@@ -1,0 +1,17 @@
+image: fkrull/multi-python
+
+setup:
+  script:
+  - apt install python3-pip
+  - pip3 install tox
+
+test:
+  script:
+    tox --recreate
+
+run:
+  script:
+  - python3 setup.py bdist_wheel
+  artifacts:
+    paths:
+    - dist/*.whl
