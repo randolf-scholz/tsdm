@@ -1,53 +1,53 @@
 def preprocess_neural_ode():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_nbeats():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_setts():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_tpa():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_gru_ode_bayes():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_ip_net():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_latent_ode():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_brits():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_mtan():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_mrnn():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_neural_cde():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_informer():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_tft():
-    pass
+    raise NotImplementedError
 
 
 model_preprocessors = {

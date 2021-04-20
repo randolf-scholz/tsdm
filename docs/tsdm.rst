@@ -1,7 +1,7 @@
-kiwi_tools package
+tsdm package
 ==================
 
-.. automodule:: kiwi_tools
+.. automodule:: tsdm
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,12 +10,12 @@ kiwi_tools package
 Submodules
 ----------
 
-.. automodule:: kiwi_tools.utils
+.. automodule:: tsdm.model_io
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: kiwi_tools.numpydoc
+.. automodule:: tsdm.config
     :members:
     :undoc-members:
     :show-inheritance:

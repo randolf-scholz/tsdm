@@ -1,9 +1,9 @@
 import logging
 import pandas
 
-from config import DATASETDIR
-from dataset_io import download_dataset
-from dataset_preprocessors import preprocess_dataset
+from .config import DATASETDIR
+from .dataset_io import download_dataset
+from .dataset_preprocessors import preprocess_dataset
 
 logger = logging.getLogger(__name__)
 
