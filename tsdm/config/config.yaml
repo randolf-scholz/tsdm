@@ -1,0 +1,19 @@
+# config.yaml
+# this file contains the default configuration. Change at your own discretion.
+
+
+# folder structure
+basedir: ".tsdm"
+logdir: "logs"
+modeldir: "models"
+datasetdir: "datasets"
+rawdatadir: "rawdata"
+
+folders:
+  datasets:
+    raw:
+    preprocessed:
+  models:
+  logs:
+
+
