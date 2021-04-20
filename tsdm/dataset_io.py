@@ -3,61 +3,7 @@ import logging
 from pathlib import Path
 import subprocess
 
-
-with open("config/config.yaml") as fname:
-    CONFIG = yaml.safe_load(fname)
-
-with open("config/models.yaml") as fname:
-    MODELS = yaml.safe_load(fname)
-
-with open("config/datasets.yaml") as fname:
-    DATASETS = yaml.safe_load(fname)
-
-with open("config/hashes.yaml") as fname:
-    HASHES = yaml.safe_load(fname)
-
-
-HOMEDIR    = Path.home()
-BASEDIR    = HOMEDIR.joinpath(CONFIG['basedir'])
-LOGDIR     = BASEDIR.joinpath(CONFIG['logdir'])
-MODELDIR   = BASEDIR.joinpath(CONFIG['modeldir'])
-DATASETDIR = BASEDIR.joinpath(CONFIG['datasetdir'])
-RAWDATADIR = BASEDIR.joinpath(CONFIG['rawdatadir'])
-
-
-LOGDIR.mkdir(parents=True, exist_ok=True)
-logging.basicConfig(
-    filename=str(LOGDIR.joinpath("example.log")),
-    filemode="w",
-    format="[%(asctime)s] [%(levelname)-s]\t[%(name)s]\t%(message)s",  # (%(filename)s:%(lineno)s)",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.INFO)
-
-
-def generate_folders(d: dict or str, current_path: Path) -> None:
-    """
-    Creates nested folder structure based on nested dictionary keys
-    source: `StackOverflow <https://stackoverflow.com/a/22058144/9318372>`_
-
-    Parameters
-    ----------
-    current_path: Path
-    d: dict
-
-    Returns
-    -------
-    None
-    """
-    for direc in d:
-        path = current_path.joinpath(direc)
-        if d[direc] is None:
-            logging.info(F"creating folder {path}")
-            path.mkdir(parents=True, exist_ok=True)
-        else:
-            generate_folders(d[direc], path)
-
-    return
-
+import config
 
 def available_models():
     return set().union(*[set(MODELS[source]) for source in MODELS])
@@ -132,8 +78,7 @@ def download_dataset(dataset: str, save_hash=True):
             yaml.safe_dump(hashes, fname)
 
 
-logging.info("Initializing Folder Structure")
-generate_folders(CONFIG['folders'], BASEDIR)
+
 download_model("N-BEATS")
 
 print(available_models())
