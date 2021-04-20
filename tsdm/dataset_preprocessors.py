@@ -1,50 +1,22 @@
-import yaml
 import logging
-from pathlib import Path
-import subprocess
-import pandas
 import zipfile
-import xarray
+
 import numpy as np
+import pandas
 
-with open("config/config.yaml") as fname:
-    CONFIG = yaml.safe_load(fname)
+from .config import RAWDATADIR, DATASETDIR
 
-with open("config/models.yaml") as fname:
-    MODELS = yaml.safe_load(fname)
-
-with open("config/datasets.yaml") as fname:
-    DATASETS = yaml.safe_load(fname)
-
-with open("config/hashes.yaml") as fname:
-    HASHES = yaml.safe_load(fname)
-
-
-HOMEDIR    = Path.home()
-BASEDIR    = HOMEDIR.joinpath(CONFIG['basedir'])
-LOGDIR     = BASEDIR.joinpath(CONFIG['logdir'])
-MODELDIR   = BASEDIR.joinpath(CONFIG['modeldir'])
-DATASETDIR = BASEDIR.joinpath(CONFIG['datasetdir'])
-RAWDATADIR = BASEDIR.joinpath(CONFIG['rawdatadir'])
-
-
-LOGDIR.mkdir(parents=True, exist_ok=True)
-logging.basicConfig(
-    filename=str(LOGDIR.joinpath("example.log")),
-    filemode="w",
-    format="[%(asctime)s] [%(levelname)-s]\t[%(name)s]\t%(message)s",  # (%(filename)s:%(lineno)s)",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def preprocess_electricity():
-    logging.info("Preprocessing Electricity Dataset")
+    logger.info("Preprocessing Electricity Dataset")
     rawdata_path = RAWDATADIR.joinpath('electricity')
     dataset_path = DATASETDIR.joinpath('electricity')
     fname = "LD2011_2014.txt"
     files = zipfile.ZipFile(rawdata_path.joinpath(fname + ".zip"))
     files.extract(fname, path=dataset_path)
-    logging.info("Finished Extracting Electricity Dataset")
+    logger.info("Finished Extracting Electricity Dataset")
     df = pandas.read_csv(dataset_path.joinpath(fname),
                          sep=";", decimal=",", parse_dates=[0], index_col=0, dtype=np.float64)
     df = df.rename_axis(index="time", columns="client")
@@ -52,70 +24,71 @@ def preprocess_electricity():
     df.to_hdf(dataset_path.joinpath("electricity.h5"), key="electricity")
     df.to_csv(dataset_path.joinpath("electricity.csv"))
     dataset_path.joinpath(fname).unlink()
-    logging.info("Finished Preprocessing Electricity Dataset")
+    logger.info("Finished Preprocessing Electricity Dataset")
+
 
 def preprocess_traffic():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_human_activity():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_air_quality_multisite():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_air_quality():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_household_consumptions():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_character_trajectories():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_mujoco():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_m3():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_uwave():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_physionet2012():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_physionet2019():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_ushcn():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_m4():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_m5():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_tourism1():
-    pass
+    raise NotImplementedError
 
 
 def preprocess_tourism2():
-    pass
+    raise NotImplementedError
 
 
 dataset_preprocessors = {
@@ -140,7 +113,15 @@ dataset_preprocessors = {
 
 
 def preprocess_dataset(dataset: str):
+    """
+    Pre-Processes Dataset according to built-in Routine
+
+    Parameters
+    ----------
+    dataset: str
+
+    Returns
+    -------
+
+    """
     return dataset_preprocessors[dataset]()
-
-
-preprocess_electricity()
