@@ -11,9 +11,6 @@ rawdatadir: "rawdata"
 
 folders:
   datasets:
-    raw:
-    preprocessed:
   models:
   logs:
-
-
+  rawdata:
