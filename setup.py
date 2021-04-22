@@ -29,7 +29,7 @@ setuptools.setup(
     long_description_content_type='test/x-rst',
     packages=setuptools.find_packages(exclude=('tests')),
     install_requires=[
-            'yaml',
+            'pyyaml',
             'pandas',
             'numpy',
             'numba',
