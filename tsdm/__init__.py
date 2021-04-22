@@ -10,7 +10,7 @@ Provides
 """
 
 from .config import HOMEDIR, BASEDIR, LOGDIR, MODELDIR, DATASETDIR, RAWDATADIR, \
-                    AVAILABLE_MODELS, AVAILABLE_DATASETS, MODELS, HASHES, DATASETS, CONFIG
+    AVAILABLE_MODELS, AVAILABLE_DATASETS, MODELS, HASHES, DATASETS, CONFIG
 from .converters import make_dense_triplets, make_sparse_triplets, make_masked_format
 from .dataset_cleaners import clean_dataset
 from .dataset_io import download_dataset

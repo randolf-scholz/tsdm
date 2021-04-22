@@ -23,7 +23,8 @@ def clean_ip_net():
 
 
 def clean_latent_ode():
-    raise NotImplementedError
+    # raise NotImplementedError
+    pass
 
 
 def clean_brits():
@@ -51,20 +52,19 @@ def clean_tft():
 
 
 model_cleanors = {
-  'NODE'          : clean_neural_ode,
-  'N-BEATS'       : clean_nbeats,
-  'SET-TS'        : clean_setts,
-  'TPA'           : clean_tpa,
-  'GRU-ODE-Bayes' : clean_gru_ode_bayes,
-  'IP-Net'        : clean_ip_net,
-  'Latent-ODE'    : clean_latent_ode,
-  'BRITS'         : clean_brits,
-  'mTAN'          : clean_mtan,
-  'M-RNN'         : clean_mrnn,
-  'NCDE'          : clean_neural_cde,
-  'Informer'      : clean_informer,
-  'TFT'           : clean_tft,
-
+    'NODE'          : clean_neural_ode,
+    'N-BEATS'       : clean_nbeats,
+    'SET-TS'        : clean_setts,
+    'TPA'           : clean_tpa,
+    'GRU-ODE-Bayes' : clean_gru_ode_bayes,
+    'IP-Net'        : clean_ip_net,
+    'Latent-ODE'    : clean_latent_ode,
+    'BRITS'         : clean_brits,
+    'mTAN'          : clean_mtan,
+    'M-RNN'         : clean_mrnn,
+    'NCDE'          : clean_neural_cde,
+    'Informer'      : clean_informer,
+    'TFT'           : clean_tft,
 }
 
 

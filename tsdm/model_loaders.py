@@ -1,11 +1,10 @@
 import sys
 
-from .config import MODELS, AVAILABLE_MODELS, MODELDIR
+from .config import MODELDIR
 from .model_io import download_model
 from .model_cleaners import clean_model
-from importlib import import_module
 from importlib.machinery import SourceFileLoader
-import importlib.util
+
 
 def load_neural_ode():
     raise NotImplementedError
@@ -47,7 +46,7 @@ def load_ode_rnn():
     model = MODELDIR.joinpath("Latent-ODE")
     if not model.exists():
         download_model('Latent-ODE')
-        # clean_model('Latent-ODE')
+        clean_model('Latent-ODE')
 
     sys.path.insert(0, str(model))
     module = SourceFileLoader("models", str(model.joinpath("lib/ode_rnn.py"))).load_module()
