@@ -11,6 +11,7 @@ github:
   GRU-ODE-Bayes: "https://github.com/edebrouwer/gru_ode_bayes.git"
   IP-Net:        "https://github.com/mlds-lab/interp-net.git"
   Latent-ODE:    "https://github.com/YuliaRubanova/latent_ode.git"
+  ODE-RNN:       "https://github.com/YuliaRubanova/latent_ode.git"
   BRITS:         "https://github.com/NIPS-BRITS/BRITS.git"
   mTAN:          "https://github.com/satyanshukla/mTANs.git"
   M-RNN:         "https://github.com/jsyoon0823/MRNN.git"
