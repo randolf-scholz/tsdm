@@ -5,6 +5,8 @@ from pathlib import Path
 MODULEPATH = Path(__file__).resolve().parent
 CONFIGPATH = MODULEPATH.joinpath("config")
 
+print(CONFIGPATH)
+
 with open(CONFIGPATH.joinpath("config.yaml")) as fname:
     CONFIG = yaml.safe_load(fname)
 

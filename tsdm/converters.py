@@ -5,7 +5,7 @@ from pandas import DataFrame
 
 
 def make_dense_triplets(df: DataFrame) -> DataFrame:
-    """
+    r"""
     Converts DataFrame to Triplet Format (num_values x 3) with index='time', columns=['variable', 'value']
 
     References:
@@ -30,9 +30,9 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
 
 
 def make_sparse_triplets(df: DataFrame) -> (DataFrame, DataFrame):
-    """
+    r"""
     Converts DataFrame to sparse triplet Format (num_measurements x (1+num_variables)) with index='time',
-    columns=['value', *variables], that is the (categorical) variable 'variable' gets stores in one-hot-encoded form
+    columns=['value', \*variables], that is the (categorical) variable 'variable' gets stores in one-hot-encoded form
 
     References:
         - pandas 'get_dummies' function https://pandas.pydata.org/docs/reference/api/pandas.get_dummies.html
@@ -51,7 +51,7 @@ def make_sparse_triplets(df: DataFrame) -> (DataFrame, DataFrame):
 
 
 def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
-    """
+    r"""
     Converts DataFrame into masked format.
     References: GRU-D paper
 
