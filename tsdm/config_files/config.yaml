@@ -1,6 +1,4 @@
-# config.yaml
-# this file contains the default configuration. Change at your own discretion.
-
+# default configuration for tsdm
 
 # folder structure
 basedir: ".tsdm"
