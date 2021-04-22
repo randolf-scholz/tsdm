@@ -5,10 +5,9 @@ from importlib import resources
 from . import config_files
 
 with resources.path(config_files, "config.yaml") as file:
+    print(F">>>>>> {file=}")
     with open(file, "r") as fname:
         CONFIG = yaml.safe_load(fname)
-
-
 with resources.path(config_files, "models.yaml") as file:
     with open(file, "r") as fname:
         MODELS = yaml.safe_load(fname)
@@ -63,7 +62,7 @@ def generate_folders(d: dict or str, current_path: Path) -> None:
     return
 
 
-logger.info(F"Found config files: {set(resources.contents('config_files'))}")
+# logger.info(F"Found config files: {set(resources.contents('config_files'))}")
 logger.info("Initializing Folder Structure")
 generate_folders(CONFIG['folders'], BASEDIR)
 

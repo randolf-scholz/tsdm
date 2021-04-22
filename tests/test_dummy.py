@@ -1,9 +1,9 @@
 import tsdm
 
 
-def dummy_test():
+def test_dummy():
     assert True
 
 
-def check_available_models():
-    assert 'M3' in tsdm.AVAILABLE_MODELS
+def test_available_models():
+    assert 'M3' in tsdm.AVAILABLE_DATASETS
