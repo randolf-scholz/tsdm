@@ -1,23 +1,25 @@
 import yaml
 import logging
 from pathlib import Path
+from importlib import resources
+from . import config_files
 
-MODULEPATH = Path(__file__).resolve().parent
-CONFIGPATH = MODULEPATH.joinpath("config")
+with resources.path(config_files, "config.yaml") as file:
+    with open(file, "r") as fname:
+        CONFIG = yaml.safe_load(fname)
 
-print(CONFIGPATH)
 
-with open(CONFIGPATH.joinpath("config.yaml")) as fname:
-    CONFIG = yaml.safe_load(fname)
+with resources.path(config_files, "models.yaml") as file:
+    with open(file, "r") as fname:
+        MODELS = yaml.safe_load(fname)
 
-with open(CONFIGPATH.joinpath("models.yaml")) as fname:
-    MODELS = yaml.safe_load(fname)
+with resources.path(config_files, "datasets.yaml") as file:
+    with open(file, "r") as fname:
+        DATASETS = yaml.safe_load(fname)
 
-with open(CONFIGPATH.joinpath("datasets.yaml")) as fname:
-    DATASETS = yaml.safe_load(fname)
-
-with open(CONFIGPATH.joinpath("hashes.yaml")) as fname:
-    HASHES = yaml.safe_load(fname)
+with resources.path(config_files, "hashes.yaml") as file:
+    with open(file, "r") as fname:
+        HASHES = yaml.safe_load(fname)
 
 
 HOMEDIR    = Path.home()
@@ -61,6 +63,7 @@ def generate_folders(d: dict or str, current_path: Path) -> None:
     return
 
 
+logger.info(F"Found config files: {set(resources.contents('config_files'))}")
 logger.info("Initializing Folder Structure")
 generate_folders(CONFIG['folders'], BASEDIR)
 

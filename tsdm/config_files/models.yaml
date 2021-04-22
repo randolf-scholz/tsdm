@@ -1,8 +1,5 @@
-# config.yaml
-# this file contains the default configuration. Change at your own discretion.
+# download sources for datasets
 
-
-# folder structure
 github:
   NODE:          "https://github.com/rtqichen/torchdiffeq.git"
   N-BEATS:       "https://github.com/ElementAI/N-BEATS.git"

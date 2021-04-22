@@ -27,11 +27,22 @@ setuptools.setup(
     description="Time Series Datasets and Models",
     long_description=read("README.rst"),
     long_description_content_type='test/x-rst',
-    packages=setuptools.find_packages(exclude=('tests')),
+    packages=setuptools.find_packages(exclude='tests'),           # include all packages in ...
+    # package_dir={"": "tsdm"},                                     # tell distutils packages are in ...
     install_requires=[
             'pyyaml',
             'pandas',
             'numpy',
             'numba',
         ],
+    include_package_data=True,
+    package_data={
+        # If any package contains *.yaml files, include them:
+        '': ['*.yaml'],
+        # And include any *.dat files found in the "config_files" subdirectory
+        # of the "tsdm" package, also:
+        'config_files': ['*.yaml'],
+    },
+    # ...but exclude virtualenv.yaml from all packages
+    exclude_package_data={"": ["virtualenv.yaml"]},
 )
