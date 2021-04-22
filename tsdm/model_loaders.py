@@ -1,3 +1,12 @@
+import sys
+
+from .config import MODELS, AVAILABLE_MODELS, MODELDIR
+from .model_io import download_model
+from .model_cleaners import clean_model
+from importlib import import_module
+from importlib.machinery import SourceFileLoader
+import importlib.util
+
 def load_neural_ode():
     raise NotImplementedError
 
@@ -23,7 +32,27 @@ def load_ip_net():
 
 
 def load_latent_ode():
-    raise NotImplementedError
+    model = MODELDIR.joinpath("Latent-ODE")
+    if not model.exists():
+        download_model('Latent-ODE')
+        # clean_model('Latent-ODE')
+
+    sys.path.insert(0, str(model))
+    module = SourceFileLoader("models", str(model.joinpath("lib/latent_ode.py"))).load_module()
+    LatentODE = getattr(module, 'LatentODE')
+    return LatentODE
+
+
+def load_ode_rnn():
+    model = MODELDIR.joinpath("Latent-ODE")
+    if not model.exists():
+        download_model('Latent-ODE')
+        # clean_model('Latent-ODE')
+
+    sys.path.insert(0, str(model))
+    module = SourceFileLoader("models", str(model.joinpath("lib/ode_rnn.py"))).load_module()
+    ODE_RNN = getattr(module, 'ODE_RNN')
+    return ODE_RNN
 
 
 def load_brits():
@@ -58,6 +87,7 @@ model_loaders = {
     'GRU-ODE-Bayes' : load_gru_ode_bayes,
     'IP-Net'        : load_ip_net,
     'Latent-ODE'    : load_latent_ode,
+    'ODE-RNN'       : load_ode_rnn,
     'BRITS'         : load_brits,
     'mTAN'          : load_mtan,
     'M-RNN'         : load_mrnn,
