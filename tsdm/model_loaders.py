@@ -1,15 +1,13 @@
 import importlib
 import importlib.util
-import os
 import sys
 from contextlib import contextmanager
-from importlib.machinery import SourceFileLoader
+from pathlib import Path
 from types import ModuleType
 
-from .config import MODELDIR, AVAILABLE_MODELS
+from .config import MODELDIR
 from .model_cleaners import clean_model
 from .model_io import download_model, model_available
-from pathlib import Path
 
 
 @contextmanager
@@ -41,7 +39,7 @@ def path_import(module_path: Path, module_name: str = None) -> ModuleType:
 
     module_name = module_name or module_path.parts[-1]
     module_init = module_path.joinpath("__init__.py")
-    assert module_init.exists(), F"Module has no __init__ file !!!"
+    assert module_init.exists(), F"Module {module_path} has no __init__ file !!!"
 
     with add_to_path(module_path):
         spec = importlib.util.spec_from_file_location(module_name, str(module_init))
@@ -72,25 +70,6 @@ def load_gru_ode_bayes():
 
 def load_ip_net():
     raise NotImplementedError
-
-# def load_latent_ode():
-#     model = MODELDIR.joinpath("Latent-ODE")
-#
-#     sys.path.insert(0, str(model))
-#     module = SourceFileLoader("models", str(model.joinpath("lib/latent_ode.py"))).load_module()
-#     LatentODE = getattr(module, 'LatentODE')
-#     return LatentODE
-
-# def load_ode_rnn():
-#     model = MODELDIR.joinpath("Latent-ODE")
-#     if not model.exists():
-#         download_model('Latent-ODE')
-#         clean_model('Latent-ODE')
-#
-#     sys.path.insert(0, str(model))
-#     module = SourceFileLoader("models", str(model.joinpath("lib/ode_rnn.py"))).load_module()
-#     ODE_RNN = getattr(module, 'ODE_RNN')
-#     return ODE_RNN
 
 
 def load_latent_ode():
