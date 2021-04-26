@@ -1,9 +1,53 @@
+import importlib
+import importlib.util
+import os
 import sys
-
-from .config import MODELDIR
-from .model_io import download_model
-from .model_cleaners import clean_model
+from contextlib import contextmanager
 from importlib.machinery import SourceFileLoader
+from types import ModuleType
+
+from .config import MODELDIR, AVAILABLE_MODELS
+from .model_cleaners import clean_model
+from .model_io import download_model, model_available
+from pathlib import Path
+
+
+@contextmanager
+def add_to_path(p: Path) -> None:
+    """Source: https://stackoverflow.com/a/41904558/9318372"""
+    old_path = sys.path
+    sys.path = sys.path[:]
+    sys.path.insert(0, str(p))
+    try:
+        yield
+    finally:
+        sys.path = old_path
+
+
+def path_import(module_path: Path, module_name: str = None) -> ModuleType:
+    """
+    implementation taken from https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+    Source: https://stackoverflow.com/a/41904558/9318372
+
+    Parameters
+    ----------
+    module_path: Path
+        Path to the folder where the module is located
+    module_name: str, optional
+
+    Returns
+    -------
+    """
+
+    module_name = module_name or module_path.parts[-1]
+    module_init = module_path.joinpath("__init__.py")
+    assert module_init.exists(), F"Module has no __init__ file !!!"
+
+    with add_to_path(module_path):
+        spec = importlib.util.spec_from_file_location(module_name, str(module_init))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
 
 
 def load_neural_ode():
@@ -29,29 +73,34 @@ def load_gru_ode_bayes():
 def load_ip_net():
     raise NotImplementedError
 
+# def load_latent_ode():
+#     model = MODELDIR.joinpath("Latent-ODE")
+#
+#     sys.path.insert(0, str(model))
+#     module = SourceFileLoader("models", str(model.joinpath("lib/latent_ode.py"))).load_module()
+#     LatentODE = getattr(module, 'LatentODE')
+#     return LatentODE
+
+# def load_ode_rnn():
+#     model = MODELDIR.joinpath("Latent-ODE")
+#     if not model.exists():
+#         download_model('Latent-ODE')
+#         clean_model('Latent-ODE')
+#
+#     sys.path.insert(0, str(model))
+#     module = SourceFileLoader("models", str(model.joinpath("lib/ode_rnn.py"))).load_module()
+#     ODE_RNN = getattr(module, 'ODE_RNN')
+#     return ODE_RNN
+
 
 def load_latent_ode():
-    model = MODELDIR.joinpath("Latent-ODE")
-    if not model.exists():
-        download_model('Latent-ODE')
-        # clean_model('Latent-ODE')
-
-    sys.path.insert(0, str(model))
-    module = SourceFileLoader("models", str(model.joinpath("lib/latent_ode.py"))).load_module()
-    LatentODE = getattr(module, 'LatentODE')
-    return LatentODE
+    module = path_import(MODELDIR.joinpath('Latent-ODE'))
+    return module.lib.latent_ode.LatentODE
 
 
 def load_ode_rnn():
-    model = MODELDIR.joinpath("Latent-ODE")
-    if not model.exists():
-        download_model('Latent-ODE')
-        clean_model('Latent-ODE')
-
-    sys.path.insert(0, str(model))
-    module = SourceFileLoader("models", str(model.joinpath("lib/ode_rnn.py"))).load_module()
-    ODE_RNN = getattr(module, 'ODE_RNN')
-    return ODE_RNN
+    module = path_import(MODELDIR.joinpath('ODE-RNN'))
+    return module.lib.ode_rnn.ODE_RNN
 
 
 def load_brits():
@@ -79,22 +128,28 @@ def load_tft():
 
 
 model_loaders = {
-    'NODE'          : load_neural_ode,
-    'N-BEATS'       : load_nbeats,
-    'SET-TS'        : load_setts,
-    'TPA'           : load_tpa,
-    'GRU-ODE-Bayes' : load_gru_ode_bayes,
-    'IP-Net'        : load_ip_net,
-    'Latent-ODE'    : load_latent_ode,
-    'ODE-RNN'       : load_ode_rnn,
-    'BRITS'         : load_brits,
-    'mTAN'          : load_mtan,
-    'M-RNN'         : load_mrnn,
-    'NCDE'          : load_neural_cde,
-    'Informer'      : load_informer,
-    'TFT'           : load_tft,
+    'NODE': load_neural_ode,
+    'N-BEATS': load_nbeats,
+    'SET-TS': load_setts,
+    'TPA': load_tpa,
+    'GRU-ODE-Bayes': load_gru_ode_bayes,
+    'IP-Net': load_ip_net,
+    'Latent-ODE': load_latent_ode,
+    'ODE-RNN': load_ode_rnn,
+    'BRITS': load_brits,
+    'mTAN': load_mtan,
+    'M-RNN': load_mrnn,
+    'NCDE': load_neural_cde,
+    'Informer': load_informer,
+    'TFT': load_tft,
 }
 
 
 def load_model(model: str):
+    assert model_available(model)
+
+    if not MODELDIR.joinpath(model).exists():
+        download_model(model)
+        clean_model(model)
+
     return model_loaders[model]()

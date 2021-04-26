@@ -8,6 +8,12 @@ from .config import AVAILABLE_DATASETS, DATASETS, RAWDATADIR
 logger = logging.getLogger(__name__)
 
 
+def dataset_available(dataset: str):
+    if dataset not in AVAILABLE_DATASETS:
+        raise NotImplementedError(F"{dataset=} unknown. {AVAILABLE_DATASETS=}")
+    return True
+
+
 def cut_dirs(url: str):
     """automatically determine number of top directories to cut"""
     return url.count("/") - 3
@@ -31,8 +37,9 @@ def download_dataset(dataset: str, save_hash=True):
             download_dataset(ds)
         return
 
+    assert dataset_available(dataset)
+
     logger.info(F"Importing {dataset=}")
-    assert dataset in AVAILABLE_DATASETS, F"Dataset {dataset} unknown. Available datasets: {AVAILABLE_DATASETS}"
     dataset_path = RAWDATADIR.joinpath(dataset)
     dataset_path.mkdir(parents=True, exist_ok=True)
 

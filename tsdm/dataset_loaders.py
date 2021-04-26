@@ -2,7 +2,7 @@ import logging
 import pandas
 
 from .config import DATASETDIR
-from .dataset_io import download_dataset
+from .dataset_io import dataset_available, download_dataset
 from .dataset_cleaners import clean_dataset
 
 logger = logging.getLogger(__name__)
@@ -103,4 +103,10 @@ dataset_loaders = {
 
 
 def load_dataset(dataset: str):
+    assert dataset_available(dataset)
+
+    if not DATASETDIR.joinpath(dataset).exists():
+        download_dataset(dataset)
+        clean_dataset(dataset)
+
     return dataset_loaders[dataset]()

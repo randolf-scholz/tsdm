@@ -4,6 +4,12 @@ import subprocess
 from .config import AVAILABLE_MODELS, MODELS, MODELDIR
 
 
+def model_available(model: str):
+    if model not in AVAILABLE_MODELS:
+        raise NotImplementedError(F"{model=} unknown. {AVAILABLE_MODELS=}")
+    return True
+
+
 def download_model(model: str):
     """
     Obtain Model from the internet
@@ -21,8 +27,9 @@ def download_model(model: str):
             download_model(model)
         return
 
+    assert model_available(model)
+
     logging.info(F"Importing {model=}")
-    assert model in AVAILABLE_MODELS, F"Model {model} unknown. Available models: {AVAILABLE_MODELS}"
     model_path = MODELDIR.joinpath(model)
     model_path.mkdir(parents=True, exist_ok=True)
 
