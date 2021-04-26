@@ -11,10 +11,42 @@ Usage guide
 Installation guide
 ------------------
 
-1. Create the conda environment (at the moment this is a bit of a bloated environment, but we cna clean it up later)
+1. Create empty environment
 
 .. code-block:: bash
 
-    conda create -f kiwi_conda_environment.yaml
+    conda create --name kiwi
 
-This creates an environment called `kiwi`.
+2. Set up the channel priorities - we will use `conda-forge` as default
+
+.. code-block:: bash
+
+    conda activate kiwi
+    conda config --env --add channels conda-forge
+    conda config --env --add channels pytorch
+    conda config --env --show channels
+    conda config --env --remove channels defaults
+    conda config --env --show channels
+    conda config --env --set channel_priority strict
+    conda config --env --show channel_priority
+
+3. Install the required packages
+
+.. code-block:: bash
+
+    conda env update -f requirements.yaml
+
+4. Install extra packages via pip
+
+.. code-block:: bash
+
+    pip install --upgrade jax jaxlib==0.1.65+cuda112 -f https://storage.googleapis.com/jax-releases/jax_releases.html
+    pip install --upgrade tensorflow-gpu
+
+5. Install the `tsdm` package via
+
+.. code-block:: bash
+
+    pip install -e .
+
+
