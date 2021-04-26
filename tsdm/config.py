@@ -5,7 +5,6 @@ from importlib import resources
 from . import config_files
 
 with resources.path(config_files, "config.yaml") as file:
-    print(F">>>>>> {file=}")
     with open(file, "r") as fname:
         CONFIG = yaml.safe_load(fname)
 with resources.path(config_files, "models.yaml") as file:

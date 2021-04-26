@@ -4,7 +4,8 @@ import zipfile
 import numpy as np
 import pandas
 
-from .config import RAWDATADIR, DATASETDIR
+from .config import DATASETDIR, RAWDATADIR
+from .dataset_io import dataset_available, download_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -124,4 +125,10 @@ def clean_dataset(dataset: str):
     -------
 
     """
+
+    assert dataset_available(dataset)
+
+    if not DATASETDIR.joinpath(dataset).exists():
+        download_dataset(dataset)
+
     return dataset_cleaners[dataset]()
