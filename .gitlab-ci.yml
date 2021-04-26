@@ -15,3 +15,15 @@ run:
   artifacts:
     paths:
     - dist/*.whl
+
+pages:
+  stage: deploy
+  script:
+    - pip install -U sphinx sphinx-rtd-theme numpydoc
+    - cd docs ; make html
+    - mv build/html/ ../public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
