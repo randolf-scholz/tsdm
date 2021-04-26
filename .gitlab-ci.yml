@@ -21,7 +21,7 @@ pages:
   script:
     - pip3 install -U sphinx sphinx-rtd-theme numpydoc
     - cd docs ; make html
-    - mv build/html/ ../public/
+    - mv _build/html/ ../public/
   artifacts:
     paths:
       - public
