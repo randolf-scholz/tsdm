@@ -72,6 +72,7 @@ def clean_ode_rnn():
         with open(lib_init, "w") as file:
             file.write(__init_file)
 
+
 def clean_brits():
     raise NotImplementedError
 
