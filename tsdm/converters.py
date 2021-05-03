@@ -21,6 +21,8 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
     data: DataFrame
     """
     result = df.melt(ignore_index=False)
+    observed = result['value'].notna()
+    result = result[observed]
     variable = result.columns[0]
     result[variable] = result[variable].astype(pandas.StringDtype())
     result.rename(columns={variable: 'variable'}, inplace=True)
@@ -69,7 +71,7 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
         the time deltas since the last observation
     """
 
-    m = df.isna().astype(np.uint8)
+    m = df.notna().astype(np.uint8)
     s = pandas.Series(df.index).diff()  # note: not the same s as in the GRU-D paper, but s(t) - s(t-1)
     s[0] = 0 * s[1]
     s = pandas.Index(s)
@@ -79,7 +81,7 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
         # using numba jit compiled for speed - pandas was too slow!
         c = np.outer(a, np.zeros(b.shape[-1]))
         for i in range(1, len(a)):
-            c[i] = a[i] + c[i - 1] * b[i]
+            c[i] = a[i] + c[i-1] * (1-b[i-1])
             # note: a[i] + b[i] * c[i-1] does not work - not implemented
         return c
 
