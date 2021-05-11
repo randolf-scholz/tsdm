@@ -39,7 +39,7 @@ def download_dataset(dataset: str, save_hash=True) -> None:
     Parameters
     ----------
     dataset: str
-    save_hash: bool
+    save_hash: bool, default=True
     """
     if dataset.upper() == "ALL":
         for ds in AVAILABLE_DATASETS:

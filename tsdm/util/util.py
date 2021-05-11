@@ -81,7 +81,7 @@ def deep_kval_update(d: dict, **new_kv) -> dict:
 
 def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
     r"""
-    Scaled :math:`\ell^p`-norm: :math:`\|x\|_p = \big(\tfrac{1}{n}\sum_{i=1}^n |x_i|^p\big)^{1/p}`
+    Scaled $\ell^p$-norm: :math:`\|x\|_p = \big(\tfrac{1}{n}\sum_{i=1}^n x_i^p \big)^{1/p}`
 
     Parameters
     ----------

@@ -6,19 +6,38 @@ from pandas import DataFrame
 
 def make_dense_triplets(df: DataFrame) -> DataFrame:
     r"""
-    Converts DataFrame to Triplet Format (num_values x 3) with index='time', columns=['variable', 'value']
+    Converts DataFrame to dense triplet format. Given that `df` has with $d$ columns with $n$ rows containing
+    $N\le n\cdot d$ observations (non-NaN entries), the result is a $(N \times 3)$ array $(t_i, v_i, x_i)_{i=1:N}$
+
+    - $t_i$ timestamp (index)
+    - $v_i$ indicator variable
+    - $x_i$ observed value
 
     References:
-        - pandas 'melt' function https://pandas.pydata.org/docs/reference/api/pandas.melt.html
-        - Set-Functions For TIme Series Paper
+        - :func:`pandas.melt`
+        - `Set-Functions For Time Series <http://proceedings.mlr.press/v119/horn20a.html>`_
 
     Parameters
     ----------
-    df: DataFrame[dtype]
+    df: :class:`pandas.DataFrame`
 
     Returns
     -------
-    data: DataFrame[string, dtype]
+    result: :class:`pandas.DataFrame`
+
+
+        ========  ================================================
+        column    data type
+        ========  ================================================
+        index     same as input
+        variable  :class:`pandas.StringDtype`
+        value     same as input
+        ========  ================================================
+
+    See Also
+    --------
+    make_sparse_triplets
+    make_masked_format
     """
     result = df.melt(ignore_index=False)
     observed = result['value'].notna()
@@ -33,19 +52,39 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
 
 def make_sparse_triplets(df: DataFrame) -> DataFrame:
     r"""
-    Converts DataFrame to sparse triplet Format (num_measurements x (1+num_variables)) with index='time',
-    columns=['value', \*variables], that is the (categorical) variable 'variable' gets stores in one-hot-encoded form
+    Converts DataFrame to sparse triplet format. Given that `df` has with $d$ columns with $n$ rows containing
+    $N\le n\cdot d$ observations (non-NaN entries), the result is a $(N \times (d+1))$ array $(t_i, v_i, x_i)_{i=1:N}$
+
+    - $t_i$ timestamp (index)
+    - $v_i$ one-hot encoded indicator variable
+    - $x_i$ observed value
 
     References:
-        -  :code:`pandas.get_dummies` function <https://pandas.pydata.org/docs/reference/api/pandas.get_dummies.html>
+        - :func:`pandas.melt`
+        - :func:`pandas.get_dummies`
+        - `Set-Functions For Time Series <http://proceedings.mlr.press/v119/horn20a.html>`_
 
     Parameters
     ----------
-    df: DataFrame[dtype]
+    df: :class:`pandas.DataFrame`
 
     Returns
     -------
-    data: DataFrame[dtype, Sparse[uint8, 0]]
+    result: :class:`pandas.DataFrame`
+
+
+        ======  ================================================
+        column  data type
+        ======  ================================================
+        index   same as input
+        value   same as input
+        \*      :class:`pandas.SparseDtype` ``Sparse[uint8, 0]``
+        ======  ================================================
+
+    See Also
+    --------
+    make_dense_triplets
+    make_masked_format
     """
     triplets = make_dense_triplets(df)
     result = pandas.get_dummies(triplets, columns=["variable"], sparse=True, prefix="", prefix_sep="")
@@ -54,21 +93,29 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
 
 def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     r"""
-    Converts DataFrame into masked format.
-    References: GRU-D paper
+    Converts DataFrame into masked format, returning 3 DataFrames with the same shape.
+
+    References:
+    - `Recurrent Neural Networks for Multivariate Time Series with Missing Values
+    <https://www.nature.com/articles/s41598-018-24271-9>`_
 
     Parameters
     ----------
-    df: DataFrame[dtype]
+    df: :class:`pandas.DataFrame`
 
     Returns
     -------
-    x: DataFrame[dtype]
+    x: :class:`pandas.DataFrame` ``[dtype]``
         The original dataframe
-    m: DataFrame[uint8]
-        The mask corresponding to the observed values
-    d: DataFrame[TimeDelta64]
-        the time deltas since the last observation
+    m: :class:`pandas.DataFrame` ``[uint8]``
+        mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
+    d: :class:`pandas.DataFrame` ``[TimeDelta64]``
+        time delta  $\delta_t = (1-m_{t-1})\odot \delta_{t-1} + \Delta t$, with $\delta_0=0$
+
+    See Also
+    --------
+    make_dense_triplets
+    make_sparse_triplets
     """
 
     m = df.notna().astype(np.uint8)

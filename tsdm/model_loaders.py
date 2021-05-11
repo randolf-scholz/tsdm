@@ -134,7 +134,8 @@ def load_model(model: str) -> type:
 
     Returns
     -------
-    class
+    type
+        The model class that was import
     """
     assert model_available(model)
 

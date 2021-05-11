@@ -114,8 +114,8 @@ def load_dataset(dataset: str) -> DataFrame:
 
     Returns
     -------
-    DataFrame
-        Containing the loaded Data
+    :class:`pandas.DataFrame`
+        DataFrame containing the loaded dataset
     """
     assert dataset_available(dataset)
 

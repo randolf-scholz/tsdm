@@ -9,7 +9,7 @@ Constants
 
 .. data:: HOMEDIR, BASEDIR, LOGDIR, MODELDIR, DATASETDIR, RAWDATADIR
 
-    Paths of the internally used directories
+    Paths of the internally used directory tree
 
 .. data:: AVAILABLE_MODELS
 
@@ -39,7 +39,7 @@ Functions
 ---------
 """
 
-import util
+# import tsdm.util as util  # noqa: F401
 from .config import HOMEDIR, BASEDIR, LOGDIR, MODELDIR, DATASETDIR, RAWDATADIR, \
     AVAILABLE_MODELS, AVAILABLE_DATASETS, MODELS, HASHES, DATASETS, CONFIG
 from .converters import make_dense_triplets, make_sparse_triplets, make_masked_format
