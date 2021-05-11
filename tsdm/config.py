@@ -66,7 +66,13 @@ logger.info("Initializing Folder Structure")
 generate_folders(CONFIG['folders'], BASEDIR)
 
 AVAILABLE_MODELS = set().union(*[set(MODELS[source]) for source in MODELS])
+r"""
+Constant containing all available models.
+"""
 logger.info(F"{AVAILABLE_MODELS=}")
 
 AVAILABLE_DATASETS = set().union(*[set(DATASETS[source]) for source in DATASETS])
+r"""
+Constant containing all available datasets.
+"""
 logger.info(F"{AVAILABLE_DATASETS=}")

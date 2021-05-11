@@ -1,5 +1,6 @@
 import logging
 import subprocess
+import warnings
 
 import yaml
 
@@ -8,29 +9,37 @@ from .config import AVAILABLE_DATASETS, DATASETS, RAWDATADIR
 logger = logging.getLogger(__name__)
 
 
-def dataset_available(dataset: str):
+def dataset_available(dataset: str) -> bool:
+    r"""
+    Checks whether the dataset is available.
+
+    Parameters
+    ----------
+    dataset: str
+
+    Returns
+    -------
+    bool
+    """
     if dataset not in AVAILABLE_DATASETS:
-        raise NotImplementedError(F"{dataset=} unknown. {AVAILABLE_DATASETS=}")
+        warnings.warn(F"{dataset=} unknown. {AVAILABLE_DATASETS=}")
+        return False
     return True
 
 
 def cut_dirs(url: str):
-    """automatically determine number of top directories to cut"""
+    r"""automatically determine number of top directories to cut"""
     return url.count("/") - 3
 
 
-def download_dataset(dataset: str, save_hash=True):
-    """
+def download_dataset(dataset: str, save_hash=True) -> None:
+    r"""
     Obtain dataset from the internet
 
     Parameters
     ----------
     dataset: str
     save_hash: bool
-
-    Returns
-    -------
-
     """
     if dataset.upper() == "ALL":
         for ds in AVAILABLE_DATASETS:
@@ -72,7 +81,7 @@ def download_dataset(dataset: str, save_hash=True):
 
 
 def delete_dataset(dataset: str):
-    """
+    r"""
     deletes downloaded dataset
 
     Parameters
@@ -87,7 +96,7 @@ def delete_dataset(dataset: str):
 
 
 def validate_dataset(dataset: str):
-    """
+    r"""
     Check dataset file integrity via hashing
 
     Parameters

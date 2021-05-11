@@ -14,11 +14,11 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
 
     Parameters
     ----------
-    df: DataFrame
+    df: DataFrame[dtype]
 
     Returns
     -------
-    data: DataFrame
+    data: DataFrame[string, dtype]
     """
     result = df.melt(ignore_index=False)
     observed = result['value'].notna()
@@ -31,21 +31,21 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
     return result
 
 
-def make_sparse_triplets(df: DataFrame) -> (DataFrame, DataFrame):
+def make_sparse_triplets(df: DataFrame) -> DataFrame:
     r"""
     Converts DataFrame to sparse triplet Format (num_measurements x (1+num_variables)) with index='time',
     columns=['value', \*variables], that is the (categorical) variable 'variable' gets stores in one-hot-encoded form
 
     References:
-        - pandas 'get_dummies' function https://pandas.pydata.org/docs/reference/api/pandas.get_dummies.html
+        -  :code:`pandas.get_dummies` function <https://pandas.pydata.org/docs/reference/api/pandas.get_dummies.html>
 
     Parameters
     ----------
-    df: DataFrame
+    df: DataFrame[dtype]
 
     Returns
     -------
-    data: DataFrame
+    data: DataFrame[dtype, Sparse[uint8, 0]]
     """
     triplets = make_dense_triplets(df)
     result = pandas.get_dummies(triplets, columns=["variable"], sparse=True, prefix="", prefix_sep="")
@@ -59,11 +59,11 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
 
     Parameters
     ----------
-    df: DataFrame
+    df: DataFrame[dtype]
 
     Returns
     -------
-    x: DataFrame
+    x: DataFrame[dtype]
         The original dataframe
     m: DataFrame[uint8]
         The mask corresponding to the observed values

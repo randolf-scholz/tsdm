@@ -124,7 +124,18 @@ model_loaders = {
 }
 
 
-def load_model(model: str):
+def load_model(model: str) -> type:
+    """
+    Load the specified model
+
+    Parameters
+    ----------
+    model: str
+
+    Returns
+    -------
+    class
+    """
     assert model_available(model)
 
     if not MODELDIR.joinpath(model).exists():

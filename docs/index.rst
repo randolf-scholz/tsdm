@@ -11,40 +11,23 @@ tsdm
    changelog
 
 
-Purpose
-_______
-
-Why do we need the package?
-
-
-
 Example
 _______
-
-To ease the usage this package tries to follow the guidelines of scikit-learn
-estimators
-https://scikit-learn.org/stable/developers/develop.html. In practise the usage
-looks like this:
 
 .. code-block:: python
 
    import tsdm
 
-   trained_model = tsdm.models.ExponentialDecay().fit(points_in_time, labels)
-   trained_model.predict(points_in_time)
+   dataset = tsdm.load_dataset('electricity')
+   x, m, d = tsdm.make_masked_format('dataset')
+   ODE_RNN = tsdm.load_model('ODE-RNN')
+   model = ODE_RNN(...)  # see model description for details
 
-Features
---------
-
-The package implements the following methods
-
-- something
-- something more
 
 Installation
 ------------
 
-Install the glucose package using `pip` by
+Install the tsdm_ package using :code:`pip` by
 
 .. code-block:: bash
 
