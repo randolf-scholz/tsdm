@@ -5,3 +5,12 @@ tsdm package
     :members:
     :undoc-members:
     :show-inheritance:
+
+Submodules
+----------
+
+.. automodule:: tsdm.util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+

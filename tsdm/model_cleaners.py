@@ -115,7 +115,13 @@ __model_cleaners = {
 }
 
 
-def clean_model(model: str):
+def clean_model(model: str) -> None:
+    r"""
+    Preprocesses the imported model (adding :code:`__init__.py` files if necessary, etc.)
+    Parameters
+    ----------
+    model: str
+    """
     assert model_available(model)
 
     if not MODELDIR.joinpath(model).exists():

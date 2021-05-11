@@ -113,17 +113,13 @@ dataset_cleaners = {
 }
 
 
-def clean_dataset(dataset: str):
-    """
-    Pre-Processes Dataset according to built-in Routine
+def clean_dataset(dataset: str) -> None:
+    r"""
+    Pre-processes dataset from RAWDATADIR according to built-in routine. Stores result in DATASETDIR.
 
     Parameters
     ----------
     dataset: str
-
-    Returns
-    -------
-
     """
 
     assert dataset_available(dataset)

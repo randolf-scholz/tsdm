@@ -1,18 +1,17 @@
 import logging
 import subprocess
+import warnings
+
+import yaml
 
 from .config import AVAILABLE_MODELS, MODELS, MODELDIR
 
-
-def model_available(model: str):
-    if model not in AVAILABLE_MODELS:
-        raise NotImplementedError(F"{model=} unknown. {AVAILABLE_MODELS=}")
-    return True
+logger = logging.getLogger(__name__)
 
 
-def download_model(model: str):
-    """
-    Obtain Model from the internet
+def model_available(model: str) -> bool:
+    r"""
+    Checks whether the model is available.
 
     Parameters
     ----------
@@ -20,7 +19,22 @@ def download_model(model: str):
 
     Returns
     -------
+    bool
+    """
+    if model not in AVAILABLE_MODELS:
+        warnings.warn(F"{model=} unknown. {AVAILABLE_MODELS=}")
+        return False
+    return True
 
+
+def download_model(model: str, save_hash=True) -> None:
+    r"""
+    Obtain Model from the internet
+
+    Parameters
+    ----------
+    model: str
+    save_hash: bool
     """
     if model.upper() == "ALL":
         for model in AVAILABLE_MODELS:
@@ -41,3 +55,14 @@ def download_model(model: str):
         url = MODELS['google'][model]
         subprocess.run(F"svn export {url} {model_path}")
         subprocess.run(F"grep -qxF '{model_path}' .gitignore || echo '{model_path}' >> .gitignore")
+
+    logger.info(F"Finished importing {model=}")
+
+    if save_hash:
+        with open(MODELDIR.joinpath("hashes.yaml"), "w+") as filename:
+            hashes = yaml.safe_load(filename) or dict()
+            hash_value = subprocess.run(
+                F"sha1sum {model_path} | sha1sum | head -c 40",
+                shell=True, encoding='utf-8', capture_output=True).stdout
+            hashes[model] = hash_value
+            yaml.safe_dump(hashes, filename)

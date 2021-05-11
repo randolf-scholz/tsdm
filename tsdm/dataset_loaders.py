@@ -4,16 +4,18 @@ import pandas
 from .config import DATASETDIR
 from .dataset_io import dataset_available, download_dataset
 from .dataset_cleaners import clean_dataset
+from pandas import DataFrame
 
 logger = logging.getLogger(__name__)
 
 
-def load_electricity():
+def load_electricity() -> DataFrame:
     dataset = DATASETDIR.joinpath("electricity/electricity.h5")
     if not dataset.exists():
         download_dataset('electricity')
         clean_dataset('electricity')
     df = pandas.read_hdf(dataset, key="electricity")
+    df = DataFrame(df)
     return df
 
 
@@ -102,7 +104,19 @@ dataset_loaders = {
 }
 
 
-def load_dataset(dataset: str):
+def load_dataset(dataset: str) -> DataFrame:
+    """
+    Load the specified dataset
+
+    Parameters
+    ----------
+    dataset: str
+
+    Returns
+    -------
+    DataFrame
+        Containing the loaded Data
+    """
     assert dataset_available(dataset)
 
     if not DATASETDIR.joinpath(dataset).exists():
