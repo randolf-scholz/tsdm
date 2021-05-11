@@ -19,7 +19,7 @@ run:
 pages:
   stage: deploy
   script:
-    - pip3 install -U sphinx sphinx-rtd-theme numpydoc
+    - pip3 install -U sphinx sphinx-rtd-theme numpydoc sphinx-math-dollar
     - cd docs ; make html
     - mv _build/html/ ../public/
   artifacts:

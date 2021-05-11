@@ -29,12 +29,12 @@ def model_available(model: str) -> bool:
 
 def download_model(model: str, save_hash=True) -> None:
     r"""
-    Obtain Model from the internet
+    Obtain model from the internet.
 
     Parameters
     ----------
     model: str
-    save_hash: bool
+    save_hash: bool, default=True
     """
     if model.upper() == "ALL":
         for model in AVAILABLE_MODELS:

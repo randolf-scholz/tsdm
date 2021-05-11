@@ -45,17 +45,31 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    # 'sphinx_math_dollar',
+    'sphinx.ext.napoleon',
+    'sphinx_math_dollar',
     'numpydoc'
 ]
 
-# mathjax_config = {
-#     'tex2jax': {
-#         'inlineMath': [ ["\\(","\\)"] ],
-#         'displayMath': [["\\[","\\]"] ],
-#     },
-# }
-#
+mathjax_config = {
+    'tex2jax': {
+        'inlineMath': [["\\(", "\\)"]],
+        'displayMath': [["\\[", "\\]"]],
+    },
+}
+
+intersphinx_mapping = {
+    "dateutil": ("https://dateutil.readthedocs.io/en/latest/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas-gbq": ("https://pandas-gbq.readthedocs.io/en/latest/", None),
+    "py": ("https://pylib.readthedocs.io/en/latest/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "statsmodels": ("https://www.statsmodels.org/devel/", None),
+    "pyarrow": ("https://arrow.apache.org/docs/", None),
+    'pandas' : ('https://pandas.pydata.org/docs', None)
+}
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -64,7 +78,7 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-autodoc_typehints = 'none'
+autodoc_typehints = 'description'
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -98,4 +112,3 @@ typehints_document_rtype = False
 # optional parameter has only a single type (e.g Optional[A] or Union[A, None]), it will always be displayed as
 # Optional!
 simplify_optional_unions = True
-
