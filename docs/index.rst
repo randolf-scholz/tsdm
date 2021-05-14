@@ -27,7 +27,7 @@ _______
 Installation
 ------------
 
-Install the tsdm_ package using :code:`pip` by
+Install the tsdm_ package using ``pip`` by
 
 .. code-block:: bash
 

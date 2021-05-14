@@ -47,7 +47,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx_math_dollar',
-    'numpydoc'
 ]
 
 mathjax_config = {
@@ -58,18 +57,13 @@ mathjax_config = {
 }
 
 intersphinx_mapping = {
-    "dateutil": ("https://dateutil.readthedocs.io/en/latest/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "pandas-gbq": ("https://pandas-gbq.readthedocs.io/en/latest/", None),
-    "py": ("https://pylib.readthedocs.io/en/latest/", None),
-    "python": ("https://docs.python.org/3/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
-    "statsmodels": ("https://www.statsmodels.org/devel/", None),
-    "pyarrow": ("https://arrow.apache.org/docs/", None),
-    'pandas' : ('https://pandas.pydata.org/docs', None)
+    "numpy"     : ("https://numpy.org/doc/stable/", None),
+    "python"    : ("https://docs.python.org/3/", None),
+    "scipy"     : ("https://docs.scipy.org/doc/scipy/reference/", None),
+    'pandas'    : ('https://pandas.pydata.org/docs', None),
+    'torch'     : ('https://pytorch.org/docs/stable/', None),
 }
-
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
