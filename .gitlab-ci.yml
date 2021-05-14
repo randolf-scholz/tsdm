@@ -1,5 +1,4 @@
-default:
-  image: fkrull/multi-python
+image: fkrull/multi-python
 
 setup:
   script:
