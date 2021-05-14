@@ -2,6 +2,7 @@ image: fkrull/multi-python
 
 setup:
   script:
+  - apt install python3-pip
   - pip3 install tox
 
 test:

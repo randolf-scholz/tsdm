@@ -80,8 +80,10 @@ def deep_kval_update(d: dict, **new_kv) -> dict:
 
 
 def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
-    r"""
-    Scaled $\ell^p$-norm: :math:`\|x\|_p = \big(\tfrac{1}{n}\sum_{i=1}^n x_i^p \big)^{1/p}`
+    r"""Scaled $\ell^p$-norm, works with both :mod:`torch` and :mod:`numpy`
+
+    .. math::
+        \|x\|_p = \big(\tfrac{1}{n}\sum_{i=1}^n x_i^p \big)^{1/p}
 
     Parameters
     ----------
@@ -99,7 +101,8 @@ def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
 
     axis_name = {torch: 'dim', np: 'axis'}[fwork]
     keep_name = {torch: 'keepdim', np: 'keepdims'}[fwork]
-    kwargs = {axis_name : axis, keep_name: keepdims}
+    # only pass arguments if axis is specified
+    kwargs = {} if axis is None else {axis_name: axis, keep_name: keepdims}
 
     if p == 0:
         # https://math.stackexchange.com/q/282271/99220
@@ -113,6 +116,40 @@ def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
     else:
         return fwork.mean(x**p, **kwargs)**(1/p)
 
+
+def relative_error(xhat: ArrayLike, x_true:ArrayLike, p=2, axis=None, keepdims=False) -> ArrayLike:
+    R"""Relative, scaled $\ell^p$-error, works with both :class:`torch.Tensor` and :mod:`numpy.linalg`
+
+    .. math::
+        \operatorname{err}_p(\hat x, x) =
+        \Big(\tfrac{1}{n}\sum_{i=1}^n \Big(\tfrac{|\hat x - x|}{|x|+\epsilon}\Big)^p \Big)^{1/p}
+
+    Parameters
+    ----------
+    xhat: ArrayLike
+        The estimation
+    x_true:  ArrayLike
+        The true value
+    p: int, default=2
+    axis: tuple[int], default=None
+    keepdims: bool, default=False
+
+    Returns
+    -------
+    ArrayLike
+    """
+
+    fwork = torch if type(xhat) == Tensor else np
+
+    if xhat.dtype in (fwork.float32, fwork.int32):
+        eps=2**-24
+    elif  xhat.dtype in (fwork.float64, fwork.int64):
+        eps=2**-53
+    else:
+        eps=2**-24
+
+    r = fwork.abs(xhat-x_true)/(fwork.abs(x_true) + eps)
+    return scaled_norm(r, p=p, axis=axis, keepdims=keepdims)
 
 def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc="upper right", print_stats=True) -> None:
     r"""
