@@ -14,3 +14,7 @@ Submodules
     :undoc-members:
     :show-inheritance:
 
+.. automodule:: tsdm.plot
+    :members:
+    :undoc-members:
+    :show-inheritance:
