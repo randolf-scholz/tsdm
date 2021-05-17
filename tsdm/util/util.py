@@ -1,12 +1,15 @@
+import gc
+import logging
 from collections import Mapping
+from functools import wraps
+from time import perf_counter_ns
+from typing import Callable
 
 import numpy as np
 import torch
-from matplotlib.offsetbox import AnchoredText
+
 from numpy.typing import ArrayLike
-from scipy.stats import mode
 from torch import nn, Tensor
-from matplotlib.axes import Axes
 
 ACTIVATIONS = {
     'AdaptiveLogSoftmaxWithLoss' : nn.AdaptiveLogSoftmaxWithLoss,
@@ -80,7 +83,7 @@ def deep_kval_update(d: dict, **new_kv) -> dict:
 
 
 def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
-    r"""Scaled $\ell^p$-norm, works with both :mod:`torch` and :mod:`numpy`
+    r"""Scaled $\ell^p$-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`
 
     .. math::
         \|x\|_p = \big(\tfrac{1}{n}\sum_{i=1}^n x_i^p \big)^{1/p}
@@ -117,12 +120,11 @@ def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
         return fwork.mean(x**p, **kwargs)**(1/p)
 
 
-def relative_error(xhat: ArrayLike, x_true:ArrayLike, p=2, axis=None, keepdims=False) -> ArrayLike:
-    R"""Relative, scaled $\ell^p$-error, works with both :class:`torch.Tensor` and :mod:`numpy.linalg`
+def relative_error(xhat: ArrayLike, x_true: ArrayLike, eps=None) -> ArrayLike:
+    R"""Relative error, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`
 
     .. math::
-        \operatorname{err}_p(\hat x, x) =
-        \Big(\tfrac{1}{n}\sum_{i=1}^n \Big(\tfrac{|\hat x - x|}{|x|+\epsilon}\Big)^p \Big)^{1/p}
+        \operatorname{r}(\hat x, x) = \tfrac{|\hat x - x|}{|x|+\epsilon}
 
     Parameters
     ----------
@@ -130,71 +132,65 @@ def relative_error(xhat: ArrayLike, x_true:ArrayLike, p=2, axis=None, keepdims=F
         The estimation
     x_true:  ArrayLike
         The true value
-    p: int, default=2
-    axis: tuple[int], default=None
-    keepdims: bool, default=False
+    eps: float, default=None
+        Tolerance parameter. By default, $2^{-24}$ for single and $2^{-53}$ for double precision
 
     Returns
     -------
     ArrayLike
     """
-
     fwork = torch if type(xhat) == Tensor else np
 
     if xhat.dtype in (fwork.float32, fwork.int32):
-        eps=2**-24
-    elif  xhat.dtype in (fwork.float64, fwork.int64):
-        eps=2**-53
+        _eps = 2**-24
+    elif xhat.dtype in (fwork.float64, fwork.int64):
+        _eps = 2**-53
     else:
-        eps=2**-24
+        _eps = 2**-24
 
+    eps = eps or _eps
     r = fwork.abs(xhat-x_true)/(fwork.abs(x_true) + eps)
-    return scaled_norm(r, p=p, axis=axis, keepdims=keepdims)
+    return r
 
-def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc="upper right", print_stats=True) -> None:
-    r"""
-    Plots the distribution of x in the given axis.
+
+def timefun(fun: Callable, append=True, loglevel: int = logging.WARNING) -> Callable:
+    r"""Logs the execution time of the function. Use as decorator.
+
+    By default appends the execution time (in seconds) to the function call.
+
+    ``outputs, time_elapse = timefun(f, append=True)(inputs)``
+
+    If the function call failed, ``outputs=None`` and ``time_elapsed=float('nan')`` are returned.
 
     Parameters
     ----------
-    x: ArrayLike
-    ax: Axes
-    bins: int
-    log: bool
-    loc: string
-    print_stats: bool
+    fun: Callable
+    append: bool, default=True
+        Whether to append the time result to the function call
+    loglevel: int, default=logging.Warning (20)
     """
-    if type(x) == Tensor:
-        x = x.detach().cpu().numpy()
-    else:
-        x = np.array(x)
 
-    x = x.flatten().astype(float)
-    nans = np.isnan(x)
-    x = x[~nans]
+    logger = logging.getLogger('timefun')
 
-    ax.grid(axis='x')
-    ax.set_axisbelow(True)
+    @wraps(fun)
+    def timed_fun(*args, **kwargs):
+        gc.collect()
+        gc.disable()
+        try:
+            start_time = perf_counter_ns()
+            result = fun(*args, **kwargs)
+            end_time = perf_counter_ns()
+            elapsed = (end_time - start_time) / 10 ** 9
+            logger.log(loglevel, F"{fun.__name__} executed in {elapsed:.4f}s")
+        except Exception:
+            result = None
+            elapsed = float('nan')
+            logger.log(loglevel, F"{fun.__name__} failed with {Exception=}")
+        gc.enable()
 
-    if log:
-        tol = 2**-24 if x.dtype == np.float32 else 2**-53
-        z = np.log10(np.maximum(x, tol))
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        low = np.floor(np.quantile(z, 0.01))
-        high = np.ceil(np.quantile(z, 1 - 0.01))
-        x = x[(z >= low) & (z <= high)]
-        bins = np.logspace(low, high, num=bins, base=10)
+        if append:
+            return result, elapsed
+        else:
+            return result
 
-    ax.hist(x, bins=bins, density=True)
-
-    if print_stats:
-        text = r"\begin{tabular}{ll}"\
-               + F"NaNs   & {100 * np.mean(nans):.2f}"+r"\%" + r" \\ "\
-               + F"Mean   & {np.mean(x):.2e}" + r" \\ "\
-               + F"Median & {np.median(x):.2e}" + r" \\ "\
-               + F"Mode   & {mode(x)[0][0]:.2e}" + r" \\ "\
-               + F"stdev  & {np.std(x):.2e}" + r" \\ "\
-               + r"\end{tabular}"
-        textbox = AnchoredText(text, loc=loc)
-        ax.add_artist(textbox)
+    return timed_fun
