@@ -1,7 +1,7 @@
 import logging
 import pandas
 
-from .config import DATASETDIR
+from tsdm.config import DATASETDIR
 from .dataset_io import dataset_available, download_dataset
 from .dataset_cleaners import clean_dataset
 from pandas import DataFrame

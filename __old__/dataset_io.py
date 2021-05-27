@@ -4,7 +4,7 @@ import warnings
 
 import yaml
 
-from .config import AVAILABLE_DATASETS, DATASETS, RAWDATADIR
+from tsdm.config import AVAILABLE_DATASETS, DATASETS, RAWDATADIR
 
 logger = logging.getLogger(__name__)
 

@@ -1,3 +1,9 @@
+r"""
+Plotting
+--------
+"""
+
+
 from typing import Callable
 
 import matplotlib.pyplot as plt
@@ -9,7 +15,7 @@ from scipy.stats import mode
 from torch import Tensor
 
 
-def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc="upper right", print_stats=True) -> None:
+def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc=1, print_stats=True):
     r"""
     Plots the distribution of x in the given axis.
 
@@ -22,7 +28,7 @@ def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc="upper
     loc: string
     print_stats: bool
     """
-    if type(x) == Tensor:
+    if isinstance(x, Tensor):
         x = x.detach().cpu().numpy()
     else:
         x = np.array(x)

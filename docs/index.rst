@@ -1,12 +1,24 @@
-
 tsdm
-================================================
+====
+
+**T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
+
+Submodules
+----------
+
+.. autosummary::
+    :toctree:
+    :template: mytemplate.rst
+
+    tsdm.util
+    tsdm.plot
+    tsdm.datasets
+    tsdm.models
+    tsdm.losses
+
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents:
 
-   tsdm
    readme
    changelog
 

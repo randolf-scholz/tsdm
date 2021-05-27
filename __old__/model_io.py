@@ -4,7 +4,7 @@ import warnings
 
 import yaml
 
-from .config import AVAILABLE_MODELS, MODELS, MODELDIR
+from config import AVAILABLE_MODELS, MODELS, MODELDIR
 
 logger = logging.getLogger(__name__)
 

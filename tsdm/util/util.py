@@ -1,13 +1,16 @@
+r"""
+Utility functions
+"""
+
 import gc
 import logging
-from collections import Mapping
+from collections.abc import Mapping
 from functools import wraps
 from time import perf_counter_ns
 from typing import Callable
 
 import numpy as np
 import torch
-
 from numpy.typing import ArrayLike
 from torch import nn, Tensor
 
@@ -91,15 +94,15 @@ def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
     Parameters
     ----------
     x: ArrayLike
-    p: int=2
-    axis: tuple[int]=None
-    keepdims: bool=False
+    p: int, default=2
+    axis: tuple[int], default=None
+    keepdims: bool, default=False
 
     Returns
     -------
     ArrayLike
     """
-    fwork = torch if type(x) == Tensor else np
+    fwork = torch if isinstance(x, Tensor) else np
     x = fwork.abs(x)
 
     axis_name = {torch: 'dim', np: 'axis'}[fwork]
@@ -110,18 +113,19 @@ def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
     if p == 0:
         # https://math.stackexchange.com/q/282271/99220
         return fwork.exp(fwork.mean(fwork.log(x), **kwargs))
-    elif p == 1:
+    if p == 1:
         return fwork.mean(x, **kwargs)
-    elif p == 2:
+    if p == 2:
         return fwork.sqrt(fwork.mean(x**2, **kwargs))
-    elif p == float('inf'):
+    if p == float('inf'):
         return fwork.max(x, **kwargs)
-    else:
-        return fwork.mean(x**p, **kwargs)**(1/p)
+
+    # other p
+    return fwork.mean(x**p, **kwargs)**(1/p)
 
 
 def relative_error(xhat: ArrayLike, x_true: ArrayLike, eps=None) -> ArrayLike:
-    R"""Relative error, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`
+    R"""Relative error, works with both :class:`~torch.Tensor` and :class:`~numpy.ndarray`
 
     .. math::
         \operatorname{r}(\hat x, x) = \tfrac{|\hat x - x|}{|x|+\epsilon}
@@ -139,7 +143,7 @@ def relative_error(xhat: ArrayLike, x_true: ArrayLike, eps=None) -> ArrayLike:
     -------
     ArrayLike
     """
-    fwork = torch if type(xhat) == Tensor else np
+    fwork = torch if isinstance(xhat, Tensor) else np
 
     if xhat.dtype in (fwork.float32, fwork.int32):
         _eps = 2**-24
@@ -181,16 +185,19 @@ def timefun(fun: Callable, append=True, loglevel: int = logging.WARNING) -> Call
             result = fun(*args, **kwargs)
             end_time = perf_counter_ns()
             elapsed = (end_time - start_time) / 10 ** 9
-            logger.log(loglevel, F"{fun.__name__} executed in {elapsed:.4f}s")
-        except Exception:
+            logger.log(loglevel, "%s executed in %.4f s" , fun.__name__, elapsed)
+        except (KeyboardInterrupt, SystemExit) as E:
+            raise E
+        except Exception as E:  # pylint: disable=W0703
             result = None
             elapsed = float('nan')
-            logger.log(loglevel, F"{fun.__name__} failed with {Exception=}")
+            RuntimeWarning(F"Function execution failed with Exception {E}")
+            logger.log(loglevel, "%s failed with Exception %s" , fun.__name__, E)
         gc.enable()
 
         if append:
             return result, elapsed
-        else:
-            return result
+        # else
+        return result
 
     return timed_fun

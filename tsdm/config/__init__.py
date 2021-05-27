@@ -1,12 +1,26 @@
-import yaml
+r"""
+tsdm configuration files
+========================
+
+Content:
+  - config.yaml
+  - datasets.yaml
+  - models.yaml
+  - hashes.yaml
+"""
+
 import logging
-from pathlib import Path
 from importlib import resources
+from pathlib import Path
+
+import yaml
+
 from . import config_files
 
 with resources.path(config_files, "config.yaml") as file:
     with open(file, "r") as fname:
         CONFIG = yaml.safe_load(fname)
+
 with resources.path(config_files, "models.yaml") as file:
     with open(file, "r") as fname:
         MODELS = yaml.safe_load(fname)
@@ -35,6 +49,8 @@ logging.basicConfig(
     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
+logger.info("Available Models: %s", set(MODELS))
+logger.info("Available Datasets: %s", set(DATASETS))
 
 
 def generate_folders(d: dict or str, current_path: Path) -> None:
@@ -54,25 +70,12 @@ def generate_folders(d: dict or str, current_path: Path) -> None:
     for direc in d:
         path = current_path.joinpath(direc)
         if d[direc] is None:
-            logging.info(F"creating folder {path}")
+            logging.info("creating folder %s", path)
             path.mkdir(parents=True, exist_ok=True)
         else:
             generate_folders(d[direc], path)
-    return
 
 
 # logger.info(F"Found config files: {set(resources.contents('config_files'))}")
 logger.info("Initializing Folder Structure")
 generate_folders(CONFIG['folders'], BASEDIR)
-
-AVAILABLE_MODELS = set().union(*[set(MODELS[source]) for source in MODELS])
-r"""
-Constant containing all available models.
-"""
-logger.info(F"{AVAILABLE_MODELS=}")
-
-AVAILABLE_DATASETS = set().union(*[set(DATASETS[source]) for source in DATASETS])
-r"""
-Constant containing all available datasets.
-"""
-logger.info(F"{AVAILABLE_DATASETS=}")
