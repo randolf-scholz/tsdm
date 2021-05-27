@@ -1,29 +1,84 @@
-image: fkrull/multi-python
+default:
+  image: python:3.9  # official python docker
+  tags: [docker]
 
-setup:
-  script:
-  - apt install python3-pip
-  - pip3 install tox
+stages:
+  - setup
+  - code analysis
+  - documentation
+  - unit tests
 
-test:
-  script:
-    tox --recreate
 
-run:
+installtion:
+  stage: setup
   script:
-  - python3 setup.py bdist_wheel
+  - python setup.py bdist_wheel
+#  artifacts:
+#    paths:
+#    - dist/*.whl
+
+
+flake8:
+  stage: code analysis
+  allow_failure: true
+  before_script:
+    - pip install flake8
+  script:
+    - flake8 tsdm --max-line-length=100 --max-doc-length 120 --ignore=E203,E221,E226,E241
+    # We ignore the following PEP8 Errors:
+    # E203 whitespace before ':'
+    # E221 multiple spaces before operator
+    # E226 missing whitespace around arithmetic operator
+    # E241 multiple spaces after ':'
+
+
+pylint:
+  stage: code analysis
+  allow_failure: true
+  before_script:
+      - pip install pylint pylint-exit anybadge torch scipy
+      - mkdir ./pylint
+  script:
+    - >
+      pylint linodenet
+      --max-line-length=120
+      --generated-members=numpy.*,torch.*
+      --disable=C0103,C0144
+      --output-format=text
+      | tee ./pylint/pylint.log || pylint-exit $?
+    # We ignore the following PyLint Errors:
+    # C0103 invalid-name
+    # C0144 non-ascii-name
+  after_script:
+    - PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
+    - anybadge --label=Pylint --file=pylint/pylint.svg --value=$PYLINT_SCORE 2=red 4=orange 8=yellow 10=green
+    - echo "Pylint score is $PYLINT_SCORE"
   artifacts:
     paths:
-    - dist/*.whl
+      - ./pylint/
+
 
 pages:
-  stage: deploy
+  stage: documentation
+  allow_failure: true
+  before_script:
+    - pip install -U sphinx sphinx-rtd-theme sphinx-math-dollar
+    - cd docs
   script:
-    - pip3 install -U sphinx sphinx-rtd-theme numpydoc sphinx-math-dollar
-    - cd docs ; make html
+    - make html
+  after_script:
     - mv _build/html/ ../public/
   artifacts:
     paths:
       - public
   only:
     - master
+
+
+tox:
+  stage: unit tests
+  allow_failure: true
+  before_script:
+    - pip install tox
+  script:
+    tox --recreate

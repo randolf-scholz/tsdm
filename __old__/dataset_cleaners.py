@@ -4,13 +4,13 @@ import zipfile
 import numpy as np
 import pandas
 
-from .config import DATASETDIR, RAWDATADIR
+from tsdm.config import DATASETDIR, RAWDATADIR
 from .dataset_io import dataset_available, download_dataset
 
 logger = logging.getLogger(__name__)
 
 
-def clean_electricity():
+def _clean_electricity():
     logger.info("Cleaning Electricity Dataset")
     rawdata_path = RAWDATADIR.joinpath('electricity')
     dataset_path = DATASETDIR.joinpath('electricity')
@@ -28,55 +28,55 @@ def clean_electricity():
     logger.info("Finished Cleaning Electricity Dataset")
 
 
-def clean_traffic():
+def _clean_traffic():
     raise NotImplementedError
 
 
-def clean_human_activity():
+def _clean_human_activity():
     raise NotImplementedError
 
 
-def clean_air_quality_multisite():
+def _clean_air_quality_multisite():
     raise NotImplementedError
 
 
-def clean_air_quality():
+def _clean_air_quality():
     raise NotImplementedError
 
 
-def clean_household_consumptions():
+def _clean_household_consumptions():
     raise NotImplementedError
 
 
-def clean_character_trajectories():
+def _clean_character_trajectories():
     raise NotImplementedError
 
 
-def clean_mujoco():
+def _clean_mujoco():
     raise NotImplementedError
 
 
-def clean_m3():
+def _clean_m3():
     raise NotImplementedError
 
 
-def clean_uwave():
+def _clean_uwave():
     raise NotImplementedError
 
 
-def clean_physionet2012():
+def _clean_physionet2012():
     raise NotImplementedError
 
 
-def clean_physionet2019():
+def _clean_physionet2019():
     raise NotImplementedError
 
 
-def clean_ushcn():
+def _clean_ushcn():
     raise NotImplementedError
 
 
-def clean_m4():
+def _clean_m4():
     raise NotImplementedError
 
 

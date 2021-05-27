@@ -1,5 +1,6 @@
-import tsdm
 from pandas import NA, DataFrame, testing
+
+from tsdm.util import make_masked_format
 
 
 def test_make_masked_format():
@@ -21,7 +22,7 @@ def test_make_masked_format():
     mask = DataFrame(m, columns=t).T
     diff = DataFrame(d, columns=t).T
 
-    x, m, d = tsdm.make_masked_format(data)
+    x, m, d = make_masked_format(data)
     testing.assert_frame_equal(x, data, check_dtype=False)
     testing.assert_frame_equal(m, mask, check_dtype=False)
     testing.assert_frame_equal(d, diff, check_dtype=False)

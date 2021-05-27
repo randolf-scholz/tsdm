@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from types import ModuleType
 
-from .config import MODELDIR
+from tsdm.config import MODELDIR
 from .model_cleaners import clean_model
 from .model_io import download_model, model_available
 

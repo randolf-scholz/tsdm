@@ -1,4 +1,4 @@
-from .config import MODELDIR
+from tsdm.config import MODELDIR
 from .model_io import download_model, model_available
 
 __init_file = r'''"""
