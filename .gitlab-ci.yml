@@ -13,9 +13,9 @@ installtion:
   stage: setup
   script:
   - python setup.py bdist_wheel
-#  artifacts:
-#    paths:
-#    - dist/*.whl
+  artifacts:
+   paths:
+   - dist/*.whl
 
 
 flake8:
@@ -24,7 +24,11 @@ flake8:
   before_script:
     - pip install flake8
   script:
-    - flake8 tsdm --max-line-length=100 --max-doc-length 120 --ignore=E203,E221,E226,E241
+    - >
+      flake8
+      --max-line-length=100 
+      --ignore=E203,E221,E226,E241
+      tsdm
     # We ignore the following PEP8 Errors:
     # E203 whitespace before ':'
     # E221 multiple spaces before operator
@@ -40,11 +44,12 @@ pylint:
       - mkdir ./pylint
   script:
     - >
-      pylint linodenet
-      --max-line-length=120
+      pylint 
+      --max-line-length=100
       --generated-members=numpy.*,torch.*
       --disable=C0103,C0144
       --output-format=text
+      tsdm
       | tee ./pylint/pylint.log || pylint-exit $?
     # We ignore the following PyLint Errors:
     # C0103 invalid-name
