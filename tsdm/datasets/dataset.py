@@ -143,7 +143,7 @@ class BaseDataset(metaclass=DatasetMetaClass):
         """Default dataset download. Overwrite if you need custom downloader"""
         dataset = cls.__name__
         parsed_url = urlparse(cls.url)
-        logger.info("Obtaining dataset %s from %s", dataset, cls.url)
+        logger.info("Obtaining dataset '%s' from %s", dataset, cls.url)
 
         if parsed_url.netloc == "www.kaggle.com":
             kaggle_name = Path(parsed_url.path).name
@@ -159,6 +159,8 @@ class BaseDataset(metaclass=DatasetMetaClass):
             subprocess.run(
                 F"wget -r -np -nH -N --cut-dirs {cut_dirs} -P '{cls.rawdata_path}' {cls.url}",
                 shell=True, check=True)
+
+        logger.info("Finished importing dataset '%s' from %s", dataset, cls.url)
 
     @classmethod
     def load(cls):

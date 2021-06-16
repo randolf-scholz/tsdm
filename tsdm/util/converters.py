@@ -6,7 +6,7 @@ converters
 import numpy as np
 import pandas as pd
 from numba import njit
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 
 def make_dense_triplets(df: DataFrame) -> DataFrame:
@@ -145,3 +145,31 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     d = DataFrame(get_deltas(s.values, m.values), index=m.index, columns=m.columns, dtype=s.dtype)
 
     return df, m, d
+
+
+def time2int(ds: Series) -> Series:
+    """Convert :class:`~pandas.Series` encoded as
+    :class:`~numpy.datetime64` or :class:`~numpy.timedelta64` to :class:`int`
+
+    Parameters
+    ----------
+    ds: Series
+
+    Returns
+    -------
+    Series
+    """
+
+    if np.issubdtype(ds.dtype, np.integer):
+        return ds
+    elif np.issubdtype(ds.dtype, np.datetime64):
+        ds = ds.astype('datetime64[ns]')
+        timedeltas = ds - ds[0]
+    elif np.issubdtype(ds.dtype, np.timedelta64):
+        timedeltas = ds.astype('timedelta64[ns]')
+    else:
+        raise ValueError(F"{ds.dtype=} not supported")
+
+    common_interval = np.gcd.reduce( timedeltas.astype(int) ).astype('timedelta64[ns]')
+
+    return timedeltas // common_interval

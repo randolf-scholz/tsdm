@@ -15,10 +15,10 @@ from .util import ACTIVATIONS, \
     relative_error, scaled_norm, \
     timefun
 
-from .converters import make_dense_triplets, make_sparse_triplets, make_masked_format
+from .converters import make_dense_triplets, make_sparse_triplets, make_masked_format, time2int
 
 __all__ = ['ACTIVATIONS',
            'deep_dict_update', 'deep_kval_update',
            'relative_error', 'scaled_norm',
            'timefun',
-           'make_dense_triplets', 'make_sparse_triplets', 'make_masked_format']
+           'make_dense_triplets', 'make_sparse_triplets', 'make_masked_format', 'time2int']
