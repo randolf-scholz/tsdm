@@ -17,7 +17,6 @@ installtion:
    paths:
    - dist/*.whl
 
-
 flake8:
   stage: code analysis
   allow_failure: true

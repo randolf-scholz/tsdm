@@ -34,6 +34,8 @@ setuptools.setup(
             'pandas',
             'numpy',
             'numba',
+            'xarray',
+            'matplotlib',
     ],
     # include_package_data=True,  <-- This MUST NOT be set https://stackoverflow.com/a/23936405/9318372
     package_data={
