@@ -15,10 +15,16 @@ from .util import ACTIVATIONS, \
     relative_error, scaled_norm, \
     timefun
 
-from .converters import make_dense_triplets, make_sparse_triplets, make_masked_format, time2int
+from .converters import make_dense_triplets, make_sparse_triplets, make_masked_format, time2int, time2float
+
+from .regularity_tests import float_gcd, time_gcd, regularity_coefficient, is_regular, is_quasiregular
+
 
 __all__ = ['ACTIVATIONS',
            'deep_dict_update', 'deep_kval_update',
            'relative_error', 'scaled_norm',
            'timefun',
-           'make_dense_triplets', 'make_sparse_triplets', 'make_masked_format', 'time2int']
+           'make_dense_triplets', 'make_sparse_triplets', 'make_masked_format',
+           'time2int', 'time2float',
+           'float_gcd', 'time_gcd', 'regularity_coefficient', 'is_regular', 'is_quasiregular'
+           ]

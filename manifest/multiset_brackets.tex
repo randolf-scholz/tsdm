@@ -1,0 +1,26 @@
+\documentclass[a4paper,11pt,reqno]{scrartcl}
+
+\usepackage{ismll-packages}
+\usepackage{ismll-mathoperators}
+\usepackage{ismll-shortsyms}
+\usepackage{ismll-style}
+
+\date{\today}
+\author{Randolf Scholz}
+\title{title}
+
+\begin{document}
+\maketitle
+
+$$
+\begin{array}{l|cccccc}
+\text{number of \textbackslash!} &\text{manual} & 0 & 1 & 2 & 3 & 4\\ \hline
+\text{normal} &      \lbrace\mkern-6.25mu     \lbrace x      \rbrace\mkern-6.25mu     \rbrace &       \lbrace    \lbrace x      \rbrace     \rbrace  &      \lbrace\!     \lbrace x      \rbrace\!     \rbrace &      \lbrace\!\!     \lbrace x      \rbrace\!\!     \rbrace &      \lbrace\!\!\!     \lbrace x      \rbrace\!\!\!     \rbrace &      \lbrace\!\!\!\!     \lbrace x      \rbrace\!\!\!\!     \rbrace \\             
+\text{big}    & \big \lbrace\mkern-8mu   \big \lbrace x \big \rbrace\mkern-8mu   \big \rbrace & \big \lbrace\big \lbrace x \big \rbrace\big \rbrace  & \big \lbrace\!\big \lbrace x \big \rbrace\!\big \rbrace & \big \lbrace\!\!\big \lbrace x \big \rbrace\!\!\big \rbrace & \big \lbrace\!\!\!\big \lbrace x  \big\rbrace\!\!\!\big \rbrace & \big \lbrace\!\!\!\!\big \lbrace x \big \rbrace\!\!\!\!\big \rbrace \\             
+\text{Big}    & \Big \lbrace\mkern-9.5mu \Big \lbrace x \Big \rbrace\mkern-9.5mu \Big \rbrace & \Big \lbrace\Big \lbrace x \Big \rbrace\Big \rbrace  & \Big \lbrace\!\Big \lbrace x \Big \rbrace\!\Big \rbrace & \Big \lbrace\!\!\Big \lbrace x \Big \rbrace\!\!\Big \rbrace & \Big \lbrace\!\!\!\Big \lbrace x  \Big\rbrace\!\!\!\Big \rbrace & \Big \lbrace\!\!\!\!\Big \lbrace x \Big \rbrace\!\!\!\!\Big \rbrace \\             
+\text{bigg}   & \bigg\lbrace\mkern-10.5mu\bigg\lbrace x \bigg\rbrace\mkern-10.5mu\bigg\rbrace & \bigg\lbrace\bigg\lbrace x \bigg\rbrace\bigg\rbrace  & \bigg\lbrace\!\bigg\lbrace x \bigg\rbrace\!\bigg\rbrace & \bigg\lbrace\!\!\bigg\lbrace x \bigg\rbrace\!\!\bigg\rbrace & \bigg\lbrace\!\!\!\bigg\lbrace x \bigg\rbrace\!\!\!\bigg\rbrace & \bigg\lbrace\!\!\!\!\bigg\lbrace x \bigg\rbrace\!\!\!\!\bigg\rbrace \\             
+\text{Bigg}   & \Bigg\lbrace\mkern-11.5mu\Bigg\lbrace x \Bigg\rbrace\mkern-11.5mu\Bigg\rbrace & \Bigg\lbrace\Bigg\lbrace x \Bigg\rbrace\Bigg\rbrace  & \Bigg\lbrace\!\Bigg\lbrace x \Bigg\rbrace\!\Bigg\rbrace & \Bigg\lbrace\!\!\Bigg\lbrace x \Bigg\rbrace\!\!\Bigg\rbrace & \Bigg\lbrace\!\!\!\Bigg\lbrace x \Bigg\rbrace\!\!\!\Bigg\rbrace & \Bigg\lbrace\!\!\!\!\Bigg\lbrace x \Bigg\rbrace\!\!\!\!\Bigg\rbrace \\             
+\end{array}
+$$
+
+\end{document}
