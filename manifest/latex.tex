@@ -1,0 +1,79 @@
+\documentclass[a4paper,11pt,reqno]{scrartcl}
+
+\usepackage{ismll-packages}
+\usepackage{ismll-mathoperators}
+\usepackage{ismll-shortsyms}
+\usepackage{ismll-style}
+
+\date{\today}
+\author{Randolf Scholz}
+\title{On Time Series}
+\usepackage{delimset}
+%\NewDocumentCommand{\set}{m}{%
+%  \left\lbrace%
+%  x%
+%  \rbrace\right%
+%}
+
+\DeclareMathDelimiterSet{\mset}[1]{%
+  \selectdelim[*]{\lbrace}\!\!\selectdelim[l]{\lbrace}%
+  #1%
+  \selectdelim[*]{\rbrace}\!\!\selectdelim[r]{\rbrace}%
+}%
+
+
+\newcommand{\llbrace}{\lbrace\!\!\lbrace}
+\newcommand{\rrbrace}{\rbrace\!\!\rbrace}
+\begin{document}
+\maketitle
+
+%
+\begin{definition}[time series]\label{def: time series}
+  A \emph{time series} $S$ over a \emph{time space} $\CT$ and a \emph{data space} $\CX$ is a finite sequence $S=(t_i, x_i)_{i=1:|S|}\in(\CT\times\CX)^*$ such that
+
+  %
+\begin{enumerate}%
+  \item The time space $\CT$ is an additive, totally ordered \emph{monoid} satisfying $\forall a,b\in \CT: a\le b\implies \exists c\in\CT: a+b=c$
+  \item The time stamps are in order $t_i \le t_j \forall i\le j$
+  \item The data space $\CX$ is a \emph{set} containing a distinguished element $\NaN$, which we will use to denote missing (unobserved) values
+\end{enumerate}%
+%
+\end{definition}
+
+
+%
+\begin{definition}[]\label{def: label}
+  We say a time series is
+
+%
+\begin{enumerate}%
+  \item \emph{regular}, iff $\exists \del t>0 \forall i: \del t_i = \del t$ 
+  \item \emph{$\kappa$-quasi-regular}, iff $\exists \del t>0 \forall i\exists k\in \DN_{0} : \del t_i = k\del t$. In this case, given  $\del t_{\min} =  \min\limits_{\del t_i > 0} \del t_i$, and $\del t_{max} = \max\{\del t>0 : \forall i\exists k\in \DN_{0} : \del t_i = k\del t\}$ we call $\kappa = \frac{\del t_{\min}}{\del t_{\max}}$ the \emph{regularity quotient}. $\kappa$ behaves similar to a condition number: $\kappa\in[1, \infty)$, the larger $\kappa$ the farther from regular the series is. One will have to insert up to $\kappa|S|$ dummies to make the TS regular. Note that for integer data, $\del t_{max} \gcd(\{\del t_i>0\})$
+  \item \emph{irregular}, iff it is neither regular nor quasi-regular.
+\end{enumerate}%
+
+Generally, an irregular time series can be made regular by inserting \emph{enough} ``empty'' observations consisting only of $\NaN$'s. Note that this is true only practically, since there is an automatic discretization through the use of floating point numbers.
+
+Therefore, the definition of quasi-regular does not cover simple cases like $(2,4,6,8,11,14,17,20,22,24,26)$ with timedeltas $2,2,2,2,3,3,3,3,2,2,2$. Here, we could insert a single dummy whenever the timedelta is 2 and two dummies whenever it is $3$ to get a regular time-series. However, when the time-steps are like $2,4,6,8, 8+2^{-10}$ then it makes little sense to fill in the gaps since it would require us to fill in so many dummies that we would drown the signal.
+
+
+In practice, since floating-point numbers are essentially rational numbers in the localization $\DZ(-2)$, every time series will be quasi-regular. Thus in practice, we ought to decide at which point we do a cut-off
+
+\end{definition}
+
+%
+\begin{example}[title]\label{ex: label}%
+  COnsider the time steps $(1,2,3,4,4+2^{-10})$. This has a strict floating-point gcd of $2^{-10}$. However, in a situation like this it may be most appropriate to not treat it as an irregular time series, not an quasi-regular time-series, but rather just merge the last two datapoints (e.g. by averaging). To deal with these cases, we generalize the notion of the floating-point gcd to a general real gcd, which is based on a notion of approximate equality.
+\end{example}%
+
+
+
+
+\section{Encoding of Features}
+
+Categorical Features: One Hot
+
+
+\section{Filter Component}
+
+\end{document}
