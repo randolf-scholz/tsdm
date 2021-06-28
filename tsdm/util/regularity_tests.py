@@ -2,10 +2,10 @@ r"""
 Test for checking how regular time series is.
 """
 
+import numba
+import numpy as np
 from numpy.typing import ArrayLike
 from pandas import Series
-import numpy as np
-import numba
 
 
 def float_gcd(x: ArrayLike) -> float:

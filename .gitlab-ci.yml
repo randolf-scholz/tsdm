@@ -33,8 +33,15 @@ installtion:
     - pip install --upgrade pip virtualenv
     - virtualenv VIRTUALENV
     - source VIRTUALENV/bin/activate
-    - pip install --upgrade pip wheel
   script:
+    - pip install -r requirements.txt
+    - pip install -e .
+
+wheel:
+  stage: setup
+  only: [ master ]
+  script:
+    - pip install --upgrade pip wheel
     - python setup.py sdist bdist_wheel
   artifacts:
     paths:
@@ -71,7 +78,6 @@ mypy:
   script:
     - pip install mypy
     - mypy --install-types linodenet
-
 
 pages:
   stage: documentation
