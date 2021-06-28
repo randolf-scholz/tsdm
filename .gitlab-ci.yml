@@ -78,7 +78,7 @@ mypy:
   stage: code analysis
   script:
     - pip install mypy
-    - mypy --install-types $MODULENAME
+    - mypy --install-types --non-interactive $MODULENAME
 
 pages:
   stage: documentation
