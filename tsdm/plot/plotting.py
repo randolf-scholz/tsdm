@@ -8,8 +8,8 @@ from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.pyplot import Figure, Axes
 from matplotlib.offsetbox import AnchoredText
+from matplotlib.pyplot import Figure, Axes
 from numpy.typing import ArrayLike
 from scipy.stats import mode
 from torch import Tensor

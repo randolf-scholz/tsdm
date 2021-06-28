@@ -1,11 +1,10 @@
 """
 Base Model that all other models must subclass
 """
-import subprocess
 import logging
+import subprocess
 from pathlib import Path
 from urllib.parse import urlparse
-
 
 logger = logging.getLogger(__name__)
 

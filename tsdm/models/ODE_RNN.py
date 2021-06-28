@@ -3,11 +3,13 @@ ODR-RNN Model
 """
 import sys
 from contextlib import contextmanager
+from importlib.util import spec_from_file_location, module_from_spec
 from pathlib import Path
 from types import ModuleType
-from importlib.util import spec_from_file_location, module_from_spec
+
 import torch
 from torch import nn
+
 from tsdm.util import deep_dict_update
 
 
