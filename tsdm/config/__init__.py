@@ -17,6 +17,9 @@ import yaml
 
 from . import config_files
 
+
+logger = logging.getLogger(__name__)
+
 with resources.path(config_files, "config.yaml") as file:
     with open(file, "r") as fname:
         CONFIG = yaml.safe_load(fname)
@@ -41,19 +44,18 @@ MODELDIR   = BASEDIR.joinpath(CONFIG['modeldir'])
 DATASETDIR = BASEDIR.joinpath(CONFIG['datasetdir'])
 RAWDATADIR = BASEDIR.joinpath(CONFIG['rawdatadir'])
 LOGDIR.mkdir(parents=True, exist_ok=True)
-logging.basicConfig(
-    filename=str(LOGDIR.joinpath("example.log")),
-    filemode="w",
-    format="[%(asctime)s] [%(levelname)-s]\t[%(name)s]\t%(message)s",  # (%(filename)s:%(lineno)s)",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.INFO)
+# logging.basicConfig(
+#     filename=str(LOGDIR.joinpath("example.log")),
+#     filemode="w",
+#     format="[%(asctime)s] [%(levelname)-s]\t[%(name)s]\t%(message)s, (%(filename)s:%(lineno)s)",
+#     datefmt="%Y-%m-%d %H:%M:%S",
+#     level=logging.INFO)
 
-logger = logging.getLogger(__name__)
 logger.info("Available Models: %s", set(MODELS))
 logger.info("Available Datasets: %s", set(DATASETS))
 
 
-def generate_folders(d: dict or str, current_path: Path) -> None:
+def generate_folders(d: dict, current_path: Path):
     """
     Creates nested folder structure based on nested dictionary keys
     source: `StackOverflow <https://stackoverflow.com/a/22058144/9318372>`_
@@ -67,13 +69,13 @@ def generate_folders(d: dict or str, current_path: Path) -> None:
     -------
     None
     """
-    for direc in d:
-        path = current_path.joinpath(direc)
-        if d[direc] is None:
-            logging.info("creating folder %s", path)
+    for directory in d:
+        path = current_path.joinpath(directory)
+        if d[directory] is None:
+            logger.info("creating folder %s", path)
             path.mkdir(parents=True, exist_ok=True)
         else:
-            generate_folders(d[direc], path)
+            generate_folders(d[directory], path)
 
 
 # logger.info(F"Found config files: {set(resources.contents('config_files'))}")

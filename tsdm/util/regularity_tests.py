@@ -1,5 +1,9 @@
+r"""
+Test for checking how regular time series is.
+"""
+
 from numpy.typing import ArrayLike
-from pandas import DataFrame, Series
+from pandas import Series
 import numpy as np
 import numba
 
@@ -65,22 +69,22 @@ def approx_float_gcd(x, rtol=1e-05, atol=1e-08) -> float:
     """
     x = np.asanyarray(x)
     x = np.abs(x).flatten()
-    t = np.min(x)
 
     @numba.njit
-    def _float_gcd(x: np.ndarray):
+    def _float_gcd(x: np.ndarray) -> float:
         n = len(x)
+        t = np.min(x)
         if n == 1:
-            return x[0]
+            return float(x[0])
         if n == 2:
             while np.abs(x[1]) > rtol*t + atol:
                 x[0], x[1] = x[1], x[0] % x[1]
-            return x[0]
-        if n >= 3:
-            out = np.empty(2)
-            out[0] = _float_gcd(x[:n//2])
-            out[1] = _float_gcd(x[n//2:])
-            return _float_gcd(out)
+            return float(x[0])
+        # n >= 3:
+        out = np.empty(2)
+        out[0] = _float_gcd(x[:n//2])
+        out[1] = _float_gcd(x[n//2:])
+        return _float_gcd(out)
 
     return _float_gcd(x)
 
@@ -98,23 +102,24 @@ def is_regular(s: Series) -> bool:
     bool
     """
     Δt = np.diff(s)
-    return np.all(Δt == np.min(Δt))
+    return bool(np.all(Δt == np.min(Δt)))
 
 
 def is_quasiregular(s: Series) -> bool:
-    r"""Test if time series is quesi-regular. By definition, this is the case if all timedeltas are
+    r"""Test if time series is quasi-regular. By definition, this is the case if all timedeltas are
     integer multiples of the minimal, non-zero timedelta of the series.
 
     Parameters
     ----------
-    s
+    s: Series
 
     Returns
     -------
-
+    bool
     """
     Δt = np.diff(s)
-    Δt_min = np.min(Δt[Δt > 0])
+    zero = np.array(0, dtype=Δt.dtype)
+    Δt_min = np.min(Δt[Δt > zero])
     z = Δt / Δt_min
     return np.allclose(z, np.rint(z))
 
@@ -131,17 +136,19 @@ def time_gcd(s: Series):
     gcd
     """
     Δt = np.diff(s)
-    Δt = Δt[Δt > np.array(0, dtype=Δt.dtype)]
+    zero = np.array(0, dtype=Δt.dtype)
+    Δt = Δt[Δt > zero]
+
     if np.issubdtype(Δt.dtype, np.timedelta64):
         Δt = Δt.astype('timedelta64[ns]').astype(int)
         gcd = np.gcd.reduce(Δt)
         return gcd.astype('timedelta64[ns]')
-    elif np.issubdtype(Δt.dtype, np.integer):
+    if np.issubdtype(Δt.dtype, np.integer):
         return np.gcd.reduce(Δt)
-    elif np.issubdtype(Δt.dtype, np.floating):
+    if np.issubdtype(Δt.dtype, np.floating):
         return float_gcd(Δt)
-    else:
-        raise NotImplementedError(F"Data type {Δt.dtype=} not understood")
+
+    raise NotImplementedError(F"Data type {Δt.dtype=} not understood")
 
 
 def regularity_coefficient(s: Series) -> float:
@@ -149,7 +156,7 @@ def regularity_coefficient(s: Series) -> float:
 
     Parameters
     ----------
-    s: series
+    s: Series
 
     Returns
     -------
@@ -158,6 +165,7 @@ def regularity_coefficient(s: Series) -> float:
     """
     gcd = time_gcd(s)
     Δt = np.diff(s)
-    Δt = Δt[Δt > np.array(0, dtype=Δt.dtype)]
+    zero = np.array(0, dtype=Δt.dtype)
+    Δt = Δt[Δt > zero]
     Δt_min = np.min(Δt)
     return Δt_min/gcd

@@ -68,7 +68,8 @@ class DatasetMetaClass(type):
         cls.dataset_file = DATASETDIR.joinpath(F"{cls.__name__}.h5")
         cls.dataset_path.mkdir(parents=True, exist_ok=True)
 
-    @property
+    # todo: remove "type ignore" once fixed in mypy
+    @property  # type: ignore
     @cache
     def dataset(cls) -> Union[Series, DataFrame, DataArray, Dataset]:
         """Caches the dataset on first execution"""
