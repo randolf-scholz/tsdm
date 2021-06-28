@@ -19,14 +19,16 @@ stages:
   - deployment
 
 before_script:  # global before_script is run before each and every job.
-  - python -V
-  - pip install --upgrade pip virtualenv
-  - virtualenv VIRTUALENV
   - source VIRTUALENV/bin/activate
-  - pip install --upgrade pip wheel
 
 installtion:
   stage: setup
+  before_script:  # first setup, overwrites global begin_script
+    - python -V
+    - pip install --upgrade pip virtualenv
+    - virtualenv VIRTUALENV
+    - source VIRTUALENV/bin/activate
+    - pip install --upgrade pip wheel
   script:
     - python setup.py sdist bdist_wheel
   artifacts:
@@ -55,7 +57,9 @@ flake8:
   stage: code analysis
   script:
     - pip install flake8
-    - flake8
+    - flake8 tsdm
+    - flake8 test
+    - flake8 docs/conf.py
     # We ignore the following PEP8 Errors:
     # E203 whitespace before ':'
     # E221 multiple spaces before operator
