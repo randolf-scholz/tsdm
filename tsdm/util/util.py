@@ -2,17 +2,20 @@ r"""
 Utility functions
 """
 
+
 import gc
 import logging
 from collections.abc import Mapping
 from functools import wraps
 from time import perf_counter_ns
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
-import torch
+from numpy import ndarray
 from numpy.typing import ArrayLike
-from torch import nn, Tensor
+import torch
+from torch import nn, Tensor, jit
+
 
 ACTIVATIONS = {
     'AdaptiveLogSoftmaxWithLoss' : nn.AdaptiveLogSoftmaxWithLoss,
@@ -43,6 +46,11 @@ ACTIVATIONS = {
     'Tanhshrink'  : nn.Tanhshrink,
     'Threshold'   : nn.Threshold,
 }
+
+
+def _torch_is_float_dtype(x: Tensor) -> bool:
+    return x.dtype in (torch.half, torch.float, torch.double, torch.bfloat16,
+                       torch.complex32, torch.complex64, torch.complex128)
 
 
 def deep_dict_update(d: dict, new: Mapping) -> dict:
@@ -85,7 +93,101 @@ def deep_kval_update(d: dict, **new_kv) -> dict:
     return d
 
 
-def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
+def relative_error(xhat: Union[ArrayLike, Tensor], x_true: ArrayLike) -> Union[ArrayLike, Tensor]:
+    R"""Relative error, works with both :class:`~torch.Tensor` and :class:`~numpy.ndarray`
+
+    .. math::
+        \operatorname{r}(\hat x, x) = \tfrac{|\hat x - x|}{|x|+\epsilon}
+
+    The tolerance parameter $\epsilon$ is determined automatically. By default,
+    $\epsilon=2^{-24}$ for single and $\epsilon=2^{-53}$ for double precision.
+
+    Parameters
+    ----------
+    xhat: ArrayLike
+        The estimation
+    x_true:  ArrayLike
+        The true value
+
+    Returns
+    -------
+    ArrayLike
+    """
+    if isinstance(xhat, Tensor):
+        return _torch_relative_error(xhat, x_true)
+
+    xhat, x_true = np.asanyarray(xhat), np.asanyarray(x_true)
+    return _numpy_relative_error(xhat, x_true)
+
+
+def _numpy_relative_error(xhat: ndarray, x_true: ndarray) -> ndarray:
+    if xhat.dtype in (np.float16, np.int16):
+        eps = 2 ** -11
+    elif xhat.dtype in (np.float32, np.int32):
+        eps = 2 ** -24
+    elif xhat.dtype in (np.float64, np.int64):
+        eps = 2 ** -53
+    else:
+        raise NotImplementedError
+
+    return np.abs(xhat - x_true) / (np.abs(x_true) + eps)
+
+
+@jit.script
+def _torch_relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
+    if xhat.dtype == torch.bfloat16:
+        eps = 2 ** -8
+    elif xhat.dtype in (torch.float16, torch.int16):
+        eps = 2 ** -11
+    elif xhat.dtype in (torch.float32, torch.int32):
+        eps = 2 ** -24
+    elif xhat.dtype in (torch.float64, torch.int64):
+        eps = 2 ** -53
+    else:
+        raise NotImplementedError
+
+    # eps = eps or _eps
+    return torch.abs(xhat - x_true) / (torch.abs(x_true) + eps)
+
+
+@jit.script
+def _torch_scaled_norm(x: Tensor,  p: float = 2,
+                       dim: list[int] = (), keepdim: bool = False) -> Tensor:  # type: ignore
+
+    if not _torch_is_float_dtype(x):
+        x = x.to(dtype=torch.float)
+    x = torch.abs(x)
+
+    if p == 0:
+        # https://math.stackexchange.com/q/282271/99220
+        return torch.exp(torch.mean(torch.log(x), dim=dim, keepdim=keepdim))
+    if p == 1:
+        return torch.mean(x, dim=dim, keepdim=keepdim)
+    if p == 2:
+        return torch.sqrt(torch.mean(x ** 2, dim=dim, keepdim=keepdim))
+    if p == float('inf'):
+        return torch.amax(x, dim=dim, keepdim=keepdim)
+    # other p
+    return torch.mean(x**p, dim=dim, keepdim=keepdim) ** (1 / p)
+
+
+def _numpy_scaled_norm(x: ndarray, p: float = 2, axis: tuple[int, ...] = (), keepdims: bool = False) -> ndarray:
+    x = np.abs(x)
+
+    if p == 0:
+        # https://math.stackexchange.com/q/282271/99220
+        return np.exp(np.mean(np.log(x), axis=axis, keepdims=keepdims))
+    if p == 1:
+        return np.mean(x, axis=axis, keepdims=keepdims)
+    if p == 2:
+        return np.sqrt(np.mean(x ** 2, axis=axis, keepdims=keepdims))
+    if p == float('inf'):
+        return np.max(x, axis=axis, keepdims=keepdims)
+    # other p
+    return np.mean(x**p, axis=axis, keepdims=keepdims) ** (1 / p)
+
+
+def scaled_norm(x: Union[ArrayLike, Tensor], p=2, axis=(), keepdims=False) -> Union[ArrayLike, Tensor]:
     r"""Scaled $\ell^p$-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`
 
     .. math::
@@ -102,59 +204,11 @@ def scaled_norm(x, p=2, axis=None, keepdims=False) -> ArrayLike:
     -------
     ArrayLike
     """
-    fwork = torch if isinstance(x, Tensor) else np
-    x = fwork.abs(x)
+    if isinstance(x, Tensor):
+        return _torch_scaled_norm(x, p=p, dim=list(axis), keepdim=keepdims)
 
-    axis_name = {torch: 'dim', np: 'axis'}[fwork]
-    keep_name = {torch: 'keepdim', np: 'keepdims'}[fwork]
-    # only pass arguments if axis is specified
-    kwargs = {} if axis is None else {axis_name: axis, keep_name: keepdims}
-
-    if p == 0:
-        # https://math.stackexchange.com/q/282271/99220
-        return fwork.exp(fwork.mean(fwork.log(x), **kwargs))
-    if p == 1:
-        return fwork.mean(x, **kwargs)
-    if p == 2:
-        return fwork.sqrt(fwork.mean(x**2, **kwargs))
-    if p == float('inf'):
-        return fwork.max(x, **kwargs)
-
-    # other p
-    return fwork.mean(x**p, **kwargs)**(1/p)
-
-
-def relative_error(xhat: ArrayLike, x_true: ArrayLike, eps=None) -> ArrayLike:
-    R"""Relative error, works with both :class:`~torch.Tensor` and :class:`~numpy.ndarray`
-
-    .. math::
-        \operatorname{r}(\hat x, x) = \tfrac{|\hat x - x|}{|x|+\epsilon}
-
-    Parameters
-    ----------
-    xhat: ArrayLike
-        The estimation
-    x_true:  ArrayLike
-        The true value
-    eps: float, default=None
-        Tolerance parameter. By default, $2^{-24}$ for single and $2^{-53}$ for double precision
-
-    Returns
-    -------
-    ArrayLike
-    """
-    fwork = torch if isinstance(xhat, Tensor) else np
-
-    if xhat.dtype in (fwork.float32, fwork.int32):
-        _eps = 2**-24
-    elif xhat.dtype in (fwork.float64, fwork.int64):
-        _eps = 2**-53
-    else:
-        _eps = 2**-24
-
-    eps = eps or _eps
-    r = fwork.abs(xhat-x_true)/(fwork.abs(x_true) + eps)
-    return r
+    x = np.asanyarray(x)
+    return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
 
 
 def timefun(fun: Callable, append=True, loglevel: int = logging.WARNING) -> Callable:

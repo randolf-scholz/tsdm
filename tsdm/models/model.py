@@ -1,7 +1,6 @@
 """
 Base Model that all other models must subclass
 """
-import yaml
 import subprocess
 import logging
 from pathlib import Path
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseModel:
-
+    r"""BaseModel that all models should subclass"""
     url: str
     name: str
     model_path: Path
@@ -21,10 +20,11 @@ class BaseModel:
         pass
 
     def predict(self, *inputs):
-        pass
+        """same as forward and __call__"""
 
     @classmethod
     def download(cls):
+        """download model (e.g. via git clone)"""
         model = cls.__name__
         parsed_url = urlparse(cls.url)
         logger.info("Obtaining model '%s' from %s", model, cls.url)
@@ -43,6 +43,3 @@ class BaseModel:
             # subprocess.run(F"git -C {model_path} pull", shell=True)
 
         logger.info("Finished importing model '%s' from %s", cls.name, cls.url)
-
-
-

@@ -12,7 +12,7 @@ from tsdm.util import deep_dict_update
 
 
 @contextmanager
-def add_to_path(p: Path) -> None:
+def add_to_path(p: Path):
     """Appends path to environment variable PATH
 
     Parameters
@@ -57,16 +57,16 @@ def path_import(module_path: Path, module_name: str = None) -> ModuleType:
 
     with add_to_path(module_path):
         spec = spec_from_file_location(module_name, str(module_init))
-        module = module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
+        the_module = module_from_spec(spec)   # type: ignore
+        spec.loader.exec_module(the_module)   # type: ignore
+        return the_module
 
 
 module = path_import(Path("/home/rscholz/.tsdm/models/ODE-RNN"))
-create_net = module.lib.utils.create_net
-ODEFunc = module.lib.ode_func.ODEFunc
-DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver
-ODE_RNN = module.lib.ode_rnn.ODE_RNN
+create_net = module.lib.utils.create_net                          # type: ignore
+ODEFunc = module.lib.ode_func.ODEFunc                             # type: ignore
+DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver              # type: ignore
+ODE_RNN = module.lib.ode_rnn.ODE_RNN                              # type: ignore
 
 
 class ODERNN:
@@ -120,9 +120,9 @@ class ODERNN:
         },
 
         'ODE_RNN_cfg': {
-            'input_dim'  :
-            'latent_dim' :
-            'device'     :
+            'input_dim'  : None,
+            'latent_dim' : None,
+            'device'     : None,
         },
     }
 
@@ -175,7 +175,7 @@ class ODERNN:
         )
 
     def __call__(self, T, X):
-        pred, info = self.model.get_reconstruction(
+        pred, = self.model.get_reconstruction(
             # Note: n_traj_samples and mode have no effect -> omitted!
             time_steps_to_predict=T,
             data=X,
@@ -183,6 +183,3 @@ class ODERNN:
             mask=torch.isnan(X))
 
         return pred
-
-
-

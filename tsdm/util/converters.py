@@ -3,20 +3,18 @@ converters
 ----------
 """
 
+from typing import Union
+
 import numpy as np
-from numpy import ndarray
 import pandas as pd
 from numba import njit
-from pandas import DataFrame, Series, CategoricalDtype
-from typing import Union
+from numpy import ndarray
 from numpy.typing import ArrayLike
-from collections.abc import Iterable
-from pandas.api.types import is_categorical_dtype, is_string_dtype, is_object_dtype
-
-
+from pandas import DataFrame, Series, CategoricalDtype
 
 
 def infer_categories(s: Series) -> set:
+    """return categories"""
     # assert is_categorical_dtype(s) or is_string_dtype(s) or is_object_dtype(s), \
     #     F"Series {s=}  with {s.dtype=} does not look like categorical data"
 
@@ -25,34 +23,16 @@ def infer_categories(s: Series) -> set:
     return set(categories)
 
 
-def encode_categorical_data(data: ArrayLike) -> ArrayLike:
-    pass
-
-
 def encode_data(data: ArrayLike) -> ndarray:
+    """docstring"""
     # compatible with numpy and torch
     # make tensor if not already
     data = np.asanyarray(data)
 
     if np.issubdtype(data.dtype, np.floating):
         return data
-    else:
-        pass
 
-
-
-
-
-
-
-def encode_metadata(metadata: dict[str, ArrayLike]) -> ArrayLike:
-
-
-
-    pass
-
-def encode_categories(df: DataFrame):
-    pass
+    return data
 
 
 def triplet2dense(df: DataFrame,
@@ -66,21 +46,15 @@ def triplet2dense(df: DataFrame,
     ----------
     df:
     cat_features:
-        Either a set of keys denoting the columns containing categorical features. In this case the categories will be
-        infered from data.
-        Or a dictionary of sets such that a key:value pair corresponds to a column and all possible categories in that
-        column. Use empty set to infer categories from data.
+        Either a set of keys denoting the columns containing categorical features.
+        In this case the categories will be inferred from data.
+        Or a dictionary of sets such that a key:value pair corresponds to a column and
+        all possible categories in that column. Use empty set to infer categories from data.
 
     Returns
     -------
 
     """
-    pass
-
-
-
-
-
 
 
 def make_dense_triplets(df: DataFrame) -> DataFrame:
@@ -236,7 +210,7 @@ def time2int(ds: Series) -> Series:
 
     if np.issubdtype(ds.dtype, np.integer):
         return ds
-    elif np.issubdtype(ds.dtype, np.datetime64):
+    if np.issubdtype(ds.dtype, np.datetime64):
         ds = ds.astype('datetime64[ns]')
         timedeltas = ds - ds[0]
     elif np.issubdtype(ds.dtype, np.timedelta64):
@@ -244,7 +218,7 @@ def time2int(ds: Series) -> Series:
     else:
         raise ValueError(F"{ds.dtype=} not supported")
 
-    common_interval = np.gcd.reduce( timedeltas.astype(int) ).astype('timedelta64[ns]')
+    common_interval = np.gcd.reduce(timedeltas.astype(int)).astype('timedelta64[ns]')
 
     return timedeltas // common_interval
 
@@ -263,7 +237,7 @@ def time2float(ds: Series) -> Series:
     """
     if np.issubdtype(ds.dtype, np.integer):
         return ds
-    elif np.issubdtype(ds.dtype, np.datetime64):
+    if np.issubdtype(ds.dtype, np.datetime64):
         ds = ds.astype('datetime64[ns]')
         timedeltas = ds - ds[0]
     elif np.issubdtype(ds.dtype, np.timedelta64):
@@ -271,6 +245,6 @@ def time2float(ds: Series) -> Series:
     else:
         raise ValueError(F"{ds.dtype=} not supported")
 
-    common_interval = np.gcd.reduce( timedeltas.astype(int) ).astype('timedelta64[ns]')
+    common_interval = np.gcd.reduce(timedeltas.astype(int)).astype('timedelta64[ns]')
 
     return (timedeltas / common_interval).astype(float)

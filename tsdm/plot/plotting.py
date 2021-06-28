@@ -30,8 +30,7 @@ def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc=1, pri
     """
     if isinstance(x, Tensor):
         x = x.detach().cpu().numpy()
-    else:
-        x = np.array(x)
+    x = np.asanyarray(x)
 
     x = x.flatten().astype(float)
     nans = np.isnan(x)
@@ -41,13 +40,13 @@ def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc=1, pri
     ax.set_axisbelow(True)
 
     if log:
-        tol = 2 ** -24 if x.dtype == np.float32 else 2 ** -53
+        tol = 2 ** -24 if np.issubdtype(x.dtype, np.float32) else 2 ** -53  # type: ignore
         z = np.log10(np.maximum(x, tol))
         ax.set_xscale('log')
         ax.set_yscale('log')
         low = np.floor(np.quantile(z, 0.01))
         high = np.ceil(np.quantile(z, 1 - 0.01))
-        x = x[(z >= low) & (z <= high)]
+        x = x[(z >= low) & (z <= high)]  # type: ignore
         bins = np.logspace(low, high, num=bins, base=10)
 
     ax.hist(x, bins=bins, density=True)
@@ -65,7 +64,7 @@ def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc=1, pri
         ax.add_artist(textbox)
 
 
-def shared_grid_plot(data: ArrayLike, plot_func: Callable, plot_func_kwargs: dict = None,
+def shared_grid_plot(data: ArrayLike, plot_func: Callable[..., None], plot_func_kwargs: dict = None,
                      titles: list[str] = None,
                      row_headers: list[str] = None, col_headers: list[str] = None,
                      xlabels: list[str] = None, ylabels: list[str] = None,
@@ -99,7 +98,7 @@ def shared_grid_plot(data: ArrayLike, plot_func: Callable, plot_func_kwargs: dic
     if data.ndim == 2:
         data = np.expand_dims(data, axis=0)
 
-    NROWS, NCOLS = data.shape[:2]
+    NROWS, NCOLS = data.shape[:2]  # type: ignore
 
     SUBPLOT_KWARGS = {
         'figsize' : (5*NCOLS, 3*NROWS),
@@ -118,21 +117,21 @@ def shared_grid_plot(data: ArrayLike, plot_func: Callable, plot_func_kwargs: dic
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):
-        plot_func(data[idx], ax=axes[idx], **plot_func_kwargs)
+        plot_func(data[idx], ax=axes[idx], **plot_func_kwargs)  # type: ignore
 
     # set axes titles
     if titles is not None:
-        for ax, title in np.nditer([axes, titles]):
+        for ax, title in np.nditer([axes, titles]):  # type: ignore
             ax.set_title(title)
 
     # set axes x-labels
     if xlabels is not None:
-        for ax, xlabel in np.nditer([axes[-1], xlabels], flags=['refs_ok']):
+        for ax, xlabel in np.nditer([axes[-1], xlabels], flags=['refs_ok']):  # type: ignore
             ax.item().set_xlabel(xlabel)
 
     # set axes y-labels
     if ylabels is not None:
-        for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=['refs_ok']):
+        for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=['refs_ok']):  # type: ignore
             ax.item().set_ylabel(ylabel)
 
     pad = 5  # in points
