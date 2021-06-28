@@ -18,6 +18,11 @@ stages:
   - unit tests
   - deployment
 
+cache:
+  paths:
+    - .cache/pip
+    - VIRTUALENV/
+
 before_script:  # global before_script is run before each and every job.
   - source VIRTUALENV/bin/activate
 
@@ -34,7 +39,6 @@ installtion:
   artifacts:
     paths:
       - dist/*.whl
-      - VIRTUALENV
 
 pylint:
   # see .pylintrc for configuration
