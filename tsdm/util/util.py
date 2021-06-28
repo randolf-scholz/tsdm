@@ -14,7 +14,7 @@ import numpy as np
 from numpy import ndarray
 from numpy.typing import ArrayLike
 import torch
-from torch import nn, Tensor, jit
+from torch import nn, Tensor
 
 
 ACTIVATIONS = {
@@ -93,7 +93,8 @@ def deep_kval_update(d: dict, **new_kv) -> dict:
     return d
 
 
-def relative_error(xhat: Union[ArrayLike, Tensor], x_true: ArrayLike) -> Union[ArrayLike, Tensor]:
+def relative_error(xhat: Union[ArrayLike, Tensor], x_true: Union[ArrayLike, Tensor]
+                   ) -> Union[ArrayLike, Tensor]:
     R"""Relative error, works with both :class:`~torch.Tensor` and :class:`~numpy.ndarray`
 
     .. math::
@@ -113,7 +114,7 @@ def relative_error(xhat: Union[ArrayLike, Tensor], x_true: ArrayLike) -> Union[A
     -------
     ArrayLike
     """
-    if isinstance(xhat, Tensor):
+    if isinstance(xhat, Tensor) and isinstance(x_true, Tensor):
         return _torch_relative_error(xhat, x_true)
 
     xhat, x_true = np.asanyarray(xhat), np.asanyarray(x_true)
@@ -133,7 +134,6 @@ def _numpy_relative_error(xhat: ndarray, x_true: ndarray) -> ndarray:
     return np.abs(xhat - x_true) / (np.abs(x_true) + eps)
 
 
-@jit.script
 def _torch_relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
     if xhat.dtype == torch.bfloat16:
         eps = 2 ** -8
@@ -150,9 +150,9 @@ def _torch_relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
     return torch.abs(xhat - x_true) / (torch.abs(x_true) + eps)
 
 
-@jit.script
-def _torch_scaled_norm(x: Tensor,  p: float = 2,
-                       dim: list[int] = (), keepdim: bool = False) -> Tensor:  # type: ignore
+def _torch_scaled_norm(x: Tensor,  p: float = 2, dim: Union[int, tuple[int, ...]] = None,
+                       keepdim: bool = False) -> Tensor:
+    dim = () if dim is None else dim
 
     if not _torch_is_float_dtype(x):
         x = x.to(dtype=torch.float)
@@ -171,7 +171,8 @@ def _torch_scaled_norm(x: Tensor,  p: float = 2,
     return torch.mean(x**p, dim=dim, keepdim=keepdim) ** (1 / p)
 
 
-def _numpy_scaled_norm(x: ndarray, p: float = 2, axis: tuple[int, ...] = (), keepdims: bool = False) -> ndarray:
+def _numpy_scaled_norm(x: ndarray, p: float = 2, axis: Union[int, tuple[int, ...]] = None,
+                       keepdims: bool = False) -> ndarray:
     x = np.abs(x)
 
     if p == 0:
@@ -187,7 +188,7 @@ def _numpy_scaled_norm(x: ndarray, p: float = 2, axis: tuple[int, ...] = (), kee
     return np.mean(x**p, axis=axis, keepdims=keepdims) ** (1 / p)
 
 
-def scaled_norm(x: Union[ArrayLike, Tensor], p=2, axis=(), keepdims=False) -> Union[ArrayLike, Tensor]:
+def scaled_norm(x: Union[ArrayLike, Tensor], p=2, axis=None, keepdims=False) -> Union[ArrayLike, Tensor]:
     r"""Scaled $\ell^p$-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`
 
     .. math::
@@ -205,7 +206,7 @@ def scaled_norm(x: Union[ArrayLike, Tensor], p=2, axis=(), keepdims=False) -> Un
     ArrayLike
     """
     if isinstance(x, Tensor):
-        return _torch_scaled_norm(x, p=p, dim=list(axis), keepdim=keepdims)
+        return _torch_scaled_norm(x, p=p, dim=axis, keepdim=keepdims)
 
     x = np.asanyarray(x)
     return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
