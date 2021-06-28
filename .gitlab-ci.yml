@@ -11,13 +11,6 @@ variables:
   TWINE_USERNAME: gitlab-ci-token
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-stages:
-  - setup
-  - code analysis
-  - documentation
-  - unit tests
-  - deployment
-
 cache:
   paths:
     - .cache/pip
@@ -25,6 +18,13 @@ cache:
 
 before_script:  # global before_script is run before each and every job.
   - source VIRTUALENV/bin/activate
+
+stages:
+  - setup
+  - code analysis
+  - documentation
+  - unit tests
+  - deployment
 
 installtion:
   stage: setup
