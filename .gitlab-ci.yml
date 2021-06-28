@@ -1,59 +1,49 @@
+#
+# https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
+#
+
 default:
   image: python:3.9  # official python docker
-  tags: [docker]
+  tags:  [docker]
+
+variables:
+  TWINE_PASSWORD: ${CI_JOB_TOKEN}
+  TWINE_USERNAME: gitlab-ci-token
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 stages:
   - setup
   - code analysis
   - documentation
   - unit tests
+  - deployment
 
+before_script:  # global before_script is run before each and every job.
+  - python -V
+  - pip install --upgrade pip virtualenv
+  - virtualenv VIRTUALENV
+  - source VIRTUALENV/bin/activate
+  - pip install --upgrade pip wheel
 
 installtion:
   stage: setup
   script:
-  - python setup.py bdist_wheel
+    - python setup.py sdist bdist_wheel
   artifacts:
-   paths:
-   - dist/*.whl
-
-flake8:
-  stage: code analysis
-  allow_failure: true
-  before_script:
-    - pip install flake8
-  script:
-    - >
-      flake8
-      --max-line-length=100 
-      --ignore=E203,E221,E226,E241
-      tsdm
-    # We ignore the following PEP8 Errors:
-    # E203 whitespace before ':'
-    # E221 multiple spaces before operator
-    # E226 missing whitespace around arithmetic operator
-    # E241 multiple spaces after ':'
-
+    paths:
+      - dist/*.whl
 
 pylint:
   stage: code analysis
-  allow_failure: true
-  before_script:
-      - pip install pylint pylint-exit anybadge torch scipy
-      - mkdir ./pylint
   script:
-    - >
-      pylint 
-      --max-line-length=100
-      --generated-members=numpy.*,torch.*
-      --disable=C0103,C0144
-      --output-format=text
-      tsdm
-      | tee ./pylint/pylint.log || pylint-exit $?
+    - pip install pylint pylint-exit torch scipy
+    - mkdir pylint
+    - pylint tsdm | tee ./pylint/pylint.log || pylint-exit $?
     # We ignore the following PyLint Errors:
     # C0103 invalid-name
     # C0144 non-ascii-name
   after_script:
+    - pip install anybadge
     - PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
     - anybadge --label=Pylint --file=pylint/pylint.svg --value=$PYLINT_SCORE 2=red 4=orange 8=yellow 10=green
     - echo "Pylint score is $PYLINT_SCORE"
@@ -61,28 +51,49 @@ pylint:
     paths:
       - ./pylint/
 
+flake8:
+  stage: code analysis
+  script:
+    - pip install flake8
+    - flake8
+    # We ignore the following PEP8 Errors:
+    # E203 whitespace before ':'
+    # E221 multiple spaces before operator
+    # E226 missing whitespace around arithmetic operator
+    # E241 multiple spaces after ':'
+
+mypy:
+  stage: code analysis
+  script:
+    - pip install mypy
+    - mypy --install-types linodenet
+
 
 pages:
   stage: documentation
+  only: [ master ]
   allow_failure: true
-  before_script:
+  script:
     - pip install -U sphinx sphinx-rtd-theme sphinx-math-dollar
     - cd docs
-  script:
     - make html
-  after_script:
-    - mv _build/html/ ../public/
+  after_script:  # note: after_script resets working dir
+    - mv  docs/_build/html/  public/
   artifacts:
     paths:
       - public
-  only:
-    - master
 
-
-tox:
+pytest:
   stage: unit tests
   allow_failure: true
-  before_script:
-    - pip install tox
   script:
-    tox --recreate
+    - pip install pytest
+    - pytest
+
+twine:
+  stage: deployment
+  only: [ master ]
+  script:
+    - pip install twine
+    # upload as a PyPi package to gitlab registry
+    - twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*

@@ -1,0 +1,9 @@
+[flake8]
+max-line-length = 120
+ignore = E203,E221,E226,E241
+
+# We ignore the following PEP8 Errors:
+# E203 whitespace before ':'
+# E221 multiple spaces before operator
+# E226 missing whitespace around arithmetic operator
+# E241 multiple spaces after ':'

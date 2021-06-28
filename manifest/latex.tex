@@ -61,6 +61,22 @@ In practice, since floating-point numbers are essentially rational numbers in th
 
 \end{definition}
 
+
+%
+\begin{definition}[$\veps$-gcd]\label{def: label}
+  We define the \emph{approximate greatest common divisor} ($\veps$-gcd) of a set of $n$ numbers $x_1, \ldots, x_n$ as
+
+  %
+\begin{align}\label{eq: eps-gpd}
+\veps-\gcd(x_1, \ldots, x_n) 
+   &= \max\{ y \mid \forall i \exists k\in\DZ : x_i \in U_\veps(k\cdot y)\} 
+\\ &= \max\{ y \mid \forall i \exists \dist(x_i, y\DZ)\le \veps \}
+\end{align}
+
+\end{definition}
+
+
+
 %
 \begin{example}[title]\label{ex: label}%
   COnsider the time steps $(1,2,3,4,4+2^{-10})$. This has a strict floating-point gcd of $2^{-10}$. However, in a situation like this it may be most appropriate to not treat it as an irregular time series, not an quasi-regular time-series, but rather just merge the last two datapoints (e.g. by averaging). To deal with these cases, we generalize the notion of the floating-point gcd to a general real gcd, which is based on a notion of approximate equality.
@@ -75,5 +91,20 @@ Categorical Features: One Hot
 
 
 \section{Filter Component}
+
+
+
+\begin{figure}[h!]
+%\centering -> This is irrelevant because of the '.5\textwidth' as Mico advised below.
+\begin{minipage}[t]{.4\textwidth}\centering
+  \includegraphics[width=.8\columnwidth]{example-image-a.pdf}
+  \caption{left}\label{table a}
+\end{minipage}%
+\begin{minipage}[t]{.6\textwidth}\centering
+  \includegraphics[width=\columnwidth]{example-image-b.pdf}
+  \caption{right}\label{table b}
+\end{minipage}
+\end{figure}
+
 
 \end{document}
