@@ -34,16 +34,15 @@ installtion:
   artifacts:
     paths:
       - dist/*.whl
+      - VIRTUALENV
 
 pylint:
+  # see .pylintrc for configuration
   stage: code analysis
   script:
     - pip install pylint pylint-exit torch scipy
     - mkdir pylint
     - pylint tsdm | tee ./pylint/pylint.log || pylint-exit $?
-    # We ignore the following PyLint Errors:
-    # C0103 invalid-name
-    # C0144 non-ascii-name
   after_script:
     - pip install anybadge
     - PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
@@ -54,19 +53,16 @@ pylint:
       - ./pylint/
 
 flake8:
+  # see .flake8 for configuration
   stage: code analysis
   script:
     - pip install flake8
     - flake8 tsdm
     - flake8 test
     - flake8 docs/conf.py
-    # We ignore the following PEP8 Errors:
-    # E203 whitespace before ':'
-    # E221 multiple spaces before operator
-    # E226 missing whitespace around arithmetic operator
-    # E241 multiple spaces after ':'
 
 mypy:
+  # see .mpypy.ini for configuration
   stage: code analysis
   script:
     - pip install mypy
@@ -88,6 +84,7 @@ pages:
       - public
 
 pytest:
+  # see pytest.ini for configuration
   stage: unit tests
   allow_failure: true
   script:
