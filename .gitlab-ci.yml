@@ -92,9 +92,9 @@ pytest:
   stage: test
   needs: [ "build" ]
   script:
-    - pip install --upgrade pytest
+    - pip install --upgrade pytest pytest-cov
     - pytest --junitxml=report.xml --cov=$MODULEDIR $TESTDIR
-    - coverage.xml
+    - coverage
   artifacts:
     # https://software.ismll.uni-hildesheim.de/help/ci/unit_test_reports
     when: always
