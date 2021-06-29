@@ -19,9 +19,6 @@ cache:
     - .mypy_cache
     - VIRTUALENV/
 
-include:
-  - template: Code-Quality.gitlab-ci.yml
-
 stages:
   - build
   - analysis

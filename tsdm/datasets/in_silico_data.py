@@ -52,7 +52,7 @@ class InSilicoData(BaseDataset, metaclass=DatasetMetaClass):
                     df = pd.read_csv(file, index_col=0)
                     df = df.rename_axis(index="time")
                     df["DOTm"] /= 100
-                    df.name = "".join([c for c in file.name if c.isdigit()])
+                    df.name = "run_" + "".join([c for c in file.name if c.isdigit()])
                     dfs[df.name] = df
 
         if cls.dataset_file.exists():
