@@ -19,10 +19,12 @@ cache:
     - .mypy_cache
     - VIRTUALENV/
 
+include:
+  - template: Code-Quality.gitlab-ci.yml
+
 stages:
   - build
   - analysis
-  - doc
   - test
   - deploy
 
@@ -93,26 +95,14 @@ analysis:mypy:
   needs: [ "build:setup" ]
   script:
     - pip install --upgrade mypy
-    - mypy --install-types $MODULEDIR
+    - mypy --install-types --non-interactive $MODULEDIR
 
-##############
-# STAGE: DOC #
-##############
-
-doc:sphinx:
-  stage: doc
-  only: [ master ]
-  allow_failure: true
-  needs: [ "build:setup" ]
-  script:
-    - pip install --upgrade sphinx sphinx-rtd-theme sphinx-math-dollar
-    - cd docs
-    - make html
-  after_script:  # note: after_script resets working dir
-    - mv  docs/_build/html/  public/
+analysis:code_quality_html:
+  extends: code_quality
+  variables:
+    REPORT_FORMAT: html
   artifacts:
-    paths:
-      - public
+    paths: [gl-code-quality-report.html]
 
 ###############
 # STAGE: TEST #
@@ -168,3 +158,19 @@ deploy:twine:
     - pip install --upgrade twine
     # upload as a PyPi package to gitlab registry
     - twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+
+deploy:sphinx:
+  stage: deploy
+  only: [ master ]
+  allow_failure: true
+  needs: [ "build:setup" ]
+  script:
+    - pip install --upgrade sphinx sphinx-rtd-theme sphinx-math-dollar
+    - cd docs
+    - make html
+  after_script:  # note: after_script resets working dir
+    - mv  docs/_build/html/  public/
+  artifacts:
+    paths:
+      - public
+

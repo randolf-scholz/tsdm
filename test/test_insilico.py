@@ -5,8 +5,6 @@ Testing of Electricity dataset, as a token for the whole BaseDataset architectur
 import logging
 from copy import copy
 
-from pandas import DataFrame
-
 from tsdm.datasets import InSilicoData
 from tsdm.util import timefun
 
