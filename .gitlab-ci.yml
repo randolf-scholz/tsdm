@@ -141,7 +141,8 @@ test:coverage:
   needs: [ "build:setup" ]
   script:
     - pip install --upgrade pytest pytest-cov
-    - pytest --cov=$MODULEDIR --cov-report=xml $TESTDIR
+    - pytest --cov=$MODULEDIR $TESTDIR
+    - coverage xml
   artifacts:
     reports:
       cobertura: coverage.xml
