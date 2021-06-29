@@ -35,11 +35,12 @@ before_script:  # global before_script is run before each and every job.
 
 build:setup:
   stage: build
-  script:
+  before_script:
     - python -V
     - pip install --upgrade pip virtualenv
     - virtualenv VIRTUALENV
     - source VIRTUALENV/bin/activate
+  script:
     # install special dependency
     # - pip install git+ssh://git@software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm.git
     # - pip install git+ssh://git@git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm.git
