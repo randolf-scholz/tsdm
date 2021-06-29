@@ -1,13 +1,13 @@
 #
 # https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
 #
-
 default:
-  image: python:3.9  # official python docker
+  image: python:3.9
   tags:  [docker]
 
 variables:
-  MODULENAME:     tsdm
+  MODULEDIR:      tsdm
+  TESTDIR:        test
   TWINE_PASSWORD: ${CI_JOB_TOKEN}
   TWINE_USERNAME: gitlab-ci-token
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -15,31 +15,44 @@ variables:
 cache:
   paths:
     - .cache/pip
-    - VIRTUALENV/
+    - .pytest_cache
+    - .mypy_cache
+  # - VIRTUALENV/
+
+stages:
+  - build
+  - analysis
+  - doc
+  - test-setup
+  - test
+  - deploy
 
 before_script:  # global before_script is run before each and every job.
   - source VIRTUALENV/bin/activate
 
-stages:
-  - setup
-  - code analysis
-  - documentation
-  - unit tests
-  - deployment
+################
+# STAGE: SETUP #
+################
 
-installtion:
-  stage: setup
-  before_script:  # first setup, overwrites global begin_script
+build:setup:
+  stage: build
+  script:
     - python -V
     - pip install --upgrade pip virtualenv
     - virtualenv VIRTUALENV
     - source VIRTUALENV/bin/activate
-  script:
+    # install special dependency
+    # - pip install git+ssh://git@software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm.git
+    # - pip install git+ssh://git@git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm.git
     - pip install -r requirements.txt
+    # try installing tsdm
     - pip install -e .
+  artifacts:
+    paths:
+      - VIRTUALENV/
 
-wheel:
-  stage: setup
+build:wheel:
+  stage: build
   only: [ master ]
   script:
     - pip install --upgrade pip wheel
@@ -48,13 +61,18 @@ wheel:
     paths:
       - dist/*.whl
 
-pylint:
+###################
+# STAGE: ANALYSIS #
+###################
+
+analysis:pylint:
   # see .pylintrc for configuration
-  stage: code analysis
+  stage: analysis
+  needs: [ "build:setup" ]
   script:
     - pip install pylint pylint-exit
     - mkdir pylint
-    - pylint $MODULENAME | tee ./pylint/pylint.log || pylint-exit $?
+    - pylint $MODULEDIR | tee ./pylint/pylint.log || pylint-exit $?
   after_script:
     - pip install anybadge
     - PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
@@ -64,26 +82,31 @@ pylint:
     paths:
       - ./pylint/
 
-flake8:
+analysis:flake8:
   # see .flake8 for configuration
-  stage: code analysis
+  stage: analysis
+  needs: [ "build:setup" ]
   script:
     - pip install flake8
-    - flake8 $MODULENAME
-    - flake8 test
-    - flake8 docs/conf.py
+    - flake8 $MODULEDIR
 
-mypy:
+analysis:mypy:
   # see .mpypy.ini for configuration
-  stage: code analysis
+  stage: analysis
+  needs: [ "build:setup" ]
   script:
     - pip install mypy
-    - mypy --install-types --non-interactive $MODULENAME
+    - mypy --install-types $MODULEDIR
 
-pages:
-  stage: documentation
+##############
+# STAGE: DOC #
+##############
+
+doc:sphinx:
+  stage: doc
   only: [ master ]
   allow_failure: true
+  needs: [ "build:setup" ]
   script:
     - pip install -U sphinx sphinx-rtd-theme sphinx-math-dollar
     - cd docs
@@ -94,17 +117,66 @@ pages:
     paths:
       - public
 
-pytest:
+#####################
+# STAGE: TEST-SETUP #
+#####################
+
+test:setup:
+  stage: test-setup
+  needs: [ "build:setup" ]
+  script:
+    # install dependencies required for testing
+    - pip install -r requirements-test.txt
+    - pip install tsdm --no-deps --index-url https://gitlab-ci-token:${CI_JOB_TOKEN}@software.ismll.uni-hildesheim.de/api/v4/projects/342/packages/pypi/simple
+  artifacts:
+    paths:
+      - VIRTUALENV/
+
+###############
+# STAGE: TEST #
+###############
+
+test:flake8:
+  # see .flake8 for configuration
+  stage: test
+  needs: [ "test:setup" ]
+  script:
+    - pip install flake8
+    - flake8 $TESTDIR
+
+test:mypy:
+  # see .mpypy.ini for configuration
+  stage: test
+  needs: [ "test:setup" ]
+  script:
+    - pip install mypy
+    - mypy --install-types --non-interactive $TESTDIR
+
+test:pytest:
   # see pytest.ini for configuration
-  stage: unit tests
-  allow_failure: true
+  stage: test
+  needs: [ "test:setup" ]
   script:
     - pip install pytest
-    - pytest
+    - pytest $TESTDIR
 
-twine:
-  stage: deployment
+test:pylint:
+  # see .pylintrc for configuration
+  stage: test
+  needs: [ "test:setup" ]
+  script:
+    - pip install pylint pylint-exit
+    - pylint $TESTDIR
+
+#################
+# STAGE: DEPLOY #
+#################
+
+deploy:twine:
+  stage: deploy
   only: [ master ]
+  allow_failure: true
+  needs: [ "build:wheel" ]
   script:
     - pip install twine
     # upload as a PyPi package to gitlab registry

@@ -188,7 +188,9 @@ def _numpy_scaled_norm(x: ndarray, p: float = 2, axis: Union[int, tuple[int, ...
     return np.mean(x**p, axis=axis, keepdims=keepdims) ** (1 / p)
 
 
-def scaled_norm(x: Union[ArrayLike, Tensor], p=2, axis=None, keepdims=False) -> Union[ArrayLike, Tensor]:
+def scaled_norm(x: Union[ArrayLike, Tensor], p: float = 2,
+                axis: Union[None, int, tuple[int, ...]] = None,
+                keepdims: bool = False) -> Union[ArrayLike, Tensor]:
     r"""Scaled $\ell^p$-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`
 
     .. math::

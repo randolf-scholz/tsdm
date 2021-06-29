@@ -1,12 +1,20 @@
+r"""
+Test converters to masked format etc.
+"""
+
 from pandas import NA, DataFrame, testing
 
 from tsdm.util import make_masked_format
 
 
 def test_make_masked_format():
-    """
-    Using example taken from Figure 2, in "Recurrent Neural Networks for Multivariate Time Series with Missing Values"
-    By Che et. al., Nature 2017
+    r"""
+    Using example taken from Figure 2 in [1]
+
+    References
+    ----------
+    1. Recurrent Neural Networks for Multivariate Time Series with Missing Values
+       Che et. al., Nature 2017
     """
     x = [[47, 49, NA, 40, NA, 43, 55],
          [NA, 15, 14, NA, NA, NA, 15]]

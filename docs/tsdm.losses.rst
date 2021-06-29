@@ -1,4 +1,5 @@
-﻿.. automodule:: tsdm.losses
+﻿.. include:: /includes.rst.txt
+
+.. automodule:: tsdm.losses
     :members:
-    :undoc-members:
     :show-inheritance:

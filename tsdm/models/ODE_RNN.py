@@ -64,14 +64,7 @@ def path_import(module_path: Path, module_name: str = None) -> ModuleType:
         return the_module
 
 
-module = path_import(Path("/home/rscholz/.tsdm/models/ODE-RNN"))
-create_net = module.lib.utils.create_net                          # type: ignore
-ODEFunc = module.lib.ode_func.ODEFunc                             # type: ignore
-DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver              # type: ignore
-ODE_RNN = module.lib.ode_rnn.ODE_RNN                              # type: ignore
-
-
-class ODERNN:
+class ODE_RNN:
     url:   str = r"https://github.com/YuliaRubanova/latent_ode.git"
     model: type
     model_path: Path
@@ -129,9 +122,15 @@ class ODERNN:
     }
 
     def __new__(cls, *args, **kwargs):
-        return super(ODERNN, cls).__new__(*args, **kwargs)
+        return super(ODE_RNN, cls).__new__(*args, **kwargs)
 
     def __init__(self, **HP):
+        module = path_import(Path("/home/rscholz/.tsdm/models/ODE-RNN"))
+        create_net = module.lib.utils.create_net  # type: ignore
+        ODEFunc = module.lib.ode_func.ODEFunc  # type: ignore
+        DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver  # type: ignore
+        _ODE_RNN = module.lib.ode_rnn.ODE_RNN  # type: ignore
+
         """Initialize the internal ODE-RNN model
 
         """
@@ -162,7 +161,7 @@ class ODERNN:
             device=HP['device']
         )
 
-        self.model = ODE_RNN(
+        self.model = _ODE_RNN(
             input_dim=HP['input_dim'],
             latent_dim=HP['n_ode_gru_dims'],
             device=HP['device'],

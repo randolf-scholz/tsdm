@@ -11,7 +11,7 @@ Basic Usage
 
    print(vars(Electricity))
    Electricity.download()
-   ELectricity.preprocess()
+   Electricity.preprocess()
    x = Electricity.load()
 
    # or, simply:
@@ -23,6 +23,7 @@ Examples
 
 import logging
 import subprocess
+from abc import ABCMeta, abstractmethod
 from functools import cache
 from pathlib import Path
 from typing import Union
@@ -30,12 +31,13 @@ from urllib.parse import urlparse
 
 from pandas import DataFrame, Series
 from xarray import Dataset, DataArray
+
 from tsdm.config import RAWDATADIR, DATASETDIR
 
 logger = logging.getLogger(__name__)
 
 
-class DatasetMetaClass(type):
+class DatasetMetaClass(ABCMeta):
     r"""This metaclasses purpose is that any dataset class has certain attributes like
     `rawdata_path`, even before being initialized. As a consequence, the dataset classes
     generally do not need to be initialized.
@@ -44,7 +46,7 @@ class DatasetMetaClass(type):
     ----------
     url: str
         a http address from where the dataset can be downloaded
-    dataset: Union[Series, DataFrame, DataArray, Dataset]
+    dataset: Series, DataFrame, DataArray or Dataset
         internal storage of the dataset
     rawdata_path: Path
         location where the raw data is stored
@@ -56,11 +58,15 @@ class DatasetMetaClass(type):
     # see https://stackoverflow.com/q/47615318/9318372
 
     url:          str
+    dataset:      Union[Series, DataFrame, DataArray, Dataset]
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
 
     def __init__(cls, *args, **kwargs):
+        """Initializing the paths such that every dataset class has them available,
+        even before being instantiated.
+        """
         super().__init__(*args, **kwargs)
         cls.rawdata_path = RAWDATADIR.joinpath(cls.__name__)
         cls.rawdata_path.mkdir(parents=True, exist_ok=True)
@@ -68,36 +74,10 @@ class DatasetMetaClass(type):
         cls.dataset_file = DATASETDIR.joinpath(F"{cls.__name__}.h5")
         cls.dataset_path.mkdir(parents=True, exist_ok=True)
 
-    # todo: remove "type ignore" once fixed in mypy
-    @property  # type: ignore
-    @cache
-    def dataset(cls) -> Union[Series, DataFrame, DataArray, Dataset]:
-        """Caches the dataset on first execution"""
-        return cls.load()
-
-    def download(cls):
-        """Download the dataset"""
-        raise NotImplementedError
-
-    def load(cls) -> Union[Series, DataFrame, DataArray, Dataset]:
-        """Load the dataset"""
-        raise NotImplementedError
-
-    def preprocess(cls):
-        """Preprocess the dataset"""
-        raise NotImplementedError
-
-    def to_dataloader(cls):
-        """Create dataloader from disk"""
-        raise NotImplementedError
-
-    def clean(cls):
-        """Clean the dataset"""
-        raise NotImplementedError
-
 
 class BaseDataset(metaclass=DatasetMetaClass):
-    r"""BaseDataset dataset
+    r"""BaseDataset dataset this class implements methods that are available
+    for all dataset classes
 
     Parameters
     ----------
@@ -108,15 +88,17 @@ class BaseDataset(metaclass=DatasetMetaClass):
     ----------
     url: str
         a http address from where the dataset can be downloaded
-    dataset: Union[Series, DataFrame, DataArray, Dataset]
+    dataset: Series, DataFrame, DataArray, Dataset
         internal storage of the dataset
     rawdata_path: Path
         location where the raw data is stored
     dataset_path: Path
         location where the pre-processed data is stored
+    dataset_file: Path
     """
+
     url:          str
-    dataset:      Union[Series, DataFrame, DataArray, Dataset]
+    # dataset:      Union[Series, DataFrame, DataArray, Dataset]
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
@@ -132,16 +114,69 @@ class BaseDataset(metaclass=DatasetMetaClass):
         super().__init__()
         self.url = url
 
-    def __new__(cls, *args, **kwargs):
-        cls.dataset_path = RAWDATADIR.joinpath(cls.__name__)
-        cls.dataset_path.mkdir(parents=True, exist_ok=True)
-        cls.rawdata_path = RAWDATADIR.joinpath(cls.__name__)
-        cls.rawdata_path.mkdir(parents=True, exist_ok=True)
-        return super().__new__(cls, *args, **kwargs)
+    # Abstract Methods - these MUST be implemented for any dataset subclass
+
+    @classmethod
+    @abstractmethod
+    def clean(cls):
+        """Cleans an already downloaded raw dataset and stores it in hdf5 format
+        under the path specified in ``dataset_file``, which, by default is
+
+        .. code-block:: python
+
+            cls.dataset_file = DATASETDIR.joinpath(F"{cls.__name__}.h5")
+
+        .. warning::
+            Must be implemented for any dataset class!!
+        """
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def load(cls):
+        """Loads the dataset stored in hdf5 format in the path `cls.dataset_file`.
+        Use the following template for dataset classes:
+
+        .. code-block:: python
+
+                @classmethod
+                def load(cls):
+                    super().load()  # <- makes sure DS is downloaded and preprocessed
+                    ...
+                    return dataset
+
+        .. warning::
+            Must be implemented for any dataset class!!
+        """
+        if cls.dataset_file is None:
+            cls.download()
+            cls.clean()
+        assert cls.dataset_file.exists()
+
+    # other class methods
+
+    # todo: remove "type ignore" once fixed in mypy
+    # noinspection PyPropertyDefinition
+    @classmethod  # type: ignore
+    @property
+    @cache
+    def dataset(cls):
+        """Caches the dataset on first execution"""
+        return cls.load()
 
     @classmethod
     def download(cls):
-        """Default dataset download. Overwrite if you need custom downloader"""
+        """Downloads the dataset and stores it in `cls.rawdata_path`.
+        The default downloader checks if
+
+
+        - The url points to kaggle.com => uses `kaggle competition download`
+        - The url points to github.com => checkout directory with `svn`
+        - Else simply use `wget` to download the `cls.url` content,
+
+
+        Overwrite if you need custom downloader
+        """
         dataset = cls.__name__
         parsed_url = urlparse(cls.url)
         logger.info("Obtaining dataset '%s' from %s", dataset, cls.url)
@@ -162,11 +197,3 @@ class BaseDataset(metaclass=DatasetMetaClass):
                 shell=True, check=True)
 
         logger.info("Finished importing dataset '%s' from %s", dataset, cls.url)
-
-    @classmethod
-    def load(cls):
-        """loads the dataset"""
-        if not cls.dataset_file.exists():
-            cls.download()
-            cls.clean()
-        return cls.dataset_file

@@ -4,7 +4,7 @@ Plotting
 """
 
 
-from typing import Callable
+from typing import Callable, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +15,8 @@ from scipy.stats import mode
 from torch import Tensor
 
 
-def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc=1, print_stats=True):
+def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log: Union[bool, float] = True,
+                           loc=1, print_stats=True):
     r"""
     Plots the distribution of x in the given axis.
 
@@ -24,7 +25,8 @@ def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc=1, pri
     x: ArrayLike
     ax: Axes
     bins: int
-    log: bool
+    log: bool or float, default=False
+        if True, use log base 10, if float, use  log w.r.t. this base
     loc: string
     print_stats: bool
     """
@@ -40,10 +42,11 @@ def visualize_distribution(x: ArrayLike, ax: Axes, bins=50, log=True, loc=1, pri
     ax.set_axisbelow(True)
 
     if log:
+        base = 10 if log is True else log
         tol = 2 ** -24 if np.issubdtype(x.dtype, np.float32) else 2 ** -53  # type: ignore
         z = np.log10(np.maximum(x, tol))
-        ax.set_xscale('log')
-        ax.set_yscale('log')
+        ax.set_xscale('log', base=base)
+        ax.set_yscale('log', base=base)
         low = np.floor(np.quantile(z, 0.01))
         high = np.ceil(np.quantile(z, 1 - 0.01))
         x = x[(z >= low) & (z <= high)]  # type: ignore

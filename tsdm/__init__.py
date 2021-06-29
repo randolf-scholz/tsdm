@@ -39,8 +39,8 @@ Functions
 ---------
 """
 
-import tsdm.util as util  # noqa: F401
-import tsdm.datasets as datatsets  # noqa: F401
+import tsdm.util as util
+import tsdm.datasets as datasets
 import tsdm.config as config
 import tsdm.losses as loss
 import tsdm.models as models
