@@ -7,8 +7,9 @@ from copy import copy
 
 from pandas import DataFrame
 
-from tsdm.datasets import Electricity
+from tsdm.datasets import InSilicoData
 from tsdm.util import timefun
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ def test_caching():
     # NOTE: this test must be executed first!!!
     """Checks if dataset caching works (should be way faster!)"""
 
-    ds = Electricity
+    ds = InSilicoData
     logger.info("Testing caching of dataset %s", ds.__name__)
     _, pre_cache_time = timefun(lambda: ds.dataset)()
     _, post_cache_time = timefun(lambda: ds.dataset)()
@@ -32,19 +33,19 @@ def test_caching():
 def test_attributes():
     """Tests if all attributes are present"""
 
-    ds = Electricity
+    ds = InSilicoData
     base_attrs = copy(set(dir(ds)))
     attrs = {'clean', 'dataset', 'dataset_file', 'dataset_path', 'download',
              'load', 'rawdata_path', 'url'}
 
     assert attrs <= base_attrs
-    assert isinstance(ds.dataset, DataFrame)
+    assert isinstance(ds.dataset, dict)
 
-    ds = Electricity("new_url")
+    ds = InSilicoData("new_url")
     instance_attrs = copy(set(dir(ds)))
 
     assert attrs <= instance_attrs
-    assert isinstance(ds.dataset, DataFrame)
+    assert isinstance(ds.dataset, dict)
 
     assert base_attrs == instance_attrs
 
