@@ -135,6 +135,17 @@ test:pylint:
     - pip install --upgrade pylint pylint-exit
     - pylint $TESTDIR
 
+test:coverage:
+  # https://docs.gitlab.com/ee/user/project/merge_requests/test_coverage_visualization.html
+  stage: test
+  needs: [ "build:setup" ]
+  script:
+    - pip install --upgrade pytest pytest-cov
+    - pytest --cov=$MODULEDIR --cov-report=xml $TESTDIR
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
 #################
 # STAGE: DEPLOY #
 #################
