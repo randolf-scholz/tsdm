@@ -32,7 +32,7 @@ before_script:  # global before_script is run before each and every job.
 # STAGE: SETUP #
 ################
 
-build:setup:
+build:
   stage: build
   before_script:
     - python -V
@@ -40,28 +40,14 @@ build:setup:
     - virtualenv VIRTUALENV
     - source VIRTUALENV/bin/activate
   script:
-    # install special dependency
-    # - pip install git+ssh://git@software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm.git
-    # - pip install git+ssh://git@git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm.git
     - pip install --upgrade -r requirements.txt
-    # try installing tsdm
     - pip install --upgrade -e .
-
-build:wheel:
-  stage: build
-  only: [ master ]
-  script:
-    - pip install --upgrade pip wheel
-    - python setup.py sdist bdist_wheel
-  artifacts:
-    paths:
-      - dist/*.whl
 
 ###################
 # STAGE: ANALYSIS #
 ###################
 
-analysis:pylint:
+pylint:
   # see .pylintrc for configuration
   stage: analysis
   needs: [ "build:setup" ]
@@ -69,6 +55,7 @@ analysis:pylint:
     - pip install --upgrade pylint pylint-exit
     - mkdir pylint
     - pylint $MODULEDIR | tee ./pylint/pylint.log || pylint-exit $?
+    - pylint $TESTDIR
   after_script:
     - pip install --upgrade anybadge
     - PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
@@ -78,90 +65,62 @@ analysis:pylint:
     paths:
       - ./pylint/
 
-analysis:flake8:
+flake8:
   # see .flake8 for configuration
   stage: analysis
   needs: [ "build:setup" ]
   script:
     - pip install --upgrade flake8
     - flake8 $MODULEDIR
+    - flake8 $TESTDIR
 
-analysis:mypy:
+mypy:
   # see .mpypy.ini for configuration
   stage: analysis
   needs: [ "build:setup" ]
   script:
     - pip install --upgrade mypy
     - mypy --install-types --non-interactive $MODULEDIR
+    - mypy --install-types --non-interactive $TESTDIR
 
 ###############
 # STAGE: TEST #
 ###############
 
-test:flake8:
-  # see .flake8 for configuration
-  stage: test
-  needs: [ "build:setup" ]
-  script:
-    - pip install --upgrade flake8
-    - flake8 $TESTDIR
-
-test:mypy:
-  # see .mpypy.ini for configuration
-  stage: test
-  needs: [ "build:setup" ]
-  script:
-    - pip install --upgrade mypy
-    - mypy --install-types --non-interactive $TESTDIR
-
-test:pytest:
+pytest:
   # see pytest.ini for configuration
   stage: test
   needs: [ "build:setup" ]
   script:
     - pip install --upgrade pytest
-    - pytest --junitxml=report.xml $TESTDIR
+    - pytest --junitxml=report.xml --cov=$MODULEDIR $TESTDIR
+    - coverage.xml
   artifacts:
     # https://software.ismll.uni-hildesheim.de/help/ci/unit_test_reports
     when: always
     reports:
-      junit: report.xml
-
-test:pylint:
-  # see .pylintrc for configuration
-  stage: test
-  needs: [ "build:setup" ]
-  script:
-    - pip install --upgrade pylint pylint-exit
-    - pylint $TESTDIR
-
-test:coverage:
-  # https://docs.gitlab.com/ee/user/project/merge_requests/test_coverage_visualization.html
-  stage: test
-  needs: [ "build:setup" ]
-  script:
-    - pip install --upgrade pytest pytest-cov
-    - pytest --cov=$MODULEDIR $TESTDIR
-    - coverage xml
-  artifacts:
-    reports:
       cobertura: coverage.xml
+      junit: report.xml
 
 #################
 # STAGE: DEPLOY #
 #################
 
-deploy:twine:
+pypi:
+  # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
   only: [ master ]
   allow_failure: true
-  needs: [ "build:wheel" ]
   script:
-    - pip install --upgrade twine
-    # upload as a PyPi package to gitlab registry
+    - pip install --upgrade pip wheel twine
+    - python setup.py sdist bdist_wheel
     - twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+  artifacts:
+    paths:
+      - dist/*.whl
 
-deploy:sphinx:
+pages:
+  # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
   only: [ master ]
   allow_failure: true
