@@ -17,7 +17,7 @@ def read(filename):
 
 setuptools.setup(
     name="tsdm",
-    version="0.0.7",
+    version="0.0.8",
     url="https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm",
     license='MIT',
 
@@ -43,8 +43,8 @@ setuptools.setup(
         # '': ['*.yaml'],
         # And include any *.yaml files found in the "config_files" subdirectory
         # of the "tsdm" package, also:
-        'tsdm.config_files' : ['*.yaml'],
-        'tsdm.datasets'     : ['*.txt'],
+        'tsdm.config'     : ['*.yaml'],
+        'tsdm.datasets'   : ['*.txt'],
     },
     # ...but exclude virtualenv.yaml from all packages
     exclude_package_data={"": ["virtualenv.yaml"]},
