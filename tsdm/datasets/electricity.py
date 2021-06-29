@@ -50,31 +50,26 @@ logger = logging.getLogger(__name__)
 
 
 class Electricity(BaseDataset, metaclass=DatasetMetaClass):
-    r"""BaseDataset metaclass
+    r"""
+    +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
+    | **Data Set Characteristics:**  | Time-Series            | **Number of Instances:**  | 370    | **Area:**               | Computer   |
+    +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
+    | **Attribute Characteristics:** | Real                   | **Number of Attributes:** | 140256 | **Date Donated**        | 2015-03-13 |
+    +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
+    | **Associated Tasks:**          | Regression, Clustering | **Missing Values?**       | N/A    | **Number of Web Hits:** | 93733      |
+    +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
+    """  # pylint: disable=line-too-long # noqa
 
-    Attributes
-    ----------
-    url: str
-        a http address from where the dataset can be downloaded
-    dataset: DataFrame
-        internal storage of the dataset
-    rawdata_path: Path
-        location where the raw data is stored
-    dataset_path: Path
-        location of folder where the pre-processed data is stored
-    dataset_file: Path
-        location of the file in which the pro-processes data is stored
-    """
-
-    url:          str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
-    dataset_path: Path
-    dataset_file: Path
-    rawdata_path: Path
+    url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
     dataset:      DataFrame
+    rawdata_path: Path
+    dataset_path: Path
+    dataset_file: Path
 
     @classmethod
     def clean(cls):
-        """Clean the dataset"""
+        """Creates DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`
+        """
         dataset = cls.__name__
         logger.info("Cleaning dataset '%s'", dataset)
 
@@ -96,7 +91,7 @@ class Electricity(BaseDataset, metaclass=DatasetMetaClass):
 
     @classmethod
     def load(cls):
-        """Load the dataset"""
+        """Load the dataset from hdf-5 file"""
         super().load()  # <- makes sure DS is downloaded and preprocessed
         df = read_hdf(cls.dataset_file, key=F"{cls.__name__}")
         df = DataFrame(df)

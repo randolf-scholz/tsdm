@@ -82,6 +82,7 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_style = 'css/my_theme.css'
 
 # -- mathjax options ---------------------------------------------------------------------------------------------------
 
@@ -266,7 +267,7 @@ napoleon_type_aliases = {
     "MultiIndex"       : "~pandas.MultiIndex",
     "CategoricalIndex" : "~pandas.CategoricalIndex",
     "TimedeltaIndex"   : "~pandas.TimedeltaIndex",
-    "DatetimeIndex"    :  "~pandas.DatetimeIndex",
+    "DatetimeIndex"    : "~pandas.DatetimeIndex",
     "Categorical"      : "~pandas.Categorical",
     # xarray
     "DataArray" : "~xarray.DataArray",

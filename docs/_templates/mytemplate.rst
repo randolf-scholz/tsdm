@@ -1,5 +1,5 @@
+.. include:: /includes.rst.txt
+
 .. automodule:: {{fullname}}
     :members:
-    :undoc-members:
     :show-inheritance:
-

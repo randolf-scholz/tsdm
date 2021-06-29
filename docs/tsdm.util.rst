@@ -1,4 +1,5 @@
-﻿.. automodule:: tsdm.util
+﻿.. include:: /includes.rst.txt
+
+.. automodule:: tsdm.util
     :members:
-    :undoc-members:
     :show-inheritance:

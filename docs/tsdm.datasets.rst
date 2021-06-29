@@ -1,4 +1,5 @@
-﻿.. automodule:: tsdm.datasets
+﻿.. include:: /includes.rst.txt
+
+.. automodule:: tsdm.datasets
     :members:
-    :undoc-members:
     :show-inheritance:

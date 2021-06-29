@@ -17,7 +17,7 @@ def read(filename):
 
 setuptools.setup(
     name="tsdm",
-    version="0.0.2",
+    version="0.0.5",
     url="https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm",
     license='MIT',
 
@@ -28,7 +28,7 @@ setuptools.setup(
     long_description=read("README.rst"),
     long_description_content_type='test/x-rst',
     # packages=['tsdm', 'tsdm.config_files'],
-    packages=setuptools.find_packages(exclude='tests'),           # include all packages in ...
+    packages=setuptools.find_packages(exclude='test'),           # include all packages in ...
     install_requires=[
             'pyyaml',
             'pandas',

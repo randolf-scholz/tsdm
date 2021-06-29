@@ -17,7 +17,6 @@ import yaml
 
 from . import config_files
 
-
 logger = logging.getLogger(__name__)
 
 with resources.path(config_files, "config.yaml") as file:
