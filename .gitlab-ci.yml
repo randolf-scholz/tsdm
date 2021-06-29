@@ -23,7 +23,6 @@ stages:
   - build
   - analysis
   - doc
-  - test-setup
   - test
   - deploy
 
