@@ -50,7 +50,7 @@ build:
 pylint:
   # see .pylintrc for configuration
   stage: analysis
-  needs: [ "build:setup" ]
+  needs: [ "build" ]
   script:
     - pip install --upgrade pylint pylint-exit
     - mkdir pylint
@@ -68,7 +68,7 @@ pylint:
 flake8:
   # see .flake8 for configuration
   stage: analysis
-  needs: [ "build:setup" ]
+  needs: [ "build" ]
   script:
     - pip install --upgrade flake8
     - flake8 $MODULEDIR
@@ -77,7 +77,7 @@ flake8:
 mypy:
   # see .mpypy.ini for configuration
   stage: analysis
-  needs: [ "build:setup" ]
+  needs: [ "build" ]
   script:
     - pip install --upgrade mypy
     - mypy --install-types --non-interactive $MODULEDIR
@@ -90,7 +90,7 @@ mypy:
 pytest:
   # see pytest.ini for configuration
   stage: test
-  needs: [ "build:setup" ]
+  needs: [ "build" ]
   script:
     - pip install --upgrade pytest
     - pytest --junitxml=report.xml --cov=$MODULEDIR $TESTDIR
@@ -124,7 +124,7 @@ pages:
   stage: deploy
   only: [ master ]
   allow_failure: true
-  needs: [ "build:setup" ]
+  needs: [ "build" ]
   script:
     - pip install --upgrade sphinx sphinx-rtd-theme sphinx-math-dollar
     - cd docs
