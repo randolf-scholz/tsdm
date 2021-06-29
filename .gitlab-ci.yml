@@ -97,13 +97,6 @@ analysis:mypy:
     - pip install --upgrade mypy
     - mypy --install-types --non-interactive $MODULEDIR
 
-analysis:code_quality_html:
-  extends: code_quality
-  variables:
-    REPORT_FORMAT: html
-  artifacts:
-    paths: [gl-code-quality-report.html]
-
 ###############
 # STAGE: TEST #
 ###############

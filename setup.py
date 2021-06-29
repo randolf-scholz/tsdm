@@ -17,7 +17,7 @@ def read(filename):
 
 setuptools.setup(
     name="tsdm",
-    version="0.0.5",
+    version="0.0.6",
     url="https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm",
     license='MIT',
 
