@@ -148,10 +148,9 @@ class BaseDataset(metaclass=DatasetMetaClass):
         .. warning::
             Must be implemented for any dataset class!!
         """
-        if cls.dataset_file is None:
+        if not cls.dataset_file.exists():
             cls.download()
             cls.clean()
-        assert cls.dataset_file.exists()
 
     # other class methods
 

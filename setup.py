@@ -43,7 +43,8 @@ setuptools.setup(
         # '': ['*.yaml'],
         # And include any *.yaml files found in the "config_files" subdirectory
         # of the "tsdm" package, also:
-        'tsdm.config_files': ['*.yaml'],
+        'tsdm.config_files' : ['*.yaml'],
+        'tsdm.datasets'     : ['*.txt'],
     },
     # ...but exclude virtualenv.yaml from all packages
     exclude_package_data={"": ["virtualenv.yaml"]},
