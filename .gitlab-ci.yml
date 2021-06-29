@@ -117,21 +117,6 @@ doc:sphinx:
     paths:
       - public
 
-#####################
-# STAGE: TEST-SETUP #
-#####################
-
-test:setup:
-  stage: test-setup
-  needs: [ "build:setup" ]
-  script:
-    # install dependencies required for testing
-    - pip install -r requirements-test.txt
-    - pip install tsdm --no-deps --index-url https://gitlab-ci-token:${CI_JOB_TOKEN}@software.ismll.uni-hildesheim.de/api/v4/projects/342/packages/pypi/simple
-  artifacts:
-    paths:
-      - VIRTUALENV/
-
 ###############
 # STAGE: TEST #
 ###############
@@ -139,7 +124,7 @@ test:setup:
 test:flake8:
   # see .flake8 for configuration
   stage: test
-  needs: [ "test:setup" ]
+  needs: [ "build:setup" ]
   script:
     - pip install flake8
     - flake8 $TESTDIR
@@ -147,7 +132,7 @@ test:flake8:
 test:mypy:
   # see .mpypy.ini for configuration
   stage: test
-  needs: [ "test:setup" ]
+  needs: [ "build:setup" ]
   script:
     - pip install mypy
     - mypy --install-types --non-interactive $TESTDIR
@@ -155,7 +140,7 @@ test:mypy:
 test:pytest:
   # see pytest.ini for configuration
   stage: test
-  needs: [ "test:setup" ]
+  needs: [ "build:setup" ]
   script:
     - pip install pytest
     - pytest $TESTDIR
@@ -163,7 +148,7 @@ test:pytest:
 test:pylint:
   # see .pylintrc for configuration
   stage: test
-  needs: [ "test:setup" ]
+  needs: [ "build:setup" ]
   script:
     - pip install pylint pylint-exit
     - pylint $TESTDIR
