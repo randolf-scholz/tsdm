@@ -140,7 +140,12 @@ test:pytest:
   needs: [ "build:setup" ]
   script:
     - pip install --upgrade pytest
-    - pytest $TESTDIR
+    - pytest --junitxml=report.xml $TESTDIR
+  artifacts:
+    # https://software.ismll.uni-hildesheim.de/help/ci/unit_test_reports
+    when: always
+    reports:
+      junit: report.xml
 
 test:pylint:
   # see .pylintrc for configuration
