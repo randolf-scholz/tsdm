@@ -40,8 +40,13 @@ build:
     - virtualenv venv
     - source venv/bin/activate
   script:
+    - pip install --upgrade wheel
+    - python setup.py sdist bdist_wheel
     - pip install --upgrade -r requirements.txt
     - pip install --upgrade -e .
+  artifacts:
+    paths:
+      - dist/*.whl
 
 ###################
 # STAGE: ANALYSIS #
@@ -110,13 +115,8 @@ pypi:
   only: [ master ]
   allow_failure: true
   script:
-    - pip install --upgrade pip wheel twine
-    - python setup.py sdist bdist_wheel
+    - pip install --upgrade pip twine
     - twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
-  artifacts:
-    when: on_success
-    paths:
-      - dist/*.whl
 
 pages:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
