@@ -27,8 +27,7 @@ setuptools.setup(
     description="Time Series Datasets and Models",
     long_description=read("README.rst"),
     long_description_content_type='test/x-rst',
-    # packages=['tsdm', 'tsdm.config_files'],
-    packages=setuptools.find_packages(exclude='test'),           # include all packages in ...
+    packages=setuptools.find_packages(exclude=['test']),           # include all packages in ...
     install_requires=[
             'pyyaml',
             'pandas',
@@ -37,15 +36,9 @@ setuptools.setup(
             'xarray',
             'matplotlib',
     ],
-    # include_package_data=True,  <-- This MUST NOT be set https://stackoverflow.com/a/23936405/9318372
-    package_data={
-        # If any package contains *.yaml files, include them:
-        # '': ['*.yaml'],
-        # And include any *.yaml files found in the "config_files" subdirectory
-        # of the "tsdm" package, also:
-        'tsdm.config'     : ['*.yaml'],
-        'tsdm.datasets'   : ['*.txt'],
-    },
+    # Files that listed in MANIFEST.in and also are in python packages,
+    # i.e. contained in folders with and __init__.py, will be included.
+    include_package_data=True,
     # ...but exclude virtualenv.yaml from all packages
     exclude_package_data={"": ["virtualenv.yaml"]},
 )
