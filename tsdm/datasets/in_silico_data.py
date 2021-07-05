@@ -30,26 +30,25 @@ class InSilicoData(BaseDataset, metaclass=DatasetMetaClass):
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """  # pylint: disable=line-too-long # noqa
 
-    url:          str = ""
-    dataset:      dict[str, DataFrame]
+    url = None
+    dataset: dict[str, DataFrame]
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
 
     @classmethod
     def clean(cls):
-        """Creates DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`
-        """
+        """Create `DataFrame` with 1 column per client and `DatetimeIndex`."""
         dataset = cls.__name__
         logger.info("Cleaning dataset '%s'", dataset)
 
         dfs = {}
         for resource in resources.contents(in_silico):
-            if resource.split('.')[-1] != "txt":
+            if resource.split(".")[-1] != "txt":
                 continue
             with resources.path(in_silico, resource) as path:
-                with open(path, 'r') as file:
-                    df = pd.read_csv(file, index_col=0)
+                with open(path, "r") as file:
+                    df = pd.read_csv(file, index_col=0, parse_dates=[0])
                     df = df.rename_axis(index="time")
                     df["DOTm"] /= 100
                     df.name = "run_" + "".join([c for c in file.name if c.isdigit()])
@@ -59,20 +58,16 @@ class InSilicoData(BaseDataset, metaclass=DatasetMetaClass):
             cls.dataset_file.unlink()
 
         for df in dfs.values():
-            df.to_hdf(cls.dataset_file, key=df.name, mode='a')
+            df.to_hdf(cls.dataset_file, key=df.name, mode="a")
 
         logger.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
     def load(cls):
-        """Load the dataset from hdf-5 file"""
+        r"""Load the dataset from hdf-5 file."""
         super().load()  # <- makes sure DS is downloaded and preprocessed
         with h5py.File(cls.dataset_file, "r") as file:
             read_dfs = {}
             for key in file.keys():
                 read_dfs[key] = pd.read_hdf(cls.dataset_file, key=key)
             return read_dfs
-
-    @classmethod
-    def download(cls):
-        """nothing to do here"""

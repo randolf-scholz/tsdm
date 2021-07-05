@@ -1,4 +1,5 @@
-r"""
+r"""Time Series Datasets and Models (TSDM).
+
 Provides
   1. Facility to import some commonly used time series datasets
   2. Facility to import some commonly used time series models
@@ -39,10 +40,6 @@ Functions
 ---------
 """
 
-import tsdm.util as util
-import tsdm.datasets as datasets
-import tsdm.config as config
-import tsdm.losses as loss
-import tsdm.models as models
+from tsdm import config, datasets, losses, models, util
 
-__all__ = ['util', 'datasets', 'models', 'config', 'loss', 'models']
+__all__ = ["util", "datasets", "models", "config", "losses", "models"]

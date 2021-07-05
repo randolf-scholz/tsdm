@@ -1,8 +1,52 @@
 [flake8]
+# A: builtins
+# B: bugbear
+# B9: bugbear future proof
+# BLK: black
+# C: mccabe / comprehensions
+# D: docstring
+# E: pycodestyle errors
+# F: pyflakes warnings
+# I: import-order 
+# W: pycodestyle warnings
+# select = B,B9,BLK,C,D,E,F,I,S,W
+
 max-line-length = 120
-ignore = E203,E221,E226,E241
-# We ignore the following PEP8 Errors:
-# E203 whitespace before ':'
-# E221 multiple spaces before operator
-# E226 missing whitespace around arithmetic operator
-# E241 multiple spaces after ':'
+ignore = 
+    E203,       # whitespace before ':'
+    E221,       # multiple spaces before operator
+    E226,       # missing whitespace around arithmetic operator
+    E241,       # multiple spaces after ':'
+    W503,       # line break before binary operator
+
+
+extend-ignore =
+    # Google Python style is not RST until after processed by Napoleon
+    # See https://github.com/peterjc/flake8-rst-docstrings/issues/17
+    RST201,     # Unexpected indentation.
+    RST203,     # Definition list ends without a blank line; unexpected unindent.
+    RST301,     # Block quote ends without a blank line; unexpected unindent.
+    RST303,     # Unknown directive type
+    RST304,     # Unknown interpreted text role
+    ANN101,     # Missing type annotation for self in method
+    ANN201,     # Missing return type annotation for public function
+
+exclude =
+    ./.git,
+    ./build,
+    ./scripts,
+    ./venv,
+    *.pyi
+
+
+# Annotations plugin
+# Supress ANN200-level errors for functions that have no return (return None)
+suppress-none-returning = True
+allow-untyped-defs = True
+
+# docstring plugin
+docstring-convention = numpy
+
+# import-order-plugin
+import-order-style = pep8
+application-import-names = tsdm

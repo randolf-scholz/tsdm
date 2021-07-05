@@ -1,6 +1,7 @@
-r"""
-tsdm configuration files
-========================
+r"""Configuration Options.
+
+tsdm.config
+===========
 
 Content:
   - config.yaml
@@ -36,12 +37,12 @@ with resources.path(config_files, "hashes.yaml") as file:
         HASHES = yaml.safe_load(fname)
 
 
-HOMEDIR    = Path.home()
-BASEDIR    = HOMEDIR.joinpath(CONFIG['basedir'])
-LOGDIR     = BASEDIR.joinpath(CONFIG['logdir'])
-MODELDIR   = BASEDIR.joinpath(CONFIG['modeldir'])
-DATASETDIR = BASEDIR.joinpath(CONFIG['datasetdir'])
-RAWDATADIR = BASEDIR.joinpath(CONFIG['rawdatadir'])
+HOMEDIR = Path.home()
+BASEDIR = HOMEDIR.joinpath(CONFIG["basedir"])
+LOGDIR = BASEDIR.joinpath(CONFIG["logdir"])
+MODELDIR = BASEDIR.joinpath(CONFIG["modeldir"])
+DATASETDIR = BASEDIR.joinpath(CONFIG["datasetdir"])
+RAWDATADIR = BASEDIR.joinpath(CONFIG["rawdatadir"])
 LOGDIR.mkdir(parents=True, exist_ok=True)
 # logging.basicConfig(
 #     filename=str(LOGDIR.joinpath("example.log")),
@@ -55,8 +56,8 @@ logger.info("Available Datasets: %s", set(DATASETS))
 
 
 def generate_folders(d: dict, current_path: Path):
-    """
-    Creates nested folder structure based on nested dictionary keys
+    """Create nested folder structure based on nested dictionary keys.
+
     source: `StackOverflow <https://stackoverflow.com/a/22058144/9318372>`_
 
     Parameters
@@ -79,4 +80,4 @@ def generate_folders(d: dict, current_path: Path):
 
 # logger.info(F"Found config files: {set(resources.contents('config_files'))}")
 logger.info("Initializing Folder Structure")
-generate_folders(CONFIG['folders'], BASEDIR)
+generate_folders(CONFIG["folders"], BASEDIR)

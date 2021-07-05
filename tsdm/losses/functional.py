@@ -1,12 +1,6 @@
-r"""
-tsdm.loss.functional
---------------------
-
-Loss Functions for time series
+r"""Loss Functions for time series.
 
 All functions implemented in batch compatible way.
-
-
 """
 
 import torch
@@ -38,9 +32,9 @@ def nd(yhat: Tensor, y: Tensor) -> Tensor:
     -------
     Tensor
     """  # pylint: disable=line-too-long # noqa
-    res  = torch.sum(torch.abs(yhat - y), dim=(-1, -2))
+    res = torch.sum(torch.abs(yhat - y), dim=(-1, -2))
     mag = torch.sum(torch.abs(y), dim=(-1, -2))
-    return res/mag
+    return res / mag
 
 
 def nrmse(yhat: Tensor, y: Tensor) -> Tensor:
@@ -64,6 +58,6 @@ def nrmse(yhat: Tensor, y: Tensor) -> Tensor:
     -------
     Tensor
     """  # pylint: disable=line-too-long # noqa
-    res = torch.sqrt(torch.sum(torch.abs(yhat - y)**2, dim=(-1, -2)))
+    res = torch.sqrt(torch.sum(torch.abs(yhat - y) ** 2, dim=(-1, -2)))
     mag = torch.sum(torch.abs(y), dim=(-1, -2))
-    return res/mag
+    return res / mag

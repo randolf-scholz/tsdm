@@ -1,10 +1,10 @@
-"""
-Object oriented loss functions, if you prefer.
-Same name but uppercase.
+r"""Object oriented loss functions.
+
+Same name as functional but uppercase.
 """
 
+from torch import Tensor, nn
 
-from torch import nn, Tensor
 from .functional import nd, nrmse
 
 
@@ -28,7 +28,8 @@ class ND(nn.Module):
 
     @staticmethod
     def forward(yhat: Tensor, y: Tensor) -> Tensor:
-        """
+        r"""Compute the loss value.
+
         Parameters
         ----------
         yhat: Tensor
@@ -56,7 +57,8 @@ class NRMSE(nn.Module):
 
     @staticmethod
     def forward(yhat: Tensor, y: Tensor) -> Tensor:
-        """
+        r"""Compute the loss value.
+
         Parameters
         ----------
         yhat: Tensor

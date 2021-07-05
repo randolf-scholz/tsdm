@@ -3,8 +3,8 @@ matplotlib
 numpy
 numba
 pandas
-scipy
-xarray
 pyyaml
-torch
+scipy
 tables
+torch
+xarray

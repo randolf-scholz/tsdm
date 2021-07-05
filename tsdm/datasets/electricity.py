@@ -61,38 +61,43 @@ class Electricity(BaseDataset, metaclass=DatasetMetaClass):
     """  # pylint: disable=line-too-long # noqa
 
     url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
-    dataset:      DataFrame
+    dataset: DataFrame
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
 
     @classmethod
     def clean(cls):
-        """Creates DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`
-        """
+        r"""Create DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`."""
         dataset = cls.__name__
         logger.info("Cleaning dataset '%s'", dataset)
 
         fname = "LD2011_2014.txt"
-        files = ZipFile(cls.rawdata_path.joinpath(fname + ".zip"))
-        files.extract(fname, path=cls.dataset_path)
+        with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as files:
+            files.extract(fname, path=cls.dataset_path)
 
         logger.info("Finished extracting dataset '%s'", dataset)
 
-        df = read_csv(cls.dataset_path.joinpath(fname),
-                      sep=";", decimal=",", parse_dates=[0], index_col=0, dtype=np.float64)
+        df = read_csv(
+            cls.dataset_path.joinpath(fname),
+            sep=";",
+            decimal=",",
+            parse_dates=[0],
+            index_col=0,
+            dtype=np.float64,
+        )
 
         df = df.rename_axis(index="time", columns="client")
-        df.name = F"{dataset}"
-        df.to_hdf(cls.dataset_file, key=F"{dataset}")
+        df.name = f"{dataset}"
+        df.to_hdf(cls.dataset_file, key=f"{dataset}")
         cls.dataset_path.joinpath(fname).unlink()
 
         logger.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
     def load(cls):
-        """Load the dataset from hdf-5 file"""
+        """Load the dataset from hdf-5 file."""
         super().load()  # <- makes sure DS is downloaded and preprocessed
-        df = read_hdf(cls.dataset_file, key=F"{cls.__name__}")
+        df = read_hdf(cls.dataset_file, key=cls.__name__)
         df = DataFrame(df)
         return df

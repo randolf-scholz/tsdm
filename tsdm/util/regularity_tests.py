@@ -1,6 +1,4 @@
-r"""
-Test for checking how regular time series is.
-"""
+r"""Test for checking how regular time series is."""
 
 import numba
 import numpy as np
@@ -9,7 +7,7 @@ from pandas import Series
 
 
 def float_gcd(x: ArrayLike) -> float:
-    r"""Computes the greatest common divisor (GCD) off a list of floats.
+    r"""Compute the greatest common divisor (GCD) off a list of floats.
 
     Note that since floats are rational numbers, this is well-defined.
 
@@ -27,9 +25,9 @@ def float_gcd(x: ArrayLike) -> float:
     assert np.issubdtype(x.dtype, np.floating), "input is not float!"
 
     mantissa_bits = {
-        np.float16:  11,
-        np.float32:  24,
-        np.float64:  53,
+        np.float16: 11,
+        np.float32: 24,
+        np.float64: 53,
         np.float128: 113,
     }[x.dtype]
 
@@ -41,17 +39,19 @@ def float_gcd(x: ArrayLike) -> float:
     assert np.allclose(z, np.rint(z)), "something went wrong"
 
     gcd = np.gcd.reduce(np.rint(z).astype(int))
-    gcd = gcd * 2**(-fac)
+    gcd = gcd * 2 ** (-fac)
 
-    z = x/gcd
+    z = x / gcd
     z_int = np.rint(z).astype(int)
     assert np.allclose(z, z_int), "Not a GCD!"
     assert np.gcd.reduce(z_int) == 1, "something went wrong"
     return gcd
 
 
-def approx_float_gcd(x, rtol=1e-05, atol=1e-08) -> float:
-    r"""Computes approximate GCD
+def approx_float_gcd(
+    x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08
+) -> float:
+    r"""Compute approximate GCD of multiple floats.
 
     Parameters
     ----------
@@ -77,20 +77,20 @@ def approx_float_gcd(x, rtol=1e-05, atol=1e-08) -> float:
         if n == 1:
             return float(x[0])
         if n == 2:
-            while np.abs(x[1]) > rtol*t + atol:
+            while np.abs(x[1]) > rtol * t + atol:
                 x[0], x[1] = x[1], x[0] % x[1]
             return float(x[0])
         # n >= 3:
         out = np.empty(2)
-        out[0] = _float_gcd(x[:n//2])
-        out[1] = _float_gcd(x[n//2:])
+        out[0] = _float_gcd(x[: n // 2])
+        out[1] = _float_gcd(x[n // 2 :])
         return _float_gcd(out)
 
     return _float_gcd(x)
 
 
 def is_regular(s: Series) -> bool:
-    r"""Test if time series is regular
+    r"""Test if time series is regular.
 
     Parameters
     ----------
@@ -106,7 +106,9 @@ def is_regular(s: Series) -> bool:
 
 
 def is_quasiregular(s: Series) -> bool:
-    r"""Test if time series is quasi-regular. By definition, this is the case if all timedeltas are
+    r"""Test if time series is quasi-regular.
+
+    By definition, this is the case if all timedeltas are
     integer multiples of the minimal, non-zero timedelta of the series.
 
     Parameters
@@ -140,19 +142,19 @@ def time_gcd(s: Series):
     Δt = Δt[Δt > zero]
 
     if np.issubdtype(Δt.dtype, np.timedelta64):
-        Δt = Δt.astype('timedelta64[ns]').astype(int)
+        Δt = Δt.astype("timedelta64[ns]").astype(int)
         gcd = np.gcd.reduce(Δt)
-        return gcd.astype('timedelta64[ns]')
+        return gcd.astype("timedelta64[ns]")
     if np.issubdtype(Δt.dtype, np.integer):
         return np.gcd.reduce(Δt)
     if np.issubdtype(Δt.dtype, np.floating):
         return float_gcd(Δt)
 
-    raise NotImplementedError(F"Data type {Δt.dtype=} not understood")
+    raise NotImplementedError(f"Data type {Δt.dtype=} not understood")
 
 
 def regularity_coefficient(s: Series) -> float:
-    r"""Computes the regularity coefficient of a time series
+    r"""Compute the regularity coefficient of a time series.
 
     Parameters
     ----------
@@ -168,4 +170,4 @@ def regularity_coefficient(s: Series) -> float:
     zero = np.array(0, dtype=Δt.dtype)
     Δt = Δt[Δt > zero]
     Δt_min = np.min(Δt)
-    return Δt_min/gcd
+    return Δt_min / gcd
