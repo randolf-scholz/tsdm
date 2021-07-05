@@ -1,4 +1,5 @@
-r"""
+r"""Dataset Import Facilities.
+
 Datasets
 ========
 
@@ -16,9 +17,6 @@ Basic Usage
 
    # or, simply:
    x = Electricity.dataset
-
-Examples
---------
 """
 
 import logging
@@ -30,15 +28,17 @@ from typing import Union
 from urllib.parse import urlparse
 
 from pandas import DataFrame, Series
-from xarray import Dataset, DataArray
+from xarray import DataArray, Dataset
 
-from tsdm.config import RAWDATADIR, DATASETDIR
+from tsdm.config import DATASETDIR, RAWDATADIR
 
 logger = logging.getLogger(__name__)
 
 
 class DatasetMetaClass(ABCMeta):
-    r"""This metaclasses purpose is that any dataset class has certain attributes like
+    r"""Dataset metaclass providing class attributes.
+
+    This metaclass makes sure that any dataset class has certain attributes like
     `rawdata_path`, even before being initialized. As a consequence, the dataset classes
     generally do not need to be initialized.
 
@@ -54,30 +54,29 @@ class DatasetMetaClass(ABCMeta):
         location where the pre-processed data is stored
     dataset_file: Path
     """
+
     # pylint: disable=no-value-for-parameter
     # see https://stackoverflow.com/q/47615318/9318372
-
-    url:          str
-    dataset:      Union[Series, DataFrame, DataArray, Dataset]
+    url: Union[str, None]
+    dataset: Union[Series, DataFrame, DataArray, Dataset]
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
 
     def __init__(cls, *args, **kwargs):
-        """Initializing the paths such that every dataset class has them available,
-        even before being instantiated.
-        """
+        r"""Initialize the paths such that every dataset class has them available."""
         super().__init__(*args, **kwargs)
         cls.rawdata_path = RAWDATADIR.joinpath(cls.__name__)
         cls.rawdata_path.mkdir(parents=True, exist_ok=True)
         cls.dataset_path = DATASETDIR
-        cls.dataset_file = DATASETDIR.joinpath(F"{cls.__name__}.h5")
+        cls.dataset_file = DATASETDIR.joinpath(cls.__name__ + ".h5")
         cls.dataset_path.mkdir(parents=True, exist_ok=True)
 
 
 class BaseDataset(metaclass=DatasetMetaClass):
-    r"""BaseDataset dataset this class implements methods that are available
-    for all dataset classes
+    r"""Abstract base class that all datasets must subclass.
+
+    Implements methods that are available for all dataset classes.
 
     Parameters
     ----------
@@ -97,36 +96,26 @@ class BaseDataset(metaclass=DatasetMetaClass):
     dataset_file: Path
     """
 
-    url:          str
+    url: Union[str, None]
     # dataset:      Union[Series, DataFrame, DataArray, Dataset]
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
-
-    def __init__(self, url: str):
-        """Reinitialize dataset from another source
-
-        Parameters
-        ----------
-        url: str
-            http(s) to download the dataset from
-        """
-        super().__init__()
-        self.url = url
 
     # Abstract Methods - these MUST be implemented for any dataset subclass
 
     @classmethod
     @abstractmethod
     def clean(cls):
-        """Cleans an already downloaded raw dataset and stores it in hdf5 format
-        under the path specified in ``dataset_file``, which, by default is
+        r"""Clean an already downloaded raw dataset and stores it in hdf5 format.
+
+        The cleaned dataset will be stored under the path specified in `cls.dataset_file`.
 
         .. code-block:: python
 
             cls.dataset_file = DATASETDIR.joinpath(F"{cls.__name__}.h5")
 
-        .. warning::
+        .. note::
             Must be implemented for any dataset class!!
         """
         raise NotImplementedError
@@ -134,7 +123,8 @@ class BaseDataset(metaclass=DatasetMetaClass):
     @classmethod
     @abstractmethod
     def load(cls):
-        """Loads the dataset stored in hdf5 format in the path `cls.dataset_file`.
+        r"""Load the dataset stored in hdf5 format in the path `cls.dataset_file`.
+
         Use the following template for dataset classes:
 
         .. code-block:: python
@@ -145,7 +135,7 @@ class BaseDataset(metaclass=DatasetMetaClass):
                     ...
                     return dataset
 
-        .. warning::
+        .. note::
             Must be implemented for any dataset class!!
         """
         if not cls.dataset_file.exists():
@@ -160,22 +150,25 @@ class BaseDataset(metaclass=DatasetMetaClass):
     @property
     @cache
     def dataset(cls):
-        """Caches the dataset on first execution"""
+        r"""Cache the dataset on first execution."""
         return cls.load()
 
     @classmethod
     def download(cls):
-        """Downloads the dataset and stores it in `cls.rawdata_path`.
+        r"""Download the dataset and stores it in `cls.rawdata_path`.
+
         The default downloader checks if
 
-
-        - The url points to kaggle.com => uses `kaggle competition download`
-        - The url points to github.com => checkout directory with `svn`
-        - Else simply use `wget` to download the `cls.url` content,
-
+        1. The url points to kaggle.com => uses `kaggle competition download`
+        2. The url points to github.com => checkout directory with `svn`
+        3. Else simply use `wget` to download the `cls.url` content,
 
         Overwrite if you need custom downloader
         """
+        if cls.url is None:
+            logger.info("Dataset '%s' provides no url. Assumed offline", cls.__name__)
+            return
+
         dataset = cls.__name__
         parsed_url = urlparse(cls.url)
         logger.info("Obtaining dataset '%s' from %s", dataset, cls.url)
@@ -183,16 +176,22 @@ class BaseDataset(metaclass=DatasetMetaClass):
         if parsed_url.netloc == "www.kaggle.com":
             kaggle_name = Path(parsed_url.path).name
             subprocess.run(
-                F"kaggle competitions download -p {cls.rawdata_path} -c {kaggle_name}",
-                shell=True, check=True)
+                f"kaggle competitions download -p {cls.rawdata_path} -c {kaggle_name}",
+                shell=True,
+                check=True,
+            )
         elif parsed_url.netloc == "github.com":
             subprocess.run(
-                F"svn export {cls.url.replace('tree/master', 'trunk')} {cls.rawdata_path}",
-                shell=True, check=True)
+                f"svn export {cls.url.replace('tree/master', 'trunk')} {cls.rawdata_path}",
+                shell=True,
+                check=True,
+            )
         else:  # default parsing, including for UCI datasets
             cut_dirs = cls.url.count("/") - 3
             subprocess.run(
-                F"wget -r -np -nH -N --cut-dirs {cut_dirs} -P '{cls.rawdata_path}' {cls.url}",
-                shell=True, check=True)
+                f"wget -r -np -nH -N --cut-dirs {cut_dirs} -P '{cls.rawdata_path}' {cls.url}",
+                shell=True,
+                check=True,
+            )
 
         logger.info("Finished importing dataset '%s' from %s", dataset, cls.url)

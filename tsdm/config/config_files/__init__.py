@@ -1,3 +1,1 @@
-"""
-Configuration Files
-"""
+"""Configuration Files."""

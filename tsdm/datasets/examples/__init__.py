@@ -1,3 +1,1 @@
-"""
-Some tiny example datasets
-"""
+r"""Some tiny example datasets."""
