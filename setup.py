@@ -19,7 +19,7 @@ def _read(filename: str) -> str:
 
 setuptools.setup(
     name="tsdm",
-    version="0.0.8",
+    version="0.1.0",
     url="https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm",
     license="MIT",
     author="Randolf Scholz",
