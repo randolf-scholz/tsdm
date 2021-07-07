@@ -39,14 +39,17 @@ build:
     - pip install --upgrade pip virtualenv
     - virtualenv venv
     - source venv/bin/activate
+    - pip install --upgrade pip 
   script:
-    - pip install --upgrade wheel
+    # generate distribution
+    - pip install --upgrade wheel setuptools
     - python setup.py sdist bdist_wheel
+    # local installation
     - pip install --upgrade -r requirements.txt
     - pip install --upgrade -e .
   artifacts:
     paths:
-      - dist/*.whl
+      - dist/
 
 ###################
 # STAGE: ANALYSIS #
