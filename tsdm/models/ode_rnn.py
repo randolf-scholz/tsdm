@@ -64,11 +64,48 @@ def path_import(module_path: Path, module_name: str = None) -> ModuleType:
 class ODE_RNN:
     r"""TODO: add docstring.
 
-    Hyperparameters
-    ---------------
-    n_ode_gru_dims
-    n_layers
-    n_units
+    Parameters
+    ----------
+    batch-size: int, default=50
+        Batch size
+    classif_per_tp: bool, default=False
+    concat_mask: bool, default=True
+    device: torch.devive, default='cpu'
+    input_dim: int
+        dimensionality of input
+    lr: float, default=1e-2
+        Learn-rate
+    nonlinear: Callable, default=nn.Tanh,
+        Nonlinearity used
+    n_gru_units: int, default=100
+        Number of units per layer in each of GRU update networks
+    n_labels: int, default=1
+        Number of outputs
+    n_layers: int
+        Number of layers in ODE func in recognition ODE
+    n_ode_gru_dims: int
+        Size of the latent state
+    n_units: int, default=100
+        Number of units per layer in ODE func
+    obsrv_std: float, default=0.01
+        Measurement error
+    odeint_rtol: float, default=1e-3
+        Relative tolerance of ODE solver
+    odeint_atol: float, default=1e-4
+        Absolute tolerance of ODE solver
+    use_binary_classif: bool, default=False
+        train_classif_w_reconstr: bool, default=False
+
+    Keyword Args
+    ------------
+    Net_cfg: dict, default={}
+        Configuration parameters for the Net
+    ODEFunc_cfg: dict, default={}
+        Configuration parameters for the ODEFunc
+    DiffeqSolver_cfg: dict, default={}
+        Configuration parameters for the DiffeqSolver
+    ODE_RNN_cfg: dict, default={}
+        Configuration parameters for the ODE-RNN
     """
 
     url: str = r"https://github.com/YuliaRubanova/latent_ode.git"
