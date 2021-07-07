@@ -42,8 +42,8 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to dense triplet format.
 
     Given that `df` has $d$ columns
-    with $n$ rows containing $N\le n\cdot d$ observations (non-NaN entries),
-    the result is a $(N \times 3)$ array $(t_i, v_i, x_i)_{i=1:N}$
+    with $n$ rows containing $N ≤ n⋅d$ observations (non-NaN entries),
+    the result is a $(N×3)$ array $(t_i, v_i, x_i)_{i=1:N}$
 
     - $t_i$ timestamp (index)
     - $v_i$ indicator variable
@@ -90,8 +90,8 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
 def make_sparse_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to sparse triplet format.
 
-    Given that `df` has $d$ columns with $n$ rows containing $N\le n\cdot d$ observations
-    (non-NaN entries), the result is a $(N \times (d+1))$ array $(t_i, v_i, x_i)_{i=1:N}$
+    Given that `df` has $d$ columns with $n$ rows containing $N ≤ n⋅d$ observations
+    (non-NaN entries), the result is a $(N×(d+1))$ array $(t_i, v_i, x_i)_{i=1:N}$
 
     - $t_i$ timestamp (index)
     - $v_i$ one-hot encoded indicator variable
@@ -146,7 +146,7 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     m: :class:`pandas.DataFrame` ``[uint8]``
         mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
     d: :class:`pandas.DataFrame` ``[TimeDelta64]``
-        time delta  $\delta_t = (1-m_{t-1})\odot \delta_{t-1} + \Delta t$, with $\delta_0=0$
+        time delta  $δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt$, with $δ_0=0$
 
     References
     ----------
@@ -194,14 +194,14 @@ def time2int(ds: Series) -> Series:
     if np.issubdtype(ds.dtype, np.integer):
         return ds
     if np.issubdtype(ds.dtype, np.datetime64):
-        ds = ds.astype("datetime64[ns]")
+        ds = ds.view("datetime64[ns]")
         timedeltas = ds - ds[0]
     elif np.issubdtype(ds.dtype, np.timedelta64):
-        timedeltas = ds.astype("timedelta64[ns]")
+        timedeltas = ds.view("timedelta64[ns]")
     else:
         raise ValueError(f"{ds.dtype=} not supported")
 
-    common_interval = np.gcd.reduce(timedeltas.astype(int)).astype("timedelta64[ns]")
+    common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 
     return timedeltas // common_interval
 
@@ -220,13 +220,13 @@ def time2float(ds: Series) -> Series:
     if np.issubdtype(ds.dtype, np.integer):
         return ds
     if np.issubdtype(ds.dtype, np.datetime64):
-        ds = ds.astype("datetime64[ns]")
+        ds = ds.view("datetime64[ns]")
         timedeltas = ds - ds[0]
     elif np.issubdtype(ds.dtype, np.timedelta64):
-        timedeltas = ds.astype("timedelta64[ns]")
+        timedeltas = ds.view("timedelta64[ns]")
     else:
         raise ValueError(f"{ds.dtype=} not supported")
 
-    common_interval = np.gcd.reduce(timedeltas.astype(int)).astype("timedelta64[ns]")
+    common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 
     return (timedeltas / common_interval).astype(float)

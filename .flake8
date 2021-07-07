@@ -1,14 +1,18 @@
 [flake8]
-# A: builtins
-# B: bugbear
-# B9: bugbear future proof
+# ANN: Annotations
+# A:   builtins
+# B:   bugbear
+# B9:  bugbear future proof
 # BLK: black
-# C: mccabe / comprehensions
-# D: docstring
-# E: pycodestyle errors
-# F: pyflakes warnings
-# I: import-order 
-# W: pycodestyle warnings
+# C:   mccabe / comprehensions
+# D:   docstring
+# E:   pycodestyle errors
+# F:   pyflakes warnings
+# I:   import-order
+# M:   flake8 extension for mutable default arguments
+# RST: restructured text
+# W:   pycodestyle warnings
+# Y:   type hinting in stub files
 # select = B,B9,BLK,C,D,E,F,I,S,W
 
 max-line-length = 120
@@ -18,7 +22,6 @@ ignore =
     E226,       # missing whitespace around arithmetic operator
     E241,       # multiple spaces after ':'
     W503,       # line break before binary operator
-
 
 extend-ignore =
     # Google Python style is not RST until after processed by Napoleon
@@ -37,7 +40,6 @@ exclude =
     ./scripts,
     ./venv,
     *.pyi
-
 
 # Annotations plugin
 # Supress ANN200-level errors for functions that have no return (return None)

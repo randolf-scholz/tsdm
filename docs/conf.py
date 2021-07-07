@@ -81,8 +81,7 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-
-html_style = "css/my_theme.css"
+# html_style = "css/my_theme.css"
 
 # -- mathjax options ---------------------------------------------------------------------------------------------------
 
@@ -284,7 +283,7 @@ napoleon_type_aliases = {
 napoleon_attr_annotations = True
 # True to allow using PEP 526 attributes annotations in classes. If an attribute is documented in the docstring without
 # a type and has an annotation in the class body, that type is used.
-napoleon_custom_sections = []
+napoleon_custom_sections = [("Hyperparameters", "params_style")]
 # Add a list of custom sections to include, expanding the list of parsed sections. Defaults to None.
 
 # -- end of configuration ----------------------------------------------------------------------------------------------

@@ -31,7 +31,7 @@ def float_gcd(x: ArrayLike) -> float:
         np.float128: 113,
     }[x.dtype]
 
-    m, e = np.frexp(x)
+    _, e = np.frexp(x)
     min_exponent = int(np.min(e))
     fac = mantissa_bits - min_exponent
 
@@ -48,9 +48,7 @@ def float_gcd(x: ArrayLike) -> float:
     return gcd
 
 
-def approx_float_gcd(
-    x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08
-) -> float:
+def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> float:
     r"""Compute approximate GCD of multiple floats.
 
     Parameters

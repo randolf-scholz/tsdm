@@ -98,10 +98,10 @@ def relative_error(
     r"""Relative error, works with both :class:`~torch.Tensor` and :class:`~numpy.ndarray`.
 
     .. math::
-        \operatorname{r}(\hat x, x) = \tfrac{|\hat x - x|}{|x|+\epsilon}
+        r(x̂, x) = \tfrac{|x̂ - x|}{|x|+ϵ}
 
-    The tolerance parameter $\epsilon$ is determined automatically. By default,
-    $\epsilon=2^{-24}$ for single and $\epsilon=2^{-53}$ for double precision.
+    The tolerance parameter $ϵ$ is determined automatically. By default,
+    $ϵ=2^{-24}$ for single and $ϵ=2^{-53}$ for double precision.
 
     Parameters
     ----------
@@ -156,10 +156,10 @@ def scaled_norm(
     axis: Union[None, int, tuple[int, ...]] = None,
     keepdims: bool = False,
 ) -> Union[ArrayLike, Tensor]:
-    r"""Scaled $\ell^p$-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`.
+    r"""Scaled $ℓ^p$-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`.
 
     .. math::
-        \|x\|_p = \big(\tfrac{1}{n}\sum_{i=1}^n x_i^p \big)^{1/p}
+        ‖x‖_p = (⅟ₙ\sum_{i=1}^n x_i^p)^{1/p}
 
     Parameters
     ----------
