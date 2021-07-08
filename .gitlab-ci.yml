@@ -253,7 +253,7 @@ pages:
       python -m pybadges
       --left-text="docs"
       --right-text="$TEXT"
-      --right-color="$COLOR" p
+      --right-color="$COLOR"
       --whole-link="https://www.sphinx-doc.org"
       > badges/sphinx.svg
     # --logo="https://github.com/sphinx-doc/sphinx/blob/master/doc/_static/favicon.svg"
