@@ -7,6 +7,7 @@
 
 include MANIFEST.in
 include LICENSE
+include tsdm/VERSION
 
 include requirements.txt
 

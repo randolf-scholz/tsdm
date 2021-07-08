@@ -10,16 +10,26 @@ import re
 import setuptools
 
 
+NAME = "tsdm"
+
+with open(f"{NAME}/VERSION", "r") as file:
+    VERSION = file.read()
+
+if "CI_PIPELINE_IID" in os.environ:
+    BUILD_NUMBER = os.environ["CI_PIPELINE_IID"]
+    VERSION += f".dev{BUILD_NUMBER}"
+
+
 def _read(filename: str) -> str:
     filename = os.path.join(os.path.dirname(__file__), filename)
-    text_type = type(u"")
+    text_type = type("")
     with io.open(filename, mode="r", encoding="utf-8") as fd:
         return re.sub(text_type(r":[a-z]+:`~?(.*?)`"), text_type(r"``\1``"), fd.read())
 
 
 setuptools.setup(
-    name="tsdm",
-    version="0.1.0",
+    name=NAME,
+    version=VERSION,
     url="https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm",
     license="MIT",
     author="Randolf Scholz",

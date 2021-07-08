@@ -39,7 +39,20 @@ Constants
 Functions
 ---------
 """
+from pathlib import Path
 
-from tsdm import config, datasets, losses, models, util
+from tsdm import config, datasets, generators, losses, models, util
 
-__all__ = ["util", "datasets", "models", "config", "losses", "models"]
+
+with open(Path(__file__).parent.joinpath("VERSION"), "r") as file:
+    __version__ = file.read()
+
+__all__ = [
+    "__version__",
+    "config",
+    "datasets",
+    "generators",
+    "losses",
+    "models",
+    "util",
+]

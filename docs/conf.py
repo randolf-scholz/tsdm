@@ -28,7 +28,8 @@ project_copyright = "%(year)s, %(author)s" % {
 author = "Randolf Scholz"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.1"
+with open("../tsdm/VERSION", "r") as file:
+    release = file.read()
 
 
 # -- General configuration ---------------------------------------------------------------------------------------------

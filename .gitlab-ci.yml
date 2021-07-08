@@ -7,6 +7,7 @@ default:
 
 variables:
   MODULEDIR:      tsdm
+  MODULENAME:     tsdm
   TESTDIR:        test
   TWINE_PASSWORD: ${CI_JOB_TOKEN}
   TWINE_USERNAME: gitlab-ci-token
@@ -35,8 +36,12 @@ before_script:  # global before_script is run before each and every job.
 build:
   stage: build
   before_script:
+    # make directories
+    - mkdir badges
+    - mkdir reports
+    # python setup
     - python -V
-    - pip install --upgrade pip virtualenv
+    - pip install --upgrade pip virtualenv pybadges
     - virtualenv venv
     - source venv/bin/activate
     - pip install --upgrade pip
@@ -44,13 +49,38 @@ build:
     # generate distribution
     - pip install --upgrade wheel setuptools
     - python setup.py sdist bdist_wheel
-    # local installation
+    # install dependencies
     - pip install --upgrade -r requirements.txt
-    - pip install --upgrade -e .
+    # build and install package
+    - pip install dist/*.whl
     - pip list
+  after_script:
+    # python version
+    - python -m pybadges 
+      --left-text="python" 
+      --right-text="3.9" 
+      --whole-link="https://www.python.org/" 
+      --logo='https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/python.svg'
+      --embed-logo
+      "> badges/python.svg"
+    # pacakge version
+    - VERSION=$(cat "$MODULEDIR/VERSION")
+    - python -m pybadges 
+      --left-text="version" 
+      --right-text="$VERSION"
+      "> badges/version.svg"
+    # black code style
+    - python -m pybadges 
+      --left-text="code style" 
+      --right-text="black"
+      --right-color=0
+      --whole-link="https://github.com/psf/black" 
+      "> badges/black.svg"
   artifacts:
     paths:
       - dist/
+      - badges/
+      - reports/
 
 ###################
 # STAGE: ANALYSIS #
@@ -61,25 +91,55 @@ pylint:
   stage: analysis
   needs: [ "build" ]
   script:
-    - pip install --upgrade pylint pylint-exit anybadge
-    - mkdir pylint
-    - pylint $TESTDIR || pylint-exit $?
-    - pylint $MODULEDIR | tee ./pylint/pylint.log || pylint-exit $?
-    - PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
-    - anybadge --label=Pylint --file=pylint/pylint.svg --value=$PYLINT_SCORE 2=red 4=orange 8=yellow 10=green
-    - echo "Pylint score is $PYLINT_SCORE"
+    # install dependencies
+    - pip install --upgrade pylint pylint-gitlab
+    # generate reports
+    - pylint $MODULEDIR 
+      --exit-zero 
+      --load-plugins=pylint_gitlab 
+      --output-format=gitlab-codeclimate
+      "> reports/codeclimate.json"
+    # human readable
+    - pylint $TESTDIR --exit-zero --output-format=colorized
+    - pylint $MODULEDIR --exit-zero --output-format=colorized | tee pylint.log
+  after_script:
+    # generate badge
+    - SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.log)
+    - >
+      COLOR=$(python -c "print({0: 'black', 2:'red', 4:'orange', 6:'yellow', 8:'green'}[int($SCORE-$SCORE%2)])")
+    - python -m pybadges
+      --left-text="Pylint"
+      --right-text="$SCORE"
+      --right-color=$COLOR
+      --whole-link="https://github.com/PyCQA/pylint"
+      "> badges/pylint.svg"
   artifacts:
+    reports:
+      codequality: reports/codeclimate.json
     paths:
-      - ./pylint/
+      - badges/
 
 flake8:
   # see .flake8 for configuration
   stage: analysis
   needs: [ "build" ]
   script:
-    - pip install --upgrade flake8
+    - pip install --upgrade -r requirements-flake8.txt
     - flake8 $MODULEDIR
     - flake8 $TESTDIR
+  after_script:
+    # generate badge
+    - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
+    - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
+    - python -m pybadges 
+      --left-text="flake8" 
+      --right-text="$TEXT"
+      --right-color="$COLOR"
+      --whole-link="https://flake8.pycqa.org/en/latest/"
+      "> badges/flake8.svg"
+  artifacts:
+    paths:
+      - badges/
 
 mypy:
   # see .mpypy.ini for configuration
@@ -87,8 +147,25 @@ mypy:
   needs: [ "build" ]
   script:
     - pip install --upgrade mypy
-    - mypy --install-types --non-interactive $MODULEDIR
-    - mypy --install-types --non-interactive $TESTDIR
+    - mypy $MODULEDIR --install-types --non-interactive  --junit-xml reports/mypy.xml
+    - mypy $TESTDIR --install-types --non-interactive  --junit-xml reports/mypy_test.xml
+  after_script:
+    # generate badge
+    - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
+    - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
+    - python -m pybadges
+      --left-text="MyPy"
+      --right-text="$TEXT"
+      --right-color="$COLOR"
+      --whole-link="https://github.com/python/mypy"
+      "> badges/mypy.svg"
+      # --logo="http://mypy-lang.org/static/mypy_light.svg"
+      # --embed-logo
+  artifacts:
+    reports:
+      junit: reports/mypy*.xml
+    paths:
+      - badges/
 
 ###############
 # STAGE: TEST #
@@ -100,14 +177,28 @@ pytest:
   needs: [ "build" ]
   script:
     - pip install --upgrade pytest pytest-cov
-    - pytest --junitxml=report.xml --cov=$MODULEDIR $TESTDIR
-    - coverage
+    - pytest --junitxml=reports/pytest.xml --cov=$MODULEDIR $TESTDIR
+    - coverage xml -o reports/coverage.xml
+    - coverage report
+  after_script:
+    # generate badge
+    - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
+    - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
+    - python -m pybadges 
+      --left-text="pytest" 
+      --right-text="$TEXT"
+      --right-color="$COLOR"
+      --whole-link="https://pytest.org"
+      "> badges/pytest.svg"
+      # --logo="https://raw.githubusercontent.com/pytest-dev/pytest/main/doc/en/img/pytest_logo_curves.svg"
+      # --embed-logo
   artifacts:
     # https://software.ismll.uni-hildesheim.de/help/ci/unit_test_reports
-    when: on_success
     reports:
-      cobertura: coverage.xml
-      junit: report.xml
+      cobertura: reports/coverage.xml
+      junit: reports/pytest.xml
+    paths:
+      - badges/
 
 #################
 # STAGE: DEPLOY #
@@ -116,25 +207,55 @@ pytest:
 pypi:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
+  needs: [ "build" ]
   only: [ master ]
   allow_failure: true
   script:
-    - pip install --upgrade pip twine
+    - pip install --upgrade twine
     - twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+  after_script:
+    # generate badge
+    - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
+    - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
+    - python -m pybadges 
+      --left-text="PyPI" 
+      --right-text="$TEXT"
+      --right-color="$COLOR"
+      --whole-link="https://pypi.org/"
+      --logo="https://pypi.org/static/images/logo-small.svg"
+      --embed-logo
+      "> badges/pypi.svg"
+      # --logo="http://mypy-lang.org/static/mypy_light.svg"
+      # --embed-logo
+  artifacts:
+    paths:
+      - badges/
 
 pages:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
+  needs: [ "build" ]
   only: [ master ]
   allow_failure: true
-  needs: [ "build" ]
   script:
     - pip install --upgrade sphinx sphinx-rtd-theme sphinx-math-dollar
     - cd docs
     - make html
-  after_script:  # note: after_script resets working dir
-    - mv  docs/_build/html/  public/
+    - mv  _build/html/  ../public/
+  after_script:
+    # generate badge
+    - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
+    - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
+    - python -m pybadges
+      --left-text="docs"
+      --right-text="$TEXT"
+      --right-color="$COLOR"
+      --whole-link="https://www.sphinx-doc.org"
+      "> badges/sphinx.svg"
+      # --logo="https://github.com/sphinx-doc/sphinx/blob/master/doc/_static/favicon.svg"
+      # --embed-logo
   artifacts:
-    when: on_success
+    expire_in: 30 days
     paths:
-      - public
+      - public/
+      - badges/

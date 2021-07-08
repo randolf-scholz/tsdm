@@ -11,6 +11,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+badges/
 build/
 develop-eggs/
 dist/
@@ -21,6 +22,7 @@ lib/
 lib64/
 parts/
 sdist/
+reports/
 var/
 wheels/
 pip-wheel-metadata/
