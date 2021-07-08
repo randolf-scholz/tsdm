@@ -69,13 +69,6 @@ build:
       --left-text="version"
       --right-text="$(cat "$MODULEDIR/VERSION")"
       > badges/version.svg
-    - > # generate black code style badge
-      python -m pybadges
-      --left-text="code style"
-      --right-text="black"
-      --right-color="black"
-      --whole-link="https://github.com/psf/black" 
-      > badges/black.svg
   artifacts:
     paths:
       - dist/
@@ -139,6 +132,13 @@ flake8:
       --right-color="$COLOR"
       --whole-link="https://flake8.pycqa.org/en/latest/"
       > badges/flake8.svg
+    - > # generate black code style badge
+      python -m pybadges
+      --left-text="code style"
+      --right-text="black"
+      --right-color="black"
+      --whole-link="https://github.com/psf/black"
+      > badges/black.svg
   artifacts:
     paths:
       - badges/
