@@ -41,10 +41,10 @@ build:
     - mkdir reports
     # python setup
     - python -V
-    - pip install --upgrade pip virtualenv pybadges
+    - pip install --upgrade pip virtualenv
     - virtualenv venv
     - source venv/bin/activate
-    - pip install --upgrade pip
+    - pip install --upgrade pip pybadges
   script:
     # generate distribution
     - pip install --upgrade wheel setuptools
@@ -55,6 +55,7 @@ build:
     - pip install dist/*.whl
     - pip list
   after_script:
+    - source venv/bin/activate
     - > # generate python version badge
       python -m pybadges
       --left-text="python"
@@ -102,6 +103,7 @@ pylint:
     - pylint $TESTDIR --exit-zero --output-format=colorized
     - pylint $MODULEDIR --exit-zero --output-format=colorized | tee pylint.log
   after_script:
+    - source venv/bin/activate
     - SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.log)
     - >
       COLOR=$(python -c "print({0: 'black', 2:'red', 4:'orange', 6:'yellow', 8:'green'}[int($SCORE-$SCORE%2)])")
@@ -127,6 +129,7 @@ flake8:
     - flake8 $MODULEDIR
     - flake8 $TESTDIR
   after_script:
+    - source venv/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate flake8 badge
@@ -149,6 +152,7 @@ mypy:
     - mypy $MODULEDIR --install-types --non-interactive  --junit-xml reports/mypy.xml
     - mypy $TESTDIR --install-types --non-interactive  --junit-xml reports/mypy_test.xml
   after_script:
+    - source venv/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate mypy badge
@@ -180,6 +184,7 @@ pytest:
     - coverage xml -o reports/coverage.xml
     - coverage report
   after_script:
+    - source venv/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate pytest badge
@@ -213,6 +218,7 @@ pypi:
     - pip install --upgrade twine
     - twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
   after_script:
+    - source venv/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate pypi badge
@@ -240,6 +246,7 @@ pages:
     - make html
     - mv  _build/html/  ../public/
   after_script:
+    - source venv/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate sphinx badge
@@ -252,7 +259,6 @@ pages:
     # --logo="https://github.com/sphinx-doc/sphinx/blob/master/doc/_static/favicon.svg"
     # --embed-logo
   artifacts:
-    expire_in: 30 days
     paths:
       - public/
       - badges/
