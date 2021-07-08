@@ -98,7 +98,7 @@ pylint:
       --exit-zero 
       --load-plugins=pylint_gitlab 
       --output-format=gitlab-codeclimate
-      "> reports/codeclimate.json"
+      > reports/codeclimate.json
     # human readable
     - pylint $TESTDIR --exit-zero --output-format=colorized
     - pylint $MODULEDIR --exit-zero --output-format=colorized | tee pylint.log
@@ -227,7 +227,7 @@ pypi:
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://pypi.org/"
-      "> badges/pypi.svg"
+      > badges/pypi.svg
     # --logo="http://mypy-lang.org/static/mypy_light.svg"
     # --embed-logo
   artifacts:
@@ -255,7 +255,7 @@ pages:
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://www.sphinx-doc.org"
-      "> badges/sphinx.svg"
+      > badges/sphinx.svg
     # --logo="https://github.com/sphinx-doc/sphinx/blob/master/doc/_static/favicon.svg"
     # --embed-logo
   artifacts:
