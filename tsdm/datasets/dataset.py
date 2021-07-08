@@ -21,7 +21,7 @@ Basic Usage
 
 import logging
 import subprocess
-from abc import ABCMeta, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from functools import cache
 from pathlib import Path
 from typing import Union
@@ -55,14 +55,6 @@ class DatasetMetaClass(ABCMeta):
     dataset_file: Path
     """
 
-    # pylint: disable=no-value-for-parameter
-    # see https://stackoverflow.com/q/47615318/9318372
-    url: Union[str, None]
-    dataset: Union[Series, DataFrame, DataArray, Dataset]
-    rawdata_path: Path
-    dataset_path: Path
-    dataset_file: Path
-
     def __init__(cls, *args, **kwargs):
         r"""Initialize the paths such that every dataset class has them available."""
         super().__init__(*args, **kwargs)
@@ -72,16 +64,37 @@ class DatasetMetaClass(ABCMeta):
         cls.dataset_file = DATASETDIR.joinpath(cls.__name__ + ".h5")
         cls.dataset_path.mkdir(parents=True, exist_ok=True)
 
+    def __dir__(cls):
+        r"""Mannually adding `dataset`, otherwise missing."""
+        # TODO: make bug report, why does dataset have to be added manually?
+        return list(super().__dir__()) + ["dataset"]
 
-class BaseDataset(metaclass=DatasetMetaClass):
+    @property  # type: ignore
+    @cache
+    @abstractmethod
+    def dataset(cls):
+        r"""Store cached version of dataset."""
+        # What is the best practice for metaclass methods that call each other?
+        # https://stackoverflow.com/q/47615318/9318372
+        return cls.load()  # pylint: disable=E1120
+
+    @abstractmethod
+    def load(cls):
+        r"""Load the dataset."""
+
+    @abstractmethod
+    def download(cls):
+        r"""Download the dataset."""
+
+    @abstractmethod
+    def clean(cls):
+        r"""Clean the dataset."""
+
+
+class BaseDataset(ABC, metaclass=DatasetMetaClass):
     r"""Abstract base class that all datasets must subclass.
 
     Implements methods that are available for all dataset classes.
-
-    Parameters
-    ----------
-    url: str
-        http(s) to download the dataset from
 
     Attributes
     ----------
@@ -96,13 +109,15 @@ class BaseDataset(metaclass=DatasetMetaClass):
     dataset_file: Path
     """
 
-    url: Union[str, None]
-    # dataset:      Union[Series, DataFrame, DataArray, Dataset]
+    url: Union[str, None] = None
+    dataset: Union[Series, DataFrame, DataArray, Dataset]
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
 
-    # Abstract Methods - these MUST be implemented for any dataset subclass
+    def __new__(cls):
+        r"""Raise error since datasets are static."""
+        raise NotImplementedError(f"{cls.__name__} is a static class")
 
     @classmethod
     @abstractmethod
@@ -141,17 +156,6 @@ class BaseDataset(metaclass=DatasetMetaClass):
         if not cls.dataset_file.exists():
             cls.download()
             cls.clean()
-
-    # other class methods
-
-    # todo: remove "type ignore" once fixed in mypy
-    # noinspection PyPropertyDefinition
-    @classmethod  # type: ignore
-    @property
-    @cache
-    def dataset(cls):
-        r"""Cache the dataset on first execution."""
-        return cls.load()
 
     @classmethod
     def download(cls):

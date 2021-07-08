@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def test_caching():
-    """Checks if dataset caching works (should be way faster)."""
+    """Check if dataset caching works (should be way faster)."""
     # NOTE: this test must be executed first!!!
 
     ds = InSilicoData
@@ -26,7 +26,7 @@ def test_caching():
 
 
 def test_attributes():
-    r"""Tests if all attributes are present."""
+    r"""Test if all attributes are present."""
     ds = InSilicoData
     base_attrs = copy(set(dir(ds)))
     attrs = {
@@ -40,16 +40,8 @@ def test_attributes():
         "url",
     }
 
-    assert attrs <= base_attrs
+    assert attrs <= base_attrs, f"{attrs - base_attrs} missing!"
     assert isinstance(ds.dataset, dict)
-
-    ds = InSilicoData()
-    instance_attrs = copy(set(dir(ds)))
-
-    assert attrs <= instance_attrs
-    assert isinstance(ds.dataset, dict)
-
-    assert base_attrs == instance_attrs
 
 
 if __name__ == "__main__":
