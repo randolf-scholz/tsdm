@@ -55,27 +55,26 @@ build:
     - pip install dist/*.whl
     - pip list
   after_script:
-    # python version
-    - python -m pybadges 
-      --left-text="python" 
-      --right-text="3.9" 
-      --whole-link="https://www.python.org/" 
-      --logo='https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/python.svg'
+    - > # generate python version badge
+      python -m pybadges
+      --left-text="python"
+      --right-text="3.9"
+      --whole-link="https://www.python.org/"
+      --logo="https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/python.svg"
       --embed-logo
-      "> badges/python.svg"
-    # pacakge version
-    - VERSION=$(cat "$MODULEDIR/VERSION")
-    - python -m pybadges 
-      --left-text="version" 
-      --right-text="$VERSION"
-      "> badges/version.svg"
-    # black code style
-    - python -m pybadges 
-      --left-text="code style" 
+      > badges/python.svg
+    - > # generate package version badge
+      python -m pybadges
+      --left-text="version"
+      --right-text="$$(cat "$MODULEDIR/VERSION")"
+      > badges/version.svg
+    - > # generate black code style badge
+      python -m pybadges
+      --left-text="code style"
       --right-text="black"
-      --right-color=0
+      --right-color="black"
       --whole-link="https://github.com/psf/black" 
-      "> badges/black.svg"
+      > badges/black.svg
   artifacts:
     paths:
       - dist/
@@ -103,16 +102,16 @@ pylint:
     - pylint $TESTDIR --exit-zero --output-format=colorized
     - pylint $MODULEDIR --exit-zero --output-format=colorized | tee pylint.log
   after_script:
-    # generate badge
     - SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.log)
     - >
       COLOR=$(python -c "print({0: 'black', 2:'red', 4:'orange', 6:'yellow', 8:'green'}[int($SCORE-$SCORE%2)])")
-    - python -m pybadges
-      --left-text="Pylint"
+    - > # generate pylint badge
+      python -m pybadges
+      --left-text="PyLint"
       --right-text="$SCORE"
       --right-color=$COLOR
       --whole-link="https://github.com/PyCQA/pylint"
-      "> badges/pylint.svg"
+      > badges/pylint.svg
   artifacts:
     reports:
       codequality: reports/codeclimate.json
@@ -128,15 +127,15 @@ flake8:
     - flake8 $MODULEDIR
     - flake8 $TESTDIR
   after_script:
-    # generate badge
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
-    - python -m pybadges 
-      --left-text="flake8" 
+    - > # generate flake8 badge
+      python -m pybadges
+      --left-text="flake8"
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://flake8.pycqa.org/en/latest/"
-      "> badges/flake8.svg"
+      > badges/flake8.svg
   artifacts:
     paths:
       - badges/
@@ -150,17 +149,17 @@ mypy:
     - mypy $MODULEDIR --install-types --non-interactive  --junit-xml reports/mypy.xml
     - mypy $TESTDIR --install-types --non-interactive  --junit-xml reports/mypy_test.xml
   after_script:
-    # generate badge
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
-    - python -m pybadges
+    - > # generate mypy badge
+      python -m pybadges
       --left-text="MyPy"
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://github.com/python/mypy"
-      "> badges/mypy.svg"
-      # --logo="http://mypy-lang.org/static/mypy_light.svg"
-      # --embed-logo
+      > badges/mypy.svg
+    # --logo="http://mypy-lang.org/static/mypy_light.svg"
+    # --embed-logo
   artifacts:
     reports:
       junit: reports/mypy*.xml
@@ -181,17 +180,17 @@ pytest:
     - coverage xml -o reports/coverage.xml
     - coverage report
   after_script:
-    # generate badge
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
-    - python -m pybadges 
-      --left-text="pytest" 
+    - > # generate pytest badge
+      python -m pybadges
+      --left-text="pytest"
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://pytest.org"
-      "> badges/pytest.svg"
-      # --logo="https://raw.githubusercontent.com/pytest-dev/pytest/main/doc/en/img/pytest_logo_curves.svg"
-      # --embed-logo
+      > badges/pytest.svg
+    # --logo="https://raw.githubusercontent.com/pytest-dev/pytest/main/doc/en/img/pytest_logo_curves.svg"
+    # --embed-logo
   artifacts:
     # https://software.ismll.uni-hildesheim.de/help/ci/unit_test_reports
     reports:
@@ -214,19 +213,17 @@ pypi:
     - pip install --upgrade twine
     - twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
   after_script:
-    # generate badge
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
-    - python -m pybadges 
-      --left-text="PyPI" 
+    - > # generate pypi badge
+      python -m pybadges
+      --left-text="PyPI"
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://pypi.org/"
-      --logo="https://pypi.org/static/images/logo-small.svg"
-      --embed-logo
       "> badges/pypi.svg"
-      # --logo="http://mypy-lang.org/static/mypy_light.svg"
-      # --embed-logo
+    # --logo="http://mypy-lang.org/static/mypy_light.svg"
+    # --embed-logo
   artifacts:
     paths:
       - badges/
@@ -243,17 +240,17 @@ pages:
     - make html
     - mv  _build/html/  ../public/
   after_script:
-    # generate badge
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
-    - python -m pybadges
+    - > # generate sphinx badge
+      python -m pybadges
       --left-text="docs"
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://www.sphinx-doc.org"
       "> badges/sphinx.svg"
-      # --logo="https://github.com/sphinx-doc/sphinx/blob/master/doc/_static/favicon.svg"
-      # --embed-logo
+    # --logo="https://github.com/sphinx-doc/sphinx/blob/master/doc/_static/favicon.svg"
+    # --embed-logo
   artifacts:
     expire_in: 30 days
     paths:
