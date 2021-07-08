@@ -67,7 +67,7 @@ build:
     - > # generate package version badge
       python -m pybadges
       --left-text="version"
-      --right-text="$$(cat "$MODULEDIR/VERSION")"
+      --right-text="$(cat "$MODULEDIR/VERSION")"
       > badges/version.svg
     - > # generate black code style badge
       python -m pybadges
@@ -253,7 +253,7 @@ pages:
       python -m pybadges
       --left-text="docs"
       --right-text="$TEXT"
-      --right-color="$COLOR"
+      --right-color="$COLOR" p
       --whole-link="https://www.sphinx-doc.org"
       > badges/sphinx.svg
     # --logo="https://github.com/sphinx-doc/sphinx/blob/master/doc/_static/favicon.svg"
