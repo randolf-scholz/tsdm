@@ -108,9 +108,9 @@ class ODE_RNN:
         Configuration parameters for the ODE-RNN
     """
 
-    url: str = r"https://github.com/YuliaRubanova/latent_ode.git"
     model: type
     model_path: Path
+    url: str = r"https://github.com/YuliaRubanova/latent_ode.git"
 
     HP: dict = {
         # Size of the latent state

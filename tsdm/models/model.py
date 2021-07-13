@@ -25,10 +25,6 @@ class BaseModel:
         r"""TODO: add docstring."""
         raise NotImplementedError
 
-    def predict(self, *inputs):
-        r"""Synonym for forward and __call__."""
-        raise NotImplementedError
-
     @classmethod
     def download(cls):
         r"""Download model (e.g. via git clone)."""
@@ -52,3 +48,7 @@ class BaseModel:
             # subprocess.run(F"git -C {model_path} pull", shell=True)
 
         logger.info("Finished importing model '%s' from %s", cls.name, cls.url)
+
+    def predict(self, *inputs):
+        r"""Synonym for forward and __call__."""
+        raise NotImplementedError

@@ -3,7 +3,7 @@ r"""Testing of Electricity dataset, as a token for the whole BaseDataset archite
 import logging
 from copy import copy
 
-from tsdm.datasets import InSilicoData
+from tsdm.datasets import InSilicoData, BaseDataset
 from tsdm.util import timefun
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,13 @@ def test_attributes():
 
     assert attrs <= base_attrs, f"{attrs - base_attrs} missing!"
     assert isinstance(ds.dataset, dict)
+    assert issubclass(InSilicoData, BaseDataset)
+    # assert isinstance(InSilicoData(), BaseDataset)
+
+    assert hasattr(InSilicoData, 'dataset')
+    assert hasattr(InSilicoData, 'load')
+    assert hasattr(InSilicoData, 'download')
+    assert hasattr(InSilicoData, 'clean')
 
 
 if __name__ == "__main__":
