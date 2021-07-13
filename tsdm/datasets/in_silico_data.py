@@ -16,7 +16,7 @@ from .examples import in_silico
 logger = logging.getLogger(__name__)
 
 
-class InSilicoData(BaseDataset, metaclass=DatasetMetaClass):
+class InSilicoData(BaseDataset):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+

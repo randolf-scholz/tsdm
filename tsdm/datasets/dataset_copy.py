@@ -65,10 +65,9 @@ class DatasetMetaClass(ABCMeta):
         cls.dataset_path.mkdir(parents=True, exist_ok=True)
 
     def __dir__(cls):
-        r"""Manually adding `dataset`, otherwise missing."""
+        r"""Mannually adding `dataset`, otherwise missing."""
         # TODO: make bug report, why does dataset have to be added manually?
-        # TODO: make bug report, adding this causes sphinx to execute cached property,
-        # for some reason, adding it to the base class is fine, but the metaclass causes problems
+        # TODO: make bug report, adding this causes sphinx to execute cached property
         return list(super().__dir__()) + ["dataset"]
 
     @property  # type: ignore
@@ -120,20 +119,6 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     def __new__(cls):
         r"""Raise error since datasets are static."""
         raise NotImplementedError(f"{cls.__name__} is a static class")
-
-    def __dir__(self):
-        r"""Manually adding `dataset`, otherwise missing."""
-        # TODO: make bug report, why does dataset have to be added manually?
-        # TODO: make bug report, adding this causes sphinx to execute cached property,
-        # for some reason, adding it to the base class is fine, but the metaclass causes problems
-        return list(super().__dir__()) + ["dataset"]
-
-    @property  # type: ignore
-    def dataset(cls):
-        r"""Store cached version of dataset."""
-        # What is the best practice for metaclass methods that call each other?
-        # https://stackoverflow.com/q/47615318/9318372
-        return cls.load()  # pylint: disable=E1120
 
     @classmethod
     @abstractmethod
