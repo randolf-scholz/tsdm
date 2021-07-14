@@ -4,11 +4,9 @@ In silico experiments
 
 import logging
 from importlib import resources
-from pathlib import Path
 
 import h5py
 import pandas as pd
-from pandas import DataFrame
 
 from .dataset import BaseDataset
 from .examples import in_silico
