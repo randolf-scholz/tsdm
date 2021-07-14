@@ -14,7 +14,7 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 import datetime
 import os
 import sys
-
+os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
 
 # -- Project information -----------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ autosummary_generate_overwrite = True
 autosummary_mock_imports = []
 # This value contains a list of modules to be mocked up. See autodoc_mock_imports for more details.
 # It defaults to autodoc_mock_imports.
-autosummary_imported_members = False
+autosummary_imported_members = True
 # A boolean flag indicating whether to document classes and functions imported in modules. Default is False
 autosummary_filename_map = {}
 # A dict mapping object names to filenames. This is necessary to avoid filename conflicts where multiple objects
@@ -284,7 +284,7 @@ napoleon_type_aliases = {
 napoleon_attr_annotations = True
 # True to allow using PEP 526 attributes annotations in classes. If an attribute is documented in the docstring without
 # a type and has an annotation in the class body, that type is used.
-napoleon_custom_sections = [("Hyperparameters", "params_style")]
+napoleon_custom_sections = []
 # Add a list of custom sections to include, expanding the list of parsed sections. Defaults to None.
 
 # -- end of configuration ----------------------------------------------------------------------------------------------

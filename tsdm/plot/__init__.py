@@ -6,7 +6,7 @@ tsdm.plot
 
 import matplotlib
 
-from .plotting import shared_grid_plot, visualize_distribution
+from tsdm.plot.plotting import shared_grid_plot, visualize_distribution
 
 matplotlib.rcParams["text.usetex"] = True
 matplotlib.rcParams["text.latex.preamble"] = r"\usepackage{{amsmath}}"
