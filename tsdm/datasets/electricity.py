@@ -1,4 +1,5 @@
-r"""
+r"""This data set contains electricity consumption of 370 points/clients. 
+
 ElectricityLoadDiagrams20112014 Data Set
 ========================================
 
@@ -44,13 +45,14 @@ from zipfile import ZipFile
 import numpy as np
 from pandas import DataFrame, read_csv, read_hdf
 
-from .dataset import BaseDataset, DatasetMetaClass
+from .dataset import BaseDataset
 
 logger = logging.getLogger(__name__)
 
 
-class Electricity(BaseDataset, metaclass=DatasetMetaClass):
-    r"""
+class Electricity(BaseDataset):
+    r"""This data set contains electricity consumption of 370 points/clients.
+
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
     | **Data Set Characteristics:**  | Time-Series            | **Number of Instances:**  | 370    | **Area:**               | Computer   |
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+

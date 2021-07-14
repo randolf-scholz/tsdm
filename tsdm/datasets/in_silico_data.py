@@ -10,7 +10,7 @@ import h5py
 import pandas as pd
 from pandas import DataFrame
 
-from .dataset import BaseDataset, DatasetMetaClass
+from .dataset import BaseDataset
 from .examples import in_silico
 
 logger = logging.getLogger(__name__)
@@ -29,12 +29,6 @@ class InSilicoData(BaseDataset):
     | missing | -       | 99%     | 99%       | 99%     | 12%   | 99%     | 93%       | -    |
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """  # pylint: disable=line-too-long # noqa
-
-    url = None
-    dataset: dict[str, DataFrame]
-    rawdata_path: Path
-    dataset_path: Path
-    dataset_file: Path
 
     @classmethod
     def clean(cls):
