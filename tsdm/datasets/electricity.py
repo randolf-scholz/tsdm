@@ -1,4 +1,4 @@
-r"""This data set contains electricity consumption of 370 points/clients. 
+r"""This data set contains electricity consumption of 370 points/clients.
 
 ElectricityLoadDiagrams20112014 Data Set
 ========================================

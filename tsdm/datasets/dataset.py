@@ -53,12 +53,6 @@ class DatasetMetaClass(ABCMeta):
     dataset_file: Path
     """
 
-    def __init__(cls, *args, **kwargs):
-        r"""Initialize the paths such that every dataset class has them available."""
-        super().__init__(*args, **kwargs)
-        cls.rawdata_path.mkdir(parents=True, exist_ok=True)
-        cls.dataset_path.mkdir(parents=True, exist_ok=True)
-
     @property  # type: ignore
     @cache
     def dataset(cls):
@@ -74,13 +68,15 @@ class DatasetMetaClass(ABCMeta):
         r"""Location where the raw data is stored."""
         if os.environ.get("GENERATING_DOCS", False):
             return Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+        RAWDATADIR.mkdir(parents=True, exist_ok=True)
         return RAWDATADIR
 
     @property
     def dataset_path(cls):
         r"""Location where the pre-processed data is stored."""
         if os.environ.get("GENERATING_DOCS", False):
-            return Path(f"~/.tsdm/datasets/")
+            return Path("~/.tsdm/datasets/")
+        DATASETDIR.mkdir(parents=True, exist_ok=True)
         return DATASETDIR
 
     @property
@@ -112,7 +108,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
 
     url: Union[str, None] = None
     """a http address from where the dataset can be downloaded"""
-    dataset = classmethod(DatasetMetaClass.dataset)                  # type: ignore
+    dataset = classmethod(DatasetMetaClass.dataset)  # type: ignore
     """The dataset cached"""
     rawdata_path: Path = classmethod(DatasetMetaClass.rawdata_path)  # type: ignore
     """location where the raw data is stored"""

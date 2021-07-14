@@ -9,7 +9,7 @@ Submodules
 ----------
 
 .. autosummary::
-    :toctree:
+    :toctree: _autosummary
     :template: module.rst
     :recursive:
 
