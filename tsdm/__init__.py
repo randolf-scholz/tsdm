@@ -41,11 +41,12 @@ Functions
 """
 from pathlib import Path
 
-from tsdm import config, datasets, generators, losses, models, util
-
+from tsdm import config, datasets, generators, losses, models, util, plot
 
 with open(Path(__file__).parent.joinpath("VERSION"), "r") as file:
     __version__ = file.read()
+
+del Path
 
 __all__ = [
     "__version__",
@@ -55,4 +56,5 @@ __all__ = [
     "losses",
     "models",
     "util",
+    "plot",
 ]

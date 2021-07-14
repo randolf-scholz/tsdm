@@ -4,7 +4,7 @@ tsdm.losses
 ===========
 """
 
-from .functional import nd, nrmse
-from .module import ND, NRMSE
+from tsdm.losses.functional import nd, nrmse
+from tsdm.losses.module import ND, NRMSE
 
 __all__ = ["nd", "nrmse", "ND", "NRMSE"]

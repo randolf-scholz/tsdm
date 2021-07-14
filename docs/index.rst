@@ -10,14 +10,10 @@ Submodules
 
 .. autosummary::
     :toctree:
-    :template: mytemplate.rst
+    :template: module.rst
+    :recursive:
 
-    tsdm.util
-    tsdm.plot
-    tsdm.datasets
-    tsdm.models
-    tsdm.losses
-
+    tsdm
 
 .. toctree::
 

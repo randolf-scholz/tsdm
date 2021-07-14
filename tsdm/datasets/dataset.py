@@ -19,12 +19,13 @@ Basic Usage
    x = Electricity.dataset
 """
 
+import os
 import logging
 import subprocess
 from abc import ABC, ABCMeta, abstractmethod
-from functools import cache
+from functools import cache, wraps
 from pathlib import Path
-from typing import Union
+from typing import Union, Callable
 from urllib.parse import urlparse
 
 from pandas import DataFrame, Series
@@ -33,6 +34,17 @@ from xarray import DataArray, Dataset
 from tsdm.config import DATASETDIR, RAWDATADIR
 
 logger = logging.getLogger(__name__)
+
+
+def docstring(value):
+    def _docstring(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if os.environ.get("GENERATING_DOCS", False):
+                return value
+            return func(*args, **kwargs)
+        return wrapper
+    return _docstring
 
 
 class DatasetMetaClass(ABCMeta):
@@ -61,36 +73,40 @@ class DatasetMetaClass(ABCMeta):
         cls.rawdata_path = RAWDATADIR.joinpath(cls.__name__)
         cls.rawdata_path.mkdir(parents=True, exist_ok=True)
         cls.dataset_path = DATASETDIR
-        cls.dataset_file = DATASETDIR.joinpath(cls.__name__ + ".h5")
         cls.dataset_path.mkdir(parents=True, exist_ok=True)
+        cls.dataset_file = DATASETDIR.joinpath(cls.__name__ + ".h5")
 
-    def __dir__(cls):
-        r"""Manually adding `dataset`, otherwise missing."""
-        # TODO: make bug report, why does dataset have to be added manually?
-        # TODO: make bug report, adding this causes sphinx to execute cached property,
-        # for some reason, adding it to the base class is fine, but the metaclass causes problems
-        return list(super().__dir__()) + ["dataset"]
+    # def __dir__(cls):
+    #     r"""Manually adding `dataset`, otherwise missing."""
+    #     # TODO: make bug report, why does dataset have to be added manually?
+    #     # TODO: make bug report, adding this causes sphinx to execute cached property,
+    #     # for some reason, adding it to the base class is fine, but the metaclass causes problems
+    #     return list(super().__dir__()) + ["dataset"]
 
     @property  # type: ignore
     @cache
-    @abstractmethod
+    @docstring("the dataset")
     def dataset(cls):
         r"""Store cached version of dataset."""
         # What is the best practice for metaclass methods that call each other?
         # https://stackoverflow.com/q/47615318/9318372
         return cls.load()  # pylint: disable=E1120
 
-    @abstractmethod
-    def load(cls):
-        r"""Load the dataset."""
 
-    @abstractmethod
-    def download(cls):
-        r"""Download the dataset."""
 
-    @abstractmethod
-    def clean(cls):
-        r"""Clean the dataset."""
+
+    #
+    # @abstractmethod
+    # def load(cls):
+    #     r"""Load the dataset."""
+    #
+    # @abstractmethod
+    # def download(cls):
+    #     r"""Download the dataset."""
+    #
+    # @abstractmethod
+    # def clean(cls):
+    #     r"""Clean the dataset."""
 
 
 class BaseDataset(ABC, metaclass=DatasetMetaClass):
@@ -98,42 +114,39 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
 
     Implements methods that are available for all dataset classes.
 
-    Attributes
-    ----------
-    url: str
-        a http address from where the dataset can be downloaded
-    dataset: Series, DataFrame, DataArray, Dataset
-        internal storage of the dataset
-    rawdata_path: Path
-        location where the raw data is stored
-    dataset_path: Path
-        location where the pre-processed data is stored
-    dataset_file: Path
     """
 
     url: Union[str, None] = None
-    dataset: Union[Series, DataFrame, DataArray, Dataset]
+    """a http address from where the dataset can be downloaded"""
+    dataset: Union[Series, DataFrame, DataArray, Dataset] = classmethod(DatasetMetaClass.dataset)
+    """The dataset cached"""
     rawdata_path: Path
+    """location where the raw data is stored"""
     dataset_path: Path
+    """location where the pre-processed data is stored"""
     dataset_file: Path
+    """The dataset file"""
 
-    def __new__(cls):
-        r"""Raise error since datasets are static."""
-        raise NotImplementedError(f"{cls.__name__} is a static class")
+    # def __new__(cls):
+    #     r"""Raise error since datasets are static."""
+    #     raise NotImplementedError(f"{cls.__name__} is a static class")
 
-    def __dir__(self):
-        r"""Manually adding `dataset`, otherwise missing."""
-        # TODO: make bug report, why does dataset have to be added manually?
-        # TODO: make bug report, adding this causes sphinx to execute cached property,
-        # for some reason, adding it to the base class is fine, but the metaclass causes problems
-        return list(super().__dir__()) + ["dataset"]
+    # def __dir__(self):
+    #     r"""Manually adding `dataset`, otherwise missing."""
+    #     # TODO: make bug report, why does dataset have to be added manually?
+    #     # TODO: make bug report, adding this causes sphinx to execute cached property,
+    #     # for some reason, adding it to the base class is fine, but the metaclass causes problems
+    #     return list(super().__dir__()) + ["dataset"]
 
-    @property  # type: ignore
-    def dataset(cls):
-        r"""Store cached version of dataset."""
-        # What is the best practice for metaclass methods that call each other?
-        # https://stackoverflow.com/q/47615318/9318372
-        return cls.load()  # pylint: disable=E1120
+    # @classmethod
+    # @property  # type: ignore
+    # @cache
+    # @docstring("the dataset")
+    # def dataset(cls):
+    #     r"""Store cached version of dataset."""
+    #     # What is the best practice for metaclass methods that call each other?
+    #     # https://stackoverflow.com/q/47615318/9318372
+    #     return cls.load()  # pylint: disable=E1120
 
     @classmethod
     @abstractmethod
@@ -149,7 +162,6 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         .. note::
             Must be implemented for any dataset class!!
         """
-        raise NotImplementedError
 
     @classmethod
     @abstractmethod
