@@ -45,10 +45,10 @@ def test_attributes():
     assert issubclass(InSilicoData, BaseDataset)
     # assert isinstance(InSilicoData(), BaseDataset)
 
-    assert hasattr(InSilicoData, 'dataset')
-    assert hasattr(InSilicoData, 'load')
-    assert hasattr(InSilicoData, 'download')
-    assert hasattr(InSilicoData, 'clean')
+    assert hasattr(InSilicoData, "dataset")
+    assert hasattr(InSilicoData, "load")
+    assert hasattr(InSilicoData, "download")
+    assert hasattr(InSilicoData, "clean")
 
 
 if __name__ == "__main__":

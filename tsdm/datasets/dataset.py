@@ -23,28 +23,14 @@ import os
 import logging
 import subprocess
 from abc import ABC, ABCMeta, abstractmethod
-from functools import cache, wraps
+from functools import cache
 from pathlib import Path
-from typing import Union, Callable
+from typing import Union
 from urllib.parse import urlparse
-
-from pandas import DataFrame, Series
-from xarray import DataArray, Dataset
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 
 logger = logging.getLogger(__name__)
-
-
-def docstring(value):
-    def _docstring(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if os.environ.get("GENERATING_DOCS", False):
-                return value
-            return func(*args, **kwargs)
-        return wrapper
-    return _docstring
 
 
 class DatasetMetaClass(ABCMeta):
@@ -70,43 +56,51 @@ class DatasetMetaClass(ABCMeta):
     def __init__(cls, *args, **kwargs):
         r"""Initialize the paths such that every dataset class has them available."""
         super().__init__(*args, **kwargs)
-        cls.rawdata_path = RAWDATADIR.joinpath(cls.__name__)
         cls.rawdata_path.mkdir(parents=True, exist_ok=True)
-        cls.dataset_path = DATASETDIR
         cls.dataset_path.mkdir(parents=True, exist_ok=True)
-        cls.dataset_file = DATASETDIR.joinpath(cls.__name__ + ".h5")
-
-    # def __dir__(cls):
-    #     r"""Manually adding `dataset`, otherwise missing."""
-    #     # TODO: make bug report, why does dataset have to be added manually?
-    #     # TODO: make bug report, adding this causes sphinx to execute cached property,
-    #     # for some reason, adding it to the base class is fine, but the metaclass causes problems
-    #     return list(super().__dir__()) + ["dataset"]
 
     @property  # type: ignore
     @cache
-    @docstring("the dataset")
     def dataset(cls):
         r"""Store cached version of dataset."""
         # What is the best practice for metaclass methods that call each other?
         # https://stackoverflow.com/q/47615318/9318372
+        if os.environ.get("GENERATING_DOCS", False):
+            return "the dataset"
         return cls.load()  # pylint: disable=E1120
 
+    @property
+    def rawdata_path(cls):
+        r"""Location where the raw data is stored."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+        return RAWDATADIR
 
+    @property
+    def dataset_path(cls):
+        r"""Location where the pre-processed data is stored."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/")
+        return DATASETDIR
 
+    @property
+    def dataset_file(cls):
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}.h5")
+        return DATASETDIR.joinpath(f"{cls.__name__}.h5")
 
-    #
-    # @abstractmethod
-    # def load(cls):
-    #     r"""Load the dataset."""
-    #
-    # @abstractmethod
-    # def download(cls):
-    #     r"""Download the dataset."""
-    #
-    # @abstractmethod
-    # def clean(cls):
-    #     r"""Clean the dataset."""
+    @abstractmethod
+    def load(cls):
+        r"""Load the dataset."""
+
+    @abstractmethod
+    def download(cls):
+        r"""Download the dataset."""
+
+    @abstractmethod
+    def clean(cls):
+        r"""Clean the dataset."""
 
 
 class BaseDataset(ABC, metaclass=DatasetMetaClass):
@@ -118,35 +112,14 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
 
     url: Union[str, None] = None
     """a http address from where the dataset can be downloaded"""
-    dataset: Union[Series, DataFrame, DataArray, Dataset] = classmethod(DatasetMetaClass.dataset)
+    dataset = classmethod(DatasetMetaClass.dataset)                  # type: ignore
     """The dataset cached"""
-    rawdata_path: Path
+    rawdata_path: Path = classmethod(DatasetMetaClass.rawdata_path)  # type: ignore
     """location where the raw data is stored"""
-    dataset_path: Path
+    dataset_path: Path = classmethod(DatasetMetaClass.dataset_path)  # type: ignore
     """location where the pre-processed data is stored"""
-    dataset_file: Path
+    dataset_file: Path = classmethod(DatasetMetaClass.dataset_file)  # type: ignore
     """The dataset file"""
-
-    # def __new__(cls):
-    #     r"""Raise error since datasets are static."""
-    #     raise NotImplementedError(f"{cls.__name__} is a static class")
-
-    # def __dir__(self):
-    #     r"""Manually adding `dataset`, otherwise missing."""
-    #     # TODO: make bug report, why does dataset have to be added manually?
-    #     # TODO: make bug report, adding this causes sphinx to execute cached property,
-    #     # for some reason, adding it to the base class is fine, but the metaclass causes problems
-    #     return list(super().__dir__()) + ["dataset"]
-
-    # @classmethod
-    # @property  # type: ignore
-    # @cache
-    # @docstring("the dataset")
-    # def dataset(cls):
-    #     r"""Store cached version of dataset."""
-    #     # What is the best practice for metaclass methods that call each other?
-    #     # https://stackoverflow.com/q/47615318/9318372
-    #     return cls.load()  # pylint: disable=E1120
 
     @classmethod
     @abstractmethod

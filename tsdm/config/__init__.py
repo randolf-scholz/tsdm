@@ -82,4 +82,4 @@ def generate_folders(d: dict, current_path: Path):
 logger.info("Initializing Folder Structure")
 generate_folders(CONFIG["folders"], BASEDIR)
 
-__all__ = ['HOMEDIR', 'BASEDIR', 'LOGDIR', 'MODELDIR', 'DATASETDIR', 'RAWDATADIR']
+__all__ = ["HOMEDIR", "BASEDIR", "LOGDIR", "MODELDIR", "DATASETDIR", "RAWDATADIR"]

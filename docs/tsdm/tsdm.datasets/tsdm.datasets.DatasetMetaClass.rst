@@ -13,6 +13,9 @@ tsdm.datasets.DatasetMetaClass
     .. autosummary::
     
       ~DatasetMetaClass.dataset
+      ~DatasetMetaClass.dataset_file
+      ~DatasetMetaClass.dataset_path
+      ~DatasetMetaClass.rawdata_path
     
     
 
@@ -22,6 +25,9 @@ tsdm.datasets.DatasetMetaClass
     .. autosummary::
     
       ~DatasetMetaClass.__init__
+      ~DatasetMetaClass.clean
+      ~DatasetMetaClass.download
+      ~DatasetMetaClass.load
       ~DatasetMetaClass.mro
       ~DatasetMetaClass.register
     
