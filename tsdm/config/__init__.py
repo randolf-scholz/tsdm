@@ -19,6 +19,7 @@ import yaml
 from tsdm.config import config_files
 
 logger = logging.getLogger(__name__)
+__all__ = ["HOMEDIR", "BASEDIR", "LOGDIR", "MODELDIR", "DATASETDIR", "RAWDATADIR"]
 
 with resources.path(config_files, "config.yaml") as file:
     with open(file, "r") as fname:
@@ -81,5 +82,3 @@ def generate_folders(d: dict, current_path: Path):
 # logger.info(F"Found config files: {set(resources.contents('config_files'))}")
 logger.info("Initializing Folder Structure")
 generate_folders(CONFIG["folders"], BASEDIR)
-
-__all__ = ["HOMEDIR", "BASEDIR", "LOGDIR", "MODELDIR", "DATASETDIR", "RAWDATADIR"]

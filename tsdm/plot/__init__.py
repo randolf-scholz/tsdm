@@ -14,4 +14,7 @@ matplotlib.rcParams["mathtext.fontset"] = "stix"
 matplotlib.rcParams["font.family"] = "STIXGeneral"
 matplotlib.rcParams["svg.fonttype"] = "none"
 
-__all__ = ["shared_grid_plot", "visualize_distribution"]
+__all__ = [
+    "shared_grid_plot",
+    "visualize_distribution",
+]

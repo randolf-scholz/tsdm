@@ -1,11 +1,21 @@
 r"""Converts for different data formats."""
 
+import logging
 from typing import Union
-
 import numpy as np
 import pandas as pd
 from numba import njit
 from pandas import CategoricalDtype, DataFrame, Series
+
+logger = logging.getLogger(__name__)
+__all__ = [
+    "make_dense_triplets",
+    "make_masked_format",
+    "make_sparse_triplets",
+    "time2float",
+    "time2int",
+    "triplet2dense",
+]
 
 
 def infer_categories(s: Series) -> set:

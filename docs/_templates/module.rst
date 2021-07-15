@@ -27,8 +27,6 @@
     {%- endfor %}
     {% endif %}
     {% endblock %}
-    {% if modules %}
-
 
     {% block functions %}
     {% if functions %}
@@ -41,7 +39,6 @@
     {%- endfor %}
     {% endif %}
     {% endblock %}
-
 
     {% block classes %}
     {% if classes %}
@@ -67,5 +64,3 @@
     {%- endfor %}
     {% endif %}
     {% endblock %}
-    {% else %}
-    {% endif %}

@@ -12,6 +12,16 @@ from numpy import ndarray
 from numpy.typing import ArrayLike
 from torch import Tensor, nn
 
+logger = logging.getLogger(__name__)
+__all__ = [
+    "ACTIVATIONS",
+    "deep_dict_update",
+    "deep_kval_update",
+    "relative_error",
+    "scaled_norm",
+    "timefun",
+]
+
 ACTIVATIONS = {
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
     "ELU": nn.ELU,
@@ -242,7 +252,7 @@ def timefun(
         Whether to append the time result to the function call
     loglevel: int, default=logging.Warning (20)
     """
-    logger = logging.getLogger("timefun")
+    timefunlogger = logging.getLogger("timefun")
 
     @wraps(fun)
     def timed_fun(*args, **kwargs):
@@ -253,14 +263,14 @@ def timefun(
             result = fun(*args, **kwargs)
             end_time = perf_counter_ns()
             elapsed = (end_time - start_time) / 10 ** 9
-            logger.log(loglevel, "%s executed in %.4f s", fun.__name__, elapsed)
+            timefunlogger.log(loglevel, "%s executed in %.4f s", fun.__name__, elapsed)
         except (KeyboardInterrupt, SystemExit) as E:
             raise E
         except Exception as E:  # pylint: disable=W0703
             result = None
             elapsed = float("nan")
             RuntimeWarning(f"Function execution failed with Exception {E}")
-            logger.log(loglevel, "%s failed with Exception %s", fun.__name__, E)
+            timefunlogger.log(loglevel, "%s failed with Exception %s", fun.__name__, E)
         gc.enable()
 
         if append:

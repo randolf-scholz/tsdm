@@ -1,5 +1,7 @@
 r"""ODR-RNN Model Import."""
 import sys
+import logging
+
 from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
@@ -9,6 +11,9 @@ import torch
 from torch import nn
 
 from tsdm.util import deep_dict_update
+
+logger = logging.getLogger(__name__)
+__all__ = ["ODE_RNN"]
 
 
 @contextmanager

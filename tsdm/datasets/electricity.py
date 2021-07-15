@@ -48,6 +48,7 @@ from pandas import DataFrame, read_csv, read_hdf
 from .dataset import BaseDataset
 
 logger = logging.getLogger(__name__)
+__all__ = ["Electricity"]
 
 
 class Electricity(BaseDataset):
