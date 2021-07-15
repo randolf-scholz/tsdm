@@ -2,10 +2,14 @@ r"""Object oriented loss functions.
 
 Same name as functional but uppercase.
 """
+import logging
 
 from torch import Tensor, nn
 
-from .functional import nd, nrmse
+from tsdm.losses.functional import nd, nrmse
+
+logger = logging.getLogger(__name__)
+__all__ = ["ND", "NRMSE"]
 
 
 class ND(nn.Module):

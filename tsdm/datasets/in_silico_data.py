@@ -12,6 +12,7 @@ from .dataset import BaseDataset
 from .examples import in_silico
 
 logger = logging.getLogger(__name__)
+__all__ = ["InSilicoData"]
 
 
 class InSilicoData(BaseDataset):

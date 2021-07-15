@@ -1,5 +1,6 @@
 r"""Plotting helper functions."""
 
+import logging
 from typing import Callable
 
 import matplotlib.pyplot as plt
@@ -9,6 +10,9 @@ from matplotlib.pyplot import Axes, Figure
 from numpy.typing import ArrayLike
 from scipy.stats import mode
 from torch import Tensor
+
+logger = logging.getLogger(__name__)
+__all__ = ["visualize_distribution", "shared_grid_plot"]
 
 
 def visualize_distribution(

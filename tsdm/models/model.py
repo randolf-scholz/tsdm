@@ -5,6 +5,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
+__all__ = ["BaseModel"]
 
 
 class BaseModel:

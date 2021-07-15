@@ -31,6 +31,7 @@ from urllib.parse import urlparse
 from tsdm.config import DATASETDIR, RAWDATADIR
 
 logger = logging.getLogger(__name__)
+__all__ = ["BaseDataset", "DatasetMetaClass"]
 
 
 class DatasetMetaClass(ABCMeta):
@@ -103,7 +104,6 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     r"""Abstract base class that all datasets must subclass.
 
     Implements methods that are available for all dataset classes.
-
     """
 
     url: Union[str, None] = None
