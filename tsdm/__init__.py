@@ -1,3 +1,4 @@
+#!usr/bin/env python
 r"""Time Series Datasets and Models (TSDM).
 
 Provides
@@ -35,9 +36,6 @@ Constants
 .. data:: MODELS
 
     Dictionary containing sources of the available models
-
-Functions
----------
 """
 from pathlib import Path
 

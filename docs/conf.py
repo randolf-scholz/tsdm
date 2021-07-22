@@ -52,6 +52,11 @@ extensions = [
     "sphinx_math_dollar",
 ]
 
+# try AutoAPI (different from sphinx-autoapi!)
+# extensions.append('autoapi.extension')
+# autoapi_type = 'python'
+# autoapi_dirs = ['../tsdm']
+
 intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
@@ -59,8 +64,13 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
-    "xarray": ("http://xarray.pydata.org/en/stable/", None),
+    "xarray": ("https://xarray.pydata.org/en/stable/", None),
 }
+
+# The name of a reST role (builtin or Sphinx extension) to use as the default role, that is,
+# for text marked up `like this`. This can be set to 'py:obj' to make `filter` a cross-reference
+# to the Python function “filter”. The default is None, which doesn’t reassign the default role.
+default_role = "py:obj"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -74,6 +84,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # unit titles (such as .. function::).
 add_module_names = False
 
+
+suppress_warnings = ["ref.python"]
 # -- Options for HTML output -------------------------------------------------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for a list of builtin themes.
@@ -181,7 +193,9 @@ autodoc_typehints_description_target = "all"
 # types are documented for all parameters and return values, whether they are documented or not.
 # When set to "documented", types will only be documented for a parameter or a return value that is
 # already documented by the docstring.
-autodoc_type_aliases = {}
+autodoc_type_aliases = {
+    "Tensor": ":class:`~torch.Tensor`",
+}
 # A dictionary for users defined type aliases that maps a type name to the full-qualified object name.
 # It is used to keep type aliases not evaluated in the document. Defaults to empty ({}).
 # The type aliases are only available if your program enables Postponed Evaluation of Annotations (PEP 563)

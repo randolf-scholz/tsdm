@@ -1,9 +1,11 @@
-.. include:: /includes.rst.txt
-
 tsdm
 ====
 
 **T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
+
+`DataFrame`, :class:`torch:Tensor`,  `Tensor`, torch:Tensor,
+
+:py:obj:`DataFrame`  :py:class:`torch.Tensor`
 
 Submodules
 ----------

@@ -2,6 +2,21 @@
 
 
 .. automodule:: {{ fullname }}
+    :members:
+    :special-members:
+
+    {% block members %}
+    {% if members %}
+    .. rubric:: Members
+
+    .. autosummary::
+        :template: module.rst
+    {% for item in members %}
+        {{ item }}
+    {%- endfor %}
+    {% endif %}
+    {% endblock %}
+
 
     {% block modules %}
     {% if modules %}
@@ -16,6 +31,7 @@
     {%- endfor %}
     {% endif %}
     {% endblock %}
+
     {% block attributes %}
     {% if attributes %}
     .. rubric:: {{ _('Module Attributes') }}
@@ -64,3 +80,4 @@
     {%- endfor %}
     {% endif %}
     {% endblock %}
+
