@@ -6,14 +6,21 @@ We will move to pyproject.toml setup once PEP 660 is resolved and part of setupt
 import io
 import os
 import re
+from pathlib import Path
 
+import pkg_resources
 import setuptools
-
 
 NAME = "tsdm"
 
 with open(f"{NAME}/VERSION", "r") as file:
     VERSION = file.read()
+
+with Path("requirements.txt").open() as requirements_txt:
+    install_requires = [
+        str(requirement)
+        for requirement in pkg_resources.parse_requirements(requirements_txt)
+    ]
 
 if "CI_PIPELINE_IID" in os.environ:
     BUILD_NUMBER = os.environ["CI_PIPELINE_IID"]
@@ -39,12 +46,16 @@ setuptools.setup(
     long_description_content_type="test/x-rst",
     packages=setuptools.find_packages(exclude=["test"]),  # include all packages in ...
     install_requires=[
-        "pyyaml",
-        "pandas",
+        "h5py",
+        "matplotlib",
         "numpy",
         "numba",
+        "pandas",
+        "pyyaml",
+        "scipy",
+        "tables",
+        "torch",
         "xarray",
-        "matplotlib",
     ],
     # Files that listed in MANIFEST.in and also are in python packages,
     # i.e. contained in folders with and __init__.py, will be included.

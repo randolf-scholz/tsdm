@@ -3,8 +3,8 @@
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
-    :show-inheritance:
     :members:
+    :show-inheritance:
 
     {% block attributes %}
     {% if attributes %}

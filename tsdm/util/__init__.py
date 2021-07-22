@@ -12,14 +12,14 @@ tsdm.util
 import tsdm.util.dataloaders as dataloaders
 import tsdm.util.converters as converters
 
-from .regularity_tests import (
+from tsdm.util._regularity_tests import (
     float_gcd,
     is_quasiregular,
     is_regular,
     regularity_coefficient,
     time_gcd,
 )
-from .util import (
+from tsdm.util._util import (
     ACTIVATIONS,
     deep_dict_update,
     deep_kval_update,

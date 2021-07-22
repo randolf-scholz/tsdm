@@ -4,10 +4,7 @@ tsdm.losses
 ===========
 """
 
-from tsdm.losses.functional import nd, nrmse
-from tsdm.losses.module import ND, NRMSE
+import tsdm.losses.functional as functional
+import tsdm.losses.module as module
 
-__all__ = ["nd", "nrmse",] + [
-    "ND",
-    "NRMSE",
-]
+__all__ = ["functional", "module"]
