@@ -4,13 +4,13 @@ import logging
 from collections.abc import Mapping
 from functools import singledispatch, wraps
 from time import perf_counter_ns
-from typing import Callable, Union, Final
+from typing import Callable, Union, Final, Type
 
 # from copy import deepcopy
 
 import numpy as np
 import torch
-from torch.optim.optimizer import Optimizer
+from torch.optim import Optimizer
 from numpy import ndarray
 from numpy.typing import ArrayLike
 from torch import Tensor, nn
@@ -26,7 +26,7 @@ __all__ = [
     "timefun",
 ]
 
-ACTIVATIONS: Final[dict[str, nn.Module]] = {
+ACTIVATIONS: Final[dict[str, Type[nn.Module]]] = {
     # Utility dictionary, for use in model creation from Hyperparameter dicts
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
     "ELU": nn.ELU,
@@ -57,7 +57,7 @@ ACTIVATIONS: Final[dict[str, nn.Module]] = {
     "Threshold": nn.Threshold,
 }
 
-OPTIMIZERS: Final[dict[str, Optimizer]] = {
+OPTIMIZERS: Final[dict[str, Type[Optimizer]]] = {
     # Utility dictionary, for use in model creation from Hyperparameter dicts
     "Adadelta": torch.optim.Adadelta,
     # Implements Adadelta algorithm.
