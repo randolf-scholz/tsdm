@@ -5,7 +5,7 @@ tsdm
 
 `DataFrame`, :class:`torch:Tensor`,  `Tensor`, torch:Tensor,
 
-:py:obj:`DataFrame`  :py:class:`torch.Tensor`
+:py:class:`DataFrame`  :py:class:`torch.Tensor`
 
 Submodules
 ----------

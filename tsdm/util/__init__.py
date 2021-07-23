@@ -9,9 +9,8 @@ tsdm.util
 
 """
 
-import tsdm.util.dataloaders as dataloaders
-import tsdm.util.converters as converters
-
+from tsdm.util import converters
+from tsdm.util import dataloaders
 from tsdm.util._regularity_tests import (
     float_gcd,
     is_quasiregular,
@@ -30,7 +29,6 @@ from tsdm.util._util import (
 
 __all__ = [
     "ACTIVATIONS",
-    "dataloaders",
     "deep_dict_update",
     "deep_kval_update",
     "relative_error",
@@ -41,4 +39,7 @@ __all__ = [
     "regularity_coefficient",
     "is_regular",
     "is_quasiregular",
+] + [
+    "converters",
+    "dataloaders",
 ]

@@ -196,3 +196,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
             )
 
         logger.info("Finished importing dataset '%s' from %s", dataset, cls.url)
+
+    @classmethod
+    def to_trainloader(cls):
+        """Return trainloader object."""

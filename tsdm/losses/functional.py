@@ -1,7 +1,7 @@
 r"""Loss Functions for time series.
 
 All functions implemented in batch compatible way.
-"""
+"""  # pylint: disable=R0801
 import logging
 
 import torch

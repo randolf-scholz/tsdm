@@ -243,8 +243,9 @@ pages:
   script:
     - pip install --upgrade sphinx sphinx-rtd-theme sphinx-math-dollar
     - cd docs
-    - make html
-    - mv  _build/html/  ../public/
+    - make clean
+    - sphinx-build -b html . _build
+    - mv  _build ../public/
   after_script:
     - source venv/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
