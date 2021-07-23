@@ -20,6 +20,7 @@ from tsdm.util._regularity_tests import (
 )
 from tsdm.util._util import (
     ACTIVATIONS,
+    OPTIMIZERS,
     deep_dict_update,
     deep_kval_update,
     relative_error,
@@ -29,6 +30,7 @@ from tsdm.util._util import (
 
 __all__ = [
     "ACTIVATIONS",
+    "OPTIMIZERS",
     "deep_dict_update",
     "deep_kval_update",
     "relative_error",

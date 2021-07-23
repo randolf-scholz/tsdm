@@ -4,12 +4,13 @@ import logging
 from collections.abc import Mapping
 from functools import singledispatch, wraps
 from time import perf_counter_ns
-from typing import Callable, Union
+from typing import Callable, Union, Final
 
 # from copy import deepcopy
 
 import numpy as np
 import torch
+from torch.optim.optimizer import Optimizer
 from numpy import ndarray
 from numpy.typing import ArrayLike
 from torch import Tensor, nn
@@ -17,6 +18,7 @@ from torch import Tensor, nn
 logger = logging.getLogger(__name__)
 __all__ = [
     "ACTIVATIONS",
+    "OPTIMIZERS",
     "deep_dict_update",
     "deep_kval_update",
     "relative_error",
@@ -24,7 +26,8 @@ __all__ = [
     "timefun",
 ]
 
-ACTIVATIONS = {
+ACTIVATIONS: Final[dict[str, nn.Module]] = {
+    # Utility dictionary, for use in model creation from Hyperparameter dicts
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
     "ELU": nn.ELU,
     "Hardshrink": nn.Hardshrink,
@@ -52,6 +55,32 @@ ACTIVATIONS = {
     "Tanh": nn.Tanh,
     "Tanhshrink": nn.Tanhshrink,
     "Threshold": nn.Threshold,
+}
+
+OPTIMIZERS: Final[dict[str, Optimizer]] = {
+    # Utility dictionary, for use in model creation from Hyperparameter dicts
+    "Adadelta": torch.optim.Adadelta,
+    # Implements Adadelta algorithm.
+    "Adagrad": torch.optim.Adagrad,
+    # Implements Adagrad algorithm.
+    "Adam": torch.optim.Adam,
+    # Implements Adam algorithm.
+    "AdamW": torch.optim.AdamW,
+    # Implements AdamW algorithm.
+    "SparseAdam": torch.optim.SparseAdam,
+    # Implements lazy version of Adam algorithm suitable for sparse tensors.
+    "Adamax": torch.optim.Adamax,
+    # Implements Adamax algorithm (a variant of Adam based on infinity norm).
+    "ASGD": torch.optim.ASGD,
+    # Implements Averaged Stochastic Gradient Descent.
+    "LBFGS": torch.optim.LBFGS,
+    # Implements L-BFGS algorithm, heavily inspired by minFunc.
+    "RMSprop": torch.optim.RMSprop,
+    # Implements RMSprop algorithm.
+    "Rprop": torch.optim.Rprop,
+    # Implements the resilient backpropagation algorithm.
+    "SGD": torch.optim.SGD,
+    # Implements stochastic gradient descent (optionally with momentum).
 }
 
 
