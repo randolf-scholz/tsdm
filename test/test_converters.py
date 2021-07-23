@@ -2,7 +2,7 @@ r"""Test converters to masked format etc."""
 
 from pandas import NA, DataFrame, testing
 
-from tsdm.util import make_masked_format
+from tsdm.util.converters import make_masked_format
 
 
 def test_make_masked_format():

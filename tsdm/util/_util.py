@@ -6,6 +6,8 @@ from functools import singledispatch, wraps
 from time import perf_counter_ns
 from typing import Callable, Union
 
+# from copy import deepcopy
+
 import numpy as np
 import torch
 from numpy import ndarray
@@ -65,7 +67,7 @@ def _torch_is_float_dtype(x: Tensor) -> bool:
     )
 
 
-def deep_dict_update(d: dict, new: Mapping) -> dict:
+def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
     r"""Update nested dictionary recursively in-place with new dictionary.
 
     Reference: https://stackoverflow.com/a/30655448/9318372
@@ -73,17 +75,21 @@ def deep_dict_update(d: dict, new: Mapping) -> dict:
     Parameters
     ----------
     d: dict
-    new: Mapping
+    new_kvals: Mapping
     """
-    for key, value in new.items():
+    # if not inplace:
+    #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)
+
+    for key, value in new_kvals.items():
         if isinstance(value, Mapping) and value:
             d[key] = deep_dict_update(d.get(key, {}), value)
         else:
-            d[key] = new[key]
+            # if value is not None or not safe:
+            d[key] = new_kvals[key]
     return d
 
 
-def deep_kval_update(d: dict, **new_kv: dict) -> dict:
+def deep_kval_update(d: dict, **new_kvals: dict) -> dict:
     r"""Update nested dictionary recursively in-place with key-value pairs.
 
     Reference: https://stackoverflow.com/a/30655448/9318372
@@ -91,13 +97,17 @@ def deep_kval_update(d: dict, **new_kv: dict) -> dict:
     Parameters
     ----------
     d: dict
-    new_kv: Mapping
+    new_kvals: dict
     """
+    # if not inplace:
+    #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)
+
     for key, value in d.items():
         if isinstance(value, Mapping) and value:
-            d[key] = deep_kval_update(d.get(key, {}), **new_kv)
-        elif key in new_kv:
-            d[key] = new_kv[key]
+            d[key] = deep_kval_update(d.get(key, {}), **new_kvals)
+        elif key in new_kvals:
+            # if value is not None or not safe:
+            d[key] = new_kvals[key]
     return d
 
 

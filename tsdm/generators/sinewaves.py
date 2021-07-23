@@ -1,4 +1,4 @@
-r"""Sine wave dataset with lots of customizability"""
+r"""Sine wave dataset with lots of customizability."""
 
 import logging
 
@@ -7,8 +7,10 @@ __all__ = ["SineWaveGenerator"]
 
 
 class SineWaveGenerator:
+    """Docstring."""
+
     def __init__(self):
-        pass
+        """Docstring."""
 
     def rvs(self):
-        pass
+        """Docstring."""

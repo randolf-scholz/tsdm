@@ -2,6 +2,7 @@ r"""Converts for different data formats."""
 
 import logging
 from typing import Union
+
 import numpy as np
 import pandas as pd
 from numba import njit

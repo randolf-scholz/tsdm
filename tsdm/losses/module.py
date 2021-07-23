@@ -1,7 +1,7 @@
-r"""Object oriented loss functions.
+r"""Loss Modules for time series.
 
-Same name as functional but uppercase.
-"""
+All functions implemented in batch compatible way.
+"""  # pylint: disable=R0801
 import logging
 
 from torch import Tensor, nn

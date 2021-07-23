@@ -58,9 +58,10 @@ def collate_padded(
 def upack_sequence(batch: PackedSequence) -> list[Tensor]:
     r"""Reverse operation of pack_sequence."""
     batch_pad_packed, lengths = pad_packed_sequence(batch, batch_first=True)
-    torch.swapaxes(batch_pad_packed, 1, 2), lengths
+    torch.swapaxes(batch_pad_packed, 1, 2)
     return [x[:l].T for x, l in zip(batch_pad_packed, lengths)]
 
 
 def unpad_sequence():
     r"""Reverse operation of pad_sequence."""
+    print(help(pack_padded_sequence))
