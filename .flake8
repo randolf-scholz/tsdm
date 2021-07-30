@@ -39,7 +39,8 @@ exclude =
     ./build,
     ./scripts,
     ./venv,
-    *.pyi
+    *.pyi,
+    ./dev,
 
 # Annotations plugin
 # Supress ANN200-level errors for functions that have no return (return None)

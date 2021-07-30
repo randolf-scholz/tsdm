@@ -1,9 +1,9 @@
 r"""Testing of Electricity dataset, as a token for the whole BaseDataset architecture."""
 
-import logging
 from copy import copy
+import logging
 
-from tsdm.datasets import InSilicoData, BaseDataset
+from tsdm.datasets import BaseDataset, InSilicoData
 from tsdm.util import timefun
 
 logger = logging.getLogger(__name__)
