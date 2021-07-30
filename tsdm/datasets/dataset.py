@@ -19,12 +19,12 @@ Basic Usage
    x = Electricity.dataset
 """
 
-import os
-import logging
-import subprocess
 from abc import ABC, ABCMeta, abstractmethod
 from functools import cache
+import logging
+import os
 from pathlib import Path
+import subprocess
 from typing import Union
 from urllib.parse import urlparse
 

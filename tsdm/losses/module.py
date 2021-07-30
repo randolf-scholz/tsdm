@@ -4,7 +4,7 @@ All functions implemented in batch compatible way.
 """  # pylint: disable=R0801
 import logging
 
-from torch import Tensor, nn
+from torch import nn, Tensor
 
 from tsdm.losses.functional import nd, nrmse
 

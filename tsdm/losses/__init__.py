@@ -4,7 +4,6 @@ tsdm.losses
 ===========
 """
 
-from tsdm.losses import functional
-from tsdm.losses import module
+from tsdm.losses import functional, module
 
 __all__ = ["functional", "module"]

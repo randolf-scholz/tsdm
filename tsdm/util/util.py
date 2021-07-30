@@ -1,19 +1,18 @@
 r"""Utility functions."""
-import gc
-import logging
 from collections.abc import Mapping
-from functools import singledispatch, wraps
-from time import perf_counter_ns
-from typing import Callable, Union, Final, Type
+from functools import singledispatch
+import logging
+from typing import Final, Type, Union
+
+import numpy as np
+from numpy import ndarray
+from numpy.typing import ArrayLike
+import torch
+from torch import nn, Tensor
+from torch.optim import Optimizer
 
 # from copy import deepcopy
 
-import numpy as np
-import torch
-from torch.optim import Optimizer
-from numpy import ndarray
-from numpy.typing import ArrayLike
-from torch import Tensor, nn
 
 logger = logging.getLogger(__name__)
 __all__ = [
@@ -23,11 +22,9 @@ __all__ = [
     "deep_kval_update",
     "relative_error",
     "scaled_norm",
-    "timefun",
 ]
 
 ACTIVATIONS: Final[dict[str, Type[nn.Module]]] = {
-    # Utility dictionary, for use in model creation from Hyperparameter dicts
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
     "ELU": nn.ELU,
     "Hardshrink": nn.Hardshrink,
@@ -56,9 +53,9 @@ ACTIVATIONS: Final[dict[str, Type[nn.Module]]] = {
     "Tanhshrink": nn.Tanhshrink,
     "Threshold": nn.Threshold,
 }
+r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""
 
 OPTIMIZERS: Final[dict[str, Type[Optimizer]]] = {
-    # Utility dictionary, for use in model creation from Hyperparameter dicts
     "Adadelta": torch.optim.Adadelta,
     # Implements Adadelta algorithm.
     "Adagrad": torch.optim.Adagrad,
@@ -82,6 +79,7 @@ OPTIMIZERS: Final[dict[str, Type[Optimizer]]] = {
     "SGD": torch.optim.SGD,
     # Implements stochastic gradient descent (optionally with momentum).
 }
+r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""
 
 
 def _torch_is_float_dtype(x: Tensor) -> bool:
@@ -273,48 +271,56 @@ def _numpy_scaled_norm(
     return np.mean(x ** p, axis=axis, keepdims=keepdims) ** (1 / p)
 
 
-def timefun(
-    fun: Callable, append: bool = True, loglevel: int = logging.WARNING
-) -> Callable:
-    r"""Log the execution time of the function. Use as decorator.
+#
+# def parametrize(decorator):
+#     params = signature(decorator).parameters
+#     no_bare_decorator = any(
+#         param.default is Parameter.empty and param.kind is not Parameter.VAR_KEYWORD
+#         for param in islice(params.values(), 1, None)
+#     )
+#
+#     @wraps(decorator)
+#     def parametrized_decorator(__func__=None, *decorator_args, **decorator_kwargs):
+#         if no_bare_decorator:
+#             return rpartial(decorator, __func__, *decorator_args, **decorator_kwargs)
+#         if __func__ is None:
+#             return rpartial(decorator, *decorator_args, **decorator_kwargs)
+#         return decorator(__func__, *decorator_args, **decorator_kwargs)
+#
+#     return parametrized_decorator
 
-    By default appends the execution time (in seconds) to the function call.
 
-    ``outputs, time_elapse = timefun(f, append=True)(inputs)``
-
-    If the function call failed, ``outputs=None`` and ``time_elapsed=float('nan')`` are returned.
-
-    Parameters
-    ----------
-    fun: Callable
-    append: bool, default=True
-        Whether to append the time result to the function call
-    loglevel: int, default=logging.Warning (20)
-    """
-    timefunlogger = logging.getLogger("timefun")
-
-    @wraps(fun)
-    def timed_fun(*args, **kwargs):
-        gc.collect()
-        gc.disable()
-        try:
-            start_time = perf_counter_ns()
-            result = fun(*args, **kwargs)
-            end_time = perf_counter_ns()
-            elapsed = (end_time - start_time) / 10 ** 9
-            timefunlogger.log(loglevel, "%s executed in %.4f s", fun.__name__, elapsed)
-        except (KeyboardInterrupt, SystemExit) as E:
-            raise E
-        except Exception as E:  # pylint: disable=W0703
-            result = None
-            elapsed = float("nan")
-            RuntimeWarning(f"Function execution failed with Exception {E}")
-            timefunlogger.log(loglevel, "%s failed with Exception %s", fun.__name__, E)
-        gc.enable()
-
-        if append:
-            return result, elapsed
-        # else
-        return result
-
-    return timed_fun
+# def parametrize(decorator: Callable) -> Callable:
+#     """
+#     Parameters
+#     ----------
+#     decorator
+#
+#     Returns
+#     -------
+#
+#     """
+#     sig = signature(decorator)
+#     params = iter(sig.parameters.items())
+#     k, f = next(params)
+#
+#     for key, param in params:
+#         if param.default is Parameter.empty and param.kind is not Parameter.VAR_KEYWORD:
+#             # make none-naked version
+#             @wraps(decorator)
+#             def parametrized_decorator(*decorator_args, **decorator_kwargs):
+#                 def wrapper(__func__: Callable) -> Callable:
+#                     return decorator(__func__, *decorator_args, **decorator_kwargs)
+#                 return wrapper
+#             return parametrized_decorator
+#
+#     # naked version, base idea by https://stackoverflow.com/a/60832711/9318372\
+#     @wraps(decorator)
+#     def parametrized_decorator(__func__=None, *decorator_args, **decorator_kwargs):
+#         def _decorator(func: Callable) -> Callable:
+#             @wraps(func)
+#             def wrapper(*func_args, **func_kwargs):
+#                 return decorator(func, *decorator_args, **decorator_kwargs)(*func_args, **func_kwargs)
+#             return wrapper
+#         return _decorator if __func__ is None else _decorator(__func__)
+#     return parametrized_decorator

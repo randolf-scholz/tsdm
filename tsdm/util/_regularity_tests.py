@@ -6,7 +6,7 @@ from typing import Union
 import numba
 import numpy as np
 from numpy.typing import ArrayLike
-from pandas import Series, DataFrame
+from pandas import DataFrame, Series
 
 logger = logging.getLogger(__name__)
 __all__ = [
