@@ -2,8 +2,8 @@ r"""
 In silico experiments
 """  # pylint: disable=line-too-long # noqa
 
-import logging
 from importlib import resources
+import logging
 
 import h5py
 import pandas as pd

@@ -9,8 +9,8 @@ tsdm.util
 
 """
 
-from tsdm.util import converters
-from tsdm.util import dataloaders
+from tsdm.util import converters, dataloaders
+from tsdm.util._decorators import timefun
 from tsdm.util._regularity_tests import (
     float_gcd,
     is_quasiregular,
@@ -18,14 +18,13 @@ from tsdm.util._regularity_tests import (
     regularity_coefficient,
     time_gcd,
 )
-from tsdm.util._util import (
+from tsdm.util.util import (
     ACTIVATIONS,
-    OPTIMIZERS,
     deep_dict_update,
     deep_kval_update,
+    OPTIMIZERS,
     relative_error,
     scaled_norm,
-    timefun,
 )
 
 __all__ = [

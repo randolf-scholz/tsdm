@@ -1,7 +1,7 @@
 r"""Base Model that all other models must subclass."""
 import logging
-import subprocess
 from pathlib import Path
+import subprocess
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
