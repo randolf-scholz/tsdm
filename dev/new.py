@@ -1,9 +1,9 @@
-from abc import ABCMeta
 import functools
-from functools import partial, wraps
 import inspect
-from inspect import Parameter, signature
 import sys
+from abc import ABCMeta
+from functools import partial, wraps
+from inspect import Parameter, signature
 from typing import Callable, Optional
 
 

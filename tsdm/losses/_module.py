@@ -4,9 +4,10 @@ All functions implemented in batch compatible way.
 """  # pylint: disable=R0801
 import logging
 
-from torch import nn, Tensor
+from torch import Tensor, nn
 
 from tsdm.losses.functional import nd, nrmse
+
 
 logger = logging.getLogger(__name__)
 __all__ = ["ND", "NRMSE"]

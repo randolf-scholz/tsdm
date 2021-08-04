@@ -4,6 +4,7 @@ import logging
 
 from tsdm.datasets import BaseDataset
 
+
 logger = logging.getLogger(__name__)
 
 

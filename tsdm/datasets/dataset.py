@@ -19,16 +19,17 @@ Basic Usage
    x = Electricity.dataset
 """
 
-from abc import ABC, ABCMeta, abstractmethod
-from functools import cache
 import logging
 import os
-from pathlib import Path
 import subprocess
+from abc import ABC, ABCMeta, abstractmethod
+from functools import cache
+from pathlib import Path
 from typing import Union
 from urllib.parse import urlparse
 
 from tsdm.config import DATASETDIR, RAWDATADIR
+
 
 logger = logging.getLogger(__name__)
 __all__ = ["BaseDataset", "DatasetMetaClass"]

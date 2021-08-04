@@ -3,10 +3,11 @@ r"""Converts for different data formats."""
 import logging
 from typing import Union
 
-from numba import njit
 import numpy as np
 import pandas as pd
+from numba import njit
 from pandas import CategoricalDtype, DataFrame, Series
+
 
 logger = logging.getLogger(__name__)
 __all__ = [

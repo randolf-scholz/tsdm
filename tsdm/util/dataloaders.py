@@ -1,15 +1,17 @@
 r"""General Purpose Data Loaders for Time Series Data."""
+
 import logging
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import (
+    PackedSequence,
     pack_padded_sequence,
     pack_sequence,
-    PackedSequence,
     pad_packed_sequence,
     pad_sequence,
 )
+
 
 logger = logging.getLogger(__name__)
 __all__ = [
