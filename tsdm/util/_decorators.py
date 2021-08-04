@@ -1,11 +1,12 @@
 r"""Custom Decorators."""
+import gc
+import logging
 from dataclasses import dataclass
 from functools import wraps
-import gc
 from inspect import Parameter, signature
-import logging
 from time import perf_counter_ns
 from typing import Any, Callable, Optional
+
 
 logger = logging.getLogger(__name__)
 __all__ = ["decorator", "DecoratorError", "timefun"]

@@ -10,13 +10,14 @@ Content:
   - hashes.yaml
 """
 
-from importlib import resources
 import logging
+from importlib import resources
 from pathlib import Path
 
 import yaml
 
 from tsdm.config import config_files
+
 
 logger = logging.getLogger(__name__)
 __all__ = [
@@ -54,16 +55,22 @@ with resources.path(config_files, "hashes.yaml") as file:
 
 HOMEDIR = Path.home()
 r"""The users home directory."""
+
 BASEDIR = HOMEDIR.joinpath(CONFIG["basedir"])
 r"""Root directory for tsdm storage."""
+
 LOGDIR = BASEDIR.joinpath(CONFIG["logdir"])
 r"""Path where logfiles are stored."""
+
 MODELDIR = BASEDIR.joinpath(CONFIG["modeldir"])
 r"""Path where imported models are stored."""
+
 DATASETDIR = BASEDIR.joinpath(CONFIG["datasetdir"])
 r"""Path where preprocessed datasets are stored."""
+
 RAWDATADIR = BASEDIR.joinpath(CONFIG["rawdatadir"])
 r"""Path where raw imported datasets are stored."""
+
 LOGDIR.mkdir(parents=True, exist_ok=True)
 # logging.basicConfig(
 #     filename=str(LOGDIR.joinpath("example.log")),

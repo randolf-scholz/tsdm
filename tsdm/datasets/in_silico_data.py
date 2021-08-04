@@ -2,14 +2,15 @@ r"""
 In silico experiments
 """  # pylint: disable=line-too-long # noqa
 
-from importlib import resources
 import logging
+from importlib import resources
 
 import h5py
 import pandas as pd
 
 from .dataset import BaseDataset
 from .examples import in_silico
+
 
 logger = logging.getLogger(__name__)
 __all__ = ["InSilicoData"]

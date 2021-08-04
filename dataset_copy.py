@@ -19,11 +19,11 @@ Basic Usage
    x = Electricity.dataset
 """
 
+import logging
+import subprocess
 from abc import ABC, ABCMeta, abstractmethod
 from functools import cache
-import logging
 from pathlib import Path
-import subprocess
 from typing import Union
 from urllib.parse import urlparse
 
@@ -31,6 +31,7 @@ from pandas import DataFrame, Series
 from xarray import DataArray, Dataset
 
 from tsdm.config import DATASETDIR, RAWDATADIR
+
 
 logger = logging.getLogger(__name__)
 

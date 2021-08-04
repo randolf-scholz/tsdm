@@ -9,6 +9,7 @@ tsdm.util
 
 """
 
+from tsdm.optimizers import OPTIMIZERS
 from tsdm.util import converters, dataloaders
 from tsdm.util._decorators import timefun
 from tsdm.util._regularity_tests import (
@@ -22,10 +23,10 @@ from tsdm.util.util import (
     ACTIVATIONS,
     deep_dict_update,
     deep_kval_update,
-    OPTIMIZERS,
     relative_error,
     scaled_norm,
 )
+
 
 __all__ = [
     "ACTIVATIONS",
