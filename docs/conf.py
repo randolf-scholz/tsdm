@@ -15,6 +15,7 @@ import datetime
 import os
 import sys
 
+
 os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
 
@@ -118,7 +119,7 @@ autosummary_generate_overwrite = True
 autosummary_mock_imports = []
 # This value contains a list of modules to be mocked up. See autodoc_mock_imports for more details.
 # It defaults to autodoc_mock_imports.
-autosummary_imported_members = True
+autosummary_imported_members = False
 # A boolean flag indicating whether to document classes and functions imported in modules. Default is False
 autosummary_filename_map = {}
 # A dict mapping object names to filenames. This is necessary to avoid filename conflicts where multiple objects

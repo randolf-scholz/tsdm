@@ -1,43 +1,16 @@
-tsdm
-====
+tsdm - **T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
+==============================================================
 
-**T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
-
-`DataFrame`, :class:`torch:Tensor`,  `Tensor`, torch:Tensor,
-
-:py:class:`DataFrame`  :py:class:`torch.Tensor`
-
-Submodules
-----------
-
-.. autosummary::
-    :toctree: _autosummary
-    :template: module.rst
-    :recursive:
-
-    tsdm
 
 .. toctree::
+   :hidden:
 
-   readme
-   changelog
-
-
-Example
-_______
-
-.. code-block:: python
-
-   import tsdm
-
-   dataset = tsdm.load_dataset('electricity')
-   x, m, d = tsdm.make_masked_format('dataset')
-   ODE_RNN = tsdm.load_model('ODE-RNN')
-   model = ODE_RNN(...)  # see model description for details
-
+   Home page <self>
+   Recipes <recipes>
+   API reference <_autosummary/tsdm>
 
 Installation
-------------
+============
 
 Install the tsdm_ package using ``pip`` by
 
@@ -50,17 +23,36 @@ Here we assume that you want to install the package in editable mode, because
 you would like to contribute to it. This package is not available on PyPI, it
 might be in the future, though.
 
+Examples
+========
+
+.. code-block:: python
+
+   import tsdm
+
+   dataset = tsdm.load_dataset('electricity')
+   x, m, d = tsdm.make_masked_format('dataset')
+   ODE_RNN = tsdm.load_model('ODE-RNN')
+   model = ODE_RNN(...)  # see model description for details
+
 Contribute
-----------
+==========
 
 - Issue Tracker: https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm/-/issues
 - Source Code: https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm
 
 Support
--------
+=======
 
 If you encounter issues, please let us know.
 
+See Also
+========
+
+.. toctree::
+
+   readme
+   changelog
 
 Indices and tables
 ==================
