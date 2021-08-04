@@ -3,16 +3,18 @@ tsdm - **T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
 
 
 .. toctree::
-   :hidden:
 
    Home page <self>
    Recipes <recipes>
    API reference <_autosummary/tsdm>
+   CHANGELOG <CHANGELOG>
+   CONTRIBUTING <CONTRIBUTING>
+   README <README>
 
 Installation
 ============
 
-Install the tsdm_ package using ``pip`` by
+Install the tsdm package using ``pip`` by
 
 .. code-block:: bash
 
@@ -45,14 +47,6 @@ Support
 =======
 
 If you encounter issues, please let us know.
-
-See Also
-========
-
-.. toctree::
-
-   readme
-   changelog
 
 Indices and tables
 ==================

@@ -1,6 +1,6 @@
 .. autosummary::
     :toctree: _autosummary
-    :template: module.rst
+    :template: custom-module-template.rst
     :recursive:
 
     tsdm
