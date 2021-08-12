@@ -1,10 +1,10 @@
 r"""Sine wave dataset with lots of customizability."""
 
 import logging
-
+from typing import Final
 
 logger = logging.getLogger(__name__)
-__all__ = ["SineWaveGenerator"]
+__all__: Final[list[str]] = ["SineWaveGenerator"]
 
 
 class SineWaveGenerator:

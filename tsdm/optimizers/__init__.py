@@ -4,12 +4,12 @@ r"""Utilities for optimizers."""
 import logging
 from typing import Final, Type
 
-import torch
-from torch.optim import Optimizer
-
+import torch.optim
+from torch.optim import lr_scheduler, Optimizer
 
 logger = logging.getLogger(__name__)
-__all__ = ["OPTIMIZERS"]
+__all__: Final[list[str]] = ["OPTIMIZERS", "LR_SCHEDULERS"]
+
 
 OPTIMIZERS: Final[dict[str, Type[Optimizer]]] = {
     "Adadelta": torch.optim.Adadelta,
@@ -34,5 +34,20 @@ OPTIMIZERS: Final[dict[str, Type[Optimizer]]] = {
     # Implements the resilient backpropagation algorithm.
     "SGD": torch.optim.SGD,
     # Implements stochastic gradient descent (optionally with momentum).
+}
+r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""
+
+LR_SCHEDULER = lr_scheduler._LRScheduler
+LR_SCHEDULERS: Final[dict[str, Type[LR_SCHEDULER]]] = {
+    "LambdaLR": lr_scheduler.LambdaLR,
+    "MultiplicativeLR": lr_scheduler.MultiplicativeLR,  # type: ignore
+    "StepLR": lr_scheduler.StepLR,
+    "MultiStepLR": lr_scheduler.MultiStepLR,
+    "ExponentialLR": lr_scheduler.ExponentialLR,
+    "CosineAnnealingLR": lr_scheduler.CosineAnnealingLR,
+    # "ReduceLROnPlateau": lr_scheduler.ReduceLROnPlateau,   # not subclass of _LRScheduler...
+    "CyclicLR": lr_scheduler.CyclicLR,
+    "OneCycleLR": lr_scheduler.OneCycleLR,  # type: ignore
+    "CosineAnnealingWarmRestarts": lr_scheduler.CosineAnnealingWarmRestarts,
 }
 r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""

@@ -3,14 +3,14 @@ r"""Loss Modules for time series.
 All functions implemented in batch compatible way.
 """  # pylint: disable=R0801
 import logging
+from typing import Final
 
-from torch import Tensor, nn
+from torch import nn, Tensor
 
 from tsdm.losses.functional import nd, nrmse
 
-
 logger = logging.getLogger(__name__)
-__all__ = ["ND", "NRMSE"]
+__all__: Final[list[str]] = ["ND", "NRMSE"]
 
 
 class ND(nn.Module):

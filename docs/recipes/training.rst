@@ -10,7 +10,11 @@ Typical experimental flow, given a fixed hyperparameter combination
     from tsdm.encoders import ENCODERS
     from tsdm.models   import MODELS
     from tsdm.losses import LOSSES
-    from tsdm. optimizers import OPTIMIZERS
+    from tsdm.optimizers import OPTIMIZERS
+    from tsdm.dataloaders import DATALOADERS
+    from tsdm.trainers import TRAINERS
+    from tsdm.metrics import METRICS
+    from tsdm.loggers import LOGGERS
 
     # current HP configuration
     HP = json.read("ID-XXXXXXX.json")
@@ -30,21 +34,17 @@ Typical experimental flow, given a fixed hyperparameter combination
     loss_cls = LOSSES(HP['loss'])
     loss     = loss_cls(HP['loss_cfg'])
 
-    dataloader_cls = HP['dataloader']
+    dataloader_cls = DATALOADERS[HP['dataloader']]
     dataloader     = dataloader_cls(HP['dataloader_cfg'])
 
-    optimizer_cls = HP['optimizer']
-    optimizer     = HP['optimizer_cfg']
-
-    trainer_cls   = HP['trainer']
+    trainer_cls   = TRAINERS[HP['trainer']]
     trainer       = HP['trainer_cfg']
 
-    metrics = HP['metrics']
+    metric_cls = METRICS[HP['metrics']]
+    metrics    = [metric_cls(config) for config, metric_cls in zip(metric_clss, HP['metrics_cfg'])]
 
-    logger = default_logger
-    logger.register(model=model, optimizer=optimizer, loss=loss, metrics=metrics)
-
-    model.init_params()  # random initialization of model
+    logger_cls = LOGGERS[HP['logger']]
+    logger     = logger_cls(HP['logger_cfg'], model, optimizer, loss, metrics, ...)
 
     for batch in dataloader:
         x, y = batch
@@ -54,8 +54,9 @@ Typical experimental flow, given a fixed hyperparameter combination
         r = loss(y, yhat)
         r.backward()
         optimizer.step()
-
-        logger.log(loss, model, optimizer, metrics, ....)
+        for metric in metrics:
+            metric(y, encoder.decode(yhat))
+        logger.log()
 
         if trainer.stopping_criteria(model, optimizer, dataloader, logger.history):
             break

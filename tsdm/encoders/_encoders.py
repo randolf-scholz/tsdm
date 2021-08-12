@@ -1,16 +1,36 @@
-r"""Converts for different data formats."""
+r"""Encoders for different types of data.
+
+- Target Encoding: enc(x) = mean(enc(y|x))
+- Binary Encoding: enx(x) =
+- Hash Encoder: enc(x) = binary(hash(x))
+- Effect/Sum/Deviation Encoding:
+- Sum Encoding
+- ECC Binary Encoding:
+- Ordinal Coding: (cᵢ | i=1:n) -> (i| i=1...n)
+- Dummy Encoding: like one-hot, with (0,...,0) added as a category
+- word2vec
+- Learned encoding:
+
+
+Hierarchical Categoricals:
+- Sum Coding
+- Helmert Coding
+- Polynomial Coding
+- Backward Difference Coding:
+"""
+# TODO: implement categorical data encoding schemes
+
 
 import logging
-from typing import Union
+from typing import Final, Union
 
+from numba import njit
 import numpy as np
 import pandas as pd
-from numba import njit
 from pandas import CategoricalDtype, DataFrame, Series
 
-
 logger = logging.getLogger(__name__)
-__all__ = [
+__all__: Final[list[str]] = [
     "make_dense_triplets",
     "make_masked_format",
     "make_sparse_triplets",

@@ -40,16 +40,16 @@ Other columns present float values with consumption in kW
 
 import logging
 from pathlib import Path
+from typing import Final
 from zipfile import ZipFile
 
 import numpy as np
 from pandas import DataFrame, read_csv, read_hdf
 
-from .dataset import BaseDataset
-
+from tsdm.datasets.dataset import BaseDataset
 
 logger = logging.getLogger(__name__)
-__all__ = ["Electricity"]
+__all__: Final[list[str]] = ["Electricity"]
 
 
 class Electricity(BaseDataset):

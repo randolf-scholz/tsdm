@@ -8,3 +8,9 @@ contains generators for synthetic datasets. By design each generators consists o
 - Allows estimating the Bayes Error, i.e. the best performance possible on the dataset.
 """
 # TODO: add some generators
+
+import logging
+from typing import Final
+
+logger = logging.getLogger(__name__)
+__all__: Final[list[str]] = []

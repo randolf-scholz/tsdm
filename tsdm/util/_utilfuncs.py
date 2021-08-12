@@ -1,23 +1,32 @@
 r"""Utility functions."""
-import logging
 from collections.abc import Mapping
+import datetime
 from functools import singledispatch
+import logging
 from typing import Final, Type, Union
 
 import numpy as np
-import torch
 from numpy import ndarray
 from numpy.typing import ArrayLike
-from torch import Tensor, nn
+import pandas
+import torch
+from torch import nn, Tensor
 
+# TODO: Use TypeAlias Once Python 3.10 comes out.
+TimeStampLike = Union[str, datetime.datetime, np.datetime64, pandas.Timestamp]
+r"""Represents a location in time."""
+TimeDeltaLike = Union[str, datetime.timedelta, np.timedelta64, pandas.Timedelta]
+r"""Represents a unit of time duration."""
 
 logger = logging.getLogger(__name__)
-__all__ = [
+__all__: Final[list[str]] = [
     "ACTIVATIONS",
     "deep_dict_update",
     "deep_kval_update",
     "relative_error",
     "scaled_norm",
+    "TimeStampLike",
+    "TimeDeltaLike",
 ]
 
 ACTIVATIONS: Final[dict[str, Type[nn.Module]]] = {
@@ -239,58 +248,3 @@ def _numpy_scaled_norm(
         return np.max(x, axis=axis, keepdims=keepdims)
     # other p
     return np.mean(x ** p, axis=axis, keepdims=keepdims) ** (1 / p)
-
-
-#
-# def parametrize(decorator):
-#     params = signature(decorator).parameters
-#     no_bare_decorator = any(
-#         param.default is Parameter.empty and param.kind is not Parameter.VAR_KEYWORD
-#         for param in islice(params.values(), 1, None)
-#     )
-#
-#     @wraps(decorator)
-#     def parametrized_decorator(__func__=None, *decorator_args, **decorator_kwargs):
-#         if no_bare_decorator:
-#             return rpartial(decorator, __func__, *decorator_args, **decorator_kwargs)
-#         if __func__ is None:
-#             return rpartial(decorator, *decorator_args, **decorator_kwargs)
-#         return decorator(__func__, *decorator_args, **decorator_kwargs)
-#
-#     return parametrized_decorator
-
-
-# def parametrize(decorator: Callable) -> Callable:
-#     """
-#     Parameters
-#     ----------
-#     decorator
-#
-#     Returns
-#     -------
-#
-#     """
-#     sig = signature(decorator)
-#     params = iter(sig.parameters.items())
-#     k, f = next(params)
-#
-#     for key, param in params:
-#         if param.default is Parameter.empty and param.kind is not Parameter.VAR_KEYWORD:
-#             # make none-naked version
-#             @wraps(decorator)
-#             def parametrized_decorator(*decorator_args, **decorator_kwargs):
-#                 def wrapper(__func__: Callable) -> Callable:
-#                     return decorator(__func__, *decorator_args, **decorator_kwargs)
-#                 return wrapper
-#             return parametrized_decorator
-#
-#     # naked version, base idea by https://stackoverflow.com/a/60832711/9318372\
-#     @wraps(decorator)
-#     def parametrized_decorator(__func__=None, *decorator_args, **decorator_kwargs):
-#         def _decorator(func: Callable) -> Callable:
-#             @wraps(func)
-#             def wrapper(*func_args, **func_kwargs):
-#                 return decorator(func, *decorator_args, **decorator_kwargs)(*func_args, **func_kwargs)
-#             return wrapper
-#         return _decorator if __func__ is None else _decorator(__func__)
-#     return parametrized_decorator

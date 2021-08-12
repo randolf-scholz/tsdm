@@ -7,7 +7,6 @@ import logging
 import torch
 from torch import Tensor
 
-
 logger = logging.getLogger(__name__)
 __all__ = ["nd", "nrmse"]
 

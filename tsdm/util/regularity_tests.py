@@ -1,16 +1,15 @@
 r"""Test for checking how regular time series is."""
 
 import logging
-from typing import Union
+from typing import Final, Union
 
 import numba
 import numpy as np
 from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 
-
 logger = logging.getLogger(__name__)
-__all__ = [
+__all__: Final[list[str]] = [
     "float_gcd",
     "approx_float_gcd",
     "is_regular",
