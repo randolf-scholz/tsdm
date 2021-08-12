@@ -5,12 +5,11 @@ We will move to pyproject.toml setup once PEP 660 is resolved and part of setupt
 
 import io
 import os
-import re
 from pathlib import Path
+import re
 
 import pkg_resources
 import setuptools
-
 
 NAME = "tsdm"
 

@@ -1,8 +1,5 @@
 r"""Configuration Options.
 
-tsdm.config
-===========
-
 Content:
   - config.yaml
   - datasets.yaml
@@ -10,17 +7,17 @@ Content:
   - hashes.yaml
 """
 
-import logging
 from importlib import resources
+import logging
 from pathlib import Path
+from typing import Final
 
 import yaml
 
 from tsdm.config import config_files
 
-
 logger = logging.getLogger(__name__)
-__all__ = [
+__all__: Final[list[str]] = [
     "CONFIG",
     "DATASETS",
     "MODELS",

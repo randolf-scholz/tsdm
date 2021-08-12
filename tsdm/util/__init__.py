@@ -1,47 +1,30 @@
-r"""Provides utility functions.
+r"""Provides utility functions."""
+import logging
+from typing import Final
 
-tsdm.util
-=========
-
-.. data:: ACTIVATIONS
-
-    A :class:`dict` containing string names as keys and corresponding :mod:`torch` functions.
-
-"""
-
-from tsdm.optimizers import OPTIMIZERS
-from tsdm.util import converters, dataloaders
-from tsdm.util._decorators import timefun
-from tsdm.util._regularity_tests import (
-    float_gcd,
-    is_quasiregular,
-    is_regular,
-    regularity_coefficient,
-    time_gcd,
-)
-from tsdm.util.util import (
+from tsdm.util import dataloaders, decorators, regularity_tests
+from tsdm.util._utilfuncs import (
     ACTIVATIONS,
     deep_dict_update,
     deep_kval_update,
     relative_error,
     scaled_norm,
+    TimeDeltaLike,
+    TimeStampLike,
 )
 
+logger = logging.getLogger(__name__)
 
-__all__ = [
+__all__: Final[list[str]] = [
     "ACTIVATIONS",
-    "OPTIMIZERS",
     "deep_dict_update",
     "deep_kval_update",
     "relative_error",
     "scaled_norm",
-    "timefun",
-    "float_gcd",
-    "time_gcd",
-    "regularity_coefficient",
-    "is_regular",
-    "is_quasiregular",
+    "TimeStampLike",
+    "TimeDeltaLike",
 ] + [
-    "converters",
     "dataloaders",
+    "decorators",
+    "regularity_tests",
 ]

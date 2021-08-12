@@ -15,7 +15,6 @@ import datetime
 import os
 import sys
 
-
 os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
 
@@ -195,7 +194,34 @@ autodoc_typehints_description_target = "all"
 # When set to "documented", types will only be documented for a parameter or a return value that is
 # already documented by the docstring.
 autodoc_type_aliases = {
-    "Tensor": ":class:`~torch.Tensor`",
+    # python
+    "Callable": "~typing.Callable",
+    "Path": "~pathlib.Path",
+    "Mapping": "~collections.abc.Mapping",
+    # torch
+    "Tensor": "~torch.Tensor",
+    "nn.Module": "~torch.nn.Module",
+    # numpy
+    "ArrayLike": "~numpy.typing.ArrayLike",
+    "datetime64": "~numpy.datetime64",
+    "timedelta64": "~numpy.timedelta64",
+    "integer": "~numpy.integer",
+    "floating": "~numpy.floating",
+    # pandas
+    "NA": "~pandas.NA",
+    "NaT": "~pandas.NaT",
+    "DataFrame": "~pandas.DataFrame",
+    "Series": "~pandas.Series",
+    "Index": "~pandas.Index",
+    "MultiIndex": "~pandas.MultiIndex",
+    "CategoricalIndex": "~pandas.CategoricalIndex",
+    "TimedeltaIndex": "~pandas.TimedeltaIndex",
+    "DatetimeIndex": "~pandas.DatetimeIndex",
+    "Categorical": "~pandas.Categorical",
+    # xarray
+    "DataArray": "~xarray.DataArray",
+    "Dataset": "~xarray.Dataset",
+    "Variable": "~xarray.Variable",
 }
 # A dictionary for users defined type aliases that maps a type name to the full-qualified object name.
 # It is used to keep type aliases not evaluated in the document. Defaults to empty ({}).

@@ -1,19 +1,18 @@
 r"""Plotting helper functions."""
 
 import logging
-from typing import Callable
+from typing import Callable, Final
 
-import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.offsetbox import AnchoredText
+import matplotlib.pyplot as plt
 from matplotlib.pyplot import Axes, Figure
+import numpy as np
 from numpy.typing import ArrayLike
 from scipy.stats import mode
 from torch import Tensor
 
-
 logger = logging.getLogger(__name__)
-__all__ = ["visualize_distribution", "shared_grid_plot"]
+__all__: Final[list[str]] = ["visualize_distribution", "shared_grid_plot"]
 
 
 def visualize_distribution(

@@ -8,7 +8,8 @@ Provides
 
 More complicated examples:
 
-Random Search / Grid Search Hyperparameter optimization with nested cross-validation split on a slurm cluster
+Random Search / Grid Search Hyperparameter optimization with nested cross-validation
+split on a slurm cluster.
 
 General idea:
 
@@ -25,25 +26,39 @@ General idea:
 
 """
 
+import logging
 from pathlib import Path
+from typing import Final
 
-from tsdm import config, datasets, generators, losses, models, optimizers, plot, util
-
+from tsdm import (
+    config,
+    datasets,
+    encoders,
+    generators,
+    losses,
+    models,
+    optimizers,
+    plot,
+    random,
+    trainers,
+    util,
+)
 
 with open(Path(__file__).parent.joinpath("VERSION"), "r") as file:
     __version__ = file.read()
     r"""The version number of the tsdm package"""
 
-del Path
-
-__all__ = [
-    "__version__",
+logger = logging.getLogger(__name__)
+__all__: Final[list[str]] = ["__version__"] + [
     "config",
     "datasets",
     "generators",
+    "encoders",
     "losses",
     "models",
     "optimizers",
     "plot",
+    "random",
+    "trainers",
     "util",
 ]

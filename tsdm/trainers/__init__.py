@@ -1,8 +1,9 @@
-r"""
-Trainers are more generic than optimizers.
+r"""Trainer scripts for machine learning models.
+
 They include the whole training loop, i.e. also stopping criteria, learn-rate schedulers and so on.
 """
+import logging
+from typing import Final
 
-from tsdm.trainers.lr_schedulers import LR_SCHEDULERS
-
-__all__ = ["LR_SCHEDULERS"]
+logger = logging.getLogger(__name__)
+__all__: Final[list[str]] = []

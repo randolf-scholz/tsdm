@@ -1,15 +1,15 @@
 r"""Custom Decorators."""
-import gc
-import logging
 from dataclasses import dataclass
 from functools import wraps
+import gc
 from inspect import Parameter, signature
+import logging
+import os
 from time import perf_counter_ns
-from typing import Any, Callable, Optional
-
+from typing import Any, Callable, Final, Optional
 
 logger = logging.getLogger(__name__)
-__all__ = ["decorator", "DecoratorError", "timefun"]
+__all__: Final[list[str]] = ["decorator", "DecoratorError", "timefun"]
 
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
@@ -59,7 +59,7 @@ class DecoratorError(Exception):
 
 
 def decorator(deco: Callable) -> Callable:
-    """Meta-Decorator for constructing parametrized decorators."""
+    r"""Meta-Decorator for constructing parametrized decorators."""
     ErrorHandler = DecoratorError(deco)
     mandatory_pos_args, mandatory_key_args = set(), set()
 
@@ -148,3 +148,24 @@ def timefun(
         return (result, elapsed) if append else result
 
     return timed_fun
+
+
+@decorator
+def sphinx_value(func: Callable, value: Any, /) -> Callable:
+    """Use alternative attribute value during sphinx compilation - useful for attributes.
+
+    Parameters
+    ----------
+    func: Callable
+    value: Any
+
+    Returns
+    -------
+    Callable
+    """
+
+    @wraps(func)
+    def wrapper(*func_args, **func_kwargs):
+        return value
+
+    return wrapper if os.environ.get("GENERATING_DOCS", False) else func
