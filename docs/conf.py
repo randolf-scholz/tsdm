@@ -150,6 +150,10 @@ autodoc_member_order = "alphabetical"
 # This value selects if automatically documented members are sorted alphabetical (value 'alphabetical'),
 # by member type (value 'groupwise') or by source order (value 'bysource'). The default is alphabetical.
 # Note that for source order, the module must be a Python module with the source code available.
+autodoc_default_flags = []
+# This value is a list of autodoc directive flags that should be automatically applied to all autodoc directives.
+# The supported flags are 'members', 'undoc-members', 'private-members', 'special-members', 'inherited-members',
+# 'show-inheritance', 'ignore-module-all' and 'exclude-members'.
 autodoc_default_optioss = {}
 # The default options for autodoc directives. They are applied to all autodoc directives automatically.
 # It must be a dictionary which maps option names to the values. For example:
@@ -178,7 +182,7 @@ autodoc_mock_imports = []
 # This value contains a list of modules to be mocked up.
 # This is useful when some external dependencies are not met at build time and break the building process.
 # You may only specify the root package of the dependencies themselves and omit the sub-modules:
-autodoc_typehints = "none"
+autodoc_typehints = "both"
 # This value controls how to represent typehints. The setting takes the following values:
 # 'signature' – Show typehints in the signature (default)
 # 'description' – Show typehints as content of the function or method The typehints of overloaded
@@ -222,6 +226,9 @@ autodoc_type_aliases = {
     "DataArray": "~xarray.DataArray",
     "Dataset": "~xarray.Dataset",
     "Variable": "~xarray.Variable",
+    # TSDM
+    "TimeDeltaLike": "tsdm.util.TimeDeltaLike",
+    "TimeStampLike": "tsdm.util.TimeStampLike",
 }
 # A dictionary for users defined type aliases that maps a type name to the full-qualified object name.
 # It is used to keep type aliases not evaluated in the document. Defaults to empty ({}).
@@ -271,6 +278,10 @@ napoleon_use_admonition_for_notes = False
 # True to use the .. admonition:: directive for Notes sections.
 # False to use the .. rubric:: directive instead.
 # Defaults to False.
+napoleon_use_admonition_for_references = False
+# True to use the .. admonition:: directive for References sections.
+# False to use the .. rubric:: directive instead.
+# Defaults to False.
 napoleon_use_ivar = True
 # True to use the :ivar: role for instance variables.
 # False to use the .. attribute:: directive instead.
@@ -283,11 +294,11 @@ napoleon_use_keyword = True
 # True to use a :keyword: role for each function keyword argument.
 # False to use a single :keyword arguments: role for all the keywords.
 # Defaults to True.
-napoleon_use_rtype = False
+napoleon_use_rtype = True
 # True to use the :rtype: role for the return type.
 # False to output the return type inline with the description.
 # Defaults to True.
-napoleon_preprocess_types = True
+napoleon_preprocess_types = False
 # True to convert the type definitions in the docstrings as references.
 # Defaults to True.
 napoleon_type_aliases = {
@@ -319,6 +330,9 @@ napoleon_type_aliases = {
     "DataArray": "~xarray.DataArray",
     "Dataset": "~xarray.Dataset",
     "Variable": "~xarray.Variable",
+    # TSDM
+    "TimeDeltaLike" : "tsdm.util.TimeDeltaLike",
+    "TimeStampLike" : "tsdm.util.TimeStampLike",
 }
 
 # A mapping to translate type names to other names or references. Works only when napoleon_use_param = True.
