@@ -14,7 +14,7 @@ __all__: Final[list[str]] = ["ND", "NRMSE"]
 
 
 class ND(nn.Module):
-    r"""Compute the normalized deviation score
+    r"""Compute the normalized deviation score.
 
     .. math::
         \operatorname{ND}(\hat Y, Y)
@@ -25,10 +25,8 @@ class ND(nn.Module):
 
     References
     ----------
-
-    *  `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
-    *  `N-BEATS: Neural basis expansion analysis for interpretable time series forecasting <https://openreview.net/forum?id=r1ecqn4YwB>`_
-
+    -  `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
+    -  `N-BEATS: Neural basis expansion analysis for interpretable time series forecasting <https://openreview.net/forum?id=r1ecqn4YwB>`_
     """  # pylint: disable=line-too-long # noqa
 
     @staticmethod
@@ -48,7 +46,7 @@ class ND(nn.Module):
 
 
 class NRMSE(nn.Module):
-    r"""Compute the normalized deviation score
+    r"""Compute the normalized deviation score.
 
     .. math::
         \operatorname{NRMSE}(\hat Y, Y)
@@ -56,8 +54,7 @@ class NRMSE(nn.Module):
 
     References
     ----------
-
-    *  `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
+    -  `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
     """  # pylint: disable=line-too-long # noqa
 
     @staticmethod

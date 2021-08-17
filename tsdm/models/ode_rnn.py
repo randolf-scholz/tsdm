@@ -5,14 +5,16 @@ import logging
 from pathlib import Path
 import sys
 from types import ModuleType
+from typing import Final
 
 import torch
 from torch import nn
 
+from tsdm.models import BaseModel
 from tsdm.util import deep_dict_update
 
 logger = logging.getLogger(__name__)
-__all__ = ["ODE_RNN"]
+__all__: Final[list[str]] = ["ODE_RNN"]
 
 
 @contextmanager
@@ -65,7 +67,7 @@ def path_import(module_path: Path, module_name: str = None) -> ModuleType:
         return the_module
 
 
-class ODE_RNN:
+class ODE_RNN(BaseModel):
     r"""TODO: add docstring.
 
     Parameters
@@ -166,6 +168,7 @@ class ODE_RNN:
 
     def __init__(self, **HP):
         r"""TODO: add docstring."""
+        super().__init__()
         module = path_import(Path("/home/rscholz/.tsdm/models/ODE-RNN"))
         create_net = module.lib.utils.create_net  # type: ignore
         ODEFunc = module.lib.ode_func.ODEFunc  # type: ignore

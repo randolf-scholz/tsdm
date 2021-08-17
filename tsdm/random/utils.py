@@ -6,7 +6,7 @@ from typing import Final, Optional
 
 import numpy as np
 from numpy.typing import NDArray
-from pandas import date_range, timedelta_range, Timedelta, Timestamp
+from pandas import date_range, Timedelta, timedelta_range, Timestamp
 
 from tsdm.util import TimeDeltaLike, TimeStampLike
 
@@ -25,7 +25,7 @@ def sample_timestamps(
     include_start: bool = True,
     include_final: bool = False,
 ) -> NDArray:
-    r"""Creates randomly sampled timestamps.
+    r"""Create randomly sampled timestamps.
 
     Parameters
     ----------
@@ -40,6 +40,7 @@ def sample_timestamps(
         If `True`, then `start` will always be the first sampled timestamp.
     include_final: bool, default=True
         If `True`, then `final` will always be the final sampled timestamp.
+
     Returns
     -------
     NDArray
@@ -47,7 +48,7 @@ def sample_timestamps(
     start = Timestamp(start)
     final = start + Timedelta("24h") if final is None else Timestamp(final)
     freq = Timedelta(freq)
-    start, stop = start.round(freq), final.round(freq)
+    start, final = start.round(freq), final.round(freq)
 
     # randomly sample timestamps
     rng = np.random.default_rng()
@@ -75,12 +76,12 @@ def sample_timestamps(
 
 
 def sample_timedeltas(
-    low:  Optional[TimeDeltaLike] = "0s",
+    low: Optional[TimeDeltaLike] = "0s",
     high: Optional[TimeDeltaLike] = "1h",
     size: Optional[int] = None,
     freq: Optional[TimeDeltaLike] = "1s",
 ) -> NDArray:
-    r"""Create randomly sampled timestamps.
+    r"""Create randomly sampled timedeltas.
 
     Parameters
     ----------

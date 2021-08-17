@@ -14,7 +14,7 @@ from typing import Final
 
 import yaml
 
-from tsdm.config import config_files
+from . import config_files
 
 logger = logging.getLogger(__name__)
 __all__: Final[list[str]] = [

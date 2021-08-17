@@ -1,4 +1,5 @@
 r"""Base Model that all other models must subclass."""
+from abc import abstractmethod
 import logging
 from pathlib import Path
 import subprocess
@@ -50,6 +51,7 @@ class BaseModel:
 
         logger.info("Finished importing model '%s' from %s", cls.name, cls.url)
 
-    def predict(self, *inputs):
+    @abstractmethod
+    def __call__(self, *inputs):
         r"""Synonym for forward and __call__."""
         raise NotImplementedError
