@@ -1,0 +1,12 @@
+docutils<0.17
+sphinx
+sphinx-rtd-theme
+sphinx-math-dollar
+# Linting
+mypy
+pylint
+pylint-gitlab
+pycodestyle
+pydocstyle
+pytest
+pytest-cov
