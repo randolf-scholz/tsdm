@@ -1,4 +1,4 @@
-r"""This data set contains electricity consumption of 370 points/clients.
+r"""Data set containing electricity consumption of 370 points/clients.
 
 ElectricityLoadDiagrams20112014 Data Set
 ========================================
@@ -53,7 +53,7 @@ __all__: Final[list[str]] = ["Electricity"]
 
 
 class Electricity(BaseDataset):
-    r"""This data set contains electricity consumption of 370 points/clients.
+    r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
     | **Data Set Characteristics:**  | Time-Series            | **Number of Instances:**  | 370    | **Area:**               | Computer   |

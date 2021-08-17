@@ -1,6 +1,4 @@
-r"""
-In silico experiments
-"""  # pylint: disable=line-too-long # noqa
+r"""In silico experiments."""  # pylint: disable=line-too-long # noqa
 
 from importlib import resources
 import logging

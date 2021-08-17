@@ -331,8 +331,8 @@ napoleon_type_aliases = {
     "Dataset": "~xarray.Dataset",
     "Variable": "~xarray.Variable",
     # TSDM
-    "TimeDeltaLike" : "tsdm.util.TimeDeltaLike",
-    "TimeStampLike" : "tsdm.util.TimeStampLike",
+    "TimeDeltaLike": "tsdm.util.TimeDeltaLike",
+    "TimeStampLike": "tsdm.util.TimeStampLike",
 }
 
 # A mapping to translate type names to other names or references. Works only when napoleon_use_param = True.

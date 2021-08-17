@@ -12,7 +12,7 @@ __all__ = ["nd", "nrmse"]
 
 
 def nd(yhat: Tensor, y: Tensor) -> Tensor:
-    r"""Compute the normalized deviation score
+    r"""Compute the normalized deviation score.
 
     .. math::
         \operatorname{ND}(\hat Y, Y)
@@ -23,7 +23,6 @@ def nd(yhat: Tensor, y: Tensor) -> Tensor:
 
     References
     ----------
-
     - `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
     - `N-BEATS: Neural basis expansion analysis for interpretable time series forecasting <https://openreview.net/forum?id=r1ecqn4YwB>`_
 
@@ -42,7 +41,7 @@ def nd(yhat: Tensor, y: Tensor) -> Tensor:
 
 
 def nrmse(yhat: Tensor, y: Tensor) -> Tensor:
-    r"""Compute the normalized deviation score
+    r"""Compute the normalized deviation score.
 
     .. math::
         \operatorname{NRMSE}(\hat Y, Y)
@@ -50,7 +49,6 @@ def nrmse(yhat: Tensor, y: Tensor) -> Tensor:
 
     References
     ----------
-
     - `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
 
     Parameters
