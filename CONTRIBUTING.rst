@@ -54,3 +54,5 @@ Getting started
 10. Push changes in the branch to your forked repository on GitHub. ::
 
     git push origin feature-xyz
+
+11. Create a merge request
