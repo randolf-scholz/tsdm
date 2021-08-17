@@ -1,8 +1,9 @@
 h5py
 matplotlib
-numpy
+numpy>=1.20
 numba
 pandas
+python>=3.9
 pyyaml
 scipy
 tables
