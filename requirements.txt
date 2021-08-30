@@ -3,6 +3,7 @@ matplotlib
 numpy>=1.20
 numba
 pandas
+python>=3.9
 pyyaml
 python>=3.9
 scipy
