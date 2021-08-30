@@ -5,10 +5,10 @@ import logging
 from typing import Final, Optional
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import DTypeLike, NDArray
 from pandas import date_range, Timedelta, timedelta_range, Timestamp
 
-from tsdm.util import TimeDeltaLike, TimeStampLike
+from tsdm.util.dtypes import BOOLS, EMOJIS, STRINGS, TimeDeltaLike, TimeStampLike
 
 logger = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["sample_timestamps", "sample_timedeltas"]
@@ -111,4 +111,43 @@ def sample_timedeltas(
     }
     base_unit = next(u for u, val in units.items() if freq >= val)
 
-    return timedeltas.astype(f"datetime64[{base_unit}]")
+    return timedeltas.astype(f"timedelta64[{base_unit}]")
+
+
+def random_data(
+    size: tuple[int], dtype: DTypeLike = float, missing: float = 0.5
+) -> NDArray:
+    r"""Create random data of given size and dtype.
+
+    Parameters
+    ----------
+    size
+    dtype
+    missing
+
+    Returns
+    -------
+    NDArray
+    """
+    dtype = np.dtype(dtype)
+    rng = np.random.default_rng()
+
+    if np.issubdtype(dtype, np.integer):
+        info = np.iinfo(dtype)
+        data = rng.integers(low=info.min, high=info.max, size=size)
+        result = data.astype(dtype)
+    elif np.issubdtype(dtype, np.floating):
+        info = np.finfo(dtype)  # type: ignore
+        exp = rng.integers(low=info.minexp, high=info.maxexp, size=size)
+        mant = rng.uniform(low=-2, high=+2, size=size)
+        result = (mant * 2 ** exp).astype(dtype)
+    elif np.issubdtype(dtype, np.bool_):
+        result = rng.choice(BOOLS, size=size)
+    elif np.issubdtype(dtype, np.unicode_):
+        result = rng.choice(EMOJIS, size=size)
+    elif np.issubdtype(dtype, np.string_):
+        result = rng.choice(STRINGS, size=size)
+    else:
+        raise NotImplementedError
+
+    return result

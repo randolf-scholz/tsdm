@@ -1,7 +1,7 @@
 r"""General Purpose Data Loaders for Time Series Data."""
 
 import logging
-from typing import Final
+from typing import Final, Optional, Sized, Iterator
 
 import torch
 from torch import Tensor
@@ -12,6 +12,7 @@ from torch.nn.utils.rnn import (
     pad_packed_sequence,
     pad_sequence,
 )
+from torch.utils.data import Sampler
 
 logger = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
@@ -67,3 +68,27 @@ def upack_sequence(batch: PackedSequence) -> list[Tensor]:
 def unpad_sequence():
     r"""Reverse operation of pad_sequence."""
     print(help(pack_padded_sequence))
+
+
+class TimeIntervalSampler(Sampler):
+    """TODO: add class."""
+
+    def __init__(self, data_source: Optional[Sized]):
+        """TODO: Add method."""
+        super().__init__(data_source)
+
+    def __iter__(self) -> Iterator:
+        """TODO: Add method."""
+        return super().__iter__()
+
+
+class SequentialSliceSampler(Sampler):
+    """TODO: add class."""
+
+    def __init__(self, data_source: Optional[Sized]):
+        """TODO: Add method."""
+        super().__init__(data_source)
+
+    def __iter__(self) -> Iterator:
+        """TODO: Add method."""
+        return super().__iter__()

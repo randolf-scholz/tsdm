@@ -14,7 +14,7 @@ from typing import Final
 
 import yaml
 
-from . import config_files
+from tsdm.config import config_files
 
 logger = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
@@ -31,22 +31,22 @@ __all__: Final[list[str]] = [
 ]
 
 with resources.path(config_files, "config.yaml") as file:
-    with open(file, "r") as fname:
+    with open(file, "r", encoding="utf8") as fname:
         CONFIG = yaml.safe_load(fname)
         r"""Dictionary containing basic configuration of TSDM."""
 
 with resources.path(config_files, "models.yaml") as file:
-    with open(file, "r") as fname:
+    with open(file, "r", encoding="utf8") as fname:
         MODELS = yaml.safe_load(fname)
         r"""Dictionary containing sources of the available models."""
 
 with resources.path(config_files, "datasets.yaml") as file:
-    with open(file, "r") as fname:
+    with open(file, "r", encoding="utf8") as fname:
         DATASETS = yaml.safe_load(fname)
         r"""Dictionary containing sources of the available datasets."""
 
 with resources.path(config_files, "hashes.yaml") as file:
-    with open(file, "r") as fname:
+    with open(file, "r", encoding="utf8") as fname:
         HASHES = yaml.safe_load(fname)
         r"""Dictionary containing hash values for both models and datasets."""
 

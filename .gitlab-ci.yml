@@ -9,9 +9,10 @@ variables:
   MODULEDIR:      tsdm
   MODULENAME:     tsdm
   TESTDIR:        test
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   TWINE_PASSWORD: ${CI_JOB_TOKEN}
   TWINE_USERNAME: gitlab-ci-token
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  TWINE_REPOSITORY_URL: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi
 
 cache:
   paths:
@@ -216,7 +217,7 @@ pypi:
   allow_failure: true
   script:
     - pip install --upgrade twine
-    - twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+    - twine upload --verbose  dist/*
   after_script:
     - source venv/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
