@@ -1,9 +1,10 @@
 h5py
 matplotlib
-numpy
+numpy>=1.20
 numba
 pandas
 pyyaml
+python>=3.9
 scipy
 tables
 torch

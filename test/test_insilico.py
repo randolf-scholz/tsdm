@@ -4,7 +4,7 @@ from copy import copy
 import logging
 
 from tsdm.datasets import BaseDataset, InSilicoData
-from tsdm.util import timefun
+from tsdm.util.decorators import timefun
 
 logger = logging.getLogger(__name__)
 

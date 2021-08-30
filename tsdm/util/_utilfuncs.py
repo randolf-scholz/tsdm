@@ -1,6 +1,5 @@
 r"""Utility functions."""
 from collections.abc import Mapping
-import datetime
 from functools import singledispatch
 import logging
 from typing import Final, Type, Union
@@ -8,15 +7,8 @@ from typing import Final, Type, Union
 import numpy as np
 from numpy import ndarray
 from numpy.typing import ArrayLike
-import pandas
 import torch
 from torch import nn, Tensor
-
-# TODO: Use TypeAlias Once Python 3.10 comes out.
-TimeStampLike = Union[str, datetime.datetime, np.datetime64, pandas.Timestamp]
-r"""Represents a location in time."""
-TimeDeltaLike = Union[str, datetime.timedelta, np.timedelta64, pandas.Timedelta]
-r"""Represents a unit of time duration."""
 
 logger = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
@@ -25,9 +17,8 @@ __all__: Final[list[str]] = [
     "deep_kval_update",
     "relative_error",
     "scaled_norm",
-    "TimeStampLike",
-    "TimeDeltaLike",
 ]
+
 
 ACTIVATIONS: Final[dict[str, Type[nn.Module]]] = {
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
