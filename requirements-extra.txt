@@ -3,6 +3,8 @@ sphinx
 sphinx-rtd-theme
 sphinx-math-dollar
 # Linting
+black
+isort
 mypy
 pylint
 pylint-gitlab
