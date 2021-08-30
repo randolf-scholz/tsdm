@@ -5,7 +5,6 @@ numba
 pandas
 python>=3.9
 pyyaml
-python>=3.9
 scipy
 tables
 torch
