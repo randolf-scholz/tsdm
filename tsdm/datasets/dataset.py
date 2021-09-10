@@ -70,7 +70,7 @@ class DatasetMetaClass(ABCMeta):
         if os.environ.get("GENERATING_DOCS", False):
             return Path(f"~/.tsdm/rawdata/{cls.__name__}/")
         RAWDATADIR.mkdir(parents=True, exist_ok=True)
-        return RAWDATADIR
+        return RAWDATADIR.joinpath(cls.__name__)
 
     @property
     def dataset_path(cls):
