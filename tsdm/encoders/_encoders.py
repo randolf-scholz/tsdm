@@ -24,9 +24,9 @@ Hierarchical Categoricals:
 import logging
 from typing import Final, Union
 
-from numba import njit
 import numpy as np
 import pandas as pd
+from numba import njit
 from pandas import CategoricalDtype, DataFrame, Series
 
 logger = logging.getLogger(__name__)
@@ -262,3 +262,8 @@ def time2float(ds: Series) -> Series:
     common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 
     return (timedeltas / common_interval).astype(float)
+
+
+# TODO: add timefeatures
+def timefeatures():
+    r"""Return time features from datetime."""

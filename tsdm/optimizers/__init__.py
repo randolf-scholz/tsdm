@@ -5,7 +5,7 @@ import logging
 from typing import Final, Type
 
 import torch.optim
-from torch.optim import lr_scheduler, Optimizer
+from torch.optim import Optimizer, lr_scheduler
 
 logger = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["OPTIMIZERS", "LR_SCHEDULERS"]

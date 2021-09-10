@@ -1,10 +1,10 @@
 r"""Custom Decorators."""
-from dataclasses import dataclass
-from functools import wraps
 import gc
-from inspect import Parameter, signature
 import logging
 import os
+from dataclasses import dataclass
+from functools import wraps
+from inspect import Parameter, signature
 from time import perf_counter_ns
 from typing import Any, Callable, Final, Optional
 
@@ -65,8 +65,10 @@ def decorator(deco: Callable) -> Callable:
 
     for key, param in signature(deco).parameters.items():
         if param.kind is VAR_POSITIONAL:
+            # TODO: allow VAR_POSITIONAL, iff mandatory KW_ONLY present.
             raise ErrorHandler("VAR_POSITIONAL arguments (*args) not allowed!")
         if param.kind is POSITIONAL_OR_KEYWORD:
+            # TODO: allow VAR_POSITIONAL, iff mandatory KW_ONLY present.
             raise ErrorHandler(
                 "Decorator does not support POSITIONAL_OR_KEYWORD arguments!!",
                 "Separate positional and keyword arguments: fun(po, /, *, ko=None,)",
@@ -80,7 +82,9 @@ def decorator(deco: Callable) -> Callable:
             mandatory_key_args |= {key}
 
     if not mandatory_pos_args:
-        raise ErrorHandler("At least one POSITIONAL_ONLY required!")
+        raise ErrorHandler(
+            "First argument of decorator must be POSITIONAL_ONLY (the function to be wrapped)!"
+        )
 
     @wraps(deco)
     def parametrized_decorator(  # pylint: disable=keyword-arg-before-vararg
@@ -169,3 +173,21 @@ def sphinx_value(func: Callable, value: Any, /) -> Callable:
         return value
 
     return wrapper if os.environ.get("GENERATING_DOCS", False) else func
+
+
+# TODO: implement mutually_exclusive_args wrapper
+# idea: sometimes we have a tuple of args (a ,b ,c, ...) where
+# 1. at least x of these args are required
+# 2. at most y of these args are allowed.
+# this decorator raises and error if not the right number of args is supplied.
+# alternative:
+# - supply a single int: exact allowed number of args, e.g. [0, 1, 3] if
+# exactly 0, 1 or 3 arguments allowed.
+# - supply a tuple[int, int]: min/max number of allowed args
+# - supply a list[int] of allowed number of args, e.g.
+# - supply a list[tuple[str]] of allowed combinations, e.g. [("a", "b"), ("c",), ("a', "c"), ...]
+# Union[int, tuple[int, int], list[int], list[tuple[str, ...]]]
+
+# def exclusive_args(args: tuple[str, ...],
+# allowed: Union[int, tuple[int, int], list[int], list[tuple[str, ...]]]):
+#     pass

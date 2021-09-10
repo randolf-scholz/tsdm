@@ -5,7 +5,7 @@ All functions implemented in batch compatible way.
 import logging
 from typing import Final
 
-from torch import nn, Tensor
+from torch import Tensor, nn
 
 from tsdm.losses.functional import nd, nrmse
 
