@@ -7,8 +7,8 @@ Content:
   - hashes.yaml
 """
 
-from importlib import resources
 import logging
+from importlib import resources
 from pathlib import Path
 from typing import Final
 

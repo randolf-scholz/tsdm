@@ -6,7 +6,7 @@ from typing import Final, Optional
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
-from pandas import date_range, Timedelta, timedelta_range, Timestamp
+from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
 from tsdm.util.dtypes import BOOLS, EMOJIS, STRINGS, TimeDeltaLike, TimeStampLike
 
