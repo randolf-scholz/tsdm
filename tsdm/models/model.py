@@ -1,8 +1,8 @@
 r"""Base Model that all other models must subclass."""
-from abc import abstractmethod
 import logging
-from pathlib import Path
 import subprocess
+from abc import abstractmethod
+from pathlib import Path
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)

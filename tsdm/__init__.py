@@ -44,7 +44,7 @@ from . import (
     util,
 )
 
-with open(Path(__file__).parent.joinpath("VERSION"), "r") as file:
+with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as file:
     __version__ = file.read()
     r"""The version number of the tsdm package"""
 

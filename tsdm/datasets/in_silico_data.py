@@ -1,7 +1,7 @@
 r"""In silico experiments."""  # pylint: disable=line-too-long # noqa
 
-from importlib import resources
 import logging
+from importlib import resources
 from typing import Final
 
 import h5py
@@ -39,7 +39,7 @@ class InSilicoData(BaseDataset):
             if resource.split(".")[-1] != "txt":
                 continue
             with resources.path(in_silico, resource) as path:
-                with open(path, "r") as file:
+                with open(path, "r", encoding="utf8") as file:
                     df = pd.read_csv(file, index_col=0, parse_dates=[0])
                     df = df.rename_axis(index="time")
                     df["DOTm"] /= 100
