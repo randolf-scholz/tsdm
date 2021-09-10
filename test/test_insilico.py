@@ -1,7 +1,7 @@
 r"""Testing of Electricity dataset, as a token for the whole BaseDataset architecture."""
 
-from copy import copy
 import logging
+from copy import copy
 
 from tsdm.datasets import BaseDataset, InSilicoData
 from tsdm.util.decorators import timefun

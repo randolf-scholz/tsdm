@@ -1,9 +1,9 @@
 r"""ODR-RNN Model Import."""
+import logging
+import sys
 from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
-import logging
 from pathlib import Path
-import sys
 from types import ModuleType
 from typing import Final
 

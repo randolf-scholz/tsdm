@@ -3,10 +3,10 @@ r"""Plotting helper functions."""
 import logging
 from typing import Callable, Final
 
-from matplotlib.offsetbox import AnchoredText
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import Axes, Figure
 import numpy as np
+from matplotlib.offsetbox import AnchoredText
+from matplotlib.pyplot import Axes, Figure
 from numpy.typing import ArrayLike
 from scipy.stats import mode
 from torch import Tensor

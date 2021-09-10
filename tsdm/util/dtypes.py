@@ -1,9 +1,9 @@
 r"""Module Docstring."""
 from __future__ import annotations
 
-from collections import namedtuple
 import datetime
 import logging
+from collections import namedtuple
 from typing import Final, Type, Union
 
 import numpy as np
