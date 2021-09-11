@@ -107,7 +107,7 @@ import logging
 from pathlib import Path
 from typing import Final
 from zipfile import ZipFile
-import time
+import pickle
 
 import numpy as np
 from pandas import DataFrame, read_csv, read_hdf, HDFStore
@@ -150,34 +150,71 @@ class Physionet2019(BaseDataset):
     dataset_file: Path
 
     @classmethod
-    def clean(cls):
-        r"""Create HDF5 of pandas dataframes representing the tables.
-        The groups are A and B, the subgroups are the ids of the patients."""
+    def clean(cls, store='hdf'):
+        #pylint disable=signature-differs
+        r"""Create a file representation of pandas dataframes representing the tables.
+        The groups are A and B, the subgroups are the ids of the patients.
+
+        The default is HDF5 (store='hdf'),  but in the case of this dataset it is
+        much faster to pickle a dictionary of pandas data frames (store='pickle')
+        In order not to change the package I override the signature in this module
+        only."""
+
         dataset = cls.__name__
         logger.info("Cleaning dataset '%s'", dataset)
-        h5file = HDFStore(cls.dataset_file)
-        for fname,prefix in [("training_setA","A"),("training_setB","B")]:
-            with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as zipfile:
-                print("cleaning "+fname)
-                for zi in tqdm(zipfile.infolist()):
-                    before = time.time()
-                    with zipfile.open(zi,"r") as zf:
-                        if zf.name.endswith('psv'):
-                            df = read_csv(zf, sep="|")
-                            group_name = zf.name.split('.')[-2].split('/')[1]
-                            h5file.put(f'/{prefix}/{group_name}',df)
+        if store=='hdf':
+            h5file = HDFStore(cls.dataset_file)
+            for fname,prefix in [("training_setA","A"),("training_setB","B")]:
+                with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as zipfile:
+                    print("cleaning "+fname)
+                    for zi in tqdm(zipfile.infolist()):
+                        with zipfile.open(zi,"r") as zf:
+                            if zf.name.endswith('psv'):
+                                df = read_csv(zf, sep="|")
+                                group_name = zf.name.split('.')[-2].split('/')[1]
+                                h5file.put(f'/{prefix}/{group_name}',df)
+        elif store=='pickle':
+            dfdict = {}
+            dataset_file = cls.dataset_file.with_suffix('.pickle')
+            for fname,prefix in [("training_setA","A"),("training_setB","B")]:
+                with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as zipfile:
+                    print("cleaning "+fname)
+                    for zi in tqdm(zipfile.infolist()):
+                        with zipfile.open(zi,"r") as zf:
+                            if zf.name.endswith('psv'):
+                                df = read_csv(zf, sep="|")
+                                group_name = zf.name.split('.')[-2].split('/')[1]
+                                dfdict[f'/{prefix}/{group_name}'] = df
+
+            with open(dataset_file,"wb") as f:
+                pickle.dump(dfdict,f)
+        else:
+            raise Exception('store ',  store, 'not supported')
+
 
         logger.info("Finished extracting dataset '%s'", dataset)
 
     @classmethod
-    def load(cls):
-        """Load the dataset from hdf-5 file."""
+    def load(cls, store='hdf'):
+        # pylint disable=signature-differs
+        """Load the dataset from file.
+
+        Default is HDF5 (store='hdf'), but in our case store='pickle' is
+        faster.
+        """
         super().load()  # <- makes sure DS is downloaded and preprocessed
-        with HDFStore(cls.dataset_file) as file:
-            read_dfs = {}
-            for root,dirs, files in file.walk():
-                for fn in files:
-                    key = f'{root}/{fn}'
-                    read_dfs[key] = read_hdf(file, key=key)
+        if store=='hdf':
+            with HDFStore(cls.dataset_file) as file:
+                read_dfs = {}
+                for root,dirs, files in file.walk():
+                    for fn in files:
+                        key = f'{root}/{fn}'
+                        read_dfs[key] = read_hdf(file, key=key)
+        elif store=='pickle':
+            dataset_file = cls.dataset_file.with_suffix('.pickle')
+            with open(dataset_file, "rb") as f:
+                read_dfs = pickle.load(f)
+        else:
+            raise Exception('store ', store, 'not supported')
 
         return read_dfs
