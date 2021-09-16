@@ -55,6 +55,7 @@ setuptools.setup(
         "scipy",
         "tables",
         "torch",
+        "tqdm",
         "xarray",
     ],
     # Files that listed in MANIFEST.in and also are in python packages,

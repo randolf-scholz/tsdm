@@ -1,4 +1,4 @@
-r"""Data set containing electricity consumption of 370 points/clients.
+r"""Data set contains electricity consumption of 370 points/clients. 
 
 ElectricityLoadDiagrams20112014 Data Set
 ========================================
@@ -65,6 +65,9 @@ class Electricity(BaseDataset):
     """  # pylint: disable=line-too-long # noqa
 
     url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
+    info_url: str = (
+        r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"
+    )
     dataset: DataFrame
     rawdata_path: Path
     dataset_path: Path
@@ -100,7 +103,7 @@ class Electricity(BaseDataset):
 
     @classmethod
     def load(cls):
-        """Load the dataset from hdf-5 file."""
+        r"""Load the dataset from hdf-5 file."""
         super().load()  # <- makes sure DS is downloaded and preprocessed
         df = read_hdf(cls.dataset_file, key=cls.__name__)
         df = DataFrame(df)
