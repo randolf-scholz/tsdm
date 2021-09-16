@@ -136,7 +136,7 @@ class SliceSampler(Sampler):
             if slice_sampler is None:
                 return lambda: max(1, len(data_source) // 10)
             if isinstance(slice_sampler, int):
-                return lambda: slice_sampler   # type: ignore
+                return lambda: slice_sampler  # type: ignore
             if callable(slice_sampler):
                 return slice_sampler
             raise NotImplementedError("slice_sampler not compatible.")

@@ -1,11 +1,11 @@
 h5py
 matplotlib
-numpy>=1.20
+numpy>=1.21
 numba
 pandas
-python>=3.9
 pyyaml
 scipy
 tables
 torch
+tqdm
 xarray
