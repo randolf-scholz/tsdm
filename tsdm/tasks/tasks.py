@@ -1,6 +1,12 @@
-r"""Module Summary Line.
+r"""Tasks make running experiments easy & reproducible.
 
-Module description
+Task = Dataset + Evaluation Protocol
+
+For simplicity, the evaluation protocol is, in this iteration, restricted to a test metric,
+and a test_loader object.
+
+We decided to use a dataloader instead of, say, a split to cater to the question of
+forecasting horizons.
 """
 
 from __future__ import annotations
@@ -105,14 +111,15 @@ class BaseTask(ABC):
 
         For instance-wise metrics
 
-        ..code :: python
+        .. code-block:: python
+
             r = mean([test_metric(y, model(x)) for x,y in test_loader])
 
         For decomposable metrics:
 
         For non-decomposable metrics:
 
-        ..code :: python
+        .. code-block:: python
 
             pairs = [(y, model(x)) for x,y in test_loader(batch_size=1)]
             score = test_metric(pairs)
@@ -122,7 +129,6 @@ class BaseTask(ABC):
     @abstractmethod
     def test_metric(self):
         r"""Return the test metric."""
-        return
 
     @property
     @abstractmethod
