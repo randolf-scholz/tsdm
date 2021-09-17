@@ -27,17 +27,25 @@ To push to both repositories do the following
     git remote -v
     git remote remove ...
 
-2. Add both hildesheim and berlin remote
+2. Add origin either berlin or hildseheim
 
 .. code-block:: shell
 
-    git remote add hildesheim https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm
-    git remote add berlin https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm
+    git remote add origin https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm.git
+    git remote add origin https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm.git
 
 3. Tell GIT from which remote to perform pulls for the branch
 
 .. code-block:: shell
 
-    git push -u hildesheim master
+    git remote set-url --add --push origin https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm.git
+    git remote set-url --add --push origin https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm.git
+    git branch --set-upstream-to=origin/master master
 
+4. Check if everything is correct. `git remote -v` should print
 
+.. code-block:: shell
+
+    origin  https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm (fetch)
+    origin  https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm (push)
+    origin  https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm (push)
