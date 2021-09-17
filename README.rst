@@ -30,8 +30,9 @@ To push to both repositories do the following
 2. Add both hildesheim and berlin remote
 
 .. code-block:: shell
-    git remote add hildesheim git@software.ismll.uni-hildesheim.de:ISMLL-internal/special-interest-group-time-series/tsdm.git
-    git remote add berlin git@git.tu-berlin.de:bvt-htbd/kiwi/tf1/tsdm.git
+
+    git remote add hildesheim https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm
+    git remote add berlin https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm
 
 3. Tell GIT from which remote to perform pulls for the branch
 
