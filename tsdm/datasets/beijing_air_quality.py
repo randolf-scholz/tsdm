@@ -73,7 +73,7 @@ from typing import Final
 
 from pandas import DataFrame, Timestamp, concat, read_csv, read_hdf
 
-from tsdm.datasets import BaseDataset
+from tsdm.datasets.dataset import BaseDataset
 
 logger = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["BeijingAirQuality"]

@@ -30,7 +30,7 @@ import logging
 from pathlib import Path
 from typing import Final
 
-from . import (
+from tsdm import (
     config,
     datasets,
     encoders,
