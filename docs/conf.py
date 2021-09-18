@@ -49,8 +49,10 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
-    "sphinx_math_dollar",
+    # "autoapi.extension",
 ]
+# autoapi_type = 'python'
+# autoapi_dirs = ['.', '../tsdm']
 
 # try AutoAPI (different from sphinx-autoapi!)
 # extensions.append('autoapi.extension')
@@ -84,8 +86,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # unit titles (such as .. function::).
 add_module_names = False
 
+# This option causes `<latex>` to behave like `<latex>` in markdown
+# We use this instead of sphinx-math-dollar because that package does not work everywhere.
+default_role = "math"
 
-suppress_warnings = ["ref.python"]
+# suppress_warnings = ["ref.python"]
+
 # -- Options for HTML output -------------------------------------------------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for a list of builtin themes.
@@ -340,7 +346,7 @@ napoleon_type_aliases = {
 napoleon_attr_annotations = True
 # True to allow using PEP 526 attributes annotations in classes. If an attribute is documented in the docstring without
 # a type and has an annotation in the class body, that type is used.
-napoleon_custom_sections = []
+napoleon_custom_sections = ["Test-Metric", "Evaluation Protocol", "Paper", "Results"]
 # Add a list of custom sections to include, expanding the list of parsed sections. Defaults to None.
 
 # -- end of configuration ----------------------------------------------------------------------------------------------

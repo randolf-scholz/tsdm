@@ -7,18 +7,17 @@ from typing import Final
 
 from torch import Tensor, nn
 
-from tsdm.losses.functional import nd, nrmse
+from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
 
 logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["ND", "NRMSE"]
+__all__: Final[list[str]] = ["ND", "NRMSE", "Q_Quantile", "Q_Quantile_Loss"]
 
 
 class ND(nn.Module):
     r"""Compute the normalized deviation score.
 
     .. math::
-        \operatorname{ND}(\hat Y, Y)
-         = \frac{\sum_{t,k} |\hat Y_{t,k} -  Y_{t,k}|}{\sum_{t,k} |Y_{t,k}|}
+        𝖭𝖣(x, x̂) = \frac{∑_{t,k} |x̂_{t,k} -  x_{t,k}|}{∑_{t,k} |x_{t,k}|}
 
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
@@ -30,27 +29,26 @@ class ND(nn.Module):
     """  # pylint: disable=line-too-long # noqa
 
     @staticmethod
-    def forward(yhat: Tensor, y: Tensor) -> Tensor:
+    def forward(x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters
         ----------
-        yhat: Tensor
-        y: Tensor
+        x: Tensor
+        xhat: Tensor
 
         Returns
         -------
         Tensor
         """
-        return nd(yhat, y)
+        return nd(x, xhat)
 
 
 class NRMSE(nn.Module):
     r"""Compute the normalized deviation score.
 
     .. math::
-        \operatorname{NRMSE}(\hat Y, Y)
-         = \frac{\sqrt{ \frac{1}{T}\sum_{t,k} |\hat Y_{t,k} -  Y_{t,k}|^2 }}{\sum_{t,k} |Y_{t,k}|}
+        𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
 
     References
     ----------
@@ -58,16 +56,70 @@ class NRMSE(nn.Module):
     """  # pylint: disable=line-too-long # noqa
 
     @staticmethod
-    def forward(yhat: Tensor, y: Tensor) -> Tensor:
+    def forward(x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters
         ----------
-        yhat: Tensor
-        y: Tensor
+        x: Tensor
+        xhat: Tensor
 
         Returns
         -------
         Tensor
         """
-        return nrmse(yhat, y)
+        return nrmse(x, xhat)
+
+
+class Q_Quantile(nn.Module):
+    r"""The q-quantile.
+
+    .. math::
+        𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
+
+    References
+    ----------
+    - `Deep State Space Models for Time Series Forecasting <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>`_
+    """  # pylint: disable=line-too-long # noqa
+
+    @staticmethod
+    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+        r"""Compute the loss value.
+
+        Parameters
+        ----------
+        x: Tensor
+        xhat: Tensor
+
+        Returns
+        -------
+        Tensor
+        """
+        return q_quantile(x, xhat)
+
+
+class Q_Quantile_Loss(nn.Module):
+    r"""The q-quantile loss.
+
+    .. math::
+        𝖰𝖫_q(x,x̂) = 2\frac{∑_{it}𝖯_q(x_{it},x̂_{it})}{∑_{it}|x_{it}|}
+
+    References
+    ----------
+    - `Deep State Space Models for Time Series Forecasting <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>`_
+    """  # pylint: disable=line-too-long # noqa
+
+    @staticmethod
+    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+        r"""Compute the loss value.
+
+        Parameters
+        ----------
+        x: Tensor
+        xhat: Tensor
+
+        Returns
+        -------
+        Tensor
+        """
+        return q_quantile_loss(x, xhat)

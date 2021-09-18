@@ -183,7 +183,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
             )
         elif parsed_url.netloc == "github.com":
             subprocess.run(
-                f"svn export {cls.url.replace('tree/master', 'trunk')} {cls.rawdata_path}",
+                f"svn export {cls.url.replace('tree/main', 'trunk')} {cls.rawdata_path}",
                 shell=True,
                 check=True,
             )

@@ -7,6 +7,53 @@ and a test_loader object.
 
 We decided to use a dataloader instead of, say, a split to cater to the question of
 forecasting horizons.
+
+Decomposable Metrics
+--------------------
+
+**Example:** Mean Square Error (MSE)
+
+.. code-block:: python
+
+    dims = (1, ...)  # sum over all axes except batch dimension
+    # y, yhat are of shape (B, ...)
+    test_metric = lambda y, yhat: torch.sum( (y-yhat)**2, dim=dims )
+    accumulation = torch.mean
+
+**Recipe**
+
+.. code-block:: python
+
+    r = []
+    for x, y in dataloader:
+        r.append( test_metric(y, model(x)) )
+
+    score = accumulation(torch.concat(r, dim=BATCHDIM))
+
+Non-decomposable Metrics
+------------------------
+
+**Example:** Area Under the Receiver Operating Characteristic Curve (AUROC)
+
+test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, ...)
+
+.. code-block:: python
+
+   score = test_metric([(y, model(x)) for x, y in test_loader])
+   accumulation = None or identity function (tbd.)
+
+**Recipe**
+
+.. code-block:: python
+
+    ys, yhats = []
+    for x, y in dataloader:
+        ys.append( y )
+        yhats.append( model(x) )
+
+    ys = torch.concat(ys, dim=BATCHDIM)
+    yhats = torch.concat(yhats, dim=BATCHDIM)
+    score = test_metric(ys, yhats)
 """
 
 from __future__ import annotations
@@ -31,53 +78,6 @@ class BaseTask(ABC):
 
     A task is always bound to a dataset.
     Its main task is create a dataloader that cycles through the test dataset once.
-
-    Decomposable Metrics
-    --------------------
-
-    **Example:** Mean Square Error (MSE)
-
-    .. code-block:: python
-
-        dims = (1, ...)  # sum over all axes except batch dimension
-        # y, yhat are of shape (B, ...)
-        test_metric = lambda y, yhat: torch.sum( (y-yhat)**2, dim=dims )
-        accumulation = torch.mean
-
-    **Recipe**
-
-    .. code-block:: python
-
-        r = []
-        for x, y in dataloader:
-            r.append( test_metric(y, model(x)) )
-
-        score = accumulation(torch.concat(r, dim=BATCHDIM))
-
-    Non-decomposable Metrics
-    ------------------------
-
-    **Example:** Area Under the Receiver Operating Characteristic Curve (AUROC)
-
-    test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, ...)
-
-    .. code-block:: python
-
-       score = test_metric([(y, model(x)) for x, y in test_loader])
-       accumulation = None or identity function (tbd.)
-
-    **Recipe**
-
-    .. code-block:: python
-
-        ys, yhats = []
-        for x, y in dataloader:
-            ys.append( y )
-            yhats.append( model(x) )
-
-        ys = torch.concat(ys, dim=BATCHDIM)
-        yhats = torch.concat(yhats, dim=BATCHDIM)
-        score = test_metric(ys, yhats)
     """
 
     @abstractmethod

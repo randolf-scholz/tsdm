@@ -1,16 +1,15 @@
 tsdm - **T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
 ==============================================================
 
-
 .. toctree::
 
-   Home page <self>
-   Recipes <recipes>
-   API reference <_autosummary/tsdm>
-   CHANGELOG <CHANGELOG>
-   CONTRIBUTING <CONTRIBUTING>
-   README <README>
-
+    Home page <self>
+    Recipes <RECIPES>
+    API <_autosummary/tsdm>
+    CHANGELOG <CHANGELOG>
+    CONTRIBUTING <CONTRIBUTING>
+    LICENSE <LICENSE>
+    README <README>
 
 Installation
 ============

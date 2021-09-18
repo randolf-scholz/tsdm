@@ -19,7 +19,10 @@ Song Xi Chen, csx '@' gsm.pku.edu.cn, Guanghua School of Management, Center for 
 Data Set Information
 --------------------
 
-This data set includes hourly air pollutants data from 12 nationally-controlled air-quality monitoring sites. The air-quality data are from the Beijing Municipal Environmental Monitoring Center. The meteorological data in each air-quality site are matched with the nearest weather station from the China Meteorological Administration. The time period is from March 1st, 2013 to February 28th, 2017. Missing data are denoted as NA.
+This data set includes hourly air pollutants data from 12 nationally-controlled air-quality monitoring sites. 
+The air-quality data are from the Beijing Municipal Environmental Monitoring Center. The meteorological data in each
+air-quality site are matched with the nearest weather station from the China Meteorological Administration. 
+The time period is from March 1st, 2013 to February 28th, 2017. Missing data are denoted as NA.
 
 Attribute Information
 ---------------------
@@ -76,6 +79,7 @@ from pandas import DataFrame, Timestamp, concat, read_csv, read_hdf
 from tsdm.datasets.dataset import BaseDataset
 
 logger = logging.getLogger(__name__)
+
 __all__: Final[list[str]] = ["BeijingAirQuality"]
 
 
@@ -139,8 +143,8 @@ class BeijingAirQuality(BaseDataset):
             stations.append(df)
 
         df = concat(stations, ignore_index=True)
-        df.name = f"{cls.__name__}"
+        df.name = cls.__name__
 
-        df.to_hdf(cls.dataset_file, key=f"{cls.__name__}")
+        df.to_hdf(cls.dataset_file, key=cls.__name__)
 
         logger.info("Finished cleaning dataset '%s'", cls.__name__)

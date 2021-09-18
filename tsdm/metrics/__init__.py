@@ -9,7 +9,7 @@ We define the following
 
     such that
 
-    - $𝔪(\{(y_i, \hat{y}_i) ∣  i=1:n \}) = 0$ if and only if $y_i=\hat{y}_i∀i$
+    - `𝔪(\{(y_i, \hat{y}_i) ∣  i=1:n \}) = 0` if and only if `y_i=\hat{y}_i∀i`
 
 2. A metric is called decomposable, if it can be written as a function
 
@@ -18,8 +18,8 @@ We define the following
         ℓ\colon 𝓨×𝓨 ⟶ ℝ_{≥ 0}
         Ψ\colon 𝓟_0(ℝ_{≥0}) ⟶ ℝ_{≥0}
 
-    I.e. the function $ℓ$ is applied element-wise to all pairs $(y, \hat{y}$ and the function $Ψ$ 
-    "accumulates" the results. Oftentimes, $Ψ$ is just the sum/mean/expectation value, although
+    I.e. the function `ℓ` is applied element-wise to all pairs `(y, \hat{y}` and the function `Ψ` 
+    "accumulates" the results. Oftentimes, `Ψ` is just the sum/mean/expectation value, although
     other accumulations such as the median value are also possible.
 
 3. A metric is called instance-wise, if it can be written in the form
