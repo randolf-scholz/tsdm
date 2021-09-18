@@ -20,7 +20,6 @@ class ElectricityDeepState:
     Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
     https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
 
-
     Evaluation Protocol
     -------------------
 
@@ -31,10 +30,8 @@ class ElectricityDeepState:
     Test-Metric
     -----------
 
-
     Results
     -------
-
 
     Obseravtion horizons: [14, 21, 28] days
     Forecast    horizons: 7 days
@@ -91,15 +88,17 @@ class ElectricityTRMF:
     Test-Metric
     -----------
 
-        **Normalized deviation (ND)**
-        .. math::
-            𝖭𝖣(Y, Ŷ) = \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i,t) ∈ Ω_\text{test}}|Ŷ_{it}-Y_{it}|\Big)
-            \Big/ \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i,t) ∈ Ω_\text{test}}|Y_{it}|\Big)
+    **Normalized deviation (ND)**
 
-        **Normalized RMSE (NRMSE)**
-        .. math::
-            𝖭𝖱𝖬𝖲𝖤(Y, Ŷ) = \sqrt{\frac{1}{|Ω_\text{test}|}∑_{(i,t)∈Ω_\text{test}}|Ŷ_{it}-Y_{it}|^2}
-            \Big/ \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i,t) ∈ Ω_\text{test}}|Y_{it}|\Big)
+    .. math::
+        𝖭𝖣(Y, Ŷ) = \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i,t) ∈ Ω_\text{test}}|Ŷ_{it}-Y_{it}|\Big)
+        \Big/ \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i,t) ∈ Ω_\text{test}}|Y_{it}|\Big)
+
+    **Normalized RMSE (NRMSE)**
+
+    .. math::
+        𝖭𝖱𝖬𝖲𝖤(Y, Ŷ) = \sqrt{\frac{1}{|Ω_\text{test}|}∑_{(i,t) ∈ Ω_\text{test}}|Ŷ_{it}-Y_{it}|^2}
+        \Big/ \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i,t) ∈ Ω_\text{test}}|Y_{it}|\Big)
 
     Results
     -------

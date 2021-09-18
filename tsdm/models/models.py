@@ -20,7 +20,6 @@ class BaseModel:
     """
 
     url: str
-    name: str
     model_path: Path
 
     def __init__(self):
