@@ -40,6 +40,7 @@ from tsdm import (
     optimizers,
     plot,
     random,
+    tasks,
     trainers,
     util,
 )
@@ -59,6 +60,7 @@ __all__: Final[list[str]] = ["__version__"] + [
     "optimizers",
     "plot",
     "random",
+    "tasks",
     "trainers",
     "util",
 ]

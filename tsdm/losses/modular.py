@@ -28,8 +28,7 @@ class ND(nn.Module):
     -  `N-BEATS: Neural basis expansion analysis for interpretable time series forecasting <https://openreview.net/forum?id=r1ecqn4YwB>`_
     """  # pylint: disable=line-too-long # noqa
 
-    @staticmethod
-    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters
@@ -55,8 +54,7 @@ class NRMSE(nn.Module):
     -  `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
     """  # pylint: disable=line-too-long # noqa
 
-    @staticmethod
-    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters
@@ -82,8 +80,7 @@ class Q_Quantile(nn.Module):
     - `Deep State Space Models for Time Series Forecasting <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>`_
     """  # pylint: disable=line-too-long # noqa
 
-    @staticmethod
-    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters
@@ -109,8 +106,7 @@ class Q_Quantile_Loss(nn.Module):
     - `Deep State Space Models for Time Series Forecasting <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>`_
     """  # pylint: disable=line-too-long # noqa
 
-    @staticmethod
-    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters

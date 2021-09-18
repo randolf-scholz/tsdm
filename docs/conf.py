@@ -49,8 +49,10 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
-    # "autoapi.extension",
 ]
+
+# AUTOAPI
+# extensions.append("autoapi.extension")
 # autoapi_type = 'python'
 # autoapi_dirs = ['.', '../tsdm']
 
@@ -90,7 +92,7 @@ add_module_names = False
 # We use this instead of sphinx-math-dollar because that package does not work everywhere.
 default_role = "math"
 
-# suppress_warnings = ["ref.python"]
+suppress_warnings = ["epub.duplicated_toc_entry"]
 
 # -- Options for HTML output -------------------------------------------------------------------------------------------
 

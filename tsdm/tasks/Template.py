@@ -29,11 +29,11 @@ class ExampleTask:
 
         A.1 Datasets and Evaluation Criteria
         [...]
-        traffic 4 : A collection of 15 months of daily data from the California Department of Transportation.
-        The data describes the occupancy rate, between 0 and 1, of different car lanes of San Francisco
-        bay area freeways. The data was sampled every 10 minutes, and we again aggregate the columns
-        to obtain hourly traffic data to finally get n = 963, T = 10, 560. The coefficient of variation for
-        traffic is 0.8565.
+        traffic 4 : A collection of 15 months of daily data from the California Department of
+        Transportation. The data describes the occupancy rate, between 0 and 1, of different car
+        lanes of San Francisco bay area freeways. The data was sampled every 10 minutes, and we
+        again aggregate the columns to obtain hourly traffic data to finally get n = 963,
+        T = 10, 560. The coefficient of variation for traffic is 0.8565.
 
     Test-Metric
     -----------
@@ -43,21 +43,19 @@ class ExampleTask:
     **Normalized deviation (ND)**
 
         .. math::
-            𝖭𝖣(Y, Ŷ) = \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i, t) \in Ω_\text{test}}|Ŷ_{it}-Y_{it}|\Big)
-            \Big/ \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i, t) \in Ω_\text{test}}|Y_{it}|\Big)
+            𝖭𝖣(Y, Ŷ) = \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i,t)∈Ω_\text{test}}|Ŷ_{it}-Y_{it}|\Big)
+            \Big/ \Big(\frac{1}{|Ω_\text{test}|} ∑_{(i,t) ∈ Ω_\text{test}}|Y_{it}|\Big)
 
     Results
     -------
 
     Here you can paste a table from the paper. The onle tool https://www.tablesgenerator.com/ is
-    your biggest friend. Use the `File>Paste Table Data` option to easily import tables. For output,
-    select `Text` and check the `Use reStructuredText syntax` checkbox. For example:
+    your biggest friend. Use the `File>Paste Table Data` option to easily import tables.
+    For output, select `Text` and check the `Use reStructuredText syntax` checkbox. For example:
 
     +-------+-------+-------------+-------------+---------------+
     | Model | TRMF  | N-BEATS (G) | N-BEATS (I) | N-BEATS (I+G) |
     +=======+=======+=============+=============+===============+
     | ND    | 0.187 | 0.112       | 0.110       | 0.111         |
     +-------+-------+-------------+-------------+---------------+
-
-
     """
