@@ -10,7 +10,7 @@ from typing import Final
 import torch
 from torch import nn
 
-from tsdm.models import BaseModel
+from tsdm.models.models import BaseModel
 from tsdm.util import deep_dict_update
 
 logger = logging.getLogger(__name__)

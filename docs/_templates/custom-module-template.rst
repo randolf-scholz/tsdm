@@ -1,10 +1,6 @@
 {{ fullname | escape | underline}}
 
 .. automodule:: {{ fullname }}
-    {% if modules %}:members:
-    :noindex:
-    {% endif %}
-
     {% block modules %}
     {% if modules %}
     .. rubric:: {{ _('Sub-Modules') }}
@@ -17,7 +13,6 @@
     {%- endfor %}
     {% endif %}
     {% endblock %}
-
 
     {% block attributes %}
     {% if attributes %}
@@ -66,15 +61,3 @@
     {% endif %}
     {% endblock %}
 
-    {# Do not use this block for now
-    {% block members %}
-    {% if members %}
-    .. rubric:: {{ _('Module Members') }}
-    .. autosummary::
-      :toctree: {{ fullname }}
-    {% for item in members %}
-      {{ item }}
-    {%- endfor %}
-    {% endif %}
-    {% endblock %}
-    #}

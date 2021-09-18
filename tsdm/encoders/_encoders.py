@@ -73,13 +73,13 @@ def triplet2dense(
 def make_dense_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to dense triplet format.
 
-    Given that `df` has $d$ columns
-    with $n$ rows containing $N ≤ n⋅d$ observations (non-NaN entries),
-    the result is a $(N×3)$ array $(t_i, v_i, x_i)_{i=1:N}$
+    Given that `df` has `d` columns
+    with `n` rows containing `N ≤ n⋅d` observations (non-NaN entries),
+    the result is a `(N×3)` array `(t_i, v_i, x_i)_{i=1:N}`
 
-    - $t_i$ timestamp (index)
-    - $v_i$ indicator variable
-    - $x_i$ observed value
+    - `t_i` timestamp (index)
+    - `v_i` indicator variable
+    - `x_i` observed value
 
     References
     ----------
@@ -122,12 +122,12 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
 def make_sparse_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to sparse triplet format.
 
-    Given that `df` has $d$ columns with $n$ rows containing $N ≤ n⋅d$ observations
-    (non-NaN entries), the result is a $(N×(d+1))$ array $(t_i, v_i, x_i)_{i=1:N}$
+    Given that `df` has `d` columns with `n` rows containing `N ≤ n⋅d` observations
+    (non-NaN entries), the result is a `(N×(d+1))` array `(t_i, v_i, x_i)_{i=1:N}`
 
-    - $t_i$ timestamp (index)
-    - $v_i$ one-hot encoded indicator variable
-    - $x_i$ observed value
+    - `t_i` timestamp (index)
+    - `v_i` one-hot encoded indicator variable
+    - `x_i` observed value
 
     Parameters
     ----------
@@ -176,9 +176,9 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     x: :class:`pandas.DataFrame` ``[dtype]``
         The original dataframe
     m: :class:`pandas.DataFrame` ``[uint8]``
-        mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
+        mask `m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}`
     d: :class:`pandas.DataFrame` ``[TimeDelta64]``
-        time delta  $δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt$, with $δ_0=0$
+        time delta  `δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt`, with `δ_0=0`
 
     References
     ----------

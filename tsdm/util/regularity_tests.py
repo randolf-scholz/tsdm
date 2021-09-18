@@ -133,7 +133,7 @@ def is_quasiregular(s: Union[Series, DataFrame]) -> bool:
 
 
 def is_regular(s: Union[Series, DataFrame]) -> bool:
-    r"""Test if time series is regular, i.e. iff $Δt_i$ is constant.
+    r"""Test if time series is regular, i.e. iff `Δt_i` is constant.
 
     Parameters
     ----------
@@ -162,9 +162,9 @@ def regularity_coefficient(
     .. math::
        κ(𝐭) = \frac{(t_\max-t_\min)/𝗀𝖼𝖽(𝐭)}{|𝐭|}
 
-    In particular, if the time-series is regular, $κ=1$, and if it is irregular,
-    $κ=∞$. To make the time-series regular, one would have to insert an additional
-    $(κ(𝐭)-1)|𝐭|$ data-points.
+    In particular, if the time-series is regular, `κ=1`, and if it is irregular,
+    `κ=∞`. To make the time-series regular, one would have to insert an additional
+    `(κ(𝐭)-1)|𝐭|` data-points.
 
     Parameters
     ----------

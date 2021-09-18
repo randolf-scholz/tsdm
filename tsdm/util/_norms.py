@@ -38,10 +38,10 @@ def relative_error(
     r"""Relative error, works with both :class:`~torch.Tensor` and :class:`~numpy.ndarray`.
 
     .. math::
-        r(x̂, x) = \tfrac{|x̂ - x|}{|x|+ϵ}
+        r(x̂, x) = \tfrac{|x̂ - x|}{|x|+ε}
 
-    The tolerance parameter $ϵ$ is determined automatically. By default,
-    $ϵ=2^{-24}$ for single and $ϵ=2^{-53}$ for double precision.
+    The tolerance parameter `ε` is determined automatically. By default,
+    `ϵ=2^{-24}` for single and `ϵ=2^{-53}` for double precision.
 
     Parameters
     ----------
@@ -135,7 +135,7 @@ def scaled_norm(
     axis: Optional[SizeLike] = None,
     keepdims: Optional[bool] = None,
 ):
-    r"""Scaled $ℓ^p$-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`.
+    r"""Scaled `ℓ^p`-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`.
 
     .. math::
         ‖x‖_p = (⅟ₙ ∑_{i=1}^n |x_i|^p)^{1/p}
@@ -149,9 +149,9 @@ def scaled_norm(
        ∥u⊕v∥_p^p = \frac{\dim U}{\dim U⊕V} ∥u∥_p^p + \frac{\dim V}{\dim U⊕V} ∥v∥_p^p
 
 
-    This choice is consistent with associativity: $∥(u⊕v)⊕w∥ = ∥u⊕(v⊕w)∥$
+    This choice is consistent with associativity: `∥(u⊕v)⊕w∥ = ∥u⊕(v⊕w)∥`
 
-    In particular, given $𝓤=⨁_{i=1:n} U_i$, then
+    In particular, given `𝓤=⨁_{i=1:n} U_i`, then
 
     ..math::
         ∥u∥_p^p = ∑_{i=1:n} \frac{\dim U_i}{\dim 𝓤} ∥u_i∥_p^p

@@ -1,0 +1,7 @@
+Dataset         M4-Hourly  M4-Hourly parts    parts     tourism-Monthly  tourism-Monthly  tourism-Quarterly  tourism-Quarterly
+Test-Metric     p50        p90       p50      p90       p50              p90              p50                p90
+Model
+ETS             0.054      0.0267    1.639    1.0086    0.093            0.054            0.105              0.055
+ARIMA           0.052      0.0354    1.6444   1.0664    0.0999           0.058            0.1241             0.062
+DeepAR          0.090      0.0304    1.273    1.086     0.10             0.059            0.11               0.062
+DeepState       0.044      0.0266    1.47     0.935     0.138            0.067            0.098              0.047
