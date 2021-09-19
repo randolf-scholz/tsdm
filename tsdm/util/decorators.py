@@ -9,7 +9,7 @@ from time import perf_counter_ns
 from typing import Any, Callable, Final, Optional
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["decorator", "DecoratorError", "timefun"]
+__all__: Final[list[str]] = ["decorator", "DecoratorError", "sphinx_value", "timefun"]
 
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY

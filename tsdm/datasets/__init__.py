@@ -14,6 +14,7 @@ from tsdm.datasets.physionet2019 import Physionet2019
 
 LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
+    "Dataset",
     "DATASETS",
     "DatasetMetaClass",
     "BaseDataset",
@@ -23,9 +24,13 @@ __all__: Final[list[str]] = [
     "BeijingAirQuality",
 ]
 
-DATASETS: Final[dict[str, Type[BaseDataset]]] = {
+Dataset = Type[BaseDataset]
+r"""Type hint for datasets."""
+
+DATASETS: Final[dict[str, Dataset]] = {
     "Electricity": Electricity,
     "InSilicoData": InSilicoData,
     "Physionet2019": Physionet2019,
     "BeijingAirQuality": BeijingAirQuality,
 }
+r"""Dictionary containing all available datasets."""

@@ -242,7 +242,7 @@ pages:
   only: [ master ]
   allow_failure: true
   script:
-    - pip install --upgrade sphinx sphinx-rtd-theme sphinx-math-dollar
+    - pip install --upgrade sphinx sphinx-rtd-theme
     - cd docs
     - make clean
     - sphinx-build -b html . _build
