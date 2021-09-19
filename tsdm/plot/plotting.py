@@ -62,14 +62,14 @@ def visualize_distribution(
 
     if print_stats:
         stats = {
-            "NaNs": f"{100*np.mean(nans):.2f}"+r"\%",
+            "NaNs": f"{100*np.mean(nans):.2f}" + r"\%",
             "Mean": f"{np.mean(x):.2e}",
             "Median": f"{np.median(x):.2e}",
             "Mode": f"{mode(x)[0][0]:.2e}",
             "Stdev": f"{np.std(x):.2e}",
         }
         if extra_stats is not None:
-            stats |= {str(key) : str(val) for key, val in extra_stats.items()}
+            stats |= {str(key): str(val) for key, val in extra_stats.items()}
 
         pad = max(len(key) for key in stats)
 
