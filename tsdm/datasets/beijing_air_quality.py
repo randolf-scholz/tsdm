@@ -78,7 +78,7 @@ from pandas import DataFrame, Timestamp, concat, read_csv, read_hdf
 
 from tsdm.datasets.dataset import BaseDataset
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 __all__: Final[list[str]] = ["BeijingAirQuality"]
 
@@ -119,7 +119,7 @@ class BeijingAirQuality(BaseDataset):
         def totime(x):
             return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
 
-        logger.info("Cleaning dataset '%s'", cls.__name__)
+        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
 
         file_path = cls.rawdata_path.joinpath("PRSA2017_Data_20130301-20170228.zip")
         data_path = cls.rawdata_path.joinpath("PRSA_Data_20130301-20170228")
@@ -128,7 +128,7 @@ class BeijingAirQuality(BaseDataset):
             with zipfile.ZipFile(file_path, "r") as zip_ref:
                 zip_ref.extractall(cls.rawdata_path)
 
-        logger.info("Finished extracting dataset '%s'", cls.__name__)
+        LOGGER.info("Finished extracting dataset '%s'", cls.__name__)
 
         stations = []
         for csv in os.listdir(data_path):
@@ -147,4 +147,4 @@ class BeijingAirQuality(BaseDataset):
 
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        logger.info("Finished cleaning dataset '%s'", cls.__name__)
+        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)

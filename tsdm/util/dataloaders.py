@@ -25,7 +25,7 @@ from torch.nn.utils.rnn import (
 )
 from torch.utils.data import Sampler
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "collate_list",
     "collate_packed",

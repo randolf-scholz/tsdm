@@ -162,7 +162,7 @@ from tqdm import tqdm
 
 from tsdm.datasets.dataset import BaseDataset
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["Physionet2019"]
 
 
@@ -210,7 +210,7 @@ class Physionet2019(BaseDataset):
         only.
         """
         dataset = cls.__name__
-        logger.info("Cleaning dataset '%s'", dataset)
+        LOGGER.info("Cleaning dataset '%s'", dataset)
         if store == "hdf":
             h5file = HDFStore(cls.dataset_file)
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
@@ -240,7 +240,7 @@ class Physionet2019(BaseDataset):
         else:
             raise Exception("store ", store, "not supported")
 
-        logger.info("Finished extracting dataset '%s'", dataset)
+        LOGGER.info("Finished extracting dataset '%s'", dataset)
 
     @classmethod
     def load(cls, store="hdf"):  # pylint: disable=arguments-differ

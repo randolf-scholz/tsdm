@@ -6,7 +6,7 @@ from tsdm.util import dataloaders, decorators, dtypes, regularity_tests, system
 from tsdm.util._norms import relative_error, scaled_norm
 from tsdm.util._utilfuncs import ACTIVATIONS, deep_dict_update, deep_kval_update
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 __all__: Final[list[str]] = [
     "ACTIVATIONS",

@@ -11,7 +11,7 @@ from numpy.typing import ArrayLike
 from scipy.stats import mode
 from torch import Tensor
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["visualize_distribution", "shared_grid_plot"]
 
 
@@ -60,6 +60,7 @@ def visualize_distribution(
     else:
         low = np.quantile(x, 0.01)
         high = np.quantile(x, 1 - 0.01)
+        bins = np.linspace(low, high, num=num_bins)
 
     ax.hist(x, bins=bins, density=True)
 
@@ -85,7 +86,7 @@ def visualize_distribution(
         )
 
         # if extra_stats is not None:
-        logger.info("writing table %s", table)
+        LOGGER.info("writing table %s", table)
 
         # text = r"\begin{tabular}{ll}test & and\\ more &test\end{tabular}"
         textbox = AnchoredText(table, loc=loc, borderpad=0.0)

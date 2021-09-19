@@ -4,7 +4,7 @@ from typing import Final
 
 import matplotlib
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = []
 
 # matplotlib.use("pgf")

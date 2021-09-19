@@ -5,7 +5,7 @@ from abc import abstractmethod
 from pathlib import Path
 from urllib.parse import urlparse
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__ = ["BaseModel"]
 
 
@@ -29,9 +29,8 @@ class BaseModel:
     @classmethod
     def download(cls):
         r"""Download model (e.g. via git clone)."""
-        model = cls.__name__
         parsed_url = urlparse(cls.url)
-        logger.info("Obtaining model '%s' from %s", model, cls.url)
+        LOGGER.info("Obtaining model '%s' from %s", cls.__name__, cls.url)
 
         if "google-research" in parsed_url.path:
             subprocess.run(
@@ -48,7 +47,7 @@ class BaseModel:
             )
             # subprocess.run(F"git -C {model_path} pull", shell=True)
 
-        logger.info("Finished importing model '%s' from %s", cls.name, cls.url)
+        LOGGER.info("Finished importing model '%s' from %s", cls.__name__, cls.url)
 
     @abstractmethod
     def __call__(self, *inputs):

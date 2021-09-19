@@ -8,7 +8,7 @@ from typing import Callable, Final
 import torch
 from torch import Tensor, jit
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "nd",
     "nrmse",

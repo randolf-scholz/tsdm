@@ -12,7 +12,7 @@ from torch import nn
 from tsdm.losses import functional
 from tsdm.losses.modular import ND, NRMSE, Q_Quantile, Q_Quantile_Loss
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "functional",
     "LOSSES",
