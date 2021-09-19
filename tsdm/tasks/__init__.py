@@ -13,7 +13,17 @@ forecasting horizons.
 from __future__ import annotations
 
 import logging
-from typing import Final
+from typing import Any, Final
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = []
+__all__: Final[list[str]] = [
+    "Task",
+    "TASKS",
+]
+
+
+Task = Any
+r"""Type hint for tasks."""
+
+TASKS: Final[dict[str, Task]] = {}
+r"""Dictionary containing all available tasks."""

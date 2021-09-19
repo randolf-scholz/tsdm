@@ -1,7 +1,7 @@
 r"""Plotting helper functions."""
 
 import logging
-from typing import Callable, Final, Optional, Literal
+from typing import Callable, Final, Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np

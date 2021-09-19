@@ -55,6 +55,7 @@ extensions = [
 # extensions.append("autoapi.extension")
 # autoapi_type = 'python'
 # autoapi_dirs = ['.', '../tsdm']
+# autoapi_root = "_autoapi"
 
 # try AutoAPI (different from sphinx-autoapi!)
 # extensions.append('autoapi.extension')
