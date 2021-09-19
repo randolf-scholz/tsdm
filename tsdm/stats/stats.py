@@ -19,13 +19,13 @@ def sparsity(df: DataFrame):
     return col_wise, total
 
 
-def linearness(df: DataFrame):
+def linearness():
     r"""Quantify linear signals in the data using regularized least-squares."""
 
 
-def periodicity(df: DataFrame):
+def periodicity():
     r"""Quantify periodic signals in the data using (Non-Uniform) FFT in O(N log N)."""
 
 
-def summary_stats(df: DataFrame):
+def summary_stats():
     r"""Summary statistics: column-wise mean/median/std/histogram. Cross-channel correlation."""

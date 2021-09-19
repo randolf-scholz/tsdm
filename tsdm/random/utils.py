@@ -110,7 +110,6 @@ def sample_timedeltas(
         for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
     }
     base_unit = next(u for u, val in units.items() if freq >= val)
-
     return timedeltas.astype(f"timedelta64[{base_unit}]")
 
 
