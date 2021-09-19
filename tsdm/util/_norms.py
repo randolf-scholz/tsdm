@@ -133,7 +133,7 @@ def scaled_norm(
     x,
     p: float = 2,
     axis: Optional[SizeLike] = None,
-    keepdims: Optional[bool] = None,
+    keepdims: bool = False,
 ):
     r"""Scaled `ℓ^p`-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`.
 
@@ -168,16 +168,16 @@ def scaled_norm(
     ArrayLike
     """
     if isinstance(x, Tensor):
-        return _torch_scaled_norm(x)
+        return _torch_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
     if isinstance(x, np.ndarray):
-        return _numpy_scaled_norm(x)
-    if axis is not None or keepdims is not None:
-        return _numpy_scaled_norm(np.asarray(x))
+        return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
+    if axis is not None:
+        return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdim)
     if isinstance(x, Iterable) and all(isinstance(item, Tensor) for item in x):
-        return _torch_multi_scaled_norm(x, p)
+        return _torch_multi_scaled_norm(x, p=p, q=p)
     if isinstance(x, Iterable) and all(isinstance(item, np.ndarray) for item in x):
-        return _numpy_multi_scaled_norm(x, p)
-    return _numpy_scaled_norm(x, p)
+        return _numpy_multi_scaled_norm(x, p=p, q=p)
+    return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdim)
 
 
 def _torch_scaled_norm(
@@ -186,7 +186,6 @@ def _torch_scaled_norm(
     axis: SizeLike = (),  # TODO: use tuple[int, ...] once supported
     keepdims: bool = False,
 ) -> Tensor:
-
     if not _torch_is_float_dtype(x):
         x = x.to(dtype=torch.float)
     x = torch.abs(x)
