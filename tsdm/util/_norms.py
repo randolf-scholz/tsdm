@@ -94,7 +94,7 @@ def scaled_norm(  # type: ignore[misc]
     x: Tensor,
     p: float = 2,
     axis: Optional[SizeLike] = None,
-    keepdims: Optional[bool] = None,
+    keepdims: bool = False,
 ) -> Tensor:
     ...
 
@@ -104,7 +104,7 @@ def scaled_norm(  # type: ignore[misc]
     x: NDArray,
     p: float = 2,
     axis: Optional[SizeLike] = None,
-    keepdims: Optional[bool] = None,
+    keepdims: bool = False,
 ) -> NDArray:
     ...
 
@@ -114,7 +114,7 @@ def scaled_norm(  # type: ignore[misc]
     x: Iterable[Tensor],
     p: float = 2,
     axis: Optional[SizeLike] = None,
-    keepdims: Optional[bool] = None,
+    keepdims: bool = False,
 ) -> Tensor:
     ...
 
@@ -124,7 +124,7 @@ def scaled_norm(  # type: ignore[misc]
     x: Iterable[NDArray],
     p: float = 2,
     axis: Optional[SizeLike] = None,
-    keepdims: Optional[bool] = None,
+    keepdims: bool = False,
 ) -> NDArray:
     ...
 
@@ -168,16 +168,17 @@ def scaled_norm(
     ArrayLike
     """
     if isinstance(x, Tensor):
+        axis = () if axis is None else axis
         return _torch_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
     if isinstance(x, np.ndarray):
         return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
     if axis is not None:
-        return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdim)
+        return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
     if isinstance(x, Iterable) and all(isinstance(item, Tensor) for item in x):
         return _torch_multi_scaled_norm(x, p=p, q=p)
     if isinstance(x, Iterable) and all(isinstance(item, np.ndarray) for item in x):
         return _numpy_multi_scaled_norm(x, p=p, q=p)
-    return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdim)
+    return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
 
 
 def _torch_scaled_norm(
