@@ -5,5 +5,5 @@ They include the whole training loop, i.e. also stopping criteria, learn-rate sc
 import logging
 from typing import Final
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = []

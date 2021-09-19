@@ -13,7 +13,7 @@ from torch import nn
 from tsdm.models.models import BaseModel
 from tsdm.util import deep_dict_update
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["ODE_RNN"]
 
 

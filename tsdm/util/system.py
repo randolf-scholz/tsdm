@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 from typing import Final, Optional
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "query_bool",
     "query_choice",
@@ -135,7 +135,7 @@ def install_package(
             except subprocess.CalledProcessError as E:
                 raise RuntimeError("Execution failed with error") from E
     else:
-        logger.info("Package '%s' already installed.", package_name)
+        LOGGER.info("Package '%s' already installed.", package_name)
 
 
 def get_requirements(package: str, version: Optional[str] = None) -> dict[str, str]:

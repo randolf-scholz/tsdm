@@ -9,7 +9,7 @@ from torch import Tensor, nn
 
 from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["ND", "NRMSE", "Q_Quantile", "Q_Quantile_Loss"]
 
 

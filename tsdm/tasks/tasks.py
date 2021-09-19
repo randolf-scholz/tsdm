@@ -67,7 +67,7 @@ from torch.utils.data import DataLoader
 # from tsdm.losses import LOSSES
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "BaseTask",
 ]

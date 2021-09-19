@@ -7,7 +7,7 @@ from typing import Any, Final, Iterable, Type
 
 from torch import nn
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "ACTIVATIONS",
     "deep_dict_update",

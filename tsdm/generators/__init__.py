@@ -12,5 +12,5 @@ contains generators for synthetic datasets. By design each generators consists o
 import logging
 from typing import Final
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = []

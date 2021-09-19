@@ -49,7 +49,7 @@ with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as fi
     __version__ = file.read()
     r"""The version number of the tsdm package"""
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["__version__"] + [
     "config",
     "datasets",

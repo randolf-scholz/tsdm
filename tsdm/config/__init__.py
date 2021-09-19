@@ -16,7 +16,7 @@ import yaml
 
 from tsdm.config import config_files
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "CONFIG",
     "DATASETS",
@@ -76,8 +76,8 @@ LOGDIR.mkdir(parents=True, exist_ok=True)
 #     datefmt="%Y-%m-%d %H:%M:%S",
 #     level=logging.INFO)
 
-logger.info("Available Models: %s", set(MODELS))
-logger.info("Available Datasets: %s", set(DATASETS))
+LOGGER.info("Available Models: %s", set(MODELS))
+LOGGER.info("Available Datasets: %s", set(DATASETS))
 
 
 def generate_folders(d: dict, current_path: Path):
@@ -97,12 +97,12 @@ def generate_folders(d: dict, current_path: Path):
     for directory in d:
         path = current_path.joinpath(directory)
         if d[directory] is None:
-            logger.info("creating folder %s", path)
+            LOGGER.info("creating folder %s", path)
             path.mkdir(parents=True, exist_ok=True)
         else:
             generate_folders(d[directory], path)
 
 
-# logger.info(F"Found config files: {set(resources.contents('config_files'))}")
-logger.info("Initializing Folder Structure")
+# LOGGER.info(F"Found config files: {set(resources.contents('config_files'))}")
+LOGGER.info("Initializing Folder Structure")
 generate_folders(CONFIG["folders"], BASEDIR)

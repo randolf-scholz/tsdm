@@ -10,7 +10,7 @@ import torch
 from numpy.typing import ArrayLike, NDArray
 from torch import Tensor
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "relative_error",
     "scaled_norm",

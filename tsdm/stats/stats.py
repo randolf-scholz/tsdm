@@ -7,7 +7,7 @@ from typing import Final
 import pandas
 from pandas import DataFrame
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = []
 
 

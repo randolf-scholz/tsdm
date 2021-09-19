@@ -10,7 +10,7 @@ import pandas as pd
 from tsdm.datasets.dataset import BaseDataset
 from tsdm.datasets.examples import in_silico
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["InSilicoData"]
 
 
@@ -32,7 +32,7 @@ class InSilicoData(BaseDataset):
     def clean(cls):
         """Create `DataFrame` with 1 column per client and `DatetimeIndex`."""
         dataset = cls.__name__
-        logger.info("Cleaning dataset '%s'", dataset)
+        LOGGER.info("Cleaning dataset '%s'", dataset)
 
         dfs = {}
         for resource in resources.contents(in_silico):
@@ -52,7 +52,7 @@ class InSilicoData(BaseDataset):
         for df in dfs.values():
             df.to_hdf(cls.dataset_file, key=df.name, mode="a")
 
-        logger.info("Finished cleaning dataset '%s'", dataset)
+        LOGGER.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
     def load(cls):

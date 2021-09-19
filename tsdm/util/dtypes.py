@@ -9,7 +9,7 @@ from typing import Final, Type, Union
 import numpy as np
 import pandas
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "BOOLS",
     "CATEGORIES",

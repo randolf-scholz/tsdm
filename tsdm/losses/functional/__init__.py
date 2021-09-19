@@ -11,7 +11,7 @@ from tsdm.losses.functional.functional import (
     q_quantile_loss,
 )
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["LOSSES", "nd", "nrmse", "q_quantile", "q_quantile_loss"]
 
 LOSSES: Final[dict[str, INSTANCE_WISE]] = {

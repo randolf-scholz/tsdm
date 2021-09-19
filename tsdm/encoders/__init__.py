@@ -11,7 +11,7 @@ from tsdm.encoders._encoders import (
     triplet2dense,
 )
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "make_dense_triplets",
     "make_masked_format",

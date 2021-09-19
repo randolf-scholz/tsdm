@@ -10,7 +10,7 @@ from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
 from tsdm.util.dtypes import BOOLS, EMOJIS, STRINGS, TimeDeltaLike, TimeStampLike
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["sample_timestamps", "sample_timedeltas"]
 
 

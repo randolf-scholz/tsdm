@@ -74,7 +74,7 @@ intersphinx_mapping = {
 # The name of a reST role (builtin or Sphinx extension) to use as the default role, that is,
 # for text marked up `like this`. This can be set to 'py:obj' to make `filter` a cross-reference
 # to the Python function “filter”. The default is None, which doesn’t reassign the default role.
-default_role = "py:obj"
+default_role = "math"  # This option causes `<latex>` to behave like $<latex>$ in markdown.
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -88,11 +88,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # unit titles (such as .. function::).
 add_module_names = False
 
-# This option causes `<latex>` to behave like `<latex>` in markdown
-# We use this instead of sphinx-math-dollar because that package does not work everywhere.
-default_role = "math"
-
-suppress_warnings = ["epub.duplicated_toc_entry"]
+# suppress_warnings = ["epub.duplicated_toc_entry"]
 
 # -- Options for HTML output -------------------------------------------------------------------------------------------
 

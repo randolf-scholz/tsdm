@@ -6,7 +6,7 @@ from copy import copy
 from tsdm.datasets import BaseDataset, InSilicoData
 from tsdm.util.decorators import timefun
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def test_caching():
@@ -14,15 +14,15 @@ def test_caching():
     # NOTE: this test must be executed first!!!
 
     ds = InSilicoData
-    logger.info("Testing caching of dataset %s", ds.__name__)
+    LOGGER.info("Testing caching of dataset %s", ds.__name__)
     _, pre_cache_time = timefun(lambda: ds.dataset)()
     _, post_cache_time = timefun(lambda: ds.dataset)()
 
-    logger.info("%f, %f", pre_cache_time, post_cache_time)
+    LOGGER.info("%f, %f", pre_cache_time, post_cache_time)
 
     assert 1000 * post_cache_time <= pre_cache_time
 
-    logger.info("%s passes caching test \N{HEAVY CHECK MARK}", ds.__name__)
+    LOGGER.info("%s passes caching test \N{HEAVY CHECK MARK}", ds.__name__)
 
 
 def test_attributes():

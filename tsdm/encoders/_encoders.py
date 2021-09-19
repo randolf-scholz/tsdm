@@ -29,7 +29,7 @@ import pandas as pd
 from numba import njit
 from pandas import CategoricalDtype, DataFrame, Series
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "make_dense_triplets",
     "make_masked_format",
@@ -84,7 +84,7 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
     References
     ----------
     - :func:`pandas.melt`
-    - `Set-Functions For Time Series <http://proceedings.mlr.press/v119/horn20a.html>`_
+    - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
     Parameters
     ----------
@@ -150,7 +150,7 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
     ----------
     - :func:`pandas.melt`
     - :func:`pandas.get_dummies`
-    - `Set-Functions For Time Series <http://proceedings.mlr.press/v119/horn20a.html>`_
+    - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
     See Also
     --------
