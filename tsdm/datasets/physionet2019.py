@@ -212,6 +212,7 @@ class Physionet2019(BaseDataset):
         dataset = cls.__name__
         LOGGER.info("Cleaning dataset '%s'", dataset)
         if store == "hdf":
+            # noinspection PyTypeChecker
             h5file = HDFStore(cls.dataset_file)
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
                 with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as zipfile:
@@ -242,6 +243,7 @@ class Physionet2019(BaseDataset):
 
         LOGGER.info("Finished extracting dataset '%s'", dataset)
 
+    # noinspection PyTypeChecker
     @classmethod
     def load(cls, store="hdf"):  # pylint: disable=arguments-differ
         r"""Load the dataset from file.

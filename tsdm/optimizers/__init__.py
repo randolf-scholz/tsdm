@@ -36,6 +36,7 @@ OPTIMIZERS: Final[dict[str, Type[Optimizer]]] = {
 }
 r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""
 
+# noinspection PyProtectedMember
 LR_SCHEDULER = lr_scheduler._LRScheduler  # pylint: disable=protected-access
 LR_SCHEDULERS: Final[dict[str, Type[LR_SCHEDULER]]] = {
     "LambdaLR": lr_scheduler.LambdaLR,

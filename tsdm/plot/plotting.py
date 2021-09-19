@@ -1,7 +1,7 @@
 r"""Plotting helper functions."""
 
 import logging
-from typing import Callable, Final, Optional
+from typing import Callable, Final, Optional, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,13 +14,25 @@ from torch import Tensor
 LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["visualize_distribution", "shared_grid_plot"]
 
+Location = Literal[
+    "upper right",
+    "upper left",
+    "lower left",
+    "lower right",
+    "center left",
+    "center right",
+    "lower center",
+    "upper center",
+    "center",
+]
+
 
 def visualize_distribution(
     x: ArrayLike,
     ax: Axes,
     num_bins: int = 50,
     log: bool = True,
-    loc: int = 1,
+    loc: Location = "upper right",
     print_stats: bool = True,
     extra_stats: Optional[dict[str, str]] = None,
 ):
@@ -33,8 +45,10 @@ def visualize_distribution(
     num_bins: int or Sequence[int]
     log: bool or float, default=False
         if True, use log base 10, if float, use  log w.r.t. this base
-    loc: int or str
+    loc: Location
     print_stats: bool
+    extra_stats: Optional[dict[str, str]]
+        Additional things to add to the stats table
     """
     if isinstance(x, Tensor):
         x = x.detach().cpu().numpy()
@@ -72,7 +86,6 @@ def visualize_distribution(
             "Mode": f"{mode(x)[0][0]:.2e}",
             "Stdev": f"{np.std(x):.2e}",
         }
-
         if extra_stats is not None:
             stats |= {str(key): str(val) for key, val in extra_stats.items()}
 
@@ -132,10 +145,10 @@ def shared_grid_plot(
     if data.ndim == 2:
         data = np.expand_dims(data, axis=0)
 
-    NROWS, NCOLS = data.shape[:2]  # type: ignore
+    nrows, ncols = data.shape[:2]  # type: ignore
 
-    SUBPLOT_KWARGS = {
-        "figsize": (5 * NCOLS, 3 * NROWS),
+    _subplot_kwargs = {
+        "figsize": (5 * ncols, 3 * nrows),
         "sharex": "col",
         "sharey": "row",
         "squeeze": False,
@@ -143,11 +156,11 @@ def shared_grid_plot(
     }
 
     if subplots_kwargs is not None:
-        SUBPLOT_KWARGS.update(subplots_kwargs)
+        _subplot_kwargs.update(subplots_kwargs)  # type: ignore
 
     plot_kwargs = {} if plot_kwargs is None else plot_kwargs
 
-    fig, axes = plt.subplots(nrows=NROWS, ncols=NCOLS, **SUBPLOT_KWARGS)
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **_subplot_kwargs)
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):

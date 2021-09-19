@@ -60,8 +60,8 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
             return float(x[0])
         # n >= 3:
         out = np.empty(2)
-        out[0] = _float_gcd(x[: n // 2])
-        out[1] = _float_gcd(x[n // 2 :])
+        out[0] = _float_gcd(x[: (n // 2)])
+        out[1] = _float_gcd(x[(n // 2) :])
         return _float_gcd(out)
 
     return _float_gcd(x)

@@ -115,8 +115,8 @@ def multiply(f, *args, **kwargs):
 
     def aux(*xs, **kws):
         if len(args) > 0:
-            return args[0] * f(*xs, **kws) + b
-        return f(*xs, **kws) + b
+            return args[0] * f(*xs, **kws)
+        return f(*xs, **kws)
 
     return aux
 
@@ -231,7 +231,7 @@ def parametrized_decorator(decorator, *meta_args, **meta_kwargs):
 
 
 @parametrized_decorator
-def add(function: Callable[float, float], bias: float = 0.0):
+def add(function: Callable[[float], float], bias: float = 0.0):
     @wraps(function)
     def wrapper(*function_args, **function_kwargs):
         print(f"Entering {function=}")

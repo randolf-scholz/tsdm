@@ -83,6 +83,7 @@ LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = ["BeijingAirQuality"]
 
 
+# noinspection PyTypeChecker
 class BeijingAirQuality(BaseDataset):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
@@ -116,7 +117,7 @@ class BeijingAirQuality(BaseDataset):
     def clean(cls):
         r"""Create DataFrame with all 12 stations and :class:`pandas.DatetimeIndex`."""
 
-        def totime(x):
+        def to_time(x):
             return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
 
         LOGGER.info("Cleaning dataset '%s'", cls.__name__)
@@ -136,7 +137,7 @@ class BeijingAirQuality(BaseDataset):
             df = read_csv(data_path.joinpath(csv))
 
             # Make multiple date columns to pandas.Timestamp
-            df["Timestamp"] = df.apply(totime, axis=1)
+            df["Timestamp"] = df.apply(to_time, axis=1)
 
             # Remove date columns and index
             df = df.drop(labels=["No", "year", "month", "day", "hour"], axis=1)
