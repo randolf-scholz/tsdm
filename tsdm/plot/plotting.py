@@ -1,7 +1,7 @@
 r"""Plotting helper functions."""
 
 import logging
-from typing import Callable, Final
+from typing import Callable, Final, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,10 +18,11 @@ __all__: Final[list[str]] = ["visualize_distribution", "shared_grid_plot"]
 def visualize_distribution(
     x,
     ax,
-    bins=50,
-    log=True,
-    loc=1,
-    print_stats=True,
+    bins: int = 50,
+    log: bool = True,
+    loc: int = 1,
+    print_stats: bool = True,
+    extra_stats: Optional[dict[str, str]] = None,
 ):
     r"""Plot the distribution of x in the given axis.
 
@@ -60,23 +61,29 @@ def visualize_distribution(
     ax.hist(x, bins=bins, density=True)
 
     if print_stats:
-        text = (
+        stats = {
+            "NaNs": f"{100*np.mean(nans):.2f}"+r"\%",
+            "Mean": f"{np.mean(x):.2e}",
+            "Median": f"{np.median(x):.2e}",
+            "Mode": f"{mode(x)[0][0]:.2e}",
+            "Stdev": f"{np.std(x):.2e}",
+        }
+        if extra_stats is not None:
+            stats |= {str(key) : str(val) for key, val in extra_stats.items()}
+
+        pad = max(len(key) for key in stats)
+
+        table = (
             r"\begin{tabular}{ll}"
-            + f"NaNs   & {100 * np.mean(nans):.2f}"
-            + r"\%"
-            + r"\\"
-            + f"Mean   & {np.mean(x):.2e}"
-            + r"\\"
-            + f"Median & {np.median(x):.2e}"
-            + r"\\"
-            + f"Mode   & {mode(x)[0][0]:.2e}"
-            + r"\\"
-            + f"Stdev  & {np.std(x):.2e}"
-            + r"\\"
+            + r"\\ ".join([key.ljust(pad) + " & " + val for key, val in stats.items()])
             + r"\end{tabular}"
         )
+
+        # if extra_stats is not None:
+        logger.info("writing table %s", table)
+
         # text = r"\begin{tabular}{ll}test & and\\ more &test\end{tabular}"
-        textbox = AnchoredText(text, loc=loc, borderpad=0)
+        textbox = AnchoredText(table, loc=loc, borderpad=0)
         ax.add_artist(textbox)
 
 
