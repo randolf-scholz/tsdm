@@ -74,16 +74,17 @@ def visualize_distribution(
         pad = max(len(key) for key in stats)
 
         table = (
-            r"\begin{tabular}{ll}"
+            r"\scriptsize"
+            + r"\begin{tabular}{ll}"
             + r"\\ ".join([key.ljust(pad) + " & " + val for key, val in stats.items()])
-            + r"\end{tabular}"
+            + r"\end{tabular}" + " "
         )
 
         # if extra_stats is not None:
         logger.info("writing table %s", table)
 
         # text = r"\begin{tabular}{ll}test & and\\ more &test\end{tabular}"
-        textbox = AnchoredText(table, loc=loc, borderpad=0)
+        textbox = AnchoredText(table, loc=loc, borderpad=0.0)
         ax.add_artist(textbox)
 
 

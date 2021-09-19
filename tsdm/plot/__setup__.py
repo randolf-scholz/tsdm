@@ -7,7 +7,7 @@ import matplotlib
 logger = logging.getLogger(__name__)
 __all__: Final[list[str]] = []
 
-matplotlib.use("pgf")
+# matplotlib.use("pgf")
 matplotlib.rcParams.update(
     {
         "text.usetex": True,
@@ -30,8 +30,8 @@ matplotlib.rcParams.update(
                 r"\usepackage{amssymb}",
             ]
         ),
-        "mathtext.fontset": "stix",
-        "font.family": "STIXGeneral",
-        "svg.fonttype": "none",
+        # "mathtext.fontset": "stix",
+        # "font.family": "STIXGeneral",
+        # "svg.fonttype": "none",
     }
 )
