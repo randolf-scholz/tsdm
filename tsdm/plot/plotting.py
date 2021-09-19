@@ -71,7 +71,7 @@ def visualize_distribution(
             + r"\\"
             + f"Mode   & {mode(x)[0][0]:.2e}"
             + r"\\"
-            + f"stdev  & {np.std(x):.2e}"
+            + f"Stdev  & {np.std(x):.2e}"
             + r"\\"
             + r"\end{tabular}"
         )
