@@ -12,3 +12,4 @@ pycodestyle
 pydocstyle
 pytest
 pytest-cov
+pytest-rerunfailures
