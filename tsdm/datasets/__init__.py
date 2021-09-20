@@ -9,6 +9,7 @@ from typing import Final, Type
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.dataset import BaseDataset, DatasetMetaClass
 from tsdm.datasets.electricity import Electricity
+from tsdm.datasets.ETDataset import ETTh1, ETTh2, ETTm1, ETTm2
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.physionet2019 import Physionet2019
 
@@ -22,6 +23,10 @@ __all__: Final[list[str]] = [
     "InSilicoData",
     "Physionet2019",
     "BeijingAirQuality",
+    "ETTh1",
+    "ETTh2",
+    "ETTm1",
+    "ETTm2",
 ]
 
 Dataset = Type[BaseDataset]
@@ -32,5 +37,9 @@ DATASETS: Final[dict[str, Dataset]] = {
     "InSilicoData": InSilicoData,
     "Physionet2019": Physionet2019,
     "BeijingAirQuality": BeijingAirQuality,
+    "ETTh1": ETTh1,
+    "ETTh2": ETTh2,
+    "ETTm1": ETTm1,
+    "ETTm2": ETTm2,
 }
 r"""Dictionary containing all available datasets."""

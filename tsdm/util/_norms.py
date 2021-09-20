@@ -8,12 +8,13 @@ from typing import Final, Iterable, Optional, Union, overload
 import numpy as np
 import torch
 from numpy.typing import ArrayLike, NDArray
-from torch import Tensor
+from torch import Tensor, jit
 
 LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
     "relative_error",
     "scaled_norm",
+    "grad_norm",
     "multi_scaled_norm",
 ]
 SizeLike = Union[int, tuple[int, ...]]  # type: ignore # TODO: use AliasType in 3.10
@@ -296,6 +297,38 @@ def _numpy_multi_scaled_norm(
     z = np.stack([_numpy_scaled_norm(z, p=p) ** q for z in x])
     w = np.array([z.size for z in x])
     return (np.dot(w, z) / np.sum(w)) ** (1 / q)
+
+
+@jit.script
+def grad_norm(
+    tensors: list[Tensor], p: float = 2.0, q: float = 2.0, normalize: bool = True
+) -> Tensor:
+    r"""Return the (scaled) p-q norm of the gradients.
+
+    Parameters
+    ----------
+    tensors: list[Tensor]
+    p: float = 2.0
+    q: float = 2.0
+    normalize: bool = True
+        If true, accumulate with mean instead of sum
+
+    Returns
+    -------
+    Tensor
+    """
+    # TODO: implement special cases p,q = ±∞
+    if normalize:
+        # initializing s this way instead of s=tensor(0) automatically gets the dtype and device correct
+        s = torch.mean(tensors.pop().grad ** p) ** (q / p)
+        for x in tensors:
+            s += torch.mean(x.grad ** p) ** (q / p)
+        return (s / (1 + len(tensors))) ** (1 / q)
+    # else
+    s = torch.sum(tensors.pop().grad ** p) ** (q / p)
+    for x in tensors:
+        s += torch.sum(x.grad ** p) ** (q / p)
+    return s ** (1 / q)
 
 
 # How would you call tuples of tensors?
