@@ -134,7 +134,7 @@ class BeijingAirQuality(BaseDataset):
         stations = []
         for csv in os.listdir(data_path):
 
-            df = read_csv(data_path.joinpath(csv))
+            df = DataFrame(read_csv(data_path.joinpath(csv)))
 
             # Make multiple date columns to pandas.Timestamp
             df["Timestamp"] = df.apply(to_time, axis=1)
