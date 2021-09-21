@@ -333,10 +333,7 @@ def grad_norm(
 
 @jit.script
 def multi_norm(
-    tensors: list[Tensor],
-    p: float = 2,
-    q: float = 2,
-    normalize: bool = True
+    tensors: list[Tensor], p: float = 2, q: float = 2, normalize: bool = True
 ) -> Tensor:
     r"""Return the (scaled) p-q norm of the gradients.
 
@@ -364,7 +361,6 @@ def multi_norm(
     for x in tensors:
         s += torch.sum(x ** p) ** (q / p)
     return s ** (1 / q)
-
 
 
 # How would you call tuples of tensors?
