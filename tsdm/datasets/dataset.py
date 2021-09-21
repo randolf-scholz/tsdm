@@ -28,10 +28,13 @@ from pathlib import Path
 from typing import Final, Union
 from urllib.parse import urlparse
 
+import torch
+from torch import Tensor
+
 from tsdm.config import DATASETDIR, RAWDATADIR
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["BaseDataset", "DatasetMetaClass"]
+__all__: Final[list[str]] = ["BaseDataset", "DatasetMetaClass", "SequenceDataset"]
 
 
 class DatasetMetaClass(ABCMeta):
@@ -200,3 +203,18 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     @classmethod
     def to_trainloader(cls):
         """Return trainloader object."""
+
+
+class SequenceDataset(torch.utils.data.Dataset):
+    r"""Sequential Dataset."""
+    def __init__(self, tensors: list[Tensor]):
+        assert all(len(x) == len(tensors[0]) for x in tensors)
+        self.tensors = tensors
+
+    def __len__(self):
+        r"""Length of the dataset."""
+        return len(self.tensors[0])
+
+    def __getitem__(self, idx):
+        r"""Get the same slice from each tensor."""
+        return [x[idx] for x in self.tensors]
