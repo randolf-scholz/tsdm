@@ -16,6 +16,7 @@ __all__: Final[list[str]] = [
     "scaled_norm",
     "grad_norm",
     "multi_scaled_norm",
+    "multi_norm",
 ]
 SizeLike = Union[int, tuple[int, ...]]  # type: ignore # TODO: use AliasType in 3.10
 
