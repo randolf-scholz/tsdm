@@ -331,6 +331,42 @@ def grad_norm(
     return s ** (1 / q)
 
 
+@jit.script
+def multi_norm(
+    tensors: list[Tensor],
+    p: float = 2,
+    q: float = 2,
+    normalize: bool = True
+) -> Tensor:
+    r"""Return the (scaled) p-q norm of the gradients.
+
+    Parameters
+    ----------
+    tensors: list[Tensor]
+    p: float = 2.0
+    q: float = 2.0
+    normalize: bool = True
+        If true, accumulate with mean instead of sum
+
+    Returns
+    -------
+    Tensor
+    """
+    # TODO: implement special cases p,q = ±∞
+    if normalize:
+        # initializing s this way instead of s=tensor(0) automatically gets the dtype and device correct
+        s = torch.mean(tensors.pop().grad ** p) ** (q / p)
+        for x in tensors:
+            s += torch.mean(x ** p) ** (q / p)
+        return (s / (1 + len(tensors))) ** (1 / q)
+    # else
+    s = torch.sum(tensors.pop().grad ** p) ** (q / p)
+    for x in tensors:
+        s += torch.sum(x ** p) ** (q / p)
+    return s ** (1 / q)
+
+
+
 # How would you call tuples of tensors?
 # hil-bor hil-tor hil-ber
 # tup-lor

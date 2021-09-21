@@ -25,7 +25,7 @@ NON_DECOMPOSABLE = Callable[[Tensor, Tensor, ...], Tensor]  # type: ignore
 
 
 @jit.script
-def nd(*, x: Tensor, xhat: Tensor) -> Tensor:
+def nd(x: Tensor, xhat: Tensor) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math::
@@ -54,7 +54,7 @@ def nd(*, x: Tensor, xhat: Tensor) -> Tensor:
 
 
 @jit.script
-def nrmse(*, x: Tensor, xhat: Tensor) -> Tensor:
+def nrmse(x: Tensor, xhat: Tensor) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math::
@@ -79,7 +79,7 @@ def nrmse(*, x: Tensor, xhat: Tensor) -> Tensor:
 
 
 @jit.script
-def q_quantile(*, x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
+def q_quantile(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile.
 
     .. math::
@@ -104,7 +104,7 @@ def q_quantile(*, x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
 
 
 @jit.script
-def q_quantile_loss(*, x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
+def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile loss.
 
     .. math::
