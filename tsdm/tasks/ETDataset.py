@@ -6,22 +6,28 @@ Module description
 from __future__ import annotations
 
 import logging
-
+from typing import Callable, Final, Literal, Optional
 
 import torch
-from typing import Final, Literal
-from pandas import Timestamp
-from tsdm.util.dtypes import TimeStampLike
-from tsdm.util.dataloaders import SliceSampler
-from tsdm.datasets import Dataset, DATASETS
-from tsdm.losses import Loss, LOSSES
+from pandas import DataFrame
+from torch import Tensor
+from torch.utils.data import DataLoader
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = []
+from tsdm.datasets import DATASETS, Dataset, SequenceDataset
+from tsdm.encoders import ENCODERS, Encoder
+from tsdm.losses import LOSSES, Loss
+from tsdm.tasks.tasks import BaseTask
+from tsdm.util.samplers import SequenceSampler
+
+LOGGER = logging.getLogger(__name__)
+
+__all__: Final[list[str]] = [
+    "ETDatasetInformer",
+]
 
 
-class ETTh1_Informer:
-    """
+class ETDatasetInformer(BaseTask):
+    """Forecasting Oil Temperature on the Electrical-Transformer datasets.
 
     Paper
     -----
@@ -55,7 +61,7 @@ class ETTh1_Informer:
         encoder’s input sequence, so the length of decoder’s start token must be less
         than the length of encoder’s input.
 
-    **Forcasting Horizon:** {1d, 2d, 7d, 14d, 30d, 40d}
+    **Forecasting Horizon:** {1d, 2d, 7d, 14d, 30d, 40d}
     **Observation Horizon:**
     **Input_Length**: {24, 48, 96, 168, 336, 720}
 
@@ -69,27 +75,86 @@ class ETTh1_Informer:
     Results
     -------
     """
+
     dataset: Dataset
+    train_dataset: DataFrame
+    valid_dataset: DataFrame
+    trial_dataset: DataFrame
     test_metric: Loss
     observation_horizon: int
     forecasting_horizon: int
+    accumulation_function: Callable[..., Tensor]
 
     def __init__(
         self,
         dataset: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
-        forecasting_horizon: Literal[24,  48, 168, 336, 960] = 24,
+        forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
         test_metric: Literal["MSE", "MAE"] = "MSE",
+        time_encoder: Encoder = "time2float",
     ):
+        super().__init__()
         self.dataset = DATASETS[dataset]
         self.test_metric = LOSSES[test_metric]
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
+        self.horizon = self.observation_horizon + self.forecasting_horizon
+        # TODO: fix type problems
+        self.train_dataset = self.dataset.dataset[  # type: ignore
+            :"2017-06-30"  # type: ignore
+        ]  # inclusive range!
+        self.valid_dataset = self.dataset.dataset[  # type: ignore
+            "2017-07-01":"2017-10-31"  # type: ignore
+        ]  # inclusive range!
+        self.trial_dataset = self.dataset.dataset[  # type: ignore
+            "2017-11-01":"2018-02-28"  # type: ignore
+        ]  # inclusive range!
 
-        self.train_dataset = self.dataset[:"2017-06-30"]              # inclusive range!
-        self.valid_dataset = self.dataset["2017-07-01":"2017-10-31"]  # inclusive range!
-        self.score_dataset = self.dataset["2017-11-01":"2018-02-28"]  # inclusive range!
+        self.accumulation_function = torch.mean  # type: ignore
+        self.test_metric = LOSSES[test_metric]
+        self.time_encoder = ENCODERS[time_encoder]
 
-    def test_loader(self, batch_size: int = 32):
-        r"""Return a dataloader object with the given batch_size."""
+    def get_dataloader(
+        self,
+        split: Literal["train", "valid", "test"],
+        batch_size: int = 32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> DataLoader:
+        r"""Return a dataloader for the training-dataset with the given batch_size.
 
+        Parameters
+        ----------
+        split: Literal["train", "valid", "test"]
+            From which part of the dataset to construc the loader
+        batch_size: int = 32
+        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None
+            defaults to cuda if cuda is available.
+
+        Returns
+        -------
+        DataLoader
+        """
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        dtype = torch.float32 if dtype is None else dtype
+
+        ds = {
+            "train": self.train_dataset,
+            "valid": self.valid_dataset,
+            "test": self.trial_dataset,
+        }[split]
+
+        _T = self.time_encoder(ds.index)
+        _X = ds.drop(columns="OT").values
+        _Y = ds["OT"].values
+
+        T = torch.tensor(_T, device=device, dtype=dtype)
+        X = torch.tensor(_X, device=device, dtype=dtype)
+        Y = torch.tensor(_Y, device=device, dtype=dtype)
+
+        dataset = SequenceDataset([T, X, Y])
+        sampler = SequenceSampler(dataset, seq_len=self.horizon)
+
+        return DataLoader(dataset, sampler=sampler, batch_size=batch_size)

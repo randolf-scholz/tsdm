@@ -13,17 +13,21 @@ forecasting horizons.
 from __future__ import annotations
 
 import logging
-from typing import Any, Final
+from typing import Final, Type
+
+from tsdm.tasks.ETDataset import ETDatasetInformer
+from tsdm.tasks.tasks import BaseTask
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
-    "Task",
-    "TASKS",
+__all__: Final[list[str]] = ["Task", "TASKS"] + [
+    "ETDatasetInformer",
 ]
 
 
-Task = Any
+Task = Type[BaseTask]
 r"""Type hint for tasks."""
 
-TASKS: Final[dict[str, Task]] = {}
+TASKS: Final[dict[str, Task]] = {
+    "ETDatasetInformer": ETDatasetInformer,
+}
 r"""Dictionary containing all available tasks."""

@@ -207,6 +207,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
 
 class SequenceDataset(torch.utils.data.Dataset):
     r"""Sequential Dataset."""
+
     def __init__(self, tensors: list[Tensor]):
         assert all(len(x) == len(tensors[0]) for x in tensors)
         self.tensors = tensors

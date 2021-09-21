@@ -60,12 +60,14 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Final
+from typing import Callable, Final, Optional
 
+import torch
+from torch import Tensor
 from torch.utils.data import DataLoader
 
-# from tsdm.losses import LOSSES
-
+from tsdm.datasets import Dataset
+from tsdm.losses import Loss
 
 LOGGER = logging.getLogger(__name__)
 __all__: Final[list[str]] = [
@@ -80,57 +82,42 @@ class BaseTask(ABC):
     Its main task is create a dataloader that cycles through the test dataset once.
     """
 
+    # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
+    dataset: Dataset
+    """The whole dataset."""
+    train_dataset: Dataset
+    """The test-slice of the datset."""
+    trial_dataset: Dataset
+    """The test-slice of the datset."""
+    test_metric: Loss
+    """The test-metric (usually instance-wise)."""
+    accumulation_function: Callable[..., Tensor]
+    """The accumulation function (usually sum or mean or identity)."""
+
     @abstractmethod
     def __init__(self, *args, **kwargs):
         r"""Perform preprocessing of the dataset."""
 
-    @property
     @abstractmethod
-    def dataset(self):
-        r"""Return the preprocessed dataset."""
+    def get_dataloader(
+        self,
+        split,  # noqa   # ignore the missing type hint ...
+        batch_size: int = 32,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> DataLoader:
+        r"""Return a dataloder object for the specified split.
 
-    @property
-    @abstractmethod
-    def train_dataset(self):
-        r"""Return the preprocessed non-test data."""
+        Parameters
+        ----------
+        split: str
+            From which part of the dataset to construct the loader
+        batch_size: int = 32
+        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None
+            defaults to cuda if cuda is available.
 
-    @property
-    @abstractmethod
-    def test_dataset(self):
-        r"""Return the preprocessed test-data."""
-
-    @property
-    def train_loader(self):
-        r"""Return a default trainloader (optional)."""
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def test_loader(self) -> DataLoader:
-        r"""Return a Dataloader instance that iterates throught the test set.
-
-        For instance-wise metrics
-
-        .. code-block:: python
-
-            r = mean([test_metric(y, model(x)) for x,y in test_loader])
-
-        For decomposable metrics:
-
-        For non-decomposable metrics:
-
-        .. code-block:: python
-
-            pairs = [(y, model(x)) for x,y in test_loader(batch_size=1)]
-            score = test_metric(pairs)
+        Returns
+        -------
+        DataLoader
         """
-
-    @property
-    @abstractmethod
-    def test_metric(self):
-        r"""Return the test metric."""
-
-    @property
-    @abstractmethod
-    def accumulation_function(self):
-        r"""Return the accumulation function."""
