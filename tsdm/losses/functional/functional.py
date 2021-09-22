@@ -9,19 +9,20 @@ import torch
 from torch import Tensor, jit
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+__all__: Final[list[str]] = [  # type hints etc.
+    "INSTANCE_WISE",
+    "AGGREGATION",
+    "NON_DECOMPOSABLE",
+] + [  # losses
     "nd",
     "nrmse",
     "q_quantile",
     "q_quantile_loss",
-    "INSTANCE_WISE",
-    "AGGREGATION",
-    "NON_DECOMPOSABLE",
 ]
 
-INSTANCE_WISE = Callable[[Tensor, Tensor, ...], Tensor]  # type: ignore
-AGGREGATION = Callable[[Tensor, ...], Tensor]  # type: ignore
-NON_DECOMPOSABLE = Callable[[Tensor, Tensor, ...], Tensor]  # type: ignore
+INSTANCE_WISE = Callable[[Tensor, Tensor], Tensor]
+AGGREGATION = Callable[[Tensor], Tensor]
+NON_DECOMPOSABLE = Callable[[Tensor, Tensor], Tensor]
 
 
 @jit.script

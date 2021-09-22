@@ -116,7 +116,7 @@ class ETDatasetInformer(BaseTask):
 
     def get_dataloader(
         self,
-        split: Literal["train", "valid", "test"],
+        split: Literal["train", "valid", "joint", "test"],
         batch_size: int = 32,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
@@ -141,9 +141,10 @@ class ETDatasetInformer(BaseTask):
         dtype = torch.float32 if dtype is None else dtype
 
         ds = {
-            "train": self.train_dataset,
-            "valid": self.valid_dataset,
-            "test": self.trial_dataset,
+            "train": self.dataset.dataset["2016-07-01":"2017-06-30"],  # type: ignore
+            "valid": self.dataset.dataset["2017-07-01":"2017-10-31"],  # type: ignore
+            "joint": self.dataset.dataset["2016-07-01":"2017-10-31"],  # type: ignore
+            "test": self.dataset.dataset["2017-11-01":"2018-02-28"],  # type: ignore
         }[split]
 
         _T = self.time_encoder(ds.index)
