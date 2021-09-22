@@ -9,6 +9,7 @@ import logging
 from typing import Callable, Final, Iterator, Optional, Sequence, Sized, Union
 
 import numpy as np
+from numpy.random import permutation
 from numpy.typing import NDArray
 from torch.utils.data import Sampler
 
@@ -109,14 +110,39 @@ class SliceSampler(Sampler):
 
 
 class SequenceSampler(Sampler):
-    """Samples sequences of length seq_len."""
+    r"""Samples sequences of length seq_len."""
 
-    def __init__(self, data_source, seq_len):
+    data: Sized
+    r"""The dataset."""
+    idx: NDArray
+    r"""A list of all valid starting indices."""
+    seq_len: int
+    r"""The static sequence length."""
+    shuffle: bool
+    r"""Whether to sample in random order."""
+
+    def __init__(self, data_source: Sized, seq_len: int, shuffle: bool = True):
+        """Initialize the Sampler.
+
+        Parameters
+        ----------
+        data_source: Sized
+        seq_len: int
+        shuffle: bool
+        """
         super().__init__(data_source)
         self.data = data_source
         self.seq_len = seq_len
+        self.idx = np.arange(len(self.data) - self.seq_len)
+        self.shuffle = shuffle
+
+    def __len__(self):
+        r"""Return the maximum allowed index."""
+        return len(self.idx)
 
     def __iter__(self):
         """Return Indices of the Samples."""
-        for idx in range(len(self.data) - self.seq_len):
-            yield range(idx, idx + self.seq_len)
+        indices = self.idx[permutation(len(self))] if self.shuffle else self.idx
+
+        for i in indices:
+            yield np.arange(i, i + self.seq_len)

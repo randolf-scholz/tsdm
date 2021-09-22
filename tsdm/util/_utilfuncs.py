@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Any, Final, Iterable, Type
 
 from torch import nn
@@ -12,6 +13,7 @@ __all__: Final[list[str]] = [
     "ACTIVATIONS",
     "deep_dict_update",
     "deep_kval_update",
+    "now",
 ]
 
 
@@ -45,6 +47,11 @@ ACTIVATIONS: Final[dict[str, Type[nn.Module]]] = {
     "Threshold": nn.Threshold,
 }
 r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""
+
+
+def now():
+    r"""Return current time in iso format."""
+    return datetime.now().isoformat(timespec="seconds")
 
 
 def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
