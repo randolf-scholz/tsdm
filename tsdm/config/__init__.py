@@ -12,11 +12,13 @@ from importlib import resources
 from pathlib import Path
 from typing import Final
 
+import torch
 import yaml
 
 from tsdm.config import config_files
 
 LOGGER = logging.getLogger(__name__)
+
 __all__: Final[list[str]] = [
     "CONFIG",
     "DATASETS",
@@ -28,7 +30,13 @@ __all__: Final[list[str]] = [
     "MODELDIR",
     "DATASETDIR",
     "RAWDATADIR",
+] + [
+    "DEFAULT_DEVICE",
+    "DEFAULT_DTYPE",
 ]
+
+DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEFAULT_DTYPE = torch.float32
 
 with resources.path(config_files, "config.yaml") as file:
     with open(file, "r", encoding="utf8") as fname:
