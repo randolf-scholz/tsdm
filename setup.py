@@ -53,6 +53,7 @@ setuptools.setup(
         "pandas",
         "pyyaml",
         "scipy",
+        "scikit-learn",
         "tables",
         "torch>=1.9.0",
         "tqdm",

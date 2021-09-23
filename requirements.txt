@@ -5,6 +5,7 @@ numba
 pandas
 pyyaml
 scipy
+scikit-learn
 tables
 torch
 tqdm

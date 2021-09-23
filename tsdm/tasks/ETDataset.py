@@ -10,9 +10,11 @@ from typing import Callable, Final, Literal, Optional
 
 import torch
 from pandas import DataFrame
+from sklearn.preprocessing import StandardScaler
 from torch import Tensor
 from torch.utils.data import DataLoader
 
+from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
 from tsdm.datasets import DATASETS, Dataset, SequenceDataset
 from tsdm.encoders import ENCODERS, Encoder
 from tsdm.losses import LOSSES, Loss
@@ -61,6 +63,12 @@ class ETDatasetInformer(BaseTask):
         encoder’s input sequence, so the length of decoder’s start token must be less
         than the length of encoder’s input.
 
+        Appendix E
+        [...]
+        All the datasets are performed standardization such that the mean of variable
+        is 0 and the standard deviation is 1.
+
+
     **Forecasting Horizon:** {1d, 2d, 7d, 14d, 30d, 40d}
     **Observation Horizon:**
     **Input_Length**: {24, 48, 96, 168, 336, 720}
@@ -77,13 +85,14 @@ class ETDatasetInformer(BaseTask):
     """
 
     dataset: Dataset
-    train_dataset: DataFrame
-    valid_dataset: DataFrame
-    trial_dataset: DataFrame
+    splits: dict[str, DataFrame]
+    r"""Available splits: train/valid/joint/test"""
     test_metric: Loss
     observation_horizon: int
     forecasting_horizon: int
     accumulation_function: Callable[..., Tensor]
+    target: str
+    r"""One of "HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"."""
 
     def __init__(
         self,
@@ -92,6 +101,8 @@ class ETDatasetInformer(BaseTask):
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
         test_metric: Literal["MSE", "MAE"] = "MSE",
         time_encoder: Encoder = "time2float",
+        target: str = "OT",
+        scale: bool = True,
     ):
         super().__init__()
         self.dataset = DATASETS[dataset]
@@ -99,20 +110,25 @@ class ETDatasetInformer(BaseTask):
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
+        self.target = target
+        self.accumulation_function = torch.nn.Identity  # type: ignore
         # TODO: fix type problems
-        self.train_dataset = self.dataset.dataset[  # type: ignore
-            :"2017-06-30"  # type: ignore
-        ]  # inclusive range!
-        self.valid_dataset = self.dataset.dataset[  # type: ignore
-            "2017-07-01":"2017-10-31"  # type: ignore
-        ]  # inclusive range!
-        self.trial_dataset = self.dataset.dataset[  # type: ignore
-            "2017-11-01":"2018-02-28"  # type: ignore
-        ]  # inclusive range!
 
+        self.splits: dict[str, DataFrame] = {
+            "train": self.dataset.dataset["2016-07-01":"2017-06-30"],  # type: ignore
+            "valid": self.dataset.dataset["2017-07-01":"2017-10-31"],  # type: ignore
+            "joint": self.dataset.dataset["2016-07-01":"2017-10-31"],  # type: ignore
+            "test": self.dataset.dataset["2017-11-01":"2018-02-28"],  # type: ignore
+        }
         self.accumulation_function = torch.mean  # type: ignore
         self.test_metric = LOSSES[test_metric]
         self.time_encoder = ENCODERS[time_encoder]
+
+        if scale:
+            self.encoder = StandardScaler()
+            self.encoder.fit(self.splits["train"])
+            # note that this also transforms all splits as they are mere pointers to the slices.
+            self.encoder.transform(self.dataset.dataset, copy=False)
 
     def get_dataloader(
         self,
@@ -120,42 +136,44 @@ class ETDatasetInformer(BaseTask):
         batch_size: int = 32,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
+        shuffle: bool = True,
+        drop_last: bool = False,
     ) -> DataLoader:
-        r"""Return a dataloader for the training-dataset with the given batch_size.
+        r"""Return a DataLoader for the training-dataset with the given batch_size.
 
         Parameters
         ----------
         split: Literal["train", "valid", "test"]
-            From which part of the dataset to construc the loader
+            Dataset part from which to construct the DataLoader
         batch_size: int = 32
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None
             defaults to cuda if cuda is available.
+        shuffle: bool = True
+        drop_last: bool = False
 
         Returns
         -------
         DataLoader
         """
-        if device is None:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        dtype = torch.float32 if dtype is None else dtype
+        device = DEFAULT_DEVICE if device is None else device
+        dtype = DEFAULT_DTYPE if dtype is None else dtype
 
-        ds = {
-            "train": self.dataset.dataset["2016-07-01":"2017-06-30"],  # type: ignore
-            "valid": self.dataset.dataset["2017-07-01":"2017-10-31"],  # type: ignore
-            "joint": self.dataset.dataset["2016-07-01":"2017-10-31"],  # type: ignore
-            "test": self.dataset.dataset["2017-11-01":"2018-02-28"],  # type: ignore
-        }[split]
+        if split == "test":
+            assert not shuffle, "Don't shuffle when evaualting test-dataset!"
 
+        ds = self.splits[split]
         _T = self.time_encoder(ds.index)
-        _X = ds.drop(columns="OT").values
-        _Y = ds["OT"].values
+        _X = ds.drop(columns=self.target).values
+        _Y = ds[self.target].values
 
         T = torch.tensor(_T, device=device, dtype=dtype)
         X = torch.tensor(_X, device=device, dtype=dtype)
         Y = torch.tensor(_Y, device=device, dtype=dtype)
 
         dataset = SequenceDataset([T, X, Y])
-        sampler = SequenceSampler(dataset, seq_len=self.horizon)
+        sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)
 
-        return DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+        return DataLoader(
+            dataset, sampler=sampler, batch_size=batch_size, drop_last=drop_last
+        )
