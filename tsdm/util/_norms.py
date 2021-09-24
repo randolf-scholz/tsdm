@@ -353,12 +353,12 @@ def multi_norm(
     # TODO: implement special cases p,q = ±∞
     if normalize:
         # initializing s this way instead of s=tensor(0) automatically gets the dtype and device correct
-        s = torch.mean(tensors.pop().grad ** p) ** (q / p)
+        s = torch.mean(tensors.pop() ** p) ** (q / p)
         for x in tensors:
             s += torch.mean(x ** p) ** (q / p)
         return (s / (1 + len(tensors))) ** (1 / q)
     # else
-    s = torch.sum(tensors.pop().grad ** p) ** (q / p)
+    s = torch.sum(tensors.pop() ** p) ** (q / p)
     for x in tensors:
         s += torch.sum(x ** p) ** (q / p)
     return s ** (1 / q)
