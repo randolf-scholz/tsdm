@@ -9,25 +9,30 @@ We decided to use a dataloader instead of, say, a split to cater to the question
 forecasting horizons.
 """
 
-
 from __future__ import annotations
 
+__all__ = [
+    # Constants
+    "Task",
+    "TASKS",
+    # Classes
+    "ETDatasetInformer",
+]
+
+
 import logging
-from typing import Final, Type
+from typing import Final
 
 from tsdm.tasks.ETDataset import ETDatasetInformer
 from tsdm.tasks.tasks import BaseTask
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["Task", "TASKS"] + [
-    "ETDatasetInformer",
-]
 
 
-Task = Type[BaseTask]
+Task = BaseTask
 r"""Type hint for tasks."""
 
-TASKS: Final[dict[str, Task]] = {
+TASKS: Final[dict[str, type[Task]]] = {
     "ETDatasetInformer": ETDatasetInformer,
 }
 r"""Dictionary containing all available tasks."""

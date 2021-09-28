@@ -58,9 +58,14 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 
 from __future__ import annotations
 
+__all__ = [
+    # Classes
+    "BaseTask",
+]
+
 import logging
 from abc import ABC, abstractmethod
-from typing import Callable, Final, Optional
+from typing import Callable, Optional
 
 import torch
 from torch import Tensor
@@ -70,9 +75,6 @@ from tsdm.datasets import Dataset
 from tsdm.losses import Loss
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
-    "BaseTask",
-]
 
 
 class BaseTask(ABC):
@@ -97,6 +99,7 @@ class BaseTask(ABC):
     @abstractmethod
     def __init__(self, *args, **kwargs):
         r"""Perform preprocessing of the dataset."""
+        super().__init__()
 
     @abstractmethod
     def get_dataloader(

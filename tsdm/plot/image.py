@@ -1,6 +1,6 @@
-r"""#TODO add module summary line.
+r"""TODO: Module Docstring.
 
-#TODO add module description.
+TODO: Module summary.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 @torch.no_grad()
 def kernel_heatmap(
     kernel: Union[NDArray, Tensor],
-    format: Literal["HWC", "CHW"] = "HWC",
+    fmt: Literal["HWC", "CHW"] = "HWC",
     cmap: str = "seismic",
 ) -> NDArray:
     r"""Create heatmap of given matrix.
@@ -35,7 +35,7 @@ def kernel_heatmap(
     Parameters
     ----------
     kernel: NDArray or Tensor
-    format: Literal["HWC", "CHW"] = "HWC"
+    fmt: Literal["HWC", "CHW"] = "HWC"
         Whether to put channels first or last.
     cmap: str = "seismic"
         The colomap.
@@ -56,8 +56,8 @@ def kernel_heatmap(
     RGBA = colormap(kernel)
     RGB = RGBA[..., :-1]
 
-    if format == "HWC":
+    if fmt == "HWC":
         return RGB
-    if format == "CHW":
+    if fmt == "CHW":
         return np.rollaxis(RGB, -1)
-    raise ValueError(format)
+    raise ValueError(fmt)

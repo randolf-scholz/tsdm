@@ -19,13 +19,23 @@ Basic Usage
    x = Electricity.dataset
 """
 
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "BaseDataset",
+    "DatasetMetaClass",
+    "SequenceDataset",
+]
+
+
 import logging
 import os
 import subprocess
 from abc import ABC, ABCMeta, abstractmethod
 from functools import cache
 from pathlib import Path
-from typing import Final, Union
+from typing import Union
 from urllib.parse import urlparse
 
 import torch
@@ -34,7 +44,6 @@ from torch import Tensor
 from tsdm.config import DATASETDIR, RAWDATADIR
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["BaseDataset", "DatasetMetaClass", "SequenceDataset"]
 
 
 class DatasetMetaClass(ABCMeta):

@@ -1,15 +1,12 @@
-r"""Test for checking how regular time series is."""
+r"""Test for checking how regular time series is.
 
-import logging
-from typing import Final, Union
+TODO: Module description.
+"""
 
-import numba
-import numpy as np
-from numpy.typing import ArrayLike
-from pandas import DataFrame, Series
+from __future__ import annotations
 
-LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+__all__ = [
+    # Functions
     "float_gcd",
     "approx_float_gcd",
     "is_regular",
@@ -17,6 +14,16 @@ __all__: Final[list[str]] = [
     "time_gcd",
     "regularity_coefficient",
 ]
+
+import logging
+from typing import Union
+
+import numba
+import numpy as np
+from numpy.typing import ArrayLike
+from pandas import DataFrame, Series
+
+LOGGER = logging.getLogger(__name__)
 
 
 def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> float:

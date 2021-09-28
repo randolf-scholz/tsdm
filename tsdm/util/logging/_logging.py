@@ -1,11 +1,12 @@
-r"""Module Summary Line.
+r"""TODO: Module Docstring.
 
-Module description
+TODO: Module summary.
 """
 
 from __future__ import annotations
 
 __all__ = [
+    # Functions
     "log_kernel_information",
     "log_optimizer_state",
     "log_model_state",
@@ -13,15 +14,13 @@ __all__ = [
 ]
 
 import logging
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import torch
 from torch import Tensor, jit, nn
 from torch.linalg import cond, det, matrix_norm, matrix_rank, slogdet
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from tsdm.losses import Loss
-from tsdm.losses.functional import FunctionalLoss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.plot import kernel_heatmap, plot_spectrum
@@ -177,9 +176,9 @@ def log_model_state(
 
     # 2d -data is order of magnitude more expensive.
     if histograms:
-        for i, (w, g) in enumerate(zip(variables, gradients)):
-            writer.add_histogram(f"{prefix}:variables/{i}", w, i)
-            writer.add_histogram(f"{prefix}:gradients/{i}", g, i)
+        for j, (w, g) in enumerate(zip(variables, gradients)):
+            writer.add_histogram(f"{prefix}:variables/{j}", w, i)
+            writer.add_histogram(f"{prefix}:gradients/{j}", g, i)
 
 
 @torch.no_grad()
@@ -188,7 +187,7 @@ def log_metrics(
     writer: SummaryWriter,
     targets: Tensor,
     predics: Tensor,
-    metrics: Union[dict[str, Union[Loss, FunctionalLoss]], list[Loss]],
+    metrics: Union[dict[str, Any], list[Any]],
     prefix: Optional[str] = None,
 ):
     r"""Log each metric provided.
@@ -206,10 +205,16 @@ def log_metrics(
 
     if isinstance(metrics, list):
         for metric in metrics:
-            assert issubclass(metric, nn.Module), "Metric must be nn.Module!"
-            writer.add_scalar(
-                f"{prefix}/{metric.__name__}", metric()(targets, predics), i
-            )
+            if issubclass(metric, nn.Module):
+                writer.add_scalar(
+                    f"{prefix}/{metric.__name__}", metric()(targets, predics), i
+                )
+            elif callable(metric):
+                writer.add_scalar(
+                    f"{prefix}/{metric.__name__}", metric(targets, predics), i
+                )
+            else:
+                raise ValueError(metric)
 
     for name, metric in metrics.items():  # type: ignore
         if issubclass(metric, nn.Module):

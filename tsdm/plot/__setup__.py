@@ -1,11 +1,18 @@
-r"""Module Docstring."""
+r"""TODO: Module Docstring.
+
+TODO: Module summary.
+"""
+
+from __future__ import annotations
+
 import logging
-from typing import Final
 
 import matplotlib
 
+# __all__ = []
+
+
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = []
 
 # matplotlib.use("pgf")
 matplotlib.rcParams.update(

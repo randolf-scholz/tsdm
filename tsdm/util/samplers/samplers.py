@@ -1,12 +1,19 @@
-r"""Module Summary Line.
+r"""TODO: Module Summary Line.
 
-Module description
-"""  # pylint: disable=line-too-long # noqa
+TODO: Module description
+"""
 
 from __future__ import annotations
 
+__all__ = [
+    # Classes
+    "SliceSampler",
+    "TimeSliceSampler",
+    "SequenceSampler",
+]
+
 import logging
-from typing import Callable, Final, Iterator, Optional, Sequence, Sized, Union
+from typing import Callable, Iterator, Optional, Sequence, Sized, Union
 
 import numpy as np
 from numpy.random import permutation
@@ -14,12 +21,6 @@ from numpy.typing import NDArray
 from torch.utils.data import Sampler
 
 LOGGER = logging.getLogger(__name__)
-
-__all__: Final[list[str]] = [
-    "SliceSampler",
-    "TimeSliceSampler",
-    "SequenceSampler",
-]
 
 
 class TimeSliceSampler(Sampler):

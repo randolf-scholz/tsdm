@@ -1,4 +1,3 @@
-#!usr/bin/env python
 r"""Time Series Datasets and Models (TSDM).
 
 Provides
@@ -23,12 +22,31 @@ General idea:
         - random sampling from dataset
         - batching of random samples
         - caching?
-
 """
+
+from __future__ import annotations
+
+__all__ = [
+    # Constants
+    "__version__",
+    # Sub-Modules
+    "config",
+    "datasets",
+    "generators",
+    "encoders",
+    "losses",
+    "models",
+    "optimizers",
+    "plot",
+    "random",
+    "tasks",
+    "trainers",
+    "util",
+]
+
 
 import logging
 from pathlib import Path
-from typing import Final
 
 from tsdm import (
     config,
@@ -50,17 +68,3 @@ with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as fi
     r"""The version number of the tsdm package"""
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["__version__"] + [
-    "config",
-    "datasets",
-    "generators",
-    "encoders",
-    "losses",
-    "models",
-    "optimizers",
-    "plot",
-    "random",
-    "tasks",
-    "trainers",
-    "util",
-]

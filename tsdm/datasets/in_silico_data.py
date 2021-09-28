@@ -1,8 +1,17 @@
-r"""In silico experiments."""  # pylint: disable=line-too-long # noqa
+r"""In silico experiments.
+
+TODO: Module Summary
+"""
+
+
+__all__ = [
+    # Classes
+    "InSilicoData",
+]
+
 
 import logging
 from importlib import resources
-from typing import Final
 
 import h5py
 import pandas as pd
@@ -11,7 +20,6 @@ from tsdm.datasets.dataset import BaseDataset
 from tsdm.datasets.examples import in_silico
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["InSilicoData"]
 
 
 class InSilicoData(BaseDataset):

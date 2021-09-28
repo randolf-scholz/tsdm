@@ -1,30 +1,27 @@
 r"""Implementation of loss functions.
 
-contains object oriented loss functions.
+Contains object oriented loss functions.
 See `tsdm.losses.functional` for functional implementations.
 """
 
 from __future__ import annotations
 
-__all__ = (
-    [  # Sub-Modules
-        "functional",
-    ]
-    + [  # Meta-Objects
-        "Loss",
-        "LOSSES",
-    ]
-    + [  # Classes
-        "ND",
-        "NRMSE",
-        "Q_Quantile",
-        "Q_Quantile_Loss",
-    ]
-)
+__all__ = [
+    # Sub-Modules
+    "functional",
+    # Meta-Objects
+    "Loss",
+    "LOSSES",
+    # Classes
+    "ND",
+    "NRMSE",
+    "Q_Quantile",
+    "Q_Quantile_Loss",
+]
 
 
 import logging
-from typing import Final, Type
+from typing import Final
 
 from torch import nn
 
@@ -33,10 +30,10 @@ from tsdm.losses.modular import ND, NRMSE, Q_Quantile, Q_Quantile_Loss
 
 LOGGER = logging.getLogger(__name__)
 
-Loss = Type[nn.Module]
+Loss = nn.Module
 r"""Type hint for losses."""
 
-TORCH_LOSSES: Final[dict[str, Loss]] = {
+TORCH_LOSSES: Final[dict[str, type[Loss]]] = {
     "L1": nn.L1Loss,
     "CosineEmbedding": nn.CosineEmbeddingLoss,
     "CrossEntropy": nn.CrossEntropyLoss,
@@ -61,7 +58,7 @@ TORCH_LOSSES: Final[dict[str, Loss]] = {
 }
 r"""Dictionary containing all available losses in torch."""
 
-TORCH_ALIASES: Final[dict[str, Loss]] = {
+TORCH_ALIASES: Final[dict[str, type[Loss]]] = {
     "MAE": nn.L1Loss,
     "L2": nn.MSELoss,
     "XENT": nn.CrossEntropyLoss,
@@ -69,7 +66,7 @@ TORCH_ALIASES: Final[dict[str, Loss]] = {
 }
 r"""Dictionary containing additional aliases for losses in torch."""
 
-LOSSES: Final[dict[str, Loss]] = {
+LOSSES: Final[dict[str, type[Loss]]] = {
     "ND": ND,
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,
