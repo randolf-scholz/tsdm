@@ -160,9 +160,9 @@ def log_model_state(
 
     Parameters
     ----------
+    model
     i: int
     writer: SummaryWriter
-    optimizer: Optimizer
     histograms: bool=False
     prefix: Optional[str] = None,
     """
