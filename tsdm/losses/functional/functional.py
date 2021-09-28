@@ -2,27 +2,22 @@ r"""Loss Functions for time series.
 
 All functions implemented in batch compatible way.
 """  # pylint: disable=R0801
-import logging
-from typing import Callable, Final
 
-import torch
-from torch import Tensor, jit
+from __future__ import annotations
 
-LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [  # type hints etc.
-    "INSTANCE_WISE",
-    "AGGREGATION",
-    "NON_DECOMPOSABLE",
-] + [  # losses
+__all__ = [  # Functions
     "nd",
     "nrmse",
     "q_quantile",
     "q_quantile_loss",
 ]
 
-INSTANCE_WISE = Callable[[Tensor, Tensor], Tensor]
-AGGREGATION = Callable[[Tensor], Tensor]
-NON_DECOMPOSABLE = Callable[[Tensor, Tensor], Tensor]
+import logging
+
+import torch
+from torch import Tensor, jit
+
+LOGGER = logging.getLogger(__name__)
 
 
 @jit.script

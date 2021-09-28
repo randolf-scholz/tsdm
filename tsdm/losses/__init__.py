@@ -4,6 +4,25 @@ contains object oriented loss functions.
 See `tsdm.losses.functional` for functional implementations.
 """
 
+from __future__ import annotations
+
+__all__ = (
+    [  # Sub-Modules
+        "functional",
+    ]
+    + [  # Meta-Objects
+        "Loss",
+        "LOSSES",
+    ]
+    + [  # Classes
+        "ND",
+        "NRMSE",
+        "Q_Quantile",
+        "Q_Quantile_Loss",
+    ]
+)
+
+
 import logging
 from typing import Final, Type
 
@@ -13,16 +32,6 @@ from tsdm.losses import functional
 from tsdm.losses.modular import ND, NRMSE, Q_Quantile, Q_Quantile_Loss
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
-    "Loss",
-    "LOSSES",
-    "functional",
-    "ND",
-    "NRMSE",
-    "Q_Quantile",
-    "Q_Quantile_Loss",
-]
-
 
 Loss = Type[nn.Module]
 r"""Type hint for losses."""
@@ -60,14 +69,10 @@ TORCH_ALIASES: Final[dict[str, Loss]] = {
 }
 r"""Dictionary containing additional aliases for losses in torch."""
 
-LOSSES: Final[dict[str, Loss]] = (
-    {
-        "ND": ND,
-        "NRMSE": NRMSE,
-        "Q_Quantile": Q_Quantile,
-        "Q_Quantile_Loss": Q_Quantile_Loss,
-    }
-    | TORCH_LOSSES
-    | TORCH_ALIASES
-)
+LOSSES: Final[dict[str, Loss]] = {
+    "ND": ND,
+    "NRMSE": NRMSE,
+    "Q_Quantile": Q_Quantile,
+    "Q_Quantile_Loss": Q_Quantile_Loss,
+} | (TORCH_LOSSES | TORCH_ALIASES)
 r"""Dictionary containing all available losses."""

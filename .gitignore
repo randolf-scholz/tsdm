@@ -3,6 +3,7 @@ video/
 
 # tensorboard run data
 runs/
+model_checkpoints/
 
 # model checkpoints
 checkpoints/

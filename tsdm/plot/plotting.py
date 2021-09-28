@@ -1,18 +1,21 @@
 r"""Plotting helper functions."""
 
-import logging
-from typing import Callable, Final, Literal, Optional
+__all__ = ("visualize_distribution", "shared_grid_plot", "plot_spectrum")
 
-import matplotlib.pyplot as plt
+import logging
+from typing import Callable, Literal, Optional
+
 import numpy as np
+import torch
+from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.pyplot import Axes, Figure
 from numpy.typing import ArrayLike
 from scipy.stats import mode
 from torch import Tensor
+from torch.linalg import eigvals
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["visualize_distribution", "shared_grid_plot"]
 
 Location = Literal[
     "upper right",
@@ -27,6 +30,7 @@ Location = Literal[
 ]
 
 
+@torch.no_grad()
 def visualize_distribution(
     x: ArrayLike,
     ax: Axes,
@@ -106,6 +110,7 @@ def visualize_distribution(
         ax.add_artist(textbox)
 
 
+@torch.no_grad()
 def shared_grid_plot(
     data: ArrayLike,
     plot_func: Callable[..., None],
@@ -212,3 +217,63 @@ def shared_grid_plot(
             )
 
     return fig, axes
+
+
+@torch.no_grad()
+def plot_spectrum(
+    kernel: Tensor,
+    style: str = "ggplot",
+    axis_kwargs: Optional[dict] = None,
+    figure_kwargs: Optional[dict] = None,
+    scatter_kwargs: Optional[dict] = None,
+) -> Figure:
+    r"""Create scatter-plot of complex matrix eigenvalues.
+
+    Parameters
+    ----------
+    kernel: Tensor
+    style: str = "bmh"
+        Which matplotlib style to use.
+    figure_kwargs: Optional[dict] = None
+        Keyword-Arguments to pass to ``matplotlib.pyplot.subplots``
+    scatter_kwargs: Optional[dict] = None
+        Keyword-Arguments to pass to ``matplotlib.pyplot.scatter``
+
+    Returns
+    -------
+    Figure
+    """
+    axis_kwargs = {
+        "xlim": (-2.5, +2.5),
+        "ylim": (-2.5, +2.5),
+        "aspect": "equal",
+        "ylabel": "imag part",
+        "xlabel": "real part",
+    } | (axis_kwargs or {})
+
+    figure_kwargs = {
+        "figsize": (4, 4),
+        "constrained_layout": True,
+        "dpi": 256,  # default: 1024px×1024px
+    } | (figure_kwargs or {})
+
+    scatter_kwargs = {
+        "edgecolors": "none",
+    } | (scatter_kwargs or {})
+
+    with plt.style.context(style):
+        assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
+        eigs = eigvals(kernel).detach().cpu()
+        fig, ax = plt.subplots(**figure_kwargs)
+        ax.set(**axis_kwargs)
+        ax.scatter(eigs.real, eigs.imag, **scatter_kwargs)
+        return fig
+
+
+# @torch.no_grad()
+# def plot_kernel_heatmap(kernel: Tensor, cmap: str = "seismic"):
+#     kernel = kernel.clone().detach().cpu()
+#     assert len(kernel.shape)==2 and kernel.shape[0] == kernel.shape[1]
+#     cmap = cm.get_cmap("seismic")
+#     RGBA = cmap(kernel)
+#     return RGBA[..., :-1]
