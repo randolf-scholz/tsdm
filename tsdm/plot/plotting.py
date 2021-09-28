@@ -241,6 +241,8 @@ def plot_spectrum(
     kernel: Tensor
     style: str = "bmh"
         Which matplotlib style to use.
+    axis_kwargs: Optional[dict] = None,
+        Keyword-Arguments to pass to ``Axes.set``
     figure_kwargs: Optional[dict] = None
         Keyword-Arguments to pass to ``matplotlib.pyplot.subplots``
     scatter_kwargs: Optional[dict] = None

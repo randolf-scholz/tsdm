@@ -25,7 +25,7 @@ r"""Type hint for activations."""
 ACTIVATIONS: Final[dict[str, Activation]] = {
     "threshold": F.threshold,
     # Thresholds each element of the input Tensor.
-    "threshold_": F.threshold_,
+    "threshold_": F.threshold_,  # type: ignore[attr-defined]
     # type: ignore  # In-place version of threshold().
     "relu": F.relu,
     # Applies the rectified linear unit function element-wise.
