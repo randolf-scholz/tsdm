@@ -1,16 +1,25 @@
-r"""Loss Modules for time series.
+r"""Loss Modules for Time Series.
 
 All functions implemented in batch compatible way.
-"""  # pylint: disable=R0801
+"""
+
+from __future__ import annotations
+
+__all__ = [  # Classes
+    "ND",
+    "NRMSE",
+    "Q_Quantile",
+    "Q_Quantile_Loss",
+]
+
+
 import logging
-from typing import Final
 
 from torch import Tensor, nn
 
 from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["ND", "NRMSE", "Q_Quantile", "Q_Quantile_Loss"]
 
 
 class ND(nn.Module):
