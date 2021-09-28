@@ -1,8 +1,15 @@
-r"""Functional implementations of loss functions."""
+r"""Functional implementations of loss functions.
+
+TODO: Module Summary.
+"""
 
 from __future__ import annotations
 
-__all__ = ["FunctialLoss", "LOSSES"] + [  # Meta-Objects  # Functions
+__all__ = [
+    # Constants
+    "FunctionalLoss",
+    "LOSSES",
+    # Functions
     "nd",
     "nrmse",
     "q_quantile",
@@ -20,7 +27,7 @@ from tsdm.losses.functional.functional import nd, nrmse, q_quantile, q_quantile_
 LOGGER = logging.getLogger(__name__)
 
 FunctionalLoss = Callable[..., Tensor]
-
+r"""Type hint for functional losses."""
 
 TORCH_LOSSES: Final[dict[str, FunctionalLoss]] = {
     "binary_cross_entropy": F.binary_cross_entropy,
@@ -56,9 +63,11 @@ TORCH_LOSSES: Final[dict[str, FunctionalLoss]] = {
     "nll": F.nll_loss,
     # The negative log likelihood loss.
     "huber": F.huber_loss,
-    # Function that uses a squared term if the absolute element-wise error falls below delta and a delta-scaled L1 term otherwise.  # noqa
+    # Function that uses a squared term if the absolute element-wise error falls below
+    # delta and a delta-scaled L1 term otherwise.
     "smooth_l1": F.smooth_l1_loss,
-    # Function that uses a squared term if the absolute element-wise error falls below beta and an L1 term otherwise.
+    # Function that uses a squared term if the absolute element-wise error falls below
+    # beta and an L1 term otherwise.
     "soft_margin": F.soft_margin_loss,
     # See SoftMarginLoss for details.
     "triplet_margin": F.triplet_margin_loss,

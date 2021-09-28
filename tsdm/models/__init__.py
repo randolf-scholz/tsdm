@@ -1,25 +1,36 @@
-r"""Implementation  / loading mechanism for models."""
+r"""Implementation  / loading mechanism for models.
 
-import logging
-from typing import Any, Final
+TODO: Module Summary.
+"""
 
-from tsdm.models.models import BaseModel
-from tsdm.models.ode_rnn import ODE_RNN
+from __future__ import annotations
 
-LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+__all__ = [
+    # Constants
     "Model",
     "MODELS",
+    # Classes
     "BaseModel",
     "ODE_RNN",
 ]
 
 
-Model = Any
+import logging
+from typing import Final
+
+from torch import nn
+
+from tsdm.models.models import BaseModel
+from tsdm.models.ode_rnn import ODE_RNN
+
+LOGGER = logging.getLogger(__name__)
+
+
+Model = nn.Module
 r"""Type hint for models."""
 
 # TODO: replace Any with BaseModel class
-MODELS: Final[dict[str, Any]] = {
+MODELS: Final[dict[str, type[Model]]] = {
     "ODE_RNN": ODE_RNN,
 }
 r"""Dictionary containing all available models."""

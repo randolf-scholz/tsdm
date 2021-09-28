@@ -1,14 +1,19 @@
-r"""Module Docstring."""
+r"""TODO: Module Docstring.
+
+TODO: Module Docstring
+"""
+
 from __future__ import annotations
 
 import logging
-from typing import Final
 
 import pandas
 from pandas import DataFrame
 
+# __all__ = []
+
+
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = []
 
 
 def sparsity(df: DataFrame):

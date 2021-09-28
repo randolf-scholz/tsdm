@@ -1,4 +1,19 @@
-r"""Custom Decorators."""
+r"""Submodule containing general purpose decorators.
+
+#TODO add module description.
+"""
+
+from __future__ import annotations
+
+__all__ = [
+    # Functions
+    "decorator",
+    "sphinx_value",
+    "timefun",
+    # Exceptions
+    "DecoratorError",
+]
+
 import gc
 import logging
 import os
@@ -6,11 +21,9 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
-from typing import Any, Callable, Final, Optional
+from typing import Any, Callable, Optional
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["decorator", "DecoratorError", "sphinx_value", "timefun"]
-
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -169,7 +182,7 @@ def sphinx_value(func: Callable, value: Any, /) -> Callable:
     """
 
     @wraps(func)
-    def wrapper(*func_args, **func_kwargs):
+    def wrapper(*func_args, **func_kwargs):  # pylint: disable=unused-argument
         return value
 
     return wrapper if os.environ.get("GENERATING_DOCS", False) else func

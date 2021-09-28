@@ -1,17 +1,23 @@
-r"""Module Summary Line.
+r"""TODO: Module Summary Line.
 
-Module description
-"""  # pylint: disable=line-too-long # noqa
+TODO: Module description
+"""
 
 from __future__ import annotations
 
+__all__ = [
+    # Classes
+    "ETDatasetInformer",
+]
+
+
 import logging
-from typing import Callable, Final, Literal, Optional
+from typing import Callable, Literal, Optional
 
 import torch
 from pandas import DataFrame
 from sklearn.preprocessing import StandardScaler
-from torch import Tensor
+from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
 from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
@@ -22,10 +28,6 @@ from tsdm.tasks.tasks import BaseTask
 from tsdm.util.samplers import SequenceSampler
 
 LOGGER = logging.getLogger(__name__)
-
-__all__: Final[list[str]] = [
-    "ETDatasetInformer",
-]
 
 
 class ETDatasetInformer(BaseTask):
@@ -105,13 +107,15 @@ class ETDatasetInformer(BaseTask):
         scale: bool = True,
     ):
         super().__init__()
+        self.target = target
         self.dataset = DATASETS[dataset]
-        self.test_metric = LOSSES[test_metric]
+        self.test_metric = LOSSES[test_metric]()
+        self.time_encoder = ENCODERS[time_encoder]
+
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
-        self.target = target
-        self.accumulation_function = torch.nn.Identity  # type: ignore
+        self.accumulation_function = nn.Identity()  # type: ignore[assignment]
         # TODO: fix type problems
 
         self.splits: dict[str, DataFrame] = {
@@ -120,9 +124,6 @@ class ETDatasetInformer(BaseTask):
             "joint": self.dataset.dataset["2016-07-01":"2017-10-31"],  # type: ignore
             "test": self.dataset.dataset["2017-11-01":"2018-02-28"],  # type: ignore
         }
-        self.accumulation_function = torch.mean  # type: ignore
-        self.test_metric = LOSSES[test_metric]
-        self.time_encoder = ENCODERS[time_encoder]
 
         if scale:
             self.encoder = StandardScaler()

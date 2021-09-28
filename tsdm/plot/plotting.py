@@ -1,6 +1,13 @@
 r"""Plotting helper functions."""
 
-__all__ = ("visualize_distribution", "shared_grid_plot", "plot_spectrum")
+from __future__ import annotations
+
+__all__ = [
+    # Functions
+    "visualize_distribution",
+    "shared_grid_plot",
+    "plot_spectrum",
+]
 
 import logging
 from typing import Callable, Literal, Optional

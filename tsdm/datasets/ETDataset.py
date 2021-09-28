@@ -3,16 +3,25 @@
 **Source:** https://github.com/zhouhaoyi/ETDataset
 """
 
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "ETTh1",
+    "ETTh2",
+    "ETTm1",
+    "ETTm2",
+]
+
+
 import logging
 from pathlib import Path
-from typing import Final
 
 from pandas import DataFrame, read_csv, read_hdf
 
 from tsdm.datasets.dataset import BaseDataset
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
 class ETTh1(BaseDataset):
@@ -38,7 +47,7 @@ class ETTh1(BaseDataset):
         LOGGER.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTh1.csv"
-        with open(cls.rawdata_path.joinpath(filename), "r") as file:
+        with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
             df = read_csv(file, parse_dates=[0], index_col=0)
         df.name = cls.__name__
 
@@ -79,7 +88,7 @@ class ETTh2(BaseDataset):
         LOGGER.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm2.csv"
-        with open(cls.rawdata_path.joinpath(filename), "r") as file:
+        with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
             df = read_csv(file, parse_dates=[0], index_col=0)
         df.name = cls.__name__
 
@@ -120,7 +129,7 @@ class ETTm1(BaseDataset):
         LOGGER.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm1.csv"
-        with open(cls.rawdata_path.joinpath(filename), "r") as file:
+        with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
             df = read_csv(file, parse_dates=[0], index_col=0)
         df.name = cls.__name__
 
@@ -161,7 +170,7 @@ class ETTm2(BaseDataset):
         LOGGER.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm2.csv"
-        with open(cls.rawdata_path.joinpath(filename), "r") as file:
+        with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
             df = read_csv(file, parse_dates=[0], index_col=0)
         df.name = cls.__name__
 

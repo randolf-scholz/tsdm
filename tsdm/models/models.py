@@ -1,15 +1,23 @@
 r"""Base Model that all other models must subclass."""
+
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "BaseModel",
+]
+
+
 import logging
 import subprocess
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
 from urllib.parse import urlparse
 
 LOGGER = logging.getLogger(__name__)
-__all__ = ["BaseModel"]
 
 
-class BaseModel:
+class BaseModel(ABC):
     r"""BaseModel that all models should subclass.
 
     Attributes
@@ -50,6 +58,6 @@ class BaseModel:
         LOGGER.info("Finished importing model '%s' from %s", cls.__name__, cls.url)
 
     @abstractmethod
-    def __call__(self, *inputs):
+    def forward(self, *inputs):
         r"""Synonym for forward and __call__."""
         raise NotImplementedError

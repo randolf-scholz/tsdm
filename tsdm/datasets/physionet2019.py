@@ -150,11 +150,17 @@ HR 	Heart rate (beats per minute)
 +------------------+-----------------------------------------------------------------------------------------------------------------------+
 """  # pylint: disable=line-too-long # noqa
 
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "Physionet2019",
+]
+
 
 import logging
 import pickle
 from pathlib import Path
-from typing import Final
 from zipfile import ZipFile
 
 from pandas import DataFrame, HDFStore, read_csv, read_hdf
@@ -163,7 +169,6 @@ from tqdm import tqdm
 from tsdm.datasets.dataset import BaseDataset
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["Physionet2019"]
 
 
 class Physionet2019(BaseDataset):

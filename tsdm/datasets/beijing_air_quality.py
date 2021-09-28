@@ -68,19 +68,21 @@ Attribute Information
 
 from __future__ import annotations
 
+__all__ = [
+    # Classes
+    "BeijingAirQuality",
+]
+
 import logging
 import os
 import zipfile
 from pathlib import Path
-from typing import Final
 
 from pandas import DataFrame, Timestamp, concat, read_csv, read_hdf
 
 from tsdm.datasets.dataset import BaseDataset
 
 LOGGER = logging.getLogger(__name__)
-
-__all__: Final[list[str]] = ["BeijingAirQuality"]
 
 
 # noinspection PyTypeChecker

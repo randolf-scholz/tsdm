@@ -1,10 +1,19 @@
-r"""Sine wave dataset with lots of customizability."""
+r"""Sine wave dataset with lots of customizability.
+
+TODO: Module Summary.
+"""
+
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "SineWaveGenerator",
+]
+
 
 import logging
-from typing import Final
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["SineWaveGenerator"]
 
 
 class SineWaveGenerator:

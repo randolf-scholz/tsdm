@@ -19,7 +19,8 @@ iterable[tuple[tensor]]
 from __future__ import annotations
 
 import logging
-from typing import Final
+
+# __all__ = []
+
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = []

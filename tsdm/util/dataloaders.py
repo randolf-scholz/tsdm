@@ -6,11 +6,20 @@ We implement multiple levels of abstraction.
 - Dataloader for tuple of TimeSeriesTensor
 - Dataloader for MetaDataset
    - sample dataset by index, then sample from that dataset.
-
 """
 
+from __future__ import annotations
+
+__all__ = [
+    # Functions
+    "collate_list",
+    "collate_packed",
+    "collate_padded",
+    "unpad_sequence",
+    "upack_sequence",
+]
+
 import logging
-from typing import Final
 
 import torch
 from torch import Tensor
@@ -23,13 +32,6 @@ from torch.nn.utils.rnn import (
 )
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
-    "collate_list",
-    "collate_packed",
-    "collate_padded",
-    "unpad_sequence",
-    "upack_sequence",
-]
 
 
 def collate_list(batch: list[Tensor]) -> list[Tensor]:

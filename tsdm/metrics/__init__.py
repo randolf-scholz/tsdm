@@ -39,7 +39,8 @@ Note that in the context of time-series, we allow the accumulator to depend on t
 from __future__ import annotations
 
 import logging
-from typing import Final
+
+# __all__ = []
+
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = []

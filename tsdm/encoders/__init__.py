@@ -1,4 +1,23 @@
-r"""Encoders for different data types."""
+r"""Encoders for different data types.
+
+TODO: Module Summary.
+"""
+
+from __future__ import annotations
+
+__all__ = [
+    # Constants
+    "Encoder",
+    "ENCODERS",
+    # Functions
+    "make_dense_triplets",
+    "make_masked_format",
+    "make_sparse_triplets",
+    "time2float",
+    "time2int",
+    "triplet2dense",
+]
+
 import logging
 from typing import Any, Final
 
@@ -13,16 +32,6 @@ from tsdm.encoders._encoders import (
 
 LOGGER = logging.getLogger(__name__)
 
-__all__: Final[list[str]] = [
-    "Encoder",
-    "ENCODERS",
-    "make_dense_triplets",
-    "make_masked_format",
-    "make_sparse_triplets",
-    "time2float",
-    "time2int",
-    "triplet2dense",
-]
 
 Encoder = Any
 r"""Type hint for encoders."""

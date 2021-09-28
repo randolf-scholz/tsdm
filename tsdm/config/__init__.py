@@ -7,19 +7,10 @@ Content:
   - hashes.yaml
 """
 
-import logging
-from importlib import resources
-from pathlib import Path
-from typing import Final
+from __future__ import annotations
 
-import torch
-import yaml
-
-from tsdm.config import config_files
-
-LOGGER = logging.getLogger(__name__)
-
-__all__: Final[list[str]] = [
+__all__ = [
+    # CONSTANTS
     "CONFIG",
     "DATASETS",
     "MODELS",
@@ -30,10 +21,20 @@ __all__: Final[list[str]] = [
     "MODELDIR",
     "DATASETDIR",
     "RAWDATADIR",
-] + [
     "DEFAULT_DEVICE",
     "DEFAULT_DTYPE",
 ]
+
+import logging
+from importlib import resources
+from pathlib import Path
+
+import torch
+import yaml
+
+from tsdm.config import config_files
+
+LOGGER = logging.getLogger(__name__)
 
 DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEFAULT_DTYPE = torch.float32

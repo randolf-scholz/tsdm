@@ -8,21 +8,23 @@ Contains things like
 
 from __future__ import annotations
 
-import importlib
-import logging
-import subprocess
-import sys
-from pathlib import Path
-from typing import Final, Optional
-
-LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+__all__ = [
+    # Functions
     "query_bool",
     "query_choice",
     "get_requirements",
     "install_package",
     "write_requirements",
 ]
+
+import importlib
+import logging
+import subprocess
+import sys
+from pathlib import Path
+from typing import Optional
+
+LOGGER = logging.getLogger(__name__)
 
 
 def query_bool(question: str, default: Optional[bool] = True) -> bool:

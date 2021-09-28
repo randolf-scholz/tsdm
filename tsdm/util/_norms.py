@@ -1,9 +1,24 @@
-r"""Module Docstring."""
+r"""TODO: Module Docstring.
+
+TODO: Module summary.
+"""
+
 from __future__ import annotations
+
+__all__ = [
+    # Constants
+    "SizeLike",
+    # Functions
+    "relative_error",
+    "scaled_norm",
+    "grad_norm",
+    "multi_scaled_norm",
+    "multi_norm",
+]
 
 import logging
 from functools import singledispatch
-from typing import Final, Iterable, Optional, Union, overload
+from typing import Iterable, Optional, Union, overload
 
 import numpy as np
 import torch
@@ -11,13 +26,7 @@ from numpy.typing import ArrayLike, NDArray
 from torch import Tensor, jit
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
-    "relative_error",
-    "scaled_norm",
-    "grad_norm",
-    "multi_scaled_norm",
-    "multi_norm",
-]
+
 SizeLike = Union[int, tuple[int, ...]]  # type: ignore # TODO: use AliasType in 3.10
 
 
@@ -283,7 +292,7 @@ def _torch_multi_scaled_norm(
     p: float = 2,
     q: float = 2,
 ) -> Tensor:
-    # TODO: use psum instead to avoid double exponentiation
+    # TODO: avoid computing power twice exponentiation
     z = torch.stack([_torch_scaled_norm(z, p=p) ** q for z in x])
     w = torch.tensor([z.numel() for z in x], device=z.device, dtype=z.dtype)
     return (torch.dot(w, z) / torch.sum(w)) ** (1 / q)
@@ -294,7 +303,7 @@ def _numpy_multi_scaled_norm(
     p: float = 2,
     q: float = 2,
 ) -> NDArray:
-    # TODO: use psum instead to avoid double exponentiation
+    # TODO: avoid computing power twice exponentiation
     z = np.stack([_numpy_scaled_norm(z, p=p) ** q for z in x])
     w = np.array([z.size for z in x])
     return (np.dot(w, z) / np.sum(w)) ** (1 / q)
@@ -320,7 +329,7 @@ def grad_norm(
     """
     # TODO: implement special cases p,q = ±∞
     if normalize:
-        # initializing s this way instead of s=tensor(0) automatically gets the dtype and device correct
+        # Initializing s this way automatically gets the dtype and device correct
         s = torch.mean(tensors.pop().grad ** p) ** (q / p)
         for x in tensors:
             s += torch.mean(x.grad ** p) ** (q / p)
@@ -352,7 +361,7 @@ def multi_norm(
     """
     # TODO: implement special cases p,q = ±∞
     if normalize:
-        # initializing s this way instead of s=tensor(0) automatically gets the dtype and device correct
+        # Initializing s this way automatically gets the dtype and device correct
         s = torch.mean(tensors.pop() ** p) ** (q / p)
         for x in tensors:
             s += torch.mean(x ** p) ** (q / p)

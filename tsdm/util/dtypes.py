@@ -1,16 +1,12 @@
-r"""Module Docstring."""
+r"""TODO: Module Docstring.
+
+TODO: Module description.
+"""
+
 from __future__ import annotations
 
-import datetime
-import logging
-from collections import namedtuple
-from typing import Final, Type, Union
-
-import numpy as np
-import pandas
-
-LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+__all__ = [
+    # Constants
     "BOOLS",
     "CATEGORIES",
     "EMOJIS",
@@ -19,6 +15,16 @@ __all__: Final[list[str]] = [
     "TimeStampLike",
     "TimeDeltaLike",
 ]
+
+import datetime
+import logging
+from collections import namedtuple
+from typing import Final, Union
+
+import numpy as np
+import pandas
+
+LOGGER = logging.getLogger(__name__)
 
 
 # TODO: Use TypeAlias Once Python 3.10 comes out.
@@ -29,7 +35,7 @@ r"""Represents a unit of time duration."""
 TimeLike = Union[TimeStampLike, TimeDeltaLike]
 r"""Represents arbitrary time type."""
 
-NUMPY_INT_DTYPES: Final[dict[Type[np.signedinteger], str]] = {
+NUMPY_INT_DTYPES: Final[dict[type[np.signedinteger], str]] = {
     np.int8: "b",
     np.int16: "h",
     np.int32: "i",
@@ -42,7 +48,7 @@ NUMPY_INT_DTYPES: Final[dict[Type[np.signedinteger], str]] = {
     np.longlong: "q",
 }
 
-NUMPY_UINT_DTYPES: Final[dict[Type[np.unsignedinteger], str]] = {
+NUMPY_UINT_DTYPES: Final[dict[type[np.unsignedinteger], str]] = {
     np.uint8: "B",
     np.uint16: "H",
     np.uint32: "I",
@@ -55,7 +61,7 @@ NUMPY_UINT_DTYPES: Final[dict[Type[np.unsignedinteger], str]] = {
     np.ulonglong: "Q",
 }
 
-NUMPY_FLOAT_DTYPES: Final[dict[Type[np.floating], str]] = {
+NUMPY_FLOAT_DTYPES: Final[dict[type[np.floating], str]] = {
     np.float_: "d",
     np.float16: "e",
     np.float32: "f",
@@ -68,7 +74,7 @@ NUMPY_FLOAT_DTYPES: Final[dict[Type[np.floating], str]] = {
     np.longfloat: "g",
 }
 
-NUMPY_COMPLEX_DTYPES: Final[dict[Type[np.complexfloating], str]] = {
+NUMPY_COMPLEX_DTYPES: Final[dict[type[np.complexfloating], str]] = {
     np.complex64: "F",
     np.complex128: "D",
     np.complex256: "G",
@@ -82,21 +88,21 @@ NUMPY_COMPLEX_DTYPES: Final[dict[Type[np.complexfloating], str]] = {
     np.longcomplex: "G",
 }
 
-NUMPY_TIME_DTYPES: Final[dict[Type[np.generic], str]] = {
+NUMPY_TIME_DTYPES: Final[dict[type[np.generic], str]] = {
     np.timedelta64: "M",
     np.datetime64: "m",
 }
 
-NUMPY_BOOL_DTYPES: Final[dict[Type[np.generic], str]] = {
+NUMPY_BOOL_DTYPES: Final[dict[type[np.generic], str]] = {
     np.bool_: "?",
 }
 
-NUMPY_OTHER_DTYPES: Final[dict[Type[np.generic], str]] = {
+NUMPY_OTHER_DTYPES: Final[dict[type[np.generic], str]] = {
     np.object_: "O",
 }
 
 
-NUMPY_STRING_DTYPES: Final[dict[Type[np.flexible], str]] = {
+NUMPY_STRING_DTYPES: Final[dict[type[np.flexible], str]] = {
     np.bytes_: "S",
     np.string_: "S",
     np.str_: "U",
@@ -105,7 +111,7 @@ NUMPY_STRING_DTYPES: Final[dict[Type[np.flexible], str]] = {
 }
 
 
-PANDAS_DTYPES: Final[dict[Type[pandas.api.extensions.ExtensionDtype], str]] = {
+PANDAS_DTYPES: Final[dict[type[pandas.api.extensions.ExtensionDtype], str]] = {
     pandas.BooleanDtype: "boolean",
     pandas.CategoricalDtype: "category",
     pandas.DatetimeTZDtype: "datetime64",  # datetime64[ns, <tz>]
@@ -167,7 +173,7 @@ STRINGS: Final[list[str]] = [
 
 label = namedtuple("label", ["object", "color"])
 
-CATEGORIES = [
+CATEGORIES: Final[list[label]] = [
     label(object="bear", color="brown"),
     label(object="bear", color="black"),
     label(object="bear", color="white"),

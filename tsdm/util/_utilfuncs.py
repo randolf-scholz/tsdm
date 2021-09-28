@@ -1,52 +1,25 @@
-r"""Utility functions."""
+r"""Utility functions.
+
+TODO:  Module description
+"""
+
 from __future__ import annotations
 
-import logging
-from collections.abc import Mapping
-from datetime import datetime
-from typing import Any, Final, Iterable, Type
-
-from torch import nn
-
-LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
-    "ACTIVATIONS",
+__all__ = [
+    # Meta-Objects
+    # Functions
     "deep_dict_update",
     "deep_kval_update",
     "now",
 ]
 
 
-ACTIVATIONS: Final[dict[str, Type[nn.Module]]] = {
-    "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
-    "ELU": nn.ELU,
-    "Hardshrink": nn.Hardshrink,
-    "Hardsigmoid": nn.Hardsigmoid,
-    "Hardtanh": nn.Hardtanh,
-    "Hardswish": nn.Hardswish,
-    "LeakyReLU": nn.LeakyReLU,
-    "LogSigmoid": nn.LogSigmoid,
-    "LogSoftmax": nn.LogSoftmax,
-    "MultiheadAttention": nn.MultiheadAttention,
-    "PReLU": nn.PReLU,
-    "ReLU": nn.ReLU,
-    "ReLU6": nn.ReLU6,
-    "RReLU": nn.RReLU,
-    "SELU": nn.SELU,
-    "CELU": nn.CELU,
-    "GELU": nn.GELU,
-    "Sigmoid": nn.Sigmoid,
-    "SiLU": nn.SiLU,
-    "Softmax": nn.Softmax,
-    "Softmax2d": nn.Softmax2d,
-    "Softplus": nn.Softplus,
-    "Softshrink": nn.Softshrink,
-    "Softsign": nn.Softsign,
-    "Tanh": nn.Tanh,
-    "Tanhshrink": nn.Tanhshrink,
-    "Threshold": nn.Threshold,
-}
-r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""
+import logging
+from collections.abc import Mapping
+from datetime import datetime
+from typing import Any, Iterable
+
+LOGGER = logging.getLogger(__name__)
 
 
 def now():

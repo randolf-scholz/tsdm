@@ -38,9 +38,15 @@ First column present date and time as a string with the following format 'yyyy-m
 Other columns present float values with consumption in kW
 """  # pylint: disable=line-too-long # noqa
 
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "Electricity",
+]
+
 import logging
 from pathlib import Path
-from typing import Final
 from zipfile import ZipFile
 
 import numpy as np
@@ -49,7 +55,6 @@ from pandas import DataFrame, read_csv, read_hdf
 from tsdm.datasets.dataset import BaseDataset
 
 LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["Electricity"]
 
 
 class Electricity(BaseDataset):

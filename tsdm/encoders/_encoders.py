@@ -20,17 +20,10 @@ Hierarchical Categoricals:
 """
 # TODO: implement categorical data encoding schemes
 
+from __future__ import annotations
 
-import logging
-from typing import Final, Union
-
-import numpy as np
-import pandas as pd
-from numba import njit
-from pandas import CategoricalDtype, DataFrame, Series
-
-LOGGER = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+__all__ = [
+    # Functions
     "make_dense_triplets",
     "make_masked_format",
     "make_sparse_triplets",
@@ -38,6 +31,17 @@ __all__: Final[list[str]] = [
     "time2int",
     "triplet2dense",
 ]
+
+
+import logging
+from typing import Union
+
+import numpy as np
+import pandas as pd
+from numba import njit
+from pandas import CategoricalDtype, DataFrame, Series
+
+LOGGER = logging.getLogger(__name__)
 
 
 def infer_categories(s: Series) -> set:
