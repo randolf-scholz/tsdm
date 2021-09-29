@@ -1,4 +1,4 @@
-r"""Data set containing electricity consumption of 370 points/clients.
+r"""Data set contains electricity consumption of 370 points/clients.
 
 ElectricityLoadDiagrams20112014 Data Set
 ========================================
@@ -38,9 +38,15 @@ First column present date and time as a string with the following format 'yyyy-m
 Other columns present float values with consumption in kW
 """  # pylint: disable=line-too-long # noqa
 
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "Electricity",
+]
+
 import logging
 from pathlib import Path
-from typing import Final
 from zipfile import ZipFile
 
 import numpy as np
@@ -48,8 +54,7 @@ from pandas import DataFrame, read_csv, read_hdf
 
 from tsdm.datasets.dataset import BaseDataset
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["Electricity"]
+LOGGER = logging.getLogger(__name__)
 
 
 class Electricity(BaseDataset):
@@ -65,6 +70,9 @@ class Electricity(BaseDataset):
     """  # pylint: disable=line-too-long # noqa
 
     url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
+    info_url: str = (
+        r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"
+    )
     dataset: DataFrame
     rawdata_path: Path
     dataset_path: Path
@@ -74,13 +82,13 @@ class Electricity(BaseDataset):
     def clean(cls):
         r"""Create DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`."""
         dataset = cls.__name__
-        logger.info("Cleaning dataset '%s'", dataset)
+        LOGGER.info("Cleaning dataset '%s'", dataset)
 
         fname = "LD2011_2014.txt"
         with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as files:
             files.extract(fname, path=cls.dataset_path)
 
-        logger.info("Finished extracting dataset '%s'", dataset)
+        LOGGER.info("Finished extracting dataset '%s'", dataset)
 
         df = read_csv(
             cls.dataset_path.joinpath(fname),
@@ -96,11 +104,11 @@ class Electricity(BaseDataset):
         df.to_hdf(cls.dataset_file, key=f"{dataset}")
         cls.dataset_path.joinpath(fname).unlink()
 
-        logger.info("Finished cleaning dataset '%s'", dataset)
+        LOGGER.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
     def load(cls):
-        """Load the dataset from hdf-5 file."""
+        r"""Load the dataset from hdf-5 file."""
         super().load()  # <- makes sure DS is downloaded and preprocessed
         df = read_hdf(cls.dataset_file, key=cls.__name__)
         df = DataFrame(df)

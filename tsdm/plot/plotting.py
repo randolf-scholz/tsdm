@@ -1,27 +1,51 @@
 r"""Plotting helper functions."""
 
-import logging
-from typing import Callable, Final
+from __future__ import annotations
 
-from matplotlib.offsetbox import AnchoredText
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import Axes, Figure
+__all__ = [
+    # Functions
+    "visualize_distribution",
+    "shared_grid_plot",
+    "plot_spectrum",
+]
+
+import logging
+from typing import Callable, Literal, Optional
+
 import numpy as np
+import torch
+from matplotlib import pyplot as plt
+from matplotlib.offsetbox import AnchoredText
+from matplotlib.pyplot import Axes, Figure
 from numpy.typing import ArrayLike
 from scipy.stats import mode
 from torch import Tensor
+from torch.linalg import eigvals
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["visualize_distribution", "shared_grid_plot"]
+LOGGER = logging.getLogger(__name__)
+
+Location = Literal[
+    "upper right",
+    "upper left",
+    "lower left",
+    "lower right",
+    "center left",
+    "center right",
+    "lower center",
+    "upper center",
+    "center",
+]
 
 
+@torch.no_grad()
 def visualize_distribution(
-    x,
-    ax,
-    bins=50,
-    log=True,
-    loc=1,
-    print_stats=True,
+    x: ArrayLike,
+    ax: Axes,
+    num_bins: int = 50,
+    log: bool = True,
+    loc: Location = "upper right",
+    print_stats: bool = True,
+    extra_stats: Optional[dict[str, str]] = None,
 ):
     r"""Plot the distribution of x in the given axis.
 
@@ -29,11 +53,13 @@ def visualize_distribution(
     ----------
     x: ArrayLike
     ax: Axes
-    bins: int or Sequence[int]
+    num_bins: int or Sequence[int]
     log: bool or float, default=False
         if True, use log base 10, if float, use  log w.r.t. this base
-    loc: int or str
+    loc: Location
     print_stats: bool
+    extra_stats: Optional[dict[str, str]]
+        Additional things to add to the stats table
     """
     if isinstance(x, Tensor):
         x = x.detach().cpu().numpy()
@@ -55,31 +81,43 @@ def visualize_distribution(
         low = np.floor(np.quantile(z, 0.01))
         high = np.ceil(np.quantile(z, 1 - 0.01))
         x = x[(z >= low) & (z <= high)]  # type: ignore
-        bins = np.logspace(low, high, num=bins, base=10)
+        bins = np.logspace(low, high, num=num_bins, base=10)
+    else:
+        low = np.quantile(x, 0.01)
+        high = np.quantile(x, 1 - 0.01)
+        bins = np.linspace(low, high, num=num_bins)
 
     ax.hist(x, bins=bins, density=True)
 
     if print_stats:
-        text = (
-            r"\begin{tabular}{ll}"
-            + f"NaNs   & {100 * np.mean(nans):.2f}"
-            + r"\%"
-            + r"\\"
-            + f"Mean   & {np.mean(x):.2e}"
-            + r"\\"
-            + f"Median & {np.median(x):.2e}"
-            + r"\\"
-            + f"Mode   & {mode(x)[0][0]:.2e}"
-            + r"\\"
-            + f"stdev  & {np.std(x):.2e}"
-            + r"\\"
+        stats = {
+            "NaNs": f"{100 * np.mean(nans):.2f}" + r"\%",
+            "Mean": f"{np.mean(x):.2e}",
+            "Median": f"{np.median(x):.2e}",
+            "Mode": f"{mode(x)[0][0]:.2e}",
+            "Stdev": f"{np.std(x):.2e}",
+        }
+        if extra_stats is not None:
+            stats |= {str(key): str(val) for key, val in extra_stats.items()}
+
+        pad = max(len(key) for key in stats)
+
+        table = (
+            r"\scriptsize"
+            + r"\begin{tabular}{ll}"
+            + r"\\ ".join([key.ljust(pad) + " & " + val for key, val in stats.items()])
             + r"\end{tabular}"
         )
+
+        # if extra_stats is not None:
+        LOGGER.info("writing table %s", table)
+
         # text = r"\begin{tabular}{ll}test & and\\ more &test\end{tabular}"
-        textbox = AnchoredText(text, loc=loc, borderpad=0)
+        textbox = AnchoredText(table, loc=loc, borderpad=0.0)
         ax.add_artist(textbox)
 
 
+@torch.no_grad()
 def shared_grid_plot(
     data: ArrayLike,
     plot_func: Callable[..., None],
@@ -119,10 +157,10 @@ def shared_grid_plot(
     if data.ndim == 2:
         data = np.expand_dims(data, axis=0)
 
-    NROWS, NCOLS = data.shape[:2]  # type: ignore
+    nrows, ncols = data.shape[:2]  # type: ignore
 
-    SUBPLOT_KWARGS = {
-        "figsize": (5 * NCOLS, 3 * NROWS),
+    _subplot_kwargs = {
+        "figsize": (5 * ncols, 3 * nrows),
         "sharex": "col",
         "sharey": "row",
         "squeeze": False,
@@ -130,11 +168,11 @@ def shared_grid_plot(
     }
 
     if subplots_kwargs is not None:
-        SUBPLOT_KWARGS.update(subplots_kwargs)
+        _subplot_kwargs.update(subplots_kwargs)  # type: ignore
 
     plot_kwargs = {} if plot_kwargs is None else plot_kwargs
 
-    fig, axes = plt.subplots(nrows=NROWS, ncols=NCOLS, **SUBPLOT_KWARGS)
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **_subplot_kwargs)
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):
@@ -186,3 +224,65 @@ def shared_grid_plot(
             )
 
     return fig, axes
+
+
+@torch.no_grad()
+def plot_spectrum(
+    kernel: Tensor,
+    style: str = "ggplot",
+    axis_kwargs: Optional[dict] = None,
+    figure_kwargs: Optional[dict] = None,
+    scatter_kwargs: Optional[dict] = None,
+) -> Figure:
+    r"""Create scatter-plot of complex matrix eigenvalues.
+
+    Parameters
+    ----------
+    kernel: Tensor
+    style: str = "bmh"
+        Which matplotlib style to use.
+    axis_kwargs: Optional[dict] = None,
+        Keyword-Arguments to pass to ``Axes.set``
+    figure_kwargs: Optional[dict] = None
+        Keyword-Arguments to pass to ``matplotlib.pyplot.subplots``
+    scatter_kwargs: Optional[dict] = None
+        Keyword-Arguments to pass to ``matplotlib.pyplot.scatter``
+
+    Returns
+    -------
+    Figure
+    """
+    axis_kwargs = {
+        "xlim": (-2.5, +2.5),
+        "ylim": (-2.5, +2.5),
+        "aspect": "equal",
+        "ylabel": "imag part",
+        "xlabel": "real part",
+    } | (axis_kwargs or {})
+
+    figure_kwargs = {
+        "figsize": (4, 4),
+        "constrained_layout": True,
+        "dpi": 256,  # default: 1024px×1024px
+    } | (figure_kwargs or {})
+
+    scatter_kwargs = {
+        "edgecolors": "none",
+    } | (scatter_kwargs or {})
+
+    with plt.style.context(style):
+        assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
+        eigs = eigvals(kernel).detach().cpu()
+        fig, ax = plt.subplots(**figure_kwargs)
+        ax.set(**axis_kwargs)
+        ax.scatter(eigs.real, eigs.imag, **scatter_kwargs)
+        return fig
+
+
+# @torch.no_grad()
+# def plot_kernel_heatmap(kernel: Tensor, cmap: str = "seismic"):
+#     kernel = kernel.clone().detach().cpu()
+#     assert len(kernel.shape)==2 and kernel.shape[0] == kernel.shape[1]
+#     cmap = cm.get_cmap("seismic")
+#     RGBA = cmap(kernel)
+#     return RGBA[..., :-1]

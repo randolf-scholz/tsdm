@@ -1,17 +1,32 @@
-r"""Utilities for optimizers."""
+r"""Utilities for optimizers.
 
+TODO: Module summary.
+"""
+
+from __future__ import annotations
+
+__all__ = [
+    # Constants
+    "Optimizer",
+    "OPTIMIZERS",
+    # Classes
+    "LR_Scheduler",
+    "LR_SCHEDULERS",
+]
 
 import logging
-from typing import Final, Type
+from typing import Final
 
 import torch.optim
-from torch.optim import lr_scheduler, Optimizer
+from torch.optim import lr_scheduler
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["OPTIMIZERS", "LR_SCHEDULERS"]
+LOGGER = logging.getLogger(__name__)
 
 
-OPTIMIZERS: Final[dict[str, Type[Optimizer]]] = {
+Optimizer = torch.optim.Optimizer
+r"""Type hint for optimizers."""
+
+OPTIMIZERS: Final[dict[str, type[Optimizer]]] = {
     "Adadelta": torch.optim.Adadelta,
     # Implements Adadelta algorithm.
     "Adagrad": torch.optim.Adagrad,
@@ -35,10 +50,13 @@ OPTIMIZERS: Final[dict[str, Type[Optimizer]]] = {
     "SGD": torch.optim.SGD,
     # Implements stochastic gradient descent (optionally with momentum).
 }
-r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""
+r"""Dictionary containing all available optimizers."""
 
-LR_SCHEDULER = lr_scheduler._LRScheduler
-LR_SCHEDULERS: Final[dict[str, Type[LR_SCHEDULER]]] = {
+# noinspection PyProtectedMember
+LR_Scheduler = lr_scheduler._LRScheduler  # pylint: disable=protected-access
+r"""Type hint for lr_schedulers."""
+
+LR_SCHEDULERS: Final[dict[str, type[LR_Scheduler]]] = {
     "LambdaLR": lr_scheduler.LambdaLR,
     "MultiplicativeLR": lr_scheduler.MultiplicativeLR,  # type: ignore
     "StepLR": lr_scheduler.StepLR,
@@ -50,4 +68,4 @@ LR_SCHEDULERS: Final[dict[str, Type[LR_SCHEDULER]]] = {
     "OneCycleLR": lr_scheduler.OneCycleLR,  # type: ignore
     "CosineAnnealingWarmRestarts": lr_scheduler.CosineAnnealingWarmRestarts,
 }
-r"""Utility dictionary, for use in model creation from Hyperparameter dicts."""
+r"""Dictionary containing all available lr_schedulers."""

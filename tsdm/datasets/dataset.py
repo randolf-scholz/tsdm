@@ -19,19 +19,31 @@ Basic Usage
    x = Electricity.dataset
 """
 
-from abc import ABC, ABCMeta, abstractmethod
-from functools import cache
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "BaseDataset",
+    "DatasetMetaClass",
+    "SequenceDataset",
+]
+
+
 import logging
 import os
-from pathlib import Path
 import subprocess
-from typing import Final, Union
+from abc import ABC, ABCMeta, abstractmethod
+from functools import cache
+from pathlib import Path
+from typing import Union
 from urllib.parse import urlparse
+
+import torch
+from torch import Tensor
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["BaseDataset", "DatasetMetaClass"]
+LOGGER = logging.getLogger(__name__)
 
 
 class DatasetMetaClass(ABCMeta):
@@ -70,7 +82,7 @@ class DatasetMetaClass(ABCMeta):
         if os.environ.get("GENERATING_DOCS", False):
             return Path(f"~/.tsdm/rawdata/{cls.__name__}/")
         RAWDATADIR.mkdir(parents=True, exist_ok=True)
-        return RAWDATADIR
+        return RAWDATADIR.joinpath(cls.__name__)
 
     @property
     def dataset_path(cls):
@@ -167,12 +179,12 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         Overwrite if you need custom downloader
         """
         if cls.url is None:
-            logger.info("Dataset '%s' provides no url. Assumed offline", cls.__name__)
+            LOGGER.info("Dataset '%s' provides no url. Assumed offline", cls.__name__)
             return
 
         dataset = cls.__name__
         parsed_url = urlparse(cls.url)
-        logger.info("Obtaining dataset '%s' from %s", dataset, cls.url)
+        LOGGER.info("Obtaining dataset '%s' from %s", dataset, cls.url)
 
         if parsed_url.netloc == "www.kaggle.com":
             kaggle_name = Path(parsed_url.path).name
@@ -183,7 +195,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
             )
         elif parsed_url.netloc == "github.com":
             subprocess.run(
-                f"svn export {cls.url.replace('tree/master', 'trunk')} {cls.rawdata_path}",
+                f"svn export {cls.url.replace('tree/main', 'trunk')} {cls.rawdata_path}",
                 shell=True,
                 check=True,
             )
@@ -195,8 +207,24 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
                 check=True,
             )
 
-        logger.info("Finished importing dataset '%s' from %s", dataset, cls.url)
+        LOGGER.info("Finished importing dataset '%s' from %s", dataset, cls.url)
 
     @classmethod
     def to_trainloader(cls):
         """Return trainloader object."""
+
+
+class SequenceDataset(torch.utils.data.Dataset):
+    r"""Sequential Dataset."""
+
+    def __init__(self, tensors: list[Tensor]):
+        assert all(len(x) == len(tensors[0]) for x in tensors)
+        self.tensors = tensors
+
+    def __len__(self):
+        r"""Length of the dataset."""
+        return len(self.tensors[0])
+
+    def __getitem__(self, idx):
+        r"""Get the same slice from each tensor."""
+        return [x[idx] for x in self.tensors]

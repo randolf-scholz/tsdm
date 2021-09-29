@@ -1,20 +1,30 @@
-r"""ODR-RNN Model Import."""
+r"""ODR-RNN Model Import.
+
+TODO: Module Summary
+"""
+
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "ODE_RNN",
+]
+
+
+import logging
+import sys
 from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
-import logging
 from pathlib import Path
-import sys
 from types import ModuleType
-from typing import Final
 
 import torch
 from torch import nn
 
-from tsdm.models import BaseModel
+from tsdm.models.models import BaseModel
 from tsdm.util import deep_dict_update
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["ODE_RNN"]
+LOGGER = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -67,7 +77,7 @@ def path_import(module_path: Path, module_name: str = None) -> ModuleType:
         return the_module
 
 
-class ODE_RNN(BaseModel):
+class ODE_RNN(BaseModel, nn.Module):
     r"""TODO: add docstring.
 
     Parameters
@@ -219,7 +229,7 @@ class ODE_RNN(BaseModel):
             train_classif_w_reconstr=HP["train_classif_w_reconstr"],
         )
 
-    def __call__(self, T, X):
+    def forward(self, T, X):
         r"""TODO: add docstring."""
         (pred,) = self.model.get_reconstruction(
             # Note: n_traj_samples and mode have no effect -> omitted!

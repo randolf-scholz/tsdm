@@ -1,8 +1,17 @@
-r"""In silico experiments."""  # pylint: disable=line-too-long # noqa
+r"""In silico experiments.
 
-from importlib import resources
+TODO: Module Summary
+"""
+
+
+__all__ = [
+    # Classes
+    "InSilicoData",
+]
+
+
 import logging
-from typing import Final
+from importlib import resources
 
 import h5py
 import pandas as pd
@@ -10,8 +19,7 @@ import pandas as pd
 from tsdm.datasets.dataset import BaseDataset
 from tsdm.datasets.examples import in_silico
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["InSilicoData"]
+LOGGER = logging.getLogger(__name__)
 
 
 class InSilicoData(BaseDataset):
@@ -32,14 +40,14 @@ class InSilicoData(BaseDataset):
     def clean(cls):
         """Create `DataFrame` with 1 column per client and `DatetimeIndex`."""
         dataset = cls.__name__
-        logger.info("Cleaning dataset '%s'", dataset)
+        LOGGER.info("Cleaning dataset '%s'", dataset)
 
         dfs = {}
         for resource in resources.contents(in_silico):
             if resource.split(".")[-1] != "txt":
                 continue
             with resources.path(in_silico, resource) as path:
-                with open(path, "r") as file:
+                with open(path, "r", encoding="utf8") as file:
                     df = pd.read_csv(file, index_col=0, parse_dates=[0])
                     df = df.rename_axis(index="time")
                     df["DOTm"] /= 100
@@ -52,7 +60,7 @@ class InSilicoData(BaseDataset):
         for df in dfs.values():
             df.to_hdf(cls.dataset_file, key=df.name, mode="a")
 
-        logger.info("Finished cleaning dataset '%s'", dataset)
+        LOGGER.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
     def load(cls):

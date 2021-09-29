@@ -1,17 +1,27 @@
-r"""Module Docstring."""
+r"""TODO: Module Docstring.
+
+TODO: Module Docstring
+"""
+
 from __future__ import annotations
 
+__all__ = [
+    # Functions
+    "sample_timestamps",
+    "sample_timedeltas",
+]
+
+
 import logging
-from typing import Final, Optional
+from typing import Optional
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
-from pandas import date_range, Timedelta, timedelta_range, Timestamp
+from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
 from tsdm.util.dtypes import BOOLS, EMOJIS, STRINGS, TimeDeltaLike, TimeStampLike
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["sample_timestamps", "sample_timedeltas"]
+LOGGER = logging.getLogger(__name__)
 
 
 # noinspection PyTypeChecker
@@ -110,7 +120,6 @@ def sample_timedeltas(
         for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
     }
     base_unit = next(u for u, val in units.items() if freq >= val)
-
     return timedeltas.astype(f"timedelta64[{base_unit}]")
 
 
@@ -149,5 +158,7 @@ def random_data(
         result = rng.choice(STRINGS, size=size)
     else:
         raise NotImplementedError
+
+    LOGGER.warning("TODO: implement missing%s!", missing)
 
     return result

@@ -9,8 +9,21 @@ contains generators for synthetic datasets. By design each generators consists o
 """
 # TODO: add some generators
 
-import logging
-from typing import Final
+from __future__ import annotations
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = []
+__all__ = [
+    # Constants
+    "Generator",
+    "GENERATORS",
+]
+
+import logging
+from typing import Any, Final
+
+LOGGER = logging.getLogger(__name__)
+
+Generator = Any
+r"""Type hint for generators."""
+
+GENERATORS: Final[dict[str, Generator]] = {}
+r"""Dictionary containing all available generators."""

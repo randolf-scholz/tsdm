@@ -6,7 +6,9 @@
 # include non-package files in the wheel, cf. setuptools documentation v57.0.0
 
 include MANIFEST.in
-include LICENSE
+include LICENSE.rst
+include README.rst
+include CHANGELOG.rst
 include tsdm/VERSION
 
 include requirements.txt

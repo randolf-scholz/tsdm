@@ -49,8 +49,13 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
-    "sphinx_math_dollar",
 ]
+
+# AUTOAPI
+# extensions.append("autoapi.extension")
+# autoapi_type = 'python'
+# autoapi_dirs = ['.', '../tsdm']
+# autoapi_root = "_autoapi"
 
 # try AutoAPI (different from sphinx-autoapi!)
 # extensions.append('autoapi.extension')
@@ -70,7 +75,7 @@ intersphinx_mapping = {
 # The name of a reST role (builtin or Sphinx extension) to use as the default role, that is,
 # for text marked up `like this`. This can be set to 'py:obj' to make `filter` a cross-reference
 # to the Python function “filter”. The default is None, which doesn’t reassign the default role.
-default_role = "py:obj"
+default_role = "math"  # This option causes `<latex>` to behave like $<latex>$ in markdown.
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -84,8 +89,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # unit titles (such as .. function::).
 add_module_names = False
 
+# suppress_warnings = ["epub.duplicated_toc_entry"]
 
-suppress_warnings = ["ref.python"]
 # -- Options for HTML output -------------------------------------------------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for a list of builtin themes.
@@ -340,7 +345,7 @@ napoleon_type_aliases = {
 napoleon_attr_annotations = True
 # True to allow using PEP 526 attributes annotations in classes. If an attribute is documented in the docstring without
 # a type and has an annotation in the class body, that type is used.
-napoleon_custom_sections = []
+napoleon_custom_sections = ["Test-Metric", "Evaluation Protocol", "Paper", "Results"]
 # Add a list of custom sections to include, expanding the list of parsed sections. Defaults to None.
 
 # -- end of configuration ----------------------------------------------------------------------------------------------
