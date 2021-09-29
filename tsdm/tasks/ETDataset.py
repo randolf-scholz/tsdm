@@ -89,7 +89,7 @@ class ETDatasetInformer(BaseTask):
     dataset: Dataset
     splits: dict[str, DataFrame]
     r"""Available splits: train/valid/joint/test"""
-    test_metric: Loss
+    test_metric: type[Loss]
     observation_horizon: int
     forecasting_horizon: int
     accumulation_function: Callable[..., Tensor]

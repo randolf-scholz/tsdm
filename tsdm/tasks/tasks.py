@@ -91,7 +91,7 @@ class BaseTask(ABC):
     """The test-slice of the datset."""
     trial_dataset: Dataset
     """The test-slice of the datset."""
-    test_metric: Loss
+    test_metric: type[Loss]
     """The test-metric (usually instance-wise)."""
     accumulation_function: Callable[..., Tensor]
     """The accumulation function (usually sum or mean or identity)."""
