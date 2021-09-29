@@ -109,7 +109,7 @@ class ETDatasetInformer(BaseTask):
         super().__init__()
         self.target = target
         self.dataset = DATASETS[dataset]
-        self.test_metric = LOSSES[test_metric]()
+        self.test_metric = LOSSES[test_metric]
         self.time_encoder = ENCODERS[time_encoder]
 
         self.forecasting_horizon = forecasting_horizon
