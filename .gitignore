@@ -1,3 +1,13 @@
+# videos
+video/
+
+# tensorboard run data
+runs/
+
+# model checkpoints
+checkpoints/
+*.pt
+
 # latex aux files
 __tex__/
 
