@@ -1,15 +1,12 @@
-r"""Test for checking how regular time series is."""
+r"""Test for checking how regular time series is.
 
-import logging
-from typing import Final, Union
+TODO: Module description.
+"""
 
-import numba
-import numpy as np
-from numpy.typing import ArrayLike
-from pandas import DataFrame, Series
+from __future__ import annotations
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+__all__ = [
+    # Functions
     "float_gcd",
     "approx_float_gcd",
     "is_regular",
@@ -17,6 +14,16 @@ __all__: Final[list[str]] = [
     "time_gcd",
     "regularity_coefficient",
 ]
+
+import logging
+from typing import Union
+
+import numba
+import numpy as np
+from numpy.typing import ArrayLike
+from pandas import DataFrame, Series
+
+LOGGER = logging.getLogger(__name__)
 
 
 def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> float:
@@ -42,7 +49,7 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
     ----------
     - <https://stackoverflow.com/q/45323619/9318372>
     """
-    logger.warning(
+    LOGGER.warning(
         "The implementation of approx_float_gcd does not work 100% correctly yet!"
     )
     x = np.asanyarray(x)
@@ -60,8 +67,8 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
             return float(x[0])
         # n >= 3:
         out = np.empty(2)
-        out[0] = _float_gcd(x[: n // 2])
-        out[1] = _float_gcd(x[n // 2 :])
+        out[0] = _float_gcd(x[: (n // 2)])
+        out[1] = _float_gcd(x[(n // 2) :])
         return _float_gcd(out)
 
     return _float_gcd(x)
@@ -133,7 +140,7 @@ def is_quasiregular(s: Union[Series, DataFrame]) -> bool:
 
 
 def is_regular(s: Union[Series, DataFrame]) -> bool:
-    r"""Test if time series is regular, i.e. iff $Δt_i$ is constant.
+    r"""Test if time series is regular, i.e. iff `Δt_i` is constant.
 
     Parameters
     ----------
@@ -162,9 +169,9 @@ def regularity_coefficient(
     .. math::
        κ(𝐭) = \frac{(t_\max-t_\min)/𝗀𝖼𝖽(𝐭)}{|𝐭|}
 
-    In particular, if the time-series is regular, $κ=1$, and if it is irregular,
-    $κ=∞$. To make the time-series regular, one would have to insert an additional
-    $(κ(𝐭)-1)|𝐭|$ data-points.
+    In particular, if the time-series is regular, `κ=1`, and if it is irregular,
+    `κ=∞`. To make the time-series regular, one would have to insert an additional
+    `(κ(𝐭)-1)|𝐭|` data-points.
 
     Parameters
     ----------

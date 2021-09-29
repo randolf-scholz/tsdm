@@ -4,7 +4,7 @@ import logging
 
 from tsdm.datasets import BaseDataset
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def test_methods_attributes():

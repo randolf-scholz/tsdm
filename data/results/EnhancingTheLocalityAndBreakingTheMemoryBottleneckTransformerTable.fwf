@@ -1,0 +1,7 @@
+Model        ARIMA  ARIMA  ETS    ETS    TRMF        DeepAR  DeepAR  DeepState  DeepState  SparseTransfomer  SparseTransfomer
+Test-Metric  p50    p90    p50    p90    p50         p50     p90     p50        p90        p50               p90
+Dataset
+e-c₁         0.154  0.102  0.101  0.077  0.084       0.075   0.040   0.083      0.056      0.059             0.034
+e-c₇         0.283  0.109  0.121  0.101  0.087       0.082   0.053   0.085      0.052      0.070             0.044
+t-c₁         0.223  0.137  0.236  0.148  0.186       0.161   0.099   0.167      0.113      0.122             0.081
+t-c₇         0.492  0.280  0.509  0.529  0.202       0.179   0.105   0.168      0.114      0.139             0.094

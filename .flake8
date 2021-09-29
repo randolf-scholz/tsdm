@@ -15,8 +15,7 @@
 # Y:   type hinting in stub files
 # select = B,B9,BLK,C,D,E,F,I,S,W
 
-max-line-length = 120
-ignore = 
+ignore =
     E203,       # whitespace before ':'
     E221,       # multiple spaces before operator
     E226,       # missing whitespace around arithmetic operator
@@ -46,6 +45,8 @@ exclude =
 # Supress ANN200-level errors for functions that have no return (return None)
 suppress-none-returning = True
 allow-untyped-defs = True
+
+max-line-length = 120
 
 # docstring plugin
 docstring-convention = numpy

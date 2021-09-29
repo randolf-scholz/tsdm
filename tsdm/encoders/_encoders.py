@@ -20,17 +20,10 @@ Hierarchical Categoricals:
 """
 # TODO: implement categorical data encoding schemes
 
+from __future__ import annotations
 
-import logging
-from typing import Final, Union
-
-from numba import njit
-import numpy as np
-import pandas as pd
-from pandas import CategoricalDtype, DataFrame, Series
-
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+__all__ = [
+    # Functions
     "make_dense_triplets",
     "make_masked_format",
     "make_sparse_triplets",
@@ -38,6 +31,17 @@ __all__: Final[list[str]] = [
     "time2int",
     "triplet2dense",
 ]
+
+
+import logging
+from typing import Union
+
+import numpy as np
+import pandas as pd
+from numba import njit
+from pandas import CategoricalDtype, DataFrame, Series
+
+LOGGER = logging.getLogger(__name__)
 
 
 def infer_categories(s: Series) -> set:
@@ -73,18 +77,18 @@ def triplet2dense(
 def make_dense_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to dense triplet format.
 
-    Given that `df` has $d$ columns
-    with $n$ rows containing $N ≤ n⋅d$ observations (non-NaN entries),
-    the result is a $(N×3)$ array $(t_i, v_i, x_i)_{i=1:N}$
+    Given that `df` has `d` columns
+    with `n` rows containing `N ≤ n⋅d` observations (non-NaN entries),
+    the result is a `(N×3)` array `(t_i, v_i, x_i)_{i=1:N}`
 
-    - $t_i$ timestamp (index)
-    - $v_i$ indicator variable
-    - $x_i$ observed value
+    - `t_i` timestamp (index)
+    - `v_i` indicator variable
+    - `x_i` observed value
 
     References
     ----------
     - :func:`pandas.melt`
-    - `Set-Functions For Time Series <http://proceedings.mlr.press/v119/horn20a.html>`_
+    - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
     Parameters
     ----------
@@ -122,12 +126,12 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
 def make_sparse_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to sparse triplet format.
 
-    Given that `df` has $d$ columns with $n$ rows containing $N ≤ n⋅d$ observations
-    (non-NaN entries), the result is a $(N×(d+1))$ array $(t_i, v_i, x_i)_{i=1:N}$
+    Given that `df` has `d` columns with `n` rows containing `N ≤ n⋅d` observations
+    (non-NaN entries), the result is a `(N×(d+1))` array `(t_i, v_i, x_i)_{i=1:N}`
 
-    - $t_i$ timestamp (index)
-    - $v_i$ one-hot encoded indicator variable
-    - $x_i$ observed value
+    - `t_i` timestamp (index)
+    - `v_i` one-hot encoded indicator variable
+    - `x_i` observed value
 
     Parameters
     ----------
@@ -150,7 +154,7 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
     ----------
     - :func:`pandas.melt`
     - :func:`pandas.get_dummies`
-    - `Set-Functions For Time Series <http://proceedings.mlr.press/v119/horn20a.html>`_
+    - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
     See Also
     --------
@@ -176,9 +180,9 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     x: :class:`pandas.DataFrame` ``[dtype]``
         The original dataframe
     m: :class:`pandas.DataFrame` ``[uint8]``
-        mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
+        mask `m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}`
     d: :class:`pandas.DataFrame` ``[TimeDelta64]``
-        time delta  $δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt$, with $δ_0=0$
+        time delta  `δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt`, with `δ_0=0`
 
     References
     ----------
@@ -262,3 +266,8 @@ def time2float(ds: Series) -> Series:
     common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 
     return (timedeltas / common_interval).astype(float)
+
+
+# TODO: add timefeatures
+def timefeatures():
+    r"""Return time features from datetime."""

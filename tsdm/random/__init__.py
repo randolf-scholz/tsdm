@@ -1,9 +1,19 @@
-r"""Module Docstring."""
+r"""TODO: Module Docstring.
+
+TODO: Module Docstring
+"""
+
+from __future__ import annotations
+
+__all__ = [
+    # Functions
+    "sample_timestamps",
+    "sample_timedeltas",
+]
+
 
 import logging
-from typing import Final
 
 from tsdm.random.utils import sample_timedeltas, sample_timestamps
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = ["sample_timestamps", "sample_timedeltas"]
+LOGGER = logging.getLogger(__name__)

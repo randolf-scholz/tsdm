@@ -3,6 +3,8 @@ sphinx
 sphinx-rtd-theme
 sphinx-math-dollar
 # Linting
+black
+isort
 mypy
 pylint
 pylint-gitlab
@@ -10,3 +12,4 @@ pycodestyle
 pydocstyle
 pytest
 pytest-cov
+pytest-rerunfailures

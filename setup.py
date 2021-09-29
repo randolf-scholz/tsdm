@@ -5,8 +5,8 @@ We will move to pyproject.toml setup once PEP 660 is resolved and part of setupt
 
 import io
 import os
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pkg_resources
 import setuptools
@@ -24,7 +24,7 @@ with Path("requirements.txt").open() as requirements_txt:
 
 if "CI_PIPELINE_IID" in os.environ:
     BUILD_NUMBER = os.environ["CI_PIPELINE_IID"]
-    VERSION += f".dev{BUILD_NUMBER}"
+    VERSION += f".{BUILD_NUMBER}"
 
 
 def _read(filename: str) -> str:
@@ -48,13 +48,15 @@ setuptools.setup(
     install_requires=[
         "h5py",
         "matplotlib",
-        "numpy",
+        "numpy>=1.21",
         "numba",
         "pandas",
         "pyyaml",
         "scipy",
+        "scikit-learn",
         "tables",
-        "torch",
+        "torch>=1.9.0",
+        "tqdm",
         "xarray",
     ],
     # Files that listed in MANIFEST.in and also are in python packages,

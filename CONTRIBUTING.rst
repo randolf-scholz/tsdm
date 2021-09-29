@@ -10,8 +10,8 @@ Getting started
 
 2. Clone the forked project locally to your machine. ::
 
-       git clone https://software.ismll.uni-hildesheim.de/rscholz/tsdm-dev
-       cd tsdm-dev
+    git clone https://software.ismll.uni-hildesheim.de/rscholz/tsdm-dev
+    cd tsdm-dev
 
 3. Checkout the appropriate branch, typically master. ::
 
@@ -27,12 +27,12 @@ Getting started
 
    Or with conda, if you prefer. (You may have to rename ``tables`` and ``torch``). ::
 
-   conda create --name tsdm-dev --file requirements.txt
-   conda activate tsdm-dev
+    conda create --name tsdm-dev --file requirements.txt
+    conda activate tsdm-dev
 
   Verify that the installation was successful. ::
 
-   python -c "import tsdm"
+    python -c "import tsdm"
 
 5. Create a new working branch. Choose a descriptive name for what you are trying to achieve. ::
 
@@ -48,11 +48,11 @@ Getting started
 
 9. Make sure your changes are parsimonious with the linting and do not break any tests.::
 
-   pip install -r requirements-flake8.txt
-   pip install -r requirements-extra.txt
+    pip install -r requirements-flake8.txt
+    pip install -r requirements-extra.txt
 
 10. Push changes in the branch to your forked repository on GitHub. ::
 
-    git push origin feature-xyz
+     git push origin feature-xyz
 
 11. Create a merge request

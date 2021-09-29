@@ -9,3 +9,43 @@ Installation guide
 .. code-block:: bash
 
     pip install -e .
+
+
+Multiple Origins Push
+---------------------
+
+The project is located at
+ - https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm
+ - https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm
+
+To push to both repositories do the following
+
+1. Remove all remotes.
+
+.. code-block:: shell
+
+    git remote -v
+    git remote remove ...
+
+2. Add origin either berlin or hildseheim
+
+.. code-block:: shell
+
+    git remote add origin https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm.git
+    git remote add origin https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm.git
+
+3. Tell GIT from which remote to perform pulls for the branch
+
+.. code-block:: shell
+
+    git remote set-url --add --push origin https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm.git
+    git remote set-url --add --push origin https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm.git
+    git branch --set-upstream-to=origin/master master
+
+4. Check if everything is correct. `git remote -v` should print
+
+.. code-block:: shell
+
+    origin  https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm (fetch)
+    origin  https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm (push)
+    origin  https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm (push)

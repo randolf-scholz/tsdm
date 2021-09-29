@@ -1,27 +1,37 @@
-r"""General Purpose Data Loaders for Time Series Data."""
+r"""General Purpose Data Loaders for Time Series Data.
 
-import logging
-from typing import Final, Optional, Sized, Iterator
+We implement multiple levels of abstraction.
 
-import torch
-from torch import Tensor
-from torch.nn.utils.rnn import (
-    pack_padded_sequence,
-    pack_sequence,
-    PackedSequence,
-    pad_packed_sequence,
-    pad_sequence,
-)
-from torch.utils.data import Sampler
+- Dataloader for TimeSeriesTensor
+- Dataloader for tuple of TimeSeriesTensor
+- Dataloader for MetaDataset
+   - sample dataset by index, then sample from that dataset.
+"""
 
-logger = logging.getLogger(__name__)
-__all__: Final[list[str]] = [
+from __future__ import annotations
+
+__all__ = [
+    # Functions
     "collate_list",
     "collate_packed",
     "collate_padded",
     "unpad_sequence",
     "upack_sequence",
 ]
+
+import logging
+
+import torch
+from torch import Tensor
+from torch.nn.utils.rnn import (
+    PackedSequence,
+    pack_padded_sequence,
+    pack_sequence,
+    pad_packed_sequence,
+    pad_sequence,
+)
+
+LOGGER = logging.getLogger(__name__)
 
 
 def collate_list(batch: list[Tensor]) -> list[Tensor]:
@@ -43,7 +53,7 @@ def collate_padded(
 
     Equivalent to :func:`torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
 
-    Signature: $[ (l_i, ...)_{i=1:B} ] -> (B, l_{\max},...)$
+    Signature: `[ (l_i, ...)_{i=1:B} ] -> (B, l_{\max},...)`
 
     Parameters
     ----------
@@ -70,25 +80,4 @@ def unpad_sequence():
     print(help(pack_padded_sequence))
 
 
-class TimeIntervalSampler(Sampler):
-    """TODO: add class."""
-
-    def __init__(self, data_source: Optional[Sized]):
-        """TODO: Add method."""
-        super().__init__(data_source)
-
-    def __iter__(self) -> Iterator:
-        """TODO: Add method."""
-        return super().__iter__()
-
-
-class SequentialSliceSampler(Sampler):
-    """TODO: add class."""
-
-    def __init__(self, data_source: Optional[Sized]):
-        """TODO: Add method."""
-        super().__init__(data_source)
-
-    def __iter__(self) -> Iterator:
-        """TODO: Add method."""
-        return super().__iter__()
+# TODO: add exclusive_args decorator
