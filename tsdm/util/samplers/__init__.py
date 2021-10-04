@@ -32,4 +32,4 @@ SAMPLERS: Final[dict[str, type[Sampler]]] = {
     "TimeSliceSampler": TimeSliceSampler,
     "SequenceSampler": SequenceSampler,
 }
-r"""Dictionary containing all available samplers."""
+r"""Dictionary of all available samplers."""

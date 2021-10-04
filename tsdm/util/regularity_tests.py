@@ -38,8 +38,8 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
     Parameters
     ----------
     x: ArrayLike
-    rtol: float
-    atol: float
+    rtol: float, default: 1e-05
+    atol: float, default: 1e-08
 
     Returns
     -------
@@ -123,7 +123,7 @@ def is_quasiregular(s: Union[Series, DataFrame]) -> bool:
 
     Parameters
     ----------
-    s: Series
+    s: DataFrame
 
     Returns
     -------
