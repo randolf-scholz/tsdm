@@ -86,6 +86,7 @@ instance/
 # Sphinx documentation
 docs/_build/
 docs/_autosummary/
+docs/autoapi
 
 # PyBuilder
 target/
@@ -149,3 +150,10 @@ dmypy.json
 
 # VSCode
 .virtual_documents
+/docs/autoapi/
+
+# dask
+dask-worker-space/
+
+# LibreOffice lock files
+.~lock.*
