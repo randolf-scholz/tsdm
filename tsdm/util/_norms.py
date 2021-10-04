@@ -52,13 +52,13 @@ def relative_error(
         r(x̂, x) = \tfrac{|x̂ - x|}{|x|+ε}
 
     The tolerance parameter `ε` is determined automatically. By default,
-    `ϵ=2^{-24}` for single and `ϵ=2^{-53}` for double precision.
+    `ε=2^{-24}` for single and `ε=2^{-53}` for double precision.
 
     Parameters
     ----------
     xhat: ArrayLike
         The estimation
-    x_true:  ArrayLike
+    x_true: ArrayLike
         The true value
 
     Returns
@@ -164,15 +164,15 @@ def scaled_norm(
 
     In particular, given `𝓤=⨁_{i=1:n} U_i`, then
 
-    ..math::
+    .. math::
         ∥u∥_p^p = ∑_{i=1:n} \frac{\dim U_i}{\dim 𝓤} ∥u_i∥_p^p
 
     Parameters
     ----------
     x: ArrayLike
-    p: int, default=2
-    axis: tuple[int], default=None
-    keepdims: bool, default=False
+    p: float, default: 2
+    axis: tuple[int], optional, default: None
+    keepdims: bool, default: False
 
     Returns
     -------
@@ -261,7 +261,6 @@ def multi_scaled_norm(
     r"""Scaled Lpq-norm.
 
     .. math::
-
         ∥u_1⊕…⊕u_n∥_{⨁_{i=1:n}U_i}
         \\&= ∥v∥_q where v_i = ∥u_i∥_p
         \\&= ∑_{i=1:n} \frac{\dim U_i}{\dim 𝓤} ∥u_i∥_p
@@ -275,8 +274,8 @@ def multi_scaled_norm(
     Parameters
     ----------
     x
-    p: float
-    q: float
+    p: float, default: 2
+    q: float, default: 2
     """
     if isinstance(x, Iterable) and all(isinstance(item, np.ndarray) for item in x):
         return _numpy_multi_scaled_norm(x, p, q)
@@ -318,9 +317,9 @@ def grad_norm(
     Parameters
     ----------
     tensors: list[Tensor]
-    p: float = 2.0
-    q: float = 2.0
-    normalize: bool = True
+    p: float, default: 2
+    q: float, default: 2
+    normalize: bool, default=True
         If true, accumulate with mean instead of sum
 
     Returns
@@ -350,9 +349,9 @@ def multi_norm(
     Parameters
     ----------
     tensors: list[Tensor]
-    p: float = 2.0
-    q: float = 2.0
-    normalize: bool = True
+    p: float, default: 2
+    q: float, default: 2
+    normalize: bool, default: True
         If true, accumulate with mean instead of sum
 
     Returns

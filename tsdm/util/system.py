@@ -15,10 +15,13 @@ __all__ = [
     "get_requirements",
     "install_package",
     "write_requirements",
+    "to_base",
+    "to_alphanumeric",
 ]
 
 import importlib
 import logging
+import string
 import subprocess
 import sys
 from pathlib import Path
@@ -28,12 +31,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 def query_bool(question: str, default: Optional[bool] = True) -> bool:
-    """Ask a yes/no question and returns answer as bool.
+    r"""Ask a yes/no question and returns answer as bool.
 
     Parameters
     ----------
     question: str
-    default: Optional[bool] (default=True)
+    default: Optional[bool], default=True
 
     Returns
     -------
@@ -67,16 +70,17 @@ def query_choice(
     question: str,
     choices: set[str],
     default: Optional[str] = None,
-    number_choice: bool = True,
+    pick_by_number: bool = True,
 ) -> str:
-    r"""Ask the user to pick a choice.
+    r"""Ask the user to pick an option.
 
     Parameters
     ----------
     question: str
     choices: tuple[str]
     default: Optional[str]
-    number_choice: bool (default=True)
+    pick_by_number: bool, default=True
+        If True, will allow the user to pick the choice by entering its number.
 
     Returns
     -------
@@ -103,9 +107,23 @@ def query_choice(
 
         if choice in choices:
             return choice
-        if number_choice and choice.isdigit() and int(choice) in ids:
+        if pick_by_number and choice.isdigit() and int(choice) in ids:
             return ids[int(choice)]
         print("Please enter either of %s", choices)
+
+
+# def try_import(pkgname: str):
+#     """
+#
+#     Parameters
+#     ----------
+#     pkgname
+#
+#     Returns
+#     -------
+#
+#     """
+#     if pgkname in
 
 
 def install_package(
@@ -119,9 +137,9 @@ def install_package(
     Parameters
     ----------
     package_name: str
-    non_interactive: bool (default=False)
+    non_interactive: bool, default=False
         If false, will generate a user prompt.
-    installer: str (default='pip')
+    installer: str, default="pip"
         Can also use `conda` or `mamba`
     options: tuple[str, ...]
         Options to pass to the isntaller
@@ -146,7 +164,7 @@ def get_requirements(package: str, version: Optional[str] = None) -> dict[str, s
     Parameters
     ----------
     package: str
-    version: Optional[str] (default=None)
+    version: Optional[str]
         In the case of None, the latest version is used.
 
     Returns
@@ -174,9 +192,10 @@ def write_requirements(
     Parameters
     ----------
     package: str
-    version: Optional[str] (default=None)
-        In the case of None, the latest version is used.
-    path: Optional[Path] (default='requirements')
+    version: Optional[str]
+        In the case of ``None``, the latest version is used.
+    path: Optional[Path]
+        In the case of ``None``, "requirements" is used.
     """
     requirements: dict[str, str] = get_requirements(package, version)
     # Note: the first entry is the package itself!
@@ -184,3 +203,58 @@ def write_requirements(
     path = Path("requirements") if path is None else Path(path)
     with open(path.joinpath(fname), "w", encoding="utf8") as file:
         file.write("\n".join(f"{k}=={requirements[k]}" for k in sorted(requirements)))
+
+
+def to_base(n: int, b: int) -> list[int]:
+    r"""Convert non-negative integer to any basis.
+
+    References
+    ----------
+    - https://stackoverflow.com/a/28666223/9318372
+
+    Parameters
+    ----------
+    n: int
+    b: int
+
+    Returns
+    -------
+    digits: list[int]
+        Satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
+    """
+    digits = []
+    while n:
+        n, d = divmod(n, b)
+        digits.append(d)
+    return digits[::-1] or [0]
+
+
+def to_alphanumeric(n: int) -> str:
+    r"""Convert integer to alphanumeric code."""
+    chars = string.ascii_uppercase + string.digits
+    digits = to_base(n, len(chars))
+    return "".join(chars[i] for i in digits)
+
+
+# def shorthash(inputs) -> str:
+#     r"""Roughly good for 2¹⁶=65536 items."""
+#     encoded = json.dumps(dictionary, sort_keys=True).encode()
+#
+#     return shake_256(inputs).hexdigest(8)
+
+# from typing import Union
+# from datetime import datetime, timedelta
+#
+# BaseTypes = Union[None, bool, int, float, str, datetime, timedelta]
+# ListType = list[BaseTypes]
+# NestedListType = Union[]
+# RecursiveListType = Union[ListType, list[ListType], list[list[ListType]]]
+# DictType = dict[str, BaseTypes]
+# ContainerTypes = Union[list[ListType], list[DictType], dict[str, ListType], dict[str, DictType]]
+# AllowedTypes = Union[BaseTypes, ListType, DictType, ContainerTypes]
+# NestedType1 = dict[str, AllowedTypes]
+# NestedType2 = dict[str, Union[AllowedTypes, ]
+#
+#
+# dict[str, AllowedTypes, NestedType]
+# JSON = dict[str, "JSON"]
