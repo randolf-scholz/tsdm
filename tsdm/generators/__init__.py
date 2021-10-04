@@ -26,4 +26,4 @@ Generator = Any
 r"""Type hint for generators."""
 
 GENERATORS: Final[dict[str, Generator]] = {}
-r"""Dictionary containing all available generators."""
+r"""Dictionary of all available generators."""

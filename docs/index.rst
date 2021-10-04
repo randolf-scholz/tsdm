@@ -2,14 +2,17 @@ tsdm - **T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
 ==============================================================
 
 .. toctree::
+   :titlesonly:
+   :maxdepth: 2
+   :name: mastertoc
 
-    Home page <self>
-    Recipes <RECIPES>
-    API <_autosummary/tsdm>
-    CHANGELOG <CHANGELOG>
-    CONTRIBUTING <CONTRIBUTING>
-    LICENSE <LICENSE>
-    README <README>
+   HOME <self>
+   API <autoapi/tsdm/index.rst>
+   RECIPES <RECIPES>
+   CHANGELOG <CHANGELOG>
+   CONTRIBUTING <CONTRIBUTING>
+   LICENSE <LICENSE>
+   README <README>
 
 Installation
 ============
@@ -30,12 +33,12 @@ Examples
 
 .. code-block:: python
 
-   import tsdm
+    import tsdm
 
-   dataset = tsdm.load_dataset('electricity')
-   x, m, d = tsdm.make_masked_format('dataset')
-   ODE_RNN = tsdm.load_model('ODE-RNN')
-   model = ODE_RNN(...)  # see model description for details
+    dataset = tsdm.load_dataset('electricity')
+    x, m, d = tsdm.make_masked_format('dataset')
+    ODE_RNN = tsdm.load_model('ODE-RNN')
+    model = ODE_RNN(...)  # see model description for details
 
 Contribute
 ==========

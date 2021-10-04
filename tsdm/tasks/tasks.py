@@ -104,12 +104,12 @@ class BaseTask(ABC):
     @abstractmethod
     def get_dataloader(
         self,
-        split,  # noqa   # ignore the missing type hint ...
+        split: str,
         batch_size: int = 32,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ) -> DataLoader:
-        r"""Return a dataloder object for the specified split.
+        r"""Return a DataLoader object for the specified split.
 
         Parameters
         ----------

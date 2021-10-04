@@ -34,5 +34,12 @@ def test_methods_attributes():
     assert hasattr(BaseDataset, "clean")
 
 
-if __name__ == "__main__":
+def __main__():
+    logging.basicConfig(level=logging.INFO)
+    LOGGER.info("Testing METHODS_ATTRIBUTES started!")
     test_methods_attributes()
+    LOGGER.info("Testing METHODS_ATTRIBUTES finished!")
+
+
+if __name__ == "__main__":
+    __main__()

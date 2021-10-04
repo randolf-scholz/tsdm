@@ -21,6 +21,8 @@ ignore =
     E226,       # missing whitespace around arithmetic operator
     E241,       # multiple spaces after ':'
     W503,       # line break before binary operator
+    ANN101,     # Missing type annotation for self in method1
+    ANN102,     # Missing type annotation for cls in classmethod1
 
 extend-ignore =
     # Google Python style is not RST until after processed by Napoleon

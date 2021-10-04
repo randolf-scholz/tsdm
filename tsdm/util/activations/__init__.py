@@ -54,4 +54,4 @@ ACTIVATIONS: Final[dict[str, type[Activation]]] = {
     "Tanhshrink": nn.Tanhshrink,
     "Threshold": nn.Threshold,
 }
-r"""Dictionary containing all available activations."""
+r"""Dictionary of all available activations."""
