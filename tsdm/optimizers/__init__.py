@@ -50,7 +50,7 @@ OPTIMIZERS: Final[dict[str, type[Optimizer]]] = {
     "SGD": torch.optim.SGD,
     # Implements stochastic gradient descent (optionally with momentum).
 }
-r"""Dictionary containing all available optimizers."""
+r"""Dictionary of all available optimizers."""
 
 # noinspection PyProtectedMember
 LR_Scheduler = lr_scheduler._LRScheduler  # pylint: disable=protected-access
@@ -68,4 +68,4 @@ LR_SCHEDULERS: Final[dict[str, type[LR_Scheduler]]] = {
     "OneCycleLR": lr_scheduler.OneCycleLR,  # type: ignore
     "CosineAnnealingWarmRestarts": lr_scheduler.CosineAnnealingWarmRestarts,
 }
-r"""Dictionary containing all available lr_schedulers."""
+r"""Dictionary of all available lr_schedulers."""
