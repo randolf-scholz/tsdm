@@ -76,31 +76,6 @@ class DatasetMetaClass(ABCMeta):
             return "the dataset"
         return cls.load()  # pylint: disable=E1120
 
-    @property
-    def rawdata_path(cls):
-        r"""Location where the raw data is stored."""
-        if os.environ.get("GENERATING_DOCS", False):
-            return Path(f"~/.tsdm/rawdata/{cls.__name__}/")
-        path = RAWDATADIR.joinpath(cls.__name__)
-        path.mkdir(parents=True, exist_ok=True)
-        return path
-
-    @property
-    def dataset_path(cls):
-        r"""Location where the pre-processed data is stored."""
-        if os.environ.get("GENERATING_DOCS", False):
-            return Path(f"~/.tsdm/datasets/{cls.__name__}/")
-        path = DATASETDIR.joinpath(cls.__name__)
-        path.mkdir(parents=True, exist_ok=True)
-        return path
-
-    @property
-    def dataset_file(cls):
-        r"""Path of the dataset file."""
-        if os.environ.get("GENERATING_DOCS", False):
-            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
-        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")
-
     @abstractmethod
     def load(cls):
         r"""Load the dataset."""
@@ -126,12 +101,40 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     """HTTP address containing additional information about the dataset"""
     dataset = classmethod(DatasetMetaClass.dataset)  # type: ignore
     """The dataset cached"""
-    rawdata_path: Path = classmethod(DatasetMetaClass.rawdata_path)  # type: ignore
-    """location where the raw data is stored"""
-    dataset_path: Path = classmethod(DatasetMetaClass.dataset_path)  # type: ignore
-    """location where the pre-processed data is stored"""
-    dataset_file: Path = classmethod(DatasetMetaClass.dataset_file)  # type: ignore
-    """The dataset file"""
+    # rawdata_path: Path = classmethod(DatasetMetaClass.rawdata_path)  # type: ignore
+    # """location where the raw data is stored"""
+    # dataset_path: Path = classmethod(DatasetMetaClass.dataset_path)  # type: ignore
+    # """location where the pre-processed data is stored"""
+    # dataset_file: Path = classmethod(DatasetMetaClass.dataset_file)  # type: ignore
+    # """The dataset file"""
+
+    @classmethod
+    @property
+    def rawdata_path(cls) -> Path:
+        r"""Location where the raw data is stored."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+        path = RAWDATADIR.joinpath(cls.__name__)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @classmethod
+    @property
+    def dataset_path(cls) -> Path:
+        r"""Location where the pre-processed data is stored."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/")
+        path = DATASETDIR.joinpath(cls.__name__)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @classmethod
+    @property
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
 
     @classmethod
     @abstractmethod

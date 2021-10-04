@@ -3,12 +3,12 @@ r"""In silico experiments.
 TODO: Module Summary
 """
 
+from __future__ import annotations
 
 __all__ = [
     # Classes
     "InSilicoData",
 ]
-
 
 import logging
 from importlib import resources

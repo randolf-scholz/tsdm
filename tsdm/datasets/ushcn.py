@@ -17,10 +17,11 @@ import os
 import sys
 from functools import cache
 from io import StringIO
+from pathlib import Path
 from typing import Literal
 
 import pandas
-from pandas import DataFrame, read_csv, read_hdf
+from pandas import DataFrame
 
 from tsdm.datasets.dataset import BaseDataset
 
@@ -54,33 +55,44 @@ class USHCN_SmallChunkedSporadic(BaseDataset):
     )
 
     @classmethod
+    @property
+    def dataset_file(cls) -> Path:
+        r"""Location where dataset is stored."""
+        return cls.dataset_path.joinpath("SmallChunkedSporadic.feather")  # type: ignore[attr-defined]
+
+    @classmethod
+    @property
+    def rawdata_file(cls) -> Path:
+        r"""Location where raw dataset is stored."""
+        return cls.rawdata_path.joinpath("small_chunked_sporadic.csv")  # type: ignore[attr-defined]
+
+    @classmethod
     def clean(cls):
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
         LOGGER.info("Finished extracting dataset '%s'", cls.__name__)
         dtypes = {
-            "ID": int,
-            "Time": float,
-            "Value_0": float,
-            "Value_1": float,
-            "Value_2": float,
-            "Value_3": float,
-            "Value_4": float,
-            "Mask_0": bool,
-            "Mask_1": bool,
-            "Mask_2": bool,
-            "Mask_3": bool,
-            "Mask_4": bool,
+            "ID": pandas.UInt16Dtype(),
+            "Time": pandas.Float32Dtype(),
+            "Value_0": pandas.Float32Dtype(),
+            "Value_1": pandas.Float32Dtype(),
+            "Value_2": pandas.Float32Dtype(),
+            "Value_3": pandas.Float32Dtype(),
+            "Value_4": pandas.Float32Dtype(),
+            "Mask_0": pandas.BooleanDtype(),
+            "Mask_1": pandas.BooleanDtype(),
+            "Mask_2": pandas.BooleanDtype(),
+            "Mask_3": pandas.BooleanDtype(),
+            "Mask_4": pandas.BooleanDtype(),
         }
-        fname = "small_chunked_sporadic.csv"
-        df = read_csv(cls.rawdata_path.joinpath(fname), dtype=dtypes)
-        df.to_hdf(cls.dataset_file, key=cls.__name__)
+        df = pandas.read_csv(cls.rawdata_file, dtype=dtypes)
+        df.to_feather(cls.dataset_file)
         LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls) -> DataFrame:
         r"""Load the dataset from hdf-5 file."""
         super().load()  # <- makes sure DS is downloaded and preprocessed
-        df = read_hdf(cls.dataset_file, key=cls.__name__)
+        df = pandas.read_feather(cls.dataset_file)
         df = DataFrame(df)
         return df
 
@@ -238,9 +250,15 @@ class USHCN(BaseDataset):
     r"""The names of the DataFrames associated with this dataset."""
 
     @classmethod
+    @property
+    def dataset_file(cls) -> Path:
+        r"""Location where dataset is stored."""
+        return cls.dataset_path.joinpath("us_daily.feather")  # type: ignore[attr-defined]
+
+    @classmethod
     def load(cls, key: KEY = "us_daily") -> DataFrame:
         r"""Load the dataset from disk."""
-        path = cls.dataset_path.joinpath(f"{key}.feather")
+        path = cls.dataset_path.joinpath(f"{key}.feather")  # type: ignore[attr-defined]
         if not path.exists():
             cls.clean(key)
         return pandas.read_feather(path)
@@ -466,7 +484,7 @@ class USHCN(BaseDataset):
         # drop old index which may contain duplicates
         data = data.reset_index(drop=True)
 
-        data.to_feather(cls.dataset_path.joinpath("us_daily.feather"))
+        data.to_feather(cls.dataset_file)
         LOGGER.info("%s: Finished cleaning 'us_daily' DataFrame", cls.__name__)
 
 
