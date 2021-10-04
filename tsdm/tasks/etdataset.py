@@ -133,7 +133,7 @@ class ETDatasetInformer(BaseTask):
 
     def get_dataloader(
         self,
-        split: Literal["train", "valid", "joint", "test"],
+        split: str,
         batch_size: int = 32,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,

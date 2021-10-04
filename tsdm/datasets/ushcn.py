@@ -77,7 +77,7 @@ class USHCN_SmallChunkedSporadic(BaseDataset):
         LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
-    def load(cls):
+    def load(cls) -> DataFrame:
         r"""Load the dataset from hdf-5 file."""
         super().load()  # <- makes sure DS is downloaded and preprocessed
         df = read_hdf(cls.dataset_file, key=cls.__name__)

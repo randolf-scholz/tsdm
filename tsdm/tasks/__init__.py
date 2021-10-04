@@ -25,7 +25,7 @@ __all__ = [
 import logging
 from typing import Final
 
-from tsdm.tasks.ETDataset import ETDatasetInformer
+from tsdm.tasks.etdataset import ETDatasetInformer
 from tsdm.tasks.tasks import BaseTask
 
 LOGGER = logging.getLogger(__name__)
