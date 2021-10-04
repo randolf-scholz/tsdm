@@ -104,4 +104,4 @@ ACTIVATIONS: Final[dict[str, Activation]] = {
     "normalize": F.normalize,
     # Performs Lp normalization of inputs over specified dimension.
 }
-r"""Dictionary containing all available activations."""
+r"""Dictionary of all available activations."""

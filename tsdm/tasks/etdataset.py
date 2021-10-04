@@ -31,7 +31,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ETDatasetInformer(BaseTask):
-    """Forecasting Oil Temperature on the Electrical-Transformer datasets.
+    r"""Forecasting Oil Temperature on the Electrical-Transformer datasets.
 
     Paper
     -----
@@ -42,7 +42,6 @@ class ETDatasetInformer(BaseTask):
 
     Evaluation Protocol
     -------------------
-
 
         ETT (Electricity Transformer Temperature)2: The ETT is a crucial indicator in
         the electric power long-term deployment. We collected 2-year data from two
@@ -59,7 +58,7 @@ class ETDatasetInformer(BaseTask):
 
         The length of encoder’s input sequence and decoder’s start token is chosen from
         {24, 48, 96, 168, 336, 480, 720} for the ETTh1, ETTh2, Weather and ECL dataset,
-         and {24, 48, 96, 192, 288, 480, 672}for the ETTm dataset.
+        and {24, 48, 96, 192, 288, 480, 672}for the ETTm dataset.
 
         In the experiment, the decoder’s start token is a segment truncated from the
         encoder’s input sequence, so the length of decoder’s start token must be less
@@ -70,11 +69,9 @@ class ETDatasetInformer(BaseTask):
         All the datasets are performed standardization such that the mean of variable
         is 0 and the standard deviation is 1.
 
-
     **Forecasting Horizon:** {1d, 2d, 7d, 14d, 30d, 40d}
     **Observation Horizon:**
     **Input_Length**: {24, 48, 96, 168, 336, 720}
-
 
     Test-Metric
     -----------
@@ -84,6 +81,8 @@ class ETDatasetInformer(BaseTask):
 
     Results
     -------
+
+    TODO: add results
     """
 
     dataset: Dataset
@@ -122,8 +121,9 @@ class ETDatasetInformer(BaseTask):
             "train": self.dataset.dataset["2016-07-01":"2017-06-30"],  # type: ignore
             "valid": self.dataset.dataset["2017-07-01":"2017-10-31"],  # type: ignore
             "joint": self.dataset.dataset["2016-07-01":"2017-10-31"],  # type: ignore
-            "test": self.dataset.dataset["2017-11-01":"2018-02-28"],  # type: ignore
+            "trial": self.dataset.dataset["2017-11-01":"2018-02-28"],  # type: ignore
         }
+        self.splits["test"] = self.splits["trial"]  # alias
 
         if scale:
             self.encoder = StandardScaler()
@@ -133,7 +133,7 @@ class ETDatasetInformer(BaseTask):
 
     def get_dataloader(
         self,
-        split: Literal["train", "valid", "joint", "test"],
+        split: str,
         batch_size: int = 32,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
@@ -161,7 +161,7 @@ class ETDatasetInformer(BaseTask):
         dtype = DEFAULT_DTYPE if dtype is None else dtype
 
         if split == "test":
-            assert not shuffle, "Don't shuffle when evaualting test-dataset!"
+            assert not shuffle, "Don't shuffle when evaluating test-dataset!"
 
         ds = self.splits[split]
         _T = self.time_encoder(ds.index)

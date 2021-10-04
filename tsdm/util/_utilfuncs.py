@@ -6,7 +6,9 @@ TODO:  Module description
 from __future__ import annotations
 
 __all__ = [
-    # Meta-Objects
+    # Constants
+    # Classes
+    "Split",
     # Functions
     "deep_dict_update",
     "deep_kval_update",
@@ -17,9 +19,19 @@ __all__ = [
 import logging
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Iterable
+from typing import Any, Iterable, NamedTuple
+
+from numpy.typing import NDArray
 
 LOGGER = logging.getLogger(__name__)
+
+
+class Split(NamedTuple):
+    r"""Holds indices for train/valid/test set."""
+
+    train: NDArray
+    valid: NDArray
+    test: NDArray
 
 
 def now():

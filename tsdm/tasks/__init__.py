@@ -16,6 +16,8 @@ __all__ = [
     "Task",
     "TASKS",
     # Classes
+    "BaseTask",
+    # Tasks
     "ETDatasetInformer",
 ]
 
@@ -23,7 +25,7 @@ __all__ = [
 import logging
 from typing import Final
 
-from tsdm.tasks.ETDataset import ETDatasetInformer
+from tsdm.tasks.etdataset import ETDatasetInformer
 from tsdm.tasks.tasks import BaseTask
 
 LOGGER = logging.getLogger(__name__)
@@ -35,4 +37,4 @@ r"""Type hint for tasks."""
 TASKS: Final[dict[str, type[Task]]] = {
     "ETDatasetInformer": ETDatasetInformer,
 }
-r"""Dictionary containing all available tasks."""
+r"""Dictionary of all available tasks."""

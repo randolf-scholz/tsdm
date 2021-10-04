@@ -44,4 +44,4 @@ ENCODERS: Final[dict[str, Encoder]] = {
     "time2int": time2int,
     "triplet2dense": triplet2dense,
 }
-r"""Dictionary containing all available encoders."""
+r"""Dictionary of all available encoders."""

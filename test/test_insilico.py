@@ -51,6 +51,16 @@ def test_attributes():
     assert hasattr(InSilicoData, "clean")
 
 
-if __name__ == "__main__":
+def __main__():
+    logging.basicConfig(level=logging.INFO)
+    LOGGER.info("Testing CACHING started!")
     test_caching()
+    LOGGER.info("Testing CACHING finished!")
+
+    LOGGER.info("Testing ATTRIBUTES started!")
     test_attributes()
+    LOGGER.info("Testing ATTRIBUTES finished!")
+
+
+if __name__ == "__main__":
+    __main__()

@@ -260,7 +260,7 @@ class Physionet2019(BaseDataset):
             with HDFStore(cls.dataset_file) as file:
                 read_dfs = {}
                 for root, _, files in file.walk():
-                    for fn in files:
+                    for fn in tqdm(files):
                         key = f"{root}/{fn}"
                         read_dfs[key] = read_hdf(file, key=key)
         elif store == "pickle":

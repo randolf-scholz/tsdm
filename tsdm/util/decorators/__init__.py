@@ -30,4 +30,4 @@ DECORATORS: Final[dict[str, Decorator]] = {
     "timefun": timefun,
     "sphinx_value": sphinx_value,
 }
-r"""Dictionary containing all available decorators."""
+r"""Dictionary of all available decorators."""

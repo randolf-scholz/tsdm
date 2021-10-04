@@ -13,7 +13,9 @@
 # --disable=W".
 disable=
     C0103,  # invalid-name
-    C0144,   # non-ascii-name
+    C0144,  # non-ascii-name
+    R0801,  # similar lines
+    W0511,  # (fixme) (todos)
 
 [FORMAT]
 
