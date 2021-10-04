@@ -28,14 +28,14 @@ __all__ = [
     "SequenceDataset",
 ]
 
-
 import logging
 import os
 import subprocess
+import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from functools import cache
 from pathlib import Path
-from typing import Union
+from typing import Optional
 from urllib.parse import urlparse
 
 import torch
@@ -81,23 +81,25 @@ class DatasetMetaClass(ABCMeta):
         r"""Location where the raw data is stored."""
         if os.environ.get("GENERATING_DOCS", False):
             return Path(f"~/.tsdm/rawdata/{cls.__name__}/")
-        RAWDATADIR.mkdir(parents=True, exist_ok=True)
-        return RAWDATADIR.joinpath(cls.__name__)
+        path = RAWDATADIR.joinpath(cls.__name__)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def dataset_path(cls):
         r"""Location where the pre-processed data is stored."""
         if os.environ.get("GENERATING_DOCS", False):
-            return Path("~/.tsdm/datasets/")
-        DATASETDIR.mkdir(parents=True, exist_ok=True)
-        return DATASETDIR
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/")
+        path = DATASETDIR.joinpath(cls.__name__)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     @property
     def dataset_file(cls):
         r"""Path of the dataset file."""
         if os.environ.get("GENERATING_DOCS", False):
-            return Path(f"~/.tsdm/datasets/{cls.__name__}.h5")
-        return DATASETDIR.joinpath(f"{cls.__name__}.h5")
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")
 
     @abstractmethod
     def load(cls):
@@ -118,8 +120,10 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     Implements methods that are available for all dataset classes.
     """
 
-    url: Union[str, None] = None
-    """a http address from where the dataset can be downloaded"""
+    url: Optional[str] = None
+    """HTTP address from where the dataset can be downloaded"""
+    info_url: Optional[str] = None
+    """HTTP address containing additional information about the dataset"""
     dataset = classmethod(DatasetMetaClass.dataset)  # type: ignore
     """The dataset cached"""
     rawdata_path: Path = classmethod(DatasetMetaClass.rawdata_path)  # type: ignore
@@ -195,7 +199,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
             )
         elif parsed_url.netloc == "github.com":
             subprocess.run(
-                f"svn export {cls.url.replace('tree/main', 'trunk')} {cls.rawdata_path}",
+                f"svn export --force {cls.url.replace('tree/main', 'trunk')} {cls.rawdata_path}",
                 shell=True,
                 check=True,
             )
@@ -210,8 +214,12 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         LOGGER.info("Finished importing dataset '%s' from %s", dataset, cls.url)
 
     @classmethod
-    def to_trainloader(cls):
-        """Return trainloader object."""
+    def info(cls):
+        r"""Open dataset information in browser."""
+        if cls.info_url is None:
+            print(cls.__doc__)
+        else:
+            webbrowser.open_new_tab(cls.info_url)
 
 
 class SequenceDataset(torch.utils.data.Dataset):

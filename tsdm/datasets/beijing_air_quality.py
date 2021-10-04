@@ -78,6 +78,7 @@ import os
 import zipfile
 from pathlib import Path
 
+import pandas
 from pandas import DataFrame, Timestamp, concat, read_csv, read_hdf
 
 from tsdm.datasets.dataset import BaseDataset
@@ -85,7 +86,6 @@ from tsdm.datasets.dataset import BaseDataset
 LOGGER = logging.getLogger(__name__)
 
 
-# noinspection PyTypeChecker
 class BeijingAirQuality(BaseDataset):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
@@ -140,6 +140,7 @@ class BeijingAirQuality(BaseDataset):
 
             # Make multiple date columns to pandas.Timestamp
             df["Timestamp"] = df.apply(to_time, axis=1)
+            df = df.set_index("Timestamp").reset_index()
 
             # Remove date columns and index
             df = df.drop(labels=["No", "year", "month", "day", "hour"], axis=1)
@@ -148,6 +149,11 @@ class BeijingAirQuality(BaseDataset):
         df = concat(stations, ignore_index=True)
         df.name = cls.__name__
 
-        df.to_hdf(cls.dataset_file, key=cls.__name__)
+        dtypes = {
+            "wd": pandas.CategoricalDtype(),
+            "station": pandas.CategoricalDtype(),
+        }
+        df = df.astype(dtypes)
+        df.to_hdf(cls.dataset_file, key=cls.__name__, format="table")
 
         LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)

@@ -52,12 +52,12 @@ from zipfile import ZipFile
 import numpy as np
 from pandas import DataFrame, read_csv, read_hdf
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.dataset import BaseDataset, DatasetMetaClass
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Electricity(BaseDataset):
+class Electricity(BaseDataset, metaclass=DatasetMetaClass):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -74,21 +74,24 @@ class Electricity(BaseDataset):
         r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"
     )
     dataset: DataFrame
+    r"""Store cached version of dataset."""
     rawdata_path: Path
+    """location where the pre-processed data is stored"""
     dataset_path: Path
+    """location where the pre-processed data is stored"""
     dataset_file: Path
+    """location where the pre-processed data is stored"""
 
     @classmethod
     def clean(cls):
         r"""Create DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`."""
-        dataset = cls.__name__
-        LOGGER.info("Cleaning dataset '%s'", dataset)
+        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
 
         fname = "LD2011_2014.txt"
         with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as files:
             files.extract(fname, path=cls.dataset_path)
 
-        LOGGER.info("Finished extracting dataset '%s'", dataset)
+        LOGGER.info("Finished extracting dataset '%s'", cls.__name__)
 
         df = read_csv(
             cls.dataset_path.joinpath(fname),
@@ -100,11 +103,11 @@ class Electricity(BaseDataset):
         )
 
         df = df.rename_axis(index="time", columns="client")
-        df.name = f"{dataset}"
-        df.to_hdf(cls.dataset_file, key=f"{dataset}")
+        df.name = cls.__name__
+        df.to_hdf(cls.dataset_file, key=cls.__name__)
         cls.dataset_path.joinpath(fname).unlink()
 
-        LOGGER.info("Finished cleaning dataset '%s'", dataset)
+        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):
