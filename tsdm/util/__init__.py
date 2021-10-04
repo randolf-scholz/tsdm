@@ -7,6 +7,8 @@ from __future__ import annotations
 
 __all__ = [
     # Constants
+    # Classes
+    "Split",
     # Functions
     "deep_dict_update",
     "deep_kval_update",
@@ -37,6 +39,6 @@ from tsdm.util import (
     system,
 )
 from tsdm.util._norms import grad_norm, multi_norm, relative_error, scaled_norm
-from tsdm.util._utilfuncs import deep_dict_update, deep_kval_update, now
+from tsdm.util._utilfuncs import Split, deep_dict_update, deep_kval_update, now
 
 LOGGER = logging.getLogger(__name__)
