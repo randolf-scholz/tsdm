@@ -75,7 +75,7 @@ TORCH_LOSSES: Final[dict[str, FunctionalLoss]] = {
     "triplet_margin_with_distance": F.triplet_margin_with_distance_loss,
     # See TripletMarginWithDistanceLoss for details.
 }
-r"""Dictionary containing all available losses in torch."""
+r"""Dictionary of all available losses in torch."""
 
 TORCH_ALIASES: Final[dict[str, FunctionalLoss]] = {
     "mae": F.l1_loss,
@@ -91,4 +91,4 @@ LOSSES: Final[dict[str, FunctionalLoss]] = {
     "q_quantile": q_quantile,
     "q_quantile_loss": q_quantile_loss,
 } | (TORCH_LOSSES | TORCH_ALIASES)
-r"""Dictionary containing all available losses."""
+r"""Dictionary of all available losses."""

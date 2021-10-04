@@ -16,6 +16,8 @@ __all__ = [
     "Task",
     "TASKS",
     # Classes
+    "BaseTask",
+    # Tasks
     "ETDatasetInformer",
 ]
 
@@ -35,4 +37,4 @@ r"""Type hint for tasks."""
 TASKS: Final[dict[str, type[Task]]] = {
     "ETDatasetInformer": ETDatasetInformer,
 }
-r"""Dictionary containing all available tasks."""
+r"""Dictionary of all available tasks."""

@@ -33,4 +33,4 @@ r"""Type hint for models."""
 MODELS: Final[dict[str, type[Model]]] = {
     "ODE_RNN": ODE_RNN,
 }
-r"""Dictionary containing all available models."""
+r"""Dictionary of all available models."""
