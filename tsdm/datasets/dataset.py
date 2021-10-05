@@ -66,15 +66,15 @@ class DatasetMetaClass(ABCMeta):
     dataset_file: Path
     """
 
-    @property  # type: ignore
-    @cache
-    def dataset(cls):
-        r"""Store cached version of dataset."""
-        # What is the best practice for metaclass methods that call each other?
-        # https://stackoverflow.com/q/47615318/9318372
-        if os.environ.get("GENERATING_DOCS", False):
-            return "the dataset"
-        return cls.load()  # pylint: disable=E1120
+    # @property  # type: ignore
+    # @cache
+    # def dataset(cls):
+    #     r"""Store cached version of dataset."""
+    #     # What is the best practice for metaclass methods that call each other?
+    #     # https://stackoverflow.com/q/47615318/9318372
+    #     if os.environ.get("GENERATING_DOCS", False):
+    #         return "the dataset"
+    #     return cls.load()  # pylint: disable=E1120
 
     @abstractmethod
     def load(cls):
@@ -99,8 +99,8 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     """HTTP address from where the dataset can be downloaded"""
     info_url: Optional[str] = None
     """HTTP address containing additional information about the dataset"""
-    dataset = classmethod(DatasetMetaClass.dataset)  # type: ignore
-    """The dataset cached"""
+    # dataset = classmethod(DatasetMetaClass.dataset)  # type: ignore
+    # """The dataset cached"""
     # rawdata_path: Path = classmethod(DatasetMetaClass.rawdata_path)  # type: ignore
     # """location where the raw data is stored"""
     # dataset_path: Path = classmethod(DatasetMetaClass.dataset_path)  # type: ignore
@@ -108,7 +108,18 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     # dataset_file: Path = classmethod(DatasetMetaClass.dataset_file)  # type: ignore
     # """The dataset file"""
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset(cls):
+        r"""Store cached version of dataset."""
+        # What is the best practice for metaclass methods that call each other?
+        # https://stackoverflow.com/q/47615318/9318372
+        if os.environ.get("GENERATING_DOCS", False):
+            return "the dataset"
+        return cls.load()  # pylint: disable=E1120
+
+    @classmethod  # type: ignore
     @property
     def rawdata_path(cls) -> Path:
         r"""Location where the raw data is stored."""
@@ -118,7 +129,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @classmethod
+    @classmethod  # type: ignore
     @property
     def dataset_path(cls) -> Path:
         r"""Location where the pre-processed data is stored."""
@@ -128,7 +139,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @classmethod
+    @classmethod  # type: ignore
     @property
     def dataset_file(cls) -> Path:
         r"""Path of the dataset file."""

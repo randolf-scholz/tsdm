@@ -52,12 +52,12 @@ from zipfile import ZipFile
 import numpy as np
 from pandas import DataFrame, read_csv, read_hdf
 
-from tsdm.datasets.dataset import BaseDataset, DatasetMetaClass
+from tsdm.datasets.dataset import BaseDataset
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Electricity(BaseDataset, metaclass=DatasetMetaClass):
+class Electricity(BaseDataset):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
