@@ -326,6 +326,9 @@ def grad_norm(
     -------
     Tensor
     """
+    if len(tensors) == 0:
+        return torch.tensor(0.0)
+
     # TODO: implement special cases p,q = ±∞
     if normalize:
         # Initializing s this way automatically gets the dtype and device correct
@@ -358,6 +361,9 @@ def multi_norm(
     -------
     Tensor
     """
+    if len(tensors) == 0:
+        return torch.tensor(0.0)
+
     # TODO: implement special cases p,q = ±∞
     if normalize:
         # Initializing s this way automatically gets the dtype and device correct
