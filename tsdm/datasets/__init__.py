@@ -14,16 +14,17 @@ __all__ = [
     "BaseDataset",
     "SequenceDataset",
     # Datasets
-    "Electricity",
-    "InSilicoData",
-    "Physionet2019",
     "BeijingAirQuality",
+    "Electricity",
     "ETTh1",
     "ETTh2",
     "ETTm1",
     "ETTm2",
+    "InSilicoData",
+    "Physionet2019",
     "USHCN",
     "USHCN_SmallChunkedSporadic",
+    "Traffic",
 ]
 
 
@@ -36,6 +37,7 @@ from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.etdataset import ETTh1, ETTh2, ETTm1, ETTm2
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.physionet2019 import Physionet2019
+from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
 
 LOGGER = logging.getLogger(__name__)
@@ -44,15 +46,16 @@ Dataset = type[BaseDataset]
 r"""Type hint for datasets."""
 
 DATASETS: Final[dict[str, Dataset]] = {
-    "USHCN": USHCN,
-    "USHCN_SmallChunkedSporadic": USHCN_SmallChunkedSporadic,
-    "Electricity": Electricity,
-    "InSilicoData": InSilicoData,
-    "Physionet2019": Physionet2019,
     "BeijingAirQuality": BeijingAirQuality,
+    "Electricity": Electricity,
     "ETTh1": ETTh1,
     "ETTh2": ETTh2,
     "ETTm1": ETTm1,
     "ETTm2": ETTm2,
+    "InSilicoData": InSilicoData,
+    "Physionet2019": Physionet2019,
+    "USHCN": USHCN,
+    "USHCN_SmallChunkedSporadic": USHCN_SmallChunkedSporadic,
+    "Traffic": Traffic,
 }
 r"""Dictionary of all available datasets."""
