@@ -175,6 +175,7 @@ class Traffic(BaseDataset):
         PEMS_train: 267 rows, each row encodes a
            - each row is data for 1 day.
            - each row encodes a 963×144 matrix (stations×timestamps)
+
         PEMS_test: same but only 172 rows
         station_labels: labels of the 963 stations
 
