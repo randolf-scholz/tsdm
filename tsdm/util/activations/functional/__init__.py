@@ -1,14 +1,18 @@
-r"""Submodule containing activation functions.
+r"""Implementations of activation functions.
 
-All torch provided activation functions are linked both in modular and functional form.
+Notes
+-----
+Contains activations in functional form.
+  - See :mod:`tsdm.util.activations.modular` for modular implementations.
 """
 
 from __future__ import annotations
 
 __all__ = [
     # Constants
-    "Activation",
-    "ACTIVATIONS",
+    "FunctionalActivation",
+    "FunctionalActivations",
+    "FunctionalActivationType",
 ]
 
 import logging
@@ -19,10 +23,11 @@ from torch.nn import functional as F
 
 LOGGER = logging.getLogger(__name__)
 
-Activation = Callable[..., Tensor]
-r"""Type hint for activations."""
-
-ACTIVATIONS: Final[dict[str, Activation]] = {
+FunctionalActivation = Callable[..., Tensor]
+r"""Type hint for functional activations."""
+FunctionalActivationType = Callable[..., Tensor]
+r"""Type hint for functional activations."""
+FunctionalActivations: Final[dict[str, FunctionalActivationType]] = {
     "threshold": F.threshold,
     # Thresholds each element of the input Tensor.
     "threshold_": F.threshold_,  # type: ignore[attr-defined]
@@ -104,4 +109,4 @@ ACTIVATIONS: Final[dict[str, Activation]] = {
     "normalize": F.normalize,
     # Performs Lp normalization of inputs over specified dimension.
 }
-r"""Dictionary of all available activations."""
+r"""Dictionary of all available functional activations."""

@@ -1,24 +1,10 @@
-r"""Encoders for different types of data.
+r"""Implementation of encoders.
 
-- Target Encoding: enc(x) = mean(enc(y|x))
-- Binary Encoding: enx(x) =
-- Hash Encoder: enc(x) = binary(hash(x))
-- Effect/Sum/Deviation Encoding:
-- Sum Encoding
-- ECC Binary Encoding:
-- Ordinal Coding: (cᵢ | i=1:n) -> (i| i=1...n)
-- Dummy Encoding: like one-hot, with (0,...,0) added as a category
-- word2vec
-- Learned encoding:
-
-
-Hierarchical Categoricals:
-- Sum Coding
-- Helmert Coding
-- Polynomial Coding
-- Backward Difference Coding:
+Notes
+-----
+Contains encoders in functional form.
+  - See :mod:`tsdm.encoders.modular` for modular implementations.
 """
-# TODO: implement categorical data encoding schemes
 
 from __future__ import annotations
 
@@ -30,6 +16,7 @@ __all__ = [
     "time2float",
     "time2int",
     "triplet2dense",
+    "timefeatures",
 ]
 
 
@@ -271,3 +258,4 @@ def time2float(ds: Series) -> Series:
 # TODO: add timefeatures
 def timefeatures():
     r"""Return time features from datetime."""
+    ...
