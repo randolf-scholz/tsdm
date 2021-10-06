@@ -61,14 +61,14 @@ from zipfile import ZipFile
 
 import numpy as np
 import pandas
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from tsdm.datasets.dataset import BaseDataset
 
 LOGGER = logging.getLogger(__name__)
 
 
-def _reformat(s: str, replacements: dict) -> str:
+def _reformat(s: str, replacements: dict) -> str:  # pylint: disable=unused-argument
     r"""Replace multiple substrings via dict.
 
     https://stackoverflow.com/a/64500851/9318372
@@ -302,6 +302,7 @@ class Traffic(BaseDataset):
                     dtype="category",
                     squeeze=True,
                 )
+                stations = Series(stations)  # make sure its not TextFileReader
 
             with files.open("PEMS_trainlabels") as file:
                 content = file.read().decode("utf8")
@@ -314,7 +315,7 @@ class Traffic(BaseDataset):
                 )
                 train_dates = shuffled_dates[: len(trainlabels)]
                 trainlabels.index = train_dates
-
+                trainlabels = Series(trainlabels)  # make sure its not TextFileReader
             # Check that the labels match with the actual weekdays
             assert (
                 trainlabels.index.day_name() == trainlabels.values.map(weekdays)
@@ -331,6 +332,7 @@ class Traffic(BaseDataset):
                 )
                 test_dates = shuffled_dates[len(trainlabels) :]
                 testlabels.index = test_dates
+                testlabels = Series(testlabels)  # make sure its not TextFileReader
 
             # Check that the labels match with the actual weekdays
             assert (

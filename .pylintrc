@@ -1,7 +1,6 @@
 # Complete config can be generated with pylint --generate-rcfile, but here we only show the manual changes to the default.
 
 [MESSAGES CONTROL]
-
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
 # option multiple times (only on the command line, not in the configuration
@@ -16,21 +15,19 @@ disable=
     C0144,  # non-ascii-name
     R0801,  # similar lines
     W0511,  # (fixme) (todos)
+    W0221,  # arguments-differ (use mypy liskov substitution principle instead!)
 
 [FORMAT]
-
 # Maximum number of characters on a single line.
 max-line-length=100
 
 [TYPECHECK]
-
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
 generated-members=numpy.*,torch.*
 
 [REPORTS]
-
 # Set the output format. Available formats are text, parseable, colorized, json
 # and msvs (visual studio). You can also give a reporter class, e.g.
 # mypackage.mymodule.MyReporterClass.

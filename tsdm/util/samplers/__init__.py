@@ -11,7 +11,7 @@ __all__ = [
     "SAMPLERS",
     # Classes
     "SliceSampler",
-    "TimeSliceSampler",
+    # "TimeSliceSampler",
     "SequenceSampler",
 ]
 
@@ -20,7 +20,7 @@ from typing import Final
 
 from torch.utils import data as torch_utils_data
 
-from tsdm.util.samplers.samplers import SequenceSampler, SliceSampler, TimeSliceSampler
+from tsdm.util.samplers.samplers import SequenceSampler, SliceSampler
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ r"""Type hint for samplers."""
 
 SAMPLERS: Final[dict[str, type[Sampler]]] = {
     "SliceSampler": SliceSampler,
-    "TimeSliceSampler": TimeSliceSampler,
+    # "TimeSliceSampler": TimeSliceSampler,
     "SequenceSampler": SequenceSampler,
 }
 r"""Dictionary of all available samplers."""
