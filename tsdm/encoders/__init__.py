@@ -27,6 +27,9 @@ Contains encoders in both modular and functional form.
 from __future__ import annotations
 
 __all__ = [
+    # Sub-Modules
+    "functional",
+    "modular",
     # Constants
     "Encoder",
     "EncoderType",

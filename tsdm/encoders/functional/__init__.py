@@ -34,7 +34,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Any, Callable, Final
+from typing import Callable, Final
 
 from sklearn.preprocessing import (
     binarize,
