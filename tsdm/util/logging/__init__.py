@@ -10,6 +10,7 @@ __all__ = [
     "Logger",
     "LOGGERS",
     # Functions
+    "compute_metrics",
     "log_optimizer_state",
     "log_kernel_information",
     "log_model_state",
@@ -20,6 +21,7 @@ import logging
 from typing import Callable, Final
 
 from tsdm.util.logging._logging import (
+    compute_metrics,
     log_kernel_information,
     log_metrics,
     log_model_state,

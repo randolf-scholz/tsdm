@@ -7,6 +7,7 @@ from __future__ import annotations
 
 __all__ = [
     # Functions
+    "compute_metrics",
     "log_kernel_information",
     "log_optimizer_state",
     "log_model_state",
@@ -185,9 +186,7 @@ def log_model_state(
 def log_metrics(
     i: int,
     writer: SummaryWriter,
-    targets: Tensor,
-    predics: Tensor,
-    metrics: Union[dict[str, Any], list[Any]],
+    metrics: dict[str, Tensor],
     prefix: Optional[str] = None,
 ):
     r"""Log each metric provided.
@@ -196,28 +195,45 @@ def log_metrics(
     ----------
     i: int,
     writer: SummaryWriter,
-    targets: Tensor,
-    predics: Tensor,
-    metrics: dict[str, Union[Loss, FunctionalLoss]] or list[Loss]
+    metrics: dict[str, Tensor]
     prefix: Optional[str] = None,
     """
     prefix = f"{prefix}:metrics" if prefix is not None else "metrics"
 
+    for key, value in metrics.items():
+        writer.add_scalar(f"{prefix}/{key}", value, i)
+
+
+def compute_metrics(
+    metrics: Union[dict[str, Any], list[Any]], *, targets: Tensor, predics: Tensor
+) -> dict[str, Tensor]:
+    r"""Compute multiple metrics.
+
+    Parameters
+    ----------
+    metrics: Union[dict[str, Any], list[Any]]
+    targets: Tensor (keyword-only)
+    predics: Tensor (keyword-only)
+
+    Returns
+    -------
+    dict[str, Tensor]
+        Name / Metric pairs
+    """
+    results: dict[str, Tensor] = {}
     if isinstance(metrics, list):
         for metric in metrics:
             if issubclass(metric, nn.Module):
-                writer.add_scalar(
-                    f"{prefix}/{metric.__name__}", metric()(targets, predics), i
-                )
+                results[metric.__name__] = metric()(targets, predics)
             elif callable(metric):
-                writer.add_scalar(
-                    f"{prefix}/{metric.__name__}", metric(targets, predics), i
-                )
+                results[metric.__name__] = metric(targets, predics)
             else:
                 raise ValueError(metric)
+        return results
 
     for name, metric in metrics.items():  # type: ignore
         if issubclass(metric, nn.Module):
-            writer.add_scalar(f"{prefix}/{name}", metric()(targets, predics), i)
+            results[name] = metric()(targets, predics)
         else:
-            writer.add_scalar(f"{prefix}/{name}", metric(targets, predics), i)
+            results[name] = metric(targets, predics)
+    return results
