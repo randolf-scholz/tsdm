@@ -20,15 +20,23 @@ __all__ = [
     "ModularActivationType",
     "FunctionalActivation",
     "FunctionalActivations",
-    "FunctionalActivationType"
+    "FunctionalActivationType",
 ]
 
 import logging
 from typing import Final, Union
 
 from tsdm.util.activations import functional, modular
-from tsdm.util.activations.functional import FunctionalActivation, FunctionalActivations,FunctionalActivationType
-from tsdm.util.activations.modular import ModularActivation, ModularActivations, ModularActivationType
+from tsdm.util.activations.functional import (
+    FunctionalActivation,
+    FunctionalActivations,
+    FunctionalActivationType,
+)
+from tsdm.util.activations.modular import (
+    ModularActivation,
+    ModularActivations,
+    ModularActivationType,
+)
 
 LOGGER = logging.getLogger(__name__)
 
