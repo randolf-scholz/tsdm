@@ -35,22 +35,23 @@ class USHCN_DeBrouwer(BaseTask):
 
         5.3Climate forecast
 
-        From short-term weather forecast to long-range prediction or assessment of systemic changes, such
-        as global warming, climatic data has always been a popular application for time-series analysis. This
-        data is often considered to be regularly sampled over long periods of time, which facilitates their
-        statistical analysis. Yet, this assumption does not usually hold in practice. Missing data are a problem
-        that is repeatedly encountered in climate research because of, among others, measurement errors,
-        sensor failure, or faulty data acquisition. The actual data is then sporadic and researchers usually
-        resort to imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
+        From short-term weather forecast to long-range prediction or assessment of systemic
+        changes, such as global warming, climatic data has always been a popular application for
+        time-series analysis. This data is often considered to be regularly sampled over long
+        periods of time, which facilitates their statistical analysis. Yet, this assumption does
+        not usually hold in practice. Missing data are a problem that is repeatedly encountered in
+        climate research because of, among others, measurement errors, sensor failure, or faulty
+        data acquisition. The actual data is then sporadic and researchers usually resort to
+        imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
 
-        We use the publicly available United State Historical Climatology Network (USHCN) daily data
-        set (Menne et al.), which contains measurements of 5 climate variables (daily temperatures, precipita-
-        tion, and snow) over 150 years for 1,218 meteorological stations scattered over the United States. We
-        selected a subset of 1,114 stations and an observation window of 4 years (between 1996 and 2000).
-        To make the time series sporadic, we subsample the data such that each station has an average of
-        around 60 observations over those 4 years. Appendix L contains additional details regarding this
-        procedure. The task is then to predict the next 3 measurements after the first 3 years of observation.
-
+        We use the publicly available United State Historical Climatology Network (USHCN) daily
+        data set (Menne et al.), which contains measurements of 5 climate variables
+        (daily temperatures, precipitation, and snow) over 150 years for 1,218 meteorological
+        stations scattered over the United States. We selected a subset of 1,114 stations and an
+        observation window of 4 years (between 1996 and 2000). To make the time series sporadic, we
+        subsample the data such that each station has an average of around 60 observations over
+        those 4 years. Appendix L contains additional details regarding this procedure.
+        The task is then to predict the next 3 measurements after the first 3 years of observation.
 
     References
     ----------
@@ -75,6 +76,7 @@ class USHCN_DeBrouwer(BaseTask):
         test_metric: Literal["MSE", "MAE"] = "MSE",
         time_encoder: Encoder = "time2float",
     ):
+        super().__init__()
         self._gen_folds()
         self.forecasting_horizon = 3
         self.observation_horizon = 3

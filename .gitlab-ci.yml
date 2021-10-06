@@ -52,6 +52,7 @@ build:
     - python setup.py sdist bdist_wheel
     # install dependencies
     - pip install --upgrade -r requirements.txt
+    - pip install --upgrade -r requirements-extra.txt
     # build and install package
     - pip install dist/*.whl
     - pip list
@@ -62,7 +63,7 @@ build:
       --left-text="python"
       --right-text="3.9"
       --whole-link="https://www.python.org/"
-      --logo="https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/python.svg"
+      --logo="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg"
       --embed-logo
       > badges/python.svg
     - > # generate package version badge
@@ -150,8 +151,8 @@ mypy:
   needs: [ "build" ]
   script:
     - pip install --upgrade mypy
-    - mypy $MODULEDIR --install-types --non-interactive  --junit-xml reports/mypy.xml
-    - mypy $TESTDIR --install-types --non-interactive  --junit-xml reports/mypy_test.xml
+    - mypy $MODULEDIR --show-error-codes --pretty --install-types --non-interactive --junit-xml reports/mypy.xml
+    - mypy $TESTDIR --show-error-codes --pretty --install-types --non-interactive --junit-xml reports/mypy_test.xml
   after_script:
     - source venv/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")

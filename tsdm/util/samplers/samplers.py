@@ -8,7 +8,7 @@ from __future__ import annotations
 __all__ = [
     # Classes
     "SliceSampler",
-    "TimeSliceSampler",
+    # "TimeSliceSampler",
     "SequenceSampler",
 ]
 
@@ -23,16 +23,16 @@ from torch.utils.data import Sampler
 LOGGER = logging.getLogger(__name__)
 
 
-class TimeSliceSampler(Sampler):
-    """TODO: add class."""
-
-    def __init__(self, data_source: Optional[Sized]):
-        """TODO: Add method."""
-        super().__init__(data_source)
-
-    def __iter__(self) -> Iterator:
-        """TODO: Add method."""
-        return super().__iter__()
+# class TimeSliceSampler(Sampler):
+#     """TODO: add class."""
+#
+#     def __init__(self, data_source: Optional[Sized]):
+#         """TODO: Add method."""
+#         super().__init__(data_source)
+#
+#     def __iter__(self) -> Iterator:
+#         """TODO: Add method."""
+#         return super().__iter__()
 
 
 class SliceSampler(Sampler):
@@ -83,7 +83,9 @@ class SliceSampler(Sampler):
 
         def default_sampler() -> tuple[int, int]:
             window_size: int = self._slice_sampler()
-            start_index: int = self.rng.choice(self.idx[:-window_size])
+            start_index: int = self.rng.choice(
+                self.idx[: -1 * window_size]
+            )  # -1*w silences pylint.
             return window_size, start_index
 
         self._sampler = default_sampler if sampler is None else sampler
