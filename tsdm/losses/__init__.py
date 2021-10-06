@@ -36,8 +36,6 @@ __all__ = [
 import logging
 from typing import Final, Union
 
-from torch import nn
-
 from tsdm.losses import functional, modular
 from tsdm.losses.functional import (
     FunctionalLoss,

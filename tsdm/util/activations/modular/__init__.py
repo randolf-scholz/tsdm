@@ -8,8 +8,6 @@ Contains activations in modular form.
 
 from __future__ import annotations
 
-import logging
-
 __all__ = [
     # Constants
     "ModularActivation",
@@ -17,6 +15,7 @@ __all__ = [
     "ModularActivationType",
 ]
 
+import logging
 from typing import Final
 
 from torch import nn

@@ -37,7 +37,7 @@ __all__ = [
 import logging
 from typing import Final
 
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator
 from sklearn.preprocessing import (
     Binarizer,
     FunctionTransformer,
@@ -61,9 +61,9 @@ from sklearn.preprocessing import (
 
 LOGGER = logging.getLogger(__name__)
 
-ModularEncoder = TransformerMixin
+ModularEncoder = BaseEstimator
 r"""Type hint for modular encoders."""
-ModularEncoderType = type[TransformerMixin]
+ModularEncoderType = type[BaseEstimator]
 r"""Type hint for modular encoders."""
 SklearnModularEncoders: Final[dict[str, ModularEncoderType]] = {
     "Binarizer": Binarizer,
