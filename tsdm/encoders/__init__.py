@@ -43,7 +43,11 @@ import logging
 from typing import Final, Union
 
 from tsdm.encoders import functional, modular
-from tsdm.encoders.functional import FunctionalEncoder, FunctionalEncoders, FunctionalEncoderType
+from tsdm.encoders.functional import (
+    FunctionalEncoder,
+    FunctionalEncoders,
+    FunctionalEncoderType,
+)
 from tsdm.encoders.modular import ModularEncoder, ModularEncoders, ModularEncoderType
 
 LOGGER = logging.getLogger(__name__)
