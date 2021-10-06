@@ -1,4 +1,10 @@
-r"""Functional variants of encoders."""
+r"""Implementation of encoders.
+
+Notes
+-----
+Contains encoders in functional form.
+  - See :mod:`tsdm.encoders.modular` for modular implementations.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +12,7 @@ __all__ = [
     # Constants
     "FunctionalEncoder",
     "FunctionalEncoders",
+    "FunctionalEncoderType",
     # Functions
     "make_dense_triplets",
     "make_masked_format",
@@ -13,6 +20,7 @@ __all__ = [
     "time2float",
     "time2int",
     "triplet2dense",
+    "timefeatures",
     # Functions
     "binarize",
     "label_binarize",
@@ -26,7 +34,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Any, Final
+from typing import Any, Callable, Final
 
 from sklearn.preprocessing import (
     binarize,
@@ -40,22 +48,23 @@ from sklearn.preprocessing import (
     scale,
 )
 
-from tsdm.encoders.functional._encoders import (
+from tsdm.encoders.functional._functional import (
     make_dense_triplets,
     make_masked_format,
     make_sparse_triplets,
     time2float,
     time2int,
+    timefeatures,
     triplet2dense,
 )
 
 LOGGER = logging.getLogger(__name__)
 
-FunctionalEncoder = Any
-r"""Type hint for encoders."""
-
-
-SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoder]] = {
+FunctionalEncoder = Callable
+r"""Type hint for functional encoders."""
+FunctionalEncoderType = Callable
+r"""Type hint for functional encoders."""
+SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoderType]] = {
     "binarize": binarize,
     "label_binarize": label_binarize,
     "maxabs_scale": maxabs_scale,
@@ -67,12 +76,12 @@ SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoder]] = {
     "scale": scale,
 }
 
-FunctionalEncoders: Final[dict[str, FunctionalEncoder]] = {
+FunctionalEncoders: Final[dict[str, FunctionalEncoderType]] = {
     "make_dense_triplets": make_dense_triplets,
     "make_masked_format": make_masked_format,
     "make_sparse_triplets": make_sparse_triplets,
     "time2float": time2float,
     "time2int": time2int,
-    "triplet2dense": triplet2dense,
+    # "triplet2dense": triplet2dense,
 } | SklearnFunctionalEncoders
-r"""Dictionary of all available encoders."""
+r"""Dictionary of all available functional encoders."""

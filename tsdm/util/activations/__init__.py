@@ -1,57 +1,43 @@
-r"""Submodule containing activation functions.
+r"""Implementations of activation functions.
 
-All torch provided activation functions are linked both in modular and functional form.
+Notes
+-----
+Contains activations in both functional and modular form.
+  - See :mod:`tsdm.util.activations.functional` for functional implementations.
+  - See :mod:`tsdm.util.activations.modular` for modular implementations.
 """
-
 from __future__ import annotations
 
 __all__ = [
+    # Sub-Modules
+    "functional",
+    "modular",
     # Constants
     "Activation",
     "ACTIVATIONS",
-    # Sub-Modules
-    "functional",
+    "ModularActivations",
+    "ModularActivation",
+    "ModularActivationType",
+    "FunctionalActivation",
+    "FunctionalActivations",
+    "FunctionalActivationType"
 ]
 
 import logging
-from typing import Final
+from typing import Final, Union
 
-from torch import nn
-
-from tsdm.util.activations import functional
+from tsdm.util.activations import functional, modular
+from tsdm.util.activations.functional import FunctionalActivation, FunctionalActivations,FunctionalActivationType
+from tsdm.util.activations.modular import ModularActivation, ModularActivations, ModularActivationType
 
 LOGGER = logging.getLogger(__name__)
 
-Activation = nn.Module
+Activation = Union[FunctionalActivation, ModularActivation]
 r"""Type hint for activations."""
-
-ACTIVATIONS: Final[dict[str, type[Activation]]] = {
-    "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
-    "ELU": nn.ELU,
-    "Hardshrink": nn.Hardshrink,
-    "Hardsigmoid": nn.Hardsigmoid,
-    "Hardtanh": nn.Hardtanh,
-    "Hardswish": nn.Hardswish,
-    "LeakyReLU": nn.LeakyReLU,
-    "LogSigmoid": nn.LogSigmoid,
-    "LogSoftmax": nn.LogSoftmax,
-    "MultiheadAttention": nn.MultiheadAttention,
-    "PReLU": nn.PReLU,
-    "ReLU": nn.ReLU,
-    "ReLU6": nn.ReLU6,
-    "RReLU": nn.RReLU,
-    "SELU": nn.SELU,
-    "CELU": nn.CELU,
-    "GELU": nn.GELU,
-    "Sigmoid": nn.Sigmoid,
-    "SiLU": nn.SiLU,
-    "Softmax": nn.Softmax,
-    "Softmax2d": nn.Softmax2d,
-    "Softplus": nn.Softplus,
-    "Softshrink": nn.Softshrink,
-    "Softsign": nn.Softsign,
-    "Tanh": nn.Tanh,
-    "Tanhshrink": nn.Tanhshrink,
-    "Threshold": nn.Threshold,
+ActivationType = Union[FunctionalActivationType, ModularActivationType]
+r"""Type hint for activations."""
+ACTIVATIONS: Final[dict[str, ActivationType]] = {
+    **ModularActivations,
+    **FunctionalActivations,
 }
 r"""Dictionary of all available activations."""

@@ -1,6 +1,9 @@
-r"""Functional implementations of loss functions.
+r"""Implementations of loss functions.
 
-TODO: Module Summary.
+Notes
+-----
+Contains losses in functional form.
+  - See :mod:`tsdm.losses.modular` for modular implementations.
 """
 
 from __future__ import annotations
@@ -8,7 +11,8 @@ from __future__ import annotations
 __all__ = [
     # Constants
     "FunctionalLoss",
-    "LOSSES",
+    "FunctionalLosses",
+    "FunctionalLossType",
     # Functions
     "nd",
     "nrmse",
@@ -22,14 +26,15 @@ from typing import Callable, Final
 from torch import Tensor
 from torch.nn import functional as F
 
-from tsdm.losses.functional.functional import nd, nrmse, q_quantile, q_quantile_loss
+from tsdm.losses.functional._functional import nd, nrmse, q_quantile, q_quantile_loss
 
 LOGGER = logging.getLogger(__name__)
 
 FunctionalLoss = Callable[..., Tensor]
 r"""Type hint for functional losses."""
-
-TORCH_LOSSES: Final[dict[str, FunctionalLoss]] = {
+FunctionalLossType = Callable[..., Tensor]
+r"""Type hint for functional losses."""
+TORCH_LOSSES: Final[dict[str, FunctionalLossType]] = {
     "binary_cross_entropy": F.binary_cross_entropy,
     # Function that measures the Binary Cross Entropy between the target and the output.
     "binary_cross_entropy_with_logits": F.binary_cross_entropy_with_logits,
@@ -77,7 +82,7 @@ TORCH_LOSSES: Final[dict[str, FunctionalLoss]] = {
 }
 r"""Dictionary of all available losses in torch."""
 
-TORCH_ALIASES: Final[dict[str, FunctionalLoss]] = {
+TORCH_ALIASES: Final[dict[str, FunctionalLossType]] = {
     "mae": F.l1_loss,
     "l2": F.mse_loss,
     "xent": F.cross_entropy,
@@ -85,10 +90,10 @@ TORCH_ALIASES: Final[dict[str, FunctionalLoss]] = {
 }
 r"""Dictionary containing additional aliases for losses in torch."""
 
-LOSSES: Final[dict[str, FunctionalLoss]] = {
+FunctionalLosses: Final[dict[str, FunctionalLossType]] = {
     "nd": nd,
     "nrmse": nrmse,
     "q_quantile": q_quantile,
     "q_quantile_loss": q_quantile_loss,
 } | (TORCH_LOSSES | TORCH_ALIASES)
-r"""Dictionary of all available losses."""
+r"""Dictionary of all available functional losses."""

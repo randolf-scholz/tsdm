@@ -1,6 +1,9 @@
-r"""Loss Functions for time series.
+r"""Implementations of loss functions.
 
-All functions implemented in batch compatible way.
+Notes
+-----
+Contains losses in functional form.
+  - See :mod:`tsdm.losses.modular` for modular implementations.
 """
 
 from __future__ import annotations
