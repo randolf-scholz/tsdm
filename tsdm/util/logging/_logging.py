@@ -15,16 +15,23 @@ __all__ = [
 ]
 
 import logging
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Optional, Union
 
 import torch
+from pandas import DataFrame
 from torch import Tensor, jit, nn
 from torch.linalg import cond, det, matrix_norm, matrix_rank, slogdet
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
+from tqdm.auto import tqdm
 
+from tsdm.losses import ModularLoss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.plot import kernel_heatmap, plot_spectrum
+from tsdm.tasks import Task
 from tsdm.util._norms import multi_norm
 
 LOGGER = logging.getLogger(__name__)
@@ -97,7 +104,7 @@ def log_kernel_information(
     writer.add_scalar(f"{prefix}:norms/l+2", matrix_norm(kernel, ord=+2), i)
     writer.add_scalar(f"{prefix}:norms/l+∞", matrix_norm(kernel, ord=+inf), i)
 
-    # 2d -data is order of magnitude more expensive.
+    # 2d-data is order of magnitude more expensive.
     if histograms:
         writer.add_histogram(f"{prefix}/histogram", kernel, i)
         writer.add_image(f"{prefix}/values", kernel_heatmap(kernel, "CHW"), i)
@@ -138,7 +145,7 @@ def log_optimizer_state(
     writer.add_scalar(f"{prefix}:norms/moments_1", multi_norm(moments_1), i)
     writer.add_scalar(f"{prefix}:norms/moments_2", multi_norm(moments_2), i)
 
-    # 2d -data is order of magnitude more expensive.
+    # NOTE: 2d-data is an order of magnitude more expensive.
     if histograms:
         for j, (w, g, a, b) in enumerate(
             zip(variables, gradients, moments_1, moments_2)
@@ -237,3 +244,113 @@ def compute_metrics(
         else:
             results[name] = metric(targets, predics)
     return results
+
+
+@torch.no_grad()
+def get_all_preds(model, dataloader):
+    Y, Ŷ = [], []
+    for batch in tqdm(dataloader, leave=False):
+        # getting targets -> task / model
+        # getting predics -> task / model
+        OBS_HORIZON = 32
+        times, inputs, targets = prep_batch(batch, OBS_HORIZON)
+        outputs, _ = model(times, inputs)
+        predics = outputs[:, OBS_HORIZON:, -1]
+        Y.append(targets)
+        Ŷ.append(predics)
+
+    return torch.cat(Y, dim=0), torch.cat(Ŷ, dim=0)
+
+
+@jit.script
+def prep_batch(batch: tuple[Tensor, Tensor, Tensor], observation_horizon: int):
+    T, X, Y = batch
+    targets = Y[..., observation_horizon:].clone()
+    Y[..., observation_horizon:] = float("nan")  # mask future
+    X[..., observation_horizon:, :] = float("nan")  # mask future
+    inputs = torch.cat([X, Y.unsqueeze(-1)], dim=-1)
+    return T, inputs, targets
+
+
+@dataclass
+class Logger:
+    writer: SummaryWriter
+    r"""The SummaryWriter Instance."""
+    model: Model
+    r"""The model instance."""
+    task: Task
+    r"""The task instance."""
+    optimizer: Optimizer
+    r"""The optimizer instance."""
+    metrics: dict[str, ModularLoss]
+    r"""The metrics that should be logged."""
+    epoch: int = 0
+    r"""The current batch number."""
+    batch: int = 0
+    r"""The current epoch number."""
+
+    # Lazy attributes
+    dataloaders: dict[str, DataLoader] = field(init=False)
+    r"""Pointer to the dataloaders associated with the task."""
+    history: dict[str, DataFrame] = field(init=False)
+    r"""Auto-updating DataFrame (similar to Keras)."""
+    LOGDIR: Path = field(init=False)
+    r"""The path where logs are stored."""
+    CHECKPOINTDIR: Path = field(init=False)
+    r"""The path where model checkpoints are stored."""
+
+    def __post_init__(self):
+        r"""Initialize the remaining attributes."""
+        self.KEYS = set(self.dataloaders)
+        self.dataloaders = self.task.dataloaders
+        self.LOGDIR = Path(self.writer.log_dir)
+        self.CHECKPOINTDIR = Path(self.writer.log_dir)
+
+        if self.history is None:
+            self.history = {
+                key: DataFrame(columns=self.metrics) for key in self.KEYS | {"batch"}
+            }
+
+    @torch.no_grad()
+    def log_at_batch_end(self, *, targets: Tensor, predics: Tensor):
+        r"""Logs metrics and optimizer state at the end of batch."""
+        self.batch += 1
+        hist = compute_metrics(targets=targets, predics=predics, metrics=self.metrics)
+        log_metrics(self.batch, self.writer, hist, prefix="batch")
+        log_optimizer_state(self.batch, self.writer, self.optimizer, prefix="batch")
+        self.history["batch"].append(self._to_cpu(hist))
+
+    @torch.no_grad()
+    def log_at_epoch_end(self, *, targets: Tensor, predics: Tensor):
+        r"""Log metric and optimizer state at the end of epoch."""
+        self.epoch += 1
+
+        log_optimizer_state(self.epoch, self.writer, self.optimizer, histograms=True)
+        # log_kernel_information(self.epoch, writer, model.system.kernel, histograms=True)
+
+        for key, dataloader in self.dataloaders.items():
+            hist = compute_metrics(
+                targets=targets, predics=predics, metrics=self.metrics
+            )
+            log_metrics(self.epoch, self.writer, hist, prefix=key)
+            self.history[key].append(self._to_cpu(hist))
+
+    @staticmethod
+    def _to_cpu(scalar_dict: dict[str, Tensor]) -> dict[str, float]:
+        return {key: scalar.item() for key, scalar in scalar_dict.items()}
+
+    def save_checkpoint(self):
+        r"""Save the hyperparameter combination with validation loss."""
+
+        torch.save(
+            {
+                "optimizer": self.optimizer,
+                "epoch": self.epoch,
+                "batch": self.batch,
+            },
+            self.CHECKPOINTDIR.joinpath(f"{self.optimizer.__class__.__name__}-{self.epoch}"),
+        )
+
+    def log_hyperparameters(self):
+        r"""Save the hyperparameter combination with validation loss."""
+        ...

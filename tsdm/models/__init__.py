@@ -6,8 +6,10 @@ TODO: Module Summary.
 from __future__ import annotations
 
 __all__ = [
-    # Constants
+    # Type Hints
     "Model",
+    "ModelType",
+    # Constants
     "MODELS",
     # Classes
     "BaseModel",
@@ -29,8 +31,11 @@ LOGGER = logging.getLogger(__name__)
 Model = nn.Module
 r"""Type hint for models."""
 
+ModelType = type[nn.Module]
+r"""Type hint for models."""
+
 # TODO: replace Any with BaseModel class
-MODELS: Final[dict[str, type[Model]]] = {
+MODELS: Final[dict[str, ModelType]] = {
     "ODE_RNN": ODE_RNN,
 }
 r"""Dictionary of all available models."""

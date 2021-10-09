@@ -8,6 +8,7 @@ from __future__ import annotations
 __all__ = [
     # Meta-Objects
     "Dataset",
+    "DatasetType",
     "DATASETS",
     # Classes
     "DatasetMetaClass",
@@ -42,12 +43,17 @@ from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
 
+from tsdm.util.types import ModularLookupTable
+
 LOGGER = logging.getLogger(__name__)
 
-Dataset = type[BaseDataset]
+Dataset = BaseDataset
 r"""Type hint for datasets."""
 
-DATASETS: Final[dict[str, Dataset]] = {
+DatasetType = type[BaseDataset]
+r"""Type hint for datasets."""
+
+DATASETS: Final[ModularLookupTable[DatasetType]] = {
     "BeijingAirQuality": BeijingAirQuality,
     "Electricity": Electricity,
     "ETTh1": ETTh1,

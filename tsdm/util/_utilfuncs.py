@@ -13,17 +13,21 @@ __all__ = [
     "deep_dict_update",
     "deep_kval_update",
     "now",
+    "initialize_from",
 ]
 
 
-import logging
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Iterable, NamedTuple
+from functools import partial, singledispatch
+from logging import getLogger
+from typing import Any, Iterable, NamedTuple, TypeVar, Union, Callable, overload
 
 from numpy.typing import NDArray
 
-LOGGER = logging.getLogger(__name__)
+# from tsdm.util.types import TYPE, LookupTable
+
+LOGGER = getLogger(__name__)
 
 
 class Split(NamedTuple):
@@ -108,3 +112,159 @@ def flatten_dict(
             else:
                 result += [(key, item)]
     return result
+
+
+T = TypeVar("T")
+S = TypeVar("S")
+
+
+ModularTable = dict[str, type[T]]
+FunctionalTable = dict[str, Callable[..., S]]
+LookupTable = Union[ModularTable, FunctionalTable, dict[str, Union[type[T], Callable[..., S]]]]
+
+
+@overload
+def initialize_from(
+    lookup_table: dict[str, type[T]], __name__: str, **kwargs: Any
+) -> T:
+    ...
+
+
+@overload
+def initialize_from(
+    lookup_table: dict[str, Callable[..., S]], __name__: str, **kwargs: Any
+) -> Callable[..., S]:
+    ...
+
+def initialize_from(
+    lookup_table: dict[str, Union[type[T], Callable[..., S]]],
+    __name__: str,
+    **kwargs: Any,
+) -> Union[T, Callable[..., S]]:
+    """Lookup class/function from dictionary and initialize it.
+
+    Roughly equivalent to:
+
+    .. code-block:: python
+
+        obj = lookup_table[__name__]
+        if isclass(obj):
+            return obj(**kwargs)
+        return partial(obj, **kwargs)
+
+
+    Parameters
+    ----------
+    lookup_table: dict[str, Callable]
+    __name__: str
+        The name of the class/function
+    kwargs: Any
+        Optional arguments to initialize class/function
+
+    Returns
+    -------
+    Callable
+        The initialized class/function
+    """
+    obj = lookup_table[__name__]
+    assert callable(obj), f"Looked up object {obj} not callable class/function."
+
+    # check that obj is a class, but not metaclass or instance.
+    if isinstance(obj, type) and not issubclass(obj, type):
+        return obj(**kwargs)
+    return partial(obj, **kwargs)
+
+
+# @initialize_from.register  # type: ignore[no-redef]
+# # Modular Only
+# def _(lookup_table: dict[str, type[T]], __name__: str, **kwargs: Any) -> T:
+#     obj = lookup_table[__name__]
+#     assert callable(obj), f"Looked up object {obj} not callable class/function."
+#     return obj(**kwargs)
+#
+#
+# @initialize_from.register  # type: ignore[no-redef]
+# # Functional Only
+# def _(lookup_table: dict[str, Callable[..., S]], __name__: str, **kwargs: Any) -> S:
+#     obj = lookup_table[__name__]
+#     assert callable(obj), f"Looked up object {obj} not callable class/function."
+#     return partial(obj, **kwargs)
+#
+#
+# @initialize_from.register  # type: ignore[no-redef]
+# # Both Modular or Functional
+# def _(
+#     lookup_table: dict[str, Union[type[T], Callable[..., S]]],
+#     __name__: str,
+#     **kwargs: Any,
+# ) -> Union[T, Callable[..., S]]:
+#     obj = lookup_table[__name__]
+#     assert callable(obj), f"Looked up object {obj} not callable class/function."
+#
+#     # check that obj is a class, but not metaclass or instance.
+#     if isinstance(obj, type) and not issubclass(obj, type):
+#         return obj(**kwargs)
+#     return partial(obj, **kwargs)
+#
+#
+
+# @singledispatch
+# def initialize_from(lookup_table, __name__: str, **kwargs: Any):
+#     """Lookup class/function from dictionary and initialize it.
+#
+#     Roughly equivalent to:
+#
+#     .. code-block:: python
+#
+#         obj = lookup_table[__name__]
+#         if isclass(obj):
+#             return obj(**kwargs)
+#         return partial(obj, **kwargs)
+#
+#
+#     Parameters
+#     ----------
+#     lookup_table: dict[str, Callable]
+#     __name__: str
+#         The name of the class/function
+#     kwargs: Any
+#         Optional arguments to initialize class/function
+#
+#     Returns
+#     -------
+#     Callable
+#         The initialized class/function
+#     """
+#     ...
+#
+#
+# @initialize_from.register  # type: ignore[no-redef]
+# # Modular Only
+# def _(lookup_table: dict[str, type[T]], __name__: str, **kwargs: Any) -> T:
+#     obj = lookup_table[__name__]
+#     assert callable(obj), f"Looked up object {obj} not callable class/function."
+#     return obj(**kwargs)
+#
+#
+# @initialize_from.register  # type: ignore[no-redef]
+# # Functional Only
+# def _(lookup_table: dict[str, Callable[..., S]], __name__: str, **kwargs: Any) -> S:
+#     obj = lookup_table[__name__]
+#     assert callable(obj), f"Looked up object {obj} not callable class/function."
+#     return partial(obj, **kwargs)
+#
+#
+# @initialize_from.register  # type: ignore[no-redef]
+# # Both Modular or Functional
+# def _(
+#     lookup_table: dict[str, Union[type[T], Callable[..., S]]],
+#     __name__: str,
+#     **kwargs: Any,
+# ) -> Union[T, Callable[..., S]]:
+#     obj = lookup_table[__name__]
+#     assert callable(obj), f"Looked up object {obj} not callable class/function."
+#
+#     # check that obj is a class, but not metaclass or instance.
+#     if isinstance(obj, type) and not issubclass(obj, type):
+#         return obj(**kwargs)
+#     return partial(obj, **kwargs)

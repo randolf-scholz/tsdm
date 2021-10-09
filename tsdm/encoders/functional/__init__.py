@@ -21,7 +21,7 @@ __all__ = [
     "time2int",
     "triplet2dense",
     "timefeatures",
-    # Functions
+    # Functions from sklearn
     "binarize",
     "label_binarize",
     "maxabs_scale",
@@ -62,8 +62,10 @@ LOGGER = logging.getLogger(__name__)
 
 FunctionalEncoder = Callable
 r"""Type hint for functional encoders."""
+
 FunctionalEncoderType = Callable
 r"""Type hint for functional encoders."""
+
 SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoderType]] = {
     "binarize": binarize,
     "label_binarize": label_binarize,

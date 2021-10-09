@@ -6,17 +6,6 @@ TODO: Module description
 from __future__ import annotations
 
 __all__ = [
-    # Constants
-    # Classes
-    "Split",
-    # Functions
-    "deep_dict_update",
-    "deep_kval_update",
-    "relative_error",
-    "scaled_norm",
-    "grad_norm",
-    "multi_norm",
-    "now",
     # Sub-Modules
     "activations",
     "dataloaders",
@@ -25,6 +14,19 @@ __all__ = [
     "regularity_tests",
     "samplers",
     "system",
+    "types",
+    # Constants
+    # Classes
+    "Split",
+    # Functions
+    "deep_dict_update",
+    "deep_kval_update",
+    "multi_norm",
+    "now",
+    "initialize_from",
+    "grad_norm",
+    "relative_error",
+    "scaled_norm",
 ]
 
 import logging
@@ -37,8 +39,15 @@ from tsdm.util import (
     regularity_tests,
     samplers,
     system,
+    types,
 )
 from tsdm.util._norms import grad_norm, multi_norm, relative_error, scaled_norm
-from tsdm.util._utilfuncs import Split, deep_dict_update, deep_kval_update, now
+from tsdm.util._utilfuncs import (
+    Split,
+    deep_dict_update,
+    deep_kval_update,
+    now,
+    initialize_from,
+)
 
 LOGGER = logging.getLogger(__name__)

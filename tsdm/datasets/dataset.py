@@ -107,6 +107,9 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     # """location where the pre-processed data is stored"""
     # dataset_file: Path = classmethod(DatasetMetaClass.dataset_file)  # type: ignore
     # """The dataset file"""
+    rawdata_path: Path
+    dataset_path: Path
+    dataset_file: Path
 
     @classmethod  # type: ignore[misc]
     @property

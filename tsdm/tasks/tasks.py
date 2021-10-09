@@ -44,6 +44,9 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 
 **Recipe**
 
+
+x̂
+
 .. code-block:: python
 
     ys, yhats = []
@@ -65,14 +68,15 @@ __all__ = [
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from functools import cached_property
+from pathlib import Path
+from typing import Any, Optional
 
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import Dataset
-from tsdm.losses import Loss
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,29 +89,71 @@ class BaseTask(ABC):
     """
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
-    dataset: Dataset
-    """The whole dataset."""
-    train_dataset: Dataset
-    """The test-slice of the datset."""
-    trial_dataset: Dataset
-    """The test-slice of the datset."""
-    test_metric: type[Loss]
-    """The test-metric (usually instance-wise)."""
-    accumulation_function: Callable[..., Tensor]
-    """The accumulation function (usually sum or mean or identity)."""
+    KEYS: Any
+    r"""Should be Literal[tuple(str)]"""
+    train_batch_size: int = 32
+    r"""Default batch size."""
+    eval_batch_size: int = 128
+    r"""Default batch size when evaluating."""
+    preprocessor: Optional[Encoder] = None
+    r"""Optional Preprocessor."""
 
     @abstractmethod
     def __init__(self, *args, **kwargs):
         r"""Perform preprocessing of the dataset."""
         super().__init__()
 
+    # @property
+    # @abstractmethod
+    # def accumulation_function(self) -> Callable[[Tensor], Tensor]:
+    #     r"""Accumulates residuals into loss - usually mean or sum."""
+    #
+    # @property
+    # @abstractmethod
+    # def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
+    #     r"""The target metric."""
+
+    @cached_property
+    @abstractmethod
+    def keys(self) -> list[str]:
+        r"""List of keys."""
+
+    @cached_property
+    @abstractmethod
+    def dataset(self) -> Dataset:
+        r"""Cache the dataset."""
+
+    @cached_property
+    @abstractmethod
+    def splits(self) -> dict[KEYS, Any]:
+        r"""Cache dictionary of dataset slices."""
+
+    @cached_property
+    def dataloaders(self) -> dict[KEYS, DataLoader]:
+        r"""Cache dictionary of evaluation-dataloaders."""
+        return {
+            key: self.get_dataloader(
+                key, batch_size=self.eval_batch_size, shuffle=False, drop_last=False
+            )
+            for key in self.splits
+        }
+
+    @cached_property
+    def batchloader(self) -> DataLoader:
+        r"""Cache main training-dataloader."""
+        return self.get_dataloader(
+            "train", batch_size=self.train_batch_size, shuffle=True, drop_last=True
+        )
+
     @abstractmethod
     def get_dataloader(
         self,
-        split: str,
-        batch_size: int = 32,
+        split: KEYS,
+        batch_size: int = 1,
+        shuffle: bool = False,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
+        **kwargs: Any
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split.
 
@@ -116,9 +162,13 @@ class BaseTask(ABC):
         split: str
             From which part of the dataset to construct the loader
         batch_size: int = 32
+        shuffle: bool = True
+            Wether to get samples in random order.
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None
             defaults to cuda if cuda is available.
+        kwargs:
+            Options to be passed directly to the dataloader such as the generator.
 
         Returns
         -------

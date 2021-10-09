@@ -18,7 +18,7 @@ import sys
 from functools import cache
 from io import StringIO
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Union
 
 import pandas
 from pandas import DataFrame
@@ -377,10 +377,12 @@ class USHCN(BaseDataset):
 
         if {"modin", "ray"} <= sys.modules.keys():
             LOGGER.info("Starting ray cluster.")
-            ray.init(num_cpus=min(2, os.cpu_count() - 2), ignore_reinit_error=True)
+            ray.init(
+                num_cpus=min(1, (os.cpu_count() or 0) - 2), ignore_reinit_error=True
+            )
 
         # column: (start, stop)
-        colspecs = {
+        colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
             "COOP_ID": (1, 6),
             "YEAR": (7, 10),
             "MONTH": (11, 12),
