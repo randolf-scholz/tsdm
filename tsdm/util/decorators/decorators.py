@@ -48,7 +48,9 @@ class DecoratorError(Exception):
     r"""Raise Error related to decorator construction."""
 
     decorated: Callable
-    message: Optional[str] = ""
+    r"""The decorator."""
+    message: str = ""
+    r"""Default message to print."""
 
     def __call__(self, *message_lines):
         r"""Raise a new error."""
@@ -59,7 +61,7 @@ class DecoratorError(Exception):
         sign = signature(self.decorated)
         maxkey = max(9, max(len(key) for key in sign.parameters))
         maxkind = max(len(str(param.kind)) for param in sign.parameters.values())
-        default_message = (
+        default_message: tuple[str, ...] = (
             f"Signature: {sign}",
             "\n".join(
                 f"{key.ljust(maxkey)}: {str(param.kind).ljust(maxkind)}"

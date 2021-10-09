@@ -13,12 +13,16 @@ __all__ = [
     # Sub-Modules
     "functional",
     "modular",
-    # Meta-Objects
+    # Types
     "Loss",
-    "LOSSES",
+    "LossType",
     "FunctionalLoss",
-    "FunctionalLosses",
+    "FunctionalLossType",
     "ModularLoss",
+    "ModularLossType",
+    # Constants
+    "LOSSES",
+    "FunctionalLosses",
     "ModularLosses",
     # Classes
     "ND",
@@ -60,7 +64,9 @@ LOGGER = logging.getLogger(__name__)
 
 Loss = Union[FunctionalLoss, ModularLoss]
 r"""Type hint for losses."""
+
 LossType = Union[FunctionalLossType, ModularLossType]
 r"""Type hint for losses."""
+
 LOSSES: Final[dict[str, LossType]] = {**FunctionalLosses, **ModularLosses}
 r"""Dictionary of all available losses."""

@@ -63,8 +63,10 @@ LOGGER = logging.getLogger(__name__)
 
 ModularEncoder = BaseEstimator
 r"""Type hint for modular encoders."""
+
 ModularEncoderType = type[BaseEstimator]
 r"""Type hint for modular encoders."""
+
 SklearnModularEncoders: Final[dict[str, ModularEncoderType]] = {
     "Binarizer": Binarizer,
     "FunctionTransformer": FunctionTransformer,

@@ -25,8 +25,10 @@ LOGGER = logging.getLogger(__name__)
 
 FunctionalActivation = Callable[..., Tensor]
 r"""Type hint for functional activations."""
+
 FunctionalActivationType = Callable[..., Tensor]
 r"""Type hint for functional activations."""
+
 FunctionalActivations: Final[dict[str, FunctionalActivationType]] = {
     "threshold": F.threshold,
     # Thresholds each element of the input Tensor.

@@ -77,7 +77,7 @@ def upack_sequence(batch: PackedSequence) -> list[Tensor]:
 
 def unpad_sequence():
     r"""Reverse operation of pad_sequence."""
-    print(help(pack_padded_sequence))
+    help(pack_padded_sequence)
 
 
 # TODO: add exclusive_args decorator

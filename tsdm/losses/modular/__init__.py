@@ -9,10 +9,11 @@ Contains losses in modular form.
 from __future__ import annotations
 
 __all__ = [
-    # Constants
+    # Types
     "ModularLoss",
-    "ModularLosses",
     "ModularLossType",
+    # Constants,
+    "ModularLosses",
     # Classes
     "ND",
     "NRMSE",
@@ -33,8 +34,10 @@ LOGGER = logging.getLogger(__name__)
 
 ModularLoss = nn.Module
 r"""Type hint for modular losses."""
+
 ModularLossType = type[nn.Module]
 r"""Type hint for modular losses."""
+
 TORCH_LOSSES: Final[dict[str, ModularLossType]] = {
     "L1": nn.L1Loss,
     "CosineEmbedding": nn.CosineEmbeddingLoss,

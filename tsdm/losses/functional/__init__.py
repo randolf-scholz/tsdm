@@ -9,10 +9,11 @@ Contains losses in functional form.
 from __future__ import annotations
 
 __all__ = [
-    # Constants
+    # Types
     "FunctionalLoss",
-    "FunctionalLosses",
     "FunctionalLossType",
+    # Constants
+    "FunctionalLosses",
     # Functions
     "nd",
     "nrmse",
@@ -32,8 +33,10 @@ LOGGER = logging.getLogger(__name__)
 
 FunctionalLoss = Callable[..., Tensor]
 r"""Type hint for functional losses."""
+
 FunctionalLossType = Callable[..., Tensor]
 r"""Type hint for functional losses."""
+
 TORCH_LOSSES: Final[dict[str, FunctionalLossType]] = {
     "binary_cross_entropy": F.binary_cross_entropy,
     # Function that measures the Binary Cross Entropy between the target and the output.

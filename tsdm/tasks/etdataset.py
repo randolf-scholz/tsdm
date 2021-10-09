@@ -12,7 +12,7 @@ __all__ = [
 
 
 import logging
-from typing import Callable, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 import torch
 from pandas import DataFrame
@@ -26,6 +26,8 @@ from tsdm.encoders import ENCODERS, Encoder
 from tsdm.losses import LOSSES, Loss
 from tsdm.tasks.tasks import BaseTask
 from tsdm.util.samplers import SequenceSampler
+from tsdm.util import initialize_from
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,14 +87,36 @@ class ETDatasetInformer(BaseTask):
     TODO: add results
     """
 
+    keys = ["train", "test", "valid", "joint", "trial"]
+    r"""Available keys."""
+    KEYS = Literal["train", "test", "valid", "joint", "trial"]
+    r"""Type Hint for keys."""
     dataset: Dataset
-    splits: dict[str, DataFrame]
-    r"""Available splits: train/valid/joint/test"""
-    test_metric: type[Loss]
-    observation_horizon: int
-    forecasting_horizon: int
+    r"""The dataset."""
+    splits: dict[KEYS, DataFrame]
+    r"""Available splits: train/valid/joint/test."""
+    test_metric: Loss
+    r"""The target metric."""
     accumulation_function: Callable[..., Tensor]
-    target: str
+    r"""Accumulates residuals into loss - usually mean or sum."""
+
+    train_batch_size: int = 32
+    """Default batch size."""
+    eval_batch_size: int = 128
+    """Default batch size when evaluating."""
+
+    # additional attributes
+    encoder: Encoder
+    r"""Encoder for the observations."""
+    time_encoder: Encoder
+    r"""Encoder for the timestamps."""
+    observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
+    r"""The number of datapoints observed during prediction."""
+    forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24
+    r"""The number of datapoints the model should forecast."""
+    TARGET = Literal["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
+    r"""Type hint available targets."""
+    target: TARGET = "OT"
     r"""One of "HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"."""
 
     def __init__(
@@ -100,24 +124,30 @@ class ETDatasetInformer(BaseTask):
         dataset: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
         forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
-        test_metric: Literal["MSE", "MAE"] = "MSE",
-        time_encoder: Encoder = "time2float",
-        target: str = "OT",
+        target: TARGET = "OT",
         scale: bool = True,
+        eval_batch_size: int = 128,
+        train_batch_size: int = 32,
+        test_metric: Literal["MSE", "MAE"] = "MSE",
+        encoder: str = "StandardScaler",
+        time_encoder: str = "time2float",
     ):
         super().__init__()
         self.target = target
-        self.dataset = DATASETS[dataset]
-        self.test_metric = LOSSES[test_metric]
-        self.time_encoder = ENCODERS[time_encoder]
-
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
+        self.eval_batch_size = eval_batch_size
+        self.train_batch_size = train_batch_size
+
+        self.encoder = initialize_from(ENCODERS, encoder)
+        self.time_encoder = initialize_from(ENCODERS, time_encoder)
+        self.dataset = initialize_from(DATASETS, dataset)
+        self.test_metric = initialize_from(LOSSES, test_metric)
+
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
         # TODO: fix type problems
-
-        self.splits: dict[str, DataFrame] = {
+        self.splits = {
             "train": self.dataset.dataset["2016-07-01":"2017-06-30"],  # type: ignore
             "valid": self.dataset.dataset["2017-07-01":"2017-10-31"],  # type: ignore
             "joint": self.dataset.dataset["2016-07-01":"2017-10-31"],  # type: ignore
@@ -126,6 +156,7 @@ class ETDatasetInformer(BaseTask):
         self.splits["test"] = self.splits["trial"]  # alias
 
         if scale:
+            # assert hasattr(self.encoder, "fit") and hasattr(self.encoder, "transform")
             self.encoder = StandardScaler()
             self.encoder.fit(self.splits["train"])
             # note that this also transforms all splits as they are mere pointers to the slices.
@@ -133,12 +164,12 @@ class ETDatasetInformer(BaseTask):
 
     def get_dataloader(
         self,
-        split: str,
-        batch_size: int = 32,
+        split: KEYS,
+        batch_size: int = 1,
+        shuffle: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
-        shuffle: bool = True,
-        drop_last: bool = False,
+        **kwargs: Any
     ) -> DataLoader:
         r"""Return a DataLoader for the training-dataset with the given batch_size.
 
@@ -151,7 +182,6 @@ class ETDatasetInformer(BaseTask):
         device: Optional[torch.device] = None
             defaults to cuda if cuda is available.
         shuffle: bool = True
-        drop_last: bool = False
 
         Returns
         -------
@@ -162,6 +192,8 @@ class ETDatasetInformer(BaseTask):
 
         if split == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
+        if split == "test" and "drop_last" in kwargs:
+            assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         ds = self.splits[split]
         _T = self.time_encoder(ds.index)
@@ -175,6 +207,4 @@ class ETDatasetInformer(BaseTask):
         dataset = SequenceDataset([T, X, Y])
         sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)
 
-        return DataLoader(
-            dataset, sampler=sampler, batch_size=batch_size, drop_last=drop_last
-        )
+        return DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)

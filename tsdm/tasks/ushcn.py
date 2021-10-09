@@ -8,7 +8,7 @@ from __future__ import annotations
 __all__ = ["USHCN_DeBrouwer"]
 
 import logging
-from typing import Callable, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 import numpy as np
 import torch
@@ -19,8 +19,8 @@ from torch.utils.data import DataLoader
 
 from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
 from tsdm.datasets import Dataset, USHCN_SmallChunkedSporadic
-from tsdm.encoders import ENCODERS, Encoder
-from tsdm.losses import LOSSES, Loss
+from tsdm.encoders import FunctionalEncoders
+from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.tasks.tasks import BaseTask
 from tsdm.util import Split
 
@@ -62,8 +62,11 @@ class USHCN_DeBrouwer(BaseTask):
         <https://proceedings.neurips.cc/paper/2019>`_
     """
 
+    def keys(self) -> list[str]:
+        pass
+
     dataset: Dataset = USHCN_SmallChunkedSporadic
-    test_metric = type[Loss]
+    test_metric = type[ModularLoss]
 
     splits: dict[int, dict[str, DataFrame]]
     folds: list[Split]
@@ -74,14 +77,14 @@ class USHCN_DeBrouwer(BaseTask):
     def __init__(
         self,
         test_metric: Literal["MSE", "MAE"] = "MSE",
-        time_encoder: Encoder = "time2float",
+        time_encoder: str = "time2float",
     ):
         super().__init__()
         self._gen_folds()
         self.forecasting_horizon = 3
         self.observation_horizon = 3
-        self.test_metric = LOSSES[test_metric]
-        self.time_encoder = ENCODERS[time_encoder]
+        self.test_metric = ModularLosses[test_metric]
+        self.time_encoder = FunctionalEncoders[time_encoder]
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
 
@@ -101,12 +104,12 @@ class USHCN_DeBrouwer(BaseTask):
     def get_dataloader(
         self,
         split: str,
-        batch_size: int = 32,
+        batch_size: int = 1,
+        shuffle: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
         fold: int = 0,
-        shuffle: bool = True,
-        drop_last: bool = False,
+        **kwargs: Any
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split & fold.
 
@@ -120,7 +123,6 @@ class USHCN_DeBrouwer(BaseTask):
         device: Optional[torch.device] = None
             defaults to cuda if cuda is available.
         shuffle: bool = True
-        drop_last: bool = False
 
         Returns
         -------
@@ -131,6 +133,8 @@ class USHCN_DeBrouwer(BaseTask):
 
         if split == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
+        if split == "test" and "drop_last" in kwargs:
+            assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         # thesplit = self.folds[fold]
         return  # type: ignore
