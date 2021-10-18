@@ -54,14 +54,16 @@ class USHCN_SmallChunkedSporadic(BaseDataset):
         + "master/gru_ode_bayes/datasets/Climate/small_chunked_sporadic.csv"
     )
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def dataset_file(cls) -> Path:
         r"""Location where dataset is stored."""
         return cls.dataset_path.joinpath("SmallChunkedSporadic.feather")  # type: ignore[attr-defined]
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def rawdata_file(cls) -> Path:
         r"""Location where raw dataset is stored."""
         return cls.rawdata_path.joinpath("small_chunked_sporadic.csv")  # type: ignore[attr-defined]
@@ -249,8 +251,9 @@ class USHCN(BaseDataset):
     KEY = Literal["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def dataset_file(cls) -> Path:
         r"""Location where dataset is stored."""
         return cls.dataset_path.joinpath("us_daily.feather")  # type: ignore[attr-defined]

@@ -1,22 +1,25 @@
-r"""#TODO: Module Summary Line.
+r"""General purpose configuration.
 
-Goal: We want a config class to have a direct 1:1 correspondence between nested dicts and config files
+Goal
+~~~~
+We want a config class to have a direct 1:1 correspondence between
+nested dicts and config files. We want to be able to write
 
-We want to be able to write
+.. code-block::
 
-Config(
-  num_layers = 10,
-  activation = 'relu',
-  optimizer = Config(
-     __type__ =  "Adam",
-     lr = 0.01,
-     beta1 = 0.99,
-     beta2 = 0.999,
-  ),
-)
+    Config(
+      num_layers = 10,
+      activation = 'relu',
+      optimizer = Config(
+         __type__ =  "Adam",
+         lr = 0.01,
+         beta1 = 0.99,
+         beta2 = 0.999,
+      ),
+    )
 
-Features:
-
+Features
+~~~~~~~~
 - permutation invariant hash: recursively ``sum( hash((key, hash(value))) )``
 - hash equivalent to hash dict/config file after serialization?
 - __iter__ -> to_dict
@@ -28,7 +31,7 @@ Features:
 - __rand__, __iand__, __and__ intersect keys, overwrite from right
 - __ge__, __le__, __eq__, __neq__
 - __rsub__, __isub__, __sub__ remove keys from the right
-# - __radd__, __iadd__, __add__ add keys from the right, keep left
+- # __radd__, __iadd__, __add__ add keys from the right, keep left
 - __len__
 - __contains__
 - __getitem__, __setitem__, __delitem__
@@ -41,43 +44,38 @@ Features:
 - allow comments? __comments__: dict[key, str] will be written as comments after serialization?
 - Type Hint protocol - https://github.com/python/mypy/issues/731
 
-How config should work:
-
+**How config should work**
 1. Decide on BaseTypes (bool, int, float, str, ...)
 2. Decide on ContainerTypes (list, tuple, set, ...)
 3. Decide how ContainerTypes can be nested (tuple[list], list[tuple], etc.)
 4. Specify type recursively.
 
-Example:
-
+**Example**
 1. BaseTypes = bool, int, float, str
 2. BaseContainers = list
 3. ContainerTypes = list[ContainerTypes] | Union[list[t] for t in BaseTypes]
 4. JSON = dict[str, JSON | BaseTypes | ContainerTypes]
 
-Implementation:
-
+**Implementation**
 - Config = Dataclass factory (with extras)
 - do not allow dunder-keys except specified namespace
 
-
 Second part
 -----------
-
 Create a helper function "initialize_from"
 
-```python
-def initialize_from(DICT: dict[str, OBJ], conf: dict or Config) -> Callable
-    cls = conf["__name__"]
-    kwargs = {k:v for k,v in conf.items() if k != "__name__"}
-    if isclass(obj):
-       result = obj(**kwargs)
-   elif callable(obj):
-       result = partial(obj, **kwargs)
-   else:
-        raise value_error
-    return result
-```
+.. code-block:: python
+
+    def initialize_from(DICT: dict[str, OBJ], conf: dict or Config) -> Callable
+        cls = conf["__name__"]
+        kwargs = {k:v for k,v in conf.items() if k != "__name__"}
+        if isclass(obj):
+           result = obj(**kwargs)
+       elif callable(obj):
+           result = partial(obj, **kwargs)
+       else:
+            raise value_error
+        return result
 """
 
 from __future__ import annotations

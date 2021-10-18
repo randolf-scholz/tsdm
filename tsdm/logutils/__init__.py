@@ -20,7 +20,7 @@ __all__ = [
 import logging
 from typing import Callable, Final
 
-from tsdm.util.logging._logging import (
+from tsdm.logutils._logutils import (
     compute_metrics,
     log_kernel_information,
     log_metrics,

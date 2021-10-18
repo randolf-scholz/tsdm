@@ -6,10 +6,12 @@ r"""Submodule containing general purpose decorators.
 from __future__ import annotations
 
 __all__ = [
+    # Classes
     # Functions
     "decorator",
     "sphinx_value",
     "timefun",
+    "trace",
     # Exceptions
     "DecoratorError",
 ]
@@ -21,7 +23,7 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 LOGGER = logging.getLogger(__name__)
 
@@ -124,6 +126,10 @@ def decorator(deco: Callable) -> Callable:
     return parametrized_decorator
 
 
+class TimeFunc:
+    logger = logging.getLogger("TimeFunc")
+
+
 @decorator
 def timefun(
     fun: Callable, /, *, append: bool = True, loglevel: int = logging.WARNING
@@ -188,6 +194,37 @@ def sphinx_value(func: Callable, value: Any, /) -> Callable:
         return value
 
     return wrapper if os.environ.get("GENERATING_DOCS", False) else func
+
+
+def trace(func: Callable) -> Callable:
+    """Log entering and exiting of function.
+
+    Parameters
+    ----------
+    func: Callable
+
+    Returns
+    -------
+    Callable
+    """
+    logger = logging.getLogger("trace")
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logger.info(
+            "%s", "\t\n".join((f"Entering {func.__name__}:" f"{args=}", f"{kwargs=}"))
+        )
+        try:
+            result = func.__get__(*args, **kwargs)
+        except (KeyboardInterrupt, SystemExit) as E:
+            raise E
+        except Exception as E:  # pylint: disable=W0703
+            logger.error("")
+            RuntimeError(f"Function execution failed with Exception {E}")
+        logger.info("%s", "\t\n".join((f"Exiting {func.__name__}:", f"{result=}")))
+        return result
+
+    return wrapper
 
 
 # TODO: implement mutually_exclusive_args wrapper

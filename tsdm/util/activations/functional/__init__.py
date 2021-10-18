@@ -12,7 +12,6 @@ __all__ = [
     # Constants
     "FunctionalActivation",
     "FunctionalActivations",
-    "FunctionalActivationType",
 ]
 
 import logging
@@ -21,15 +20,14 @@ from typing import Callable, Final
 from torch import Tensor
 from torch.nn import functional as F
 
+from tsdm.util.types import LookupTable
+
 LOGGER = logging.getLogger(__name__)
 
 FunctionalActivation = Callable[..., Tensor]
 r"""Type hint for functional activations."""
 
-FunctionalActivationType = Callable[..., Tensor]
-r"""Type hint for functional activations."""
-
-FunctionalActivations: Final[dict[str, FunctionalActivationType]] = {
+FunctionalActivations: Final[LookupTable[FunctionalActivation]] = {
     "threshold": F.threshold,
     # Thresholds each element of the input Tensor.
     "threshold_": F.threshold_,  # type: ignore[attr-defined]

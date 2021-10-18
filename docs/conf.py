@@ -20,6 +20,8 @@ import sys
 os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
 
+MODULE = "tsdm"
+
 # -- Project information ----------------------------------------------------------------------------------------------
 
 master_doc = "index"
@@ -38,7 +40,7 @@ project_copyright = "%(year)s, %(author)s" % {
 
 # The major project version, used as the replacement for |version|.
 # For example, for the Python documentation, this may be something like 2.6.
-with open("../tsdm/VERSION", "r", encoding="utf8") as file:
+with open(f"../{MODULE}/VERSION", "r", encoding="utf8") as file:
     version = file.read()
 
 # The full project version, used as the replacement for |release| and e.g. in the HTML templates.
@@ -55,15 +57,14 @@ release = version
 extensions = [
     "sphinx.ext.autodoc",
     # "sphinx.ext.autosummary",
+    "sphinx.ext.coverage",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.todo",
-    "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
-    "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
 ]
-
 
 intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable/", None),
@@ -76,7 +77,6 @@ intersphinx_mapping = {
     "torch": ("https://pytorch.org/docs/stable/", None),
     "xarray": ("https://xarray.pydata.org/en/stable/", None),
 }
-
 
 # The name of a reST role (builtin or Sphinx extension) to use as the default role, that is,
 # for text marked up `like this`. This can be set to 'py:obj' to make `filter` a cross-reference
@@ -104,7 +104,7 @@ add_module_names = False
 # Activate the extension
 extensions.append("autoapi.extension")
 # Paths (relative or absolute) to the source code that you wish to generate your API documentation from.
-autoapi_dirs = ["../tsdm"]
+autoapi_dirs = [f"../{MODULE}"]
 # Set the type of files you are documenting. This depends on the programming language that you are using.
 # Default: "python"
 autoapi_type = "python"
@@ -230,7 +230,6 @@ html_theme_options = {
     # Default: "#2980B9"
 }
 
-
 # -- mathjax options --------------------------------------------------------------------------------------------------
 
 # mathjax_path = r"https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
@@ -288,7 +287,7 @@ autodoc_default_flags = []
 # This value is a list of autodoc directive flags that should be automatically applied to all autodoc directives.
 # The supported flags are 'members', 'undoc-members', 'private-members', 'special-members', 'inherited-members',
 # 'show-inheritance', 'ignore-module-all' and 'exclude-members'.
-autodoc_default_optioss = {}
+autodoc_default_options = {}
 # The default options for autodoc directives. They are applied to all autodoc directives automatically.
 # It must be a dictionary which maps option names to the values. For example:
 #
@@ -468,7 +467,6 @@ napoleon_type_aliases = {
     "TimeDeltaLike": "tsdm.util.TimeDeltaLike",
     "TimeStampLike": "tsdm.util.TimeStampLike",
 }
-
 # A mapping to translate type names to other names or references. Works only when napoleon_use_param = True.
 # Defaults to None.
 napoleon_attr_annotations = True

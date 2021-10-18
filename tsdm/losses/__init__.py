@@ -15,11 +15,8 @@ __all__ = [
     "modular",
     # Types
     "Loss",
-    "LossType",
     "FunctionalLoss",
-    "FunctionalLossType",
     "ModularLoss",
-    "ModularLossType",
     # Constants
     "LOSSES",
     "FunctionalLosses",
@@ -44,7 +41,6 @@ from tsdm.losses import functional, modular
 from tsdm.losses.functional import (
     FunctionalLoss,
     FunctionalLosses,
-    FunctionalLossType,
     nd,
     nrmse,
     q_quantile,
@@ -55,18 +51,18 @@ from tsdm.losses.modular import (
     NRMSE,
     ModularLoss,
     ModularLosses,
-    ModularLossType,
     Q_Quantile,
     Q_Quantile_Loss,
 )
+from tsdm.util.types import LookupTable
 
 LOGGER = logging.getLogger(__name__)
 
 Loss = Union[FunctionalLoss, ModularLoss]
 r"""Type hint for losses."""
 
-LossType = Union[FunctionalLossType, ModularLossType]
-r"""Type hint for losses."""
-
-LOSSES: Final[dict[str, LossType]] = {**FunctionalLosses, **ModularLosses}
+LOSSES: Final[LookupTable[Union[FunctionalLoss, type[ModularLoss]]]] = {
+    **FunctionalLosses,
+    **ModularLosses,
+}
 r"""Dictionary of all available losses."""

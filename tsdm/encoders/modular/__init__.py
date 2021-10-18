@@ -12,8 +12,10 @@ __all__ = [
     # Constants
     "ModularEncoder",
     "ModularEncoders",
-    "ModularEncoderType",
     # Classes
+    "BaseEncoder",
+    "Time2Float",
+    # Classes - Sklearn
     "Binarizer",
     "FunctionTransformer",
     "KBinsDiscretizer",
@@ -59,15 +61,15 @@ from sklearn.preprocessing import (
     StandardScaler,
 )
 
+from tsdm.encoders.modular._modular import BaseEncoder, Time2Float
+from tsdm.util.types import LookupTable
+
 LOGGER = logging.getLogger(__name__)
 
 ModularEncoder = BaseEstimator
 r"""Type hint for modular encoders."""
 
-ModularEncoderType = type[BaseEstimator]
-r"""Type hint for modular encoders."""
-
-SklearnModularEncoders: Final[dict[str, ModularEncoderType]] = {
+SklearnModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
     "Binarizer": Binarizer,
     "FunctionTransformer": FunctionTransformer,
     "KBinsDiscretizer": KBinsDiscretizer,
@@ -89,5 +91,5 @@ SklearnModularEncoders: Final[dict[str, ModularEncoderType]] = {
 }
 r"""Dictionary of all available sklearn encoders."""
 
-ModularEncoders = SklearnModularEncoders
+ModularEncoders: Final[LookupTable[type[BaseEstimator]]] = SklearnModularEncoders
 r"""Dictionary of all available modular encoders."""

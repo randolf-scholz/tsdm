@@ -19,13 +19,13 @@ __all__ = [
 
 from collections.abc import Mapping
 from datetime import datetime
-from functools import partial, singledispatch
+from functools import partial
 from logging import getLogger
-from typing import Any, Iterable, NamedTuple, TypeVar, Union, Callable, overload
+from typing import Any, Callable, Iterable, NamedTuple, Union, overload
 
 from numpy.typing import NDArray
 
-# from tsdm.util.types import TYPE, LookupTable
+from tsdm.util.types import LookupTable, ObjectType, ReturnType
 
 LOGGER = getLogger(__name__)
 
@@ -114,34 +114,94 @@ def flatten_dict(
     return result
 
 
-T = TypeVar("T")
-S = TypeVar("S")
+# T = TypeVar("T")
+# S = TypeVar("S")
 
 
-ModularTable = dict[str, type[T]]
-FunctionalTable = dict[str, Callable[..., S]]
-LookupTable = Union[ModularTable, FunctionalTable, dict[str, Union[type[T], Callable[..., S]]]]
+# ModularTable = dict[str, type[T]]
+# FunctionalTable = dict[str, Callable[..., S]]
+# LookupTable = Union[
+#     ModularTable, FunctionalTable, dict[str, Union[type[T], Callable[..., S]]]
+# ]
 
 
+# @overload
+# def initialize_from(
+#     lookup_table: LookupTable[ObjectType], __name__: str, **kwargs: Any
+# ) -> ObjectType:
+#     ...
+
+
+# partial from func
 @overload
 def initialize_from(
-    lookup_table: dict[str, type[T]], __name__: str, **kwargs: Any
-) -> T:
-    ...
-
-
-@overload
-def initialize_from(
-    lookup_table: dict[str, Callable[..., S]], __name__: str, **kwargs: Any
-) -> Callable[..., S]:
-    ...
-
-def initialize_from(
-    lookup_table: dict[str, Union[type[T], Callable[..., S]]],
+    lookup_table: LookupTable[Callable[..., ReturnType]],
+    /,
     __name__: str,
     **kwargs: Any,
-) -> Union[T, Callable[..., S]]:
-    """Lookup class/function from dictionary and initialize it.
+) -> Callable[..., ReturnType]:
+    ...
+
+
+# partial from type
+@overload
+def initialize_from(
+    lookup_table: LookupTable[type[ObjectType]],
+    /,
+    __name__: str,
+    **kwargs: Any,
+) -> ObjectType:
+    ...
+
+
+# partial from already initialized object
+@overload
+def initialize_from(
+    lookup_table: LookupTable[ObjectType],
+    /,
+    __name__: str,
+    **kwargs: Any,
+) -> ObjectType:
+    ...
+
+
+@overload
+def initialize_from(
+    lookup_table: LookupTable[Union[Callable[..., ReturnType], type[ObjectType]]],
+    /,
+    __name__: str,
+    **kwargs: Any,
+) -> Union[Callable[..., ReturnType], ObjectType]:
+    ...
+
+
+# @overload
+# def initialize_from(
+#     lookup_table: LookupTable[Union[Callable[..., ReturnType], ObjectType]],
+#     /,
+#     __name__: str,
+#     **kwargs: Any,
+# ) -> Union[Callable[..., ReturnType], ObjectType]:
+#     ...
+
+
+# @overload
+# def initialize_from(
+#     lookup_table: LookupTable[ObjectType],
+#     /,
+#     __name__: str,
+#     **kwargs: Any,
+# ) -> ObjectType:
+#     ...
+
+
+def initialize_from(
+    lookup_table,
+    /,
+    __name__: str,
+    **kwargs: Any,
+):
+    r"""Lookup class/function from dictionary and initialize it.
 
     Roughly equivalent to:
 
@@ -151,7 +211,6 @@ def initialize_from(
         if isclass(obj):
             return obj(**kwargs)
         return partial(obj, **kwargs)
-
 
     Parameters
     ----------
@@ -171,7 +230,8 @@ def initialize_from(
 
     # check that obj is a class, but not metaclass or instance.
     if isinstance(obj, type) and not issubclass(obj, type):
-        return obj(**kwargs)
+        return obj(**kwargs)  # type: ignore[call-arg]
+    # if it is function, fix kwargs
     return partial(obj, **kwargs)
 
 

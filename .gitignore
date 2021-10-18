@@ -86,7 +86,7 @@ instance/
 # Sphinx documentation
 docs/_build/
 docs/_autosummary/
-docs/autoapi
+docs/autoapi/
 
 # PyBuilder
 target/
@@ -145,12 +145,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-#PyCharm
+# PyCharm
 .idea
 
 # VSCode
 .virtual_documents
-/docs/autoapi/
 
 # dask
 dask-worker-space/

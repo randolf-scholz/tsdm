@@ -8,7 +8,7 @@ and a test_loader object.
 We decided to use a dataloader instead of, say, a split to cater to the question of
 forecasting horizons.
 
-Decomposable Metrics
+Decomposable METRICS
 --------------------
 
 **Example:** Mean Square Error (MSE)
@@ -30,7 +30,7 @@ Decomposable Metrics
 
     score = accumulation(torch.concat(r, dim=BATCHDIM))
 
-Non-decomposable Metrics
+Non-decomposable METRICS
 ------------------------
 
 **Example:** Area Under the Receiver Operating Characteristic Curve (AUROC)
@@ -69,14 +69,14 @@ __all__ = [
 import logging
 from abc import ABC, abstractmethod
 from functools import cached_property
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import Dataset
+from tsdm.encoders import Encoder
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,8 +84,28 @@ LOGGER = logging.getLogger(__name__)
 class BaseTask(ABC):
     r"""Abstract Base Class for Tasks.
 
-    A task is always bound to a dataset.
-    Its main task is create a dataloader that cycles through the test dataset once.
+    A task is a combination of a dataset and an evaluation protocol (EVP).
+
+    Attributes
+    ----------
+    keys: list[str]
+        A list of string specifying the data splits of interest.
+    train_batch_size: int, default=32
+        Default batch-size used by batchloader.
+    eval_batch_size: int, default=128
+        Default batch-size used by dataloaders (for evaluation).
+    preprocessor: Optional[Encoder], default=None
+        Task specific preprocessing. For example, the EVP might specifically ask for
+        evaluation of Mean Squared Error on standardized data.
+    dataset: Dataset
+        The attached dataset
+    splits: dict[keys, Dataset]
+        Contains slices of the dataset. Contains a slice for each key, but may
+        also hold additional entries. (For example: "joint" = "train"+"valid")
+    bachloader: DataLoader
+        The main DataLoader to be used for training models.
+    dataloaders: dict[keys, DataLoader]
+        Holds ``DataLoaders`` for all the keys.
     """
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
@@ -96,7 +116,9 @@ class BaseTask(ABC):
     eval_batch_size: int = 128
     r"""Default batch size when evaluating."""
     preprocessor: Optional[Encoder] = None
-    r"""Optional Preprocessor."""
+    r"""Optional task specific preprocessor."""
+    encoder: Optional[Encoder] = None
+    r"""Optional encoder that may be applied for dataloaders."""
 
     @abstractmethod
     def __init__(self, *args, **kwargs):
@@ -108,10 +130,10 @@ class BaseTask(ABC):
     # def accumulation_function(self) -> Callable[[Tensor], Tensor]:
     #     r"""Accumulates residuals into loss - usually mean or sum."""
     #
-    # @property
-    # @abstractmethod
-    # def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
-    #     r"""The target metric."""
+    @cached_property
+    @abstractmethod
+    def test_metric(self) -> Callable[..., Tensor]:
+        r"""The target metric."""
 
     @cached_property
     @abstractmethod

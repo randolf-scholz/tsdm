@@ -5,6 +5,7 @@ from __future__ import annotations
 __all__ = ["Template"]
 
 import logging
+from functools import cache
 from pathlib import Path
 
 from tsdm.datasets.dataset import BaseDataset
@@ -15,14 +16,16 @@ LOGGER = logging.getLogger(__name__)
 class Template(BaseDataset):
     r"""A rough Template how an implemented dataset should look like."""
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def rawdata_file(cls) -> Path:
         r"""Location of (possibly compressed) data archive."""
         return cls.rawdata_path.joinpath(f"{cls.__name__}.csv")  # type: ignore
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def dataset_file(cls) -> Path:
         r"""Location of the main data file."""
         return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore

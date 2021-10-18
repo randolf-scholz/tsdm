@@ -15,14 +15,16 @@
 # Y:   type hinting in stub files
 # select = B,B9,BLK,C,D,E,F,I,S,W
 
+max-line-length = 120
+
 ignore =
     E203,       # whitespace before ':'
     E221,       # multiple spaces before operator
     E226,       # missing whitespace around arithmetic operator
     E241,       # multiple spaces after ':'
     W503,       # line break before binary operator
-    ANN101,     # Missing type annotation for self in method1
-    ANN102,     # Missing type annotation for cls in classmethod1
+    ANN101,     # Missing type annotation for self in method
+    ANN102,     # Missing type annotation for cls in classmethod
 
 extend-ignore =
     # Google Python style is not RST until after processed by Napoleon
@@ -48,11 +50,10 @@ exclude =
 suppress-none-returning = True
 allow-untyped-defs = True
 
-max-line-length = 120
-
 # docstring plugin
 docstring-convention = numpy
 
 # import-order-plugin
+# flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
 import-order-style = pep8
 application-import-names = tsdm

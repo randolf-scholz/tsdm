@@ -6,25 +6,39 @@ r"""#TODO: Module Summary Line.
 from __future__ import annotations
 
 __all__ = [
+    # Type Variables
+    "ObjectType",
+    "ReturnType",
     # Types
-    "ModularLookupTable",
-    "Registry",
+    "LookupTable",
 ]
 
 import logging
-from typing import TypeVar, Callable, Generic, Union
+from typing import TypeVar
 
 LOGGER = logging.getLogger(__name__)
 
 
-CLS = TypeVar("CLS")
-r"""Generic type hint for class."""
+ObjectType = TypeVar("ObjectType")
+r"""Generic type hint for instances."""
 
-FUNC = TypeVar("FUNC")
-r"""Generic type hint for function."""
+ReturnType = TypeVar("ReturnType")
+r"""Generic type hint for return values."""
+
+ObjectTypeA = TypeVar("ObjectTypeA")
+r"""Generic type hint for instances."""
+
+ObjectTypeB = TypeVar("ObjectTypeB")
+r"""Generic type hint for instances."""
+
+
+LookupTable = dict[str, ObjectType]
+r"""Table of objects."""
+# TODO: replace with variadic generics PEP646
+
 
 #
-# class ModularLookupTable(dict[str, CLS]):
+# class ClassLookupTable(dict[str, CLS]):
 #     r"""dict of classes"""
 
 
@@ -100,27 +114,27 @@ r"""Generic type hint for function."""
 #     def __getitem__(self, parameters):
 #         return self._getitem(self, parameters)
 
-# @_SpecialForm
-def ModularLookupTable(arg):
-    """Optional type.
-    Optional[X] is equivalent to Union[X, None].
-    """
-    # arg = _type_check(parameters, f"{self} requires a single type.")
-    return dict[str, arg]
-
-
-T = TypeVar("T")
-
-
-class Registry(Generic[T]):
-    def __init__(self) -> None:
-        self._store: dict[str, T] = {}
-
-    def set_item(self, k: str, v: T) -> None:
-        self._store[k] = v
-
-    def get_item(self, k: str) -> T:
-        return self._store[k]
+# # @_SpecialForm
+# def ClassLookupTable(arg):
+#     """Optional type.
+#     Optional[X] is equivalent to Union[X, None].
+#     """
+#     # arg = _type_check(parameters, f"{self} requires a single type.")
+#     return dict[str, arg]
+#
+#
+# T = TypeVar("T")
+#
+#
+# class Registry(Generic[T]):
+#     def __init__(self) -> None:
+#         self._store: dict[str, T] = {}
+#
+#     def set_item(self, k: str, v: T) -> None:
+#         self._store[k] = v
+#
+#     def get_item(self, k: str) -> T:
+#         return self._store[k]
 
 
 # ModularType = type[TYPE]
