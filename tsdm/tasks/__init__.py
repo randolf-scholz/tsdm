@@ -27,6 +27,7 @@ from typing import Final
 
 from tsdm.tasks.etdataset import ETDatasetInformer
 from tsdm.tasks.tasks import BaseTask
+from tsdm.util.types import LookupTable
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ LOGGER = logging.getLogger(__name__)
 Task = BaseTask
 r"""Type hint for tasks."""
 
-TASKS: Final[dict[str, type[Task]]] = {
+TASKS: Final[LookupTable[type[Task]]] = {
     "ETDatasetInformer": ETDatasetInformer,
 }
 r"""Dictionary of all available tasks."""

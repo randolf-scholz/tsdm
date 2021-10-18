@@ -1,4 +1,19 @@
-r"""Implementation of encoders.
+r"""Implementation of Encoders.
+
+Role & Specification
+--------------------
+
+Encoders are used in multiple contexts
+  - Perform preprocessing for task objects: For example, a task might ask to evaluate on
+    standardized features. In this case, an encoder object is associated with the task that
+    will perform this preprocessing at task creation time.
+  - Perform data encoding tasks such as encoding of categorical variables.
+  - Transform data from one framework to another, like :mod:`numpy` → :mod:`torch`
+
+Specification:
+  - Encoders **must** be reversible.
+  - Modules that are not reversible, we call transformations.
+      - Example: Convert logit output of a NN to a class prediction.
 
 Notes
 -----
@@ -32,32 +47,28 @@ __all__ = [
     "modular",
     # Constants
     "Encoder",
-    "EncoderType",
     "ENCODERS",
     "ModularEncoder",
     "ModularEncoders",
-    "ModularEncoderType",
     "FunctionalEncoder",
     "FunctionalEncoders",
-    "FunctionalEncoderType",
 ]
 
 import logging
 from typing import Final, Union
 
 from tsdm.encoders import functional, modular
-from tsdm.encoders.functional import (
-    FunctionalEncoder,
-    FunctionalEncoders,
-    FunctionalEncoderType,
-)
-from tsdm.encoders.modular import ModularEncoder, ModularEncoders, ModularEncoderType
+from tsdm.encoders.functional import FunctionalEncoder, FunctionalEncoders
+from tsdm.encoders.modular import ModularEncoder, ModularEncoders
+from tsdm.util.types import LookupTable
 
 LOGGER = logging.getLogger(__name__)
 
-Encoder = Union[ModularEncoder, FunctionalEncoder]
+Encoder = Union[FunctionalEncoder, ModularEncoder]
 r"""Type hint for encoders."""
-EncoderType = Union[ModularEncoderType, FunctionalEncoderType]
-r"""Type hint for encoders."""
-ENCODERS: Final[dict[str, EncoderType]] = {**ModularEncoders, **FunctionalEncoders}
+
+ENCODERS: Final[LookupTable[Union[FunctionalEncoder, type[ModularEncoder]]]] = {
+    **ModularEncoders,
+    **FunctionalEncoders,
+}
 r"""Dictionary of all available encoders."""

@@ -16,7 +16,6 @@ from typing import Any, Callable, Literal, Optional
 
 import torch
 from pandas import DataFrame
-from sklearn.preprocessing import StandardScaler
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
@@ -25,9 +24,8 @@ from tsdm.datasets import DATASETS, Dataset, SequenceDataset
 from tsdm.encoders import ENCODERS, Encoder
 from tsdm.losses import LOSSES, Loss
 from tsdm.tasks.tasks import BaseTask
-from tsdm.util.samplers import SequenceSampler
 from tsdm.util import initialize_from
-
+from tsdm.util.samplers import SequenceSampler
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,13 +56,13 @@ class ETDatasetInformer(BaseTask):
         {24, 48, 96, 168, 336, 720} for the ETTh1, ETTh2, Weather and Electricity
         dataset, and chosen from {24, 48, 96, 192, 288, 672} for the ETTm dataset.
 
-        The length of encoder’s input sequence and decoder’s start token is chosen from
+        The length of preprocessor’s input sequence and decoder’s start token is chosen from
         {24, 48, 96, 168, 336, 480, 720} for the ETTh1, ETTh2, Weather and ECL dataset,
         and {24, 48, 96, 192, 288, 480, 672}for the ETTm dataset.
 
         In the experiment, the decoder’s start token is a segment truncated from the
-        encoder’s input sequence, so the length of decoder’s start token must be less
-        than the length of encoder’s input.
+        preprocessor’s input sequence, so the length of decoder’s start token must be less
+        than the length of preprocessor’s input.
 
         Appendix E
         [...]
@@ -89,13 +87,13 @@ class ETDatasetInformer(BaseTask):
 
     keys = ["train", "test", "valid", "joint", "trial"]
     r"""Available keys."""
-    KEYS = Literal["train", "test", "valid", "joint", "trial"]
+    KEYS = Literal["train", "test", "valid", "joint", "trial", "whole"]
     r"""Type Hint for keys."""
     dataset: Dataset
     r"""The dataset."""
     splits: dict[KEYS, DataFrame]
     r"""Available splits: train/valid/joint/test."""
-    test_metric: Loss
+    test_metric: Loss  # Callable[..., Tensor] | nn.Module
     r"""The target metric."""
     accumulation_function: Callable[..., Tensor]
     r"""Accumulates residuals into loss - usually mean or sum."""
@@ -129,7 +127,7 @@ class ETDatasetInformer(BaseTask):
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
         test_metric: Literal["MSE", "MAE"] = "MSE",
-        encoder: str = "StandardScaler",
+        preprocessor: str = "StandardScaler",
         time_encoder: str = "time2float",
     ):
         super().__init__()
@@ -139,28 +137,26 @@ class ETDatasetInformer(BaseTask):
         self.eval_batch_size = eval_batch_size
         self.train_batch_size = train_batch_size
 
-        self.encoder = initialize_from(ENCODERS, encoder)
-        self.time_encoder = initialize_from(ENCODERS, time_encoder)
-        self.dataset = initialize_from(DATASETS, dataset)
-        self.test_metric = initialize_from(LOSSES, test_metric)
+        self.preprocessor = initialize_from(ENCODERS, __name__=preprocessor)
+        self.time_encoder = initialize_from(ENCODERS, __name__=time_encoder)
+        self.dataset = initialize_from(DATASETS, __name__=dataset)
+        self.test_metric = initialize_from(LOSSES, __name__=test_metric)  # type: ignore[assignment]
 
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
+
         # TODO: fix type problems
-        self.splits = {
-            "train": self.dataset.dataset["2016-07-01":"2017-06-30"],  # type: ignore
-            "valid": self.dataset.dataset["2017-07-01":"2017-10-31"],  # type: ignore
-            "joint": self.dataset.dataset["2016-07-01":"2017-10-31"],  # type: ignore
-            "trial": self.dataset.dataset["2017-11-01":"2018-02-28"],  # type: ignore
+        self.splits: dict[str, DataFrame] = {
+            "train": self.dataset.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore
+            "valid": self.dataset.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore
+            "joint": self.dataset.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore
+            "trial": self.dataset.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore
+            "whole": self.dataset.dataset,  # type: ignore
         }
         self.splits["test"] = self.splits["trial"]  # alias
 
-        if scale:
-            # assert hasattr(self.encoder, "fit") and hasattr(self.encoder, "transform")
-            self.encoder = StandardScaler()
-            self.encoder.fit(self.splits["train"])
-            # note that this also transforms all splits as they are mere pointers to the slices.
-            self.encoder.transform(self.dataset.dataset, copy=False)
+        # Fit the Preprocessors
+        self.preprocessor.fit(self.splits["train"])
 
     def get_dataloader(
         self,
@@ -196,7 +192,11 @@ class ETDatasetInformer(BaseTask):
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         ds = self.splits[split]
-        _T = self.time_encoder(ds.index)
+
+        # Apply Encoders
+        _T = self.time_encoder(ds.index)  # type: ignore[attr-defined]
+        _V = self.preprocessor.transform(ds)
+
         _X = ds.drop(columns=self.target).values
         _Y = ds[self.target].values
 

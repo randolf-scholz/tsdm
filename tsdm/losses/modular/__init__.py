@@ -11,7 +11,6 @@ from __future__ import annotations
 __all__ = [
     # Types
     "ModularLoss",
-    "ModularLossType",
     # Constants,
     "ModularLosses",
     # Classes
@@ -28,6 +27,7 @@ from typing import Final
 from torch import nn
 
 from tsdm.losses.modular._modular import ND, NRMSE, Q_Quantile, Q_Quantile_Loss
+from tsdm.util.types import LookupTable
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,10 +35,7 @@ LOGGER = logging.getLogger(__name__)
 ModularLoss = nn.Module
 r"""Type hint for modular losses."""
 
-ModularLossType = type[nn.Module]
-r"""Type hint for modular losses."""
-
-TORCH_LOSSES: Final[dict[str, ModularLossType]] = {
+TORCH_LOSSES: Final[LookupTable[type[ModularLoss]]] = {
     "L1": nn.L1Loss,
     "CosineEmbedding": nn.CosineEmbeddingLoss,
     "CrossEntropy": nn.CrossEntropyLoss,
@@ -61,17 +58,17 @@ TORCH_LOSSES: Final[dict[str, ModularLossType]] = {
     "TripletMargin": nn.TripletMarginLoss,
     "TripletMarginWithDistance": nn.TripletMarginWithDistanceLoss,
 }
-r"""Dictionary of all available losses in torch."""
+r"""Dictionary of all available modular losses in torch."""
 
-TORCH_ALIASES: Final[dict[str, ModularLossType]] = {
+TORCH_ALIASES: Final[LookupTable[type[ModularLoss]]] = {
     "MAE": nn.L1Loss,
     "L2": nn.MSELoss,
     "XENT": nn.CrossEntropyLoss,
     "KL": nn.KLDivLoss,
 }
-r"""Dictionary containing additional aliases for losses in torch."""
+r"""Dictionary containing additional aliases for modular losses in torch."""
 
-ModularLosses: Final[dict[str, ModularLossType]] = {
+ModularLosses: Final[LookupTable[type[ModularLoss]]] = {
     "ND": ND,
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,

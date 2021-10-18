@@ -6,12 +6,15 @@ r"""#TODO: Module Summary Line.
 from __future__ import annotations
 
 __all__ = [
+    # Type Variables
+    "ObjectType",
+    "ReturnType",
     # Types
-    "ModularLookupTable",
+    "LookupTable",
 ]
 
 import logging
 
-from tsdm.util.types._types import ModularLookupTable
+from tsdm.util.types._types import LookupTable, ObjectType, ReturnType
 
 LOGGER = logging.getLogger(__name__)

@@ -42,12 +42,12 @@ from tsdm.util import (
     types,
 )
 from tsdm.util._norms import grad_norm, multi_norm, relative_error, scaled_norm
-from tsdm.util._utilfuncs import (
+from tsdm.util._util import (
     Split,
     deep_dict_update,
     deep_kval_update,
-    now,
     initialize_from,
+    now,
 )
 
 LOGGER = logging.getLogger(__name__)

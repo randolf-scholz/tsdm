@@ -107,9 +107,6 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     # """location where the pre-processed data is stored"""
     # dataset_file: Path = classmethod(DatasetMetaClass.dataset_file)  # type: ignore
     # """The dataset file"""
-    rawdata_path: Path
-    dataset_path: Path
-    dataset_file: Path
 
     @classmethod  # type: ignore[misc]
     @property
@@ -122,8 +119,9 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
             return "the dataset"
         return cls.load()  # pylint: disable=E1120
 
-    @classmethod  # type: ignore
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def rawdata_path(cls) -> Path:
         r"""Location where the raw data is stored."""
         if os.environ.get("GENERATING_DOCS", False):
@@ -132,8 +130,9 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @classmethod  # type: ignore
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def dataset_path(cls) -> Path:
         r"""Location where the pre-processed data is stored."""
         if os.environ.get("GENERATING_DOCS", False):
@@ -142,8 +141,9 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @classmethod  # type: ignore
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def dataset_file(cls) -> Path:
         r"""Path of the dataset file."""
         if os.environ.get("GENERATING_DOCS", False):

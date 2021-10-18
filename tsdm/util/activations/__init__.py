@@ -17,34 +17,26 @@ __all__ = [
     "ACTIVATIONS",
     "ModularActivations",
     "ModularActivation",
-    "ModularActivationType",
     "FunctionalActivation",
     "FunctionalActivations",
-    "FunctionalActivationType",
 ]
 
 import logging
 from typing import Final, Union
 
 from tsdm.util.activations import functional, modular
-from tsdm.util.activations.functional import (
-    FunctionalActivation,
-    FunctionalActivations,
-    FunctionalActivationType,
-)
-from tsdm.util.activations.modular import (
-    ModularActivation,
-    ModularActivations,
-    ModularActivationType,
-)
+from tsdm.util.activations.functional import FunctionalActivation, FunctionalActivations
+from tsdm.util.activations.modular import ModularActivation, ModularActivations
+from tsdm.util.types import LookupTable
 
 LOGGER = logging.getLogger(__name__)
 
 Activation = Union[FunctionalActivation, ModularActivation]
 r"""Type hint for activations."""
-ActivationType = Union[FunctionalActivationType, ModularActivationType]
-r"""Type hint for activations."""
-ACTIVATIONS: Final[dict[str, ActivationType]] = {
+
+ACTIVATIONS: Final[
+    LookupTable[Union[FunctionalActivation, type[ModularActivation]]]
+] = {
     **ModularActivations,
     **FunctionalActivations,
 }

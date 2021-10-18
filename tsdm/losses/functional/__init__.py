@@ -11,7 +11,6 @@ from __future__ import annotations
 __all__ = [
     # Types
     "FunctionalLoss",
-    "FunctionalLossType",
     # Constants
     "FunctionalLosses",
     # Functions
@@ -28,16 +27,15 @@ from torch import Tensor
 from torch.nn import functional as F
 
 from tsdm.losses.functional._functional import nd, nrmse, q_quantile, q_quantile_loss
+from tsdm.util.types import LookupTable
 
 LOGGER = logging.getLogger(__name__)
 
+# TODO: use better definition [Tensor, Tensor, ...] -> Tensor once supported
 FunctionalLoss = Callable[..., Tensor]
 r"""Type hint for functional losses."""
 
-FunctionalLossType = Callable[..., Tensor]
-r"""Type hint for functional losses."""
-
-TORCH_LOSSES: Final[dict[str, FunctionalLossType]] = {
+TORCH_LOSSES: Final[LookupTable[FunctionalLoss]] = {
     "binary_cross_entropy": F.binary_cross_entropy,
     # Function that measures the Binary Cross Entropy between the target and the output.
     "binary_cross_entropy_with_logits": F.binary_cross_entropy_with_logits,
@@ -85,7 +83,7 @@ TORCH_LOSSES: Final[dict[str, FunctionalLossType]] = {
 }
 r"""Dictionary of all available losses in torch."""
 
-TORCH_ALIASES: Final[dict[str, FunctionalLossType]] = {
+TORCH_ALIASES: Final[LookupTable[FunctionalLoss]] = {
     "mae": F.l1_loss,
     "l2": F.mse_loss,
     "xent": F.cross_entropy,
@@ -93,7 +91,7 @@ TORCH_ALIASES: Final[dict[str, FunctionalLossType]] = {
 }
 r"""Dictionary containing additional aliases for losses in torch."""
 
-FunctionalLosses: Final[dict[str, FunctionalLossType]] = {
+FunctionalLosses: Final[LookupTable[FunctionalLoss]] = {
     "nd": nd,
     "nrmse": nrmse,
     "q_quantile": q_quantile,

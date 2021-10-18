@@ -1,4 +1,4 @@
-r"""Metric and Losses.
+r"""METRICS (non-differentiable losses).
 
 We define the following
 
@@ -38,9 +38,36 @@ Note that in the context of time-series, we allow the accumulator to depend on t
 
 from __future__ import annotations
 
+__all__ = [
+    # Sub-Module
+    "functional",
+    "modular",
+    # Types
+    "FunctionalMetric",
+    "ModularMetric",
+    "Metric",
+    # Constants
+    "FunctionalMetrics",
+    "ModularMetrics",
+    "METRICS",
+]
+
 import logging
+from typing import Final, Union
 
-# __all__ = []
-
+from tsdm.metrics import functional, modular
+from tsdm.metrics.functional import FunctionalMetric, FunctionalMetrics
+from tsdm.metrics.modular import ModularMetric, ModularMetrics
+from tsdm.util.types import LookupTable
 
 LOGGER = logging.getLogger(__name__)
+
+
+Metric = Union[FunctionalMetric, ModularMetric]
+r"""Type hint for metrics."""
+
+METRICS: Final[LookupTable[Union[FunctionalMetric, type[ModularMetric]]]] = {
+    **FunctionalMetrics,
+    **ModularMetrics,
+}
+r"""Dictionary of all available  metrics."""

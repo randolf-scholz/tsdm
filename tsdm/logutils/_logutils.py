@@ -15,9 +15,10 @@ __all__ = [
 ]
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, overload
 
 import torch
 from pandas import DataFrame
@@ -27,12 +28,13 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm.auto import tqdm
 
-from tsdm.losses import ModularLoss
+from tsdm.encoders import Encoder
+from tsdm.losses import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.plot import kernel_heatmap, plot_spectrum
 from tsdm.tasks import Task
-from tsdm.util._norms import multi_norm
+from tsdm.util import multi_norm
 
 LOGGER = logging.getLogger(__name__)
 
@@ -189,26 +191,87 @@ def log_model_state(
             writer.add_histogram(f"{prefix}:gradients/{j}", g, i)
 
 
+# user can provide targets and predics
+@overload
+def log_metrics(
+    i: int,
+    writer: SummaryWriter,
+    metrics: dict[str, Loss],
+    *,
+    targets: Tensor,
+    predics: Tensor,
+    prefix: Optional[str] = None,
+):
+    ...
+
+
+# user can provide values by dict
+@overload
+def log_metrics(
+    i: int,
+    writer: SummaryWriter,
+    metrics: dict[str, Loss],
+    *,
+    values: dict[str, Tensor],
+    prefix: Optional[str] = None,
+):
+    ...
+
+
+# user can provide values by list
+@overload
+def log_metrics(
+    i: int,
+    writer: SummaryWriter,
+    metrics: Sequence[str],
+    *,
+    values: Sequence[Tensor],
+    prefix: Optional[str] = None,
+):
+    ...
+
+
 @torch.no_grad()
 def log_metrics(
     i: int,
     writer: SummaryWriter,
-    metrics: dict[str, Tensor],
+    metrics: Union[dict[str, Loss], Sequence[str]],
+    *,
+    targets: Optional[Tensor] = None,
+    predics: Optional[Tensor] = None,
+    values: Optional[Union[dict[str, Tensor], Sequence[Tensor]]] = None,
     prefix: Optional[str] = None,
 ):
-    r"""Log each metric provided.
+    r"""Log multiple metrics at once.
 
     Parameters
     ----------
     i: int,
     writer: SummaryWriter,
-    metrics: dict[str, Tensor]
-    prefix: Optional[str] = None,
+    metrics: dict[str, ModularLoss]
+    *
+    targets: Optional[Tensor], default=None
+    predics: Optional[Tensor], default=None
+    values: Optional[Tensor], default=None
+    prefix: Optional[str], default=None
     """
     prefix = f"{prefix}:metrics" if prefix is not None else "metrics"
 
-    for key, value in metrics.items():
-        writer.add_scalar(f"{prefix}/{key}", value, i)
+    if values is None:
+        assert (
+            targets is not None and predics is not None
+        ), "values and (targets, predics) are mutually exclusive"
+        assert len(targets) == len(predics) == len(metrics)
+        assert isinstance(metrics, dict)
+        values = compute_metrics(metrics, targets=targets, predics=predics)
+    else:
+        assert (
+            targets is None and predics is None
+        ), "values and (targets, predics) are mutually exclusive"
+        assert len(values) == len(metrics)
+
+    for key in metrics:
+        writer.add_scalar(f"{prefix}/{key}", values, i)
 
 
 def compute_metrics(
@@ -232,7 +295,7 @@ def compute_metrics(
         for metric in metrics:
             if issubclass(metric, nn.Module):
                 results[metric.__name__] = metric()(targets, predics)
-            elif callable(metric):
+            elif callable(metric) | isinstance(metric, nn.Module):
                 results[metric.__name__] = metric(targets, predics)
             else:
                 raise ValueError(metric)
@@ -254,7 +317,7 @@ def get_all_preds(model, dataloader):
         # getting predics -> task / model
         OBS_HORIZON = 32
         times, inputs, targets = prep_batch(batch, OBS_HORIZON)
-        outputs, _ = model(times, inputs)
+        outputs, _ = model(times, inputs)  # here we should apply the decoder.
         predics = outputs[:, OBS_HORIZON:, -1]
         Y.append(targets)
         Ŷ.append(predics)
@@ -262,7 +325,7 @@ def get_all_preds(model, dataloader):
     return torch.cat(Y, dim=0), torch.cat(Ŷ, dim=0)
 
 
-@jit.script
+@jit.script  # This should be the encoder
 def prep_batch(batch: tuple[Tensor, Tensor, Tensor], observation_horizon: int):
     T, X, Y = batch
     targets = Y[..., observation_horizon:].clone()
@@ -273,7 +336,7 @@ def prep_batch(batch: tuple[Tensor, Tensor, Tensor], observation_horizon: int):
 
 
 @dataclass
-class Logger:
+class DefaultLogger:
     writer: SummaryWriter
     r"""The SummaryWriter Instance."""
     model: Model
@@ -282,11 +345,13 @@ class Logger:
     r"""The task instance."""
     optimizer: Optimizer
     r"""The optimizer instance."""
-    metrics: dict[str, ModularLoss]
+    encoder: Encoder
+    r"""The used encoder."""
+    metrics: dict[str, Loss]
     r"""The metrics that should be logged."""
-    epoch: int = 0
+    num_epoch: int = 0
     r"""The current batch number."""
-    batch: int = 0
+    num_batch: int = 0
     r"""The current epoch number."""
 
     # Lazy attributes
@@ -313,26 +378,32 @@ class Logger:
 
     @torch.no_grad()
     def log_at_batch_end(self, *, targets: Tensor, predics: Tensor):
-        r"""Logs metrics and optimizer state at the end of batch."""
-        self.batch += 1
-        hist = compute_metrics(targets=targets, predics=predics, metrics=self.metrics)
-        log_metrics(self.batch, self.writer, hist, prefix="batch")
-        log_optimizer_state(self.batch, self.writer, self.optimizer, prefix="batch")
-        self.history["batch"].append(self._to_cpu(hist))
+        r"""Log metrics and optimizer state at the end of batch."""
+        self.num_batch += 1
+        values = compute_metrics(targets=targets, predics=predics, metrics=self.metrics)
+        log_metrics(
+            self.num_batch, self.writer, self.metrics, values=values, prefix="batch"
+        )
+        log_optimizer_state(self.num_batch, self.writer, self.optimizer, prefix="batch")
+        self.history["batch"].append(self._to_cpu(values))
 
     @torch.no_grad()
     def log_at_epoch_end(self, *, targets: Tensor, predics: Tensor):
         r"""Log metric and optimizer state at the end of epoch."""
-        self.epoch += 1
+        self.num_epoch += 1
 
-        log_optimizer_state(self.epoch, self.writer, self.optimizer, histograms=True)
+        log_optimizer_state(
+            self.num_epoch, self.writer, self.optimizer, histograms=True
+        )
         # log_kernel_information(self.epoch, writer, model.system.kernel, histograms=True)
 
-        for key, dataloader in self.dataloaders.items():
+        for key in self.dataloaders:
             hist = compute_metrics(
                 targets=targets, predics=predics, metrics=self.metrics
             )
-            log_metrics(self.epoch, self.writer, hist, prefix=key)
+            log_metrics(
+                self.num_epoch, self.writer, self.metrics, values=hist, prefix=key
+            )
             self.history[key].append(self._to_cpu(hist))
 
     @staticmethod
@@ -341,14 +412,15 @@ class Logger:
 
     def save_checkpoint(self):
         r"""Save the hyperparameter combination with validation loss."""
-
         torch.save(
             {
                 "optimizer": self.optimizer,
-                "epoch": self.epoch,
-                "batch": self.batch,
+                "epoch": self.num_epoch,
+                "batch": self.num_batch,
             },
-            self.CHECKPOINTDIR.joinpath(f"{self.optimizer.__class__.__name__}-{self.epoch}"),
+            self.CHECKPOINTDIR.joinpath(
+                f"{self.optimizer.__class__.__name__}-{self.num_epoch}"
+            ),
         )
 
     def log_hyperparameters(self):

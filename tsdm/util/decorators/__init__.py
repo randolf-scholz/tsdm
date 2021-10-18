@@ -6,6 +6,8 @@ r"""Submodule containing general purpose decorators.
 from __future__ import annotations
 
 __all__ = [
+    # Classes
+    "trace",
     # Constants
     "Decorator",
     "DECORATORS",
@@ -18,7 +20,7 @@ __all__ = [
 import logging
 from typing import Callable, Final
 
-from tsdm.util.decorators.decorators import decorator, sphinx_value, timefun
+from tsdm.util.decorators.decorators import decorator, sphinx_value, timefun, trace
 
 LOGGER = logging.getLogger(__name__)
 

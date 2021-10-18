@@ -247,6 +247,9 @@ def time2float(ds: Series) -> Series:
         timedeltas = ds - ds[0]
     elif np.issubdtype(ds.dtype, np.timedelta64):
         timedeltas = ds.view("timedelta64[ns]")
+    elif np.issubdtype(ds.dtype, np.floating):
+        LOGGER.warning("Array is already floating dtype.")
+        return ds
     else:
         raise ValueError(f"{ds.dtype=} not supported")
 
