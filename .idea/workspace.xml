@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedIndex" value="3" />
+  </component>
+  <component name="ProjectId" id="1xrATtRaxjt2Kg9MYWEAe8kdzYv" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+    <property name="settings.editor.selected.configurable" value="preferences.externalTools" />
+    <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/.gitlab-ci.yml" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/docs/_autoapi_templates/python" />
+      <recent name="$PROJECT_DIR$/docs/_autoapi_templates" />
+      <recent name="$PROJECT_DIR$/tsdm/tasks" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tsdm" />
+      <recent name="$PROJECT_DIR$/tsdm/util" />
+      <recent name="$PROJECT_DIR$/docs/_templates" />
+      <recent name="$PROJECT_DIR$/docs/_autoapi_templates/python" />
+      <recent name="$PROJECT_DIR$/docs/_autoapi_templates" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="" />
+      <created>1631102845808</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1631102845808</updated>
+      <workItem from="1631102848340" duration="23711000" />
+      <workItem from="1631474727515" duration="1332000" />
+      <workItem from="1631626410482" duration="2990000" />
+      <workItem from="1631713401776" duration="636000" />
+      <workItem from="1632425535178" duration="287000" />
+      <workItem from="1632427369625" duration="782000" />
+      <workItem from="1632468108695" duration="599000" />
+      <workItem from="1632472876930" duration="6971000" />
+      <workItem from="1632582502976" duration="2461000" />
+      <workItem from="1632644695065" duration="599000" />
+      <workItem from="1632721665679" duration="44669000" />
+      <workItem from="1632919475265" duration="11504000" />
+      <workItem from="1632954539426" duration="4955000" />
+      <workItem from="1633167761527" duration="7262000" />
+      <workItem from="1633205781850" duration="10828000" />
+      <workItem from="1633216661852" duration="19146000" />
+      <workItem from="1633288392046" duration="26431000" />
+      <workItem from="1633341729748" duration="4788000" />
+      <workItem from="1633850060342" duration="2833000" />
+      <workItem from="1633933414395" duration="4571000" />
+      <workItem from="1634104301638" duration="27209000" />
+      <workItem from="1634196035473" duration="20245000" />
+      <workItem from="1634498006571" duration="1979000" />
+      <workItem from="1634540258613" duration="1016000" />
+      <workItem from="1634541554049" duration="3981000" />
+      <workItem from="1634628967883" duration="1280000" />
+      <workItem from="1634805838272" duration="599000" />
+      <workItem from="1634980459407" duration="599000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+  </component>
+</project>
