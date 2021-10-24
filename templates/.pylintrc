@@ -24,15 +24,13 @@ max-line-length=100
 
 [TYPECHECK]
 
-# List of members which are set dynamically and missed by pylint inference
-# system, and so shouldn't trigger E1101 when accessed. Python regular
-# expressions are accepted.
+# List of members which are set dynamically and missed by pylint inference system, and so shouldn't
+# trigger E1101 when accessed. Python regular expressions are accepted.
 generated-members=numpy.*,torch.*
 
 [REPORTS]
 
-# Set the output format. Available formats are text, parseable, colorized, json
-# and msvs (visual studio). You can also give a reporter class, e.g.
-# mypackage.mymodule.MyReporterClass.
-output-format=text
+# Set the output format. Available formats are text, parseable, colorized, json and
+# msvs (visual studio). You can also give a reporter class, e.g. mypackage.mymodule.MyReporterClass
+output-format=colorized
 
