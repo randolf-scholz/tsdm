@@ -5,9 +5,8 @@
       <entry url="file://$PROJECT_DIR$">
         <entryData>
           <resourceRoots>
-            <path value="file://$PROJECT_DIR$/manifest" />
-            <path value="file://$PROJECT_DIR$/docs/_static" />
             <path value="file://$PROJECT_DIR$/data" />
+            <path value="file://$PROJECT_DIR$/manifest" />
           </resourceRoots>
         </entryData>
       </entry>
