@@ -129,7 +129,7 @@ class BaseTask(ABC):
     # @abstractmethod
     # def accumulation_function(self) -> Callable[[Tensor], Tensor]:
     #     r"""Accumulates residuals into loss - usually mean or sum."""
-    #
+
     @cached_property
     @abstractmethod
     def test_metric(self) -> Callable[..., Tensor]:
@@ -175,7 +175,7 @@ class BaseTask(ABC):
         shuffle: bool = False,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split.
 

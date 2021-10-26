@@ -109,7 +109,7 @@ class USHCN_DeBrouwer(BaseTask):
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
         fold: int = 0,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split & fold.
 

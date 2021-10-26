@@ -12,8 +12,12 @@ __all__ = [
     # Functions
     "deep_dict_update",
     "deep_kval_update",
-    "now",
     "initialize_from",
+    "now",
+    "relsize_skewpart",
+    "relsize_sympart",
+    "skew_symmetric",
+    "symmetric",
 ]
 
 
@@ -23,7 +27,9 @@ from functools import partial
 from logging import getLogger
 from typing import Any, Callable, Iterable, NamedTuple, Union, overload
 
+import torch
 from numpy.typing import NDArray
+from torch import Tensor, jit
 
 from tsdm.util.types import LookupTable, ObjectType, ReturnType
 
@@ -328,3 +334,25 @@ def initialize_from(
 #     if isinstance(obj, type) and not issubclass(obj, type):
 #         return obj(**kwargs)
 #     return partial(obj, **kwargs)
+@jit.script
+def symmetric(x: Tensor) -> Tensor:
+    r"""Symmetric part of matrix."""
+    return (x + x.swapaxes(-1, -2)) / 2
+
+
+@jit.script
+def skew_symmetric(x: Tensor) -> Tensor:
+    r"""Skew-Symmetric part of matrix."""
+    return (x - x.swapaxes(-1, -2)) / 2
+
+
+@jit.script
+def relsize_sympart(kernel: Tensor) -> Tensor:
+    r"""Relative magnitude of symmetric part."""
+    return torch.mean(symmetric(kernel) ** 2) / torch.mean(kernel ** 2)
+
+
+@jit.script
+def relsize_skewpart(kernel: Tensor) -> Tensor:
+    r"""Relative magnitude of skew-symmetric part."""
+    return torch.mean(skew_symmetric(kernel) ** 2) / torch.mean(kernel ** 2)
