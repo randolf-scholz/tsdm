@@ -21,12 +21,16 @@ __all__ = [
     # Functions
     "deep_dict_update",
     "deep_kval_update",
+    "grad_norm",
+    "initialize_from",
     "multi_norm",
     "now",
-    "initialize_from",
-    "grad_norm",
     "relative_error",
+    "relsize_skewpart",
+    "relsize_sympart",
     "scaled_norm",
+    "skew_symmetric",
+    "symmetric",
 ]
 
 import logging
@@ -48,6 +52,10 @@ from tsdm.util._util import (
     deep_kval_update,
     initialize_from,
     now,
+    relsize_skewpart,
+    relsize_sympart,
+    skew_symmetric,
+    symmetric,
 )
 
 LOGGER = logging.getLogger(__name__)

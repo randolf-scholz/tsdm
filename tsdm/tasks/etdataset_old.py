@@ -13,12 +13,11 @@ __all__ = [
 
 import logging
 from typing import Any, Callable, Literal, Optional
-from functools import cached_property
 
 import torch
 from pandas import DataFrame
 from torch import Tensor, nn
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
 from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
 from tsdm.datasets import DATASETS, Dataset, SequenceDataset
@@ -85,6 +84,7 @@ class ETDatasetInformer(BaseTask):
 
     TODO: add results
     """
+
     keys = ["train", "test", "valid", "joint", "trial"]
     r"""Available keys."""
     KEYS = Literal["train", "test", "valid", "joint", "trial", "whole"]
@@ -104,10 +104,10 @@ class ETDatasetInformer(BaseTask):
     """Default batch size when evaluating."""
 
     # additional attributes
-    preprocessor: Encoder
-    r"""Encoder for the observations."""
     encoder: Encoder
     r"""Encoder for the observations."""
+    time_encoder: Encoder
+    r"""Encoder for the timestamps."""
     observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
     r"""The number of datapoints observed during prediction."""
     forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24
@@ -119,8 +119,6 @@ class ETDatasetInformer(BaseTask):
 
     def __init__(
         self,
-        *,
-        encoder: Optional[Encoder] = None,
         dataset: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
         forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
@@ -130,6 +128,7 @@ class ETDatasetInformer(BaseTask):
         train_batch_size: int = 32,
         test_metric: Literal["MSE", "MAE"] = "MSE",
         preprocessor: str = "StandardScaler",
+        time_encoder: str = "time2float",
     ):
         super().__init__()
         self.target = target
@@ -139,46 +138,36 @@ class ETDatasetInformer(BaseTask):
         self.train_batch_size = train_batch_size
 
         self.preprocessor = initialize_from(ENCODERS, __name__=preprocessor)
+        self.time_encoder = initialize_from(ENCODERS, __name__=time_encoder)
         self.dataset = initialize_from(DATASETS, __name__=dataset)
         self.test_metric = initialize_from(LOSSES, __name__=test_metric)  # type: ignore[assignment]
 
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
 
-        # Fit the Preprocessors
-        self.preprocessor.fit(self.splits["train"])
-        # Set the Encoder
-        self.encoder = Encoder
-
-    @cached_property
-    def splits(self) -> dict[str, DataFrame]:
-        _splits = {
+        # TODO: fix type problems
+        self.splits: dict[str, DataFrame] = {
             "train": self.dataset.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore
             "valid": self.dataset.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore
             "joint": self.dataset.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore
             "trial": self.dataset.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore
             "whole": self.dataset.dataset,  # type: ignore
         }
-        _splits["test"] = _splits["trial"]  # alias
-        return _splits
+        self.splits["test"] = self.splits["trial"]  # alias
+
+        # Fit the Preprocessors
+        self.preprocessor.fit(self.splits["train"])
 
     def get_dataloader(
         self,
         split: KEYS,
         batch_size: int = 1,
         shuffle: bool = True,
-        encode: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader for the training-dataset with the given batch_size.
-
-        If encode=True, then it will create a dataloader with two outputs
-
-        (inputs, targets)
-
-        where inputs = encoder.encode(masked_batch).
 
         Parameters
         ----------
@@ -194,6 +183,8 @@ class ETDatasetInformer(BaseTask):
         -------
         DataLoader
         """
+        device = DEFAULT_DEVICE if device is None else device
+        dtype = DEFAULT_DTYPE if dtype is None else dtype
 
         if split == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
@@ -201,10 +192,19 @@ class ETDatasetInformer(BaseTask):
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         ds = self.splits[split]
-        ds = self.preprocessor.transform(ds)
-        tensors = self.encoder.encode(ds)
 
-        dataset = TensorDataset(tensors)
+        # Apply Encoders
+        _T = self.time_encoder(ds.index)  # type: ignore[attr-defined]
+        _V = self.preprocessor.transform(ds)
+
+        _X = ds.drop(columns=self.target).values
+        _Y = ds[self.target].values
+
+        T = torch.tensor(_T, device=device, dtype=dtype)
+        X = torch.tensor(_X, device=device, dtype=dtype)
+        Y = torch.tensor(_Y, device=device, dtype=dtype)
+
+        dataset = SequenceDataset([T, X, Y])
         sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)
 
         return DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)

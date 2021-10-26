@@ -82,6 +82,29 @@ We should consider the following data-structures
 - TimeSeries-Dataset: a Tuple of TimeSeriesTensors together with a tuple of regular tensors.
 - MetaDataSet (equimodel/non-equimodal): a Collection of Dataset objects with the same/different modality over some index
 
+Example
+-------
+
+We want to show a complete example for a case where we both need a ``tuple[TimeTensor]`` and a ``tuple[Tensor]``
+to represent the dataset. Consider a Video then we have
+
+TimeTensors:
+
+- picture signal: time×width×height
+- audio signal: time×frequency
+- subtitles: time×variable_length
+
+Static Tensors:
+
+- preview image: width×height
+- genre: class
+- language: class
+- runtime: timedelta
+- year: datetime
+- title: string
+
+Seeing the variety of data possible, we see that likely things cannot be encoded in a single string.
+
 
 Mental Model h5 files
 ---------------------
