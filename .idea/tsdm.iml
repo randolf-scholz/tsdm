@@ -42,7 +42,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PackageRequirementsSettings">
-    <option name="requirementsPath" value="$MODULE_DIR$/requirements-extra.txt" />
+    <option name="requirementsPath" value="$MODULE_DIR$/requirements.txt" />
     <option name="versionSpecifier" value="Greater or equal (&gt;=x.y.z)" />
   </component>
   <component name="PyDocumentationSettings">

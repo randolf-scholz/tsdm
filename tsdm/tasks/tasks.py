@@ -44,9 +44,6 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 
 **Recipe**
 
-
-x̂
-
 .. code-block:: python
 
     ys, yhats = []
@@ -57,6 +54,32 @@ x̂
     ys = torch.concat(ys, dim=BATCHDIM)
     yhats = torch.concat(yhats, dim=BATCHDIM)
     score = test_metric(ys, yhats)
+
+Normal Encoder
+--------------
+
+A normal encoder is an encoder with the property that all output tensors share the same index axis.
+
+I.e. it has a signature of the form ``list[tensor[n, ...]] → list[tensor[n, ...]]``
+Pre-Encoder: Map DataFrame to torch.util.data.Dataset
+
+
+
+Default DataLoader Creation
+---------------------------
+
+.. code-block:: python
+
+    data = pre_processor.encode(data)  # DataFrame to DataFrame
+    data = pre_encoder.encode(data)  # DataFrame to DataSet
+    dataset = TensorDataset(*inputs, targets)
+    sampler = SequenceSampler(tuple[TimeTensor], tuple[StaticTensor])
+    dataloader = DataLoader(dataset, sampler=sampler, collate=....)
+    batch = next(dataloader)
+
+    inputs,
+
+
 """
 
 from __future__ import annotations
@@ -97,12 +120,15 @@ class BaseTask(ABC):
     preprocessor: Optional[Encoder], default=None
         Task specific preprocessing. For example, the EVP might specifically ask for
         evaluation of Mean Squared Error on standardized data.
+    pre_encoder: Optional[Encoder], default=None
+        Model specific encoder. Must be a :ref:`normal encoder <Normal Encoder>`.
+        Is applied before batching and caches results.
     dataset: Dataset
         The attached dataset
     splits: dict[keys, Dataset]
         Contains slices of the dataset. Contains a slice for each key, but may
         also hold additional entries. (For example: "joint" = "train"+"valid")
-    bachloader: DataLoader
+    batchloader: DataLoader
         The main DataLoader to be used for training models.
     dataloaders: dict[keys, DataLoader]
         Holds ``DataLoaders`` for all the keys.
@@ -117,8 +143,8 @@ class BaseTask(ABC):
     r"""Default batch size when evaluating."""
     preprocessor: Optional[Encoder] = None
     r"""Optional task specific preprocessor."""
-    encoder: Optional[Encoder] = None
-    r"""Optional encoder that may be applied for dataloaders."""
+    pre_encoder: Optional[Encoder] = None
+    r"""Optional model specific normal encoder that is applied before batching."""
 
     @abstractmethod
     def __init__(self, *args, **kwargs):
@@ -129,7 +155,7 @@ class BaseTask(ABC):
     # @abstractmethod
     # def accumulation_function(self) -> Callable[[Tensor], Tensor]:
     #     r"""Accumulates residuals into loss - usually mean or sum."""
-    #
+
     @cached_property
     @abstractmethod
     def test_metric(self) -> Callable[..., Tensor]:
@@ -185,7 +211,7 @@ class BaseTask(ABC):
             From which part of the dataset to construct the loader
         batch_size: int = 32
         shuffle: bool = True
-            Wether to get samples in random order.
+            Whether to get samples in random order.
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None
             defaults to cuda if cuda is available.
