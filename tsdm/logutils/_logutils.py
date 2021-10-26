@@ -34,33 +34,9 @@ from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.plot import kernel_heatmap, plot_spectrum
 from tsdm.tasks import Task
-from tsdm.util import multi_norm
+from tsdm.util import multi_norm, relsize_skewpart, relsize_symmpart
 
 LOGGER = logging.getLogger(__name__)
-
-
-@jit.script
-def symmetric(x: Tensor) -> Tensor:
-    r"""Symmetric part of matrix."""
-    return (x + x.swapaxes(-1, -2)) / 2
-
-
-@jit.script
-def skew_symmetric(x: Tensor) -> Tensor:
-    r"""Skew-Symmetric part of matrix."""
-    return (x - x.swapaxes(-1, -2)) / 2
-
-
-@jit.script
-def symmpart(kernel):
-    r"""Relative magnitude of symmetric part."""
-    return torch.mean(symmetric(kernel) ** 2) / torch.mean(kernel ** 2)
-
-
-@jit.script
-def skewpart(kernel):
-    r"""Relative magnitude of skew-symmetric part."""
-    return torch.mean(skew_symmetric(kernel) ** 2) / torch.mean(kernel ** 2)
 
 
 @torch.no_grad()
@@ -86,8 +62,8 @@ def log_kernel_information(
     prefix = f"{prefix}:kernel" if prefix is not None else "kernel"
     inf = float("inf")
 
-    writer.add_scalar(f"{prefix}/skewpart", skewpart(kernel), i)
-    writer.add_scalar(f"{prefix}/symmpart", symmpart(kernel), i)
+    writer.add_scalar(f"{prefix}/skewpart", relsize_skewpart(kernel), i)
+    writer.add_scalar(f"{prefix}/symmpart", relsize_symmpart(kernel), i)
 
     # general properties
     writer.add_scalar(f"{prefix}/det", det(kernel), i)
