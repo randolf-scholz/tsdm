@@ -34,8 +34,7 @@ from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.plot import kernel_heatmap, plot_spectrum
 from tsdm.tasks import Task
-from tsdm.util import multi_norm
-from util import relsize_skewpart, relsize_sympart
+from tsdm.util import multi_norm, relsize_skewpart, relsize_symmpart
 
 LOGGER = logging.getLogger(__name__)
 
@@ -64,7 +63,7 @@ def log_kernel_information(
     inf = float("inf")
 
     writer.add_scalar(f"{prefix}/skewpart", relsize_skewpart(kernel), i)
-    writer.add_scalar(f"{prefix}/symmpart", relsize_sympart(kernel), i)
+    writer.add_scalar(f"{prefix}/symmpart", relsize_symmpart(kernel), i)
 
     # general properties
     writer.add_scalar(f"{prefix}/det", det(kernel), i)
@@ -293,13 +292,9 @@ def get_all_preds(model, dataloader):
         # getting targets -> task / model
         # getting predics -> task / model
         OBS_HORIZON = 32
-
-        inputs, targets = prep_batch(batch, OBS_HORIZON)
-
-        outputs = model(*inputs)  # here we should apply the decoder.
-        # post-processing of model outputs when predicting
+        times, inputs, targets = prep_batch(batch, OBS_HORIZON)
+        outputs, _ = model(times, inputs)  # here we should apply the decoder.
         predics = outputs[:, OBS_HORIZON:, -1]
-
         Y.append(targets)
         Ŷ.append(predics)
 
