@@ -14,10 +14,10 @@ __all__ = [
     "deep_kval_update",
     "initialize_from",
     "now",
-    "relsize_skewpart",
-    "relsize_sympart",
     "skew_symmetric",
+    "relsize_skewpart",
     "symmetric",
+    "relsize_symmpart",
 ]
 
 
@@ -347,12 +347,12 @@ def skew_symmetric(x: Tensor) -> Tensor:
 
 
 @jit.script
-def relsize_sympart(kernel: Tensor) -> Tensor:
+def relsize_symmpart(kernel):
     r"""Relative magnitude of symmetric part."""
     return torch.mean(symmetric(kernel) ** 2) / torch.mean(kernel ** 2)
 
 
 @jit.script
-def relsize_skewpart(kernel: Tensor) -> Tensor:
+def relsize_skewpart(kernel):
     r"""Relative magnitude of skew-symmetric part."""
     return torch.mean(skew_symmetric(kernel) ** 2) / torch.mean(kernel ** 2)
