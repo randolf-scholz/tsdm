@@ -165,7 +165,7 @@ class ETDatasetInformer(BaseTask):
         shuffle: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader for the training-dataset with the given batch_size.
 

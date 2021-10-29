@@ -7,6 +7,8 @@
           <resourceRoots>
             <path value="file://$PROJECT_DIR$/data" />
             <path value="file://$PROJECT_DIR$/manifest" />
+            <path value="file://$PROJECT_DIR$/tsdm/config/config_files" />
+            <path value="file://$PROJECT_DIR$/tsdm/datasets/examples" />
           </resourceRoots>
         </entryData>
       </entry>

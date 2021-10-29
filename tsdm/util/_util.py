@@ -39,9 +39,9 @@ LOGGER = getLogger(__name__)
 class Split(NamedTuple):
     r"""Holds indices for train/valid/test set."""
 
-    train: NDArray
-    valid: NDArray
-    test: NDArray
+    train: Any
+    valid: Any
+    test: Any
 
 
 def now():

@@ -301,7 +301,7 @@ def get_all_preds(model, dataloader):
     return torch.cat(Y, dim=0), torch.cat(Ŷ, dim=0)
 
 
-@jit.script  # This should be the encoder
+@jit.script  # This should be the pre_encoder
 def prep_batch(batch: tuple[Tensor, Tensor, Tensor], observation_horizon: int):
     T, X, Y = batch
     timestamps = T
@@ -324,7 +324,7 @@ class DefaultLogger:
     optimizer: Optimizer
     r"""The optimizer instance."""
     encoder: Encoder
-    r"""The used encoder."""
+    r"""The used pre_encoder."""
     metrics: dict[str, Loss]
     r"""The metrics that should be logged."""
     num_epoch: int = 0

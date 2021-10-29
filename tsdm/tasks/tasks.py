@@ -58,7 +58,7 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 Normal Encoder
 --------------
 
-A normal encoder is an encoder with the property that all output tensors share the same index axis.
+A normal pre_encoder is an pre_encoder with the property that all output tensors share the same index axis.
 
 I.e. it has a signature of the form ``list[tensor[n, ...]] → list[tensor[n, ...]]``
 Pre-Encoder: Map DataFrame to torch.util.data.Dataset
@@ -121,7 +121,7 @@ class BaseTask(ABC):
         Task specific preprocessing. For example, the EVP might specifically ask for
         evaluation of Mean Squared Error on standardized data.
     pre_encoder: Optional[Encoder], default=None
-        Model specific encoder. Must be a :ref:`normal encoder <Normal Encoder>`.
+        Model specific pre_encoder. Must be a :ref:`normal pre_encoder <Normal Encoder>`.
         Is applied before batching and caches results.
     dataset: Dataset
         The attached dataset
@@ -135,7 +135,7 @@ class BaseTask(ABC):
     """
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
-    KEYS: Anygi
+    KEYS: Any
     r"""Should be Literal[tuple(str)]"""
     train_batch_size: int = 32
     r"""Default batch size."""
@@ -144,7 +144,7 @@ class BaseTask(ABC):
     preprocessor: Optional[Encoder] = None
     r"""Optional task specific preprocessor."""
     pre_encoder: Optional[Encoder] = None
-    r"""Optional model specific normal encoder that is applied before batching."""
+    r"""Optional model specific normal pre_encoder that is applied before batching."""
 
     @abstractmethod
     def __init__(self, *args, **kwargs):

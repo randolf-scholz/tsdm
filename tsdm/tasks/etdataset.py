@@ -107,9 +107,7 @@ class ETDatasetInformer(BaseTask):
     # additional attributes
     preprocessor: Encoder
     r"""Encoder for the observations."""
-    preprocessor: Encoder
-    r"""Task specific pre-processor."""
-    preencoder: Encoder
+    pre_encoder: Encoder
     r"""Encoder for the observations."""
     observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
     r"""The number of datapoints observed during prediction."""
@@ -123,7 +121,7 @@ class ETDatasetInformer(BaseTask):
     def __init__(
         self,
         *,
-        encoder: Optional[Encoder] = None,
+        pre_encoder: Optional[Encoder] = None,
         dataset: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
         forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
@@ -151,7 +149,7 @@ class ETDatasetInformer(BaseTask):
         # Fit the Preprocessors
         self.preprocessor.fit(self.splits["train"])
         # Set the Encoder
-        self.encoder = Encoder
+        self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
 
     @cached_property
     def splits(self) -> dict[str, DataFrame]:
@@ -181,7 +179,7 @@ class ETDatasetInformer(BaseTask):
 
         (inputs, targets)
 
-        where inputs = encoder.encode(masked_batch).
+        where inputs = pre_encoder.encode(masked_batch).
 
         Parameters
         ----------

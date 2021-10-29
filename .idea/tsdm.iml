@@ -24,7 +24,8 @@
       <excludeFolder url="file://$MODULE_DIR$/examples/.ipynb_checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/examples/.virtual_documents" />
       <excludeFolder url="file://$MODULE_DIR$/manifest/__tex__" />
-      <excludePattern pattern=".ipynb_checkpoints/" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/.ipynb_checkpoints" />
+      <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (kiwi)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

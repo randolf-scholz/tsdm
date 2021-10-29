@@ -1,4 +1,4 @@
-"""Representation of Time Series Datasets."""
+    """Representation of Time Series Datasets."""
 
 from torch import Tensor
 
@@ -19,6 +19,21 @@ class TimeTensor(Tensor):
 
 
 class TimeSeriesDataset:
+    """
+    tuple[DataFrame]
+    tuple[DataFrame]
+    """
+
+
+
+class TimeSeriesCollection:
+    """
+    General TimeSeriesCollection:
+        Mapping[keys -> TimeSeriesDataset]
+    Regular TimeSeriesCollection:
+        All TimeSeriesDataset have the same schema and can be merged into a single table.
+    """
+
 
 
 
