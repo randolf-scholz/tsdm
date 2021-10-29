@@ -8,37 +8,21 @@ and a test_loader object.
 We decided to use a dataloader instead of, say, a split to cater to the question of
 forecasting horizons.
 
-The whole start-to-end data pipeline looks as follows:
 
-Modus Operandi: small data-set, everything in-memory
+Idea:
 
-1. Raw Dataset (numpy/pandas/xarray/etc.)
-2. Perform task specific pre-processing.
-3. Perform the model specific encoding
-4. Sample a batch
-   - batch should consist of model_inputs, model_targets, true_targets
-   - targets are model/loss specific preprocessed targets from raw dataset, for instance
-     one-hot encoded for classification task
-5. compute:
-   - `outputs = model(*inputs)`
-        - outputs should have the same shape as targets ?!?
-        - but then the model needs to know task specific things!
-        - but most models need to know these during initialization anyway.
-        - but our model here doesn't and that makes it special.
-        - alternatively another encoding/decoding layer is necessary.
-   - `predictions = ???(outputs)`
-        - convert to "true" targets
-        - i.e. revert any encoding/preprocessing steps
+The Pre-Encoder must work in the following way:
 
-6
+- ``(named)tuple[TimeTensor] → (named)tuple[TimeTensor]`` row-wise!
+- ``(named)tuple[Tensor] → (named)tuple[Tensor]``
 
+More generally, eligible inputs are:
 
-Modus Operandi: large data-set, stream from disk
+- ``DataFrame``, ``TimeTensor``, ``tuple[DataFrame]``, ``tuple[TimeTensor]``
+- Product-types.
 
-
-
-
-
+Must return a `NamedTuple` that agrees with the original column names!
+This allows us to select
 """
 
 from __future__ import annotations

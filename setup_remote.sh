@@ -17,5 +17,5 @@ git remote -v
 
 git fetch berlin
 git branch --set-upstream-to=berlin/main  main
-
+git push -u berlin --all
 
