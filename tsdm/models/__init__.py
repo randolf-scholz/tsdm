@@ -25,7 +25,7 @@ from torch import nn
 from tsdm.models.models import BaseModel
 from tsdm.models.ode_rnn import ODE_RNN
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 Model = nn.Module

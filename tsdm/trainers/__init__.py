@@ -10,4 +10,4 @@ import logging
 # __all__ = []
 
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)

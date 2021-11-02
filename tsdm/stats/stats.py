@@ -13,7 +13,7 @@ from pandas import DataFrame
 # __all__ = []
 
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def sparsity(df: DataFrame):

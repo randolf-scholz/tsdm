@@ -22,7 +22,7 @@ from torch.optim import lr_scheduler
 
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Optimizer = torch.optim.Optimizer
 r"""Type hint for optimizers."""

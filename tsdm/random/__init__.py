@@ -16,4 +16,4 @@ import logging
 
 from tsdm.random.utils import sample_timedeltas, sample_timestamps
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)

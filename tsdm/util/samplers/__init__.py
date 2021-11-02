@@ -22,7 +22,7 @@ from torch.utils import data as torch_utils_data
 
 from tsdm.util.samplers.samplers import SequenceSampler, SliceSampler
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Sampler = torch_utils_data.Sampler
 r"""Type hint for samplers."""

@@ -23,7 +23,7 @@ from torch import Tensor, nn
 
 from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class ND(nn.Module):

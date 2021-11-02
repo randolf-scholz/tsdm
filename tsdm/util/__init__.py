@@ -56,4 +56,4 @@ from tsdm.util._util import (
     symmetric,
 )
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)

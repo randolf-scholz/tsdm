@@ -28,7 +28,7 @@ import pandas as pd
 from numba import njit
 from pandas import CategoricalDtype, DataFrame, Series
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def infer_categories(s: Series) -> set:
@@ -248,7 +248,7 @@ def time2float(ds: Series) -> Series:
     elif np.issubdtype(ds.dtype, np.timedelta64):
         timedeltas = ds.view("timedelta64[ns]")
     elif np.issubdtype(ds.dtype, np.floating):
-        LOGGER.warning("Array is already floating dtype.")
+        __logger__.warning("Array is already floating dtype.")
         return ds
     else:
         raise ValueError(f"{ds.dtype=} not supported")

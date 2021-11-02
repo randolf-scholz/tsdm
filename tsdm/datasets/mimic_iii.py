@@ -37,7 +37,7 @@ from tsdm.datasets.dataset import BaseDataset
 # from pandas import DataFrame
 
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class MIMIC_III(BaseDataset):
@@ -59,11 +59,13 @@ class MIMIC_III(BaseDataset):
         Overwrite if you need custom downloader
         """
         if cls.url is None:
-            LOGGER.info("Dataset '%s' provides no url. Assumed offline", cls.__name__)
+            __logger__.info(
+                "Dataset '%s' provides no url. Assumed offline", cls.__name__
+            )
             return
 
         dataset = cls.__name__
-        LOGGER.info("Obtaining dataset '%s' from %s", dataset, cls.url)
+        __logger__.info("Obtaining dataset '%s' from %s", dataset, cls.url)
 
         cut_dirs = cls.url.count("/") - 3
 
@@ -79,4 +81,4 @@ class MIMIC_III(BaseDataset):
             check=True,
         )
 
-        LOGGER.info("Finished importing dataset '%s' from %s", dataset, cls.url)
+        __logger__.info("Finished importing dataset '%s' from %s", dataset, cls.url)

@@ -20,7 +20,7 @@ from numpy.random import permutation
 from numpy.typing import NDArray
 from torch.utils.data import Sampler
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 # class TimeSliceSampler(Sampler):

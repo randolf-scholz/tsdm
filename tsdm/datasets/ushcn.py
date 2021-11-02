@@ -25,13 +25,13 @@ from pandas import DataFrame
 
 from tsdm.datasets.dataset import BaseDataset
 
-LOGGER = logging.getLogger(__name__)  # noqa
+__logger__ = logging.getLogger(__name__)  # noqa
 
 try:
     os.environ["MODIN_ENGINE"] = "ray"
     from modin import pandas as pd
 except ImportError as e:
-    LOGGER.warning("Modin not found, falling back to pandas! %s", e)
+    __logger__.warning("Modin not found, falling back to pandas! %s", e)
     pd = pandas
 else:
     import ray
@@ -71,7 +71,7 @@ class USHCN_SmallChunkedSporadic(BaseDataset):
     @classmethod
     def clean(cls):
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
-        LOGGER.info("Finished extracting dataset '%s'", cls.__name__)
+        __logger__.info("Finished extracting dataset '%s'", cls.__name__)
         dtypes = {
             "ID": pandas.UInt16Dtype(),
             "Time": pandas.Float32Dtype(),
@@ -88,7 +88,7 @@ class USHCN_SmallChunkedSporadic(BaseDataset):
         }
         df = pandas.read_csv(cls.rawdata_file, dtype=dtypes)
         df.to_feather(cls.dataset_file)
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls) -> DataFrame:
@@ -279,7 +279,9 @@ class USHCN(BaseDataset):
             "stations": cls._clean_stations,
             "states": cls._clean_states,
         }[key]()
-        LOGGER.info("Finished cleaning table '%s' of dataset '%s'", key, cls.__name__)
+        __logger__.info(
+            "Finished cleaning table '%s' of dataset '%s'", key, cls.__name__
+        )
 
     @classmethod  # type: ignore
     @property
@@ -304,7 +306,7 @@ class USHCN(BaseDataset):
         }
         states = pandas.read_csv(StringIO(STATE_CODES), sep="\t", dtype=state_dtypes)
         states.to_feather(cls.dataset_path.joinpath("states.feather"))
-        LOGGER.info("%s: Finished cleaning 'states' DataFrame", cls.__name__)
+        __logger__.info("%s: Finished cleaning 'states' DataFrame", cls.__name__)
 
     @classmethod
     def _clean_stations(cls):
@@ -369,7 +371,7 @@ class USHCN(BaseDataset):
         )
         path = cls.dataset_path.joinpath("stations.feather")
         stations.to_feather(path)
-        LOGGER.info("%s: Finished cleaning 'stations' DataFrame", cls.__name__)
+        __logger__.info("%s: Finished cleaning 'stations' DataFrame", cls.__name__)
 
     @classmethod
     def _clean_us_daily(cls):
@@ -379,7 +381,7 @@ class USHCN(BaseDataset):
             cls.download()
 
         if {"modin", "ray"} <= sys.modules.keys():
-            LOGGER.info("Starting ray cluster.")
+            __logger__.info("Starting ray cluster.")
             ray.init(
                 num_cpus=min(1, (os.cpu_count() or 0) - 2), ignore_reinit_error=True
             )
@@ -432,7 +434,7 @@ class USHCN(BaseDataset):
         with gzip.open(us_daily_file_compressed, "rb") as compressed_file:
             with open(us_daily_file, "w", encoding="utf8") as file:
                 file.write(compressed_file.read().decode("utf-8"))
-        LOGGER.info("%s finished decompressing main file", cls.__name__)
+        __logger__.info("%s finished decompressing main file", cls.__name__)
 
         ds = pd.read_fwf(
             us_daily_file,
@@ -442,7 +444,7 @@ class USHCN(BaseDataset):
             dtype=dtype,
         )
         ds = pd.DataFrame(ds)  # In case TextFileReader was returned.
-        LOGGER.info("%s finished loading main file.", cls.__name__)
+        __logger__.info("%s finished loading main file.", cls.__name__)
 
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
@@ -455,7 +457,7 @@ class USHCN(BaseDataset):
 
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = data.stack(level="DAY", dropna=True).reset_index(level="DAY")
-        LOGGER.info("%s finished dataframe stacking.", cls.__name__)
+        __logger__.info("%s finished dataframe stacking.", cls.__name__)
 
         # correct dtypes after stacking operation
         _dtypes = {k: v for k, v in dtypes.items() if k in data.columns} | {
@@ -465,7 +467,7 @@ class USHCN(BaseDataset):
 
         # recombine data columns with original data
         data = ds[id_cols].join(data, how="inner")
-        LOGGER.info("%s finished dataframe merging.", cls.__name__)
+        __logger__.info("%s finished dataframe merging.", cls.__name__)
 
         # fix column order
         data = data[
@@ -484,13 +486,13 @@ class USHCN(BaseDataset):
 
         # optional: sorting
         data = data.sort_values(by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"])
-        LOGGER.info("%s finished sorting.", cls.__name__)
+        __logger__.info("%s finished sorting.", cls.__name__)
 
         # drop old index which may contain duplicates
         data = data.reset_index(drop=True)
 
         data.to_feather(cls.dataset_file)
-        LOGGER.info("%s: Finished cleaning 'us_daily' DataFrame", cls.__name__)
+        __logger__.info("%s: Finished cleaning 'us_daily' DataFrame", cls.__name__)
 
 
 STATE_CODES = r"""

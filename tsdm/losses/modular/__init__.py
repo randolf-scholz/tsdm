@@ -29,7 +29,7 @@ from torch import nn
 from tsdm.losses.modular._modular import ND, NRMSE, Q_Quantile, Q_Quantile_Loss
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 ModularLoss = nn.Module

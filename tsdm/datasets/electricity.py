@@ -54,7 +54,7 @@ from pandas import DataFrame, read_csv, read_hdf
 
 from tsdm.datasets.dataset import BaseDataset
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class Electricity(BaseDataset):
@@ -85,13 +85,13 @@ class Electricity(BaseDataset):
     @classmethod
     def clean(cls):
         r"""Create DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         fname = "LD2011_2014.txt"
         with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as files:
             files.extract(fname, path=cls.dataset_path)
 
-        LOGGER.info("Finished extracting dataset '%s'", cls.__name__)
+        __logger__.info("Finished extracting dataset '%s'", cls.__name__)
 
         df = read_csv(
             cls.dataset_path.joinpath(fname),
@@ -107,7 +107,7 @@ class Electricity(BaseDataset):
         df.to_hdf(cls.dataset_file, key=cls.__name__)
         cls.dataset_path.joinpath(fname).unlink()
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):

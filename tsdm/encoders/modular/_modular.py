@@ -17,7 +17,7 @@ from typing import Any, Literal
 import numpy as np
 from pandas import Series
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class BaseEncoder(ABC):
@@ -95,7 +95,7 @@ class Time2Float(BaseEncoder):
         elif np.issubdtype(ds.dtype, np.integer):
             timedeltas = ds.view("timedelta64[ns]")
         elif np.issubdtype(ds.dtype, np.floating):
-            LOGGER.warning("Array is already floating dtype.")
+            __logger__.warning("Array is already floating dtype.")
             timedeltas = ds
         else:
             raise ValueError(f"{ds.dtype=} not supported")
@@ -132,7 +132,7 @@ class Time2Float(BaseEncoder):
         elif np.issubdtype(ds.dtype, np.timedelta64):
             timedeltas = ds.view("timedelta64[ns]")
         elif np.issubdtype(ds.dtype, np.floating):
-            LOGGER.warning("Array is already floating dtype.")
+            __logger__.warning("Array is already floating dtype.")
             return ds
         else:
             raise ValueError(f"{ds.dtype=} not supported")

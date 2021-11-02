@@ -24,7 +24,7 @@ from torch import nn
 from tsdm.models.models import BaseModel
 from tsdm.util import deep_dict_update
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 @contextmanager

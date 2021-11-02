@@ -60,7 +60,7 @@ from tsdm.metrics.functional import FunctionalMetric, FunctionalMetrics
 from tsdm.metrics.modular import ModularMetric, ModularMetrics
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 Metric = Union[FunctionalMetric, ModularMetric]

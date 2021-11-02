@@ -43,7 +43,7 @@ from torch import Tensor
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class DatasetMetaClass(ABCMeta):
@@ -200,12 +200,14 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         Overwrite if you need custom downloader
         """
         if cls.url is None:
-            LOGGER.info("Dataset '%s' provides no url. Assumed offline", cls.__name__)
+            __logger__.info(
+                "Dataset '%s' provides no url. Assumed offline", cls.__name__
+            )
             return
 
         dataset = cls.__name__
         parsed_url = urlparse(cls.url)
-        LOGGER.info("Obtaining dataset '%s' from %s", dataset, cls.url)
+        __logger__.info("Obtaining dataset '%s' from %s", dataset, cls.url)
 
         if parsed_url.netloc == "www.kaggle.com":
             kaggle_name = Path(parsed_url.path).name
@@ -228,7 +230,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
                 check=True,
             )
 
-        LOGGER.info("Finished importing dataset '%s' from %s", dataset, cls.url)
+        __logger__.info("Finished importing dataset '%s' from %s", dataset, cls.url)
 
     @classmethod
     def info(cls):

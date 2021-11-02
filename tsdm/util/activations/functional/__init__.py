@@ -22,7 +22,7 @@ from torch.nn import functional as F
 
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 FunctionalActivation = Callable[..., Tensor]
 r"""Type hint for functional activations."""

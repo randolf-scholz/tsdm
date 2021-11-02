@@ -21,7 +21,7 @@ from pandas import DataFrame, read_csv, read_hdf
 
 from tsdm.datasets.dataset import BaseDataset
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class ETTh1(BaseDataset):
@@ -44,7 +44,7 @@ class ETTh1(BaseDataset):
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTh1.csv"
         with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
@@ -54,7 +54,7 @@ class ETTh1(BaseDataset):
         # Store the preprocessed dataset as h5 file
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):
@@ -85,7 +85,7 @@ class ETTh2(BaseDataset):
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm2.csv"
         with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
@@ -95,7 +95,7 @@ class ETTh2(BaseDataset):
         # Store the preprocessed dataset as h5 file
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):
@@ -126,7 +126,7 @@ class ETTm1(BaseDataset):
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm1.csv"
         with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
@@ -136,7 +136,7 @@ class ETTm1(BaseDataset):
         # Store the preprocessed dataset as h5 file
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):
@@ -167,7 +167,7 @@ class ETTm2(BaseDataset):
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm2.csv"
         with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
@@ -177,7 +177,7 @@ class ETTm2(BaseDataset):
         # Store the preprocessed dataset as h5 file
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):

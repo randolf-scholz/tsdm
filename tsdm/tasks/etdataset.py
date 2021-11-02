@@ -29,7 +29,7 @@ from tsdm.tasks.tasks import BaseTask
 from tsdm.util import initialize_from
 from tsdm.util.samplers import SequenceSampler
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class ETDatasetInformer(BaseTask):

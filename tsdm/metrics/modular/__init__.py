@@ -19,7 +19,7 @@ from torch import nn
 
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 ModularMetric = nn.Module

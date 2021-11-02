@@ -65,7 +65,7 @@ from pandas import DataFrame, Series
 
 from tsdm.datasets.dataset import BaseDataset
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def _reformat(s: str, replacements: dict) -> str:  # pylint: disable=unused-argument
@@ -158,7 +158,7 @@ class Traffic(BaseDataset):
             "randperm": cls._clean_randperm,
         }
         cleaners[key]()
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def _clean_data(cls, use_true: bool = True):
