@@ -28,7 +28,6 @@ from logging import getLogger
 from typing import Any, Callable, Iterable, NamedTuple, Union, overload
 
 import torch
-from numpy.typing import NDArray
 from torch import Tensor, jit
 
 from tsdm.util.types import LookupTable, ObjectType, ReturnType
