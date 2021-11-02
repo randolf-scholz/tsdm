@@ -23,6 +23,7 @@ from typing import Final, Union
 
 import numpy as np
 import pandas
+from pandas.api.extensions import ExtensionDtype
 
 LOGGER = logging.getLogger(__name__)
 
@@ -118,7 +119,7 @@ NUMPY_OTHER_DTYPES: Final[dict[type[np.generic], str]] = {
 }
 r"""Dictionary of all :mod:`numpy` generic data types."""
 
-PANDAS_DTYPES: Final[dict[type[pandas.api.extensions.ExtensionDtype], str]] = {
+PANDAS_DTYPES: Final[dict[type[ExtensionDtype], str]] = {
     pandas.BooleanDtype: "boolean",
     pandas.CategoricalDtype: "category",
     pandas.DatetimeTZDtype: "datetime64",  # datetime64[ns, <tz>]
@@ -139,6 +140,13 @@ PANDAS_DTYPES: Final[dict[type[pandas.api.extensions.ExtensionDtype], str]] = {
 }
 r"""Dictionary of all :mod:`pandas` data types."""
 
+
+NULLABLE_DTYPES: Final[
+    dict[Union[type[np.generic], type[ExtensionDtype]], str]
+] = PANDAS_DTYPES | {
+    np.timedelta64: "M",
+    np.datetime64: "m",
+}
 
 BOOLS: Final[list[bool]] = [True, False]
 r"""List of example bool objects."""
