@@ -1,6 +1,6 @@
-r"""KIWI Run Data
+r"""KIWI Run Data.
 
-TODO: Module Summary
+Extracted from iLab DataBase
 """
 
 from __future__ import annotations
@@ -10,16 +10,16 @@ __all__ = [
     "KIWI_RUNS",
 ]
 
-import pickle
 import logging
-from pathlib import Path
+import os
+import pickle
 from functools import cache
-from collections import defaultdict
+from pathlib import Path
+from typing import Final, Literal, Optional
 
-from pandas import DataFrame, Series
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import ShuffleSplit
-from itertools import chain
+from pandas import DataFrame, Series
 
 from tsdm.datasets.dataset import BaseDataset
 
@@ -30,65 +30,58 @@ def contains_no_information(series: Series) -> bool:
     return len(series.dropna().unique()) <= 1
 
 
-def contains_nan_slice(series: Series, slices: list[Series]) -> bool:
+def contains_nan_slice(
+    series: Series, slices: list[Series], two_enough: bool = False
+) -> bool:
+    num_missing = 0
     for idx in slices:
         if pd.isna(series[idx]).all():
-            return True
+            num_missing += 1
+
+    if (num_missing > 0 and not two_enough) or (
+        num_missing >= len(slices) - 1 and two_enough
+    ):
+        LOGGER.info(
+            "%s: data missing in %s/%s slices!", series.name, num_missing, len(slices)
+        )
+        return True
     return False
 
 
-def create_replicate_dict(experiments_per_run):
-    """Stores the list of possible (run_id, experiment_id) for each
-    replicate set as given by a tuple (run_id, color) in a dictionary
-
-    args:
-
-    experiment_per_run:  dict of dict of dict as given for the present dataset.
-                         keys of first level: run_ids
-                         keys of second level: experiment_ids
-                         keys of third level: metadata, measurements_reactor
-                                              measurements_array, setpoints,
-                                              measurements_aggregated
+def float_is_int(series: Series) -> bool:
+    mask = pd.notna(series)
+    return series[mask].apply(float.is_integer).all()
 
 
-    returns: dict  (maps (run_id, experiment_id) to the list of (run_id, experiment_id) that belongs to it.)
+def get_integer_cols(table: DataFrame) -> set[str]:
+    cols = set()
+    for col in table:
+        if np.issubdtype(table[col].dtype, np.integer):
+            LOGGER.info("Integer column                       : %s", col)
+            cols.add(col)
+        elif np.issubdtype(table[col].dtype, np.floating) and float_is_int(table[col]):
+            LOGGER.info("Integer column pretending to be float: %s", col)
+            cols.add(col)
+    return cols
 
-    """
 
-    col_run_to_exp = defaultdict(list)
-    for run in experiments_per_run.keys():
-        for exp in experiments_per_run[run].keys():
-            col_run_to_exp[
-                (experiments_per_run[run][exp]["metadata"]["color"][0], run)
-            ].append((run, exp))
-    return col_run_to_exp
-
-
-class ReplicateBasedSplitter:
-    def __init__(self, n_splits=5, random_state=0, test_size=0.25, train_size=None):
-        self.splitter = ShuffleSplit(
-            n_splits=n_splits,
-            random_state=random_state,
-            test_size=test_size,
-            train_size=train_size,
-        )  #
-
-    def split(self, col_run_to_exp):
-        """generator that yields the lists of  pairs of keys to create the train and test data.
-        Example usage s. below"""
-        keys = list(col_run_to_exp.keys())
-        for train_repl_sets, test_repl_sets in self.splitter.split(keys):
-            train_keys = list(
-                chain(
-                    *[col_run_to_exp[keys[key_index]] for key_index in train_repl_sets]
-                )
-            )
-            test_keys = list(
-                chain(
-                    *[col_run_to_exp[keys[key_index]] for key_index in test_repl_sets]
-                )
-            )
-            yield train_keys, test_keys
+def get_useless_cols(
+    table: DataFrame, slices: Optional[list[Series]] = None, strict: bool = False
+) -> set[str]:
+    useless_cols = set()
+    for col in table:
+        s = table[col]
+        if col in ("run_id", "experiment_id"):
+            continue
+        if contains_no_information(s):
+            LOGGER.info("No information in      %s", col)
+            useless_cols.add(col)
+        elif slices is not None and contains_nan_slice(
+            s, slices, two_enough=(not strict)
+        ):
+            LOGGER.info("Missing for some run   %s", col)
+            useless_cols.add(col)
+    return useless_cols
 
 
 metadata_dtypes = {
@@ -121,24 +114,24 @@ metadata_categoricals = {
 class KIWI_RUNS(BaseDataset):
     r"""KIWI RUN Data.
 
+    The cleaned data will consist of 2 parts:
+
+    - timeseries
+    - metadata
+
+    Rawdata Format:
+
     .. code-block:: python
 
-        list[
-            dict[
-                "train": dict[(int, int), dict[
-                    'metadata': DataFrame,                  # MetaData
-                    'setpoints': DataFrame,                 # MetaData
-                    'measurements_reactor': DataFrame,      # TimeTensor
-                    'measurements_array': DataFrame,        # TimeTensor
-                    'measurements_aggregated' : DataFrame,  # TimeTensor
-                ],
-                "test": dict[(int, int), dict[
-                    'metadata': DataFrame,                  # MetaData
-                    'setpoints': DataFrame,                 # MetaData
-                    'measurements_reactor': DataFrame,      # TimeTensor
-                    'measurements_array': DataFrame,        # TimeTensor
-                    'measurements_aggregated' : DataFrame,  # TimeTensor
-                ],
+        dict[int, # run_id
+            dict[int, # experiment_id
+                 dict[
+                     'metadata',: DataFrame,                # static
+                     'setpoints': DataFrame,                # static
+                     'measurements_reactor',: DataFrame,    # TimeTensor
+                     'measurements_array',: DataFrame,      # TimeTensor
+                     'measurements_aggregated': DataFrame,  # TimeTensor
+                 ]
             ]
         ]
     """
@@ -147,24 +140,72 @@ class KIWI_RUNS(BaseDataset):
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/"
         "fRBSr82NxY7ratK/download/kiwi_experiments_and_run_355.pk"
     )
+    keys: Final[list[str]] = [
+        "metadata",
+        "setpoints",
+        "measurements_reactor",
+        "measurements_array",
+        "measurements_aggregated",
+        "timeseries",
+    ]
+    r"""Available keys."""
+    KEYS = Literal[
+        "metadata",
+        "setpoints",
+        "measurements_reactor",
+        "measurements_array",
+        "measurements_aggregated",
+        "timeseries",
+    ]
+    r"""Type Hint for keys."""
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     @property
     @cache
     def rawdata_file(cls) -> Path:
-        path = cls.rawdata_path.joinpath("kiwi_experiments_and_run_355.pk")
-        path.mkdir(parents=True, exist_ok=True)
+        r"""Path of the raw data file."""
+        return cls.rawdata_path.joinpath("kiwi_experiments_and_run_355.pk")  # type: ignore[attr-defined]
 
     @classmethod  # type: ignore[misc]
     @property
     @cache
     def dataset_file(cls) -> Path:
         r"""Path of the dataset file."""
-        return cls.dataset_path.joinpath(f"{cls.__name__}.pk")  # type: ignore[attr-defined]
+        return cls.dataset_path.joinpath("timeseries.feather")  # type: ignore[attr-defined]
+
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def metadata_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        return cls.dataset_path.joinpath("metadata.feather")  # type: ignore[attr-defined]
+
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def metadata(cls) -> DataFrame:
+        r"""Store cached version of dataset."""
+        # What is the best practice for metaclass methods that call each other?
+        # https://stackoverflow.com/q/47615318/9318372
+        if os.environ.get("GENERATING_DOCS", False):
+            return "the metadata"
+        return cls.load("metadata")  # pylint: disable=E1120
+
+    @classmethod
+    def load(cls, key: KEYS = "timeseries") -> DataFrame:
+        r"""Load the dataset from disk."""
+        super().load()  # <- makes sure DS is downloaded and preprocessed
+        path = cls.dataset_path.joinpath(f"{key}.feather")  # type: ignore[attr-defined]
+        table = pd.read_feather(path)
+        if "measurements" in key or key == "timeseries":
+            table = table.set_index(["run_id", "experiment_id", "measurement_time"])
+        else:
+            table = table.set_index(["run_id", "experiment_id"])
+        return table
 
     @classmethod
     def clean(cls):
-        """Create `DataFrame` with 1 column per client and `DatetimeIndex`."""
+        r"""Clean an already downloaded raw dataset and stores it in feather format."""
         dataset = cls.__name__
         LOGGER.info("Cleaning dataset '%s'", dataset)
 
@@ -177,28 +218,327 @@ class KIWI_RUNS(BaseDataset):
             for exp in data[run]
         ]
         DF = DataFrame(DATA).set_index(["run_id", "experiment_id"])
-        metadata = pd.concat(iter(DF["metadata"]), keys=DF["metadata"].index)
-        setpoints = pd.concat(iter(DF["setpoints"]), keys=DF["setpoints"].index)
-        measurements_reactor = pd.concat(
-            iter(DF["measurements_reactor"]), keys=DF["measurements_reactor"].index
-        )
-        measurements_array = pd.concat(
-            iter(DF["measurements_array"]), keys=DF["measurements_array"].index
-        )
-        measurements_aggregated = pd.concat(
-            iter(DF["measurements_aggregated"]),
-            keys=DF["measurements_aggregated"].index,
-        )
 
-        # with open(cls.dataset_file, "w") as file:
-        #     pickle.dump(cv_splits, file)
+        tables = {}
+
+        for key in (
+            "metadata",
+            "setpoints",
+            "measurements_reactor",
+            "measurements_array",
+            "measurements_aggregated",
+        ):
+            if key == "metadata":
+                tables[key] = pd.concat(iter(DF[key])).reset_index(drop=True)
+            else:
+                tables[key] = (
+                    pd.concat(iter(DF[key]), keys=DF[key].index)
+                    .reset_index(level=2, drop=True)
+                    .reset_index()
+                )
+            tables[key].name = key
+            cls._clean(tables[key])
 
         LOGGER.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
-    def load(cls):
-        r"""Load the dataset from hdf-5 file."""
-        super().load()  # <- makes sure DS is downloaded and preprocessed
-        with open(cls.dataset_file, "rb") as file:
-            data = pickle.load(file)
-        return data
+    def _clean(cls, table: DataFrame):
+        r"""Create the DataFrames.
+
+        Parameters
+        ----------
+        table: DataFrame
+        """
+        key = table.name
+        {
+            "metadata": cls._clean_metadata,
+            "setpoints": cls._clean_setpoints,
+            "measurements_reactor": cls._clean_measurements_reactor,
+            "measurements_array": cls._clean_measurements_array,
+            "measurements_aggregated": cls._clean_measurements_aggregated,
+        }[key](table)
+        LOGGER.info("Finished cleaning table '%s' of dataset '%s'", key, cls.__name__)
+
+    @classmethod
+    def _clean_metadata(cls, table):
+        runs = table["run_id"].dropna().unique()
+        run_masks = [table["run_id"] == run for run in runs]
+
+        table_columns = set(table.columns)
+        useless_cols = get_useless_cols(table, slices=run_masks) | {
+            "folder_id_y",
+            "ph_Base_conc",
+            "ph_Ki",
+            "ph_Kp",
+            "ph_Tolerance",
+            "pms_id",
+        }
+        get_integer_cols(table)
+        remaining_cols = table_columns - useless_cols
+
+        selected_columns = {
+            "Feed_concentration_glc": "float32",
+            "OD_Dilution": "float32",
+            "bioreactor_id": "UInt32",
+            "color": "string",
+            "container_number": "UInt32",
+            "end_time": "datetime64[ns]",
+            "experiment_id": "UInt32",
+            "organism_id": "UInt32",
+            "pH_correction_factor": "float32",
+            "profile_id": "UInt32",
+            "profile_name": "string",
+            "run_id": "UInt32",
+            "run_name": "string",
+            "start_time": "datetime64[ns]",
+        }
+
+        categorical_columns = {
+            "Feed_concentration_glc": "Int16",
+            "OD_Dilution": "Float32",
+            "color": "category",
+            "pH_correction_factor": "Float32",
+            "profile_name": "category",
+            "run_name": "category",
+        }
+
+        assert (
+            selected_columns.keys() >= remaining_cols
+        ), f"Missing encoding: {remaining_cols - selected_columns.keys()}"
+
+        assert (
+            selected_columns.keys() <= remaining_cols
+        ), f"Superfluous encoding: {selected_columns.keys() - remaining_cols}"
+
+        assert set(categorical_columns) <= set(
+            selected_columns
+        ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
+
+        table = table[selected_columns]
+        table = table.astype(selected_columns)
+        table = table.astype(categorical_columns)
+        table = table.reset_index(drop=True)
+        path = cls.dataset_path.joinpath("metadata.feather")
+        table.to_feather(path)
+
+    @classmethod
+    def _clean_setpoints(cls, table):
+        runs = table["run_id"].dropna().unique()
+        run_masks = [table["run_id"] == run for run in runs]
+
+        table_columns = set(table.columns)
+        useless_cols = get_useless_cols(table, slices=run_masks)
+        get_integer_cols(table)
+        remaining_cols = table_columns - useless_cols
+
+        selected_columns = {
+            "experiment_id": "UInt32",
+            "run_id": "UInt32",
+            "cultivation_age": "UInt32",
+            "setpoint_id": "UInt32",
+            "unit": "string",
+            # "Puls_AceticAcid": "Float32",
+            "Puls_Glucose": "Float32",
+            # "Puls_Medium": "Float32",
+            "StirringSpeed": "UInt16",
+            # "pH": "Float32",
+            "Feed_glc_cum_setpoints": "UInt16",
+            "Flow_Air": "UInt8",
+            "InducerConcentration": "Float32",
+            # "Flow_Nitrogen": "Float32",
+            # "Flow_O2": "Float32",
+            # "Feed_dextrine_cum_setpoints": "Float32",
+        }
+
+        categorical_columns = {
+            "unit": "category",
+        }
+
+        assert (
+            selected_columns.keys() >= remaining_cols
+        ), f"Missing encoding: {remaining_cols - selected_columns.keys()}"
+
+        assert (
+            selected_columns.keys() <= remaining_cols
+        ), f"Superfluous encoding: {selected_columns.keys() - remaining_cols}"
+
+        assert set(categorical_columns) <= set(
+            selected_columns
+        ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
+
+        table["unit"] = table["unit"].replace(to_replace="-", value=pd.NA)
+        table = table[selected_columns]
+        table = table.astype(selected_columns)
+        table = table.astype(categorical_columns)
+        table = table.reset_index(drop=True)
+        path = cls.dataset_path.joinpath("setpoints.feather")
+        table.to_feather(path)
+
+    @classmethod
+    def _clean_measurements_reactor(cls, table: DataFrame):
+        runs = table["run_id"].dropna().unique()
+        run_masks = [table["run_id"] == run for run in runs]
+
+        table_columns = set(table.columns)
+        useless_cols = get_useless_cols(table, slices=run_masks)
+        get_integer_cols(table)
+        remaining_cols = table_columns - useless_cols
+
+        selected_columns: dict[str, str] = {
+            "Acetate": "Float32",
+            "Base": "Int16",
+            "Cumulated_feed_volume_glucose": "Int16",
+            "Cumulated_feed_volume_medium": "Float32",
+            "DOT": "Float32",
+            "Fluo_GFP": "Float32",
+            "Glucose": "Float32",
+            "InducerConcentration": "Float32",
+            "OD600": "Float32",
+            "Probe_Volume": "Int16",
+            "Volume": "Float32",
+            "experiment_id": "UInt32",
+            "measurement_id": "UInt32",
+            "measurement_time": "datetime64[ns]",
+            "pH": "Float32",
+            "run_id": "UInt32",
+            "unit": "string",
+        }
+
+        categorical_columns: dict[str, str] = {
+            "unit": "category",
+        }
+
+        assert (
+            selected_columns.keys() >= remaining_cols
+        ), f"Missing encoding: {remaining_cols - selected_columns.keys()}"
+
+        assert (
+            selected_columns.keys() <= remaining_cols
+        ), f"Superfluous encoding: {selected_columns.keys() - remaining_cols}"
+
+        assert set(categorical_columns) <= set(
+            selected_columns
+        ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
+
+        table["unit"] = table["unit"].replace(to_replace="-", value=pd.NA)
+        table = table[selected_columns]
+        table = table.astype(selected_columns)
+        table = table.astype(categorical_columns)
+        table = table.reset_index(drop=True)
+        path = cls.dataset_path.joinpath("measurements_reactor.feather")  # type: ignore[attr-defined]
+        table.to_feather(path)
+
+    @classmethod
+    def _clean_measurements_array(cls, table: DataFrame):
+        runs = table["run_id"].dropna().unique()
+        run_masks = [table["run_id"] == run for run in runs]
+
+        table_columns = set(table.columns)
+        useless_cols = get_useless_cols(table, slices=run_masks)
+        get_integer_cols(table)
+        remaining_cols = table_columns - useless_cols
+
+        selected_columns: dict[str, str] = {
+            "run_id": "UInt32",
+            "experiment_id": "UInt32",
+            "measurement_time": "datetime64[ns]",
+            "measurement_id": "UInt32",
+            "unit": "string",
+            "Flow_Air": "Float32",
+            # "Flow_Nitrogen"      :         "float64",
+            # "Flow_O2"            :         "float64",
+            "StirringSpeed": "Int16",
+            "Temperature": "Float32",
+        }
+
+        categorical_columns: dict[str, str] = {
+            "unit": "category",
+        }
+
+        assert (
+            selected_columns.keys() >= remaining_cols
+        ), f"Missing encoding: {remaining_cols - selected_columns.keys()}"
+
+        assert (
+            selected_columns.keys() <= remaining_cols
+        ), f"Superfluous encoding: {selected_columns.keys() - remaining_cols}"
+
+        assert set(categorical_columns) <= set(
+            selected_columns
+        ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
+
+        table["unit"] = table["unit"].replace(to_replace="-", value=pd.NA)
+        table = table[selected_columns]
+        table = table.astype(selected_columns)
+        table = table.astype(categorical_columns)
+        table = table.reset_index(drop=True)
+        path = cls.dataset_path.joinpath("measurements_array.feather")  # type: ignore[attr-defined]
+        table.to_feather(path)
+
+    @classmethod
+    def _clean_measurements_aggregated(cls, table: DataFrame):
+        runs = table["run_id"].dropna().unique()
+        run_masks = [table["run_id"] == run for run in runs]
+        table_columns = set(table.columns)
+        useless_cols = get_useless_cols(table, slices=run_masks)
+        get_integer_cols(table)
+        remaining_cols = table_columns - useless_cols
+
+        selected_columns: dict[str, str] = {
+            "run_id": "UInt32",
+            "experiment_id": "UInt32",
+            "measurement_time": "datetime64[ns]",
+            "unit": "string",
+            "Flow_Air": "Float32",
+            # "Flow_Nitrogen"                 :          "Float32",
+            # "Flow_O2"                       :          "Int32",
+            "StirringSpeed": "Int16",
+            "Temperature": "Float32",
+            "Acetate": "Float32",
+            # "Acid"                          :          "Float32",
+            "Base": "Int16",
+            "Cumulated_feed_volume_glucose": "Int16",
+            "Cumulated_feed_volume_medium": "Float32",
+            "DOT": "Float32",
+            # "Fluo_CFP"                      :          "Float32",
+            # "Fluo_RFP"                      :          "Float32",
+            # "Fluo_YFP"                      :          "Float32",
+            "Glucose": "Float32",
+            "OD600": "Float32",
+            "Probe_Volume": "Int16",
+            "pH": "Float32",
+            "Fluo_GFP": "Float32",
+            "InducerConcentration": "Float32",
+            # "remark"                        :           "string",
+            "Volume": "Float32",
+        }
+        categorical_columns: dict[str, str] = {"unit": "category"}
+
+        assert (
+            selected_columns.keys() >= remaining_cols
+        ), f"Missing encoding: {remaining_cols - selected_columns.keys()}"
+
+        assert (
+            selected_columns.keys() <= remaining_cols
+        ), f"Superfluous encoding: {selected_columns.keys() - remaining_cols}"
+
+        assert set(categorical_columns) <= set(
+            selected_columns
+        ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
+
+        table["unit"] = table["unit"].replace(to_replace="-", value=pd.NA)
+        table = table[selected_columns]
+        table = table.astype(selected_columns)
+        table = table.astype(categorical_columns)
+        table = table.reset_index(drop=True)
+        path = cls.dataset_path.joinpath("measurements_aggregated.feather")  # type: ignore[attr-defined]
+        table.to_feather(path)
+
+        # generate timeseries frame
+
+        table = table.drop(columns="unit")
+        table = table.astype("Float32")
+        table = table.groupby(["run_id", "experiment_id", "measurement_time"]).mean()
+        table = table.astype(selected_columns.pop("unit"))
+        table = table.dropna(how="all")
+        table.reset_index().to_feather(cls.dataset_file)

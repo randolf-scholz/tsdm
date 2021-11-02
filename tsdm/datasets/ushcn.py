@@ -279,7 +279,7 @@ class USHCN(BaseDataset):
             "stations": cls._clean_stations,
             "states": cls._clean_states,
         }[key]()
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        LOGGER.info("Finished cleaning table '%s' of dataset '%s'", key, cls.__name__)
 
     @classmethod  # type: ignore
     @property
