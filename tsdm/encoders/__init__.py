@@ -62,7 +62,7 @@ from tsdm.encoders.functional import FunctionalEncoder, FunctionalEncoders
 from tsdm.encoders.modular import ModularEncoder, ModularEncoders
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Encoder = Union[FunctionalEncoder, ModularEncoder]
 r"""Type hint for encoders."""

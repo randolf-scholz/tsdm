@@ -23,7 +23,7 @@ from pandas import DataFrame, Series
 
 from tsdm.datasets.dataset import BaseDataset
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def contains_no_information(series: Series) -> bool:
@@ -41,7 +41,7 @@ def contains_nan_slice(
     if (num_missing > 0 and not two_enough) or (
         num_missing >= len(slices) - 1 and two_enough
     ):
-        LOGGER.info(
+        __logger__.info(
             "%s: data missing in %s/%s slices!", series.name, num_missing, len(slices)
         )
         return True
@@ -57,10 +57,10 @@ def get_integer_cols(table: DataFrame) -> set[str]:
     cols = set()
     for col in table:
         if np.issubdtype(table[col].dtype, np.integer):
-            LOGGER.info("Integer column                       : %s", col)
+            __logger__.info("Integer column                       : %s", col)
             cols.add(col)
         elif np.issubdtype(table[col].dtype, np.floating) and float_is_int(table[col]):
-            LOGGER.info("Integer column pretending to be float: %s", col)
+            __logger__.info("Integer column pretending to be float: %s", col)
             cols.add(col)
     return cols
 
@@ -74,12 +74,12 @@ def get_useless_cols(
         if col in ("run_id", "experiment_id"):
             continue
         if contains_no_information(s):
-            LOGGER.info("No information in      %s", col)
+            __logger__.info("No information in      %s", col)
             useless_cols.add(col)
         elif slices is not None and contains_nan_slice(
             s, slices, two_enough=(not strict)
         ):
-            LOGGER.info("Missing for some run   %s", col)
+            __logger__.info("Missing for some run   %s", col)
             useless_cols.add(col)
     return useless_cols
 
@@ -207,7 +207,7 @@ class KIWI_RUNS(BaseDataset):
     def clean(cls):
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         dataset = cls.__name__
-        LOGGER.info("Cleaning dataset '%s'", dataset)
+        __logger__.info("Cleaning dataset '%s'", dataset)
 
         with open(cls.rawdata_file, "rb") as file:
             data = pickle.load(file)
@@ -239,7 +239,7 @@ class KIWI_RUNS(BaseDataset):
             tables[key].name = key
             cls._clean(tables[key])
 
-        LOGGER.info("Finished cleaning dataset '%s'", dataset)
+        __logger__.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
     def _clean(cls, table: DataFrame):
@@ -257,7 +257,9 @@ class KIWI_RUNS(BaseDataset):
             "measurements_array": cls._clean_measurements_array,
             "measurements_aggregated": cls._clean_measurements_aggregated,
         }[key](table)
-        LOGGER.info("Finished cleaning table '%s' of dataset '%s'", key, cls.__name__)
+        __logger__.info(
+            "Finished cleaning table '%s' of dataset '%s'", key, cls.__name__
+        )
 
     @classmethod
     def _clean_metadata(cls, table):

@@ -58,7 +58,7 @@ from tsdm.encoders.functional._functional import (
 )
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 FunctionalEncoder = Callable
 r"""Type hint for functional encoders."""

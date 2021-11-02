@@ -16,7 +16,7 @@ __all__ = [
 import logging
 from typing import TypeVar
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 ObjectType = TypeVar("ObjectType")

@@ -12,7 +12,7 @@ import matplotlib
 # __all__ = []
 
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 # matplotlib.use("pgf")
 matplotlib.rcParams.update(

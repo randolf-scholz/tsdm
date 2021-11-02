@@ -29,7 +29,7 @@ from torch.nn import functional as F
 from tsdm.losses.functional._functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 # TODO: use better definition [Tensor, Tensor, ...] -> Tensor once supported
 FunctionalLoss = Callable[..., Tensor]

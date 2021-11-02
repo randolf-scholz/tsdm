@@ -24,7 +24,7 @@ from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.tasks.tasks import BaseTask
 from tsdm.util import Split
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class USHCN_DeBrouwer(BaseTask):

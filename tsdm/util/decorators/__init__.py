@@ -22,7 +22,7 @@ from typing import Callable, Final
 
 from tsdm.util.decorators.decorators import decorator, sphinx_value, timefun, trace
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Decorator = Callable[..., Callable]
 r"""Type hint for datasets."""

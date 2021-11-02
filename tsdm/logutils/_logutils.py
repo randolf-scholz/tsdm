@@ -36,7 +36,7 @@ from tsdm.plot import kernel_heatmap, plot_spectrum
 from tsdm.tasks import Task
 from tsdm.util import multi_norm, relsize_skewpart, relsize_symmpart
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 @torch.no_grad()

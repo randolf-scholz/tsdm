@@ -25,7 +25,7 @@ from inspect import Parameter, signature
 from time import perf_counter_ns
 from typing import Any, Callable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -113,14 +113,14 @@ def decorator(deco: Callable) -> Callable:
                 # all pos args except func given
                 if missing_keys := (mandatory_key_args - kwargs.keys()):
                     raise ErrorHandler(f"Not enough kwargs supplied, {missing_keys=}")
-                LOGGER.info(">>> Generating bracket version of %s <<<", decorator)
+                __logger__.info(">>> Generating bracket version of %s <<<", decorator)
                 return rpartial(deco, *(__func__, *args), **kwargs)
-            LOGGER.info(">>> Generating functional version of %s <<<", decorator)
+            __logger__.info(">>> Generating functional version of %s <<<", decorator)
             return deco(__func__, *args, **kwargs)
         if __func__ is None:
-            LOGGER.info(">>> Generating bare version of %s <<<", decorator)
+            __logger__.info(">>> Generating bare version of %s <<<", decorator)
             return rpartial(deco, *args, **kwargs)
-        LOGGER.info(">>> Generating bracket version of %s <<<", decorator)
+        __logger__.info(">>> Generating bracket version of %s <<<", decorator)
         return deco(__func__, *args, **kwargs)
 
     return parametrized_decorator

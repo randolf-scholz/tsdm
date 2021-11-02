@@ -34,7 +34,7 @@ import yaml
 
 from tsdm.config import config_files
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEFAULT_DTYPE = torch.float32
@@ -85,8 +85,8 @@ LOGDIR.mkdir(parents=True, exist_ok=True)
 #     datefmt="%Y-%m-%d %H:%M:%S",
 #     level=logging.INFO)
 
-LOGGER.info("Available Models: %s", set(MODELS))
-LOGGER.info("Available Datasets: %s", set(DATASETS))
+__logger__.info("Available Models: %s", set(MODELS))
+__logger__.info("Available Datasets: %s", set(DATASETS))
 
 
 def generate_folders(d: dict, current_path: Path):
@@ -106,12 +106,12 @@ def generate_folders(d: dict, current_path: Path):
     for directory in d:
         path = current_path.joinpath(directory)
         if d[directory] is None:
-            LOGGER.info("creating folder %s", path)
+            __logger__.info("creating folder %s", path)
             path.mkdir(parents=True, exist_ok=True)
         else:
             generate_folders(d[directory], path)
 
 
-# LOGGER.info(F"Found config files: {set(resources.contents('config_files'))}")
-LOGGER.info("Initializing Folder Structure")
+# __logger__.info(F"Found config files: {set(resources.contents('config_files'))}")
+__logger__.info("Initializing Folder Structure")
 generate_folders(CONFIG["folders"], BASEDIR)

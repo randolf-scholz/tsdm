@@ -25,7 +25,7 @@ import torch
 from numpy.typing import ArrayLike, NDArray
 from torch import Tensor, jit
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 SizeLike = Union[int, tuple[int, ...]]  # type: ignore # TODO: use AliasType in 3.10
 

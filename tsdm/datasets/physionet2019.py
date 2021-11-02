@@ -168,7 +168,7 @@ from tqdm import tqdm
 
 from tsdm.datasets.dataset import BaseDataset
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class Physionet2019(BaseDataset):
@@ -215,7 +215,7 @@ class Physionet2019(BaseDataset):
         only.
         """
         dataset = cls.__name__
-        LOGGER.info("Cleaning dataset '%s'", dataset)
+        __logger__.info("Cleaning dataset '%s'", dataset)
         if store == "hdf":
             # noinspection PyTypeChecker
             h5file = HDFStore(cls.dataset_file)
@@ -246,7 +246,7 @@ class Physionet2019(BaseDataset):
         else:
             raise Exception("store ", store, "not supported")
 
-        LOGGER.info("Finished extracting dataset '%s'", dataset)
+        __logger__.info("Finished extracting dataset '%s'", dataset)
 
     # noinspection PyTypeChecker
     @classmethod

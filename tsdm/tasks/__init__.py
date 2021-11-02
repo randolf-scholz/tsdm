@@ -45,7 +45,7 @@ from tsdm.tasks.etdataset import ETDatasetInformer
 from tsdm.tasks.tasks import BaseTask
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 Task = BaseTask

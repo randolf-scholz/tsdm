@@ -21,7 +21,7 @@ from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
 from tsdm.util.dtypes import BOOLS, EMOJIS, STRINGS, TimeDeltaLike, TimeStampLike
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 # noinspection PyTypeChecker
@@ -159,6 +159,6 @@ def random_data(
     else:
         raise NotImplementedError
 
-    LOGGER.warning("TODO: implement missing%s!", missing)
+    __logger__.warning("TODO: implement missing%s!", missing)
 
     return result

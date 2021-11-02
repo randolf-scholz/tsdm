@@ -25,7 +25,7 @@ import numpy as np
 import pandas
 from pandas.api.extensions import ExtensionDtype
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 # TODO: Use TypeAlias Once Python 3.10 comes out.

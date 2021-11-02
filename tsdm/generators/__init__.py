@@ -20,7 +20,7 @@ __all__ = [
 import logging
 from typing import Any, Final
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Generator = Any
 r"""Type hint for generators."""

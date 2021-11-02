@@ -29,7 +29,7 @@ from tsdm.util.activations.functional import FunctionalActivation, FunctionalAct
 from tsdm.util.activations.modular import ModularActivation, ModularActivations
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Activation = Union[FunctionalActivation, ModularActivation]
 r"""Type hint for activations."""

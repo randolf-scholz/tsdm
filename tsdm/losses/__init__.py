@@ -56,7 +56,7 @@ from tsdm.losses.modular import (
 )
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Loss = Union[FunctionalLoss, ModularLoss]
 r"""Type hint for losses."""

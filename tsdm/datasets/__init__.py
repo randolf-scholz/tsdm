@@ -45,7 +45,7 @@ from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Dataset = Union[BaseDataset, type[BaseDataset]]
 r"""Type hint for datasets."""

@@ -31,7 +31,7 @@ from torch.nn.utils.rnn import (
     pad_sequence,
 )
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def collate_list(batch: list[Tensor]) -> list[Tensor]:

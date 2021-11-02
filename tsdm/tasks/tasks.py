@@ -101,7 +101,7 @@ from torch.utils.data import DataLoader
 from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class BaseTask(ABC):

@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from urllib.parse import urlparse
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class BaseModel(ABC):
@@ -38,7 +38,7 @@ class BaseModel(ABC):
     def download(cls):
         r"""Download model (e.g. via git clone)."""
         parsed_url = urlparse(cls.url)
-        LOGGER.info("Obtaining model '%s' from %s", cls.__name__, cls.url)
+        __logger__.info("Obtaining model '%s' from %s", cls.__name__, cls.url)
 
         if "google-research" in parsed_url.path:
             subprocess.run(
@@ -55,7 +55,7 @@ class BaseModel(ABC):
             )
             # subprocess.run(F"git -C {model_path} pull", shell=True)
 
-        LOGGER.info("Finished importing model '%s' from %s", cls.__name__, cls.url)
+        __logger__.info("Finished importing model '%s' from %s", cls.__name__, cls.url)
 
     @abstractmethod
     def forward(self, *inputs):

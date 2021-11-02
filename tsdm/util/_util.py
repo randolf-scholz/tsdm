@@ -32,7 +32,7 @@ from torch import Tensor, jit
 
 from tsdm.util.types import LookupTable, ObjectType, ReturnType
 
-LOGGER = getLogger(__name__)
+__logger__ = getLogger(__name__)
 
 
 class Split(NamedTuple):

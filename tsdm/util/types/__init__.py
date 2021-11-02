@@ -17,4 +17,4 @@ import logging
 
 from tsdm.util.types._types import LookupTable, ObjectType, ReturnType
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)

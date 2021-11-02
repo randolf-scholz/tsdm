@@ -29,7 +29,7 @@ from tsdm.tasks import TASKS
 from tsdm.util.activations import ACTIVATIONS
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 LookupTables: Final[LookupTable[LookupTable]] = {
     "activation": ACTIVATIONS,

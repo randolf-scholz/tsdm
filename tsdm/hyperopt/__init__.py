@@ -31,4 +31,4 @@ from tsdm.hyperopt._hyperopt import (
     LookupTables,
 )
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)

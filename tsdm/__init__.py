@@ -66,7 +66,7 @@ from tsdm import (
     util,
 )
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as file:
     __version__ = file.read()

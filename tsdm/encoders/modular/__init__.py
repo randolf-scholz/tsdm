@@ -64,7 +64,7 @@ from sklearn.preprocessing import (
 from tsdm.encoders.modular._modular import BaseEncoder, Time2Float
 from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 ModularEncoder = BaseEstimator
 r"""Type hint for modular encoders."""
