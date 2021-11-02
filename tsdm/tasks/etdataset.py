@@ -2,6 +2,7 @@ r"""TODO: Module Summary Line.
 
 TODO: Module description
 """
+# flake8: noqa
 
 from __future__ import annotations
 
@@ -12,8 +13,8 @@ __all__ = [
 
 
 import logging
-from typing import Any, Callable, Literal, Optional
 from functools import cached_property
+from typing import Any, Callable, Literal, Optional
 
 import torch
 from pandas import DataFrame
@@ -195,7 +196,6 @@ class ETDatasetInformer(BaseTask):
         -------
         DataLoader
         """
-
         if split == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
         if split == "test" and "drop_last" in kwargs:
