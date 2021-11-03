@@ -29,6 +29,7 @@ __all__ = [
     # Functions
     "nd",
     "nrmse",
+    "rmse",
     "q_quantile",
     "q_quantile_loss",
 ]
@@ -45,6 +46,7 @@ from tsdm.losses.functional import (
     nrmse,
     q_quantile,
     q_quantile_loss,
+    rmse,
 )
 from tsdm.losses.modular import (
     ND,

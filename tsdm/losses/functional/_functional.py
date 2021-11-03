@@ -11,6 +11,7 @@ from __future__ import annotations
 __all__ = [  # Functions
     "nd",
     "nrmse",
+    "rmse",
     "q_quantile",
     "q_quantile_loss",
 ]
@@ -124,3 +125,25 @@ def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     Tensor
     """  # pylint: disable=line-too-long # noqa
     return 2 * torch.sum(q_quantile(x, xhat, q)) / torch.sum(torch.abs(x))
+
+
+@jit.script
+def rmse(
+    x: Tensor,
+    xhat: Tensor,
+) -> Tensor:
+    r"""Compute the RMSE
+
+    .. math::
+        𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[|x - x̂|^2]}
+
+    Parameters
+    ----------
+    x: Tensor,
+    xhat: Tensor,
+
+    Returns
+    -------
+    Tensor
+    """
+    return torch.sqrt(torch.mean((x - xhat) ** 2))
