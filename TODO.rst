@@ -4,8 +4,6 @@ ToDo's
 - StandardScalar is not properly vectorized. Do custom implementation instead.
 - Exact loss function? Forecast?
 
-
-
 - Without Standard-scaling
 - RMSE **NOT** channel wise, but flattened
 - accumulate cross-validation: RMSE
@@ -35,5 +33,24 @@ timeseries.min()
     Fluo_GFP                        -250.000000
     InducerConcentration               0.000000
     Volume                            -2.235569
+
+
+Sensor spot
+-
+
+
+
+Current WorkFLow
+
+KIWI data - cut off negative values
+
+- push tsdm with KIWI task
+- run linodenet on KIWI data
+- create graphs
+- encode metadata
+- results with metadata
+
+
+- results on Electricity, ETTh, Traffic
 
 
