@@ -16,6 +16,7 @@ __all__ = [
     # Functions
     "nd",
     "nrmse",
+    "rmse",
     "q_quantile",
     "q_quantile_loss",
 ]
@@ -26,7 +27,13 @@ from typing import Callable, Final
 from torch import Tensor
 from torch.nn import functional as F
 
-from tsdm.losses.functional._functional import nd, nrmse, q_quantile, q_quantile_loss
+from tsdm.losses.functional._functional import (
+    nd,
+    nrmse,
+    q_quantile,
+    q_quantile_loss,
+    rmse,
+)
 from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
