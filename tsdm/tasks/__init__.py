@@ -5,7 +5,7 @@ Task = Dataset + Evaluation Protocol
 For simplicity, the evaluation protocol is, in this iteration, restricted to a test metric,
 and a test_loader object.
 
-We decided to use a dataloader instead of, say, a split to cater to the question of
+We decided to use a dataloader instead of, say, a key to cater to the question of
 forecasting horizons.
 
 
@@ -35,6 +35,7 @@ __all__ = [
     "BaseTask",
     # Tasks
     "ETDatasetInformer",
+    "KIWI_RUNS_TASK",
 ]
 
 
@@ -42,6 +43,7 @@ import logging
 from typing import Final
 
 from tsdm.tasks.etdataset import ETDatasetInformer
+from tsdm.tasks.kiwi_runs import KIWI_RUNS_TASK
 from tsdm.tasks.tasks import BaseTask
 from tsdm.util.types import LookupTable
 
@@ -53,5 +55,6 @@ r"""Type hint for tasks."""
 
 TASKS: Final[LookupTable[type[Task]]] = {
     "ETDatasetInformer": ETDatasetInformer,
+    "KIWI_RUNS_TASK": KIWI_RUNS_TASK,
 }
 r"""Dictionary of all available tasks."""

@@ -166,7 +166,7 @@ class ETDatasetInformer(BaseTask):
 
     def get_dataloader(
         self,
-        split: KEYS,
+        key: KEYS,
         batch_size: int = 1,
         shuffle: bool = True,
         encode: bool = True,
@@ -184,7 +184,7 @@ class ETDatasetInformer(BaseTask):
 
         Parameters
         ----------
-        split: Literal["train", "valid", "test"]
+        key: Literal["train", "valid", "test"]
             Dataset part from which to construct the DataLoader
         batch_size: int = 32
         dtype: torch.dtype = torch.float32,
@@ -196,12 +196,12 @@ class ETDatasetInformer(BaseTask):
         -------
         DataLoader
         """
-        if split == "test":
+        if key == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
-        if split == "test" and "drop_last" in kwargs:
+        if key == "test" and "drop_last" in kwargs:
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
-        ds = self.splits[split]
+        ds = self.splits[key]
         ds = self.preprocessor.transform(ds)
         tensors = self.encoder.encode(ds)
 

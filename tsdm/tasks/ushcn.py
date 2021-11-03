@@ -103,7 +103,7 @@ class USHCN_DeBrouwer(BaseTask):
 
     def get_dataloader(
         self,
-        split: str,
+        key: str,
         batch_size: int = 1,
         shuffle: bool = True,
         device: Optional[torch.device] = None,
@@ -115,7 +115,7 @@ class USHCN_DeBrouwer(BaseTask):
 
         Parameters
         ----------
-        split: str
+        key: str
             From which part of the dataset to construct the loader
         fold: int
         batch_size: int = 32
@@ -131,9 +131,9 @@ class USHCN_DeBrouwer(BaseTask):
         device = DEFAULT_DEVICE if device is None else device
         dtype = DEFAULT_DTYPE if dtype is None else dtype
 
-        if split == "test":
+        if key == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
-        if split == "test" and "drop_last" in kwargs:
+        if key == "test" and "drop_last" in kwargs:
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         # thesplit = self.folds[fold]
