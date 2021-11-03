@@ -5,7 +5,7 @@ Task = Dataset + Evaluation Protocol
 For simplicity, the evaluation protocol is, in this iteration, restricted to a test metric,
 and a test_loader object.
 
-We decided to use a dataloader instead of, say, a split to cater to the question of
+We decided to use a dataloader instead of, say, a key to cater to the question of
 forecasting horizons.
 
 Decomposable METRICS
@@ -196,7 +196,7 @@ class BaseTask(ABC):
     @abstractmethod
     def get_dataloader(
         self,
-        split: KEYS,
+        key: KEYS,
         batch_size: int = 1,
         shuffle: bool = False,
         device: Optional[torch.device] = None,
@@ -207,7 +207,7 @@ class BaseTask(ABC):
 
         Parameters
         ----------
-        split: str
+        key: str
             From which part of the dataset to construct the loader
         batch_size: int = 32
         shuffle: bool = True
