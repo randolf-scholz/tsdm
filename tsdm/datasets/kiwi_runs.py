@@ -539,8 +539,7 @@ class KIWI_RUNS(BaseDataset):
         # generate timeseries frame
 
         table = table.drop(columns="unit")
-        table = table.astype("Float32")
         table = table.groupby(["run_id", "experiment_id", "measurement_time"]).mean()
-        table = table.astype(selected_columns.pop("unit"))
         table = table.dropna(how="all")
+        table = table.astype("Float32")
         table.reset_index().to_feather(cls.dataset_file)
