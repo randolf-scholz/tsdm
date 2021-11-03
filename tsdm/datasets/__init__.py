@@ -13,6 +13,7 @@ __all__ = [
     "DatasetMetaClass",
     "BaseDataset",
     "SequenceDataset",
+    "DataSetCollection",
     # Datasets
     "BeijingAirQuality",
     "ETTh1",
@@ -34,7 +35,12 @@ import logging
 from typing import Final, Union
 
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
-from tsdm.datasets.dataset import BaseDataset, DatasetMetaClass, SequenceDataset
+from tsdm.datasets.dataset import (
+    BaseDataset,
+    DataSetCollection,
+    DatasetMetaClass,
+    SequenceDataset,
+)
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.etdataset import ETTh1, ETTh2, ETTm1, ETTm2
 from tsdm.datasets.in_silico_data import InSilicoData
@@ -58,7 +64,7 @@ DATASETS: Final[LookupTable[Dataset]] = {
     "ETTm2": ETTm2,
     "Electricity": Electricity,
     "InSilicoData": InSilicoData,
-    "KIWI_RUNS": KIWI_RUNS,
+    "KIWI_RUNS_TASK": KIWI_RUNS,
     "MIMIC_III": MIMIC_III,
     "Physionet2019": Physionet2019,
     "Traffic": Traffic,
