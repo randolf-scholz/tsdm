@@ -8,6 +8,7 @@ from __future__ import annotations
 __all__ = [
     # Classes
     # Functions
+    "autojit",
     "decorator",
     "sphinx_value",
     "timefun",
@@ -24,6 +25,10 @@ from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
 from typing import Any, Callable
+
+from torch import jit, nn
+
+from tsdm.config import conf
 
 __logger__ = logging.getLogger(__name__)
 
@@ -225,6 +230,55 @@ def trace(func: Callable) -> Callable:
         return result
 
     return wrapper
+
+
+def autojit(base_class: type[nn.Module]) -> type[nn.Module]:
+    r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
+
+    Makes it so that
+
+    .. code-block:: python
+
+        class MyModule():
+            ...
+
+        model = jit.script(MyModule())
+
+    and
+
+    .. code-block:: python
+
+        @autojit
+        class MyModule():
+            ...
+
+        model = MyModule()
+
+    are (roughly?) equivalent
+
+    Parameters
+    ----------
+    base_class: type[nn.Module]
+
+    Returns
+    -------
+    type
+    """
+    assert issubclass(base_class, nn.Module)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):  # type: ignore
+        r"""A simple Wrapper."""
+
+        # noinspection PyArgumentList
+        def __new__(cls, *args, **kwargs):
+            instance = base_class(*args, **kwargs)
+
+            if conf.autojit:  # pylint: disable=no-member
+                return jit.script(instance)
+            return instance
+
+    return WrappedClass
 
 
 # TODO: implement mutually_exclusive_args wrapper
