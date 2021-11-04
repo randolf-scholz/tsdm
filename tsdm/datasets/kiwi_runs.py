@@ -274,6 +274,7 @@ class KIWI_RUNS(BaseDataset):
             "ph_Kp",
             "ph_Tolerance",
             "pms_id",
+            "description",
         }
         get_integer_cols(table)
         remaining_cols = table_columns - useless_cols
