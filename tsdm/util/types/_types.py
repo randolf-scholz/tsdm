@@ -18,6 +18,8 @@ from typing import TypeVar
 
 __logger__ = logging.getLogger(__name__)
 
+TYPE = TypeVar("TYPE")
+r"""Generic type hint"""
 
 ObjectType = TypeVar("ObjectType")
 r"""Generic type hint for instances."""
@@ -30,7 +32,6 @@ r"""Generic type hint for instances."""
 
 ObjectTypeB = TypeVar("ObjectTypeB")
 r"""Generic type hint for instances."""
-
 
 LookupTable = dict[str, ObjectType]
 r"""Table of objects."""

@@ -7,7 +7,7 @@ r"""#TODO add module summary line.
 import logging
 from functools import cache, cached_property, partial
 from itertools import product
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Literal, Optional
 
 import torch
 from pandas import DataFrame
@@ -16,7 +16,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import KIWI_RUNS
-from tsdm.datasets.dataset import DataSetCollection
+from tsdm.datasets.base import DataSetCollection
 from tsdm.encoders import ENCODERS, Encoder
 from tsdm.encoders.functional import time2float
 from tsdm.tasks.tasks import BaseTask
@@ -28,6 +28,12 @@ __logger__ = logging.getLogger(__name__)
 
 class KIWI_RUNS_TASK(BaseTask):
     r"""A collection of bioreactor runs.
+
+    For this task we do several simplifications
+
+    - drop run_id 355
+    -
+
 
     - timeseries for each run_id and experiment_id
     - metadata for each run_id and experiment_id
@@ -50,9 +56,8 @@ class KIWI_RUNS_TASK(BaseTask):
 
     keys: list[tuple[int, str]] = list(product(range(5), ("train", "test")))
     r"""Available keys."""
-
-    dataset = KIWI_RUNS
-    r"""The dataset."""
+    KEYS = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
+    r"""Type Hint for Keys"""
     timeseries: DataFrame
     r"""The whole timeseries data."""
     metadata: DataFrame
@@ -68,18 +73,18 @@ class KIWI_RUNS_TASK(BaseTask):
     r"""The number of datapoints the model should forecast."""
     targets: list[str] = ["Glucose", "OD600", "DOT", "Base"]
     r"""The columns that should be predicted."""
-    preprocessor: Encoder
-    r"""Encoder for the observations."""
     pre_encoder: Encoder
     r"""Encoder for the observations."""
 
     def test_metric(self) -> Callable[..., Tensor]:
-        pass
+        r"""The target metric."""
+        ...
 
     def __init__(
         self,
         *,
         preprocessor: str = "StandardScaler",
+        pre_processor: Optional[Encoder] = None,
         pre_encoder: Optional[Encoder] = None,
         forecasting_horizon: int = 24,
         observation_horizon: int = 96,
@@ -93,10 +98,27 @@ class KIWI_RUNS_TASK(BaseTask):
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
 
-        self.metadata: DataFrame = self.dataset.metadata
-        self.timeseries: DataFrame = self.dataset.dataset.astype("float32")  # type: ignore[attr-defined]
+        md: DataFrame = KIWI_RUNS.metadata
+        ts: DataFrame = KIWI_RUNS.dataset
 
-        self.preprocessor = initialize_from(ENCODERS, __name__=preprocessor)
+        # drop all time stamps outside of start_time and end_time in the metadata.
+        merged = ts[[]].join(md[["start_time", "end_time"]])
+        time = merged.index.get_level_values("measurement_time")
+        cond = (merged["start_time"] <= time) & (time <= merged["end_time"])
+        ts = ts[cond]
+        # all measurements should be ≥0
+        ts = ts.clip(lower=0.0)
+        # remove run 355
+        ts = ts.drop(355)
+        md = md.drop(355)
+
+        self.metadata: DataFrame = md
+        self.timeseries: DataFrame = ts
+
+        if pre_encoder is not None:
+            self.preprocessor = initialize_from(ENCODERS, __name__=preprocessor)
+        else:
+            self.preprocessor = None
 
         if pre_encoder is not None:
             self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
@@ -130,7 +152,7 @@ class KIWI_RUNS_TASK(BaseTask):
         return splits.astype("string").astype("category")
 
     @cache
-    def splits(self, key: tuple[int, str]) -> tuple[DataFrame, DataFrame]:
+    def splits(self, key: KEYS) -> tuple[DataFrame, DataFrame]:
         """Return a subset of the data corresponding to the split.
 
         Parameters
@@ -221,6 +243,12 @@ class KIWI_RUNS_TASK(BaseTask):
         ts, md = self.splits(key)
         ts_train, md_train = self.splits((split, "train"))
 
+        # select metadata
+        md = md[["Feed_concentration_glc", "pH_correction_factor", "OD_Dilution"]]
+        # convert to regular float
+        md = md.astype("float32")
+        ts = ts.astype("float32")
+
         self.preprocessor.fit(ts_train)
         self.preprocessor.transform(ts, copy=False)
 
@@ -235,8 +263,9 @@ class KIWI_RUNS_TASK(BaseTask):
         X = torch.tensor(
             ts.drop(columns=["measurement_time"]).values, device=device, dtype=dtype
         )
+        M = torch.tensor(md, device=device, dtype=dtype)
 
-        shared_index = ts.index.unique().values
+        shared_index = md.index
         masks = {idx: (ts.index == idx) for idx in shared_index}
         datasets = {
             idx: TensorDataset(T[masks[idx]], X[masks[idx]]) for idx in shared_index

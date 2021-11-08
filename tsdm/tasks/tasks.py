@@ -144,7 +144,7 @@ class BaseTask(ABC):
     preprocessor: Optional[Encoder] = None
     r"""Optional task specific preprocessor."""
     pre_encoder: Optional[Encoder] = None
-    r"""Optional model specific normal pre_encoder that is applied before batching."""
+    r"""Optional model specific normal pre-encoder that is applied before batching."""
 
     @abstractmethod
     def __init__(self, *args, **kwargs):
