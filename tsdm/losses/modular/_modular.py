@@ -166,7 +166,7 @@ class WRMSE(nn.Module):
         channel_wise: bool = True,
         normalize: bool = True,
     ):
-        r"""Compute the weighted RMSE
+        r"""Compute the weighted RMSE.
 
         Channel-wise: RMSE(RMSE(channel))
         Non-channel-wise: RMSE(flatten(results))
@@ -186,10 +186,10 @@ class WRMSE(nn.Module):
         self.ignore_nan = ignore_nan
         self.channel_wise = channel_wise
         self.register_buffer("FAILED", torch.tensor(float("nan")))
-        self.shape = w.shape
+        self.shape = list(w.shape)
 
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
-        r"""Signature: ``...𝐦, ...𝐦 → 0``
+        r"""Signature: ``...𝐦, ...𝐦 → 0``.
 
         Parameters
         ----------
@@ -201,7 +201,7 @@ class WRMSE(nn.Module):
         Tensor
         """
         assert x.shape[-self.rank :] == self.shape
-        batch_dims = torch.arange(len(x.shape) - self.rank)
+        batch_dims = list(range(len(x.shape) - self.rank))
 
         mask = torch.isnan(x)
         # the residuals, shape: ...𝐦
@@ -209,7 +209,7 @@ class WRMSE(nn.Module):
 
         # xhat is not allowed to be nan if x isn't.
         if torch.any(torch.isnan(xhat) & ~mask):
-            return self.FAILED
+            raise RuntimeError(f"Observations have NaN entries when Targets do not!")
 
         if self.ignore_nan:
             if self.channel_wise:
