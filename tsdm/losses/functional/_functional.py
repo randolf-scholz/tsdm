@@ -132,7 +132,7 @@ def rmse(
     x: Tensor,
     xhat: Tensor,
 ) -> Tensor:
-    r"""Compute the RMSE
+    r"""Compute the RMSE.
 
     .. math::
         𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[|x - x̂|^2]}
