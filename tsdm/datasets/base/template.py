@@ -2,13 +2,16 @@ r"""A rough Template how an implemented dataset should look like."""
 
 from __future__ import annotations
 
-__all__ = ["Template"]
+__all__ = [
+    # Classes
+    "Template",
+]
 
 import logging
 from functools import cache
 from pathlib import Path
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base.dataset import BaseDataset
 
 __logger__ = logging.getLogger(__name__)
 

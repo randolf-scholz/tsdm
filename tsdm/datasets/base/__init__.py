@@ -2,13 +2,17 @@ r"""Base Classes for datasets."""
 
 
 __all__ = [
+    # Classes
     "BaseDataset",
     "DataSetCollection",
     "DatasetMetaClass",
     "SequenceDataset",
     "TimeTensor",
     "TimeSeriesDataset",
+    "Template",
+    # Types
     "IndexedArray",
+    # Functions
     "tensor_info",
 ]
 
@@ -21,6 +25,7 @@ from tsdm.datasets.base.dataset import (
     DatasetMetaClass,
     SequenceDataset,
 )
+from tsdm.datasets.base.template import Template
 from tsdm.datasets.base.timeseries import (
     IndexedArray,
     TimeSeriesDataset,

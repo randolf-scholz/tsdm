@@ -6,6 +6,8 @@ Implement your own by subclassing :class:`BaseDataset`
 from __future__ import annotations
 
 __all__ = [
+    # Sub-Packages
+    "base",
     # Meta-Objects
     "Dataset",
     "DATASETS",
@@ -41,6 +43,8 @@ __all__ = [
 import logging
 from typing import Final, Union
 
+
+from tsdm.datasets import base
 from tsdm.datasets.base import (
     BaseDataset,
     DataSetCollection,
