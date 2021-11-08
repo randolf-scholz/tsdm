@@ -4,48 +4,62 @@ from collections import defaultdict
 from sklearn.model_selection import ShuffleSplit
 from itertools import chain
 
+
 def create_replicate_dict(experiments_per_run):
-    '''Stores the list of possible (run_id, experiment_id) for each 
-    replicate set as given by a tuple (run_id, color) in a dictionary 
-    
+    """Stores the list of possible (run_id, experiment_id) for each
+    replicate set as given by a tuple (run_id, color) in a dictionary
+
     args:
-    
+
     experiment_per_run:  dict of dict of dict as given for the present dataset.
                          keys of first level: run_ids
                          keys of second level: experiment_ids
                          keys of third level: metadata, measurements_reactor
                                               measurements_array, setpoints,
                                               measurements_aggregated
-                                    
-                                    
-    returns: dict  (maps (run_id, experiment_id) to the list of (run_id, experiment_id) that belongs to it.)
-    
-    '''
 
-    col_run_to_exp =  defaultdict(list)
+
+    returns: dict  (maps (run_id, experiment_id) to the list of (run_id, experiment_id) that belongs to it.)
+
+    """
+
+    col_run_to_exp = defaultdict(list)
     for run in experiments_per_run.keys():
         for exp in experiments_per_run[run].keys():
-            col_run_to_exp[(experiments_per_run[run][exp]["metadata"]["color"][0],run)].append ((run,exp))
+            col_run_to_exp[
+                (experiments_per_run[run][exp]["metadata"]["color"][0], run)
+            ].append((run, exp))
     return col_run_to_exp
 
 
 class ReplicateBasedSplitter:
-    
     def __init__(self, n_splits=5, random_state=0, test_size=0.25, train_size=None):
-        self.splitter = ShuffleSplit(n_splits=n_splits, random_state=random_state, test_size=test_size, train_size=train_size)#
-        
-    def split(self,col_run_to_exp):
-        '''generator that yields the lists of  pairs of keys to create the train and test data.
-        Example usage s. below'''
+        self.splitter = ShuffleSplit(
+            n_splits=n_splits,
+            random_state=random_state,
+            test_size=test_size,
+            train_size=train_size,
+        )  #
+
+    def split(self, col_run_to_exp):
+        """generator that yields the lists of  pairs of keys to create the train and test data.
+        Example usage s. below"""
         keys = list(col_run_to_exp.keys())
         for train_repl_sets, test_repl_sets in self.splitter.split(keys):
-            train_keys = list(chain(*[col_run_to_exp[keys[key_index]] for key_index in train_repl_sets]))
-            test_keys = list(chain(*[col_run_to_exp[keys[key_index]] for key_index in test_repl_sets]))
+            train_keys = list(
+                chain(
+                    *[col_run_to_exp[keys[key_index]] for key_index in train_repl_sets]
+                )
+            )
+            test_keys = list(
+                chain(
+                    *[col_run_to_exp[keys[key_index]] for key_index in test_repl_sets]
+                )
+            )
             yield train_keys, test_keys
 
 
-            
-if __name__=="__main__":
+if __name__ == "__main__":
     import pickle
 
     FILENAME = "kiwi_experiments_and_run_355.pk"
@@ -62,6 +76,4 @@ if __name__=="__main__":
         data_test = [experiments_per_run[k[0]][k[1]] for k in test_keys]
 
         for data in data_train:
-            print(data['metadata']['organism_id'][0])
-
-            
+            print(data["metadata"]["organism_id"][0])
