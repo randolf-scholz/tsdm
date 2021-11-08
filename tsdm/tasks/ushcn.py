@@ -21,7 +21,7 @@ from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
 from tsdm.datasets import Dataset, USHCN_SmallChunkedSporadic
 from tsdm.encoders import FunctionalEncoders
 from tsdm.losses import ModularLoss, ModularLosses
-from tsdm.tasks.tasks import BaseTask
+from tsdm.tasks.base import BaseTask
 from tsdm.util import Split
 
 __logger__ = logging.getLogger(__name__)
