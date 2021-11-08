@@ -209,7 +209,7 @@ class WRMSE(nn.Module):
 
         # xhat is not allowed to be nan if x isn't.
         if torch.any(torch.isnan(xhat) & ~mask):
-            raise RuntimeError(f"Observations have NaN entries when Targets do not!")
+            raise RuntimeError("Observations have NaN entries when Targets do not!")
 
         if self.ignore_nan:
             if self.channel_wise:

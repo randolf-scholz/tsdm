@@ -81,8 +81,8 @@ Create a helper function "initialize_from"
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable, Mapping, MutableMapping
-from typing import Optional, Union
+from collections.abc import Iterable, Mapping
+from typing import Optional, Union, Any
 
 __all__ = ["Config"]
 
@@ -107,12 +107,12 @@ class Config(Iterable):
     """
 
     def __init__(
-        self, __dict__: Optional[Union[Mapping, Iterable]] = None, /, **kwargs
+        self, __dict__: Optional[Union[Mapping, Iterable]] = None, /, **kwargs: Any
     ):
         super().__init__()
 
         if __dict__ is not None:
-            assert not kwargs, f"kwargs not allowed if Mappping given!"
+            assert not kwargs, "kwargs not allowed if Mapping given!"
 
         if isinstance(__dict__, Mapping):
             for key in __dict__:
@@ -128,7 +128,7 @@ class Config(Iterable):
             for item in items:
                 assert isinstance(item, Iterable)
                 tup = tuple(item)
-                assert len(tup) == 2, f"Too many inputs."
+                assert len(tup) == 2, "Too many inputs."
                 key, value = tup
                 self._add_key_value(key, value)
         else:
@@ -137,19 +137,20 @@ class Config(Iterable):
         for key, value in kwargs.items():
             self._add_key_value(key, value)
 
-    def _add_key_value(self, key: str, value):
-        assert isinstance(key, str), f"Only string keys allowed"
-        assert not hasattr(self, key), f"key already taken!"
+    def _add_key_value(self, key: str, value: Any):
+        assert isinstance(key, str), f"{key=} not string-type!"
+        assert not hasattr(self, key), f"{key=} already taken!"
         if isinstance(value, Mapping):
             setattr(self, key, Config(value))
         else:
             setattr(self, key, value)
 
-    def __repr__(self, nest_level: int = 0):
+    def __repr__(self, nest_level: int = 0) -> str:
+        r"""Pretty print."""
         print(nest_level)
         pad = r"_" * 4
         start_string = f"{self.__class__.__name__}("
-        end_string = f")"
+        end_string = ")"
 
         lines = [start_string]
 
@@ -164,11 +165,19 @@ class Config(Iterable):
         # print(result)
         return result
 
-    def __len__(self):
+    def __len__(self) -> int:
+        r"""Return the length of the internal dict."""
         return self.__dict__.__len__()
 
-    def __getitem__(self, key, from_iter=False):
-        print(f"__getitem__ called from {id(self)} with {key=} and {from_iter=}")
+    def __getitem__(self, key: str, from_iter: bool = False) -> Any:
+        r"""Return item from internal dict.
+
+        Parameters
+        ----------
+        key: str
+        from_iter: bool = False
+        """
+        # print(f"__getitem__ called from {id(self)} with {key=} and {from_iter=}")
         value = self.__dict__[key]
 
         if from_iter and isinstance(value, Config):
@@ -176,8 +185,7 @@ class Config(Iterable):
         return value
 
     def __iter__(self):
-        print(f"__iter__ called, {id(self)=}")
-        print(f"{self.__dict__=}")
-        for key, value in self.__dict__.items():
+        r"""Iterate over key, value pairs."""
+        for key in self.__dict__:
             # if isinstance(value, Config):
             yield key, self.__getitem__(key, from_iter=True)
