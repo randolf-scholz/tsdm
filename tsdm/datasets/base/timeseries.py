@@ -1,5 +1,7 @@
 """Representation of Time Series Datasets."""
 
+from __future__ import annotations
+
 __all__ = [
     # Classes
     "TimeTensor",
@@ -11,7 +13,7 @@ __all__ = [
 ]
 
 from collections.abc import Collection, Iterable, Mapping, Sized
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -54,16 +56,26 @@ class TimeTensor(Tensor):
     Use :meth:`TimeTensor.loc` and meth:`TimeTensor.iloc` just like with DataFrames.
     """
 
-    @staticmethod
     def __new__(
         cls,
         x: Sized,
-        *args,
+        *args: Any,
         index: Optional[Index] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> TimeTensor:  # need delayed annotation here!
+        r"""Create new TimeTensor.
+
+        Parameters
+        ----------
+        x: Sized
+            The input data.
+        args: Any
+        index: Optional[Index] = None,
+            If :class:`None`, then ``range(len(x))`` will be used as the index.
+        kwargs: Any
+        """
         if isinstance(x, DataFrame) or isinstance(x, Series):
-            assert index is None, f"Index given, but x is DataFrame/Series"
+            assert index is None, "Index given, but x is DataFrame/Series"
             x = x.values
         return super().__new__(cls, x, *args, **kwargs)  # type: ignore[call-arg]
 
@@ -89,7 +101,7 @@ IndexedArray = Union[Series, DataFrame, TimeTensor]
 r"""Type Hint for IndexedArrays."""
 
 
-def is_indexed_array(x) -> bool:
+def is_indexed_array(x: Any) -> bool:
     r"""Test if Union[Series, DataFrame, TimeTensor]."""
     return (
         isinstance(x, Series) or isinstance(x, DataFrame) or isinstance(x, TimeTensor)
@@ -97,14 +109,14 @@ def is_indexed_array(x) -> bool:
 
 
 def tensor_info(x: Tensor) -> str:
-    r"""Prints useful information about Tensor."""
+    r"""Print useful information about Tensor."""
     return f"{x.__class__.__name__}[{tuple(x.shape)}, {x.dtype}, {x.device.type}]"
 
 
 class AlignedTimeSeriesDataset(TensorDataset):
     r"""Dataset of Sequences with shared index.
 
-    This represents a special case of a time-series dataset in which all `TimeTensor`s
+    This represents a special case of a time-series dataset in which all `TimeTensor` s
     share the same index.
     """
 
@@ -191,6 +203,7 @@ class TimeSeriesDataset(TensorDataset):
                 self.metadata = Tensor(metadata)
 
     def __repr__(self) -> str:
+        r"""Pretty print."""
         pad = r"  "
 
         if isinstance(self.timeseries, tuple):
@@ -217,7 +230,7 @@ class TimeSeriesDataset(TensorDataset):
         )
 
     def __len__(self) -> int:
-        r"""The length of the longest timeseries."""
+        r"""Return the length of the longest timeseries."""
         if isinstance(self.timeseries, tuple):
             return max(len(tensor) for tensor in self.timeseries)
         return len(self.timeseries)

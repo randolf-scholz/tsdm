@@ -1,7 +1,4 @@
-r"""#TODO: Module Summary Line.
-
-#TODO: Module description
-"""
+r"""Generic types for type hints etc."""
 
 from __future__ import annotations
 
