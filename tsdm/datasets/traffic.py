@@ -63,7 +63,7 @@ import numpy as np
 import pandas
 from pandas import DataFrame, Series
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
 __logger__ = logging.getLogger(__name__)
 

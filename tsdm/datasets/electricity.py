@@ -52,7 +52,7 @@ from zipfile import ZipFile
 import numpy as np
 from pandas import DataFrame, read_csv, read_hdf
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
 __logger__ = logging.getLogger(__name__)
 

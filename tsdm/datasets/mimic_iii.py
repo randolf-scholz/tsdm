@@ -27,7 +27,7 @@ import os
 import subprocess
 from getpass import getpass
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
 # from pathlib import Path
 # from typing import Final
