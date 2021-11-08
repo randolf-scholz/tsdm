@@ -16,7 +16,7 @@ from importlib import resources
 import h5py
 import pandas as pd
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 from tsdm.datasets.examples import in_silico
 
 __logger__ = logging.getLogger(__name__)

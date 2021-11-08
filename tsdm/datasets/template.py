@@ -8,7 +8,7 @@ import logging
 from functools import cache
 from pathlib import Path
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
 __logger__ = logging.getLogger(__name__)
 

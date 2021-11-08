@@ -166,7 +166,7 @@ from zipfile import ZipFile
 from pandas import DataFrame, HDFStore, read_csv, read_hdf
 from tqdm import tqdm
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
 __logger__ = logging.getLogger(__name__)
 

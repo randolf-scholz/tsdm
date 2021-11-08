@@ -28,19 +28,30 @@ __all__ = [
     "Traffic",
     "USHCN",
     "USHCN_SmallChunkedSporadic",
+    # Classes
+    "TimeTensor",
+    "TimeSeriesDataset",
+    # Types
+    "IndexedArray",
+    # Functions
+    "tensor_info",
 ]
 
 
 import logging
 from typing import Final, Union
 
-from tsdm.datasets.beijing_air_quality import BeijingAirQuality
-from tsdm.datasets.dataset import (
+from tsdm.datasets.base import (
     BaseDataset,
     DataSetCollection,
     DatasetMetaClass,
+    IndexedArray,
     SequenceDataset,
+    TimeSeriesDataset,
+    TimeTensor,
+    tensor_info,
 )
+from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.etdataset import ETTh1, ETTh2, ETTm1, ETTm2
 from tsdm.datasets.in_silico_data import InSilicoData

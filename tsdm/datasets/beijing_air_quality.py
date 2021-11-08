@@ -81,7 +81,7 @@ from pathlib import Path
 import pandas
 from pandas import DataFrame, Timestamp, concat, read_csv, read_hdf
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
 __logger__ = logging.getLogger(__name__)
 

@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
 __logger__ = logging.getLogger(__name__)
 
@@ -84,33 +84,6 @@ def get_useless_cols(
     return useless_cols
 
 
-metadata_dtypes = {
-    "experiment_id": "UInt32",
-    "bioreactor_id": "UInt32",
-    "container_number": "UInt32",
-    "profile_id": "UInt32",
-    "color": "string",
-    "profile_name": "string",
-    "organism_id": "UInt32",
-    "run_id": "UInt32",
-    "OD_Dilution": "float32",
-    "run_name": "string",
-    "start_time": "datetime64[ns]",
-    "end_time": "datetime64[ns]",
-    "Feed_concentration_glc": "float32",
-    "pH_correction_factor": "float32",
-}
-
-metadata_categoricals = {
-    "profile_name": "category",
-    "run_name": "category",
-    "color": "category",
-    "pH_correction_factor": "Float32",
-    "Feed_concentration_glc": "Float32",
-    "OD_Dilution": "Float32",
-}
-
-
 class KIWI_RUNS(BaseDataset):
     r"""KIWI RUN Data.
 
@@ -169,16 +142,9 @@ class KIWI_RUNS(BaseDataset):
     @classmethod  # type: ignore[misc]
     @property
     @cache
-    def dataset_file(cls) -> Path:
-        r"""Path of the dataset file."""
-        return cls.dataset_path.joinpath("timeseries.feather")  # type: ignore[attr-defined]
-
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def metadata_file(cls) -> Path:
-        r"""Path of the dataset file."""
-        return cls.dataset_path.joinpath("metadata.feather")  # type: ignore[attr-defined]
+    def dataset_file(cls) -> dict[KEYS, Path]:
+        r"""Path of the dataset file for the given key."""
+        return {key: cls.dataset_path.joinpath(f"{key}.feather") for key in cls.keys}
 
     @classmethod  # type: ignore[misc]
     @property
@@ -194,9 +160,12 @@ class KIWI_RUNS(BaseDataset):
     @classmethod
     def load(cls, key: KEYS = "timeseries") -> DataFrame:
         r"""Load the dataset from disk."""
-        super().load()  # <- makes sure DS is downloaded and preprocessed
-        path = cls.dataset_path.joinpath(f"{key}.feather")  # type: ignore[attr-defined]
-        table = pd.read_feather(path)
+        if not cls.dataset_file[key].exists():
+            cls.clean()
+
+        table = pd.read_feather(cls.dataset_file[key])
+        # fix index dtype (groupby messes it up....)
+        table = table.astype({"run_id": "int32", "experiment_id": "int32"})
         if "measurements" in key or key == "timeseries":
             table = table.set_index(["run_id", "experiment_id", "measurement_time"])
         else:
@@ -204,7 +173,7 @@ class KIWI_RUNS(BaseDataset):
         return table
 
     @classmethod
-    def clean(cls):
+    def clean(cls, key: Optional[KEYS] = None):
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         dataset = cls.__name__
         __logger__.info("Cleaning dataset '%s'", dataset)
@@ -239,6 +208,7 @@ class KIWI_RUNS(BaseDataset):
             tables[key].name = key
             cls._clean(tables[key])
 
+        cls._clean_timeseries()
         __logger__.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
@@ -321,7 +291,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_path.joinpath("metadata.feather")
+        path = cls.dataset_file["metadata"]
         table.to_feather(path)
 
     @classmethod
@@ -374,7 +344,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_path.joinpath("setpoints.feather")
+        path = cls.dataset_file["setpoints"]
         table.to_feather(path)
 
     @classmethod
@@ -428,7 +398,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_path.joinpath("measurements_reactor.feather")  # type: ignore[attr-defined]
+        path = cls.dataset_file["measurements_reactor"]  # type: ignore[attr-defined]
         table.to_feather(path)
 
     @classmethod
@@ -475,7 +445,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_path.joinpath("measurements_array.feather")  # type: ignore[attr-defined]
+        path = cls.dataset_file["measurements_array"]  # type: ignore[attr-defined]
         table.to_feather(path)
 
     @classmethod
@@ -534,13 +504,28 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_path.joinpath("measurements_aggregated.feather")  # type: ignore[attr-defined]
+        path = cls.dataset_file["measurements_aggregated"]  # type: ignore[attr-defined]
         table.to_feather(path)
 
-        # generate timeseries frame
+    @classmethod
+    def _clean_timeseries(cls):
+        md = cls.load("metadata")
+        ts = cls.load("measurements_aggregated")
 
-        table = table.drop(columns="unit")
-        table = table.groupby(["run_id", "experiment_id", "measurement_time"]).mean()
-        table = table.dropna(how="all")
-        table = table.astype("Float32")
-        table.reset_index().to_feather(cls.dataset_file)
+        # generate timeseries frame
+        ts = ts.drop(columns="unit")
+        ts = ts.groupby(["run_id", "experiment_id", "measurement_time"]).mean()
+        # drop rows with only <NA> values
+        ts = ts.dropna(how="all")
+        # convert all value columns to float
+        ts = ts.astype("Float32")
+
+        # check if metadata-index matches with times-series index
+        tsidx = ts.reset_index(level="measurement_time").index
+        pd.testing.assert_index_equal(md.index, tsidx.unique())
+
+        # reset index
+        ts = ts.reset_index()
+        ts = ts.astype({"run_id": "int32", "experiment_id": "int32"})
+        path = cls.dataset_file["timeseries"]
+        ts.to_feather(path)
