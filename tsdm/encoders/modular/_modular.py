@@ -6,16 +6,20 @@ r"""#TODO add module summary line.
 from __future__ import annotations
 
 __all__ = [
+    # Classes
     "BaseEncoder",
     "Time2Float",
+    "DateTimeEncoder",
 ]
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Literal
+from typing import Any, Literal, Optional, Union
 
 import numpy as np
-from pandas import Series
+import pandas.api.types
+from pandas import DatetimeIndex, Series, Timedelta, Timestamp
+from torch import Tensor
 
 __logger__ = logging.getLogger(__name__)
 
@@ -35,9 +39,9 @@ class BaseEncoder(ABC):
     def decode(self, data):
         r"""Reverse the applied transformation."""
 
-    transform = encode
-    fit_transform = encode
-    inverse_transform = decode
+    # transform = encode
+    # fit_transform = encode
+    # inverse_transform = decode
 
 
 class Time2Float(BaseEncoder):
@@ -147,6 +151,53 @@ class Time2Float(BaseEncoder):
         Roughly equal to:
         ``ds ⟶ (scale*ds + offset).astype(original_dtype)``
         """
+
+
+class DateTimeEncoder(BaseEncoder):
+    r"""Encode TimeSeries as TimeTensor."""
+
+    unit: str
+    r"""The base frequency to convert timedeltas to."""
+    offset: Timestamp
+    r"""The starting point of the timeseries."""
+    kind: Union[Series, DatetimeIndex] = None
+    r"""Whether to encode as index of Series."""
+    name: Optional[str] = None
+    r"""The name of the original Series."""
+    dtype: np.dtype
+    r"""The original dtype of the Series."""
+
+    def __init__(self, unit: Optional[str] = None):
+        """Initialize the parameters.
+
+        Parameters
+        ----------
+        unit: Optional[str]=None
+        """
+        self.unit = "s" if unit is None else unit
+
+    def fit(self, datetimes: Union[Series, DatetimeIndex]):
+        r"""Store the offset."""
+        if isinstance(datetimes, Series):
+            self.kind = Series
+        elif isinstance(datetimes, DatetimeIndex):
+            self.kind = DatetimeIndex
+        else:
+            raise ValueError(f"Incompatible {type(datetimes)=}")
+
+        self.offset = Timestamp(datetimes[0])
+        self.name = datetimes.name
+        self.dtype = datetimes.dtype
+
+    def encode(self, datetimes: Union[Series, DatetimeIndex]) -> Tensor:
+        r"""Encode the input."""
+        timedeltas = (datetimes - self.offset) / Timedelta(1, unit=self.unit)
+        return Tensor(timedeltas)
+
+    def decode(self, timedeltas: Tensor) -> Union[Series, DatetimeIndex]:
+        r"""Decode the input."""
+        converted = pandas.to_timedelta(timedeltas.cpu(), unit=self.unit)
+        return self.kind(converted + self.offset, name=self.name, dtype=self.dtype)
 
 
 # class DataFrameEncoder(BaseEncoder):
