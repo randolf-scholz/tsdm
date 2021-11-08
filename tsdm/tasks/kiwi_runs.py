@@ -19,7 +19,7 @@ from tsdm.datasets import KIWI_RUNS
 from tsdm.datasets.base import DataSetCollection
 from tsdm.encoders import ENCODERS, Encoder
 from tsdm.encoders.functional import time2float
-from tsdm.tasks.tasks import BaseTask
+from tsdm.tasks.base import BaseTask
 from tsdm.util import initialize_from
 from tsdm.util.samplers import CollectionSampler, SequenceSampler
 
@@ -263,7 +263,7 @@ class KIWI_RUNS_TASK(BaseTask):
         X = torch.tensor(
             ts.drop(columns=["measurement_time"]).values, device=device, dtype=dtype
         )
-        M = torch.tensor(md, device=device, dtype=dtype)
+        # M = torch.tensor(md, device=device, dtype=dtype)
 
         shared_index = md.index
         masks = {idx: (ts.index == idx) for idx in shared_index}

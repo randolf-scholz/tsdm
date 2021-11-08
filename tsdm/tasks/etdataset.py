@@ -25,7 +25,7 @@ from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
 from tsdm.datasets import DATASETS, Dataset, SequenceDataset
 from tsdm.encoders import ENCODERS, Encoder
 from tsdm.losses import LOSSES, Loss
-from tsdm.tasks.tasks import BaseTask
+from tsdm.tasks.base import BaseTask
 from tsdm.util import initialize_from
 from tsdm.util.samplers import SequenceSampler
 

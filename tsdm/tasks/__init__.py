@@ -28,11 +28,12 @@ This allows us to select
 from __future__ import annotations
 
 __all__ = [
+    # Sub- Packages
+    "base",
     # Constants
     "Task",
     "TASKS",
     # Classes
-    "BaseTask",
     # Tasks
     "ETDatasetInformer",
     "KIWI_RUNS_TASK",
@@ -42,9 +43,10 @@ __all__ = [
 import logging
 from typing import Final
 
+from tsdm.tasks import base
+from tsdm.tasks.base import BaseTask
 from tsdm.tasks.etdataset import ETDatasetInformer
 from tsdm.tasks.kiwi_runs import KIWI_RUNS_TASK
-from tsdm.tasks.tasks import BaseTask
 from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
