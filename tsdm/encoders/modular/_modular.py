@@ -11,6 +11,7 @@ __all__ = [
     "ChainedEncoder",
     "DataFrameEncoder",
     "DateTimeEncoder",
+    "FloatEncoder",
     "IdentityEncoder",
     "Standardizer",
     "TensorEncoder",
@@ -72,19 +73,19 @@ class ChainedEncoder(BaseEncoder):
             else:
                 self.chained.append(encoder)
 
-    def fit(self, data, *args, **kwargs):
+    def fit(self, data):
         r"""Fit to the data."""
         for encoder in reversed(self.chained):
             encoder.fit(data)
             data = encoder.encode(data)
 
-    def encode(self, data, *args, **kwargs):
+    def encode(self, data):
         r"""Encode the input."""
         for encoder in reversed(self.chained):
             data = encoder.encode(data)
         return data
 
-    def decode(self, data, *args, **kwargs):
+    def decode(self, data):
         r"""Decode tne input."""
         for encoder in self.chained:
             data = encoder.decode(data)
@@ -325,28 +326,36 @@ class DataFrameEncoder(BaseEncoder):
         self.column_wise: bool = isinstance(self.column_encoder, dict)
         self.encode_index: bool = index_encoder is not None
 
+        idxenc_spec = DataFrame(
+            columns=["col", "encoder"],
+            index=Index([], name="partition"),
+        )
+
         if self.encode_index:
-            _idxenc_spec = {
-                "col": NA,
-                "encoder": self.index_encoder,
-            }
-            idxenc_spec = DataFrame.from_records(
-                _idxenc_spec, index=Index([NA], name="partition")
+            _idxenc_spec = Series(
+                {
+                    "col": NA,
+                    "encoder": self.index_encoder,
+                },
+                name=0,
             )
-        else:
-            idxenc_spec = DataFrame(
+            idxenc_spec = idxenc_spec.append(_idxenc_spec)
+
+        if not isinstance(self.column_encoder, dict):
+            colenc_spec = DataFrame(
                 columns=["col", "encoder"],
                 index=Index([], name="partition"),
             )
 
-        if not isinstance(self.column_encoder, dict):
-            _colenc_spec = {
-                "col": NA,
-                "encoder": self.column_encoder,
-            }
-            colenc_spec = DataFrame.from_records(
-                _colenc_spec, index=Index([0], name="partition")
+            _colenc_spec = Series(
+                {
+                    "col": NA,
+                    "encoder": self.column_encoder,
+                },
+                name=0,
             )
+
+            colenc_spec = colenc_spec.append(_colenc_spec)
         else:
             keys = self.column_encoder.keys()
             assert len(set(keys)) == len(keys), "Some keys are duplicates!"
@@ -404,7 +413,7 @@ class DataFrameEncoder(BaseEncoder):
             cols = list(df.columns)
             self.spec.loc["columns"].iloc[0]["col"] = cols
             encoder = self.spec.loc["columns", "encoder"].item()
-            encoder.fit(df.values)
+            encoder.fit(df)
 
     def encode(self, df: DataFrame, /) -> tuple:
         r"""Encode the input."""
@@ -443,7 +452,7 @@ class DataFrameEncoder(BaseEncoder):
 
     def __repr__(self) -> str:
         """Pretty print."""
-        return repr(self.spec)
+        return f"{self.__class__.__name__}()"
 
 
 class Standardizer(BaseEncoder):
@@ -566,3 +575,30 @@ class TensorEncoder(BaseEncoder):
     def decode(self, data: tuple[Tensor, ...]) -> tuple[PandasObject, ...]:
         r"""Convert each input from tensor to numpy."""
         return tuple(tensor.cpu().numpy() for tensor in data)
+
+    def __repr__(self):
+        r"""Pretty print."""
+        return f"{self.__class__.__name__}()"
+
+
+class FloatEncoder(BaseEncoder):
+    """Converts all columns of DataFrame to float32."""
+
+    dtypes: Series = None
+    r"""The original dtypes."""
+
+    def fit(self, data: PandasObject):
+        r"""Remember the original dtypes."""
+        self.dtypes = data.dtypes
+
+    def encode(self, data: PandasObject) -> PandasObject:
+        r"""Make everything float32."""
+        return data.astype("float32")
+
+    def decode(self, data, /):
+        r"""Restore original dtypes."""
+        return data.astype(self.dtypes)
+
+    def __repr__(self):
+        """Pretty print."""
+        return f"{self.__class__.__name__}()"
