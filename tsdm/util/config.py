@@ -82,7 +82,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterable, Mapping
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 
 __all__ = ["Config"]
 
