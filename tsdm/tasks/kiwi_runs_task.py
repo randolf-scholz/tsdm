@@ -26,6 +26,7 @@ from tsdm.encoders.modular import (
     Standardizer,
     TensorEncoder,
 )
+from tsdm.losses.modular import WRMSE
 from tsdm.tasks.base import BaseTask
 from tsdm.util.samplers import CollectionSampler, SequenceSampler
 
@@ -96,7 +97,8 @@ class KIWI_RUNS_TASK(BaseTask):
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
         r"""The target metric."""
-        ...
+        w = torch.tensor(self.loss_weights["weight"])
+        return WRMSE(w)
 
     def __init__(
         self,
@@ -152,7 +154,7 @@ class KIWI_RUNS_TASK(BaseTask):
             ]
         )
         controls.index = controls.apply(lambda x: ts.columns.get_loc(x))
-        self.controls = controls
+        self.controls = Series(controls.index, index=controls)
 
         targets = Series(
             [
@@ -163,7 +165,7 @@ class KIWI_RUNS_TASK(BaseTask):
             ]
         )
         targets.index = targets.apply(lambda x: ts.columns.get_loc(x))
-        self.targets = targets
+        self.targets = Series(targets.index, index=targets)
 
         observables = Series(
             [
@@ -174,7 +176,7 @@ class KIWI_RUNS_TASK(BaseTask):
             ]
         )
         observables.index = observables.apply(lambda x: ts.columns.get_loc(x))
-        self.observables = observables
+        self.observables = Series(observables.index, index=observables)
 
         assert (set(controls) | set(targets) | set(observables)) == set(ts.columns)
 
@@ -316,7 +318,7 @@ class KIWI_RUNS_TASK(BaseTask):
         # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # dtype = torch.float32
         # M = torch.tensor(md, device=device, dtype=dtype)
-
+        ts = ts.reset_index(level=2)  # <- crucial! we need to make sure index is same.
         shared_index = md.index
         masks = {idx: (ts.index == idx) for idx in shared_index}
         datasets = {

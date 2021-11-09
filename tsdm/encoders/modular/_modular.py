@@ -23,7 +23,6 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Any, Literal, Optional, Union
 
-import numpy
 import numpy as np
 import pandas.api.types
 import torch
