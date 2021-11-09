@@ -467,10 +467,20 @@ class Standardizer(BaseEncoder):
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""
 
-    def __init__(self, ignore_nan: bool = True, axis: Union[int, tuple[int, ...]] = -1):
+    def __init__(
+        self,
+        /,
+        mean: Optional[Tensor] = None,
+        stdv: Optional[Tensor] = None,
+        *,
+        ignore_nan: bool = True,
+        axis: Union[int, tuple[int, ...]] = -1,
+    ):
         super().__init__()
         self.ignore_nan = ignore_nan
         self.axis = axis if isinstance(axis, tuple) else (axis,)
+        self.mean = mean
+        self.stdv = stdv
 
     def fit(self, data):
         r"""Compute the mean and stdv."""
