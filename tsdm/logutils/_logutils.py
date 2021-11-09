@@ -237,17 +237,28 @@ def log_metrics(
         assert (
             targets is not None and predics is not None
         ), "values and (targets, predics) are mutually exclusive"
-        assert len(targets) == len(predics) == len(metrics)
+        assert len(targets) == len(predics)
         assert isinstance(metrics, dict)
         values = compute_metrics(metrics, targets=targets, predics=predics)
-    else:
+    elif isinstance(values, dict):
+        assert (
+            targets is None and predics is None
+        ), "values and (targets, predics) are mutually exclusive"
+        assert set(values.keys()) == set(metrics.keys())
+    elif isinstance(values, Sequence):
         assert (
             targets is None and predics is None
         ), "values and (targets, predics) are mutually exclusive"
         assert len(values) == len(metrics)
+        values = {key:val for key, val in zip(metrics, values)}
+    else:
+        raise ValueError(f"{values=} not understood!")
 
     for key in metrics:
-        writer.add_scalar(f"{prefix}/{key}", values, i)
+        score = values[key]
+        if torch.isnan(score).any():
+            raise RuntimeError("NaN Encountered!")
+        writer.add_scalar(f"{prefix}/{key}", score, i)
 
 
 def compute_metrics(
@@ -278,10 +289,12 @@ def compute_metrics(
         return results
 
     for name, metric in metrics.items():  # type: ignore
-        if issubclass(metric, nn.Module):
+        if isinstance(metric, nn.Module):
+            results[name] = metric(targets, predics)
+        elif isinstance(metric, type) and issubclass(metric, nn.Module):
             results[name] = metric()(targets, predics)
         else:
-            results[name] = metric(targets, predics)
+            raise ValueError(f"{type(metric)=} not understood!")
     return results
 
 

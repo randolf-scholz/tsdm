@@ -267,9 +267,9 @@ class DataSetCollection(torch_dataset):
     in the sense that index.unique() is identical for all inputs.
     """
 
-    def __init__(self, indexed_tensors: Mapping[Any, torch_dataset]):
-        self.index = Index(indexed_tensors.keys())
-        self.indexed_tensors = Series(indexed_tensors)
+    def __init__(self, indexed_datasets: Mapping[Any, torch_dataset]):
+        self.index = Index(indexed_datasets.keys())
+        self.indexed_tensors = Series(indexed_datasets)
 
     def __len__(self):
         r"""Length of the dataset."""
