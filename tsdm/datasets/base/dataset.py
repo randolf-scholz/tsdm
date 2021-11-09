@@ -144,14 +144,14 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def dataset_file(cls) -> Path:
-        r"""Path of the dataset file."""
-        if os.environ.get("GENERATING_DOCS", False):
-            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
-        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
+    # @classmethod  # type: ignore[misc]
+    # @property
+    # @cache
+    # def dataset_file(cls) -> Path:
+    #     r"""Path of the dataset file."""
+    #     if os.environ.get("GENERATING_DOCS", False):
+    #         return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+    #     return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
 
     @classmethod
     @abstractmethod
