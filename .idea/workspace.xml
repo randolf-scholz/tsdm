@@ -5,7 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/tsdm/VERSION" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/VERSION" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
