@@ -21,4 +21,4 @@ from tsdm.plot import __setup__
 from tsdm.plot.image import kernel_heatmap
 from tsdm.plot.plotting import plot_spectrum, shared_grid_plot, visualize_distribution
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)

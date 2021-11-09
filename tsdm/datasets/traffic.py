@@ -28,7 +28,7 @@ I will keep separate copies of this database on my website in a Matlab format. I
 Data-Format
 -----------
 
-There are two files for each fold, the data file and the labels file. We have split the 440 time series between train and test folds, but you are of course free to merge them to consider a different cross validation setting.
+There are two files for each fold, the data file and the labels file. We have key the 440 time series between train and test folds, but you are of course free to merge them to consider a different cross validation setting.
 - The PEMS_train textfile has 263 lines. Each line describes a time-series provided as a matrix. The matrix syntax is that of Matlab, e.g. [ a b ; c d] is the matrix with row vectors [a b] and [c d] in that order. Each matrix describes the different occupancies rates (963 lines, one for each station/detector) sampled every 10 minutes during the day (144 columns).
 - The PEMS_trainlabel text describes, for each day of measurements described above, the day of the week on which the data was sampled, namely an integer between 1 (Mon.) and 7 (Sun.).
 
@@ -63,9 +63,9 @@ import numpy as np
 import pandas
 from pandas import DataFrame, Series
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def _reformat(s: str, replacements: dict) -> str:  # pylint: disable=unused-argument
@@ -158,7 +158,7 @@ class Traffic(BaseDataset):
             "randperm": cls._clean_randperm,
         }
         cleaners[key]()
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def _clean_data(cls, use_true: bool = True):

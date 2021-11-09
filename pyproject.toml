@@ -122,7 +122,6 @@ py_version=39
 [tool.black]
 line-length = 88
 target-version = ['py39']
-diff = true
 color = true
 
 ############################

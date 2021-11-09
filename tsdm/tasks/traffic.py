@@ -10,7 +10,7 @@ import logging
 # __all__ = []
 
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class TrafficTFT:
@@ -23,7 +23,7 @@ class TrafficTFT:
     -------------------
 
         Traffic: Tests on the Traffic dataset are also kept consistent with previous work, using
-        500k training samples taken before 2008-06-15 as per [9], and split in the same way as the
+        500k training samples taken before 2008-06-15 as per [9], and key in the same way as the
         Electricity dataset. For testing, we use the 7 days immediately following the training set,
         and z-score normalization was applied across all entities. For inputs, we also take traffic
         occupancy, day-of-week, hour-of-day and and a time index as real-valued inputs, and the

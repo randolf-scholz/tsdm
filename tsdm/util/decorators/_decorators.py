@@ -6,10 +6,13 @@ r"""Submodule containing general purpose decorators.
 from __future__ import annotations
 
 __all__ = [
+    # Classes
     # Functions
+    "autojit",
     "decorator",
     "sphinx_value",
     "timefun",
+    "trace",
     # Exceptions
     "DecoratorError",
 ]
@@ -21,9 +24,13 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
-LOGGER = logging.getLogger(__name__)
+from torch import jit, nn
+
+from tsdm.config import conf
+
+__logger__ = logging.getLogger(__name__)
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -48,7 +55,9 @@ class DecoratorError(Exception):
     r"""Raise Error related to decorator construction."""
 
     decorated: Callable
-    message: Optional[str] = ""
+    r"""The decorator."""
+    message: str = ""
+    r"""Default message to print."""
 
     def __call__(self, *message_lines):
         r"""Raise a new error."""
@@ -59,7 +68,7 @@ class DecoratorError(Exception):
         sign = signature(self.decorated)
         maxkey = max(9, max(len(key) for key in sign.parameters))
         maxkind = max(len(str(param.kind)) for param in sign.parameters.values())
-        default_message = (
+        default_message: tuple[str, ...] = (
             f"Signature: {sign}",
             "\n".join(
                 f"{key.ljust(maxkey)}: {str(param.kind).ljust(maxkind)}"
@@ -109,17 +118,21 @@ def decorator(deco: Callable) -> Callable:
                 # all pos args except func given
                 if missing_keys := (mandatory_key_args - kwargs.keys()):
                     raise ErrorHandler(f"Not enough kwargs supplied, {missing_keys=}")
-                LOGGER.info(">>> Generating bracket version of %s <<<", decorator)
+                __logger__.info(">>> Generating bracket version of %s <<<", decorator)
                 return rpartial(deco, *(__func__, *args), **kwargs)
-            LOGGER.info(">>> Generating functional version of %s <<<", decorator)
+            __logger__.info(">>> Generating functional version of %s <<<", decorator)
             return deco(__func__, *args, **kwargs)
         if __func__ is None:
-            LOGGER.info(">>> Generating bare version of %s <<<", decorator)
+            __logger__.info(">>> Generating bare version of %s <<<", decorator)
             return rpartial(deco, *args, **kwargs)
-        LOGGER.info(">>> Generating bracket version of %s <<<", decorator)
+        __logger__.info(">>> Generating bracket version of %s <<<", decorator)
         return deco(__func__, *args, **kwargs)
 
     return parametrized_decorator
+
+
+class TimeFunc:
+    logger = logging.getLogger("TimeFunc")
 
 
 @decorator
@@ -186,6 +199,86 @@ def sphinx_value(func: Callable, value: Any, /) -> Callable:
         return value
 
     return wrapper if os.environ.get("GENERATING_DOCS", False) else func
+
+
+def trace(func: Callable) -> Callable:
+    """Log entering and exiting of function.
+
+    Parameters
+    ----------
+    func: Callable
+
+    Returns
+    -------
+    Callable
+    """
+    logger = logging.getLogger("trace")
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logger.info(
+            "%s", "\t\n".join((f"Entering {func.__name__}:" f"{args=}", f"{kwargs=}"))
+        )
+        try:
+            result = func.__get__(*args, **kwargs)
+        except (KeyboardInterrupt, SystemExit) as E:
+            raise E
+        except Exception as E:  # pylint: disable=W0703
+            logger.error("")
+            RuntimeError(f"Function execution failed with Exception {E}")
+        logger.info("%s", "\t\n".join((f"Exiting {func.__name__}:", f"{result=}")))
+        return result
+
+    return wrapper
+
+
+def autojit(base_class: type[nn.Module]) -> type[nn.Module]:
+    r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
+
+    Makes it so that
+
+    .. code-block:: python
+
+        class MyModule():
+            ...
+
+        model = jit.script(MyModule())
+
+    and
+
+    .. code-block:: python
+
+        @autojit
+        class MyModule():
+            ...
+
+        model = MyModule()
+
+    are (roughly?) equivalent
+
+    Parameters
+    ----------
+    base_class: type[nn.Module]
+
+    Returns
+    -------
+    type
+    """
+    assert issubclass(base_class, nn.Module)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):  # type: ignore
+        r"""A simple Wrapper."""
+
+        # noinspection PyArgumentList
+        def __new__(cls, *args, **kwargs):
+            instance = base_class(*args, **kwargs)
+
+            if conf.autojit:  # pylint: disable=no-member
+                return jit.script(instance)
+            return instance
+
+    return WrappedClass
 
 
 # TODO: implement mutually_exclusive_args wrapper
