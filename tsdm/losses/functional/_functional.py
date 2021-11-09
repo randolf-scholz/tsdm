@@ -11,6 +11,7 @@ from __future__ import annotations
 __all__ = [  # Functions
     "nd",
     "nrmse",
+    "rmse",
     "q_quantile",
     "q_quantile_loss",
 ]
@@ -20,7 +21,7 @@ import logging
 import torch
 from torch import Tensor, jit
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 @jit.script
@@ -49,7 +50,7 @@ def nd(x: Tensor, xhat: Tensor) -> Tensor:
     """  # pylint: disable=line-too-long # noqa
     res = torch.sum(torch.abs(xhat - x), dim=(-1, -2))
     mag = torch.sum(torch.abs(x), dim=(-1, -2))
-    return res / mag
+    return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
 @jit.script
@@ -61,7 +62,8 @@ def nrmse(x: Tensor, xhat: Tensor) -> Tensor:
 
     References
     ----------
-    - `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
+    - `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+      <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
 
     Parameters
     ----------
@@ -71,10 +73,10 @@ def nrmse(x: Tensor, xhat: Tensor) -> Tensor:
     Returns
     -------
     Tensor
-    """  # pylint: disable=line-too-long # noqa
+    """
     res = torch.sqrt(torch.sum(torch.abs(xhat - x) ** 2, dim=(-1, -2)))
     mag = torch.sum(torch.abs(x), dim=(-1, -2))
-    return res / mag
+    return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
 @jit.script
@@ -124,3 +126,25 @@ def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     Tensor
     """  # pylint: disable=line-too-long # noqa
     return 2 * torch.sum(q_quantile(x, xhat, q)) / torch.sum(torch.abs(x))
+
+
+@jit.script
+def rmse(
+    x: Tensor,
+    xhat: Tensor,
+) -> Tensor:
+    r"""Compute the RMSE.
+
+    .. math::
+        𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[|x - x̂|^2]}
+
+    Parameters
+    ----------
+    x: Tensor,
+    xhat: Tensor,
+
+    Returns
+    -------
+    Tensor
+    """
+    return torch.sqrt(torch.mean((x - xhat) ** 2))

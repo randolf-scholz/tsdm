@@ -13,15 +13,16 @@ __all__ = [
     "ETTm2",
 ]
 
-
 import logging
+import os
+from functools import cache
 from pathlib import Path
 
 from pandas import DataFrame, read_csv, read_hdf
 
-from tsdm.datasets.dataset import BaseDataset
+from tsdm.datasets.base import BaseDataset
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class ETTh1(BaseDataset):
@@ -41,10 +42,19 @@ class ETTh1(BaseDataset):
     dataset_path: Path
     dataset_file: Path
 
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
+
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTh1.csv"
         with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
@@ -54,7 +64,7 @@ class ETTh1(BaseDataset):
         # Store the preprocessed dataset as h5 file
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):
@@ -82,10 +92,19 @@ class ETTh2(BaseDataset):
     dataset_path: Path
     dataset_file: Path
 
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
+
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm2.csv"
         with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
@@ -95,7 +114,7 @@ class ETTh2(BaseDataset):
         # Store the preprocessed dataset as h5 file
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):
@@ -123,10 +142,19 @@ class ETTm1(BaseDataset):
     dataset_path: Path
     dataset_file: Path
 
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
+
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm1.csv"
         with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
@@ -136,7 +164,7 @@ class ETTm1(BaseDataset):
         # Store the preprocessed dataset as h5 file
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):
@@ -164,10 +192,19 @@ class ETTm2(BaseDataset):
     dataset_path: Path
     dataset_file: Path
 
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
+
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
-        LOGGER.info("Cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Cleaning dataset '%s'", cls.__name__)
 
         filename = "ETTm2.csv"
         with open(cls.rawdata_path.joinpath(filename), "r", encoding="utf8") as file:
@@ -177,7 +214,7 @@ class ETTm2(BaseDataset):
         # Store the preprocessed dataset as h5 file
         df.to_hdf(cls.dataset_file, key=cls.__name__)
 
-        LOGGER.info("Finished cleaning dataset '%s'", cls.__name__)
+        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
     @classmethod
     def load(cls):

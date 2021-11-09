@@ -10,16 +10,23 @@ variables:
   MODULENAME:     tsdm
   TESTDIR:        test
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
+  PYTEST_CACHE_DIR: "${CI_PROJECT_DIR}/.pytest_cache"
+  VENVNAME: "venv"
+  VENV_DIR: "${CI_PROJECT_DIR}/${VENVNAME}"
   TWINE_PASSWORD: ${CI_JOB_TOKEN}
   TWINE_USERNAME: gitlab-ci-token
   TWINE_REPOSITORY_URL: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi
 
 cache:
-  paths:
-    - .cache/pip
-    - .pytest_cache
-    - .mypy_cache
-    - venv/
+  - key: pip
+    paths: [ "${PIP_CACHE_DIR}" ]
+  - key: mypy
+    paths: [ "${MYPY_CACHE_DIR}" ]
+  - key: pytest
+    paths: [ "${PYTEST_CACHE_DIR}" ]
+  - key: venv
+    paths: [ "${VENV_DIR}" ]
 
 stages:
   - build
@@ -28,14 +35,19 @@ stages:
   - deploy
 
 before_script:  # global before_script is run before each and every job.
-  - source venv/bin/activate
+  - source ${VENVNAME}/bin/activate
 
 ################
 # STAGE: SETUP #
 ################
 
-build:
+setup:
   stage: build
+  cache:
+    - key: pip
+      paths: [ "${PIP_CACHE_DIR}" ]
+    - key: venv
+      paths: [ "${VENV_DIR}" ]
   before_script:
     # make directories
     - mkdir badges
@@ -43,21 +55,19 @@ build:
     # python setup
     - python -V
     - pip install --upgrade pip virtualenv
-    - virtualenv venv
-    - source venv/bin/activate
+    - virtualenv ${VENVNAME}
+    - source ${VENVNAME}/bin/activate
     - pip install --upgrade pip pybadges
   script:
-    # generate distribution
-    - pip install --upgrade wheel setuptools
-    - python setup.py sdist bdist_wheel
     # install dependencies
     - pip install --upgrade -r requirements.txt
     - pip install --upgrade -r requirements-extra.txt
     # build and install package
+    - python setup.py sdist bdist_wheel
     - pip install dist/*.whl
     - pip list
   after_script:
-    - source venv/bin/activate
+    - source ${VENVNAME}/bin/activate
     - > # generate python version badge
       python -m pybadges
       --left-text="python"
@@ -84,10 +94,12 @@ build:
 pylint:
   # see .pylintrc for configuration
   stage: analysis
-  needs: [ "build" ]
+  cache:
+    - key: venv
+      paths: [ "${VENV_DIR}" ]
+      policy: pull
+  needs: [ "setup" ]
   script:
-    # install dependencies
-    - pip install --upgrade pylint pylint-gitlab
     # generate reports
     - pylint $MODULEDIR 
       --exit-zero 
@@ -98,7 +110,7 @@ pylint:
     - pylint $TESTDIR --exit-zero --output-format=colorized
     - pylint $MODULEDIR --exit-zero --output-format=colorized | tee pylint.log
   after_script:
-    - source venv/bin/activate
+    - source ${VENVNAME}/bin/activate
     - SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.log)
     - >
       COLOR=$(python -c "print({0: 'black', 2:'red', 4:'orange', 6:'yellow', 8:'green'}[int($SCORE-$SCORE%2)])")
@@ -118,13 +130,17 @@ pylint:
 flake8:
   # see .flake8 for configuration
   stage: analysis
-  needs: [ "build" ]
+  cache:
+    - key: venv
+      paths: [ "${VENV_DIR}" ]
+      policy: pull
+  needs: [ "setup" ]
   script:
-    - pip install --upgrade -r requirements-flake8.txt
     - flake8 $MODULEDIR
     - flake8 $TESTDIR
+    - isort $MODULEDIR --check-only --diff
   after_script:
-    - source venv/bin/activate
+    - source ${VENVNAME}/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate flake8 badge
@@ -148,13 +164,17 @@ flake8:
 mypy:
   # see .mpypy.ini for configuration
   stage: analysis
-  needs: [ "build" ]
+  cache:
+    - key: venv
+      paths: [ "${VENV_DIR}" ]
+    - key: mypy
+      paths: [ "${MYPY_CACHE_DIR}" ]
+  needs: [ "setup" ]
   script:
-    - pip install --upgrade mypy
     - mypy $MODULEDIR --show-error-codes --pretty --install-types --non-interactive --junit-xml reports/mypy.xml
     - mypy $TESTDIR --show-error-codes --pretty --install-types --non-interactive --junit-xml reports/mypy_test.xml
   after_script:
-    - source venv/bin/activate
+    - source ${VENVNAME}/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate mypy badge
@@ -179,14 +199,19 @@ mypy:
 pytest:
   # see pytest.ini for configuration
   stage: test
-  needs: [ "build" ]
+  cache:
+    - key: venv
+      paths: [ "${VENV_DIR}" ]
+      policy: pull
+    - key: pytest
+      paths: [ "${PYTEST_CACHE_DIR}" ]
+  needs: [ "setup" ]
   script:
-    - pip install --upgrade pytest pytest-cov
-    - pytest --junitxml=reports/pytest.xml --cov=$MODULEDIR $TESTDIR
+    - pytest --junitxml=reports/pytest.xml --cov=$MODULEDIR $TESTDIR --reruns 3 --only-rerun AssertionError
     - coverage xml -o reports/coverage.xml
     - coverage report
   after_script:
-    - source venv/bin/activate
+    - source ${VENVNAME}/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate pytest badge
@@ -213,14 +238,16 @@ pytest:
 pypi:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
-  needs: [ "build" ]
+  cache:
+    - key: venv
+      paths: [ "${VENV_DIR}" ]
+      policy: pull
+  needs: [ "setup", "pytest" ]
   only: [ master ]
-  allow_failure: true
   script:
-    - pip install --upgrade twine
     - twine upload --verbose  dist/*
   after_script:
-    - source venv/bin/activate
+    - source ${VENVNAME}/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate pypi badge
@@ -239,17 +266,18 @@ pypi:
 pages:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
-  needs: [ "build" ]
+  cache:
+    - key: venv
+      paths: [ "${VENV_DIR}" ]
+      policy: pull
+  needs: [ "setup", "pytest" ]
   only: [ master ]
-  allow_failure: true
   script:
-    - pip install --upgrade sphinx sphinx-rtd-theme
     - cd docs
-    - make clean
-    - sphinx-build -b html . _build
+    - make html
     - mv  _build ../public/
   after_script:
-    - source venv/bin/activate
+    - source ${VENVNAME}/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
     - TEXT=$([ "$CI_JOB_STATUS" == "success" ] && echo "passing" || echo "failed")
     - > # generate sphinx badge

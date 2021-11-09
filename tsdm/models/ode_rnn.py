@@ -24,7 +24,7 @@ from torch import nn
 from tsdm.models.models import BaseModel
 from tsdm.util import deep_dict_update
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -231,7 +231,7 @@ class ODE_RNN(BaseModel, nn.Module):
 
     def forward(self, T, X):
         r"""TODO: add docstring."""
-        (pred,) = self.model.get_reconstruction(
+        (pred,) = self.model.get_reconstruction(  # type: ignore[attr-defined]
             # Note: n_traj_samples and mode have no effect -> omitted!
             time_steps_to_predict=T,
             data=X,

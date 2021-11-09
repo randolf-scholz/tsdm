@@ -22,7 +22,7 @@ from scipy.stats import mode
 from torch import Tensor
 from torch.linalg import eigvals
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 Location = Literal[
     "upper right",
@@ -110,7 +110,7 @@ def visualize_distribution(
         )
 
         # if extra_stats is not None:
-        LOGGER.info("writing table %s", table)
+        __logger__.info("writing table %s", table)
 
         # text = r"\begin{tabular}{ll}test & and\\ more &test\end{tabular}"
         textbox = AnchoredText(table, loc=loc, borderpad=0.0)

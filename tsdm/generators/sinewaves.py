@@ -13,7 +13,7 @@ __all__ = [
 
 import logging
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class SineWaveGenerator:

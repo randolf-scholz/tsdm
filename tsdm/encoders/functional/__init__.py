@@ -12,7 +12,6 @@ __all__ = [
     # Constants
     "FunctionalEncoder",
     "FunctionalEncoders",
-    "FunctionalEncoderType",
     # Functions
     "make_dense_triplets",
     "make_masked_format",
@@ -21,7 +20,7 @@ __all__ = [
     "time2int",
     "triplet2dense",
     "timefeatures",
-    # Functions
+    # Functions from sklearn
     "binarize",
     "label_binarize",
     "maxabs_scale",
@@ -57,14 +56,14 @@ from tsdm.encoders.functional._functional import (
     timefeatures,
     triplet2dense,
 )
+from tsdm.util.types import LookupTable
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 FunctionalEncoder = Callable
 r"""Type hint for functional encoders."""
-FunctionalEncoderType = Callable
-r"""Type hint for functional encoders."""
-SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoderType]] = {
+
+SklearnFunctionalEncoders: Final[LookupTable[FunctionalEncoder]] = {
     "binarize": binarize,
     "label_binarize": label_binarize,
     "maxabs_scale": maxabs_scale,
@@ -76,7 +75,7 @@ SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoderType]] = {
     "scale": scale,
 }
 
-FunctionalEncoders: Final[dict[str, FunctionalEncoderType]] = {
+FunctionalEncoders: Final[LookupTable[FunctionalEncoder]] = {
     "make_dense_triplets": make_dense_triplets,
     "make_masked_format": make_masked_format,
     "make_sparse_triplets": make_sparse_triplets,

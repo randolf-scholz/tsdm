@@ -2,6 +2,7 @@ r"""TODO: Module Summary Line.
 
 TODO: Module description
 """
+# flake8: noqa
 
 from __future__ import annotations
 
@@ -12,22 +13,23 @@ __all__ = [
 
 
 import logging
-from typing import Callable, Literal, Optional
+from functools import cached_property
+from typing import Any, Callable, Literal, Optional
 
 import torch
 from pandas import DataFrame
-from sklearn.preprocessing import StandardScaler
 from torch import Tensor, nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
 from tsdm.datasets import DATASETS, Dataset, SequenceDataset
 from tsdm.encoders import ENCODERS, Encoder
 from tsdm.losses import LOSSES, Loss
-from tsdm.tasks.tasks import BaseTask
+from tsdm.tasks.base import BaseTask
+from tsdm.util import initialize_from
 from tsdm.util.samplers import SequenceSampler
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class ETDatasetInformer(BaseTask):
@@ -56,13 +58,13 @@ class ETDatasetInformer(BaseTask):
         {24, 48, 96, 168, 336, 720} for the ETTh1, ETTh2, Weather and Electricity
         dataset, and chosen from {24, 48, 96, 192, 288, 672} for the ETTm dataset.
 
-        The length of encoder’s input sequence and decoder’s start token is chosen from
+        The length of preprocessor’s input sequence and decoder’s start token is chosen from
         {24, 48, 96, 168, 336, 480, 720} for the ETTh1, ETTh2, Weather and ECL dataset,
         and {24, 48, 96, 192, 288, 480, 672}for the ETTm dataset.
 
         In the experiment, the decoder’s start token is a segment truncated from the
-        encoder’s input sequence, so the length of decoder’s start token must be less
-        than the length of encoder’s input.
+        preprocessor’s input sequence, so the length of decoder’s start token must be less
+        than the length of preprocessor’s input.
 
         Appendix E
         [...]
@@ -85,96 +87,125 @@ class ETDatasetInformer(BaseTask):
     TODO: add results
     """
 
+    keys = ["train", "test", "valid", "joint", "trial"]
+    r"""Available keys."""
+    KEYS = Literal["train", "test", "valid", "joint", "trial", "whole"]
+    r"""Type Hint for keys."""
     dataset: Dataset
-    splits: dict[str, DataFrame]
-    r"""Available splits: train/valid/joint/test"""
-    test_metric: type[Loss]
-    observation_horizon: int
-    forecasting_horizon: int
+    r"""The dataset."""
+    splits: dict[KEYS, DataFrame]
+    r"""Available splits: train/valid/joint/test."""
+    test_metric: Loss  # Callable[..., Tensor] | nn.Module
+    r"""The target metric."""
     accumulation_function: Callable[..., Tensor]
-    target: str
+    r"""Accumulates residuals into loss - usually mean or sum."""
+
+    train_batch_size: int = 32
+    """Default batch size."""
+    eval_batch_size: int = 128
+    """Default batch size when evaluating."""
+
+    # additional attributes
+    preprocessor: Encoder
+    r"""Encoder for the observations."""
+    pre_encoder: Encoder
+    r"""Encoder for the observations."""
+    observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
+    r"""The number of datapoints observed during prediction."""
+    forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24
+    r"""The number of datapoints the model should forecast."""
+    TARGET = Literal["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
+    r"""Type hint available targets."""
+    target: TARGET = "OT"
     r"""One of "HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"."""
 
     def __init__(
         self,
+        *,
+        pre_encoder: Optional[Encoder] = None,
         dataset: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
         forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
-        test_metric: Literal["MSE", "MAE"] = "MSE",
-        time_encoder: Encoder = "time2float",
-        target: str = "OT",
+        target: TARGET = "OT",
         scale: bool = True,
+        eval_batch_size: int = 128,
+        train_batch_size: int = 32,
+        test_metric: Literal["MSE", "MAE"] = "MSE",
+        preprocessor: str = "StandardScaler",
     ):
         super().__init__()
         self.target = target
-        self.dataset = DATASETS[dataset]
-        self.test_metric = LOSSES[test_metric]
-        self.time_encoder = ENCODERS[time_encoder]
-
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
+        self.eval_batch_size = eval_batch_size
+        self.train_batch_size = train_batch_size
+
+        self.preprocessor = initialize_from(ENCODERS, __name__=preprocessor)
+        self.dataset = initialize_from(DATASETS, __name__=dataset)
+        self.test_metric = initialize_from(LOSSES, __name__=test_metric)  # type: ignore[assignment]
+
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
-        # TODO: fix type problems
 
-        self.splits: dict[str, DataFrame] = {
-            "train": self.dataset.dataset["2016-07-01":"2017-06-30"],  # type: ignore
-            "valid": self.dataset.dataset["2017-07-01":"2017-10-31"],  # type: ignore
-            "joint": self.dataset.dataset["2016-07-01":"2017-10-31"],  # type: ignore
-            "trial": self.dataset.dataset["2017-11-01":"2018-02-28"],  # type: ignore
+        # Fit the Preprocessors
+        self.preprocessor.fit(self.splits["train"])
+        # Set the Encoder
+        self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
+
+    @cached_property
+    def splits(self) -> dict[str, DataFrame]:
+        _splits = {
+            "train": self.dataset.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore
+            "valid": self.dataset.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore
+            "joint": self.dataset.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore
+            "trial": self.dataset.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore
+            "whole": self.dataset.dataset,  # type: ignore
         }
-        self.splits["test"] = self.splits["trial"]  # alias
-
-        if scale:
-            self.encoder = StandardScaler()
-            self.encoder.fit(self.splits["train"])
-            # note that this also transforms all splits as they are mere pointers to the slices.
-            self.encoder.transform(self.dataset.dataset, copy=False)
+        _splits["test"] = _splits["trial"]  # alias
+        return _splits
 
     def get_dataloader(
         self,
-        split: str,
-        batch_size: int = 32,
+        key: KEYS,
+        batch_size: int = 1,
+        shuffle: bool = True,
+        encode: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
-        shuffle: bool = True,
-        drop_last: bool = False,
+        **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader for the training-dataset with the given batch_size.
 
+        If encode=True, then it will create a dataloader with two outputs
+
+        (inputs, targets)
+
+        where inputs = pre_encoder.encode(masked_batch).
+
         Parameters
         ----------
-        split: Literal["train", "valid", "test"]
+        key: Literal["train", "valid", "test"]
             Dataset part from which to construct the DataLoader
         batch_size: int = 32
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None
             defaults to cuda if cuda is available.
         shuffle: bool = True
-        drop_last: bool = False
 
         Returns
         -------
         DataLoader
         """
-        device = DEFAULT_DEVICE if device is None else device
-        dtype = DEFAULT_DTYPE if dtype is None else dtype
-
-        if split == "test":
+        if key == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
+        if key == "test" and "drop_last" in kwargs:
+            assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
-        ds = self.splits[split]
-        _T = self.time_encoder(ds.index)
-        _X = ds.drop(columns=self.target).values
-        _Y = ds[self.target].values
+        ds = self.splits[key]
+        ds = self.preprocessor.transform(ds)
+        tensors = self.encoder.encode(ds)
 
-        T = torch.tensor(_T, device=device, dtype=dtype)
-        X = torch.tensor(_X, device=device, dtype=dtype)
-        Y = torch.tensor(_Y, device=device, dtype=dtype)
-
-        dataset = SequenceDataset([T, X, Y])
+        dataset = TensorDataset(tensors)
         sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)
 
-        return DataLoader(
-            dataset, sampler=sampler, batch_size=batch_size, drop_last=drop_last
-        )
+        return DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)

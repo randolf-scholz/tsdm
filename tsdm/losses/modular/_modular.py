@@ -6,24 +6,25 @@ Contains losses in modular form.
   - See :mod:`tsdm.losses.functional` for functional implementations.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "ND",
     "NRMSE",
     "Q_Quantile",
     "Q_Quantile_Loss",
+    "WRMSE",
 ]
 
 
 import logging
+from typing import Final
 
+import torch
 from torch import Tensor, nn
 
 from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class ND(nn.Module):
@@ -136,3 +137,72 @@ class Q_Quantile_Loss(nn.Module):
         Tensor
         """
         return q_quantile_loss(x, xhat)
+
+
+class WRMSE(nn.Module):
+    r"""Weighted Root Mean Square Error.
+
+    .. math::
+
+        (1/m)∑_m (1/n)∑_n w(x_{n,m}- x_{n,m})^2
+    """
+
+    # Constants
+    rank: Final[int]
+    r"""CONST: The number of dimensions of the weight tensor."""
+    shape: torch.Size
+    r"""CONST: The shape of the weight tensor."""
+    # Buffers
+    w: Tensor
+    r"""BUFFER: The weight-vector."""
+
+    def __init__(
+        self,
+        w: Tensor,
+        /,
+        normalize: bool = True,
+    ):
+        r"""Compute the weighted RMSE.
+
+        Channel-wise: RMSE(RMSE(channel))
+        Non-channel-wise: RMSE(flatten(results))
+
+        Parameters
+        ----------
+        w: Tensor
+        ignore_nan: bool = True
+        channel_wise: bool = True
+            If true, compute mean across channels first and then accumulate channels
+        normalize: bool = True
+        """
+        super().__init__()
+        assert torch.all(w >= 0) and torch.any(w > 0)
+        self.register_buffer("w", w / torch.sum(w) if normalize else w)
+        self.rank = len(w.shape)
+        self.register_buffer("FAILED", torch.tensor(float("nan")))
+        self.shape = w.shape
+
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
+        r"""Signature: ``...𝐦, ...𝐦 → 0``.
+
+        Parameters
+        ----------
+        x: Tensor
+        xhat: Tensor
+
+        Returns
+        -------
+        Tensor
+        """
+        assert x.shape[-self.rank :] == self.shape
+        # batch_dims = list(range(len(x.shape) - self.rank))
+
+        mask = ~torch.isnan(x)
+        # xhat is not allowed to be nan if x isn't.
+        if torch.any(torch.isnan(xhat) & mask):
+            raise RuntimeError("Observations have NaN entries when Targets do not!")
+
+        # the residuals, shape: ...𝐦
+        r = (self.w ** 2 * (x - xhat))[mask] ** 2
+
+        return torch.sqrt(torch.mean(r))

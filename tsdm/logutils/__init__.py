@@ -8,7 +8,7 @@ from __future__ import annotations
 __all__ = [
     # Constants
     "Logger",
-    "LOGGERS",
+    "__logger__S",
     # Functions
     "compute_metrics",
     "log_optimizer_state",
@@ -20,7 +20,7 @@ __all__ = [
 import logging
 from typing import Callable, Final
 
-from tsdm.util.logging._logging import (
+from tsdm.logutils._logutils import (
     compute_metrics,
     log_kernel_information,
     log_metrics,
@@ -28,12 +28,12 @@ from tsdm.util.logging._logging import (
     log_optimizer_state,
 )
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 Logger = Callable[..., int]
 
-LOGGERS: Final[dict[str, Logger]] = {
+__logger__S: Final[dict[str, Logger]] = {
     "log_optimizer_state": log_optimizer_state,
     "log_kernel_information": log_kernel_information,
     "log_model_state": log_model_state,

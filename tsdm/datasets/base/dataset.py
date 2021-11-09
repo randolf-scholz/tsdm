@@ -26,6 +26,7 @@ __all__ = [
     "BaseDataset",
     "DatasetMetaClass",
     "SequenceDataset",
+    "DataSetCollection",
 ]
 
 import logging
@@ -33,17 +34,19 @@ import os
 import subprocess
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
+from collections.abc import Iterable, Sequence
 from functools import cache
 from pathlib import Path
-from typing import Optional
+from typing import Any, Mapping, Optional
 from urllib.parse import urlparse
 
-import torch
+from pandas import Index, Series
 from torch import Tensor
+from torch.utils.data import Dataset as torch_dataset
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 class DatasetMetaClass(ABCMeta):
@@ -119,8 +122,9 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
             return "the dataset"
         return cls.load()  # pylint: disable=E1120
 
-    @classmethod  # type: ignore
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def rawdata_path(cls) -> Path:
         r"""Location where the raw data is stored."""
         if os.environ.get("GENERATING_DOCS", False):
@@ -129,8 +133,9 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @classmethod  # type: ignore
+    @classmethod  # type: ignore[misc]
     @property
+    @cache
     def dataset_path(cls) -> Path:
         r"""Location where the pre-processed data is stored."""
         if os.environ.get("GENERATING_DOCS", False):
@@ -139,13 +144,14 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    @classmethod  # type: ignore
-    @property
-    def dataset_file(cls) -> Path:
-        r"""Path of the dataset file."""
-        if os.environ.get("GENERATING_DOCS", False):
-            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
-        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
+    # @classmethod  # type: ignore[misc]
+    # @property
+    # @cache
+    # def dataset_file(cls) -> Path:
+    #     r"""Path of the dataset file."""
+    #     if os.environ.get("GENERATING_DOCS", False):
+    #         return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+    #     return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
 
     @classmethod
     @abstractmethod
@@ -197,12 +203,14 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
         Overwrite if you need custom downloader
         """
         if cls.url is None:
-            LOGGER.info("Dataset '%s' provides no url. Assumed offline", cls.__name__)
+            __logger__.info(
+                "Dataset '%s' provides no url. Assumed offline", cls.__name__
+            )
             return
 
         dataset = cls.__name__
         parsed_url = urlparse(cls.url)
-        LOGGER.info("Obtaining dataset '%s' from %s", dataset, cls.url)
+        __logger__.info("Obtaining dataset '%s' from %s", dataset, cls.url)
 
         if parsed_url.netloc == "www.kaggle.com":
             kaggle_name = Path(parsed_url.path).name
@@ -225,7 +233,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
                 check=True,
             )
 
-        LOGGER.info("Finished importing dataset '%s' from %s", dataset, cls.url)
+        __logger__.info("Finished importing dataset '%s' from %s", dataset, cls.url)
 
     @classmethod
     def info(cls):
@@ -236,7 +244,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
             webbrowser.open_new_tab(cls.info_url)
 
 
-class SequenceDataset(torch.utils.data.Dataset):
+class SequenceDataset(torch_dataset):
     r"""Sequential Dataset."""
 
     def __init__(self, tensors: list[Tensor]):
@@ -250,3 +258,32 @@ class SequenceDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         r"""Get the same slice from each tensor."""
         return [x[idx] for x in self.tensors]
+
+
+class DataSetCollection(torch_dataset):
+    r"""Represents a ``mapping[keys → Datasets]``.
+
+    All tensors must have a shared index,
+    in the sense that index.unique() is identical for all inputs.
+    """
+
+    def __init__(self, indexed_datasets: Mapping[Any, torch_dataset]):
+        self.index = Index(indexed_datasets.keys())
+        self.indexed_tensors = Series(indexed_datasets)
+
+    def __len__(self):
+        r"""Length of the dataset."""
+        return len(self.index)
+
+    def __getitem__(self, item):
+        r"""Hierarchical lookup."""
+        # test for hierarchical indexing
+        if isinstance(item, Sequence):
+            first, rest = item[0], item[1:]
+            if isinstance(first, slice) or isinstance(first, Iterable):
+                # pass remaining indices to sub-object
+                value = self.indexed_tensors[first]
+                return value[rest]
+
+        # no hierarchical indexing
+        return self.indexed_tensors[item]

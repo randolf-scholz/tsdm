@@ -12,7 +12,6 @@ __all__ = [
     # Constants
     "ModularActivation",
     "ModularActivations",
-    "ModularActivationType",
 ]
 
 import logging
@@ -20,15 +19,14 @@ from typing import Final
 
 from torch import nn
 
-LOGGER = logging.getLogger(__name__)
+from tsdm.util.types import LookupTable
+
+__logger__ = logging.getLogger(__name__)
 
 ModularActivation = nn.Module
 r"""Type hint for modular activations."""
 
-ModularActivationType = type[nn.Module]
-r"""Type hint for modular activations."""
-
-ModularActivations: Final[dict[str, ModularActivationType]] = {
+ModularActivations: Final[LookupTable[type[ModularActivation]]] = {
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
     "ELU": nn.ELU,
     "Hardshrink": nn.Hardshrink,
