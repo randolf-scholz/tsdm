@@ -150,12 +150,8 @@ class WRMSE(nn.Module):
     # Constants
     rank: Final[int]
     r"""CONST: The number of dimensions of the weight tensor."""
-    shape: Final[list[int]]
+    shape: torch.Size
     r"""CONST: The shape of the weight tensor."""
-    channel_wise: Final[bool]
-    r"""CONST: Whether to compute the it channel wise."""
-    ignore_nan: Final[bool]
-    r"""CONST: Whether to ignore NaN-values."""
     # Buffers
     w: Tensor
     r"""BUFFER: The weight-vector."""
@@ -163,8 +159,7 @@ class WRMSE(nn.Module):
     def __init__(
         self,
         w: Tensor,
-        ignore_nan: bool = True,
-        channel_wise: bool = True,
+        /,
         normalize: bool = True,
     ):
         r"""Compute the weighted RMSE.
@@ -182,10 +177,8 @@ class WRMSE(nn.Module):
         """
         super().__init__()
         assert torch.all(w >= 0) and torch.any(w > 0)
-        self.w = w / torch.sum(w) if normalize else w
+        self.register_buffer("w", w / torch.sum(w) if normalize else w)
         self.rank = len(w.shape)
-        self.ignore_nan = ignore_nan
-        self.channel_wise = channel_wise
         self.register_buffer("FAILED", torch.tensor(float("nan")))
         self.shape = w.shape
 
@@ -202,21 +195,14 @@ class WRMSE(nn.Module):
         Tensor
         """
         assert x.shape[-self.rank :] == self.shape
-        batch_dims = list(range(len(x.shape) - self.rank))
+        # batch_dims = list(range(len(x.shape) - self.rank))
 
-        mask = torch.isnan(x)
-        # the residuals, shape: ...𝐦
-        r = self.w * (x - xhat) ** 2
-
+        mask = ~torch.isnan(x)
         # xhat is not allowed to be nan if x isn't.
-        if torch.any(torch.isnan(xhat) & ~mask):
+        if torch.any(torch.isnan(xhat) & mask):
             raise RuntimeError("Observations have NaN entries when Targets do not!")
 
-        if self.ignore_nan:
-            if self.channel_wise:
-                return torch.sqrt(torch.nanmean(torch.nanmean(r, dim=batch_dims)))
-            return torch.sqrt(torch.nanmean(r))
+        # the residuals, shape: ...𝐦
+        r = (self.w ** 2 * (x - xhat))[mask] ** 2
 
-        if self.channel_wise:
-            torch.sqrt(torch.mean(torch.mean(r, dim=batch_dims)))
         return torch.sqrt(torch.mean(r))
