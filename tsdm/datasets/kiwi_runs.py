@@ -133,8 +133,19 @@ class KIWI_RUNS(BaseDataset):
     r"""Type Hint for keys."""
     dataset: DataFrame
     r"""The main dataset. Alias for Timeseries."""
-    timeseries: DataFrame = dataset
+    timeseries: DataFrame
     r"""The main dataset."""
+
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset(cls):
+        r"""Store cached version of dataset."""
+        # What is the best practice for metaclass methods that call each other?
+        # https://stackoverflow.com/q/47615318/9318372
+        if os.environ.get("GENERATING_DOCS", False):
+            return "the dataset"
+        return cls.load()  # pylint: disable=E1120
 
     @classmethod  # type: ignore[misc]
     @property

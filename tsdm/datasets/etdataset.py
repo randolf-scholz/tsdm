@@ -13,8 +13,9 @@ __all__ = [
     "ETTm2",
 ]
 
-
 import logging
+import os
+from functools import cache
 from pathlib import Path
 
 from pandas import DataFrame, read_csv, read_hdf
@@ -40,6 +41,15 @@ class ETTh1(BaseDataset):
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
+
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
 
     @classmethod
     def clean(cls):
@@ -82,6 +92,15 @@ class ETTh2(BaseDataset):
     dataset_path: Path
     dataset_file: Path
 
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
+
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
@@ -123,6 +142,15 @@ class ETTm1(BaseDataset):
     dataset_path: Path
     dataset_file: Path
 
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
+
     @classmethod
     def clean(cls):
         r"""Create DataFrame from the .csv file."""
@@ -163,6 +191,15 @@ class ETTm2(BaseDataset):
     rawdata_path: Path
     dataset_path: Path
     dataset_file: Path
+
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        if os.environ.get("GENERATING_DOCS", False):
+            return Path(f"~/.tsdm/datasets/{cls.__name__}/{cls.__name__}.h5")
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")  # type: ignore[attr-defined]
 
     @classmethod
     def clean(cls):
