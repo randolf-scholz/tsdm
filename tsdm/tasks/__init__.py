@@ -46,7 +46,7 @@ from typing import Final
 from tsdm.tasks import base
 from tsdm.tasks.base import BaseTask
 from tsdm.tasks.etdataset import ETDatasetInformer
-from tsdm.tasks.kiwi_runs import KIWI_RUNS_TASK
+from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
 from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
