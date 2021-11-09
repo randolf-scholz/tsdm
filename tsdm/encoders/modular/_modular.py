@@ -8,11 +8,13 @@ from __future__ import annotations
 __all__ = [
     # Classes
     "BaseEncoder",
-    "Time2Float",
-    "DateTimeEncoder",
-    "Standardizer",
-    "DataFrameEncoder",
     "ChainedEncoder",
+    "DataFrameEncoder",
+    "DateTimeEncoder",
+    "IdentityEncoder",
+    "Standardizer",
+    "TensorEncoder",
+    "Time2Float",
 ]
 
 import logging
@@ -24,15 +26,7 @@ import numpy
 import numpy as np
 import pandas.api.types
 import torch
-from pandas import (
-    NA,
-    DataFrame,
-    DatetimeIndex,
-    Index,
-    Series,
-    Timedelta,
-    Timestamp,
-)
+from pandas import NA, DataFrame, DatetimeIndex, Index, Series, Timedelta, Timestamp
 from torch import Tensor
 
 __logger__ = logging.getLogger(__name__)
@@ -374,7 +368,7 @@ class DataFrameEncoder(BaseEncoder):
             [idxenc_spec, colenc_spec],
             keys=["index", "columns"],
             names=["section", "partition"],
-        )
+        ).astype({"col": object})
 
         # add extra repr options by cloning from spec.
         for x in [
@@ -407,7 +401,8 @@ class DataFrameEncoder(BaseEncoder):
                 cols = series["col"]
                 encoder.fit(df[cols])
         else:
-            self.spec.loc["columns", "col"] = cols = list(df.columns)
+            cols = list(df.columns)
+            self.spec.loc["columns"].iloc[0]["col"] = cols
             encoder = self.spec.loc["columns", "encoder"].item()
             encoder.fit(df.values)
 
@@ -527,25 +522,47 @@ class Standardizer(BaseEncoder):
 #     def decode(self, data, /):
 #         pass
 
-# class TensorEncoder(BaseEncoder):
-#     r"""Converts objects to Tensor."""
-#
-#     colspecs: list[Series]
-#     """The data types/column names of all the tensors"""
-#
-#     def __init__(self, dtype: Optional[torch.dtype]=None, device: Optional[torch.device] = None):
-#         super().__init__()
-#         self.colspecs = []
-#
-#     def fit(self, *data: tuple):
-#         r"""Fit to the data."""
-#         for ndarray in data:
-#             self.
-#
-#
-#     def encode(self, *data: tuple[Union[Series, DataFrame]]) -> tuple[Tensor, ...]:
-#         r"""Converts each input from ? to tensor"""
-#
-#
-#     def decode(self, *data: tuple[Tensor, ...]) -> tuple[Union[Series, DataFrame]]:
-#         r"""Converts each input from tensor to original"""
+
+PandasObject = Union[Index, Series, DataFrame]
+
+
+class TensorEncoder(BaseEncoder):
+    r"""Converts objects to Tensor."""
+
+    dtype: torch.dtype
+    r"""The default dtype."""
+    device: torch.device
+    r"""The device the tensors are strored in."""
+    # colspecs: list[Series]
+    # """The data types/column names of all the tensors"""
+
+    def __init__(
+        self, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None
+    ):
+        super().__init__()
+
+        self.dtype = torch.float32 if dtype is None else dtype
+        default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = default_device if device is None else device
+
+    def fit(self, *data: PandasObject):
+        r"""Fit to the data."""
+        # for item in data:
+        #     _type = type(item)
+        #     if isinstance(item, DataFrame):
+        #         columns = item.columns
+        #         dtypes = item.dtypes
+        #     elif isinstance(item, Series) or isinstance(item, Index):
+        #         name = item.name
+        #         dtype = item.dtype
+
+    def encode(self, data: tuple[PandasObject, ...]) -> tuple[Tensor, ...]:
+        r"""Convert each inputs to tensor."""
+        return tuple(
+            torch.tensor(ndarray.values, device=self.device, dtype=self.dtype)
+            for ndarray in data
+        )
+
+    def decode(self, data: tuple[Tensor, ...]) -> tuple[PandasObject, ...]:
+        r"""Convert each input from tensor to numpy."""
+        return tuple(tensor.cpu().numpy() for tensor in data)

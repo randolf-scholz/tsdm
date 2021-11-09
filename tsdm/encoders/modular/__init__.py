@@ -14,10 +14,13 @@ __all__ = [
     "ModularEncoders",
     # Classes
     "BaseEncoder",
-    "Time2Float",
-    "DateTimeEncoder",
-    "Standardizer",
+    "ChainedEncoder",
     "DataFrameEncoder",
+    "DateTimeEncoder",
+    "IdentityEncoder",
+    "Standardizer",
+    "TensorEncoder",
+    "Time2Float",
     # Classes - Sklearn
     "Binarizer",
     "FunctionTransformer",
@@ -66,9 +69,12 @@ from sklearn.preprocessing import (
 
 from tsdm.encoders.modular._modular import (
     BaseEncoder,
+    ChainedEncoder,
     DataFrameEncoder,
     DateTimeEncoder,
+    IdentityEncoder,
     Standardizer,
+    TensorEncoder,
     Time2Float,
 )
 from tsdm.util.types import LookupTable
