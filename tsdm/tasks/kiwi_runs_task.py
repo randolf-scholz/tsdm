@@ -10,16 +10,23 @@ from itertools import product
 from typing import Any, Callable, Literal, Optional
 
 import torch
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
-from tsdm.datasets import KIWI_RUNS
+from tsdm.datasets import KIWI_RUNS, Dataset
 from tsdm.datasets.base import DataSetCollection
-from tsdm.encoders import ENCODERS, Encoder
+from tsdm.encoders.modular import (
+    BaseEncoder,
+    ChainedEncoder,
+    DataFrameEncoder,
+    DateTimeEncoder,
+    FloatEncoder,
+    Standardizer,
+    TensorEncoder,
+)
 from tsdm.tasks.base import BaseTask
-from tsdm.util import initialize_from
 from tsdm.util.samplers import CollectionSampler, SequenceSampler
 
 __logger__ = logging.getLogger(__name__)
@@ -31,7 +38,8 @@ class KIWI_RUNS_TASK(BaseTask):
     For this task we do several simplifications
 
     - drop run_id 355
-    -
+    - drop almost all metadata
+    - restrict timepoints to start_time & end_time given in metadata.
 
 
     - timeseries for each run_id and experiment_id
@@ -61,6 +69,8 @@ class KIWI_RUNS_TASK(BaseTask):
     r"""The whole timeseries data."""
     metadata: DataFrame
     r"""The metadata."""
+    dataset: Dataset = KIWI_RUNS
+    r"""The Dataset."""
 
     train_batch_size: int = 32
     """Default batch size."""
@@ -72,9 +82,18 @@ class KIWI_RUNS_TASK(BaseTask):
     r"""The number of datapoints the model should forecast."""
     targets: list[str] = ["Glucose", "OD600", "DOT", "Base"]
     r"""The columns that should be predicted."""
-    pre_encoder: Encoder
+    pre_encoder: BaseEncoder
     r"""Encoder for the observations."""
+    controls: Series
+    r"""The control variables."""
+    targets: Series
+    r"""The target varaibles."""
+    observables: Series
+    r"""The observables."""
+    loss_weights: DataFrame
+    r"""Contains Information about the loss."""
 
+    @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
         r"""The target metric."""
         ...
@@ -82,9 +101,7 @@ class KIWI_RUNS_TASK(BaseTask):
     def __init__(
         self,
         *,
-        preprocessor: str = "StandardScaler",
-        pre_processor: Optional[Encoder] = None,
-        pre_encoder: Optional[Encoder] = None,
+        preprocessor: Optional[BaseEncoder] = None,
         forecasting_horizon: int = 24,
         observation_horizon: int = 96,
         eval_batch_size: int = 128,
@@ -114,22 +131,67 @@ class KIWI_RUNS_TASK(BaseTask):
         self.metadata: DataFrame = md
         self.timeseries: DataFrame = ts
 
-        if pre_encoder is not None:
-            self.preprocessor = initialize_from(ENCODERS, __name__=preprocessor)
-        else:
-            self.preprocessor = None
+        if preprocessor is None:
+            self.preprocessor = ChainedEncoder(
+                TensorEncoder(),
+                DataFrameEncoder(
+                    Standardizer() @ FloatEncoder(),
+                    index_encoder=DateTimeEncoder(),
+                ),
+            )
 
-        if pre_encoder is not None:
-            self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
-        else:
-            self.pre_encoder = None
+        controls = Series(
+            [
+                "Cumulated_feed_volume_glucose",
+                "Cumulated_feed_volume_medium",
+                "InducerConcentration",
+                "StirringSpeed",
+                "Flow_Air",
+                "Temperature",
+                "Probe_Volume",
+            ]
+        )
+        controls.index = controls.apply(lambda x: ts.columns.get_loc(x))
+        self.controls = controls
 
-        self.loss_weights = {
-            "Base": 200,
-            "DOT": 100,
-            "Glucose": 10,
-            "OD600": 20,
-        }
+        targets = Series(
+            [
+                "Base",
+                "DOT",
+                "Glucose",
+                "OD600",
+            ]
+        )
+        targets.index = targets.apply(lambda x: ts.columns.get_loc(x))
+        self.targets = targets
+
+        observables = Series(
+            [
+                "Acetate",
+                "Fluo_GFP",
+                "Volume",
+                "pH",
+            ]
+        )
+        observables.index = observables.apply(lambda x: ts.columns.get_loc(x))
+        self.observables = observables
+
+        assert (set(controls) | set(targets) | set(observables)) == set(ts.columns)
+
+        # Setting of loss weights
+        weights = DataFrame.from_dict(
+            {
+                "Base": 200,
+                "DOT": 100,
+                "Glucose": 10,
+                "OD600": 20,
+            },
+            orient="index",
+            columns=["weight"],
+        )
+        weights["col_index"] = weights.index.map(lambda x: (ts.columns == x).argmax())
+        weights.index.name = "col"
+        self.loss_weights = weights
 
     @cached_property
     def split_idx(self) -> DataFrame:
@@ -151,7 +213,7 @@ class KIWI_RUNS_TASK(BaseTask):
         return splits.astype("string").astype("category")
 
     @cache
-    def splits(self, key: KEYS) -> tuple[DataFrame, DataFrame]:
+    def splits(self, key: KEYS) -> tuple[DataFrame, DataFrame]:  # type: ignore[override]
         """Return a subset of the data corresponding to the split.
 
         Parameters
@@ -184,7 +246,7 @@ class KIWI_RUNS_TASK(BaseTask):
         }
 
     @cached_property
-    def batchloader(self) -> dict[int, DataLoader]:
+    def batchloader(self) -> dict[int, DataLoader]:  # type: ignore[override]
         r"""Return the trainloader for the given key.
 
         Returns
@@ -246,20 +308,13 @@ class KIWI_RUNS_TASK(BaseTask):
         md = md.astype("float32")
         ts = ts.astype("float32")
 
-        if self.preprocessor is not None:
-            ts_train, md_train = self.splits((split, "train"))
-            self.preprocessor.fit(ts_train)
-            self.preprocessor.transform(ts, copy=False)
+        # preprocessing
+        ts_train, md_train = self.splits((split, "train"))
+        self.preprocessor.fit(ts_train.reset_index(level=[0, 1], drop=True))
+        T, X = self.preprocessor.transform(ts.reset_index(level=[0, 1], drop=True))
 
-        ts = ts.reset_index(level=2)  # make measurements_time a regular col
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        dtype = torch.float32
-
-        T = Tensor(timedeltas.values, device=device, dtype=dtype)
-        X = Tensor(
-            ts.drop(columns=["measurement_time"]).values, device=device, dtype=dtype
-        )
+        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # dtype = torch.float32
         # M = torch.tensor(md, device=device, dtype=dtype)
 
         shared_index = md.index
