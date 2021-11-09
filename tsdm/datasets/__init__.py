@@ -43,7 +43,6 @@ __all__ = [
 import logging
 from typing import Final, Union
 
-
 from tsdm.datasets import base
 from tsdm.datasets.base import (
     BaseDataset,
