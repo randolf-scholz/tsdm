@@ -16,6 +16,8 @@ __all__ = [
     "BaseEncoder",
     "Time2Float",
     "DateTimeEncoder",
+    "Standardizer",
+    "DataFrameEncoder",
     # Classes - Sklearn
     "Binarizer",
     "FunctionTransformer",
@@ -62,7 +64,13 @@ from sklearn.preprocessing import (
     StandardScaler,
 )
 
-from tsdm.encoders.modular._modular import BaseEncoder, DateTimeEncoder, Time2Float
+from tsdm.encoders.modular._modular import (
+    BaseEncoder,
+    DataFrameEncoder,
+    DateTimeEncoder,
+    Standardizer,
+    Time2Float,
+)
 from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)

@@ -18,7 +18,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from tsdm.datasets import KIWI_RUNS
 from tsdm.datasets.base import DataSetCollection
 from tsdm.encoders import ENCODERS, Encoder
-from tsdm.encoders.functional import time2float
 from tsdm.tasks.base import BaseTask
 from tsdm.util import initialize_from
 from tsdm.util.samplers import CollectionSampler, SequenceSampler
@@ -241,26 +240,24 @@ class KIWI_RUNS_TASK(BaseTask):
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         ts, md = self.splits(key)
-        ts_train, md_train = self.splits((split, "train"))
-
         # select metadata
         md = md[["Feed_concentration_glc", "pH_correction_factor", "OD_Dilution"]]
         # convert to regular float
         md = md.astype("float32")
         ts = ts.astype("float32")
 
-        self.preprocessor.fit(ts_train)
-        self.preprocessor.transform(ts, copy=False)
+        if self.preprocessor is not None:
+            ts_train, md_train = self.splits((split, "train"))
+            self.preprocessor.fit(ts_train)
+            self.preprocessor.transform(ts, copy=False)
 
-        ts = ts.reset_index(level=2)  # make measurements regular col
+        ts = ts.reset_index(level=2)  # make measurements_time a regular col
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         dtype = torch.float32
 
-        T = torch.tensor(
-            time2float(ts["measurement_time"].values), device=device, dtype=dtype
-        )
-        X = torch.tensor(
+        T = Tensor(timedeltas.values, device=device, dtype=dtype)
+        X = Tensor(
             ts.drop(columns=["measurement_time"]).values, device=device, dtype=dtype
         )
         # M = torch.tensor(md, device=device, dtype=dtype)
