@@ -12,6 +12,7 @@ __all__ = [
     "NRMSE",
     "Q_Quantile",
     "Q_Quantile_Loss",
+    "WRMSE",
 ]
 
 
@@ -21,7 +22,7 @@ from typing import Final
 import torch
 from torch import Tensor, nn
 
-from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
+from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
 
 __logger__ = logging.getLogger(__name__)
 
@@ -186,7 +187,7 @@ class WRMSE(nn.Module):
         self.ignore_nan = ignore_nan
         self.channel_wise = channel_wise
         self.register_buffer("FAILED", torch.tensor(float("nan")))
-        self.shape = list(w.shape)
+        self.shape = w.shape
 
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Signature: ``...𝐦, ...𝐦 → 0``.
@@ -213,9 +214,9 @@ class WRMSE(nn.Module):
 
         if self.ignore_nan:
             if self.channel_wise:
-                return rmse(torch.sqrt(torch.nanmean(r, dim=batch_dims)))
-            return torch.sqrt(torch.nanmean(r, dim=batch_dims))
+                return torch.sqrt(torch.nanmean(torch.nanmean(r, dim=batch_dims)))
+            return torch.sqrt(torch.nanmean(r))
 
         if self.channel_wise:
-            rmse(torch.sqrt(torch.mean(r, dim=batch_dims)))
+            torch.sqrt(torch.mean(torch.mean(r, dim=batch_dims)))
         return torch.sqrt(torch.mean(r))

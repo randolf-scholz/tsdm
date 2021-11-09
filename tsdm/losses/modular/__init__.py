@@ -18,6 +18,7 @@ __all__ = [
     "NRMSE",
     "Q_Quantile",
     "Q_Quantile_Loss",
+    "WRMSE",
 ]
 
 
@@ -26,7 +27,7 @@ from typing import Final
 
 from torch import nn
 
-from tsdm.losses.modular._modular import ND, NRMSE, Q_Quantile, Q_Quantile_Loss
+from tsdm.losses.modular._modular import ND, NRMSE, WRMSE, Q_Quantile, Q_Quantile_Loss
 from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
