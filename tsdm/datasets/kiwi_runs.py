@@ -131,6 +131,10 @@ class KIWI_RUNS(BaseDataset):
         "timeseries",
     ]
     r"""Type Hint for keys."""
+    dataset: DataFrame
+    r"""The main dataset. Alias for Timeseries."""
+    timeseries: DataFrame = dataset
+    r"""The main dataset."""
 
     @classmethod  # type: ignore[misc]
     @property
@@ -142,9 +146,9 @@ class KIWI_RUNS(BaseDataset):
     @classmethod  # type: ignore[misc]
     @property
     @cache
-    def dataset_file(cls) -> dict[KEYS, Path]:
+    def dataset_file(cls) -> dict[str, Path]:
         r"""Path of the dataset file for the given key."""
-        return {key: cls.dataset_path.joinpath(f"{key}.feather") for key in cls.keys}
+        return {key: cls.dataset_path.joinpath(f"{key}.feather") for key in cls.keys}  # type: ignore[attr-defined]
 
     @classmethod  # type: ignore[misc]
     @property
@@ -160,10 +164,10 @@ class KIWI_RUNS(BaseDataset):
     @classmethod
     def load(cls, key: KEYS = "timeseries") -> DataFrame:
         r"""Load the dataset from disk."""
-        if not cls.dataset_file[key].exists():
+        if not cls.dataset_file[key].exists():  # type: ignore[index]
             cls.clean()
 
-        table = pd.read_feather(cls.dataset_file[key])
+        table = pd.read_feather(cls.dataset_file[key])  # type: ignore[index]
         # fix index dtype (groupby messes it up....)
         table = table.astype({"run_id": "int32", "experiment_id": "int32"})
         if "measurements" in key or key == "timeseries":
@@ -173,12 +177,12 @@ class KIWI_RUNS(BaseDataset):
         return table
 
     @classmethod
-    def clean(cls, key: Optional[KEYS] = None):
+    def clean(cls):
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         dataset = cls.__name__
         __logger__.info("Cleaning dataset '%s'", dataset)
 
-        with open(cls.rawdata_file, "rb") as file:
+        with open(cls.rawdata_file, "rb") as file:  # type: ignore[call-overload]
             data = pickle.load(file)
 
         DATA = [
@@ -190,25 +194,22 @@ class KIWI_RUNS(BaseDataset):
 
         tables = {}
 
-        for key in (
-            "metadata",
-            "setpoints",
-            "measurements_reactor",
-            "measurements_array",
-            "measurements_aggregated",
-        ):
-            if key == "metadata":
+        for key in cls.keys:
+            if key == "timeseries":
+                cls._clean_timeseries()
+            elif key == "metadata":
                 tables[key] = pd.concat(iter(DF[key])).reset_index(drop=True)
+                tables[key].name = key
+                cls._clean(tables[key])
             else:
                 tables[key] = (
                     pd.concat(iter(DF[key]), keys=DF[key].index)
                     .reset_index(level=2, drop=True)
                     .reset_index()
                 )
-            tables[key].name = key
-            cls._clean(tables[key])
+                tables[key].name = key
+                cls._clean(tables[key])
 
-        cls._clean_timeseries()
         __logger__.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
@@ -398,7 +399,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_file["measurements_reactor"]  # type: ignore[attr-defined]
+        path = cls.dataset_file["measurements_reactor"]  # type: ignore[index]
         table.to_feather(path)
 
     @classmethod
@@ -445,7 +446,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_file["measurements_array"]  # type: ignore[attr-defined]
+        path = cls.dataset_file["measurements_array"]  # type: ignore[index]
         table.to_feather(path)
 
     @classmethod
@@ -504,7 +505,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_file["measurements_aggregated"]  # type: ignore[attr-defined]
+        path = cls.dataset_file["measurements_aggregated"]  # type: ignore[index]
         table.to_feather(path)
 
     @classmethod
