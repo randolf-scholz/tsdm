@@ -99,7 +99,6 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import Dataset
-from tsdm.encoders import Encoder
 
 __logger__ = logging.getLogger(__name__)
 
@@ -141,15 +140,10 @@ class BaseTask(ABC):
     r"""Default batch size."""
     eval_batch_size: int = 128
     r"""Default batch size when evaluating."""
-    preprocessor: Optional[Encoder] = None
-    r"""Optional task specific preprocessor."""
-    pre_encoder: Optional[Encoder] = None
-    r"""Optional model specific normal pre-encoder that is applied before batching."""
-
-    @abstractmethod
-    def __init__(self, *args, **kwargs):
-        r"""Perform preprocessing of the dataset."""
-        super().__init__()
+    # preprocessor: Optional[Encoder] = None
+    # r"""Optional task specific preprocessor."""
+    # pre_encoder: Optional[Encoder] = None
+    # r"""Optional model specific normal pre-encoder that is applied before batching."""
 
     # @property
     # @abstractmethod
@@ -163,7 +157,7 @@ class BaseTask(ABC):
 
     @cached_property
     @abstractmethod
-    def keys(self) -> list[str]:
+    def keys(self) -> list[Any]:
         r"""List of keys."""
 
     @cached_property
