@@ -4,7 +4,7 @@ r"""Base Classes for datasets."""
 __all__ = [
     # Classes
     "BaseDataset",
-    "DataSetCollection",
+    "DatasetCollection",
     "DatasetMetaClass",
     "SequenceDataset",
     "TimeTensor",
@@ -21,7 +21,7 @@ import logging
 
 from tsdm.datasets.base.dataset import (
     BaseDataset,
-    DataSetCollection,
+    DatasetCollection,
     DatasetMetaClass,
     SequenceDataset,
 )
