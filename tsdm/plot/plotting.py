@@ -22,6 +22,7 @@ from scipy.stats import mode
 from torch import Tensor
 from torch.linalg import eigvals
 
+
 __logger__ = logging.getLogger(__name__)
 
 Location = Literal[

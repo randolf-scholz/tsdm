@@ -15,6 +15,7 @@ __all__ = [
 ]
 
 import logging
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -111,27 +112,37 @@ def log_optimizer_state(
 
     # TODO: make this compatible with optimziers other than ADAM.
     if not isinstance(optimizer, torch.optim.Adam):
-        raise RuntimeError("Optimizer logging only works with ADAM currently")
+        warnings.warn(
+            "Optimizer logging only works with ADAM currently", RuntimeWarning
+        )
 
     variables = list(optimizer.state.keys())
     gradients = [w.grad for w in variables]
-    moments_1 = [d["exp_avg"] for d in optimizer.state.values()]
-    moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values()]
+    try:
+        moments_1 = [d["exp_avg"] for d in optimizer.state.values()]
+        moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values()]
+    except:
+        pass
 
     writer.add_scalar(f"{prefix}:norms/variables", multi_norm(variables), i)
     writer.add_scalar(f"{prefix}:norms/gradients", multi_norm(gradients), i)
-    writer.add_scalar(f"{prefix}:norms/moments_1", multi_norm(moments_1), i)
-    writer.add_scalar(f"{prefix}:norms/moments_2", multi_norm(moments_2), i)
+    try:
+        writer.add_scalar(f"{prefix}:norms/moments_1", multi_norm(moments_1), i)
+        writer.add_scalar(f"{prefix}:norms/moments_2", multi_norm(moments_2), i)
+    except:
+        pass
 
     # NOTE: 2d-data is an order of magnitude more expensive.
     if histograms:
-        for j, (w, g, a, b) in enumerate(
-            zip(variables, gradients, moments_1, moments_2)
-        ):
+        for j, (w, g) in enumerate(zip(variables, gradients)):
             writer.add_histogram(f"{prefix}:variables/{j}", w, i)
             writer.add_histogram(f"{prefix}:gradients/{j}", g, i)
-            writer.add_histogram(f"{prefix}:moments_1/{j}", a, i)
-            writer.add_histogram(f"{prefix}:moments_2/{j}", b, i)
+        try:
+            for j, (a, b) in enumerate(zip(moments_1, moments_2)):
+                writer.add_histogram(f"{prefix}:moments_1/{j}", a, i)
+                writer.add_histogram(f"{prefix}:moments_2/{j}", b, i)
+        except:
+            pass
 
 
 @torch.no_grad()
@@ -250,7 +261,7 @@ def log_metrics(
             targets is None and predics is None
         ), "values and (targets, predics) are mutually exclusive"
         assert len(values) == len(metrics)
-        values = {key:val for key, val in zip(metrics, values)}
+        values = {key: val for key, val in zip(metrics, values)}
     else:
         raise ValueError(f"{values=} not understood!")
 

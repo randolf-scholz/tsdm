@@ -81,16 +81,14 @@ class KIWI_RUNS_TASK(BaseTask):
     r"""The number of datapoints observed during prediction."""
     forecasting_horizon: int = 24
     r"""The number of datapoints the model should forecast."""
-    targets: list[str] = ["Glucose", "OD600", "DOT", "Base"]
-    r"""The columns that should be predicted."""
     pre_encoder: BaseEncoder
     r"""Encoder for the observations."""
     controls: Series
     r"""The control variables."""
     targets: Series
-    r"""The target varaibles."""
+    r"""The target variables."""
     observables: Series
-    r"""The observables."""
+    r"""The observables variables."""
     loss_weights: DataFrame
     r"""Contains Information about the loss."""
 
@@ -119,16 +117,9 @@ class KIWI_RUNS_TASK(BaseTask):
         md: DataFrame = KIWI_RUNS.metadata
         ts: DataFrame = KIWI_RUNS.dataset
 
-        # drop all time stamps outside of start_time and end_time in the metadata.
-        merged = ts[[]].join(md[["start_time", "end_time"]])
-        time = merged.index.get_level_values("measurement_time")
-        cond = (merged["start_time"] <= time) & (time <= merged["end_time"])
-        ts = ts[cond]
-        # all measurements should be ≥0
-        ts = ts.clip(lower=0.0)
-        # remove run 355
-        ts = ts.drop(355)
-        md = md.drop(355)
+        # remove run 355 adn 482
+        ts = ts.drop([355, 482])
+        md = md.drop([355, 482])
 
         self.metadata: DataFrame = md
         self.timeseries: DataFrame = ts
@@ -154,7 +145,7 @@ class KIWI_RUNS_TASK(BaseTask):
             ]
         )
         controls.index = controls.apply(lambda x: ts.columns.get_loc(x))
-        self.controls = Series(controls.index, index=controls)
+        self.controls = controls
 
         targets = Series(
             [
@@ -165,10 +156,14 @@ class KIWI_RUNS_TASK(BaseTask):
             ]
         )
         targets.index = targets.apply(lambda x: ts.columns.get_loc(x))
-        self.targets = Series(targets.index, index=targets)
+        self.targets = targets
 
         observables = Series(
             [
+                "Base",
+                "DOT",
+                "Glucose",
+                "OD600",
                 "Acetate",
                 "Fluo_GFP",
                 "Volume",
@@ -176,9 +171,9 @@ class KIWI_RUNS_TASK(BaseTask):
             ]
         )
         observables.index = observables.apply(lambda x: ts.columns.get_loc(x))
-        self.observables = Series(observables.index, index=observables)
+        self.observables = observables
 
-        assert (set(controls) | set(targets) | set(observables)) == set(ts.columns)
+        assert (set(controls.values) | set(targets.values) | set(observables.values)) == set(ts.columns)
 
         # Setting of loss weights
         weights = DataFrame.from_dict(
@@ -189,11 +184,14 @@ class KIWI_RUNS_TASK(BaseTask):
                 "OD600": 20,
             },
             orient="index",
-            columns=["weight"],
+            columns=["inverse_weight"],
         )
         weights["col_index"] = weights.index.map(lambda x: (ts.columns == x).argmax())
+        weights["weight"] = 1 / weights["inverse_weight"]
+
         weights.index.name = "col"
         self.loss_weights = weights
+        self.units = self.dataset.units
 
     @cached_property
     def split_idx(self) -> DataFrame:
