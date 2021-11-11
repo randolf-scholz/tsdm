@@ -14,16 +14,17 @@ __all__ = [
 ]
 
 import logging
-import random
-from typing import Callable, Iterator, Optional, Sequence, Sized, Union
+from collections.abc import Mapping
+from itertools import chain
+from typing import Any, Callable, Iterator, Optional, Sequence, Sized, Union
 
 import numpy as np
 from numpy.random import permutation
 from numpy.typing import NDArray
-from pandas import Index
+from pandas import Index, Series
 from torch.utils.data import Sampler
 
-from tsdm.datasets import DataSetCollection
+from tsdm.datasets import DatasetCollection
 
 __logger__ = logging.getLogger(__name__)
 
@@ -186,44 +187,55 @@ class CollectionSampler(Sampler):
     """
 
     idx: Index
-    r"""The shared index. Must be reduced to unique entries."""
+    r"""The shared index."""
+    subsamplers: dict[Any, Sampler]
+    r"""The subsamplers to sample from the collection."""
+    early_stop: bool = False
+    r"""Whether to stop sampling when the index is exhausted."""
+    shuffle: bool = True
+    r"""Whether to sample in random order."""
+    sizes: Series
+    r"""The sizes of the subsamplers."""
+    partition: Series
+    r"""Contains each key a number of times equal to the size of the subsampler."""
 
     def __init__(
         self,
-        data_source: DataSetCollection,
-        subsampler: type[Sampler],
+        data_source: DatasetCollection,
+        subsamplers: Mapping[Any, Sampler],
         shuffle: bool = True,
         early_stop: bool = False,
     ):
         super().__init__(data_source)
         self.data = data_source
         self.shuffle = shuffle
-        self.idx = data_source.index
-        self.subsamplers = {key: subsampler(data_source[key]) for key in self.idx}
+        self.idx = data_source.keys()
+        self.subsamplers = dict(subsamplers)
         self.early_stop = early_stop
+        self.sizes = Series({key: len(self.subsamplers[key]) for key in self.idx})
+
+        if early_stop:
+            partition = list(chain(*([key] * min(self.sizes) for key in self.idx)))
+        else:
+            partition = list(chain(*([key] * self.sizes[key] for key in self.idx)))
+        self.partition = Series(partition)
 
     def __len__(self):
         r"""Return the maximum allowed index."""
-        return len(self.idx)
+        if self.early_stop:
+            return min(self.sizes) * len(self.subsamplers)
+        return sum(self.sizes)
 
     def __iter__(self):
         r"""Return indices of the samples.
 
-        This works by setting up a set of subsamplers that sample from each dataset
-        individually until they are exhausted
+        When ``early_stop=True``, it will sample precisely min() * len(subsamplers) samples.
+        When ``early_stop=False``, it will sample all samples.
         """
         activate_iterators = {
             key: iter(sampler) for key, sampler in self.subsamplers.items()
         }
-        activate_keys = list(activate_iterators)
+        perm = np.random.permutation(self.partition)
 
-        while activate_iterators:
-            key = random.choice(activate_keys)
-            try:
-                subitem = next(activate_iterators[key])
-                yield key, subitem
-            except StopIteration as E:
-                if self.early_stop:
-                    raise E
-                activate_iterators.pop(key)
-                activate_keys = list(activate_iterators)
+        for key in perm:
+            yield key, next(activate_iterators[key])

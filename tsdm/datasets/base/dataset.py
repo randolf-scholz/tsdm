@@ -26,7 +26,7 @@ __all__ = [
     "BaseDataset",
     "DatasetMetaClass",
     "SequenceDataset",
-    "DataSetCollection",
+    "DatasetCollection",
 ]
 
 import logging
@@ -40,9 +40,8 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 from urllib.parse import urlparse
 
-from pandas import Index, Series
 from torch import Tensor
-from torch.utils.data import Dataset as torch_dataset
+from torch.utils.data import Dataset as Torch_Dataset
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 
@@ -244,7 +243,7 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
             webbrowser.open_new_tab(cls.info_url)
 
 
-class SequenceDataset(torch_dataset):
+class SequenceDataset(Torch_Dataset):
     r"""Sequential Dataset."""
 
     def __init__(self, tensors: list[Tensor]):
@@ -260,20 +259,27 @@ class SequenceDataset(torch_dataset):
         return [x[idx] for x in self.tensors]
 
 
-class DataSetCollection(torch_dataset):
+class DatasetCollection(Mapping, Torch_Dataset):
     r"""Represents a ``mapping[keys → Datasets]``.
 
     All tensors must have a shared index,
     in the sense that index.unique() is identical for all inputs.
     """
 
-    def __init__(self, indexed_datasets: Mapping[Any, torch_dataset]):
-        self.index = Index(indexed_datasets.keys())
-        self.indexed_tensors = Series(indexed_datasets)
+    datasets: dict[Any, Torch_Dataset]
+    """The datasets"""
+
+    def __init__(self, indexed_datasets: Mapping[Any, Torch_Dataset]):
+        super().__init__()
+        self.datasets = dict(indexed_datasets)
+        self.index = self.datasets.keys()
+        self.keys = self.datasets.keys  # type: ignore[assignment]
+        self.values = self.datasets.values  # type: ignore[assignment]
+        self.items = self.datasets.items  # type: ignore[assignment]
 
     def __len__(self):
         r"""Length of the dataset."""
-        return len(self.index)
+        return len(self.datasets)
 
     def __getitem__(self, item):
         r"""Hierarchical lookup."""
@@ -282,8 +288,17 @@ class DataSetCollection(torch_dataset):
             first, rest = item[0], item[1:]
             if isinstance(first, slice) or isinstance(first, Iterable):
                 # pass remaining indices to sub-object
-                value = self.indexed_tensors[first]
+                value = self.datasets[first]
                 return value[rest]
 
         # no hierarchical indexing
-        return self.indexed_tensors[item]
+        return self.datasets[item]
+
+    def __iter__(self):
+        r"""Iterate over the datasets."""
+        for key in self.index:
+            yield self.datasets[key]
+
+    def __repr__(self):
+        r"""Representation of the dataset."""
+        return f"DatasetCollection({self.datasets})"
