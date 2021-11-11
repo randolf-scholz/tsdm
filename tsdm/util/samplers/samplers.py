@@ -193,13 +193,14 @@ class CollectionSampler(Sampler):
         data_source: DataSetCollection,
         subsampler: type[Sampler],
         shuffle: bool = True,
+        early_stop: bool = False,
     ):
         super().__init__(data_source)
         self.data = data_source
         self.shuffle = shuffle
         self.idx = data_source.index
-
         self.subsamplers = {key: subsampler(data_source[key]) for key in self.idx}
+        self.early_stop = early_stop
 
     def __len__(self):
         r"""Return the maximum allowed index."""
@@ -221,6 +222,8 @@ class CollectionSampler(Sampler):
             try:
                 subitem = next(activate_iterators[key])
                 yield key, subitem
-            except StopIteration:
+            except StopIteration as E:
+                if self.early_stop:
+                    raise E
                 activate_iterators.pop(key)
                 activate_keys = list(activate_iterators)

@@ -22,6 +22,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 
 from tsdm.datasets.base import BaseDataset
+from tsdm.util.strings import snake2camel
 
 __logger__ = logging.getLogger(__name__)
 
@@ -120,6 +121,7 @@ class KIWI_RUNS(BaseDataset):
         "measurements_array",
         "measurements_aggregated",
         "timeseries",
+        "units",
     ]
     r"""Available keys."""
     KEYS = Literal[
@@ -170,7 +172,21 @@ class KIWI_RUNS(BaseDataset):
         # https://stackoverflow.com/q/47615318/9318372
         if os.environ.get("GENERATING_DOCS", False):
             return "the metadata"
-        return cls.load("metadata")  # pylint: disable=E1120
+        return cls.load("metadata")
+
+    @classmethod  # type: ignore[misc]
+    @property
+    @cache
+    def timeseries(cls) -> DataFrame:
+        """The TimeSeries."""
+        return cls.dataset
+
+    @classmethod
+    @property
+    @cache
+    def units(cls) -> DataFrame:
+        """The units metadata."""
+        return cls.load("units")
 
     @classmethod
     def load(cls, key: KEYS = "timeseries") -> DataFrame:
@@ -179,10 +195,15 @@ class KIWI_RUNS(BaseDataset):
             cls.clean()
 
         table = pd.read_feather(cls.dataset_file[key])  # type: ignore[index]
+
+        if key == "units":
+            return table.set_index("variable")
+
         # fix index dtype (groupby messes it up....)
         table = table.astype({"run_id": "int32", "experiment_id": "int32"})
         if "measurements" in key or key == "timeseries":
             table = table.set_index(["run_id", "experiment_id", "measurement_time"])
+            table.columns.name = "variable"
         else:
             table = table.set_index(["run_id", "experiment_id"])
         return table
@@ -206,39 +227,41 @@ class KIWI_RUNS(BaseDataset):
         tables = {}
 
         for key in cls.keys:
-            if key == "timeseries":
-                cls._clean_timeseries()
+            if key in ("units", "timeseries"):
+                cls._clean(key)
             elif key == "metadata":
                 tables[key] = pd.concat(iter(DF[key])).reset_index(drop=True)
-                tables[key].name = key
-                cls._clean(tables[key])
+                cls._clean(key, tables[key])
             else:
                 tables[key] = (
                     pd.concat(iter(DF[key]), keys=DF[key].index)
                     .reset_index(level=2, drop=True)
                     .reset_index()
                 )
-                tables[key].name = key
-                cls._clean(tables[key])
+                cls._clean(key, tables[key])
 
         __logger__.info("Finished cleaning dataset '%s'", dataset)
 
     @classmethod
-    def _clean(cls, table: DataFrame):
+    def _clean(cls, key: str, table: Optional[DataFrame] = None):
         r"""Create the DataFrames.
 
         Parameters
         ----------
         table: DataFrame
         """
-        key = table.name
-        {
+        cleaner = {
+            "units": cls._clean_units,
+            "timeseries": cls._clean_timeseries,
             "metadata": cls._clean_metadata,
             "setpoints": cls._clean_setpoints,
             "measurements_reactor": cls._clean_measurements_reactor,
             "measurements_array": cls._clean_measurements_array,
             "measurements_aggregated": cls._clean_measurements_aggregated,
-        }[key](table)
+        }[key]
+
+        cleaner() if table is None else cleaner(table)
+
         __logger__.info(
             "Finished cleaning table '%s' of dataset '%s'", key, cls.__name__
         )
@@ -303,7 +326,9 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_file["metadata"]
+        # table = table.rename(columns={col: snake2camel(col) for col in table})
+        table.columns.name = "variable"
+        path = cls.dataset_file["metadata"]  # type: ignore[index]
         table.to_feather(path)
 
     @classmethod
@@ -356,7 +381,8 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
-        path = cls.dataset_file["setpoints"]
+        # table = table.rename(columns={col: snake2camel(col) for col in table})
+        path = cls.dataset_file["setpoints"]  # type: ignore[index]
         table.to_feather(path)
 
     @classmethod
@@ -410,6 +436,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
+        # table = table.rename(columns={col: snake2camel(col) for col in table})
         path = cls.dataset_file["measurements_reactor"]  # type: ignore[index]
         table.to_feather(path)
 
@@ -457,6 +484,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
+        # table = table.rename(columns={col: snake2camel(col) for col in table})
         path = cls.dataset_file["measurements_array"]  # type: ignore[index]
         table.to_feather(path)
 
@@ -516,6 +544,7 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
+        # table = table.rename(columns={col: snake2camel(col) for col in table})
         path = cls.dataset_file["measurements_aggregated"]  # type: ignore[index]
         table.to_feather(path)
 
@@ -523,14 +552,48 @@ class KIWI_RUNS(BaseDataset):
     def _clean_timeseries(cls):
         md = cls.load("metadata")
         ts = cls.load("measurements_aggregated")
-
+        # drop rows with only <NA> values
+        ts = ts.dropna(how="all")
         # generate timeseries frame
         ts = ts.drop(columns="unit")
+        # gather
         ts = ts.groupby(["run_id", "experiment_id", "measurement_time"]).mean()
         # drop rows with only <NA> values
         ts = ts.dropna(how="all")
         # convert all value columns to float
         ts = ts.astype("Float32")
+        # sort according to measurement_time
+        ts = ts.sort_values(["run_id", "experiment_id", "measurement_time"])
+        # drop all time stamps outside of start_time and end_time in the metadata.
+        merged = ts[[]].join(md[["start_time", "end_time"]])
+        time = merged.index.get_level_values("measurement_time")
+        cond = (merged["start_time"] <= time) & (time <= merged["end_time"])
+        ts = ts[cond]
+
+        # replace wrong pH values
+        ts["pH"] = ts["pH"].replace(0.0, pd.NA)
+        # mask out-of bounds values
+        ts["DOT"][ts["DOT"] < 0] = pd.NA
+        ts["DOT"][ts["DOT"] > 100] = 100.0
+        ts["Glucose"][ts["Glucose"] < 0] = pd.NA
+        ts["Acetate"][ts["Acetate"] < 0] = pd.NA
+        ts["OD600"][ts["OD600"] < 0] = pd.NA
+        # drop rows with only <NA> values
+        ts = ts.dropna(how="all")
+
+        # Forward Fill piece-wise constant control variables
+        ffill_consts = [
+            "Cumulated_feed_volume_glucose",
+            "Cumulated_feed_volume_medium",
+            "InducerConcentration",
+            "StirringSpeed",
+            "Flow_Air",
+            "Probe_Volume",
+        ]
+        for idx, slc in ts.groupby(["run_id", "experiment_id"]):
+            slc = slc[ffill_consts].fillna(method="ffill")
+            # forward fill remaining NA with zeros.
+            ts.loc[idx, ffill_consts] = slc[ffill_consts].fillna(0)
 
         # check if metadata-index matches with times-series index
         tsidx = ts.reset_index(level="measurement_time").index
@@ -539,5 +602,34 @@ class KIWI_RUNS(BaseDataset):
         # reset index
         ts = ts.reset_index()
         ts = ts.astype({"run_id": "int32", "experiment_id": "int32"})
-        path = cls.dataset_file["timeseries"]
+        # ts = ts.rename(columns={col: snake2camel(col) for col in ts})
+        ts.columns.name = "variable"
+        path = cls.dataset_file["timeseries"]  # type: ignore[index]
         ts.to_feather(path)
+
+    @classmethod
+    def _clean_units(cls):
+        ts = cls.load("measurements_aggregated")
+
+        _units = ts["unit"]
+        data = ts.drop(columns="unit")
+        data = data.astype("float32")
+
+        units = Series(dtype=pd.StringDtype(), name="unit")
+
+        for col in data:
+            if col == "runtime": continue
+            mask = pd.notna(data[col])
+            unit = _units[mask].unique().to_list()
+            assert len(unit) <= 1, f"{col}, {unit} {len(unit)}"
+            units[col] = unit[0]
+
+        units["DOT"] = "%"
+        units["OD600"] = "%"
+        units["pH"] = "-log[H⁺]"
+        units["Acetate"] = "g/L"
+        units = units.fillna(pd.NA).astype("string").astype("category")
+        units.index.name = "variable"
+        units = units.reset_index()
+        path = cls.dataset_file["units"]  # type: ignore[index]
+        units.to_feather(path)

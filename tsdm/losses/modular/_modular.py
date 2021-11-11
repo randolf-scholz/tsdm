@@ -19,6 +19,7 @@ __all__ = [
 import logging
 from typing import Final
 
+import numpy as np
 import torch
 from torch import Tensor, nn
 
@@ -195,14 +196,13 @@ class WRMSE(nn.Module):
         Tensor
         """
         assert x.shape[-self.rank :] == self.shape
-        # batch_dims = list(range(len(x.shape) - self.rank))
-
-        mask = ~torch.isnan(x)
-        # xhat is not allowed to be nan if x isn't.
-        if torch.any(torch.isnan(xhat) & mask):
-            raise RuntimeError("Observations have NaN entries when Targets do not!")
-
         # the residuals, shape: ...𝐦
-        r = (self.w ** 2 * (x - xhat))[mask] ** 2
+        r = self.w * (x - xhat) ** 2
 
         return torch.sqrt(torch.mean(r))
+
+    def __repr__(self) -> str:
+        """Pretty print."""
+        with np.printoptions(precision=2):
+            weights = self.w.cpu().numpy()
+            return f"{self.__class__.__name__}(\n" + repr(weights) + "\n)"
