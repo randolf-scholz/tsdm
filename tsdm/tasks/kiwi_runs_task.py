@@ -5,7 +5,7 @@ r"""#TODO add module summary line.
 
 
 import logging
-from functools import cache, cached_property, partial
+from functools import cached_property
 from itertools import product
 from typing import Any, Callable, Literal, Optional
 
@@ -16,7 +16,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import KIWI_RUNS, Dataset
-from tsdm.datasets.base import DataSetCollection
+from tsdm.datasets.base import DatasetCollection
 from tsdm.encoders.modular import (
     BaseEncoder,
     ChainedEncoder,
@@ -114,15 +114,11 @@ class KIWI_RUNS_TASK(BaseTask):
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
 
-        md: DataFrame = KIWI_RUNS.metadata
-        ts: DataFrame = KIWI_RUNS.dataset
+        self.units: DataFrame = KIWI_RUNS.units
+        self.metadata: DataFrame = KIWI_RUNS.metadata.drop([355, 482])
+        self.timeseries: DataFrame = KIWI_RUNS.dataset.drop([355, 482])
 
-        # remove run 355 adn 482
-        ts = ts.drop([355, 482])
-        md = md.drop([355, 482])
-
-        self.metadata: DataFrame = md
-        self.timeseries: DataFrame = ts
+        ts = self.timeseries
 
         if preprocessor is None:
             self.preprocessor = ChainedEncoder(
@@ -173,7 +169,9 @@ class KIWI_RUNS_TASK(BaseTask):
         observables.index = observables.apply(lambda x: ts.columns.get_loc(x))
         self.observables = observables
 
-        assert (set(controls.values) | set(targets.values) | set(observables.values)) == set(ts.columns)
+        assert (
+            set(controls.values) | set(targets.values) | set(observables.values)
+        ) == set(ts.columns)
 
         # Setting of loss weights
         weights = DataFrame.from_dict(
@@ -191,7 +189,6 @@ class KIWI_RUNS_TASK(BaseTask):
 
         weights.index.name = "col"
         self.loss_weights = weights
-        self.units = self.dataset.units
 
     @cached_property
     def split_idx(self) -> DataFrame:
@@ -212,27 +209,26 @@ class KIWI_RUNS_TASK(BaseTask):
         splits.columns.name = "split"
         return splits.astype("string").astype("category")
 
-    @cache
-    def splits(self, key: KEYS) -> tuple[DataFrame, DataFrame]:  # type: ignore[override]
+    @cached_property
+    def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
         """Return a subset of the data corresponding to the split.
-
-        Parameters
-        ----------
-        key: tuple[int, str]
 
         Returns
         -------
         tuple[DataFrame, DataFrame]
         """
-        assert key in self.keys, f"Wrong {key=}. Only {self.keys} work."
-        split, data_part = key
+        splits = {}
+        for key in self.keys:
+            assert key in self.keys, f"Wrong {key=}. Only {self.keys} work."
+            split, data_part = key
 
-        mask = self.split_idx[split] == data_part
-        idx = self.split_idx[split][mask].index
-        timeseries = self.timeseries.reset_index(level=2).loc[idx]
-        timeseries = timeseries.set_index("measurement_time", append=True)
-        metadata = self.metadata.loc[idx]
-        return timeseries, metadata
+            mask = self.split_idx[split] == data_part
+            idx = self.split_idx[split][mask].index
+            timeseries = self.timeseries.reset_index(level=2).loc[idx]
+            timeseries = timeseries.set_index("measurement_time", append=True)
+            metadata = self.metadata.loc[idx]
+            splits[key] = (timeseries, metadata)
+        return splits
 
     @cached_property
     def dataloaders(self) -> dict[tuple[int, str], DataLoader]:
@@ -301,30 +297,37 @@ class KIWI_RUNS_TASK(BaseTask):
         if part == "test" and "drop_last" in kwargs:
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
-        ts, md = self.splits(key)
-        # select metadata
-        md = md[["Feed_concentration_glc", "pH_correction_factor", "OD_Dilution"]]
-        # convert to regular float
-        md = md.astype("float32")
-        ts = ts.astype("float32")
-
-        # preprocessing
-        ts_train, md_train = self.splits((split, "train"))
+        # Fit the preprocessor on the training data
+        ts_train, md_train = self.splits[(split, "train")]
         self.preprocessor.fit(ts_train.reset_index(level=[0, 1], drop=True))
-        T, X = self.preprocessor.transform(ts.reset_index(level=[0, 1], drop=True))
 
-        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # dtype = torch.float32
-        # M = torch.tensor(md, device=device, dtype=dtype)
-        ts = ts.reset_index(level=2)  # <- crucial! we need to make sure index is same.
-        shared_index = md.index
-        masks = {idx: (ts.index == idx) for idx in shared_index}
-        datasets = {
-            idx: TensorDataset(T[masks[idx]], X[masks[idx]]) for idx in shared_index
+        ts, md = self.splits[key]
+        # md = md[["Feed_concentration_glc", "pH_correction_factor", "OD_Dilution"]]
+
+        datasets = {}
+
+        for idx, slc in ts.groupby(["run_id", "experiment_id"]):
+            T, X = self.preprocessor.transform(slc.reset_index(level=[0, 1], drop=True))
+            datasets[idx] = TensorDataset(T, X)
+
+        # T, X = self.preprocessor.transform(ts.reset_index(level=[0, 1], drop=True))
+        #
+        # # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # # dtype = torch.float32
+        # # M = torch.tensor(md, device=device, dtype=dtype)
+        # ts = ts.reset_index(level=2)  # <- crucial! we need to make sure index is same.
+        # shared_index = md.index
+        # masks = {idx: (ts.index == idx) for idx in shared_index}
+        # datasets = {
+        #     idx: TensorDataset(T[masks[idx]], X[masks[idx]]) for idx in shared_index
+        # }
+
+        dataset = DatasetCollection(datasets)
+
+        subsamplers = {
+            key: SequenceSampler(ds, seq_len=self.horizon, shuffle=shuffle)
+            for key, ds in dataset.items()
         }
-
-        dataset = DataSetCollection(datasets)
-        subsampler = partial(SequenceSampler, seq_len=self.horizon, shuffle=shuffle)  # type: ignore[assignment]
-        sampler = CollectionSampler(dataset, subsampler=subsampler)
+        sampler = CollectionSampler(dataset, subsamplers=subsamplers)
 
         return DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)

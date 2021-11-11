@@ -10,7 +10,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 @overload
-def snake2camel(s: str) -> str:
+def snake2camel(s: str) -> str:  # type: ignore[misc]
     ...
 
 
