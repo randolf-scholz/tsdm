@@ -15,7 +15,7 @@ __all__ = [
     "DatasetMetaClass",
     "BaseDataset",
     "SequenceDataset",
-    "DataSetCollection",
+    "DatasetCollection",
     # Datasets
     "BeijingAirQuality",
     "ETTh1",
@@ -46,7 +46,7 @@ from typing import Final, Union
 from tsdm.datasets import base
 from tsdm.datasets.base import (
     BaseDataset,
-    DataSetCollection,
+    DatasetCollection,
     DatasetMetaClass,
     IndexedArray,
     SequenceDataset,

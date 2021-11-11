@@ -22,7 +22,6 @@ import pandas as pd
 from pandas import DataFrame, Series
 
 from tsdm.datasets.base import BaseDataset
-from tsdm.util.strings import snake2camel
 
 __logger__ = logging.getLogger(__name__)
 
@@ -178,14 +177,14 @@ class KIWI_RUNS(BaseDataset):
     @property
     @cache
     def timeseries(cls) -> DataFrame:
-        """The TimeSeries."""
+        """Return the TimeSeries."""
         return cls.dataset
 
     @classmethod
     @property
     @cache
     def units(cls) -> DataFrame:
-        """The units metadata."""
+        """Return the units metadata."""
         return cls.load("units")
 
     @classmethod
@@ -618,7 +617,8 @@ class KIWI_RUNS(BaseDataset):
         units = Series(dtype=pd.StringDtype(), name="unit")
 
         for col in data:
-            if col == "runtime": continue
+            if col == "runtime":
+                continue
             mask = pd.notna(data[col])
             unit = _units[mask].unique().to_list()
             assert len(unit) <= 1, f"{col}, {unit} {len(unit)}"

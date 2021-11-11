@@ -121,7 +121,7 @@ def log_optimizer_state(
     try:
         moments_1 = [d["exp_avg"] for d in optimizer.state.values()]
         moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values()]
-    except:
+    except KeyError:
         pass
 
     writer.add_scalar(f"{prefix}:norms/variables", multi_norm(variables), i)
@@ -129,7 +129,7 @@ def log_optimizer_state(
     try:
         writer.add_scalar(f"{prefix}:norms/moments_1", multi_norm(moments_1), i)
         writer.add_scalar(f"{prefix}:norms/moments_2", multi_norm(moments_2), i)
-    except:
+    except NameError:
         pass
 
     # NOTE: 2d-data is an order of magnitude more expensive.
@@ -141,7 +141,7 @@ def log_optimizer_state(
             for j, (a, b) in enumerate(zip(moments_1, moments_2)):
                 writer.add_histogram(f"{prefix}:moments_1/{j}", a, i)
                 writer.add_histogram(f"{prefix}:moments_2/{j}", b, i)
-        except:
+        except NameError:
             pass
 
 
