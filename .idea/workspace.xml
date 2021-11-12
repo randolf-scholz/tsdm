@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/tsdm/plot/__setup__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/__setup__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -138,7 +138,7 @@
       <workItem from="1634805838272" duration="599000" />
       <workItem from="1634980459407" duration="599000" />
       <workItem from="1636708429337" duration="100000" />
-      <workItem from="1636709503008" duration="1445000" />
+      <workItem from="1636709503008" duration="1797000" />
     </task>
     <servers />
   </component>
