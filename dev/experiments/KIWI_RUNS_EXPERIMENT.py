@@ -4,11 +4,11 @@
 # In[1]:
 
 
-get_ipython().run_line_magic('config', "InteractiveShell.ast_node_interactivity='last_expr_or_assign'  # always print last expr.")
-get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg'")
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
-get_ipython().run_line_magic('matplotlib', 'inline')
+# get_ipython().run_line_magic('config', "InteractiveShell.ast_node_interactivity='last_expr_or_assign'  # always print last expr.")
+# get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg'")
+# get_ipython().run_line_magic('load_ext', 'autoreload')
+# get_ipython().run_line_magic('autoreload', '2')
+# get_ipython().run_line_magic('matplotlib', 'inline')
 
 
 # In[2]:
@@ -249,11 +249,11 @@ for epoch in (epochs := trange(100)):
         # log_optimizer_state(epoch, writer, optimizer, histograms=True)
         log_kernel_information(epoch, writer, model.system.kernel, histograms=True)
 
-        for key in (0, "train"), (0, "test"):
+        for key in ((0, "train"), (0, "test")):
             dataloader = EVALLOADERS[key]
             y, ŷ = get_all_preds(model, dataloader)
             log_metrics(
-                epoch, writer, metrics=metrics, targets=y, predics=ŷ, prefix=name
+                epoch, writer, metrics=metrics, targets=y, predics=ŷ, prefix=key[1]
             )
 
     for batch in (batches := tqdm(TRAINLOADER[0])):
@@ -319,10 +319,11 @@ for epoch in (epochs := trange(100)):
         log_optimizer_state(epoch, writer, optimizer, histograms=True)
         log_kernel_information(epoch, writer, model.system.kernel, histograms=True)
 
-        for name, dataloader in EVALLOADERS[0].items():
+        for key in ((0, "train"), (0, "test")):
+            dataloader = EVALLOADERS[key]
             y, ŷ = get_all_preds(model, dataloader)
             log_metrics(
-                epoch, writer, metrics=metrics, targets=y, predics=ŷ, prefix=name
+                epoch, writer, metrics=metrics, targets=y, predics=ŷ, prefix=key[1]
             )
 
         # Model Checkpoint
