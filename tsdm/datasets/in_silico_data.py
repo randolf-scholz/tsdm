@@ -3,15 +3,15 @@ r"""In silico experiments.
 TODO: Module Summary
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "InSilicoData",
 ]
 
 import logging
+from functools import cache
 from importlib import resources
+from pathlib import Path
 
 import h5py
 import pandas as pd
@@ -35,6 +35,13 @@ class InSilicoData(BaseDataset):
     | missing | -       | 99%     | 99%       | 99%     | 12%   | 99%     | 93%       | -    |
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """  # pylint: disable=line-too-long # noqa
+
+    @classmethod
+    @property
+    @cache
+    def dataset_file(cls) -> Path:
+        r"""Path of the dataset file."""
+        return cls.dataset_path.joinpath(f"{cls.__name__}.h5")
 
     @classmethod
     def clean(cls):
