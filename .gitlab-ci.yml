@@ -170,6 +170,7 @@ mypy:
     - key: mypy
       paths: [ "${MYPY_CACHE_DIR}" ]
   needs: [ "setup" ]
+  allow_failure: true
   script:
     - mypy $MODULEDIR --show-error-codes --pretty --install-types --non-interactive --junit-xml reports/mypy.xml
     - mypy $TESTDIR --show-error-codes --pretty --install-types --non-interactive --junit-xml reports/mypy_test.xml
