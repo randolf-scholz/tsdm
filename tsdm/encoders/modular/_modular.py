@@ -229,12 +229,14 @@ class DateTimeEncoder(BaseEncoder):
     r"""The base frequency to convert timedeltas to."""
     offset: Timestamp
     r"""The starting point of the timeseries."""
-    kind: Union[Series, DatetimeIndex] = None
+    kind: Union[type[Series], type[DatetimeIndex]]
     r"""Whether to encode as index of Series."""
     name: Optional[str] = None
     r"""The name of the original Series."""
     dtype: np.dtype
     r"""The original dtype of the Series."""
+    freq: Optional[Any] = None
+    r"""The frequency attribute in case of DatetimeIndex."""
 
     def __init__(self, unit: str = "s"):
         """Initialize the parameters.
@@ -256,8 +258,10 @@ class DateTimeEncoder(BaseEncoder):
             raise ValueError(f"Incompatible {type(datetimes)=}")
 
         self.offset = Timestamp(datetimes[0])
-        self.name = datetimes.name
+        self.name = str(datetimes.name) if datetimes.name is not None else None
         self.dtype = datetimes.dtype
+        if isinstance(datetimes, DatetimeIndex):
+            self.freq = datetimes.freq
 
     def encode(self, datetimes: Union[Series, DatetimeIndex]) -> Series:
         r"""Encode the input."""
@@ -266,7 +270,12 @@ class DateTimeEncoder(BaseEncoder):
     def decode(self, timedeltas: Series) -> Union[Series, DatetimeIndex]:
         r"""Decode the input."""
         converted = pandas.to_timedelta(timedeltas, unit=self.unit)
-        return self.kind(converted + self.offset, name=self.name, dtype=self.dtype)
+        datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
+        if self.kind == Series:
+            return datetimes
+        return DatetimeIndex(
+            datetimes, freq=self.freq, name=self.name, dtype=self.dtype
+        )
 
 
 class IdentityEncoder(BaseEncoder):

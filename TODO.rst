@@ -54,3 +54,6 @@ KIWI data - cut off negative values
 - results on Electricity, ETTh, Traffic
 
 
+ADD
+ECL : https://drive.google.com/file/d/1rUPdR7R2iWFW-LMoDdHoO2g4KgnkpFzP/view?usp=sharing
+Weather: https://drive.google.com/file/d/1UBRz-aM_57i_KCC-iaSWoKDPTGGv6EaG/view?usp=sharing

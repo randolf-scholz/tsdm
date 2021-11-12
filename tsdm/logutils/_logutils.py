@@ -16,7 +16,7 @@ __all__ = [
 
 import logging
 import warnings
-from collections.abc import Sequence, Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional, Union, overload
