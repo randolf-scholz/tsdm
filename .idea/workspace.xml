@@ -5,13 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/plot/__setup__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/__setup__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/random/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/random/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/_random.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/stats/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/stats/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/stats/stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/stats/_stats.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -144,7 +138,7 @@
       <workItem from="1634805838272" duration="599000" />
       <workItem from="1634980459407" duration="599000" />
       <workItem from="1636708429337" duration="100000" />
-      <workItem from="1636709503008" duration="1218000" />
+      <workItem from="1636709503008" duration="1445000" />
     </task>
     <servers />
   </component>
