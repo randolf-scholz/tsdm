@@ -16,7 +16,7 @@ __all__ = [
 
 import logging
 import warnings
-from collections.abc import Sequence
+from collections.abc import Sequence, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional, Union, overload
@@ -251,7 +251,7 @@ def log_metrics(
         assert len(targets) == len(predics)
         assert isinstance(metrics, dict)
         values = compute_metrics(metrics, targets=targets, predics=predics)
-    elif isinstance(values, dict):
+    elif isinstance(values, Mapping):
         assert (
             targets is None and predics is None
         ), "values and (targets, predics) are mutually exclusive"

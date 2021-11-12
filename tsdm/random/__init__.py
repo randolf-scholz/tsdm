@@ -14,6 +14,6 @@ __all__ = [
 
 import logging
 
-from tsdm.random.utils import sample_timedeltas, sample_timestamps
+from tsdm.random._random import sample_timedeltas, sample_timestamps
 
 __logger__ = logging.getLogger(__name__)
