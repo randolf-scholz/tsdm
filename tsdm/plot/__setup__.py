@@ -4,10 +4,10 @@ Enable LaTeX rendering by default, if installed.
 """
 
 import logging
-from typing import Final
-import matplotlib
 import warnings
+from typing import Final
 
+import matplotlib
 
 __logger__ = logging.getLogger(__name__)
 

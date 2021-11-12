@@ -11,13 +11,15 @@ LOGGER = logging.getLogger(__name__)
 
 def test_datetime_encoder():
     r"""Test whether the encoder is reversible."""
+    # test Index
     time = date_range("2020-01-01", "2021-01-01", freq="1d")
     encoder = DateTimeEncoder()
     encoder.fit(time)
     encoded = encoder.encode(time)
     decoded = encoder.decode(encoded)
-    testing.assert_series_equal(time, decoded)
+    testing.assert_index_equal(time, decoded)
 
+    # test Series
     time = Series(time)
     encoder = DateTimeEncoder()
     encoder.fit(time)

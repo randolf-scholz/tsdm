@@ -110,6 +110,13 @@ class BaseDataset(ABC, metaclass=DatasetMetaClass):
     # dataset_file: Path = classmethod(DatasetMetaClass.dataset_file)  # type: ignore
     # """The dataset file"""
 
+    @classmethod
+    @property
+    @abstractmethod
+    def dataset_file(cls):
+        """Location where the data is stored."""
+        ...
+
     @classmethod  # type: ignore[misc]
     @property
     @cache
