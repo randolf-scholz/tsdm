@@ -1,44 +1,49 @@
-r"""TODO: Module Docstring.
+r"""Initialize the plotting module.
 
-TODO: Module summary.
+Enable LaTeX rendering by default, if installed.
 """
 
-from __future__ import annotations
-
 import logging
-
-# import matplotlib
-
-# __all__ = []
+from typing import Final
+import matplotlib
+import warnings
 
 
 __logger__ = logging.getLogger(__name__)
 
-# matplotlib.use("pgf")
-# matplotlib.rcParams.update(
-#     {
-#         "text.usetex": True,
-#         "pgf.texsystem": r"lualatex",
-#         "pgf.preamble": "\n".join(
-#             [
-#                 r"\usepackage{fontspec}",
-#                 r"\usepackage[T1]{fontenc}",
-#                 r"\usepackage[utf8x]{inputenc}",
-#                 r"\usepackage{amsmath}",
-#                 r"\usepackage{amsfonts}",
-#                 r"\usepackage{amssymb}",
-#                 r"\usepackage{unicode-math}",
-#             ]
-#         ),
-#         "text.latex.preamble": "\n".join(
-#             [
-#                 r"\usepackage{amsmath}",
-#                 r"\usepackage{amsfonts}",
-#                 r"\usepackage{amssymb}",
-#             ]
-#         ),
-#         # "mathtext.fontset": "stix",
-#         # "font.family": "STIXGeneral",
-#         # "svg.fonttype": "none",
-#     }
-# )
+USE_TEX: Final[bool] = matplotlib.checkdep_usetex(True)
+
+
+if USE_TEX:
+    try:
+        matplotlib.use("pgf")
+    except ValueError:
+        warnings.warn("matplotlib: pgf backend not available")
+
+    matplotlib.rcParams.update(
+        {
+            "text.usetex": True,
+            "pgf.texsystem": r"lualatex",
+            "pgf.preamble": "\n".join(
+                [
+                    r"\usepackage{fontspec}",
+                    r"\usepackage[T1]{fontenc}",
+                    r"\usepackage[utf8x]{inputenc}",
+                    r"\usepackage{amsmath}",
+                    r"\usepackage{amsfonts}",
+                    r"\usepackage{amssymb}",
+                    r"\usepackage{unicode-math}",
+                ]
+            ),
+            "text.latex.preamble": "\n".join(
+                [
+                    r"\usepackage{amsmath}",
+                    r"\usepackage{amsfonts}",
+                    r"\usepackage{amssymb}",
+                ]
+            ),
+            # "mathtext.fontset": "stix",
+            # "font.family": "STIXGeneral",
+            # "svg.fonttype": "none",
+        }
+    )
