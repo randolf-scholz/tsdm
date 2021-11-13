@@ -239,3 +239,7 @@ class CollectionSampler(Sampler):
 
         for key in perm:
             yield key, next(activate_iterators[key])
+
+    def __getitem__(self, key: Any) -> Sampler:
+        r"""Return the subsampler for the given key."""
+        return self.subsamplers[key]
