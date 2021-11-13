@@ -5,6 +5,7 @@ r"""#TODO add module summary line.
 
 
 import logging
+from copy import deepcopy
 from functools import cached_property
 from itertools import product
 from typing import Any, Callable, Literal, Optional
@@ -329,5 +330,6 @@ class KIWI_RUNS_TASK(BaseTask):
             for key, ds in dataset.items()
         }
         sampler = CollectionSampler(dataset, subsamplers=subsamplers)
-
-        return DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)
+        dloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)
+        dloader.preprocessor = deepcopy(self.preprocessor)
+        return dloader
