@@ -25,6 +25,7 @@ from tsdm.encoders.modular import (
     DateTimeEncoder,
     FloatEncoder,
     Standardizer,
+    MinMaxScaler,
     TensorEncoder,
 )
 from tsdm.losses.modular import WRMSE
@@ -43,7 +44,6 @@ class KIWI_RUNS_TASK(BaseTask):
     - drop almost all metadata
     - restrict timepoints to start_time & end_time given in metadata.
 
-
     - timeseries for each run_id and experiment_id
     - metadata for each run_id and experiment_id
 
@@ -57,8 +57,6 @@ class KIWI_RUNS_TASK(BaseTask):
     Questions:
     - Should each batch contain only snippets form a single TS, or is there merit to sampling
       snippets from multiple TS in each batch?
-
-
 
     Divide 'Glucose' by 10, 'OD600' by 20, 'DOT' by 100, 'Base' by 200, then use RMSE.
     """
@@ -126,7 +124,7 @@ class KIWI_RUNS_TASK(BaseTask):
                 TensorEncoder(),
                 DataFrameEncoder(
                     Standardizer() @ FloatEncoder(),
-                    index_encoder=DateTimeEncoder(),
+                    index_encoder=MinMaxScaler() @ DateTimeEncoder(),
                 ),
             )
 

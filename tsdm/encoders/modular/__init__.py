@@ -75,6 +75,7 @@ from tsdm.encoders.modular._modular import (
     DateTimeEncoder,
     FloatEncoder,
     IdentityEncoder,
+    MinMaxScaler,
     Standardizer,
     TensorEncoder,
     Time2Float,
