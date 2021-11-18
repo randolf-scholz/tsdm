@@ -267,8 +267,10 @@ def log_metrics(
 
     for key in metrics:
         score = values[key]
-        if torch.isnan(score).any():
-            raise RuntimeError("NaN Encountered!")
+        if not torch.isfinite(score).all():
+            HAS_NAN = torch.isnan(score).any().item()
+            HAS_INF = torch.isinf(score).any().item()
+            raise RuntimeError(f"Model collapsed! {HAS_NAN=} {HAS_INF=}")
         writer.add_scalar(f"{prefix}/{key}", score, i)
 
 
