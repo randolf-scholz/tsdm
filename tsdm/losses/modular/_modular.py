@@ -179,6 +179,7 @@ class WRMSE(nn.Module):
         super().__init__()
         assert torch.all(w >= 0) and torch.any(w > 0)
         self.register_buffer("w", w / torch.sum(w) if normalize else w)
+        self.w = self.w.to(dtype=torch.float32)
         self.rank = len(w.shape)
         self.register_buffer("FAILED", torch.tensor(float("nan")))
         self.shape = w.shape

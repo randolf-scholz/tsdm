@@ -44,7 +44,7 @@ def kernel_heatmap(
     -------
     NDArray
     """
-    # This transormation is chosen because by the 68–95–99.7 rule,
+    # This transformation is chosen because by the 68–95–99.7 rule,
     # for k=6=2⋅3 roughly 99.7% of the probability mass will lie in the interval [0,1]
     kernel = 0.5 + (kernel - kernel.mean()) / (6 * kernel.std())
     kernel = kernel.clip(0, 1)

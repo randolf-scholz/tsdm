@@ -24,8 +24,8 @@ from tsdm.encoders.modular import (
     DataFrameEncoder,
     DateTimeEncoder,
     FloatEncoder,
-    Standardizer,
     MinMaxScaler,
+    Standardizer,
     TensorEncoder,
 )
 from tsdm.losses.modular import WRMSE

@@ -19,54 +19,17 @@ __all__ = [
     "DateTimeEncoder",
     "FloatEncoder",
     "IdentityEncoder",
+    "MinMaxScaler",
     "Standardizer",
     "TensorEncoder",
     "Time2Float",
-    # Classes - Sklearn
-    "Binarizer",
-    "FunctionTransformer",
-    "KBinsDiscretizer",
-    "KernelCenterer",
-    "LabelBinarizer",
-    "LabelEncoder",
-    "MaxAbsScaler",
-    "MinMaxScaler",
-    "MultiLabelBinarizer",
-    "Normalizer",
-    "OneHotEncoder",
-    "OrdinalEncoder",
-    "PolynomialFeatures",
-    "PowerTransformer",
-    "QuantileTransformer",
-    "RobustScaler",
-    "SplineTransformer",
-    "StandardScaler",
 ]
 
 import logging
 from typing import Final
 
+from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
-from sklearn.preprocessing import (
-    Binarizer,
-    FunctionTransformer,
-    KBinsDiscretizer,
-    KernelCenterer,
-    LabelBinarizer,
-    LabelEncoder,
-    MaxAbsScaler,
-    MinMaxScaler,
-    MultiLabelBinarizer,
-    Normalizer,
-    OneHotEncoder,
-    OrdinalEncoder,
-    PolynomialFeatures,
-    PowerTransformer,
-    QuantileTransformer,
-    RobustScaler,
-    SplineTransformer,
-    StandardScaler,
-)
 
 from tsdm.encoders.modular._modular import (
     BaseEncoder,
@@ -88,24 +51,24 @@ ModularEncoder = BaseEstimator
 r"""Type hint for modular encoders."""
 
 SklearnModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
-    "Binarizer": Binarizer,
-    "FunctionTransformer": FunctionTransformer,
-    "KBinsDiscretizer": KBinsDiscretizer,
-    "KernelCenterer": KernelCenterer,
-    "LabelBinarizer": LabelBinarizer,
-    "LabelEncoder": LabelEncoder,
-    "MaxAbsScaler": MaxAbsScaler,
-    "MinMaxScaler": MinMaxScaler,
-    "MultiLabelBinarizer": MultiLabelBinarizer,
-    "Normalizer": Normalizer,
-    "OneHotEncoder": OneHotEncoder,
-    "OrdinalEncoder": OrdinalEncoder,
-    "PolynomialFeatures": PolynomialFeatures,
-    "PowerTransformer": PowerTransformer,
-    "QuantileTransformer": QuantileTransformer,
-    "RobustScaler": RobustScaler,
-    "SplineTransformer": SplineTransformer,
-    "StandardScaler": StandardScaler,
+    "Binarizer": sk_preprocessing.Binarizer,
+    "FunctionTransformer": sk_preprocessing.FunctionTransformer,
+    "KBinsDiscretizer": sk_preprocessing.KBinsDiscretizer,
+    "KernelCenterer": sk_preprocessing.KernelCenterer,
+    "LabelBinarizer": sk_preprocessing.LabelBinarizer,
+    "LabelEncoder": sk_preprocessing.LabelEncoder,
+    "MaxAbsScaler": sk_preprocessing.MaxAbsScaler,
+    "MinMaxScaler": sk_preprocessing.MinMaxScaler,
+    "MultiLabelBinarizer": sk_preprocessing.MultiLabelBinarizer,
+    "Normalizer": sk_preprocessing.Normalizer,
+    "OneHotEncoder": sk_preprocessing.OneHotEncoder,
+    "OrdinalEncoder": sk_preprocessing.OrdinalEncoder,
+    "PolynomialFeatures": sk_preprocessing.PolynomialFeatures,
+    "PowerTransformer": sk_preprocessing.PowerTransformer,
+    "QuantileTransformer": sk_preprocessing.QuantileTransformer,
+    "RobustScaler": sk_preprocessing.RobustScaler,
+    "SplineTransformer": sk_preprocessing.SplineTransformer,
+    "StandardScaler": sk_preprocessing.StandardScaler,
 }
 r"""Dictionary of all available sklearn encoders."""
 
