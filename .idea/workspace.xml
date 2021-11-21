@@ -5,15 +5,35 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dev/experiments/adam_2021-11-15T20:38:52_LinODEnet-0.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bugs/collect_env.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bugs/torch_sampler.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/class-properties/ClassAttribute.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/class-properties/ClassProperty.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/class-properties/ClassPropertyIdea.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/class-properties/ClassPropertyIdea.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/class-properties/MetaClasses.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/class-properties/classmethod_property.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/class-properties/decorator.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/class-properties/property_in_pure_python.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/decorators/Associativity.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/experiments/Encoder is bad.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/experiments/GRUCell-Filter is bad.pdf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/Associativity.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/ClassAttribute.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/ClassProperty.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/ClassPropertyIdea.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/MetaClasses.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/Untitled.ipynb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/losses/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/losses/modular/_modular.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/plot/image.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/image.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/util/activations/modular/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/activations/modular/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/samplers/samplers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/samplers/samplers.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,7 +77,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net" />
+    <property name="last_opened_file_path" value="$USER_HOME$/GIT/pytorch" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -150,6 +170,9 @@
       <workItem from="1636969322652" duration="5226000" />
       <workItem from="1637017272691" duration="8063000" />
       <workItem from="1637053538919" duration="3778000" />
+      <workItem from="1637308955104" duration="4766000" />
+      <workItem from="1637400335162" duration="599000" />
+      <workItem from="1637490729634" duration="7365000" />
     </task>
     <servers />
   </component>

@@ -23,7 +23,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable
-from typing import Any, Literal, Optional, Union, Callable
+from typing import Any, Callable, Literal, Optional, Union
 
 import numpy as np
 import pandas.api.types
@@ -34,8 +34,9 @@ from torch import Tensor
 __logger__ = logging.getLogger(__name__)
 
 
-
-def apply_along_axes(a: Tensor, b: Tensor, op: Callable, axes: tuple[int, ...]) -> Tensor:
+def apply_along_axes(
+    a: Tensor, b: Tensor, op: Callable, axes: tuple[int, ...]
+) -> Tensor:
     axes = tuple(axes)
     rank = len(a.shape)
     source = tuple(range(rank))
@@ -531,8 +532,6 @@ class Standardizer(BaseEncoder):
                 self.mean = np.mean(data, axis=axes)
                 self.stdv = np.std(data, axis=axes)
 
-
-
         # if isinstance(data, Tensor):
         #     mask = ~torch.isnan(data) if self.ignore_nan else torch.full_like(data, True)
         #     count = torch.maximum(torch.tensor(1), mask.sum(dim=axes))
@@ -549,7 +548,6 @@ class Standardizer(BaseEncoder):
         #     self.mean = masked.sum(axis=axes)/count
         #     residual = apply_along_axes(masked, -self.mean, np.add, axes=axes)
         #     self.stdv = np.sqrt((residual**2).sum(axis=axes)/count)
-
 
     def encode(self, data):
         r"""Encode the input."""
@@ -628,12 +626,12 @@ class MinMaxScaler(BaseEncoder):
     xmin: Tensor
 
     def __init__(
-         self,
-         /,
-         ymin: Optional[Tensor] = None,
-         ymax: Optional[Tensor] = None,
-         *,
-         axis: Union[int, tuple[int, ...]] = -1,
+        self,
+        /,
+        ymin: Optional[Tensor] = None,
+        ymax: Optional[Tensor] = None,
+        *,
+        axis: Union[int, tuple[int, ...]] = -1,
     ):
         r"""Initialize the MinMaxScaler.
 
@@ -645,22 +643,20 @@ class MinMaxScaler(BaseEncoder):
         """
         super().__init__()
 
-        self.ymin = 0.0 if ymin is None else ymin
-        self.ymax = 1.0 if ymax is None else ymax
+        self.ymin = torch.tensor(0.0) if ymin is None else ymin
+        self.ymax = torch.tensor(1.0) if ymax is None else ymax
 
         if isinstance(axis, Iterable):
             self.axis = tuple(axis)
         else:
             self.axis = (axis,)
 
-
     def fit(self, data):
         r"""Compute the min and max."""
         data = np.asarray(data)
         self.xmax = np.nanmax(data, axis=self.axis)
         self.xmin = np.nanmin(data, axis=self.axis)
-        self.scale = (self.ymax - self.ymin)/(self.xmax - self.xmin)
-
+        self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def encode(self, data, /):
         r"""Encode the input."""
@@ -668,8 +664,7 @@ class MinMaxScaler(BaseEncoder):
 
     def decode(self, data, /):
         r"""Decode the input."""
-        return (1/self.scale) * (data - self.ymin) + self.xmin
-
+        return (1 / self.scale) * (data - self.ymin) + self.xmin
 
 
 # class ConcatEncoder(BaseEncoder):

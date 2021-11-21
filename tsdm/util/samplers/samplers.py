@@ -212,7 +212,7 @@ class CollectionSampler(Sampler):
         self.idx = data_source.keys()
         self.subsamplers = dict(subsamplers)
         self.early_stop = early_stop
-        self.sizes = Series({key: len(self.subsamplers[key]) for key in self.idx})
+        self.sizes = Series({key: len(self.subsamplers[key]) for key in self.idx})  # type: ignore[arg-type]
 
         if early_stop:
             partition = list(chain(*([key] * min(self.sizes) for key in self.idx)))

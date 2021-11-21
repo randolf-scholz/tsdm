@@ -33,7 +33,7 @@ ModularActivations: Final[LookupTable[type[ModularActivation]]] = {
     "Hardsigmoid": nn.Hardsigmoid,
     "Hardtanh": nn.Hardtanh,
     "Hardswish": nn.Hardswish,
-    "Identity" : nn.Identity,
+    "Identity": nn.Identity,
     "LeakyReLU": nn.LeakyReLU,
     "LogSigmoid": nn.LogSigmoid,
     "LogSoftmax": nn.LogSoftmax,

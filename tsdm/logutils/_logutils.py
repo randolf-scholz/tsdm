@@ -251,12 +251,12 @@ def log_metrics(
         assert len(targets) == len(predics)
         assert isinstance(metrics, dict)
         values = compute_metrics(metrics, targets=targets, predics=predics)
-    elif isinstance(values, Mapping):
+    elif isinstance(values, Mapping) and isinstance(metrics, Mapping):
         assert (
             targets is None and predics is None
         ), "values and (targets, predics) are mutually exclusive"
         assert set(values.keys()) == set(metrics.keys())
-    elif isinstance(values, Sequence):
+    elif isinstance(values, Sequence) and isinstance(metrics, Sequence):
         assert (
             targets is None and predics is None
         ), "values and (targets, predics) are mutually exclusive"
@@ -265,6 +265,8 @@ def log_metrics(
     else:
         raise ValueError(f"{values=} not understood!")
 
+    print(values)
+    print(metrics)
     for key in metrics:
         score = values[key]
         if not torch.isfinite(score).all():
