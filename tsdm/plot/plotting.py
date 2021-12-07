@@ -1,7 +1,5 @@
 r"""Plotting helper functions."""
 
-from __future__ import annotations
-
 __all__ = [
     # Functions
     "visualize_distribution",

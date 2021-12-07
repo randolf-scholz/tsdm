@@ -1,10 +1,16 @@
 r"""Utility functions for string manipulation."""
 
-__all__ = ["snake2camel"]
+__all__ = [
+    # Functions
+    "snake2camel",
+    # "camel2snake",
+    "repr_mapping",
+    "repr_sequence",
+]
 
 import logging
-from collections.abc import Iterable
-from typing import overload
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Optional, overload
 
 __logger__ = logging.getLogger(__name__)
 
@@ -35,3 +41,70 @@ def snake2camel(s):
 
     substrings = s.split("_")
     return "".join(s[0].capitalize() + s[1:] for s in substrings)
+
+
+def repr_mapping(obj: Mapping, pad: int = 2, maxitems: Optional[int] = 6) -> str:
+    """Return a string representation of a mapping object.
+
+    Parameters
+    ----------
+    obj: Mapping
+    pad: int
+    maxitems: Optional[int] = 6
+
+    Returns
+    -------
+    str
+    """
+    padding = " " * pad
+
+    max_key_length = max(len(str(key)) for key in obj.keys())
+    items = list(obj.items())
+
+    string = type(obj).__name__ + "(\n"
+
+    if maxitems is None or len(obj) <= maxitems:
+        string += "".join(
+            f"{padding}{str(key):<{max_key_length}}: {value}\n" for key, value in items
+        )
+    else:
+        string += "".join(
+            f"{padding}{str(key):<{max_key_length}}: {value}\n"
+            for key, value in items[: maxitems // 2]
+        )
+        string += f"{padding}...\n"
+        string += "".join(
+            f"{padding}{str(key):<{max_key_length}}: {value}\n"
+            for key, value in items[-maxitems // 2 :]
+        )
+    string += ")"
+    return string
+
+
+def repr_sequence(obj: Sequence, pad: int = 2, maxitems: Optional[int] = 6) -> str:
+    """Return a string representation of a sequence object.
+
+    Parameters
+    ----------
+    obj: Sequence
+    pad: int
+
+    Returns
+    -------
+    str
+    """
+    padding = " " * pad
+    if maxitems is None:
+        maxitems = len(obj)
+
+    string = type(obj).__name__ + "(\n"
+
+    if maxitems is None or len(obj) <= 6:
+        string += "".join(f"{padding}{value}\n" for value in obj)
+    else:
+        string += "".join(f"{padding}{value}\n" for value in obj[: maxitems // 2])
+        string += f"{padding}...\n"
+        string += "".join(f"{padding}{value}\n" for value in obj[-maxitems // 2 :])
+    string += ")"
+
+    return string

@@ -31,6 +31,23 @@ pytest
 pytest-cov
 pytest-rerunfailures
 
+#########
+# TYPES #
+#########
+types-PyYAML
+types-backports
+types-protobuf
+types-pyOpenSSL
+types-redis
+types-requests
+types-setuptools
+types-six
+types-tabulate
+types-toml
+types-futures
+types-cryptography
+types-enum34
+types-ipaddress
 
 ##########
 # flake8 #

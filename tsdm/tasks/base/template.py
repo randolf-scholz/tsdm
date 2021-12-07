@@ -1,9 +1,4 @@
-r"""Example Task Implementation.
-
-TODO: Module description
-"""
-
-from __future__ import annotations
+r"""Example Task Implementation."""
 
 import logging
 

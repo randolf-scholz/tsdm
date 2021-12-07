@@ -6,6 +6,8 @@ __all__ = [
     # Classes
     "TimeTensor",
     "TimeSeriesDataset",
+    "TimeSeriesTuple",
+    "TimeSeriesBatch",
     # Types
     "IndexedArray",
     # Functions
@@ -13,7 +15,7 @@ __all__ = [
 ]
 
 from collections.abc import Collection, Iterable, Mapping, Sized
-from typing import Any, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -74,7 +76,7 @@ class TimeTensor(Tensor):
             If :class:`None`, then ``range(len(x))`` will be used as the index.
         kwargs: Any
         """
-        if isinstance(x, DataFrame) or isinstance(x, Series):
+        if isinstance(x, (DataFrame, Series)):
             assert index is None, "Index given, but x is DataFrame/Series"
             x = x.values
         return super().__new__(cls, x, *args, **kwargs)  # type: ignore[call-arg]
@@ -85,7 +87,7 @@ class TimeTensor(Tensor):
         index: Optional[Index] = None,
     ):
         super().__init__()  # optional
-        if isinstance(x, DataFrame) or isinstance(x, Series):
+        if isinstance(x, (DataFrame, Series)):
             index = x.index
         else:
             index = Index(np.arange(len(x))) if index is None else index
@@ -103,9 +105,7 @@ r"""Type Hint for IndexedArrays."""
 
 def is_indexed_array(x: Any) -> bool:
     r"""Test if Union[Series, DataFrame, TimeTensor]."""
-    return (
-        isinstance(x, Series) or isinstance(x, DataFrame) or isinstance(x, TimeTensor)
-    )
+    return isinstance(x, (DataFrame, Series, TimeTensor))
 
 
 def tensor_info(x: Tensor) -> str:
@@ -238,3 +238,32 @@ class TimeSeriesDataset(TensorDataset):
     def __getitem__(self, item):
         r"""Return corresponding slice from each tensor."""
         return tuple(tensor.loc[item] for tensor in self.timeseries)
+
+
+class TimeSeriesTuple(NamedTuple):
+    r"""A tuple of Tensors describing a slice of a multivariate timeseries."""
+
+    timestamps: Tensor
+    """Timestamps of the data."""
+
+    observables: Tensor
+    """The observables."""
+
+    covariates: Tensor
+    """The controls."""
+
+    targets: Tensor
+    """The targets."""
+
+
+class TimeSeriesBatch(NamedTuple):
+    """Inputs for the model."""
+
+    inputs: TimeSeriesTuple
+    """The inputs."""
+
+    future: TimeSeriesTuple
+    """The future."""
+
+    metadata: Tensor
+    """The metadata."""

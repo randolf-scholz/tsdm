@@ -58,7 +58,8 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 Normal Encoder
 --------------
 
-A normal pre_encoder is an pre_encoder with the property that all output tensors share the same index axis.
+A normal pre_encoder is an pre_encoder with the property that all output tensors
+share the same index axis.
 
 I.e. it has a signature of the form ``list[tensor[n, ...]] → list[tensor[n, ...]]``
 Pre-Encoder: Map DataFrame to torch.util.data.Dataset
@@ -78,11 +79,7 @@ Default DataLoader Creation
     batch = next(dataloader)
 
     inputs,
-
-
 """
-
-from __future__ import annotations
 
 __all__ = [
     # Classes
@@ -91,26 +88,35 @@ __all__ = [
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Generic, Optional
 
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import Dataset
+from tsdm.datasets import DATASET
+from tsdm.encoders import ModularEncoder
+from tsdm.util import LazyDict
+from tsdm.util.types import KeyType
 
 __logger__ = logging.getLogger(__name__)
 
 
-class BaseTask(ABC):
+class BaseTask(ABC, Generic[KeyType]):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
 
+    The DataLoader will return batches of data consisting of tuples of the form:
+    ``(inputs, targets)``. The model will be trained on the inputs, and the targets
+    will be used to evaluate the model.
+    That is, the model must product an output of the same shape and data type of the targets.
+
     Attributes
     ----------
-    keys: list[str]
+    index: list[str]
         A list of string specifying the data splits of interest.
     train_batch_size: int, default=32
         Default batch-size used by batchloader.
@@ -119,78 +125,102 @@ class BaseTask(ABC):
     preprocessor: Optional[Encoder], default=None
         Task specific preprocessing. For example, the EVP might specifically ask for
         evaluation of Mean Squared Error on standardized data.
-    pre_encoder: Optional[Encoder], default=None
-        Model specific pre_encoder. Must be a :ref:`normal pre_encoder <Normal Encoder>`.
-        Is applied before batching and caches results.
     dataset: Dataset
         The attached dataset
-    splits: dict[keys, Dataset]
+    splits: Mapping[KeyType, Any]
         Contains slices of the dataset. Contains a slice for each key, but may
         also hold additional entries. (For example: "joint" = "train"+"valid")
-    batchloader: DataLoader
+    batchloaders: Mapping[KeyType, DataLoader]
         The main DataLoader to be used for training models.
-    dataloaders: dict[keys, DataLoader]
-        Holds ``DataLoaders`` for all the keys.
+    dataloaders: Mapping[KeyType, DataLoader]
+        Holds ``DataLoaders`` for all the index.
     """
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
-    KEYS: Any
-    r"""Should be Literal[tuple(str)]"""
+
     train_batch_size: int = 32
     r"""Default batch size."""
     eval_batch_size: int = 128
     r"""Default batch size when evaluating."""
-    # preprocessor: Optional[Encoder] = None
-    # r"""Optional task specific preprocessor."""
-    # pre_encoder: Optional[Encoder] = None
-    # r"""Optional model specific normal pre-encoder that is applied before batching."""
-
+    preprocessor: Optional[ModularEncoder] = None
+    r"""Optional task specific preprocessor (applied before batching)."""
+    postprocessor: Optional[ModularEncoder] = None
+    r"""Optional task specific postprocessor (applied after batching)."""
+    dataset: DATASET
+    """The attached dataset."""
+    test_metric: Callable[..., Tensor]
+    """The metric to be used for evaluation."""
     # @property
     # @abstractmethod
     # def accumulation_function(self) -> Callable[[Tensor], Tensor]:
     #     r"""Accumulates residuals into loss - usually mean or sum."""
 
-    @cached_property
-    @abstractmethod
-    def test_metric(self) -> Callable[..., Tensor]:
-        r"""The target metric."""
+    # @property
+    # @abstractmethod
+    # def test_metric(self) -> Callable[..., Tensor]:
+    #     r"""The target metric.
+    #
+    #     Should be something like ``["train", "valid", "test"]``
+    #     """
 
-    @cached_property
+    @property
     @abstractmethod
-    def keys(self) -> list[Any]:
-        r"""List of keys."""
+    def index(self) -> Sequence[KeyType]:
+        r"""List of index."""
 
-    @cached_property
-    @abstractmethod
-    def dataset(self) -> Dataset:
-        r"""Cache the dataset."""
+    # @property
+    # @abstractmethod
+    # def dataset(self) -> DATASET:
+    #     r"""Cache the dataset."""
 
-    @cached_property
+    @property
     @abstractmethod
-    def splits(self) -> dict[KEYS, Any]:
+    def splits(self) -> Mapping[KeyType, Any]:
         r"""Cache dictionary of dataset slices."""
 
     @cached_property
-    def dataloaders(self) -> dict[KEYS, DataLoader]:
+    def dataloaders(self) -> Mapping[KeyType, DataLoader]:
         r"""Cache dictionary of evaluation-dataloaders."""
-        return {
-            key: self.get_dataloader(
-                key, batch_size=self.eval_batch_size, shuffle=False, drop_last=False
+        return LazyDict(
+            (
+                key,
+                (
+                    self.get_dataloader,
+                    {
+                        "key": key,
+                        "batch_size": self.eval_batch_size,
+                        "shuffle": False,
+                        "drop_last": False,
+                    },
+                ),
             )
             for key in self.splits
-        }
+        )
 
     @cached_property
-    def batchloader(self) -> DataLoader:
+    def batchloaders(self) -> Mapping[KeyType, DataLoader]:
         r"""Cache main training-dataloader."""
-        return self.get_dataloader(
-            "train", batch_size=self.train_batch_size, shuffle=True, drop_last=True
+        return LazyDict(
+            (
+                key,
+                (
+                    self.get_dataloader,
+                    {
+                        "key": key,
+                        "batch_size": self.train_batch_size,
+                        "shuffle": True,
+                        "drop_last": True,
+                    },
+                ),
+            )
+            for key in self.splits
         )
 
     @abstractmethod
     def get_dataloader(
         self,
-        key: KEYS,
+        key: KeyType,
+        *,
         batch_size: int = 1,
         shuffle: bool = False,
         device: Optional[torch.device] = None,
@@ -216,3 +246,12 @@ class BaseTask(ABC):
         -------
         DataLoader
         """
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the object."""
+        string = (
+            f"{self.__class__.__name__}("
+            f"dataset={self.dataset.name}, "
+            f"test_metric={type(self.test_metric).__name__})"
+        )
+        return string

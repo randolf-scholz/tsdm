@@ -13,3 +13,5 @@ xarray>=0.19.0
 modin>=0.11.1
 setuptools>=58.2.0
 tensorboard
+ray
+pyarrow

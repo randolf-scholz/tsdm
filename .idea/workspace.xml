@@ -5,14 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitlab-ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.gitlab-ci.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TODO.rst" beforeDir="false" afterPath="$PROJECT_DIR$/TODO.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_encoders.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_encoders.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/base/dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/base/dataset.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/in_silico_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/in_silico_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/plot/__setup__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/__setup__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements-extra.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements-extra.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,10 +35,23 @@
     </file-type-list>
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/bugs/type_narrowing.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/datasets/electricity.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/datasets/in_silico_data.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/random/samplers/samplers.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/datasets/ett.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/test/test_insilico.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/datasets/base/_base.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/datasets/physionet2019.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/random/__init__.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/random/_random.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/random/samplers/__init__.py" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedIndex" value="3" />
+    <option name="selectedIndex" value="2" />
   </component>
   <component name="ProjectId" id="1xrATtRaxjt2Kg9MYWEAe8kdzYv" />
   <component name="ProjectLevelVcsManager">
@@ -56,7 +66,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net/.gitlab-ci.yml" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -72,14 +82,14 @@
       <recent name="$PROJECT_DIR$/tsdm/tasks" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tsdm/random" />
       <recent name="$PROJECT_DIR$/tsdm" />
+      <recent name="$PROJECT_DIR$/tsdm/models" />
       <recent name="$PROJECT_DIR$/tsdm/util" />
       <recent name="$PROJECT_DIR$/docs/_templates" />
-      <recent name="$PROJECT_DIR$/docs/_autoapi_templates/python" />
-      <recent name="$PROJECT_DIR$/docs/_autoapi_templates" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.type_narrowing">
     <configuration name="kiwi_runs" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="tsdm" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -102,8 +112,31 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="type_narrowing" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="tsdm" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/bugs" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/bugs/type_narrowing.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.type_narrowing" />
         <item itemvalue="Python.kiwi_runs" />
       </list>
     </recent_temporary>
@@ -145,7 +178,32 @@
       <workItem from="1634805838272" duration="599000" />
       <workItem from="1634980459407" duration="599000" />
       <workItem from="1636708429337" duration="100000" />
-      <workItem from="1636709503008" duration="4173000" />
+      <workItem from="1636709503008" duration="8018000" />
+      <workItem from="1636969322652" duration="5226000" />
+      <workItem from="1637017272691" duration="8063000" />
+      <workItem from="1637053538919" duration="3778000" />
+      <workItem from="1637308955104" duration="4766000" />
+      <workItem from="1637400335162" duration="599000" />
+      <workItem from="1637490729634" duration="17164000" />
+      <workItem from="1637578513671" duration="15711000" />
+      <workItem from="1637623894012" duration="7457000" />
+      <workItem from="1637662758749" duration="3206000" />
+      <workItem from="1637666083272" duration="1228000" />
+      <workItem from="1637667363604" duration="238000" />
+      <workItem from="1637667609324" duration="10181000" />
+      <workItem from="1637752816622" duration="34303000" />
+      <workItem from="1637913415328" duration="9273000" />
+      <workItem from="1638175407593" duration="599000" />
+      <workItem from="1638262208997" duration="599000" />
+      <workItem from="1638303004475" duration="5710000" />
+      <workItem from="1638387032898" duration="5173000" />
+      <workItem from="1638430503813" duration="15684000" />
+      <workItem from="1638449382967" duration="3935000" />
+      <workItem from="1638455725017" duration="7399000" />
+      <workItem from="1638468410243" duration="14576000" />
+      <workItem from="1638518093967" duration="20542000" />
+      <workItem from="1638633994924" duration="599000" />
+      <workItem from="1638774460962" duration="43049000" />
     </task>
     <servers />
   </component>
@@ -162,15 +220,15 @@
         </entry>
       </map>
     </option>
-    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/tsdm$samplers.coverage" NAME="samplers Coverage Results" MODIFIED="1635847331526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tsdm/util/samplers" />
     <SUITE FILE_PATH="coverage/tsdm$pytest_in_test_insilico_py.coverage" NAME="pytest in test_insilico.py Coverage Results" MODIFIED="1634986532541" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
     <SUITE FILE_PATH="coverage/tsdm$tasks.coverage" NAME="tasks Coverage Results" MODIFIED="1636342035843" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tsdm/tasks" />
+    <SUITE FILE_PATH="coverage/tsdm$samplers.coverage" NAME="samplers Coverage Results" MODIFIED="1635847331526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tsdm/util/samplers" />
+    <SUITE FILE_PATH="coverage/tsdm$mypy_type_narrowing.coverage" NAME="mypy type narrowing Coverage Results" MODIFIED="1637857614310" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/bugs" />
     <SUITE FILE_PATH="coverage/tsdm$kiwi_runs.coverage" NAME="kiwi_runs Coverage Results" MODIFIED="1636568132306" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tsdm/datasets" />
   </component>
 </project>
