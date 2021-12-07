@@ -1,46 +1,50 @@
 # We will use pyproject.toml once PEP 660 (https://www.python.org/dev/peps/pep-0660) support is added
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
 
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
 
 ########################
 # Poetry Configuration #
 ########################
 
-[tool.poetry]
-name = "tsdm"
-version = "0.1.0"
-description = "Time Series Datasets and Models"
-authors = ["Randolf Scholz <rscholz@ismll.de>"]
-license = "MIT"
+#[build-system]
+#requires = ["poetry-core>=1.0.0"]
+#build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.dependencies]
-python = ">=3.9, <3.10"
-numpy = ">=1.20"
-pandas = ">=1.2"
-scipy = ">=1.7"
-h5py = ">=3.1"
-numba = ">=0.53"
-xarray = ">=0.18"
-PyYAML = ">=5.4"
-matplotlib = ">=3.4"
-tables = ">=3.6"
-
-[tool.poetry.dev-dependencies]
-mypy = ">=0.910"
-pylint = ">=2.9"
-flake8 = ">=3.9"
-pytest = ">=6.2"
-pytest-cov = ">=2.12"
-coverage = ">=5.5"
-twine = ">=3.3"
-Sphinx = ">=4.0"
-sphinx-math-dollar = ">=1.2"
-sphinx-rtd-theme = ">=0.5.2"
-wheel = ">=0.36.2"
-virtualenv = ">=20.4"
-pip = ">=21.1.3"
+#[tool.poetry]
+#name = "tsdm"
+#version = "0.1.0"
+#description = "Time Series Datasets and Models"
+#authors = ["Randolf Scholz <rscholz@ismll.de>"]
+#license = "MIT"
+#
+#[tool.poetry.dependencies]
+#python = ">=3.9, <3.10"
+#numpy = ">=1.21"
+#pandas = ">=1.3"
+#scipy = ">=1.7"
+#h5py = ">=3.1"
+#numba = ">=0.53"
+#xarray = ">=0.18"
+#PyYAML = ">=5.4"
+#matplotlib = ">=3.4"
+#tables = ">=3.6"
+#
+#[tool.poetry.dev-dependencies]
+#mypy = ">=0.910"
+#pylint = ">=2.9"
+#flake8 = ">=3.9"
+#pytest = ">=6.2"
+#pytest-cov = ">=2.12"
+#coverage = ">=5.5"
+#twine = ">=3.3"
+#Sphinx = ">=4.0"
+#sphinx-math-dollar = ">=1.2"
+#sphinx-rtd-theme = ">=0.5.2"
+#wheel = ">=0.36.2"
+#virtualenv = ">=20.4"
+#pip = ">=21.1.3"
 
 ########################
 # PyLint Configuration #

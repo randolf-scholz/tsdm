@@ -9,15 +9,17 @@ include MANIFEST.in
 include LICENSE.rst
 include README.rst
 include CHANGELOG.rst
+include pyproject.toml
 include tsdm/VERSION
 
 include requirements.txt
+include requirements-extra.txt
 
 recursive-include tsdm *.*
-recursive-include docs *.*
-recursive-include test *.*
 
 prune */__pycache__
 prune */.ipynb_checkpoints
+prune */.pytest_cache
+prune */.virtual_documents
 
 global-exclude *.o *.so *.dylib *.a .git *.pyc *.swp

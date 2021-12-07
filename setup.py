@@ -24,10 +24,11 @@ with Path("requirements.txt").open() as requirements_txt:
 
 if "CI_PIPELINE_IID" in os.environ:
     BUILD_NUMBER = os.environ["CI_PIPELINE_IID"]
-    VERSION += f".{BUILD_NUMBER}"
+    VERSION += BUILD_NUMBER
 
 
-def _read(filename: str) -> str:
+def _read_rst(filename: str) -> str:
+    """Read the contents of a .rst file."""
     filename = os.path.join(os.path.dirname(__file__), filename)
     text_type = type("")
     with io.open(filename, mode="r", encoding="utf-8") as fd:
@@ -42,20 +43,24 @@ setuptools.setup(
     author="Randolf Scholz",
     author_email="scholz@ismll.uni-hildesheim.de",
     description="Time Series Datasets and Models",
-    long_description=_read("README.rst"),
+    long_description=_read_rst("README.rst"),
     long_description_content_type="test/x-rst",
     packages=setuptools.find_packages(exclude=["test"]),  # include all packages in ...
     install_requires=[
         "h5py",
         "matplotlib",
-        "numpy>=1.21",
+        "modin",
         "numba",
+        "numpy>=1.21",
         "pandas",
+        "pyarrow",
         "pyyaml",
+        "ray",
+        "scikit-learn>=1.0",
         "scipy",
-        "scikit-learn",
         "tables",
-        "torch>=1.9.0",
+        "tensorboard",
+        "torch>=1.10",
         "tqdm",
         "xarray",
     ],

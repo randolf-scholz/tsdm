@@ -87,7 +87,6 @@ setup:
     paths:
     - dist/
     - badges/
-    - reports/
 
 ###################
 # STAGE: ANALYSIS #
