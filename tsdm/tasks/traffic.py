@@ -1,9 +1,4 @@
-r"""Tasks associated with the Traffic dataset.
-
-TODO: Module description.
-"""
-
-from __future__ import annotations
+r"""Tasks associated with the Traffic dataset."""
 
 import logging
 

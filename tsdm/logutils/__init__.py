@@ -1,9 +1,4 @@
-r"""TODO: Module Docstring.
-
-TODO: Module summary.
-"""
-
-from __future__ import annotations
+r"""Logging Utility Functions."""
 
 __all__ = [
     # Constants

@@ -1,11 +1,8 @@
-r"""Implementation  / loading mechanism for models.
-
-TODO: Module Summary.
-"""
-
-from __future__ import annotations
+r"""Implementation  / loading mechanism for models."""
 
 __all__ = [
+    # Sub-Packages
+    "activations",
     # Type Hints
     "Model",
     "ModelType",
@@ -22,11 +19,11 @@ from typing import Final
 
 from torch import nn
 
-from tsdm.models.models import BaseModel
+from tsdm.models import activations
+from tsdm.models._models import BaseModel
 from tsdm.models.ode_rnn import ODE_RNN
 
 __logger__ = logging.getLogger(__name__)
-
 
 Model = nn.Module
 r"""Type hint for models."""

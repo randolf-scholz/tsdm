@@ -36,8 +36,6 @@ We define the following
 Note that in the context of time-series, we allow the accumulator to depend on the time variable.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Sub-Module
     "functional",

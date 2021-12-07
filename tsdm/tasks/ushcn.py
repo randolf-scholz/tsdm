@@ -3,11 +3,10 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-from __future__ import annotations
-
 __all__ = ["USHCN_DeBrouwer"]
 
 import logging
+from functools import cached_property
 from typing import Any, Callable, Literal, Optional
 
 import numpy as np
@@ -18,7 +17,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
 from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
-from tsdm.datasets import Dataset, USHCN_SmallChunkedSporadic
+from tsdm.datasets import DATASET, USHCN_SmallChunkedSporadic
 from tsdm.encoders import FunctionalEncoders
 from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.tasks.base import BaseTask
@@ -62,10 +61,10 @@ class USHCN_DeBrouwer(BaseTask):
         <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    def keys(self) -> list[str]:
-        """TODO: Add keys."""
+    @cached_property
+    def index(self) -> list[str]:
+        """TODO: Add index."""
 
-    dataset: Dataset = USHCN_SmallChunkedSporadic
     test_metric = type[ModularLoss]
 
     splits: dict[int, dict[str, DataFrame]]
@@ -87,6 +86,7 @@ class USHCN_DeBrouwer(BaseTask):
         self.time_encoder = FunctionalEncoders[time_encoder]
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
+        self.dataset: DATASET = USHCN_SmallChunkedSporadic()
 
     def _gen_folds(self):
         N = self.dataset.dataset["ID"].nunique()
@@ -104,11 +104,11 @@ class USHCN_DeBrouwer(BaseTask):
     def get_dataloader(
         self,
         key: str,
+        *,
         batch_size: int = 1,
         shuffle: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
-        fold: int = 0,
         **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split & fold.
@@ -117,7 +117,6 @@ class USHCN_DeBrouwer(BaseTask):
         ----------
         key: str
             From which part of the dataset to construct the loader
-        fold: int
         batch_size: int = 32
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None
@@ -137,4 +136,4 @@ class USHCN_DeBrouwer(BaseTask):
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         # thesplit = self.folds[fold]
-        return  # type: ignore
+        raise NotImplementedError

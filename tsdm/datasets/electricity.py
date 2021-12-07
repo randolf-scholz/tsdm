@@ -38,26 +38,25 @@ First column present date and time as a string with the following format 'yyyy-m
 Other columns present float values with consumption in kW
 """  # pylint: disable=line-too-long # noqa
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "Electricity",
 ]
 
 import logging
+from functools import cached_property
 from pathlib import Path
 from zipfile import ZipFile
 
 import numpy as np
-from pandas import DataFrame, read_csv, read_hdf
+from pandas import DataFrame, read_csv, read_feather
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base import SimpleDataset
 
 __logger__ = logging.getLogger(__name__)
 
 
-class Electricity(BaseDataset):
+class Electricity(SimpleDataset):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -69,50 +68,38 @@ class Electricity(BaseDataset):
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa
 
-    url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
+    base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
+    r"""HTTP address from where the dataset can be downloaded"""
     info_url: str = (
         r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"
     )
+    r"""HTTP address containing additional information about the dataset"""
     dataset: DataFrame
     r"""Store cached version of dataset."""
-    rawdata_path: Path
-    """location where the pre-processed data is stored"""
-    dataset_path: Path
-    """location where the pre-processed data is stored"""
-    dataset_file: Path
-    """location where the pre-processed data is stored"""
 
-    @classmethod
-    def clean(cls):
+    @cached_property
+    def rawdata_files(self) -> Path:
+        """Path to the raw data file."""
+        return self.rawdata_dir / "LD2011_2014.txt.zip"
+
+    def _clean(self) -> None:
         r"""Create DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`."""
-        __logger__.info("Cleaning dataset '%s'", cls.__name__)
-
-        fname = "LD2011_2014.txt"
-        with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as files:
-            files.extract(fname, path=cls.dataset_path)
-
-        __logger__.info("Finished extracting dataset '%s'", cls.__name__)
-
-        df = read_csv(
-            cls.dataset_path.joinpath(fname),
-            sep=";",
-            decimal=",",
-            parse_dates=[0],
-            index_col=0,
-            dtype=np.float64,
-        )
+        with ZipFile(self.rawdata_files) as files:
+            with files.open(self.rawdata_files.stem, "r") as file:
+                df = read_csv(
+                    file,
+                    sep=";",
+                    decimal=",",
+                    parse_dates=[0],
+                    index_col=0,
+                    dtype=np.float64,
+                )
 
         df = df.rename_axis(index="time", columns="client")
-        df.name = cls.__name__
-        df.to_hdf(cls.dataset_file, key=cls.__name__)
-        cls.dataset_path.joinpath(fname).unlink()
+        df.name = self.name
+        df = df.reset_index()
+        df.to_feather(self.dataset_files)
 
-        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
-
-    @classmethod
-    def load(cls):
-        r"""Load the dataset from hdf-5 file."""
-        super().load()  # <- makes sure DS is downloaded and preprocessed
-        df = read_hdf(cls.dataset_file, key=cls.__name__)
-        df = DataFrame(df)
-        return df
+    def _load(self) -> DataFrame:
+        r"""Load the dataset from disk."""
+        return read_feather(self.dataset_files).set_index("time")

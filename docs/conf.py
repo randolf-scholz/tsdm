@@ -67,17 +67,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",
 ]
 
-intersphinx_mapping = {
-    "matplotlib": ("https://matplotlib.org/stable/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "numba": ("https://numba.pydata.org/numba-doc/latest/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
-    "python": ("https://docs.python.org/3/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "sklearn": ("https://scikit-learn.org/stable/", None),
-    "torch": ("https://pytorch.org/docs/stable/", None),
-    "xarray": ("https://xarray.pydata.org/en/stable/", None),
-}
+
 
 # The name of a reST role (builtin or Sphinx extension) to use as the default role, that is,
 # for text marked up `like this`. This can be set to 'py:obj' to make `filter` a cross-reference
@@ -100,7 +90,41 @@ add_module_names = False
 
 # suppress_warnings = ["epub.duplicated_toc_entry"]
 
-# -- AutoAPI configuration --------------------------------------------------------------------------------------------
+# -- Intersphinx configuration --------------------------------------------------------------------
+
+# This config value contains the locations and names of other projects that should be linked to
+# in this documentation.
+# Relative local paths for target locations are taken as relative to the base of the
+# built documentation, while relative local paths for inventory locations are taken as
+# relative to the source directory.
+# When fetching remote inventory files, proxy settings will be read from the
+# $HTTP_PROXY environment variable.
+intersphinx_mapping = {
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "numba": ("https://numba.pydata.org/numba-doc/latest/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
+    "python": ("https://docs.python.org/3/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "sklearn": ("https://scikit-learn.org/stable/", None),
+    "torch": ("https://pytorch.org/docs/stable/", None),
+    "xarray": ("https://xarray.pydata.org/en/stable/", None),
+}
+
+# The maximum number of days to cache remote inventories. The default is 5,
+# meaning five days. Set this to a negative value to cache inventories for unlimited time.
+intersphinx_cache_limit = 5
+
+# The number of seconds for timeout. The default is None, meaning do not timeout.
+intersphinx_timeout = 2
+
+# When a cross-reference without an explicit inventory specification is being resolved by
+# intersphinx, skip resolution if it matches one of the specifications in this list.
+# The default value is ['std:doc'].
+intersphinx_disabled_reftypes = ['std:doc']
+
+
+# -- AutoAPI configuration ------------------------------------------------------------------------
 
 # Activate the extension
 extensions.append("autoapi.extension")
