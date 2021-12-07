@@ -27,11 +27,11 @@ Features
 - __bool__
 - __str__
 - __repr__
-- __ror__, __ior__, __or__ combine keys, overwrite from right
-- __rand__, __iand__, __and__ intersect keys, overwrite from right
+- __ror__, __ior__, __or__ combine index, overwrite from right
+- __rand__, __iand__, __and__ intersect index, overwrite from right
 - __ge__, __le__, __eq__, __neq__
-- __rsub__, __isub__, __sub__ remove keys from the right
-- # __radd__, __iadd__, __add__ add keys from the right, keep left
+- __rsub__, __isub__, __sub__ remove index from the right
+- # __radd__, __iadd__, __add__ add index from the right, keep left
 - __len__
 - __contains__
 - __getitem__, __setitem__, __delitem__
@@ -58,7 +58,7 @@ Features
 
 **Implementation**
 - Config = Dataclass factory (with extras)
-- do not allow dunder-keys except specified namespace
+- do not allow dunder-index except specified namespace
 
 Second part
 -----------
@@ -78,8 +78,6 @@ Create a helper function "initialize_from"
         return result
 """
 
-from __future__ import annotations
-
 import logging
 from collections.abc import Iterable, Mapping
 from typing import Any, Optional, Union
@@ -90,17 +88,18 @@ __logger__ = logging.getLogger(__name__)
 
 
 def is_dunder(s: str) -> bool:
+    r"""Check if string is a dunder method."""
     return s.startswith("__") and s.endswith("__")
 
 
 class Config(Iterable):
-    """Remark - Initializing dicts.
+    r"""Remark - Initializing dicts.
 
     There are 3 ways of initializing `dict`
 
     - `dict(**kwargs)`: standard key/values
     - `dict(Mapping, **kwargs)`:  If a mapping object is given, then
-        1. A list of keys `list[key]` will be generated via `list(iter(Mapping))`
+        1. A list of index `list[key]` will be generated via `list(iter(Mapping))`
         2. The values will be looked up via `Mapping.__getitem__(key)`
     - `dict(Iterable, **kwargs)`: If the first item is an iterable, then:
         1. A `list[tuple[key, value]]` will be generated via `list(iter(Iterable))`

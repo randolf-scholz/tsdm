@@ -8,8 +8,6 @@ We implement multiple levels of abstraction.
    - sample dataset by index, then sample from that dataset.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Functions
     "collate_list",

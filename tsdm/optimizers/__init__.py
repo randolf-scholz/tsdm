@@ -1,9 +1,4 @@
-r"""Utilities for optimizers.
-
-TODO: Module summary.
-"""
-
-from __future__ import annotations
+r"""Utilities for optimizers."""
 
 __all__ = [
     # Constants

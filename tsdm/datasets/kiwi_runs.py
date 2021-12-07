@@ -1,9 +1,7 @@
 r"""KIWI Run Data.
 
-Extracted from iLab DataBase
+Extracted from iLab DataBase.
 """
-
-from __future__ import annotations
 
 __all__ = [
     # Classes
@@ -11,28 +9,29 @@ __all__ = [
 ]
 
 import logging
-import os
 import pickle
-from functools import cache
+from functools import cached_property
 from pathlib import Path
-from typing import Final, Literal, Optional
+from typing import Any, Callable, Final, Literal, Optional
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base import Dataset
 
 __logger__ = logging.getLogger(__name__)
 
 
 def contains_no_information(series: Series) -> bool:
+    r"""Check if a series contains no information."""
     return len(series.dropna().unique()) <= 1
 
 
 def contains_nan_slice(
     series: Series, slices: list[Series], two_enough: bool = False
 ) -> bool:
+    r"""Check if data is completely missing for many slices."""
     num_missing = 0
     for idx in slices:
         if pd.isna(series[idx]).all():
@@ -41,7 +40,7 @@ def contains_nan_slice(
     if (num_missing > 0 and not two_enough) or (
         num_missing >= len(slices) - 1 and two_enough
     ):
-        __logger__.info(
+        __logger__.debug(
             "%s: data missing in %s/%s slices!", series.name, num_missing, len(slices)
         )
         return True
@@ -49,18 +48,20 @@ def contains_nan_slice(
 
 
 def float_is_int(series: Series) -> bool:
+    """Check if all float values are integers."""
     mask = pd.notna(series)
     return series[mask].apply(float.is_integer).all()
 
 
 def get_integer_cols(table: DataFrame) -> set[str]:
+    r"""Get all columns that contain only integers."""
     cols = set()
     for col in table:
         if np.issubdtype(table[col].dtype, np.integer):
-            __logger__.info("Integer column                       : %s", col)
+            __logger__.debug("Integer column                       : %s", col)
             cols.add(col)
         elif np.issubdtype(table[col].dtype, np.floating) and float_is_int(table[col]):
-            __logger__.info("Integer column pretending to be float: %s", col)
+            __logger__.debug("Integer column pretending to be float: %s", col)
             cols.add(col)
     return cols
 
@@ -68,23 +69,24 @@ def get_integer_cols(table: DataFrame) -> set[str]:
 def get_useless_cols(
     table: DataFrame, slices: Optional[list[Series]] = None, strict: bool = False
 ) -> set[str]:
+    r"""Get all columns that are considered useless."""
     useless_cols = set()
     for col in table:
         s = table[col]
         if col in ("run_id", "experiment_id"):
             continue
         if contains_no_information(s):
-            __logger__.info("No information in      %s", col)
+            __logger__.debug("No information in      %s", col)
             useless_cols.add(col)
         elif slices is not None and contains_nan_slice(
             s, slices, two_enough=(not strict)
         ):
-            __logger__.info("Missing for some run   %s", col)
+            __logger__.debug("Missing for some run   %s", col)
             useless_cols.add(col)
     return useless_cols
 
 
-class KIWI_RUNS(BaseDataset):
+class KIWI_RUNS(Dataset):
     r"""KIWI RUN Data.
 
     The cleaned data will consist of 2 parts:
@@ -109,11 +111,25 @@ class KIWI_RUNS(BaseDataset):
         ]
     """
 
-    url: str = (
+    base_url: str = (
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/"
         "fRBSr82NxY7ratK/download/kiwi_experiments_and_run_355.pk"
     )
-    keys: Final[list[str]] = [
+    index: Final[list[str]] = [
+        "timeseries",
+        "metadata",
+        "units",
+    ]
+    r"""Available index."""
+
+    auxiliaries: Final[list[str]] = [
+        "setpoints",
+        "measurements_reactor",
+        "measurements_array",
+        "measurements_aggregated",
+    ]
+
+    KEYS = Literal[
         "metadata",
         "setpoints",
         "measurements_reactor",
@@ -122,78 +138,33 @@ class KIWI_RUNS(BaseDataset):
         "timeseries",
         "units",
     ]
-    r"""Available keys."""
-    KEYS = Literal[
-        "metadata",
-        "setpoints",
-        "measurements_reactor",
-        "measurements_array",
-        "measurements_aggregated",
-        "timeseries",
-    ]
-    r"""Type Hint for keys."""
-    dataset: DataFrame
-    r"""The main dataset. Alias for Timeseries."""
-    timeseries: DataFrame
-    r"""The main dataset."""
+    r"""Type Hint for index."""
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def dataset(cls):
-        r"""Store cached version of dataset."""
-        # What is the best practice for metaclass methods that call each other?
-        # https://stackoverflow.com/q/47615318/9318372
-        if os.environ.get("GENERATING_DOCS", False):
-            return "the dataset"
-        return cls.load()  # pylint: disable=E1120
+    # @cached_property
+    # def dataset(self) -> DataFrame:
+    #     r"""Store cached version of dataset."""
+    #     # What is the best practice for metaclass methods that call each other?
+    #     # https://stackoverflow.com/q/47615318/9318372
+    #     if os.environ.get("GENERATING_DOCS", False):
+    #         return "the dataset"
+    #     return self.load()
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def rawdata_file(cls) -> Path:
+    @cached_property
+    def rawdata_files(self) -> Path:
         r"""Path of the raw data file."""
-        return cls.rawdata_path.joinpath("kiwi_experiments_and_run_355.pk")  # type: ignore[attr-defined]
+        return self.rawdata_dir / "kiwi_experiments_and_run_355.pk"
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def dataset_file(cls) -> dict[str, Path]:
+    @cached_property
+    def dataset_files(self) -> dict[str, Path]:
         r"""Path of the dataset file for the given key."""
-        return {key: cls.dataset_path.joinpath(f"{key}.feather") for key in cls.keys}  # type: ignore[attr-defined]
+        return {
+            key: self.dataset_dir / f"{key}.feather"
+            for key in self.index + self.auxiliaries
+        }
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def metadata(cls) -> DataFrame:
-        r"""Store cached version of dataset."""
-        # What is the best practice for metaclass methods that call each other?
-        # https://stackoverflow.com/q/47615318/9318372
-        if os.environ.get("GENERATING_DOCS", False):
-            return "the metadata"
-        return cls.load("metadata")
-
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def timeseries(cls) -> DataFrame:
-        """Return the TimeSeries."""
-        return cls.dataset
-
-    @classmethod
-    @property
-    @cache
-    def units(cls) -> DataFrame:
-        """Return the units metadata."""
-        return cls.load("units")
-
-    @classmethod
-    def load(cls, key: KEYS = "timeseries") -> DataFrame:
+    def _load(self, key: KEYS = "timeseries") -> DataFrame:
         r"""Load the dataset from disk."""
-        if not cls.dataset_file[key].exists():  # type: ignore[index]
-            cls.clean()
-
-        table = pd.read_feather(cls.dataset_file[key])  # type: ignore[index]
+        table = pd.read_feather(self.dataset_files[key])
 
         if key == "units":
             return table.set_index("variable")
@@ -205,15 +176,13 @@ class KIWI_RUNS(BaseDataset):
             table.columns.name = "variable"
         else:
             table = table.set_index(["run_id", "experiment_id"])
+
         return table
 
-    @classmethod
-    def clean(cls):
+    def _clean(self, key: KEYS) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
-        dataset = cls.__name__
-        __logger__.info("Cleaning dataset '%s'", dataset)
-
-        with open(cls.rawdata_file, "rb") as file:  # type: ignore[call-overload]
+        with open(self.rawdata_files, "rb") as file:
+            __logger__.info("Loading raw data from %s", self.rawdata_files)
             data = pickle.load(file)
 
         DATA = [
@@ -223,50 +192,48 @@ class KIWI_RUNS(BaseDataset):
         ]
         DF = DataFrame(DATA).set_index(["run_id", "experiment_id"])
 
-        tables = {}
+        tables: dict[Any, DataFrame] = {}
 
-        for key in cls.keys:
-            if key in ("units", "timeseries"):
-                cls._clean(key)
-            elif key == "metadata":
-                tables[key] = pd.concat(iter(DF[key])).reset_index(drop=True)
-                cls._clean(key, tables[key])
-            else:
-                tables[key] = (
-                    pd.concat(iter(DF[key]), keys=DF[key].index)
-                    .reset_index(level=2, drop=True)
-                    .reset_index()
-                )
-                cls._clean(key, tables[key])
+        # must clean auxiliaries first
+        # for key in self.auxiliaries+self.index:
+        if key in ("units", "timeseries"):
+            self._clean_table(key)
+        elif key == "metadata":
+            tables[key] = pd.concat(iter(DF[key])).reset_index(drop=True)
+            self._clean_table(key, tables[key])
+        else:
+            tables[key] = (
+                pd.concat(iter(DF[key]), keys=DF[key].index)
+                .reset_index(level=2, drop=True)
+                .reset_index()
+            )
+            self._clean_table(key, tables[key])
 
-        __logger__.info("Finished cleaning dataset '%s'", dataset)
-
-    @classmethod
-    def _clean(cls, key: str, table: Optional[DataFrame] = None):
+    def _clean_table(self, key: str, table: Optional[DataFrame] = None):
         r"""Create the DataFrames.
 
         Parameters
         ----------
         table: DataFrame
         """
-        cleaner = {
-            "units": cls._clean_units,
-            "timeseries": cls._clean_timeseries,
-            "metadata": cls._clean_metadata,
-            "setpoints": cls._clean_setpoints,
-            "measurements_reactor": cls._clean_measurements_reactor,
-            "measurements_array": cls._clean_measurements_array,
-            "measurements_aggregated": cls._clean_measurements_aggregated,
-        }[key]
+        cleaners: dict[str, Callable] = {
+            "measurements_aggregated": self._clean_measurements_aggregated,
+            "measurements_array": self._clean_measurements_array,
+            "measurements_reactor": self._clean_measurements_reactor,
+            "metadata": self._clean_metadata,
+            "setpoints": self._clean_setpoints,
+            "timeseries": self._clean_timeseries,
+            "units": self._clean_units,
+        }
+        cleaner = cleaners[key]
+        if table is None:
+            cleaner()
+        else:
+            cleaner(table)
 
-        cleaner() if table is None else cleaner(table)
+        __logger__.info("%s/%s Finished cleaning table!", self.name, key)
 
-        __logger__.info(
-            "Finished cleaning table '%s' of dataset '%s'", key, cls.__name__
-        )
-
-    @classmethod
-    def _clean_metadata(cls, table):
+    def _clean_metadata(self, table):
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
 
@@ -327,11 +294,10 @@ class KIWI_RUNS(BaseDataset):
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
         table.columns.name = "variable"
-        path = cls.dataset_file["metadata"]  # type: ignore[index]
+        path = self.dataset_files["metadata"]
         table.to_feather(path)
 
-    @classmethod
-    def _clean_setpoints(cls, table):
+    def _clean_setpoints(self, table):
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
 
@@ -381,11 +347,10 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = cls.dataset_file["setpoints"]  # type: ignore[index]
+        path = self.dataset_files["setpoints"]
         table.to_feather(path)
 
-    @classmethod
-    def _clean_measurements_reactor(cls, table: DataFrame):
+    def _clean_measurements_reactor(self, table: DataFrame):
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
 
@@ -436,11 +401,10 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = cls.dataset_file["measurements_reactor"]  # type: ignore[index]
+        path = self.dataset_files["measurements_reactor"]
         table.to_feather(path)
 
-    @classmethod
-    def _clean_measurements_array(cls, table: DataFrame):
+    def _clean_measurements_array(self, table: DataFrame):
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
 
@@ -484,11 +448,10 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = cls.dataset_file["measurements_array"]  # type: ignore[index]
+        path = self.dataset_files["measurements_array"]
         table.to_feather(path)
 
-    @classmethod
-    def _clean_measurements_aggregated(cls, table: DataFrame):
+    def _clean_measurements_aggregated(self, table: DataFrame):
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
         table_columns = set(table.columns)
@@ -544,13 +507,12 @@ class KIWI_RUNS(BaseDataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = cls.dataset_file["measurements_aggregated"]  # type: ignore[index]
+        path = self.dataset_files["measurements_aggregated"]
         table.to_feather(path)
 
-    @classmethod
-    def _clean_timeseries(cls):
-        md = cls.load("metadata")
-        ts = cls.load("measurements_aggregated")
+    def _clean_timeseries(self):
+        md = self.load(key="metadata")
+        ts = self.load(key="measurements_aggregated")
         # drop rows with only <NA> values
         ts = ts.dropna(how="all")
         # generate timeseries frame
@@ -603,12 +565,11 @@ class KIWI_RUNS(BaseDataset):
         ts = ts.astype({"run_id": "int32", "experiment_id": "int32"})
         # ts = ts.rename(columns={col: snake2camel(col) for col in ts})
         ts.columns.name = "variable"
-        path = cls.dataset_file["timeseries"]  # type: ignore[index]
+        path = self.dataset_files["timeseries"]
         ts.to_feather(path)
 
-    @classmethod
-    def _clean_units(cls):
-        ts = cls.load("measurements_aggregated")
+    def _clean_units(self):
+        ts = self.load(key="measurements_aggregated")
 
         _units = ts["unit"]
         data = ts.drop(columns="unit")
@@ -631,5 +592,5 @@ class KIWI_RUNS(BaseDataset):
         units = units.fillna(pd.NA).astype("string").astype("category")
         units.index.name = "variable"
         units = units.reset_index()
-        path = cls.dataset_file["units"]  # type: ignore[index]
+        path = self.dataset_files["units"]
         units.to_feather(path)

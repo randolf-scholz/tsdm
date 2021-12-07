@@ -3,8 +3,6 @@ r"""Submodule containing general purpose decorators.
 #TODO add module description.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     # Functions
@@ -13,6 +11,7 @@ __all__ = [
     "sphinx_value",
     "timefun",
     "trace",
+    "vectorize",
     # Exceptions
     "DecoratorError",
 ]
@@ -24,11 +23,13 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 from torch import jit, nn
 
 from tsdm.config import conf
+from tsdm.util.types import ObjectType, ReturnType
+from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
 
@@ -129,10 +130,6 @@ def decorator(deco: Callable) -> Callable:
         return deco(__func__, *args, **kwargs)
 
     return parametrized_decorator
-
-
-class TimeFunc:
-    logger = logging.getLogger("TimeFunc")
 
 
 @decorator
@@ -279,6 +276,75 @@ def autojit(base_class: type[nn.Module]) -> type[nn.Module]:
             return instance
 
     return WrappedClass
+
+
+@decorator
+def vectorize(
+    func: Callable[[ObjectType], ReturnType],
+    kind: type[CollectionType],
+    /,  # noqa: W504
+) -> Callable[[Union[ObjectType, CollectionType]], Union[ReturnType, CollectionType]]:
+    """Vectorize a function with a single, positional-only input.
+
+    The signature will change accordingly
+
+    Parameters
+    ----------
+    func: Callable[[ObjectType], ReturnType]
+    kind: type[CollectionType]
+
+    Returns
+    -------
+    Callable[[Union[ObjectType, CollectionType]], Union[ReturnType, CollectionType]]
+
+    Examples
+    --------
+    .. code-block:: python
+
+        @vectorize(list)
+        def f(x):
+            return x + 1
+
+        assert f(1) == 2
+        assert f(1,2) == [2,3]
+    """
+    params = list(signature(func).parameters.values())
+
+    if not params:
+        raise ValueError(f"{func} has no parameters")
+    if params[0].kind not in (
+        Parameter.POSITIONAL_ONLY,
+        Parameter.POSITIONAL_OR_KEYWORD,
+    ):
+        raise ValueError(f"{func} must have a single positional parameter!")
+    for param in params[1:]:
+        if param.kind not in (Parameter.KEYWORD_ONLY, Parameter.VAR_KEYWORD):
+            raise ValueError(f"{func} must have a single positional parameter!")
+
+    @wraps(func)
+    def wrapper(arg, *args):
+        if not args:
+            return func(arg)
+        return kind(func(x) for x in (arg, *args))
+
+    return wrapper
+
+
+# @decorator
+# def apply_on_iter(
+#     cls: Iterable[ObjectType], func: Callable[[ObjectType], ReturnType]
+# ) -> Iterable[ReturnType]:
+#
+#     iter_method = getattr(cls, "__iter__")
+#
+#     @wraps(iter_method)
+#     def wrapper() -> Iterable[ReturnType]:
+#         for x in iter_method():
+#             yield func(x)
+#
+#     setattr(cls, "__iter__", wrapper)
+#
+#     return cls
 
 
 # TODO: implement mutually_exclusive_args wrapper

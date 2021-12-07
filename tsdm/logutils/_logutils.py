@@ -1,9 +1,4 @@
-r"""TODO: Module Docstring.
-
-TODO: Module summary.
-"""
-
-from __future__ import annotations
+r"""Logging Utility Functions."""
 
 __all__ = [
     # Functions
@@ -23,11 +18,10 @@ from typing import Any, Optional, Union, overload
 
 import torch
 from pandas import DataFrame
-from torch import Tensor, jit, nn
+from torch import Tensor, nn
 from torch.linalg import cond, det, matrix_norm, matrix_rank, slogdet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm.auto import tqdm
 
 from tsdm.encoders import Encoder
 from tsdm.losses import Loss
@@ -251,24 +245,28 @@ def log_metrics(
         assert len(targets) == len(predics)
         assert isinstance(metrics, dict)
         values = compute_metrics(metrics, targets=targets, predics=predics)
-    elif isinstance(values, Mapping):
+    elif isinstance(values, Mapping) and isinstance(metrics, Mapping):
         assert (
             targets is None and predics is None
         ), "values and (targets, predics) are mutually exclusive"
         assert set(values.keys()) == set(metrics.keys())
-    elif isinstance(values, Sequence):
+    elif isinstance(values, Sequence) and isinstance(metrics, Sequence):
         assert (
             targets is None and predics is None
         ), "values and (targets, predics) are mutually exclusive"
         assert len(values) == len(metrics)
-        values = {key: val for key, val in zip(metrics, values)}
+        values = dict(zip(metrics, values))
     else:
         raise ValueError(f"{values=} not understood!")
 
+    print(values)
+    print(metrics)
     for key in metrics:
         score = values[key]
-        if torch.isnan(score).any():
-            raise RuntimeError("NaN Encountered!")
+        if not torch.isfinite(score).all():
+            HAS_NAN = torch.isnan(score).any().item()
+            HAS_INF = torch.isinf(score).any().item()
+            raise RuntimeError(f"Model collapsed! {HAS_NAN=} {HAS_INF=}")
         writer.add_scalar(f"{prefix}/{key}", score, i)
 
 
@@ -309,36 +307,42 @@ def compute_metrics(
     return results
 
 
-@torch.no_grad()
-def get_all_preds(model, dataloader):
-    Y, Ŷ = [], []
-    for batch in tqdm(dataloader, leave=False):
-        # getting targets -> task / model
-        # getting predics -> task / model
-        OBS_HORIZON = 32
-        times, inputs, targets = prep_batch(batch, OBS_HORIZON)
-        outputs, _ = model(times, inputs)  # here we should apply the decoder.
-        predics = outputs[:, OBS_HORIZON:, -1]
-        Y.append(targets)
-        Ŷ.append(predics)
-
-    return torch.cat(Y, dim=0), torch.cat(Ŷ, dim=0)
-
-
-@jit.script  # This should be the pre_encoder
-def prep_batch(batch: tuple[Tensor, Tensor, Tensor], observation_horizon: int):
-    T, X, Y = batch
-    timestamps = T
-    targets = Y[..., observation_horizon:].clone()
-    Y[..., observation_horizon:] = float("nan")  # mask future
-    X[..., observation_horizon:, :] = float("nan")  # mask future
-    observations = torch.cat([X, Y.unsqueeze(-1)], dim=-1)
-    inputs = (timestamps, observations)
-    return inputs, targets
+# @torch.no_grad()
+# def get_all_preds(model, dataloader):
+#     r"""Get all predictions from a model."""
+#     Y, Ŷ = [], []
+#     for batch in tqdm(dataloader, leave=False):
+#         # getting targets -> task / model
+#         # getting predics -> task / model
+#         OBS_HORIZON = 32
+#         times, inputs, targets = prep_batch(batch, OBS_HORIZON)
+#         outputs, _ = model(times, inputs)  # here we should apply the decoder.
+#         predics = outputs[:, OBS_HORIZON:, -1]
+#         Y.append(targets)
+#         Ŷ.append(predics)
+#
+#     return torch.cat(Y, dim=0), torch.cat(Ŷ, dim=0)
+#
+#
+# @jit.script  # This should be the pre_encoder
+# def prep_batch(
+#     batch: tuple[Tensor, Tensor, Tensor], observation_horizon: int
+# ) -> tuple[Tensor, Tensor, Tensor]:
+#     r"""Prepare a batch for training."""
+#     T, X, Y = batch
+#     timestamps = T
+#     targets = Y[..., observation_horizon:].clone()
+#     Y[..., observation_horizon:] = float("nan")  # mask future
+#     X[..., observation_horizon:, :] = float("nan")  # mask future
+#     observations = torch.cat([X, Y.unsqueeze(-1)], dim=-1)
+#     inputs = (timestamps, observations)
+#     return inputs, targets
 
 
 @dataclass
 class DefaultLogger:
+    r"""Default logger."""
+
     writer: SummaryWriter
     r"""The SummaryWriter Instance."""
     model: Model
@@ -425,6 +429,6 @@ class DefaultLogger:
             ),
         )
 
-    def log_hyperparameters(self):
-        r"""Save the hyperparameter combination with validation loss."""
-        ...
+    # def log_hyperparameters(self):
+    #     r"""Save the hyperparameter combination with validation loss."""
+    #     ...

@@ -150,8 +150,6 @@ HR 	Heart rate (beats per minute)
 +------------------+-----------------------------------------------------------------------------------------------------------------------+
 """  # pylint: disable=line-too-long # noqa
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "Physionet2019",
@@ -160,18 +158,19 @@ __all__ = [
 
 import logging
 import pickle
+from functools import cached_property
 from pathlib import Path
 from zipfile import ZipFile
 
 from pandas import DataFrame, HDFStore, read_csv, read_hdf
 from tqdm import tqdm
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base import SimpleDataset
 
 __logger__ = logging.getLogger(__name__)
 
 
-class Physionet2019(BaseDataset):
+class Physionet2019(SimpleDataset):
     r"""Physionet Challenge 2019.
 
     Each training data file provides a table with measurements over time. Each column of the table provides a sequence
@@ -197,14 +196,30 @@ class Physionet2019(BaseDataset):
     there was no recorded measurement of a variable at the time interval.
     """  # pylint: disable=line-too-long # noqa
 
-    url: str = r"https://archive.physionet.org/users/shared/challenge-2019/"
-    dataset: DataFrame
-    rawdata_path: Path
-    dataset_path: Path
-    dataset_file: Path
+    base_url: str = r"https://archive.physionet.org/users/shared/challenge-2019/"
+    r"""HTTP address from where the dataset can be downloaded"""
+    info_url: str = r"https://physionet.org/content/challenge-2019/1.0.0/"
+    r"""HTTP address containing additional information about the dataset"""
 
-    @classmethod
-    def clean(cls, store="hdf"):  # pylint: disable=arguments-differ
+    @property
+    def index(self) -> list:
+        r"""Return the index of the dataset."""
+        return []
+
+    @cached_property
+    def dataset_files(self) -> Path:
+        r"""Location where the pre-processed data is stored."""
+        return self.dataset_dir / f"{self.name}.h5"
+
+    @cached_property
+    def rawdata_files(self) -> dict[str, Path]:
+        r"""Location where the raw data is stored."""
+        return {
+            "A": self.rawdata_dir / "training_setA.zip",
+            "B": self.rawdata_dir / "training_setB.zip",
+        }
+
+    def _clean(self, store="hdf"):
         r"""Create a file representation of pandas dataframes representing the tables.
 
         The groups are A and B, the subgroups are the ids of the patients.
@@ -214,13 +229,62 @@ class Physionet2019(BaseDataset):
         In order not to change the package I override the signature in this module
         only.
         """
-        dataset = cls.__name__
-        __logger__.info("Cleaning dataset '%s'", dataset)
+        dtypes = {
+            # Vital signs (columns 1-8)
+            "HR": None,  # Heart rate (beats per minute)
+            "O2Sat": None,  # Pulse oximetry (%)
+            "Temp": None,  # Temperature (Deg C)
+            "SBP": None,  # Systolic BP (mm Hg)
+            "MAP": None,  # Mean arterial pressure (mm Hg)
+            "DBP": None,  # Diastolic BP (mm Hg)
+            "Resp": None,  # Respiration rate (breaths per minute)
+            "EtCO2": None,  # End tidal carbon dioxide (mm Hg)
+            # Laboratory values (columns 9-34)
+            "BaseExcess": None,  # Measure of excess bicarbonate (mmol/L)
+            "HCO3": None,  # Bicarbonate (mmol/L)
+            "FiO2": None,  # Fraction of inspired oxygen (%)
+            "pH": None,  # N/A
+            "PaCO2": None,  # Partial pressure of carbon dioxide from arterial blood (mm Hg)
+            "SaO2": None,  # Oxygen saturation from arterial blood (%)
+            "AST": None,  # Aspartate transaminase (IU/L)
+            "BUN": None,  # Blood urea nitrogen (mg/dL)
+            "Alkalinephos": None,  # Alkaline phosphatase (IU/L)
+            "Calcium": None,  # (mg/dL)
+            "Chloride": None,  # (mmol/L)
+            "Creatinine": None,  # (mg/dL)
+            "Bilirubin_direct": None,  # Bilirubin direct (mg/dL)
+            "Glucose": None,  # Serum glucose (mg/dL)
+            "Lactate": None,  # Lactic acid (mg/dL)
+            "Magnesium": None,  # (mmol/dL)
+            "Phosphate": None,  # (mg/dL)
+            "Potassium": None,  # (mmol/L)
+            "Bilirubin_total": None,  # Total bilirubin (mg/dL)
+            "TroponinI": None,  # Troponin I (ng/mL)
+            "Hct": None,  # Hematocrit (%)
+            "Hgb": None,  # Hemoglobin (g/dL)
+            "PTT": None,  # partial thromboplastin time (seconds)
+            "WBC": None,  # Leukocyte count (count*10^3/µL)
+            "Fibrinogen": None,  # (mg/dL)
+            "Platelets": None,  # (count*10^3/µL)
+            # Demographics (columns 35-40)
+            "Age": None,  # Years (100 for patients 90 or above)
+            "Gender": None,  # Female (0) or Male (1)
+            "Unit1": None,  # Administrative identifier for ICU unit (MICU)
+            "Unit2": None,  # Administrative identifier for ICU unit (SICU)
+            "HospAdmTime": None,  # Hours between hospital admit and ICU admit
+            "ICULOS": None,  # ICU length-of-stay (hours since ICU admit)
+            # Outcome (column 41)
+            # For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6
+            # and 0 if t<tsepsis−6. For non-sepsis patients, SepsisLabel is 0.
+            "SepsisLabel": None,
+        }
+
+        print(dtypes)
+
         if store == "hdf":
-            # noinspection PyTypeChecker
-            h5file = HDFStore(cls.dataset_file)
+            h5file = HDFStore(self.dataset_files)
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
-                with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as zipfile:
+                with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
                     print("cleaning " + fname)
                     for zi in tqdm(zipfile.infolist()):
                         with zipfile.open(zi, "r") as zf:
@@ -230,9 +294,9 @@ class Physionet2019(BaseDataset):
                                 h5file.put(f"/{prefix}/{group_name}", df)
         elif store == "pickle":
             dfdict = {}
-            dataset_file = cls.dataset_file.with_suffix(".pickle")
+            dataset_file = self.dataset_files.with_suffix(".pickle")
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
-                with ZipFile(cls.rawdata_path.joinpath(fname + ".zip")) as zipfile:
+                with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
                     print("cleaning " + fname)
                     for zi in tqdm(zipfile.infolist()):
                         with zipfile.open(zi, "r") as zf:
@@ -246,25 +310,20 @@ class Physionet2019(BaseDataset):
         else:
             raise Exception("store ", store, "not supported")
 
-        __logger__.info("Finished extracting dataset '%s'", dataset)
-
-    # noinspection PyTypeChecker
-    @classmethod
-    def load(cls, store="hdf"):  # pylint: disable=arguments-differ
+    def _load(self, store: str = "hdf") -> DataFrame:
         r"""Load the dataset from file.
 
         Default is HDF5 (store='hdf'), but in our case store='pickle' is faster.
         """
-        super().load()  # <- makes sure DS is downloaded and preprocessed
         if store == "hdf":
-            with HDFStore(cls.dataset_file) as file:
+            with HDFStore(self.dataset_files) as file:
                 read_dfs = {}
                 for root, _, files in file.walk():
                     for fn in tqdm(files):
                         key = f"{root}/{fn}"
                         read_dfs[key] = read_hdf(file, key=key)
         elif store == "pickle":
-            dataset_file = cls.dataset_file.with_suffix(".pickle")
+            dataset_file = self.dataset_files.with_suffix(".pickle")
             with open(dataset_file, "rb") as f:
                 read_dfs = pickle.load(f)
         else:

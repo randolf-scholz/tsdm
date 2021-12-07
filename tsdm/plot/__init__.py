@@ -1,9 +1,4 @@
-r"""Plotting Functionality.
-
-TODO: Module summary.
-"""
-
-from __future__ import annotations
+r"""Plotting Functionality."""
 
 __all__ = [
     # Sub-Modules
