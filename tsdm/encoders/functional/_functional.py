@@ -6,8 +6,6 @@ Contains encoders in functional form.
   - See :mod:`tsdm.encoders.modular` for modular implementations.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Functions
     "make_dense_triplets",
@@ -49,7 +47,7 @@ def triplet2dense(
     ----------
     df: DataFrame
     cat_features:
-        Either a set of keys denoting the columns containing categorical features.
+        Either a set of index denoting the columns containing categorical features.
         In this case the categories will be inferred from data.
         Or a dictionary of sets such that a key:value pair corresponds to a column and
         all possible categories in that column. Use empty set to infer categories from data.

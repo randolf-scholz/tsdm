@@ -6,8 +6,6 @@ Contains things like
 - package installation
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Functions
     "query_bool",

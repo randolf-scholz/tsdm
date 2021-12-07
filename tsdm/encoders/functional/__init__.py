@@ -6,8 +6,6 @@ Contains encoders in functional form.
   - See :mod:`tsdm.encoders.modular` for modular implementations.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Constants
     "FunctionalEncoder",

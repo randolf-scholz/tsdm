@@ -1,9 +1,4 @@
-r"""TODO: Module Docstring.
-
-TODO: Module Docstring
-"""
-
-from __future__ import annotations
+r"""Utility functions for random number generation."""
 
 __all__ = [
     # Functions

@@ -1,4 +1,4 @@
-r"""Some tiny example datasets."""
+r"""Some tiny example dataset."""
 
 import logging
 from typing import Final

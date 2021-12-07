@@ -1,13 +1,15 @@
-r"""#TODO add module summary line.
+r"""Implementation of encoders.
 
-#TODO add module description.
+Notes
+-----
+Contains encoders in modular form.
+  - See :mod:`tsdm.encoders.functional` for functional implementations.
 """
 
-from __future__ import annotations
-
 __all__ = [
-    # Classes
+    # ABC
     "BaseEncoder",
+    # Classes
     "ChainedEncoder",
     "DataFrameEncoder",
     "DateTimeEncoder",
@@ -22,8 +24,9 @@ __all__ = [
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable
-from typing import Any, Callable, Literal, Optional, Union
+from collections.abc import Iterable, Mapping, Sequence
+from functools import singledispatchmethod
+from typing import Any, Callable, Literal, Optional, Union, overload
 
 import numpy as np
 import pandas.api.types
@@ -31,12 +34,27 @@ import torch
 from pandas import NA, DataFrame, DatetimeIndex, Index, Series, Timedelta, Timestamp
 from torch import Tensor
 
+from tsdm.datasets import TimeTensor
+
 __logger__ = logging.getLogger(__name__)
 
 
 def apply_along_axes(
     a: Tensor, b: Tensor, op: Callable, axes: tuple[int, ...]
 ) -> Tensor:
+    r"""Apply a function to multiple axes of a tensor.
+
+    Parameters
+    ----------
+    a: Tensor
+    b: Tensor
+    op: Callable
+    axes: tuple[int, ...]
+
+    Returns
+    -------
+    Tensor
+    """
     axes = tuple(axes)
     rank = len(a.shape)
     source = tuple(range(rank))
@@ -76,6 +94,10 @@ class BaseEncoder(ABC):
     def __matmul__(self, other):
         r"""Return chained encoders."""
         return ChainedEncoder(self, other)
+
+    def __repr__(self):
+        """Return a string representation of the encoder."""
+        return f"{self.__class__.__name__}"
 
 
 class ChainedEncoder(BaseEncoder):
@@ -137,14 +159,6 @@ class Time2Float(BaseEncoder):
     r"""Convert ``Series`` encoded as ``datetime64`` or ``timedelta64`` to ``floating``.
 
     By default, the data is mapped onto the unit interval `[0,1]`
-
-    Parameters
-    ----------
-    ds: Series
-
-    Returns
-    -------
-    Series
     """
 
     original_dtype: np.dtype
@@ -269,20 +283,20 @@ class DateTimeEncoder(BaseEncoder):
         super().__init__()
         self.unit = unit
 
-    def fit(self, datetimes: Union[Series, DatetimeIndex]):
+    def fit(self, data: Union[Series, DatetimeIndex]):
         r"""Store the offset."""
-        if isinstance(datetimes, Series):
+        if isinstance(data, Series):
             self.kind = Series
-        elif isinstance(datetimes, DatetimeIndex):
+        elif isinstance(data, DatetimeIndex):
             self.kind = DatetimeIndex
         else:
-            raise ValueError(f"Incompatible {type(datetimes)=}")
+            raise ValueError(f"Incompatible {type(data)=}")
 
-        self.offset = Timestamp(datetimes[0])
-        self.name = str(datetimes.name) if datetimes.name is not None else None
-        self.dtype = datetimes.dtype
-        if isinstance(datetimes, DatetimeIndex):
-            self.freq = datetimes.freq
+        self.offset = Timestamp(data[0])
+        self.name = str(data.name) if data.name is not None else None
+        self.dtype = data.dtype
+        if isinstance(data, DatetimeIndex):
+            self.freq = data.freq
 
     def encode(self, datetimes: Union[Series, DatetimeIndex]) -> Series:
         r"""Encode the input."""
@@ -290,6 +304,8 @@ class DateTimeEncoder(BaseEncoder):
 
     def decode(self, timedeltas: Series) -> Union[Series, DatetimeIndex]:
         r"""Decode the input."""
+        __logger__.debug("Decoding %s", type(timedeltas))
+        print(self.unit)
         converted = pandas.to_timedelta(timedeltas, unit=self.unit)
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
         if self.kind == Series:
@@ -321,24 +337,24 @@ class DataFrameEncoder(BaseEncoder):
     It is assumed that the DataFrame Modality doesn't change.
     """
 
-    column_encoder: Union[BaseEncoder, dict[Any, BaseEncoder]]
+    column_encoders: Union[BaseEncoder, Mapping[Any, BaseEncoder]]
     r"""Encoders for the columns."""
-    index_encoder: Optional[BaseEncoder] = None
+    index_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]] = None
     r"""Optional Encoder for the index."""
     colspec: Series = None
     r"""The columns-specification of the DataFrame."""
     encode_index: bool
     r"""Whether to encode the index."""
     column_wise: bool
-    r"""Whether to encode column-wise"""
+    r"""Whether to encode column-wise."""
     partitions: Optional[dict] = None
-    r"""Contains partitions if used column wise"""
+    r"""Contains partitions if used column wise."""
 
     def __init__(
         self,
-        encoders: Union[BaseEncoder, dict[Any, BaseEncoder]],
+        column_encoders: Union[BaseEncoder, Mapping[Any, BaseEncoder]],
         *,
-        index_encoder: Optional[BaseEncoder] = None,
+        index_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]] = None,
     ):
         r"""Set up the individual encoders.
 
@@ -346,31 +362,40 @@ class DataFrameEncoder(BaseEncoder):
 
         Parameters
         ----------
-        encoders
-        index_encoder
+        column_encoders
+        index_encoders
         """
         super().__init__()
-        self.column_encoder = encoders
-        self.index_encoder = index_encoder
-        self.column_wise: bool = isinstance(self.column_encoder, dict)
-        self.encode_index: bool = index_encoder is not None
+        self.column_encoders = column_encoders
 
-        idxenc_spec = DataFrame(
+        if isinstance(index_encoders, Mapping):
+            raise NotImplementedError("Index encoders not yet supported")
+
+        self.index_encoders = index_encoders
+        self.column_wise: bool = isinstance(self.column_encoders, Mapping)
+        self.encode_index: bool = index_encoders is not None
+
+        index_spec = DataFrame(
             columns=["col", "encoder"],
             index=Index([], name="partition"),
         )
 
         if self.encode_index:
-            _idxenc_spec = Series(
-                {
-                    "col": NA,
-                    "encoder": self.index_encoder,
-                },
-                name=0,
-            )
-            idxenc_spec = idxenc_spec.append(_idxenc_spec)
+            if not isinstance(self.index_encoders, Mapping):
+                _idxenc_spec = Series(
+                    {
+                        "col": NA,
+                        "encoder": self.index_encoders,
+                    },
+                    name=0,
+                )
+                index_spec = index_spec.append(_idxenc_spec)
+            else:
+                raise NotImplementedError(
+                    "Multiple Index encoders are not supported yet."
+                )
 
-        if not isinstance(self.column_encoder, dict):
+        if not isinstance(self.column_encoders, Mapping):
             colenc_spec = DataFrame(
                 columns=["col", "encoder"],
                 index=Index([], name="partition"),
@@ -379,22 +404,22 @@ class DataFrameEncoder(BaseEncoder):
             _colenc_spec = Series(
                 {
                     "col": NA,
-                    "encoder": self.column_encoder,
+                    "encoder": self.column_encoders,
                 },
                 name=0,
             )
 
             colenc_spec = colenc_spec.append(_colenc_spec)
         else:
-            keys = self.column_encoder.keys()
-            assert len(set(keys)) == len(keys), "Some keys are duplicates!"
+            keys = self.column_encoders.keys()
+            assert len(set(keys)) == len(keys), "Some index are duplicates!"
 
-            _encoders = tuple(set(self.column_encoder.values()))
+            _encoders = tuple(set(self.column_encoders.values()))
             encoders = Series(_encoders, name="encoder")
             partitions = Series(range(len(_encoders)), name="partition")
 
             _columns = defaultdict(list)
-            for key, encoder in self.column_encoder.items():
+            for key, encoder in self.column_encoders.items():
                 _columns[encoder].append(key)
 
             columns = Series(_columns, name="col")
@@ -403,32 +428,36 @@ class DataFrameEncoder(BaseEncoder):
             colenc_spec = colenc_spec.join(columns, on="encoder")
 
         self.spec = pandas.concat(
-            [idxenc_spec, colenc_spec],
+            [index_spec, colenc_spec],
             keys=["index", "columns"],
             names=["section", "partition"],
         ).astype({"col": object})
 
+        self.spec.name = self.__class__.__name__
+
         # add extra repr options by cloning from spec.
-        for x in [
-            "_repr_data_resource_",
-            "_repr_fits_horizontal_",
-            "_repr_fits_vertical_",
-            "_repr_html_",
-            "_repr_latex_",
-        ]:
-            setattr(self, x, getattr(self.spec, x))
+        # for x in [
+        #     "_repr_data_resource_",
+        #     "_repr_fits_horizontal_",
+        #     "_repr_fits_vertical_",
+        #     "_repr_html_",
+        #     "_repr_latex_",
+        # ]:
+        #     setattr(self, x, getattr(self.spec, x))
 
     def fit(self, df: DataFrame, /):
         r"""Fit to the data."""
         self.colspec = df.dtypes
 
-        if self.index_encoder is not None:
-            self.index_encoder.fit(df.index)
+        if self.index_encoders is not None:
+            if isinstance(self.index_encoders, Mapping):
+                raise NotImplementedError("Multiple index encoders not yet supported")
+            self.index_encoders.fit(df.index)
 
-        if isinstance(self.column_encoder, dict):
+        if isinstance(self.column_encoders, Mapping):
             # check if cols are a proper partition.
             keys = set(df.columns)
-            _keys = set(self.column_encoder.keys())
+            _keys = set(self.column_encoders.keys())
             assert keys <= _keys, f"Missing encoders for columns {keys - _keys}!"
             assert (
                 keys >= _keys
@@ -453,14 +482,18 @@ class DataFrameEncoder(BaseEncoder):
             tensors.append(encoder.encode(df[cols]))
         encoded_columns = tuple(tensors)
 
-        if self.index_encoder is not None:
-            encoded_index = self.index_encoder.encode(df.index)
+        if self.index_encoders is not None:
+            if isinstance(self.index_encoders, Mapping):
+                raise NotImplementedError("Multiple index encoders not yet supported")
+            encoded_index = self.index_encoders.encode(df.index)
             return encoded_index, *encoded_columns
         return encoded_columns
 
     def decode(self, data: tuple, /) -> DataFrame:
         r"""Decode the input."""
         if self.encode_index:
+            if isinstance(self.index_encoders, Mapping):
+                raise NotImplementedError("Multiple index encoders not yet supported")
             encoder = self.spec.loc["index", "encoder"].item()
             index = encoder.decode(data[0])
             data = data[1:]
@@ -481,7 +514,11 @@ class DataFrameEncoder(BaseEncoder):
 
     def __repr__(self) -> str:
         """Pretty print."""
-        return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}(" + self.spec.__repr__() + "\n)"
+
+    def _repr_html_(self) -> str:
+        """HTML representation."""
+        return f"<h3>{self.__class__.__name__}</h3>" + self.spec._repr_html_()
 
 
 class Standardizer(BaseEncoder):
@@ -566,70 +603,23 @@ class Standardizer(BaseEncoder):
         return f"{self.__class__.__name__}(" + f"{list(self.axis)}" + ")"
 
 
-# class MinMaxScaler(BaseEncoder):
-#     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
-#
-#     ymin: Tensor
-#     ymax: Tensor
-#     xmax: Tensor
-#     xmin: Tensor
-#
-#     def __init__(
-#          self,
-#          /,
-#          ymin: Optional[Tensor] = None,
-#          ymax: Optional[Tensor] = None,
-#          *,
-#          axis: Union[int, tuple[int, ...]] = -1,
-#     ):
-#         r"""Initialize the MinMaxScaler.
-#
-#         Parameters
-#         ----------
-#         ymin
-#         ymax
-#         axis
-#         """
-#         super().__init__()
-#
-#         self.ymin = torch.tensor(0.0) if ymin is None else ymin
-#         self.ymax = torch.tensor(1.0) if ymax is None else ymax
-#
-#         if isinstance(axis, Iterable):
-#             self.axis = tuple(axis)
-#         else:
-#             self.axis = (axis,)
-#
-#
-#     def fit(self, data):
-#         r"""Compute the min and max."""
-#         self.xmax = torch.max(data, self.axis)
-#         self.xmin = torch.min(data, dim=self.axis)
-#         self.scale = (self.ymax - self.ymin)/(self.xmax - self.xmin)
-#
-#
-#     def encode(self, data, /):
-#         r"""Encode the input."""
-#         return self.scale * (data - self.xmin) + self.ymin
-#
-#     def decode(self, data, /):
-#         r"""Decode the input."""
-#         return (1/self.scale) * (data - self.ymin) + self.xmin
-
-
 class MinMaxScaler(BaseEncoder):
     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
 
-    ymin: Tensor
-    ymax: Tensor
-    xmax: Tensor
-    xmin: Tensor
+    xmin: Union[np.ndarray, Tensor]
+    xmax: Union[np.ndarray, Tensor]
+    ymin: Union[np.ndarray, Tensor]
+    ymax: Union[np.ndarray, Tensor]
+    scale: Union[np.ndarray, Tensor]
+    """The scaling factor."""
 
     def __init__(
         self,
         /,
-        ymin: Optional[Tensor] = None,
-        ymax: Optional[Tensor] = None,
+        ymin: Optional[Union[float, np.ndarray]] = None,
+        ymax: Optional[Union[float, np.ndarray]] = None,
+        xmin: Optional[Union[float, np.ndarray]] = None,
+        xmax: Optional[Union[float, np.ndarray]] = None,
         *,
         axis: Union[int, tuple[int, ...]] = -1,
     ):
@@ -642,29 +632,108 @@ class MinMaxScaler(BaseEncoder):
         axis
         """
         super().__init__()
-
-        self.ymin = torch.tensor(0.0) if ymin is None else ymin
-        self.ymax = torch.tensor(1.0) if ymax is None else ymax
+        self.xmin = np.array(0.0 if xmin is None else xmin)
+        self.xmax = np.array(1.0 if xmax is None else xmax)
+        self.ymin = np.array(0.0 if ymin is None else ymin)
+        self.ymax = np.array(1.0 if ymax is None else ymax)
+        self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
         if isinstance(axis, Iterable):
             self.axis = tuple(axis)
         else:
             self.axis = (axis,)
 
-    def fit(self, data):
+    @singledispatchmethod
+    def fit(self, data: np.ndarray) -> None:
         r"""Compute the min and max."""
         data = np.asarray(data)
-        self.xmax = np.nanmax(data, axis=self.axis)
+        self.ymin = np.array(self.ymin, dtype=data.dtype)
+        self.ymax = np.array(self.ymax, dtype=data.dtype)
         self.xmin = np.nanmin(data, axis=self.axis)
+        self.xmax = np.nanmax(data, axis=self.axis)
+        self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+
+    @fit.register(torch.Tensor)  # type: ignore[no-redef]
+    def _(self, data: Tensor) -> None:
+        r"""Compute the min and max."""
+        mask = torch.isnan(data)
+        self.ymin = torch.tensor(self.ymin, device=data.device, dtype=data.dtype)
+        self.ymax = torch.tensor(self.ymax, device=data.device, dtype=data.dtype)
+        neginf = torch.tensor(float("-inf"), device=data.device, dtype=data.dtype)
+        posinf = torch.tensor(float("+inf"), device=data.device, dtype=data.dtype)
+
+        self.xmin = torch.amin(
+            torch.where(mask, posinf, data), dim=self.axis, keepdim=True
+        )
+        self.xmax = torch.amax(
+            torch.where(mask, neginf, data), dim=self.axis, keepdim=True
+        )
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def encode(self, data, /):
         r"""Encode the input."""
-        return self.scale * (data - self.xmin) + self.ymin
+        __logger__.debug("Encoding data %s", data)
+        return (data - self.xmin) * self.scale + self.ymin
 
     def decode(self, data, /):
         r"""Decode the input."""
-        return (1 / self.scale) * (data - self.ymin) + self.xmin
+        __logger__.debug("Decoding data %s", data)
+        return (data - self.ymin) / self.scale + self.xmin
+
+    # @singledispatchmethod
+    # def fit(self, data: Union[Tensor, np.ndarray]):
+    #     r"""Compute the min and max."""
+    #     return self.fit(np.asarray(data))
+    #
+    # @fit.register(Tensor)
+    # def _(self, data: Tensor) -> Tensor:
+    #     r"""Compute the min and max."""
+    #     mask = torch.isnan(data)
+    #     self.xmin = torch.min(
+    #         torch.where(mask, torch.tensor(float("+inf")), data), dim=self.axis
+    #     )
+    #     self.xmax = torch.max(
+    #         torch.where(mask, torch.tensor(float("-inf")), data), dim=self.axis
+    #     )
+    #     self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+
+    # @encode.register(Tensor)  # type: ignore[no-redef]
+    # def _(self, data: Tensor) -> Tensor:
+    #     r"""Encode the input."""
+    #     return self.scale * (data - self.xmin) + self.ymin
+    #
+    # @encode.register(Tensor)  # type: ignore[no-redef]
+    # def _(self, data: NDArray) -> NDArray:
+    #     r"""Encode the input."""
+    #     return self.scale * (data - self.xmin) + self.ymin
+
+    # @singledispatchmethod
+
+    # @decode.register(Tensor)  # type: ignore[no-redef]
+    # def _(self, data, /):
+    #     r"""Decode the input."""
+    #     return (1 / self.scale) * (data - self.ymin) + self.xmin
+    #
+    # @decode.register(Tensor)  # type: ignore[no-redef]
+    # def _(self, data, /):
+    #     r"""Decode the input."""
+    #     return (1 / self.scale) * (data - self.ymin) + self.xmin
+
+    # def fit(self, data):
+    #     r"""Compute the min and max."""
+    #     data = np.asarray(data)
+    #     self.xmax = np.nanmax(data, axis=self.axis)
+    #     self.xmin = np.nanmin(data, axis=self.axis)
+    #     print(self.xmax, self.xmin)
+    #     self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+    #
+    # def encode(self, data, /):
+    #     r"""Encode the input."""
+    #     return self.scale * (data - self.xmin) + self.ymin
+    #
+    # def decode(self, data, /):
+    #     r"""Decode the input."""
+    #     return (1 / self.scale) * (data - self.ymin) + self.xmin
 
 
 # class ConcatEncoder(BaseEncoder):
@@ -759,3 +828,96 @@ class FloatEncoder(BaseEncoder):
     def __repr__(self):
         """Pretty print."""
         return f"{self.__class__.__name__}()"
+
+
+class IntEncoder(BaseEncoder):
+    """Converts all columns of DataFrame to int32."""
+
+    dtypes: Series = None
+    r"""The original dtypes."""
+
+    def fit(self, data: PandasObject):
+        r"""Remember the original dtypes."""
+        self.dtypes = data.dtypes
+
+    def encode(self, data: PandasObject) -> PandasObject:
+        r"""Make everything int32."""
+        return data.astype("int32")
+
+    def decode(self, data, /):
+        r"""Restore original dtypes."""
+        return data.astype(self.dtypes)
+
+    def __repr__(self):
+        """Pretty print."""
+        return f"{self.__class__.__name__}()"
+
+
+class TimeSlicer(BaseEncoder):
+    """Reorganizes the data by slicing."""
+
+    # TODO: multiple horizons
+
+    def __init__(self, horizon):
+        super().__init__()
+        self.horizon = horizon
+
+    @staticmethod
+    def is_tensor_pair(data: Any) -> bool:
+        r"""Check if the data is a pair of tensors."""
+        if isinstance(data, Sequence) and len(data) == 2:
+            if isinstance(data[0], torch.Tensor) and isinstance(data[1], torch.Tensor):
+                return True
+        return False
+
+    @overload
+    def encode(self, data: TimeTensor) -> Sequence[TimeTensor]:
+        ...
+
+    @overload
+    def encode(self, data: Sequence[TimeTensor]) -> Sequence[Sequence[TimeTensor]]:  # type: ignore[misc]
+        ...
+
+    @overload
+    def encode(self, data: tuple[Tensor, Tensor]) -> Sequence[tuple[Tensor, Tensor]]:
+        ...
+
+    @overload
+    def encode(
+        self, data: Sequence[tuple[Tensor, Tensor]]
+    ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]:
+        ...
+
+    def encode(self, data, /):
+        """Slice the data."""
+        if isinstance(data, TimeTensor):
+            return data[: self.horizon], data[self.horizon]
+        if self.is_tensor_pair(data):
+            T, X = data
+            idx = T <= self.horizon
+            return (T[idx], X[idx]), (T[~idx], X[~idx])
+        return tuple(self.encode(item) for item in data)
+
+    @overload
+    def decode(self, data: Sequence[TimeTensor]) -> TimeTensor:
+        ...
+
+    @overload
+    def decode(self, data: Sequence[Sequence[TimeTensor]]) -> Sequence[TimeTensor]:  # type: ignore[misc]
+        ...
+
+    @overload
+    def decode(self, data: Sequence[tuple[Tensor, Tensor]]) -> tuple[Tensor, Tensor]:
+        ...
+
+    @overload
+    def decode(
+        self, data: Sequence[Sequence[tuple[Tensor, Tensor]]]
+    ) -> Sequence[tuple[Tensor, Tensor]]:
+        ...
+
+    def decode(self, data, /):
+        """Restores the original data."""
+        if isinstance(data[0], TimeTensor) or self.is_tensor_pair(data[0]):
+            return torch.cat(data, dim=0)
+        return tuple(self.decode(item) for item in data)

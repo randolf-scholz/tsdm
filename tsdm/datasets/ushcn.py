@@ -3,8 +3,6 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "USHCN",
@@ -14,8 +12,7 @@ __all__ = [
 import gzip
 import logging
 import os
-import sys
-from functools import cache
+from functools import cached_property
 from io import StringIO
 from pathlib import Path
 from typing import Literal, Union
@@ -23,21 +20,65 @@ from typing import Literal, Union
 import pandas
 from pandas import DataFrame
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base import Dataset, SimpleDataset
 
-__logger__ = logging.getLogger(__name__)  # noqa
-
-try:
-    os.environ["MODIN_ENGINE"] = "ray"
-    from modin import pandas as pd
-except ImportError as e:
-    __logger__.warning("Modin not found, falling back to pandas! %s", e)
-    pd = pandas
-else:
-    import ray
+__logger__ = logging.getLogger(__name__)
 
 
-class USHCN_SmallChunkedSporadic(BaseDataset):
+STATE_CODES = r"""
+ID	Abbr.	State
+01	AL	Alabama
+02	AZ	Arizona
+03	AR	Arkansas
+04	CA	California
+05	CO	Colorado
+06	CT	Connecticut
+07	DE	Delaware
+08	FL	Florida
+09	GA	Georgia
+10	ID	Idaho
+11	IL	Idaho
+12	IN	Indiana
+13	IA	Iowa
+14	KS	Kansas
+15	KY	Kentucky
+16	LA	Louisiana
+17	ME	Maine
+18	MD	Maryland
+19	MA	Massachusetts
+20	MI	Michigan
+21	MN	Minnesota
+22	MS	Mississippi
+23	MO	Missouri
+24	MT	Montana
+25	NE	Nebraska
+26	NV	Nevada
+27	NH	NewHampshire
+28	NJ	NewJersey
+29	NM	NewMexico
+30	NY	NewYork
+31	NC	NorthCarolina
+32	ND	NorthDakota
+33	OH	Ohio
+34	OK	Oklahoma
+35	OR	Oregon
+36	PA	Pennsylvania
+37	RI	RhodeIsland
+38	SC	SouthCarolina
+39	SD	SouthDakota
+40	TN	Tennessee
+41	TX	Texas
+42	UT	Utah
+43	VT	Vermont
+44	VA	Virginia
+45	WA	Washington
+46	WV	WestVirginia
+47	WI	Wisconsin
+48	WY	Wyoming
+"""
+
+
+class USHCN_SmallChunkedSporadic(SimpleDataset):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
 
     References
@@ -49,29 +90,29 @@ class USHCN_SmallChunkedSporadic(BaseDataset):
         <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    url = (
-        "https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
-        + "master/gru_ode_bayes/datasets/Climate/small_chunked_sporadic.csv"
+    base_url = (
+        r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
+        r"master/gru_ode_bayes/datasets/Climate/small_chunked_sporadic.csv"
     )
+    r"""HTTP address from where the dataset can be downloaded"""
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def dataset_file(cls) -> Path:
+    info_url = "https://github.com/edebrouwer/gru_ode_bayes"
+    r"""HTTP address containing additional information about the dataset"""
+
+    dataset: DataFrame
+
+    @cached_property
+    def dataset_files(self) -> Path:
         r"""Location where dataset is stored."""
-        return cls.dataset_path.joinpath("SmallChunkedSporadic.feather")  # type: ignore[attr-defined]
+        return self.dataset_dir / "SmallChunkedSporadic.feather"
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def rawdata_file(cls) -> Path:
+    @cached_property
+    def rawdata_files(self) -> Path:
         r"""Location where raw dataset is stored."""
-        return cls.rawdata_path.joinpath("small_chunked_sporadic.csv")  # type: ignore[attr-defined]
+        return self.rawdata_dir / "small_chunked_sporadic.csv"
 
-    @classmethod
-    def clean(cls):
+    def _clean(self):
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
-        __logger__.info("Finished extracting dataset '%s'", cls.__name__)
         dtypes = {
             "ID": pandas.UInt16Dtype(),
             "Time": pandas.Float32Dtype(),
@@ -86,20 +127,17 @@ class USHCN_SmallChunkedSporadic(BaseDataset):
             "Mask_3": pandas.BooleanDtype(),
             "Mask_4": pandas.BooleanDtype(),
         }
-        df = pandas.read_csv(cls.rawdata_file, dtype=dtypes)
-        df.to_feather(cls.dataset_file)
-        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
+        df = pandas.read_csv(self.rawdata_files, dtype=dtypes)
+        df = DataFrame(df).reset_index()
+        df.to_feather(self.dataset_files)
 
-    @classmethod
-    def load(cls) -> DataFrame:
+    def _load(self) -> DataFrame:
         r"""Load the dataset from hdf-5 file."""
-        super().load()  # <- makes sure DS is downloaded and preprocessed
-        df = pandas.read_feather(cls.dataset_file)
-        df = DataFrame(df)
-        return df
+        df = pandas.read_feather(self.dataset_files)
+        return df.set_index(["ID", "Time"])
 
 
-class USHCN(BaseDataset):
+class USHCN(Dataset):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -246,28 +284,41 @@ class USHCN(BaseDataset):
       at the station (i.e., the number of hours that must be added to local standard time to match UTC).
     """  # pylint: disable=line-too-long # noqa
 
-    url = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
+    base_url = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
+    """HTTP address from where the dataset can be downloaded"""
     info_url = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
-    KEY = Literal["us_daily", "states", "stations"]
+    """HTTP address containing additional information about the dataset"""
+    KEYS = Literal["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
+    index = ["us_daily", "states", "stations"]
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def dataset_file(cls) -> Path:
-        r"""Location where dataset is stored."""
-        return cls.dataset_path.joinpath("us_daily.feather")  # type: ignore[attr-defined]
+    @cached_property
+    def rawdata_files(self) -> dict[str, Union[None, Path]]:
+        r"""Location of (possibly compressed) data archive."""
+        return {
+            "metadata": self.rawdata_dir / "data_format.txt",
+            "states": None,
+            "stations": self.rawdata_dir / "ushcn-stations.txt",
+            "stations_metadata": self.rawdata_dir / "station_file_format.txt",
+            "us_daily": self.rawdata_dir / "us.txt.gz",
+        }
 
-    @classmethod
-    def load(cls, key: KEY = "us_daily") -> DataFrame:
+    def _load(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Load the dataset from disk."""
-        path = cls.dataset_path.joinpath(f"{key}.feather")  # type: ignore[attr-defined]
-        if not path.exists():
-            cls.clean(key)
-        return pandas.read_feather(path)
+        # path = self.dataset_files[key]
+        # if not path.exists():
+        #     self.clean(key=key)
+        df = pandas.read_feather(self.dataset_files[key])
+        if key == "us_daily":
+            df = df.set_index(["time", "COOP_ID"])
+        elif key == "states":
+            df = df.set_index("ID")
+        elif key == "stations":
+            ...
+            # df = df.set_index("COOP_ID")
+        return df
 
-    @classmethod
-    def clean(cls, key: KEY = "us_daily"):
+    def _clean(self, key: KEYS = "us_daily"):
         r"""Create the DataFrames.
 
         Parameters
@@ -275,44 +326,25 @@ class USHCN(BaseDataset):
         key: Literal["us_daily", "states", "stations"], default="us_daily"
         """
         {
-            "us_daily": cls._clean_us_daily,
-            "stations": cls._clean_stations,
-            "states": cls._clean_states,
+            "us_daily": self._clean_us_daily,
+            "stations": self._clean_stations,
+            "states": self._clean_states,
         }[key]()
-        __logger__.info(
-            "Finished cleaning table '%s' of dataset '%s'", key, cls.__name__
-        )
 
-    @classmethod  # type: ignore
-    @property
-    @cache
-    def states(cls) -> DataFrame:
-        r"""Table containing the states data."""
-        return cls.load(key="states")
-
-    @classmethod  # type: ignore
-    @property
-    @cache
-    def stations(cls) -> DataFrame:
-        r"""Table containing the states data."""
-        return cls.load(key="stations")
-
-    @classmethod
-    def _clean_states(cls):
+    def _clean_states(self):
         state_dtypes = {
             "ID": pandas.CategoricalDtype(ordered=True),
             "Abbr.": pandas.CategoricalDtype(ordered=True),
             "State": pandas.StringDtype(),
         }
         states = pandas.read_csv(StringIO(STATE_CODES), sep="\t", dtype=state_dtypes)
-        states.to_feather(cls.dataset_path.joinpath("states.feather"))
-        __logger__.info("%s: Finished cleaning 'states' DataFrame", cls.__name__)
+        states.to_feather(self.dataset_files["states"])
+        __logger__.info("Finished cleaning 'states' DataFrame")
 
-    @classmethod
-    def _clean_stations(cls):
-        stations_file = cls.rawdata_path.joinpath("ushcn-stations.txt")
+    def _clean_stations(self):
+        stations_file = self.rawdata_files["stations"]
         if not stations_file.exists():
-            cls.download()
+            self.download()
 
         stations_colspecs = {
             "COOP_ID": (1, 6),
@@ -331,15 +363,15 @@ class USHCN(BaseDataset):
         stations_cspecs = [(a - 1, b) for a, b in stations_colspecs.values()]
 
         stations_dtypes = {
-            "COOP_ID": pandas.CategoricalDtype(ordered=True),
+            "COOP_ID": pandas.StringDtype(),
             "LATITUDE": pandas.Float32Dtype(),
             "LONGITUDE": pandas.Float32Dtype(),
             "ELEVATION": pandas.Float32Dtype(),
-            "STATE": cls.states.ID.dtype,
+            "STATE": pandas.StringDtype(),
             "NAME": pandas.StringDtype(),
-            "COMPONENT_1": pandas.CategoricalDtype(ordered=True),
-            "COMPONENT_2": pandas.CategoricalDtype(ordered=True),
-            "COMPONENT_3": pandas.CategoricalDtype(ordered=True),
+            "COMPONENT_1": pandas.StringDtype(),
+            "COMPONENT_2": pandas.StringDtype(),
+            "COMPONENT_3": pandas.StringDtype(),
             "UTC_OFFSET": "timedelta64[h]",
         }
 
@@ -359,32 +391,36 @@ class USHCN(BaseDataset):
         )
         stations = DataFrame(stations)  # in case TextFileReader is returned
 
+        for col, na_value in stations_na_values.items():
+            stations[col] = stations[col].replace(na_value, pandas.NA)
+
         # Get union of all ids
-        COOP_IDS = pandas.CategoricalDtype(stations.COOP_ID, ordered=True)
-        stations = stations.astype(
-            {
-                "COOP_ID": COOP_IDS,
-                "COMPONENT_1": COOP_IDS,
-                "COMPONENT_2": COOP_IDS,
-                "COMPONENT_3": COOP_IDS,
-            }
-        )
-        path = cls.dataset_path.joinpath("stations.feather")
+        stations_new_dtypes = {
+            "COOP_ID": "Int32",
+            "COMPONENT_1": "Int32",
+            "COMPONENT_2": "Int32",
+            "COMPONENT_3": "Int32",
+            "STATE": "category",
+        }
+        stations = stations.astype(stations_new_dtypes)
+        path = self.dataset_files["stations"]
         stations.to_feather(path)
-        __logger__.info("%s: Finished cleaning 'stations' DataFrame", cls.__name__)
+        __logger__.info("Finished cleaning 'stations' DataFrame")
 
-    @classmethod
-    def _clean_us_daily(cls):
-        us_daily_file_compressed = cls.rawdata_path.joinpath("us.txt.gz")
-        us_daily_file = cls.rawdata_path.joinpath("us.txt")
-        if not us_daily_file_compressed.exists():
-            cls.download()
+    def _clean_us_daily(self):
+        try:
+            os.environ["MODIN_ENGINE"] = "ray"
+            import ray
+            from modin import pandas as pd
 
-        if {"modin", "ray"} <= sys.modules.keys():
-            __logger__.info("Starting ray cluster.")
-            ray.init(
-                num_cpus=min(1, (os.cpu_count() or 0) - 2), ignore_reinit_error=True
-            )
+            __logger__.warning("Using Modin with Ray Backend")
+        except ImportError as e:
+            __logger__.warning("Modin/Ray not found, falling back to pandas! %s", e)
+            pd = pandas
+        else:
+            num_cpus = max(1, (os.cpu_count() or 0) - 2)
+            __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
+            ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
 
         # column: (start, stop)
         colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
@@ -408,7 +444,7 @@ class USHCN(BaseDataset):
         ELEMENTS = pandas.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
 
         dtypes = {
-            "COOP_ID": cls.stations.COOP_ID.dtype,
+            "COOP_ID": pandas.Int32Dtype(),
             "YEAR": pandas.UInt16Dtype(),
             "MONTH": pandas.UInt8Dtype(),
             "ELEMENT": ELEMENTS,
@@ -418,7 +454,7 @@ class USHCN(BaseDataset):
             "SFLAG": SFLAGS,
         }
 
-        # dtypes but with same keys as colspec.
+        # dtypes but with same index as colspec.
         dtype = {
             key: (dtypes[key[0]] if isinstance(key, tuple) else dtypes[key])
             for key in colspecs
@@ -429,12 +465,14 @@ class USHCN(BaseDataset):
 
         # per column values to be interpreted as nan
         na_values = {("VALUE", k): -9999 for k in range(1, 32)}
+        us_daily_file = self.rawdata_dir / self.rawdata_files["us_daily"].stem
+        __logger__.info("Decompressing into %s", us_daily_file)
 
-        # TODO: rewrite once modin.pandas.read_fwf works with gzip
-        with gzip.open(us_daily_file_compressed, "rb") as compressed_file:
+        with gzip.open(self.rawdata_files["us_daily"], "rb") as compressed_file:
             with open(us_daily_file, "w", encoding="utf8") as file:
                 file.write(compressed_file.read().decode("utf-8"))
-        __logger__.info("%s finished decompressing main file", cls.__name__)
+
+        __logger__.info("Finished decompressing main file")
 
         ds = pd.read_fwf(
             us_daily_file,
@@ -443,8 +481,9 @@ class USHCN(BaseDataset):
             na_values=na_values,
             dtype=dtype,
         )
-        ds = pd.DataFrame(ds)  # In case TextFileReader was returned.
-        __logger__.info("%s finished loading main file.", cls.__name__)
+        us_daily_file.unlink()
+        # ds = pd.DataFrame(ds)  # In case TextFileReader was returned.
+        __logger__.info("Finished loading main file.")
 
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
@@ -457,7 +496,7 @@ class USHCN(BaseDataset):
 
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = data.stack(level="DAY", dropna=True).reset_index(level="DAY")
-        __logger__.info("%s finished dataframe stacking.", cls.__name__)
+        __logger__.info("Finished dataframe stacking.")
 
         # correct dtypes after stacking operation
         _dtypes = {k: v for k, v in dtypes.items() if k in data.columns} | {
@@ -467,7 +506,7 @@ class USHCN(BaseDataset):
 
         # recombine data columns with original data
         data = ds[id_cols].join(data, how="inner")
-        __logger__.info("%s finished dataframe merging.", cls.__name__)
+        __logger__.info("Finished dataframe merging.")
 
         # fix column order
         data = data[
@@ -486,63 +525,15 @@ class USHCN(BaseDataset):
 
         # optional: sorting
         data = data.sort_values(by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"])
-        __logger__.info("%s finished sorting.", cls.__name__)
+        __logger__.info("Finished sorting.")
 
         # drop old index which may contain duplicates
         data = data.reset_index(drop=True)
 
-        data.to_feather(cls.dataset_file)
-        __logger__.info("%s: Finished cleaning 'us_daily' DataFrame", cls.__name__)
+        __logger__.info("Creating time index.")
+        datetimes = pd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
+        data = data.drop(columns=["YEAR", "MONTH", "DAY"])
+        data["time"] = datetimes
+        __logger__.info("Finished creating time index.")
 
-
-STATE_CODES = r"""
-ID	Abbr.	State
-01	AL	Alabama
-02	AZ	Arizona
-03	AR	Arkansas
-04	CA	California
-05	CO	Colorado
-06	CT	Connecticut
-07	DE	Delaware
-08	FL	Florida
-09	GA	Georgia
-10	ID	Idaho
-11	IL	Idaho
-12	IN	Indiana
-13	IA	Iowa
-14	KS	Kansas
-15	KY	Kentucky
-16	LA	Louisiana
-17	ME	Maine
-18	MD	Maryland
-19	MA	Massachusetts
-20	MI	Michigan
-21	MN	Minnesota
-22	MS	Mississippi
-23	MO	Missouri
-24	MT	Montana
-25	NE	Nebraska
-26	NV	Nevada
-27	NH	NewHampshire
-28	NJ	NewJersey
-29	NM	NewMexico
-30	NY	NewYork
-31	NC	NorthCarolina
-32	ND	NorthDakota
-33	OH	Ohio
-34	OK	Oklahoma
-35	OR	Oregon
-36	PA	Pennsylvania
-37	RI	RhodeIsland
-38	SC	SouthCarolina
-39	SD	SouthDakota
-40	TN	Tennessee
-41	TX	Texas
-42	UT	Utah
-43	VT	Vermont
-44	VA	Virginia
-45	WA	Washington
-46	WV	WestVirginia
-47	WI	Wisconsin
-48	WY	Wyoming
-"""
+        data.to_feather(self.dataset_files["us_daily"])

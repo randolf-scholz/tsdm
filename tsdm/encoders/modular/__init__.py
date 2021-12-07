@@ -6,14 +6,13 @@ Contains encoders in modular form.
   - See :mod:`tsdm.encoders.functional` for functional implementations.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Constants
     "ModularEncoder",
     "ModularEncoders",
-    # Classes
+    # ABC
     "BaseEncoder",
+    # Classes
     "ChainedEncoder",
     "DataFrameEncoder",
     "DateTimeEncoder",
@@ -47,8 +46,6 @@ from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
-ModularEncoder = BaseEstimator
-r"""Type hint for modular encoders."""
 
 SklearnModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
     "Binarizer": sk_preprocessing.Binarizer,
@@ -72,5 +69,19 @@ SklearnModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
 }
 r"""Dictionary of all available sklearn encoders."""
 
-ModularEncoders: Final[LookupTable[type[BaseEstimator]]] = SklearnModularEncoders
+ModularEncoder = BaseEncoder
+r"""Type hint for modular encoders."""
+
+
+ModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
+    "ChainedEncoder": ChainedEncoder,
+    "DataFrameEncoder": DataFrameEncoder,
+    "DateTimeEncoder": DateTimeEncoder,
+    "FloatEncoder": FloatEncoder,
+    "IdentityEncoder": IdentityEncoder,
+    "MinMaxScaler": MinMaxScaler,
+    "Standardizer": Standardizer,
+    "TensorEncoder": TensorEncoder,
+    "Time2Float": Time2Float,
+}
 r"""Dictionary of all available modular encoders."""

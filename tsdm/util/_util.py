@@ -3,8 +3,6 @@ r"""Utility functions.
 TODO:  Module description
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Constants
     # Classes
@@ -14,23 +12,35 @@ __all__ = [
     "deep_kval_update",
     "initialize_from",
     "now",
-    "skew_symmetric",
+    "skewpart",
     "relsize_skewpart",
-    "symmetric",
+    "symmpart",
     "relsize_symmpart",
+    "flatten_dict",
+    "flatten_nested",
+    "prepend_path",
+    "paths_exists",
 ]
 
-
-from collections.abc import Mapping
+import os
+from collections.abc import Collection, Mapping
 from datetime import datetime
 from functools import partial
 from logging import getLogger
+from pathlib import Path
 from typing import Any, Callable, Iterable, NamedTuple, Union, overload
 
 import torch
 from torch import Tensor, jit
 
-from tsdm.util.types import LookupTable, ObjectType, ReturnType
+from tsdm.util.types import (
+    LookupTable,
+    NullableNestedType,
+    ObjectType,
+    PathType,
+    ReturnType,
+)
+from tsdm.util.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
 
@@ -90,6 +100,84 @@ def deep_kval_update(d: dict, **new_kvals: dict) -> dict:
             # if value is not None or not safe:
             d[key] = new_kvals[key]
     return d
+
+
+def apply_nested(
+    nested: NullableNestedType[ObjectType],
+    kind: type[ObjectType],
+    func: Callable[[ObjectType], ReturnType],
+) -> NullableNestedType[ReturnType]:
+    r"""Apply function to nested iterables of a given kind.
+
+    Parameters
+    ----------
+    nested: Nested Data-Structure (Iterable, Mapping, ...)
+    kind: The type of the leave nodes
+    func: A function to apply to all leave Nodes
+    """
+    if nested is None:
+        return None
+    if isinstance(nested, kind):
+        return func(nested)
+    if isinstance(nested, Mapping):
+        return {k: apply_nested(v, kind, func) for k, v in nested.items()}
+    # TODO https://github.com/python/mypy/issues/11615
+    if isinstance(nested, Collection):
+        return [apply_nested(obj, kind, func) for obj in nested]  # type: ignore[misc]
+    raise TypeError(f"Unsupported type: {type(nested)}")
+
+
+def prepend_path(
+    files: NullableNestedType[PathType],
+    path: Path,
+) -> NullableNestedType[Path]:
+    """Prepends path to all files in nested iterable.
+
+    Parameters
+    ----------
+    files
+        Nested Datastructed with Path-objects at leave nodes.
+    path
+
+    Returns
+    -------
+    Nested data-structure with prepended path.
+    """
+    # TODO: change it to apply_nested in python 3.10
+
+    if files is None:
+        return None
+    if isinstance(files, (str, os.PathLike)):
+        return path / Path(files)
+    if isinstance(files, Mapping):
+        return {k: prepend_path(v, path) for k, v in files.items()}
+    # TODO https://github.com/python/mypy/issues/11615
+    if isinstance(files, Collection):
+        return [prepend_path(f, path) for f in files]  # type: ignore[misc]
+    raise TypeError(f"Unsupported type: {type(files)}")
+
+
+def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
+    r"""Flatten nested iterables of a given kind.
+
+    Parameters
+    ----------
+    nested: Any
+    kind: hashable
+
+    Returns
+    -------
+    set[hashable]
+    """
+    if nested is None:
+        return set()
+    if isinstance(nested, kind):
+        return {nested}
+    if isinstance(nested, Mapping):
+        return set.union(*(flatten_nested(v, kind) for v in nested.values()))
+    if isinstance(nested, Iterable):
+        return set.union(*(flatten_nested(v, kind) for v in nested))
+    raise ValueError(f"{type(nested)} is not understood")
 
 
 def flatten_dict(
@@ -240,6 +328,35 @@ def initialize_from(
     return partial(obj, **kwargs)
 
 
+def paths_exists(
+    paths: Union[
+        None, Path, Collection[Path], Mapping[Any, Union[None, Path, Collection[Path]]]
+    ]
+) -> bool:
+    """Check whether the files exist.
+
+    The input can be arbitrarily nested data-structure with :class:`Path` in leaves.
+
+    Parameters
+    ----------
+    paths: None | Path | Collection[Path] | Mapping[Any, None | Path | Collection[Path]]
+
+    Returns
+    -------
+    bool
+    """
+    if paths is None:
+        return True
+    if isinstance(paths, Mapping):
+        return all(paths_exists(f) for f in paths.values())
+    if isinstance(paths, Collection):
+        return all(paths_exists(f) for f in paths)
+    if isinstance(paths, Path):
+        return paths.exists()
+
+    raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
+
+
 # @initialize_from.register  # type: ignore[no-redef]
 # # Modular Only
 # def _(lookup_table: dict[str, type[T]], __name__: str, **kwargs: Any) -> T:
@@ -334,24 +451,24 @@ def initialize_from(
 #         return obj(**kwargs)
 #     return partial(obj, **kwargs)
 @jit.script
-def symmetric(x: Tensor) -> Tensor:
+def symmpart(x: Tensor) -> Tensor:
     r"""Symmetric part of matrix."""
     return (x + x.swapaxes(-1, -2)) / 2
 
 
 @jit.script
-def skew_symmetric(x: Tensor) -> Tensor:
+def skewpart(x: Tensor) -> Tensor:
     r"""Skew-Symmetric part of matrix."""
     return (x - x.swapaxes(-1, -2)) / 2
 
 
 @jit.script
 def relsize_symmpart(kernel):
-    r"""Relative magnitude of symmetric part."""
-    return torch.mean(symmetric(kernel) ** 2) / torch.mean(kernel ** 2)
+    r"""Relative magnitude of symmpart part."""
+    return torch.mean(symmpart(kernel) ** 2) / torch.mean(kernel ** 2)
 
 
 @jit.script
 def relsize_skewpart(kernel):
-    r"""Relative magnitude of skew-symmetric part."""
-    return torch.mean(skew_symmetric(kernel) ** 2) / torch.mean(kernel ** 2)
+    r"""Relative magnitude of skew-symmpart part."""
+    return torch.mean(skewpart(kernel) ** 2) / torch.mean(kernel ** 2)

@@ -66,8 +66,6 @@ Attribute Information
 +---------+-----------------------------------------+
 """  # pylint: disable=line-too-long # noqa
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "BeijingAirQuality",
@@ -76,17 +74,18 @@ __all__ = [
 import logging
 import os
 import zipfile
+from functools import cached_property
 from pathlib import Path
 
 import pandas
-from pandas import DataFrame, Timestamp, concat, read_csv, read_hdf
+from pandas import DataFrame, Timestamp, concat, read_csv, read_feather
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base import SimpleDataset
 
 __logger__ = logging.getLogger(__name__)
 
 
-class BeijingAirQuality(BaseDataset):
+class BeijingAirQuality(SimpleDataset):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -98,62 +97,65 @@ class BeijingAirQuality(BaseDataset):
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa
 
-    url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
+    base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
+    r"""HTTP address from where the dataset can be downloaded"""
+
     info_url: str = (
         r"https://archive.ics.uci.edu/ml/datasets/Beijing+Multi-Site+Air-Quality+Data"
     )
+    r"""HTTP address containing additional information about the dataset"""
+
     dataset: DataFrame
-    rawdata_path: Path
-    dataset_path: Path
-    dataset_file: Path
 
-    @classmethod
-    def load(cls):
+    @cached_property
+    def rawdata_files(self) -> Path:
+        r"""Location where the raw data is stored."""
+        return self.rawdata_dir / "PRSA2017_Data_20130301-20170228.zip"
+
+    def _load(self):
         """Load the dataset from hdf-5 file."""
-        super().load()  # <- makes sure DS is downloaded and preprocessed
-        df = read_hdf(cls.dataset_file, key=cls.__name__)
-        df = DataFrame(df)
-        return df
+        df = read_feather(self.dataset_files)
+        return df.set_index("time")
 
-    @classmethod
-    def clean(cls):
+    def _clean(self):
         r"""Create DataFrame with all 12 stations and :class:`pandas.DatetimeIndex`."""
 
         def to_time(x):
             return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
 
-        __logger__.info("Cleaning dataset '%s'", cls.__name__)
-
-        file_path = cls.rawdata_path.joinpath("PRSA2017_Data_20130301-20170228.zip")
-        data_path = cls.rawdata_path.joinpath("PRSA_Data_20130301-20170228")
+        data_path = self.rawdata_dir / "PRSA_Data_20130301-20170228"
 
         if not os.path.exists(data_path):
-            with zipfile.ZipFile(file_path, "r") as zip_ref:
-                zip_ref.extractall(cls.rawdata_path)
+            with zipfile.ZipFile(self.rawdata_files, "r") as zip_ref:
+                zip_ref.extractall(self.rawdata_dir)
 
-        __logger__.info("Finished extracting dataset '%s'", cls.__name__)
+        __logger__.info("%s: Finished extracting dataset", self.name)
 
         stations = []
         for csv in os.listdir(data_path):
-
-            df = DataFrame(read_csv(data_path.joinpath(csv)))
+            print(csv)
+            df = DataFrame(read_csv(data_path / csv))
 
             # Make multiple date columns to pandas.Timestamp
-            df["Timestamp"] = df.apply(to_time, axis=1)
-            df = df.set_index("Timestamp").reset_index()
+            df["time"] = df.apply(to_time, axis=1)
 
             # Remove date columns and index
             df = df.drop(labels=["No", "year", "month", "day", "hour"], axis=1)
             stations.append(df)
 
         df = concat(stations, ignore_index=True)
-        df.name = cls.__name__
+        data_path.unlink()
+        df.name = self.name
+        df = df.set_index("time")
 
         dtypes = {
             "wd": pandas.CategoricalDtype(),
             "station": pandas.CategoricalDtype(),
         }
-        df = df.astype(dtypes)
-        df.to_hdf(cls.dataset_file, key=cls.__name__, format="table")
+        for col in df.columns:
+            if col not in dtypes:
+                dtypes[col] = "float32"
 
-        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
+        df = df.astype(dtypes)
+        df = df.reset_index()
+        df.to_feather(self.dataset_files)

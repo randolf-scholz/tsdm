@@ -25,32 +25,32 @@ from typing import Final, Optional, Union
 
 import numpy as np
 import pandas
-import pandas as pd
 from pandas import Series
 
 __logger__ = logging.getLogger(__name__)
 
 NA_STRINGS: Final[set[str]] = {
-    "",
-    "-",
-    "n/a",
-    "N/A" "<na>",
-    "<NA>",
-    "nan",
-    "NaN",
-    "NAN",
-    "NaT",
-    "none",
-    "None",
-    "NONE",
+    r"",
+    r"-",
+    r"n/a",
+    r"N/A",
+    r"<na>",
+    r"<NA>",
+    r"nan",
+    r"NaN",
+    r"NAN",
+    r"NaT",
+    r"none",
+    r"None",
+    r"NONE",
 }
 
 NA_VALUES: Final[set] = {
     None,
     float("nan"),
     np.nan,
-    pd.NA,
-    pd.NaT,
+    pandas.NA,
+    pandas.NaT,
     np.datetime64("NaT"),
 }
 
@@ -100,7 +100,7 @@ def is_empty(series: Series) -> bool:
     -------
     bool
     """
-    return pd.isna(series).all()
+    return pandas.isna(series).all()
 
 
 def get_uniques(series: Series, ignore_nan: bool = True) -> Series:
@@ -143,16 +143,13 @@ def string_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
     )
 
 
-def string_to_bool(
-    series: Series, mask: Optional[Series] = None, uniques: Optional[Series] = None
-) -> Series:
+def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
     r"""Convert Series to nullable boolean.
 
     Parameters
     ----------
     series: Series
     uniques: Optional[Series]
-    mask: Optional[Series]
 
     Returns
     -------

@@ -17,38 +17,46 @@ very large population of ICU patients; and it contains highly granular data, inc
 vital signs, laboratory results, and medications.
 """
 
-
-from __future__ import annotations
-
 __all__ = ["MIMIC_III"]
 
 import logging
 import os
 import subprocess
+from functools import cached_property
 from getpass import getpass
+from pathlib import Path
 
-from tsdm.datasets.base import BaseDataset
-
-# from pathlib import Path
-# from typing import Final
-# from zipfile import ZipFile
-#
-# import numpy as np
-# from pandas import DataFrame
-
+from tsdm.datasets.base import SimpleDataset
 
 __logger__ = logging.getLogger(__name__)
 
 
-class MIMIC_III(BaseDataset):
-    r"""MIMIC-III Clinical Database."""
+class MIMIC_III(SimpleDataset):
+    r"""MIMIC-III SimpleDataset Database."""
 
-    url: str = r"https://physionet.org/files/mimiciii/1.4/"
+    base_url: str = r"https://physionet.org/files/mimiciii/1.4/"
+    r"""HTTP address from where the dataset can be downloaded"""
     info_url: str = r"https://physionet.org/content/mimiciii/1.4/"
+    r"""HTTP address containing additional information about the dataset"""
 
-    @classmethod
-    def download(cls):
-        r"""Download the dataset and stores it in `cls.rawdata_path`.
+    @cached_property
+    def dataset_files(self) -> Path:
+        r"""Path to the downloaded dataset."""
+        return self.rawdata_dir / "MIMIC-III.zip"
+
+    @cached_property
+    def rawdata_files(self) -> Path:
+        r"""Path to the raw data."""
+        return self.rawdata_dir / "rawdata"
+
+    def _clean(self):
+        r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
+
+    def _load(self):
+        r"""Load the dataset stored in hdf5 format in the path `cls.dataset_files`."""
+
+    def download(self, **kwargs):
+        r"""Download the dataset and stores it in `cls.rawdata_dir`.
 
         The default downloader checks if
 
@@ -57,28 +65,30 @@ class MIMIC_III(BaseDataset):
         3. Else simply use `wget` to download the `cls.url` content,
 
         Overwrite if you need custom downloader
+
+        Parameters
+        ----------
+        kwargs
         """
-        if cls.url is None:
-            __logger__.info(
-                "Dataset '%s' provides no url. Assumed offline", cls.__name__
-            )
+        if self.url is None:
+            __logger__.info("Dataset '%s' provides no url. Assumed offline", self.name)
             return
 
-        dataset = cls.__name__
-        __logger__.info("Obtaining dataset '%s' from %s", dataset, cls.url)
+        dataset = self.name
+        __logger__.info("Obtaining dataset '%s' from %s", dataset, self.url)
 
-        cut_dirs = cls.url.count("/") - 3
+        cut_dirs = self.url.count("/") - 3
 
-        user = input("MIMIC-III username")
+        user = input("MIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)
 
         os.environ["PASSWORD"] = password
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            f"--cut-dirs {cut_dirs} -P '{cls.rawdata_path}' {cls.url}",
+            f"--cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {self.url}",
             shell=True,
             check=True,
         )
 
-        __logger__.info("Finished importing dataset '%s' from %s", dataset, cls.url)
+        __logger__.info("Finished importing dataset '%s' from %s", dataset, self.url)
