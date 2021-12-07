@@ -1,4 +1,4 @@
-# download sources for datasets
+# download sources for dataset
 # UCI
 Electricity:
   https://archive.ics.uci.edu/ml/machine-learning-databases/00321/
@@ -26,7 +26,7 @@ tourism2:
   https://www.kaggle.com/c/tourism2
 # OTHER
 MuJoCo:
-  https://www.cs.toronto.edu/~rtqichen/datasets/HopperPhysics/training.pt
+  https://www.cs.toronto.edu/~rtqichen/dataset/HopperPhysics/training.pt
 M3:
   https://forecasters.org/data/m3comp/M3C.xls
 UWAVE:

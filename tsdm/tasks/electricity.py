@@ -3,12 +3,17 @@ r"""Tasks associated with the Electricity dataset.
 TODO: Module summary.
 """
 
-from __future__ import annotations
+
+__all__ = [
+    "ElectricityDeepState",
+    "ElectricityDeepAR",
+    "ElectricityTFT",
+    "ElectricityTRMF",
+    "ElectricityELBMBTTF",
+]
+
 
 import logging
-
-# __all__ = []
-
 
 __logger__ = logging.getLogger(__name__)
 
@@ -19,15 +24,15 @@ class ElectricityDeepState:
     Paper
     -----
 
-    Deep State Space Models for Time Series Forecasting
-    Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang, Tim Januschowski
-    Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
-    https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    - | Deep State Space Models for Time Series Forecasting
+      | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang, Tim Januschowski
+      | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
+      | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
 
     Evaluation Protocol
     -------------------
 
-        We train each method on all time series of these datasets but vary the size of the training
+        We train each method on all time series of these dataset but vary the size of the training
         range Tᵢ∈ {14, 21, 28} days. We evaluate all the methods on the next τ = 7 days after the
         forecast start time using the standard p50 and p90- quantile losses.
 
@@ -37,7 +42,7 @@ class ElectricityDeepState:
     Results
     -------
 
-    Obseravtion horizons: [14, 21, 28] days
+    Observation horizons: [14, 21, 28] days
     Forecast    horizons: 7 days
     Split:
 
@@ -51,6 +56,9 @@ class ElectricityDeepAR:
 
     Paper
     -----
+
+    - | DeepAR: Probabilistic forecasting with autoregressive recurrent networks
+      | http://www.sciencedirect.com/science/article/pii/S0169207019301888>
 
     Evaluation Protocol
     -------------------
@@ -74,6 +82,9 @@ class ElectricityTRMF:
 
     Paper
     -----
+
+    - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+      | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
 
     Evaluation Protocol
     -------------------
@@ -121,6 +132,9 @@ class ElectricityTFT:
     Paper
     -----
 
+    - | Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting
+      | https://www.sciencedirect.com/science/article/pii/S0169207021000637
+
     Evaluation Protocol
     -------------------
 
@@ -155,8 +169,8 @@ class ElectricityELBMBTTF:
     Paper
     -----
 
-    `Enhancing the Locality and Breaking the Memory Bottleneck of Transformer on Time Series Forecasting
-    <https://proceedings.neurips.cc/paper/2019/hash/6775a0635c302542da2c32aa19d86be0-Abstract.html>`_
+    - | Enhancing the Locality and Breaking the Memory Bottleneck of Transformer on Time Series Forecasting
+      | https://proceedings.neurips.cc/paper/2019/hash/6775a0635c302542da2c32aa19d86be0-Abstract.html
 
     Evaluation Protocol
     -------------------
@@ -174,7 +188,7 @@ class ElectricityELBMBTTF:
         A.3 Evaluation
         Following the experimental settings in [6], one week data from 9/1/2014 00:00 (included) 9
         on electricity-c and 6/15/2008 17:00 (included) 10 on traffic-c is left as test sets.
-        For electricity-f and traffic-f datasets, one week data from 8/31/2014 00:15 (included) and
+        For electricity-f and traffic-f dataset, one week data from 8/31/2014 00:15 (included) and
         6/15/2008 17:00 (included) 11 is left as test sets, respectively.
 
     Test-Metric

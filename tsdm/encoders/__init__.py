@@ -39,8 +39,6 @@ Contains encoders in both modular and functional form.
 # - Polynomial Coding
 # - Backward Difference Coding:
 
-from __future__ import annotations
-
 __all__ = [
     # Sub-Modules
     "functional",

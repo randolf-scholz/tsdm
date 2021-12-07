@@ -25,8 +25,6 @@ Must return a `NamedTuple` that agrees with the original column names!
 This allows us to select
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Sub- Packages
     "base",
@@ -35,7 +33,7 @@ __all__ = [
     "TASKS",
     # Classes
     # Tasks
-    "ETDatasetInformer",
+    "ETDatasetTask_Informer",
     "KIWI_RUNS_TASK",
 ]
 
@@ -45,7 +43,7 @@ from typing import Final
 
 from tsdm.tasks import base
 from tsdm.tasks.base import BaseTask
-from tsdm.tasks.etdataset import ETDatasetInformer
+from tsdm.tasks.etdataset import ETDatasetTask_Informer
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
 from tsdm.util.types import LookupTable
 
@@ -56,7 +54,7 @@ Task = BaseTask
 r"""Type hint for tasks."""
 
 TASKS: Final[LookupTable[type[Task]]] = {
-    "ETDatasetInformer": ETDatasetInformer,
+    "ETDatasetTask_Informer": ETDatasetTask_Informer,
     "KIWI_RUNS_TASK": KIWI_RUNS_TASK,
 }
 r"""Dictionary of all available tasks."""

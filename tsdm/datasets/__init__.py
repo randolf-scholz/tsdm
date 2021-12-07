@@ -3,25 +3,27 @@ r"""Dataset Import Facilities.
 Implement your own by subclassing :class:`BaseDataset`
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Sub-Packages
     "base",
-    # Meta-Objects
-    "Dataset",
+    "synthetic",
+    # Types
+    "DATASET",
+    # Constants
     "DATASETS",
-    # Classes
-    "DatasetMetaClass",
+    # ABCs
     "BaseDataset",
-    "SequenceDataset",
+    "Dataset",
+    # Classes
     "DatasetCollection",
+    "SequenceDataset",
+    "IndexedArray",
+    "TimeTensor",
+    "TimeSeriesDataset",
+    "Template",
     # Datasets
     "BeijingAirQuality",
-    "ETTh1",
-    "ETTh2",
-    "ETTm1",
-    "ETTm2",
+    "ETT",
     "Electricity",
     "InSilicoData",
     "KIWI_RUNS",
@@ -41,22 +43,23 @@ __all__ = [
 
 
 import logging
-from typing import Final, Union
+from typing import Final
 
 from tsdm.datasets import base
 from tsdm.datasets.base import (
     BaseDataset,
+    Dataset,
     DatasetCollection,
-    DatasetMetaClass,
     IndexedArray,
     SequenceDataset,
+    Template,
     TimeSeriesDataset,
     TimeTensor,
     tensor_info,
 )
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
-from tsdm.datasets.etdataset import ETTh1, ETTh2, ETTm1, ETTm2
+from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_runs import KIWI_RUNS
 from tsdm.datasets.mimic_iii import MIMIC_III
@@ -67,15 +70,12 @@ from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
-Dataset = Union[BaseDataset, type[BaseDataset]]
-r"""Type hint for datasets."""
+DATASET = BaseDataset
+r"""Type hint for dataset."""
 
-DATASETS: Final[LookupTable[Dataset]] = {
+DATASETS: Final[LookupTable[type[DATASET]]] = {
     "BeijingAirQuality": BeijingAirQuality,
-    "ETTh1": ETTh1,
-    "ETTh2": ETTh2,
-    "ETTm1": ETTm1,
-    "ETTm2": ETTm2,
+    "ETT": ETT,
     "Electricity": Electricity,
     "InSilicoData": InSilicoData,
     "KIWI_RUNS_TASK": KIWI_RUNS,
@@ -85,4 +85,4 @@ DATASETS: Final[LookupTable[Dataset]] = {
     "USHCN": USHCN,
     "USHCN_SmallChunkedSporadic": USHCN_SmallChunkedSporadic,
 }
-r"""Dictionary of all available datasets."""
+r"""Dictionary of all available dataset."""

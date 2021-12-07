@@ -2,45 +2,50 @@ r"""TODO: Module Summary Line.
 
 TODO: Module description
 """
-# flake8: noqa
-
-from __future__ import annotations
 
 __all__ = [
     # Classes
-    "ETDatasetInformer",
+    "ETDatasetTask_Informer",
 ]
 
 
 import logging
 from functools import cached_property
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Literal, Mapping, Optional, Sequence
 
 import torch
 from pandas import DataFrame
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
-from tsdm.datasets import DATASETS, Dataset, SequenceDataset
-from tsdm.encoders import ENCODERS, Encoder
+from tsdm.datasets import ETT
+from tsdm.encoders.modular import (
+    ChainedEncoder,
+    DataFrameEncoder,
+    DateTimeEncoder,
+    FloatEncoder,
+    MinMaxScaler,
+    ModularEncoder,
+    Standardizer,
+    TensorEncoder,
+)
 from tsdm.losses import LOSSES, Loss
+from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.util import initialize_from
-from tsdm.util.samplers import SequenceSampler
 
 __logger__ = logging.getLogger(__name__)
 
 
-class ETDatasetInformer(BaseTask):
-    r"""Forecasting Oil Temperature on the Electrical-Transformer datasets.
+class ETDatasetTask_Informer(BaseTask):
+    r"""Forecasting Oil Temperature on the Electrical-Transformer dataset.
 
     Paper
     -----
 
-    Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting
-    Haoyi Zhou, Shanghang Zhang, Jieqi Peng, Shuai Zhang, Jianxin Li, Hui Xiong, Wancai Zhang
-    https://arxiv.org/abs/2012.07436
+    - | Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting
+      | Haoyi Zhou, Shanghang Zhang, Jieqi Peng, Shuai Zhang, Jianxin Li, Hui Xiong, Wancai Zhang
+      | https://ojs.aaai.org/index.php/AAAI/article/view/17325
 
     Evaluation Protocol
     -------------------
@@ -48,7 +53,7 @@ class ETDatasetInformer(BaseTask):
         ETT (Electricity Transformer Temperature)2: The ETT is a crucial indicator in
         the electric power long-term deployment. We collected 2-year data from two
         separated counties in China. To explore the granularity on the LSTF problem,
-        we create separate datasets as {ETTh1, ETTh2}for 1-hour-level and ETTm1 for
+        we create separate dataset as {ETTh1, ETTh2}for 1-hour-level and ETTm1 for
         15-minute-level. Each data point consists of the target value ”oil temperature”
         and 6 power load features. The train/val/test is 12/4/4 months
 
@@ -68,7 +73,7 @@ class ETDatasetInformer(BaseTask):
 
         Appendix E
         [...]
-        All the datasets are performed standardization such that the mean of variable
+        All the dataset are performed standardization such that the mean of variable
         is 0 and the standard deviation is 1.
 
     **Forecasting Horizon:** {1d, 2d, 7d, 14d, 30d, 40d}
@@ -87,14 +92,12 @@ class ETDatasetInformer(BaseTask):
     TODO: add results
     """
 
-    keys = ["train", "test", "valid", "joint", "trial"]
-    r"""Available keys."""
-    KEYS = Literal["train", "test", "valid", "joint", "trial", "whole"]
-    r"""Type Hint for keys."""
-    dataset: Dataset
+    KeyType = Literal["train", "test", "valid", "joint", "trial", "whole"]
+    r"""Type Hint for index."""
+    index: Sequence[KeyType] = ["train", "test", "valid", "joint", "trial"]
+    r"""Available index."""
+    dataset: DataFrame
     r"""The dataset."""
-    splits: dict[KEYS, DataFrame]
-    r"""Available splits: train/valid/joint/test."""
     test_metric: Loss  # Callable[..., Tensor] | nn.Module
     r"""The target metric."""
     accumulation_function: Callable[..., Tensor]
@@ -106,9 +109,7 @@ class ETDatasetInformer(BaseTask):
     """Default batch size when evaluating."""
 
     # additional attributes
-    preprocessor: Encoder
-    r"""Encoder for the observations."""
-    pre_encoder: Encoder
+    preprocessor: ModularEncoder
     r"""Encoder for the observations."""
     observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
     r"""The number of datapoints observed during prediction."""
@@ -122,16 +123,13 @@ class ETDatasetInformer(BaseTask):
     def __init__(
         self,
         *,
-        pre_encoder: Optional[Encoder] = None,
-        dataset: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
+        dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
         forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
         target: TARGET = "OT",
-        scale: bool = True,
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
         test_metric: Literal["MSE", "MAE"] = "MSE",
-        preprocessor: str = "StandardScaler",
     ):
         super().__init__()
         self.target = target
@@ -140,36 +138,45 @@ class ETDatasetInformer(BaseTask):
         self.eval_batch_size = eval_batch_size
         self.train_batch_size = train_batch_size
 
-        self.preprocessor = initialize_from(ENCODERS, __name__=preprocessor)
-        self.dataset = initialize_from(DATASETS, __name__=dataset)
-        self.test_metric = initialize_from(LOSSES, __name__=test_metric)  # type: ignore[assignment]
+        self.dataset = ETT()[dataset_id]
+        self.dataset.name = dataset_id
+        self.test_metric: Loss = initialize_from(LOSSES, __name__=test_metric)  # type: ignore[assignment]
 
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
 
+        self.preprocessor = ChainedEncoder(
+            TensorEncoder(),
+            DataFrameEncoder(
+                Standardizer() @ FloatEncoder(),
+                index_encoders=MinMaxScaler() @ DateTimeEncoder(),
+            ),
+        )
+
         # Fit the Preprocessors
         self.preprocessor.fit(self.splits["train"])
         # Set the Encoder
-        self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
+        # self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
 
     @cached_property
-    def splits(self) -> dict[str, DataFrame]:
-        _splits = {
-            "train": self.dataset.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore
-            "valid": self.dataset.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore
-            "joint": self.dataset.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore
-            "trial": self.dataset.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore
-            "whole": self.dataset.dataset,  # type: ignore
+    def splits(self) -> Mapping[KeyType, DataFrame]:
+        r"""Split the dataset into train, test and validation."""
+        _splits: dict[Any, DataFrame] = {
+            "train": self.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore
+            "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore
+            "joint": self.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore
+            "trial": self.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore
+            "whole": self.dataset,  # type: ignore
         }
         _splits["test"] = _splits["trial"]  # alias
         return _splits
 
     def get_dataloader(
         self,
-        key: KEYS,
+        key: KeyType,
+        *,
         batch_size: int = 1,
         shuffle: bool = True,
-        encode: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
@@ -202,10 +209,10 @@ class ETDatasetInformer(BaseTask):
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         ds = self.splits[key]
-        ds = self.preprocessor.transform(ds)
-        tensors = self.encoder.encode(ds)
+        tensors = self.preprocessor.transform(ds)
+        # tensors = self.encoder.encode(ds)
 
-        dataset = TensorDataset(tensors)
+        dataset = TensorDataset(*tensors)
         sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)
 
         return DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)

@@ -1,11 +1,11 @@
-r"""TODO: Module Docstring.
+r"""Statistical functions for random variables."""
 
-TODO: Module Docstring
-"""
-
-from __future__ import annotations
 
 __all__ = [
+    # Sub-Packages
+    "generators",
+    "samplers",
+    "stats",
     # Functions
     "sample_timestamps",
     "sample_timedeltas",
@@ -14,6 +14,7 @@ __all__ = [
 
 import logging
 
+from tsdm.random import generators, samplers, stats
 from tsdm.random._random import sample_timedeltas, sample_timestamps
 
 __logger__ = logging.getLogger(__name__)

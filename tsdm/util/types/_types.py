@@ -1,19 +1,28 @@
 r"""Generic types for type hints etc."""
 
-from __future__ import annotations
-
 __all__ = [
     # Type Variables
     "ObjectType",
     "ReturnType",
     # Types
     "LookupTable",
+    "PathType",
+    "NestedType",
+    "NullableNestedType",
+    "KeyType",
 ]
-
 import logging
-from typing import TypeVar
+import os
+from collections.abc import Collection, Mapping
+from typing import Any, TypeVar, Union
 
 __logger__ = logging.getLogger(__name__)
+
+KeyType = TypeVar("KeyType")
+r"""TypeVar for Index Keys."""
+
+PathType = Union[str, os.PathLike[str]]
+r"""Type for path-like objects."""
 
 TYPE = TypeVar("TYPE")
 r"""Generic type hint"""
@@ -32,6 +41,49 @@ r"""Generic type hint for instances."""
 
 LookupTable = dict[str, ObjectType]
 r"""Table of objects."""
+
+NestedTypeVar = TypeVar("NestedTypeVar")
+r"""Type variable for nested type variables."""
+
+NestedType = Union[
+    NestedTypeVar,
+    Collection[NestedTypeVar],
+    Mapping[Any, Union[NestedTypeVar, Collection[NestedTypeVar]]],
+]
+r"""Type for nested type variables."""
+
+NullableNestedType = Union[
+    None,
+    NestedTypeVar,
+    Collection[NestedTypeVar],
+    Mapping[Any, Union[None, NestedTypeVar, Collection[NestedTypeVar]]],
+]
+r"""Type for nullable nested type variables."""
+
+
+# R = TypeVar("R")
+#
+#
+# class AbstractAttribute:
+#     __is_abstract_attribute__ = True
+
+
+# class DummyAttribute:
+#     pass
+#
+#
+# class AbstractAttribute(obj: Callable[[Any], R] = None) -> R:
+#
+#     def __init__(self, obj: Callable[[Any], R] = None):
+#         self.obj = obj
+#
+#     _obj = cast(Any, obj)
+#
+#     if obj is None:
+#         _obj = DummyAttribute()
+#     _obj.__is_abstract_attribute__ = True
+#     return cast(R, _obj)
+
 # TODO: replace with variadic generics PEP646
 
 

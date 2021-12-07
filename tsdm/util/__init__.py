@@ -1,59 +1,55 @@
-r"""Provides utility functions.
-
-TODO: Module description
-"""
-
-from __future__ import annotations
+r"""Provides utility functions."""
 
 __all__ = [
     # Sub-Modules
-    "activations",
     "dataloaders",
     "decorators",
     "regularity_tests",
-    "samplers",
     "system",
     "types",
     # Constants
     # Classes
     "Split",
+    "LazyDict",
+    "LazyFunction",
     # Functions
     "deep_dict_update",
     "deep_kval_update",
+    "flatten_dict",
+    "flatten_nested",
     "grad_norm",
     "initialize_from",
     "multi_norm",
     "now",
+    "paths_exists",
+    "prepend_path",
     "relative_error",
     "relsize_skewpart",
     "relsize_symmpart",
     "scaled_norm",
-    "skew_symmetric",
-    "symmetric",
+    "skewpart",
+    "symmpart",
 ]
 
 import logging
 
-from tsdm.util import (
-    activations,
-    dataloaders,
-    decorators,
-    regularity_tests,
-    samplers,
-    system,
-    types,
-)
+from tsdm.util import dataloaders, decorators, regularity_tests, system, types
 from tsdm.util._norms import grad_norm, multi_norm, relative_error, scaled_norm
 from tsdm.util._util import (
     Split,
     deep_dict_update,
     deep_kval_update,
+    flatten_dict,
+    flatten_nested,
     initialize_from,
     now,
+    paths_exists,
+    prepend_path,
     relsize_skewpart,
     relsize_symmpart,
-    skew_symmetric,
-    symmetric,
+    skewpart,
+    symmpart,
 )
+from tsdm.util.lazydict import LazyDict, LazyFunction
 
 __logger__ = logging.getLogger(__name__)

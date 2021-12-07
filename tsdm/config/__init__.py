@@ -2,12 +2,10 @@ r"""Configuration Options.
 
 Content:
   - config.yaml
-  - datasets.yaml
+  - dataset.yaml
   - models.yaml
   - hashes.yaml
 """
-
-from __future__ import annotations
 
 __all__ = [
     # CONSTANTS
