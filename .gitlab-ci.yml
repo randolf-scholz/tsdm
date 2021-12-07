@@ -29,6 +29,9 @@ variables:
 
 # global before_script is run before each and every job.
 before_script:
+- mkdir -p public
+- mkdir -p reports
+- mkdir -p badges
 - source ${VENVNAME}/bin/activate
 
 ################
@@ -46,8 +49,8 @@ setup:
     - "${VENV_DIR}"
   before_script:
   # make directories
-  - mkdir badges
-  - mkdir reports
+  - mkdir -p badges
+  - mkdir -p reports
   # python setup
   - python -V
   - pip install --upgrade pip virtualenv
