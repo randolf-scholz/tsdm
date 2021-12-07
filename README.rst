@@ -1,7 +1,12 @@
 **T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
 =======================================================
 
-This repository contains tools to import important time series datasets and baseline models
+This repository contains tools to import important time series datasets and baseline models.
+
+.. note::
+
+    Documentation is hosted at https://www.user.tu-berlin.de/randolf.scholz/
+
 
 Installation guide
 ------------------

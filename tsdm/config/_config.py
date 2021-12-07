@@ -79,12 +79,12 @@ with resources.path(config_files, "models.yaml") as file:
 with resources.path(config_files, "datasets.yaml") as file:
     with open(file, "r", encoding="utf8") as fname:
         DATASETS = yaml.safe_load(fname)
-        r"""Dictionary containing sources of the available datasets."""
+        r"""Dictionary containing sources of the available dataset."""
 
 with resources.path(config_files, "hashes.yaml") as file:
     with open(file, "r", encoding="utf8") as fname:
         HASHES = yaml.safe_load(fname)
-        r"""Dictionary containing hash values for both models and datasets."""
+        r"""Dictionary containing hash values for both models and dataset."""
 
 HOMEDIR = Path.home()
 r"""The users home directory."""
@@ -99,10 +99,10 @@ MODELDIR = BASEDIR.joinpath(CONFIG["modeldir"])
 r"""Path where imported models are stored."""
 
 DATASETDIR = BASEDIR.joinpath(CONFIG["datasetdir"])
-r"""Path where preprocessed datasets are stored."""
+r"""Path where preprocessed dataset are stored."""
 
 RAWDATADIR = BASEDIR.joinpath(CONFIG["rawdatadir"])
-r"""Path where raw imported datasets are stored."""
+r"""Path where raw imported dataset are stored."""
 
 LOGDIR.mkdir(parents=True, exist_ok=True)
 # logging.basicConfig(
@@ -117,7 +117,7 @@ __logger__.info("Available Datasets: %s", set(DATASETS))
 
 
 def generate_folders(d: dict, current_path: Path):
-    """Create nested folder structure based on nested dictionary keys.
+    """Create nested folder structure based on nested dictionary index.
 
     source: `StackOverflow <https://stackoverflow.com/a/22058144/9318372>`_
 

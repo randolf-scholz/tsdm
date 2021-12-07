@@ -47,13 +47,10 @@ Relevant Papers
 M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference on Machine Learning 2011.
 """  # pylint: disable=line-too-long # noqa
 
-
-from __future__ import annotations
-
 __all__ = ["Traffic"]
 
 import logging
-from functools import cache
+from functools import cached_property
 from io import StringIO
 from pathlib import Path
 from typing import Callable, Literal
@@ -63,7 +60,7 @@ import numpy as np
 import pandas
 from pandas import DataFrame, Series
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base import Dataset
 
 __logger__ = logging.getLogger(__name__)
 
@@ -77,7 +74,7 @@ def _reformat(s: str, replacements: dict) -> str:  # pylint: disable=unused-argu
     return result
 
 
-class Traffic(BaseDataset):
+class Traffic(Dataset):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -90,61 +87,59 @@ class Traffic(BaseDataset):
 
     """  # pylint: disable=line-too-long # noqa
 
-    url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
+    base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
+    r"""HTTP address from where the dataset can be downloaded"""
     info_url: str = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
-    KEY = Literal["PEMS", "labels", "randperm", "invperm"]
+    r"""HTTP address containing additional information about the dataset"""
+    KEYS = Literal["timeseries", "labels", "randperm", "invperm"]
     r"""The names of the DataFrames associated with this dataset."""
+    index: list[KEYS] = ["timeseries", "labels", "randperm", "invperm"]
+    r"""The identifiers for the dataset."""
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def dataset(cls) -> DataFrame:
-        r"""Cache dataset."""
-        return cls.load(key="PEMS").set_index(["day", "time"])
+    # @cached_property
+    # def dataset_files(self) -> Mapping[KeyType, Path]:
+    #     r"""Location of the main file."""
+    #     return {key: self.dataset_dir / f"{key}.feather" for key in self.index}
 
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def labels(cls) -> DataFrame:
-        r"""Cache labels."""
-        return cls.load(key="labels").set_index("day").squeeze()
-
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def invperm(cls) -> DataFrame:
-        r"""Cache inverse permutation."""
-        return cls.load(key="invperm").squeeze()
-
-    @classmethod  # type: ignore[misc]
-    @property
-    @cache
-    def randperm(cls) -> DataFrame:
-        r"""Cache permutation."""
-        return cls.load(key="randperm").squeeze()
-
-    @classmethod
-    @property
-    def dateset_file(cls) -> Path:
-        r"""Location of the main file."""
-        return cls.dataset_path.joinpath("PEMS.feather")  # type: ignore
-
-    @classmethod
-    @property
-    def rawdata_file(cls) -> Path:
+    @cached_property
+    def rawdata_files(self) -> Path:
         r"""Location of the compressed source."""
-        return cls.rawdata_path.joinpath("PEMS-SF.zip")  # type: ignore
+        return self.rawdata_dir / "PEMS-SF.zip"
 
-    @classmethod
-    def load(cls, key: KEY = "PEMS") -> DataFrame:
+    # @cached_property
+    # def dataset(self) -> DataFrame:
+    #     r"""Cache dataset."""
+    #     return self.load(key="PEMS").set_index(["day", "time"])
+    #
+    # @cached_property
+    # def labels(self) -> DataFrame:
+    #     r"""Cache labels."""
+    #     return self.load(key="labels").set_index("day").squeeze()
+    #
+    # @cached_property
+    # def invperm(self) -> DataFrame:
+    #     r"""Cache inverse permutation."""
+    #     return self.load(key="invperm").squeeze()
+    #
+    # @cached_property
+    # def randperm(self) -> DataFrame:
+    #     r"""Cache permutation."""
+    #     return self.load(key="randperm").squeeze()
+
+    def _load(self, key: KEYS) -> DataFrame:
         r"""Load the pre-preprocessed dataset from disk."""
-        path = cls.dataset_path.joinpath(f"{key}.feather")  # type: ignore[attr-defined]
-        if not path.exists():
-            cls.clean(key=key)
-        return pandas.read_feather(path)
+        df = pandas.read_feather(self.dataset_files[key])
+        if key == "timeseries":
+            return df.set_index(["day", "time"])
+        if key == "labels":
+            return df.set_index("day").squeeze()
+        if key == "invperm":
+            return df.squeeze()
+        if key == "randperm":
+            return df.squeeze()
+        raise KeyError(f"{key} is not a valid key")
 
-    @classmethod
-    def clean(cls, key: KEY = "PEMS"):
+    def _clean(self, key: KEYS) -> None:
         r"""Create the DataFrames.
 
         Parameters
@@ -152,16 +147,14 @@ class Traffic(BaseDataset):
         key: Literal["us_daily", "states", "stations"], default="us_daily"
         """
         cleaners: dict[str, Callable[[], None]] = {
-            "PEMS": cls._clean_data,
-            "labels": cls._clean_data,
-            "invperm": cls._clean_randperm,
-            "randperm": cls._clean_randperm,
+            "timeseries": self._clean_data,
+            "labels": self._clean_data,
+            "invperm": self._clean_randperm,
+            "randperm": self._clean_randperm,
         }
         cleaners[key]()
-        __logger__.info("Finished cleaning dataset '%s'", cls.__name__)
 
-    @classmethod
-    def _clean_data(cls, use_true: bool = True):
+    def _clean_data(self, use_true: bool = True):
         r"""Create DataFrame from raw data.
 
         Parameters
@@ -285,14 +278,14 @@ class Traffic(BaseDataset):
         dates = dates[~mask]
 
         # Shuffle dates according to permutation the authors applied
-        shuffled_dates = dates[cls.randperm]
+        shuffled_dates = dates[self.randperm]
 
         timestamps = pandas.timedelta_range(
             "0:00:00", "23:59:59", freq="10min", name="time"
         )
         assert len(timestamps) == 144
 
-        with ZipFile(cls.rawdata_file) as files:  # type: ignore
+        with ZipFile(self.rawdata_paths) as files:
             with files.open("stations_list") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
@@ -375,16 +368,15 @@ class Traffic(BaseDataset):
         PEMS = pandas.concat([PEMS_train, PEMS_test])
         labels = pandas.concat([trainlabels, testlabels]).rename("labels")
 
-        mismatches = labels[cls.invperm].map(weekdays) != dates.day_name()
+        mismatches = labels[self.invperm].map(weekdays) != dates.day_name()
         assert len(dates[mismatches]) == 0, "Mismatches in label and date weekday!"
 
-        PEMS.reset_index().to_feather(cls.dateset_file)
+        PEMS.reset_index().to_feather(self.dataset_files["timeseries"])
         labels = DataFrame(labels).reset_index()
-        labels.to_feather(cls.dataset_path.joinpath("labels.feather"))  # type: ignore
+        labels.to_feather(self.dataset_files["labels"])
 
-    @classmethod
-    def _clean_randperm(cls):
-        with ZipFile(cls.rawdata_file) as files:  # type: ignore
+    def _clean_randperm(self):
+        with ZipFile(self.rawdata_paths) as files:
             with files.open("randperm") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
@@ -398,5 +390,5 @@ class Traffic(BaseDataset):
                 invperm = randperm.copy().argsort()
                 invperm.name = "invperm"
                 assert (randperm[invperm] == np.arange(len(randperm))).all()
-        DataFrame(randperm).to_feather(cls.dataset_path.joinpath("randperm.feather"))  # type: ignore
-        DataFrame(invperm).to_feather(cls.dataset_path.joinpath("invperm.feather"))  # type: ignore
+        DataFrame(randperm).to_feather(self.dataset_files["randperm"])
+        DataFrame(invperm).to_feather(self.dataset_files["invperm"])

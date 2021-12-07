@@ -1,9 +1,9 @@
 r"""Time Series Datasets and Models (TSDM).
 
 Provides
-  1. Facility to import some commonly used time series datasets
+  1. Facility to import some commonly used time series dataset
   2. Facility to import some commonly used time series models
-  3. Facility to preprocess time series datasets
+  3. Facility to preprocess time series dataset
 
 More complicated examples:
 
@@ -24,15 +24,12 @@ General idea:
         - caching?
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Constants
     "__version__",
     # Sub-Modules
     "config",
     "datasets",
-    "generators",
     "hyperopt",
     "encoders",
     "logutils",
@@ -53,7 +50,6 @@ from tsdm import (
     config,
     datasets,
     encoders,
-    generators,
     hyperopt,
     logutils,
     losses,

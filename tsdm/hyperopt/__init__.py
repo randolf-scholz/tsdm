@@ -1,7 +1,5 @@
 r"""Utilities for Hyperparameter-Optimization."""
 
-from __future__ import annotations
-
 __all__ = [
     # Constants
     "LookupTables",

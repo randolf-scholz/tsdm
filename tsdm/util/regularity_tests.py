@@ -3,8 +3,6 @@ r"""Test for checking how regular time series is.
 TODO: Module description.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Functions
     "float_gcd",

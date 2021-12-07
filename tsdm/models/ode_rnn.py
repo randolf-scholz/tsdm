@@ -1,9 +1,4 @@
-r"""ODR-RNN Model Import.
-
-TODO: Module Summary
-"""
-
-from __future__ import annotations
+r"""ODR-RNN Model Import."""
 
 __all__ = [
     # Classes
@@ -21,7 +16,7 @@ from types import ModuleType
 import torch
 from torch import nn
 
-from tsdm.models.models import BaseModel
+from tsdm.models._models import BaseModel
 from tsdm.util import deep_dict_update
 
 __logger__ = logging.getLogger(__name__)

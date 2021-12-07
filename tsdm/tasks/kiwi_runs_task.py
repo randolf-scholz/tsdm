@@ -5,14 +5,14 @@ r"""#TODO add module summary line.
 
 
 import logging
+from copy import deepcopy
 from functools import cached_property
 from itertools import product
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal, Optional
 
 import torch
 from pandas import DataFrame, Series
 from sklearn.model_selection import ShuffleSplit
-from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import KIWI_RUNS, Dataset
@@ -23,12 +23,13 @@ from tsdm.encoders.modular import (
     DataFrameEncoder,
     DateTimeEncoder,
     FloatEncoder,
+    MinMaxScaler,
     Standardizer,
     TensorEncoder,
 )
 from tsdm.losses.modular import WRMSE
+from tsdm.random.samplers import CollectionSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.util.samplers import CollectionSampler, SequenceSampler
 
 __logger__ = logging.getLogger(__name__)
 
@@ -42,7 +43,6 @@ class KIWI_RUNS_TASK(BaseTask):
     - drop almost all metadata
     - restrict timepoints to start_time & end_time given in metadata.
 
-
     - timeseries for each run_id and experiment_id
     - metadata for each run_id and experiment_id
 
@@ -55,23 +55,19 @@ class KIWI_RUNS_TASK(BaseTask):
 
     Questions:
     - Should each batch contain only snippets form a single TS, or is there merit to sampling
-      snippets from multiple TS in each batch?
-
-
+    snippets from multiple TS in each batch?
 
     Divide 'Glucose' by 10, 'OD600' by 20, 'DOT' by 100, 'Base' by 200, then use RMSE.
     """
 
-    keys: list[tuple[int, str]] = list(product(range(5), ("train", "test")))
-    r"""Available keys."""
-    KEYS = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
+    index: list[tuple[int, str]] = list(product(range(5), ("train", "test")))
+    r"""Available index."""
+    KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
     r"""Type Hint for Keys"""
     timeseries: DataFrame
     r"""The whole timeseries data."""
     metadata: DataFrame
     r"""The metadata."""
-    dataset: Dataset = KIWI_RUNS
-    r"""The Dataset."""
 
     train_batch_size: int = 32
     """Default batch size."""
@@ -83,6 +79,8 @@ class KIWI_RUNS_TASK(BaseTask):
     r"""The number of datapoints the model should forecast."""
     pre_encoder: BaseEncoder
     r"""Encoder for the observations."""
+    preprocessor: BaseEncoder
+    r"""Encoder for the observations."""
     controls: Series
     r"""The control variables."""
     targets: Series
@@ -92,16 +90,9 @@ class KIWI_RUNS_TASK(BaseTask):
     loss_weights: DataFrame
     r"""Contains Information about the loss."""
 
-    @cached_property
-    def test_metric(self) -> Callable[..., Tensor]:
-        r"""The target metric."""
-        w = torch.tensor(self.loss_weights["weight"])
-        return WRMSE(w)
-
     def __init__(
         self,
         *,
-        preprocessor: Optional[BaseEncoder] = None,
         forecasting_horizon: int = 24,
         observation_horizon: int = 96,
         eval_batch_size: int = 128,
@@ -114,20 +105,20 @@ class KIWI_RUNS_TASK(BaseTask):
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
 
-        self.units: DataFrame = KIWI_RUNS.units
-        self.metadata: DataFrame = KIWI_RUNS.metadata.drop([355, 482])
-        self.timeseries: DataFrame = KIWI_RUNS.dataset.drop([355, 482])
+        self.dataset: Dataset = KIWI_RUNS()
+        self.units: DataFrame = self.dataset.units
+        self.metadata: DataFrame = self.dataset.metadata.drop([355, 482])
+        self.timeseries: DataFrame = self.dataset.timeseries.drop([355, 482])
 
         ts = self.timeseries
 
-        if preprocessor is None:
-            self.preprocessor = ChainedEncoder(
-                TensorEncoder(),
-                DataFrameEncoder(
-                    Standardizer() @ FloatEncoder(),
-                    index_encoder=DateTimeEncoder(),
-                ),
-            )
+        self.preprocessor = ChainedEncoder(
+            TensorEncoder(),
+            DataFrameEncoder(
+                Standardizer() @ FloatEncoder(),
+                index_encoders=MinMaxScaler() @ DateTimeEncoder(),
+            ),
+        )
 
         controls = Series(
             [
@@ -140,7 +131,7 @@ class KIWI_RUNS_TASK(BaseTask):
                 "Probe_Volume",
             ]
         )
-        controls.index = controls.apply(lambda x: ts.columns.get_loc(x))
+        controls.index = controls.apply(ts.columns.get_loc)
         self.controls = controls
 
         targets = Series(
@@ -151,7 +142,7 @@ class KIWI_RUNS_TASK(BaseTask):
                 "OD600",
             ]
         )
-        targets.index = targets.apply(lambda x: ts.columns.get_loc(x))
+        targets.index = targets.apply(ts.columns.get_loc)
         self.targets = targets
 
         observables = Series(
@@ -166,7 +157,7 @@ class KIWI_RUNS_TASK(BaseTask):
                 "pH",
             ]
         )
-        observables.index = observables.apply(lambda x: ts.columns.get_loc(x))
+        observables.index = observables.apply(ts.columns.get_loc)
         self.observables = observables
 
         assert (
@@ -186,9 +177,11 @@ class KIWI_RUNS_TASK(BaseTask):
         )
         weights["col_index"] = weights.index.map(lambda x: (ts.columns == x).argmax())
         weights["weight"] = 1 / weights["inverse_weight"]
-
+        weights["normalized"] = weights["weight"] / weights["weight"].sum()
         weights.index.name = "col"
         self.loss_weights = weights
+        w = torch.tensor(self.loss_weights["weight"])
+        self.test_metric = WRMSE(w)  # type: ignore[assignment]
 
     @cached_property
     def split_idx(self) -> DataFrame:
@@ -218,8 +211,8 @@ class KIWI_RUNS_TASK(BaseTask):
         tuple[DataFrame, DataFrame]
         """
         splits = {}
-        for key in self.keys:
-            assert key in self.keys, f"Wrong {key=}. Only {self.keys} work."
+        for key in self.index:
+            assert key in self.index, f"Wrong {key=}. Only {self.index} work."
             split, data_part = key
 
             mask = self.split_idx[split] == data_part
@@ -230,38 +223,39 @@ class KIWI_RUNS_TASK(BaseTask):
             splits[key] = (timeseries, metadata)
         return splits
 
-    @cached_property
-    def dataloaders(self) -> dict[tuple[int, str], DataLoader]:
-        r"""Cache dictionary of evaluation-dataloaders."""
-        # TODO: make lazy dict
-        return {
-            key: self.get_dataloader(
-                key, batch_size=self.eval_batch_size, shuffle=False, drop_last=False
-            )
-            for key in self.keys
-        }
+    # @cached_property
+    # def dataloaders(self) -> dict[tuple[int, str], DataLoader]:
+    #     r"""Cache dictionary of evaluation-dataloaders."""
+    #     # TODO: make lazy dict
+    #     return {
+    #         key: self.get_dataloader(
+    #             key, batch_size=self.eval_batch_size, shuffle=False, drop_last=False
+    #         )
+    #         for key in self.index
+    #     }
 
-    @cached_property
-    def batchloader(self) -> dict[int, DataLoader]:  # type: ignore[override]
-        r"""Return the trainloader for the given key.
-
-        Returns
-        -------
-        dict[int, DataLoader]
-        """
-        return {
-            split: self.get_dataloader(
-                (split, "train"),
-                batch_size=self.train_batch_size,
-                shuffle=True,
-                drop_last=True,
-            )
-            for split in range(5)
-        }
+    # @cached_property
+    # def batchloader(self) -> dict[int, DataLoader]:  # type: ignore[override]
+    #     r"""Return the trainloader for the given key.
+    #
+    #     Returns
+    #     -------
+    #     dict[int, DataLoader]
+    #     """
+    #     return {
+    #         split: self.get_dataloader(
+    #             (split, "train"),
+    #             batch_size=self.train_batch_size,
+    #             shuffle=True,
+    #             drop_last=True,
+    #         )
+    #         for split in range(5)
+    #     }
 
     def get_dataloader(
         self,
         key: tuple[int, str],
+        *,
         batch_size: int = 1,
         shuffle: bool = True,
         device: Optional[torch.device] = None,
@@ -307,7 +301,7 @@ class KIWI_RUNS_TASK(BaseTask):
         datasets = {}
 
         for idx, slc in ts.groupby(["run_id", "experiment_id"]):
-            T, X = self.preprocessor.transform(slc.reset_index(level=[0, 1], drop=True))
+            T, X = self.preprocessor.encode(slc.reset_index(level=[0, 1], drop=True))
             datasets[idx] = TensorDataset(T, X)
 
         # T, X = self.preprocessor.transform(ts.reset_index(level=[0, 1], drop=True))
@@ -318,7 +312,7 @@ class KIWI_RUNS_TASK(BaseTask):
         # ts = ts.reset_index(level=2)  # <- crucial! we need to make sure index is same.
         # shared_index = md.index
         # masks = {idx: (ts.index == idx) for idx in shared_index}
-        # datasets = {
+        # dataset = {
         #     idx: TensorDataset(T[masks[idx]], X[masks[idx]]) for idx in shared_index
         # }
 
@@ -329,5 +323,8 @@ class KIWI_RUNS_TASK(BaseTask):
             for key, ds in dataset.items()
         }
         sampler = CollectionSampler(dataset, subsamplers=subsamplers)
-
-        return DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)
+        dataloader = DataLoader(
+            dataset, sampler=sampler, batch_size=batch_size, **kwargs
+        )
+        dataloader.preprocessor = deepcopy(self.preprocessor)
+        return dataloader

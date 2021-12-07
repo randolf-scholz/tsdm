@@ -6,8 +6,6 @@ Contains losses in functional form.
   - See :mod:`tsdm.losses.modular` for modular implementations.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Types
     "FunctionalLoss",

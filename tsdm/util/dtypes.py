@@ -3,8 +3,6 @@ r"""TODO: Module Docstring.
 TODO: Module description.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Constants
     "BOOLS",

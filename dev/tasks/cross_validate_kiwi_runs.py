@@ -12,9 +12,9 @@ def create_replicate_dict(experiments_per_run):
     args:
 
     experiment_per_run:  dict of dict of dict as given for the present dataset.
-                         keys of first level: run_ids
-                         keys of second level: experiment_ids
-                         keys of third level: metadata, measurements_reactor
+                         index of first level: run_ids
+                         index of second level: experiment_ids
+                         index of third level: metadata, measurements_reactor
                                               measurements_array, setpoints,
                                               measurements_aggregated
 
@@ -42,7 +42,7 @@ class ReplicateBasedSplitter:
         )  #
 
     def split(self, col_run_to_exp):
-        """generator that yields the lists of  pairs of keys to create the train and test data.
+        """generator that yields the lists of  pairs of index to create the train and test data.
         Example usage s. below"""
         keys = list(col_run_to_exp.keys())
         for train_repl_sets, test_repl_sets in self.splitter.split(keys):

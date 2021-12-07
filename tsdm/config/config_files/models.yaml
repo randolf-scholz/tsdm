@@ -1,4 +1,4 @@
-# download sources for datasets
+# download sources for dataset
 
 NODE:          https://github.com/rtqichen/torchdiffeq.git
 N-BEATS:       https://github.com/ElementAI/N-BEATS.git

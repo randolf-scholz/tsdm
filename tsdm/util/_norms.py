@@ -3,8 +3,6 @@ r"""TODO: Module Docstring.
 TODO: Module summary.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Constants
     "SizeLike",
