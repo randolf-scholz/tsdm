@@ -767,7 +767,7 @@ class TensorEncoder(BaseEncoder):
     dtype: torch.dtype
     r"""The default dtype."""
     device: torch.device
-    r"""The device the tensors are strored in."""
+    r"""The device the tensors are stored in."""
     # colspecs: list[Series]
     # """The data types/column names of all the tensors"""
 
@@ -777,8 +777,8 @@ class TensorEncoder(BaseEncoder):
         super().__init__()
 
         self.dtype = torch.float32 if dtype is None else dtype
-        default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = default_device if device is None else device
+        # default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu") if device is None else device
 
     def fit(self, *data: PandasObject):
         r"""Fit to the data."""

@@ -3,8 +3,8 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-
 import logging
+import os
 from copy import deepcopy
 from functools import cached_property
 from itertools import product
@@ -89,6 +89,8 @@ class KIWI_RUNS_TASK(BaseTask):
     r"""The observables variables."""
     loss_weights: DataFrame
     r"""Contains Information about the loss."""
+    dataloader_kwargs: dict
+    r"""Dataloader kwargs."""
 
     def __init__(
         self,
@@ -97,6 +99,7 @@ class KIWI_RUNS_TASK(BaseTask):
         observation_horizon: int = 96,
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
+        dataloader_kwargs: Optional[dict] = None,
     ):
         self.eval_batch_size = eval_batch_size
         self.train_batch_size = train_batch_size
@@ -104,6 +107,13 @@ class KIWI_RUNS_TASK(BaseTask):
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
+
+        dataloader_kwargs = {} if dataloader_kwargs is None else dataloader_kwargs
+
+        self.dataloader_kwargs = {
+            "pin_memory": True,
+            "num_workers": max(1, (os.cpu_count() or 0) // 2 - 2),
+        } | dataloader_kwargs
 
         self.dataset: Dataset = KIWI_RUNS()
         self.units: DataFrame = self.dataset.units
@@ -284,6 +294,8 @@ class KIWI_RUNS_TASK(BaseTask):
         -------
         DataLoader
         """
+        dataloader_kwargs = self.dataloader_kwargs | kwargs
+
         split, part = key
 
         if part == "test":
@@ -324,7 +336,7 @@ class KIWI_RUNS_TASK(BaseTask):
         }
         sampler = CollectionSampler(dataset, subsamplers=subsamplers)
         dataloader = DataLoader(
-            dataset, sampler=sampler, batch_size=batch_size, **kwargs
+            dataset, sampler=sampler, batch_size=batch_size, **dataloader_kwargs
         )
         dataloader.preprocessor = deepcopy(self.preprocessor)
         return dataloader
