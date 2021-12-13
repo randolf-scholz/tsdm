@@ -47,3 +47,5 @@ if USE_TEX:
             # "svg.fonttype": "none",
         }
     )
+else:
+    warnings.warn("matplotlib: no LaTeX rendering")

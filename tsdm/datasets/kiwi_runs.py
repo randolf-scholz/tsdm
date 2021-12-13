@@ -214,7 +214,7 @@ class KIWI_RUNS(Dataset):
 
         Parameters
         ----------
-        table: DataFrame
+        table: Optional[DataFrame] = None
         """
         cleaners: dict[str, Callable] = {
             "measurements_aggregated": self._clean_measurements_aggregated,
@@ -233,7 +233,7 @@ class KIWI_RUNS(Dataset):
 
         __logger__.info("%s/%s Finished cleaning table!", self.name, key)
 
-    def _clean_metadata(self, table):
+    def _clean_metadata(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
 
@@ -297,7 +297,7 @@ class KIWI_RUNS(Dataset):
         path = self.dataset_files["metadata"]
         table.to_feather(path)
 
-    def _clean_setpoints(self, table):
+    def _clean_setpoints(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
 
@@ -350,7 +350,7 @@ class KIWI_RUNS(Dataset):
         path = self.dataset_files["setpoints"]
         table.to_feather(path)
 
-    def _clean_measurements_reactor(self, table: DataFrame):
+    def _clean_measurements_reactor(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
 
@@ -404,7 +404,7 @@ class KIWI_RUNS(Dataset):
         path = self.dataset_files["measurements_reactor"]
         table.to_feather(path)
 
-    def _clean_measurements_array(self, table: DataFrame):
+    def _clean_measurements_array(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
 
@@ -451,7 +451,7 @@ class KIWI_RUNS(Dataset):
         path = self.dataset_files["measurements_array"]
         table.to_feather(path)
 
-    def _clean_measurements_aggregated(self, table: DataFrame):
+    def _clean_measurements_aggregated(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
         run_masks = [table["run_id"] == run for run in runs]
         table_columns = set(table.columns)
@@ -510,9 +510,9 @@ class KIWI_RUNS(Dataset):
         path = self.dataset_files["measurements_aggregated"]
         table.to_feather(path)
 
-    def _clean_timeseries(self):
+    def _clean_timeseries(self) -> None:
         md = self.load(key="metadata")
-        ts = self.load(key="measurements_aggregated")
+        ts: DataFrame = self.load(key="measurements_aggregated")
         # drop rows with only <NA> values
         ts = ts.dropna(how="all")
         # generate timeseries frame
@@ -568,7 +568,7 @@ class KIWI_RUNS(Dataset):
         path = self.dataset_files["timeseries"]
         ts.to_feather(path)
 
-    def _clean_units(self):
+    def _clean_units(self) -> None:
         ts = self.load(key="measurements_aggregated")
 
         _units = ts["unit"]

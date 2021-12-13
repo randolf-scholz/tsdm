@@ -1,8 +1,11 @@
+
+
 # Pickles
 *.pk
 
-# videos
+# videos & images
 video/
+pics/
 
 # tensorboard run data
 runs/

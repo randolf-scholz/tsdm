@@ -7,6 +7,7 @@ __all__ = [
     # Constants
     "BOOLS",
     "CATEGORIES",
+    "PRECISION",
     "EMOJIS",
     "STRINGS",
     "TimeLike",
@@ -21,6 +22,7 @@ from typing import Final, Union
 
 import numpy as np
 import pandas
+import torch
 from pandas.api.extensions import ExtensionDtype
 
 __logger__ = logging.getLogger(__name__)
@@ -33,6 +35,20 @@ TimeDeltaLike = Union[str, datetime.timedelta, np.timedelta64, pandas.Timedelta]
 r"""Represents a unit of time duration."""
 TimeLike = Union[TimeStampLike, TimeDeltaLike]
 r"""Represents arbitrary time type."""
+
+
+PRECISION: Final[dict] = {
+    16: 2 ** -11,
+    32: 2 ** -24,
+    64: 2 ** -53,
+    torch.float16: 2 ** -11,
+    torch.float32: 2 ** -24,
+    torch.float64: 2 ** -53,
+    np.float16: 2 ** -11,
+    np.float32: 2 ** -24,
+    np.float64: 2 ** -53,
+}
+"""Maps precision to the corresponding precision factor."""
 
 NUMPY_INT_DTYPES: Final[dict[type[np.signedinteger], str]] = {
     np.int8: "b",
