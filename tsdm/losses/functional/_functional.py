@@ -23,7 +23,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 @jit.script
-def nd(x: Tensor, xhat: Tensor) -> Tensor:
+def nd(x: Tensor, xhat: Tensor, eps: float = 2 ** -24) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math::
@@ -48,11 +48,12 @@ def nd(x: Tensor, xhat: Tensor) -> Tensor:
     """  # pylint: disable=line-too-long # noqa
     res = torch.sum(torch.abs(xhat - x), dim=(-1, -2))
     mag = torch.sum(torch.abs(x), dim=(-1, -2))
+    mag = torch.maximum(mag, torch.tensor(eps, dtype=x.dtype, device=x.device))
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
 @jit.script
-def nrmse(x: Tensor, xhat: Tensor) -> Tensor:
+def nrmse(x: Tensor, xhat: Tensor, eps: float = 2 ** -24) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math::
@@ -74,6 +75,7 @@ def nrmse(x: Tensor, xhat: Tensor) -> Tensor:
     """
     res = torch.sqrt(torch.sum(torch.abs(xhat - x) ** 2, dim=(-1, -2)))
     mag = torch.sum(torch.abs(x), dim=(-1, -2))
+    mag = torch.maximum(mag, torch.tensor(eps, dtype=x.dtype, device=x.device))
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
 
