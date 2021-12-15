@@ -5,37 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/bugs/__module__Missing.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/Untitled.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/Encoder is bad.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/ReZero+Kalman_encoder_stats.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/ReZero_encoder_stats.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/ReZero_ftw_2021-12-13T02:23:26_LinODEnet-0.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/ReZero_ftw_2021-12-13T02:23:26_LinODEnet-1.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/ReZero_ftw_2021-12-13T02:23:26_LinODEnet-2.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/ReZero_ftw_2021-12-13T02:23:26_LinODEnet-3.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/ReZero_ftw_encoder_stats.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/adam_2021-11-15T20:38:52_LinODEnet-0.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/all_ReZero+caiming_concat+rescale_encoder_stats.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/all_ReZero+caiming_concat_encoder_stats.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/pics/all_ReZero_encoder_stats.pdf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/ReZero+ResNet+NRMSE_encoder_stats.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/SBATCH.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/tsdm.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/tsdm.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/datasets/BeijingAirQuality.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/BeijingAirQuality.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/experiments/2021-11-15T12:05:00_LinODEnet-0.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/experiments/adam_2021-11-15T20:38:52_LinODEnet-0.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/experiments/skew_allways_2021-11-15T16:05:41_LinODEnet-0.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs/conf.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/Encoder is bad.pdf" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/kiwi_runs.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/kiwi_runs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/plot/__setup__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/__setup__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/dtypes.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/dtypes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,7 +75,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -246,7 +221,9 @@
       <workItem from="1639128362042" duration="1383000" />
       <workItem from="1639304634674" duration="611000" />
       <workItem from="1639345543756" duration="7710000" />
-      <workItem from="1639405214940" duration="2882000" />
+      <workItem from="1639405214940" duration="3600000" />
+      <workItem from="1639471786075" duration="801000" />
+      <workItem from="1639491617852" duration="599000" />
     </task>
     <servers />
   </component>
