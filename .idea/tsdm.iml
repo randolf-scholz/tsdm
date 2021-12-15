@@ -24,6 +24,19 @@
       <excludeFolder url="file://$MODULE_DIR$/examples/.virtual_documents" />
       <excludeFolder url="file://$MODULE_DIR$/manifest/__tex__" />
       <excludeFolder url="file://$MODULE_DIR$/dev/.ipynb_checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/bugs/.mypy_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/datasets/dask-worker-space" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/experiments/old_runs/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/experiments/old_runs/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/experiments/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/experiments/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/pics" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/video" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/pics" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/runs" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (kiwi)" jdkType="Python SDK" />
