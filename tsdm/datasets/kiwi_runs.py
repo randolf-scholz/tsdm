@@ -511,7 +511,7 @@ class KIWI_RUNS(Dataset):
         table.to_feather(path)
 
     def _clean_timeseries(self) -> None:
-        md = self.load(key="metadata")
+        md: DataFrame = self.load(key="metadata")
         ts: DataFrame = self.load(key="measurements_aggregated")
         # drop rows with only <NA> values
         ts = ts.dropna(how="all")
@@ -569,7 +569,7 @@ class KIWI_RUNS(Dataset):
         ts.to_feather(path)
 
     def _clean_units(self) -> None:
-        ts = self.load(key="measurements_aggregated")
+        ts: DataFrame = self.load(key="measurements_aggregated")
 
         _units = ts["unit"]
         data = ts.drop(columns="unit")

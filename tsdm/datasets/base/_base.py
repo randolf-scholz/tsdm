@@ -435,7 +435,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
 
     def load(
         self, *, key: Optional[KeyType] = None, force: bool = False
-    ) -> Union[Mapping[KeyType, DATASET_OBJECT], DATASET_OBJECT]:
+    ) -> Union[DATASET_OBJECT, Mapping[KeyType, DATASET_OBJECT]]:
         r"""Load the selected DATASET_OBJECT.
 
         Parameters

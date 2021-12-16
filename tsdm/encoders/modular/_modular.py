@@ -15,10 +15,11 @@ __all__ = [
     "DateTimeEncoder",
     "FloatEncoder",
     "IdentityEncoder",
+    "MinMaxScaler",
+    "PositionalEncoder",
     "Standardizer",
     "TensorEncoder",
     "Time2Float",
-    "MinMaxScaler",
 ]
 
 import logging
@@ -26,7 +27,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import singledispatchmethod
-from typing import Any, Callable, Literal, Optional, Union, overload
+from typing import Any, Callable, Final, Literal, Optional, Union, overload
 
 import numpy as np
 import pandas.api.types
@@ -921,3 +922,60 @@ class TimeSlicer(BaseEncoder):
         if isinstance(data[0], TimeTensor) or self.is_tensor_pair(data[0]):
             return torch.cat(data, dim=0)
         return tuple(self.decode(item) for item in data)
+
+
+class PositionalEncoder(BaseEncoder):
+    r"""Positional encoding.
+
+    .. math::
+        x_{2 k}(t)   &:=\sin \left(\frac{t}{t^{2 k / τ}}\right) \\
+        x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
+
+    """
+
+    # Constants
+    num_dim: Final[int]
+    r"""Number of dimensions."""
+
+    # Buffers
+    scale: Final[float]
+    r"""Scale factor for positional encoding."""
+    scales: Final[np.ndarray]
+    r"""Scale factors for positional encoding."""
+
+    def __init__(self, num_dim: int, scale: float) -> None:
+        super().__init__()
+
+        self.num_dim = num_dim
+        self.scale = float(scale)
+        self.scales = self.scale ** (-np.arange(0, num_dim + 2, 2) / num_dim)
+        assert self.scales[0] == 1.0, "Something went wrong."
+
+    def encode(self, data: np.ndarray, /) -> np.ndarray:
+        r"""Signature: [...] -> [...2d].
+
+        Note: we simple concatenate the sin and cosine terms without interleaving them.
+
+        Parameters
+        ----------
+        x: Tensor
+
+        Returns
+        -------
+        Tensor
+        """
+        z = np.einsum("..., d -> ...d", data, self.scales)
+        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
+
+    def decode(self, data: np.ndarray, /) -> np.ndarray:
+        r"""Signature: [...2d] -> [...].
+
+        Parameters
+        ----------
+        x: Tensor
+
+        Returns
+        -------
+        Tensor
+        """
+        return np.arcsin(data[..., 0])
