@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
+# %%
 
-# In[1]:
+# %%
 
 
 # get_ipython().run_line_magic('config', "InteractiveShell.ast_node_interactivity='last_expr_or_assign'  # always print last expr.")
@@ -15,7 +16,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-# In[2]:
+# %%
 
 
 import os
@@ -23,10 +24,10 @@ import os
 # enable JIT compilation - must be done before loading torch!
 os.environ["PYTORCH_JIT"] = "1"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-RUN_NAME = "Long+ResNet+AdamW+NRMSE"  # | input("enter name for run")
+RUN_NAME = "Long+iResNet+AdamW+NRMSE"  # | input("enter name for run")
 
 
-# In[3]:
+# %%
 
 
 from pathlib import Path
@@ -61,7 +62,7 @@ from tsdm.tasks import KIWI_RUNS_TASK
 from tsdm.util import grad_norm, multi_norm
 
 
-# In[4]:
+# %%
 
 
 torch.backends.cudnn.benchmark = True
@@ -69,7 +70,7 @@ torch.backends.cudnn.benchmark = True
 
 # # Initialize Task
 
-# In[5]:
+# %%
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -84,7 +85,7 @@ OBS_HORIZON = 240
 HORIZON = SEQLEN = OBS_HORIZON + PRD_HORIZON
 
 
-# In[6]:
+# %%
 
 
 task = KIWI_RUNS_TASK(
@@ -102,7 +103,7 @@ NUM_PTS, NUM_DIM = ts.shape
 
 # ## Initialize Loss & Metrics
 
-# In[7]:
+# %%
 
 
 TASK_LOSS = task.test_metric.to(device=DEVICE)
@@ -118,7 +119,7 @@ metrics = {key: LOSSES[key]() for key in ("ND", "NRMSE", "MSE", "MAE")} | {
 LOSS = metrics["NRMSE"]
 
 
-# In[8]:
+# %%
 
 
 task.loss_weights
@@ -126,7 +127,7 @@ task.loss_weights
 
 # ## Initialize DataLoaders
 
-# In[9]:
+# %%
 
 
 TRAINLOADERS = task.batchloaders
@@ -136,7 +137,7 @@ EVALLOADERS = task.dataloaders
 
 # ## Hyperparamters
 
-# In[10]:
+# %%
 
 
 def join_dicts(d: dict[str, Any]) -> dict[str, Any]:
@@ -232,8 +233,8 @@ MODEL_CONFIG = {
     "embedding_type": "concat",
     "Filter": FILTER,
     "System": SYSTEM,
-    "Encoder": ResNet.DEFAULT_HP,
-    "Decoder": ResNet.DEFAULT_HP,
+    "Encoder": iResNet.HP,
+    "Decoder": iResNet.HP,
     "Embedding": EMBEDDING,
 }
 
@@ -246,7 +247,7 @@ HPARAMS = join_dicts(
 )
 
 
-# In[11]:
+# %%
 
 
 model = ResNet(input_size=12, rezero=True)
@@ -255,7 +256,7 @@ torchinfo.summary(model, depth=4)
 
 # ## Initialize Model
 
-# In[12]:
+# %%
 
 
 MODEL = LinODEnet
@@ -266,7 +267,7 @@ torchinfo.summary(model)
 
 # ### Initialized Kernel statistics
 
-# In[13]:
+# %%
 
 
 expA = torch.matrix_exp(model.kernel)
@@ -279,14 +280,14 @@ for o in (-np.infty, -2, -1, 1, 2, np.infty, "fro", "nuc"):
 
 # ## Initalize Optimizer
 
-# In[14]:
+# %%
 
 
 from tsdm.optimizers import OPTIMIZERS
 from tsdm.util import initialize_from
 
 
-# In[15]:
+# %%
 
 
 OPTIMIZER_CONFIG |= {"params": model.parameters()}
@@ -295,7 +296,7 @@ optimizer = initialize_from(OPTIMIZERS, **OPTIMIZER_CONFIG)
 
 # ## Utility functions
 
-# In[16]:
+# %%
 
 
 batch = next(iter(TRAINLOADER))
@@ -309,14 +310,14 @@ inputs[:, OBS_HORIZON:, task.observables.index] = NAN
 # assert inputs.shape == (BATCH_SIZE, HORIZON, NUM_DIM)
 
 
-# In[17]:
+# %%
 
 
 targets = X[..., OBS_HORIZON:, task.targets.index].clone()
 targets.shape
 
 
-# In[18]:
+# %%
 
 
 def prep_batch(batch: tuple[Tensor, Tensor]):
@@ -361,7 +362,7 @@ def get_all_preds(model, dataloader):
 
 # ## Logging Utilities
 
-# In[19]:
+# %%
 
 
 from tsdm.logutils import compute_metrics
@@ -388,7 +389,7 @@ torch.linalg.norm(y).backward()
 model.zero_grad()
 
 
-# In[20]:
+# %%
 
 
 RUN_START = tsdm.util.now()
@@ -402,7 +403,7 @@ writer = SummaryWriter(LOGGING_DIR)
 
 # # Training
 
-# In[ ]:
+# %%
 
 
 i = -1
@@ -513,7 +514,7 @@ for _ in (epochs := trange(100)):
         )
 
 
-# In[ ]:
+# %%
 
 
 raise StopIteration
@@ -521,14 +522,14 @@ raise StopIteration
 
 # # Post Training Analysis
 
-# In[ ]:
+# %%
 
 
 buffers = dict(model.named_buffers())
 set(buffers.keys())
 
 
-# In[ ]:
+# %%
 
 
 timedeltas = model.timedeltas.detach().cpu()
@@ -541,7 +542,7 @@ xhat_pre.shape, xhat_post.shape, zhat_pre.shape, zhat_post.shape
 
 # ## Relative size change xhat_pre ⟶ xhat_post
 
-# In[ ]:
+# %%
 
 
 get_ipython().run_line_magic('matplotlib', 'inline')
@@ -654,7 +655,7 @@ ax[2, 3].set_title(r"Rel. magnitude change $\hat{x}_t' \rightarrow \hat{z}_t'$")
 fig.savefig(f"{RUN_NAME}_encoder_stats_post_training.pdf")
 
 
-# In[ ]:
+# %%
 
 
 
@@ -662,7 +663,7 @@ fig.savefig(f"{RUN_NAME}_encoder_stats_post_training.pdf")
 
 # # distribution plots
 
-# In[ ]:
+# %%
 
 
 xhat_pre_mean = torch.mean(xhat_pre, dim=-1).mean(dim=0)
@@ -684,7 +685,7 @@ tuples = [
 S = np.arange(len(xhat_pre_mean));
 
 
-# In[ ]:
+# %%
 
 
 fig, axes = plt.subplots(
@@ -699,31 +700,31 @@ for ax, (key, mean, std) in zip(axes.flatten(), tuples):
     ax.set_yscale("symlog")
 
 
-# In[ ]:
+# %%
 
 
 xhat_pre[0, 0]
 
 
-# In[ ]:
+# %%
 
 
 xhat_pre[0, 1]
 
 
-# In[ ]:
+# %%
 
 
 xhat_pre[0, 2]
 
 
-# In[ ]:
+# %%
 
 
 xhat_pre[0, -1]
 
 
-# In[ ]:
+# %%
 
 
 dummy = torch.randn(10_000, m, device="cuda")
@@ -734,7 +735,7 @@ chg = (dummy2 / dummy1).clone().detach().cpu().numpy()
 plt.hist(chg, bins="auto");
 
 
-# In[ ]:
+# %%
 
 
 expA = torch.matrix_exp(model.kernel)
@@ -746,7 +747,7 @@ for o in (-np.infty, -2, -1, 1, 2, np.infty, "fro", "nuc"):
     print(f"{o=:6s}\t {val=:10.6f} \t {val2=:10.6f}")
 
 
-# In[ ]:
+# %%
 
 
 from matplotlib import cm
@@ -761,13 +762,13 @@ plt.imshow(mat)
 
 # # Profiling
 
-# In[ ]:
+# %%
 
 
 from torch.profiler import ProfilerActivity, profile, record_function
 
 
-# In[ ]:
+# %%
 
 
 with profile(
@@ -778,19 +779,19 @@ with profile(
     model(times, inputs)
 
 
-# In[ ]:
+# %%
 
 
 print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
 
 
-# In[ ]:
+# %%
 
 
 print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
 
-# In[ ]:
+# %%
 
 
 
