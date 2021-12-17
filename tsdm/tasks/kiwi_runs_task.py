@@ -110,9 +110,11 @@ class KIWI_RUNS_TASK(BaseTask):
 
         dataloader_kwargs = {} if dataloader_kwargs is None else dataloader_kwargs
 
+        cpus: int = (os.cpu_count() or 0)//2
+
         self.dataloader_kwargs = {
             "pin_memory": True,
-            "num_workers": max(1, (os.cpu_count() or 0) // 2 - 2),
+            "num_workers": max(1, min(cpus, 4)),
         } | dataloader_kwargs
 
         self.dataset: Dataset = KIWI_RUNS()
