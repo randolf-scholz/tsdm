@@ -140,7 +140,9 @@ class ETDatasetTask_Informer(BaseTask):
 
         self.dataset = ETT()[dataset_id]
         self.dataset.name = dataset_id
-        self.test_metric: Loss = initialize_from(LOSSES, __name__=test_metric)  # type: ignore[assignment]
+        self.test_metric: Loss = initialize_from(
+            LOSSES, __name__=test_metric
+        )  # type: ignore[assignment]
 
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]

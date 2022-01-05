@@ -110,7 +110,7 @@ class KIWI_RUNS_TASK(BaseTask):
 
         dataloader_kwargs = {} if dataloader_kwargs is None else dataloader_kwargs
 
-        cpus: int = (os.cpu_count() or 0)//2
+        cpus: int = (os.cpu_count() or 0) // 2
 
         self.dataloader_kwargs = {
             "pin_memory": True,

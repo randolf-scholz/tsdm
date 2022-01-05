@@ -41,9 +41,9 @@ def test_PositionalEncoder() -> None:
     try:
         t_inverse = encoder.decode(y)
         logger.info("Inverse")
-    except Exception:
+    except Exception as E:
         logger.error("Inverse")
-        raise RuntimeError("Failed to run PositionalEncoder inverse")
+        raise RuntimeError("Failed to run PositionalEncoder inverse") from E
     else:
         assert np.allclose(t_inverse, t), "inverse failed"
 
@@ -76,9 +76,9 @@ def test_PositionalEncoder_Torch() -> None:
     try:
         t_inverse = encoder.inverse(y)
         logger.info("Inverse")
-    except Exception:
+    except Exception as E:
         logger.error("Inverse")
-        raise RuntimeError("Failed to run PositionalEncoder inverse")
+        raise RuntimeError("Failed to run PositionalEncoder inverse") from E
     else:
         assert torch.allclose(t_inverse, t), "inverse failed"
 
@@ -97,23 +97,23 @@ def test_Time2Vec() -> None:
     try:
         encoder = Time2Vec(num_dim, "sin")
         logger.info("Initialization")
-    except Exception:
+    except Exception as E:
         logger.error("Initialization")
-        raise RuntimeError("Failed to initialize Time2Vec")
+        raise RuntimeError("Failed to initialize Time2Vec") from E
 
     try:
         y = encoder(t)
         logger.info("Forward")
-    except Exception:
+    except Exception as E:
         logger.error("Forward")
-        raise RuntimeError("Failed to run Time2Vec")
+        raise RuntimeError("Failed to run Time2Vec") from E
 
     try:
         t_inverse = encoder.inverse(y)
         logger.info("Inverse")
-    except Exception:
+    except Exception as E:
         logger.error("Inverse")
-        raise RuntimeError("Failed to run Time2Vec inverse")
+        raise RuntimeError("Failed to run Time2Vec inverse") from E
     else:
         assert torch.allclose(t_inverse, t), "inverse failed"
 

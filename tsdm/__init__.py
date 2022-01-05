@@ -79,7 +79,8 @@ with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as fi
 #     format="%(asctime)s [%(levelname)s] :: %(message)s",
 #     handlers=[
 #         logging.StreamHandler(),
-#         # logging.FileHandler("../logs/log_file_{}-{}-{}-{}.log".format(c_now.year,c_now.month,c_now.day,c_now.hour))
+#         # logging.FileHandler("../logs/log_file_{}-{}-{}-{}.log"
+#         # .format(c_now.year,c_now.month,c_now.day,c_now.hour))
 #     ]
 # )
 # DEBUG_LEVELV_NUM = 99
@@ -144,7 +145,8 @@ with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as fi
 #
 #         levelno = args[1].levelno
 #         if(levelno>=50):
-#             color = BACKGROUND_YELLOW | FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY
+#             color = BACKGROUND_YELLOW | FOREGROUND_RED | FOREGROUND_INTENSITY
+#             | BACKGROUND_INTENSITY
 #         elif(levelno>=40):
 #             color = FOREGROUND_RED | FOREGROUND_INTENSITY
 #         elif(levelno>=30):
