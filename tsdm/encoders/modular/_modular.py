@@ -876,11 +876,7 @@ class TimeSlicer(BaseEncoder):
         ...
 
     @overload
-    def encode(self, data: Sequence[TimeTensor]) -> Sequence[Sequence[TimeTensor]]:  # type: ignore[misc]
-        ...
-
-    @overload
-    def encode(self, data: tuple[Tensor, Tensor]) -> Sequence[tuple[Tensor, Tensor]]:
+    def encode(self, data: Sequence[TimeTensor]) -> Sequence[Sequence[TimeTensor]]:
         ...
 
     @overload
@@ -890,7 +886,10 @@ class TimeSlicer(BaseEncoder):
         ...
 
     def encode(self, data, /):
-        """Slice the data."""
+        """Slice the data.
+
+        Provide pairs of tensors (T, X) and return a list of pairs (T_sliced, X_sliced).
+        """
         if isinstance(data, TimeTensor):
             return data[: self.horizon], data[self.horizon]
         if self.is_tensor_pair(data):
@@ -904,11 +903,7 @@ class TimeSlicer(BaseEncoder):
         ...
 
     @overload
-    def decode(self, data: Sequence[Sequence[TimeTensor]]) -> Sequence[TimeTensor]:  # type: ignore[misc]
-        ...
-
-    @overload
-    def decode(self, data: Sequence[tuple[Tensor, Tensor]]) -> tuple[Tensor, Tensor]:
+    def decode(self, data: Sequence[Sequence[TimeTensor]]) -> Sequence[TimeTensor]:
         ...
 
     @overload
