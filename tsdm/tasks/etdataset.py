@@ -168,7 +168,7 @@ class ETDatasetTask_Informer(BaseTask):
             "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore
             "joint": self.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore
             "trial": self.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore
-            "whole": self.dataset,  # type: ignore
+            "whole": self.dataset,
         }
         _splits["test"] = _splits["trial"]  # alias
         return _splits

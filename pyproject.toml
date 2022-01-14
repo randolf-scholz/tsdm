@@ -91,6 +91,7 @@ color_output = true
 error_summary = true
 show_error_codes = true
 show_column_numbers = true
+warn_unused_ignores = true
 plugins = "numpy.typing.mypy_plugin"
 pretty = true
 
@@ -134,3 +135,12 @@ color = true
 [tool.pydocstyle]
 convention = "numpy"
 #count = true
+
+#########################
+# pyright Configuration #
+#########################
+[tool.pyright]
+pythonVersion = "3.9"
+reportMissingImports = false
+reportUnsupportedDunderAll = false
+

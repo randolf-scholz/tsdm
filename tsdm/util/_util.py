@@ -323,7 +323,7 @@ def initialize_from(
 
     # check that obj is a class, but not metaclass or instance.
     if isinstance(obj, type) and not issubclass(obj, type):
-        return obj(**kwargs)  # type: ignore[call-arg]
+        return obj(**kwargs)
     # if it is function, fix kwargs
     return partial(obj, **kwargs)
 

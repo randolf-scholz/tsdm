@@ -175,10 +175,10 @@ class ODE_RNN(BaseModel, nn.Module):
         r"""TODO: add docstring."""
         super().__init__()
         module = path_import(Path("/home/rscholz/.tsdm/models/ODE-RNN"))
-        create_net = module.lib.utils.create_net  # type: ignore
-        ODEFunc = module.lib.ode_func.ODEFunc  # type: ignore
-        DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver  # type: ignore
-        _ODE_RNN = module.lib.ode_rnn.ODE_RNN  # type: ignore
+        create_net = module.lib.utils.create_net
+        ODEFunc = module.lib.ode_func.ODEFunc
+        DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver
+        _ODE_RNN = module.lib.ode_rnn.ODE_RNN
 
         """Initialize the internal ODE-RNN model
 
@@ -226,7 +226,7 @@ class ODE_RNN(BaseModel, nn.Module):
 
     def forward(self, T, X):
         r"""TODO: add docstring."""
-        (pred,) = self.model.get_reconstruction(  # type: ignore[attr-defined]
+        (pred,) = self.model.get_reconstruction(
             # Note: n_traj_samples and mode have no effect -> omitted!
             time_steps_to_predict=T,
             data=X,

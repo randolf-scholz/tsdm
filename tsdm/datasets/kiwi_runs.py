@@ -112,8 +112,8 @@ class KIWI_RUNS(Dataset):
     """
 
     base_url: str = (
-        "https://owncloud.innocampus.tu-berlin.de/index.php/s/"
-        "fRBSr82NxY7ratK/download/kiwi_experiments_and_run_355.pk"
+        "https://owncloud.innocampus.tu-berlin.de/index.php/s"
+        "/fRBSr82NxY7ratK/download/kiwi_experiments_and_run_355.pk"
     )
     index: Final[list[str]] = [
         "timeseries",
