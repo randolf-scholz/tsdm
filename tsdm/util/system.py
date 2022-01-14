@@ -179,7 +179,7 @@ def get_requirements(package: str, version: Optional[str] = None) -> dict[str, s
         ),
         text=True,
     )
-    return dict(line.split("==") for line in reqs.rstrip("\n").split("\n"))  # type: ignore
+    return dict(line.split("==") for line in reqs.rstrip("\n").split("\n"))
 
 
 def write_requirements(

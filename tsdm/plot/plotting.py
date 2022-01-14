@@ -15,7 +15,7 @@ import torch
 from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.pyplot import Axes, Figure
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import mode
 from torch import Tensor
 from torch.linalg import eigvals
@@ -37,7 +37,7 @@ Location = Literal[
 
 @torch.no_grad()
 def visualize_distribution(
-    x: ArrayLike,
+    data: ArrayLike,
     ax: Axes,
     num_bins: int = 50,
     log: bool = True,
@@ -49,7 +49,7 @@ def visualize_distribution(
 
     Parameters
     ----------
-    x: ArrayLike
+    data: ArrayLike
     ax: Axes
     num_bins: int or Sequence[int]
     log: bool or float, default=False
@@ -59,11 +59,10 @@ def visualize_distribution(
     extra_stats: Optional[dict[str, str]]
         Additional things to add to the stats table
     """
-    if isinstance(x, Tensor):
-        x = x.detach().cpu().numpy()
-    x = np.asanyarray(x)
+    if isinstance(data, Tensor):
+        data = data.detach().cpu().numpy()
 
-    x = x.flatten().astype(float)
+    x: NDArray[np.float64] = np.asarray(data, dtype=float).flatten()
     nans = np.isnan(x)
     x = x[~nans]
 
@@ -72,13 +71,13 @@ def visualize_distribution(
 
     if log:
         base = 10 if log is True else log
-        tol = 2 ** -24 if np.issubdtype(x.dtype, np.float32) else 2 ** -53  # type: ignore
+        tol = 2 ** -24 if np.issubdtype(x.dtype, np.float32) else 2 ** -53
         z = np.log10(np.maximum(x, tol))
         ax.set_xscale("log", base=base)
         ax.set_yscale("log", base=base)
         low = np.floor(np.quantile(z, 0.01))
         high = np.ceil(np.quantile(z, 1 - 0.01))
-        x = x[(z >= low) & (z <= high)]  # type: ignore
+        x = x[(z >= low) & (z <= high)]
         bins = np.logspace(low, high, num=num_bins, base=10)
     else:
         low = np.quantile(x, 0.01)
@@ -119,12 +118,12 @@ def visualize_distribution(
 def shared_grid_plot(
     data: ArrayLike,
     plot_func: Callable[..., None],
-    plot_kwargs: dict = None,
-    titles: list[str] = None,
-    row_headers: list[str] = None,
-    col_headers: list[str] = None,
-    xlabels: list[str] = None,
-    ylabels: list[str] = None,
+    plot_kwargs: Optional[dict] = None,
+    titles: Optional[list[str]] = None,
+    row_headers: Optional[list[str]] = None,
+    col_headers: Optional[list[str]] = None,
+    xlabels: Optional[list[str]] = None,
+    ylabels: Optional[list[str]] = None,
     **subplots_kwargs: dict,
 ) -> tuple[Figure, Axes]:
     r"""Create a grid plot with shared axes and row/col headers.
@@ -155,7 +154,7 @@ def shared_grid_plot(
     if data.ndim == 2:
         data = np.expand_dims(data, axis=0)
 
-    nrows, ncols = data.shape[:2]  # type: ignore
+    nrows, ncols = data.shape[:2]
 
     _subplot_kwargs = {
         "figsize": (5 * ncols, 3 * nrows),
@@ -166,29 +165,33 @@ def shared_grid_plot(
     }
 
     if subplots_kwargs is not None:
-        _subplot_kwargs.update(subplots_kwargs)  # type: ignore
+        _subplot_kwargs.update(subplots_kwargs)
 
     plot_kwargs = {} if plot_kwargs is None else plot_kwargs
 
+    axes: NDArray[Axes]
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **_subplot_kwargs)
 
     # call the plot functions
-    for idx in np.ndindex(axes.shape):
-        plot_func(data[idx], ax=axes[idx], **plot_kwargs)  # type: ignore
+    for idx in np.ndindex(axes.shape):  # type: ignore
+        plot_func(data[idx], ax=axes[idx], **plot_kwargs)
 
     # set axes titles
     if titles is not None:
-        for ax, title in np.nditer([axes, titles]):  # type: ignore
+        # for ax, title in np.nditer([axes, titles]):  # type: ignore
+        for ax, title in zip(axes.flat, np.asarray(titles).flat):
             ax.set_title(title)
 
     # set axes x-labels
     if xlabels is not None:
-        for ax, xlabel in np.nditer([axes[-1], xlabels], flags=["refs_ok"]):  # type: ignore
+        # for ax, xlabel in np.nditer([axes[-1], xlabels], flags=["refs_ok"]):  # type: ignore
+        for ax, xlabel in zip(axes[-1], np.asarray(xlabels).flat):
             ax.item().set_xlabel(xlabel)
 
     # set axes y-labels
     if ylabels is not None:
-        for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=["refs_ok"]):  # type: ignore
+        # for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=["refs_ok"]):  # type: ignore
+        for ax, ylabel in zip(axes[:, 0], np.asarray(ylabels).flat):
             ax.item().set_ylabel(ylabel)
 
     pad = 5  # in points

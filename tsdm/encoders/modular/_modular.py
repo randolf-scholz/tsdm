@@ -654,7 +654,7 @@ class MinMaxScaler(BaseEncoder):
         self.xmax = np.nanmax(data, axis=self.axis)
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
-    @fit.register(torch.Tensor)  # type: ignore[no-redef]
+    @fit.register(torch.Tensor)
     def _(self, data: Tensor) -> None:
         r"""Compute the min and max."""
         mask = torch.isnan(data)

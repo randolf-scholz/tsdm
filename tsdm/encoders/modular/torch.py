@@ -108,7 +108,7 @@ class PositionalEncoder(nn.Module):
         assert num_dim % 2 == 0, "num_dim must be even"
         self.num_dim = num_dim
         self.scale = float(scale)
-        scales = self.scale ** (-2*torch.arange(0, num_dim//2) / (num_dim-2))
+        scales = self.scale ** (-2 * torch.arange(0, num_dim // 2) / (num_dim - 2))
         assert scales[0] == 1.0, "Something went wrong."
         self.register_buffer("scales", scales, persistent=True)
 

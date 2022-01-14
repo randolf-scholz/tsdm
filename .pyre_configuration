@@ -1,0 +1,6 @@
+{
+  "source_directories": [
+    "."
+  ],
+  "taint_models_path": "/home/rscholz/miniconda3/envs/kiwi/lib"
+}

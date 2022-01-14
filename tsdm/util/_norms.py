@@ -25,7 +25,8 @@ from torch import Tensor, jit
 
 __logger__ = logging.getLogger(__name__)
 
-SizeLike = Union[int, tuple[int, ...]]  # type: ignore # TODO: use AliasType in 3.10
+SizeLike = Union[int, tuple[int, ...]]
+"""Type hint for a size-like object."""
 
 
 def _torch_is_float_dtype(x: Tensor) -> bool:
@@ -119,7 +120,7 @@ def scaled_norm(  # type: ignore[misc]
 
 
 @overload
-def scaled_norm(  # type: ignore[misc]
+def scaled_norm(
     x: Iterable[Tensor],
     p: float = 2,
     axis: Optional[SizeLike] = None,
@@ -129,7 +130,7 @@ def scaled_norm(  # type: ignore[misc]
 
 
 @overload
-def scaled_norm(  # type: ignore[misc]
+def scaled_norm(
     x: Iterable[NDArray],
     p: float = 2,
     axis: Optional[SizeLike] = None,

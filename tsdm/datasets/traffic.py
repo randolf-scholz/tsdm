@@ -70,7 +70,7 @@ def _reformat(s: str, replacements: dict) -> str:  # pylint: disable=unused-argu
 
     https://stackoverflow.com/a/64500851/9318372
     """
-    *_, result = (s := s.replace(c, r) for c, r in replacements.items())  # type: ignore[no-redef]
+    *_, result = (s := s.replace(c, r) for c, r in replacements.items())
     return result
 
 

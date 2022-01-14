@@ -45,7 +45,12 @@ __all__ = [
 ]
 
 import logging
+import sys
 from pathlib import Path
+
+# version check
+if sys.version_info < (3, 9):
+    raise RuntimeError("Python >= 3.9 required")
 
 from tsdm import (
     config,
