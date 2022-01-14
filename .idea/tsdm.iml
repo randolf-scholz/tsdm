@@ -37,6 +37,13 @@
       <excludeFolder url="file://$MODULE_DIR$/examples/checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/examples/pics" />
       <excludeFolder url="file://$MODULE_DIR$/examples/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/cluster/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/cluster/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/.pyre" />
+      <excludeFolder url="file://$MODULE_DIR$/.pytype" />
+      <excludeFolder url="file://$MODULE_DIR$/.pytype/imports" />
+      <excludeFolder url="file://$MODULE_DIR$/.pytype/pyi" />
+      <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (kiwi)" jdkType="Python SDK" />

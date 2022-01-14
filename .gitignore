@@ -151,6 +151,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Pytype type checker
+.pytype/
+
+
 # PyCharm
 # .idea
 
@@ -162,3 +166,5 @@ dask-worker-space/
 
 # LibreOffice lock files
 .~lock.*
+
+
