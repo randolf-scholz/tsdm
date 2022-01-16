@@ -17,6 +17,8 @@ pydocstyle
 # MyPy #
 ########
 mypy
+types_setuptools
+types_toml
 
 ##########
 # PyLint #
