@@ -154,7 +154,7 @@ def shared_grid_plot(
     if data.ndim == 2:
         data = np.expand_dims(data, axis=0)
 
-    nrows, ncols = data.shape[:2]  # type: ignore
+    nrows, ncols = data.shape[:2]
 
     _subplot_kwargs = {
         "figsize": (5 * ncols, 3 * nrows),
@@ -174,7 +174,7 @@ def shared_grid_plot(
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):  # type: ignore
-        plot_func(data[idx], ax=axes[idx], **plot_kwargs)  # type: ignore
+        plot_func(data[idx], ax=axes[idx], **plot_kwargs)
 
     # set axes titles
     if titles is not None:

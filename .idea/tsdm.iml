@@ -44,6 +44,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.pytype/imports" />
       <excludeFolder url="file://$MODULE_DIR$/.pytype/pyi" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/bugs/.ipynb_checkpoints" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (kiwi)" jdkType="Python SDK" />

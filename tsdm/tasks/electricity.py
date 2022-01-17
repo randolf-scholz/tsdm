@@ -48,7 +48,7 @@ class ElectricityDeepState:
 
     NBEATS claims a key at 2014-09-01 is used. But this seems wrong.
     The date 2014-09-01 only ever occurs in Appendix A5, Figure 4&5 which show an example plot.
-    """  # pylint: disable=line-too-long
+    """
 
 
 class ElectricityDeepAR:
@@ -74,7 +74,7 @@ class ElectricityDeepAR:
 
     Results
     -------
-    """  # pylint: disable=line-too-long
+    """
 
 
 class ElectricityTRMF:
@@ -123,7 +123,7 @@ class ElectricityTRMF:
     +=======+=======+=============+=============+===============+
     | ND    | 0.255 | 0.171       | 0.185       | 0.111         |
     +-------+-------+-------------+-------------+---------------+
-    """  # pylint: disable=line-too-long
+    """
 
 
 class ElectricityTFT:
@@ -160,7 +160,7 @@ class ElectricityTFT:
     +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
     | P90   | 0.102 | 0.034     | 0.056 | 0.400  | 0.077 | 0.036 | 0.036   | 0.027 | NaN   |
     +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
-    """  # pylint: disable=line-too-long
+    """
 
 
 class ElectricityELBMBTTF:
@@ -226,4 +226,4 @@ class ElectricityELBMBTTF:
     +--------+----------------+-------------+
     | Ours   | 0.074/0.042    | 0.139/0.090 |
     +--------+----------------+-------------+
-    """  # pylint: disable=line-too-long
+    """
