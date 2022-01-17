@@ -65,7 +65,7 @@ from tsdm.datasets.base import Dataset
 __logger__ = logging.getLogger(__name__)
 
 
-def _reformat(s: str, replacements: dict) -> str:  # pylint: disable=unused-argument
+def _reformat(s: str, replacements: dict) -> str:
     r"""Replace multiple substrings via dict.
 
     https://stackoverflow.com/a/64500851/9318372
@@ -84,7 +84,6 @@ class Traffic(Dataset):
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**           | Classification            | **Missing Values?**       | N/A    | **Number of Web Hits:** | 79749      |
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-
     """  # pylint: disable=line-too-long # noqa
 
     base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"

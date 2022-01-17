@@ -1,0 +1,93 @@
+r"""#TODO add module summary line.
+
+#TODO add module description.
+"""
+
+__all__ = [
+    # CLASSES
+    "SetFuncTS",
+]
+
+import logging
+from typing import Optional
+
+import torch
+from torch import Tensor, nn
+
+from tsdm.encoders.modular.torch import PositionalEncoder
+from tsdm.models.generic import MLP, DeepSet, ScaledDotProductAttention
+from tsdm.util.decorators import autojit
+
+__logger__ = logging.getLogger(__name__)
+
+
+@autojit
+class SetFuncTS(nn.Module):
+    r"""Set function for time series.
+
+    References
+    ----------
+    - | Set Functions for Time Series
+      | Max Horn, Michael Moor, Christian Bock, Bastian Rieck, Karsten Borgwardt
+      | Proceedings of the 37th International Conference on Machine Learning
+      | PMLR 119:4353-4363, 2020.
+      | https://proceedings.mlr.press/v119/horn20a.html
+    - https://github.com/BorgwardtLab/Set_Functions_for_Time_Series
+    """
+
+    def __init__(
+        self,
+        input_size: int,
+        output_size: int,
+        latent_size: Optional[int] = None,
+        dim_keys: Optional[int] = None,
+        dim_vals: Optional[int] = None,
+        dim_time: Optional[int] = None,
+    ) -> None:
+        super().__init__()
+
+        dim_keys = input_size if dim_keys is None else dim_keys
+        dim_vals = input_size if dim_vals is None else dim_vals
+        dim_time = 10 if dim_time is None else dim_time
+        latent_size = input_size if latent_size is None else latent_size
+        # time_encoder
+        # feature_encoder -> CNN?
+        self.time_encoder = PositionalEncoder(dim_time, scale=1.0)
+        self.key_encoder = DeepSet(input_size + dim_time - 1, dim_keys)
+        self.value_encoder = MLP(input_size + dim_time - 1, dim_vals)
+        self.attn = ScaledDotProductAttention(
+            dim_keys + input_size + dim_time - 1, dim_vals, latent_size
+        )
+        self.head = MLP(latent_size, output_size)
+
+    def forward(self, s: Tensor) -> Tensor:
+        r"""Signature: `(..., T, D) → (..., F)`.
+
+        s must be a tensor of the shape L×(2+C), sᵢ = [tᵢ, zᵢ, mᵢ], where
+        - tᵢ is timestamp
+        - zᵢ is observed value
+        - mᵢ is identifier
+
+        C is the number of classes (one-hot encoded identifier)
+
+        Parameters
+        ----------
+        s: Tensor
+
+        Returns
+        -------
+        Tensor
+        """
+        t = s[..., 0]
+        v = s[..., 1:2]
+        m = s[..., 2:]
+        time_features = self.time_encoder(t)
+        s = torch.cat([time_features, v, m], dim=-1)
+        fs = self.key_encoder(s)
+        fs = torch.tile(fs.unsqueeze(-2), (s.shape[-2], 1))
+        K = torch.cat([fs, s], dim=-1)
+        V = self.value_encoder(s)
+        mask = torch.isnan(s[..., 0])
+        z = self.attn(K, V, mask=mask)
+        y = self.head(z)
+        return y

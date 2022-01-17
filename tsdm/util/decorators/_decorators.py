@@ -28,7 +28,7 @@ from typing import Any, Callable, Union
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import ObjectType, ReturnType
+from tsdm.util.types import ObjectType, ReturnType, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -229,7 +229,7 @@ def trace(func: Callable) -> Callable:
     return wrapper
 
 
-def autojit(base_class: type[nn.Module]) -> type[nn.Module]:
+def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
     r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
 
     Makes it so that
@@ -268,13 +268,17 @@ def autojit(base_class: type[nn.Module]) -> type[nn.Module]:
         r"""A simple Wrapper."""
 
         # noinspection PyArgumentList
-        def __new__(cls, *args, **kwargs):
-            instance = base_class(*args, **kwargs)
+        def __new__(cls, *args: Any, **kwargs: Any) -> nnModuleType:  # type: ignore[misc]
+            # Note: If __new__() does not return an instance of cls,
+            # then the new instance's __init__() method will not be invoked.
+            instance: nnModuleType = base_class(*args, **kwargs)
 
             if conf.autojit:  # pylint: disable=no-member
-                return jit.script(instance)
+                scripted: nnModuleType = jit.script(instance)
+                return scripted
             return instance
 
+    assert issubclass(WrappedClass, base_class)
     return WrappedClass
 
 
