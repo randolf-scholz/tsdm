@@ -267,7 +267,8 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
             header = f"<h3>{self.name}</h3>"
-            return header + self.dataset._repr_html_()
+            html_repr = self.dataset._repr_html_()  # pylint: disable=protected-access
+            return header + html_repr
         raise NotImplementedError
 
 

@@ -5,6 +5,7 @@ TODO: Module summary.
 
 
 __all__ = [
+    # CLASSES
     "ElectricityDeepState",
     "ElectricityDeepAR",
     "ElectricityTFT",
@@ -23,9 +24,9 @@ class ElectricityDeepState:
 
     Paper
     -----
-
     - | Deep State Space Models for Time Series Forecasting
-      | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang, Tim Januschowski
+      | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
+        Tim Januschowski
       | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
       | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
 
@@ -41,7 +42,6 @@ class ElectricityDeepState:
 
     Results
     -------
-
     Observation horizons: [14, 21, 28] days
     Forecast    horizons: 7 days
     Split:
@@ -117,7 +117,6 @@ class ElectricityTRMF:
 
     Results
     -------
-
     +-------+-------+-------------+-------------+---------------+
     | Model | TRMF  | N-BEATS (G) | N-BEATS (I) | N-BEATS (I+G) |
     +=======+=======+=============+=============+===============+
@@ -164,12 +163,14 @@ class ElectricityTFT:
 
 
 class ElectricityELBMBTTF:
-    """Experiments as performed by the "LogSparseTransformer" paper.
+    r"""Experiments as performed by the "LogSparseTransformer" paper.
 
     Paper
     -----
-
-    - | Enhancing the Locality and Breaking the Memory Bottleneck of Transformer on Time Series Forecasting
+    - | Enhancing the Locality and Breaking the Memory Bottleneck of Transformer
+        on Time Series Forecasting
+      | Shiyang Li, Xiaoyong Jin, Yao Xuan, Xiyou Zhou, Wenhu Chen, Yu-Xiang Wang, Xifeng Yan
+      | Advances in Neural Information Processing Systems 32 (NeurIPS 2019)
       | https://proceedings.neurips.cc/paper/2019/hash/6775a0635c302542da2c32aa19d86be0-Abstract.html
 
     Evaluation Protocol

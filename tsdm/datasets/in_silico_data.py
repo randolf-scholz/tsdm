@@ -43,7 +43,9 @@ class InSilicoData(SimpleDataset):
         self,
     ) -> Path:
         r"""Path to the raw data files."""
-        return resources.path(examples, "in_silico.zip").__enter__()
+        resource = resources.path(examples, "in_silico.zip")
+        assert hasattr(resource, "__enter__")
+        return resource.__enter__()  # pylint: disable=no-member
 
     def _clean(self) -> None:
         with ZipFile(self.rawdata_files, "r") as files:

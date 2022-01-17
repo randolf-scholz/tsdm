@@ -5,23 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/dev/tasks/KIWI_Final_product.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tsdm/models/generic/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tsdm/models/generic/deepset.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tsdm/models/generic/mlp.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tsdm/models/generic/scaled_dot_product_attention.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tsdm/models/seft.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/tsdm.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/tsdm.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/webResources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/webResources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements-extra.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/models/set_function_time_series.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/models/set_function_time_series.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs/conf.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/plot/plotting.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/plotting.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/base/_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/base/_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/in_silico_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/in_silico_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/physionet2019.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/physionet2019.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/ushcn.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/ushcn.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/models/generic/mlp.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/generic/mlp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/random/generators/sinewaves.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/tasks/electricity.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/electricity.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/types/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/types/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/types/_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/types/_types.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,6 +28,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
+        <option value="Blank Requirements File" />
       </list>
     </option>
   </component>
@@ -249,7 +246,7 @@
       <workItem from="1642169011871" duration="4440000" />
       <workItem from="1642193931659" duration="934000" />
       <workItem from="1642331447972" duration="1601000" />
-      <workItem from="1642406999798" duration="7991000" />
+      <workItem from="1642406999798" duration="12438000" />
     </task>
     <servers />
   </component>
