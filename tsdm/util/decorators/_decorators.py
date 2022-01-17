@@ -264,16 +264,15 @@ def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
     assert issubclass(base_class, nn.Module)
 
     @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type: ignore
+    class WrappedClass(base_class):  # type: ignore  # pylint: disable=too-few-public-methods
         r"""A simple Wrapper."""
 
-        # noinspection PyArgumentList
         def __new__(cls, *args: Any, **kwargs: Any) -> nnModuleType:  # type: ignore[misc]
             # Note: If __new__() does not return an instance of cls,
             # then the new instance's __init__() method will not be invoked.
             instance: nnModuleType = base_class(*args, **kwargs)
 
-            if conf.autojit:  # pylint: disable=no-member
+            if conf.autojit:
                 scripted: nnModuleType = jit.script(instance)
                 return scripted
             return instance

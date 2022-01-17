@@ -34,8 +34,12 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2 ** -24) -> Tensor:
 
     References
     ----------
-    - `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
-    - `N-BEATS: Neural basis expansion analysis for interpretable time series forecasting <https://openreview.net/forum?id=r1ecqn4YwB>`_
+    - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+      | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
+      | Advances in Neural Information Processing Systems 29 (NIPS 2016)
+      | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+    - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
+      | https://openreview.net/forum?id=r1ecqn4YwB
 
     Parameters
     ----------
@@ -45,7 +49,7 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2 ** -24) -> Tensor:
     Returns
     -------
     Tensor
-    """  # pylint: disable=line-too-long # noqa
+    """
     res = torch.sum(torch.abs(xhat - x), dim=(-1, -2))
     mag = torch.sum(torch.abs(x), dim=(-1, -2))
     mag = torch.maximum(mag, torch.tensor(eps, dtype=x.dtype, device=x.device))
@@ -61,8 +65,10 @@ def nrmse(x: Tensor, xhat: Tensor, eps: float = 2 ** -24) -> Tensor:
 
     References
     ----------
-    - `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-      <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
+    - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+      | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
+      | Advances in Neural Information Processing Systems 29 (NIPS 2016)
+      | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
 
     Parameters
     ----------
@@ -84,22 +90,26 @@ def q_quantile(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile.
 
     .. math::
-         𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
+        𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
 
-     References
-     ----------
-     - `Deep State Space Models for Time Series Forecasting <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>`_
+    References
+    ----------
+    - | Deep State Space Models for Time Series Forecasting
+      | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
+        Tim Januschowski
+      | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
+      | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
 
-     Parameters
-     ----------
-     x: Tensor
-     xhat: Tensor
-     q: float
+    Parameters
+    ----------
+    x: Tensor
+    xhat: Tensor
+    q: float
 
-     Returns
-     -------
-     Tensor
-    """  # pylint: disable=line-too-long # noqa
+    Returns
+    -------
+    Tensor
+    """
     residual = x - xhat
     return torch.max((q - 1) * residual, q * residual)
 
@@ -113,7 +123,11 @@ def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
 
     References
     ----------
-    - `Deep State Space Models for Time Series Forecasting <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>`_
+    - | Deep State Space Models for Time Series Forecasting
+      | Syama Sundar Rangapuram, Matthias W. Seeger, Jan Gasthaus, Lorenzo Stella, Yuyang Wang,
+        Tim Januschowski
+      | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
+      | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
 
     Parameters
     ----------
@@ -124,7 +138,7 @@ def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     Returns
     -------
     Tensor
-    """  # pylint: disable=line-too-long # noqa
+    """
     return 2 * torch.sum(q_quantile(x, xhat, q)) / torch.sum(torch.abs(x))
 
 

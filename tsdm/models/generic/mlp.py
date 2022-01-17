@@ -30,9 +30,8 @@ class MLP(nn.Sequential):
             nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
             layers.append(layer)
             layers.append(nn.ReLU())
-        else:
-            layer = nn.Linear(input_size, output_size)
-            nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
-            nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
-            layers.append(layer)
+        layer = nn.Linear(input_size, output_size)
+        nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
+        nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
+        layers.append(layer)
         super().__init__(*layers)

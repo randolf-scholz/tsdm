@@ -410,14 +410,18 @@ class USHCN(Dataset):
     def _clean_us_daily(self):
         try:
             os.environ["MODIN_ENGINE"] = "ray"
-            import ray
-            from modin import pandas as pd
+            import modin.pandas  # pylint: disable=import-outside-toplevel
+            import ray  # pylint: disable=import-outside-toplevel
 
             __logger__.warning("Using Modin with Ray Backend")
-        except ImportError as e:
-            __logger__.warning("Modin/Ray not found, falling back to pandas! %s", e)
+        except ImportError(ray) as e:
+            __logger__.warning("Ray not found, falling back to pandas! %s", e)
+            pd = pandas
+        except ImportError(modin) as e:
+            __logger__.warning("Modin not found, falling back to pandas! %s", e)
             pd = pandas
         else:
+            pd = modin.pandas
             num_cpus = max(1, (os.cpu_count() or 0) - 2)
             __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
             ray.init(num_cpus=num_cpus, ignore_reinit_error=True)

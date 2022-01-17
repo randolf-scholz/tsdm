@@ -177,13 +177,14 @@ class Time2Float(BaseEncoder):
         super().__init__()
         self.normalization = normalization
 
-    def fit(self, ds: Series):
+    def fit(self, data: Series):
         r"""Fit to the data.
 
         Parameters
         ----------
-        ds: Series
+        data: Series
         """
+        ds = data
         self.original_dtype = ds.dtype
         self.offset = ds[0].copy()
         assert (
@@ -318,10 +319,6 @@ class DateTimeEncoder(BaseEncoder):
 
 class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
-
-    def __init__(self):
-        r"""Initialize the encoder."""
-        super().__init__()
 
     def encode(self, data, /):
         r"""Encode the input."""
@@ -519,7 +516,8 @@ class DataFrameEncoder(BaseEncoder):
 
     def _repr_html_(self) -> str:
         """HTML representation."""
-        return f"<h3>{self.__class__.__name__}</h3>" + self.spec._repr_html_()
+        html_repr = self.spec._repr_html_()  # pylint: disable=protected-access
+        return f"<h3>{self.__class__.__name__}</h3> {html_repr}"
 
 
 class Standardizer(BaseEncoder):
