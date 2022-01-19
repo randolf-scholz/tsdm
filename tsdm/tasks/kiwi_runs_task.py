@@ -11,7 +11,7 @@ from itertools import product
 from typing import Any, Literal, Optional
 
 import torch
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, MultiIndex
 from sklearn.model_selection import ShuffleSplit
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -117,6 +117,7 @@ class KIWI_RUNS_TASK(BaseTask):
             "num_workers": max(1, min(cpus, 4)),
         } | dataloader_kwargs
 
+        # setup dataset
         self.dataset: Dataset = KIWI_RUNS()
         self.units: DataFrame = self.dataset.units
         self.metadata: DataFrame = self.dataset.metadata.drop([355, 482])
@@ -215,8 +216,51 @@ class KIWI_RUNS_TASK(BaseTask):
         return splits.astype("string").astype("category")
 
     @cached_property
+    def split_idx_sparse(self) -> DataFrame:
+        r"""Return sparse table with indices for each split.
+
+        Returns
+        -------
+        DataFrame[bool]
+        """
+        df = self.split_idx
+        columns = df.columns
+
+        # get categoricals
+        categories = {
+            col: df[col].astype("category").dtype.categories for col in columns
+        }
+
+        if isinstance(df.columns, MultiIndex):
+            index_tuples = [
+                (*col, cat)
+                for col, cats in zip(columns, categories)
+                for cat in categories[col]
+            ]
+            names = df.columns.names + ["partition"]
+        else:
+            index_tuples = [
+                (col, cat)
+                for col, cats in zip(columns, categories)
+                for cat in categories[col]
+            ]
+            names = [df.columns.name, "partition"]
+
+        new_columns = MultiIndex.from_tuples(index_tuples, names=names)
+        result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
+
+        if isinstance(df.columns, MultiIndex):
+            for col in new_columns:
+                result[col] = df[col[:-1]] == col[-1]
+        else:
+            for col in new_columns:
+                result[col] = df[col[0]] == col[-1]
+
+        return result
+
+    @cached_property
     def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
-        """Return a subset of the data corresponding to the split.
+        r"""Return a subset of the data corresponding to the split.
 
         Returns
         -------
