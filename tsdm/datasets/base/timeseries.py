@@ -33,7 +33,7 @@ class _IndexMethodClone:
         self.index_method = getattr(self.index, method)
 
     def __getitem__(self, item):
-        idx = self.index_method[item]
+        idx = self.index_method[item].values
         return self.data[idx]
 
 
@@ -93,10 +93,11 @@ class TimeTensor(Tensor):
             index = Index(np.arange(len(x))) if index is None else index
 
         self.index = Series(np.arange(len(x)), index=index)
-        self.loc = _IndexMethodClone(self, self.index.loc)
-        self.iloc = _IndexMethodClone(self, self.index.iloc)
-        self.at = _IndexMethodClone(self, self.index.at)
-        self.iat = _IndexMethodClone(self, self.index.iat)
+        # self.loc = self.index.loc
+        self.loc = _IndexMethodClone(self, self.index, "loc")
+        self.iloc = _IndexMethodClone(self, self.index, "iloc")
+        self.at = _IndexMethodClone(self, self.index, "at")
+        self.iat = _IndexMethodClone(self, self.index, "iat")
 
 
 IndexedArray = Union[Series, DataFrame, TimeTensor]
