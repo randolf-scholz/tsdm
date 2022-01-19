@@ -46,6 +46,19 @@ class SliceSampler(Sampler):
 
     Should you want to sample windows of varying size, you may supply a
 
+    Alternatives:
+    - sample with fixed horizon and start/stop between bounds
+      - [sₖ, tₖ], sᵢ = t₀ + k⋅Δt, tᵢ = t₀ + (k+1)⋅Δt
+    - sample with a fixed start location and varying length.
+      - [sₖ, tₖ], sᵢ = t₀, tᵢ= t₀ + k⋅Δt
+    - sample with a fixed final location and varying length.
+      - [sₖ, tₖ], sᵢ = tₗ - k⋅Δt, tᵢ= tₗ
+    - sample with varying start and final location and varying length.
+      - all slices of length k⋅Δt such that 0 < k⋅Δt < max_length
+      - start stop location within bounds [t_min, t_max]
+      - start stop locations from the set t_offset + [t_min, t_max] ∩ Δtℤ
+      - [sₖ, tⱼ], sᵢ = t₀ + k⋅Δt, tⱼ = t₀ + k⋅Δt
+
     Attributes
     ----------
     data:
