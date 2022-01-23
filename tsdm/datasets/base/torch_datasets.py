@@ -1,7 +1,8 @@
 r"""Datasets that subclass :class:`torch.utils.data.Dataset`."""
 
 import logging
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any
 
 from torch import Tensor
 from torch.utils.data import Dataset as Torch_Dataset

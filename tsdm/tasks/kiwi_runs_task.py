@@ -11,7 +11,7 @@ from itertools import product
 from typing import Any, Literal, Optional
 
 import torch
-from pandas import DataFrame, Series, MultiIndex
+from pandas import DataFrame, MultiIndex, Series
 from sklearn.model_selection import ShuffleSplit
 from torch.utils.data import DataLoader, TensorDataset
 

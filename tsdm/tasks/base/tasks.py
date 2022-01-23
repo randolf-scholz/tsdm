@@ -88,9 +88,9 @@ __all__ = [
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Callable, Generic, Optional
+from typing import Any, Generic, Optional
 
 import torch
 from torch import Tensor

@@ -25,9 +25,9 @@ __all__ = [
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import singledispatchmethod
-from typing import Any, Callable, Final, Literal, Optional, Union, overload
+from typing import Any, Final, Literal, Optional, Union, overload
 
 import numpy as np
 import pandas.api.types

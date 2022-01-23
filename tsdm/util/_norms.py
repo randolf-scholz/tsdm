@@ -15,8 +15,9 @@ __all__ = [
 ]
 
 import logging
+from collections.abc import Iterable
 from functools import singledispatch
-from typing import Iterable, Optional, Union, overload
+from typing import Optional, Union, overload
 
 import numpy as np
 import torch

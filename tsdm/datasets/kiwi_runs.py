@@ -10,9 +10,10 @@ __all__ = [
 
 import logging
 import pickle
+from collections.abc import Callable
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Callable, Final, Literal, Optional
+from typing import Any, Final, Literal, Optional
 
 import numpy as np
 import pandas as pd

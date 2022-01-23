@@ -19,11 +19,12 @@ __all__ = [
 import gc
 import logging
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
-from typing import Any, Callable, Union
+from typing import Any, Union
 
 from torch import jit, nn
 

@@ -11,6 +11,7 @@ __all__ = [
     "NestedType",
     "NullableNestedType",
     "KeyType",
+    "ValueType",
 ]
 
 import logging
@@ -23,7 +24,10 @@ from torch import nn
 __logger__ = logging.getLogger(__name__)
 
 KeyType = TypeVar("KeyType")
-r"""TypeVar for Index Keys."""
+r"""TypeVar for ``Mapping`` keys."""
+
+ValueType = TypeVar("ValueType")
+r"""TypeVar for ``Mapping`` values."""
 
 PathType = Union[str, os.PathLike[str]]
 r"""Type for path-like objects."""

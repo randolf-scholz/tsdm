@@ -9,9 +9,9 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from itertools import chain
-from typing import Any, Callable, Iterator, Optional, Sequence, Sized, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 from numpy.random import permutation
