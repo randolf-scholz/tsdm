@@ -8,11 +8,12 @@ __all__ = [
     "ReturnType",
     "nnModuleType",
     # Types
-    "LookupTable",
-    "PathType",
-    "NullableNestedType",
-    "NestedType",
     "KeyType",
+    "LookupTable",
+    "NestedType",
+    "NullableNestedType",
+    "PathType",
+    "ValueType",
 ]
 
 import logging
@@ -26,6 +27,7 @@ from tsdm.util.types._types import (
     ObjectType,
     PathType,
     ReturnType,
+    ValueType,
     nnModuleType,
 )
 

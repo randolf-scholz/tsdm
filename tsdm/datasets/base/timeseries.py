@@ -135,8 +135,8 @@ class TimeSeriesDataset(TensorDataset):
     - ds[t₀:t₁] = tuple[X[t₀:t₁] for X in self.timeseries], metadata
     """
 
-    timeseries: Union[TimeTensor, tuple[TimeTensor, ...]]
-    metadata: Optional[Union[Tensor, tuple[Tensor, ...]]] = None
+    timeseries: Union[IndexedArray, tuple[IndexedArray, ...]]
+    metadata: Optional[Union[IndexedArray, tuple[IndexedArray, ...]]] = None
 
     def __init__(
         self,

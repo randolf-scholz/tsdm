@@ -23,12 +23,12 @@ __all__ = [
 ]
 
 import os
-from collections.abc import Collection, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from datetime import datetime
 from functools import partial
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Callable, Iterable, NamedTuple, Union, overload
+from typing import Any, NamedTuple, Union, overload
 
 import torch
 from torch import Tensor, jit

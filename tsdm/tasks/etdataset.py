@@ -10,8 +10,9 @@ __all__ = [
 
 
 import logging
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Callable, Literal, Mapping, Optional, Sequence
+from typing import Any, Literal, Optional
 
 import torch
 from pandas import DataFrame

@@ -50,10 +50,11 @@ M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference 
 __all__ = ["Traffic"]
 
 import logging
+from collections.abc import Callable
 from functools import cached_property
 from io import StringIO
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 from zipfile import ZipFile
 
 import numpy as np

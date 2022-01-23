@@ -8,7 +8,8 @@ __all__ = [
 ]
 
 import logging
-from typing import Callable, Literal, Optional
+from collections.abc import Callable
+from typing import Literal, Optional
 
 import numpy as np
 import torch

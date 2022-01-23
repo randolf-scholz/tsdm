@@ -13,7 +13,8 @@ __all__ = [
 ]
 
 import logging
-from typing import Callable, Final
+from collections.abc import Callable
+from typing import Final
 
 from tsdm.logutils._logutils import (
     compute_metrics,
