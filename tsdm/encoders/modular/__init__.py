@@ -23,6 +23,8 @@ __all__ = [
     "Standardizer",
     "TensorEncoder",
     "Time2Float",
+    "IntEncoder",
+    "TripletEncoder",
 ]
 
 import logging
@@ -38,11 +40,13 @@ from tsdm.encoders.modular._modular import (
     DateTimeEncoder,
     FloatEncoder,
     IdentityEncoder,
+    IntEncoder,
     MinMaxScaler,
     PositionalEncoder,
     Standardizer,
     TensorEncoder,
     Time2Float,
+    TripletEncoder,
 )
 from tsdm.util.types import LookupTable
 
@@ -85,5 +89,7 @@ ModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
     "Standardizer": Standardizer,
     "TensorEncoder": TensorEncoder,
     "Time2Float": Time2Float,
+    "IntEncoder": IntEncoder,
+    "TripletEncoder": TripletEncoder,
 }
 r"""Dictionary of all available modular encoders."""

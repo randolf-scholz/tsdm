@@ -20,6 +20,8 @@ __all__ = [
     "Standardizer",
     "TensorEncoder",
     "Time2Float",
+    "IntEncoder",
+    "TripletEncoder",
 ]
 
 import logging
@@ -30,6 +32,7 @@ from functools import singledispatchmethod
 from typing import Any, Final, Literal, Optional, Union, overload
 
 import numpy as np
+import pandas as pd
 import pandas.api.types
 import torch
 from pandas import NA, DataFrame, DatetimeIndex, Index, Series, Timedelta, Timestamp
@@ -367,7 +370,7 @@ class DataFrameEncoder(BaseEncoder):
         self.column_encoders = column_encoders
 
         if isinstance(index_encoders, Mapping):
-            raise NotImplementedError("Index encoders not yet supported")
+            raise NotImplementedError("Multi-Index encoders not yet supported")
 
         self.index_encoders = index_encoders
         self.column_wise: bool = isinstance(self.column_encoders, Mapping)
@@ -974,3 +977,45 @@ class PositionalEncoder(BaseEncoder):
         Tensor
         """
         return np.arcsin(data[..., 0])
+
+
+class TripletEncoder(BaseEncoder):
+    def __init__(self, sparse: bool = True):
+        super().__init__()
+        self.sparse = sparse
+
+    def encode(self, df):
+        result = df.melt(ignore_index=False)
+        observed = result["value"].notna()
+        result = result[observed]
+        variable = result.columns[0]
+        result[variable] = result[variable].astype(pd.StringDtype())
+        result[variable] = result[variable].astype(self.categories)
+        result.rename(columns={variable: "variable"}, inplace=True)
+        result.index.rename("time", inplace=True)
+        result.sort_values(by=["time", "variable"], inplace=True)
+
+        if not self.sparse:
+            return result
+        return pd.get_dummies(
+            result, columns=["variable"], sparse=True, prefix="", prefix_sep=""
+        )
+
+    def fit(self, data):
+        result = data.melt(ignore_index=False)
+        observed = result["value"].notna()
+        result = result[observed]
+        variable = result.columns[0]
+        result[variable] = result[variable].astype(pd.StringDtype())
+        self.categories = pd.CategoricalDtype(result[variable].unique())
+
+    def decode(self, data, /):
+        if self.sparse:
+            df = data.iloc[:, 1:]
+            df = df[df == 1].stack().reset_index(level=-1)
+            df["value"] = data["value"]
+            df = df.rename(columns={"level_1": "variable"})
+        else:
+            df = data
+        print(df)
+        return df.pivot_table(index="time", columns="variable", values="value")
