@@ -25,6 +25,7 @@ __all__ = [
     "Time2Float",
     "IntEncoder",
     "TripletEncoder",
+    "ConcatEncoder",
 ]
 
 import logging
@@ -36,6 +37,7 @@ from sklearn.base import BaseEstimator
 from tsdm.encoders.modular._modular import (
     BaseEncoder,
     ChainedEncoder,
+    ConcatEncoder,
     DataFrameEncoder,
     DateTimeEncoder,
     FloatEncoder,
@@ -91,5 +93,6 @@ ModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
     "Time2Float": Time2Float,
     "IntEncoder": IntEncoder,
     "TripletEncoder": TripletEncoder,
+    "ConcatEncoder": ConcatEncoder,
 }
 r"""Dictionary of all available modular encoders."""

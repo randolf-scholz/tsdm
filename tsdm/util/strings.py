@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Iterable, Mapping, Sequence, Callable
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Optional, overload
 
 __logger__ = logging.getLogger(__name__)
@@ -48,6 +48,7 @@ def repr_mapping(
     pad: int = 2,
     maxitems: Optional[int] = 6,
     repr_fun: Optional[Callable[..., str]] = None,
+    title: Optional[str] = None,
 ) -> str:
     """Return a string representation of a mapping object.
 
@@ -61,14 +62,15 @@ def repr_mapping(
     -------
     str
     """
-    to_string = repr if repr_fun is None else repr_fun
-
     padding = " " * pad
+    _to_string = repr if repr_fun is None else repr_fun
+    to_string = lambda x: _to_string(x).replace("\n", "\n" + padding)
 
     max_key_length = max(len(str(key)) for key in obj.keys())
     items = list(obj.items())
-
-    string = type(obj).__name__ + "(\n"
+    if title is None:
+        title = type(obj).__name__
+    string = title + "(\n"
 
     if maxitems is None or len(obj) <= maxitems:
         string += "".join(
@@ -106,8 +108,11 @@ def repr_sequence(
     -------
     str
     """
-    to_string = repr if repr_fun is None else repr_fun
     padding = " " * pad
+
+    _to_string = repr if repr_fun is None else repr_fun
+    to_string = lambda x: _to_string(x).replace("\n", "\n" + padding)
+
     if maxitems is None:
         maxitems = len(obj)
 

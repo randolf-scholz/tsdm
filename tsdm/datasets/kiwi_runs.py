@@ -564,6 +564,7 @@ class KIWI_RUNS(Dataset):
         # reset index
         ts = ts.reset_index()
         ts = ts.astype({"run_id": "int32", "experiment_id": "int32"})
+        ts["measurement_time"] = ts["measurement_time"].round("s")
         # ts = ts.rename(columns={col: snake2camel(col) for col in ts})
         ts.columns.name = "variable"
         path = self.dataset_files["timeseries"]

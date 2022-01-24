@@ -11,14 +11,14 @@ __all__ = [
 import logging
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from itertools import chain
-from typing import Any, Optional, Union, TypeVar
+from typing import Any, Optional, TypeVar, Union
 
 import numpy as np
 from numpy.random import permutation
 from numpy.typing import NDArray
-from pandas import Index, Series
+from pandas import Index, Series, Timedelta, Timestamp
 from torch.utils.data import Sampler
-from pandas import Timestamp, Timedelta
+
 from tsdm.datasets.base import DatasetCollection
 
 __logger__ = logging.getLogger(__name__)

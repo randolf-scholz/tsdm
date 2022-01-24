@@ -10,6 +10,7 @@ __all__ = [
     # ABC
     "BaseEncoder",
     # Classes
+    "ConcatEncoder",
     "ChainedEncoder",
     "DataFrameEncoder",
     "DateTimeEncoder",
@@ -81,6 +82,7 @@ class BaseEncoder(ABC):
     # TODO: Implement __matmul__ @ for composition of encoders.
 
     def __init__(self):
+        super().__init__()
         self.transform = self.encode
         self.inverse_transform = self.decode
 
@@ -267,6 +269,8 @@ class DateTimeEncoder(BaseEncoder):
 
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
+    round: str = "s"
+    r"""The frequency the decoding should be rounded to."""
     offset: Timestamp
     r"""The starting point of the timeseries."""
     kind: Union[type[Series], type[DatetimeIndex]]
@@ -278,8 +282,8 @@ class DateTimeEncoder(BaseEncoder):
     freq: Optional[Any] = None
     r"""The frequency attribute in case of DatetimeIndex."""
 
-    def __init__(self, unit: str = "s"):
-        """Initialize the parameters.
+    def __init__(self, unit: str = "s", round: str = "s"):
+        r"""Initialize the parameters.
 
         Parameters
         ----------
@@ -287,6 +291,7 @@ class DateTimeEncoder(BaseEncoder):
         """
         super().__init__()
         self.unit = unit
+        self.round = round
 
     def fit(self, data: Union[Series, DatetimeIndex]):
         r"""Store the offset."""
@@ -310,14 +315,13 @@ class DateTimeEncoder(BaseEncoder):
     def decode(self, timedeltas: Series) -> Union[Series, DatetimeIndex]:
         r"""Decode the input."""
         __logger__.debug("Decoding %s", type(timedeltas))
-        print(self.unit)
         converted = pandas.to_timedelta(timedeltas, unit=self.unit)
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
         if self.kind == Series:
-            return datetimes
+            return datetimes.round(self.round)
         return DatetimeIndex(
             datetimes, freq=self.freq, name=self.name, dtype=self.dtype
-        )
+        ).round(self.round)
 
 
 class IdentityEncoder(BaseEncoder):
@@ -740,26 +744,36 @@ class MinMaxScaler(BaseEncoder):
     #     return (1 / self.scale) * (data - self.ymin) + self.xmin
 
 
-# class ConcatEncoder(BaseEncoder):
-#     def __init__(self, axis, framework: Literal[torch, numpy, pandas]):
-#         """
-#
-#         Parameters
-#         ----------
-#         axis
-#         framework
-#         """
-#         super().__init__()
-#
-#     def fit(self, *data):
-#         ...
-#         # if isinstance(data[0])
-#
-#     def encode(self, data, /):
-#         pass
-#
-#     def decode(self, data, /):
-#         pass
+class ConcatEncoder(BaseEncoder):
+
+    lengths: list[int]
+    numdims: list[int]
+    axis: int
+    maxdim: int
+
+    def __init__(self, axis: int = 0):
+        """Concatenate tensors along the specified axis.
+
+        Parameters
+        ----------
+        axis
+        framework
+        """
+        super().__init__()
+        self.axis = axis
+
+    def fit(self, data):
+        self.numdims = [d.ndim for d in data]
+        self.maxdim = max(self.numdims)
+        data = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
+        self.lengths = [x.shape[self.axis] for x in data]
+
+    def encode(self, data, /):
+        return torch.cat([d[(...,) + (None,)*(self.maxdim-d.ndim)] for d in data], axis=self.axis)
+
+    def decode(self, data, /):
+        result = torch.split(data, self.lengths, dim=self.axis)
+        return tuple(x.squeeze() for x in result)
 
 
 PandasObject = Union[Index, Series, DataFrame]
@@ -812,10 +826,14 @@ class TensorEncoder(BaseEncoder):
 
 
 class FloatEncoder(BaseEncoder):
-    """Converts all columns of DataFrame to float32."""
+    r"""Converts all columns of DataFrame to float32."""
 
     dtypes: Series = None
     r"""The original dtypes."""
+
+    def __init__(self, dtype: str  = 'float32'):
+        self.target_dtype = dtype
+        super().__init__()
 
     def fit(self, data: PandasObject):
         r"""Remember the original dtypes."""
@@ -823,14 +841,14 @@ class FloatEncoder(BaseEncoder):
 
     def encode(self, data: PandasObject) -> PandasObject:
         r"""Make everything float32."""
-        return data.astype("float32")
+        return data.astype(self.target_dtype)
 
     def decode(self, data, /):
         r"""Restore original dtypes."""
         return data.astype(self.dtypes)
 
     def __repr__(self):
-        """Pretty print."""
+        r"""Pretty print."""
         return f"{self.__class__.__name__}()"
 
 
@@ -984,10 +1002,20 @@ class TripletEncoder(BaseEncoder):
         super().__init__()
         self.sparse = sparse
 
+
+    def fit(self, data):
+        self.categories = pd.CategoricalDtype(data.columns)
+        # result = data.melt(ignore_index=False)
+        # # observed = result["value"].notna()
+        # # result = result[observed]
+        # variable = result.columns[0]
+        # result[variable] = result[variable].astype(pd.StringDtype())
+        # self.categories = pd.CategoricalDtype(result[variable].unique())
+
     def encode(self, df):
         result = df.melt(ignore_index=False)
-        observed = result["value"].notna()
-        result = result[observed]
+        # observed = result["value"].notna()
+        # result = result[observed]
         variable = result.columns[0]
         result[variable] = result[variable].astype(pd.StringDtype())
         result[variable] = result[variable].astype(self.categories)
@@ -1001,13 +1029,6 @@ class TripletEncoder(BaseEncoder):
             result, columns=["variable"], sparse=True, prefix="", prefix_sep=""
         )
 
-    def fit(self, data):
-        result = data.melt(ignore_index=False)
-        observed = result["value"].notna()
-        result = result[observed]
-        variable = result.columns[0]
-        result[variable] = result[variable].astype(pd.StringDtype())
-        self.categories = pd.CategoricalDtype(result[variable].unique())
 
     def decode(self, data, /):
         if self.sparse:
@@ -1017,5 +1038,5 @@ class TripletEncoder(BaseEncoder):
             df = df.rename(columns={"level_1": "variable"})
         else:
             df = data
-        print(df)
-        return df.pivot_table(index="time", columns="variable", values="value")
+        df = df.pivot_table(index="time", columns="variable", values="value", dropna=False)
+        return df[self.categories.categories]
