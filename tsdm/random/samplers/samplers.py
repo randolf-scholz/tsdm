@@ -11,19 +11,21 @@ __all__ = [
 import logging
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from itertools import chain
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, TypeVar
 
 import numpy as np
 from numpy.random import permutation
 from numpy.typing import NDArray
 from pandas import Index, Series
 from torch.utils.data import Sampler
-
+from pandas import Timestamp, Timedelta
 from tsdm.datasets.base import DatasetCollection
 
 __logger__ = logging.getLogger(__name__)
 
 
+TimedeltaLike = TypeVar("TimedeltaLike", int, float, Timedelta)
+TimestampLike = TypeVar("TimestampLike", int, float, Timestamp)
 # class TimeSliceSampler(Sampler):
 #     """TODO: add class."""
 #
@@ -251,3 +253,139 @@ class CollectionSampler(Sampler):
     def __getitem__(self, key: Any) -> Sampler:
         r"""Return the subsampler for the given key."""
         return self.subsamplers[key]
+
+
+V = TypeVar("V")
+
+Boxed = Union[
+    Sequence[V],
+    Mapping[int, V],
+    Callable[[int], V],
+]
+
+dt_type = Union[
+    TimedeltaLike,
+    Sequence[TimedeltaLike],
+    Mapping[int, TimedeltaLike],
+    Callable[[int], TimedeltaLike],
+]
+
+import numpy as np
+from torch.utils.data import Sampler
+
+
+class IntervalSampler(
+    Sampler,
+):
+    """Returns all intervals `[a, b]` such that:
+
+    - `a = t₀ + i⋅sₖ`
+    - `b = t₀ + i⋅sₖ + Δtₖ`
+    - `i, k ∈ ℤ`
+    - `a ≥ t_min`
+    - `b ≤ t_max`
+    - `sₖ` is the stride corresponding to intervals of size `Δtₖ`
+    """
+
+    @staticmethod
+    def _get_value(obj: Union[V, Boxed[V]], k: int) -> V:
+        if isinstance(obj, Callable):
+            return obj(k)
+        if isinstance(obj, Sequence):
+            return obj[k]
+        # Fallback: multiple!
+        return obj
+
+    def __init__(
+        self,
+        xmin,
+        xmax,
+        deltax: dt_type,
+        stride: Optional[dt_type] = None,
+        levels: Optional[Sequence[int]] = None,
+        offset: Optional[dt_type] = None,
+        multiples: bool = True,
+        shuffle: bool = True,
+    ) -> None:
+
+        # set stride and offset
+        zero = 0 * (xmax - xmin)
+        stride = zero if stride is None else stride
+        offset = xmin if offset is None else offset
+
+        # validate bounds
+        assert xmin <= offset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
+
+        # determine delta_max
+        delta_max = max(offset - xmin, xmax - offset)
+
+        # determine levels
+        if levels is None:
+            if isinstance(deltax, Mapping):
+                levels = [k for k in deltax.keys() if deltax[l] <= delta_max]
+            elif isinstance(deltax, Sequence):
+                levels = [k for k in range(len(deltax)) if deltax[k] <= delta_max]
+            elif isinstance(deltax, Callable):
+                levels = []
+                for k in count():
+                    dt = self._get_value(deltax, k)
+                    if dt == zero:
+                        continue
+                    if dt > delta_max:
+                        break
+                    levels.append(k)
+            else:
+                levels = [0]
+        else:
+            levels = [k for k in levels if self._get_value(deltax, k) <= delta_max]
+
+        # validate levels
+        assert all(self._get_value(deltax, k) <= delta_max for k in levels)
+
+        # compute valid intervals
+        intervals: list[Interval] = []
+
+        # for each level, get all intervals
+        for k in levels:
+            dt = self._get_value(deltax, k)
+            st = self._get_value(stride, k)
+            x0 = self._get_value(offset, k)
+
+            # get valid interval bounds, probably there is an easier way to do it...
+            stridesa = grid(xmin, xmax, st, x0)
+            stridesb = grid(xmin, xmax, st, x0 + dt)
+            valid_strides = set.intersection(set(stridesa), set(stridesb))
+
+            if not valid_strides:
+                break
+
+            intervals.extend(
+                [(x0 + i * st, x0 + i * st + dt, dt, st) for i in valid_strides]
+            )
+
+        # set variables
+        self.offset = offset
+        self.deltax = deltax
+        self.stride = stride
+        self.shuffle = shuffle
+        self.intervals = DataFrame(
+            intervals, columns=["left", "right", "delta", "stride"]
+        )
+
+    def __iter__(self) -> Iterator:
+        if self.shuffle:
+            perm = np.random.permutation(len(self))
+        else:
+            perm = np.arange(len(self))
+
+        for k in perm:
+            yield self.loc[k, "left"], self.loc[k, "right"]
+
+    def __len__(self) -> int:
+        return len(self.intervals)
+
+    def __getattr__(self, key):
+        return self.intervals.__getattr__(key)
+
+    def __getitem__(self, key):
+        return self.intervals[key]
