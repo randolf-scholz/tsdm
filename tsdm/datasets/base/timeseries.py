@@ -32,8 +32,11 @@ class _IndexMethodClone:
         self.index = index
         self.index_method = getattr(self.index, method)
 
-    def __getitem__(self, item):
-        idx = self.index_method[item].values
+    def __getitem__(self, key: Any) -> ArrayLike:
+        idx = self.index_method[key]
+        if isinstance(idx, Series):
+            idx = idx.values
+
         return self.data[idx]
 
 

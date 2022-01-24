@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence, Callable
 from typing import Optional, overload
 
 __logger__ = logging.getLogger(__name__)
@@ -43,7 +43,12 @@ def snake2camel(s):
     return "".join(s[0].capitalize() + s[1:] for s in substrings)
 
 
-def repr_mapping(obj: Mapping, pad: int = 2, maxitems: Optional[int] = 6) -> str:
+def repr_mapping(
+    obj: Mapping,
+    pad: int = 2,
+    maxitems: Optional[int] = 6,
+    repr_fun: Optional[Callable[..., str]] = None,
+) -> str:
     """Return a string representation of a mapping object.
 
     Parameters
@@ -56,6 +61,8 @@ def repr_mapping(obj: Mapping, pad: int = 2, maxitems: Optional[int] = 6) -> str
     -------
     str
     """
+    to_string = repr if repr_fun is None else repr_fun
+
     padding = " " * pad
 
     max_key_length = max(len(str(key)) for key in obj.keys())
@@ -65,23 +72,29 @@ def repr_mapping(obj: Mapping, pad: int = 2, maxitems: Optional[int] = 6) -> str
 
     if maxitems is None or len(obj) <= maxitems:
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {value}\n" for key, value in items
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}\n"
+            for key, value in items
         )
     else:
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {value}\n"
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}\n"
             for key, value in items[: maxitems // 2]
         )
         string += f"{padding}...\n"
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {value}\n"
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}\n"
             for key, value in items[-maxitems // 2 :]
         )
     string += ")"
     return string
 
 
-def repr_sequence(obj: Sequence, pad: int = 2, maxitems: Optional[int] = 6) -> str:
+def repr_sequence(
+    obj: Sequence,
+    pad: int = 2,
+    maxitems: Optional[int] = 6,
+    repr_fun: Optional[Callable[..., str]] = None,
+) -> str:
     """Return a string representation of a sequence object.
 
     Parameters
@@ -93,6 +106,7 @@ def repr_sequence(obj: Sequence, pad: int = 2, maxitems: Optional[int] = 6) -> s
     -------
     str
     """
+    to_string = repr if repr_fun is None else repr_fun
     padding = " " * pad
     if maxitems is None:
         maxitems = len(obj)
@@ -100,11 +114,15 @@ def repr_sequence(obj: Sequence, pad: int = 2, maxitems: Optional[int] = 6) -> s
     string = type(obj).__name__ + "(\n"
 
     if maxitems is None or len(obj) <= 6:
-        string += "".join(f"{padding}{value}\n" for value in obj)
+        string += "".join(f"{padding}{to_string(value)}\n" for value in obj)
     else:
-        string += "".join(f"{padding}{value}\n" for value in obj[: maxitems // 2])
+        string += "".join(
+            f"{padding}{to_string(value)}\n" for value in obj[: maxitems // 2]
+        )
         string += f"{padding}...\n"
-        string += "".join(f"{padding}{value}\n" for value in obj[-maxitems // 2 :])
+        string += "".join(
+            f"{padding}{to_string(value)}\n" for value in obj[-maxitems // 2 :]
+        )
     string += ")"
 
     return string
