@@ -387,7 +387,8 @@ class DataFrameEncoder(BaseEncoder):
                     },
                     name=0,
                 )
-                index_spec = index_spec.append(_idxenc_spec)
+                # index_spec = index_spec.append(_idxenc_spec)
+                index_spec.loc[0] = _idxenc_spec
             else:
                 raise NotImplementedError(
                     "Multiple Index encoders are not supported yet."
@@ -406,8 +407,9 @@ class DataFrameEncoder(BaseEncoder):
                 },
                 name=0,
             )
-
-            colenc_spec = colenc_spec.append(_colenc_spec)
+            # colenc_spec = colenc_spec.append(_colenc_spec)
+            # colenc_spec = pandas.concat([colenc_spec, _colenc_spec])
+            colenc_spec.loc[0] = _colenc_spec
         else:
             keys = self.column_encoders.keys()
             assert len(set(keys)) == len(keys), "Some index are duplicates!"
