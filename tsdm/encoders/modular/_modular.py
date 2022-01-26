@@ -617,6 +617,12 @@ class Standardizer(BaseEncoder):
         return f"{self.__class__.__name__}(" + f"{list(self.axis)}" + ")"
 
 
+    def __getitem__(self, item):
+        return Standardizer(mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:])
+
+
+
+
 class MinMaxScaler(BaseEncoder):
     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
 
@@ -825,18 +831,33 @@ class TensorEncoder(BaseEncoder):
         #         name = item.name
         #         dtype = item.dtype
 
-    def encode(self, data: tuple[PandasObject, ...]) -> tuple[Tensor, ...]:
-        r"""Convert each inputs to tensor."""
-        return self.return_type(
-            *(
-                torch.tensor(ndarray.values, device=self.device, dtype=self.dtype)
-                for ndarray in data
-            )
-        )
+    @overload
+    def encode(self, data: PandasObject) -> Tensor:
+        ...
 
+    @overload
+    def encode(self, data: tuple[PandasObject, ...]) -> tuple[Tensor, ...]:
+        ...
+
+    def encode(self, data):
+        r"""Convert each inputs to tensor."""
+        if isinstance(data, tuple):
+            return self.return_type(*(self.encode(x) for x in data))
+        return torch.tensor(data.values, device=self.device, dtype=self.dtype)
+
+    @overload
+    def decode(self, data: Tensor) -> PandasObject:
+        ...
+
+    @overload
     def decode(self, data: tuple[Tensor, ...]) -> tuple[PandasObject, ...]:
+        ...
+
+    def decode(self, data):
         r"""Convert each input from tensor to numpy."""
-        return self.return_type(*(tensor.cpu().numpy() for tensor in data))
+        if isinstance(data, tuple):
+            return self.return_type(*(self.decode(x) for x in data))
+        return tensor.cpu().numpy()
 
     def __repr__(self):
         r"""Pretty print."""

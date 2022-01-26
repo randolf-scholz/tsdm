@@ -12,7 +12,7 @@ import logging
 from typing import Optional
 
 import torch
-from torch import Tensor, nn
+from torch import Tensor, nn, jit
 
 from tsdm.encoders.modular.torch import PositionalEncoder
 from tsdm.models.generic import MLP, DeepSet, ScaledDotProductAttention
@@ -60,7 +60,8 @@ class SetFuncTS(nn.Module):
         )
         self.head = MLP(latent_size, output_size)
 
-    def forward(self, s: Tensor) -> Tensor:
+    @jit.export
+    def forward(self, t: Tensor, v: Tensor, m:Tensor) -> Tensor:
         r"""Signature: `(..., T, D) → (..., F)`.
 
         s must be a tensor of the shape L×(2+C), sᵢ = [tᵢ, zᵢ, mᵢ], where
@@ -78,10 +79,14 @@ class SetFuncTS(nn.Module):
         -------
         Tensor
         """
-        t = s[..., 0]
-        v = s[..., 1:2]
-        m = s[..., 2:]
+        # t = s[..., 0]
+        # v = s[..., 1:2]
+        # m = s[..., 2:]
         time_features = self.time_encoder(t)
+
+        if v.ndim < m.ndim:
+            v = v.unsqueeze(-1)
+
         s = torch.cat([time_features, v, m], dim=-1)
         fs = self.key_encoder(s)
         fs = torch.tile(fs.unsqueeze(-2), (s.shape[-2], 1))
@@ -91,3 +96,7 @@ class SetFuncTS(nn.Module):
         z = self.attn(K, V, mask=mask)
         y = self.head(z)
         return y
+
+    @jit.export
+    def batch_forward(self, batch: list[tuple[Tensor, Tensor, Tensor]]) -> Tensor:
+        return torch.cat([self.forward(t, v, m) for t, v, m in batch])
