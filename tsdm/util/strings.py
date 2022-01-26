@@ -10,7 +10,7 @@ __all__ = [
 
 import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Optional, overload
+from typing import Any, Optional, overload
 
 __logger__ = logging.getLogger(__name__)
 
@@ -63,8 +63,11 @@ def repr_mapping(
     str
     """
     padding = " " * pad
-    _to_string = repr if repr_fun is None else repr_fun
-    to_string = lambda x: _to_string(x).replace("\n", "\n" + padding)
+
+    _to_string: Callable[..., str] = repr if repr_fun is None else repr_fun
+
+    def to_string(x: Any) -> str:
+        return _to_string(x).replace("\n", "\n" + padding)
 
     max_key_length = max(len(str(key)) for key in obj.keys())
     items = list(obj.items())
@@ -111,7 +114,9 @@ def repr_sequence(
     padding = " " * pad
 
     _to_string = repr if repr_fun is None else repr_fun
-    to_string = lambda x: _to_string(x).replace("\n", "\n" + padding)
+
+    def to_string(x: Any) -> str:
+        return _to_string(x).replace("\n", "\n" + padding)
 
     if maxitems is None:
         maxitems = len(obj)

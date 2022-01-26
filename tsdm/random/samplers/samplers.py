@@ -10,13 +10,13 @@ __all__ = [
 
 import logging
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
-from itertools import chain
+from itertools import chain, count
 from typing import Any, Optional, TypeVar, Union
 
 import numpy as np
 from numpy.random import permutation
 from numpy.typing import NDArray
-from pandas import Index, Series, Timedelta, Timestamp
+from pandas import DataFrame, Index, Interval, Series, Timedelta, Timestamp
 from torch.utils.data import Sampler
 
 from tsdm.datasets.base import DatasetCollection
@@ -270,9 +270,6 @@ dt_type = Union[
     Callable[[int], TimedeltaLike],
 ]
 
-import numpy as np
-from torch.utils.data import Sampler
-
 
 class IntervalSampler(
     Sampler,
@@ -289,7 +286,7 @@ class IntervalSampler(
 
     @staticmethod
     def _get_value(obj: Union[V, Boxed[V]], k: int) -> V:
-        if isinstance(obj, Callable):
+        if callable(obj):
             return obj(k)
         if isinstance(obj, Sequence):
             return obj[k]
@@ -307,6 +304,7 @@ class IntervalSampler(
         multiples: bool = True,
         shuffle: bool = True,
     ) -> None:
+        super().__init__(None)
 
         # set stride and offset
         zero = 0 * (xmax - xmin)
@@ -322,7 +320,7 @@ class IntervalSampler(
         # determine levels
         if levels is None:
             if isinstance(deltax, Mapping):
-                levels = [k for k in deltax.keys() if deltax[l] <= delta_max]
+                levels = [k for k in deltax.keys() if deltax[k] <= delta_max]
             elif isinstance(deltax, Sequence):
                 levels = [k for k in range(len(deltax)) if deltax[k] <= delta_max]
             elif isinstance(deltax, Callable):
@@ -389,3 +387,36 @@ class IntervalSampler(
 
     def __getitem__(self, key):
         return self.intervals[key]
+
+
+def grid(
+    xmin: TimestampLike,
+    xmax: TimestampLike,
+    delta: TimedeltaLike,
+    xoffset: Optional[TimestampLike] = None,
+) -> list[int]:
+    r"""Computes `\{k∈ℤ∣ xₘᵢₙ ≤ x₀+k⋅Δ ≤ xₘₐₓ\}`.
+
+    Special case: if Δ=0, returns [0]
+    """
+
+    xo = xmin if xoffset is None else xoffset
+    zero = type(delta)(0)
+
+    if delta == zero:
+        return [0]
+
+    assert delta > zero, "Assumption delta>0 violated!"
+    assert xmin <= xoffset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
+
+    a = xmin - xoffset
+    b = xmax - xoffset
+    kmax = b // delta
+    kmin = a // delta
+
+    assert xmin <= xo + kmin * delta
+    assert xmin > xo + (kmin - 1) * delta
+    assert xmax >= xo + kmax * delta
+    assert xmax < xo + (kmax + 1) * delta
+
+    return list(range(kmin, kmax + 1))

@@ -27,7 +27,7 @@ __all__ = [
 
 import logging
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import singledispatchmethod
 from typing import Any, Final, Literal, Optional, Union, overload
@@ -421,16 +421,17 @@ class DataFrameEncoder(BaseEncoder):
             keys = self.column_encoders.keys()
             assert len(set(keys)) == len(keys), "Some index are duplicates!"
 
-            _encoders = tuple(set(self.column_encoders.values()))
-            encoders = Series(_encoders, name="encoder")
-            partitions = Series(range(len(_encoders)), name="partition")
+            encoders = Series(self.column_encoders.values(), name="encoder")
+            partitions = Series(range(len(encoders)), name="partition")
 
             _columns = defaultdict(list)
             for key, encoder in self.column_encoders.items():
-                _columns[encoder].append(key)
+                if isinstance(key, str):
+                    _columns[encoder] = key
+                else:
+                    _columns[encoder].extend(key)
 
             columns = Series(_columns, name="col")
-
             colenc_spec = DataFrame(encoders, index=partitions)
             colenc_spec = colenc_spec.join(columns, on="encoder")
 
@@ -465,10 +466,10 @@ class DataFrameEncoder(BaseEncoder):
             # check if cols are a proper partition.
             keys = set(df.columns)
             _keys = set(self.column_encoders.keys())
-            assert keys <= _keys, f"Missing encoders for columns {keys - _keys}!"
-            assert (
-                keys >= _keys
-            ), f"Encoder given for non-existent columns {_keys- keys}!"
+            # assert keys <= _keys, f"Missing encoders for columns {keys - _keys}!"
+            # assert (
+            #     keys >= _keys
+            # ), f"Encoder given for non-existent columns {_keys- keys}!"
 
             for _, series in self.spec.loc["columns"].iterrows():
                 encoder = series["encoder"]
@@ -509,13 +510,18 @@ class DataFrameEncoder(BaseEncoder):
 
         columns = []
         col_names = []
-        for partition, series in self.spec.loc["columns"].iterrows():
+        for partition, (col_name, encoder) in self.spec.loc["columns"].iterrows():
             tensor = data[partition]
-            encoder = series["encoder"]
             columns.append(encoder.decode(tensor))
-            col_names += series["col"]
-        # return columns, col_names
-        values = np.hstack(columns)
+            if isinstance(col_name, str):
+                col_names.append(col_name)
+            else:
+                col_names.extend(col_name)
+
+        columns = [
+            np.expand_dims(arr, axis=1) if arr.ndim < 2 else arr for arr in columns
+        ]
+        values = np.concatenate(columns, axis=1)
         df = DataFrame(values, index=index, columns=col_names)
         return df[self.colspec.index].astype(self.colspec)  # bring cols in right order
 
@@ -769,7 +775,9 @@ class ConcatEncoder(BaseEncoder):
         self.lengths = [x.shape[self.axis] for x in data]
 
     def encode(self, data, /):
-        return torch.cat([d[(...,) + (None,)*(self.maxdim-d.ndim)] for d in data], axis=self.axis)
+        return torch.cat(
+            [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], axis=self.axis
+        )
 
     def decode(self, data, /):
         result = torch.split(data, self.lengths, dim=self.axis)
@@ -786,17 +794,25 @@ class TensorEncoder(BaseEncoder):
     r"""The default dtype."""
     device: torch.device
     r"""The device the tensors are stored in."""
+    names: Optional[list[str]] = None
     # colspecs: list[Series]
     # """The data types/column names of all the tensors"""
+    return_type: type = tuple
 
     def __init__(
-        self, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None
+        self,
+        names: Optional[list[str]] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
     ):
         super().__init__()
-
+        self.names = names
         self.dtype = torch.float32 if dtype is None else dtype
         # default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.device = torch.device("cpu") if device is None else device
+
+        if names is not None:
+            self.return_type = namedtuple("namedtuple", names)
 
     def fit(self, *data: PandasObject):
         r"""Fit to the data."""
@@ -811,14 +827,16 @@ class TensorEncoder(BaseEncoder):
 
     def encode(self, data: tuple[PandasObject, ...]) -> tuple[Tensor, ...]:
         r"""Convert each inputs to tensor."""
-        return tuple(
-            torch.tensor(ndarray.values, device=self.device, dtype=self.dtype)
-            for ndarray in data
+        return self.return_type(
+            *(
+                torch.tensor(ndarray.values, device=self.device, dtype=self.dtype)
+                for ndarray in data
+            )
         )
 
     def decode(self, data: tuple[Tensor, ...]) -> tuple[PandasObject, ...]:
         r"""Convert each input from tensor to numpy."""
-        return tuple(tensor.cpu().numpy() for tensor in data)
+        return self.return_type(*(tensor.cpu().numpy() for tensor in data))
 
     def __repr__(self):
         r"""Pretty print."""
@@ -831,13 +849,13 @@ class FloatEncoder(BaseEncoder):
     dtypes: Series = None
     r"""The original dtypes."""
 
-    def __init__(self, dtype: str  = 'float32'):
+    def __init__(self, dtype: str = "float32"):
         self.target_dtype = dtype
         super().__init__()
 
     def fit(self, data: PandasObject):
         r"""Remember the original dtypes."""
-        self.dtypes = data.dtypes
+        self.dtypes = data.dtypes if hasattr(data, "dtypes") else data.dtype
 
     def encode(self, data: PandasObject) -> PandasObject:
         r"""Make everything float32."""
@@ -1002,9 +1020,9 @@ class TripletEncoder(BaseEncoder):
         super().__init__()
         self.sparse = sparse
 
-
     def fit(self, data):
         self.categories = pd.CategoricalDtype(data.columns)
+        self.dtypes = data.dtypes
         # result = data.melt(ignore_index=False)
         # # observed = result["value"].notna()
         # # result = result[observed]
@@ -1013,7 +1031,7 @@ class TripletEncoder(BaseEncoder):
         # self.categories = pd.CategoricalDtype(result[variable].unique())
 
     def encode(self, df):
-        result = df.melt(ignore_index=False)
+        result = df.melt(ignore_index=False).dropna()
         # observed = result["value"].notna()
         # result = result[observed]
         variable = result.columns[0]
@@ -1029,7 +1047,6 @@ class TripletEncoder(BaseEncoder):
             result, columns=["variable"], sparse=True, prefix="", prefix_sep=""
         )
 
-
     def decode(self, data, /):
         if self.sparse:
             df = data.iloc[:, 1:]
@@ -1038,5 +1055,15 @@ class TripletEncoder(BaseEncoder):
             df = df.rename(columns={"level_1": "variable"})
         else:
             df = data
-        df = df.pivot_table(index="time", columns="variable", values="value", dropna=False)
-        return df[self.categories.categories]
+        df = df.pivot_table(
+            index="time", columns="variable", values="value", dropna=False
+        )
+
+        # re-add missing columns
+        for cat in self.categories.categories:
+            if cat not in df.columns:
+                df[cat] = float("nan")  # TODO: replace with pd.NA when supported
+
+        result = df[self.categories.categories]  # fix column order
+        result = result.astype(self.dtypes)
+        return result
