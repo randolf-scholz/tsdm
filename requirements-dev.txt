@@ -19,6 +19,7 @@ pydocstyle
 mypy
 types_setuptools
 types_toml
+pandas-stubs
 
 ##########
 # PyLint #
