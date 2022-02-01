@@ -146,10 +146,7 @@ class BaseTask(ABC, Generic[KeyType]):
     r"""Optional task specific preprocessor (applied before batching)."""
     postprocessor: Optional[ModularEncoder] = None
     r"""Optional task specific postprocessor (applied after batching)."""
-    dataset: DATASET
-    """The attached dataset."""
-    test_metric: Callable[..., Tensor]
-    """The metric to be used for evaluation."""
+
     # @property
     # @abstractmethod
     # def accumulation_function(self) -> Callable[[Tensor], Tensor]:
@@ -162,6 +159,16 @@ class BaseTask(ABC, Generic[KeyType]):
     #
     #     Should be something like ``["train", "valid", "test"]``
     #     """
+
+    @property
+    @abstractmethod
+    def test_metric(self) -> Callable[..., Tensor]:
+        r"""The metric to be used for evaluation."""
+
+    @property
+    @abstractmethod
+    def dataset(self) -> DATASET:
+        r"""The attached dataset."""
 
     @property
     @abstractmethod
