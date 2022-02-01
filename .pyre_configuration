@@ -1,6 +1,9 @@
 {
   "source_directories": [
-    "."
+    {
+      "import_root": ".",
+      "source": "tsdm"
+    }
   ],
-  "taint_models_path": "/home/rscholz/miniconda3/envs/kiwi/lib"
+  "taint_models_path": "/home/rscholz/Projects/KIWI/tsdm/venv/lib"
 }

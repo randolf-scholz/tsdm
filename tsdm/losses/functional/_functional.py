@@ -23,7 +23,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 @jit.script
-def nd(x: Tensor, xhat: Tensor, eps: float = 2 ** -24) -> Tensor:
+def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math::
@@ -57,7 +57,7 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2 ** -24) -> Tensor:
 
 
 @jit.script
-def nrmse(x: Tensor, xhat: Tensor, eps: float = 2 ** -24) -> Tensor:
+def nrmse(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math::

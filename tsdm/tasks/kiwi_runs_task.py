@@ -16,7 +16,7 @@ from sklearn.model_selection import ShuffleSplit
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import KIWI_RUNS, Dataset
-from tsdm.datasets.base import DatasetCollection
+from tsdm.datasets.torch.generic import DatasetCollection
 from tsdm.encoders.modular import (
     BaseEncoder,
     ChainedEncoder,

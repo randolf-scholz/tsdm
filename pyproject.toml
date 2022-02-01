@@ -133,16 +133,16 @@ python_version = "3.9"
 show_column_numbers = true
 show_error_codes = true
 warn_unused_ignores = true
-
+#mypy_path="/home/rscholz/GIT/CONTRIBUTING/pandas-stubs/third_party/3"
 [[tool.mypy.overrides]]
 module = [
-#    "h5py.*",
-#    "matplotlib.*",
+    "h5py.*",
+    "matplotlib.*",
     "modin.*",
-#    "numba.*",
-#    "pandas.*",
+    "numba.*",
+    "pandas.*",
     "sklearn.*",
-#    "scipy.*",
+    "scipy.*",
     "tqdm.*",
 ]
 ignore_missing_imports = true

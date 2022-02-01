@@ -1,16 +1,21 @@
 r"""Utility functions for string manipulation."""
 
+from __future__ import annotations
+
 __all__ = [
     # Functions
     "snake2camel",
     # "camel2snake",
     "repr_mapping",
     "repr_sequence",
+    "tensor_info",
 ]
 
 import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any, Optional, overload
+
+from torch import Tensor
 
 __logger__ = logging.getLogger(__name__)
 
@@ -47,16 +52,18 @@ def repr_mapping(
     obj: Mapping,
     pad: int = 2,
     maxitems: Optional[int] = 6,
-    repr_fun: Optional[Callable[..., str]] = None,
+    repr_fun: Callable[..., str] = repr,
     title: Optional[str] = None,
 ) -> str:
-    """Return a string representation of a mapping object.
+    r"""Return a string representation of a mapping object.
 
     Parameters
     ----------
     obj: Mapping
     pad: int
     maxitems: Optional[int] = 6
+    repr_fun: Callable[..., str] = repr
+    title: Optional[str] = repr,
 
     Returns
     -------
@@ -64,10 +71,8 @@ def repr_mapping(
     """
     padding = " " * pad
 
-    _to_string: Callable[..., str] = repr if repr_fun is None else repr_fun
-
     def to_string(x: Any) -> str:
-        return _to_string(x).replace("\n", "\n" + padding)
+        return repr_fun(x).replace("\n", "\n" + padding)
 
     max_key_length = max(len(str(key)) for key in obj.keys())
     items = list(obj.items())
@@ -98,14 +103,16 @@ def repr_sequence(
     obj: Sequence,
     pad: int = 2,
     maxitems: Optional[int] = 6,
-    repr_fun: Optional[Callable[..., str]] = None,
+    repr_fun: Callable[..., str] = repr,
 ) -> str:
-    """Return a string representation of a sequence object.
+    r"""Return a string representation of a sequence object.
 
     Parameters
     ----------
     obj: Sequence
     pad: int
+    maxitems: Optional[int] = 6
+    repr_fun: Callable[..., str] = repr
 
     Returns
     -------
@@ -113,10 +120,8 @@ def repr_sequence(
     """
     padding = " " * pad
 
-    _to_string = repr if repr_fun is None else repr_fun
-
     def to_string(x: Any) -> str:
-        return _to_string(x).replace("\n", "\n" + padding)
+        return repr_fun(x).replace("\n", "\n" + padding)
 
     if maxitems is None:
         maxitems = len(obj)
@@ -136,3 +141,8 @@ def repr_sequence(
     string += ")"
 
     return string
+
+
+def tensor_info(x: Tensor) -> str:
+    r"""Print useful information about Tensor."""
+    return f"{x.__class__.__name__}[{tuple(x.shape)}, {x.dtype}, {x.device.type}]"

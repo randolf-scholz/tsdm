@@ -11,7 +11,6 @@ __all__ = [
     # Types
     "IndexedArray",
     # Functions
-    "tensor_info",
 ]
 
 from collections.abc import Collection, Iterable, Mapping, Sized
@@ -23,6 +22,8 @@ from pandas import DataFrame, Index, Series
 from torch import Tensor
 from torch.utils.data import TensorDataset
 
+from tsdm.util.strings import tensor_info
+
 
 class _IndexMethodClone:
     r"""Clone .loc and similar methods to tensor-like object."""
@@ -32,8 +33,9 @@ class _IndexMethodClone:
         self.index = index
         self.index_method = getattr(self.index, method)
 
-    def __getitem__(self, key: Any) -> ArrayLike:
+    def __getitem__(self, key):
         idx = self.index_method[key]
+
         if isinstance(idx, Series):
             idx = idx.values
 
@@ -110,11 +112,6 @@ r"""Type Hint for IndexedArrays."""
 def is_indexed_array(x: Any) -> bool:
     r"""Test if Union[Series, DataFrame, TimeTensor]."""
     return isinstance(x, (DataFrame, Series, TimeTensor))
-
-
-def tensor_info(x: Tensor) -> str:
-    r"""Print useful information about Tensor."""
-    return f"{x.__class__.__name__}[{tuple(x.shape)}, {x.dtype}, {x.device.type}]"
 
 
 class AlignedTimeSeriesDataset(TensorDataset):

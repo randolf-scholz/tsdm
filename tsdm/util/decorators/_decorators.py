@@ -162,7 +162,7 @@ def timefun(
             start_time = perf_counter_ns()
             result = fun(*args, **kwargs)
             end_time = perf_counter_ns()
-            elapsed = (end_time - start_time) / 10 ** 9
+            elapsed = (end_time - start_time) / 10**9
             timefun_logger.log(loglevel, "%s executed in %.4f s", fun.__name__, elapsed)
         except (KeyboardInterrupt, SystemExit) as E:
             raise E

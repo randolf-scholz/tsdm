@@ -465,10 +465,10 @@ def skewpart(x: Tensor) -> Tensor:
 @jit.script
 def relsize_symmpart(kernel):
     r"""Relative magnitude of symmpart part."""
-    return torch.mean(symmpart(kernel) ** 2) / torch.mean(kernel ** 2)
+    return torch.mean(symmpart(kernel) ** 2) / torch.mean(kernel**2)
 
 
 @jit.script
 def relsize_skewpart(kernel):
     r"""Relative magnitude of skew-symmpart part."""
-    return torch.mean(skewpart(kernel) ** 2) / torch.mean(kernel ** 2)
+    return torch.mean(skewpart(kernel) ** 2) / torch.mean(kernel**2)
