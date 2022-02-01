@@ -15,6 +15,7 @@ import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any, Optional, overload
 
+from numpy.typing import ArrayLike
 from torch import Tensor
 
 __logger__ = logging.getLogger(__name__)
@@ -141,6 +142,23 @@ def repr_sequence(
     string += ")"
 
     return string
+
+
+def repr_array(obj: ArrayLike, title: Optional[str] = None) -> str:
+    """Return a string representation of a array object.
+
+    Parameters
+    ----------
+    obj: ArrayLike
+    title: Optional[str] = None
+
+    Returns
+    -------
+    str
+    """
+    if hasattr(obj, "shape"):
+        return type(obj).__name__ + "[" + str(obj.shape) + "]"
+    return f"[" + ", ".join(repr_array(x) for x in obj) + "]"
 
 
 def tensor_info(x: Tensor) -> str:

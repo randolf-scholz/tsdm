@@ -6,6 +6,8 @@ __all__ = [
     # "TimeSliceSampler",
     "SequenceSampler",
     "CollectionSampler",
+    "IntervalSampler",
+    "HierarchicalSampler",
 ]
 
 import logging
@@ -372,10 +374,7 @@ class HierarchicalSampler(Sampler):
         return repr_mapping(self.subsamplers)
 
 
-class IntervalSampler(
-    Sampler,
-    Generic[TimedeltaLike],
-):
+class IntervalSampler(Sampler, Generic[TimedeltaLike]):
     r"""Returns all intervals `[a, b]`.
 
     The intervals must satisfy:

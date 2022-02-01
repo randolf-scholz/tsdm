@@ -6,9 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/kiwi_runs.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/torch_datasets/kiwi_runs.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -246,7 +248,7 @@
       <workItem from="1643278173324" duration="3204000" />
       <workItem from="1643367082021" duration="1200000" />
       <workItem from="1643624950261" duration="167000" />
-      <workItem from="1643625131100" duration="24312000" />
+      <workItem from="1643625131100" duration="28779000" />
     </task>
     <servers />
   </component>
