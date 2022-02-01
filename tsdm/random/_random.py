@@ -144,7 +144,7 @@ def random_data(
         finfo = np.finfo(dtype)
         exp = rng.integers(low=finfo.minexp, high=finfo.maxexp, size=size)
         mant = rng.uniform(low=-2, high=+2, size=size)
-        result = (mant * 2 ** exp).astype(dtype)
+        result = (mant * 2**exp).astype(dtype)
     elif np.issubdtype(dtype, np.bool_):
         result = rng.choice(BOOLS, size=size)
     elif np.issubdtype(dtype, np.unicode_):

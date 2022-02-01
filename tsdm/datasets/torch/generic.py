@@ -1,5 +1,159 @@
 r"""Generic Dataset classes."""
 
+from __future__ import annotations
+
+__all__ = [
+    # Classes
+    "MappingDataset",
+    "DatasetCollection",
+]
+
 import logging
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from typing import Any, Optional
+
+from pandas import DataFrame, MultiIndex
+from torch.utils.data import Dataset as Torch_Dataset
+
+from tsdm.util.strings import repr_mapping
 
 __logger__ = logging.getLogger(__name__)
+
+
+class MappingDataset(Torch_Dataset, Mapping):
+    r"""Represents a Mapping[Key, Dataset].
+
+    ``ds[key]`` returns the dataset for the given key.
+    If the key is a tuple, tries to divert to the nested dataset.
+
+    ``ds[(key, subkey)]=ds[key][subkey]``
+    """
+
+    def __init__(self, data: Mapping[Any, Torch_Dataset], prepend_key: bool = False):
+        r"""Initialize the dataset.
+
+        Parameters
+        ----------
+        data: Mapping
+        prepend_key: bool
+            If True, the keys are prepended to the dataset.
+        """
+        super().__init__()
+        assert isinstance(data, Mapping)
+        if isinstance(data, Mapping):
+            self.index = data.keys()
+            self.data = data
+        self.prepend_key = prepend_key
+
+    def __iter__(self) -> Iterator:
+        r"""Iterate over the keys."""
+        return iter(self.index)
+
+    def __len__(self) -> int:
+        r"""Length of the dataset."""
+        return len(self.index)
+
+    def _lookup(self, key):
+        if not isinstance(key, tuple):
+            return self.data[key]
+        try:
+            outer = self.data[key[0]]
+            return outer[key[1:]]
+        except KeyError:
+            return self.data[key]
+
+    def __getitem__(self, key):
+        r"""Get the dataset for the given key."""
+        if self.prepend_key:
+            return key, self._lookup(key)
+        return self._lookup(key)
+
+    @staticmethod
+    def from_dataframe(
+        df: DataFrame, levels: Optional[list[str]] = None
+    ) -> MappingDataset:
+        """Create a MappingDataset from a DataFrame.
+
+        Parameters
+        ----------
+        df: DataFrame
+        levels: Optional[list[str]]
+            If given, the selected levels from the DataFrame's MultiIndex are used as keys.
+
+        Returns
+        -------
+        MappingDataset
+        """
+        if levels is not None:
+            mindex = df.index.to_frame()
+            subidx = MultiIndex.from_frame(mindex[levels])
+            index = subidx.unique()
+        else:
+            index = df.index
+
+        return MappingDataset({idx: df.loc[idx] for idx in index})
+
+    def __repr__(self):
+        r"""Representation of the dataset."""
+        return repr_mapping(self)  # , repr_fun=repr_array)
+
+
+# class TupleDataset(Torch_Dataset):
+#     r"""Sequential Dataset."""
+#
+#     def __init__(self, *tensors: Tensor, **named_tensors: Tensor):
+#         assert all(len(x) == len(tensors[0]) for x in tensors)
+#         self.tensors = tensors
+#
+#     def __len__(self):
+#         r"""Length of the dataset."""
+#         return len(self.tensors[0])
+#
+#     def __getitem__(self, idx):
+#         r"""Get the same slice from each tensor."""
+#         return tuple(x[idx] for x in self.tensors)
+
+
+class DatasetCollection(Mapping, Torch_Dataset):
+    r"""Represents a ``mapping[index → torch.Datasets]``.
+
+    All tensors must have a shared index,
+    in the sense that index.unique() is identical for all inputs.
+    """
+
+    dataset: dict[Any, Torch_Dataset]
+    """The dataset"""
+
+    def __init__(self, indexed_datasets: Mapping[Any, Torch_Dataset]):
+        super().__init__()
+        self.dataset = dict(indexed_datasets)
+        self.index = self.dataset.keys()
+        self.keys = self.dataset.keys  # type: ignore[assignment]
+        self.values = self.dataset.values  # type: ignore[assignment]
+        self.items = self.dataset.items  # type: ignore[assignment]
+
+    def __len__(self):
+        r"""Length of the dataset."""
+        return len(self.dataset)
+
+    def __getitem__(self, item):
+        r"""Hierarchical lookup."""
+        # test for hierarchical indexing
+        if isinstance(item, Sequence):
+            first, rest = item[0], item[1:]
+            if isinstance(first, (Iterable, slice)):
+                # pass remaining indices to sub-object
+                value = self.dataset[first]
+                return value[rest]
+
+        # no hierarchical indexing
+        return self.dataset[item]
+
+    def __iter__(self):
+        r"""Iterate over the dataset."""
+        for key in self.index:
+            yield self.dataset[key]
+
+    def __repr__(self):
+        r"""Representation of the dataset."""
+        return repr_mapping(self)

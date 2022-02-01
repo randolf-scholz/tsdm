@@ -6,9 +6,26 @@
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/kiwi_runs.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/torch_datasets/kiwi_runs.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.pyre_configuration" beforeDir="false" afterPath="$PROJECT_DIR$/.pyre_configuration" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/overload_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/overload_problem.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/base/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/base/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/torch/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/torch/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/torch/generic.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/torch/generic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/torch/timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/torch/timeseries.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/plot/plotting.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/plotting.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/random/_random.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/_random.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/_norms.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/_norms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/_util.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/dtypes.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/dtypes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,8 +35,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="Blank Requirements File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -51,7 +68,6 @@
     <setting file="file://$PROJECT_DIR$/tsdm/encoders/modular/torch.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/tsdm/datasets/electricity.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/datasets/in_silico_data.py" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/tsdm/datasets/base/torch_datasets.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/_util.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/bugs/__module__Missing.py" root0="SKIP_INSPECTION" />
   </component>
@@ -74,7 +90,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$USER_HOME$/GIT/CONTRIBUTING/pandas-stubs" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -90,11 +106,11 @@
       <recent name="$PROJECT_DIR$/tsdm/tasks" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tsdm/datasets/torch" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/tsdm/random" />
       <recent name="$PROJECT_DIR$/tsdm" />
       <recent name="$PROJECT_DIR$/tsdm/models" />
-      <recent name="$PROJECT_DIR$/tsdm/util" />
     </key>
   </component>
   <component name="RunManager" selected="Python.type_narrowing">
@@ -243,7 +259,11 @@
       <workItem from="1642760262912" duration="1754000" />
       <workItem from="1642953990947" duration="31729000" />
       <workItem from="1643041205938" duration="39000" />
-      <workItem from="1643160651506" duration="11736000" />
+      <workItem from="1643160651506" duration="12186000" />
+      <workItem from="1643278173324" duration="3204000" />
+      <workItem from="1643367082021" duration="1200000" />
+      <workItem from="1643624950261" duration="167000" />
+      <workItem from="1643625131100" duration="23006000" />
     </task>
     <servers />
   </component>

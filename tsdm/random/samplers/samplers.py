@@ -11,21 +11,39 @@ __all__ = [
 import logging
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from itertools import chain, count
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar, Union
 
 import numpy as np
 from numpy.random import permutation
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Interval, Series, Timedelta, Timestamp
+from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler
 
-from tsdm.datasets.base import DatasetCollection
+from tsdm.datasets.torch.generic import DatasetCollection
+from tsdm.util.strings import repr_mapping
+from tsdm.util.types import ValueType
 
 __logger__ = logging.getLogger(__name__)
 
 
 TimedeltaLike = TypeVar("TimedeltaLike", int, float, Timedelta)
 TimestampLike = TypeVar("TimestampLike", int, float, Timestamp)
+
+Boxed = Union[
+    Sequence[ValueType],
+    Mapping[int, ValueType],
+    Callable[[int], ValueType],
+]
+
+dt_type = Union[
+    TimedeltaLike,
+    Sequence[TimedeltaLike],
+    Mapping[int, TimedeltaLike],
+    Callable[[int], TimedeltaLike],
+]
+
+
 # class TimeSliceSampler(Sampler):
 #     """TODO: add class."""
 #
@@ -255,27 +273,112 @@ class CollectionSampler(Sampler):
         return self.subsamplers[key]
 
 
-V = TypeVar("V")
+# class MappingSampler(Sampler):
+#     r"""Sample from a Mapping of Datasets.
+#
+#     To be used in conjunction with :class:`tsdm.datasets.torch.MappingDataset`.
+#     """
+#
+#     def __init__(self, data_source: Mapping[Any, TorchDataset], shuffle: bool = True):
+#         super().__init__(data_source)
+#         self.data = data_source
+#         self.shuffle = shuffle
+#         self.index = list(data_source.keys())
+#
+#     def __len__(self) -> int:
+#         r"""Return the maximum allowed index."""
+#         return len(self.data)
+#
+#     def __iter__(self) -> Iterator[TorchDataset]:
+#         r"""Sample from the dataset."""
+#         if self.shuffle:
+#             perm = np.random.permutation(self.index)
+#         else:
+#             perm = self.index
+#
+#         for k in perm:
+#             yield self.data[k]
 
-Boxed = Union[
-    Sequence[V],
-    Mapping[int, V],
-    Callable[[int], V],
-]
 
-dt_type = Union[
-    TimedeltaLike,
-    Sequence[TimedeltaLike],
-    Mapping[int, TimedeltaLike],
-    Callable[[int], TimedeltaLike],
-]
+class HierarchicalSampler(Sampler):
+    r"""Samples a single random dataset from a collection of dataset.
+
+    Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
+    """
+
+    idx: Index
+    r"""The shared index."""
+    subsamplers: Mapping[Any, Sampler]
+    r"""The subsamplers to sample from the collection."""
+    early_stop: bool = False
+    r"""Whether to stop sampling when the index is exhausted."""
+    shuffle: bool = True
+    r"""Whether to sample in random order."""
+    sizes: Series
+    r"""The sizes of the subsamplers."""
+    partition: Series
+    r"""Contains each key a number of times equal to the size of the subsampler."""
+
+    def __init__(
+        self,
+        data_source: Mapping[Any, TorchDataset],
+        subsamplers: Mapping[Any, Sampler],
+        shuffle: bool = True,
+        early_stop: bool = False,
+    ):
+        super().__init__(data_source)
+        self.data = data_source
+        self.idx = data_source.keys()
+        self.subsamplers = dict(subsamplers)
+        self.sizes = Series({key: len(self.subsamplers[key]) for key in self.idx})
+        self.shuffle = shuffle
+        self.early_stop = early_stop
+
+        if early_stop:
+            partition = list(chain(*([key] * min(self.sizes) for key in self.idx)))
+        else:
+            partition = list(chain(*([key] * self.sizes[key] for key in self.idx)))
+        self.partition = Series(partition)
+
+    def __len__(self):
+        r"""Return the maximum allowed index."""
+        if self.early_stop:
+            return min(self.sizes) * len(self.subsamplers)
+        return sum(self.sizes)
+
+    def __iter__(self):
+        r"""Return indices of the samples.
+
+        When ``early_stop=True``, it will sample precisely min() * len(subsamplers) samples.
+        When ``early_stop=False``, it will sample all samples.
+        """
+        activate_iterators = {
+            key: iter(sampler) for key, sampler in self.subsamplers.items()
+        }
+
+        if self.shuffle:
+            perm = np.random.permutation(self.partition)
+        else:
+            perm = self.partition
+
+        for key in perm:
+            yield key, next(activate_iterators[key])
+
+    def __getitem__(self, key: Any) -> Sampler:
+        r"""Return the subsampler for the given key."""
+        return self.subsamplers[key]
+
+    def __repr__(self):
+        return repr_mapping(self.subsamplers)
 
 
 class IntervalSampler(
     Sampler,
+    Generic[TimedeltaLike],
 ):
-    """Returns all intervals `[a, b]` such that:
+    r"""Returns all intervals `[a, b]`.
 
+    The intervals must satisfy:
     - `a = t₀ + i⋅sₖ`
     - `b = t₀ + i⋅sₖ + Δtₖ`
     - `i, k ∈ ℤ`
@@ -284,23 +387,33 @@ class IntervalSampler(
     - `sₖ` is the stride corresponding to intervals of size `Δtₖ`
     """
 
+    offset: TimedeltaLike
+    deltax: dt_type
+    stride: dt_type
+    shuffle: bool
+    intervals: DataFrame
+
     @staticmethod
-    def _get_value(obj: Union[V, Boxed[V]], k: int) -> V:
+    def _get_value(
+        obj: Union[TimedeltaLike, Boxed[TimedeltaLike]], k: int
+    ) -> TimedeltaLike:
         if callable(obj):
             return obj(k)
         if isinstance(obj, Sequence):
+            return obj[k]
+        if isinstance(obj, Mapping):
             return obj[k]
         # Fallback: multiple!
         return obj
 
     def __init__(
         self,
-        xmin,
-        xmax,
+        xmin: TimedeltaLike,
+        xmax: TimedeltaLike,
         deltax: dt_type,
         stride: Optional[dt_type] = None,
         levels: Optional[Sequence[int]] = None,
-        offset: Optional[dt_type] = None,
+        offset: Optional[TimedeltaLike] = None,
         multiples: bool = True,
         shuffle: bool = True,
     ) -> None:
@@ -323,7 +436,7 @@ class IntervalSampler(
                 levels = [k for k in deltax.keys() if deltax[k] <= delta_max]
             elif isinstance(deltax, Sequence):
                 levels = [k for k in range(len(deltax)) if deltax[k] <= delta_max]
-            elif isinstance(deltax, Callable):
+            elif callable(deltax):
                 levels = []
                 for k in count():
                     dt = self._get_value(deltax, k)
@@ -395,12 +508,23 @@ def grid(
     delta: TimedeltaLike,
     xoffset: Optional[TimestampLike] = None,
 ) -> list[int]:
-    r"""Computes `\{k∈ℤ∣ xₘᵢₙ ≤ x₀+k⋅Δ ≤ xₘₐₓ\}`.
+    r"""Compute `\{k∈ℤ∣ xₘᵢₙ ≤ x₀+k⋅Δ ≤ xₘₐₓ\}`.
 
-    Special case: if Δ=0, returns [0]
+    That is, a list of all integers such that `x₀+k⋅Δ` is in the interval `[x₀, xₘₐₓ]`.
+    Special case: if `Δ=0`, returns ``[0]``
+
+    Parameters
+    ----------
+    xmin
+    xmax
+    delta
+    xoffset
+
+    Returns
+    -------
+    list[int]
     """
-
-    xo = xmin if xoffset is None else xoffset
+    xoffset = xmin if xoffset is None else xoffset
     zero = type(delta)(0)
 
     if delta == zero:
@@ -411,12 +535,12 @@ def grid(
 
     a = xmin - xoffset
     b = xmax - xoffset
-    kmax = b // delta
-    kmin = a // delta
+    kmax = int(b // delta)  # need int() in case both are floats
+    kmin = int(a // delta)
 
-    assert xmin <= xo + kmin * delta
-    assert xmin > xo + (kmin - 1) * delta
-    assert xmax >= xo + kmax * delta
-    assert xmax < xo + (kmax + 1) * delta
+    assert xmin <= xoffset + kmin * delta
+    assert xmin > xoffset + (kmin - 1) * delta
+    assert xmax >= xoffset + kmax * delta
+    assert xmax < xoffset + (kmax + 1) * delta
 
     return list(range(kmin, kmax + 1))

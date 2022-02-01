@@ -6,6 +6,8 @@ Contains encoders in modular form.
   - See :mod:`tsdm.encoders.functional` for functional implementations.
 """
 
+from __future__ import annotations
+
 __all__ = [
     # ABC
     "BaseEncoder",
@@ -42,6 +44,9 @@ from torch import Tensor
 from tsdm.datasets import TimeTensor
 
 __logger__ = logging.getLogger(__name__)
+
+PandasObject = Union[Index, Series, DataFrame]
+r"""Type Hint for pandas objects."""
 
 
 def apply_along_axes(
@@ -269,7 +274,7 @@ class DateTimeEncoder(BaseEncoder):
 
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
-    round: str = "s"
+    basefreq: str = "s"
     r"""The frequency the decoding should be rounded to."""
     offset: Timestamp
     r"""The starting point of the timeseries."""
@@ -282,7 +287,7 @@ class DateTimeEncoder(BaseEncoder):
     freq: Optional[Any] = None
     r"""The frequency attribute in case of DatetimeIndex."""
 
-    def __init__(self, unit: str = "s", round: str = "s"):
+    def __init__(self, unit: str = "s", basefreq: str = "s"):
         r"""Initialize the parameters.
 
         Parameters
@@ -291,7 +296,7 @@ class DateTimeEncoder(BaseEncoder):
         """
         super().__init__()
         self.unit = unit
-        self.round = round
+        self.basefreq = basefreq
 
     def fit(self, data: Union[Series, DatetimeIndex]):
         r"""Store the offset."""
@@ -318,10 +323,10 @@ class DateTimeEncoder(BaseEncoder):
         converted = pandas.to_timedelta(timedeltas, unit=self.unit)
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
         if self.kind == Series:
-            return datetimes.round(self.round)
-        return DatetimeIndex(
+            return datetimes.round(self.basefreq)
+        return DatetimeIndex(  # pylint: disable=no-member
             datetimes, freq=self.freq, name=self.name, dtype=self.dtype
-        ).round(self.round)
+        ).round(self.basefreq)
 
 
 class IdentityEncoder(BaseEncoder):
@@ -346,7 +351,7 @@ class DataFrameEncoder(BaseEncoder):
     r"""Encoders for the columns."""
     index_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]] = None
     r"""Optional Encoder for the index."""
-    colspec: Series = None
+    colspec: Series
     r"""The columns-specification of the DataFrame."""
     encode_index: bool
     r"""Whether to encode the index."""
@@ -424,7 +429,7 @@ class DataFrameEncoder(BaseEncoder):
             encoders = Series(self.column_encoders.values(), name="encoder")
             partitions = Series(range(len(encoders)), name="partition")
 
-            _columns = defaultdict(list)
+            _columns: dict = defaultdict(list)
             for key, encoder in self.column_encoders.items():
                 if isinstance(key, str):
                     _columns[encoder] = key
@@ -464,8 +469,8 @@ class DataFrameEncoder(BaseEncoder):
 
         if isinstance(self.column_encoders, Mapping):
             # check if cols are a proper partition.
-            keys = set(df.columns)
-            _keys = set(self.column_encoders.keys())
+            # keys = set(df.columns)
+            # _keys = set(self.column_encoders.keys())
             # assert keys <= _keys, f"Missing encoders for columns {keys - _keys}!"
             # assert (
             #     keys >= _keys
@@ -616,11 +621,11 @@ class Standardizer(BaseEncoder):
         r"""Pretty print."""
         return f"{self.__class__.__name__}(" + f"{list(self.axis)}" + ")"
 
-
-    def __getitem__(self, item):
-        return Standardizer(mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:])
-
-
+    def __getitem__(self, item: Any) -> Standardizer:
+        r"""Return a slice of the Standarsizer."""
+        return Standardizer(
+            mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:]
+        )
 
 
 class MinMaxScaler(BaseEncoder):
@@ -757,40 +762,42 @@ class MinMaxScaler(BaseEncoder):
 
 
 class ConcatEncoder(BaseEncoder):
+    r"""Concatenate multiple encoders."""
 
     lengths: list[int]
     numdims: list[int]
     axis: int
     maxdim: int
 
-    def __init__(self, axis: int = 0):
-        """Concatenate tensors along the specified axis.
+    def __init__(self, axis: int = 0) -> None:
+        r"""Concatenate tensors along the specified axis.
 
         Parameters
         ----------
-        axis
-        framework
+        axis: int
         """
         super().__init__()
         self.axis = axis
 
     def fit(self, data):
+        r"""Fit to the data."""
         self.numdims = [d.ndim for d in data]
         self.maxdim = max(self.numdims)
+        # pad dimensions if necessary
         data = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
+        # store the lengths of the slices
         self.lengths = [x.shape[self.axis] for x in data]
 
     def encode(self, data, /):
+        r"""Encode the input."""
         return torch.cat(
             [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], axis=self.axis
         )
 
     def decode(self, data, /):
+        r"""Decode the input."""
         result = torch.split(data, self.lengths, dim=self.axis)
         return tuple(x.squeeze() for x in result)
-
-
-PandasObject = Union[Index, Series, DataFrame]
 
 
 class TensorEncoder(BaseEncoder):
@@ -818,7 +825,7 @@ class TensorEncoder(BaseEncoder):
         self.device = torch.device("cpu") if device is None else device
 
         if names is not None:
-            self.return_type = namedtuple("namedtuple", names)
+            self.return_type = namedtuple("namedtuple", names)  # type: ignore[misc]
 
     def fit(self, *data: PandasObject):
         r"""Fit to the data."""
@@ -832,7 +839,7 @@ class TensorEncoder(BaseEncoder):
         #         dtype = item.dtype
 
     @overload
-    def encode(self, data: PandasObject) -> Tensor:
+    def encode(self, data: PandasObject) -> Tensor:  # type: ignore[misc]
         ...
 
     @overload
@@ -842,7 +849,7 @@ class TensorEncoder(BaseEncoder):
     def encode(self, data):
         r"""Convert each inputs to tensor."""
         if isinstance(data, tuple):
-            return self.return_type(*(self.encode(x) for x in data))
+            return self.return_type(self.encode(x) for x in data)
         return torch.tensor(data.values, device=self.device, dtype=self.dtype)
 
     @overload
@@ -857,7 +864,7 @@ class TensorEncoder(BaseEncoder):
         r"""Convert each input from tensor to numpy."""
         if isinstance(data, tuple):
             return self.return_type(*(self.decode(x) for x in data))
-        return tensor.cpu().numpy()
+        return data.cpu().numpy()
 
     def __repr__(self):
         r"""Pretty print."""
@@ -1037,11 +1044,30 @@ class PositionalEncoder(BaseEncoder):
 
 
 class TripletEncoder(BaseEncoder):
-    def __init__(self, sparse: bool = True):
+    r"""Encode the data into triplets."""
+
+    categories: pd.CategoricalDtype
+    r"""The stored categories."""
+    dtypes: Series
+    r"""The original dtypes."""
+
+    def __init__(self, sparse: bool = True) -> None:
+        r"""Initialize the encoder.
+
+        Parameters
+        ----------
+        sparse: bool = True
+        """
         super().__init__()
         self.sparse = sparse
 
-    def fit(self, data):
+    def fit(self, data: DataFrame) -> None:
+        r"""Fit the encoder.
+
+        Parameters
+        ----------
+        data
+        """
         self.categories = pd.CategoricalDtype(data.columns)
         self.dtypes = data.dtypes
         # result = data.melt(ignore_index=False)
@@ -1051,7 +1077,8 @@ class TripletEncoder(BaseEncoder):
         # result[variable] = result[variable].astype(pd.StringDtype())
         # self.categories = pd.CategoricalDtype(result[variable].unique())
 
-    def encode(self, df):
+    def encode(self, df: DataFrame) -> DataFrame:
+        r"""Encode the data."""
         result = df.melt(ignore_index=False).dropna()
         # observed = result["value"].notna()
         # result = result[observed]
@@ -1068,7 +1095,8 @@ class TripletEncoder(BaseEncoder):
             result, columns=["variable"], sparse=True, prefix="", prefix_sep=""
         )
 
-    def decode(self, data, /):
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        r"""Decode the data."""
         if self.sparse:
             df = data.iloc[:, 1:]
             df = df[df == 1].stack().reset_index(level=-1)
