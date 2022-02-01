@@ -3,6 +3,11 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+__all__ = [
+    # Classes
+    "KIWI_RUNS_TASK",
+]
+
 import logging
 import os
 from copy import deepcopy
@@ -194,7 +199,7 @@ class KIWI_RUNS_TASK(BaseTask):
         weights.index.name = "col"
         self.loss_weights = weights
         w = torch.tensor(self.loss_weights["weight"])
-        self.test_metric = WRMSE(w)  # type: ignore[assignment]
+        self.test_metric = WRMSE(w)  # type: ignore[misc]
 
     @cached_property
     def split_idx(self) -> DataFrame:
