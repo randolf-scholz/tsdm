@@ -6,12 +6,14 @@ r"""Submodule containing general purpose decorators.
 __all__ = [
     # Classes
     # Functions
-    "autojit",
     "decorator",
     "sphinx_value",
     "timefun",
     "trace",
     "vectorize",
+    # Class Decorators
+    "autojit",
+    "IterItems",
     # Exceptions
     "DecoratorError",
 ]
@@ -19,16 +21,18 @@ __all__ = [
 import gc
 import logging
 import os
+from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
-from typing import Any, Callable, Union
+from typing import Any, Union, overload
 
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import ObjectType, ReturnType
+from tsdm.util.types import ObjectType, ReturnType, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -161,7 +165,7 @@ def timefun(
             start_time = perf_counter_ns()
             result = fun(*args, **kwargs)
             end_time = perf_counter_ns()
-            elapsed = (end_time - start_time) / 10 ** 9
+            elapsed = (end_time - start_time) / 10**9
             timefun_logger.log(loglevel, "%s executed in %.4f s", fun.__name__, elapsed)
         except (KeyboardInterrupt, SystemExit) as E:
             raise E
@@ -229,7 +233,7 @@ def trace(func: Callable) -> Callable:
     return wrapper
 
 
-def autojit(base_class: type[nn.Module]) -> type[nn.Module]:
+def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
     r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
 
     Makes it so that
@@ -264,17 +268,20 @@ def autojit(base_class: type[nn.Module]) -> type[nn.Module]:
     assert issubclass(base_class, nn.Module)
 
     @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type: ignore
+    class WrappedClass(base_class):  # type: ignore  # pylint: disable=too-few-public-methods
         r"""A simple Wrapper."""
 
-        # noinspection PyArgumentList
-        def __new__(cls, *args, **kwargs):
-            instance = base_class(*args, **kwargs)
+        def __new__(cls, *args: Any, **kwargs: Any) -> nnModuleType:  # type: ignore[misc]
+            # Note: If __new__() does not return an instance of cls,
+            # then the new instance's __init__() method will not be invoked.
+            instance: nnModuleType = base_class(*args, **kwargs)
 
-            if conf.autojit:  # pylint: disable=no-member
-                return jit.script(instance)
+            if conf.autojit:
+                scripted: nnModuleType = jit.script(instance)
+                return scripted
             return instance
 
+    assert issubclass(WrappedClass, base_class)
     return WrappedClass
 
 
@@ -363,3 +370,39 @@ def vectorize(
 # def exclusive_args(args: tuple[str, ...],
 # allowed: Union[int, tuple[int, int], list[int], list[tuple[str, ...]]]):
 #     pass
+
+
+@overload
+def IterItems(obj: type[ObjectType]) -> type[ObjectType]:
+    ...
+
+
+@overload
+def IterItems(obj: ObjectType) -> ObjectType:
+    ...
+
+
+def IterItems(obj):
+    r"""Wrap a class such that ``__getitem__`` returns (key, value) pairs."""
+    if isinstance(obj, type):
+        base_class = obj
+    else:
+        base_class = type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):
+        r"""A simple Wrapper."""
+
+        def __getitem__(self, key: Any) -> tuple[Any, Any]:
+            r"""Get the item from the dataset."""
+            return key, super().__getitem__(key)
+
+        def __repr__(self) -> str:
+            r"""Representation of the dataset."""
+            return r"IterItems@" + super().__repr__()
+
+    if isinstance(obj, type):
+        return WrappedClass
+    obj = deepcopy(obj)
+    obj.__class__ = WrappedClass
+    return obj

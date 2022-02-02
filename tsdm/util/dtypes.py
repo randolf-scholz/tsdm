@@ -38,15 +38,15 @@ r"""Represents arbitrary time type."""
 
 
 PRECISION: Final[dict] = {
-    16: 2 ** -11,
-    32: 2 ** -24,
-    64: 2 ** -53,
-    torch.float16: 2 ** -11,
-    torch.float32: 2 ** -24,
-    torch.float64: 2 ** -53,
-    np.float16: 2 ** -11,
-    np.float32: 2 ** -24,
-    np.float64: 2 ** -53,
+    16: 2**-11,
+    32: 2**-24,
+    64: 2**-53,
+    torch.float16: 2**-11,
+    torch.float32: 2**-24,
+    torch.float64: 2**-53,
+    np.float16: 2**-11,
+    np.float32: 2**-24,
+    np.float64: 2**-53,
 }
 """Maps precision to the corresponding precision factor."""
 

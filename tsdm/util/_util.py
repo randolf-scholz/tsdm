@@ -23,12 +23,12 @@ __all__ = [
 ]
 
 import os
-from collections.abc import Collection, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from datetime import datetime
 from functools import partial
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Callable, Iterable, NamedTuple, Union, overload
+from typing import Any, NamedTuple, Union, overload
 
 import torch
 from torch import Tensor, jit
@@ -323,7 +323,7 @@ def initialize_from(
 
     # check that obj is a class, but not metaclass or instance.
     if isinstance(obj, type) and not issubclass(obj, type):
-        return obj(**kwargs)  # type: ignore[call-arg]
+        return obj(**kwargs)
     # if it is function, fix kwargs
     return partial(obj, **kwargs)
 
@@ -465,10 +465,10 @@ def skewpart(x: Tensor) -> Tensor:
 @jit.script
 def relsize_symmpart(kernel):
     r"""Relative magnitude of symmpart part."""
-    return torch.mean(symmpart(kernel) ** 2) / torch.mean(kernel ** 2)
+    return torch.mean(symmpart(kernel) ** 2) / torch.mean(kernel**2)
 
 
 @jit.script
 def relsize_skewpart(kernel):
     r"""Relative magnitude of skew-symmpart part."""
-    return torch.mean(skewpart(kernel) ** 2) / torch.mean(kernel ** 2)
+    return torch.mean(skewpart(kernel) ** 2) / torch.mean(kernel**2)

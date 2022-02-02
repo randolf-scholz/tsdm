@@ -13,6 +13,7 @@ __all__ = [
     "Q_Quantile",
     "Q_Quantile_Loss",
     "WRMSE",
+    "RMSE",
 ]
 
 
@@ -23,7 +24,7 @@ import numpy as np
 import torch
 from torch import Tensor, nn
 
-from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
+from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
 
 __logger__ = logging.getLogger(__name__)
 
@@ -207,3 +208,28 @@ class WRMSE(nn.Module):
         with np.printoptions(precision=2):
             weights = self.w.cpu().numpy()
             return f"{self.__class__.__name__}(\n" + repr(weights) + "\n)"
+
+
+class RMSE(nn.Module):
+    r"""Root Mean Square Error."""
+
+    def forward(
+        self,
+        x: Tensor,
+        xhat: Tensor,
+    ) -> Tensor:
+        r"""Compute the RMSE.
+
+        .. math::
+            𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[|x - x̂|^2]}
+
+        Parameters
+        ----------
+        x: Tensor,
+        xhat: Tensor,
+
+        Returns
+        -------
+        Tensor
+        """
+        return rmse(x, xhat)

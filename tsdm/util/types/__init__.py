@@ -6,12 +6,14 @@ __all__ = [
     # Type Variables
     "ObjectType",
     "ReturnType",
+    "nnModuleType",
     # Types
-    "LookupTable",
-    "PathType",
-    "NullableNestedType",
-    "NestedType",
     "KeyType",
+    "LookupTable",
+    "NestedType",
+    "NullableNestedType",
+    "PathType",
+    "ValueType",
 ]
 
 import logging
@@ -25,6 +27,8 @@ from tsdm.util.types._types import (
     ObjectType,
     PathType,
     ReturnType,
+    ValueType,
+    nnModuleType,
 )
 
 __logger__ = logging.getLogger(__name__)
