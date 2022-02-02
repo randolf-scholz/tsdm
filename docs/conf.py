@@ -56,7 +56,7 @@ release = version
 
 extensions = [
     "sphinx.ext.autodoc",
-    # "sphinx.ext.autosummary",
+    "sphinx.ext.autosummary",
     "sphinx.ext.coverage",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -67,8 +67,6 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx_copybutton",
 ]
-
-
 
 # The name of a reST role (builtin or Sphinx extension) to use as the default role, that is,
 # for text marked up `like this`. This can be set to 'py:obj' to make `filter` a cross-reference
@@ -152,7 +150,7 @@ autoapi_generate_api_docs = True
 autoapi_options = [
     "members",
     "undoc-members",
-    "private-members",
+    # "private-members",
     "show-inheritance",
     "show-module-summary",
     "special-members",

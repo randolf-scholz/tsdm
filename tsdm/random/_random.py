@@ -137,14 +137,14 @@ def random_data(
     rng = np.random.default_rng()
 
     if np.issubdtype(dtype, np.integer):
-        info = np.iinfo(dtype)
-        data = rng.integers(low=info.min, high=info.max, size=size)
+        iinfo = np.iinfo(dtype)
+        data = rng.integers(low=iinfo.min, high=iinfo.max, size=size)
         result = data.astype(dtype)
-    elif np.issubdtype(dtype, np.floating):
-        info = np.finfo(dtype)  # type: ignore
-        exp = rng.integers(low=info.minexp, high=info.maxexp, size=size)
+    elif np.issubdtype(dtype, np.inexact):
+        finfo = np.finfo(dtype)
+        exp = rng.integers(low=finfo.minexp, high=finfo.maxexp, size=size)
         mant = rng.uniform(low=-2, high=+2, size=size)
-        result = (mant * 2 ** exp).astype(dtype)
+        result = (mant * 2**exp).astype(dtype)
     elif np.issubdtype(dtype, np.bool_):
         result = rng.choice(BOOLS, size=size)
     elif np.issubdtype(dtype, np.unicode_):

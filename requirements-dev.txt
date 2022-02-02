@@ -1,0 +1,93 @@
+#################
+# Documentation #
+#################
+sphinx
+sphinx-rtd-theme
+sphinx-autoapi
+
+#####################
+# Linting & Testing #
+#####################
+black
+isort
+pycodestyle
+pydocstyle
+
+########
+# MyPy #
+########
+mypy
+types_setuptools
+types_toml
+
+##########
+# PyLint #
+##########
+pylint
+pylint-gitlab
+
+##########
+# Pytest #
+##########
+pytest
+pytest-cov
+pytest-rerunfailures
+
+#########
+# TYPES #
+#########
+types-PyYAML
+types-backports
+types-protobuf
+types-pyOpenSSL
+types-redis
+types-requests
+types-setuptools
+types-six
+types-tabulate
+types-toml
+types-futures
+types-cryptography
+types-enum34
+types-ipaddress
+
+##########
+# flake8 #
+##########
+flake8                 # Wrapper for PyFlakes and pycodestyle
+flake8-annotations     # ANN:  Flake8 Type Annotation Checking
+flake8-black           # BLK:  Flake8 plugin to run black for checking Python coding style
+flake8-bugbear         # B,B9: A plugin for Flake8 finding likely bugs and design problems in your program
+flake8-comprehensions  # C400: A flake8 plugin to help you write better list/set/dict comprehensions
+flake8-docstrings      # D:    A plugin to flake8 to include checks provided by pep257
+flake8-import-order    # I:    Flake8 plugin that checks import order against various Python Style Guides
+flake8-mutable         # M:    flake8 extension for mutable default arguments
+flake8-nb              # E, W: flake8 checking for jupyter notebooks
+flake8-pyi             # Y:    A plugin for Flake8 that
+flake8-rst             # RST:  Allows run flake8 on code snippets in docstrings or RST files
+flake8-rst-docstrings  # RST:  flake8 plugin to validate Python docstrings as reStructuredText (RST)
+
+##############
+# Deployment #
+##############
+setuptools
+twine
+wheel
+
+#####################
+# tsdm dependencies #
+#####################
+# h5py>=3.4.0
+# matplotlib>=3.4.3
+# modin>=0.11.0
+# numba>=0.53.1
+# numpy>=1.21.2
+# pandas>=1.3.3
+# pyyaml>=5.4.1
+# ray>=1.6.0
+# scikit-learn>=1.0
+# scipy>=1.7.1
+# setuptools>=58.0.4
+# tables>=3.6.0
+# tqdm>=4.62.3
+# xarray>=0.19.0

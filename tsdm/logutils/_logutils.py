@@ -295,7 +295,7 @@ def compute_metrics(
                 raise ValueError(metric)
         return results
 
-    for name, metric in metrics.items():  # type: ignore
+    for name, metric in metrics.items():
         if isinstance(metric, nn.Module):
             results[name] = metric(targets, predics)
         elif isinstance(metric, type) and issubclass(metric, nn.Module):

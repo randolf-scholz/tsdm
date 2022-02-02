@@ -3,20 +3,27 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+__all__ = [
+    # Classes
+    "KIWI_RUNS_TASK",
+]
+
 import logging
 import os
+from collections.abc import Callable
 from copy import deepcopy
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, Optional
 
 import torch
-from pandas import DataFrame, Series
+from pandas import DataFrame, MultiIndex, Series
 from sklearn.model_selection import ShuffleSplit
+from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
-from tsdm.datasets import KIWI_RUNS, Dataset
-from tsdm.datasets.base import DatasetCollection
+from tsdm.datasets import KIWI_RUNS
+from tsdm.datasets.torch.generic import DatasetCollection
 from tsdm.encoders.modular import (
     BaseEncoder,
     ChainedEncoder,
@@ -110,12 +117,14 @@ class KIWI_RUNS_TASK(BaseTask):
 
         dataloader_kwargs = {} if dataloader_kwargs is None else dataloader_kwargs
 
+        cpus: int = (os.cpu_count() or 0) // 2
+
         self.dataloader_kwargs = {
             "pin_memory": True,
-            "num_workers": max(1, (os.cpu_count() or 0) // 2 - 2),
+            "num_workers": max(1, min(cpus, 4)),
         } | dataloader_kwargs
 
-        self.dataset: Dataset = KIWI_RUNS()
+        # setup dataset
         self.units: DataFrame = self.dataset.units
         self.metadata: DataFrame = self.dataset.metadata.drop([355, 482])
         self.timeseries: DataFrame = self.dataset.timeseries.drop([355, 482])
@@ -190,8 +199,17 @@ class KIWI_RUNS_TASK(BaseTask):
         weights["normalized"] = weights["weight"] / weights["weight"].sum()
         weights.index.name = "col"
         self.loss_weights = weights
+
+    @cached_property
+    def dataset(self) -> KIWI_RUNS:
+        r"""Return the cached dataset."""
+        return KIWI_RUNS()
+
+    @cached_property
+    def test_metric(self) -> Callable[..., Tensor]:
+        r"""The target metric."""
         w = torch.tensor(self.loss_weights["weight"])
-        self.test_metric = WRMSE(w)  # type: ignore[assignment]
+        return WRMSE(w)
 
     @cached_property
     def split_idx(self) -> DataFrame:
@@ -213,8 +231,51 @@ class KIWI_RUNS_TASK(BaseTask):
         return splits.astype("string").astype("category")
 
     @cached_property
+    def split_idx_sparse(self) -> DataFrame:
+        r"""Return sparse table with indices for each split.
+
+        Returns
+        -------
+        DataFrame[bool]
+        """
+        df = self.split_idx
+        columns = df.columns
+
+        # get categoricals
+        categories = {
+            col: df[col].astype("category").dtype.categories for col in columns
+        }
+
+        if isinstance(df.columns, MultiIndex):
+            index_tuples = [
+                (*col, cat)
+                for col, cats in zip(columns, categories)
+                for cat in categories[col]
+            ]
+            names = df.columns.names + ["partition"]
+        else:
+            index_tuples = [
+                (col, cat)
+                for col, cats in zip(columns, categories)
+                for cat in categories[col]
+            ]
+            names = [df.columns.name, "partition"]
+
+        new_columns = MultiIndex.from_tuples(index_tuples, names=names)
+        result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
+
+        if isinstance(df.columns, MultiIndex):
+            for col in new_columns:
+                result[col] = df[col[:-1]] == col[-1]
+        else:
+            for col in new_columns:
+                result[col] = df[col[0]] == col[-1]
+
+        return result
+
+    @cached_property
     def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
-        """Return a subset of the data corresponding to the split.
+        r"""Return a subset of the data corresponding to the split.
 
         Returns
         -------
@@ -315,18 +376,6 @@ class KIWI_RUNS_TASK(BaseTask):
         for idx, slc in ts.groupby(["run_id", "experiment_id"]):
             T, X = self.preprocessor.encode(slc.reset_index(level=[0, 1], drop=True))
             datasets[idx] = TensorDataset(T, X)
-
-        # T, X = self.preprocessor.transform(ts.reset_index(level=[0, 1], drop=True))
-        #
-        # # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # # dtype = torch.float32
-        # # M = torch.tensor(md, device=device, dtype=dtype)
-        # ts = ts.reset_index(level=2)  # <- crucial! we need to make sure index is same.
-        # shared_index = md.index
-        # masks = {idx: (ts.index == idx) for idx in shared_index}
-        # dataset = {
-        #     idx: TensorDataset(T[masks[idx]], X[masks[idx]]) for idx in shared_index
-        # }
 
         dataset = DatasetCollection(datasets)
 

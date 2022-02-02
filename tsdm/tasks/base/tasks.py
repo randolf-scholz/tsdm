@@ -88,9 +88,9 @@ __all__ = [
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Callable, Generic, Optional
+from typing import Any, Generic, Optional
 
 import torch
 from torch import Tensor
@@ -146,32 +146,21 @@ class BaseTask(ABC, Generic[KeyType]):
     r"""Optional task specific preprocessor (applied before batching)."""
     postprocessor: Optional[ModularEncoder] = None
     r"""Optional task specific postprocessor (applied after batching)."""
-    dataset: DATASET
-    """The attached dataset."""
-    test_metric: Callable[..., Tensor]
-    """The metric to be used for evaluation."""
-    # @property
-    # @abstractmethod
-    # def accumulation_function(self) -> Callable[[Tensor], Tensor]:
-    #     r"""Accumulates residuals into loss - usually mean or sum."""
 
-    # @property
-    # @abstractmethod
-    # def test_metric(self) -> Callable[..., Tensor]:
-    #     r"""The target metric.
-    #
-    #     Should be something like ``["train", "valid", "test"]``
-    #     """
+    @property
+    @abstractmethod
+    def test_metric(self) -> Callable[..., Tensor]:
+        r"""The metric to be used for evaluation."""
+
+    @property
+    @abstractmethod
+    def dataset(self) -> DATASET:
+        r"""Return the cached dataset associated with the task."""
 
     @property
     @abstractmethod
     def index(self) -> Sequence[KeyType]:
         r"""List of index."""
-
-    # @property
-    # @abstractmethod
-    # def dataset(self) -> DATASET:
-    #     r"""Cache the dataset."""
 
     @property
     @abstractmethod
