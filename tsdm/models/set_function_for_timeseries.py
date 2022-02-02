@@ -34,6 +34,8 @@ class SetFuncTS(nn.Module):
       | https://proceedings.mlr.press/v119/horn20a.html
     - https://github.com/BorgwardtLab/Set_Functions_for_Time_Series
     """
+    # BUFFER
+    dummy: Tensor
 
     def __init__(
         self,
@@ -59,6 +61,7 @@ class SetFuncTS(nn.Module):
             dim_keys + input_size + dim_time - 1, dim_vals, latent_size
         )
         self.head = MLP(latent_size, output_size)
+        self.register_buffer("dummy", torch.zeros(1))
 
     @jit.export
     def forward(self, t: Tensor, v: Tensor, m: Tensor) -> Tensor:
@@ -81,6 +84,10 @@ class SetFuncTS(nn.Module):
         -------
         Tensors [F]
         """
+        t = t.to(device=self.dummy.device)
+        v = v.to(device=self.dummy.device)
+        m = m.to(device=self.dummy.device)
+
         time_features = self.time_encoder(t)
 
         if v.ndim < m.ndim:

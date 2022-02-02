@@ -7,8 +7,8 @@ __all__ = [
     # Classes
     "KIWI_FINAL_PRODUCT",
 ]
-
 import logging
+import os
 from functools import cached_property
 from itertools import product
 from typing import Any, Callable, Literal, NamedTuple, Optional
@@ -103,7 +103,6 @@ def get_time_table(
 
     for idx, slc in ts.groupby(level=[0, 1]):
         slc = slc.reset_index(level=[0, 1], drop=True)
-        # display(slc)
         t_induction = get_induction_time(slc)
         t_target = get_final_product(slc, target=target)
         if pd.isna(t_induction):
@@ -139,6 +138,8 @@ class KIWI_FINAL_PRODUCT(BaseTask):
     r"""The whole timeseries data."""
     metadata: DataFrame
     r"""The metadata."""
+    dataloader_kwargs: dict
+    r"""The dataloader kwargs."""
 
     def __init__(
         self,
@@ -150,6 +151,13 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         collate_fn: Optional[Callable] = None,
     ) -> None:
         super().__init__()
+
+        cpus: int = (os.cpu_count() or 0) // 2
+
+        self.dataloader_kwargs = {
+            "pin_memory": False,
+            "num_workers": max(1, min(cpus, 4)),
+        }
 
         # Setup Dataset, drop runs that don't work for this task.
         dataset = self.dataset
@@ -282,7 +290,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
             timeseries = self.timeseries.reset_index(level=2).loc[idx]
             timeseries = timeseries.set_index("measurement_time", append=True)
             metadata = self.metadata.loc[idx]
-            splits[key] = (timeseries, metadata)
+            splits[key] = timeseries, metadata
             # splits[key] = Split(key[0], key[1], timeseries, metadata)
         return splits
 
@@ -352,7 +360,16 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
         # Construct the dataloader
         dataloader = DataLoader(
-            DS, sampler=sampler, collate_fn=self.collate_fn, batch_size=batch_size
+            DS,
+            sampler=sampler,
+            batch_size=batch_size,
+            **(
+                self.dataloader_kwargs
+                | {
+                    "collate_fn": self.collate_fn,
+                }
+                | kwargs
+            ),
         )
         return dataloader
 
