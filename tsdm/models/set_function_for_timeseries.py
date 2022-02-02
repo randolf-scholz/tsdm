@@ -119,7 +119,7 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward_tuple(self, t: tuple[Tensor, Tensor, Tensor]) -> Tensor:
-        r"""Signature: `(∗V, T), (*V, D), (*V, K) → (..., F)."""
+        r"""Signature: `(∗V, T), (*V, D), (*V, K) → (..., F)`."""
         return self.forward(t[0], t[1], t[2])
 
     @jit.export

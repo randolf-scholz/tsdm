@@ -82,7 +82,7 @@ wheel = "^0.37.1"
 # PyLint Configuration #
 ########################
 [tool.pylint]
-[tool.pylint.'MESSAGES CONTROL']
+[tool.pylint."MESSAGES CONTROL"]
 enable= [
     "useless-suppression",
 ]
