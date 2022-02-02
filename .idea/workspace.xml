@@ -5,28 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/dev/dataloaders/changing_dataloader_post_init.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dev/tasks/Kiwi_Final_product_implemented.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/test_istensor.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/Concept - data pipeline.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/torch_datasets/Concept - data pipeline.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/Untitled.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/torch_datasets/Untitled.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/kiwi_runs.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/torch_datasets/kiwi_runs.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/tasks/KIWI_Final_product.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tasks/KIWI_Final_product.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/kiwi_runs.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/kiwi_runs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/torch/generic.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/torch/generic.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/torch/timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/torch/timeseries.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/tasks/Kiwi_Final_product_implemented.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tasks/Kiwi_Final_product_implemented.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/regularity_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/regularity_tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/types/_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/types/_types.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -279,7 +260,7 @@
       <workItem from="1643707089904" duration="7429000" />
       <workItem from="1643729358109" duration="1455000" />
       <workItem from="1643743003734" duration="1370000" />
-      <workItem from="1643744922777" duration="14751000" />
+      <workItem from="1643744922777" duration="15837000" />
     </task>
     <servers />
   </component>
