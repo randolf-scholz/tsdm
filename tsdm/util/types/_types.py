@@ -35,7 +35,7 @@ r"""Type for path-like objects."""
 TYPE = TypeVar("TYPE")
 r"""Generic type hint"""
 
-ObjectType = TypeVar("ObjectType")
+ObjectType = TypeVar("ObjectType", bound=object)
 r"""Generic type hint for instances."""
 
 ReturnType = TypeVar("ReturnType")

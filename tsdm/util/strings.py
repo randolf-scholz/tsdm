@@ -6,6 +6,7 @@ __all__ = [
     # Functions
     "snake2camel",
     # "camel2snake",
+    "repr_array",
     "repr_mapping",
     "repr_sequence",
     "tensor_info",
@@ -52,8 +53,9 @@ def snake2camel(s):
 def repr_mapping(
     obj: Mapping,
     pad: int = 2,
-    maxitems: Optional[int] = 6,
+    maxitems: int = 6,
     repr_fun: Callable[..., str] = repr,
+    linebreaks: bool = True,
     title: Optional[str] = None,
 ) -> str:
     r"""Return a string representation of a mapping object.
@@ -65,35 +67,35 @@ def repr_mapping(
     maxitems: Optional[int] = 6
     repr_fun: Callable[..., str] = repr
     title: Optional[str] = repr,
+    linebreaks: bool = True,
 
     Returns
     -------
     str
     """
-    padding = " " * pad
+    br = "\n" if linebreaks else ""
+    padding = " " * pad * linebreaks
+    max_key_length = max(len(str(key)) for key in obj.keys())
+    items = list(obj.items())
+    title = type(obj).__name__ if title is None else title
+    string = title + "(" + br
 
     def to_string(x: Any) -> str:
         return repr_fun(x).replace("\n", "\n" + padding)
 
-    max_key_length = max(len(str(key)) for key in obj.keys())
-    items = list(obj.items())
-    if title is None:
-        title = type(obj).__name__
-    string = title + "(\n"
-
-    if maxitems is None or len(obj) <= maxitems:
+    if len(obj) <= maxitems:
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}\n"
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{br}"
             for key, value in items
         )
     else:
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}\n"
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{br}"
             for key, value in items[: maxitems // 2]
         )
         string += f"{padding}...\n"
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}\n"
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{br}"
             for key, value in items[-maxitems // 2 :]
         )
     string += ")"
@@ -103,8 +105,10 @@ def repr_mapping(
 def repr_sequence(
     obj: Sequence,
     pad: int = 2,
-    maxitems: Optional[int] = 6,
+    maxitems: int = 6,
     repr_fun: Callable[..., str] = repr,
+    linebreaks: bool = True,
+    title: Optional[str] = None,
 ) -> str:
     r"""Return a string representation of a sequence object.
 
@@ -114,30 +118,31 @@ def repr_sequence(
     pad: int
     maxitems: Optional[int] = 6
     repr_fun: Callable[..., str] = repr
+    linebreaks: bool = True,
+    title: Optional[str] = None,
 
     Returns
     -------
     str
     """
-    padding = " " * pad
+    br = "\n" if linebreaks else ""
+    sep = "" if linebreaks else ", "
+    padding = " " * pad * linebreaks
+    title = type(obj).__name__ if title is None else title
+    string = title + "(" + br
 
     def to_string(x: Any) -> str:
-        return repr_fun(x).replace("\n", "\n" + padding)
-
-    if maxitems is None:
-        maxitems = len(obj)
-
-    string = type(obj).__name__ + "(\n"
+        return repr_fun(x).replace("\n", br + padding)
 
     if maxitems is None or len(obj) <= 6:
-        string += "".join(f"{padding}{to_string(value)}\n" for value in obj)
+        string += sep.join(f"{padding}{to_string(value)}{br}" for value in obj)
     else:
-        string += "".join(
-            f"{padding}{to_string(value)}\n" for value in obj[: maxitems // 2]
+        string += sep.join(
+            f"{padding}{to_string(value)}{br}" for value in obj[: maxitems // 2]
         )
-        string += f"{padding}...\n"
-        string += "".join(
-            f"{padding}{to_string(value)}\n" for value in obj[-maxitems // 2 :]
+        string += f"{padding}..." + br
+        string += sep.join(
+            f"{padding}{to_string(value)}{br}" for value in obj[-maxitems // 2 :]
         )
     string += ")"
 
@@ -145,7 +150,7 @@ def repr_sequence(
 
 
 def repr_array(obj: ArrayLike, title: Optional[str] = None) -> str:
-    """Return a string representation of a array object.
+    r"""Return a string representation of a array object.
 
     Parameters
     ----------
@@ -156,9 +161,34 @@ def repr_array(obj: ArrayLike, title: Optional[str] = None) -> str:
     -------
     str
     """
+    title = type(obj).__name__ if title is None else title
+
     if hasattr(obj, "shape"):
-        return type(obj).__name__ + "[" + str(obj.shape) + "]"
-    return f"[" + ", ".join(repr_array(x) for x in obj) + "]"
+        shape: Iterable[int] = obj.shape  # type: ignore[union-attr]
+        return title + str(list(shape))
+    if isinstance(obj, Sequence) and not isinstance(obj, str):
+        return "[" + ", ".join(repr_array(x) for x in obj) + "]"
+    return repr(obj)
+
+
+def repr_object(obj: Any) -> str:
+    r"""Return a string representation of an object.
+
+    Parameters
+    ----------
+    obj: Any
+
+    Returns
+    -------
+    str
+    """
+    if isinstance(obj, Tensor):
+        return repr_array(obj)
+    if isinstance(obj, Mapping):
+        return repr_mapping(obj)
+    if isinstance(obj, Sequence):
+        return repr_sequence(obj)
+    return str(obj)
 
 
 def tensor_info(x: Tensor) -> str:

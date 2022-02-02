@@ -849,7 +849,9 @@ class TensorEncoder(BaseEncoder):
     def encode(self, data):
         r"""Convert each inputs to tensor."""
         if isinstance(data, tuple):
-            return self.return_type(self.encode(x) for x in data)
+            if self.return_type == tuple:
+                return self.return_type(self.encode(x) for x in data)
+            return self.return_type(*(self.encode(x) for x in data))
         return torch.tensor(data.values, device=self.device, dtype=self.dtype)
 
     @overload
@@ -1116,3 +1118,41 @@ class TripletEncoder(BaseEncoder):
         result = df[self.categories.categories]  # fix column order
         result = result.astype(self.dtypes)
         return result
+
+
+class CSVEncoder(BaseEncoder):
+    r"""Encode the data into a CSV file."""
+
+    def __init__(self, filename: str, header: bool = True) -> None:
+        r"""Initialize the encoder.
+
+        Parameters
+        ----------
+        filename: str
+        header: bool = True
+        """
+        super().__init__()
+        self.filename = filename
+        self.header = header
+
+    def fit(self, data: DataFrame) -> None:
+        r"""Fit the encoder.
+
+        Parameters
+        ----------
+        data
+        """
+        self.dtypes = data.dtypes
+        self.columns = data.columns
+
+    def encode(self, df: DataFrame) -> DataFrame:
+        r"""Encode the data."""
+        df.to_csv(self.filename, index=False, header=self.header)
+        return df
+
+    def decode(self, fname: Optional[str] = None, /) -> DataFrame:
+        r"""Decode the data."""
+        if fname is None:
+            fname = self.filename
+        frame = DataFrame(pd.read_csv(fname)).astype(self.dtypes)
+        return frame

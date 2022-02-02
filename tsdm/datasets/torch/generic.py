@@ -13,14 +13,14 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any, Optional
 
 from pandas import DataFrame, MultiIndex
-from torch.utils.data import Dataset as Torch_Dataset
+from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.util.strings import repr_mapping
 
 __logger__ = logging.getLogger(__name__)
 
 
-class MappingDataset(Torch_Dataset, Mapping):
+class MappingDataset(TorchDataset, Mapping):
     r"""Represents a Mapping[Key, Dataset].
 
     ``ds[key]`` returns the dataset for the given key.
@@ -29,21 +29,18 @@ class MappingDataset(Torch_Dataset, Mapping):
     ``ds[(key, subkey)]=ds[key][subkey]``
     """
 
-    def __init__(self, data: Mapping[Any, Torch_Dataset], prepend_key: bool = False):
+    def __init__(self, data: Mapping[Any, TorchDataset]):
         r"""Initialize the dataset.
 
         Parameters
         ----------
         data: Mapping
-        prepend_key: bool
-            If True, the keys are prepended to the dataset.
         """
         super().__init__()
         assert isinstance(data, Mapping)
         if isinstance(data, Mapping):
-            self.index = data.keys()
+            self.index = list(data.keys())
             self.data = data
-        self.prepend_key = prepend_key
 
     def __iter__(self) -> Iterator:
         r"""Iterate over the keys."""
@@ -53,7 +50,8 @@ class MappingDataset(Torch_Dataset, Mapping):
         r"""Length of the dataset."""
         return len(self.index)
 
-    def _lookup(self, key):
+    def __getitem__(self, key):
+        r"""Get the dataset for the given key."""
         if not isinstance(key, tuple):
             return self.data[key]
         try:
@@ -61,12 +59,6 @@ class MappingDataset(Torch_Dataset, Mapping):
             return outer[key[1:]]
         except KeyError:
             return self.data[key]
-
-    def __getitem__(self, key):
-        r"""Get the dataset for the given key."""
-        if self.prepend_key:
-            return key, self._lookup(key)
-        return self._lookup(key)
 
     @staticmethod
     def from_dataframe(
@@ -114,20 +106,20 @@ class MappingDataset(Torch_Dataset, Mapping):
 #         return tuple(x[idx] for x in self.tensors)
 
 
-class DatasetCollection(Mapping, Torch_Dataset):
+class DatasetCollection(Mapping, TorchDataset):
     r"""Represents a ``mapping[index → torch.Datasets]``.
 
     All tensors must have a shared index,
     in the sense that index.unique() is identical for all inputs.
     """
 
-    dataset: dict[Any, Torch_Dataset]
+    dataset: dict[Any, TorchDataset]
     """The dataset"""
 
-    def __init__(self, indexed_datasets: Mapping[Any, Torch_Dataset]):
+    def __init__(self, indexed_datasets: Mapping[Any, TorchDataset]):
         super().__init__()
         self.dataset = dict(indexed_datasets)
-        self.index = self.dataset.keys()
+        self.index = list(self.dataset.keys())
         self.keys = self.dataset.keys  # type: ignore[assignment]
         self.values = self.dataset.values  # type: ignore[assignment]
         self.items = self.dataset.items  # type: ignore[assignment]
@@ -157,3 +149,26 @@ class DatasetCollection(Mapping, Torch_Dataset):
     def __repr__(self):
         r"""Representation of the dataset."""
         return repr_mapping(self)
+
+
+# class IterItems(TorchDataset):
+#     r"""A thin wrapper around a dataset that yields items from the dataset."""
+#
+#     def __init__(self, dataset: TorchDataset) -> None:
+#         super().__init__()
+#         self.dataset = dataset
+#
+#     def __getitem__(self, key: Any) -> tuple[Any, Any]:
+#         r"""Get the item from the dataset."""
+#         return Items(key, self.dataset[key])
+#
+#     def __repr__(self) -> str:
+#         r"""Representation of the dataset."""
+#         return r"IterItems@" + self.dataset.__repr__()
+#
+#     def __getattr__(self, item):
+#         r"""Forward all other attributes to the dataset."""
+#         return getattr(self.dataset, item)
+#
+#     def __iter__(self):
+#         r"""Forward to wrapped object."""

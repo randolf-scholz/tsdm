@@ -5,12 +5,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/dev/dataloaders/changing_dataloader_post_init.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/tasks/Kiwi_Final_product_implemented.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/test_istensor.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/Concept - data pipeline.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/torch_datasets/Concept - data pipeline.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/Untitled.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/torch_datasets/Untitled.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/kiwi_runs.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/torch_datasets/kiwi_runs.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/tasks/KIWI_Final_product.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tasks/KIWI_Final_product.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/kiwi_runs.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/kiwi_runs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/torch/generic.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/torch/generic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/torch/timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/torch/timeseries.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/tasks/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/regularity_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/regularity_tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/types/_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/types/_types.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,10 +57,14 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/tsdm/plot/__setup__.py" root0="SKIP_INSPECTION" />
-    <setting file="file://$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/plot/__init__.py" root0="SKIP_INSPECTION" />
-    <setting file="file://$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/tsdm/losses/modular/_modular.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/datasets/torch/timeseries.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/util/regularity_tests.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/test/test_insilico.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/util/strings.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/datasets/physionet2019.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/random/__init__.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/types/_utils.py" root0="SKIP_INSPECTION" />
@@ -53,8 +73,12 @@
     <setting file="file://$PROJECT_DIR$/tsdm/encoders/modular/torch.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/tsdm/datasets/electricity.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/datasets/in_silico_data.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/tasks/__init__.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/tasks/base/tasks.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/_util.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/bugs/__module__Missing.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/tsdm/random/stats/_stats.py" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -75,7 +99,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$USER_HOME$/GIT/CONTRIBUTING/pandas-stubs" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -83,6 +107,9 @@
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
     <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/pyproject.toml" />
+  </component>
+  <component name="ReaderModeSettings">
+    <option name="enabled" value="false" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -249,6 +276,10 @@
       <workItem from="1643367082021" duration="1200000" />
       <workItem from="1643624950261" duration="167000" />
       <workItem from="1643625131100" duration="28779000" />
+      <workItem from="1643707089904" duration="7429000" />
+      <workItem from="1643729358109" duration="1455000" />
+      <workItem from="1643743003734" duration="1370000" />
+      <workItem from="1643744922777" duration="14751000" />
     </task>
     <servers />
   </component>

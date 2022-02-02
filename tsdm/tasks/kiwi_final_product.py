@@ -5,15 +5,13 @@ r"""#TODO add module summary line.
 
 __all__ = [
     # Classes
-    # 'KIWI_FINAL_PRODUCT',
+    "KIWI_FINAL_PRODUCT",
 ]
 
 import logging
-import os
-from copy import deepcopy
 from functools import cached_property
 from itertools import product
-from typing import Any, Callable, Literal, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Callable, Literal, NamedTuple, Optional
 
 import pandas as pd
 import torch
@@ -21,36 +19,39 @@ from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.nn import MSELoss
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
 from tsdm.datasets.torch import MappingDataset, TimeSeriesDataset
-from tsdm.encoders.modular import (
-    ModularEncoder,
-    ChainedEncoder,
-    DataFrameEncoder,
-    DateTimeEncoder,
-    FloatEncoder,
-    IdentityEncoder,
-    MinMaxScaler,
-    Standardizer,
-    TensorEncoder,
-    TripletEncoder,
-)
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks.base import BaseTask
+from tsdm.util.decorators import IterItems
 from tsdm.util.strings import repr_array, repr_mapping
-from tsdm.util.types import KeyType
 
 __logger__ = logging.getLogger(__name__)
 
 
 class Batch(NamedTuple):
-    index: Tensor
+    r"""Represents a batch of elements."""
+
+    index: Any
+    timeseries: Any
+    metadata: Any
+    targets: Any
+
+    def __repr__(self):
+        return repr_mapping(
+            self._asdict(), title=self.__class__.__name__, repr_fun=repr_array
+        )
+
+
+class Split(NamedTuple):
+    r"""Represents a data split."""
+
+    number: int
+    partition: Literal["train", "test"]
     timeseries: Tensor
     metadata: Tensor
-    targets: Tensor
-    encoded_targets: Tensor
 
     def __repr__(self):
         return repr_mapping(
@@ -59,7 +60,7 @@ class Batch(NamedTuple):
 
 
 def get_induction_time(s: Series) -> Timestamp:
-    # Compute the induction time
+    r"""Compute the induction time."""
     # s = ts.loc[run_id, exp_id]
     inducer = s["InducerConcentration"]
     total_induction = inducer[-1] - inducer[0]
@@ -74,7 +75,8 @@ def get_induction_time(s: Series) -> Timestamp:
     return inductions.first_valid_index()
 
 
-def get_final_product(s: Series, target) -> Timestamp:
+def get_final_product(s: Series, target: str) -> Timestamp:
+    r"""Compute the final product time."""
     # Final and target times
     targets = s[target]
     mask = pd.notna(targets)
@@ -84,9 +86,9 @@ def get_final_product(s: Series, target) -> Timestamp:
 
 
 def get_time_table(
-    ts: DataFrame, target="Fluo_GFP", t_min="0.6h", delta_t="5m"
+    ts: DataFrame, target: str = "Fluo_GFP", t_min: str = "0.6h"
 ) -> DataFrame:
-
+    r"""Compute the induction time and final product time for each run and experiment."""
     columns = [
         "slice",
         "t_min",
@@ -122,17 +124,22 @@ def get_time_table(
 
 
 class KIWI_FINAL_PRODUCT(BaseTask):
+    r"""Forecast the final biomass or product."""
 
-    dataset: KIWI_RUNS
-    test_metric: Callable[..., Tensor]
+    KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
+    r"""Type Hint for Keys"""
+    index: list[KeyType] = list(product(range(5), ("train", "test")))  # type: ignore[arg-type]
+    r"""Available index."""
     target: Literal["Fluo_GFP", "OD600"]
     r"""The target variables."""
-    index: list[tuple[int, str]] = list(product(range(5), ("train", "test")))
-    r"""Available index."""
     delta_t: Timedelta
     r"""The time resolution."""
     t_min: Timedelta
     r"""The minimum observation time."""
+    timeseries: DataFrame
+    r"""The whole timeseries data."""
+    metadata: DataFrame
+    r"""The metadata."""
 
     def __init__(
         self,
@@ -141,22 +148,28 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         delta_t: str = "5m",
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
-        preprocessor: Optional[ModularEncoder] = None,
         collate_fn: Optional[Callable] = None,
     ) -> None:
         super().__init__()
 
-        self.dataset = KIWI_RUNS()
+        # Setup Dataset, drop runs that don't work for this task.
+        dataset = self.dataset
+        dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype(float)
+        dataset.metadata = dataset.metadata.drop([355, 445, 482])
+
+        self.timeseries = ts = self.dataset.timeseries
+        self.metadata = md = self.dataset.metadata
+
+        # Initialize other attributes
         self.target = target
         self.t_min = t_min
         self.delta_t = Timedelta(delta_t)
-        self.timeseries = ts = self.dataset.timeseries
-        self.metadata = md = self.dataset.metadata
+
         self.eval_batch_size = eval_batch_size
         self.train_batch_size = train_batch_size
 
         self.final_product_times = get_time_table(
-            ts, target=self.target, t_min=self.t_min, delta_t=delta_t
+            ts, target=self.target, t_min=self.t_min
         )
 
         # Compute the final vector
@@ -170,47 +183,25 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         final_vec.index = final_vec.index.set_names(ts.index.names)
         self.final_vec = final_vec[target]
 
-        # Setup the preprocessor
-        if preprocessor is None:
-            self.preprocessor = ChainedEncoder(
-                TensorEncoder(names=("time", "value", "index")),
-                DataFrameEncoder(
-                    column_encoders={
-                        "value": IdentityEncoder(),
-                        tuple(ts.columns): FloatEncoder("float32"),
-                    },
-                    index_encoders=MinMaxScaler() @ DateTimeEncoder(unit="h"),
-                ),
-                TripletEncoder(sparse=True),
-                Standardizer(),
+        # Construct the dataset object
+        TSDs = {}
+        for key in self.metadata.index:
+            TSDs[key] = TimeSeriesDataset(
+                self.timeseries.loc[key],
+                metadata=(self.metadata.loc[key], self.final_vec.loc[key]),
             )
-        else:
-            self.preprocessor = preprocessor
+        DS = MappingDataset(TSDs)
+        self.DS = DS
 
-        # Setup the collate function
-        if collate_fn is None:
+    @cached_property
+    def dataset(self) -> KIWI_RUNS:
+        r"""Return the cached dataset."""
+        return KIWI_RUNS()
 
-            # Create the collate function
-            def my_collate(batch: list):
-                index: list[Tensor] = []
-                timeseries = []
-                metadata = []
-                targets = []
-                encoded_targets = []
-
-                for idx, (ts_data, (md_data, target)) in batch:
-                    index.append(torch.tensor(idx[0]))
-                    timeseries.append(self.preprocessor.encode(ts_data))
-                    metadata.append(md_data)
-                    targets.append(target)
-                    encoded_targets.append(target_encoder.encode(target))
-
-                index = torch.stack(index)
-                targets = pd.concat(targets)
-                encoded_targets = torch.concat(encoded_targets)
-
-                return Batch(index, timeseries, metadata, targets, encoded_targets)
-
+    @cached_property
+    def test_metric(self) -> Callable[..., Tensor]:
+        r"""The target metric."""
+        return jit.script(MSELoss())
 
     @cached_property
     def split_idx(self) -> DataFrame:
@@ -275,7 +266,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         return result
 
     @cached_property
-    def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
+    def splits(self) -> dict[KeyType, tuple[DataFrame, DataFrame]]:
         r"""Return a subset of the data corresponding to the split.
 
         Returns
@@ -293,19 +284,23 @@ class KIWI_FINAL_PRODUCT(BaseTask):
             timeseries = timeseries.set_index("measurement_time", append=True)
             metadata = self.metadata.loc[idx]
             splits[key] = (timeseries, metadata)
+            # splits[key] = Split(key[0], key[1], timeseries, metadata)
         return splits
 
-    @cached_property
-    def test_metric(self) -> Callable[..., Tensor]:
-        return jit.script(MSELoss())
+    @staticmethod
+    def collate_fn(batch: list[tuple]) -> Batch:
+        r"""Batch the sampled items."""
+        index = []
+        timeseries = []
+        metadata = []
+        targets = []
+        for idx, (ts_data, (md_data, target)) in batch:
+            index.append(idx)
+            timeseries.append(ts_data)
+            metadata.append(md_data)
+            targets.append(target)
 
-    # @cached_property
-    # def dataset(self) -> DATASET:
-    #     pass
-
-    @cached_property
-    def index(self) -> Sequence[KeyType]:
-        pass
+        return Batch(index, timeseries, metadata, targets)
 
     def get_dataloader(
         self,
@@ -317,20 +312,20 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
     ) -> DataLoader:
-        """
+        r"""Return a dataloader for the given split.
 
         Parameters
         ----------
-        key
-        batch_size
-        shuffle
-        device
-        dtype
-        kwargs
+        key: KeyType,
+        batch_size: int = 1,
+        shuffle: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+        kwargs: Any,
 
         Returns
         -------
-
+        DataLoader
         """
         split, part = key
 
@@ -339,43 +334,61 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         if part == "test" and "drop_last" in kwargs:
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
-        # Fit the preprocessor on the training data
-        ts_train, md_train = self.splits[(split, "train")]
-        preprocessor = deepcopy(self.preprocessor)
-        preprocessor.fit(ts_train.reset_index(level=[0, 1], drop=True))
-
-        # get the target encoder
-        target_idx = self.timeseries.columns.get_loc(self.target)
-        target_encoder = (
-            TensorEncoder() @ FloatEncoder() @ preprocessor[-1][target_idx]
-        )
-
         # Construct the dataset object
         TSDs = {}
-        for key in self.metadata.index:
-            TSDs[key] = TimeSeriesDataset(
-                self.timeseries.loc[key],
-                metadata=(self.metadata.loc[key], self.final_vec.loc[key]),
+        for idx in self.metadata.index:
+            TSDs[idx] = TimeSeriesDataset(
+                self.timeseries.loc[idx],
+                metadata=(self.metadata.loc[idx], self.final_vec.loc[idx]),
             )
-        DS = MappingDataset(TSDs, prepend_key=True)
+        DS = IterItems(MappingDataset(TSDs))
 
         # Setup the samplers
         subsamplers = {}
-        for key in TSDs:
+        for idx in TSDs:
             subsampler = IntervalSampler(
-                xmin=self.final_product_times.loc[key, "t_min"],
-                xmax=self.final_product_times.loc[key, "t_max"],
+                xmin=self.final_product_times.loc[idx, "t_min"],
+                xmax=self.final_product_times.loc[idx, "t_max"],
                 # offset=t_0,
                 deltax=lambda k: k * self.delta_t,
                 stride=None,
                 shuffle=True,
             )
-            subsamplers[key] = subsampler
+            subsamplers[idx] = subsampler
         sampler = HierarchicalSampler(TSDs, subsamplers, shuffle=True)
 
         # Construct the dataloader
         dataloader = DataLoader(
-            DS, sampler=sampler, collate_fn=my_collate, batch_size=8
+            DS, sampler=sampler, collate_fn=self.collate_fn, batch_size=batch_size
         )
-        dataloader.preprocessor = preprocessor
         return dataloader
+
+
+# # Fit the preprocessor on the training data
+# ts_train, md_train = self.splits[(split, "train")]
+# preprocessor = deepcopy(self.preprocessor)
+# preprocessor.fit(ts_train.reset_index(level=[0, 1], drop=True))
+#
+# # get the target encoder
+# target_idx = self.timeseries.columns.get_loc(self.target)
+# target_encoder = (
+#     TensorEncoder() @ FloatEncoder() @ preprocessor[-1][target_idx]
+# )
+#
+#
+# # Setup the preprocessor
+# if preprocessor is None:
+#     self.preprocessor = ChainedEncoder(
+#         TensorEncoder(names=("time", "value", "index")),
+#         DataFrameEncoder(
+#             column_encoders={
+#                 "value": IdentityEncoder(),
+#                 tuple(ts.columns): FloatEncoder("float32"),
+#             },
+#             index_encoders=MinMaxScaler() @ DateTimeEncoder(unit="h"),
+#         ),
+#         TripletEncoder(sparse=True),
+#         Standardizer(),
+#     )
+# else:
+#     self.preprocessor = preprocessor
