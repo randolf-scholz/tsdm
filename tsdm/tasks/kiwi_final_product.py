@@ -107,7 +107,7 @@ def get_time_table(
         t_induction = get_induction_time(slc)
         t_target = get_final_product(slc, target=target)
         if pd.isna(t_induction):
-            print(f"{idx}: no t_induction!")
+            __logger__.info("%s: no t_induction!", idx)
             t_max = get_final_product(slc.loc[slc.index < t_target], target=target)
             assert t_max < t_target
         else:
@@ -119,7 +119,6 @@ def get_time_table(
         df.loc[idx, "t_induction"] = t_induction
         df.loc[idx, "t_target"] = t_target
         df.loc[idx, "slice"] = slice(t_min, t_max)
-        # = t_final
     return df
 
 
@@ -327,19 +326,13 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         -------
         DataLoader
         """
-        split, part = key
-
-        if part == "test":
-            assert not shuffle, "Don't shuffle when evaluating test-dataset!"
-        if part == "test" and "drop_last" in kwargs:
-            assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
-
         # Construct the dataset object
+        ts, md = self.splits[key]
         TSDs = {}
-        for idx in self.metadata.index:
+        for idx in md.index:
             TSDs[idx] = TimeSeriesDataset(
-                self.timeseries.loc[idx],
-                metadata=(self.metadata.loc[idx], self.final_vec.loc[idx]),
+                ts.loc[idx],
+                metadata=(md.loc[idx], self.final_vec.loc[idx]),
             )
         DS = IterItems(MappingDataset(TSDs))
 
