@@ -93,6 +93,14 @@ class PositionalEncoder(nn.Module):
         x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
     """
 
+    HP: dict = {
+        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__doc__": __doc__,
+        "__module__": __module__,  # type: ignore[name-defined]
+        "num_dim": int,
+        "scale": float,
+    }
+
     # Constants
     num_dim: Final[int]
     r"""Number of dimensions."""

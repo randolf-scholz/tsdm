@@ -17,6 +17,7 @@ __all__ = [
     "Q_Quantile",
     "Q_Quantile_Loss",
     "WRMSE",
+    "RMSE",
 ]
 
 
@@ -25,7 +26,14 @@ from typing import Final
 
 from torch import nn
 
-from tsdm.losses.modular._modular import ND, NRMSE, WRMSE, Q_Quantile, Q_Quantile_Loss
+from tsdm.losses.modular._modular import (
+    ND,
+    NRMSE,
+    RMSE,
+    WRMSE,
+    Q_Quantile,
+    Q_Quantile_Loss,
+)
 from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
@@ -72,5 +80,6 @@ ModularLosses: Final[LookupTable[type[ModularLoss]]] = {
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,
     "Q_Quantile_Loss": Q_Quantile_Loss,
+    "RMSE": RMSE,
 } | (TORCH_LOSSES | TORCH_ALIASES)
 r"""Dictionary of all available modular losses."""

@@ -24,6 +24,18 @@ __logger__ = logging.getLogger(__name__)
 class DeepSet(nn.Module):
     r"""Permutation invariant deep set model."""
 
+    HP: dict = {
+        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__doc__": __doc__,
+        "__module__": __module__,  # type: ignore[name-defined]
+        "input_size": int,
+        "output_size": int,
+        "latent_size": int,
+        "encoder": MLP.HP,
+        "decoder": MLP.HP,
+    }
+    r"""Dictionary of hyperparameters."""
+
     def __init__(
         self,
         input_size: int,

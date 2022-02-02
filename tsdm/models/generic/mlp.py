@@ -10,6 +10,7 @@ __all__ = [
 
 
 import logging
+from typing import Optional
 
 from torch import nn
 
@@ -22,15 +23,50 @@ __logger__ = logging.getLogger(__name__)
 class MLP(nn.Sequential):
     """A standard Multi-Layer Perceptron."""
 
-    def __init__(self, input_size: int, output_size: int, num_layers: int = 2):
+    HP: dict = {
+        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__doc__": __doc__,
+        "__module__": __module__,  # type: ignore[name-defined]
+        "input_size": int,
+        "output_size": int,
+        "latent_size": int,
+        "num_layers": 2,
+        "dropout": float,
+    }
+    r"""Dictionary of hyperparameters."""
+
+    def __init__(
+        self,
+        input_size: int,
+        output_size: int,
+        latent_size: Optional[int] = None,
+        num_layers: int = 2,
+        dropout: float = 0.2,
+    ) -> None:
+        self.dropout = dropout
+        self.latent_size = input_size if latent_size is None else latent_size
+        self.input_size = input_size
+        self.output_size = output_size
+
         layers: list[nn.Module] = []
-        for _ in range(num_layers):
-            layer = nn.Linear(input_size, input_size)
+
+        # input layer
+        layer = nn.Linear(self.input_size, self.latent_size)
+        nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
+        nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
+        layers.append(layer)
+
+        # hidden layers
+        for _ in range(num_layers - 1):
+            layer = nn.Linear(self.latent_size, self.latent_size)
             nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
             nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
             layers.append(layer)
             layers.append(nn.ReLU())
-        layer = nn.Linear(input_size, output_size)
+            layers.append(nn.Dropout(self.dropout))
+
+        # output_layer
+        layer = nn.Linear(self.latent_size, self.output_size)
         nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
         nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
         layers.append(layer)

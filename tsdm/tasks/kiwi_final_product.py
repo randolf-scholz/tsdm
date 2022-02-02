@@ -138,7 +138,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
     r"""The whole timeseries data."""
     metadata: DataFrame
     r"""The metadata."""
-    dataloader_kwargs: dict
+    dataloader_kwargs: dict[str, Any]
     r"""The dataloader kwargs."""
 
     def __init__(
@@ -364,7 +364,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
             sampler=sampler,
             batch_size=batch_size,
             **(
-                self.dataloader_kwargs
+                self.dataloader_kwargs  # type: ignore[arg-type]
                 | {
                     "collate_fn": self.collate_fn,
                 }
