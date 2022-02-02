@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 import logging
-from math import isqrt, sqrt
+from math import sqrt
 from typing import Optional
 
 import torch
@@ -25,6 +25,17 @@ __logger__ = logging.getLogger(__name__)
 class ScaledDotProductAttention(nn.Module):
     r"""Permutation-invariant dot-product attention."""
 
+    HP: dict = {
+        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__doc__": __doc__,
+        "__module__": __module__,  # type: ignore[name-defined]
+        "dim_k": int,
+        "dim_v": int,
+        "output_size": int,
+        "num_heads": int,
+    }
+    r"""Dictionary of hyperparameters."""
+
     # BUFFERS
     scale: Tensor
     attention_weights: Tensor
@@ -34,14 +45,14 @@ class ScaledDotProductAttention(nn.Module):
         dim_k: int,
         dim_v: int,
         output_size: int,
-        num_heads: int = 5,
+        num_heads: int = 4,
         dim_k_latent: Optional[int] = None,
         dim_v_latent: Optional[int] = None,
     ) -> None:
         super().__init__()
         dim_q = dim_k
 
-        dim_k_latent = max(1, isqrt(dim_k)) if dim_k_latent is None else dim_k_latent
+        dim_k_latent = max(1, dim_k // 2) if dim_k_latent is None else dim_k_latent
         dim_v_latent = dim_v if dim_v_latent is None else dim_v_latent
 
         Wq = torch.zeros((num_heads, dim_k_latent))
