@@ -849,9 +849,7 @@ class TensorEncoder(BaseEncoder):
     def encode(self, data):
         r"""Convert each inputs to tensor."""
         if isinstance(data, tuple):
-            if self.return_type == tuple:
-                return self.return_type(self.encode(x) for x in data)
-            return self.return_type(*(self.encode(x) for x in data))
+            return tuple(self.encode(x) for x in data)
         return torch.tensor(data.values, device=self.device, dtype=self.dtype)
 
     @overload
