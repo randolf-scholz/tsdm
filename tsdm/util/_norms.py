@@ -15,8 +15,9 @@ __all__ = [
 ]
 
 import logging
+from collections.abc import Iterable
 from functools import singledispatch
-from typing import Iterable, Optional, Union, overload
+from typing import Optional, Union, overload
 
 import numpy as np
 import torch
@@ -25,7 +26,8 @@ from torch import Tensor, jit
 
 __logger__ = logging.getLogger(__name__)
 
-SizeLike = Union[int, tuple[int, ...]]  # type: ignore # TODO: use AliasType in 3.10
+SizeLike = Union[int, tuple[int, ...]]
+"""Type hint for a size-like object."""
 
 
 def _torch_is_float_dtype(x: Tensor) -> bool:
@@ -43,7 +45,7 @@ def _torch_is_float_dtype(x: Tensor) -> bool:
 @singledispatch
 def relative_error(
     xhat: Union[ArrayLike, Tensor], x_true: Union[ArrayLike, Tensor]
-) -> Union[ArrayLike, Tensor]:
+) -> Union[NDArray, Tensor]:
     r"""Relative error, works with both :class:`~torch.Tensor` and :class:`~numpy.ndarray`.
 
     .. math::
@@ -68,13 +70,13 @@ def relative_error(
 
 
 @relative_error.register
-def _numpy_relative_error(xhat: NDArray, x_true: NDArray) -> NDArray:
+def _numpy_relative_error(xhat: np.ndarray, x_true: np.ndarray) -> np.ndarray:
     if xhat.dtype in (np.float16, np.int16):
-        eps = 2 ** -11
+        eps = 2**-11
     elif xhat.dtype in (np.float32, np.int32):
-        eps = 2 ** -24
+        eps = 2**-24
     elif xhat.dtype in (np.float64, np.int64):
-        eps = 2 ** -53
+        eps = 2**-53
     else:
         raise NotImplementedError
 
@@ -84,13 +86,13 @@ def _numpy_relative_error(xhat: NDArray, x_true: NDArray) -> NDArray:
 @relative_error.register
 def _torch_relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
     if xhat.dtype in (torch.bfloat16,):
-        eps = 2 ** -8
+        eps = 2**-8
     elif xhat.dtype in (torch.float16, torch.int16):
-        eps = 2 ** -11
+        eps = 2**-11
     elif xhat.dtype in (torch.float32, torch.int32):
-        eps = 2 ** -24
+        eps = 2**-24
     elif xhat.dtype in (torch.float64, torch.int64):
-        eps = 2 ** -53
+        eps = 2**-53
     else:
         raise NotImplementedError
 
@@ -119,7 +121,7 @@ def scaled_norm(  # type: ignore[misc]
 
 
 @overload
-def scaled_norm(  # type: ignore[misc]
+def scaled_norm(
     x: Iterable[Tensor],
     p: float = 2,
     axis: Optional[SizeLike] = None,
@@ -129,7 +131,7 @@ def scaled_norm(  # type: ignore[misc]
 
 
 @overload
-def scaled_norm(  # type: ignore[misc]
+def scaled_norm(
     x: Iterable[NDArray],
     p: float = 2,
     axis: Optional[SizeLike] = None,
@@ -206,11 +208,11 @@ def _torch_scaled_norm(
     if p == 1:
         return torch.mean(x, dim=axis, keepdim=keepdims)
     if p == 2:
-        return torch.sqrt(torch.mean(x ** 2, dim=axis, keepdim=keepdims))
+        return torch.sqrt(torch.mean(x**2, dim=axis, keepdim=keepdims))
     if p == float("inf"):
         return torch.amax(x, dim=axis, keepdim=keepdims)
     # other p
-    return torch.mean(x ** p, dim=axis, keepdim=keepdims) ** (1 / p)
+    return torch.mean(x**p, dim=axis, keepdim=keepdims) ** (1 / p)
 
 
 def _numpy_scaled_norm(
@@ -227,11 +229,11 @@ def _numpy_scaled_norm(
     if p == 1:
         return np.mean(x, axis=axis, keepdims=keepdims)
     if p == 2:
-        return np.sqrt(np.mean(x ** 2, axis=axis, keepdims=keepdims))
+        return np.sqrt(np.mean(x**2, axis=axis, keepdims=keepdims))
     if p == float("inf"):
         return np.max(x, axis=axis, keepdims=keepdims)
     # other p
-    return np.mean(x ** p, axis=axis, keepdims=keepdims) ** (1 / p)
+    return np.mean(x**p, axis=axis, keepdims=keepdims) ** (1 / p)
 
 
 @overload
@@ -332,12 +334,12 @@ def grad_norm(
         # Initializing s this way automatically gets the dtype and device correct
         s = torch.mean(tensors.pop().grad ** p) ** (q / p)
         for x in tensors:
-            s += torch.mean(x.grad ** p) ** (q / p)
+            s += torch.mean(x.grad**p) ** (q / p)
         return (s / (1 + len(tensors))) ** (1 / q)
     # else
     s = torch.sum(tensors.pop().grad ** p) ** (q / p)
     for x in tensors:
-        s += torch.sum(x.grad ** p) ** (q / p)
+        s += torch.sum(x.grad**p) ** (q / p)
     return s ** (1 / q)
 
 
@@ -367,12 +369,12 @@ def multi_norm(
         # Initializing s this way automatically gets the dtype and device correct
         s = torch.mean(tensors.pop() ** p) ** (q / p)
         for x in tensors:
-            s += torch.mean(x ** p) ** (q / p)
+            s += torch.mean(x**p) ** (q / p)
         return (s / (1 + len(tensors))) ** (1 / q)
     # else
     s = torch.sum(tensors.pop() ** p) ** (q / p)
     for x in tensors:
-        s += torch.sum(x ** p) ** (q / p)
+        s += torch.sum(x**p) ** (q / p)
     return s ** (1 / q)
 
 

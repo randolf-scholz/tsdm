@@ -1,0 +1,9 @@
+{
+  "source_directories": [
+    {
+      "import_root": ".",
+      "source": "tsdm"
+    }
+  ],
+  "taint_models_path": "/home/rscholz/Projects/KIWI/tsdm/venv/lib"
+}

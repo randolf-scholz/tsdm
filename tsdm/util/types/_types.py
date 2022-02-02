@@ -4,22 +4,30 @@ __all__ = [
     # Type Variables
     "ObjectType",
     "ReturnType",
+    "nnModuleType",
     # Types
     "LookupTable",
     "PathType",
     "NestedType",
     "NullableNestedType",
     "KeyType",
+    "ValueType",
 ]
+
 import logging
 import os
 from collections.abc import Collection, Mapping
 from typing import Any, TypeVar, Union
 
+from torch import nn
+
 __logger__ = logging.getLogger(__name__)
 
 KeyType = TypeVar("KeyType")
-r"""TypeVar for Index Keys."""
+r"""TypeVar for ``Mapping`` keys."""
+
+ValueType = TypeVar("ValueType")
+r"""TypeVar for ``Mapping`` values."""
 
 PathType = Union[str, os.PathLike[str]]
 r"""Type for path-like objects."""
@@ -27,7 +35,7 @@ r"""Type for path-like objects."""
 TYPE = TypeVar("TYPE")
 r"""Generic type hint"""
 
-ObjectType = TypeVar("ObjectType")
+ObjectType = TypeVar("ObjectType", bound=object)
 r"""Generic type hint for instances."""
 
 ReturnType = TypeVar("ReturnType")
@@ -59,6 +67,9 @@ NullableNestedType = Union[
     Mapping[Any, Union[None, NestedTypeVar, Collection[NestedTypeVar]]],
 ]
 r"""Type for nullable nested type variables."""
+
+nnModuleType = TypeVar("nnModuleType", bound=nn.Module)
+r"""Type Variable for nn.Modules."""
 
 
 # R = TypeVar("R")

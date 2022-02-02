@@ -10,9 +10,10 @@ __all__ = [
 
 import logging
 import pickle
+from collections.abc import Callable
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Callable, Final, Literal, Optional
+from typing import Any, Final, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -112,8 +113,8 @@ class KIWI_RUNS(Dataset):
     """
 
     base_url: str = (
-        "https://owncloud.innocampus.tu-berlin.de/index.php/s/"
-        "fRBSr82NxY7ratK/download/kiwi_experiments_and_run_355.pk"
+        "https://owncloud.innocampus.tu-berlin.de/index.php/s"
+        "/fRBSr82NxY7ratK/download/kiwi_experiments_and_run_355.pk"
     )
     index: Final[list[str]] = [
         "timeseries",
@@ -139,6 +140,13 @@ class KIWI_RUNS(Dataset):
         "units",
     ]
     r"""Type Hint for index."""
+
+    timeseries: DataFrame
+    r"""The whole timeseries data."""
+    metadata: DataFrame
+    r"""The metadata."""
+    units: DataFrame
+    r"""The units of the measured variables."""
 
     # @cached_property
     # def dataset(self) -> DataFrame:
@@ -511,7 +519,7 @@ class KIWI_RUNS(Dataset):
         table.to_feather(path)
 
     def _clean_timeseries(self) -> None:
-        md = self.load(key="metadata")
+        md: DataFrame = self.load(key="metadata")
         ts: DataFrame = self.load(key="measurements_aggregated")
         # drop rows with only <NA> values
         ts = ts.dropna(how="all")
@@ -563,13 +571,14 @@ class KIWI_RUNS(Dataset):
         # reset index
         ts = ts.reset_index()
         ts = ts.astype({"run_id": "int32", "experiment_id": "int32"})
+        ts["measurement_time"] = ts["measurement_time"].round("s")
         # ts = ts.rename(columns={col: snake2camel(col) for col in ts})
         ts.columns.name = "variable"
         path = self.dataset_files["timeseries"]
         ts.to_feather(path)
 
     def _clean_units(self) -> None:
-        ts = self.load(key="measurements_aggregated")
+        ts: DataFrame = self.load(key="measurements_aggregated")
 
         _units = ts["unit"]
         data = ts.drop(columns="unit")

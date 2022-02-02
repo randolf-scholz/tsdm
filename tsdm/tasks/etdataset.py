@@ -10,8 +10,9 @@ __all__ = [
 
 
 import logging
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Callable, Literal, Mapping, Optional, Sequence
+from typing import Any, Literal, Optional
 
 import torch
 from pandas import DataFrame
@@ -140,7 +141,9 @@ class ETDatasetTask_Informer(BaseTask):
 
         self.dataset = ETT()[dataset_id]
         self.dataset.name = dataset_id
-        self.test_metric: Loss = initialize_from(LOSSES, __name__=test_metric)  # type: ignore[assignment]
+        self.test_metric: Loss = initialize_from(
+            LOSSES, __name__=test_metric
+        )  # type: ignore[assignment]
 
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
@@ -166,7 +169,7 @@ class ETDatasetTask_Informer(BaseTask):
             "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore
             "joint": self.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore
             "trial": self.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore
-            "whole": self.dataset,  # type: ignore
+            "whole": self.dataset,
         }
         _splits["test"] = _splits["trial"]  # alias
         return _splits

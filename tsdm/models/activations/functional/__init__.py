@@ -13,7 +13,8 @@ __all__ = [
 ]
 
 import logging
-from typing import Callable, Final
+from collections.abc import Callable
+from typing import Final
 
 from torch import Tensor
 from torch.nn import functional as F
@@ -29,7 +30,7 @@ FunctionalActivations: Final[LookupTable[FunctionalActivation]] = {
     "threshold": F.threshold,
     # Thresholds each element of the input Tensor.
     "threshold_": F.threshold_,  # type: ignore[attr-defined]
-    # type: ignore  # In-place version of threshold().
+    # In-place version of threshold().
     "relu": F.relu,
     # Applies the rectified linear unit function element-wise.
     "relu_": F.relu_,

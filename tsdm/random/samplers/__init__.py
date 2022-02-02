@@ -9,6 +9,8 @@ __all__ = [
     # "TimeSliceSampler",
     "SequenceSampler",
     "CollectionSampler",
+    "IntervalSampler",
+    "HierarchicalSampler",
 ]
 
 import logging
@@ -18,6 +20,8 @@ from torch.utils import data as torch_utils_data
 
 from tsdm.random.samplers.samplers import (
     CollectionSampler,
+    HierarchicalSampler,
+    IntervalSampler,
     SequenceSampler,
     SliceSampler,
 )

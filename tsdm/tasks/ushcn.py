@@ -6,8 +6,9 @@ r"""#TODO add module summary line.
 __all__ = ["USHCN_DeBrouwer"]
 
 import logging
+from collections.abc import Callable
 from functools import cached_property
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal, Optional
 
 import numpy as np
 import torch
