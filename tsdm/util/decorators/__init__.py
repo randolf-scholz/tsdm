@@ -15,6 +15,7 @@ __all__ = [
     "timefun",
     "trace",
     "vectorize",
+    "IterItems",
 ]
 
 import logging
@@ -22,6 +23,7 @@ from collections.abc import Callable
 from typing import Final
 
 from tsdm.util.decorators._decorators import (
+    IterItems,
     autojit,
     decorator,
     sphinx_value,

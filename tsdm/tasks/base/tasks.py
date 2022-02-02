@@ -147,19 +147,6 @@ class BaseTask(ABC, Generic[KeyType]):
     postprocessor: Optional[ModularEncoder] = None
     r"""Optional task specific postprocessor (applied after batching)."""
 
-    # @property
-    # @abstractmethod
-    # def accumulation_function(self) -> Callable[[Tensor], Tensor]:
-    #     r"""Accumulates residuals into loss - usually mean or sum."""
-
-    # @property
-    # @abstractmethod
-    # def test_metric(self) -> Callable[..., Tensor]:
-    #     r"""The target metric.
-    #
-    #     Should be something like ``["train", "valid", "test"]``
-    #     """
-
     @property
     @abstractmethod
     def test_metric(self) -> Callable[..., Tensor]:
@@ -168,17 +155,12 @@ class BaseTask(ABC, Generic[KeyType]):
     @property
     @abstractmethod
     def dataset(self) -> DATASET:
-        r"""The attached dataset."""
+        r"""Return the cached dataset associated with the task."""
 
     @property
     @abstractmethod
     def index(self) -> Sequence[KeyType]:
         r"""List of index."""
-
-    # @property
-    # @abstractmethod
-    # def dataset(self) -> DATASET:
-    #     r"""Cache the dataset."""
 
     @property
     @abstractmethod

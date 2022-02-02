@@ -141,6 +141,13 @@ class KIWI_RUNS(Dataset):
     ]
     r"""Type Hint for index."""
 
+    timeseries: DataFrame
+    r"""The whole timeseries data."""
+    metadata: DataFrame
+    r"""The metadata."""
+    units: DataFrame
+    r"""The units of the measured variables."""
+
     # @cached_property
     # def dataset(self) -> DataFrame:
     #     r"""Store cached version of dataset."""
