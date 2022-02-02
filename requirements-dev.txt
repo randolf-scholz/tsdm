@@ -71,6 +71,7 @@ flake8-rst-docstrings  # RST:  flake8 plugin to validate Python docstrings as re
 ##############
 # Deployment #
 ##############
+poetry
 setuptools
 twine
 wheel
