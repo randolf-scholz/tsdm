@@ -62,7 +62,8 @@ setup:
   - pip install --upgrade -r requirements.txt
   - pip install --upgrade -r requirements-dev.txt
   # build and install package
-  - python setup.py sdist bdist_wheel
+#  - python setup.py sdist bdist_wheel
+  - poetry build
   - pip install dist/*.whl
   - pip list
   after_script:
