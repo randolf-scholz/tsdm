@@ -4,6 +4,7 @@
 sphinx
 sphinx-rtd-theme
 sphinx-autoapi
+sphinx_copybutton
 
 #####################
 # Linting & Testing #
