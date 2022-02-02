@@ -220,3 +220,17 @@ def time_gcd(s: Series):
         return float_gcd(Δt)
 
     raise NotImplementedError(f"Data type {Δt.dtype=} not understood")
+
+
+def distributiveness(s: Series) -> float:
+    r"""Compute the distributiveness of a time series.
+
+    For a given irregular timeseries, we define this as the minimum:
+
+    .. math::
+        σ(TS) = \min\{ d(TS, TS') ∣ 𝐄[∆t(TS')] = 𝐄[∆t(TS)], TS' regular  \}
+
+    I.e. the minimum distance (for example Dynamic Time Warping) between the time series,
+    and a regular time series with the same average frequency.
+    """
+    raise NotImplementedError

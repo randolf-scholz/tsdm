@@ -50,10 +50,11 @@ M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference 
 __all__ = ["Traffic"]
 
 import logging
+from collections.abc import Callable
 from functools import cached_property
 from io import StringIO
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 from zipfile import ZipFile
 
 import numpy as np
@@ -65,12 +66,12 @@ from tsdm.datasets.base import Dataset
 __logger__ = logging.getLogger(__name__)
 
 
-def _reformat(s: str, replacements: dict) -> str:  # pylint: disable=unused-argument
+def _reformat(s: str, replacements: dict) -> str:
     r"""Replace multiple substrings via dict.
 
     https://stackoverflow.com/a/64500851/9318372
     """
-    *_, result = (s := s.replace(c, r) for c, r in replacements.items())  # type: ignore[no-redef]
+    *_, result = (s := s.replace(c, r) for c, r in replacements.items())
     return result
 
 
@@ -84,7 +85,6 @@ class Traffic(Dataset):
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**           | Classification            | **Missing Values?**       | N/A    | **Number of Web Hits:** | 79749      |
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-
     """  # pylint: disable=line-too-long # noqa
 
     base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"

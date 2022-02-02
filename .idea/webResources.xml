@@ -9,6 +9,7 @@
             <path value="file://$PROJECT_DIR$/manifest" />
             <path value="file://$PROJECT_DIR$/tsdm/config/config_files" />
             <path value="file://$PROJECT_DIR$/tsdm/datasets/examples" />
+            <path value="file://$PROJECT_DIR$/docs/recipes" />
           </resourceRoots>
         </entryData>
       </entry>

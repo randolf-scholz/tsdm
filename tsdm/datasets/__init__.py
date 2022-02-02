@@ -7,6 +7,7 @@ __all__ = [
     # Sub-Packages
     "base",
     "synthetic",
+    "torch",
     # Types
     "DATASET",
     # Constants
@@ -14,13 +15,11 @@ __all__ = [
     # ABCs
     "BaseDataset",
     "Dataset",
-    # Classes
-    "DatasetCollection",
-    "SequenceDataset",
-    "IndexedArray",
-    "TimeTensor",
-    "TimeSeriesDataset",
     "Template",
+    # Classes
+    "IndexedArray",
+    "TimeSeriesDataset",
+    "TimeTensor",
     # Datasets
     "BeijingAirQuality",
     "ETT",
@@ -32,31 +31,14 @@ __all__ = [
     "Traffic",
     "USHCN",
     "USHCN_SmallChunkedSporadic",
-    # Classes
-    "TimeTensor",
-    "TimeSeriesDataset",
-    # Types
-    "IndexedArray",
-    # Functions
-    "tensor_info",
 ]
 
 
 import logging
 from typing import Final
 
-from tsdm.datasets import base
-from tsdm.datasets.base import (
-    BaseDataset,
-    Dataset,
-    DatasetCollection,
-    IndexedArray,
-    SequenceDataset,
-    Template,
-    TimeSeriesDataset,
-    TimeTensor,
-    tensor_info,
-)
+from tsdm.datasets import base, torch
+from tsdm.datasets.base import BaseDataset, Dataset, Template
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT
@@ -64,6 +46,7 @@ from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_runs import KIWI_RUNS
 from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.datasets.physionet2019 import Physionet2019
+from tsdm.datasets.torch import IndexedArray, TimeSeriesDataset, TimeTensor
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
 from tsdm.util.types import LookupTable
