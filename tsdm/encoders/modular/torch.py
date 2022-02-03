@@ -111,7 +111,7 @@ class PositionalEncoder(nn.Module):
     scales: Tensor
     r"""Scale factors for positional encoding."""
 
-    def __init__(self, num_dim: int, scale: float) -> None:
+    def __init__(self, num_dim: int, *, scale: float) -> None:
         super().__init__()
         assert num_dim % 2 == 0, "num_dim must be even"
         self.num_dim = num_dim
