@@ -58,6 +58,7 @@ class SetFuncTS(nn.Module):
         dim_keys: Optional[int] = None,
         dim_vals: Optional[int] = None,
         dim_time: Optional[int] = None,
+        dim_deepset: Optional[int] = None,
     ) -> None:
         super().__init__()
 
@@ -68,9 +69,15 @@ class SetFuncTS(nn.Module):
         # time_encoder
         # feature_encoder -> CNN?
         self.time_encoder = PositionalEncoder(dim_time, scale=10.0)
-        self.key_encoder = DeepSet(input_size + dim_time - 1, dim_keys)
-        print(dim_vals)
-        self.value_encoder = MLP(input_size + dim_time - 1, dim_vals)
+        self.key_encoder = DeepSet(
+            input_size + dim_time - 1,
+            dim_keys,
+            latent_size=dim_deepset,
+            hidden_size=dim_deepset,
+        )
+        self.value_encoder = MLP(
+            input_size + dim_time - 1, dim_vals, hidden_size=dim_vals
+        )
         self.attn = ScaledDotProductAttention(
             dim_keys + input_size + dim_time - 1, dim_vals, latent_size
         )

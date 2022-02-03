@@ -3,6 +3,7 @@ r"""Implementation / loading mechanism for models."""
 __all__ = [
     # Sub-Packages
     "activations",
+    "generic",
     # Type Hints
     "Model",
     "ModelType",
@@ -12,6 +13,10 @@ __all__ = [
     "BaseModel",
     "ODE_RNN",
     "SetFuncTS",
+    # Generic
+    "MLP",
+    "DeepSet",
+    "ScaledDotProductAttention",
 ]
 
 import logging
@@ -19,8 +24,9 @@ from typing import Final
 
 from torch import nn
 
-from tsdm.models import activations
+from tsdm.models import activations, generic
 from tsdm.models._models import BaseModel
+from tsdm.models.generic import MLP, DeepSet, ScaledDotProductAttention
 from tsdm.models.ode_rnn import ODE_RNN
 from tsdm.models.set_function_for_timeseries import SetFuncTS
 

@@ -1143,14 +1143,13 @@ class CSVEncoder(BaseEncoder):
         self.dtypes = data.dtypes
         self.columns = data.columns
 
-    def encode(self, df: DataFrame) -> DataFrame:
+    def encode(self, df: DataFrame) -> Path:
         r"""Encode the data."""
         df.to_csv(self.filename, index=False, header=self.header)
-        return df
+        return self.filename
 
-    def decode(self, fname: Optional[str] = None, /) -> DataFrame:
+    def decode(self, fname: Optional[Union[str, Path]] = None, /) -> DataFrame:
         r"""Decode the data."""
         if fname is None:
             fname = self.filename
-        frame = DataFrame(pd.read_csv(fname)).astype(self.dtypes)
-        return frame
+        return DataFrame(pd.read_csv(fname)).astype(self.dtypes)
