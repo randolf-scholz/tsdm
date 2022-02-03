@@ -54,8 +54,7 @@ tensorboard = ">=2.7"
 torch = ">=1.10"
 tqdm = ">=4.50"
 xarray = ">=0.20"
-ray = {version = ">=1.6", extras = ["modin[ray]>=0.12"]}
-
+modin = {version = ">=0.12", extras = ["ray"], optional = true}
 
 [tool.poetry.dev-dependencies]
 Sphinx = "^4.4.0"
