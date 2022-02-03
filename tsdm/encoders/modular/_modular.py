@@ -42,6 +42,7 @@ from pandas import NA, DataFrame, DatetimeIndex, Index, Series, Timedelta, Times
 from torch import Tensor
 
 from tsdm.datasets import TimeTensor
+from tsdm.util.types import PathType
 
 __logger__ = logging.getLogger(__name__)
 
@@ -1121,7 +1122,21 @@ class TripletEncoder(BaseEncoder):
 class CSVEncoder(BaseEncoder):
     r"""Encode the data into a CSV file."""
 
-    def __init__(self, filename: str, header: bool = True) -> None:
+    filename: PathType
+    r"""The filename of the CSV file."""
+    dtypes: Series
+    r"""The original dtypes."""
+    read_csv_kwargs: dict[str, Any]
+    r"""The kwargs for the read_csv function."""
+    to_csv_kwargs: dict[str, Any]
+    r"""The kwargs for the to_csv function."""
+
+    def __init__(
+        self,
+        filename: PathType,
+        to_csv_kwargs: Optional[dict[str, Any]] = None,
+        read_csv_kwargs: Optional[dict[str, Any]] = None,
+    ) -> None:
         r"""Initialize the encoder.
 
         Parameters
@@ -1131,7 +1146,8 @@ class CSVEncoder(BaseEncoder):
         """
         super().__init__()
         self.filename = filename
-        self.header = header
+        self.read_csv_kwargs = read_csv_kwargs or {}
+        self.to_csv_kwargs = to_csv_kwargs or {}
 
     def fit(self, data: DataFrame) -> None:
         r"""Fit the encoder.
@@ -1141,15 +1157,15 @@ class CSVEncoder(BaseEncoder):
         data
         """
         self.dtypes = data.dtypes
-        self.columns = data.columns
 
-    def encode(self, df: DataFrame) -> Path:
+    def encode(self, df: DataFrame) -> PathType:
         r"""Encode the data."""
-        df.to_csv(self.filename, index=False, header=self.header)
+        df.to_csv(self.filename, **self.to_csv_kwargs)
         return self.filename
 
-    def decode(self, fname: Optional[Union[str, Path]] = None, /) -> DataFrame:
+    def decode(self, fname: Optional[PathType] = None, /) -> DataFrame:
         r"""Decode the data."""
         if fname is None:
             fname = self.filename
-        return DataFrame(pd.read_csv(fname)).astype(self.dtypes)
+        frame = pd.read_csv(fname, **self.read_csv_kwargs)
+        return DataFrame(frame).astype(self.dtypes)
