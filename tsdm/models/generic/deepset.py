@@ -21,7 +21,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 @autojit
-class DeepSet(nn.Module):
+class DeepSet(nn.ModuleDict):
     r"""Permutation invariant deep set model."""
 
     HP: dict = {
@@ -31,6 +31,7 @@ class DeepSet(nn.Module):
         "input_size": int,
         "output_size": int,
         "latent_size": int,
+        "bottleneck_size": int,
         "encoder": MLP.HP,
         "decoder": MLP.HP,
     }
@@ -38,17 +39,27 @@ class DeepSet(nn.Module):
 
     def __init__(
         self,
-        input_size: int,
+        inputs_size: int,
         output_size: int,
+        *,
         latent_size: Optional[int] = None,
+        hidden_size: Optional[int] = None,
         encoder_layers: int = 2,
         decoder_layers: int = 2,
         # aggregation: Literal["min", "max", "sum", "mean", "prod"] = "sum",
     ):
-        super().__init__()
-        latent_size = input_size if latent_size is None else latent_size
-        self.encoder = MLP(input_size, latent_size, encoder_layers)
-        self.decoder = MLP(latent_size, output_size, decoder_layers)
+        # super().__init__()
+        latent_size = inputs_size if latent_size is None else latent_size
+        hidden_size = inputs_size if hidden_size is None else hidden_size
+        encoder = MLP(
+            inputs_size, latent_size, hidden_size=hidden_size, num_layers=encoder_layers
+        )
+        decoder = MLP(
+            latent_size, output_size, hidden_size=hidden_size, num_layers=decoder_layers
+        )
+        super().__init__({"encoder": encoder, "decoder": decoder})
+        self.encoder = self["encoder"]
+        self.decoder = self["decoder"]
 
     def forward(self, x: Tensor) -> Tensor:
         r"""Signature: `[..., <Var>, D] -> [..., F]`.

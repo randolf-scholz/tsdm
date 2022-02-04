@@ -5,9 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitlab-ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.gitlab-ci.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/losses/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/losses/modular/_modular.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/system.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/system.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,14 +81,14 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net/.gitlab-ci.yml" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
     <property name="settings.editor.selected.configurable" value="preferences.externalTools" />
-    <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/pyproject.toml" />
+    <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/.gitlab-ci.yml" />
   </component>
   <component name="ReaderModeSettings">
     <option name="enabled" value="false" />
@@ -260,7 +261,8 @@
       <workItem from="1643707089904" duration="7429000" />
       <workItem from="1643729358109" duration="1455000" />
       <workItem from="1643743003734" duration="1370000" />
-      <workItem from="1643744922777" duration="31532000" />
+      <workItem from="1643744922777" duration="37503000" />
+      <workItem from="1643917609543" duration="12251000" />
     </task>
     <servers />
   </component>

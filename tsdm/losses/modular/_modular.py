@@ -22,13 +22,15 @@ from typing import Final
 
 import numpy as np
 import torch
-from torch import Tensor, nn
+from torch import Tensor, jit, nn
 
 from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
+from tsdm.util.decorators import autojit
 
 __logger__ = logging.getLogger(__name__)
 
 
+@autojit
 class ND(nn.Module):
     r"""Compute the normalized deviation score.
 
@@ -40,12 +42,14 @@ class ND(nn.Module):
 
     References
     ----------
-    -  `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
-    -  `N-BEATS: Neural basis expansion analysis for interpretable time series forecasting <https://openreview.net/forum?id=r1ecqn4YwB>`_
-    """  # pylint: disable=line-too-long # noqa
+    - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+      | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+    - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
+      | https://openreview.net/forum?id=r1ecqn4YwB
+    """
 
-    @staticmethod
-    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+    @jit.export
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:  # pylint: disable=no-self-use
         r"""Compute the loss value.
 
         Parameters
@@ -60,6 +64,7 @@ class ND(nn.Module):
         return nd(x, xhat)
 
 
+@autojit
 class NRMSE(nn.Module):
     r"""Compute the normalized deviation score.
 
@@ -68,11 +73,12 @@ class NRMSE(nn.Module):
 
     References
     ----------
-    -  `Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction <https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html>`_
-    """  # pylint: disable=line-too-long # noqa
+    - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+      | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+    """
 
-    @staticmethod
-    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+    @jit.export
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:  # pylint: disable=no-self-use
         r"""Compute the loss value.
 
         Parameters
@@ -87,6 +93,7 @@ class NRMSE(nn.Module):
         return nrmse(x, xhat)
 
 
+@autojit
 class Q_Quantile(nn.Module):
     r"""The q-quantile.
 
@@ -95,11 +102,12 @@ class Q_Quantile(nn.Module):
 
     References
     ----------
-    - `Deep State Space Models for Time Series Forecasting <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>`_
-    """  # pylint: disable=line-too-long # noqa
+    - | Deep State Space Models for Time Series Forecasting
+      | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    """
 
-    @staticmethod
-    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+    @jit.export
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:  # pylint: disable=no-self-use
         r"""Compute the loss value.
 
         Parameters
@@ -114,6 +122,7 @@ class Q_Quantile(nn.Module):
         return q_quantile(x, xhat)
 
 
+@autojit
 class Q_Quantile_Loss(nn.Module):
     r"""The q-quantile loss.
 
@@ -122,11 +131,12 @@ class Q_Quantile_Loss(nn.Module):
 
     References
     ----------
-    - `Deep State Space Models for Time Series Forecasting <https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html>`_
-    """  # pylint: disable=line-too-long # noqa
+    - | Deep State Space Models for Time Series Forecasting
+      | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    """
 
-    @staticmethod
-    def forward(x: Tensor, xhat: Tensor) -> Tensor:
+    @jit.export
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:  # pylint: disable=no-self-use
         r"""Compute the loss value.
 
         Parameters
@@ -141,6 +151,7 @@ class Q_Quantile_Loss(nn.Module):
         return q_quantile_loss(x, xhat)
 
 
+@autojit
 class WRMSE(nn.Module):
     r"""Weighted Root Mean Square Error.
 
@@ -154,6 +165,7 @@ class WRMSE(nn.Module):
     r"""CONST: The number of dimensions of the weight tensor."""
     shape: torch.Size
     r"""CONST: The shape of the weight tensor."""
+
     # Buffers
     w: Tensor
     r"""BUFFER: The weight-vector."""
@@ -172,9 +184,6 @@ class WRMSE(nn.Module):
         Parameters
         ----------
         w: Tensor
-        ignore_nan: bool = True
-        channel_wise: bool = True
-            If true, compute mean across channels first and then accumulate channels
         normalize: bool = True
         """
         super().__init__()
@@ -185,6 +194,7 @@ class WRMSE(nn.Module):
         self.register_buffer("FAILED", torch.tensor(float("nan")))
         self.shape = w.shape
 
+    @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Signature: ``...𝐦, ...𝐦 → 0``.
 
@@ -210,10 +220,12 @@ class WRMSE(nn.Module):
             return f"{self.__class__.__name__}(\n" + repr(weights) + "\n)"
 
 
+@autojit
 class RMSE(nn.Module):
     r"""Root Mean Square Error."""
 
-    def forward(
+    @jit.export
+    def forward(  # pylint: disable=no-self-use
         self,
         x: Tensor,
         xhat: Tensor,

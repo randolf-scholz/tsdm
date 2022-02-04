@@ -60,7 +60,7 @@ def test_PositionalEncoder_Torch() -> None:
     logger.info("Start Testing")
 
     try:
-        encoder = PositionalEncoder_Torch(num_dim, scale)
+        encoder = PositionalEncoder_Torch(num_dim, scale=scale)
         logger.info("Initialization")
     except Exception as E:
         logger.error("Initialization")

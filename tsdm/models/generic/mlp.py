@@ -27,9 +27,9 @@ class MLP(nn.Sequential):
         "__name__": __qualname__,  # type: ignore[name-defined]
         "__doc__": __doc__,
         "__module__": __module__,  # type: ignore[name-defined]
-        "input_size": int,
+        "inputs_size": int,
         "output_size": int,
-        "latent_size": int,
+        "hidden_size": int,
         "num_layers": 2,
         "dropout": float,
     }
@@ -37,36 +37,39 @@ class MLP(nn.Sequential):
 
     def __init__(
         self,
-        input_size: int,
+        inputs_size: int,
         output_size: int,
-        latent_size: Optional[int] = None,
+        *,
+        hidden_size: Optional[int] = None,
         num_layers: int = 2,
         dropout: float = 0.2,
     ) -> None:
         self.dropout = dropout
-        self.latent_size = input_size if latent_size is None else latent_size
-        self.input_size = input_size
+        self.hidden_size = inputs_size if hidden_size is None else hidden_size
+        self.inputs_size = inputs_size
         self.output_size = output_size
 
         layers: list[nn.Module] = []
 
         # input layer
-        layer = nn.Linear(self.input_size, self.latent_size)
-        nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
-        nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
+        layer = nn.Linear(self.inputs_size, self.hidden_size)
+        nn.init.kaiming_normal_(layer.weight, nonlinearity="linear")
+        nn.init.kaiming_normal_(layer.bias[None], nonlinearity="linear")
         layers.append(layer)
 
         # hidden layers
         for _ in range(num_layers - 1):
-            layer = nn.Linear(self.latent_size, self.latent_size)
+            layers.append(nn.ReLU())
+            layers.append(nn.Dropout(self.dropout))
+            layer = nn.Linear(self.hidden_size, self.hidden_size)
             nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
             nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
             layers.append(layer)
-            layers.append(nn.ReLU())
-            layers.append(nn.Dropout(self.dropout))
 
         # output_layer
-        layer = nn.Linear(self.latent_size, self.output_size)
+        layers.append(nn.ReLU())
+        layers.append(nn.Dropout(self.dropout))
+        layer = nn.Linear(self.hidden_size, self.output_size)
         nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
         nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
         layers.append(layer)
