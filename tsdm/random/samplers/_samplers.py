@@ -69,6 +69,7 @@ class SliceSampler(Sampler):
     Should you want to sample windows of varying size, you may supply a
 
     Alternatives:
+
     - sample with fixed horizon and start/stop between bounds
       - [sₖ, tₖ], sᵢ = t₀ + k⋅Δt, tᵢ = t₀ + (k+1)⋅Δt
     - sample with a fixed start location and varying length.
@@ -167,7 +168,7 @@ class SequenceSampler(Sampler):
         ----------
         data_source: Sized
         seq_len: int
-        shuffle: bool
+        shuffle: bool = True
         """
         super().__init__(data_source)
         self.data = data_source
@@ -259,7 +260,7 @@ class CollectionSampler(Sampler):
     def __iter__(self):
         r"""Return indices of the samples.
 
-        When ``early_stop=True``, it will sample precisely min() * len(subsamplers) samples.
+        When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
         When ``early_stop=False``, it will sample all samples.
         """
         activate_iterators = {
@@ -379,12 +380,13 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
     r"""Returns all intervals `[a, b]`.
 
     The intervals must satisfy:
+
     - `a = t₀ + i⋅sₖ`
     - `b = t₀ + i⋅sₖ + Δtₖ`
     - `i, k ∈ ℤ`
     - `a ≥ t_min`
     - `b ≤ t_max`
-    - `sₖ` is the stride corresponding to intervals of size `Δtₖ`
+    - `sₖ` is the stride corresponding to intervals of size `Δtₖ`.
     """
 
     offset: TimedeltaLike
