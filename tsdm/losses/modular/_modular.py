@@ -22,7 +22,7 @@ from typing import Final
 
 import numpy as np
 import torch
-from torch import Tensor, nn, jit
+from torch import Tensor, jit, nn
 
 from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
 from tsdm.util.decorators import autojit
