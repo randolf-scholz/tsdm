@@ -53,9 +53,9 @@ def query_bool(question: str, default: Optional[bool] = True) -> bool:
         try:
             print(question)
             choice = input(prompt).lower()
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as E:
             print("Operation aborted. Exiting.")
-            sys.exit(0)
+            raise E
 
         if not choice and default is not None:
             return default
