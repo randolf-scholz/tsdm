@@ -18,7 +18,7 @@ from typing import Final
 
 from torch.utils import data as torch_utils_data
 
-from tsdm.random.samplers.samplers import (
+from tsdm.random.samplers._samplers import (
     CollectionSampler,
     HierarchicalSampler,
     IntervalSampler,
