@@ -602,4 +602,4 @@ def grid(
 #         if self.drop_last:
 #             return len(self.sampler) // self.batch_size  # type: ignore[arg-type]
 #         else:
-#             return (len(self.sampler) + self.batch_size - 1) // self.batch_size  # type: ignore[arg-type]
+#             return (len(self.sampler) + self.batch_size - 1) // self.batch_size

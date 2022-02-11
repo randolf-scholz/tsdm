@@ -3,6 +3,8 @@ r"""Initialize the plotting module.
 Enable LaTeX rendering by default, if installed.
 """
 
+__all__ = []  # type: ignore
+
 import logging
 import warnings
 from typing import Final

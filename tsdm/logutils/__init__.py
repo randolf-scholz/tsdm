@@ -3,7 +3,7 @@ r"""Logging Utility Functions."""
 __all__ = [
     # Constants
     "Logger",
-    "__logger__S",
+    "LOGGERS",
     # Functions
     "compute_metrics",
     "log_optimizer_state",
@@ -29,7 +29,7 @@ __logger__ = logging.getLogger(__name__)
 
 Logger = Callable[..., int]
 
-__logger__S: Final[dict[str, Logger]] = {
+LOGGERS: Final[dict[str, Logger]] = {
     "log_optimizer_state": log_optimizer_state,
     "log_kernel_information": log_kernel_information,
     "log_model_state": log_model_state,

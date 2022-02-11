@@ -8,24 +8,58 @@ Contains things like
 
 __all__ = [
     # Functions
-    "query_bool",
-    "query_choice",
+    "get_napoleon_type_aliases",
     "get_requirements",
     "install_package",
-    "write_requirements",
-    "to_base",
+    "query_bool",
+    "query_choice",
     "to_alphanumeric",
+    "to_base",
+    "write_requirements",
 ]
 
 import importlib
+import inspect
 import logging
 import string
 import subprocess
 import sys
 from pathlib import Path
+from types import ModuleType
 from typing import Optional
 
+from tsdm.util.strings import dict2string
+
 __logger__ = logging.getLogger(__name__)
+
+
+def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
+    r"""Automatically create type aliases for all exported functions and classes.
+
+    Parameters
+    ----------
+    module: ModuleType
+
+    Returns
+    -------
+    dict[str, str]
+    """
+    d: dict[str, str] = {}
+    for item in module.__all__:
+        obj = getattr(module, item)
+        if inspect.ismodule(obj):
+            d[item] = f":py:mod:`~{obj.__name__}`"
+            if not item.startswith("_"):
+                d |= get_napoleon_type_aliases(obj)
+        elif inspect.isfunction(obj):
+            d[item] = f":py:func:`~{obj.__module__}.{obj.__qualname__}`"
+        elif inspect.isclass(obj):
+            d[item] = f":py:class:`~{obj.__module__}.{obj.__qualname__}`"
+        else:
+            d[item] = f":py:obj:`~{module.__name__}.{item}`"
+
+    __logger__.info("Found napoleon type aliases: %s", dict2string(d))
+    return d
 
 
 def query_bool(question: str, default: Optional[bool] = True) -> bool:

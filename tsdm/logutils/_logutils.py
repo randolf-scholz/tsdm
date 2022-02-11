@@ -40,7 +40,8 @@ def log_kernel_information(
     writer: SummaryWriter,
     kernel: Tensor,
     histograms: bool = False,
-    prefix: Optional[str] = None,
+    prefix: str = "",
+    postfix: str = "",
 ):
     r"""Log kernel information.
 
@@ -50,32 +51,34 @@ def log_kernel_information(
     writer: SummaryWriter
     kernel: Tensor
     histograms: bool = False
-    prefix: Optional[str] = None,
-        Adds a prefix to the tensorboard logging path
+    prefix: str = ""
+    postfix: str = ""
     """
     assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
-    prefix = f"{prefix}:kernel" if prefix is not None else "kernel"
+
+    identifier = f"{prefix+':'*bool(prefix)}kernel{':'*bool(postfix)+postfix}"
+
     inf = float("inf")
 
-    writer.add_scalar(f"{prefix}/skewpart", relsize_skewpart(kernel), i)
-    writer.add_scalar(f"{prefix}/symmpart", relsize_symmpart(kernel), i)
+    writer.add_scalar(f"{identifier}/skewpart", relsize_skewpart(kernel), i)
+    writer.add_scalar(f"{identifier}/symmpart", relsize_symmpart(kernel), i)
 
     # general properties
-    writer.add_scalar(f"{prefix}/det", det(kernel), i)
-    writer.add_scalar(f"{prefix}/logdet", slogdet(kernel)[-1], i)
-    writer.add_scalar(f"{prefix}/rank", matrix_rank(kernel), i)
-    writer.add_scalar(f"{prefix}/trace", torch.trace(kernel), i)
-    writer.add_scalar(f"{prefix}/cond", cond(kernel), i)
+    writer.add_scalar(f"{identifier}/det", det(kernel), i)
+    writer.add_scalar(f"{identifier}/logdet", slogdet(kernel)[-1], i)
+    writer.add_scalar(f"{identifier}/rank", matrix_rank(kernel), i)
+    writer.add_scalar(f"{identifier}/trace", torch.trace(kernel), i)
+    writer.add_scalar(f"{identifier}/cond", cond(kernel), i)
 
     # norms
-    writer.add_scalar(f"{prefix}:norms/fro", matrix_norm(kernel, ord="fro"), i)
-    writer.add_scalar(f"{prefix}:norms/nuc", matrix_norm(kernel, ord="nuc"), i)
-    writer.add_scalar(f"{prefix}:norms/l-∞", matrix_norm(kernel, ord=-inf), i)
-    writer.add_scalar(f"{prefix}:norms/l-2", matrix_norm(kernel, ord=-2), i)
-    writer.add_scalar(f"{prefix}:norms/l-1", matrix_norm(kernel, ord=-1), i)
-    writer.add_scalar(f"{prefix}:norms/l+1", matrix_norm(kernel, ord=+1), i)
-    writer.add_scalar(f"{prefix}:norms/l+2", matrix_norm(kernel, ord=+2), i)
-    writer.add_scalar(f"{prefix}:norms/l+∞", matrix_norm(kernel, ord=+inf), i)
+    writer.add_scalar(f"{identifier}:norms/fro", matrix_norm(kernel, ord="fro"), i)
+    writer.add_scalar(f"{identifier}:norms/nuc", matrix_norm(kernel, ord="nuc"), i)
+    writer.add_scalar(f"{identifier}:norms/l-∞", matrix_norm(kernel, ord=-inf), i)
+    writer.add_scalar(f"{identifier}:norms/l-2", matrix_norm(kernel, ord=-2), i)
+    writer.add_scalar(f"{identifier}:norms/l-1", matrix_norm(kernel, ord=-1), i)
+    writer.add_scalar(f"{identifier}:norms/l+1", matrix_norm(kernel, ord=+1), i)
+    writer.add_scalar(f"{identifier}:norms/l+2", matrix_norm(kernel, ord=+2), i)
+    writer.add_scalar(f"{identifier}:norms/l+∞", matrix_norm(kernel, ord=+inf), i)
 
     # 2d-data is order of magnitude more expensive.
     if histograms:
@@ -90,7 +93,8 @@ def log_optimizer_state(
     writer: SummaryWriter,
     optimizer: Optimizer,
     histograms: bool = False,
-    prefix: Optional[str] = None,
+    prefix: str = "",
+    postfix: str = "",
 ):
     r"""Log optimizer data.
 
@@ -100,11 +104,12 @@ def log_optimizer_state(
     writer: SummaryWriter
     optimizer: Optimizer
     histograms: bool=False
-    prefix: Optional[str] = None,
+    prefix: str = ""
+    postfix: str = ""
     """
-    prefix = f"{prefix}:optim" if prefix is not None else "optim"
+    identifier = f"{prefix+':'*bool(prefix)}optim{':'*bool(postfix)+postfix}"
 
-    # TODO: make this compatible with optimziers other than ADAM.
+    # TODO: make this compatible with optimizers other than ADAM.
     if not isinstance(optimizer, torch.optim.Adam):
         warnings.warn(
             "Optimizer logging only works with ADAM currently", RuntimeWarning
@@ -118,23 +123,23 @@ def log_optimizer_state(
     except KeyError:
         pass
 
-    writer.add_scalar(f"{prefix}:norms/variables", multi_norm(variables), i)
-    writer.add_scalar(f"{prefix}:norms/gradients", multi_norm(gradients), i)
+    writer.add_scalar(f"{identifier}:norms/variables", multi_norm(variables), i)
+    writer.add_scalar(f"{identifier}:norms/gradients", multi_norm(gradients), i)
     try:
-        writer.add_scalar(f"{prefix}:norms/moments_1", multi_norm(moments_1), i)
-        writer.add_scalar(f"{prefix}:norms/moments_2", multi_norm(moments_2), i)
+        writer.add_scalar(f"{identifier}:norms/moments_1", multi_norm(moments_1), i)
+        writer.add_scalar(f"{identifier}:norms/moments_2", multi_norm(moments_2), i)
     except NameError:
         pass
 
     # NOTE: 2d-data is an order of magnitude more expensive.
     if histograms:
         for j, (w, g) in enumerate(zip(variables, gradients)):
-            writer.add_histogram(f"{prefix}:variables/{j}", w, i)
-            writer.add_histogram(f"{prefix}:gradients/{j}", g, i)
+            writer.add_histogram(f"{identifier}:variables/{j}", w, i)
+            writer.add_histogram(f"{identifier}:gradients/{j}", g, i)
         try:
             for j, (a, b) in enumerate(zip(moments_1, moments_2)):
-                writer.add_histogram(f"{prefix}:moments_1/{j}", a, i)
-                writer.add_histogram(f"{prefix}:moments_2/{j}", b, i)
+                writer.add_histogram(f"{identifier}:moments_1/{j}", a, i)
+                writer.add_histogram(f"{identifier}:moments_2/{j}", b, i)
         except NameError:
             pass
 
@@ -145,7 +150,8 @@ def log_model_state(
     writer: SummaryWriter,
     model: Model,
     histograms: bool = False,
-    prefix: Optional[str] = None,
+    prefix: str = "",
+    postfix: str = "",
 ):
     """Log optimizer data.
 
@@ -155,21 +161,23 @@ def log_model_state(
     i: int
     writer: SummaryWriter
     histograms: bool=False
-    prefix: Optional[str] = None,
+    prefix: str = ""
+    postfix: str = ""
     """
-    # TODO: make this compatible with optimziers other than ADAM.
-    prefix = f"{prefix}:model" if prefix is not None else "model"
+    # TODO: make this compatible with optimizers other than ADAM.
+    identifier = f"{prefix+':'*bool(prefix)}model{':'*bool(postfix)+postfix}"
+
     variables = list(model.parameters())
     gradients = [w.grad for w in variables]
 
-    writer.add_scalar(f"{prefix}:norms/variables", multi_norm(variables), i)
-    writer.add_scalar(f"{prefix}:norms/gradients", multi_norm(gradients), i)
+    writer.add_scalar(f"{identifier}:norms/variables", multi_norm(variables), i)
+    writer.add_scalar(f"{identifier}:norms/gradients", multi_norm(gradients), i)
 
     # 2d -data is order of magnitude more expensive.
     if histograms:
         for j, (w, g) in enumerate(zip(variables, gradients)):
-            writer.add_histogram(f"{prefix}:variables/{j}", w, i)
-            writer.add_histogram(f"{prefix}:gradients/{j}", g, i)
+            writer.add_histogram(f"{identifier}:variables/{j}", w, i)
+            writer.add_histogram(f"{identifier}:gradients/{j}", g, i)
 
 
 # user can provide targets and predics
@@ -212,7 +220,7 @@ def log_metrics(
     ...
 
 
-@torch.no_grad()
+@torch.no_grad()  # type: ignore[misc]
 def log_metrics(
     i: int,
     writer: SummaryWriter,
@@ -221,7 +229,8 @@ def log_metrics(
     targets: Optional[Tensor] = None,
     predics: Optional[Tensor] = None,
     values: Optional[Union[dict[str, Tensor], Sequence[Tensor]]] = None,
-    prefix: Optional[str] = None,
+    prefix: str = "",
+    postfix: str = "",
 ):
     r"""Log multiple metrics at once.
 
@@ -234,9 +243,10 @@ def log_metrics(
     targets: Optional[Tensor], default=None
     predics: Optional[Tensor], default=None
     values: Optional[Tensor], default=None
-    prefix: Optional[str], default=None
+    prefix: str = ""
+    postfix: str = ""
     """
-    prefix = f"{prefix}:metrics" if prefix is not None else "metrics"
+    identifier = f"{prefix+':'*bool(prefix)}metrics{':'*bool(postfix)+postfix}"
 
     if values is None:
         assert (
@@ -265,7 +275,7 @@ def log_metrics(
             HAS_NAN = torch.isnan(score).any().item()
             HAS_INF = torch.isinf(score).any().item()
             raise RuntimeError(f"Model collapsed! {HAS_NAN=} {HAS_INF=}")
-        writer.add_scalar(f"{prefix}/{key}", score, i)
+        writer.add_scalar(f"{identifier}/{key}", score, i)
 
 
 def compute_metrics(
@@ -306,7 +316,7 @@ def compute_metrics(
 
 
 # @torch.no_grad()
-# def get_all_preds(model, dataloader):
+# def get_all_predictions(model, dataloader):
 #     r"""Get all predictions from a model."""
 #     Y, Ŷ = [], []
 #     for batch in tqdm(dataloader, leave=False):
