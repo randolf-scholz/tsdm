@@ -319,7 +319,7 @@ def grad_norm(
     tensors: list[Tensor]
     p: float, default: 2
     q: float, default: 2
-    normalize: bool, default=True
+    normalize: bool, default True
         If true, accumulate with mean instead of sum
 
     Returns

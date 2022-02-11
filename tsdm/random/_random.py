@@ -34,16 +34,16 @@ def sample_timestamps(
 
     Parameters
     ----------
-    start: TimeStampLike, default=<today>
-    final: TimeStampLike, default=<today>+<24h>
+    start: TimeStampLike, default <today>
+    final: TimeStampLike, default <today>+<24h>
     size: int
-    freq: TimeDeltaLike, default="1s"
+    freq: TimeDeltaLike, default "1s"
         The smallest possible timedelta between distinct timestamps.
-    replace: bool, default=True
+    replace: bool, default True
         Whether the sample is with or without replacement.
-    include_start: bool, default=True
+    include_start: bool, default True
         If `True`, then `start` will always be the first sampled timestamp.
-    include_final: bool, default=True
+    include_final: bool, default True
         If `True`, then `final` will always be the final sampled timestamp.
 
     Returns

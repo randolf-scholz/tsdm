@@ -323,7 +323,7 @@ class USHCN(Dataset):
 
         Parameters
         ----------
-        key: Literal["us_daily", "states", "stations"], default="us_daily"
+        key: Literal["us_daily", "states", "stations"], default "us_daily"
         """
         {
             "us_daily": self._clean_us_daily,

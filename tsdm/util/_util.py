@@ -188,7 +188,7 @@ def flatten_dict(
     Parameters
     ----------
     d: dict
-    recursive: bool (default=True)
+    recursive: bool (default True)
         If true applies flattening strategy recursively on nested dicts, yielding
         list[tuple[key1, key2, ...., keyN, value]]
 

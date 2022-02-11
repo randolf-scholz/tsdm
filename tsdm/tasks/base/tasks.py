@@ -118,11 +118,11 @@ class BaseTask(ABC, Generic[KeyType]):
     ----------
     index: list[str]
         A list of string specifying the data splits of interest.
-    train_batch_size: int, default=32
+    train_batch_size: int, default 32
         Default batch-size used by batchloader.
-    eval_batch_size: int, default=128
+    eval_batch_size: int, default 128
         Default batch-size used by dataloaders (for evaluation).
-    preprocessor: Optional[Encoder], default=None
+    preprocessor: Optional[Encoder], default None
         Task specific preprocessing. For example, the EVP might specifically ask for
         evaluation of Mean Squared Error on standardized data.
     dataset: Dataset
