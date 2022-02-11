@@ -144,7 +144,7 @@ class Traffic(Dataset):
 
         Parameters
         ----------
-        key: Literal["us_daily", "states", "stations"], default="us_daily"
+        key: Literal["us_daily", "states", "stations"], default "us_daily"
         """
         cleaners: dict[str, Callable[[], None]] = {
             "timeseries": self._clean_data,

@@ -68,7 +68,7 @@ def query_bool(question: str, default: Optional[bool] = True) -> bool:
     Parameters
     ----------
     question: str
-    default: Optional[bool], default=True
+    default: Optional[bool], default True
 
     Returns
     -------
@@ -111,7 +111,7 @@ def query_choice(
     question: str
     choices: tuple[str]
     default: Optional[str]
-    pick_by_number: bool, default=True
+    pick_by_number: bool, default True
         If True, will allow the user to pick the choice by entering its number.
 
     Returns
@@ -169,9 +169,9 @@ def install_package(
     Parameters
     ----------
     package_name: str
-    non_interactive: bool, default=False
+    non_interactive: bool, default False
         If false, will generate a user prompt.
-    installer: str, default="pip"
+    installer: str, default "pip"
         Can also use `conda` or `mamba`
     options: tuple[str, ...]
         Options to pass to the isntaller

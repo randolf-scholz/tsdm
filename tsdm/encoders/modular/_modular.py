@@ -183,7 +183,7 @@ class Time2Float(BaseEncoder):
 
         Parameters
         ----------
-        normalization: Literal["gcd", "max", "none"], default="max"
+        normalization: Literal["gcd", "max", "none"], default "max"
         """
         super().__init__()
         self.normalization = normalization

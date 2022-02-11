@@ -240,9 +240,9 @@ def log_metrics(
     writer: SummaryWriter,
     metrics: dict[str, ModularLoss]
     *
-    targets: Optional[Tensor], default=None
-    predics: Optional[Tensor], default=None
-    values: Optional[Tensor], default=None
+    targets: Optional[Tensor], default None
+    predics: Optional[Tensor], default None
+    values: Optional[Tensor], default None
     prefix: str = ""
     postfix: str = ""
     """

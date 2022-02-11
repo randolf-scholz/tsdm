@@ -151,9 +151,9 @@ def timefun(
     Parameters
     ----------
     fun: Callable
-    append: bool, default=True
+    append: bool, default True
         Whether to append the time result to the function call
-    loglevel: int, default=logging.Warning (20)
+    loglevel: int, default logging.Warning (20)
     """
     timefun_logger = logging.getLogger("timefun")
 
