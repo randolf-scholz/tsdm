@@ -10,6 +10,7 @@ __all__ = [
     "repr_mapping",
     "repr_sequence",
     "tensor_info",
+    "dict2string",
 ]
 
 import logging
@@ -194,3 +195,28 @@ def repr_object(obj: Any) -> str:
 def tensor_info(x: Tensor) -> str:
     r"""Print useful information about Tensor."""
     return f"{x.__class__.__name__}[{tuple(x.shape)}, {x.dtype}, {x.device.type}]"
+
+
+def dict2string(d: dict[str, Any]) -> str:
+    r"""Return pretty string representation of dictionary.
+
+    Vertically aligns keys.
+
+    Parameters
+    ----------
+    d: dict[str, Any]
+
+    Returns
+    -------
+    str
+    """
+    max_key_length = max((len(key) for key in d), default=0)
+    pad = " " * 2
+
+    string = "dict(" + "\n"
+
+    for key, value in sorted(d.items()):
+        string += f"\n{pad}{key:<{max_key_length}}: {repr(value)}"
+
+    string += "\n)"
+    return string

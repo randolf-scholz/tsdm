@@ -14,8 +14,14 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 import datetime
+import logging
 import os
 import sys
+
+import tsdm
+
+__logger__ = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO)
 
 os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
@@ -134,7 +140,7 @@ intersphinx_timeout = 2
 # When a cross-reference without an explicit inventory specification is being resolved by
 # intersphinx, skip resolution if it matches one of the specifications in this list.
 # The default value is ['std:doc'].
-intersphinx_disabled_reftypes = ['std:doc']
+intersphinx_disabled_reftypes = ["std:doc"]
 
 
 # -- AutoAPI configuration ------------------------------------------------------------------------
@@ -419,7 +425,7 @@ autodoc_inherit_docstrings = True
 # --  sphinx.ext.napoleon configuration -------------------------------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 
-napoleon_google_docstring = False
+napoleon_google_docstring = True
 # True to parse Google style docstrings.
 # False to disable support for Google style docstrings.
 # Defaults to True.
@@ -502,9 +508,14 @@ napoleon_type_aliases = {
     "Dataset": "~xarray.Dataset",
     "Variable": "~xarray.Variable",
     # TSDM
-    "TimeDeltaLike": "tsdm.util.TimeDeltaLike",
-    "TimeStampLike": "tsdm.util.TimeStampLike",
+    # "TimeDeltaLike": "tsdm.util.TimeDeltaLike",
+    # "TimeStampLike": "tsdm.util.TimeStampLike",
+    # "ScaledDotProductAttention" : ":class:`~tsdm.models.ScaledDotProductAttention`"
 }
+# recursively napoleon_type_aliases for tsdm classes / functions.
+
+napoleon_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
+
 # A mapping to translate type names to other names or references. Works only when napoleon_use_param = True.
 # Defaults to None.
 napoleon_attr_annotations = True

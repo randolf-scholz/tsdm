@@ -40,7 +40,6 @@ __all__ = [
     "plot",
     "random",
     "tasks",
-    "trainers",
     "util",
 ]
 
@@ -64,7 +63,6 @@ from tsdm import (
     plot,
     random,
     tasks,
-    trainers,
     util,
 )
 

@@ -5,11 +5,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/dev/test/Untitled.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-ConvNet.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs/conf.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/samplers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/_samplers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/final_product.sh" beforeDir="false" afterPath="$PROJECT_DIR$/examples/final_product.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/synthetic/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/synthetic/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/logutils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/plot/__setup__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/__setup__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/trainers/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/system.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/system.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -90,14 +106,14 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net/docs/conf.py" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
-    <property name="settings.editor.selected.configurable" value="preferences.externalTools" />
-    <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/.gitlab-ci.yml" />
+    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.notebooks.jupyter.connections.configuration.JupyterServerConfigurable" />
+    <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/docs/conf.py" />
   </component>
   <component name="ReaderModeSettings">
     <option name="enabled" value="false" />
@@ -272,7 +288,11 @@
       <workItem from="1643743003734" duration="1370000" />
       <workItem from="1643744922777" duration="37503000" />
       <workItem from="1643917609543" duration="12664000" />
-      <workItem from="1643937624788" duration="1237000" />
+      <workItem from="1643937624788" duration="2031000" />
+      <workItem from="1643996052443" duration="4451000" />
+      <workItem from="1644391827873" duration="3315000" />
+      <workItem from="1644576870003" duration="1255000" />
+      <workItem from="1644578133849" duration="6217000" />
     </task>
     <servers />
   </component>
