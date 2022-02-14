@@ -51,9 +51,13 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
             d[item] = f":py:mod:`~{obj.__name__}`"
             if not item.startswith("_"):
                 d |= get_napoleon_type_aliases(obj)
+        elif inspect.ismethod(obj):
+            d[item] = f":py:meth:`~{obj.__module__}.{obj.__qualname__}`"
         elif inspect.isfunction(obj):
             d[item] = f":py:func:`~{obj.__module__}.{obj.__qualname__}`"
         elif inspect.isclass(obj):
+            if issubclass(obj, Exception):
+                d[item] = f":py:exc:`~{obj.__module__}.{obj.__qualname__}`"
             d[item] = f":py:class:`~{obj.__module__}.{obj.__qualname__}`"
         else:
             d[item] = f":py:obj:`~{module.__name__}.{item}`"
