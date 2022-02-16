@@ -17,6 +17,9 @@ __all__ = [
     "vectorize",
     "IterItems",
     "IterKeys",
+    "pre_hook",
+    "post_hook",
+    "hook",
 ]
 
 import logging
@@ -28,6 +31,9 @@ from tsdm.util.decorators._decorators import (
     IterKeys,
     autojit,
     decorator,
+    hook,
+    post_hook,
+    pre_hook,
     sphinx_value,
     timefun,
     trace,
