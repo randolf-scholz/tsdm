@@ -180,6 +180,8 @@ class ChainedEncoder(BaseEncoder):
             else:
                 self.chained.append(encoder)
 
+        self.is_fitted = all(e.is_fitted for e in self.chained)
+
     def fit(self, data):
         r"""Fit to the data."""
         for encoder in reversed(self.chained):
@@ -706,9 +708,11 @@ class Standardizer(BaseEncoder):
 
     def __getitem__(self, item: Any) -> Standardizer:
         r"""Return a slice of the Standardizer."""
-        return Standardizer(
+        encoder = Standardizer(
             mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:]
         )
+        encoder.is_fitted = True
+        return encoder
 
 
 class MinMaxScaler(BaseEncoder):
@@ -840,9 +844,12 @@ class MinMaxScaler(BaseEncoder):
         assert not all(x.ndim == 0 for x in oldvals)
         lost_ranks = max(x.ndim for x in oldvals) - max(x.ndim for x in newvals)
 
-        return MinMaxScaler(
+        encoder = MinMaxScaler(
             xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, axis=self.axis[lost_ranks:]
         )
+
+        encoder.is_fitted = True
+        return encoder
 
     # @singledispatchmethod
     # def fit(self, data: Union[Tensor, np.ndarray]):
@@ -1327,6 +1334,7 @@ class ProductEncoder(BaseEncoder):
     def __init__(self, encoders: Iterable[BaseEncoder]) -> None:
         super().__init__()
         self.encoders = tuple(encoders)
+        self.is_fitted = all(e.is_fitted for e in self.encoders)
 
     def fit(self, data: Sequence[Any]) -> None:
         r"""Fit the encoder."""
