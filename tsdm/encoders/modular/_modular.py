@@ -35,7 +35,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from functools import singledispatchmethod
-from typing import Any, Final, Literal, Optional, Union, overload
+from typing import Any, Final, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 import pandas as pd
@@ -55,6 +55,8 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.datasets import TimeTensor
+from tsdm.util.decorators import post_hook, pre_hook
+from tsdm.util.strings import repr_namedtuple
 from tsdm.util.types import PathType
 from tsdm.util.types.abc import HashableType
 
@@ -62,6 +64,24 @@ __logger__ = logging.getLogger(__name__)
 
 PandasObject = Union[Index, Series, DataFrame]
 r"""Type Hint for pandas objects."""
+
+
+def get_broadcast(data: Any, axis: tuple[int, ...]) -> tuple[Union[None, slice], ...]:
+    r"""Get the broadcast transform.
+
+    Example
+    -------
+    data is (2,3,4,5,6,7)
+    axis is (0,2,-1)
+    broadcast is (:, None, :, None, None, :)
+    then, given a tensor x of shape (2, 4, 7), we can perform
+    element-wise operations via data + x[broadcast]
+    """
+    rank = len(data.shape)
+    axes = list(range(rank))
+    axis = tuple(a % rank for a in axis)
+    broadcast = tuple(slice(None) if a in axis else None for a in axes)
+    return broadcast
 
 
 def apply_along_axes(
@@ -99,23 +119,16 @@ def apply_along_axes(
 class BaseEncoder(ABC):
     r"""Base class that all encoders must subclass."""
 
-    # TODO: Implement __matmul__ @ for composition of encoders.
+    is_fitted: bool = False
+    """Whether the encoder has been fitted."""
 
     def __init__(self):
         super().__init__()
+        self.fit = post_hook(self.fit, self._post_fit_hook)
+        self.encode = pre_hook(self.encode, self._pre_encode_hook)
+        self.decode = pre_hook(self.decode, self._pre_decode_hook)
         self.transform = self.encode
         self.inverse_transform = self.decode
-
-    def fit(self, data):
-        r"""By default does nothing."""
-
-    @abstractmethod
-    def encode(self, data, /):
-        r"""Transform the data."""
-
-    @abstractmethod
-    def decode(self, data, /):
-        r"""Reverse the applied transformation."""
 
     def __matmul__(self, other):
         r"""Return chained encoders."""
@@ -128,6 +141,28 @@ class BaseEncoder(ABC):
     def __repr__(self):
         r"""Return a string representation of the encoder."""
         return f"{self.__class__.__name__}"
+
+    def fit(self, data):
+        r"""By default does nothing."""
+
+    @abstractmethod
+    def encode(self, data, /):
+        r"""Transform the data."""
+
+    @abstractmethod
+    def decode(self, data, /):
+        r"""Reverse the applied transformation."""
+
+    def _post_fit_hook(self, *args, **kwargs):
+        self.is_fitted = True
+
+    def _pre_encode_hook(self, *args, **kwargs):
+        if not self.is_fitted:
+            raise RuntimeError("Encoder has not been fitted.")
+
+    def _pre_decode_hook(self, *args, **kwargs):
+        if not self.is_fitted:
+            raise RuntimeError("Encoder has not been fitted.")
 
 
 class ChainedEncoder(BaseEncoder):
@@ -569,7 +604,18 @@ class Standardizer(BaseEncoder):
     ignore_nan: bool = True
     r"""Whether to ignore nan-values while fitting."""
     axis: tuple[int, ...]
-    r"""Over which axis to perform the scaling."""
+    r"""The axis to perform the scaling. If None, automatically select the axis."""
+
+    class Parameters(NamedTuple):
+        r"""The parameters of the StandardScalar."""
+
+        mean: Union[np.ndarray, Tensor]
+        stdv: Union[np.ndarray, Tensor]
+        axis: tuple[int, ...]
+
+        def __repr__(self) -> str:
+            r"""Pretty print."""
+            return repr_namedtuple(self)
 
     def __init__(
         self,
@@ -578,17 +624,25 @@ class Standardizer(BaseEncoder):
         stdv: Optional[Tensor] = None,
         *,
         ignore_nan: bool = True,
-        axis: Union[int, tuple[int, ...]] = -1,
+        axis: Optional[Union[int, tuple[int, ...]]] = None,
     ):
         super().__init__()
         self.ignore_nan = ignore_nan
-        self.axis = axis if isinstance(axis, tuple) else (axis,)
+        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore
         self.mean = mean
         self.stdv = stdv
+
+    @property
+    def param(self) -> Parameters:
+        r"""Parameters of the Standardizer."""
+        return self.Parameters(self.mean, self.stdv, self.axis)
 
     def fit(self, data):
         r"""Compute the mean and stdv."""
         rank = len(data.shape)
+        if self.axis is None:
+            self.axis = () if rank == 1 else (-1,)
+
         selection = [(a % rank) for a in self.axis]
         axes = tuple(k for k in range(rank) if k not in selection)
 
@@ -628,17 +682,27 @@ class Standardizer(BaseEncoder):
         r"""Encode the input."""
         if self.mean is None:
             raise RuntimeError("Needs to be fitted first!")
-        return (data - self.mean) / self.stdv
+
+        __logger__.debug("Encoding data %s", data)
+        broadcast = get_broadcast(data, self.axis)
+        __logger__.debug("Broadcasting to %s", broadcast)
+
+        return (data - self.mean[broadcast]) / self.stdv[broadcast]
 
     def decode(self, data):
         r"""Decode the input."""
         if self.mean is None:
             raise RuntimeError("Needs to be fitted first!")
-        return data * self.stdv + self.mean
+
+        __logger__.debug("Encoding data %s", data)
+        broadcast = get_broadcast(data, self.axis)
+        __logger__.debug("Broadcasting to %s", broadcast)
+
+        return data * self.stdv[broadcast] + self.mean[broadcast]
 
     def __repr__(self) -> str:
         r"""Pretty print."""
-        return f"{self.__class__.__name__}(" + f"{list(self.axis)}" + ")"
+        return f"{self.__class__.__name__}(axis={self.axis})"
 
     def __getitem__(self, item: Any) -> Standardizer:
         r"""Return a slice of the Standardizer."""
@@ -659,6 +723,20 @@ class MinMaxScaler(BaseEncoder):
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""
 
+    class Parameters(NamedTuple):
+        r"""The parameters of the MinMaxScaler."""
+
+        xmin: Union[np.ndarray, Tensor]
+        xmax: Union[np.ndarray, Tensor]
+        ymin: Union[np.ndarray, Tensor]
+        ymax: Union[np.ndarray, Tensor]
+        scale: Union[np.ndarray, Tensor]
+        axis: tuple[int, ...]
+
+        def __repr__(self) -> str:
+            r"""Pretty print."""
+            return repr_namedtuple(self)
+
     def __init__(
         self,
         /,
@@ -667,7 +745,7 @@ class MinMaxScaler(BaseEncoder):
         xmin: Optional[Union[float, np.ndarray, Tensor]] = None,
         xmax: Optional[Union[float, np.ndarray, Tensor]] = None,
         *,
-        axis: Union[int, tuple[int, ...]] = -1,
+        axis: Optional[Union[int, tuple[int, ...]]] = None,
     ):
         r"""Initialize the MinMaxScaler.
 
@@ -683,20 +761,26 @@ class MinMaxScaler(BaseEncoder):
         self.ymin = np.array(0.0 if ymin is None else ymin)
         self.ymax = np.array(1.0 if ymax is None else ymax)
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore
 
-        if isinstance(axis, Iterable):
-            self.axis = tuple(axis)
-        else:
-            self.axis = (axis,)
+    @property
+    def param(self) -> Parameters:
+        r"""Parameters of the MinMaxScaler."""
+        return self.Parameters(
+            self.xmin, self.xmax, self.ymin, self.ymax, self.scale, self.axis
+        )
 
     @singledispatchmethod
     def fit(self, data: np.ndarray) -> None:
         r"""Compute the min and max."""
         data = np.asarray(data)
         rank = len(data.shape)
+        if self.axis is None:
+            self.axis = () if rank == 1 else (-1,)
+
         selection = [(a % rank) for a in self.axis]
         axes = tuple(k for k in range(rank) if k not in selection)
-
+        # axes = self.axis
         self.ymin = np.array(self.ymin, dtype=data.dtype)
         self.ymax = np.array(self.ymax, dtype=data.dtype)
         self.xmin = np.nanmin(data, axis=axes)
@@ -712,27 +796,37 @@ class MinMaxScaler(BaseEncoder):
         neginf = torch.tensor(float("-inf"), device=data.device, dtype=data.dtype)
         posinf = torch.tensor(float("+inf"), device=data.device, dtype=data.dtype)
 
-        self.xmin = torch.amin(
-            torch.where(mask, posinf, data), dim=self.axis, keepdim=True
-        )
-        self.xmax = torch.amax(
-            torch.where(mask, neginf, data), dim=self.axis, keepdim=True
-        )
+        self.xmin = torch.amin(torch.where(mask, posinf, data), dim=self.axis)
+        self.xmax = torch.amax(torch.where(mask, neginf, data), dim=self.axis)
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def encode(self, data, /):
         r"""Encode the input."""
         __logger__.debug("Encoding data %s", data)
-        return (data - self.xmin) * self.scale + self.ymin
+        broadcast = get_broadcast(data, self.axis)
+        __logger__.debug("Broadcasting to %s", broadcast)
+
+        xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
+        scale = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
+        ymin = self.ymin[broadcast] if self.ymin.ndim > 1 else self.ymin
+
+        return (data - xmin) * scale + ymin
 
     def decode(self, data, /):
         r"""Decode the input."""
         __logger__.debug("Decoding data %s", data)
-        return (data - self.ymin) / self.scale + self.xmin
+        broadcast = get_broadcast(data, self.axis)
+        __logger__.debug("Broadcasting to %s", broadcast)
+
+        xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
+        scale = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
+        ymin = self.ymin[broadcast] if self.ymin.ndim > 1 else self.ymin
+
+        return (data - ymin) / scale + xmin
 
     def __repr__(self) -> str:
         r"""Pretty print."""
-        return f"{self.__class__.__name__}(" + f"{list(self.axis)}" + ")"
+        return f"{self.__class__.__name__}(axis={self.axis})"
 
     def __getitem__(self, item: Any) -> MinMaxScaler:
         r"""Return a slice of the MinMaxScaler."""

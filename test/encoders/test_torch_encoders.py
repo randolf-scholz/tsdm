@@ -26,6 +26,7 @@ def test_PositionalEncoder() -> None:
 
     try:
         encoder = PositionalEncoder(num_dim, scale)
+        encoder.fit(None)
         logger.info("Initialization")
     except Exception as E:
         logger.error("Initialization")
