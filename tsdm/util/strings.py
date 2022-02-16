@@ -16,7 +16,7 @@ __all__ = [
 
 import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, Optional, overload
+from typing import Any, NamedTuple, Optional, overload
 
 from numpy.typing import ArrayLike
 from torch import Tensor
@@ -223,7 +223,7 @@ def dict2string(d: dict[str, Any]) -> str:
     return string
 
 
-def repr_namedtuple(obj: tuple) -> str:
+def repr_namedtuple(obj: NamedTuple) -> str:
     r"""Return a string representation of a namedtuple object."""
     assert hasattr(obj, "_fields")
 
