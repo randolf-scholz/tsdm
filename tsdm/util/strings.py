@@ -9,6 +9,7 @@ __all__ = [
     "repr_array",
     "repr_mapping",
     "repr_sequence",
+    "repr_namedtuple",
     "tensor_info",
     "dict2string",
 ]
@@ -219,4 +220,33 @@ def dict2string(d: dict[str, Any]) -> str:
         string += f"\n{pad}{key:<{max_key_length}}: {repr(value)}"
 
     string += "\n)"
+    return string
+
+
+def repr_namedtuple(obj: tuple) -> str:
+    r"""Return a string representation of a namedtuple object."""
+    assert hasattr(obj, "_fields")
+
+    pad = " " * 2
+    name = obj.__class__.__name__
+
+    string = f"{name}("
+
+    strings: list[str] = []
+    keys = obj._fields
+    max_key_len = max(len(key) for key in keys)
+    objs = [repr(x).replace("\n", "\n" + " " * max_key_len) for x in obj]
+
+    for k, x in zip(keys, objs):
+        strings.append(f"{k:<{max_key_len}} = {x}")
+
+    total_length = len("".join(strings))
+
+    if total_length < 80:
+        string += ", ".join(strings)
+    else:
+        string += "".join(f"\n{pad}{s}," for s in strings)
+        string += "\n"
+    string += ")"
+
     return string
