@@ -11,6 +11,9 @@ __all__ = [
     "timefun",
     "trace",
     "vectorize",
+    "hook",
+    "pre_hook",
+    "post_hook",
     # Class Decorators
     "autojit",
     "IterItems",
@@ -443,3 +446,45 @@ def IterKeys(obj):
     obj = deepcopy(obj)
     obj.__class__ = WrappedClass
     return obj
+
+
+@decorator
+def hook(func: Callable, pre_hook: Callable, post_hook: Callable, /) -> Callable:
+    r"""Wrap a function with pre and post hooks."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        r"""Wrap a function with pre and post hooks."""
+        pre_hook(*args, **kwargs)
+        result = func(*args, **kwargs)
+        post_hook(*args, **kwargs)
+        return result
+
+    return wrapper
+
+
+@decorator
+def pre_hook(func: Callable, hook: Callable, /) -> Callable:
+    r"""Wrap a function with a pre hook."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        r"""Wrap a function with a pre hook."""
+        hook(*args, **kwargs)
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@decorator
+def post_hook(func: Callable, hook: Callable, /) -> Callable:
+    r"""Wrap a function with a post hook."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        r"""Wrap a function with a post hook."""
+        result = func(*args, **kwargs)
+        hook(*args, **kwargs)
+        return result
+
+    return wrapper
