@@ -5,27 +5,38 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/dev/test/Untitled.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-ConvNet.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow_jax.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/BUGS/pickle_namedtuple.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/BUGS/to_frame.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/CONCEPT/Concept - data pipeline.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/encoders/DataFrameSplitter.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/encoders/FrameEncoder.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/encoders/ProductEncoder.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/encoders/TripletEncoder.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/encoders/Untitled.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tsdm/encoders/modular/generic.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/Concept - data pipeline.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/Untitled.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/encoders/DataFrameEncoder.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/DataFrameEncoder.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/class.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/class.rst" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs/conf.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/final_product.sh" beforeDir="false" afterPath="$PROJECT_DIR$/examples/final_product.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/synthetic/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/synthetic/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/logutils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/losses/functional/_functional.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/plot/__setup__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/__setup__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/trainers/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/system.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/system.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,7 +117,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net/docs/conf.py" />
+    <property name="last_opened_file_path" value="$USER_HOME$/GIT/pytorch" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -292,7 +303,12 @@
       <workItem from="1643996052443" duration="4451000" />
       <workItem from="1644391827873" duration="3315000" />
       <workItem from="1644576870003" duration="1255000" />
-      <workItem from="1644578133849" duration="6217000" />
+      <workItem from="1644578133849" duration="18884000" />
+      <workItem from="1644824194264" duration="1282000" />
+      <workItem from="1644829269827" duration="1753000" />
+      <workItem from="1644876936202" duration="3970000" />
+      <workItem from="1644917099888" duration="4473000" />
+      <workItem from="1644954609369" duration="7380000" />
     </task>
     <servers />
   </component>

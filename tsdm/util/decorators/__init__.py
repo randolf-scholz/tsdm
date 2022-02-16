@@ -16,6 +16,7 @@ __all__ = [
     "trace",
     "vectorize",
     "IterItems",
+    "IterKeys",
 ]
 
 import logging
@@ -24,6 +25,7 @@ from typing import Final
 
 from tsdm.util.decorators._decorators import (
     IterItems,
+    IterKeys,
     autojit,
     decorator,
     sphinx_value,
