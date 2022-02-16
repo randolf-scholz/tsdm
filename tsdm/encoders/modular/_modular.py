@@ -25,12 +25,15 @@ __all__ = [
     "Time2Float",
     "IntEncoder",
     "TripletEncoder",
+    "ProductEncoder",
+    "FrameSplitter",
+    "FrameEncoder",
 ]
 
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from functools import singledispatchmethod
 from typing import Any, Final, Literal, Optional, Union, overload
 
@@ -38,11 +41,22 @@ import numpy as np
 import pandas as pd
 import pandas.api.types
 import torch
-from pandas import NA, DataFrame, DatetimeIndex, Index, Series, Timedelta, Timestamp
+from pandas import (
+    NA,
+    DataFrame,
+    DatetimeIndex,
+    Index,
+    MultiIndex,
+    Series,
+    Timedelta,
+    Timestamp,
+)
+from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.datasets import TimeTensor
 from tsdm.util.types import PathType
+from tsdm.util.types.abc import HashableType
 
 __logger__ = logging.getLogger(__name__)
 
@@ -69,21 +83,21 @@ def apply_along_axes(
     axes = tuple(axes)
     rank = len(a.shape)
     source = tuple(range(rank))
-    iperm = axes + tuple(ax for ax in range(rank) if ax not in axes)
-    perm = tuple(np.argsort(iperm))
+    inverse_permutation = axes + tuple(ax for ax in range(rank) if ax not in axes)
+    perm = tuple(np.argsort(inverse_permutation))
     if isinstance(a, Tensor):
         a = torch.moveaxis(a, source, perm)
         a = op(a, b)
-        a = torch.moveaxis(a, source, iperm)
+        a = torch.moveaxis(a, source, inverse_permutation)
     else:
         a = np.moveaxis(a, source, perm)
         a = op(a, b)
-        a = np.moveaxis(a, source, iperm)
+        a = np.moveaxis(a, source, inverse_permutation)
     return a
 
 
 class BaseEncoder(ABC):
-    """Base class that all encoders must subclass."""
+    r"""Base class that all encoders must subclass."""
 
     # TODO: Implement __matmul__ @ for composition of encoders.
 
@@ -107,8 +121,12 @@ class BaseEncoder(ABC):
         r"""Return chained encoders."""
         return ChainedEncoder(self, other)
 
+    def __or__(self, other):
+        r"""Return product encoders."""
+        return ProductEncoder((self, other))
+
     def __repr__(self):
-        """Return a string representation of the encoder."""
+        r"""Return a string representation of the encoder."""
         return f"{self.__class__.__name__}"
 
 
@@ -179,7 +197,7 @@ class Time2Float(BaseEncoder):
     scale: Any
 
     def __init__(self, normalization: Literal["gcd", "max", "none"] = "max"):
-        """Choose the normalizations scheme.
+        r"""Choose the normalizations scheme.
 
         Parameters
         ----------
@@ -275,7 +293,7 @@ class DateTimeEncoder(BaseEncoder):
 
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
-    basefreq: str = "s"
+    base_freq: str = "s"
     r"""The frequency the decoding should be rounded to."""
     offset: Timestamp
     r"""The starting point of the timeseries."""
@@ -288,7 +306,7 @@ class DateTimeEncoder(BaseEncoder):
     freq: Optional[Any] = None
     r"""The frequency attribute in case of DatetimeIndex."""
 
-    def __init__(self, unit: str = "s", basefreq: str = "s"):
+    def __init__(self, unit: str = "s", base_freq: str = "s"):
         r"""Initialize the parameters.
 
         Parameters
@@ -297,7 +315,7 @@ class DateTimeEncoder(BaseEncoder):
         """
         super().__init__()
         self.unit = unit
-        self.basefreq = basefreq
+        self.base_freq = base_freq
 
     def fit(self, data: Union[Series, DatetimeIndex]):
         r"""Store the offset."""
@@ -308,7 +326,7 @@ class DateTimeEncoder(BaseEncoder):
         else:
             raise ValueError(f"Incompatible {type(data)=}")
 
-        self.offset = Timestamp(data[0])
+        self.offset = Timestamp(Series(data).iloc[0])
         self.name = str(data.name) if data.name is not None else None
         self.dtype = data.dtype
         if isinstance(data, DatetimeIndex):
@@ -324,10 +342,10 @@ class DateTimeEncoder(BaseEncoder):
         converted = pandas.to_timedelta(timedeltas, unit=self.unit)
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
         if self.kind == Series:
-            return datetimes.round(self.basefreq)
+            return datetimes.round(self.base_freq)
         return DatetimeIndex(  # pylint: disable=no-member
             datetimes, freq=self.freq, name=self.name, dtype=self.dtype
-        ).round(self.basefreq)
+        ).round(self.base_freq)
 
 
 class IdentityEncoder(BaseEncoder):
@@ -623,7 +641,7 @@ class Standardizer(BaseEncoder):
         return f"{self.__class__.__name__}(" + f"{list(self.axis)}" + ")"
 
     def __getitem__(self, item: Any) -> Standardizer:
-        r"""Return a slice of the Standarsizer."""
+        r"""Return a slice of the Standardizer."""
         return Standardizer(
             mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:]
         )
@@ -638,14 +656,16 @@ class MinMaxScaler(BaseEncoder):
     ymax: Union[np.ndarray, Tensor]
     scale: Union[np.ndarray, Tensor]
     """The scaling factor."""
+    axis: tuple[int, ...]
+    r"""Over which axis to perform the scaling."""
 
     def __init__(
         self,
         /,
-        ymin: Optional[Union[float, np.ndarray]] = None,
-        ymax: Optional[Union[float, np.ndarray]] = None,
-        xmin: Optional[Union[float, np.ndarray]] = None,
-        xmax: Optional[Union[float, np.ndarray]] = None,
+        ymin: Optional[Union[float, np.ndarray, Tensor]] = None,
+        ymax: Optional[Union[float, np.ndarray, Tensor]] = None,
+        xmin: Optional[Union[float, np.ndarray, Tensor]] = None,
+        xmax: Optional[Union[float, np.ndarray, Tensor]] = None,
         *,
         axis: Union[int, tuple[int, ...]] = -1,
     ):
@@ -673,10 +693,14 @@ class MinMaxScaler(BaseEncoder):
     def fit(self, data: np.ndarray) -> None:
         r"""Compute the min and max."""
         data = np.asarray(data)
+        rank = len(data.shape)
+        selection = [(a % rank) for a in self.axis]
+        axes = tuple(k for k in range(rank) if k not in selection)
+
         self.ymin = np.array(self.ymin, dtype=data.dtype)
         self.ymax = np.array(self.ymax, dtype=data.dtype)
-        self.xmin = np.nanmin(data, axis=self.axis)
-        self.xmax = np.nanmax(data, axis=self.axis)
+        self.xmin = np.nanmin(data, axis=axes)
+        self.xmax = np.nanmax(data, axis=axes)
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     @fit.register(torch.Tensor)
@@ -705,6 +729,26 @@ class MinMaxScaler(BaseEncoder):
         r"""Decode the input."""
         __logger__.debug("Decoding data %s", data)
         return (data - self.ymin) / self.scale + self.xmin
+
+    def __repr__(self) -> str:
+        r"""Pretty print."""
+        return f"{self.__class__.__name__}(" + f"{list(self.axis)}" + ")"
+
+    def __getitem__(self, item: Any) -> MinMaxScaler:
+        r"""Return a slice of the MinMaxScaler."""
+        xmin = self.xmin if self.xmin.ndim == 0 else self.xmin[item]
+        xmax = self.xmax if self.xmax.ndim == 0 else self.xmax[item]
+        ymin = self.ymin if self.ymin.ndim == 0 else self.ymin[item]
+        ymax = self.ymax if self.ymax.ndim == 0 else self.ymax[item]
+
+        oldvals = (self.xmin, self.xmax, self.ymin, self.ymax)
+        newvals = (xmin, xmax, ymin, ymax)
+        assert not all(x.ndim == 0 for x in oldvals)
+        lost_ranks = max(x.ndim for x in oldvals) - max(x.ndim for x in newvals)
+
+        return MinMaxScaler(
+            xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, axis=self.axis[lost_ranks:]
+        )
 
     # @singledispatchmethod
     # def fit(self, data: Union[Tensor, np.ndarray]):
@@ -792,7 +836,7 @@ class ConcatEncoder(BaseEncoder):
     def encode(self, data, /):
         r"""Encode the input."""
         return torch.cat(
-            [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], axis=self.axis
+            [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], dim=self.axis
         )
 
     def decode(self, data, /):
@@ -900,7 +944,7 @@ class FloatEncoder(BaseEncoder):
 
 
 class IntEncoder(BaseEncoder):
-    """Converts all columns of DataFrame to int32."""
+    r"""Converts all columns of DataFrame to int32."""
 
     dtypes: Series = None
     r"""The original dtypes."""
@@ -918,12 +962,12 @@ class IntEncoder(BaseEncoder):
         return data.astype(self.dtypes)
 
     def __repr__(self):
-        """Pretty print."""
+        r"""Pretty print."""
         return f"{self.__class__.__name__}()"
 
 
 class TimeSlicer(BaseEncoder):
-    """Reorganizes the data by slicing."""
+    r"""Reorganizes the data by slicing."""
 
     # TODO: multiple horizons
 
@@ -1021,7 +1065,7 @@ class PositionalEncoder(BaseEncoder):
 
         Parameters
         ----------
-        x: Tensor
+        data: Tensor
 
         Returns
         -------
@@ -1035,7 +1079,7 @@ class PositionalEncoder(BaseEncoder):
 
         Parameters
         ----------
-        x: Tensor
+        data: Tensor
 
         Returns
         -------
@@ -1087,8 +1131,9 @@ class TripletEncoder(BaseEncoder):
         result[variable] = result[variable].astype(pd.StringDtype())
         result[variable] = result[variable].astype(self.categories)
         result.rename(columns={variable: "variable"}, inplace=True)
-        result.index.rename("time", inplace=True)
-        result.sort_values(by=["time", "variable"], inplace=True)
+        # result.index.rename("time", inplace=True)
+        # result.sort_values(by=["time", "variable"], inplace=True)
+        result = result.sort_index()
 
         if not self.sparse:
             return result
@@ -1099,15 +1144,23 @@ class TripletEncoder(BaseEncoder):
     def decode(self, data: DataFrame, /) -> DataFrame:
         r"""Decode the data."""
         if self.sparse:
-            df = data.iloc[:, 1:]
-            df = df[df == 1].stack().reset_index(level=-1)
+            df = data.iloc[:, 1:].stack()
+            df = df[df == 1]
+            df.index = df.index.rename("variable", level=-1)
+            df = df.reset_index(level=-1)
             df["value"] = data["value"]
-            df = df.rename(columns={"level_1": "variable"})
         else:
             df = data
         df = df.pivot_table(
-            index="time", columns="variable", values="value", dropna=False
+            # TODO: FIX with https://github.com/pandas-dev/pandas/pull/45994
+            # simply use df.index.names instead then.
+            index=df.index,
+            columns="variable",
+            values="value",
+            dropna=False,
         )
+        if isinstance(data.index, MultiIndex):
+            df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
 
         # re-add missing columns
         for cat in self.categories.categories:
@@ -1142,7 +1195,8 @@ class CSVEncoder(BaseEncoder):
         Parameters
         ----------
         filename: str
-        header: bool = True
+        to_csv_kwargs: Optional[dict[str, Any]]
+        read_csv_kwargs: Optional[dict[str, Any]]
         """
         super().__init__()
         self.filename = filename
@@ -1169,3 +1223,244 @@ class CSVEncoder(BaseEncoder):
             fname = self.filename
         frame = pd.read_csv(fname, **self.read_csv_kwargs)
         return DataFrame(frame).astype(self.dtypes)
+
+
+class ProductEncoder(BaseEncoder):
+    r"""Product-Type for Encoders."""
+
+    encoders: tuple[BaseEncoder, ...]
+
+    def __init__(self, encoders: Iterable[BaseEncoder]) -> None:
+        super().__init__()
+        self.encoders = tuple(encoders)
+
+    def fit(self, data: Sequence[Any]) -> None:
+        r"""Fit the encoder."""
+        # print(data)
+        for encoder, x in zip(self.encoders, data):
+            encoder.fit(x)
+
+    def encode(self, data: Sequence[Any]) -> Sequence[Any]:
+        r"""Encode the data."""
+        return tuple(encoder.encode(x) for encoder, x in zip(self.encoders, data))
+
+    def decode(self, data: Sequence[Any]) -> Sequence[Any]:
+        r"""Decode the data."""
+        return tuple(encoder.decode(x) for encoder, x in zip(self.encoders, data))
+
+    def __iter__(self):
+        r"""Yield the encoders 1 by 1."""
+        for encoder in self.encoders:
+            yield encoder
+
+    def __len__(self):
+        r"""Return number of chained encoders."""
+        return self.encoders.__len__()
+
+    def __getitem__(self, item):
+        r"""Return given item."""
+        return self.encoders.__getitem__(item)
+
+    def __contains__(self, item):
+        r"""Return contains."""
+        return self.encoders.__contains__(item)
+
+    def __repr__(self):
+        r"""Pretty print."""
+        return f"{self.__class__.__name__}{self.encoders}"
+
+
+class FrameSplitter(BaseEncoder):
+    r"""Split a DataFrame into multiple groups."""
+
+    columns: Index
+    dtypes: Series
+    groups: dict[Any, Sequence[Any]]
+
+    @staticmethod
+    def _pairwise_disjoint(groups: Iterable[Sequence[HashableType]]) -> bool:
+        union: set[HashableType] = set().union(*(set(obj) for obj in groups))
+        n = sum(len(u) for u in groups)
+        return n == len(union)
+
+    def __init__(self, groups: dict[HashableType, Sequence[HashableType]]) -> None:
+        super().__init__()
+        self.groups = groups
+        assert self._pairwise_disjoint(self.groups.values())
+
+    def fit(self, data: DataFrame) -> None:
+        r"""Fit the encoder."""
+        self.columns = data.columns
+        self.dtypes = data.dtypes
+
+    def encode(self, data: DataFrame) -> tuple[DataFrame, ...]:
+        r"""Encode the data."""
+        encoded = []
+        for columns in self.groups.values():
+            encoded.append(data[columns].dropna(how="all"))
+        return tuple(encoded)
+
+    def decode(self, data: tuple[DataFrame, ...]) -> DataFrame:
+        r"""Decode the data."""
+        decoded = pd.concat(data, axis="columns")
+        decoded = decoded.astype(self.dtypes)
+        decoded = decoded[self.columns]
+        return decoded
+
+
+class FrameEncoder(BaseEncoder):
+    r"""Encode a DataFrame by group-wise transformations."""
+
+    columns: Index
+    dtypes: Series
+    index_columns: Index
+    index_dtypes: Series
+
+    column_encoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+    r"""Encoders for the columns."""
+    index_encoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+    r"""Optional Encoder for the index."""
+    column_decoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+    r"""Reverse Dictionary from encoded column name -> encoder"""
+    index_decoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+    r"""Reverse Dictionary from encoded index name -> encoder"""
+
+    @staticmethod
+    def _names(
+        obj: Union[Index, Series, DataFrame]
+    ) -> Union[Hashable, FrozenList[Hashable]]:
+        if isinstance(obj, MultiIndex):
+            return FrozenList(obj.names)
+        if isinstance(obj, (Series, Index)):
+            return obj.name
+        if isinstance(obj, DataFrame):
+            return FrozenList(obj.columns)
+        raise ValueError
+
+    def __init__(
+        self,
+        column_encoders: Optional[
+            Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]
+        ] = None,
+        *,
+        index_encoders: Optional[
+            Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]
+        ] = None,
+    ):
+        super().__init__()
+        self.column_encoders = column_encoders
+        self.index_encoders = index_encoders
+
+    def fit(self, data: DataFrame) -> None:
+        r"""Fit the encoder."""
+        data = data.copy()
+        index = data.index.to_frame()
+        self.columns = data.columns
+        self.dtypes = data.dtypes
+        self.index_columns = index.columns
+        self.index_dtypes = index.dtypes
+
+        if self.column_encoders is None:
+            self.column_decoders = None
+        elif isinstance(self.column_encoders, BaseEncoder):
+            self.column_encoders.fit(data)
+            self.column_decoders = self.column_encoders
+        else:
+            self.column_decoders = {}
+            for group, encoder in self.column_encoders.items():
+                encoder.fit(data[group])
+                encoded = encoder.encode(data[group])
+                self.column_decoders[self._names(encoded)] = encoder
+
+        if self.index_encoders is None:
+            self.index_decoders = None
+        elif isinstance(self.index_encoders, BaseEncoder):
+            self.index_encoders.fit(index)
+            self.index_decoders = self.index_encoders
+        else:
+            self.index_decoders = {}
+            for group, encoder in self.index_encoders.items():
+                encoder.fit(index[group])
+                encoded = encoder.encode(index[group])
+                self.index_decoders[self._names(encoded)] = encoder
+
+    def encode(self, data: DataFrame) -> DataFrame:
+        r"""Encode the data."""
+        data = data.copy(deep=True)
+        index = data.index.to_frame()
+        encoded_cols = data
+        encoded_inds = encoded_cols.index.to_frame()
+
+        if self.column_encoders is None:
+            pass
+        elif isinstance(self.column_encoders, BaseEncoder):
+            encoded = self.column_encoders.encode(data)
+            encoded_cols = encoded_cols.drop(columns=data.columns)
+            encoded_cols[self._names(encoded)] = encoded
+        else:
+            for group, encoder in self.column_encoders.items():
+                encoded = encoder.encode(data[group])
+                encoded_cols = encoded_cols.drop(columns=group)
+                encoded_cols[self._names(encoded)] = encoded
+
+        if self.index_encoders is None:
+            pass
+        elif isinstance(self.index_encoders, BaseEncoder):
+            encoded = self.index_encoders.encode(index)
+            encoded_inds = encoded_inds.drop(columns=index.columns)
+            encoded_inds[self._names(encoded)] = encoded
+        else:
+            for group, encoder in self.index_encoders.items():
+                encoded = encoder.encode(index[group])
+                encoded_inds = encoded_inds.drop(columns=group)
+                encoded_inds[self._names(encoded)] = encoded
+
+        # Assemble DataFrame
+        encoded = DataFrame(encoded_cols)
+        encoded[self._names(encoded_inds)] = encoded_inds
+        encoded = encoded.set_index(self._names(encoded_inds))
+        return encoded
+
+    def decode(self, data: DataFrame) -> DataFrame:
+        r"""Decode the data."""
+        data = data.copy(deep=True)
+        index = data.index.to_frame()
+        decoded_cols = data
+        decoded_inds = decoded_cols.index.to_frame()
+
+        if self.column_decoders is None:
+            pass
+        elif isinstance(self.column_decoders, BaseEncoder):
+            decoded = self.column_decoders.decode(data)
+            decoded_cols = decoded_cols.drop(columns=data.columns)
+            decoded_cols[self._names(decoded)] = decoded
+        else:
+            for group, encoder in self.column_decoders.items():
+                decoded = encoder.decode(data[group])
+                decoded_cols = decoded_cols.drop(columns=group)
+                decoded_cols[self._names(decoded)] = decoded
+
+        if self.index_decoders is None:
+            pass
+        elif isinstance(self.index_decoders, BaseEncoder):
+            decoded = self.index_decoders.decode(index)
+            decoded_inds = decoded_inds.drop(columns=index.columns)
+            decoded_inds[self._names(decoded)] = decoded
+        else:
+            for group, encoder in self.index_decoders.items():
+                decoded = encoder.decode(index[group])
+                decoded_inds = decoded_inds.drop(columns=group)
+                decoded_inds[self._names(decoded)] = decoded
+
+        # Restore index order + dtypes
+        decoded_inds = decoded_inds[self.index_columns]
+        decoded_inds = decoded_inds.astype(self.index_dtypes)
+
+        # Assemble DataFrame
+        decoded = DataFrame(decoded_cols)
+        decoded[self._names(decoded_inds)] = decoded_inds
+        decoded = decoded.set_index(self._names(decoded_inds))
+        decoded = decoded[self.columns]
+        decoded = decoded.astype(self.dtypes)
+
+        return decoded

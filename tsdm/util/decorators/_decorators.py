@@ -14,6 +14,7 @@ __all__ = [
     # Class Decorators
     "autojit",
     "IterItems",
+    "IterKeys",
     # Exceptions
     "DecoratorError",
 ]
@@ -400,6 +401,42 @@ def IterItems(obj):
         def __repr__(self) -> str:
             r"""Representation of the dataset."""
             return r"IterItems@" + super().__repr__()
+
+    if isinstance(obj, type):
+        return WrappedClass
+    obj = deepcopy(obj)
+    obj.__class__ = WrappedClass
+    return obj
+
+
+@overload
+def IterKeys(obj: type[ObjectType]) -> type[ObjectType]:
+    ...
+
+
+@overload
+def IterKeys(obj: ObjectType) -> ObjectType:
+    ...
+
+
+def IterKeys(obj):
+    r"""Wrap a class such that ``__getitem__`` returns key instead."""
+    if isinstance(obj, type):
+        base_class = obj
+    else:
+        base_class = type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):
+        r"""A simple Wrapper."""
+
+        def __getitem__(self, key: Any) -> tuple[Any, Any]:
+            r"""Return the key as is."""
+            return key
+
+        def __repr__(self) -> str:
+            r"""Representation of the dataset."""
+            return r"IterKeys@" + super().__repr__()
 
     if isinstance(obj, type):
         return WrappedClass
