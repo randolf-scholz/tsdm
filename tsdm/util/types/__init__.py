@@ -4,22 +4,26 @@ __all__ = [
     # Submodules
     "abc",
     # Type Variables
+    "Type",
+    "ClassType",
+    "KeyType",
     "ObjectType",
     "ReturnType",
+    "ValueType",
     "nnModuleType",
-    # Types
-    "KeyType",
+    # Generic Types
     "LookupTable",
     "NestedType",
     "NullableNestedType",
+    # Static Types
     "PathType",
-    "ValueType",
 ]
 
 import logging
 
 from tsdm.util.types import abc
 from tsdm.util.types._types import (
+    ClassType,
     KeyType,
     LookupTable,
     NestedType,
@@ -27,6 +31,7 @@ from tsdm.util.types._types import (
     ObjectType,
     PathType,
     ReturnType,
+    Type,
     ValueType,
     nnModuleType,
 )
