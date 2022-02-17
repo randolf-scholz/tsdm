@@ -539,6 +539,13 @@ class KIWI_RUNS(Dataset):
         cond = (merged["start_time"] <= time) & (time <= merged["end_time"])
         ts = ts[cond]
 
+        # Change index to TimeDelta
+        realtime = merged.index.get_level_values("measurement_time") - merged.start_time
+        realtime.name = "measurement_time"
+        ts = ts.join(realtime)
+        ts = ts.reset_index(-1, drop=True)
+        ts = ts.set_index("measurement_time", append=True)
+
         # replace wrong pH values
         ts["pH"] = ts["pH"].replace(0.0, pd.NA)
         # mask out-of bounds values
@@ -565,8 +572,8 @@ class KIWI_RUNS(Dataset):
             ts.loc[idx, ffill_consts] = slc[ffill_consts].fillna(0)
 
         # check if metadata-index matches with times-series index
-        tsidx = ts.reset_index(level="measurement_time").index
-        pd.testing.assert_index_equal(md.index, tsidx.unique())
+        ts_idx = ts.reset_index(level="measurement_time").index
+        pd.testing.assert_index_equal(md.index, ts_idx.unique())
 
         # reset index
         ts = ts.reset_index()
