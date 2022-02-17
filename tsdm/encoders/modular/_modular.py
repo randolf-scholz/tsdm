@@ -56,7 +56,7 @@ from torch import Tensor
 
 from tsdm.datasets import TimeTensor
 from tsdm.util.decorators import post_hook, pre_hook
-from tsdm.util.strings import repr_namedtuple
+from tsdm.util.strings import repr_mapping, repr_namedtuple, repr_sequence
 from tsdm.util.types import PathType
 from tsdm.util.types.abc import HashableType
 
@@ -130,19 +130,19 @@ class BaseEncoder(ABC):
         self.transform = self.encode
         self.inverse_transform = self.decode
 
-    def __matmul__(self, other):
+    def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
         return ChainedEncoder(self, other)
 
-    def __or__(self, other):
+    def __or__(self, other: BaseEncoder) -> ProductEncoder:
         r"""Return product encoders."""
         return ProductEncoder((self, other))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
-        return f"{self.__class__.__name__}"
+        return f"{self.__class__.__name__}()"
 
-    def fit(self, data):
+    def fit(self, data: Any) -> None:
         r"""By default does nothing."""
 
     @abstractmethod
@@ -219,7 +219,7 @@ class ChainedEncoder(BaseEncoder):
 
     def __repr__(self):
         r"""Pretty print."""
-        return f"{self.__class__.__name__}{self.chained}"
+        return repr_sequence(self)
 
 
 class Time2Float(BaseEncoder):
@@ -1369,7 +1369,7 @@ class ProductEncoder(BaseEncoder):
 
     def __repr__(self):
         r"""Pretty print."""
-        return f"{self.__class__.__name__}{self.encoders}"
+        return repr_sequence(self, title=self.__class__.__name__)
 
 
 class FrameSplitter(BaseEncoder):
@@ -1566,3 +1566,11 @@ class FrameEncoder(BaseEncoder):
         decoded = decoded.astype(self.dtypes)
 
         return decoded
+
+    def __repr__(self) -> str:
+        """Return a string representation of the encoder."""
+        items = {
+            "column_encoders": self.column_encoders,
+            "index_encoders": self.index_encoders,
+        }
+        return repr_mapping(items, title=self.__class__.__name__)
