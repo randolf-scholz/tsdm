@@ -52,9 +52,39 @@ def snake2camel(s):
     return "".join(s[0].capitalize() + s[1:] for s in substrings)
 
 
+def tensor_info(x: Tensor) -> str:
+    r"""Print useful information about Tensor."""
+    return f"{x.__class__.__name__}[{tuple(x.shape)}, {x.dtype}, {x.device.type}]"
+
+
+def dict2string(d: dict[str, Any]) -> str:
+    r"""Return pretty string representation of dictionary.
+
+    Vertically aligns keys.
+
+    Parameters
+    ----------
+    d: dict[str, Any]
+
+    Returns
+    -------
+    str
+    """
+    max_key_length = max((len(key) for key in d), default=0)
+    pad = " " * 2
+
+    string = "dict(" + "\n"
+
+    for key, value in sorted(d.items()):
+        string += f"\n{pad}{key:<{max_key_length}}: {repr(value)}"
+
+    string += "\n)"
+    return string
+
+
 def repr_mapping(
     obj: Mapping,
-    pad: int = 2,
+    pad: int = 4,
     maxitems: int = 6,
     repr_fun: Callable[..., str] = repr,
     linebreaks: bool = True,
@@ -76,6 +106,7 @@ def repr_mapping(
     str
     """
     br = "\n" if linebreaks else ""
+    sep = "," if linebreaks else ", "
     padding = " " * pad * linebreaks
     max_key_length = max(len(str(key)) for key in obj.keys())
     items = list(obj.items())
@@ -87,17 +118,17 @@ def repr_mapping(
 
     if len(obj) <= maxitems:
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{br}"
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
             for key, value in items
         )
     else:
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{br}"
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
             for key, value in items[: maxitems // 2]
         )
         string += f"{padding}...\n"
         string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{br}"
+            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
             for key, value in items[-maxitems // 2 :]
         )
     string += ")"
@@ -106,7 +137,7 @@ def repr_mapping(
 
 def repr_sequence(
     obj: Sequence,
-    pad: int = 2,
+    pad: int = 4,
     maxitems: int = 6,
     repr_fun: Callable[..., str] = repr,
     linebreaks: bool = True,
@@ -128,7 +159,7 @@ def repr_sequence(
     str
     """
     br = "\n" if linebreaks else ""
-    sep = "" if linebreaks else ", "
+    sep = "," if linebreaks else ", "
     padding = " " * pad * linebreaks
     title = type(obj).__name__ if title is None else title
     string = title + "(" + br
@@ -137,14 +168,14 @@ def repr_sequence(
         return repr_fun(x).replace("\n", br + padding)
 
     if maxitems is None or len(obj) <= 6:
-        string += sep.join(f"{padding}{to_string(value)}{br}" for value in obj)
+        string += "".join(f"{padding}{to_string(value)}{sep}{br}" for value in obj)
     else:
-        string += sep.join(
-            f"{padding}{to_string(value)}{br}" for value in obj[: maxitems // 2]
+        string += "".join(
+            f"{padding}{to_string(value)}{sep}{br}" for value in obj[: maxitems // 2]
         )
         string += f"{padding}..." + br
-        string += sep.join(
-            f"{padding}{to_string(value)}{br}" for value in obj[-maxitems // 2 :]
+        string += "".join(
+            f"{padding}{to_string(value)}{sep}{br}" for value in obj[-maxitems // 2 :]
         )
     string += ")"
 
@@ -188,52 +219,44 @@ def repr_object(obj: Any) -> str:
         return repr_array(obj)
     if isinstance(obj, Mapping):
         return repr_mapping(obj)
+    if isinstance(obj, tuple) and hasattr(obj, "_fields"):
+        return repr_namedtuple(obj)
     if isinstance(obj, Sequence):
         return repr_sequence(obj)
     return str(obj)
 
 
-def tensor_info(x: Tensor) -> str:
-    r"""Print useful information about Tensor."""
-    return f"{x.__class__.__name__}[{tuple(x.shape)}, {x.dtype}, {x.device.type}]"
-
-
-def dict2string(d: dict[str, Any]) -> str:
-    r"""Return pretty string representation of dictionary.
-
-    Vertically aligns keys.
+def repr_namedtuple(
+    obj: tuple,
+    padding: int = 4,
+    maxitems: int = 6,
+    repr_fun: Callable[..., str] = repr,
+    linebreaks: bool = True,
+    title: Optional[str] = None,
+) -> str:
+    r"""Return a string representation of a namedtuple object.
 
     Parameters
     ----------
-    d: dict[str, Any]
+    obj
+    padding
+    maxitems
+    repr_fun
+    linebreaks
+    title
 
     Returns
     -------
     str
     """
-    max_key_length = max((len(key) for key in d), default=0)
-    pad = " " * 2
-
-    string = "dict(" + "\n"
-
-    for key, value in sorted(d.items()):
-        string += f"\n{pad}{key:<{max_key_length}}: {repr(value)}"
-
-    string += "\n)"
-    return string
-
-
-def repr_namedtuple(obj: NamedTuple) -> str:
-    r"""Return a string representation of a namedtuple object."""
     assert hasattr(obj, "_fields")
+    keys = obj._fields  # type: ignore[attr-defined]
 
-    pad = " " * 2
     name = obj.__class__.__name__
-
+    pad = " " * padding
     string = f"{name}("
 
     strings: list[str] = []
-    keys = obj._fields
     max_key_len = max(len(key) for key in keys)
     objs = [repr(x).replace("\n", "\n" + " " * max_key_len) for x in obj]
 
