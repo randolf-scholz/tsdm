@@ -29,6 +29,7 @@ __all__ = [
     "scaled_norm",
     "skewpart",
     "symmpart",
+    "round_relative",
 ]
 
 import logging
@@ -47,6 +48,7 @@ from tsdm.util._util import (
     prepend_path,
     relsize_skewpart,
     relsize_symmpart,
+    round_relative,
     skewpart,
     symmpart,
 )
