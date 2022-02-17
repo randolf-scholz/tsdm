@@ -14,6 +14,7 @@ __all__ = [
     "hook",
     "pre_hook",
     "post_hook",
+    "wrapmethod",
     # Class Decorators
     "autojit",
     "IterItems",
@@ -31,12 +32,14 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
+from types import MethodType
 from typing import Any, Union, overload
+from typing import overload
 
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import ObjectType, ReturnType, nnModuleType
+from tsdm.util.types import ObjectType, ReturnType, nnModuleType, ClassType, Type
 from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -488,3 +491,39 @@ def post_hook(func: Callable, hook: Callable, /) -> Callable:
         return result
 
     return wrapper
+
+
+@overload
+def wrapmethod(obj: ClassType, method: str, func: Callable) -> ClassType:
+    ...
+
+
+@overload
+def wrapmethod(obj: ObjectType, method: str, func: Callable) -> ObjectType:
+    ...
+
+
+@decorator
+def wrapmethod(obj, method, func, /):
+    r"""Wrap a method of a class/instance or instance."""
+    if isinstance(obj, type):
+        base_class = obj
+    else:
+        base_class = type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):
+        r"""A simple Wrapper."""
+
+        def __repr__(self) -> str:
+            r"""Representation of the dataset."""
+            return f"wrapmethod[{method}, {func.__name__}]@" + super().__repr__()
+
+    setattr(WrappedClass, method, MethodType(func, obj))
+
+    if isinstance(obj, type):
+        return WrappedClass
+
+    obj = deepcopy(obj)  # <--- do we need this?
+    obj.__class__ = WrappedClass
+    return obj

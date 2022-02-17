@@ -20,6 +20,7 @@ __all__ = [
     "pre_hook",
     "post_hook",
     "hook",
+    "wrapmethod",
 ]
 
 import logging
@@ -38,6 +39,7 @@ from tsdm.util.decorators._decorators import (
     timefun,
     trace,
     vectorize,
+    wrapmethod,
 )
 
 __logger__ = logging.getLogger(__name__)
