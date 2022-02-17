@@ -16,7 +16,6 @@ __logger__ = logging.getLogger(__name__)
 @mark.parametrize("Encoder", (Standardizer, MinMaxScaler))
 def test_standardizer(Encoder):
     """Check whether the Standardizer encoder works as expected."""
-
     X = np.random.rand(3)
     encoder = Encoder()
     encoder.fit(X)
