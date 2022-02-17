@@ -90,7 +90,7 @@ def get_time_table(
 ) -> DataFrame:
     r"""Compute the induction time and final product time for each run and experiment."""
     columns = [
-        "slice",
+        # "slice",
         "t_min",
         "t_induction",
         "t_max",
@@ -117,7 +117,7 @@ def get_time_table(
         df.loc[idx, "t_min"] = t_min = slc.index[0] + min_wait
         df.loc[idx, "t_induction"] = t_induction
         df.loc[idx, "t_target"] = t_target
-        df.loc[idx, "slice"] = slice(t_min, t_max)
+        # df.loc[idx, "slice"] = slice(t_min, t_max)
     return df
 
 
@@ -186,16 +186,22 @@ class KIWI_FINAL_PRODUCT(BaseTask):
             t_target = self.final_product_times.loc[idx, "t_target"]
             final_vecs[(*idx, t_target)] = ts.loc[idx].loc[t_target]
 
-        final_vec = DataFrame.from_dict(final_vecs, orient="index")
-        final_vec.index = final_vec.index.set_names(ts.index.names)
-        self.final_vec = final_vec[target]
+        final_value = DataFrame.from_dict(final_vecs, orient="index")
+        final_value.index = final_value.index.set_names(ts.index.names)
+        self.final_value = final_value[target]
+        self.final_value = self.final_value.reset_index(-1)
+        self.final_value = self.final_value.rename(
+            columns={"measurement_time": "final_time"}
+        )
+
+        self.metadata = self.metadata.join(self.final_value)
 
         # Construct the dataset object
         TSDs = {}
         for key in self.metadata.index:
             TSDs[key] = TimeSeriesDataset(
                 self.timeseries.loc[key],
-                metadata=(self.metadata.loc[key], self.final_vec.loc[key]),
+                metadata=(self.metadata.loc[key], self.final_value.loc[key]),
             )
         DS = MappingDataset(TSDs)
         self.DS = DS
@@ -340,7 +346,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         for idx in md.index:
             TSDs[idx] = TimeSeriesDataset(
                 ts.loc[idx],
-                metadata=(md.loc[idx], self.final_vec.loc[idx]),
+                metadata=(md.loc[idx], self.final_value.loc[idx]),
             )
         DS = IterItems(MappingDataset(TSDs))
 
