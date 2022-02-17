@@ -12,22 +12,23 @@ __all__ = [
     # ABC
     "BaseEncoder",
     # Classes
-    "ConcatEncoder",
     "ChainedEncoder",
+    "ConcatEncoder",
     "DataFrameEncoder",
     "DateTimeEncoder",
     "FloatEncoder",
+    "FrameEncoder",
+    "FrameSplitter",
     "IdentityEncoder",
+    "IntEncoder",
     "MinMaxScaler",
     "PositionalEncoder",
+    "ProductEncoder",
     "Standardizer",
     "TensorEncoder",
     "Time2Float",
-    "IntEncoder",
+    "TimeDeltaEncoder",
     "TripletEncoder",
-    "ProductEncoder",
-    "FrameSplitter",
-    "FrameEncoder",
 ]
 
 import logging
@@ -383,6 +384,39 @@ class DateTimeEncoder(BaseEncoder):
         return DatetimeIndex(  # pylint: disable=no-member
             datetimes, freq=self.freq, name=self.name, dtype=self.dtype
         ).round(self.base_freq)
+
+    def __repr__(self) -> str:
+        r"""Return a string representation."""
+        return f"{self.__class__.__name__}(unit={self.unit!r})"
+
+
+class TimeDeltaEncoder(BaseEncoder):
+    r"""Encode TimeDelta as Float."""
+
+    unit: str = "s"
+    r"""The base frequency to convert timedeltas to."""
+
+    def __init__(self, unit: str = "s"):
+        r"""Initialize the parameters.
+
+        Parameters
+        ----------
+        unit: Optional[str]=None
+        """
+        super().__init__()
+        self.unit = unit
+
+    def encode(self, data, /):
+        r"""Encode the input."""
+        return data / Timedelta(1, unit=self.unit)
+
+    def decode(self, data, /):
+        r"""Decode the input."""
+        return data * Timedelta(1, unit=self.unit)
+
+    def __repr__(self) -> str:
+        r"""Return a string representation."""
+        return f"{self.__class__.__name__}(unit={self.unit!r})"
 
 
 class IdentityEncoder(BaseEncoder):

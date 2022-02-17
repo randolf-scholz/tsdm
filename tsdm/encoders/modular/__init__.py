@@ -28,6 +28,7 @@ __all__ = [
     "Standardizer",
     "TensorEncoder",
     "Time2Float",
+    "TimeDeltaEncoder",
     "TripletEncoder",
 ]
 
@@ -54,6 +55,7 @@ from tsdm.encoders.modular._modular import (
     Standardizer,
     TensorEncoder,
     Time2Float,
+    TimeDeltaEncoder,
     TripletEncoder,
 )
 from tsdm.util.types import LookupTable
