@@ -29,6 +29,7 @@ __all__ = [
     "Time2Float",
     "TimeDeltaEncoder",
     "TripletEncoder",
+    "LogEncoder",
 ]
 
 import logging
@@ -395,8 +396,10 @@ class TimeDeltaEncoder(BaseEncoder):
 
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
+    base_freq: str = "s"
+    r"""The frequency the decoding should be rounded to."""
 
-    def __init__(self, unit: str = "s"):
+    def __init__(self, unit: str = "s", base_freq: str = "s"):
         r"""Initialize the parameters.
 
         Parameters
@@ -405,6 +408,7 @@ class TimeDeltaEncoder(BaseEncoder):
         """
         super().__init__()
         self.unit = unit
+        self.base_freq = base_freq
 
     def encode(self, data, /):
         r"""Encode the input."""
@@ -412,7 +416,13 @@ class TimeDeltaEncoder(BaseEncoder):
 
     def decode(self, data, /):
         r"""Decode the input."""
-        return data * Timedelta(1, unit=self.unit)
+        result = data * Timedelta(1, unit=self.unit)
+        if hasattr(result, "apply"):
+            return result.apply(lambda x: x.round(self.base_freq))
+        elif hasattr(result, "map"):
+            return result.map(lambda x: x.round(self.base_freq))
+        else:
+            return result
 
     def __repr__(self) -> str:
         r"""Return a string representation."""
@@ -1608,3 +1618,35 @@ class FrameEncoder(BaseEncoder):
             "index_encoders": self.index_encoders,
         }
         return repr_mapping(items, title=self.__class__.__name__)
+
+
+class LogEncoder(BaseEncoder):
+    r"""Encode data on logarithmic scale.
+
+    Uses base 2 by default for lower numerical error and fast computation.
+    """
+
+    threshold: np.ndarray
+    replacement: np.ndarray
+
+    def fit(self, data, /):
+        r"""Fit the encoder to the data."""
+        assert np.all(data >= 0)
+
+        mask = data == 0
+        self.threshold = data[~mask].min()
+        self.replacement = np.log2(self.threshold / 2)
+
+    def encode(self, data, /):
+        """Encode data on logarithmic scale."""
+        result = data.copy()
+        mask = data <= 0
+        result[:] = np.where(mask, self.replacement, np.log2(data))
+        return result
+
+    def decode(self, data, /):
+        r"""Decode data on logarithmic scale."""
+        result = 2**data
+        mask = result < self.threshold
+        result[:] = np.where(mask, 0, result)
+        return result
