@@ -30,6 +30,7 @@ __all__ = [
     "Time2Float",
     "TimeDeltaEncoder",
     "TripletEncoder",
+    "LogEncoder",
 ]
 
 import logging
@@ -49,6 +50,7 @@ from tsdm.encoders.modular._modular import (
     FrameSplitter,
     IdentityEncoder,
     IntEncoder,
+    LogEncoder,
     MinMaxScaler,
     PositionalEncoder,
     ProductEncoder,
