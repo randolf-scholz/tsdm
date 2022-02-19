@@ -15,11 +15,13 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, Optional, overload
+from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
+from typing import Any, Optional, Union, overload
 
-from numpy.typing import ArrayLike
+from pandas import DataFrame, Series
 from torch import Tensor
+
+from tsdm.util.types.protocols import Array, NTuple
 
 __logger__ = logging.getLogger(__name__)
 
@@ -82,129 +84,7 @@ def dict2string(d: dict[str, Any]) -> str:
     return string
 
 
-def repr_mapping(
-    obj: Mapping,
-    pad: int = 4,
-    maxitems: int = 6,
-    repr_fun: Callable[..., str] = repr,
-    linebreaks: bool = True,
-    title: Optional[str] = None,
-) -> str:
-    r"""Return a string representation of a mapping object.
-
-    Parameters
-    ----------
-    obj: Mapping
-    pad: int
-    maxitems: Optional[int] = 6
-    repr_fun: Callable[..., str] = repr
-    title: Optional[str] = repr,
-    linebreaks: bool = True,
-
-    Returns
-    -------
-    str
-    """
-    br = "\n" if linebreaks else ""
-    sep = "," if linebreaks else ", "
-    padding = " " * pad * linebreaks
-    max_key_length = max(len(str(key)) for key in obj.keys())
-    items = list(obj.items())
-    title = type(obj).__name__ if title is None else title
-    string = title + "(" + br
-
-    def to_string(x: Any) -> str:
-        return repr_fun(x).replace("\n", "\n" + padding)
-
-    if len(obj) <= maxitems:
-        string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
-            for key, value in items
-        )
-    else:
-        string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
-            for key, value in items[: maxitems // 2]
-        )
-        string += f"{padding}...\n"
-        string += "".join(
-            f"{padding}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
-            for key, value in items[-maxitems // 2 :]
-        )
-    string += ")"
-    return string
-
-
-def repr_sequence(
-    obj: Sequence,
-    pad: int = 4,
-    maxitems: int = 6,
-    repr_fun: Callable[..., str] = repr,
-    linebreaks: bool = True,
-    title: Optional[str] = None,
-) -> str:
-    r"""Return a string representation of a sequence object.
-
-    Parameters
-    ----------
-    obj: Sequence
-    pad: int
-    maxitems: Optional[int] = 6
-    repr_fun: Callable[..., str] = repr
-    linebreaks: bool = True,
-    title: Optional[str] = None,
-
-    Returns
-    -------
-    str
-    """
-    br = "\n" if linebreaks else ""
-    sep = "," if linebreaks else ", "
-    padding = " " * pad * linebreaks
-    title = type(obj).__name__ if title is None else title
-    string = title + "(" + br
-
-    def to_string(x: Any) -> str:
-        return repr_fun(x).replace("\n", br + padding)
-
-    if maxitems is None or len(obj) <= 6:
-        string += "".join(f"{padding}{to_string(value)}{sep}{br}" for value in obj)
-    else:
-        string += "".join(
-            f"{padding}{to_string(value)}{sep}{br}" for value in obj[: maxitems // 2]
-        )
-        string += f"{padding}..." + br
-        string += "".join(
-            f"{padding}{to_string(value)}{sep}{br}" for value in obj[-maxitems // 2 :]
-        )
-    string += ")"
-
-    return string
-
-
-def repr_array(obj: ArrayLike, title: Optional[str] = None) -> str:
-    r"""Return a string representation of a array object.
-
-    Parameters
-    ----------
-    obj: ArrayLike
-    title: Optional[str] = None
-
-    Returns
-    -------
-    str
-    """
-    title = type(obj).__name__ if title is None else title
-
-    if hasattr(obj, "shape"):
-        shape: Iterable[int] = obj.shape  # type: ignore[union-attr]
-        return title + str(list(shape))
-    if isinstance(obj, Sequence) and not isinstance(obj, str):
-        return "[" + ", ".join(repr_array(x) for x in obj) + "]"
-    return repr(obj)
-
-
-def repr_object(obj: Any) -> str:
+def repr_object(obj: Any, **kwargs: Any) -> str:
     r"""Return a string representation of an object.
 
     Parameters
@@ -216,60 +96,240 @@ def repr_object(obj: Any) -> str:
     str
     """
     if isinstance(obj, Tensor):
-        return repr_array(obj)
+        return repr_array(obj, **kwargs)
     if isinstance(obj, Mapping):
-        return repr_mapping(obj)
-    if isinstance(obj, tuple) and hasattr(obj, "_fields"):
-        return repr_namedtuple(obj)
+        return repr_mapping(obj, **kwargs)
+    if isinstance(obj, NTuple):
+        return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
-        return repr_sequence(obj)
+        return repr_sequence(obj, **kwargs)
     return str(obj)
 
 
-def repr_namedtuple(
-    obj: tuple,
-    padding: int = 4,
-    maxitems: int = 6,
-    repr_fun: Callable[..., str] = repr,
+def repr_mapping(
+    obj: Mapping,
+    *,
     linebreaks: bool = True,
+    maxitems: int = 6,
+    padding: int = 4,
+    recursive: Union[bool, int] = True,
+    repr_fun: Callable[..., str] = repr_object,
+    title: Optional[str] = None,
+) -> str:
+    r"""Return a string representation of a mapping object.
+
+    Parameters
+    ----------
+    obj: Mapping
+    linebreaks: bool, default True
+    maxitems: int, default 6
+    padding: int
+    recursive: bool, default True
+    repr_fun: Callable[..., str], default repr_object
+    title: Optional[str], default None,
+
+    Returns
+    -------
+    str
+    """
+    br = "\n" if linebreaks else ""
+    # key_sep = ": "
+    sep = "," if linebreaks else ", "
+    pad = " " * padding * linebreaks
+    max_key_length = 0  # max(len(str(key)) for key in obj.keys())
+    items = list(obj.items())
+    title = type(obj).__name__ if title is None else title
+    string = title + "(" + br
+
+    # TODO: automatic linebreak detection if string length exceeds max_length
+
+    def to_string(x: Any) -> str:
+        if recursive:
+            if isinstance(recursive, bool):
+                return repr_fun(x).replace("\n", br + pad)
+            return repr_fun(x, recursive=recursive - 1).replace("\n", br + pad)
+        return repr_type(x)
+
+    # keys = [str(key) for key in obj.keys()]
+    # values: list[str] = [to_string(x) for x in obj.values()]
+
+    if len(obj) <= maxitems:
+        string += "".join(
+            f"{pad}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
+            for key, value in items
+        )
+    else:
+        string += "".join(
+            f"{pad}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
+            for key, value in items[: maxitems // 2]
+        )
+        string += f"{pad}...\n"
+        string += "".join(
+            f"{pad}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
+            for key, value in items[-maxitems // 2 :]
+        )
+    string += ")"
+    return string
+
+
+def repr_sequence(
+    obj: Sequence,
+    *,
+    linebreaks: bool = True,
+    maxitems: int = 6,
+    padding: int = 4,
+    recursive: Union[bool, int] = True,
+    repr_fun: Callable[..., str] = repr_object,
+    title: Optional[str] = None,
+) -> str:
+    r"""Return a string representation of a sequence object.
+
+    Parameters
+    ----------
+    obj: Sequence
+    linebreaks: bool, default True
+    maxitems: int, default 6
+    padding: int
+    recursive: bool, default True
+    repr_fun: Callable[..., str], default repr_object
+    title: Optional[str], default None,
+
+    Returns
+    -------
+    str
+    """
+    br = "\n" if linebreaks else ""
+    sep = "," if linebreaks else ", "
+    pad = " " * padding * linebreaks
+    title = type(obj).__name__ if title is None else title
+    string = title + "(" + br
+
+    def to_string(x: Any) -> str:
+        if recursive:
+            if isinstance(recursive, bool):
+                return repr_fun(x).replace("\n", br + pad)
+            return repr_fun(x, recursive=recursive - 1).replace("\n", br + pad)
+        return repr_type(x)
+
+    if len(obj) <= maxitems:
+        string += "".join(f"{pad}{to_string(value)}{sep}{br}" for value in obj)
+    else:
+        string += "".join(
+            f"{pad}{to_string(value)}{sep}{br}" for value in obj[: maxitems // 2]
+        )
+        string += f"{pad}..." + br
+        string += "".join(
+            f"{pad}{to_string(value)}{sep}{br}" for value in obj[-maxitems // 2 :]
+        )
+    string += ")"
+
+    return string
+
+
+def repr_namedtuple(
+    obj: NTuple,
+    *,
+    linebreaks: bool = True,
+    maxitems: int = 6,
+    padding: int = 4,
+    recursive: Union[bool, int] = True,
+    repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
     r"""Return a string representation of a namedtuple object.
 
     Parameters
     ----------
-    obj
-    padding
-    maxitems
-    repr_fun
-    linebreaks
-    title
+    obj: tuple
+    linebreaks: bool, default True
+    maxitems: int, default 6
+    padding: int
+    recursive: bool | int, default True
+    repr_fun: Callable[..., str], default repr_object
+    title: Optional[str], default None,
 
     Returns
     -------
     str
     """
-    assert hasattr(obj, "_fields")
-    keys = obj._fields  # type: ignore[attr-defined]
+    title = type(obj).__name__ if title is None else title
+    return repr_mapping(
+        obj._asdict(),
+        padding=padding,
+        maxitems=maxitems,
+        title=title,
+        repr_fun=repr_fun,
+        linebreaks=linebreaks,
+        recursive=recursive,
+    )
 
-    name = obj.__class__.__name__
-    pad = " " * padding
-    string = f"{name}("
 
-    strings: list[str] = []
-    max_key_len = max(len(key) for key in keys)
-    objs = [repr(x).replace("\n", "\n" + " " * max_key_len) for x in obj]
+def repr_array(obj: Array, *, title: Optional[str] = None) -> str:
+    r"""Return a string representation of a array object.
 
-    for k, x in zip(keys, objs):
-        strings.append(f"{k:<{max_key_len}} = {x}")
+    Parameters
+    ----------
+    obj: ArrayLike
+    title: Optional[str] = None
 
-    total_length = len("".join(strings))
+    Returns
+    -------
+    str
+    """
+    assert isinstance(obj, Array)
 
-    if total_length < 80:
-        string += ", ".join(strings)
-    else:
-        string += "".join(f"\n{pad}{s}," for s in strings)
-        string += "\n"
-    string += ")"
+    title = type(obj).__name__ if title is None else title
 
+    string = title + "["
+    string += str(obj.shape)
+
+    if hasattr(obj, "dtype"):
+        string += f", dtype={str(obj.dtype)}"  # type: ignore[attr-defined]
+    elif isinstance(obj, DataFrame):
+        dtypes: Series = obj.dtypes
+        if len(dtypes.unique()) == 1:
+            string += f", dtype={str(dtypes[0])}"
+        else:
+            string += ", dtype=mixed"
+
+    string += "]"
     return string
+
+
+def repr_sized(obj: Sized, *, title: Optional[str] = None) -> str:
+    r"""Return a string representation of a sized object.
+
+    Parameters
+    ----------
+    obj: Sized
+    title: Optional[str], default None
+
+    Returns
+    -------
+    str
+    """
+    title = type(obj).__name__ if title is None else title
+    string = title + "["
+    string += str(len(obj))
+    string += "]"
+    return string
+
+
+def repr_type(obj: Any) -> str:
+    r"""Return a string representation of an object.
+
+    Parameters
+    ----------
+    obj: Any
+
+    Returns
+    -------
+    str
+    """
+    if isinstance(obj, Array):
+        return repr_array(obj)
+    if isinstance(obj, Sized):
+        return repr_sized(obj)
+    if isinstance(obj, type):
+        return obj.__name__
+    return obj.__class__.__name__ + "()"
