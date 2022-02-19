@@ -19,7 +19,7 @@ __all__ = [
     "IterKeys",
     "pre_hook",
     "post_hook",
-    "hook",
+    "wrap_hook",
     "wrapmethod",
 ]
 
@@ -32,13 +32,13 @@ from tsdm.util.decorators._decorators import (
     IterKeys,
     autojit,
     decorator,
-    hook,
     post_hook,
     pre_hook,
     sphinx_value,
     timefun,
     trace,
     vectorize,
+    wrap_hook,
     wrapmethod,
 )
 
