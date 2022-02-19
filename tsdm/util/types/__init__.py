@@ -3,6 +3,7 @@ r"""Generic types for type hints etc."""
 __all__ = [
     # Submodules
     "abc",
+    "protocols",
     # Type Variables
     "Type",
     "ClassType",
@@ -21,7 +22,7 @@ __all__ = [
 
 import logging
 
-from tsdm.util.types import abc
+from tsdm.util.types import abc, protocols
 from tsdm.util.types._types import (
     ClassType,
     KeyType,
