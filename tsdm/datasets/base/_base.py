@@ -29,6 +29,8 @@ Some design decisions:
     - For Series, DataFrame, TorchDataset, __iter__ iterates over values.
 """
 
+from __future__ import annotations
+
 __all__ = [
     # Classes
     "BaseDataset",
@@ -96,7 +98,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     name: str
     r"""Name of the dataset."""
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls) -> BaseDataset:
         """Create a new dataset instance.
 
         Parameters
@@ -194,7 +196,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             Must be implemented for any dataset class!!
         """
 
-    def download(self, *, url: Optional[Union[str, Path]] = None):
+    def download(self, *, url: Optional[Union[str, Path]] = None) -> None:
         r"""Download the dataset and stores it in `cls.rawdata_dir`.
 
         The default downloader checks if

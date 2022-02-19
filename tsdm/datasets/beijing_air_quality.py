@@ -117,7 +117,7 @@ class BeijingAirQuality(SimpleDataset):
         df = read_feather(self.dataset_files)
         return df.set_index("time")
 
-    def _clean(self):
+    def _clean(self) -> None:
         r"""Create DataFrame with all 12 stations and :class:`pandas.DatetimeIndex`."""
 
         def to_time(x):

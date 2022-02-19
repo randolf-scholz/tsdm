@@ -67,6 +67,7 @@ class SetFuncTS(nn.Module):
         self,
         input_size: int,
         output_size: int,
+        *,
         latent_size: Optional[int] = None,
         dim_keys: Optional[int] = None,
         dim_vals: Optional[int] = None,

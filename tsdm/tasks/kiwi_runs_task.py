@@ -139,6 +139,17 @@ class KIWI_RUNS_TASK(BaseTask):
             ),
         )
 
+        targets = Series(
+            [
+                "Base",
+                "DOT",
+                "Glucose",
+                "OD600",
+            ]
+        )
+        targets.index = targets.apply(ts.columns.get_loc)
+        self.targets = targets
+
         controls = Series(
             [
                 "Cumulated_feed_volume_glucose",
@@ -152,17 +163,6 @@ class KIWI_RUNS_TASK(BaseTask):
         )
         controls.index = controls.apply(ts.columns.get_loc)
         self.controls = controls
-
-        targets = Series(
-            [
-                "Base",
-                "DOT",
-                "Glucose",
-                "OD600",
-            ]
-        )
-        targets.index = targets.apply(ts.columns.get_loc)
-        self.targets = targets
 
         observables = Series(
             [
@@ -329,8 +329,6 @@ class KIWI_RUNS_TASK(BaseTask):
         *,
         batch_size: int = 1,
         shuffle: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader for the training-dataset with the given batch_size.
@@ -346,9 +344,6 @@ class KIWI_RUNS_TASK(BaseTask):
         key: Literal["train", "valid", "test"]
             Dataset part from which to construct the DataLoader
         batch_size: int = 32
-        dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None
-            defaults to cuda if cuda is available.
         shuffle: bool = True
 
         Returns

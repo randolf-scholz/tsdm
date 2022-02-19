@@ -37,6 +37,7 @@ __logger__ = logging.getLogger(__name__)
 @torch.no_grad()
 def log_kernel_information(
     i: int,
+    *,
     writer: SummaryWriter,
     kernel: Tensor,
     histograms: bool = False,
@@ -90,6 +91,7 @@ def log_kernel_information(
 @torch.no_grad()
 def log_optimizer_state(
     i: int,
+    *,
     writer: SummaryWriter,
     optimizer: Optimizer,
     histograms: bool = False,
@@ -147,6 +149,7 @@ def log_optimizer_state(
 @torch.no_grad()
 def log_model_state(
     i: int,
+    *,
     writer: SummaryWriter,
     model: Model,
     histograms: bool = False,
@@ -396,9 +399,15 @@ class DefaultLogger:
         self.num_batch += 1
         values = compute_metrics(targets=targets, predics=predics, metrics=self.metrics)
         log_metrics(
-            self.num_batch, self.writer, self.metrics, values=values, prefix="batch"
+            self.num_batch,
+            writer=self.writer,
+            metrics=self.metrics,
+            values=values,
+            prefix="batch",
         )
-        log_optimizer_state(self.num_batch, self.writer, self.optimizer, prefix="batch")
+        log_optimizer_state(
+            self.num_batch, writer=self.writer, optimizer=self.optimizer, prefix="batch"
+        )
         self.history["batch"].append(self._to_cpu(values))
 
     @torch.no_grad()
@@ -407,7 +416,10 @@ class DefaultLogger:
         self.num_epoch += 1
 
         log_optimizer_state(
-            self.num_epoch, self.writer, self.optimizer, histograms=True
+            self.num_epoch,
+            writer=self.writer,
+            optimizer=self.optimizer,
+            histograms=True,
         )
         # log_kernel_information(self.epoch, writer, model.system.kernel, histograms=True)
 
