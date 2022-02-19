@@ -37,12 +37,23 @@ from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from functools import singledispatchmethod
-from typing import Any, Final, Literal, NamedTuple, Optional, Union, overload
+from typing import (
+    Any,
+    Final,
+    Generic,
+    Literal,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import numpy as np
 import pandas as pd
 import pandas.api.types
 import torch
+from numpy.typing import NDArray
 from pandas import (
     NA,
     DataFrame,
@@ -60,12 +71,15 @@ from tsdm.datasets import TimeTensor
 from tsdm.util.decorators import post_hook, pre_hook
 from tsdm.util.strings import repr_mapping, repr_namedtuple, repr_sequence
 from tsdm.util.types import PathType
-from tsdm.util.types.abc import HashableType
 
 __logger__ = logging.getLogger(__name__)
 
 PandasObject = Union[Index, Series, DataFrame]
 r"""Type Hint for pandas objects."""
+TensorLike = Union[Tensor, NDArray, DataFrame, Series]
+r"""Type Hint for tensor-like objects."""
+TensorType = TypeVar("TensorType", Tensor, NDArray, DataFrame, Series)
+r"""TypeVar for tensor-like objects."""
 
 
 def get_broadcast(data: Any, axis: tuple[int, ...]) -> tuple[Union[None, slice], ...]:
@@ -144,25 +158,31 @@ class BaseEncoder(ABC):
         r"""Return a string representation of the encoder."""
         return f"{self.__class__.__name__}()"
 
-    def fit(self, data: Any) -> None:
+    def fit(self, data: Any, /) -> None:  # pylint: disable=method-hidden
         r"""By default does nothing."""
 
     @abstractmethod
-    def encode(self, data, /):
+    def encode(self, data, /):  # pylint: disable=method-hidden
         r"""Transform the data."""
 
     @abstractmethod
-    def decode(self, data, /):
+    def decode(self, data, /):  # pylint: disable=method-hidden
         r"""Reverse the applied transformation."""
 
-    def _post_fit_hook(self, *args, **kwargs):
+    def _post_fit_hook(
+        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
+    ) -> None:
         self.is_fitted = True
 
-    def _pre_encode_hook(self, *args, **kwargs):
+    def _pre_encode_hook(
+        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
+    ) -> None:
         if not self.is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
 
-    def _pre_decode_hook(self, *args, **kwargs):
+    def _pre_decode_hook(
+        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
+    ) -> None:
         if not self.is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
 
@@ -184,19 +204,19 @@ class ChainedEncoder(BaseEncoder):
 
         self.is_fitted = all(e.is_fitted for e in self.chained)
 
-    def fit(self, data):
+    def fit(self, data: Any, /) -> None:
         r"""Fit to the data."""
         for encoder in reversed(self.chained):
             encoder.fit(data)
             data = encoder.encode(data)
 
-    def encode(self, data):
+    def encode(self, data, /):
         r"""Encode the input."""
         for encoder in reversed(self.chained):
             data = encoder.encode(data)
         return data
 
-    def decode(self, data):
+    def decode(self, data, /):
         r"""Decode tne input."""
         for encoder in self.chained:
             data = encoder.decode(data)
@@ -245,7 +265,7 @@ class Time2Float(BaseEncoder):
         super().__init__()
         self.normalization = normalization
 
-    def fit(self, data: Series):
+    def fit(self, data: Series, /) -> None:
         r"""Fit to the data.
 
         Parameters
@@ -287,7 +307,7 @@ class Time2Float(BaseEncoder):
         else:
             raise ValueError(f"{self.normalization=} not understood")
 
-    def encode(self, ds: Series) -> Series:
+    def encode(self, data: Series, /) -> Series:
         """Encode the data.
 
         Roughly equal to::
@@ -295,31 +315,31 @@ class Time2Float(BaseEncoder):
 
         Parameters
         ----------
-        ds: Series
+        data: Series
 
         Returns
         -------
         Series
         """
-        if np.issubdtype(ds.dtype, np.integer):
-            return ds
-        if np.issubdtype(ds.dtype, np.datetime64):
-            ds = ds.view("datetime64[ns]")
-            self.offset = ds[0].copy()
-            timedeltas = ds - self.offset
-        elif np.issubdtype(ds.dtype, np.timedelta64):
-            timedeltas = ds.view("timedelta64[ns]")
-        elif np.issubdtype(ds.dtype, np.floating):
+        if np.issubdtype(data.dtype, np.integer):
+            return data
+        if np.issubdtype(data.dtype, np.datetime64):
+            data = data.view("datetime64[ns]")
+            self.offset = data[0].copy()
+            timedeltas = data - self.offset
+        elif np.issubdtype(data.dtype, np.timedelta64):
+            timedeltas = data.view("timedelta64[ns]")
+        elif np.issubdtype(data.dtype, np.floating):
             __logger__.warning("Array is already floating dtype.")
-            return ds
+            return data
         else:
-            raise ValueError(f"{ds.dtype=} not supported")
+            raise ValueError(f"{data.dtype=} not supported")
 
         common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 
         return (timedeltas / common_interval).astype(float)
 
-    def decode(self, ds: Series, /) -> Series:
+    def decode(self, data: Series, /) -> Series:
         """Apply the inverse transformation.
 
         Roughly equal to:
@@ -356,7 +376,7 @@ class DateTimeEncoder(BaseEncoder):
         self.unit = unit
         self.base_freq = base_freq
 
-    def fit(self, data: Union[Series, DatetimeIndex]):
+    def fit(self, data: Union[Series, DatetimeIndex], /) -> None:
         r"""Store the offset."""
         if isinstance(data, Series):
             self.kind = Series
@@ -371,14 +391,14 @@ class DateTimeEncoder(BaseEncoder):
         if isinstance(data, DatetimeIndex):
             self.freq = data.freq
 
-    def encode(self, datetimes: Union[Series, DatetimeIndex]) -> Series:
+    def encode(self, data: Union[Series, DatetimeIndex], /) -> Series:
         r"""Encode the input."""
-        return (datetimes - self.offset) / Timedelta(1, unit=self.unit)
+        return (data - self.offset) / Timedelta(1, unit=self.unit)
 
-    def decode(self, timedeltas: Series) -> Union[Series, DatetimeIndex]:
+    def decode(self, data: Series, /) -> Union[Series, DatetimeIndex]:
         r"""Decode the input."""
-        __logger__.debug("Decoding %s", type(timedeltas))
-        converted = pandas.to_timedelta(timedeltas, unit=self.unit)
+        __logger__.debug("Decoding %s", type(data))
+        converted = pandas.to_timedelta(data, unit=self.unit)
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
         if self.kind == Series:
             return datetimes.round(self.base_freq)
@@ -419,10 +439,9 @@ class TimeDeltaEncoder(BaseEncoder):
         result = data * Timedelta(1, unit=self.unit)
         if hasattr(result, "apply"):
             return result.apply(lambda x: x.round(self.base_freq))
-        elif hasattr(result, "map"):
+        if hasattr(result, "map"):
             return result.map(lambda x: x.round(self.base_freq))
-        else:
-            return result
+        return result
 
     def __repr__(self) -> str:
         r"""Return a string representation."""
@@ -558,14 +577,14 @@ class DataFrameEncoder(BaseEncoder):
         # ]:
         #     setattr(self, x, getattr(self.spec, x))
 
-    def fit(self, df: DataFrame, /):
+    def fit(self, data: DataFrame, /) -> None:
         r"""Fit to the data."""
-        self.colspec = df.dtypes
+        self.colspec = data.dtypes
 
         if self.index_encoders is not None:
             if isinstance(self.index_encoders, Mapping):
                 raise NotImplementedError("Multiple index encoders not yet supported")
-            self.index_encoders.fit(df.index)
+            self.index_encoders.fit(data.index)
 
         if isinstance(self.column_encoders, Mapping):
             # check if cols are a proper partition.
@@ -579,26 +598,26 @@ class DataFrameEncoder(BaseEncoder):
             for _, series in self.spec.loc["columns"].iterrows():
                 encoder = series["encoder"]
                 cols = series["col"]
-                encoder.fit(df[cols])
+                encoder.fit(data[cols])
         else:
-            cols = list(df.columns)
+            cols = list(data.columns)
             self.spec.loc["columns"].iloc[0]["col"] = cols
             encoder = self.spec.loc["columns", "encoder"].item()
-            encoder.fit(df)
+            encoder.fit(data)
 
-    def encode(self, df: DataFrame, /) -> tuple:
+    def encode(self, data: DataFrame, /) -> tuple:
         r"""Encode the input."""
         tensors = []
         for _, series in self.spec.loc["columns"].iterrows():
             encoder = series["encoder"]
             cols = series["col"]
-            tensors.append(encoder.encode(df[cols]))
+            tensors.append(encoder.encode(data[cols]))
         encoded_columns = tuple(tensors)
 
         if self.index_encoders is not None:
             if isinstance(self.index_encoders, Mapping):
                 raise NotImplementedError("Multiple index encoders not yet supported")
-            encoded_index = self.index_encoders.encode(df.index)
+            encoded_index = self.index_encoders.encode(data.index)
             return encoded_index, *encoded_columns
         return encoded_columns
 
@@ -640,7 +659,7 @@ class DataFrameEncoder(BaseEncoder):
         return f"<h3>{self.__class__.__name__}</h3> {html_repr}"
 
 
-class Standardizer(BaseEncoder):
+class Standardizer(BaseEncoder, Generic[TensorType]):
     r"""A StandardScalar that works with batch dims."""
 
     mean: Any
@@ -655,8 +674,8 @@ class Standardizer(BaseEncoder):
     class Parameters(NamedTuple):
         r"""The parameters of the StandardScalar."""
 
-        mean: Union[np.ndarray, Tensor]
-        stdv: Union[np.ndarray, Tensor]
+        mean: TensorLike
+        stdv: TensorLike
         axis: tuple[int, ...]
 
         def __repr__(self) -> str:
@@ -683,7 +702,7 @@ class Standardizer(BaseEncoder):
         r"""Parameters of the Standardizer."""
         return self.Parameters(self.mean, self.stdv, self.axis)
 
-    def fit(self, data):
+    def fit(self, data: TensorType, /) -> None:
         r"""Compute the mean and stdv."""
         rank = len(data.shape)
         if self.axis is None:
@@ -724,7 +743,7 @@ class Standardizer(BaseEncoder):
         #     residual = apply_along_axes(masked, -self.mean, np.add, axes=axes)
         #     self.stdv = np.sqrt((residual**2).sum(axis=axes)/count)
 
-    def encode(self, data):
+    def encode(self, data: TensorType, /) -> TensorType:
         r"""Encode the input."""
         if self.mean is None:
             raise RuntimeError("Needs to be fitted first!")
@@ -735,7 +754,7 @@ class Standardizer(BaseEncoder):
 
         return (data - self.mean[broadcast]) / self.stdv[broadcast]
 
-    def decode(self, data):
+    def decode(self, data: TensorType, /) -> TensorType:
         r"""Decode the input."""
         if self.mean is None:
             raise RuntimeError("Needs to be fitted first!")
@@ -759,14 +778,14 @@ class Standardizer(BaseEncoder):
         return encoder
 
 
-class MinMaxScaler(BaseEncoder):
+class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
 
-    xmin: Union[np.ndarray, Tensor]
-    xmax: Union[np.ndarray, Tensor]
-    ymin: Union[np.ndarray, Tensor]
-    ymax: Union[np.ndarray, Tensor]
-    scale: Union[np.ndarray, Tensor]
+    xmin: Union[NDArray, Tensor]
+    xmax: Union[NDArray, Tensor]
+    ymin: Union[NDArray, Tensor]
+    ymax: Union[NDArray, Tensor]
+    scale: Union[NDArray, Tensor]
     """The scaling factor."""
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""
@@ -774,11 +793,11 @@ class MinMaxScaler(BaseEncoder):
     class Parameters(NamedTuple):
         r"""The parameters of the MinMaxScaler."""
 
-        xmin: Union[np.ndarray, Tensor]
-        xmax: Union[np.ndarray, Tensor]
-        ymin: Union[np.ndarray, Tensor]
-        ymax: Union[np.ndarray, Tensor]
-        scale: Union[np.ndarray, Tensor]
+        xmin: TensorLike
+        xmax: TensorLike
+        ymin: TensorLike
+        ymax: TensorLike
+        scale: TensorLike
         axis: tuple[int, ...]
 
         def __repr__(self) -> str:
@@ -788,10 +807,10 @@ class MinMaxScaler(BaseEncoder):
     def __init__(
         self,
         /,
-        ymin: Optional[Union[float, np.ndarray, Tensor]] = None,
-        ymax: Optional[Union[float, np.ndarray, Tensor]] = None,
-        xmin: Optional[Union[float, np.ndarray, Tensor]] = None,
-        xmax: Optional[Union[float, np.ndarray, Tensor]] = None,
+        ymin: Optional[Union[float, TensorType]] = None,
+        ymax: Optional[Union[float, TensorType]] = None,
+        xmin: Optional[Union[float, TensorType]] = None,
+        xmax: Optional[Union[float, TensorType]] = None,
         *,
         axis: Optional[Union[int, tuple[int, ...]]] = None,
     ):
@@ -819,7 +838,7 @@ class MinMaxScaler(BaseEncoder):
         )
 
     @singledispatchmethod
-    def fit(self, data: np.ndarray) -> None:
+    def fit(self, data: TensorType, /) -> None:
         r"""Compute the min and max."""
         data = np.asarray(data)
         rank = len(data.shape)
@@ -836,7 +855,7 @@ class MinMaxScaler(BaseEncoder):
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     @fit.register(torch.Tensor)
-    def _(self, data: Tensor) -> None:
+    def _(self, data: Tensor, /) -> None:
         r"""Compute the min and max."""
         mask = torch.isnan(data)
         self.ymin = torch.tensor(self.ymin, device=data.device, dtype=data.dtype)
@@ -848,7 +867,7 @@ class MinMaxScaler(BaseEncoder):
         self.xmax = torch.amax(torch.where(mask, neginf, data), dim=self.axis)
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
-    def encode(self, data, /):
+    def encode(self, data: TensorType, /) -> TensorType:
         r"""Encode the input."""
         __logger__.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, self.axis)
@@ -860,7 +879,7 @@ class MinMaxScaler(BaseEncoder):
 
         return (data - xmin) * scale + ymin
 
-    def decode(self, data, /):
+    def decode(self, data: TensorType, /) -> TensorType:
         r"""Decode the input."""
         __logger__.debug("Decoding data %s", data)
         broadcast = get_broadcast(data, self.axis)
@@ -896,7 +915,7 @@ class MinMaxScaler(BaseEncoder):
         return encoder
 
     # @singledispatchmethod
-    # def fit(self, data: Union[Tensor, np.ndarray]):
+    # def fit(self, data: Union[Tensor, np.ndarray], /) -> None:
     #     r"""Compute the min and max."""
     #     return self.fit(np.asarray(data))
     #
@@ -934,7 +953,7 @@ class MinMaxScaler(BaseEncoder):
     #     r"""Decode the input."""
     #     return (1 / self.scale) * (data - self.ymin) + self.xmin
 
-    # def fit(self, data):
+    # def fit(self, data, /) -> None:
     #     r"""Compute the min and max."""
     #     data = np.asarray(data)
     #     self.xmax = np.nanmax(data, axis=self.axis)
@@ -969,7 +988,7 @@ class ConcatEncoder(BaseEncoder):
         super().__init__()
         self.axis = axis
 
-    def fit(self, data):
+    def fit(self, data: tuple[Tensor, ...], /) -> None:
         r"""Fit to the data."""
         self.numdims = [d.ndim for d in data]
         self.maxdim = max(self.numdims)
@@ -978,13 +997,13 @@ class ConcatEncoder(BaseEncoder):
         # store the lengths of the slices
         self.lengths = [x.shape[self.axis] for x in data]
 
-    def encode(self, data, /):
+    def encode(self, data: tuple[Tensor, ...], /) -> Tensor:
         r"""Encode the input."""
         return torch.cat(
             [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], dim=self.axis
         )
 
-    def decode(self, data, /):
+    def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
         r"""Decode the input."""
         result = torch.split(data, self.lengths, dim=self.axis)
         return tuple(x.squeeze() for x in result)
@@ -1017,7 +1036,7 @@ class TensorEncoder(BaseEncoder):
         if names is not None:
             self.return_type = namedtuple("namedtuple", names)  # type: ignore[misc]
 
-    def fit(self, *data: PandasObject):
+    def fit(self, data: PandasObject, /) -> None:
         r"""Fit to the data."""
         # for item in data:
         #     _type = type(item)
@@ -1029,28 +1048,28 @@ class TensorEncoder(BaseEncoder):
         #         dtype = item.dtype
 
     @overload
-    def encode(self, data: PandasObject) -> Tensor:  # type: ignore[misc]
+    def encode(self, data: PandasObject, /) -> Tensor:  # type: ignore[misc]
         ...
 
     @overload
-    def encode(self, data: tuple[PandasObject, ...]) -> tuple[Tensor, ...]:
+    def encode(self, data: tuple[PandasObject, ...], /) -> tuple[Tensor, ...]:
         ...
 
-    def encode(self, data):
+    def encode(self, data, /):
         r"""Convert each inputs to tensor."""
         if isinstance(data, tuple):
             return tuple(self.encode(x) for x in data)
         return torch.tensor(data.values, device=self.device, dtype=self.dtype)
 
     @overload
-    def decode(self, data: Tensor) -> PandasObject:
+    def decode(self, data: Tensor, /) -> PandasObject:
         ...
 
     @overload
-    def decode(self, data: tuple[Tensor, ...]) -> tuple[PandasObject, ...]:
+    def decode(self, data: tuple[Tensor, ...], /) -> tuple[PandasObject, ...]:
         ...
 
-    def decode(self, data):
+    def decode(self, data, /):
         r"""Convert each input from tensor to numpy."""
         if isinstance(data, tuple):
             return self.return_type(*(self.decode(x) for x in data))
@@ -1071,15 +1090,15 @@ class FloatEncoder(BaseEncoder):
         self.target_dtype = dtype
         super().__init__()
 
-    def fit(self, data: PandasObject):
+    def fit(self, data: PandasObject, /) -> None:
         r"""Remember the original dtypes."""
         self.dtypes = data.dtypes if hasattr(data, "dtypes") else data.dtype
 
-    def encode(self, data: PandasObject) -> PandasObject:
+    def encode(self, data: PandasObject, /) -> PandasObject:
         r"""Make everything float32."""
         return data.astype(self.target_dtype)
 
-    def decode(self, data, /):
+    def decode(self, data: PandasObject, /) -> PandasObject:
         r"""Restore original dtypes."""
         return data.astype(self.dtypes)
 
@@ -1094,11 +1113,11 @@ class IntEncoder(BaseEncoder):
     dtypes: Series = None
     r"""The original dtypes."""
 
-    def fit(self, data: PandasObject):
+    def fit(self, data: PandasObject, /) -> None:
         r"""Remember the original dtypes."""
         self.dtypes = data.dtypes
 
-    def encode(self, data: PandasObject) -> PandasObject:
+    def encode(self, data: PandasObject, /) -> PandasObject:
         r"""Make everything int32."""
         return data.astype("int32")
 
@@ -1129,16 +1148,18 @@ class TimeSlicer(BaseEncoder):
         return False
 
     @overload
-    def encode(self, data: TimeTensor) -> Sequence[TimeTensor]:
+    def encode(self, data: TimeTensor, /) -> Sequence[TimeTensor]:
         ...
 
     @overload
-    def encode(self, data: Sequence[TimeTensor]) -> Sequence[Sequence[TimeTensor]]:
+    def encode(self, data: Sequence[TimeTensor], /) -> Sequence[Sequence[TimeTensor]]:
         ...
 
     @overload
     def encode(
-        self, data: Sequence[tuple[Tensor, Tensor]]
+        self,
+        data: Sequence[tuple[Tensor, Tensor]],
+        /,
     ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]:
         ...
 
@@ -1156,16 +1177,18 @@ class TimeSlicer(BaseEncoder):
         return tuple(self.encode(item) for item in data)
 
     @overload
-    def decode(self, data: Sequence[TimeTensor]) -> TimeTensor:
+    def decode(self, data: Sequence[TimeTensor], /) -> TimeTensor:
         ...
 
     @overload
-    def decode(self, data: Sequence[Sequence[TimeTensor]]) -> Sequence[TimeTensor]:
+    def decode(self, data: Sequence[Sequence[TimeTensor]], /) -> Sequence[TimeTensor]:
         ...
 
     @overload
     def decode(
-        self, data: Sequence[Sequence[tuple[Tensor, Tensor]]]
+        self,
+        data: Sequence[Sequence[tuple[Tensor, Tensor]]],
+        /,
     ) -> Sequence[tuple[Tensor, Tensor]]:
         ...
 
@@ -1251,7 +1274,7 @@ class TripletEncoder(BaseEncoder):
         super().__init__()
         self.sparse = sparse
 
-    def fit(self, data: DataFrame) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         r"""Fit the encoder.
 
         Parameters
@@ -1267,9 +1290,9 @@ class TripletEncoder(BaseEncoder):
         # result[variable] = result[variable].astype(pd.StringDtype())
         # self.categories = pd.CategoricalDtype(result[variable].unique())
 
-    def encode(self, df: DataFrame) -> DataFrame:
+    def encode(self, data: DataFrame, /) -> DataFrame:
         r"""Encode the data."""
-        result = df.melt(ignore_index=False).dropna()
+        result = data.melt(ignore_index=False).dropna()
         # observed = result["value"].notna()
         # result = result[observed]
         variable = result.columns[0]
@@ -1348,7 +1371,7 @@ class CSVEncoder(BaseEncoder):
         self.read_csv_kwargs = read_csv_kwargs or {}
         self.to_csv_kwargs = to_csv_kwargs or {}
 
-    def fit(self, data: DataFrame) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         r"""Fit the encoder.
 
         Parameters
@@ -1357,16 +1380,16 @@ class CSVEncoder(BaseEncoder):
         """
         self.dtypes = data.dtypes
 
-    def encode(self, df: DataFrame) -> PathType:
+    def encode(self, data: DataFrame, /) -> PathType:
         r"""Encode the data."""
-        df.to_csv(self.filename, **self.to_csv_kwargs)
+        data.to_csv(self.filename, **self.to_csv_kwargs)
         return self.filename
 
-    def decode(self, fname: Optional[PathType] = None, /) -> DataFrame:
+    def decode(self, data: Optional[PathType] = None, /) -> DataFrame:
         r"""Decode the data."""
-        if fname is None:
-            fname = self.filename
-        frame = pd.read_csv(fname, **self.read_csv_kwargs)
+        if data is None:
+            data = self.filename
+        frame = pd.read_csv(data, **self.read_csv_kwargs)
         return DataFrame(frame).astype(self.dtypes)
 
 
@@ -1380,17 +1403,17 @@ class ProductEncoder(BaseEncoder):
         self.encoders = tuple(encoders)
         self.is_fitted = all(e.is_fitted for e in self.encoders)
 
-    def fit(self, data: Sequence[Any]) -> None:
+    def fit(self, data: Sequence[Any], /) -> None:
         r"""Fit the encoder."""
         # print(data)
         for encoder, x in zip(self.encoders, data):
             encoder.fit(x)
 
-    def encode(self, data: Sequence[Any]) -> Sequence[Any]:
+    def encode(self, data: Sequence[Any], /) -> Sequence[Any]:
         r"""Encode the data."""
         return tuple(encoder.encode(x) for encoder, x in zip(self.encoders, data))
 
-    def decode(self, data: Sequence[Any]) -> Sequence[Any]:
+    def decode(self, data: Sequence[Any], /) -> Sequence[Any]:
         r"""Decode the data."""
         return tuple(encoder.decode(x) for encoder, x in zip(self.encoders, data))
 
@@ -1416,41 +1439,140 @@ class ProductEncoder(BaseEncoder):
         return repr_sequence(self, title=self.__class__.__name__)
 
 
+# class FrameSplitter(BaseEncoder):
+#     r"""Split a DataFrame into multiple groups."""
+#
+#     columns: Index
+#     dtypes: Series
+#     groups: dict[Any, Sequence[Any]]
+#
+#     @staticmethod
+#     def _pairwise_disjoint(groups: Iterable[Sequence[HashableType]]) -> bool:
+#         union: set[HashableType] = set().union(*(set(obj) for obj in groups))
+#         n = sum(len(u) for u in groups)
+#         return n == len(union)
+#
+#     def __init__(self, groups: dict[HashableType, Sequence[HashableType]]) -> None:
+#         super().__init__()
+#         self.groups = groups
+#         assert self._pairwise_disjoint(self.groups.values())
+#
+#     def fit(self, data: DataFrame, /) -> None:
+#         r"""Fit the encoder."""
+#         self.columns = data.columns
+#         self.dtypes = data.dtypes
+#
+#     def encode(self, data: DataFrame, /) -> tuple[DataFrame, ...]:
+#         r"""Encode the data."""
+#         encoded = []
+#         for columns in self.groups.values():
+#             encoded.append(data[columns].dropna(how="all"))
+#         return tuple(encoded)
+#
+#     def decode(self, data: tuple[DataFrame, ...], /) -> DataFrame:
+#         r"""Decode the data."""
+#         decoded = pd.concat(data, axis="columns")
+#         decoded = decoded.astype(self.dtypes)
+#         decoded = decoded[self.columns]
+#         return decoded
+
+
 class FrameSplitter(BaseEncoder):
-    r"""Split a DataFrame into multiple groups."""
+    r"""Split a DataFrame into multiple groups.
+
+    The special value ``...`` (:class:`Ellipsis`) can be used to indicate
+    that all other columns belong to this group.
+
+    This function can be used on index columns as well.
+    """
 
     columns: Index
+    index_columns: Index
     dtypes: Series
-    groups: dict[Any, Sequence[Any]]
+    index_dtypes = Series
+    # FIXME: Union[types.EllipsisType, set[Hashable]] in 3.10
+    groups: dict[Any, Union[Hashable, set[Hashable]]]
 
-    @staticmethod
-    def _pairwise_disjoint(groups: Iterable[Sequence[HashableType]]) -> bool:
-        union: set[HashableType] = set().union(*(set(obj) for obj in groups))
-        n = sum(len(u) for u in groups)
-        return n == len(union)
+    @property
+    def names(self) -> set[Hashable]:
+        r"""Return the union of all groups."""
+        sets = [
+            {obj} if not isinstance(obj, set) else obj for obj in self.groups.values()
+        ]
+        union: set[Hashable] = set.union(*sets)
+        assert sum(len(u) for u in sets) == len(union), "Duplicate columns!"
+        return union
 
-    def __init__(self, groups: dict[HashableType, Sequence[HashableType]]) -> None:
+    def __init__(self, groups: Iterable[Hashable]) -> None:
         super().__init__()
-        self.groups = groups
-        assert self._pairwise_disjoint(self.groups.values())
+        # self.groups = {key: FrozenList(val) for key, val in groups.items()}
 
-    def fit(self, data: DataFrame) -> None:
+        if not isinstance(groups, Mapping):
+            groups = dict(enumerate(groups))
+
+        self.groups = {}
+        for key, obj in groups.items():
+            if obj is Ellipsis:
+                self.groups[key] = obj
+            elif isinstance(obj, str) or not isinstance(obj, Iterable):
+                self.groups[key] = {obj}
+            else:
+                self.groups[key] = set(obj)
+
+    def fit(self, data: DataFrame, /) -> None:
         r"""Fit the encoder."""
-        self.columns = data.columns
+        index = data.index.to_frame()
         self.dtypes = data.dtypes
+        self.columns = data.columns
+        self.index_columns = index.columns
+        self.index_dtypes = index.dtypes
 
-    def encode(self, data: DataFrame) -> tuple[DataFrame, ...]:
+        assert not (
+            j := set(index.columns) & set(data.columns)
+        ), f"index columns and data columns must be disjoint {j}!"
+
+    def encode(self, data: DataFrame, /) -> tuple[DataFrame, ...]:
         r"""Encode the data."""
+        # copy the frame and add index as columns.
+        data = data.copy()
+        index = data.index.to_frame()
+        data[index.columns] = index
+        data_columns = set(data.columns) | set(index.columns)
+
+        assert Ellipsis in self.names or data_columns <= self.names, (
+            f"Unknown columns {data_columns - self.names}."
+            "If you want to encode unknown columns add a group ``...`` (Ellipsis)."
+        )
+
         encoded = []
         for columns in self.groups.values():
-            encoded.append(data[columns].dropna(how="all"))
+            # FIXME: columns is Ellipsis in 3.10
+            if not isinstance(columns, set):
+                continue
+            encoded.append(data[columns].dropna(how="all").squeeze(axis="columns"))
+            data_columns -= set(columns)
+        if Ellipsis in self.names:
+            encoded.append(data[data_columns])
         return tuple(encoded)
 
-    def decode(self, data: tuple[DataFrame, ...]) -> DataFrame:
+    def decode(self, data: tuple[DataFrame, ...], /) -> DataFrame:
         r"""Decode the data."""
-        decoded = pd.concat(data, axis="columns")
-        decoded = decoded.astype(self.dtypes)
-        decoded = decoded[self.columns]
+        joined = pd.concat(data, axis="columns")
+
+        # Assemble the columns
+        columns = joined[self.columns].squeeze(axis="columns")
+        columns.columns = self.columns
+        columns = columns.astype(self.dtypes)
+
+        # assemble the index
+        index = joined[self.index_columns].squeeze(axis="columns")
+        index.columns = self.index_columns
+        index = index.astype(self.index_dtypes)
+
+        if isinstance(index, Series):
+            decoded = columns.reindex(index)
+        else:
+            decoded = columns.reindex(MultiIndex.from_frame(index))
         return decoded
 
 
@@ -1497,7 +1619,7 @@ class FrameEncoder(BaseEncoder):
         self.column_encoders = column_encoders
         self.index_encoders = index_encoders
 
-    def fit(self, data: DataFrame) -> None:
+    def fit(self, data: DataFrame, /) -> None:
         r"""Fit the encoder."""
         data = data.copy()
         index = data.index.to_frame()
@@ -1530,7 +1652,7 @@ class FrameEncoder(BaseEncoder):
                 encoded = encoder.encode(index[group])
                 self.index_decoders[self._names(encoded)] = encoder
 
-    def encode(self, data: DataFrame) -> DataFrame:
+    def encode(self, data: DataFrame, /) -> DataFrame:
         r"""Encode the data."""
         data = data.copy(deep=True)
         index = data.index.to_frame()
@@ -1567,7 +1689,7 @@ class FrameEncoder(BaseEncoder):
         encoded = encoded.set_index(self._names(encoded_inds))
         return encoded
 
-    def decode(self, data: DataFrame) -> DataFrame:
+    def decode(self, data: DataFrame, /) -> DataFrame:
         r"""Decode the data."""
         data = data.copy(deep=True)
         index = data.index.to_frame()
@@ -1626,10 +1748,10 @@ class LogEncoder(BaseEncoder):
     Uses base 2 by default for lower numerical error and fast computation.
     """
 
-    threshold: np.ndarray
-    replacement: np.ndarray
+    threshold: NDArray
+    replacement: NDArray
 
-    def fit(self, data, /):
+    def fit(self, data: NDArray, /) -> None:
         r"""Fit the encoder to the data."""
         assert np.all(data >= 0)
 
@@ -1637,14 +1759,14 @@ class LogEncoder(BaseEncoder):
         self.threshold = data[~mask].min()
         self.replacement = np.log2(self.threshold / 2)
 
-    def encode(self, data, /):
+    def encode(self, data: NDArray, /) -> NDArray:
         """Encode data on logarithmic scale."""
         result = data.copy()
         mask = data <= 0
         result[:] = np.where(mask, self.replacement, np.log2(data))
         return result
 
-    def decode(self, data, /):
+    def decode(self, data: NDArray, /) -> NDArray:
         r"""Decode data on logarithmic scale."""
         result = 2**data
         mask = result < self.threshold
