@@ -28,12 +28,12 @@ class BaseModel(ABC):
     url: str
     model_path: Path
 
-    def __init__(self):
+    def __init__(self) -> None:
         r"""TODO: add docstring."""
         raise NotImplementedError
 
     @classmethod
-    def download(cls):
+    def download(cls) -> None:
         r"""Download model (e.g. via git clone)."""
         parsed_url = urlparse(cls.url)
         __logger__.info("Obtaining model '%s' from %s", cls.__name__, cls.url)
@@ -56,6 +56,6 @@ class BaseModel(ABC):
         __logger__.info("Finished importing model '%s' from %s", cls.__name__, cls.url)
 
     @abstractmethod
-    def forward(self, *inputs):
+    def forward(self):
         r"""Synonym for forward and __call__."""
         raise NotImplementedError

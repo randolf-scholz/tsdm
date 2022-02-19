@@ -343,7 +343,7 @@ class TimeSeriesDataset(TorchDataset):
             ts_lines = repr_sequence(
                 self.timeseries,
                 linebreaks=False,
-                pad=pad,
+                padding=pad,
                 repr_fun=repr_array,
                 title="timeseries=",
             )
@@ -356,7 +356,7 @@ class TimeSeriesDataset(TorchDataset):
             md_lines = repr_sequence(
                 self.metadata,
                 linebreaks=False,
-                pad=pad,
+                padding=pad,
                 repr_fun=repr_array,
                 title="metadata=",
             )

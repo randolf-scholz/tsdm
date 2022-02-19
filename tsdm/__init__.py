@@ -51,6 +51,8 @@ from pathlib import Path
 if sys.version_info < (3, 9):
     raise RuntimeError("Python >= 3.9 required")
 
+# pylint: disable=wrong-import-position
+
 from tsdm import (
     config,
     datasets,
@@ -65,6 +67,8 @@ from tsdm import (
     tasks,
     util,
 )
+
+# pylint: enable=wrong-import-position
 
 __logger__ = logging.getLogger(__name__)
 

@@ -39,6 +39,7 @@ Location = Literal[
 @torch.no_grad()
 def visualize_distribution(
     data: ArrayLike,
+    *,
     ax: Axes,
     num_bins: int = 50,
     log: bool = True,
@@ -118,6 +119,7 @@ def visualize_distribution(
 @torch.no_grad()
 def shared_grid_plot(
     data: ArrayLike,
+    *,
     plot_func: Callable[..., None],
     plot_kwargs: Optional[dict] = None,
     titles: Optional[list[str]] = None,
