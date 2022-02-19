@@ -11,7 +11,7 @@ __all__ = [
     "timefun",
     "trace",
     "vectorize",
-    "hook",
+    "wrap_hook",
     "pre_hook",
     "post_hook",
     "wrapmethod",
@@ -33,13 +33,12 @@ from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
 from types import MethodType
-from typing import Any, Union, overload
-from typing import overload
+from typing import Any, Optional, Union, overload
 
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import ObjectType, ReturnType, nnModuleType, ClassType, Type
+from tsdm.util.types import ClassType, ObjectType, ReturnType, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -452,15 +451,15 @@ def IterKeys(obj):
 
 
 @decorator
-def hook(func: Callable, pre_hook: Callable, post_hook: Callable, /) -> Callable:
+def wrap_hook(func: Callable, pre_func: Callable, post_func: Callable, /) -> Callable:
     r"""Wrap a function with pre and post hooks."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
         r"""Wrap a function with pre and post hooks."""
-        pre_hook(*args, **kwargs)
+        pre_func(*args, **kwargs)
         result = func(*args, **kwargs)
-        post_hook(*args, **kwargs)
+        post_func(*args, **kwargs)
         return result
 
     return wrapper
@@ -468,11 +467,11 @@ def hook(func: Callable, pre_hook: Callable, post_hook: Callable, /) -> Callable
 
 @decorator
 def pre_hook(func: Callable, hook: Callable, /) -> Callable:
-    r"""Wrap a function with a pre hook."""
+    r"""Wrap a function with a pre wrap_hook."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        r"""Wrap a function with a pre hook."""
+        r"""Wrap a function with a pre wrap_hook."""
         hook(*args, **kwargs)
         return func(*args, **kwargs)
 
@@ -481,14 +480,46 @@ def pre_hook(func: Callable, hook: Callable, /) -> Callable:
 
 @decorator
 def post_hook(func: Callable, hook: Callable, /) -> Callable:
-    r"""Wrap a function with a post hook."""
+    r"""Wrap a function with a post wrap_hook."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        r"""Wrap a function with a post hook."""
+        r"""Wrap a function with a post wrap_hook."""
         result = func(*args, **kwargs)
         hook(*args, **kwargs)
         return result
+
+    return wrapper
+
+
+@decorator
+def wrap_chain(
+    func: Callable,
+    /,
+    *,
+    pre_func: Optional[Callable] = None,
+    post_func: Optional[Callable] = None,
+) -> Callable:
+    """Chain a function with pre and post func.
+
+    Parameters
+    ----------
+    func
+    pre_func
+    post_func
+
+    Returns
+    -------
+    Callable
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        r"""Wrap a function with pre and post hooks."""
+        pre_result = pre_func(*args, **kwargs)
+        result = func(pre_result)
+        post_result = post_func(result)
+        return post_result
 
     return wrapper
 
