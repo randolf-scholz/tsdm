@@ -185,7 +185,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
         # Setup Dataset, drop runs that don't work for this task.
         dataset = self.dataset
-        dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype(float)
+        dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype("float32")
         dataset.metadata = dataset.metadata.drop([355, 445, 482])
 
         self.timeseries = ts = self.dataset.timeseries
@@ -209,7 +209,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
             t_target = self.final_product_times.loc[idx, "target_time"]
             final_vecs[(*idx, t_target)] = ts.loc[idx].loc[t_target]
 
-        final_value = DataFrame.from_dict(final_vecs, orient="index")
+        final_value = DataFrame.from_dict(final_vecs, orient="index", dtype="float32")
         final_value.index = final_value.index.set_names(ts.index.names)
         self.final_value = final_value[self.target]
         self.final_value = self.final_value.reset_index(-1)

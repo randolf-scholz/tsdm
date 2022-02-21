@@ -144,7 +144,7 @@ def decorator(deco: Callable) -> Callable:
 
 @decorator
 def timefun(
-    fun: Callable, /, *, append: bool = True, loglevel: int = logging.WARNING
+    fun: Callable, /, *, append: bool = False, loglevel: int = logging.WARNING
 ) -> Callable:
     r"""Log the execution time of the function. Use as decorator.
 
@@ -172,14 +172,18 @@ def timefun(
             result = fun(*args, **kwargs)
             end_time = perf_counter_ns()
             elapsed = (end_time - start_time) / 10**9
-            timefun_logger.log(loglevel, "%s executed in %.4f s", fun.__name__, elapsed)
+            timefun_logger.log(
+                loglevel, "%s executed in %.4f s", fun.__qualname__, elapsed
+            )
         except (KeyboardInterrupt, SystemExit) as E:
             raise E
         except Exception as E:  # pylint: disable=W0703
             result = None
             elapsed = float("nan")
             RuntimeWarning(f"Function execution failed with Exception {E}")
-            timefun_logger.log(loglevel, "%s failed with Exception %s", fun.__name__, E)
+            timefun_logger.log(
+                loglevel, "%s failed with Exception %s", fun.__qualname__, E
+            )
         gc.enable()
 
         return (result, elapsed) if append else result
