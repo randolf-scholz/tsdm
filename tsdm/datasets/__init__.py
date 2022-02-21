@@ -37,7 +37,7 @@ __all__ = [
 import logging
 from typing import Final
 
-from tsdm.datasets import base, torch
+from tsdm.datasets import base, synthetic, torch
 from tsdm.datasets.base import BaseDataset, Dataset, Template
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity

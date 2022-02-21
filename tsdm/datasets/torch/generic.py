@@ -52,6 +52,7 @@ class MappingDataset(TorchDataset, Mapping):
 
     def __getitem__(self, key):
         r"""Get the dataset for the given key."""
+        print(key)
         if not isinstance(key, tuple):
             return self.data[key]
         try:
@@ -87,7 +88,7 @@ class MappingDataset(TorchDataset, Mapping):
 
     def __repr__(self):
         r"""Representation of the dataset."""
-        return repr_mapping(self)  # , repr_fun=repr_array)
+        return repr_mapping(self)
 
 
 # class TupleDataset(Torch_Dataset):

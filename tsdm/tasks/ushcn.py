@@ -8,17 +8,15 @@ __all__ = ["USHCN_DeBrouwer"]
 import logging
 from collections.abc import Callable
 from functools import cached_property
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import numpy as np
-import torch
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
-from tsdm.config import DEFAULT_DEVICE, DEFAULT_DTYPE
-from tsdm.datasets import DATASET, USHCN_SmallChunkedSporadic
+from tsdm.datasets import USHCN_SmallChunkedSporadic
 from tsdm.encoders import FunctionalEncoders
 from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.tasks.base import BaseTask
@@ -74,6 +72,11 @@ class USHCN_DeBrouwer(BaseTask):
     forecasting_horizon: int
     accumulation_function: Callable[..., Tensor]
 
+    @cached_property
+    def dataset(self) -> USHCN_SmallChunkedSporadic:
+        r"""Return cached dataset."""
+        return USHCN_SmallChunkedSporadic()
+
     def __init__(
         self,
         test_metric: Literal["MSE", "MAE"] = "MSE",
@@ -87,7 +90,6 @@ class USHCN_DeBrouwer(BaseTask):
         self.time_encoder = FunctionalEncoders[time_encoder]
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
-        self.dataset: DATASET = USHCN_SmallChunkedSporadic()
 
     def _gen_folds(self):
         N = self.dataset.dataset["ID"].nunique()
@@ -108,8 +110,6 @@ class USHCN_DeBrouwer(BaseTask):
         *,
         batch_size: int = 1,
         shuffle: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split & fold.
@@ -119,22 +119,16 @@ class USHCN_DeBrouwer(BaseTask):
         key: str
             From which part of the dataset to construct the loader
         batch_size: int = 32
-        dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None
-            defaults to cuda if cuda is available.
         shuffle: bool = True
 
         Returns
         -------
         DataLoader
         """
-        device = DEFAULT_DEVICE if device is None else device
-        dtype = DEFAULT_DTYPE if dtype is None else dtype
-
         if key == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
         if key == "test" and "drop_last" in kwargs:
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
-        # thesplit = self.folds[fold]
+        # the split = self.folds[fold]
         raise NotImplementedError

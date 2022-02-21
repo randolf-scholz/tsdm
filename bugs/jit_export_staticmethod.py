@@ -2,6 +2,7 @@ import torch
 from torch import nn, jit, Tensor
 from typing import Final
 
+
 class PositionalEncoder(nn.Module):
     num_dim: Final[int]
     scale: Final[float]
@@ -24,6 +25,7 @@ class PositionalEncoder(nn.Module):
     @staticmethod
     def inverse(t: Tensor) -> Tensor:
         return torch.asin(t[..., 0])
+
 
 encoder = jit.script(PositionalEncoder(5, 1.23))
 

@@ -12,9 +12,8 @@ __all__ = [
 import logging
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
-import torch
 from pandas import DataFrame
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -180,8 +179,6 @@ class ETDatasetTask_Informer(BaseTask):
         *,
         batch_size: int = 1,
         shuffle: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader for the training-dataset with the given batch_size.
@@ -197,8 +194,6 @@ class ETDatasetTask_Informer(BaseTask):
         key: Literal["train", "valid", "test"]
             Dataset part from which to construct the DataLoader
         batch_size: int = 32
-        dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None
             defaults to cuda if cuda is available.
         shuffle: bool = True
 

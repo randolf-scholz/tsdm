@@ -16,6 +16,11 @@ __all__ = [
     "trace",
     "vectorize",
     "IterItems",
+    "IterKeys",
+    "pre_hook",
+    "post_hook",
+    "wrap_hook",
+    "wrapmethod",
 ]
 
 import logging
@@ -24,12 +29,17 @@ from typing import Final
 
 from tsdm.util.decorators._decorators import (
     IterItems,
+    IterKeys,
     autojit,
     decorator,
+    post_hook,
+    pre_hook,
     sphinx_value,
     timefun,
     trace,
     vectorize,
+    wrap_hook,
+    wrapmethod,
 )
 
 __logger__ = logging.getLogger(__name__)

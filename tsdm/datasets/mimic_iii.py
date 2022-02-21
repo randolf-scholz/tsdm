@@ -25,6 +25,7 @@ import subprocess
 from functools import cached_property
 from getpass import getpass
 from pathlib import Path
+from typing import Optional, Union
 
 from tsdm.datasets.base import SimpleDataset
 
@@ -49,13 +50,13 @@ class MIMIC_III(SimpleDataset):
         r"""Path to the raw data."""
         return self.rawdata_dir / "rawdata"
 
-    def _clean(self):
+    def _clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
 
     def _load(self):
         r"""Load the dataset stored in hdf5 format in the path `cls.dataset_files`."""
 
-    def download(self, **kwargs):
+    def download(self, *, url: Optional[Union[str, Path]] = None) -> None:
         r"""Download the dataset and stores it in `cls.rawdata_dir`.
 
         The default downloader checks if
@@ -68,7 +69,7 @@ class MIMIC_III(SimpleDataset):
 
         Parameters
         ----------
-        kwargs
+        url: Optional[Union[str, Path]], default None
         """
         if self.url is None:
             __logger__.info("Dataset '%s' provides no url. Assumed offline", self.name)
@@ -84,9 +85,11 @@ class MIMIC_III(SimpleDataset):
 
         os.environ["PASSWORD"] = password
 
+        url = self.url if url is None else url
+
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            f"--cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {self.url}",
+            f"--cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {url}",
             shell=True,
             check=True,
         )

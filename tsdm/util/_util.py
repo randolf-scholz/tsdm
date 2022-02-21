@@ -20,6 +20,7 @@ __all__ = [
     "flatten_nested",
     "prepend_path",
     "paths_exists",
+    "round_relative",
 ]
 
 import os
@@ -30,6 +31,7 @@ from logging import getLogger
 from pathlib import Path
 from typing import Any, NamedTuple, Union, overload
 
+import numpy as np
 import torch
 from torch import Tensor, jit
 
@@ -51,6 +53,14 @@ class Split(NamedTuple):
     train: Any
     valid: Any
     test: Any
+
+
+def round_relative(x: np.ndarray, decimals: int = 2) -> np.ndarray:
+    r"""Round to relative precision."""
+    order = np.where(x == 0, 0, np.floor(np.log10(x)))
+    digits = decimals - order
+    rounded = np.rint(x * 10**digits)
+    return np.true_divide(rounded, 10**digits)
 
 
 def now():
@@ -188,7 +198,7 @@ def flatten_dict(
     Parameters
     ----------
     d: dict
-    recursive: bool (default=True)
+    recursive: bool (default True)
         If true applies flattening strategy recursively on nested dicts, yielding
         list[tuple[key1, key2, ...., keyN, value]]
 

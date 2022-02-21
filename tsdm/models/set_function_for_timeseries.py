@@ -25,6 +25,19 @@ __logger__ = logging.getLogger(__name__)
 class SetFuncTS(nn.Module):
     r"""Set function for time series.
 
+    Attributes
+    ----------
+    time_encoder: nn.Module, default PositionalEncoder
+        Signature: `(..., *N) -> (..., *N, dₜ)`
+    key_encoder: nn.Module, default DeepSet
+        Signature: `(..., *N, K) -> (..., *N, dₖ)`
+    value_encoder: nn.Module, default MLP
+        Signature: `(..., *N, V) -> (..., *N, dᵥ)`
+    attention: nn.Module, default :class:`~tsdm.models.ScaledDotProductAttention`
+        Signature: `(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)`
+    head: nn.Module, default MLP
+        Signature: `(..., F) -> (..., E)`
+
     References
     ----------
     - | Set Functions for Time Series
@@ -32,7 +45,7 @@ class SetFuncTS(nn.Module):
       | Proceedings of the 37th International Conference on Machine Learning
       | PMLR 119:4353-4363, 2020.
       | https://proceedings.mlr.press/v119/horn20a.html
-    - https://github.com/BorgwardtLab/Set_Functions_for_Time_Series
+      | https://github.com/BorgwardtLab/Set_Functions_for_Time_Series
     """
 
     HP: dict = {
@@ -54,12 +67,25 @@ class SetFuncTS(nn.Module):
         self,
         input_size: int,
         output_size: int,
+        *,
         latent_size: Optional[int] = None,
         dim_keys: Optional[int] = None,
         dim_vals: Optional[int] = None,
         dim_time: Optional[int] = None,
         dim_deepset: Optional[int] = None,
     ) -> None:
+        """Initialize the model.
+
+        Parameters
+        ----------
+        input_size: int,
+        output_size: int,
+        latent_size: Optional[int] = None,
+        dim_keys: Optional[int] = None,
+        dim_vals: Optional[int] = None,
+        dim_time: Optional[int] = None,
+        dim_deepset: Optional[int] = None,
+        """
         super().__init__()
 
         dim_keys = input_size if dim_keys is None else dim_keys
@@ -78,7 +104,7 @@ class SetFuncTS(nn.Module):
         self.value_encoder = MLP(
             input_size + dim_time - 1, dim_vals, hidden_size=dim_vals
         )
-        self.attn = ScaledDotProductAttention(
+        self.attention = ScaledDotProductAttention(
             dim_keys + input_size + dim_time - 1, dim_vals, latent_size
         )
         self.head = MLP(latent_size, output_size)
@@ -86,7 +112,7 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor, v: Tensor, m: Tensor) -> Tensor:
-        r"""Signature: `(..., T, D) → (..., F)`.
+        r"""Signature: `(*N, dₜ), (*N, dᵥ), (*N, dₘ) → (..., F)`.
 
         s must be a tensor of the shape L×(2+C), sᵢ = [tᵢ, zᵢ, mᵢ], where
         - tᵢ is timestamp
@@ -97,13 +123,13 @@ class SetFuncTS(nn.Module):
 
         Parameters
         ----------
-        t: Tensor `[*V, T]`
-        v: Tensor `[*V, D]`
-        m: Tensor `[*V, K]`
+        t: Tensor
+        v: Tensor
+        m: Tensor
 
         Returns
         -------
-        Tensors [F]
+        Tensor
         """
         t = t.to(device=self.dummy.device)
         v = v.to(device=self.dummy.device)
@@ -120,22 +146,22 @@ class SetFuncTS(nn.Module):
         K = torch.cat([fs, s], dim=-1)
         V = self.value_encoder(s)
         mask = torch.isnan(s[..., 0])
-        z = self.attn(K, V, mask=mask)
+        z = self.attention(K, V, mask=mask)
         y = self.head(z)
         return y
 
     @jit.export
     def forward_tuple(self, t: tuple[Tensor, Tensor, Tensor]) -> Tensor:
-        r"""Signature: `(∗V, T), (*V, D), (*V, K) → (..., F)`."""
+        r"""Signature: `[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] → (F, )`."""
         return self.forward(t[0], t[1], t[2])
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor, Tensor]]) -> Tensor:
-        r"""Signature: `[(∗V, T), (*V, D), (*V, K)] → (..., F)`.
+        r"""Signature: `[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] → (..., F)`.
 
         Parameters
         ----------
-        batch: list[tuple[Tensor, Tensor, Tensor]
+        batch: list[tuple[Tensor, Tensor, Tensor]]
 
         Returns
         -------

@@ -171,7 +171,7 @@ class ElectricityELBMBTTF:
         on Time Series Forecasting
       | Shiyang Li, Xiaoyong Jin, Yao Xuan, Xiyou Zhou, Wenhu Chen, Yu-Xiang Wang, Xifeng Yan
       | Advances in Neural Information Processing Systems 32 (NeurIPS 2019)
-      | https://proceedings.neurips.cc/paper/2019/hash/6775a0635c302542da2c32aa19d86be0-Abstract.html
+      | http://proceedings.neurips.cc/paper/2019/hash/6775a0635c302542da2c32aa19d86be0-Abstract.html
 
     Evaluation Protocol
     -------------------

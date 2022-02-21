@@ -39,6 +39,7 @@ Location = Literal[
 @torch.no_grad()
 def visualize_distribution(
     data: ArrayLike,
+    *,
     ax: Axes,
     num_bins: int = 50,
     log: bool = True,
@@ -53,7 +54,7 @@ def visualize_distribution(
     data: ArrayLike
     ax: Axes
     num_bins: int or Sequence[int]
-    log: bool or float, default=False
+    log: bool or float, default False
         if True, use log base 10, if float, use  log w.r.t. this base
     loc: Location
     print_stats: bool
@@ -118,6 +119,7 @@ def visualize_distribution(
 @torch.no_grad()
 def shared_grid_plot(
     data: ArrayLike,
+    *,
     plot_func: Callable[..., None],
     plot_kwargs: Optional[dict] = None,
     titles: Optional[list[str]] = None,
@@ -133,16 +135,17 @@ def shared_grid_plot(
 
     Parameters
     ----------
-    data: ArrayLike
-    plot_func: Callable
+    data
+        :class:`~numpy.typing.ArrayLike`
+    plot_func
         With signature plot_func(data, ax=)
-    plot_kwargs: dict
-    titles: list[str]
-    row_headers: list[str]
-    col_headers: list[str]
-    xlabels: list[str]
-    ylabels: list[str]
-    subplots_kwargs: dict
+    plot_kwargs
+    titles
+    row_headers
+    col_headers
+    xlabels
+    ylabels
+    subplots_kwargs
         Default arguments: ``tight_layout=True``, ``sharex='col``, ``sharey='row'``
 
     Returns

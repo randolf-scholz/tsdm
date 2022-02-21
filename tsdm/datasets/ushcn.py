@@ -111,7 +111,7 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
         r"""Location where raw dataset is stored."""
         return self.rawdata_dir / "small_chunked_sporadic.csv"
 
-    def _clean(self):
+    def _clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
         dtypes = {
             "ID": pandas.UInt16Dtype(),
@@ -323,7 +323,7 @@ class USHCN(Dataset):
 
         Parameters
         ----------
-        key: Literal["us_daily", "states", "stations"], default="us_daily"
+        key: Literal["us_daily", "states", "stations"], default "us_daily"
         """
         {
             "us_daily": self._clean_us_daily,

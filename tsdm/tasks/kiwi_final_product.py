@@ -7,8 +7,10 @@ __all__ = [
     # Classes
     "KIWI_FINAL_PRODUCT",
 ]
+
 import logging
 import os
+from copy import deepcopy
 from functools import cached_property
 from itertools import product
 from typing import Any, Callable, Literal, NamedTuple, Optional
@@ -25,8 +27,7 @@ from tsdm.datasets import KIWI_RUNS
 from tsdm.datasets.torch import MappingDataset, TimeSeriesDataset
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.util.decorators import IterItems
-from tsdm.util.strings import repr_array, repr_mapping
+from tsdm.util.strings import repr_namedtuple
 
 __logger__ = logging.getLogger(__name__)
 
@@ -40,9 +41,7 @@ class Batch(NamedTuple):
     targets: Any
 
     def __repr__(self):
-        return repr_mapping(
-            self._asdict(), title=self.__class__.__name__, repr_fun=repr_array
-        )
+        return repr_namedtuple(self)
 
 
 class Split(NamedTuple):
@@ -54,9 +53,7 @@ class Split(NamedTuple):
     metadata: Tensor
 
     def __repr__(self):
-        return repr_mapping(
-            self._asdict(), title=self.__class__.__name__, repr_fun=repr_array
-        )
+        return repr_namedtuple(self)
 
 
 def get_induction_time(s: Series) -> Timestamp:
@@ -90,11 +87,11 @@ def get_time_table(
 ) -> DataFrame:
     r"""Compute the induction time and final product time for each run and experiment."""
     columns = [
-        "slice",
+        # "slice",
         "t_min",
         "t_induction",
         "t_max",
-        "t_target",
+        "target_time",
     ]
     index = ts.reset_index(level=[2]).index.unique()
     df = DataFrame(index=index, columns=columns)
@@ -114,10 +111,10 @@ def get_time_table(
             t_max = t_induction
         df.loc[idx, "t_max"] = t_max
 
-        df.loc[idx, "t_min"] = t_min = slc.index[0] + min_wait
+        df.loc[idx, "t_min"] = slc.index[0] + min_wait
         df.loc[idx, "t_induction"] = t_induction
-        df.loc[idx, "t_target"] = t_target
-        df.loc[idx, "slice"] = slice(t_min, t_max)
+        df.loc[idx, "target_time"] = t_target
+        # df.loc[idx, "slice"] = slice(t_min, t_max)
     return df
 
 
@@ -140,15 +137,42 @@ class KIWI_FINAL_PRODUCT(BaseTask):
     r"""The metadata."""
     dataloader_kwargs: dict[str, Any]
     r"""The dataloader kwargs."""
+    controls: Series
+    r"""List of control variables"""
+    observables: Series
+    r"""List of observable variables"""
+    # def make_sample(self, DS, idx: tuple[tuple[int, int], slice]) -> Sample:
+    #     r"""Return a sample from the dataset."""
+    #     print(idx)
+    #     key, slc = idx
+    #     ts, md = deepcopy(DS[key])
+    #     # get targets
+    #     target_time = md["target_time"]
+    #     target_value = md["target_value"]
+    #     # mask target values
+    #     md["target_value"] = float("nan")
+    #     # mask observation horizon
+    #     mask = (ts.index <= slc.start) & (slc.stop <= ts.index)
+    #     # mask observables outside observation range
+    #     ts.loc[~mask, self.observables] = float("nan")
+    #     # select the data
+    #
+    #     index = idx
+    #     inputs = (ts[slc.start : target_time], md)
+    #     targets = target_value
+    #     originals = deepcopy(DS[key])
+    #
+    #     return self.Sample(index, inputs, targets, originals)
 
     def __init__(
         self,
+        *,
         target: Literal["Fluo_GFP", "OD600"] = "Fluo_GFP",
         t_min: str = "0.6h",
         delta_t: str = "5m",
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
-        collate_fn: Optional[Callable] = None,
+        # collate_fn: Optional[Callable] = None,
     ) -> None:
         super().__init__()
 
@@ -161,7 +185,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
         # Setup Dataset, drop runs that don't work for this task.
         dataset = self.dataset
-        dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype(float)
+        dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype("float32")
         dataset.metadata = dataset.metadata.drop([355, 445, 482])
 
         self.timeseries = ts = self.dataset.timeseries
@@ -181,24 +205,62 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
         # Compute the final vector
         final_vecs = {}
-
         for idx in md.index:
-            t_target = self.final_product_times.loc[idx, "t_target"]
+            t_target = self.final_product_times.loc[idx, "target_time"]
             final_vecs[(*idx, t_target)] = ts.loc[idx].loc[t_target]
 
-        final_vec = DataFrame.from_dict(final_vecs, orient="index")
-        final_vec.index = final_vec.index.set_names(ts.index.names)
-        self.final_vec = final_vec[target]
+        final_value = DataFrame.from_dict(final_vecs, orient="index", dtype="float32")
+        final_value.index = final_value.index.set_names(ts.index.names)
+        self.final_value = final_value[self.target]
+        self.final_value = self.final_value.reset_index(-1)
+        self.final_value = self.final_value.rename(
+            columns={"measurement_time": "target_time"}
+        )
 
+        self.metadata = self.metadata.join(self.final_value)
+        self.metadata = self.metadata.rename(columns={self.target: "target_value"})
         # Construct the dataset object
         TSDs = {}
         for key in self.metadata.index:
             TSDs[key] = TimeSeriesDataset(
                 self.timeseries.loc[key],
-                metadata=(self.metadata.loc[key], self.final_vec.loc[key]),
+                metadata=self.metadata.loc[key],
             )
         DS = MappingDataset(TSDs)
         self.DS = DS
+
+        controls = Series(
+            [
+                "Cumulated_feed_volume_glucose",
+                "Cumulated_feed_volume_medium",
+                "InducerConcentration",
+                "StirringSpeed",
+                "Flow_Air",
+                "Temperature",
+                "Probe_Volume",
+            ]
+        )
+        # get reverse index
+        controls.index = controls.apply(ts.columns.get_loc)
+        self.controls = controls
+
+        observables = Series(
+            [
+                "Base",
+                "DOT",
+                "Glucose",
+                "OD600",
+                "Acetate",
+                "Fluo_GFP",
+                "Volume",
+                "pH",
+            ]
+        )
+        # get reverse index
+        observables.index = observables.apply(ts.columns.get_loc)
+        self.observables = observables
+
+        self.dataloader_kwargs = {"collate_fn": self.collate_fn}
 
     @cached_property
     def dataset(self) -> KIWI_RUNS:
@@ -295,19 +357,20 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         return splits
 
     @staticmethod
-    def collate_fn(batch: list[tuple]) -> Batch:
+    def collate_fn(batch: list[tuple]) -> list[tuple]:
         r"""Batch the sampled items."""
-        index = []
-        timeseries = []
-        metadata = []
-        targets = []
-        for idx, (ts_data, (md_data, target)) in batch:
-            index.append(idx)
-            timeseries.append(ts_data)
-            metadata.append(md_data)
-            targets.append(target)
-
-        return Batch(index, timeseries, metadata, targets)
+        return batch
+        # index = []
+        # timeseries = []
+        # metadata = []
+        # targets = []
+        # for idx, (ts_data, (md_data, target)) in batch:
+        #     index.append(idx)
+        #     timeseries.append(ts_data)
+        #     metadata.append(md_data)
+        #     targets.append(target)
+        #
+        # return Batch(index, timeseries, metadata, targets)
 
     def get_dataloader(
         self,
@@ -315,8 +378,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         *,
         batch_size: int = 1,
         shuffle: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
     ) -> DataLoader:
         r"""Return a dataloader for the given split.
@@ -326,8 +387,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         key: KeyType,
         batch_size: int = 1,
         shuffle: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
         kwargs: Any,
 
         Returns
@@ -340,65 +399,76 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         for idx in md.index:
             TSDs[idx] = TimeSeriesDataset(
                 ts.loc[idx],
-                metadata=(md.loc[idx], self.final_vec.loc[idx]),
+                metadata=(md.loc[idx], self.final_value.loc[idx]),
             )
-        DS = IterItems(MappingDataset(TSDs))
+        DS = MappingDataset(TSDs)
 
         # Setup the samplers
         subsamplers = {}
-        for idx in TSDs:
+        for idx in DS:
             subsampler = IntervalSampler(
                 xmin=self.final_product_times.loc[idx, "t_min"],
                 xmax=self.final_product_times.loc[idx, "t_max"],
                 # offset=t_0,
                 deltax=lambda k: k * self.delta_t,
                 stride=None,
-                shuffle=True,
+                shuffle=shuffle,
             )
             subsamplers[idx] = subsampler
-        sampler = HierarchicalSampler(TSDs, subsamplers, shuffle=True)
+        sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
 
         # Construct the dataloader
         dataloader = DataLoader(
-            DS,
+            # wrapmethod(DS, "__getitem__", self.make_sample),
+            _Dataset(ts, md, self.observables),
             sampler=sampler,
             batch_size=batch_size,
-            **(
-                self.dataloader_kwargs  # type: ignore[arg-type]
-                | {
-                    "collate_fn": self.collate_fn,
-                }
-                | kwargs
-            ),
+            **(self.dataloader_kwargs | kwargs),
         )
         return dataloader
 
 
-# # Fit the preprocessor on the training data
-# ts_train, md_train = self.splits[(split, "train")]
-# preprocessor = deepcopy(self.preprocessor)
-# preprocessor.fit(ts_train.reset_index(level=[0, 1], drop=True))
-#
-# # get the target encoder
-# target_idx = self.timeseries.columns.get_loc(self.target)
-# target_encoder = (
-#     TensorEncoder() @ FloatEncoder() @ preprocessor[-1][target_idx]
-# )
-#
-#
-# # Setup the preprocessor
-# if preprocessor is None:
-#     self.preprocessor = ChainedEncoder(
-#         TensorEncoder(names=("time", "value", "index")),
-#         DataFrameEncoder(
-#             column_encoders={
-#                 "value": IdentityEncoder(),
-#                 tuple(ts.columns): FloatEncoder("float32"),
-#             },
-#             index_encoders=MinMaxScaler() @ DateTimeEncoder(unit="h"),
-#         ),
-#         TripletEncoder(sparse=True),
-#         Standardizer(),
-#     )
-# else:
-#     self.preprocessor = preprocessor
+class Sample(NamedTuple):
+    r"""A sample of the data."""
+
+    key: tuple[tuple[int, int], slice]
+    inputs: tuple[DataFrame, DataFrame]
+    targets: float
+    originals: Optional[tuple[DataFrame, DataFrame]] = None
+
+    def __repr__(self) -> str:
+        return repr_namedtuple(self, recursive=1)
+
+
+class _Dataset(torch.utils.data.Dataset):
+    def __init__(self, ts, md, observables):
+        super().__init__()
+        self.timeseries = ts
+        self.metadata = md
+        self.observables = observables
+
+    def __getitem__(self, item):
+        r"""Return a sample from the dataset."""
+        key, slc = item
+        ts = deepcopy(self.timeseries.loc[key])
+        md = deepcopy(self.metadata.loc[key])
+        # get targets
+        target_time = md["target_time"]
+        target_value = md["target_value"]
+        # mask target values
+        md["target_value"] = float("nan")
+        # mask observation horizon
+        mask = (ts.index <= slc.start) & (slc.stop <= ts.index)
+        # mask observables outside observation range
+        ts.loc[~mask, self.observables] = float("nan")
+        # select the data
+
+        index = item
+        inputs = (ts[slc.start : target_time], md)
+        targets = target_value
+        originals = (
+            deepcopy(self.timeseries.loc[key]),
+            deepcopy(self.metadata.loc[key]),
+        )
+
+        return Sample(index, inputs, targets, originals)

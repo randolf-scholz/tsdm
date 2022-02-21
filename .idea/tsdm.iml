@@ -50,10 +50,16 @@
     <orderEntry type="jdk" jdkName="Python 3.9 (kiwi)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="PackageRequirementsSettings">
+    <option name="requirementsPath" value="requirements.txt, requirements-dev.txt, requirements-extra.txt" />
+  </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="NUMPY" />
     <option name="myDocStringFormat" value="NumPy" />
     <option name="renderExternalDocumentation" value="true" />
+  </component>
+  <component name="ReSTService">
+    <option name="DOC_DIR" value="docs" />
   </component>
   <component name="TemplatesService">
     <option name="templateFileTypes">

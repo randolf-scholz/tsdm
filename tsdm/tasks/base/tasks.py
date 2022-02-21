@@ -92,7 +92,6 @@ from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import Any, Generic, Optional
 
-import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 
@@ -118,11 +117,11 @@ class BaseTask(ABC, Generic[KeyType]):
     ----------
     index: list[str]
         A list of string specifying the data splits of interest.
-    train_batch_size: int, default=32
+    train_batch_size: int, default 32
         Default batch-size used by batchloader.
-    eval_batch_size: int, default=128
+    eval_batch_size: int, default 128
         Default batch-size used by dataloaders (for evaluation).
-    preprocessor: Optional[Encoder], default=None
+    preprocessor: Optional[Encoder], default None
         Task specific preprocessing. For example, the EVP might specifically ask for
         evaluation of Mean Squared Error on standardized data.
     dataset: Dataset
@@ -212,8 +211,6 @@ class BaseTask(ABC, Generic[KeyType]):
         *,
         batch_size: int = 1,
         shuffle: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split.
@@ -225,8 +222,6 @@ class BaseTask(ABC, Generic[KeyType]):
         batch_size: int = 32
         shuffle: bool = True
             Whether to get samples in random order.
-        dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None
             defaults to cuda if cuda is available.
         kwargs:
             Options to be passed directly to the dataloader such as the generator.

@@ -20,6 +20,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 
 from tsdm.datasets.base import Dataset
+from tsdm.util import round_relative
 
 __logger__ = logging.getLogger(__name__)
 
@@ -539,14 +540,26 @@ class KIWI_RUNS(Dataset):
         cond = (merged["start_time"] <= time) & (time <= merged["end_time"])
         ts = ts[cond]
 
+        # Change index to TimeDelta
+        realtime = merged.index.get_level_values("measurement_time") - merged.start_time
+        realtime.name = "measurement_time"
+        ts = ts.join(realtime)
+        ts = ts.reset_index(-1, drop=True)
+        ts = ts.set_index("measurement_time", append=True)
+
         # replace wrong pH values
         ts["pH"] = ts["pH"].replace(0.0, pd.NA)
         # mask out-of bounds values
-        ts["DOT"][ts["DOT"] < 0] = pd.NA
-        ts["DOT"][ts["DOT"] > 100] = 100.0
         ts["Glucose"][ts["Glucose"] < 0] = pd.NA
         ts["Acetate"][ts["Acetate"] < 0] = pd.NA
+        ts["Fluo_GFP"][ts["Fluo_GFP"] < 0] = pd.NA
+        ts["Fluo_GFP"][ts["Fluo_GFP"] > 1_000_000] = 1_000_000
+        ts["DOT"][ts["DOT"] < 0] = pd.NA
+        ts["DOT"][ts["DOT"] > 100] = 100.0
         ts["OD600"][ts["OD600"] < 0] = pd.NA
+        ts["OD600"][ts["OD600"] > 100] = 100
+        ts["Volume"][ts["Volume"] < 0] = pd.NA
+
         # drop rows with only <NA> values
         ts = ts.dropna(how="all")
 
@@ -565,8 +578,8 @@ class KIWI_RUNS(Dataset):
             ts.loc[idx, ffill_consts] = slc[ffill_consts].fillna(0)
 
         # check if metadata-index matches with times-series index
-        tsidx = ts.reset_index(level="measurement_time").index
-        pd.testing.assert_index_equal(md.index, tsidx.unique())
+        ts_idx = ts.reset_index(level="measurement_time").index
+        pd.testing.assert_index_equal(md.index, ts_idx.unique())
 
         # reset index
         ts = ts.reset_index()
@@ -600,6 +613,42 @@ class KIWI_RUNS(Dataset):
         units["Acetate"] = "g/L"
         units = units.fillna(pd.NA).astype("string").astype("category")
         units.index.name = "variable"
+
+        # add dataset statistics
+        units = units.to_frame()
+        ts: DataFrame = self._load(key="timeseries")
+
+        units["min"] = ts.min()
+        units["max"] = ts.max()
+        units["eps"] = ts[ts > units["min"]].min()
+        units["sup"] = ts[ts < units["max"]].max()
+        units["mean"] = ts.mean()
+        units["median"] = ts.median()
+        units["std"] = ts.std()
+        units["nan"] = ts.isna().mean()
+        units["mins"] = (ts == units["min"]).mean()
+        units["maxs"] = (ts == units["max"]).mean()
+
+        columns = [
+            "min",
+            "eps",
+            "sup",
+            "max",
+            "median",
+            "mean",
+            "std",
+            "nan",
+            "mins",
+            "maxs",
+        ]
+        percents = [
+            "nan",
+            "mins",
+            "maxs",
+        ]
+
+        units[columns] = units[columns].astype("float32").apply(round_relative)
+        units[percents] = units[percents].round(3)
         units = units.reset_index()
         path = self.dataset_files["units"]
         units.to_feather(path)
