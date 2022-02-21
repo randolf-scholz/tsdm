@@ -13,7 +13,7 @@ __all__ = [
     "tensor_info",
     "dict2string",
 ]
-
+import builtins
 import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from typing import Any, Optional, Union, overload
@@ -95,6 +95,8 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
     -------
     str
     """
+    if type(obj).__name__ in dir(builtins):
+        return str(obj)
     if isinstance(obj, Tensor):
         return repr_array(obj, **kwargs)
     if isinstance(obj, Mapping):
