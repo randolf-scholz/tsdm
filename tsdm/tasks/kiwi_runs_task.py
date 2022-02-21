@@ -343,8 +343,8 @@ class KIWI_RUNS_TASK(BaseTask):
         ----------
         key: Literal["train", "valid", "test"]
             Dataset part from which to construct the DataLoader
-        batch_size: int = 32
-        shuffle: bool = True
+        batch_size: int, default 32
+        shuffle: bool, default True
 
         Returns
         -------

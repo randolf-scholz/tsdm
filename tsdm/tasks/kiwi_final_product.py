@@ -141,7 +141,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
     r"""List of control variables"""
     observables: Series
     r"""List of observable variables"""
-
     # def make_sample(self, DS, idx: tuple[tuple[int, int], slice]) -> Sample:
     #     r"""Return a sample from the dataset."""
     #     print(idx)
@@ -206,7 +205,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
         # Compute the final vector
         final_vecs = {}
-        print(self.final_product_times)
         for idx in md.index:
             t_target = self.final_product_times.loc[idx, "target_time"]
             final_vecs[(*idx, t_target)] = ts.loc[idx].loc[t_target]
@@ -261,6 +259,8 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         # get reverse index
         observables.index = observables.apply(ts.columns.get_loc)
         self.observables = observables
+
+        self.dataloader_kwargs = {"collate_fn": self.collate_fn}
 
     @cached_property
     def dataset(self) -> KIWI_RUNS:
@@ -377,7 +377,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         key: KeyType,
         *,
         batch_size: int = 1,
-        shuffle: bool = True,
+        shuffle: bool = False,
         **kwargs: Any,
     ) -> DataLoader:
         r"""Return a dataloader for the given split.
@@ -423,13 +423,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
             _Dataset(ts, md, self.observables),
             sampler=sampler,
             batch_size=batch_size,
-            **(
-                self.dataloader_kwargs  # type: ignore[arg-type]
-                | {
-                    "collate_fn": self.collate_fn,
-                }
-                | kwargs
-            ),
+            **(self.dataloader_kwargs | kwargs),
         )
         return dataloader
 
