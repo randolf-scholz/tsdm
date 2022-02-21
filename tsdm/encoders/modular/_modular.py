@@ -152,7 +152,7 @@ class BaseEncoder(ABC):
 
     def __or__(self, other: BaseEncoder) -> ProductEncoder:
         r"""Return product encoders."""
-        return ProductEncoder((self, other))
+        return ProductEncoder(self, other)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
@@ -187,7 +187,7 @@ class BaseEncoder(ABC):
             raise RuntimeError("Encoder has not been fitted.")
 
 
-class ChainedEncoder(BaseEncoder):
+class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
     r"""Represents function composition of encoders."""
 
     def __init__(self, *encoders: BaseEncoder):
@@ -222,11 +222,6 @@ class ChainedEncoder(BaseEncoder):
             data = encoder.decode(data)
         return data
 
-    def __iter__(self):
-        r"""Yield the encoders 1 by 1."""
-        for encoder in self.chained:
-            yield encoder
-
     def __len__(self):
         r"""Return number of chained encoders."""
         return self.chained.__len__()
@@ -234,10 +229,6 @@ class ChainedEncoder(BaseEncoder):
     def __getitem__(self, item):
         r"""Return given item."""
         return self.chained.__getitem__(item)
-
-    def __contains__(self, item):
-        r"""Return contains."""
-        return self.chained.__contains__(item)
 
     def __repr__(self):
         r"""Pretty print."""
@@ -697,6 +688,18 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         self.mean = mean
         self.stdv = stdv
 
+    def __repr__(self) -> str:
+        r"""Pretty print."""
+        return f"{self.__class__.__name__}(axis={self.axis})"
+
+    def __getitem__(self, item: Any) -> Standardizer:
+        r"""Return a slice of the Standardizer."""
+        encoder = Standardizer(
+            mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:]
+        )
+        encoder.is_fitted = self.is_fitted
+        return encoder
+
     @property
     def param(self) -> Parameters:
         r"""Parameters of the Standardizer."""
@@ -765,18 +768,6 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 
         return data * self.stdv[broadcast] + self.mean[broadcast]
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"{self.__class__.__name__}(axis={self.axis})"
-
-    def __getitem__(self, item: Any) -> Standardizer:
-        r"""Return a slice of the Standardizer."""
-        encoder = Standardizer(
-            mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:]
-        )
-        encoder.is_fitted = True
-        return encoder
-
 
 class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
@@ -829,6 +820,29 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         self.ymax = np.array(1.0 if ymax is None else ymax)
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
         self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore
+
+    def __getitem__(self, item: Any) -> MinMaxScaler:
+        r"""Return a slice of the MinMaxScaler."""
+        xmin = self.xmin if self.xmin.ndim == 0 else self.xmin[item]
+        xmax = self.xmax if self.xmax.ndim == 0 else self.xmax[item]
+        ymin = self.ymin if self.ymin.ndim == 0 else self.ymin[item]
+        ymax = self.ymax if self.ymax.ndim == 0 else self.ymax[item]
+
+        oldvals = (self.xmin, self.xmax, self.ymin, self.ymax)
+        newvals = (xmin, xmax, ymin, ymax)
+        assert not all(x.ndim == 0 for x in oldvals)
+        lost_ranks = max(x.ndim for x in oldvals) - max(x.ndim for x in newvals)
+
+        encoder = MinMaxScaler(
+            xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, axis=self.axis[lost_ranks:]
+        )
+
+        encoder.is_fitted = self.is_fitted
+        return encoder
+
+    def __repr__(self) -> str:
+        r"""Pretty print."""
+        return f"{self.__class__.__name__}(axis={self.axis})"
 
     @property
     def param(self) -> Parameters:
@@ -890,29 +904,6 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         ymin = self.ymin[broadcast] if self.ymin.ndim > 1 else self.ymin
 
         return (data - ymin) / scale + xmin
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"{self.__class__.__name__}(axis={self.axis})"
-
-    def __getitem__(self, item: Any) -> MinMaxScaler:
-        r"""Return a slice of the MinMaxScaler."""
-        xmin = self.xmin if self.xmin.ndim == 0 else self.xmin[item]
-        xmax = self.xmax if self.xmax.ndim == 0 else self.xmax[item]
-        ymin = self.ymin if self.ymin.ndim == 0 else self.ymin[item]
-        ymax = self.ymax if self.ymax.ndim == 0 else self.ymax[item]
-
-        oldvals = (self.xmin, self.xmax, self.ymin, self.ymax)
-        newvals = (xmin, xmax, ymin, ymax)
-        assert not all(x.ndim == 0 for x in oldvals)
-        lost_ranks = max(x.ndim for x in oldvals) - max(x.ndim for x in newvals)
-
-        encoder = MinMaxScaler(
-            xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, axis=self.axis[lost_ranks:]
-        )
-
-        encoder.is_fitted = True
-        return encoder
 
     # @singledispatchmethod
     # def fit(self, data: Union[Tensor, np.ndarray], /) -> None:
@@ -1072,7 +1063,7 @@ class TensorEncoder(BaseEncoder):
     def decode(self, data, /):
         r"""Convert each input from tensor to numpy."""
         if isinstance(data, tuple):
-            return self.return_type(*(self.decode(x) for x in data))
+            return tuple(self.decode(x) for x in data)
         return data.cpu().numpy()
 
     def __repr__(self):
@@ -1393,15 +1384,40 @@ class CSVEncoder(BaseEncoder):
         return DataFrame(frame).astype(self.dtypes)
 
 
-class ProductEncoder(BaseEncoder):
+class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
     r"""Product-Type for Encoders."""
 
     encoders: tuple[BaseEncoder, ...]
 
-    def __init__(self, encoders: Iterable[BaseEncoder]) -> None:
+    def __init__(self, *encoders: BaseEncoder) -> None:
         super().__init__()
-        self.encoders = tuple(encoders)
+        self.encoders = encoders
         self.is_fitted = all(e.is_fitted for e in self.encoders)
+
+    def __len__(self) -> int:
+        r"""Return the number of the encoders."""
+        return len(self.encoders)
+
+    @singledispatchmethod
+    def __getitem__(self, index):
+        r"""Get the encoder at the given index."""
+        raise ValueError(f"Index {index} not supported.")
+
+    @__getitem__.register(int)
+    def _(self, index: int) -> ProductEncoder:
+        encoder = ProductEncoder(self.encoders[index])
+        encoder.is_fitted = self.is_fitted
+        return encoder
+
+    @__getitem__.register(slice)
+    def _(self, index: slice) -> ProductEncoder:
+        encoder = ProductEncoder(*self.encoders[index])
+        encoder.is_fitted = self.is_fitted
+        return encoder
+
+    def __repr__(self):
+        r"""Pretty print."""
+        return repr_sequence(self)
 
     def fit(self, data: Sequence[Any], /) -> None:
         r"""Fit the encoder."""
@@ -1416,27 +1432,6 @@ class ProductEncoder(BaseEncoder):
     def decode(self, data: Sequence[Any], /) -> Sequence[Any]:
         r"""Decode the data."""
         return tuple(encoder.decode(x) for encoder, x in zip(self.encoders, data))
-
-    def __iter__(self):
-        r"""Yield the encoders 1 by 1."""
-        for encoder in self.encoders:
-            yield encoder
-
-    def __len__(self):
-        r"""Return number of chained encoders."""
-        return self.encoders.__len__()
-
-    def __getitem__(self, item):
-        r"""Return given item."""
-        return self.encoders.__getitem__(item)
-
-    def __contains__(self, item):
-        r"""Return contains."""
-        return self.encoders.__contains__(item)
-
-    def __repr__(self):
-        r"""Pretty print."""
-        return repr_sequence(self, title=self.__class__.__name__)
 
 
 # class FrameSplitter(BaseEncoder):
@@ -1477,7 +1472,7 @@ class ProductEncoder(BaseEncoder):
 #         return decoded
 
 
-class FrameSplitter(BaseEncoder):
+class FrameSplitter(BaseEncoder, Mapping):
     r"""Split a DataFrame into multiple groups.
 
     The special value ``...`` (:class:`Ellipsis`) can be used to indicate
@@ -1486,26 +1481,38 @@ class FrameSplitter(BaseEncoder):
     This function can be used on index columns as well.
     """
 
-    columns: Index
-    index_columns: Index
-    dtypes: Series
-    index_dtypes = Series
-    # FIXME: Union[types.EllipsisType, set[Hashable]] in 3.10
-    groups: dict[Any, Union[Hashable, set[Hashable]]]
+    column_columns: Index
+    column_dtypes: Series
+    column_indices: list[int]
 
-    @property
-    def names(self) -> set[Hashable]:
-        r"""Return the union of all groups."""
-        sets = [
-            {obj} if not isinstance(obj, set) else obj for obj in self.groups.values()
-        ]
-        union: set[Hashable] = set.union(*sets)
-        assert sum(len(u) for u in sets) == len(union), "Duplicate columns!"
-        return union
+    index_columns: Index
+    index_dtypes = Series
+    index_indices: list[int]
+
+    # FIXME: Union[types.EllipsisType, set[Hashable]] in 3.10
+    groups: dict[Hashable, Union[Hashable, list[Hashable]]]
+    group_indices: dict[Hashable, list[int]]
+
+    indices: dict[Hashable, list[int]]
+    has_ellipsis: bool = False
+    ellipsis: Optional[Hashable] = None
+
+    permutation: list[int]
+    inverse_permutation: list[int]
+
+    # @property
+    # def names(self) -> set[Hashable]:
+    #     r"""Return the union of all groups."""
+    #     sets: list[set] = [
+    #         set(obj) if isinstance(obj, Iterable) else {Ellipsis}
+    #         for obj in self.groups.values()
+    #     ]
+    #     union: set[Hashable] = set.union(*sets)
+    #     assert sum(len(u) for u in sets) == len(union), "Duplicate columns!"
+    #     return union
 
     def __init__(self, groups: Iterable[Hashable]) -> None:
         super().__init__()
-        # self.groups = {key: FrozenList(val) for key, val in groups.items()}
 
         if not isinstance(groups, Mapping):
             groups = dict(enumerate(groups))
@@ -1514,65 +1521,113 @@ class FrameSplitter(BaseEncoder):
         for key, obj in groups.items():
             if obj is Ellipsis:
                 self.groups[key] = obj
+                self.ellipsis = key
+                self.has_ellipsis = True
             elif isinstance(obj, str) or not isinstance(obj, Iterable):
-                self.groups[key] = {obj}
+                self.groups[key] = [obj]
             else:
-                self.groups[key] = set(obj)
+                self.groups[key] = list(obj)
+
+    def __repr__(self):
+        r"""Return a string representation of the object."""
+        return repr_mapping(self)
+
+    def __len__(self):
+        r"""Return the number of groups."""
+        return len(self.groups)
+
+    def __iter__(self):
+        r"""Iterate over the groups."""
+        return iter(self.groups)
+
+    def __getitem__(self, item):
+        r"""Return the group."""
+        return self.groups[item]
 
     def fit(self, data: DataFrame, /) -> None:
         r"""Fit the encoder."""
         index = data.index.to_frame()
-        self.dtypes = data.dtypes
-        self.columns = data.columns
+        self.column_dtypes = data.dtypes
+        self.column_columns = data.columns
         self.index_columns = index.columns
         self.index_dtypes = index.dtypes
 
         assert not (
-            j := set(index.columns) & set(data.columns)
+            j := set(self.index_columns) & set(self.column_columns)
         ), f"index columns and data columns must be disjoint {j}!"
+
+        data = data.copy().reset_index()
+
+        def get_idx(cols: Any) -> list[int]:
+            return [data.columns.get_loc(i) for i in cols]
+
+        self.indices: dict[Hashable, int] = dict(enumerate(data.columns))
+        self.group_indices: dict[Hashable, list[int]] = {}
+        self.column_indices = get_idx(self.column_columns)
+        self.index_indices = get_idx(self.index_columns)
+
+        # replace ellipsis indices
+        if self.has_ellipsis:
+            # FIXME EllipsisType in 3.10
+            fixed_cols = set().union(
+                *(
+                    set(cols) for cols in self.groups.values() if cols is not Ellipsis  # type: ignore[arg-type]
+                )
+            )
+            ellipsis_columns = [c for c in data.columns if c not in fixed_cols]
+            self.groups[self.ellipsis] = ellipsis_columns
+
+        # set column indices
+        self.permutation = []
+        for group, columns in self.groups.items():
+            if columns is Ellipsis:
+                continue
+            self.group_indices[group] = get_idx(columns)
+            self.permutation += self.group_indices[group]
+        self.inverse_permutation = np.argsort(self.permutation).tolist()
+        # sorted(p.copy(), key=p.__getitem__)
 
     def encode(self, data: DataFrame, /) -> tuple[DataFrame, ...]:
         r"""Encode the data."""
         # copy the frame and add index as columns.
         data = data.copy()
-        index = data.index.to_frame()
-        data[index.columns] = index
-        data_columns = set(data.columns) | set(index.columns)
+        data = data.reset_index()  # prepend index as columns!
+        data_columns = set(data.columns)
 
-        assert Ellipsis in self.names or data_columns <= self.names, (
-            f"Unknown columns {data_columns - self.names}."
+        assert data_columns <= set(self.indices.values()), (
+            f"Unknown columns {data_columns - set(self.indices)}."
             "If you want to encode unknown columns add a group ``...`` (Ellipsis)."
         )
 
         encoded = []
         for columns in self.groups.values():
-            # FIXME: columns is Ellipsis in 3.10
-            if not isinstance(columns, set):
-                continue
             encoded.append(data[columns].dropna(how="all").squeeze(axis="columns"))
-            data_columns -= set(columns)
-        if Ellipsis in self.names:
-            encoded.append(data[data_columns])
         return tuple(encoded)
 
     def decode(self, data: tuple[DataFrame, ...], /) -> DataFrame:
         r"""Decode the data."""
+        data = tuple(DataFrame(x) for x in data)
         joined = pd.concat(data, axis="columns")
 
+        # unshuffle the columns, restoring original order
+        joined = joined.iloc[..., self.inverse_permutation]
+
         # Assemble the columns
-        columns = joined[self.columns].squeeze(axis="columns")
-        columns.columns = self.columns
-        columns = columns.astype(self.dtypes)
+        columns = joined.iloc[..., self.column_indices]
+        columns.columns = self.column_columns
+        columns = columns.astype(self.column_dtypes)
+        columns = columns.squeeze(axis="columns")
 
         # assemble the index
-        index = joined[self.index_columns].squeeze(axis="columns")
+        index = joined.iloc[..., self.index_indices]
         index.columns = self.index_columns
         index = index.astype(self.index_dtypes)
+        index = index.squeeze(axis="columns")
 
         if isinstance(index, Series):
-            decoded = columns.reindex(index)
+            decoded = columns.set_index(index)
         else:
-            decoded = columns.reindex(MultiIndex.from_frame(index))
+            decoded = columns.set_index(MultiIndex.from_frame(index))
         return decoded
 
 
@@ -1734,7 +1789,7 @@ class FrameEncoder(BaseEncoder):
         return decoded
 
     def __repr__(self) -> str:
-        """Return a string representation of the encoder."""
+        r"""Return a string representation of the encoder."""
         items = {
             "column_encoders": self.column_encoders,
             "index_encoders": self.index_encoders,
