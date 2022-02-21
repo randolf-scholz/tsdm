@@ -5,6 +5,7 @@ __all__ = [
     "abc",
     "protocols",
     # Type Variables
+    "Self",
     "Type",
     "ClassType",
     "KeyType",
@@ -32,6 +33,7 @@ from tsdm.util.types._types import (
     ObjectType,
     PathType,
     ReturnType,
+    Self,
     Type,
     ValueType,
     nnModuleType,

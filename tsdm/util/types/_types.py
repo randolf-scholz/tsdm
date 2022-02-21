@@ -3,6 +3,7 @@ r"""Generic types for type hints etc."""
 __all__ = [
     # Type Variables
     "Type",
+    "Self",
     "ClassType",
     "KeyType",
     "ObjectType",
@@ -34,6 +35,9 @@ r"""TypeVar for ``Mapping`` values."""
 
 Type = TypeVar("Type")
 r"""Generic type hint"""
+
+Self = TypeVar("Self")
+"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
 
 ClassType = TypeVar("ClassType", bound=type)
 r"""Generic type hint"""
