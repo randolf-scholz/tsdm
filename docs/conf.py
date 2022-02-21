@@ -17,11 +17,13 @@ import datetime
 import logging
 import os
 import sys
+import typing
+from collections import abc
 
 import tsdm
 
 __logger__ = logging.getLogger(__name__)
-# logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
@@ -59,7 +61,6 @@ release = version
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -96,20 +97,31 @@ add_module_names = False
 # suppress_warnings = ["epub.duplicated_toc_entry"]
 
 
-# -- AutoSectionLabel configuration ---------------------------------------------------------------
+# -- AutoSectionLabel configuration -----------------------------------------------------------------------------------
 
+autosectionlabel_prefix_document = True
 # True to prefix each section label with the name of the document it is in, followed by a colon.
 # For example, index:Introduction for a section called Introduction that appears in document index.rst.
 # Useful for avoiding ambiguity when the same section heading appears in different documents.
-autosectionlabel_prefix_document = True
 
+autosectionlabel_maxdepth = None
 # If set, autosectionlabel chooses the sections for labeling by its depth. For example, when set 1
 # to autosectionlabel_maxdepth, labels are generated only for top level sections, and deeper sections
 # are not labeled. It defaults to None (disabled).
-autosectionlabel_maxdepth = None
 
+# -- Intersphinx configuration ----------------------------------------------------------------------------------------
 
-# -- Intersphinx configuration --------------------------------------------------------------------
+intersphinx_mapping = {
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numba": ("https://numba.pydata.org/numba-doc/latest/", None),
+    "numpy": ('https://numpy.org/doc/stable/', None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
+    "python": ("https://docs.python.org/3.10/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "sklearn": ("https://scikit-learn.org/stable/", None),
+    "torch": ("https://pytorch.org/docs/stable/", None),
+    "xarray": ("https://xarray.pydata.org/en/stable/", None),
+}
 
 # This config value contains the locations and names of other projects that should be linked to
 # in this documentation.
@@ -118,55 +130,46 @@ autosectionlabel_maxdepth = None
 # relative to the source directory.
 # When fetching remote inventory files, proxy settings will be read from the
 # $HTTP_PROXY environment variable.
-intersphinx_mapping = {
-    "matplotlib": ("https://matplotlib.org/stable/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "numba": ("https://numba.pydata.org/numba-doc/latest/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
-    "python": ("https://docs.python.org/3/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "sklearn": ("https://scikit-learn.org/stable/", None),
-    "torch": ("https://pytorch.org/docs/stable/", None),
-    "xarray": ("https://xarray.pydata.org/en/stable/", None),
-}
 
+intersphinx_cache_limit = 5
 # The maximum number of days to cache remote inventories. The default is 5,
 # meaning five days. Set this to a negative value to cache inventories for unlimited time.
-intersphinx_cache_limit = 5
 
-# The number of seconds for timeout. The default is None, meaning do not timeout.
 intersphinx_timeout = 2
+# The number of seconds for timeout. The default is None, meaning do not timeout.
 
+intersphinx_disabled_reftypes = ["std:doc"]
 # When a cross-reference without an explicit inventory specification is being resolved by
 # intersphinx, skip resolution if it matches one of the specifications in this list.
 # The default value is ['std:doc'].
-intersphinx_disabled_reftypes = ["std:doc"]
 
+# -- AutoAPI configuration --------------------------------------------------------------------------------------------
 
-# -- AutoAPI configuration ------------------------------------------------------------------------
-
-# Activate the extension
 extensions.append("autoapi.extension")
-# Paths (relative or absolute) to the source code that you wish to generate your API documentation from.
+# Activate the extension
+
 autoapi_dirs = [f"../{MODULE}"]
+# Paths (relative or absolute) to the source code that you wish to generate your API documentation from.
+
+autoapi_type = "python"
 # Set the type of files you are documenting. This depends on the programming language that you are using.
 # Default: "python"
-autoapi_type = "python"
+
+# autoapi_template_dir = "_templates/_autoapi_templates"
 # A directory that has user-defined templates to override our default templates. The path can either be absolute,
 # or relative to the source directory of your documentation files. An path relative to where sphinx-build is run is
 # allowed for backwards compatibility only and will be removed in a future version.
 # Default: ""
-autoapi_template_dir = "_templates/_autoapi_templates"
+
+autoapi_file_patterns = ["*.py", "*.pyi"]
 # A list containing the file patterns to look for when generating documentation.
 # Patterns should be listed in order of preference. For example, if autoapi_file_patterns is set to the default value,
 # and a .py file and a .pyi file are found, then the .py will be read.
-autoapi_file_patterns = ["*.py", "*.pyi"]
+
+autoapi_generate_api_docs = True
 # Whether to generate API documentation. If this is False, documentation should be generated though the Directives.
 # Default: True
-autoapi_generate_api_docs = True
-# Options for display of the generated documentation.
-# Default: [ 'members', 'undoc-members', 'private-members', 'show-inheritance', 'show-module-summary',
-# 'special-members', 'imported-members', ]
+
 autoapi_options = [
     "members",
     "undoc-members",
@@ -176,42 +179,61 @@ autoapi_options = [
     "special-members",
     "imported-members",
 ]
+# Options for display of the generated documentation.
+# Default: [ 'members', 'undoc-members', 'private-members', 'show-inheritance', 'show-module-summary',
+# 'special-members', 'imported-members', ]
+
+autoapi_ignore = ["*migrations*"]
 # A list of patterns to ignore when finding files. The defaults by language are:
 # Default = ['*migrations*']
-autoapi_ignore = ["*migrations*"]
+
+autoapi_root = "autoapi"
 # Path to output the generated AutoAPI files into, including the generated index page.
 # This path must be relative to the source directory of your documentation files.
 # This can be used to place the generated documentation anywhere in your documentation hierarchy.
 # Default: "autoapi"
-autoapi_root = "autoapi"
+
+autoapi_add_toctree_entry = False
 # Whether to insert the generated documentation into the TOC tree. If this is False, the default AutoAPI index page
 # is not generated and you will need to include the generated documentation in a TOC tree entry yourself.
 # Default: True
-autoapi_add_toctree_entry = False
+
+autoapi_member_order = "groupwise"
+# The order to document members. This option can have the following values:
+# alphabetical: Order members by their name, case sensitively.
+# bysource: Order members by the order that they were defined in the source code.
+# groupwise: Order members by their type then alphabetically, ordering the types as follows:
+# Submodules and subpackages, Attributes, Exceptions, Classes, Functions, and Methods.
+# Default: bysource
+
+autoapi_python_class_content = "both"
 # Which docstring to insert into the content of a class.
 # If the class does not have an __init__ or the __init__ docstring is empty and
 # the class defines a __new__ with a docstring, the __new__ docstring is used instead of the __init__ docstring.
 # Default: "class"
-autoapi_python_class_content = "class"
+
+autoapi_python_use_implicit_namespaces = True
 # This changes the package detection behaviour to be compatible with PEP 420,
 # but directories in autoapi_dirs are no longer searched recursively for packages. Instead, when this is True,
 # autoapi_dirs should point directly to the directories of implicit namespaces and the directories of packages.
 # Default: False
-autoapi_python_use_implicit_namespaces = False
+
+autoapi_prepare_jinja_env = None
 # A callback that is called shortly after the Jinja environment is created.
 # It passed the Jinja environment for editing before template rendering begins.
 # Default: None
-autoapi_prepare_jinja_env = None
+
+autoapi_keep_files = True
 # Keep the AutoAPI generated files on the filesystem after the run.
 # Useful for debugging or transitioning to manual documentation.
 # Keeping files will also allow AutoAPI to use incremental builds. Providing none of the source files have changed,
 # AutoAPI will skip parsing the source code and regenerating the API documentation.
 # Default: False
-autoapi_keep_files = True
+
+suppress_warnings = []
 # This is a sphinx builtin option that enables the granular filtering of AutoAPI generated warnings.
 # Items in the suppress_warnings list are of the format "type.subtype" where ".subtype" can be left out
-# to cover all subtypes. To suppress all AutoAPI warnings add the type "autoapi" to the list:
-suppress_warnings = []
+# to cover all subtypes. To suppress all AutoAPI warnings add the type "autoapi" to the list
 
 # -- Options for HTML output ------------------------------------------------------------------------------------------
 
@@ -287,16 +309,29 @@ html_theme_options = {
 
 autosummary_context = {}
 # A dictionary of values to pass into the template engine’s context for autosummary stubs files.
+
 autosummary_generate = True
 # Boolean indicating whether to scan all found documents for autosummary directives,
 # and to generate stub pages for each. It is enabled by default.
+
 autosummary_generate_overwrite = True
 # If true, autosummary overwrites existing files by generated stub pages. Defaults to true (enabled).
+
 autosummary_mock_imports = []
 # This value contains a list of modules to be mocked up. See autodoc_mock_imports for more details.
 # It defaults to autodoc_mock_imports.
+
 autosummary_imported_members = False
 # A boolean flag indicating whether to document classes and functions imported in modules. Default is False
+
+autosummary_ignore_module_all = True
+# If False and a module has the __all__ attribute set,
+# autosummary documents every member listed in __all__ and no others.
+# Note that if an imported member is listed in __all__, it will be documented regardless of the value of
+# autosummary_imported_members. To match the behaviour of from module import *, set autosummary_ignore_module_all to
+# False and autosummary_imported_members to True.
+# Default is True
+
 autosummary_filename_map = {}
 # A dict mapping object names to filenames. This is necessary to avoid filename conflicts where multiple objects
 # have names that are indistinguishable when case is ignored, on file systems where filenames are case-insensitive.
@@ -304,7 +339,7 @@ autosummary_filename_map = {}
 # -- autodoc options --------------------------------------------------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#directive-autoclass
 
-autoclass_content = "class"
+autoclass_content = "both"
 # This value selects what content will be inserted into the main body of an autoclass directive.
 # The possible values are: (default="class")
 # "class"
@@ -316,36 +351,40 @@ autoclass_content = "class"
 # Only the __init__ method’s docstring is inserted.
 # If the class has no __init__ method or if the __init__ method’s docstring is empty,
 # but the class has a __new__ method’s docstring, it is used instead.
+
 autodoc_class_signature = "mixed"
-# This value selects how the signautre will be displayed for the class defined by autoclass directive.
+# This value selects how the signature will be displayed for the class defined by autoclass directive.
 # The possible values are: (default="mixed")
 # "mixed"
 # Display the signature with the class name.
 # "separated"
 # Display the signature as a method.
-autodoc_member_order = "alphabetical"
+
+autodoc_member_order = "groupwise"
 # This value selects if automatically documented members are sorted alphabetical (value 'alphabetical'),
 # by member type (value 'groupwise') or by source order (value 'bysource'). The default is alphabetical.
 # Note that for source order, the module must be a Python module with the source code available.
+
 autodoc_default_flags = []
 # This value is a list of autodoc directive flags that should be automatically applied to all autodoc directives.
 # The supported flags are 'members', 'undoc-members', 'private-members', 'special-members', 'inherited-members',
 # 'show-inheritance', 'ignore-module-all' and 'exclude-members'.
-autodoc_default_options = {}
+# autodoc_default_options = {}
 # The default options for autodoc directives. They are applied to all autodoc directives automatically.
 # It must be a dictionary which maps option names to the values. For example:
 #
-#     autodoc_default_options = {
-#         'members': 'var1, var2',
-#         'member-order': 'bysource',
-#         'special-members': '__init__',
-#         'undoc-members': True,
-#         'exclude-members': '__weakref__'
-#     }
+# autodoc_default_options = {
+#     'members': 'var1, var2',
+#     'member-order': 'groupwise',
+#     'special-members': '__init__',
+#     'undoc-members': True,
+#     'exclude-members': '__weakref__'
+# }
 # Setting None or True to the value is equivalent to giving only the option name to the directives.
 # The supported options are 'members', 'member-order', 'undoc-members', 'private-members', 'special-members',
 # 'inherited-members', 'show-inheritance', 'ignore-module-all', 'imported-members', 'exclude-members' and
 # 'class-doc-from'.
+
 autodoc_docstring_signature = True
 # Functions imported from C modules cannot be introspected, and therefore the signature for such functions cannot be
 # automatically determined. However, it is an often-used convention to put the signature into the first line of the
@@ -355,11 +394,13 @@ autodoc_docstring_signature = True
 # docstring content.
 # autodoc will continue to look for multiple signature lines, stopping at the first line that does not look like a
 # signature. This is useful for declaring overloaded function signatures.
+
 autodoc_mock_imports = []
 # This value contains a list of modules to be mocked up.
 # This is useful when some external dependencies are not met at build time and break the building process.
 # You may only specify the root package of the dependencies themselves and omit the sub-modules:
-autodoc_typehints = "description"
+
+autodoc_typehints = "both"
 # This value controls how to represent typehints. The setting takes the following values:
 # 'signature' – Show typehints in the signature (default)
 # 'description' – Show typehints as content of the function or method The typehints of overloaded
@@ -368,22 +409,20 @@ autodoc_typehints = "description"
 # 'both' – Show typehints in the signature and as content of the function or method
 # Overloaded functions or methods will not have typehints included in the description
 # because it is impossible to accurately represent all possible overloads as a list of parameters.
-autodoc_typehints_description_target = "all"
+
+autodoc_typehints_description_target = "documented"
 # This value controls whether the types of undocumented parameters and return values are
 # documented when autodoc_typehints is set to description. The default value is "all", meaning that
 # types are documented for all parameters and return values, whether they are documented or not.
 # When set to "documented", types will only be documented for a parameter or a return value that is
 # already documented by the docstring.
+
 autodoc_type_aliases = {
-    # python
-    "Callable": "~typing.Callable",
-    "Path": "~pathlib.Path",
-    "Mapping": "~collections.abc.Mapping",
     # torch
     "Tensor": "~torch.Tensor",
     "nn.Module": "~torch.nn.Module",
     # numpy
-    "ArrayLike": "~numpy.typing.ArrayLike",
+    "ArrayLike": ":class:`~numpy.typing.ArrayLike`",
     "datetime64": "~numpy.datetime64",
     "timedelta64": "~numpy.timedelta64",
     "integer": "~numpy.integer",
@@ -403,20 +442,32 @@ autodoc_type_aliases = {
     "DataArray": "~xarray.DataArray",
     "Dataset": "~xarray.Dataset",
     "Variable": "~xarray.Variable",
-    # TSDM
-    "TimeDeltaLike": "tsdm.util.TimeDeltaLike",
-    "TimeStampLike": "tsdm.util.TimeStampLike",
 }
 # A dictionary for users defined type aliases that maps a type name to the full-qualified object name.
 # It is used to keep type aliases not evaluated in the document. Defaults to empty ({}).
 # The type aliases are only available if your program enables Postponed Evaluation of Annotations (PEP 563)
 # feature via from __future__ import annotations.
-autodoc_preserve_defaults = False
+
+autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(typing)
+# recursively napoleon_type_aliases for tsdm classes / functions.
+autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(abc)
+# recursively napoleon_type_aliases for tsdm classes / functions.
+autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
+# recursively napoleon_type_aliases for tsdm classes / functions.
+
+autodoc_typehints_format = "short"
+# This value controls the format of typehints. The setting takes the following values:
+# 'fully-qualified' – Show the module name and its name of typehints
+# 'short' – Suppress the leading module names of the typehints (ex. io.StringIO -> StringIO)
+
+autodoc_preserve_defaults = True
 # If True, the default argument values of functions will be not evaluated on generating document.
 # It preserves them as is in the source code.
+
 autodoc_warningiserror = True
 # This value controls the behavior of sphinx-build -W during importing modules. If False is given,
 # autodoc forcedly suppresses the error if the imported module emits warnings. By default, True.
+
 autodoc_inherit_docstrings = True
 # This value controls the docstrings inheritance. If set to True the docstring for classes or methods,
 # if not explicitly set, is inherited from parents. The default is True.
@@ -429,65 +480,74 @@ napoleon_google_docstring = True
 # True to parse Google style docstrings.
 # False to disable support for Google style docstrings.
 # Defaults to True.
+
 napoleon_numpy_docstring = True
 # True to parse NumPy style docstrings.
 # False to disable support for NumPy style docstrings.
 # Defaults to True.
-napoleon_include_init_with_doc = False
+
+napoleon_include_init_with_doc = True
 # True to list __init___ docstrings separately from the class docstring.
 # False to fall back to Sphinx’s default behavior,
 # which considers the __init___ docstring as part of the class documentation.
 # Defaults to False.
+
 napoleon_include_private_with_doc = False
 # True to include private members (like _membername) with docstrings in the documentation.
 # False to fall back to Sphinx’s default behavior.
 # Defaults to False.
+
 napoleon_include_special_with_doc = True
 # True to include special members (like __membername__) with docstrings in the documentation.
 # False to fall back to Sphinx’s default behavior.
 # Defaults to True.
+
 napoleon_use_admonition_for_examples = True
 # True to use the .. admonition:: directive for the Example and Examples sections.
 # False to use the .. rubric:: directive instead.
 # One may look better than the other depending on what HTML theme is used.
 # Defaults to False.
+
 napoleon_use_admonition_for_notes = True
 # True to use the .. admonition:: directive for Notes sections.
 # False to use the .. rubric:: directive instead.
 # Defaults to False.
-napoleon_use_admonition_for_references = False
+
+napoleon_use_admonition_for_references = True
 # True to use the .. admonition:: directive for References sections.
 # False to use the .. rubric:: directive instead.
 # Defaults to False.
+
 napoleon_use_ivar = True
 # True to use the :ivar: role for instance variables.
 # False to use the .. attribute:: directive instead.
 # Defaults to False.
-napoleon_use_param = True
+
+napoleon_use_param = False
 # True to use a :param: role for each function parameter.
 # False to use a single :parameters: role for all the parameters.
 # Defaults to True.
-napoleon_use_keyword = True
+
+napoleon_use_keyword = False
 # True to use a :keyword: role for each function keyword argument.
 # False to use a single :keyword arguments: role for all the keywords.
 # Defaults to True.
+
 napoleon_use_rtype = True
 # True to use the :rtype: role for the return type.
 # False to output the return type inline with the description.
 # Defaults to True.
+
 napoleon_preprocess_types = True
 # True to convert the type definitions in the docstrings as references.
 # Defaults to True.
+
 napoleon_type_aliases = {
-    # python
-    "Callable": "~typing.Callable",
-    "Path": "~pathlib.Path",
-    "Mapping": "~collections.abc.Mapping",
     # torch
-    "Tensor": "~torch.Tensor",
-    "nn.Module": "~torch.nn.Module",
+    "Tensor": ":class:`~torch.Tensor`",
+    "nn.Module": ":class:`~torch.nn.Module`",
     # numpy
-    "ArrayLike": "~numpy.typing.ArrayLike",
+    "ArrayLike": ":class:`~numpy.typing.ArrayLike`",
     "datetime64": "~numpy.datetime64",
     "timedelta64": "~numpy.timedelta64",
     "integer": "~numpy.integer",
@@ -512,15 +572,20 @@ napoleon_type_aliases = {
     # "TimeStampLike": "tsdm.util.TimeStampLike",
     # "ScaledDotProductAttention" : ":class:`~tsdm.models.ScaledDotProductAttention`"
 }
-# recursively napoleon_type_aliases for tsdm classes / functions.
-
-napoleon_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
-
 # A mapping to translate type names to other names or references. Works only when napoleon_use_param = True.
 # Defaults to None.
+
+napoleon_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(typing)
+# recursively napoleon_type_aliases for tsdm classes / functions.
+napoleon_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(abc)
+# recursively napoleon_type_aliases for tsdm classes / functions.
+napoleon_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
+# recursively napoleon_type_aliases for tsdm classes / functions.
+
 napoleon_attr_annotations = True
 # True to allow using PEP 526 attributes annotations in classes. If an attribute is documented in the docstring without
 # a type and has an annotation in the class body, that type is used.
+
 napoleon_custom_sections = ["Test-Metric", "Evaluation Protocol", "Paper", "Results"]
 # Add a list of custom sections to include, expanding the list of parsed sections. Defaults to None.
 
