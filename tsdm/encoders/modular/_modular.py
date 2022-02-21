@@ -68,7 +68,7 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.datasets import TimeTensor
-from tsdm.util.decorators import post_hook, pre_hook
+from tsdm.util.decorators import post_hook, pre_hook, timefun
 from tsdm.util.strings import repr_mapping, repr_namedtuple, repr_sequence
 from tsdm.util.types import PathType
 
@@ -135,8 +135,17 @@ def apply_along_axes(
 class BaseEncoder(ABC):
     r"""Base class that all encoders must subclass."""
 
-    is_fitted: bool = False
+    _is_fitted: bool = False
     """Whether the encoder has been fitted."""
+
+    @property
+    def is_fitted(self) -> bool:
+        r"""Whether the encoder has been fitted."""
+        return self.is_fitted
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool) -> None:
+        self._is_fitted = value
 
     def __init__(self):
         super().__init__()
@@ -172,18 +181,18 @@ class BaseEncoder(ABC):
     def _post_fit_hook(
         self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
     ) -> None:
-        self.is_fitted = True
+        self._is_fitted = True
 
     def _pre_encode_hook(
         self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
     ) -> None:
-        if not self.is_fitted:
+        if not self._is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
 
     def _pre_decode_hook(
         self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
     ) -> None:
-        if not self.is_fitted:
+        if not self._is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
 
 
@@ -202,7 +211,7 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
             else:
                 self.chained.append(encoder)
 
-        self.is_fitted = all(e.is_fitted for e in self.chained)
+        self.is_fitted = all(e._is_fitted for e in self.chained)
 
     def fit(self, data: Any, /) -> None:
         r"""Fit to the data."""
@@ -697,7 +706,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         encoder = Standardizer(
             mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:]
         )
-        encoder.is_fitted = self.is_fitted
+        encoder._is_fitted = self._is_fitted
         return encoder
 
     @property
@@ -837,7 +846,7 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
             xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, axis=self.axis[lost_ranks:]
         )
 
-        encoder.is_fitted = self.is_fitted
+        encoder._is_fitted = self._is_fitted
         return encoder
 
     def __repr__(self) -> str:
@@ -1392,7 +1401,7 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
     def __init__(self, *encoders: BaseEncoder) -> None:
         super().__init__()
         self.encoders = encoders
-        self.is_fitted = all(e.is_fitted for e in self.encoders)
+        self.is_fitted = all(e._is_fitted for e in self.encoders)
 
     def __len__(self) -> int:
         r"""Return the number of the encoders."""
@@ -1590,7 +1599,6 @@ class FrameSplitter(BaseEncoder, Mapping):
     def encode(self, data: DataFrame, /) -> tuple[DataFrame, ...]:
         r"""Encode the data."""
         # copy the frame and add index as columns.
-        data = data.copy()
         data = data.reset_index()  # prepend index as columns!
         data_columns = set(data.columns)
 
@@ -1601,7 +1609,7 @@ class FrameSplitter(BaseEncoder, Mapping):
 
         encoded = []
         for columns in self.groups.values():
-            encoded.append(data[columns].dropna(how="all").squeeze(axis="columns"))
+            encoded.append(data[columns].squeeze(axis="columns"))
         return tuple(encoded)
 
     def decode(self, data: tuple[DataFrame, ...], /) -> DataFrame:
