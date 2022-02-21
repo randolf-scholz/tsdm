@@ -11,9 +11,14 @@ __all__ = [
     "timefun",
     "trace",
     "vectorize",
+    "wrap_hook",
+    "pre_hook",
+    "post_hook",
+    "wrapmethod",
     # Class Decorators
     "autojit",
     "IterItems",
+    "IterKeys",
     # Exceptions
     "DecoratorError",
 ]
@@ -27,12 +32,13 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
-from typing import Any, Union, overload
+from types import MethodType
+from typing import Any, Optional, Union, overload
 
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import ObjectType, ReturnType, nnModuleType
+from tsdm.util.types import ClassType, ObjectType, ReturnType, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -138,7 +144,7 @@ def decorator(deco: Callable) -> Callable:
 
 @decorator
 def timefun(
-    fun: Callable, /, *, append: bool = True, loglevel: int = logging.WARNING
+    fun: Callable, /, *, append: bool = False, loglevel: int = logging.WARNING
 ) -> Callable:
     r"""Log the execution time of the function. Use as decorator.
 
@@ -151,9 +157,9 @@ def timefun(
     Parameters
     ----------
     fun: Callable
-    append: bool, default=True
+    append: bool, default True
         Whether to append the time result to the function call
-    loglevel: int, default=logging.Warning (20)
+    loglevel: int, default logging.Warning (20)
     """
     timefun_logger = logging.getLogger("timefun")
 
@@ -166,14 +172,18 @@ def timefun(
             result = fun(*args, **kwargs)
             end_time = perf_counter_ns()
             elapsed = (end_time - start_time) / 10**9
-            timefun_logger.log(loglevel, "%s executed in %.4f s", fun.__name__, elapsed)
+            timefun_logger.log(
+                loglevel, "%s executed in %.4f s", fun.__qualname__, elapsed
+            )
         except (KeyboardInterrupt, SystemExit) as E:
             raise E
         except Exception as E:  # pylint: disable=W0703
             result = None
             elapsed = float("nan")
             RuntimeWarning(f"Function execution failed with Exception {E}")
-            timefun_logger.log(loglevel, "%s failed with Exception %s", fun.__name__, E)
+            timefun_logger.log(
+                loglevel, "%s failed with Exception %s", fun.__qualname__, E
+            )
         gc.enable()
 
         return (result, elapsed) if append else result
@@ -404,5 +414,151 @@ def IterItems(obj):
     if isinstance(obj, type):
         return WrappedClass
     obj = deepcopy(obj)
+    obj.__class__ = WrappedClass
+    return obj
+
+
+@overload
+def IterKeys(obj: type[ObjectType]) -> type[ObjectType]:
+    ...
+
+
+@overload
+def IterKeys(obj: ObjectType) -> ObjectType:
+    ...
+
+
+def IterKeys(obj):
+    r"""Wrap a class such that ``__getitem__`` returns key instead."""
+    if isinstance(obj, type):
+        base_class = obj
+    else:
+        base_class = type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):
+        r"""A simple Wrapper."""
+
+        def __getitem__(self, key: Any) -> tuple[Any, Any]:
+            r"""Return the key as is."""
+            return key
+
+        def __repr__(self) -> str:
+            r"""Representation of the dataset."""
+            return r"IterKeys@" + super().__repr__()
+
+    if isinstance(obj, type):
+        return WrappedClass
+    obj = deepcopy(obj)
+    obj.__class__ = WrappedClass
+    return obj
+
+
+@decorator
+def wrap_hook(func: Callable, pre_func: Callable, post_func: Callable, /) -> Callable:
+    r"""Wrap a function with pre and post hooks."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        r"""Wrap a function with pre and post hooks."""
+        pre_func(*args, **kwargs)
+        result = func(*args, **kwargs)
+        post_func(*args, **kwargs)
+        return result
+
+    return wrapper
+
+
+@decorator
+def pre_hook(func: Callable, hook: Callable, /) -> Callable:
+    r"""Wrap a function with a pre wrap_hook."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        r"""Wrap a function with a pre wrap_hook."""
+        hook(*args, **kwargs)
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@decorator
+def post_hook(func: Callable, hook: Callable, /) -> Callable:
+    r"""Wrap a function with a post wrap_hook."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        r"""Wrap a function with a post wrap_hook."""
+        result = func(*args, **kwargs)
+        hook(*args, **kwargs)
+        return result
+
+    return wrapper
+
+
+@decorator
+def wrap_chain(
+    func: Callable,
+    /,
+    *,
+    pre_func: Optional[Callable] = None,
+    post_func: Optional[Callable] = None,
+) -> Callable:
+    """Chain a function with pre and post func.
+
+    Parameters
+    ----------
+    func
+    pre_func
+    post_func
+
+    Returns
+    -------
+    Callable
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        r"""Wrap a function with pre and post hooks."""
+        pre_result = pre_func(*args, **kwargs)
+        result = func(pre_result)
+        post_result = post_func(result)
+        return post_result
+
+    return wrapper
+
+
+@overload
+def wrapmethod(obj: ClassType, method: str, func: Callable) -> ClassType:
+    ...
+
+
+@overload
+def wrapmethod(obj: ObjectType, method: str, func: Callable) -> ObjectType:
+    ...
+
+
+@decorator
+def wrapmethod(obj, method, func, /):
+    r"""Wrap a method of a class/instance or instance."""
+    if isinstance(obj, type):
+        base_class = obj
+    else:
+        base_class = type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):
+        r"""A simple Wrapper."""
+
+        def __repr__(self) -> str:
+            r"""Representation of the dataset."""
+            return f"wrapmethod[{method}, {func.__name__}]@" + super().__repr__()
+
+    setattr(WrappedClass, method, MethodType(func, obj))
+
+    if isinstance(obj, type):
+        return WrappedClass
+
+    obj = deepcopy(obj)  # <--- do we need this?
     obj.__class__ = WrappedClass
     return obj

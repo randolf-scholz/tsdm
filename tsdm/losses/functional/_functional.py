@@ -111,7 +111,7 @@ def q_quantile(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     Tensor
     """
     residual = x - xhat
-    return torch.max((q - 1) * residual, q * residual)
+    return torch.max((q - 1) * residual, q * residual)  # simplified formula
 
 
 @jit.script

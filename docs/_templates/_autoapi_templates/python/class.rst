@@ -6,10 +6,10 @@
 
 
    {% if obj.bases %}
+
    {% if "show-inheritance" in autoapi_options %}
    Bases: {% for base in obj.bases %}{{ base|link_objs }}{% if not loop.last %}, {% endif %}{% endfor %}
    {% endif %}
-
 
    {% if "show-inheritance-diagram" in autoapi_options and obj.bases != ["object"] %}
    .. autoapi-inheritance-diagram:: {{ obj.obj["full_name"] }}
@@ -17,33 +17,40 @@
       {% if "private-members" in autoapi_options %}
       :private-bases:
       {% endif %}
+   {% endif %}
 
    {% endif %}
-   {% endif %}
+
    {% if obj.docstring %}
    {{ obj.docstring|prepare_docstring|indent(3) }}
    {% endif %}
+
    {% if "inherited-members" in autoapi_options %}
    {% set visible_classes = obj.classes|selectattr("display")|list %}
    {% else %}
    {% set visible_classes = obj.classes|rejectattr("inherited")|selectattr("display")|list %}
    {% endif %}
+
    {% for klass in visible_classes %}
    {{ klass.render()|indent(3) }}
    {% endfor %}
+
    {% if "inherited-members" in autoapi_options %}
    {% set visible_attributes = obj.attributes|selectattr("display")|list %}
    {% else %}
    {% set visible_attributes = obj.attributes|rejectattr("inherited")|selectattr("display")|list %}
    {% endif %}
+
    {% for attribute in visible_attributes %}
    {{ attribute.render()|indent(3) }}
    {% endfor %}
+
    {% if "inherited-members" in autoapi_options %}
    {% set visible_methods = obj.methods|selectattr("display")|list %}
    {% else %}
    {% set visible_methods = obj.methods|rejectattr("inherited")|selectattr("display")|list %}
    {% endif %}
+
    {% for method in visible_methods %}
    {{ method.render()|indent(3) }}
    {% endfor %}

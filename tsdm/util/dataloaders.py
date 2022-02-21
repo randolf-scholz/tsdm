@@ -56,8 +56,8 @@ def collate_padded(
     Parameters
     ----------
     batch: list[Tensor]
-    batch_first: bool, default=True
-    padding_value: float, default=True
+    batch_first: bool, default True
+    padding_value: float, default True
 
     Returns
     -------

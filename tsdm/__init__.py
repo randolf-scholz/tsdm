@@ -40,7 +40,6 @@ __all__ = [
     "plot",
     "random",
     "tasks",
-    "trainers",
     "util",
 ]
 
@@ -51,6 +50,8 @@ from pathlib import Path
 # version check
 if sys.version_info < (3, 9):
     raise RuntimeError("Python >= 3.9 required")
+
+# pylint: disable=wrong-import-position
 
 from tsdm import (
     config,
@@ -64,9 +65,10 @@ from tsdm import (
     plot,
     random,
     tasks,
-    trainers,
     util,
 )
+
+# pylint: enable=wrong-import-position
 
 __logger__ = logging.getLogger(__name__)
 

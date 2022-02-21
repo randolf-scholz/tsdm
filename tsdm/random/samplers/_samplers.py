@@ -269,6 +269,7 @@ class CollectionSampler(Sampler):
         perm = np.random.permutation(self.partition)
 
         for key in perm:
+            # This won't raise StopIteration, because the length is matched.
             yield key, next(activate_iterators[key])
 
     def __getitem__(self, key: Any) -> Sampler:
@@ -365,6 +366,7 @@ class HierarchicalSampler(Sampler):
             perm = self.partition
 
         for key in perm:
+            # This won't raise StopIteration, because the length is matched.
             yield key, next(activate_iterators[key])
 
     def __getitem__(self, key: Any) -> Sampler:
@@ -410,13 +412,13 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
 
     def __init__(
         self,
+        *,
         xmin: TimedeltaLike,
         xmax: TimedeltaLike,
         deltax: dt_type,
         stride: Optional[dt_type] = None,
         levels: Optional[Sequence[int]] = None,
         offset: Optional[TimedeltaLike] = None,
-        multiples: bool = True,
         shuffle: bool = True,
     ) -> None:
         super().__init__(None)
@@ -602,4 +604,4 @@ def grid(
 #         if self.drop_last:
 #             return len(self.sampler) // self.batch_size  # type: ignore[arg-type]
 #         else:
-#             return (len(self.sampler) + self.batch_size - 1) // self.batch_size  # type: ignore[arg-type]
+#             return (len(self.sampler) + self.batch_size - 1) // self.batch_size
