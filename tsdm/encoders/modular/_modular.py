@@ -68,7 +68,7 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.datasets import TimeTensor
-from tsdm.util.decorators import post_hook, pre_hook, timefun
+from tsdm.util.decorators import post_hook, pre_hook
 from tsdm.util.strings import repr_mapping, repr_namedtuple, repr_sequence
 from tsdm.util.types import PathType
 
