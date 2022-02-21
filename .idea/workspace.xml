@@ -5,10 +5,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/dev/utils/wrapmethod.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/tsdm.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/tsdm.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bugs/pickle_namedtupel.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bugs/tmp.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dev/encoders/FrameSplitterTest.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-base.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class-template.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class-template_mod.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module-template.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module-template_mod.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/mytemplate.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/mytemplate2.rst" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/abc_type_hint.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/abc_type_hint.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/collect_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/collect_env.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/flake8_W504.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/flake8_W504.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/jit_export_staticmethod.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/jit_export_staticmethod.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/matplotlib_pandas_nullable.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/matplotlib_pandas_nullable.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/overload_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/overload_problem.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/type_narrowing.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/type_narrowing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/CONCEPT/Concept - KIWI_final_product.md" beforeDir="false" afterPath="$PROJECT_DIR$/dev/CONCEPT/Concept - KIWI_final_product.md" afterDir="false" />
@@ -19,6 +35,7 @@
       <change beforePath="$PROJECT_DIR$/dev/encoders/FrameEncoder.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/FrameEncoder.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/encoders/LogEncoder.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/LogEncoder.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/encoders/TripletEncoder.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/TripletEncoder.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/encoders/Untitled.ipynb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/utils/decorators.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/utils/decorators.ipynb" afterDir="false" />
@@ -29,10 +46,11 @@
       <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/final_product.sh" beforeDir="false" afterPath="$PROJECT_DIR$/examples/final_product.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/pylintrc.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/templates/pylintrc.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/util/types/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/types/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/util/types/_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/types/_types.py" afterDir="false" />
     </list>
@@ -309,7 +327,10 @@
       <workItem from="1644954609369" duration="7733000" />
       <workItem from="1644998393773" duration="17767000" />
       <workItem from="1645054823145" duration="14951000" />
-      <workItem from="1645093153116" duration="7890000" />
+      <workItem from="1645093153116" duration="9403000" />
+      <workItem from="1645172743234" duration="6684000" />
+      <workItem from="1645179469633" duration="21809000" />
+      <workItem from="1645392380553" duration="20329000" />
     </task>
     <servers />
   </component>
