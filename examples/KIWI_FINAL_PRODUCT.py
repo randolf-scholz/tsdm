@@ -1,25 +1,39 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+
+import argparse
+
+parser = argparse.ArgumentParser(prog="PROG")
+parser.add_argument("target", type=str, help="Either OD600 or Fluo_GFP", default="OD600")
+parser.add_argument("--split", type=int, help="0, 1, 2, 3 or 4", default=0)
+args = parser.parse_args()
+
+TARGET = args.target
+SPLIT = args.split
+
+assert TARGET in ["OD600", "Fluo_GFP"], f"{args.target=}"
+
+print(f"{TARGET=}")
 # In[1]:
-
-
-# get_ipython().run_line_magic('config', "InteractiveShell.ast_node_interactivity='last_expr_or_assign'  # always print last expr.")
-# get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg'")
-# get_ipython().run_line_magic('load_ext', 'autoreload')
-# get_ipython().run_line_magic('autoreload', '2')
-# get_ipython().run_line_magic('matplotlib', 'inline')
 
 import logging
 import os
+import sys
 from pathlib import Path
 from time import perf_counter, time
 from typing import Any, NamedTuple
 
 # enable JIT compilation - must be done before loading torch!
 os.environ["PYTORCH_JIT"] = "1"
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 # logging.basicConfig(level=logging.INFO)
+
+
+def header(s: str, pad=3):
+    n = (79 - len(s)) // 2 - pad
+    s = s.upper().center(79 - 2 * n)
+    print(f"\n{'>'*n + s + '<'*n}\n", file=sys.stdout, flush=True)
 
 
 # In[2]:
@@ -29,8 +43,16 @@ import torch
 import torchinfo
 
 BATCH_SIZE = 128
-TARGET = "OD600"
-SPLIT = 0
+# TARGET = "OD600"
+
+available_gpus = {i: torch.cuda.device(i) for i in range(torch.cuda.device_count())}
+print(f"Availabel GPUS: {available_gpus=}")
+# assert len(available_gpus)==0
+DEVICE = next(iter(available_gpus.values()))
+print(f"{DEVICE=}")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"{DEVICE=}")
+
 
 RUN_NAME = f"{TARGET}-{SPLIT}-More_params"  # | input("enter name for run")
 
@@ -67,7 +89,6 @@ from tsdm.tasks import KIWI_FINAL_PRODUCT
 from tsdm.util import grad_norm, multi_norm
 from tsdm.util.strings import *
 
-
 # In[26]:
 
 
@@ -80,7 +101,6 @@ torch.backends.cudnn.benchmark = False
 # In[5]:
 
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DTYPE = torch.float32
 
 task = KIWI_FINAL_PRODUCT(
@@ -181,21 +201,21 @@ TRAINLOADER = task.get_dataloader(
     pin_memory=True,
     drop_last=True,
     shuffle=True,
-    # num_workers=6,
-    num_workers=os.cpu_count() // 4,
+    num_workers=8,
+    # num_workers=os.cpu_count() // 4,
     persistent_workers=True,
 )
 
 
 EVALLOADER = task.get_dataloader(
-    (SPLIT, "train"),
+    (SPLIT, "test"),
     batch_size=BATCH_SIZE,
     collate_fn=mycollate,
     pin_memory=True,
     drop_last=False,
     shuffle=False,
-    # num_workers=6,
-    num_workers=os.cpu_count() // 4,
+    num_workers=8,
+    # num_workers=os.cpu_count() // 4,
     persistent_workers=True,
 )
 
@@ -241,6 +261,9 @@ LR_SCHEDULER_CONFIG = {
 
 # In[11]:
 
+###############################################################################
+header("INITIALIZE MODEL")  #
+#############################
 
 from tsdm.models import SetFuncTS
 
@@ -254,58 +277,35 @@ summary(model)
 
 # In[12]:
 
+###############################################################################
+header("FORWARD PASS TEST")  #
+##############################
 
 batch = next(iter(TRAINLOADER))
+print("Loaded batch")
 y = model.forward_batch(batch.timeseries)
+print("forward done")
 torch.linalg.norm(y).backward()
+print("backward done")
 model.zero_grad()
 
-
-# ## Initalize Optimizer
-
 # In[13]:
-
+###############################################################################
+header("INITIALIZE OPTIMIZER ")  #
+##################################
 
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.util import initialize_from
 
-
-# In[14]:
-
-
 OPTIMIZER_CONFIG |= {"params": model.parameters()}
 optimizer = initialize_from(OPTIMIZERS, **OPTIMIZER_CONFIG)
 
-
-# In[15]:
-
-
-# lr_scheduler = initialize_from(
-#     LR_SCHEDULERS, LR_SCHEDULER_CONFIG | {"optimizer": optimizer}
-# )
-
-
-# ## Logging Utilities
-
 # In[16]:
-
+###############################################################################
+header("INITIALIZE LOGGING ")  #
+################################
 
 from tsdm.logutils import compute_metrics
-
-# def log_all(i, model, writer, optimizer):
-#     kernel = model.system.kernel.clone().detach().cpu()
-#     log_kernel_information(i, writer, kernel, histograms=True)
-#     log_optimizer_state(i, writer, optimizer, histograms=True)
-
-
-def log_hparams(i, writer, *, metric_dict, hparam_dict):
-    hparam_dict |= {"epoch": i}
-    metric_dict = add_prefix(metric_dict, "hparam")
-    writer.add_hparams(hparam_dict=hparam_dict, metric_dict=metric_dict)
-
-
-# In[17]:
-
 
 RUN_START = tsdm.util.now()
 CHECKPOINTDIR = Path(
@@ -316,16 +316,11 @@ LOGGING_DIR = f"runs/{MODEL.__name__}/{DATASET.name}/{RUN_NAME}/{RUN_START}"
 writer = SummaryWriter(LOGGING_DIR)
 
 
-# # Training
-
-# In[18]:
-
-
 @torch.no_grad()
 def get_all_predictions(model, dataloader):
     ys = []
     yhats = []
-    for batch in tqdm(dataloader, leave=False):
+    for batch in dataloader:
         # ts = batch.timeseries
         # inputs = [(t.to(device=DEVICE),v.to(device=DEVICE), m.to(device=DEVICE)) for t,v,m in ts]
         # yhats.append(model.batch_forward(inputs))
@@ -339,7 +334,9 @@ def get_all_predictions(model, dataloader):
 
 
 # In[19]:
-
+###############################################################################
+header("EVALUATE INITAILIZED MODEL LOGGING ")  #
+################################################
 
 i = -1
 epoch = 1
@@ -351,14 +348,17 @@ with torch.no_grad():
         log_metrics(epoch, writer, metrics=metrics, targets=y, predics=ŷ, prefix=key)
 
 # In[ ]:
+###############################################################################
+header("BEGIN TRAINING ")  #
+############################
 
 for epoch in (epochs := range(epoch, 2000)):
-    if epoch==1000:
+    if epoch == 1000:
         for g in optimizer.param_groups:
             g["lr"] = 0.0001
 
     batching_time = perf_counter()
-    for batch in (batches := tqdm(TRAINLOADER, leave=False)):
+    for batch in TRAINLOADER:
         batching_time = perf_counter() - batching_time
         i += 1
         # Optimization step
@@ -399,14 +399,16 @@ for epoch in (epochs := range(epoch, 2000)):
             # gval = grad_norm(list(model.parameters())).clone().detach().cpu().numpy()
             logging_time = time() - logging_time
 
-        batches.set_postfix(
-            # loss=f"{lval:.2e}",
-            # gnorm=f"{gval:.2e}",
-            epoch=epoch,
-            Δt_forward=f"{forward_time:.1f}",
-            Δt_backward=f"{backward_time:.1f}",
-            Δt_logging=f"{logging_time:.1f}",
-            Δt_batching=f"{batching_time:.1f}",
+        print(
+            dict(
+                # loss=f"{lval:.2e}",
+                # gnorm=f"{gval:.2e}",
+                epoch=epoch,
+                Δt_forward=f"{forward_time:.1f}",
+                Δt_backward=f"{backward_time:.1f}",
+                Δt_logging=f"{logging_time:.1f}",
+                Δt_batching=f"{batching_time:.1f}",
+            )
         )
         batching_time = perf_counter()
 
@@ -424,54 +426,9 @@ for epoch in (epochs := range(epoch, 2000)):
         torch.save(
             {
                 "optimizer": optimizer,
+                "optimizer_state": optimizer.state_dict(),
                 "epoch": epoch,
                 "batch": i,
             },
             CHECKPOINTDIR.joinpath(f"{optimizer.__class__.__name__}-{epoch}"),
         )
-
-
-# In[ ]:
-
-
-raise StopIteration
-
-
-# # Post Training Analysis
-
-# # Profiling
-
-# In[ ]:
-
-
-from torch.profiler import ProfilerActivity, profile, record_function
-
-
-# In[ ]:
-
-
-with profile(
-    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-    record_shapes=True,
-    profile_memory=True,
-) as prof:
-    model(times, inputs)
-
-
-# In[ ]:
-
-
-print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
-
-
-# In[ ]:
-
-
-print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
-
-
-# In[ ]:
-
-
-
-

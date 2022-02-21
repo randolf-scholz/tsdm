@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=FINAL_PRODUCT
+#SBATCH --job-name=FINAL_OD600
 #SBATCH --partition=GPU
 #SBATCH --output=logs/%j-%x.stdout.log
 #SBATCH --error=logs/%j-%x.stderr.log
@@ -12,4 +12,4 @@ mkdir -p logs
 
 srun python debug_info.py
 
-srun python KIWI_FINAL_PRODUCT.py "Fluo_GFP"
+srun python KIWI_FINAL_PRODUCT.py "OD600" --split=1
