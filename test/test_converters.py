@@ -6,7 +6,7 @@ from pandas import NA, DataFrame, testing
 
 from tsdm.encoders.functional import make_masked_format
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def test_make_masked_format():
@@ -36,9 +36,9 @@ def test_make_masked_format():
 
 def __main__():
     logging.basicConfig(level=logging.INFO)
-    LOGGER.info("Testing MASKED_FORMAT started!")
+    __logger__.info("Testing MASKED_FORMAT started!")
     test_make_masked_format()
-    LOGGER.info("Testing MASKED_FORMAT finished!")
+    __logger__.info("Testing MASKED_FORMAT finished!")
 
 
 if __name__ == "__main__":

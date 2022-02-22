@@ -4,7 +4,7 @@ import logging
 
 from tsdm.datasets import InSilicoData
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def test_methods_attributes():
@@ -29,9 +29,9 @@ def test_methods_attributes():
 
 def __main__():
     logging.basicConfig(level=logging.INFO)
-    LOGGER.info("Testing METHODS_ATTRIBUTES started!")
+    __logger__.info("Testing METHODS_ATTRIBUTES started!")
     test_methods_attributes()
-    LOGGER.info("Testing METHODS_ATTRIBUTES finished!")
+    __logger__.info("Testing METHODS_ATTRIBUTES finished!")
 
 
 if __name__ == "__main__":
