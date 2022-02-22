@@ -36,7 +36,7 @@ def kernel_heatmap(
     fmt: Literal["HWC", "CHW"] = "HWC"
         Whether to put channels first or last.
     cmap: str = "seismic"
-        The colomap.
+        The colormap.
 
     Returns
     -------

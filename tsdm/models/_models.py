@@ -5,7 +5,6 @@ __all__ = [
     "BaseModel",
 ]
 
-
 import logging
 import subprocess
 from abc import ABC, abstractmethod

@@ -117,6 +117,7 @@ def repr_mapping(
     recursive: Union[bool, int] = True,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
+    align: bool = False,
 ) -> str:
     r"""Return a string representation of a mapping object.
 
@@ -129,6 +130,8 @@ def repr_mapping(
     recursive: bool, default True
     repr_fun: Callable[..., str], default repr_object
     title: Optional[str], default None,
+    align:
+        Whether to vertically align keys.
 
     Returns
     -------
@@ -138,7 +141,10 @@ def repr_mapping(
     # key_sep = ": "
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
-    max_key_length = 0  # max(len(str(key)) for key in obj.keys())
+
+    keys = [str(key) for key in obj.keys()]
+    max_key_length = max(len(key) for key in keys) if align else 0
+
     items = list(obj.items())
     title = type(obj).__name__ if title is None else title
     string = title + "(" + br

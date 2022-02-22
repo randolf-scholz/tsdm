@@ -28,7 +28,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
-from tsdm.util.strings import dict2string
+from tsdm.util.strings import repr_mapping
 
 __logger__ = logging.getLogger(__name__)
 
@@ -45,24 +45,27 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
     dict[str, str]
     """
     d: dict[str, str] = {}
+    if not hasattr(module, "__all__"):
+        return d
+
     for item in module.__all__:
         obj = getattr(module, item)
         if inspect.ismodule(obj):
-            d[item] = f":py:mod:`~{obj.__name__}`"
+            d[item] = f":mod:`~{obj.__name__}`"
             if not item.startswith("_"):
                 d |= get_napoleon_type_aliases(obj)
         elif inspect.ismethod(obj):
-            d[item] = f":py:meth:`~{obj.__module__}.{obj.__qualname__}`"
+            d[item] = f":meth:`~{obj.__module__}.{obj.__qualname__}`"
         elif inspect.isfunction(obj):
-            d[item] = f":py:func:`~{obj.__module__}.{obj.__qualname__}`"
+            d[item] = f":func:`~{obj.__module__}.{obj.__qualname__}`"
         elif inspect.isclass(obj):
             if issubclass(obj, Exception):
-                d[item] = f":py:exc:`~{obj.__module__}.{obj.__qualname__}`"
-            d[item] = f":py:class:`~{obj.__module__}.{obj.__qualname__}`"
+                d[item] = f":exc:`~{obj.__module__}.{obj.__qualname__}`"
+            d[item] = f":class:`~{obj.__module__}.{obj.__qualname__}`"
         else:
-            d[item] = f":py:obj:`~{module.__name__}.{item}`"
+            d[item] = f":obj:`~{module.__name__}.{item}`"
 
-    __logger__.info("Found napoleon type aliases: %s", dict2string(d))
+    __logger__.info("Found napoleon type aliases: %s", repr_mapping(d, maxitems=-1))
     return d
 
 
