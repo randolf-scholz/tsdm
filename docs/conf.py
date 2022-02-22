@@ -83,7 +83,7 @@ default_role = (
 )
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates", "_autoapi_templates"]
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -155,7 +155,7 @@ autoapi_type = "python"
 # Set the type of files you are documenting. This depends on the programming language that you are using.
 # Default: "python"
 
-# autoapi_template_dir = "_templates/_autoapi_templates"
+autoapi_template_dir = "_templates/autoapi"
 # A directory that has user-defined templates to override our default templates. The path can either be absolute,
 # or relative to the source directory of your documentation files. An path relative to where sphinx-build is run is
 # allowed for backwards compatibility only and will be removed in a future version.
@@ -239,13 +239,14 @@ suppress_warnings = []
 
 # The theme to use for HTML and HTML Help pages. See the documentation for a list of builtin themes.
 html_theme = "sphinx_rtd_theme"
+# html_theme = 'piccolo_theme'
+# html_theme = 'karma_sphinx_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 # html_style = "css/my_theme.css"
-
 
 # -- Sphinx-Read the Docs Theme Configuration -------------------------------------------------------------------------
 
@@ -267,7 +268,7 @@ html_theme_options = {
     "titles_only": True,
     # When enabled, page subheadings are not included in the navigation.
     # Default: False
-    # MISCELLENEOUS OPTIONS
+    # MISCELLANEOUS OPTIONS
     "analytics_id": "",
     # If specified, Google Analytics’ gtag.js is included in your pages.
     # Set the value to the ID provided to you by google (like UA-XXXXXXX or G-XXXXXXXXXX).
@@ -324,7 +325,7 @@ autosummary_mock_imports = []
 autosummary_imported_members = False
 # A boolean flag indicating whether to document classes and functions imported in modules. Default is False
 
-autosummary_ignore_module_all = True
+autosummary_ignore_module_all = False
 # If False and a module has the __all__ attribute set,
 # autosummary documents every member listed in __all__ and no others.
 # Note that if an imported member is listed in __all__, it will be documented regardless of the value of
@@ -400,7 +401,7 @@ autodoc_mock_imports = []
 # This is useful when some external dependencies are not met at build time and break the building process.
 # You may only specify the root package of the dependencies themselves and omit the sub-modules:
 
-autodoc_typehints = "both"
+autodoc_typehints = "signature"
 # This value controls how to represent typehints. The setting takes the following values:
 # 'signature' – Show typehints in the signature (default)
 # 'description' – Show typehints as content of the function or method The typehints of overloaded
@@ -421,8 +422,9 @@ autodoc_type_aliases = {
     # torch
     "Tensor": "~torch.Tensor",
     "nn.Module": "~torch.nn.Module",
+    "SummaryWriter": "~torch.utils.tensorboard.writer.SummaryWriter",
     # numpy
-    "ArrayLike": ":class:`~numpy.typing.ArrayLike`",
+    "ArrayLike": "~numpy.typing.ArrayLike",
     "datetime64": "~numpy.datetime64",
     "timedelta64": "~numpy.timedelta64",
     "integer": "~numpy.integer",
@@ -447,13 +449,14 @@ autodoc_type_aliases = {
 # It is used to keep type aliases not evaluated in the document. Defaults to empty ({}).
 # The type aliases are only available if your program enables Postponed Evaluation of Annotations (PEP 563)
 # feature via from __future__ import annotations.
-
 autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(typing)
-# recursively napoleon_type_aliases for tsdm classes / functions.
+# # recursively napoleon_type_aliases for tsdm classes / functions.
 autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(abc)
-# recursively napoleon_type_aliases for tsdm classes / functions.
+# # recursively napoleon_type_aliases for tsdm classes / functions.
+# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(torch)
+# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(torch.utils)
 autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
-# recursively napoleon_type_aliases for tsdm classes / functions.
+# # recursively napoleon_type_aliases for tsdm classes / functions.
 
 autodoc_typehints_format = "short"
 # This value controls the format of typehints. The setting takes the following values:
@@ -523,12 +526,12 @@ napoleon_use_ivar = True
 # False to use the .. attribute:: directive instead.
 # Defaults to False.
 
-napoleon_use_param = False
+napoleon_use_param = True
 # True to use a :param: role for each function parameter.
 # False to use a single :parameters: role for all the parameters.
 # Defaults to True.
 
-napoleon_use_keyword = False
+napoleon_use_keyword = True
 # True to use a :keyword: role for each function keyword argument.
 # False to use a single :keyword arguments: role for all the keywords.
 # Defaults to True.
@@ -544,10 +547,11 @@ napoleon_preprocess_types = True
 
 napoleon_type_aliases = {
     # torch
-    "Tensor": ":class:`~torch.Tensor`",
-    "nn.Module": ":class:`~torch.nn.Module`",
+    "Tensor": "~torch.Tensor",
+    "nn.Module": "~torch.nn.Module",
+    "SummaryWriter": "~torch.utils.tensorboard.writer.SummaryWriter",
     # numpy
-    "ArrayLike": ":class:`~numpy.typing.ArrayLike`",
+    "ArrayLike": "~numpy.typing.ArrayLike",
     "datetime64": "~numpy.datetime64",
     "timedelta64": "~numpy.timedelta64",
     "integer": "~numpy.integer",
@@ -567,18 +571,14 @@ napoleon_type_aliases = {
     "DataArray": "~xarray.DataArray",
     "Dataset": "~xarray.Dataset",
     "Variable": "~xarray.Variable",
-    # TSDM
-    # "TimeDeltaLike": "tsdm.util.TimeDeltaLike",
-    # "TimeStampLike": "tsdm.util.TimeStampLike",
-    # "ScaledDotProductAttention" : ":class:`~tsdm.models.ScaledDotProductAttention`"
 }
 # A mapping to translate type names to other names or references. Works only when napoleon_use_param = True.
 # Defaults to None.
 
 napoleon_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(typing)
-# recursively napoleon_type_aliases for tsdm classes / functions.
+# # recursively napoleon_type_aliases for tsdm classes / functions.
 napoleon_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(abc)
-# recursively napoleon_type_aliases for tsdm classes / functions.
+# # recursively napoleon_type_aliases for tsdm classes / functions.
 napoleon_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
 # recursively napoleon_type_aliases for tsdm classes / functions.
 
