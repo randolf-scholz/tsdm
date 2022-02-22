@@ -10,6 +10,8 @@
             <path value="file://$PROJECT_DIR$/tsdm/config/config_files" />
             <path value="file://$PROJECT_DIR$/tsdm/datasets/examples" />
             <path value="file://$PROJECT_DIR$/docs/recipes" />
+            <path value="file://$PROJECT_DIR$/docs/_static" />
+            <path value="file://$PROJECT_DIR$/docs/_templates" />
           </resourceRoots>
         </entryData>
       </entry>

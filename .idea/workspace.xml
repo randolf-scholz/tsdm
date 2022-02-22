@@ -5,26 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/bugs/pickle_namedtupel.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bugs/tmp.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dev/encoders/FrameSplitterTest.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-base.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class-template.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class-template_mod.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module-template.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module-template_mod.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/mytemplate.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/mytemplate2.rst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.flake8" beforeDir="false" afterPath="$PROJECT_DIR$/.flake8" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/tsdm.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/tsdm.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/webResources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/webResources.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/abc_type_hint.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/abc_type_hint.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/collect_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/collect_env.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/flake8_W504.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/flake8_W504.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/jit_export_staticmethod.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/jit_export_staticmethod.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/matplotlib_pandas_nullable.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/matplotlib_pandas_nullable.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/overload_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/overload_problem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/type_narrowing.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/type_narrowing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/pickle_namedtupel.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/pickle_namedtupel.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/CONCEPT/Concept - KIWI_final_product.md" beforeDir="false" afterPath="$PROJECT_DIR$/dev/CONCEPT/Concept - KIWI_final_product.md" afterDir="false" />
@@ -39,20 +25,61 @@
       <change beforePath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/utils/decorators.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/utils/decorators.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/class.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/class.rst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/API.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_static/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/index.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/attribute.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/class.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/data.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/exception.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/function.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/method.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/module.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/package.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-base.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class-template.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class-template_mod.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module-template.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module-template_mod.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/mytemplate.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/mytemplate2.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-base.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-class-template.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-class-template_mod.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-class.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-module-template.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-module-template_mod.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-module.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/mytemplate.rst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/_templates/mytemplate2.rst" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs/conf.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/index.rst.bak" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy2.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/final_product.sh" beforeDir="false" afterPath="$PROJECT_DIR$/examples/final_product.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/t" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements-dev.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements-dev.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/templates/pylintrc.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/templates/pylintrc.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/config/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/config/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/config/_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/config/_config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/config/config_files/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/config/config_files/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/examples/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/examples/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/datasets/synthetic/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/synthetic/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/models/_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/plot/image.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/image.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/random/stats/_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/stats/_stats.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/regularity_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/regularity_tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/types/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/types/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/types/_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/types/_types.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/system.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/system.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -159,7 +186,7 @@
       <recent name="$PROJECT_DIR$/tsdm/models" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.type_narrowing">
+  <component name="RunManager" selected="Python.pickle_subclass_hook">
     <configuration name="kiwi_runs" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="tsdm" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -174,6 +201,28 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tsdm/datasets/kiwi_runs.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pickle_subclass_hook" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="tsdm" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/bugs" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -206,6 +255,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.pickle_subclass_hook" />
         <item itemvalue="Python.type_narrowing" />
         <item itemvalue="Python.kiwi_runs" />
       </list>
@@ -330,7 +380,8 @@
       <workItem from="1645093153116" duration="9403000" />
       <workItem from="1645172743234" duration="6684000" />
       <workItem from="1645179469633" duration="21809000" />
-      <workItem from="1645392380553" duration="20329000" />
+      <workItem from="1645392380553" duration="23989000" />
+      <workItem from="1645440257551" duration="15268000" />
     </task>
     <servers />
   </component>
@@ -351,22 +402,12 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tsdm/encoders/modular/__init__.py</url>
-          <line>35</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
-  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/tsdm$pytest_in_test_insilico_py.coverage" NAME="pytest in test_insilico.py Coverage Results" MODIFIED="1634986532541" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/test" />
     <SUITE FILE_PATH="coverage/tsdm$tasks.coverage" NAME="tasks Coverage Results" MODIFIED="1636342035843" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tsdm/tasks" />
     <SUITE FILE_PATH="coverage/tsdm$samplers.coverage" NAME="samplers Coverage Results" MODIFIED="1635847331526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tsdm/util/samplers" />
     <SUITE FILE_PATH="coverage/tsdm$mypy_type_narrowing.coverage" NAME="mypy type narrowing Coverage Results" MODIFIED="1637857614310" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/bugs" />
+    <SUITE FILE_PATH="coverage/tsdm$pickle_subclass_hook.coverage" NAME="pickle_subclass_hook Coverage Results" MODIFIED="1645446273621" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/bugs" />
     <SUITE FILE_PATH="coverage/tsdm$kiwi_runs.coverage" NAME="kiwi_runs Coverage Results" MODIFIED="1636568132306" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tsdm/datasets" />
   </component>
 </project>

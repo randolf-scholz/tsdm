@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/tsdm" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bugs" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/.mypy_cache" />
       <excludeFolder url="file://$MODULE_DIR$/.pytest_cache" />
@@ -17,7 +18,6 @@
       <excludeFolder url="file://$MODULE_DIR$/reports" />
       <excludeFolder url="file://$MODULE_DIR$/tsdm.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
-      <excludeFolder url="file://$MODULE_DIR$/docs/_static" />
       <excludeFolder url="file://$MODULE_DIR$/docs/_build" />
       <excludeFolder url="file://$MODULE_DIR$/docs/autoapi" />
       <excludeFolder url="file://$MODULE_DIR$/examples/.ipynb_checkpoints" />
@@ -45,6 +45,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.pytype/pyi" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/bugs/.ipynb_checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/_autosummary" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (kiwi)" jdkType="Python SDK" />
@@ -73,7 +74,6 @@
     <option name="TEMPLATE_CONFIGURATION" value="Jinja2" />
     <option name="TEMPLATE_FOLDERS">
       <list>
-        <option value="$MODULE_DIR$/docs/_templates" />
         <option value="$MODULE_DIR$/templates" />
       </list>
     </option>
