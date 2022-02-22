@@ -3,9 +3,19 @@
 
 
 import argparse
+import os
+import sys
+
+# enable JIT compilation - must be done before loading torch!
+os.environ["PYTORCH_JIT"] = "1"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# logging.basicConfig(level=logging.INFO)
+
 
 parser = argparse.ArgumentParser(prog="PROG")
-parser.add_argument("target", type=str, help="Either OD600 or Fluo_GFP", default="OD600")
+parser.add_argument(
+    "target", type=str, help="Either OD600 or Fluo_GFP", default="OD600"
+)
 parser.add_argument("--split", type=int, help="0, 1, 2, 3 or 4", default=0)
 args = parser.parse_args()
 
@@ -15,19 +25,6 @@ SPLIT = args.split
 assert TARGET in ["OD600", "Fluo_GFP"], f"{args.target=}"
 
 print(f"{TARGET=}")
-# In[1]:
-
-import logging
-import os
-import sys
-from pathlib import Path
-from time import perf_counter, time
-from typing import Any, NamedTuple
-
-# enable JIT compilation - must be done before loading torch!
-os.environ["PYTORCH_JIT"] = "1"
-# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
-# logging.basicConfig(level=logging.INFO)
 
 
 def header(s: str, pad=3):
@@ -36,36 +33,26 @@ def header(s: str, pad=3):
     print(f"\n{'>'*n + s + '<'*n}\n", file=sys.stdout, flush=True)
 
 
-# In[2]:
+###############################################################################
+header("Imports")  #
+####################
 
-
-import torch
-import torchinfo
-
-BATCH_SIZE = 128
-# TARGET = "OD600"
-
-available_gpus = {i: torch.cuda.device(i) for i in range(torch.cuda.device_count())}
-print(f"Availabel GPUS: {available_gpus=}")
-# assert len(available_gpus)==0
-DEVICE = next(iter(available_gpus.values()))
-print(f"{DEVICE=}")
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"{DEVICE=}")
-
-
-RUN_NAME = f"{TARGET}-{SPLIT}-More_params"  # | input("enter name for run")
-
-
-# In[3]:
-
+import logging
+import os
+import sys
+from pathlib import Path
+from time import perf_counter, time
+from typing import Any, NamedTuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas
+import torch
+import torchinfo
 from linodenet.models import LinODE, LinODECell, LinODEnet
 from linodenet.models.filters import SequentialFilter
 from linodenet.projections.functional import skew_symmetric, symmetric
+from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from torch import Tensor, jit, nn, tensor
 from torch.optim import SGD, Adam, AdamW
@@ -79,28 +66,49 @@ from tsdm.datasets import DATASETS
 from tsdm.encoders.functional import time2float
 from tsdm.encoders.modular import *
 from tsdm.logutils import (
+    compute_metrics,
     log_kernel_information,
     log_metrics,
     log_model_state,
     log_optimizer_state,
 )
 from tsdm.losses import LOSSES
+from tsdm.models import SetFuncTS
+from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
+from tsdm.random.samplers import *
 from tsdm.tasks import KIWI_FINAL_PRODUCT
-from tsdm.util import grad_norm, multi_norm
+from tsdm.util import grad_norm, initialize_from, multi_norm
 from tsdm.util.strings import *
 
-# In[26]:
+###############################################################################
+header("Configuration")  #
+##########################
 
+
+BATCH_SIZE = 128
+# TARGET = "OD600"
+
+available_gpus = {i: torch.cuda.device(i) for i in range(torch.cuda.device_count())}
+print(f"Available GPUS: {available_gpus=}")
+# assert len(available_gpus)==0
+DEVICE = next(iter(available_gpus.values()))
+print(f"{DEVICE=}")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"{DEVICE=}")
+
+
+RUN_NAME = f"{TARGET}-{SPLIT}-More_params"  # | input("enter name for run")
+
+
+np.set_printoptions(4, linewidth=80)
 
 # Disable benchmarking for variable sized input
-torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.benchmark = True
 
 
-# # Initialize Task
-
-# In[5]:
-
-
+###############################################################################
+header("Initialize Task")  #
+############################
 DTYPE = torch.float32
 
 task = KIWI_FINAL_PRODUCT(
@@ -114,85 +122,67 @@ ts = task.timeseries
 md = task.metadata
 NUM_PTS, NUM_DIM = ts.shape
 
-
-# ## Initialize Encoder
-
-# In[6]:
-
+###############################################################################
+header("Initialize Encoder")  #
+###############################
 
 ts, md = task.splits[SPLIT, "train"]
 
-
 encoder = ChainedEncoder(
-    TensorEncoder(names=("time", "value", "index")),
-    DataFrameEncoder(
-        column_encoders={
-            "value": IdentityEncoder(),
-            tuple(ts.columns): FloatEncoder("float32"),
-        },
-        index_encoders=MinMaxScaler() @ DateTimeEncoder(unit="h"),
+    #
+    TensorEncoder(),
+    FrameSplitter(["value", "measurement_time", ...]),
+    # FrameSplitter([...]),
+    TripletEncoder(),
+    FrameEncoder(
+        Standardizer(),
+        index_encoders=MinMaxScaler() @ TimeDeltaEncoder(unit="s"),
     ),
-    TripletEncoder(sparse=True),
-    Standardizer(),
 )
 encoder.fit(ts.reset_index([0, 1], drop=True))
-task.target_idx = task.timeseries.columns.get_loc(task.target)
-target_encoder = TensorEncoder() @ FloatEncoder() @ encoder[-1][task.target_idx]
+target_index = ts.columns.get_loc(task.target)
+target_encoder = encoder[-1].column_encoders[target_index]
 
-
-# ## Define Batching Function
-
-# In[7]:
+###############################################################################
+header("Collate Function")  #
+#############################
 
 
 class Batch(NamedTuple):
-    index: Tensor
-    timeseries: Tensor
-    metadata: Tensor
-    targets: Tensor
-    encoded_targets: Tensor
-
-    def __repr__(self):
-        return repr_mapping(
-            self._asdict(), title=self.__class__.__name__, repr_fun=repr_array
-        )
+    timeseries: list[Tensor]
+    targets: NDArray
+    encoded_targets: NDArray
 
 
 @torch.no_grad()
-def mycollate(batch: list):
-    index = []
+def mycollate(samples: list[tuple]) -> tuple[list[Tensor], NDArray, NDArray]:
     timeseries = []
-    metadata = []
     targets = []
     encoded_targets = []
 
-    for idx, (ts_data, (md_data, target)) in batch:
-        index.append(torch.tensor(idx[0]))
+    for idx, (ts_data, md_data), target, originals in samples:
         timeseries.append(encoder.encode(ts_data))
-        metadata.append(md_data)
         targets.append(target)
         encoded_targets.append(target_encoder.encode(target))
 
-    index = torch.stack(index)
-    targets = pandas.concat(targets)
-    encoded_targets = torch.concat(encoded_targets)
+    # timeseries = torch.cat(timeseries)
+    targets = np.stack(targets)
+    encoded_targets = torch.tensor(encoded_targets)
 
-    return Batch(index, timeseries, metadata, targets, encoded_targets)
+    return Batch(timeseries, targets, encoded_targets)
 
 
-# ## Initialize Loss & Metrics
-
-# In[8]:
-
+###############################################################################
+header("Initialize Loss")  #
+############################
 
 LOSS = task.test_metric.to(device=DEVICE)
 metrics = {key: jit.script(LOSSES[key]()) for key in ("RMSE", "MSE", "MAE")}
 
 
-# ## Initialize DataLoaders
-
-# In[28]:
-
+###############################################################################
+header("Initialize DataLoaders")  #
+###################################
 
 TRAINLOADER = task.get_dataloader(
     (SPLIT, "train"),
@@ -219,11 +209,9 @@ EVALLOADER = task.get_dataloader(
     persistent_workers=True,
 )
 
-
-# ## Hyperparamters
-
-# In[10]:
-
+###############################################################################
+header("Initialize Hyperparameters")  #
+#######################################
 
 OPTIMIZER_CONFIG = {
     "__name__": "AdamW",
@@ -256,26 +244,14 @@ LR_SCHEDULER_CONFIG = {
     # (bool) – If True, prints a message to stdout for each update. Default: False.
 }
 
-
-# ## Model
-
-# In[11]:
-
 ###############################################################################
 header("INITIALIZE MODEL")  #
 #############################
-
-from tsdm.models import SetFuncTS
 
 MODEL = SetFuncTS
 model = MODEL(17, 1, latent_size=256, dim_keys=128, dim_vals=128, dim_deepset=128)
 model.to(device=DEVICE, dtype=DTYPE)
 summary(model)
-
-
-# ### Warmup - test forward / backward pass
-
-# In[12]:
 
 ###############################################################################
 header("FORWARD PASS TEST")  #
@@ -289,23 +265,17 @@ torch.linalg.norm(y).backward()
 print("backward done")
 model.zero_grad()
 
-# In[13]:
 ###############################################################################
 header("INITIALIZE OPTIMIZER ")  #
 ##################################
 
-from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
-from tsdm.util import initialize_from
-
 OPTIMIZER_CONFIG |= {"params": model.parameters()}
 optimizer = initialize_from(OPTIMIZERS, **OPTIMIZER_CONFIG)
 
-# In[16]:
 ###############################################################################
 header("INITIALIZE LOGGING ")  #
 ################################
 
-from tsdm.logutils import compute_metrics
 
 RUN_START = tsdm.util.now()
 CHECKPOINTDIR = Path(
@@ -333,26 +303,26 @@ def get_all_predictions(model, dataloader):
     return y, yhat
 
 
-# In[19]:
 ###############################################################################
 header("EVALUATE INITAILIZED MODEL LOGGING ")  #
 ################################################
 
-i = -1
-epoch = 1
+i = 0  # batch_num
+epoch = 0  # epoch
 
 with torch.no_grad():
     for key, dloader in {"train": TRAINLOADER, "test": EVALLOADER}.items():
         y, ŷ = get_all_predictions(model, dloader)
         assert torch.isfinite(y).all()
-        log_metrics(epoch, writer, metrics=metrics, targets=y, predics=ŷ, prefix=key)
+        log_metrics(
+            epoch, writer=writer, metrics=metrics, targets=y, predics=ŷ, prefix=key
+        )
 
-# In[ ]:
 ###############################################################################
 header("BEGIN TRAINING ")  #
 ############################
 
-for epoch in (epochs := range(epoch, 2000)):
+for epoch in (epochs := range(epoch, epoch + 2000)):
     if epoch == 1000:
         for g in optimizer.param_groups:
             g["lr"] = 0.0001
@@ -387,18 +357,21 @@ for epoch in (epochs := range(epoch, 2000)):
 
             log_metrics(
                 i,
-                writer,
+                writer=writer,
                 metrics=metrics,
                 targets=targets.clone(),
                 predics=predics.clone(),
                 prefix="batch",
             )
-            log_optimizer_state(i, writer, optimizer, prefix="batch")
+            log_optimizer_state(i, writer=writer, optimizer=optimizer, prefix="batch")
 
             # lval = loss.clone().detach().cpu().numpy()
             # gval = grad_norm(list(model.parameters())).clone().detach().cpu().numpy()
             logging_time = time() - logging_time
+        batching_time = perf_counter()
 
+    with torch.no_grad():
+        # end-of-epoch logging
         print(
             dict(
                 # loss=f"{lval:.2e}",
@@ -410,15 +383,12 @@ for epoch in (epochs := range(epoch, 2000)):
                 Δt_batching=f"{batching_time:.1f}",
             )
         )
-        batching_time = perf_counter()
 
-    with torch.no_grad():
-        # end-of-epoch logging
         for key, dloader in {"train": TRAINLOADER, "test": EVALLOADER}.items():
             y, ŷ = get_all_predictions(model, dloader)
             assert torch.isfinite(y).all()
             log_metrics(
-                epoch, writer, metrics=metrics, targets=y, predics=ŷ, prefix=key
+                epoch, writer=writer, metrics=metrics, targets=y, predics=ŷ, prefix=key
             )
 
         # Model Checkpoint
