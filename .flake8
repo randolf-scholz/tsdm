@@ -19,9 +19,9 @@ max-line-length = 120
 
 ignore =
     E203,       # whitespace before ':'
-    E221,       # multiple spaces before operator
-    E226,       # missing whitespace around arithmetic operator
-    E241,       # multiple spaces after ':'
+#    E221,       # multiple spaces before operator
+#    E226,       # missing whitespace around arithmetic operator
+#    E241,       # multiple spaces after ':'
     W503,       # line break before binary operator
     ANN101,     # Missing type annotation for self in method
     ANN102,     # Missing type annotation for cls in classmethod
@@ -32,10 +32,11 @@ extend-ignore =
     RST201,     # Unexpected indentation.
     RST203,     # Definition list ends without a blank line; unexpected unindent.
     RST301,     # Block quote ends without a blank line; unexpected unindent.
-    RST303,     # Unknown directive type
-    RST304,     # Unknown interpreted text role
-    ANN101,     # Missing type annotation for self in method
-    ANN201,     # Missing return type annotation for public function
+#    RST303,     # Unknown directive type
+#    RST304,     # Unknown interpreted text role
+#    ANN101,     # Missing type annotation for self in method
+#    ANN201,     # Missing return type annotation for public function
+    D407,       # Missing dashed underline after section
 
 exclude =
     ./.git,
@@ -57,3 +58,14 @@ docstring-convention = numpy
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
 import-order-style = pep8
 application-import-names = tsdm
+
+rst-roles =
+    mod,
+    func,
+    data,
+    const,
+    class,
+    meth,
+    attr,
+    exc,
+    obj,
