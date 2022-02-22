@@ -8,7 +8,7 @@ from pandas import DataFrame
 from tsdm.datasets import BaseDataset, InSilicoData
 from tsdm.util.decorators import timefun
 
-LOGGER = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def test_caching():
@@ -16,17 +16,17 @@ def test_caching():
     # NOTE: this test must be executed first!!!
 
     ds = InSilicoData()
-    LOGGER.info("Testing caching of dataset %s", ds.name)
-    _, pre_cache_time = timefun(lambda: ds.dataset)()
-    _, post_cache_time = timefun(lambda: ds.dataset)()
+    __logger__.info("Testing caching of dataset %s", ds.name)
+    _, pre_cache_time = timefun(lambda: ds.dataset, append=True)()
+    _, post_cache_time = timefun(lambda: ds.dataset, append=True)()
 
-    LOGGER.info("%f, %f", pre_cache_time, post_cache_time)
+    __logger__.info("%f, %f", pre_cache_time, post_cache_time)
 
     assert (
         100 * post_cache_time <= pre_cache_time
     ), f"{post_cache_time=}, {pre_cache_time=}"
 
-    LOGGER.info("%s passes caching test \N{HEAVY CHECK MARK}", ds.name)
+    __logger__.info("%s passes caching test \N{HEAVY CHECK MARK}", ds.name)
 
 
 def test_attributes():
@@ -57,13 +57,13 @@ def test_attributes():
 
 def __main__():
     logging.basicConfig(level=logging.INFO)
-    LOGGER.info("Testing CACHING started!")
+    __logger__.info("Testing CACHING started!")
     test_caching()
-    LOGGER.info("Testing CACHING finished!")
+    __logger__.info("Testing CACHING finished!")
 
-    LOGGER.info("Testing ATTRIBUTES started!")
+    __logger__.info("Testing ATTRIBUTES started!")
     test_attributes()
-    LOGGER.info("Testing ATTRIBUTES finished!")
+    __logger__.info("Testing ATTRIBUTES finished!")
 
 
 if __name__ == "__main__":
