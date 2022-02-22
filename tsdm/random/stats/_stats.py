@@ -14,7 +14,7 @@ from pandas import DataFrame, Series
 __logger__ = logging.getLogger(__name__)
 
 
-def sparsity(df: DataFrame):
+def sparsity(df: DataFrame) -> tuple[float, float]:
     r"""Quantify sparsity in the data."""
     mask = pandas.isna(df)
     col_wise = mask.mean(axis=0)

@@ -35,7 +35,7 @@ from tsdm.config import config_files
 __logger__ = logging.getLogger(__name__)
 
 os.environ["TSDM_AUTOJIT"] = "True"
-"""Default value."""
+r"""Default value."""
 
 
 class Config:
@@ -59,10 +59,10 @@ class Config:
 
 
 conf: Config = Config()  # = Config(__name__, __doc__)
-"""The unique :class:`~tsdm.config.Config` instance used to configure :mod:`tsdm`."""
+r"""The unique :class:`~tsdm.config.Config` instance used to configure :mod:`tsdm`."""
 
 DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-"""The default :mod:`torch` device to use."""
+r"""The default :mod:`torch` device to use."""
 DEFAULT_DTYPE = torch.float32
 r"""The default :mod:`torch` datatype to use."""
 
@@ -117,9 +117,7 @@ __logger__.info("Available Datasets: %s", set(DATASETS))
 
 
 def generate_folders(d: dict, current_path: Path):
-    """Create nested folder structure based on nested dictionary index.
-
-    source: `StackOverflow <https://stackoverflow.com/a/22058144/9318372>`_
+    r"""Create nested folder structure based on nested dictionary index.
 
     Parameters
     ----------
@@ -129,6 +127,10 @@ def generate_folders(d: dict, current_path: Path):
     Returns
     -------
     None
+
+    References
+    ----------
+    `StackOverflow <https://stackoverflow.com/a/22058144/9318372>`_
     """
     for directory in d:
         path = current_path.joinpath(directory)

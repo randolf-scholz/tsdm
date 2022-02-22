@@ -149,11 +149,19 @@ class BaseEncoder(ABC):
 
     def __init__(self):
         super().__init__()
-        self.fit = post_hook(self.fit, self._post_fit_hook)
-        self.encode = pre_hook(self.encode, self._pre_encode_hook)
-        self.decode = pre_hook(self.decode, self._pre_decode_hook)
         self.transform = self.encode
         self.inverse_transform = self.decode
+
+    def __init_subclass__(cls, /, *args, **kwargs):
+        """Initialize the subclass.
+
+        The wrapping of fit/encode/decode must be done here to avoid
+        :exc:`~pickle.PickleError`!
+        """
+        super().__init_subclass__(*args, **kwargs)
+        cls.fit = post_hook(cls.fit, cls._post_fit_hook)
+        cls.encode = pre_hook(cls.encode, cls._pre_encode_hook)
+        cls.decode = pre_hook(cls.decode, cls._pre_decode_hook)
 
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
@@ -167,15 +175,15 @@ class BaseEncoder(ABC):
         r"""Return a string representation of the encoder."""
         return f"{self.__class__.__name__}()"
 
-    def fit(self, data: Any, /) -> None:  # pylint: disable=method-hidden
+    def fit(self, data: Any, /) -> None:
         r"""By default does nothing."""
 
     @abstractmethod
-    def encode(self, data, /):  # pylint: disable=method-hidden
+    def encode(self, data, /):
         r"""Transform the data."""
 
     @abstractmethod
-    def decode(self, data, /):  # pylint: disable=method-hidden
+    def decode(self, data, /):
         r"""Reverse the applied transformation."""
 
     def _post_fit_hook(
@@ -1580,7 +1588,9 @@ class FrameSplitter(BaseEncoder, Mapping):
             # FIXME EllipsisType in 3.10
             fixed_cols = set().union(
                 *(
-                    set(cols) for cols in self.groups.values() if cols is not Ellipsis  # type: ignore[arg-type]
+                    set(cols)  # type: ignore[arg-type]
+                    for cols in self.groups.values()
+                    if cols is not Ellipsis
                 )
             )
             ellipsis_columns = [c for c in data.columns if c not in fixed_cols]

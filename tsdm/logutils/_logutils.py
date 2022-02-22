@@ -51,9 +51,9 @@ def log_kernel_information(
     i: int
     writer: SummaryWriter
     kernel: Tensor
-    histograms: bool = False
-    prefix: str = ""
-    postfix: str = ""
+    histograms: bool, default False
+    prefix: str, default ""
+    postfix: str, default ""
     """
     assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
 
@@ -156,16 +156,15 @@ def log_model_state(
     prefix: str = "",
     postfix: str = "",
 ):
-    """Log optimizer data.
+    r"""Log optimizer data.
 
-    Parameters
-    ----------
-    model
-    i: int
-    writer: SummaryWriter
-    histograms: bool=False
-    prefix: str = ""
-    postfix: str = ""
+    Args:
+        i: current step
+        writer: SummaryWriter
+        model: Model
+        histograms: whether to create histograms
+        prefix: e.g. prefix:model:postfix
+        postfix: e.g. prefix:model:postfix
     """
     # TODO: make this compatible with optimizers other than ADAM.
     identifier = f"{prefix+':'*bool(prefix)}model{':'*bool(postfix)+postfix}"
@@ -246,8 +245,8 @@ def log_metrics(
     targets: Optional[Tensor], default None
     predics: Optional[Tensor], default None
     values: Optional[Tensor], default None
-    prefix: str = ""
-    postfix: str = ""
+    prefix: str, default ""
+    postfix: str, default ""
     """
     identifier = f"{prefix+':'*bool(prefix)}metrics{':'*bool(postfix)+postfix}"
 

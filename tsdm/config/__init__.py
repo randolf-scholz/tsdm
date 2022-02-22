@@ -28,9 +28,9 @@ __all__ = [
 
 import logging
 
-from tsdm.config._config import CONFIG  # CONSTANTS; Classes
 from tsdm.config._config import (
     BASEDIR,
+    CONFIG,
     DATASETDIR,
     DATASETS,
     DEFAULT_DEVICE,

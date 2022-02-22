@@ -195,7 +195,7 @@ def regularity_coefficient(
     return ((np.max(s) - np.min(s)) / gcd) / len(Δt)
 
 
-def time_gcd(s: Series):
+def time_gcd(s: Series) -> float:
     """Compute the greatest common divisor of datetime64/int/float data.
 
     Parameters

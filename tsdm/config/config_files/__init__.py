@@ -1,5 +1,3 @@
 r"""Configuration Files."""
 
-import logging
-
-__logger__ = logging.getLogger(__name__)
+__all__: list[str] = []

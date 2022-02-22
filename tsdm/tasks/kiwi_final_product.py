@@ -472,3 +472,27 @@ class _Dataset(torch.utils.data.Dataset):
         )
 
         return Sample(index, inputs, targets, originals)
+
+
+# class Batch(NamedTuple):
+#     timeseries: list[Tensor]
+#     targets: NDArray
+#     encoded_targets: NDArray
+#
+#
+# @torch.no_grad()
+# def mycollate(samples: list[tuple]) -> tuple[list[Tensor], NDArray, NDArray]:
+#     timeseries = []
+#     targets = []
+#     encoded_targets = []
+#
+#     for idx, (ts_data, md_data), target, originals in samples:
+#         timeseries.append(encoder.encode(ts_data))
+#         targets.append(target)
+#         encoded_targets.append(target_encoder.encode(target))
+#
+#     # timeseries = torch.cat(timeseries)
+#     targets = np.stack(targets)
+#     encoded_targets = torch.tensor(targets)
+#
+#     return Batch(timeseries, targets, encoded_targets)

@@ -9,7 +9,7 @@ __all__ = [
     "synthetic",
     "torch",
     # Types
-    "DATASET",
+    "dataset",
     # Constants
     "DATASETS",
     # ABCs
@@ -53,10 +53,10 @@ from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
-DATASET = BaseDataset
+dataset = BaseDataset
 r"""Type hint for dataset."""
 
-DATASETS: Final[LookupTable[type[DATASET]]] = {
+DATASETS: Final[LookupTable[type[dataset]]] = {
     "BeijingAirQuality": BeijingAirQuality,
     "ETT": ETT,
     "Electricity": Electricity,
