@@ -458,7 +458,7 @@ class _Dataset(torch.utils.data.Dataset):
         # mask target values
         md["target_value"] = float("nan")
         # mask observation horizon
-        mask = (ts.index <= slc.start) & (slc.stop <= ts.index)
+        mask = (slc.start <= ts.index) & (ts.index <= slc.stop)
         # mask observables outside observation range
         ts.loc[~mask, self.observables] = float("nan")
         # select the data
