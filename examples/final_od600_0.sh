@@ -6,7 +6,15 @@
 #SBATCH --gpus=1
 #SBATCH --exclude=pgpu-[020-021],ngpu-022
 
+printenv
+python -c "import tsdm; print(tsdm.__version__)"
+echo $PATH
+export PATH
+conda info
+conda info --envs
+which conda
 source activate kiwi
+
 ulimit -Sn 32768
 mkdir -p logs
 
