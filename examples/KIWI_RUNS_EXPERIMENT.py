@@ -60,7 +60,6 @@ from tsdm.losses import LOSSES
 from tsdm.tasks import KIWI_RUNS_TASK
 from tsdm.util import grad_norm, multi_norm
 
-
 # In[4]:
 
 
@@ -284,7 +283,6 @@ for o in (-np.infty, -2, -1, 1, 2, np.infty, "fro", "nuc"):
 
 from tsdm.optimizers import OPTIMIZERS
 from tsdm.util import initialize_from
-
 
 # In[15]:
 
@@ -544,7 +542,7 @@ xhat_pre.shape, xhat_post.shape, zhat_pre.shape, zhat_post.shape
 # In[ ]:
 
 
-get_ipython().run_line_magic('matplotlib', 'inline')
+get_ipython().run_line_magic("matplotlib", "inline")
 plt.style.use("bmh")
 
 BATCH_DIM, LEN, DIM = tuple(xhat_pre.shape)
@@ -657,9 +655,6 @@ fig.savefig(f"{RUN_NAME}_encoder_stats_post_training.pdf")
 # In[ ]:
 
 
-
-
-
 # # distribution plots
 
 # In[ ]:
@@ -681,7 +676,7 @@ tuples = [
     (r"$\hat{x}'$", zhat_post_mean, zhat_post_stdv),
 ]
 
-S = np.arange(len(xhat_pre_mean));
+S = np.arange(len(xhat_pre_mean))
 
 
 # In[ ]:
@@ -731,7 +726,7 @@ dummy2 = model.encoder(dummy)
 dummy1 = torch.linalg.norm(dummy, dim=-1) / m
 dummy2 = torch.linalg.norm(dummy2, dim=-1) / m
 chg = (dummy2 / dummy1).clone().detach().cpu().numpy()
-plt.hist(chg, bins="auto");
+plt.hist(chg, bins="auto")
 
 
 # In[ ]:
@@ -766,7 +761,6 @@ plt.imshow(mat)
 
 from torch.profiler import ProfilerActivity, profile, record_function
 
-
 # In[ ]:
 
 
@@ -791,7 +785,3 @@ print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
 
 # In[ ]:
-
-
-
-

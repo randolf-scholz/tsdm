@@ -1,3 +1,9 @@
+# Pytorch profiling
+*.pt.trace.json
+
+# tensorboard files
+*events.out.tfevents*
+
 # Pickles
 *.pk
 
