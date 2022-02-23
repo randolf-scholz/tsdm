@@ -7,6 +7,9 @@ Contains encoders in modular form.
 """
 
 __all__ = [
+    # Modules
+    "generic",
+    "numerical",
     # Constants
     "ModularEncoder",
     "ModularEncoders",
@@ -20,17 +23,21 @@ __all__ = [
     "FloatEncoder",
     "FrameEncoder",
     "FrameSplitter",
+    "FrameIndexer",
     "IdentityEncoder",
     "IntEncoder",
-    "MinMaxScaler",
     "PositionalEncoder",
     "ProductEncoder",
-    "Standardizer",
     "TensorEncoder",
     "Time2Float",
     "TimeDeltaEncoder",
     "TripletEncoder",
     "LogEncoder",
+    "MinMaxScaler",
+    "Standardizer",
+    "ValueEncoder",
+    "DuplicateEncoder",
+    "CloneEncoder",
 ]
 
 import logging
@@ -39,27 +46,34 @@ from typing import Final
 from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
 
-from tsdm.encoders.modular._modular import (
-    BaseEncoder,
-    ChainedEncoder,
-    ConcatEncoder,
-    DataFrameEncoder,
+from tsdm.encoders.modular import generic, numerical
+from tsdm.encoders.modular._dtypes import (
     DateTimeEncoder,
     FloatEncoder,
-    FrameEncoder,
-    FrameSplitter,
-    IdentityEncoder,
     IntEncoder,
-    LogEncoder,
-    MinMaxScaler,
-    PositionalEncoder,
-    ProductEncoder,
-    Standardizer,
-    TensorEncoder,
     Time2Float,
     TimeDeltaEncoder,
-    TripletEncoder,
 )
+from tsdm.encoders.modular._modular import (
+    ConcatEncoder,
+    DataFrameEncoder,
+    FrameEncoder,
+    FrameIndexer,
+    FrameSplitter,
+    PositionalEncoder,
+    TensorEncoder,
+    TripletEncoder,
+    ValueEncoder,
+)
+from tsdm.encoders.modular.generic import (
+    BaseEncoder,
+    ChainedEncoder,
+    CloneEncoder,
+    DuplicateEncoder,
+    IdentityEncoder,
+    ProductEncoder,
+)
+from tsdm.encoders.modular.numerical import LogEncoder, MinMaxScaler, Standardizer
 from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
