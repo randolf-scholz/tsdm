@@ -30,6 +30,7 @@ __all__ = [
     "skewpart",
     "symmpart",
     "round_relative",
+    "initialize_from_config",
 ]
 
 import logging
@@ -43,6 +44,7 @@ from tsdm.util._util import (
     flatten_dict,
     flatten_nested,
     initialize_from,
+    initialize_from_config,
     now,
     paths_exists,
     prepend_path,

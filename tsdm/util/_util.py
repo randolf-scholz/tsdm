@@ -11,6 +11,7 @@ __all__ = [
     "deep_dict_update",
     "deep_kval_update",
     "initialize_from",
+    "initialize_from_config",
     "now",
     "skewpart",
     "relsize_skewpart",
@@ -27,6 +28,7 @@ import os
 from collections.abc import Callable, Collection, Iterable, Mapping
 from datetime import datetime
 from functools import partial
+from importlib import import_module
 from logging import getLogger
 from pathlib import Path
 from typing import Any, NamedTuple, Union, overload
@@ -336,6 +338,41 @@ def initialize_from(
         return obj(**kwargs)
     # if it is function, fix kwargs
     return partial(obj, **kwargs)
+
+
+def is_dunder(name: str) -> bool:
+    r"""Check if name is a dunder method.
+
+    Parameters
+    ----------
+    name: str
+
+    Returns
+    -------
+    bool
+    """
+    return name.startswith("__") and name.endswith("__")
+
+
+def initialize_from_config(config: dict[str, Any]) -> Any:
+    r"""Initialize a class from a dictionary.
+
+    Parameters
+    ----------
+    config: dict[str, Any]
+
+    Returns
+    -------
+    object
+    """
+    assert "__name__" in config, "__name__ not found in dict"
+    assert "__module__" in config, "__module__ not found in dict"
+    __logger__.debug("Initializing %s", config)
+    config = config.copy()
+    module = import_module(config.pop("__module__"))
+    cls = getattr(module, config.pop("__name__"))
+    opts = {key: val for key, val in config.items() if not is_dunder("key")}
+    return cls(**opts)
 
 
 def paths_exists(
