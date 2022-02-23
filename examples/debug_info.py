@@ -66,8 +66,7 @@ for word in "conda", "cuda", "mkl", "tf", "xla", "slurm", "omp", "kmp":
     subheader(f"{word} configuration")
     matches = {}
     for key in sorted(os.environ):
-        key = key.lower()
-        if f"{word}_" in key or f"_{word}" in key:
+        if f"{word}_" in key.lower() or f"_{word}" in key.lower():
             matches[key] = os.environ.get(key)
     pprint_dict(matches)
 

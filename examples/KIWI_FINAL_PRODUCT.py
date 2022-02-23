@@ -85,7 +85,7 @@ header("Configuration")  #
 ##########################
 
 
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 # TARGET = "OD600"
 
 available_gpus = {i: torch.cuda.device(i) for i in range(torch.cuda.device_count())}
@@ -296,8 +296,8 @@ def get_all_predictions(model, dataloader):
         # yhats.append(model.batch_forward(inputs))
         yhats.append(model.forward_batch(batch.timeseries))
         ys.append(batch.encoded_targets.to(device=DEVICE))
-    y = torch.cat(ys)
-    yhat = torch.cat(yhats)
+    y = torch.cat(ys).cpu().numpy()
+    yhat = torch.cat(yhats).cpu().numpy()
     y = torch.tensor(target_encoder.decode(y))
     yhat = torch.tensor(target_encoder.decode(yhat))
     return y, yhat
