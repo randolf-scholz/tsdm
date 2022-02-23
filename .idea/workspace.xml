@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AnalysisUIOptions">
+    <option name="ANALYZE_TEST_SOURCES" value="false" />
+    <option name="SCOPE_TYPE" value="3" />
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.flake8" beforeDir="false" afterPath="$PROJECT_DIR$/.flake8" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/tsdm.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/tsdm.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/webResources.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/webResources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bugs/torch_runtime_0slice.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/profiling/workstation_155048.1645653009785.pt.trace.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/pickle_namedtupel.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/pickle_namedtupel.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/CONCEPT/Concept - KIWI_final_product.md" beforeDir="false" afterPath="$PROJECT_DIR$/dev/CONCEPT/Concept - KIWI_final_product.md" afterDir="false" />
@@ -25,61 +26,25 @@
       <change beforePath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dev/utils/decorators.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/utils/decorators.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/API.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_static/.gitkeep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/index.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/attribute.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/class.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/data.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/exception.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/function.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/method.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/module.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autoapi_templates/python/package.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-base.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class-template.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class-template_mod.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-class.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module-template.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module-template_mod.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/custom-module.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/mytemplate.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/_autosummary_templates/mytemplate2.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-base.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-class-template.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-class-template_mod.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-class.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-module-template.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-module-template_mod.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/custom-module.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/mytemplate.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/mytemplate2.rst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs/conf.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/index.rst.bak" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-ConvNet.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-ConvNet.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy2.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT_iresnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT_iresnet.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/results.ods" beforeDir="false" afterPath="$PROJECT_DIR$/examples/results.ods" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/t" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements-dev.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements-dev.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/pylintrc.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/templates/pylintrc.cfg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/config/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/config/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/config/_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/config/_config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/config/config_files/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/config/config_files/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/examples/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/examples/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/synthetic/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/synthetic/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/logutils/_logutils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/models/_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/_models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/plot/image.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/plot/image.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/random/stats/_stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/stats/_stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/regularity_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/regularity_tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/system.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/system.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/generic.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/generic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/torch.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/torch.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/util/_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/_util.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -110,7 +75,10 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/tsdm/plot/__setup__.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/tsdm/models/generic/rezero.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/models/generic/resnet.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/plot/__init__.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/tsdm/models/generic/dense.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/regularity_tests.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/strings.py" root0="FORCE_HIGHLIGHTING" />
@@ -118,6 +86,7 @@
     <setting file="file://$PROJECT_DIR$/tsdm/random/__init__.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/types/_utils.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/tsdm/random/_random.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/encoders/modular/generic.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/random/samplers/__init__.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/logutils/_logutils.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" root0="FORCE_HIGHLIGHTING" />
@@ -128,15 +97,18 @@
     <setting file="file://$PROJECT_DIR$/tsdm/tasks/base/tasks.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/docs/conf.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/types/_types.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/util/types/protocols.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/util/_util.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/tsdm/random/stats/_stats.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/docs/recipes/dataloaders.rst" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/models/generic/mlp.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/docs/recipes/datasets.rst" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/losses/modular/_modular.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/losses/functional/_functional.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/datasets/torch/timeseries.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/test/test_insilico.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/tsdm/models/generic/conv1d.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/encoders/modular/torch.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/bugs/__module__Missing.py" root0="SKIP_INSPECTION" />
@@ -145,7 +117,7 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedIndex" value="2" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectId" id="1xrATtRaxjt2Kg9MYWEAe8kdzYv" />
   <component name="ProjectLevelVcsManager">
@@ -160,13 +132,13 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../LinODE-Net" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyIntegratedToolsModulesConfigurable" />
+    <property name="settings.editor.selected.configurable" value="Errors" />
     <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/docs/conf.py" />
   </component>
   <component name="ReaderModeSettings">
@@ -381,7 +353,11 @@
       <workItem from="1645172743234" duration="6684000" />
       <workItem from="1645179469633" duration="21809000" />
       <workItem from="1645392380553" duration="23989000" />
-      <workItem from="1645440257551" duration="15268000" />
+      <workItem from="1645440257551" duration="27695000" />
+      <workItem from="1645576990976" duration="9935000" />
+      <workItem from="1645587306876" duration="135000" />
+      <workItem from="1645587450166" duration="7930000" />
+      <workItem from="1645603473768" duration="18354000" />
     </task>
     <servers />
   </component>
