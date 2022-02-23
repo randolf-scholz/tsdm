@@ -13,6 +13,7 @@ __all__ = [
     "BaseModel",
     "ODE_RNN",
     "SetFuncTS",
+    "GroupedSetFuncTS",
     # Generic
     "MLP",
     "DeepSet",
@@ -28,7 +29,7 @@ from tsdm.models import activations, generic
 from tsdm.models._models import BaseModel
 from tsdm.models.generic import MLP, DeepSet, ScaledDotProductAttention
 from tsdm.models.ode_rnn import ODE_RNN
-from tsdm.models.set_function_for_timeseries import SetFuncTS
+from tsdm.models.set_function_for_timeseries import GroupedSetFuncTS, SetFuncTS
 
 __logger__ = logging.getLogger(__name__)
 
