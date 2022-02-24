@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+
+import textwrap
 import subprocess
 from itertools import product
 
 for target, split in product(["OD600", "Fluo_GFP"], [0, 1, 2, 3, 4]):
 
-    s = f"""
+    s = f"""\
     #!/usr/bin/env bash
     #SBATCH --job-name={target}
     #SBATCH --partition=GPU
@@ -21,11 +23,13 @@ for target, split in product(["OD600", "Fluo_GFP"], [0, 1, 2, 3, 4]):
 
     srun python debug_info.py
 
-    srun python KIWI_FINAL_PRODUCT.py  "{target}" --split={split}
+    srun python KIWI_FINAL_PRODUCT.py  "{target}" --split={split}\
     """
-    with open("sbatch.sh", "w") as f:
-        f.write(s)
 
+    with open("sbatch.sh", "w") as f:
+        f.write(textwrap.dedent(s))
+
+    print(target, split)
     job = subprocess.run(
         "sbatch sbatch.sh",
         shell=True,
