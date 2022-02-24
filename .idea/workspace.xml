@@ -8,44 +8,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/bugs/torch_runtime_0slice.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/profiling/workstation_155048.1645653009785.pt.trace.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/pivot_table_performance.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/CONCEPT/Concept - KIWI_final_product.md" beforeDir="false" afterPath="$PROJECT_DIR$/dev/CONCEPT/Concept - KIWI_final_product.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/Concept - data pipeline.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/datasets/torch_datasets/Untitled.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/encoders/DataFrameEncoder.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/DataFrameEncoder.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/encoders/DataFrameSplitter.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/DataFrameSplitter.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/encoders/FrameEncoder.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/FrameEncoder.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/encoders/LogEncoder.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/LogEncoder.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/encoders/TripletEncoder.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/TripletEncoder.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/encoders/Untitled.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/models/ConvSetTS.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/plotting/KIWI_RUNS_Booklet.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/utils/decorators.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/utils/decorators.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-ConvNet.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-ConvNet.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy2.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT_iresnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT_iresnet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/evaluate_linodenet_final_product.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/results.ods" beforeDir="false" afterPath="$PROJECT_DIR$/examples/results.ods" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/t" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/generic.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/generic.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/torch.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/torch.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/_util.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/_util.py" afterDir="false" />
-    </list>
+    <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -357,7 +320,7 @@
       <workItem from="1645576990976" duration="9935000" />
       <workItem from="1645587306876" duration="135000" />
       <workItem from="1645587450166" duration="7930000" />
-      <workItem from="1645603473768" duration="18354000" />
+      <workItem from="1645603473768" duration="18761000" />
     </task>
     <servers />
   </component>
