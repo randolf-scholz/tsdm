@@ -155,6 +155,7 @@ target_encoder = TensorEncoder() @ encoder[-1][target_idx]
 header("SETUP COLLATE_FN")  #
 #############################
 
+
 class Batch(NamedTuple):
     timeseries: list[Tensor]
     targets: NDArray
@@ -213,8 +214,8 @@ EVALLOADER = task.get_dataloader(
 )
 
 ###############################################################################
-header("HYPERPARAMETERS"  #
-###########################
+header("HYPERPARAMETERS")  #
+############################
 
 OPTIMIZER_CONFIG = {
     "__name__": "AdamW",
@@ -260,7 +261,7 @@ slow_encoder = MLP(SLOW_DIM + 2 + 8, 32)
 
 fast_encoder = nn.Sequential(
     nn.Conv1d(
-        FAST_DIM + 2+ 8, 32, kernel_size=8, padding="same", padding_mode="replicate"
+        FAST_DIM + 2 + 8, 32, kernel_size=8, padding="same", padding_mode="replicate"
     ),
     ReZero(ConvBlock(32), ConvBlock(32), ConvBlock(32)),
     nn.AvgPool1d(16),
