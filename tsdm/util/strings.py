@@ -105,7 +105,10 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
         return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, **kwargs)
-    return str(obj)
+    try:
+        return repr(obj)
+    except Exception:  # Fallback Option
+        return repr(type((obj)))
 
 
 def repr_mapping(

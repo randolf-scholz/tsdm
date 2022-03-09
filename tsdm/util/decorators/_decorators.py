@@ -38,6 +38,7 @@ from typing import Any, Optional, Union, overload
 from torch import jit, nn
 
 from tsdm.config import conf
+from tsdm.util.strings import repr_mapping, repr_sequence
 from tsdm.util.types import ClassType, ObjectType, ReturnType, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
@@ -120,7 +121,7 @@ def decorator(deco: Callable) -> Callable:
         )
 
     @wraps(deco)
-    def parametrized_decorator(  # pylint: disable=keyword-arg-before-vararg
+    def _parametrized_decorator(  # pylint: disable=keyword-arg-before-vararg
         __func__: Any = None, *args: Any, **kwargs: Any
     ) -> Callable:
         if len(mandatory_pos_args | mandatory_key_args) > 1:
@@ -129,17 +130,17 @@ def decorator(deco: Callable) -> Callable:
                 # all pos args except func given
                 if missing_keys := (mandatory_key_args - kwargs.keys()):
                     raise ErrorHandler(f"Not enough kwargs supplied, {missing_keys=}")
-                __logger__.info(">>> Generating bracket version of %s <<<", decorator)
+                __logger__.debug(">>> Generating bracket version of %s <<<", decorator)
                 return rpartial(deco, *(__func__, *args), **kwargs)
-            __logger__.info(">>> Generating functional version of %s <<<", decorator)
+            __logger__.debug(">>> Generating functional version of %s <<<", decorator)
             return deco(__func__, *args, **kwargs)
         if __func__ is None:
-            __logger__.info(">>> Generating bare version of %s <<<", decorator)
+            __logger__.debug(">>> Generating bare version of %s <<<", decorator)
             return rpartial(deco, *args, **kwargs)
-        __logger__.info(">>> Generating bracket version of %s <<<", decorator)
+        __logger__.debug(">>> Generating bracket version of %s <<<", decorator)
         return deco(__func__, *args, **kwargs)
 
-    return parametrized_decorator
+    return _parametrized_decorator
 
 
 @decorator
@@ -206,10 +207,10 @@ def sphinx_value(func: Callable, value: Any, /) -> Callable:
     """
 
     @wraps(func)
-    def wrapper(*func_args, **func_kwargs):  # pylint: disable=unused-argument
+    def _wrapper(*func_args, **func_kwargs):  # pylint: disable=unused-argument
         return value
 
-    return wrapper if os.environ.get("GENERATING_DOCS", False) else func
+    return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
 
 
 def trace(func: Callable) -> Callable:
@@ -226,21 +227,30 @@ def trace(func: Callable) -> Callable:
     logger = logging.getLogger("trace")
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def _wrapper(*args, **kwargs):
         logger.info(
-            "%s", "\t\n".join((f"Entering {func.__name__}:" f"{args=}", f"{kwargs=}"))
+            "%s",
+            "\t\n".join(
+                (
+                    f" {func.__qualname__}: ENTERING",
+                    f"args={repr_sequence(args)}",
+                    f"kwargs={repr_mapping(kwargs)}",
+                )
+            ),
         )
         try:
-            result = func.__get__(*args, **kwargs)
+            result = func(*args, **kwargs)
         except (KeyboardInterrupt, SystemExit) as E:
             raise E
-        except Exception as E:  # pylint: disable=W0703
-            logger.error("")
-            RuntimeError(f"Function execution failed with Exception {E}")
-        logger.info("%s", "\t\n".join((f"Exiting {func.__name__}:", f"{result=}")))
+        except Exception as E:
+            logger.error("%s: FAILURE with Exception %s", func.__qualname__, E)
+            raise RuntimeError(f"Function execution failed with Exception {E}") from E
+        else:
+            logger.info("%s: SUCCESS with result=%s", func.__qualname__, result)
+        logger.info("%s", "\t\n".join((f" {func.__qualname__}: EXITING",)))
         return result
 
-    return wrapper
+    return _wrapper
 
 
 def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
