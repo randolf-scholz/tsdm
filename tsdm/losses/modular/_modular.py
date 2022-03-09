@@ -163,7 +163,7 @@ class WRMSE(nn.Module):
     # Constants
     rank: Final[int]
     r"""CONST: The number of dimensions of the weight tensor."""
-    shape: torch.Size
+    shape: Final[tuple[int, ...]]
     r"""CONST: The shape of the weight tensor."""
 
     # Buffers
@@ -192,7 +192,7 @@ class WRMSE(nn.Module):
         self.w = self.w.to(dtype=torch.float32)
         self.rank = len(w.shape)
         self.register_buffer("FAILED", torch.tensor(float("nan")))
-        self.shape = w.shape
+        self.shape = tuple(w.shape)
 
     @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
@@ -207,6 +207,7 @@ class WRMSE(nn.Module):
         -------
         Tensor
         """
+        self.w = self.w.to(device=x.device)
         assert x.shape[-self.rank :] == self.shape
         # the residuals, shape: ...𝐦
         r = self.w * (x - xhat) ** 2
