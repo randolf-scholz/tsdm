@@ -28,11 +28,11 @@ from tsdm.encoders.modular import (
     BaseEncoder,
     ChainedEncoder,
     DataFrameEncoder,
-    DateTimeEncoder,
     FloatEncoder,
     MinMaxScaler,
     Standardizer,
     TensorEncoder,
+    TimeDeltaEncoder,
 )
 from tsdm.losses.modular import WRMSE
 from tsdm.random.samplers import CollectionSampler, SequenceSampler
@@ -135,7 +135,7 @@ class KIWI_RUNS_TASK(BaseTask):
             TensorEncoder(),
             DataFrameEncoder(
                 Standardizer() @ FloatEncoder(),
-                index_encoders=MinMaxScaler() @ DateTimeEncoder(),
+                index_encoders=MinMaxScaler() @ TimeDeltaEncoder(unit="s"),
             ),
         )
 
