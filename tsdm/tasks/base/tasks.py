@@ -146,6 +146,15 @@ class BaseTask(ABC, Generic[KeyType]):
     postprocessor: Optional[ModularEncoder] = None
     r"""Optional task specific postprocessor (applied after batching)."""
 
+    def __repr__(self) -> str:
+        r"""Return a string representation of the object."""
+        string = (
+            f"{self.__class__.__name__}("
+            f"dataset={self.dataset.name}, "
+            f"test_metric={type(self.test_metric).__name__})"
+        )
+        return string
+
     @property
     @abstractmethod
     def test_metric(self) -> Callable[..., Tensor]:
@@ -230,12 +239,3 @@ class BaseTask(ABC, Generic[KeyType]):
         -------
         DataLoader
         """
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the object."""
-        string = (
-            f"{self.__class__.__name__}("
-            f"dataset={self.dataset.name}, "
-            f"test_metric={type(self.test_metric).__name__})"
-        )
-        return string
