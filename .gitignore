@@ -1,3 +1,6 @@
+# Ignore pickle files
+*.pickle
+
 # Pytorch profiling
 *.pt.trace.json
 
