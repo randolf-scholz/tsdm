@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import torch
-from torch import nn, jit
+from torch import Tensor, jit, nn
 
 
 class MWE(nn.Module):
@@ -10,21 +10,21 @@ class MWE(nn.Module):
         super().__init__()
         self.linear = nn.Linear(2 * input_size, output_size)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         r"""[..., input_size] -> [..., output_size]"""
-        x = torch.cat([x, x], dim=-1)
+        z = torch.cat([x, x], dim=-1)
         # print("")  # FIXME: Commenting this line causes RunTimeError
-        x = self.linear(x)
-        return x
+        return self.linear(z)
 
 
-xdim = 7
-model = jit.script(MWE(xdim, 10))  # bug does not happen without jit
+xdim, ydim = 7, 10
+device = torch.device('cuda')  # bug happens both on CPU and GPU
+model = jit.script(MWE(xdim, ydim)).to(device=device)  # bug only occurs with JIT
 
 for k in range(100):
     num_observations = torch.randint(0, 3, (1,)).item()
-    x = torch.randn(num_observations, xdim)
-    print(f"Sample {k=} of shape {x.shape}")
+    sample = torch.randn(num_observations, xdim, device=device)
+    print(f"Sample {k=} of shape {sample.shape}, {sample.device=}")
     model.zero_grad()
-    z = model(x)
-    z.norm().backward()
+    y = model(sample)
+    y.norm().backward()
