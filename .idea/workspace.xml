@@ -9,32 +9,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/examples/CONVNET-Copy1.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/abc_type_hint.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/abc_type_hint.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/collect_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/collect_env.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/jit_export_staticmethod.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/jit_export_staticmethod.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/overload_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/overload_problem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/torch_runtime_0slice.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/torch_runtime_0slice.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bugs/torch_sampler.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/torch_sampler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/CONVNET.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/CONVNET.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_ForecastPlot.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_TASK.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_TASK.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/_modular.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/encoders/modular/torch.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/encoders/modular/torch.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/losses/modular/_modular.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/losses/modular/_modular.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/models/generic/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/generic/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/models/generic/conv1d.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/generic/conv1d.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/models/generic/deepset.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/generic/deepset.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/models/generic/rezero.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/generic/rezero.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/models/set_function_for_timeseries.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/_norms.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/_norms.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/decorators/_decorators.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/strings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/strings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -122,7 +98,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$USER_HOME$/GIT/CONTRIBUTING/pytorch" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
@@ -354,7 +330,7 @@
       <workItem from="1646214501435" duration="600000" />
       <workItem from="1646298316234" duration="52000" />
       <workItem from="1646298377475" duration="4224000" />
-      <workItem from="1646812857822" duration="333000" />
+      <workItem from="1646812857822" duration="6909000" />
     </task>
     <servers />
   </component>
