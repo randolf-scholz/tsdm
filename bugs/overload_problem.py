@@ -1,7 +1,8 @@
 from typing import overload
-from torch import Tensor
+
 import torch
 from pandas import DataFrame
+from torch import Tensor
 
 
 class TensorEncoder:

@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from collections.abc import Sized
 from typing import Generic, Iterator, Optional, TypeVar
+
 from torch.utils.data import Sampler, SequentialSampler
 
 T_co = TypeVar("T_co", covariant=True)

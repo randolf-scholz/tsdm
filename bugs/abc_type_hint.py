@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Sequence, Literal, Generic
+from typing import Generic, Literal, Sequence, TypeVar
 
 KEYS = TypeVar("KeyType")
 """Type hint for index"""

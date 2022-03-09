@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 import pickle
+from abc import ABC, abstractmethod
 
 
 def create_hook(func, hook):

@@ -1,6 +1,7 @@
-import torch
-from torch import nn, jit, Tensor
 from typing import Final
+
+import torch
+from torch import Tensor, jit, nn
 
 
 class PositionalEncoder(nn.Module):
