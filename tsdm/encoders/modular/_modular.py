@@ -1037,9 +1037,9 @@ class TensorEncoder(BaseEncoder):
         r"""Convert each inputs to tensor."""
         if isinstance(data, tuple):
             return tuple(self.encode(x) for x in data)
-        elif isinstance(data, np.ndarray):
+        if isinstance(data, np.ndarray):
             return torch.from_numpy(data).to(device=self.device, dtype=self.dtype)
-        elif isinstance(data, (Index, Series, DataFrame)):
+        if isinstance(data, (Index, Series, DataFrame)):
             return torch.tensor(data.values, device=self.device, dtype=self.dtype)
         return torch.tensor(data, device=self.device, dtype=self.dtype)
 

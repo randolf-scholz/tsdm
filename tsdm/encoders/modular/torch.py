@@ -44,8 +44,8 @@ class Time2Vec(nn.Module):
         super().__init__()
 
         self.num_dim = num_dim
-        self.freq = nn.Parameter(torch.randn(num_dim))
-        self.phase = nn.Parameter(torch.randn(num_dim))
+        self.freq = nn.Parameter(torch.randn(num_dim - 1))
+        self.phase = nn.Parameter(torch.randn(num_dim - 1))
 
         if act == "sin":
             self.act = torch.sin
@@ -119,7 +119,7 @@ class PositionalEncoder(nn.Module):
         self.scale = float(scale)
         scales = self.scale ** (-2 * torch.arange(0, num_dim // 2) / (num_dim - 2))
         assert scales[0] == 1.0, "Something went wrong."
-        self.register_buffer("scales", scales, persistent=True)
+        self.register_buffer("scales", scales)
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
