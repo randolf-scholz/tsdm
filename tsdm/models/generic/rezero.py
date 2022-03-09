@@ -3,9 +3,16 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+__all__ = [
+    "ReZero",
+    "ReZeroMLP",
+    "ResNetBlock",
+]
+
 import logging
 from collections import OrderedDict
-from typing import Any
+from math import ceil, log2
+from typing import Any, Final, Optional
 
 import torch
 from torch import Tensor, jit, nn
@@ -102,3 +109,119 @@ class ReZero(nn.Sequential):
         for k, block in enumerate(self):
             x = x + self.weights[k] * block(x)
         return x
+
+
+@autojit
+class ConcatEmbedding(nn.Module):
+    r"""Maps `x ⟼ [x,w]`.
+
+    Attributes
+    ----------
+    input_size:  int
+    hidden_size: int
+    pad_size:    int
+    padding: Tensor
+    """
+
+    HP = {
+        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__doc__": __doc__,
+        "__module__": __module__,  # type: ignore[name-defined]
+        "input_size": int,
+        "hidden_size": int,
+    }
+    r"""Dictionary of Hyperparameters."""
+
+    # Constants
+    input_size: Final[int]
+    r"""CONST: The dimensionality of the inputs."""
+    hidden_size: Final[int]
+    r"""CONST: The dimensionality of the outputs."""
+    pad_size: Final[int]
+    r"""CONST: The size of the padding."""
+
+    # BUFFERS
+    scale: Tensor
+    r"""BUFFER: The scaling scalar."""
+
+    # Parameters
+    padding: Tensor
+    r"""PARAM: The padding vector."""
+
+    def __init__(self, input_size: int, hidden_size: int) -> None:
+        super().__init__()
+        assert (
+            input_size <= hidden_size
+        ), f"ConcatEmbedding requires {input_size=} < {hidden_size=}!"
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.pad_size = hidden_size - input_size
+        self.padding = nn.Parameter(torch.randn(self.pad_size))
+
+    @jit.export
+    def forward(self, x: Tensor) -> Tensor:
+        r"""Signature: `[..., d] ⟶ [..., d+e]`.
+
+        Parameters
+        ----------
+        x: Tensor, shape=(...,DIM)
+
+        Returns
+        -------
+        Tensor, shape=(...,LAT)
+        """
+        shape = list(x.shape[:-1]) + [self.pad_size]
+        z = torch.cat([x, self.padding.expand(shape)], dim=-1)
+        torch.cuda.synchronize()  # needed when cat holds 0-size tensor
+        return z
+
+    @jit.export
+    def inverse(self, Z: Tensor) -> Tensor:
+        r"""Signature: `[..., d+e] ⟶ [..., d]`.
+
+        The reverse of the forward. Satisfies inverse(forward(x)) = x for any input.
+
+        Parameters
+        ----------
+        Z: Tensor, shape=(...,LEN,LAT)
+
+        Returns
+        -------
+        Tensor, shape=(...,LEN,DIM)
+        """
+        return Z[..., : self.input_size]
+
+
+@autojit
+class ReZeroMLP(nn.Sequential):
+    r"""A ReZero based on MLP and Encoder + Decoder."""
+
+    def __init__(
+        self,
+        input_size: int,
+        output_size: int,
+        *,
+        latent_size: Optional[int] = None,
+        num_blocks: int = 2,
+    ) -> None:
+        super().__init__()
+
+        latent_size = (
+            2 ** ceil(log2(input_size)) if latent_size is None else latent_size
+        )
+
+        self.encoder = ConcatEmbedding(input_size, latent_size)
+
+        blocks = [
+            nn.Sequential(
+                ReverseDense(latent_size, latent_size // 2),
+                ReverseDense(latent_size // 2, latent_size),
+            )
+            for _ in range(num_blocks)
+        ]
+
+        # self.encoder = ReverseDense(input_size=input_size, output_size=latent_size)
+        self.blocks = ReZero(*blocks)
+        self.decoder = ReverseDense(input_size=latent_size, output_size=output_size)
+
+        super().__init__(*[self.encoder, self.blocks, self.decoder])
