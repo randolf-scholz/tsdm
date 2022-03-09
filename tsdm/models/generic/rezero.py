@@ -12,7 +12,7 @@ __all__ = [
 import logging
 from collections import OrderedDict
 from math import ceil, log2
-from typing import Any, Final, Optional
+from typing import Any, Final, Optional, Union
 
 import torch
 from torch import Tensor, jit, nn
@@ -20,6 +20,9 @@ from torch import Tensor, jit, nn
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.util import deep_dict_update, initialize_from_config
 from tsdm.util.decorators import autojit
+from tsdm.util.types import Self
+
+from torch._jit_internal import _copy_to_script_wrapper
 
 __logger__ = logging.getLogger(__name__)
 
@@ -90,9 +93,18 @@ class ResNetBlock(nn.Sequential):
 class ReZero(nn.Sequential):
     """A ReZero model."""
 
-    def __init__(self, *blocks: nn.Module) -> None:
+    weights: Tensor
+    r"""PARAM: The weights of the model."""
+
+    def __init__(self, *blocks: nn.Module, weights: Optional[Tensor] = None) -> None:
         super().__init__(*blocks)
-        self.weights = nn.Parameter(torch.zeros(len(blocks)))
+
+        if weights is None:
+            self.weights = nn.Parameter(torch.zeros(len(blocks)))
+        else:
+            self.weights = nn.Parameter(weights.to(torch.float))
+
+        # self.register_parameter("weights", nn.Parameter(weights))
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
@@ -109,6 +121,15 @@ class ReZero(nn.Sequential):
         for k, block in enumerate(self):
             x = x + self.weights[k] * block(x)
         return x
+
+    @_copy_to_script_wrapper
+    def __getitem__(self: Self, item: Union[int, slice]) -> Self:
+        blocks: list[nn.Module] = list(self._modules.values())[item]
+        return self.__class__(*blocks, weights=self.weights[item])
+
+    @jit.export
+    def __len__(self) -> int:
+        return len(self._modules)
 
 
 @autojit
