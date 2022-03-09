@@ -351,7 +351,7 @@ def multi_norm(
 
     Parameters
     ----------
-    tensors: list[Tensor]
+    x: list[Tensor]
     p: float, default: 2
     q: float, default: 2
     normalize: bool, default: True
@@ -361,6 +361,12 @@ def multi_norm(
     -------
     Tensor
     """
+    _tensors: list[Tensor] = []
+    for tensor in tensors:
+        if tensor.numel() > 0:
+            _tensors.append(tensor)
+    tensors = _tensors
+
     if len(tensors) == 0:
         return torch.tensor(0.0)
 
@@ -371,6 +377,7 @@ def multi_norm(
         for x in tensors:
             s += torch.mean(x**p) ** (q / p)
         return (s / (1 + len(tensors))) ** (1 / q)
+
     # else
     s = torch.sum(tensors.pop() ** p) ** (q / p)
     for x in tensors:
