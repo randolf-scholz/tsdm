@@ -15,8 +15,14 @@ from typing import Optional
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.encoders.modular.torch import PositionalEncoder
-from tsdm.models.generic import MLP, DeepSet, ScaledDotProductAttention
+from tsdm.encoders.modular.torch import PositionalEncoder, Time2Vec
+from tsdm.models.generic import (
+    MLP,
+    DeepSet,
+    DeepSetReZero,
+    ReZeroMLP,
+    ScaledDotProductAttention,
+)
 from tsdm.util.decorators import autojit
 
 __logger__ = logging.getLogger(__name__)
@@ -211,7 +217,7 @@ class GroupedSetFuncTS(nn.Module):
     r"""Dictionary of hyperparameters."""
 
     # BUFFER
-    NAN: Tensor
+    ZERO: Tensor
 
     def __init__(
         self,
@@ -246,25 +252,27 @@ class GroupedSetFuncTS(nn.Module):
         latent_size = input_size if latent_size is None else latent_size
         # time_encoder
         # feature_encoder -> CNN?
-
         self.fast_encoder = fast_encoder
         self.slow_encoder = slow_encoder
 
-        self.time_encoder = PositionalEncoder(dim_time, scale=10.0)
-        self.key_encoder = DeepSet(
-            input_size + dim_time - 1,
+        self.time_encoder = Time2Vec(dim_time)
+        self.key_encoder = DeepSetReZero(
+            input_size,
             dim_keys,
             latent_size=dim_deepset,
             hidden_size=dim_deepset,
         )
-        self.value_encoder = MLP(
-            input_size + dim_time - 1, dim_vals, hidden_size=dim_vals
-        )
+
+        self.value_encoder = ReZeroMLP(input_size, dim_vals, latent_size=dim_vals)
+        # self.value_encoder = MLP(input_size, dim_vals, hidden_size=dim_vals)
+
         self.attention = ScaledDotProductAttention(
-            dim_keys + input_size + dim_time - 1, dim_vals, latent_size
+            dim_keys + input_size, dim_vals, latent_size
         )
-        self.head = MLP(latent_size, output_size)
-        self.register_buffer("NAN", torch.tensor(float("nan")))
+        self.head = ReZeroMLP(latent_size, output_size)
+        # self.head = MLP(latent_size, output_size)
+
+        self.register_buffer("ZERO", torch.tensor(0.0))
 
     @jit.export
     def forward(self, slow: Tensor, fast: Tensor) -> Tensor:
@@ -286,30 +294,36 @@ class GroupedSetFuncTS(nn.Module):
         -------
         Tensor
         """
-        fast = fast.to(device=self.NAN.device)
-        slow = slow.to(device=self.NAN.device)
+        fast = fast.to(device=self.ZERO.device)
+        slow = slow.to(device=self.ZERO.device)
+
         t_slow = slow[..., 0]
         t_fast = fast[..., 0]
-        time_features_slow = self.time_encoder(t_slow)
-        time_features_fast = self.time_encoder(t_fast)
 
-        slow = torch.cat([time_features_slow, slow], dim=-1)
-        fast = torch.cat([time_features_fast, fast], dim=-1)
+        fast = fast[..., 1:]
+        slow = slow[..., 1:]
+
+        time_features_slow = self.time_encoder(t_slow)  # [..., ] -> [..., dₜ]
+        time_features_fast = self.time_encoder(t_fast)  # [..., ] -> [..., dₜ]
+
+        slow = torch.cat(
+            [time_features_slow, slow], dim=-1
+        )  # [..., d] -> [..., d+dₜ-1]
+        fast = torch.cat(
+            [time_features_fast, fast], dim=-1
+        )  # [..., d] -> [..., d+dₜ-1]
 
         # FIXME: https://github.com/pytorch/pytorch/issues/73291
         torch.cuda.synchronize()  # needed when cat holds 0-size tensor
 
-        fast = fast.swapaxes(-1, -2)
+        slow = self.slow_encoder(slow)
 
+        fast = fast.swapaxes(-1, -2)
         if fast.ndim == 2:
-            fast = fast.unsqueeze(0)
-            fast = self.fast_encoder(fast)
-            fast = fast.squeeze(0)
+            fast = self.fast_encoder(fast.unsqueeze(0)).squeeze(0)
         else:
             fast = self.fast_encoder(fast)
-
         fast = fast.swapaxes(-1, -2)
-        slow = self.slow_encoder(slow)
 
         s = torch.cat([slow, fast], dim=-2)
 
@@ -318,6 +332,7 @@ class GroupedSetFuncTS(nn.Module):
         K = torch.cat([fs, s], dim=-1)
         V = self.value_encoder(s)
         mask = torch.isnan(s[..., 0])
+
         z = self.attention(K, V, mask=mask)
         y = self.head(z)
         return y.squeeze()
