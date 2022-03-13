@@ -7,7 +7,7 @@ __all__ = [
     # Classes
     # Functions
     "decorator",
-    "sphinx_value",
+    # "sphinx_value",
     "timefun",
     "trace",
     "vectorize",
@@ -25,7 +25,6 @@ __all__ = [
 
 import gc
 import logging
-import os
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
@@ -56,10 +55,10 @@ def rpartial(func: Callable, /, *fixed_args: Any, **fixed_kwargs: Any) -> Callab
     r"""Apply positional arguments from the right."""
 
     @wraps(func)
-    def wrapper(*func_args, **func_kwargs):
+    def _wrapper(*func_args, **func_kwargs):
         return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
 
-    return wrapper
+    return _wrapper
 
 
 @dataclass
@@ -78,12 +77,12 @@ class DecoratorError(Exception):
     def __str__(self):
         r"""Create Error Message."""
         sign = signature(self.decorated)
-        maxkey = max(9, max(len(key) for key in sign.parameters))
-        maxkind = max(len(str(param.kind)) for param in sign.parameters.values())
+        max_key_len = max(9, max(len(key) for key in sign.parameters))
+        max_kind_len = max(len(str(param.kind)) for param in sign.parameters.values())
         default_message: tuple[str, ...] = (
             f"Signature: {sign}",
             "\n".join(
-                f"{key.ljust(maxkey)}: {str(param.kind).ljust(maxkind)}"
+                f"{key.ljust(max_key_len)}: {str(param.kind).ljust(max_kind_len)}"
                 f", Optional: {param.default is EMPTY}"
                 for key, param in sign.parameters.items()
             ),
@@ -165,7 +164,7 @@ def timefun(
     timefun_logger = logging.getLogger("timefun")
 
     @wraps(fun)
-    def timed_fun(*args, **kwargs):
+    def _timed_fun(*args, **kwargs):
         gc.collect()
         gc.disable()
         try:
@@ -189,28 +188,28 @@ def timefun(
 
         return (result, elapsed) if append else result
 
-    return timed_fun
+    return _timed_fun
 
 
-@decorator
-def sphinx_value(func: Callable, value: Any, /) -> Callable:
-    """Use alternative attribute value during sphinx compilation - useful for attributes.
-
-    Parameters
-    ----------
-    func: Callable
-    value: Any
-
-    Returns
-    -------
-    Callable
-    """
-
-    @wraps(func)
-    def _wrapper(*func_args, **func_kwargs):  # pylint: disable=unused-argument
-        return value
-
-    return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
+# @decorator
+# def sphinx_value(func: Callable, value: Any, /) -> Callable:
+#     """Use alternative attribute value during sphinx compilation - useful for attributes.
+#
+#     Parameters
+#     ----------
+#     func: Callable
+#     value: Any
+#
+#     Returns
+#     -------
+#     Callable
+#     """
+#
+#     @wraps(func)
+#     def _wrapper(*func_args, **func_kwargs):  # pylint: disable=unused-argument
+#         return value
+#
+#     return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
 
 
 def trace(func: Callable) -> Callable:
@@ -349,12 +348,12 @@ def vectorize(
             raise ValueError(f"{func} must have a single positional parameter!")
 
     @wraps(func)
-    def wrapper(arg, *args):
+    def _wrapper(arg, *args):
         if not args:
             return func(arg)
         return kind(func(x) for x in (arg, *args))
 
-    return wrapper
+    return _wrapper
 
 
 # @decorator

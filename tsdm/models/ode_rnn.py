@@ -81,7 +81,7 @@ class ODE_RNN(BaseModel, nn.Module):
         Batch size
     classif_per_tp: bool, default False
     concat_mask: bool, default True
-    device: torch.devive, default 'cpu'
+    device: torch.device, default 'cpu'
     input_dim: int
         dimensionality of input
     lr: float, default 1e-2
@@ -152,7 +152,7 @@ class ODE_RNN(BaseModel, nn.Module):
         "n_labels": 1,
         # relative tolerance of ODE solver
         "odeint_rtol": 1e-3,
-        # absolute tolereance of ODE solver
+        # absolute tolerance of ODE solver
         "odeint_atol": 1e-4,
         # batch_size
         "batch-size": 50,
@@ -172,17 +172,15 @@ class ODE_RNN(BaseModel, nn.Module):
         return super(ODE_RNN, cls).__new__(*args, **kwargs)
 
     def __init__(self, **HP):
-        r"""TODO: add docstring."""
+        r"""Initialize the internal ODE-RNN model."""
         super().__init__()
-        module = path_import(Path("/home/rscholz/.tsdm/models/ODE-RNN"))
+        # TODO: Use tsdm.home_path or something
+        module = path_import(Path.home() / ".tsdm/models/ODE-RNN")
         create_net = module.lib.utils.create_net
         ODEFunc = module.lib.ode_func.ODEFunc
         DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver
         _ODE_RNN = module.lib.ode_rnn.ODE_RNN
 
-        """Initialize the internal ODE-RNN model
-
-        """
         self.HP = HP = deep_dict_update(self.HP, HP)
 
         self.ode_func_net = create_net(

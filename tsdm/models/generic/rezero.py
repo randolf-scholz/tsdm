@@ -16,13 +16,12 @@ from typing import Any, Final, Optional, Union
 
 import torch
 from torch import Tensor, jit, nn
+from torch._jit_internal import _copy_to_script_wrapper
 
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.util import deep_dict_update, initialize_from_config
 from tsdm.util.decorators import autojit
 from tsdm.util.types import Self
-
-from torch._jit_internal import _copy_to_script_wrapper
 
 __logger__ = logging.getLogger(__name__)
 
@@ -124,11 +123,13 @@ class ReZero(nn.Sequential):
 
     @_copy_to_script_wrapper
     def __getitem__(self: Self, item: Union[int, slice]) -> Self:
+        r"""Get a sub-model."""
         blocks: list[nn.Module] = list(self._modules.values())[item]
         return self.__class__(*blocks, weights=self.weights[item])
 
     @jit.export
     def __len__(self) -> int:
+        r"""Get the number of sub-models."""
         return len(self._modules)
 
 

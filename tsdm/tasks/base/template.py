@@ -48,7 +48,7 @@ class ExampleTask:
     Results
     -------
 
-    Here you can paste a table from the paper. The onle tool https://www.tablesgenerator.com/ is
+    Here you can paste a table from the paper. The online tool https://www.tablesgenerator.com/ is
     your biggest friend. Use the `File>Paste Table Data` option to easily import tables.
     For output, select `Text` and check the `Use reStructuredText syntax` checkbox. For example:
 

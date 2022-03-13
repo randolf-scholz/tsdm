@@ -10,7 +10,7 @@ __all__ = [
 
 import logging
 import pickle
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Literal, Optional
@@ -31,7 +31,7 @@ def contains_no_information(series: Series) -> bool:
 
 
 def contains_nan_slice(
-    series: Series, slices: list[Series], two_enough: bool = False
+    series: Series, slices: list[Sequence], two_enough: bool = False
 ) -> bool:
     r"""Check if data is completely missing for many slices."""
     num_missing = 0
@@ -69,7 +69,7 @@ def get_integer_cols(table: DataFrame) -> set[str]:
 
 
 def get_useless_cols(
-    table: DataFrame, slices: Optional[list[Series]] = None, strict: bool = False
+    table: DataFrame, slices: Optional[list[Sequence]] = None, strict: bool = False
 ) -> set[str]:
     r"""Get all columns that are considered useless."""
     useless_cols = set()
@@ -244,7 +244,7 @@ class KIWI_RUNS(Dataset):
 
     def _clean_metadata(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
-        run_masks = [table["run_id"] == run for run in runs]
+        run_masks: list[Series[bool]] = [table["run_id"] == run for run in runs]
 
         table_columns = set(table.columns)
         useless_cols = get_useless_cols(table, slices=run_masks) | {
@@ -308,7 +308,7 @@ class KIWI_RUNS(Dataset):
 
     def _clean_setpoints(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
-        run_masks = [table["run_id"] == run for run in runs]
+        run_masks: list[Series[bool]] = [table["run_id"] == run for run in runs]
 
         table_columns = set(table.columns)
         useless_cols = get_useless_cols(table, slices=run_masks)
@@ -361,7 +361,7 @@ class KIWI_RUNS(Dataset):
 
     def _clean_measurements_reactor(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
-        run_masks = [table["run_id"] == run for run in runs]
+        run_masks: list[Series[bool]] = [table["run_id"] == run for run in runs]
 
         table_columns = set(table.columns)
         useless_cols = get_useless_cols(table, slices=run_masks)
@@ -415,7 +415,7 @@ class KIWI_RUNS(Dataset):
 
     def _clean_measurements_array(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
-        run_masks = [table["run_id"] == run for run in runs]
+        run_masks: list[Series[bool]] = [table["run_id"] == run for run in runs]
 
         table_columns = set(table.columns)
         useless_cols = get_useless_cols(table, slices=run_masks)
@@ -462,7 +462,7 @@ class KIWI_RUNS(Dataset):
 
     def _clean_measurements_aggregated(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
-        run_masks = [table["run_id"] == run for run in runs]
+        run_masks: list[Series[bool]] = [table["run_id"] == run for run in runs]
         table_columns = set(table.columns)
         useless_cols = get_useless_cols(table, slices=run_masks)
         get_integer_cols(table)

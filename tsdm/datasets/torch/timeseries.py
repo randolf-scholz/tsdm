@@ -179,23 +179,23 @@ class AlignedTimeSeriesDataset(TensorDataset):
 #             # Case: Iterable
 #             elif isinstance(timeseries, Iterable):
 #                 timeseries = list(timeseries)
-#                 firstobs = timeseries[0]
+#                 first_obs = timeseries[0]
 #                 # Case: Iterable[IndexedArray]
-#                 if is_indexed_array(firstobs):
+#                 if is_indexed_array(first_obs):
 #                     for tensor in timeseries:
 #                         ts_tensors.append(TimeTensor(tensor))
 #                 # Case: Iterable[tuple(Index, ArrayLike)]
 #                 elif (
-#                     isinstance(firstobs, tuple)
-#                     and len(firstobs) == 2
-#                     and isinstance(firstobs[0], Index)
+#                     isinstance(first_obs, tuple)
+#                     and len(first_obs) == 2
+#                     and isinstance(first_obs[0], Index)
 #                 ):
 #                     for index, tensor in timeseries:
 #                         ts_tensors.append(TimeTensor(tensor, index=index))
 #                 else:
-#                     raise ValueError(f"{timeseries=} not undertstood")
+#                     raise ValueError(f"{timeseries=} not understood")
 #             else:
-#                 raise ValueError(f"{timeseries=} not undertstood")
+#                 raise ValueError(f"{timeseries=} not understood")
 #
 #         self.timeseries = tuple(ts_tensors)
 #

@@ -54,19 +54,19 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
     x = np.abs(x).flatten()
 
     @numba.njit
-    def _float_gcd(x: np.ndarray) -> float:
-        n = len(x)
-        t = np.min(x)
+    def _float_gcd(z: np.ndarray) -> float:
+        n = len(z)
+        t = np.min(z)
         if n == 1:
-            return float(x[0])
+            return float(z[0])
         if n == 2:
-            while np.abs(x[1]) > rtol * t + atol:
-                x[0], x[1] = x[1], x[0] % x[1]
-            return float(x[0])
+            while np.abs(z[1]) > rtol * t + atol:
+                z[0], z[1] = z[1], z[0] % z[1]
+            return float(z[0])
         # n >= 3:
         out = np.empty(2)
-        out[0] = _float_gcd(x[: (n // 2)])
-        out[1] = _float_gcd(x[(n // 2) :])
+        out[0] = _float_gcd(z[: (n // 2)])
+        out[1] = _float_gcd(z[(n // 2) :])
         return _float_gcd(out)
 
     return _float_gcd(x)

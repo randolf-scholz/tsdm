@@ -481,7 +481,7 @@ class _Dataset(torch.utils.data.Dataset):
 #
 #
 # @torch.no_grad()
-# def mycollate(samples: list[tuple]) -> tuple[list[Tensor], NDArray, NDArray]:
+# def my_collate(samples: list[tuple]) -> tuple[list[Tensor], NDArray, NDArray]:
 #     timeseries = []
 #     targets = []
 #     encoded_targets = []

@@ -78,9 +78,9 @@ class MappingDataset(TorchDataset, Mapping):
         MappingDataset
         """
         if levels is not None:
-            mindex = df.index.to_frame()
-            subidx = MultiIndex.from_frame(mindex[levels])
-            index = subidx.unique()
+            min_index = df.index.to_frame()
+            sub_index = MultiIndex.from_frame(min_index[levels])
+            index = sub_index.unique()
         else:
             index = df.index
 
