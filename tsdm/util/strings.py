@@ -108,7 +108,7 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
     try:
         return repr(obj)
     except Exception:  # Fallback Option
-        return repr(type((obj)))
+        return repr(type(obj))
 
 
 def repr_mapping(

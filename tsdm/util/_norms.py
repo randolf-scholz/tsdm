@@ -30,16 +30,15 @@ SizeLike = Union[int, tuple[int, ...]]
 """Type hint for a size-like object."""
 
 
-def _torch_is_float_dtype(x: Tensor) -> bool:
-    return x.dtype in (
-        torch.half,
-        torch.float,
-        torch.double,
-        torch.bfloat16,
-        torch.complex32,
-        torch.complex64,
-        torch.complex128,
-    )
+# def _torch_is_float_dtype(x: Tensor) -> bool:
+#     return x.dtype in (
+#         torch.half,        # identical with torch.float16
+#         torch.float,       # identical with torch.float32
+#         torch.double,      # identical with torch.float64
+#         torch.bfloat16,
+#         torch.complex64,
+#         torch.complex128,
+#     )
 
 
 @singledispatch
@@ -198,7 +197,7 @@ def _torch_scaled_norm(
     axis: SizeLike = (),  # TODO: use tuple[int, ...] once supported
     keepdims: bool = False,
 ) -> Tensor:
-    if not _torch_is_float_dtype(x):
+    if not torch.is_floating_point(x):
         x = x.to(dtype=torch.float)
     x = torch.abs(x)
 
@@ -351,7 +350,7 @@ def multi_norm(
 
     Parameters
     ----------
-    x: list[Tensor]
+    tensors: list[Tensor]
     p: float, default: 2
     q: float, default: 2
     normalize: bool, default: True

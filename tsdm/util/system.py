@@ -125,7 +125,7 @@ def query_choice(
     -------
     str
     """
-    choices = set(choices)
+    choices: set[str] = set(choices)
     ids: dict[int, str] = dict(enumerate(choices))
 
     if default is not None:
@@ -151,20 +151,6 @@ def query_choice(
         print("Please enter either of %s", choices)
 
 
-# def try_import(pkgname: str):
-#     """
-#
-#     Parameters
-#     ----------
-#     pkgname
-#
-#     Returns
-#     -------
-#
-#     """
-#     if pgkname in
-
-
 def install_package(
     package_name: str,
     non_interactive: bool = False,
@@ -181,7 +167,7 @@ def install_package(
     installer: str, default "pip"
         Can also use `conda` or `mamba`
     options: tuple[str, ...]
-        Options to pass to the isntaller
+        Options to pass to the installer
     """
     package_available = importlib.util.find_spec(package_name)
     install_call = (installer, "install", package_name)

@@ -302,7 +302,7 @@ class Physionet2019(SimpleDataset):
                                 group_name = zf.name.split(".")[-2].split("/")[1]
                                 h5file.put(f"/{prefix}/{group_name}", df)
         elif store == "pickle":
-            dfdict = {}
+            df_dict: dict[str, DataFrame] = {}
             dataset_file = self.dataset_files.with_suffix(".pickle")
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
                 with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
@@ -312,10 +312,10 @@ class Physionet2019(SimpleDataset):
                             if zf.name.endswith("psv"):
                                 df = read_csv(zf, sep="|")
                                 group_name = zf.name.split(".")[-2].split("/")[1]
-                                dfdict[f"/{prefix}/{group_name}"] = df
+                                df_dict[f"/{prefix}/{group_name}"] = df
 
             with open(dataset_file, "wb") as f:
-                pickle.dump(dfdict, f)
+                pickle.dump(df_dict, f)
         else:
             raise Exception("store ", store, "not supported")
 

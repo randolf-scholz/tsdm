@@ -18,7 +18,7 @@ from typing import Any, Generic, Optional, TypeVar, Union
 import numpy as np
 from numpy.random import permutation
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Interval, Series, Timedelta, Timestamp
+from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler
 
@@ -105,7 +105,7 @@ class SliceSampler(Sampler):
         self.idx = np.arange(len(data_source))
         self.rng = np.random.default_rng() if generator is None else generator
 
-        def slicesampler_dispatch() -> Callable[[], int]:
+        def _slicesampler_dispatch() -> Callable[[], int]:
             # use default if None is provided
             if slice_sampler is None:
                 return lambda: max(1, len(data_source) // 10)
@@ -116,16 +116,16 @@ class SliceSampler(Sampler):
                 return slice_sampler
             raise NotImplementedError("slice_sampler not compatible.")
 
-        self._slice_sampler = slicesampler_dispatch()
+        self._slice_sampler = _slicesampler_dispatch()
 
-        def default_sampler() -> tuple[int, int]:
+        def _default_sampler() -> tuple[int, int]:
             window_size: int = self._slice_sampler()
             start_index: int = self.rng.choice(
                 self.idx[: -1 * window_size]
             )  # -1*w silences pylint.
             return window_size, start_index
 
-        self._sampler = default_sampler if sampler is None else sampler
+        self._sampler = _default_sampler if sampler is None else sampler
 
     def slice_sampler(self) -> int:
         r"""Return random window size."""
@@ -332,7 +332,7 @@ class HierarchicalSampler(Sampler):
     ):
         super().__init__(data_source)
         self.data = data_source
-        self.idx = data_source.keys()
+        self.idx = Index(data_source.keys())
         self.subsamplers = dict(subsamplers)
         self.sizes = Series({key: len(self.subsamplers[key]) for key in self.idx})
         self.shuffle = shuffle
@@ -456,9 +456,8 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
 
         # validate levels
         assert all(self._get_value(deltax, k) <= delta_max for k in levels)
-
         # compute valid intervals
-        intervals: list[Interval] = []
+        intervals: list[tuple[dt_type, dt_type, dt_type, dt_type]] = []
 
         # for each level, get all intervals
         for k in levels:
@@ -467,9 +466,11 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
             x0 = self._get_value(offset, k)
 
             # get valid interval bounds, probably there is an easier way to do it...
-            stridesa = grid(xmin, xmax, st, x0)
-            stridesb = grid(xmin, xmax, st, x0 + dt)
-            valid_strides = set.intersection(set(stridesa), set(stridesb))
+            stride_left: list[int] = grid(xmin, xmax, st, x0)
+            stride_right: list[int] = grid(xmin, xmax, st, x0 + dt)
+            valid_strides: set[int] = set.intersection(
+                set(stride_left), set(stride_right)
+            )
 
             if not valid_strides:
                 break

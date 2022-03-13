@@ -11,7 +11,7 @@ __all__ = [
     # Functions
     "autojit",
     "decorator",
-    "sphinx_value",
+    # "sphinx_value",
     "timefun",
     "trace",
     "vectorize",
@@ -27,14 +27,13 @@ import logging
 from collections.abc import Callable
 from typing import Final
 
-from tsdm.util.decorators._decorators import (
+from tsdm.util.decorators._decorators import (  # sphinx_value,
     IterItems,
     IterKeys,
     autojit,
     decorator,
     post_hook,
     pre_hook,
-    sphinx_value,
     timefun,
     trace,
     vectorize,
@@ -50,7 +49,7 @@ r"""Type hint for dataset."""
 DECORATORS: Final[dict[str, Decorator]] = {
     "autojit": autojit,
     "decorator": decorator,
-    "sphinx_value": sphinx_value,
+    # "sphinx_value": sphinx_value,
     "timefun": timefun,
     "trace": trace,
 }

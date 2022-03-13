@@ -32,6 +32,16 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
 
+    Parameters
+    ----------
+    xhat: Tensor
+    x: Tensor
+    eps: float, default 2**-24
+
+    Returns
+    -------
+    Tensor
+
     References
     ----------
     - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
@@ -40,15 +50,6 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
       | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
     - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
       | https://openreview.net/forum?id=r1ecqn4YwB
-
-    Parameters
-    ----------
-    xhat: Tensor
-    x: Tensor
-
-    Returns
-    -------
-    Tensor
     """
     res = torch.sum(torch.abs(xhat - x), dim=(-1, -2))
     mag = torch.sum(torch.abs(x), dim=(-1, -2))
@@ -63,21 +64,22 @@ def nrmse(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     .. math::
         𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
 
+    Parameters
+    ----------
+    xhat: Tensor
+    x: Tensor
+    eps: float, default 2**-24
+
+    Returns
+    -------
+    Tensor
+
     References
     ----------
     - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
       | Hsiang-Fu Yu, Nikhil Rao, Inderjit S. Dhillon
       | Advances in Neural Information Processing Systems 29 (NIPS 2016)
       | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-
-    Parameters
-    ----------
-    xhat: Tensor
-    x: Tensor
-
-    Returns
-    -------
-    Tensor
     """
     res = torch.sqrt(torch.sum(torch.abs(xhat - x) ** 2, dim=(-1, -2)))
     mag = torch.sum(torch.abs(x), dim=(-1, -2))

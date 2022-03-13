@@ -90,13 +90,13 @@ with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as fi
 #         # .format(c_now.year,c_now.month,c_now.day,c_now.hour))
 #     ]
 # )
-# DEBUG_LEVELV_NUM = 99
-# logging.addLevelName(DEBUG_LEVELV_NUM, "CUSTOM")
+# DEBUG_LEVEL_NUM = 99
+# logging.addLevelName(DEBUG_LEVEL_NUM, "CUSTOM")
 # def custom_level(message, *args, **kws):
-#     logging.Logger._log(logging.root,DEBUG_LEVELV_NUM, message, args, **kws)
+#     logging.Logger._log(logging.root,DEBUG_LEVEL_NUM, message, args, **kws)
 # logging.custom_level = custom_level
 # # --- --- --- ---
-# logging.custom_level("Waka")
+# logging.custom_level("demo")
 
 # #!/usr/bin/env python
 # # encoding: utf-8
@@ -124,12 +124,10 @@ with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as fi
 #         FOREGROUND_RED       = 0x0004 # text color contains red.
 #         FOREGROUND_INTENSITY = 0x0008 # text color is intensified.
 #         FOREGROUND_WHITE     = FOREGROUND_BLUE|FOREGROUND_GREEN |FOREGROUND_RED
-#        # winbase.h
 #         STD_INPUT_HANDLE = -10
 #         STD_OUTPUT_HANDLE = -11
 #         STD_ERROR_HANDLE = -12
 #
-#         # wincon.h
 #         FOREGROUND_BLACK     = 0x0000
 #         FOREGROUND_BLUE      = 0x0001
 #         FOREGROUND_GREEN     = 0x0002
@@ -202,8 +200,8 @@ with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as fi
 #     logging.StreamHandler.emit = add_coloring_to_emit_ansi(logging.StreamHandler.emit)
 #     #log = logging.getLogger()
 #     #log.addFilter(log_filter())
-#     #//hdlr = logging.StreamHandler()
-#     #//hdlr.setFormatter(formatter())
+#     #//handler = logging.StreamHandler()
+#     #//handler.setFormatter(formatter())
 
 #
 # GREY = "\x1b[38;21m"
