@@ -206,7 +206,7 @@ def timefun(
 #     """
 #
 #     @wraps(func)
-#     def _wrapper(*func_args, **func_kwargs):  # pylint: disable=unused-argument
+#     def _wrapper(*func_args, **func_kwargs):
 #         return value
 #
 #     return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
