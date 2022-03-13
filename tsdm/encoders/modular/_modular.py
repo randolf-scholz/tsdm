@@ -372,7 +372,7 @@ class DataFrameEncoder(BaseEncoder):
 
     def _repr_html_(self) -> str:
         """HTML representation."""
-        html_repr = self.spec.to_html()  # pylint: disable=protected-access
+        html_repr = self.spec.to_html()
         return f"<h3>{self.__class__.__name__}</h3> {html_repr}"
 
 
