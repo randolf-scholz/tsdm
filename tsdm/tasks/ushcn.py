@@ -107,10 +107,9 @@ class USHCN_DeBrouwer(BaseTask):
     def get_dataloader(
         self,
         key: str,
-        *,
-        batch_size: int = 1,
-        shuffle: bool = True,
-        **kwargs: Any,
+        /,
+        shuffle: bool = False,
+        **dataloader_kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split & fold.
 
@@ -127,8 +126,10 @@ class USHCN_DeBrouwer(BaseTask):
         """
         if key == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
-        if key == "test" and "drop_last" in kwargs:
-            assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
+        if key == "test" and "drop_last" in dataloader_kwargs:
+            assert not dataloader_kwargs[
+                "drop_last"
+            ], "Don't drop when evaluating test-dataset!"
 
         # the split = self.folds[fold]
         raise NotImplementedError

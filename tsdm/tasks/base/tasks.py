@@ -175,6 +175,27 @@ class BaseTask(ABC, Generic[KeyType]):
     def splits(self) -> Mapping[KeyType, Any]:
         r"""Cache dictionary of dataset slices."""
 
+    @abstractmethod
+    def get_dataloader(
+        self,
+        key: KeyType,
+        /,
+        **dataloader_kwargs: Any,
+    ) -> DataLoader:
+        r"""Return a DataLoader object for the specified split.
+
+        Parameters
+        ----------
+        key: str
+            From which part of the dataset to construct the loader
+        dataloader_kwargs:
+            Options to be passed directly to the dataloader such as the generator.
+
+        Returns
+        -------
+        DataLoader
+        """
+
     @cached_property
     def dataloaders(self) -> Mapping[KeyType, DataLoader]:
         r"""Cache dictionary of evaluation-dataloaders."""
@@ -212,30 +233,3 @@ class BaseTask(ABC, Generic[KeyType]):
             )
             for key in self.splits
         )
-
-    @abstractmethod
-    def get_dataloader(
-        self,
-        key: KeyType,
-        *,
-        batch_size: int = 1,
-        shuffle: bool = False,
-        **kwargs: Any,
-    ) -> DataLoader:
-        r"""Return a DataLoader object for the specified split.
-
-        Parameters
-        ----------
-        key: str
-            From which part of the dataset to construct the loader
-        batch_size: int = 32
-        shuffle: bool = True
-            Whether to get samples in random order.
-            defaults to cuda if cuda is available.
-        kwargs:
-            Options to be passed directly to the dataloader such as the generator.
-
-        Returns
-        -------
-        DataLoader
-        """

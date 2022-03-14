@@ -176,6 +176,7 @@ class ETDatasetTask_Informer(BaseTask):
     def get_dataloader(
         self,
         key: KeyType,
+        /,
         *,
         batch_size: int = 1,
         shuffle: bool = True,
