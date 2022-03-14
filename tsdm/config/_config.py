@@ -116,7 +116,7 @@ __logger__.info("Available Models: %s", set(MODELS))
 __logger__.info("Available Datasets: %s", set(DATASETS))
 
 
-def generate_folders(d: dict, current_path: Path):
+def generate_folders(d: dict, current_path: Path) -> None:
     r"""Create nested folder structure based on nested dictionary index.
 
     Parameters
@@ -135,12 +135,12 @@ def generate_folders(d: dict, current_path: Path):
     for directory in d:
         path = current_path.joinpath(directory)
         if d[directory] is None:
-            __logger__.info("creating folder %s", path)
+            __logger__.debug("creating folder %s", path)
             path.mkdir(parents=True, exist_ok=True)
         else:
             generate_folders(d[directory], path)
 
 
-__logger__.info("Initializing folder structure")
+__logger__.debug("Initializing folder structure")
 generate_folders(CONFIG["folders"], BASEDIR)
-__logger__.info("Created folder structure in %s", BASEDIR)
+__logger__.debug("Created folder structure in %s", BASEDIR)

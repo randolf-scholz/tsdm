@@ -304,30 +304,30 @@ class SimpleDataset(BaseDataset):
 
     def clean(self, *, force: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
-        __logger__.info("%s: START cleaning dataset!", self.name)
+        __logger__.debug("%s: START cleaning dataset!", self.name)
         if self.dataset_files_exist() and not force:
-            __logger__.info("%s: Dataset files already exist, skipping.", self.name)
+            __logger__.debug("%s: Dataset files already exist, skipping.", self.name)
             return
         if not self.rawdata_files_exist():
             self.download()
         self._clean()
-        __logger__.info("%s: DONE cleaning dataset!", self.name)
+        __logger__.debug("%s: DONE cleaning dataset!", self.name)
 
     def load(self) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
-        __logger__.info("%s: START loading dataset!", self.name)
+        __logger__.debug("%s: START loading dataset!", self.name)
         if not self.rawdata_files_exist():
             self.download()
         else:
-            __logger__.info("%s: Rawdata files already exist!", self.name)
+            __logger__.debug("%s: Rawdata files already exist!", self.name)
 
         if not self.dataset_files_exist():
             self.clean()
         else:
-            __logger__.info("%s: Dataset files already exist!", self.name)
+            __logger__.debug("%s: Dataset files already exist!", self.name)
 
         result = self._load()
-        __logger__.info("%s: DONE loading dataset!", self.name)
+        __logger__.debug("%s: DONE loading dataset!", self.name)
         return result
 
     def __getattr__(self, key):
@@ -415,26 +415,26 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             Force cleaning of dataset.
         """
         if not self.rawdata_files_exist(key=key):
-            __logger__.info("%s/%s missing, fetching it now!", self.name, key)
+            __logger__.debug("%s/%s missing, fetching it now!", self.name, key)
             self.download(key=key)
         if (
             key in self.dataset_files
             and self.dataset_files_exist(key=key)
             and not force
         ):
-            __logger__.info("%s/%s already exists, skipping.", self.name, key)
+            __logger__.debug("%s/%s already exists, skipping.", self.name, key)
             return
 
         if key is None:
-            __logger__.info("%s: START cleaning dataset!", self.name)
+            __logger__.debug("%s: START cleaning dataset!", self.name)
             for key_ in self.index:
                 self.clean(key=key_, force=force)
-            __logger__.info("%s: DONE cleaning dataset", self.name)
+            __logger__.debug("%s: DONE cleaning dataset", self.name)
             return
 
-        __logger__.info("%s/%s: START cleaning dataset!", self.name, key)
+        __logger__.debug("%s/%s: START cleaning dataset!", self.name, key)
         self._clean(key=key)
-        __logger__.info("%s/%s: DONE cleaning dataset!", self.name, key)
+        __logger__.debug("%s/%s: DONE cleaning dataset!", self.name, key)
 
     def load(
         self, *, key: Optional[KeyType] = None, force: bool = False
@@ -457,18 +457,18 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             self.clean(key=key)
 
         if key is None:
-            __logger__.info("%s: START loading dataset!", self.name)
+            __logger__.debug("%s: START loading dataset!", self.name)
             result = {_key: self.load(key=_key) for _key in self.index}
-            __logger__.info("%s: DONE loading dataset!", self.name)
+            __logger__.debug("%s: DONE loading dataset!", self.name)
             return result
 
         if key in self.dataset and self.dataset[key] is not None and not force:
-            __logger__.info("%s/%s: dataset already exists, skipping!", self.name, key)
+            __logger__.debug("%s/%s: dataset already exists, skipping!", self.name, key)
             return self.dataset[key]
 
-        __logger__.info("%s/%s: START loading dataset!", self.name, key)
+        __logger__.debug("%s/%s: START loading dataset!", self.name, key)
         self.dataset[key] = self._load(key=key)
-        __logger__.info("%s/%s: DONE loading dataset!", self.name, key)
+        __logger__.debug("%s/%s: DONE loading dataset!", self.name, key)
         return self.dataset[key]
 
     def _download(self, key: KeyType) -> None:
@@ -476,7 +476,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         assert key is not None, "Called _download with key=None!"
 
         if self.base_url is None:
-            __logger__.info("%s: Dataset provides no url. Assumed offline", self.name)
+            __logger__.debug("%s: Dataset provides no url. Assumed offline", self.name)
             return
 
         if self.rawdata_files is None:
@@ -508,13 +508,13 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             Force re-downloading of dataset.
         """
         if self.base_url is None:
-            __logger__.info(
+            __logger__.debug(
                 "%s: Dataset provides no base_url. Assumed offline", self.name
             )
             return
 
         if not force and self.rawdata_files_exist(key=key):
-            __logger__.info(
+            __logger__.debug(
                 "%s/%s: Rawdata files already exist, skipping.",
                 self.name,
                 "" if key is None else key,
@@ -522,18 +522,18 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             return
 
         if key is None:
-            __logger__.info("%s: START downloading dataset!", self.name)
+            __logger__.debug("%s: START downloading dataset!", self.name)
             if isinstance(self.rawdata_files, Mapping):
                 for key_ in self.rawdata_files:
                     self.download(key=key_, url=url, force=force)
             else:
                 super().download(url=url)
-            __logger__.info("%s: DONE downloading dataset!", self.name)
+            __logger__.debug("%s: DONE downloading dataset!", self.name)
             return
 
-        __logger__.info("%s/%s: START downloading dataset!", self.name, key)
+        __logger__.debug("%s/%s: START downloading dataset!", self.name, key)
         self._download(key=key)
-        __logger__.info("%s/%s: DONE downloading dataset!", self.name, key)
+        __logger__.debug("%s/%s: DONE downloading dataset!", self.name, key)
 
     def __getattr__(self, key):
         """Attribute lookup for index."""

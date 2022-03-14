@@ -96,6 +96,8 @@ class SliceSampler(Sampler):
     def __init__(
         self,
         data_source: Sequence,
+        /,
+        *,
         slice_sampler: Optional[Union[int, Callable[[], int]]] = None,
         sampler: Optional[Callable[[], tuple[int, int]]] = None,
         generator: Optional[np.random.Generator] = None,
@@ -161,7 +163,7 @@ class SequenceSampler(Sampler):
     shuffle: bool
     r"""Whether to sample in random order."""
 
-    def __init__(self, data_source: Sized, seq_len: int, shuffle: bool = True):
+    def __init__(self, data_source: Sized, /, *, seq_len: int, shuffle: bool = True):
         r"""Initialize the Sampler.
 
         Parameters
@@ -233,7 +235,9 @@ class CollectionSampler(Sampler):
     def __init__(
         self,
         data_source: DatasetCollection,
+        /,
         subsamplers: Mapping[Any, Sampler],
+        *,
         shuffle: bool = True,
         early_stop: bool = False,
     ):
@@ -326,7 +330,9 @@ class HierarchicalSampler(Sampler):
     def __init__(
         self,
         data_source: Mapping[Any, TorchDataset],
+        /,
         subsamplers: Mapping[Any, Sampler],
+        *,
         shuffle: bool = True,
         early_stop: bool = False,
     ):

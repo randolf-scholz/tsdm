@@ -61,7 +61,7 @@ class BaseEncoder(ABC):
         self.inverse_transform = self.decode
 
     def __init_subclass__(cls, /, *args, **kwargs):
-        """Initialize the subclass.
+        r"""Initialize the subclass.
 
         The wrapping of fit/encode/decode must be done here to avoid
         :exc:`~pickle.PickleError`!
