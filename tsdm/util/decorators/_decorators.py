@@ -653,7 +653,7 @@ def wrap_func(
 
         return _wrapper
 
-    raise RuntimeError("Unreachable code reached for %s", func)
+    raise RuntimeError(f"Unreachable code reached for {func}")
 
 
 # @decorator

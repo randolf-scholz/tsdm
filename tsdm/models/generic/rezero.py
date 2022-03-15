@@ -21,7 +21,6 @@ from torch._jit_internal import _copy_to_script_wrapper
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.util import deep_dict_update, initialize_from_config
 from tsdm.util.decorators import autojit
-from tsdm.util.types import Self
 
 __logger__ = logging.getLogger(__name__)
 
@@ -90,20 +89,15 @@ class ResNetBlock(nn.Sequential):
 
 @autojit
 class ReZero(nn.Sequential):
-    """A ReZero model."""
+    r"""A ReZero model."""
 
     weights: Tensor
     r"""PARAM: The weights of the model."""
 
     def __init__(self, *blocks: nn.Module, weights: Optional[Tensor] = None) -> None:
         super().__init__(*blocks)
-
-        if weights is None:
-            self.weights = nn.Parameter(torch.zeros(len(blocks)))
-        else:
-            self.weights = nn.Parameter(weights.to(torch.float))
-
-        # self.register_parameter("weights", nn.Parameter(weights))
+        weights = torch.zeros(len(blocks)) if weights is None else weights
+        self.register_parameter("weights", nn.Parameter(weights.to(torch.float)))
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
@@ -122,10 +116,14 @@ class ReZero(nn.Sequential):
         return x
 
     @_copy_to_script_wrapper
-    def __getitem__(self: Self, item: Union[int, slice]) -> Self:
+    def __getitem__(
+        self: nn.Sequential, item: Union[int, slice]
+    ) -> Union[nn.Module, nn.Sequential]:
         r"""Get a sub-model."""
-        blocks: list[nn.Module] = list(self._modules.values())[item]
-        return self.__class__(*blocks, weights=self.weights[item])
+        modules: list[nn.Module] = list(self._modules.values())
+        if isinstance(item, slice):
+            return ReZero(*modules[item], weights=self.weights[item])  # type: ignore[index]
+        return modules[item]
 
     @jit.export
     def __len__(self) -> int:

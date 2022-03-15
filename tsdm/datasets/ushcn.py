@@ -282,7 +282,7 @@ class USHCN(Dataset):
       with those of the USHCN site to form a longer time series.
     - UTC_OFFSET	is the time difference between Coordinated Universal Time (UTC) and local standard time
       at the station (i.e., the number of hours that must be added to local standard time to match UTC).
-    """  # pylint: disable=line-too-long # noqa
+    """
 
     base_url = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
     """HTTP address from where the dataset can be downloaded"""
