@@ -9,7 +9,6 @@ __all__ = [
 ]
 
 import logging
-from copy import deepcopy
 from functools import cached_property
 from itertools import product
 from typing import Any, Callable, Literal, NamedTuple, Optional, Union

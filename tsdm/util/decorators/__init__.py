@@ -17,9 +17,7 @@ __all__ = [
     "vectorize",
     "IterItems",
     "IterKeys",
-    "pre_hook",
-    "post_hook",
-    "wrap_hook",
+    "wrap_func",
     "wrapmethod",
 ]
 
@@ -27,17 +25,15 @@ import logging
 from collections.abc import Callable
 from typing import Final
 
-from tsdm.util.decorators._decorators import (  # sphinx_value,
+from tsdm.util.decorators._decorators import (
     IterItems,
     IterKeys,
     autojit,
     decorator,
-    post_hook,
-    pre_hook,
     timefun,
     trace,
     vectorize,
-    wrap_hook,
+    wrap_func,
     wrapmethod,
 )
 

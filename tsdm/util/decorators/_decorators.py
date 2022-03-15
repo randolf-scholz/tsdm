@@ -11,9 +11,7 @@ __all__ = [
     "timefun",
     "trace",
     "vectorize",
-    "wrap_hook",
-    "pre_hook",
-    "post_hook",
+    "wrap_func",
     "wrapmethod",
     # Class Decorators
     "autojit",
@@ -29,15 +27,15 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import wraps
-from inspect import Parameter, signature
+from inspect import Parameter, Signature, signature
 from time import perf_counter_ns
 from types import MethodType
 from typing import Any, Optional, Union, overload
 
+from makefun import wraps as wraps_makefun
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.strings import repr_mapping, repr_sequence
 from tsdm.util.types import ClassType, ObjectType, ReturnType, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
@@ -49,6 +47,18 @@ POSITIONAL_OR_KEYWORD = Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD = Parameter.VAR_KEYWORD
 VAR_POSITIONAL = Parameter.VAR_POSITIONAL
 EMPTY = Parameter.empty
+_DECORATED = object()
+
+PARAM_TYPES = (
+    (POSITIONAL_ONLY, True),
+    (POSITIONAL_ONLY, False),
+    (POSITIONAL_OR_KEYWORD, True),
+    (POSITIONAL_OR_KEYWORD, False),
+    (VAR_POSITIONAL, True),
+    (KEYWORD_ONLY, True),
+    (KEYWORD_ONLY, False),
+    (VAR_KEYWORD, True),
+)
 
 
 def rpartial(func: Callable, /, *fixed_args: Any, **fixed_kwargs: Any) -> Callable:
@@ -91,53 +101,185 @@ class DecoratorError(Exception):
         return super().__str__() + "\n" + "\n".join(default_message)
 
 
+def _last_positional_only_arg_index(sig: Signature) -> int:
+    r"""Return index such that all parameters before are POSITIONAL_ONLY."""
+    for i, param in enumerate(sig.parameters.values()):
+        if param.kind is not POSITIONAL_ONLY:
+            return i
+    return len(sig.parameters)
+
+
 def decorator(deco: Callable) -> Callable:
-    r"""Meta-Decorator for constructing parametrized decorators."""
+    r"""Meta-Decorator for constructing parametrized decorators.
+
+    There are 3 different ways of using decorators:
+
+    1. BARE MODE
+        >>> @deco
+        ... def func(*args, **kwargs):
+        ...     # Input: func
+        ...     # Output: Wrapped Function
+    2. FUNCTIONAL MODE
+        >>> deco(func, *args, **kwargs)
+        ...     # Input: func, args, kwargs
+        ...     # Output: Wrapped Function
+    3. BRACKET MODE
+        >>> @deco(*args, **kwargs)
+        ... def func(*args, **kwargs):
+        ...     # Input: args, kwargs
+        ...     # Output: decorator with single positional argument
+
+    Crucially, one needs to be able to distinguish between the three modes.
+    In particular, when the decorator has optional arguments, one needs to be able to distinguish
+    between FUNCTIONAL MODE and BRACKET MODE.
+
+    To achieve this, we introduce a special senitel value for the first argument.
+    Adding this senitel requires that the decorator has no mandatory positional-only arguments.
+    Otherwise, the new signature would have an optional positional-only argument before the first
+    mandatory positional-only argument.
+
+    Therefore, we add senitel values to all mandatory positional-only arguments.
+    If the mandatory positional args are not given
+
+    IDEA: We replace the decorators signature with a new signature in which all arguments
+    have default values.
+
+    Fundamentally, signatures that lead to ambiguity between the 3 modes cannot be allowed.
+    Note that in BARE MODE, the decorator receives no arguments.
+    In BRACKET MODE, the decorator receives the arguments as given, and must return a
+    decorator that takes a single input.
+
+    +------------+-----------------+----------+-------------------+
+    |            | mandatory args? | VAR_ARGS | no mandatory args |
+    +============+=================+==========+===================+
+    | bare       | ✘               | ✘        | ✔                 |
+    +------------+-----------------+----------+-------------------+
+    | bracket    | ✔               | ✔        | ✔                 |
+    +------------+-----------------+----------+-------------------+
+    | functional | ✔               | ✔        | ✔                 |
+    +------------+-----------------+----------+-------------------+
+
+    Examples
+    --------
+    >>> def wrap_func(
+    ...     func: Callable,
+    ...     before: Optional[Callable]=None,
+    ...     after: Optional[Callable]=None,
+    ...     /
+    ... ) -> Callable:
+    ...     '''Wraps function.'''
+
+    Here, there is a problem:
+
+    >>> @wrap_func
+    ... def func(...)
+
+    here, and also in the case of wrap_func(func), the result should be an identity operation.
+    However, the other case
+
+    >>> @wrap_func(before)
+    ...def func(...)
+
+    the result is a wrapped function. The fundamental problem is a disambiguation between the cases.
+    In either case the decorator sees as input (callable, None, None) and so it cannot distinguish
+    whether the first input is a wrapping, or the wrapped.
+
+    Thus we either need to abandon positional arguments with default values.
+
+    Note however, that it is possible so save the situation by adding at least one
+    mandatory positional argument:
+
+    >>> def wrap_func(
+    ...     func: Callable,
+    ...     before: Optional[Callable],
+    ...     after: Optional[Callable]=None,
+    ...     /
+    ... ) -> Callable:
+    ...     '''Wraps function.'''
+
+    Because now, we can test how many arguments were passed. If only a single positional argument was passed,
+    we know that the decorator was called in the bracket mode.
+
+    Arguments::
+
+        PO | PO+D | *ARGS | PO/K | PO/K+D | KO | KO+D | **KWARGS |
+
+    For decorators, we only allow signatures of the form::
+
+        func | PO | KO | KO + D | **KWARGS
+
+    Under the hood, the signature will be changed to::
+
+        PO | __func__ = None | / | * | KO | KO + D | **KWARGS
+
+    I.e. we insert a single positional only argument with default, which is the function to be wrapped.
+    """
+    __logger__.debug(">>>>> Creating decorator %s <<<<<", deco)
+
+    deco_sig = signature(deco)
     ErrorHandler = DecoratorError(deco)
-    mandatory_pos_args, mandatory_key_args = set(), set()
+    # param_iterator = iter(deco_sig.parameters.items())
 
-    for key, param in signature(deco).parameters.items():
-        if param.kind is VAR_POSITIONAL:
-            # TODO: allow VAR_POSITIONAL, iff mandatory KW_ONLY present.
-            raise ErrorHandler("VAR_POSITIONAL arguments (*args) not allowed!")
-        if param.kind is POSITIONAL_OR_KEYWORD:
-            # TODO: allow VAR_POSITIONAL, iff mandatory KW_ONLY present.
-            raise ErrorHandler(
-                "Decorator does not support POSITIONAL_OR_KEYWORD arguments!!",
-                "Separate positional and keyword arguments: fun(po, /, *, ko=None,)",
-                "Cf. https://www.python.org/dev/peps/pep-0570/",
-            )
-        if param.kind is POSITIONAL_ONLY and param.default is not EMPTY:
-            raise ErrorHandler("POSITIONAL_ONLY arguments not allowed to be optional!")
-        if param.default is EMPTY and param.kind is POSITIONAL_ONLY:
-            mandatory_pos_args |= {key}
-        if param.default is EMPTY and param.kind is KEYWORD_ONLY:
-            mandatory_key_args |= {key}
+    BUCKETS: dict[Any, set[str]] = {key: set() for key in PARAM_TYPES}
 
-    if not mandatory_pos_args:
+    for key, param in deco_sig.parameters.items():
+        BUCKETS[param.kind, param.default is EMPTY].add(key)
+
+    __logger__.debug(
+        "DETECTED SIGNATURE:"
+        "\n\t%s POSITIONAL_ONLY       (mandatory)"
+        "\n\t%s POSITIONAL_ONLY       (optional)"
+        "\n\t%s POSITIONAL_OR_KEYWORD (mandatory)"
+        "\n\t%s POSITIONAL_OR_KEYWORD (optional)"
+        "\n\t%s VAR_POSITIONAL"
+        "\n\t%s KEYWORD_ONLY          (mandatory)"
+        "\n\t%s KEYWORD_ONLY          (optional)"
+        "\n\t%s VAR_KEYWORD",
+        *(len(BUCKETS[key]) for key in PARAM_TYPES),
+    )
+
+    if BUCKETS[POSITIONAL_OR_KEYWORD, True] or BUCKETS[POSITIONAL_OR_KEYWORD, False]:
         raise ErrorHandler(
-            "First argument of decorator must be POSITIONAL_ONLY (the function to be wrapped)!"
+            "Decorator does not support POSITIONAL_OR_KEYWORD arguments!!",
+            "Separate positional and keyword arguments using '/' and '*':"
+            ">>> def deco(func, po1, po2 , /, *, ko1, ko2, **kwargs): ...",
+            "Cf. https://www.python.org/dev/peps/pep-0570/",
+        )
+    if BUCKETS[POSITIONAL_ONLY, False]:
+        raise ErrorHandler(
+            "Decorator does not support POSITIONAL_ONLY arguments with defaults!!"
+        )
+    if BUCKETS[VAR_POSITIONAL, True]:
+        raise ErrorHandler("Decorator does not support VAR_POSITIONAL arguments!!")
+    if not len(BUCKETS[POSITIONAL_ONLY, True]) >= 1:
+        raise ErrorHandler(
+            "Decorator must have the function to be decorated as the first"
+            "POSITIONAL_ONLY argument!!"
         )
 
-    @wraps(deco)
-    def _parametrized_decorator(  # pylint: disable=keyword-arg-before-vararg
-        __func__: Any = None, *args: Any, **kwargs: Any
-    ) -> Callable:
-        if len(mandatory_pos_args | mandatory_key_args) > 1:
-            # no bare decorator allowed!
-            if len(args) + 1 == len(mandatory_pos_args) - 1:
-                # all pos args except func given
-                if missing_keys := (mandatory_key_args - kwargs.keys()):
-                    raise ErrorHandler(f"Not enough kwargs supplied, {missing_keys=}")
-                __logger__.debug(">>> Generating bracket version of %s <<<", decorator)
-                return rpartial(deco, *(__func__, *args), **kwargs)
-            __logger__.debug(">>> Generating functional version of %s <<<", decorator)
-            return deco(__func__, *args, **kwargs)
-        if __func__ is None:
-            __logger__.debug(">>> Generating bare version of %s <<<", decorator)
-            return rpartial(deco, *args, **kwargs)
-        __logger__.debug(">>> Generating bracket version of %s <<<", decorator)
-        return deco(__func__, *args, **kwargs)
+    # (1b) modify the signature to add a new parameter '__func__' as the single
+    # positional-only argument with a default value.
+    params = list(deco_sig.parameters.values())
+    index = _last_positional_only_arg_index(deco_sig)
+    params.insert(
+        index, Parameter("__func__", kind=Parameter.POSITIONAL_ONLY, default=_DECORATED)
+    )
+    del params[0]
+    new_sig = deco_sig.replace(parameters=params)
+
+    @wraps_makefun(deco, new_sig=new_sig)
+    def _parametrized_decorator(*args: Any, **kwargs: Any) -> Callable:
+        __logger__.debug(
+            "DECORATING \n\tfunc=%s: \n\targs=%s, \n\tkwargs=%s", deco, args, kwargs
+        )
+
+        if args[-1] is _DECORATED:
+            __logger__.debug("%s: Decorator used in BRACKET mode.", deco)
+            return rpartial(deco, *args[:-1], **kwargs)
+
+        assert callable(args[0]), "First argument must be callable!"
+        __logger__.debug("%s: Decorator in FUNCTIONAL/BARE mode.", deco)
+        return deco(*args, **kwargs)
 
     return _parametrized_decorator
 
@@ -229,15 +371,16 @@ def trace(func: Callable) -> Callable:
     def _wrapper(*args, **kwargs):
         logger.info(
             "%s",
-            "\t\n".join(
+            "\n\t".join(
                 (
-                    f" {func.__qualname__}: ENTERING",
-                    f"args={repr_sequence(args)}",
-                    f"kwargs={repr_mapping(kwargs)}",
+                    f"{func.__qualname__}: ENTERING",
+                    f"args={(args)}",
+                    f"kwargs={(kwargs)}",
                 )
             ),
         )
         try:
+            logger.info("%s: EXECUTING", func.__qualname__)
             result = func(*args, **kwargs)
         except (KeyboardInterrupt, SystemExit) as E:
             raise E
@@ -246,7 +389,7 @@ def trace(func: Callable) -> Callable:
             raise RuntimeError(f"Function execution failed with Exception {E}") from E
         else:
             logger.info("%s: SUCCESS with result=%s", func.__qualname__, result)
-        logger.info("%s", "\t\n".join((f" {func.__qualname__}: EXITING",)))
+        logger.info("%s", "\n\t".join((f"{func.__qualname__}: EXITING",)))
         return result
 
     return _wrapper
@@ -464,77 +607,112 @@ def IterKeys(obj):
 
 
 @decorator
-def wrap_hook(func: Callable, pre_func: Callable, post_func: Callable, /) -> Callable:
-    r"""Wrap a function with pre and post hooks."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        r"""Wrap a function with pre and post hooks."""
-        pre_func(*args, **kwargs)
-        result = func(*args, **kwargs)
-        post_func(*args, **kwargs)
-        return result
-
-    return wrapper
-
-
-@decorator
-def pre_hook(func: Callable, hook: Callable, /) -> Callable:
-    r"""Wrap a function with a pre wrap_hook."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        r"""Wrap a function with a pre wrap_hook."""
-        hook(*args, **kwargs)
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-@decorator
-def post_hook(func: Callable, hook: Callable, /) -> Callable:
-    r"""Wrap a function with a post wrap_hook."""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        r"""Wrap a function with a post wrap_hook."""
-        result = func(*args, **kwargs)
-        hook(*args, **kwargs)
-        return result
-
-    return wrapper
-
-
-@decorator
-def wrap_chain(
+def wrap_func(
     func: Callable,
+    before: Optional[Callable],
+    after: Optional[Callable],
     /,
-    *,
-    pre_func: Optional[Callable] = None,
-    post_func: Optional[Callable] = None,
 ) -> Callable:
-    """Chain a function with pre and post func.
+    r"""Wrap a function with pre and post hooks."""
+    if before is None and after is None:
+        __logger__.debug("No hooks added to %s", func)
+        return func
 
-    Parameters
-    ----------
-    func
-    pre_func
-    post_func
+    if before is not None and after is None:
+        __logger__.debug("Adding pre hook %s to %s", before, func)
 
-    Returns
-    -------
-    Callable
-    """
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            before(*args, **kwargs)
+            result = func(*args, **kwargs)
+            return result
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        r"""Wrap a function with pre and post hooks."""
-        pre_result = pre_func(*args, **kwargs)
-        result = func(pre_result)
-        post_result = post_func(result)
-        return post_result
+        return _wrapper
 
-    return wrapper
+    if before is None and after is not None:
+        __logger__.debug("Adding post hook %s to %s", after, func)
+
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            after(*args, **kwargs)
+            return result
+
+        return _wrapper
+
+    if before is not None and after is not None:
+        __logger__.debug("Adding pre hook %s to %s", before, func)
+        __logger__.debug("Adding post hook %s to %s", after, func)
+
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            before(*args, **kwargs)
+            result = func(*args, **kwargs)
+            after(*args, **kwargs)
+            return result
+
+        return _wrapper
+
+    raise RuntimeError("Unreachable code reached for %s", func)
+
+
+# @decorator
+# def pre_hook(func: Callable, hook: Callable, /) -> Callable:
+#     r"""Wrap a function with a pre wrap_hook."""
+#
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+#         r"""Wrap a function with a pre wrap_hook."""
+#         hook(*args, **kwargs)
+#         return func(*args, **kwargs)
+#
+#     return wrapper
+#
+#
+# @decorator
+# def post_hook(func: Callable, hook: Callable, /) -> Callable:
+#     r"""Wrap a function with a post wrap_hook."""
+#
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+#         r"""Wrap a function with a post wrap_hook."""
+#         result = func(*args, **kwargs)
+#         hook(*args, **kwargs)
+#         return result
+#
+#     return wrapper
+#
+#
+# @decorator
+# def wrap_chain(
+#     func: Callable,
+#     /,
+#     *,
+#     before: Optional[Callable] = None,
+#     after: Optional[Callable] = None,
+# ) -> Callable:
+#     """Chain a function with pre and post func.
+#
+#     Parameters
+#     ----------
+#     func
+#     before
+#     after
+#
+#     Returns
+#     -------
+#     Callable
+#     """
+#
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+#         r"""Wrap a function with pre and post hooks."""
+#         pre_result = before(*args, **kwargs)
+#         result = func(pre_result)
+#         post_result = after(result)
+#         return post_result
+#
+#     return wrapper
 
 
 @overload

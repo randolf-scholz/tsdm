@@ -19,7 +19,7 @@ from copy import deepcopy
 from functools import singledispatchmethod
 from typing import Any, Sequence
 
-from tsdm.util.decorators import post_hook, pre_hook
+from tsdm.util.decorators import wrap_func
 from tsdm.util.strings import repr_sequence
 
 __logger__ = logging.getLogger(__name__)
@@ -30,6 +30,38 @@ class BaseEncoder(ABC):
 
     _is_fitted: bool = False
     """Whether the encoder has been fitted."""
+
+    def __init__(self):
+        super().__init__()
+        self.transform = self.encode
+        self.inverse_transform = self.decode
+
+    def __init_subclass__(cls, /, *args, **kwargs):
+        r"""Initialize the subclass.
+
+        The wrapping of fit/encode/decode must be done here to avoid
+        :exc:`~pickle.PickleError`!
+        """
+        super().__init_subclass__(*args, **kwargs)
+        cls.fit = wrap_func(cls.fit, None, cls._post_fit_hook)
+        cls.encode = wrap_func(cls.encode, cls._pre_encode_hook, None)
+        cls.decode = wrap_func(cls.decode, cls._pre_decode_hook, None)
+
+    def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
+        r"""Return chained encoders."""
+        return ChainedEncoder(self, other)
+
+    def __or__(self, other: BaseEncoder) -> ProductEncoder:
+        r"""Return product encoders."""
+        return ProductEncoder(self, other)
+
+    def __pow__(self, power: int) -> DuplicateEncoder:
+        r"""Return the product encoder of the encoder with itself `power` times."""
+        return DuplicateEncoder(self, power)
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the encoder."""
+        return f"{self.__class__.__name__}()"
 
     @property
     def is_fitted(self) -> bool:
@@ -54,38 +86,6 @@ class BaseEncoder(ABC):
     def is_bijective(self) -> bool:
         r"""Whether the encoder is bijective."""
         return self.is_surjective and self.is_injective
-
-    def __init__(self):
-        super().__init__()
-        self.transform = self.encode
-        self.inverse_transform = self.decode
-
-    def __init_subclass__(cls, /, *args, **kwargs):
-        r"""Initialize the subclass.
-
-        The wrapping of fit/encode/decode must be done here to avoid
-        :exc:`~pickle.PickleError`!
-        """
-        super().__init_subclass__(*args, **kwargs)
-        cls.fit = post_hook(cls.fit, cls._post_fit_hook)
-        cls.encode = pre_hook(cls.encode, cls._pre_encode_hook)
-        cls.decode = pre_hook(cls.decode, cls._pre_decode_hook)
-
-    def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
-        r"""Return chained encoders."""
-        return ChainedEncoder(self, other)
-
-    def __or__(self, other: BaseEncoder) -> ProductEncoder:
-        r"""Return product encoders."""
-        return ProductEncoder(self, other)
-
-    def __pow__(self, power: int) -> DuplicateEncoder:
-        r"""Return the product encoder of the encoder with itself `power` times."""
-        return DuplicateEncoder(self, power)
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the encoder."""
-        return f"{self.__class__.__name__}()"
 
     def fit(self, data: Any, /) -> None:
         r"""By default does nothing."""

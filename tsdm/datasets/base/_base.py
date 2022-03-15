@@ -54,6 +54,7 @@ from pandas import DataFrame, Series
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.util import flatten_nested, paths_exists
+from tsdm.util.decorators import wrap_func
 from tsdm.util.types import KeyType, NullableNestedType
 
 __logger__ = logging.getLogger(__name__)
@@ -274,13 +275,18 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
         raise NotImplementedError
 
 
-##################################
-# Dataset with Single DataFrames #
-##################################
+##########################################
+# Dataset consisting of Single DataFrame #
+##########################################
 
 
 class SimpleDataset(BaseDataset):
     r"""Dataset class that consists of a singular DataFrame."""
+
+    def __init_subclass__(cls, /, *args, **kwargs):
+        r"""Add wrapper code."""
+        cls.load = wrap_func(cls.load, cls._load_pre_hook, cls._load_post_hook)
+        cls.clean = wrap_func(cls.clean, cls._load_pre_hook, cls._load_post_hook)
 
     @cached_property
     def dataset_files(self) -> NullableNestedType[Path]:
@@ -293,28 +299,28 @@ class SimpleDataset(BaseDataset):
         return self.load()
 
     @abstractmethod
-    def _clean(self) -> None:
-        r"""Clean the selected DATASET_OBJECT."""
-        # implement loading of dataset
-
-    @abstractmethod
-    def _load(self) -> DATASET_OBJECT:
-        r"""Load the pre-processed dataset."""
-        # implement loading of dataset
-
     def clean(self, *, force: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
+
+    @abstractmethod
+    def load(self) -> DATASET_OBJECT:
+        r"""Load the selected DATASET_OBJECT."""
+
+    def _clean_pre_hook(self, *, force: bool) -> None:
+        r"""Code that is executed before ``clean``."""
         __logger__.debug("%s: START cleaning dataset!", self.name)
         if self.dataset_files_exist() and not force:
             __logger__.debug("%s: Dataset files already exist, skipping.", self.name)
             return
         if not self.rawdata_files_exist():
             self.download()
-        self._clean()
+
+    def _clean_post_hook(self) -> None:
+        r"""Code that is executed after ``clean``."""
         __logger__.debug("%s: DONE cleaning dataset!", self.name)
 
-    def load(self) -> DATASET_OBJECT:
-        r"""Load the selected DATASET_OBJECT."""
+    def _load_pre_hook(self, *, force: bool) -> None:
+        r"""Code that is executed before ``load``."""
         __logger__.debug("%s: START loading dataset!", self.name)
         if not self.rawdata_files_exist():
             self.download()
@@ -326,9 +332,9 @@ class SimpleDataset(BaseDataset):
         else:
             __logger__.debug("%s: Dataset files already exist!", self.name)
 
-        result = self._load()
+    def _load_post_hook(self) -> None:
+        r"""Code that is executed after ``load``."""
         __logger__.debug("%s: DONE loading dataset!", self.name)
-        return result
 
     def __getattr__(self, key):
         """Attribute lookup."""
@@ -350,9 +356,9 @@ class SimpleDataset(BaseDataset):
     #     # raise NotImplementedError
 
 
-####################################
-# Dataset with Multiple DataFrames #
-####################################
+#############################################
+# Dataset consisting of Multiple DataFrames #
+#############################################
 
 
 class Dataset(BaseDataset, Mapping, Generic[KeyType]):
@@ -362,7 +368,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
     We subclass Mapping to provide the mapping interface.
     """
 
-    __slots__ = ()
+    __slots__ = ()  # Do we need this?
 
     @property
     @abstractmethod
@@ -370,10 +376,33 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         r"""Return the index of the dataset."""
         # implement loading of dataset
 
+
     @cached_property
     def dataset(self) -> MutableMapping[KeyType, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
         return {key: None for key in self.index}
+
+    @cached_property
+    def dataset_files(self) -> Mapping[KeyType, Path]:
+        r"""Return the paths of the dataset files."""
+        return {key: self.dataset_dir / f"{key}.feather" for key in self.index}
+
+    def __getattr__(self, key):
+        """Attribute lookup for index."""
+        if self.index is not None and key in self.index:
+            if self.dataset[key] is None:
+                self.load(key=key)
+            return self.dataset[key]
+        raise AttributeError(f"No attribute {key} in {self.name}")
+
+    def __repr__(self):
+        r"""Pretty Print."""
+        if len(self.index) > 6:
+            indices = list(self.index)
+            selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
+            selection[2] = "..."
+            return f"{self.name}({', '.join(selection)})"
+        return f"{self.name}{self.index}"
 
     @abstractmethod
     def _clean(self, key: KeyType) -> None:
@@ -382,11 +411,6 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
     @abstractmethod
     def _load(self, key: KeyType) -> DATASET_OBJECT:
         r"""Clean the selected DATASET_OBJECT."""
-
-    @cached_property
-    def dataset_files(self) -> Mapping[KeyType, Path]:
-        r"""Return the paths of the dataset files."""
-        return {key: self.dataset_dir / f"{key}.feather" for key in self.index}
 
     def rawdata_files_exist(self, key: Optional[KeyType] = None) -> bool:
         r"""Check if raw data files exist."""
@@ -403,6 +427,10 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
 
         assert isinstance(self.dataset_files, Mapping)
         return paths_exists(self.dataset_files[key])
+
+    # def pre_clean_hook(self, *, key: Optional[KeyType] = None, force: bool = False) -> None:
+    #     r"""Code that is executed before ``clean``."""
+    #     __logger__.debug("%s: START cleaning dataset!", self.name)
 
     def clean(self, *, key: Optional[KeyType] = None, force: bool = False) -> None:
         r"""Clean the selected DATASET_OBJECT.
@@ -534,20 +562,3 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         __logger__.debug("%s/%s: START downloading dataset!", self.name, key)
         self._download(key=key)
         __logger__.debug("%s/%s: DONE downloading dataset!", self.name, key)
-
-    def __getattr__(self, key):
-        """Attribute lookup for index."""
-        if self.index is not None and key in self.index:
-            if self.dataset[key] is None:
-                self.load(key=key)
-            return self.dataset[key]
-        raise AttributeError(f"No attribute {key} in {self.name}")
-
-    def __repr__(self):
-        r"""Pretty Print."""
-        if len(self.index) > 6:
-            indices = list(self.index)
-            selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
-            selection[2] = "..."
-            return f"{self.name}({', '.join(selection)})"
-        return f"{self.name}{self.index}"

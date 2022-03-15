@@ -24,10 +24,7 @@ from tsdm.datasets import KIWI_RUNS
 from tsdm.datasets.torch import MappingDataset, TimeSeriesDataset
 from tsdm.encoders.modular import BaseEncoder
 from tsdm.losses.modular import WRMSE
-from tsdm.random.samplers import (
-    HierarchicalSampler,
-    SequenceSampler,
-)
+from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.util.strings import repr_namedtuple
 
@@ -143,6 +140,7 @@ class KIWI_RUNS_TASK(BaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
+        r"""The metric to be used for evaluation."""
         ts = self.timeseries
         weights = DataFrame.from_dict(
             {
