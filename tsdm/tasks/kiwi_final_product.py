@@ -311,7 +311,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         key: KeyType,
         /,
         *,
-        batch_size: int = 1,
         shuffle: bool = False,
         **dataloader_kwargs: Any,
     ) -> DataLoader:
@@ -320,7 +319,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         Parameters
         ----------
         key: KeyType,
-        batch_size: int = 1,
         shuffle: bool = False,
         dataloader_kwargs: Any,
 
