@@ -52,7 +52,6 @@ class MappingDataset(TorchDataset, Mapping):
 
     def __getitem__(self, key):
         r"""Get the dataset for the given key."""
-        print(key)
         if not isinstance(key, tuple):
             return self.data[key]
         try:

@@ -328,6 +328,8 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         """
         # Construct the dataset object
         ts, md = self.splits[key]
+        dataset = _Dataset(ts, md, self.observables)
+
         TSDs = {}
         for idx in md.index:
             TSDs[idx] = TimeSeriesDataset(
@@ -335,7 +337,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
                 metadata=(md.loc[idx], self.final_value.loc[idx]),
             )
         DS = MappingDataset(TSDs)
-        dataset = _Dataset(ts, md, self.observables)
 
         # construct the sampler
         subsamplers = {}

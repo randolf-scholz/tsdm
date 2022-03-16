@@ -289,21 +289,49 @@ class KIWI_RUNS_TASK(BaseTask):
         """
         # Construct the dataset object
         ts, md = self.splits[key]
+        dataset = _Dataset(
+            ts,
+            md,
+            observables=self.observables.index,
+            observation_horizon=self.observation_horizon,
+            targets=self.targets.index,
+        )
+
         TSDs = {}
         for idx in md.index:
             TSDs[idx] = TimeSeriesDataset(
                 ts.loc[idx],
                 metadata=md.loc[idx],
             )
-        dataset = MappingDataset(TSDs)
+        DS = MappingDataset(TSDs)
 
         # construct the sampler
         subsamplers = {
             key: SequenceSampler(ds, seq_len=self.horizon, shuffle=shuffle)
-            for key, ds in dataset.items()
+            for key, ds in DS.items()
         }
-        sampler = HierarchicalSampler(dataset, subsamplers, shuffle=shuffle)
+        sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
 
         # construct the dataloader
         kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
         return DataLoader(dataset, sampler=sampler, **kwargs)
+
+
+class _Dataset(torch.utils.data.Dataset):
+    def __init__(self, ts, md, *, observables, targets, observation_horizon):
+        super().__init__()
+        self.timeseries = ts
+        self.metadata = md
+        self.observables = observables
+        self.targets = targets
+        self.observation_horizon = observation_horizon
+
+    def __getitem__(self, item):
+        key, slc = item
+        ts = self.timeseries.loc[key].iloc[slc].copy(deep=True)
+        md = self.metadata.loc[key].copy(deep=True)
+        originals = (ts.copy(deep=True), md.copy(deep=True))
+        targets = ts.iloc[self.observation_horizon :, self.targets].copy(deep=True)
+        ts.iloc[self.observation_horizon :, self.targets] = float("nan")
+        ts.iloc[self.observation_horizon :, self.observables] = float("nan")
+        return Sample(key=item, inputs=(ts, md), targets=targets, originals=originals)

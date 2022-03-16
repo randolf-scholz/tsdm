@@ -35,7 +35,7 @@ class LazyFunction(NamedTuple):
 
 
 class LazyDict(MutableMapping):
-    """A Lazy Dictionary implementation."""
+    r"""A Lazy Dictionary implementation."""
 
     @staticmethod
     def _validate_value(value: Any) -> LazyFunction:

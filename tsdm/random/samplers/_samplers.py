@@ -329,7 +329,7 @@ class HierarchicalSampler(Sampler):
 
     def __init__(
         self,
-        data_source: Mapping[Any, TorchDataset],
+        data_source: Mapping[Any, Any],
         /,
         subsamplers: Mapping[Any, Sampler],
         *,

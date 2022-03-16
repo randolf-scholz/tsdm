@@ -7,16 +7,11 @@ We want to create models that can be initialized from config files.
    sufficient to initialize the model.
 2. This config should be a class that can be 1:1 translated into a ``json`` file
 3. Either initialize form a config  <=> (dictionary), OR in some situations, pass a complete submodule directly.
-  4. This requires that the submodule has a ``from_dict`` method.
-5. 
+    - This requires that the submodule has a ``from_dict`` method.
+
 
 
 How should the recursion be performed?
-
-1. 
-
-
-
 
 Desiderata:
 
