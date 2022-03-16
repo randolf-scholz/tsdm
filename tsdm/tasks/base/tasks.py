@@ -196,40 +196,40 @@ class BaseTask(ABC, Generic[KeyType]):
         DataLoader
         """
 
-    @cached_property
-    def dataloaders(self) -> Mapping[KeyType, DataLoader]:
-        r"""Cache dictionary of evaluation-dataloaders."""
-        return LazyDict(
-            (
-                key,
-                (
-                    self.get_dataloader,
-                    {
-                        "key": key,
-                        "batch_size": self.eval_batch_size,
-                        "shuffle": False,
-                        "drop_last": False,
-                    },
-                ),
-            )
-            for key in self.splits
-        )
+    # @cached_property
+    # def dataloaders(self) -> Mapping[KeyType, DataLoader]:
+    #     r"""Cache dictionary of evaluation-dataloaders."""
+    #     return LazyDict(
+    #         (
+    #             key,
+    #             (
+    #                 self.get_dataloader,
+    #                 {
+    #                     "key": key,
+    #                     "batch_size": self.eval_batch_size,
+    #                     "shuffle": False,
+    #                     "drop_last": False,
+    #                 },
+    #             ),
+    #         )
+    #         for key in self.splits
+    #     )
 
-    @cached_property
-    def batchloaders(self) -> Mapping[KeyType, DataLoader]:
-        r"""Cache main training-dataloader."""
-        return LazyDict(
-            (
-                key,
-                (
-                    self.get_dataloader,
-                    {
-                        "key": key,
-                        "batch_size": self.train_batch_size,
-                        "shuffle": True,
-                        "drop_last": True,
-                    },
-                ),
-            )
-            for key in self.splits
-        )
+    # @cached_property
+    # def batchloaders(self) -> Mapping[KeyType, DataLoader]:
+    #     r"""Cache main training-dataloader."""
+    #     return LazyDict(
+    #         (
+    #             key,
+    #             (
+    #                 self.get_dataloader, key,
+    #                 {
+    #                     "key": key,
+    #                     "batch_size": self.train_batch_size,
+    #                     "shuffle": True,
+    #                     "drop_last": True,
+    #                 },
+    #             ),
+    #         )
+    #         for key in self.splits
+    #     )
