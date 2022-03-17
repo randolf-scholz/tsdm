@@ -21,6 +21,15 @@ repos:
         description: "ensures that a file is either empty, or ends with one newline."
     -   id: trailing-whitespace
         description: "trims trailing whitespace.."
+-   repo: local
+    hooks:
+    -   id: jupyter-nb-clear-output
+        name: jupyter-nb-clear-output
+        description: Clear output cells in Jupyter notebooks
+        files: 'dev/.*\.ipynb$'
+        stages: [commit]
+        language: system
+        entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
 exclude: \.idea/
 
 
@@ -29,16 +38,7 @@ exclude: \.idea/
 
 
 #repos:
-#  - repo: local
-#    hooks:
 
-#      - id: jupyter-nb-clear-output
-#        name: jupyter-nb-clear-output
-#        description: Clear output cells in Jupyter notebooks
-#        files: 'dev/.*\.ipynb$'
-#        stages: [commit]
-#        language: system
-#        entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
 #      - id: blacken-docs
 #        name: blacken-docs
 #        description: Run `black` on python code blocks in documentation files

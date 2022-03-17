@@ -23,7 +23,7 @@ Usage
 -----
 
 .. code-block:: python
-  
+
   class Module(bb.Module):
 
     @dataclass
@@ -35,7 +35,7 @@ Usage
 
 
 
-     
+
 
 
 
@@ -71,22 +71,3 @@ Examples
 Similarity between two images of fixed size:
 
 - ``(..., ((H, W, C), (H, W, C)) -> ...``
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -339,7 +339,3 @@ for epoch in (epochs := trange(100)):
 
 
 # In[ ]:
-
-
-
-

@@ -5,4 +5,3 @@
 .. autoattribute:: {{ objname }}
    :members:
    :annotation:
-

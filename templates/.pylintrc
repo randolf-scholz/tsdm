@@ -33,4 +33,3 @@ generated-members=numpy.*,torch.*
 # Set the output format. Available formats are text, parseable, colorized, json and
 # msvs (visual studio). You can also give a reporter class, e.g. mypackage.mymodule.MyReporterClass
 output-format=colorized
-
