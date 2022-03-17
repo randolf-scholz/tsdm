@@ -33,23 +33,17 @@ from pathlib import Path
 from time import perf_counter, time
 from typing import Any
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas
 import torch
 import torchinfo
-from linodenet.models import LinODE, LinODECell, LinODEnet
-from linodenet.projections.functional import skew_symmetric, symmetric
-from pandas import DataFrame, Index, Series, Timedelta, Timestamp
-from torch import Tensor, jit, nn, tensor
-from torch.optim import SGD, Adam, AdamW
-from torch.utils.data import BatchSampler, DataLoader
+from linodenet.models import LinODEnet
+from torch import Tensor, tensor
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm, trange
 
 import tsdm
 from tsdm.datasets import DATASETS
-from tsdm.encoders.functional import time2float
+from encoders.functional import time2float
 from tsdm.logutils import (
     log_kernel_information,
     log_metrics,
@@ -58,7 +52,6 @@ from tsdm.logutils import (
 )
 from tsdm.losses import LOSSES
 from tsdm.tasks import KIWI_RUNS_TASK
-from tsdm.util import grad_norm, multi_norm
 
 # In[4]:
 
@@ -219,7 +212,7 @@ FILTER = {
 #         "dtype": None,
 #     },
 # }
-from linodenet.models.encoders import ResNet, iResNet
+from linodenet.models.encoders import ResNet
 
 # ENCODER = {"__name__": "ResNet", "__module__": "linodenet.models.encoders","input_size": int, "nblocks": 5, "rezero": True}
 # DECODER = {"__name__": "ResNet", "__module__": "linodenet.models.encoders","input_size": int, "nblocks": 5, "rezero": True}
@@ -759,7 +752,7 @@ plt.imshow(mat)
 # In[ ]:
 
 
-from torch.profiler import ProfilerActivity, profile, record_function
+from torch.profiler import ProfilerActivity, profile
 
 # In[ ]:
 

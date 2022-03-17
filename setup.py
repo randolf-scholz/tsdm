@@ -13,8 +13,8 @@ import setuptools
 
 NAME = "tsdm"
 
-with open(f"{NAME}/VERSION", "r") as file:
-    VERSION = file.read()
+with open(f"src/{NAME}/VERSION", "r") as version_file:
+    VERSION: str = version_file.read().strip()
 
 with Path("requirements.txt").open() as requirements_txt:
     install_requires = [

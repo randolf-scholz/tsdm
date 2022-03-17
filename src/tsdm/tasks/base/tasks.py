@@ -89,7 +89,6 @@ __all__ = [
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
-from functools import cached_property
 from typing import Any, Generic, Optional
 
 from torch import Tensor
@@ -97,7 +96,6 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import dataset
 from tsdm.encoders import ModularEncoder
-from tsdm.util import LazyDict
 from tsdm.util.types import KeyType
 
 __logger__ = logging.getLogger(__name__)

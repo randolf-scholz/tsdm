@@ -21,12 +21,12 @@ from typing import Final
 from torch.utils import data as torch_utils_data
 
 from tsdm.random.samplers._samplers import (
+    BaseSampler,
     CollectionSampler,
     HierarchicalSampler,
     IntervalSampler,
     SequenceSampler,
     SliceSampler,
-    BaseSampler,
 )
 
 __logger__ = logging.getLogger(__name__)

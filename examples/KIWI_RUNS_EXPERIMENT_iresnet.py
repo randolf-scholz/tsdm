@@ -50,7 +50,7 @@ from tqdm.auto import tqdm, trange
 
 import tsdm
 from tsdm.datasets import DATASETS
-from tsdm.encoders.functional import time2float
+from encoders.functional import time2float
 from tsdm.logutils import (
     log_kernel_information,
     log_metrics,
