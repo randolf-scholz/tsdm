@@ -189,7 +189,7 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     def get_deltas(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # using numba jit compiled for speed - pandas was too slow!
         # c = np.outer(a, np.zeros(b.shape[-1]))
-        c = np.zeros( (*a.shape, b.shape[-1]), dtype=a.dtype)
+        c = np.zeros((*a.shape, b.shape[-1]), dtype=a.dtype)
 
         for i in range(1, len(a)):
             c[i] = a[i] + c[i - 1] * (1 - b[i - 1])

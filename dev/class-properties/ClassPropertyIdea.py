@@ -41,7 +41,7 @@ class BaseDecorator:
             self.__func__ = obj
 
     def __call__(self, *args, **kwargs):
-        return self.__func__.__call__(*args ** kwargs)
+        return self.__func__.__call__(*args**kwargs)
 
 
 def Property(func):

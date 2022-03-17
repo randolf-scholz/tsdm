@@ -26,6 +26,7 @@ from torch import Tensor, jit, nn
 
 from typing import TypeVar
 
+
 @dataclass
 class Config:
     input_size: int
@@ -36,5 +37,6 @@ class Config:
         if self.latent_size is None:
             self.latent_size = self.input_size
 
-conf = Config(2,3)
+
+conf = Config(2, 3)
 bar: int = conf.latent_size

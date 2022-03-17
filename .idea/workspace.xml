@@ -9,35 +9,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.pre-commit-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TODO.rst" beforeDir="false" afterPath="$PROJECT_DIR$/TODO.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/dev.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/data/dev.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/results/DeepStateTable1.fwf" beforeDir="false" afterPath="$PROJECT_DIR$/data/results/DeepStateTable1.fwf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/results/DeepStateTable2.fwf" beforeDir="false" afterPath="$PROJECT_DIR$/data/results/DeepStateTable2.fwf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/results/DeepStateTable3.fwf" beforeDir="false" afterPath="$PROJECT_DIR$/data/results/DeepStateTable3.fwf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/results/TemporalFusionTransformerTable2.fwf" beforeDir="false" afterPath="$PROJECT_DIR$/data/results/TemporalFusionTransformerTable2.fwf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/results_DeepState.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/data/results_DeepState.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/BUGS/einsum_slow.csv" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/BUGS/einsum_slow.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/class-properties/classmethod_property.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/class-properties/classmethod_property.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/dataloaders/notes.md" beforeDir="false" afterPath="$PROJECT_DIR$/dev/dataloaders/notes.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/tasks/Electricity.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tasks/Electricity.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/tmp.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tmp.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/_templates/autosummary-custom/custom-attribute-template.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/_templates/autosummary-custom/custom-attribute-template.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/recipes/dataloaders.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/recipes/dataloaders.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/recipes/datasets.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/recipes/datasets.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/recipes/iterative_hyperopt.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/recipes/iterative_hyperopt.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/recipes/parametrization.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/recipes/parametrization.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/recipes/tasks.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/recipes/tasks.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT-Copy1.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/sbatch.sh" beforeDir="false" afterPath="$PROJECT_DIR$/examples/sbatch.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifest/latex.tex" beforeDir="false" afterPath="$PROJECT_DIR$/manifest/latex.tex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifest/multiset_brackets.tex" beforeDir="false" afterPath="$PROJECT_DIR$/manifest/multiset_brackets.tex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/poetry.toml" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup_remote.sh" beforeDir="false" afterPath="$PROJECT_DIR$/setup_remote.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/.isort.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/templates/.isort.cfg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/.pylintrc" beforeDir="false" afterPath="$PROJECT_DIR$/templates/.pylintrc" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -376,7 +349,7 @@
       <workItem from="1647509572563" duration="1794000" />
       <workItem from="1647523544895" duration="890000" />
       <workItem from="1647524628817" duration="2868000" />
-      <workItem from="1647527948212" duration="15243000" />
+      <workItem from="1647527948212" duration="15650000" />
     </task>
     <servers />
   </component>

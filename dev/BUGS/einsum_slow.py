@@ -36,8 +36,9 @@ rng = np.random.default_rng()
 
 
 reductions = []
-for a,b in product("ijkl", "ijkl"):
-    if a==b: continue
+for a, b in product("ijkl", "ijkl"):
+    if a == b:
+        continue
     reduction = f"{a}{b},ijkl->" + "ijkl".replace(a, "").replace(b, "")
     reductions.append(reduction)
 
@@ -45,7 +46,12 @@ framework = ["numpy", "torch"]
 dtypes = ["float32", "float64"]
 sizes = [64, 128, 256]
 
-TORCH_DTYPES = {"int32": torch.int32, "int64": torch.int64, "float32": torch.float32, "float64": torch.float64}
+TORCH_DTYPES = {
+    "int32": torch.int32,
+    "int64": torch.int64,
+    "float32": torch.float32,
+    "float64": torch.float64,
+}
 
 devices = [torch.device("cpu"), torch.device("cuda")]
 columns = Series(reductions, name="reduction")
