@@ -13,17 +13,15 @@ __all__ = [
 ]
 
 import logging
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from itertools import chain, count
 from typing import Any, Generic, Optional, TypeVar, Union
-from abc import ABC, abstractmethod
-
 
 import numpy as np
 from numpy.random import permutation
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
-from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler
 
 from tsdm.datasets.torch.generic import DatasetCollection
@@ -62,9 +60,9 @@ dt_type = Union[
 #         return super().__iter__()
 
 
-
 class BaseSampler(Sampler, Sized, ABC):
-    #
+    r"""Abstract Base Class for all Samplers."""
+
     # def __init__(self, data_source: Optional[Sized]) -> None:
     #     r"""Initialize the sampler."""
     #     super().__init__(data_source)
@@ -76,9 +74,6 @@ class BaseSampler(Sampler, Sized, ABC):
     @abstractmethod
     def __iter__(self) -> Iterator:
         r"""Iterate over random indices."""
-
-
-
 
 
 class SliceSampler(Sampler):

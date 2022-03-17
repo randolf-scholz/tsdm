@@ -4,7 +4,6 @@
 
 import argparse
 import os
-import sys
 
 # enable JIT compilation - must be done before loading torch!
 os.environ["PYTORCH_JIT"] = "1"
@@ -37,47 +36,30 @@ def header(s: str, pad=3):
 header("Imports")  #
 ####################
 
-import logging
-import os
 import sys
 from pathlib import Path
 from time import perf_counter, time
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas
 import torch
-import torchinfo
-from linodenet.models import LinODE, LinODECell, LinODEnet
-from linodenet.models.filters import SequentialFilter
-from linodenet.projections.functional import skew_symmetric, symmetric
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series, Timedelta, Timestamp
-from torch import Tensor, jit, nn, tensor
-from torch.optim import SGD, Adam, AdamW
-from torch.utils.data import BatchSampler, DataLoader
+from torch import Tensor, jit
 from torch.utils.tensorboard import SummaryWriter
 from torchinfo import summary
-from tqdm import tqdm, trange
 
 import tsdm
-from tsdm.datasets import DATASETS
-from tsdm.encoders.functional import time2float
 from tsdm.encoders.modular import *
 from tsdm.logutils import (
-    compute_metrics,
-    log_kernel_information,
     log_metrics,
-    log_model_state,
     log_optimizer_state,
 )
 from tsdm.losses import LOSSES
 from tsdm.models import SetFuncTS
-from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
+from tsdm.optimizers import OPTIMIZERS
 from tsdm.random.samplers import *
 from tsdm.tasks import KIWI_FINAL_PRODUCT
-from tsdm.util import grad_norm, initialize_from, multi_norm
+from tsdm.util import initialize_from
 from tsdm.util.strings import *
 
 ###############################################################################

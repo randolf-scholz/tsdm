@@ -12,6 +12,7 @@
             <path value="file://$PROJECT_DIR$/docs/recipes" />
             <path value="file://$PROJECT_DIR$/docs/_static" />
             <path value="file://$PROJECT_DIR$/docs/_templates" />
+            <path value="file://$PROJECT_DIR$/templates" />
           </resourceRoots>
         </entryData>
       </entry>

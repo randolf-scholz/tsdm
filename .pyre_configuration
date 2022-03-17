@@ -1,9 +1,8 @@
 {
   "source_directories": [
-    {
-      "import_root": ".",
-      "source": "tsdm"
-    }
+    "src"
   ],
-  "taint_models_path": "/home/rscholz/Projects/KIWI/tsdm/venv/lib"
+  "search_path": [
+    ".venv/lib/python3.9/site-packages"
+  ]
 }

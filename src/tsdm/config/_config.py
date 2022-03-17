@@ -66,25 +66,23 @@ r"""The default :mod:`torch` device to use."""
 DEFAULT_DTYPE = torch.float32
 r"""The default :mod:`torch` datatype to use."""
 
-with resources.path(config_files, "config.yaml") as file:
-    with open(file, "r", encoding="utf8") as fname:
-        CONFIG = yaml.safe_load(fname)
-        r"""Dictionary containing basic configuration of TSDM."""
 
-with resources.path(config_files, "models.yaml") as file:
-    with open(file, "r", encoding="utf8") as fname:
-        MODELS = yaml.safe_load(fname)
-        r"""Dictionary containing sources of the available models."""
+with resources.open_text(config_files, "config.yaml") as file:
+    # with open(file, "r", encoding="utf8") as fname:
+    CONFIG = yaml.safe_load(file)
+    r"""Dictionary containing basic configuration of TSDM."""
 
-with resources.path(config_files, "datasets.yaml") as file:
-    with open(file, "r", encoding="utf8") as fname:
-        DATASETS = yaml.safe_load(fname)
-        r"""Dictionary containing sources of the available dataset."""
+with resources.open_text(config_files, "models.yaml") as file:
+    MODELS = yaml.safe_load(file)
+    r"""Dictionary containing sources of the available models."""
 
-with resources.path(config_files, "hashes.yaml") as file:
-    with open(file, "r", encoding="utf8") as fname:
-        HASHES = yaml.safe_load(fname)
-        r"""Dictionary containing hash values for both models and dataset."""
+with resources.open_text(config_files, "datasets.yaml") as file:
+    DATASETS = yaml.safe_load(file)
+    r"""Dictionary containing sources of the available dataset."""
+
+with resources.open_text(config_files, "hashes.yaml") as file:
+    HASHES = yaml.safe_load(file)
+    r"""Dictionary containing hash values for both models and dataset."""
 
 HOMEDIR = Path.home()
 r"""The users home directory."""
