@@ -60,7 +60,7 @@ repos:
 #        -   --warn-unused-configs
 #        -   --ignore-missing-imports
 #        additional_dependencies:
-#        -   numpy==1.21
+#        -   numpy==1.21.5
 #        -   types-PyYAML
 #        -   types-backports
 #        -   types-protobuf
