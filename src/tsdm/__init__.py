@@ -45,7 +45,7 @@ __all__ = [
 
 import logging
 import sys
-from pathlib import Path
+from importlib import metadata
 
 # version check
 if sys.version_info < (3, 9):
@@ -71,11 +71,8 @@ from tsdm import (
 # pylint: enable=wrong-import-position
 
 __logger__ = logging.getLogger(__name__)
-
-with open(Path(__file__).parent.joinpath("VERSION"), "r", encoding="utf8") as file:
-    __version__ = file.read()
-    r"""The version number of the :mod:`tsdm` package."""
-
+__version__ = metadata.version(__package__)
+r"""The version number of the :mod:`tsdm` package."""
 
 #
 # import logging

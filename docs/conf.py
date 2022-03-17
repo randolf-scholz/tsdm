@@ -19,6 +19,7 @@ import os
 import sys
 import typing
 from collections import abc
+from importlib import metadata
 
 import tsdm
 
@@ -29,6 +30,7 @@ os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
 
 MODULE = "tsdm"
+MODULE_DIR = "src/tsdm"
 
 # -- Project information ----------------------------------------------------------------------------------------------
 
@@ -48,8 +50,7 @@ project_copyright = "%(year)s, %(author)s" % {
 
 # The major project version, used as the replacement for |version|.
 # For example, for the Python documentation, this may be something like 2.6.
-with open(f"../{MODULE}/VERSION", "r", encoding="utf8") as file:
-    version = file.read()
+version = metadata.version(MODULE)
 
 # The full project version, used as the replacement for |release| and e.g. in the HTML templates.
 # For example, for the Python documentation, this may be something like 2.6.0rc1.
@@ -109,7 +110,7 @@ autosectionlabel_maxdepth = None
 # to autosectionlabel_maxdepth, labels are generated only for top level sections, and deeper sections
 # are not labeled. It defaults to None (disabled).
 
-# -- Intersphinx configuration ----------------------------------------------------------------------------------------
+# -- InterSphinx configuration ----------------------------------------------------------------------------------------
 
 intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable/", None),
@@ -122,7 +123,6 @@ intersphinx_mapping = {
     "torch": ("https://pytorch.org/docs/stable/", None),
     "xarray": ("https://xarray.pydata.org/en/stable/", None),
 }
-
 # This config value contains the locations and names of other projects that should be linked to
 # in this documentation.
 # Relative local paths for target locations are taken as relative to the base of the
@@ -148,7 +148,7 @@ intersphinx_disabled_reftypes = ["std:doc"]
 extensions.append("autoapi.extension")
 # Activate the extension
 
-autoapi_dirs = [f"../{MODULE}"]
+autoapi_dirs = [f"../{MODULE_DIR}"]
 # Paths (relative or absolute) to the source code that you wish to generate your API documentation from.
 
 autoapi_type = "python"
@@ -440,6 +440,7 @@ autodoc_type_aliases = {
     "TimedeltaIndex": "~pandas.TimedeltaIndex",
     "DatetimeIndex": "~pandas.DatetimeIndex",
     "Categorical": "~pandas.Categorical",
+    "get_dummies": "~pandas.get_dummies",
     # xarray
     "DataArray": "~xarray.DataArray",
     "Dataset": "~xarray.Dataset",

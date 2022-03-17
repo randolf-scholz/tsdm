@@ -23,8 +23,8 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
-from numba import njit
-from pandas import CategoricalDtype, DataFrame, Series
+import numba
+from pandas import CategoricalDtype, DataFrame, Series, get_dummies
 
 __logger__ = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
 
     Returns
     -------
-    result: DataFrame
+    DataFrame
 
 
         ======  ================================================
@@ -158,15 +158,15 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
 
     Parameters
     ----------
-    df: :class:`pandas.DataFrame`
+    df: DataFrame
 
     Returns
     -------
-    x: :class:`pandas.DataFrame` ``[dtype]``
+    x: DataFrame
         The original dataframe
-    m: :class:`pandas.DataFrame` ``[uint8]``
+    m: DataFrame
         mask `m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}`
-    d: :class:`pandas.DataFrame` ``[TimeDelta64]``
+    d: DataFrame
         time delta  `δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt`, with `δ_0=0`
 
     References
@@ -185,10 +185,12 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     s[0] = 0 * s[1]
     s = pd.Index(s)
 
-    @njit
+    @numba.njit
     def get_deltas(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # using numba jit compiled for speed - pandas was too slow!
-        c = np.outer(a, np.zeros(b.shape[-1]))
+        # c = np.outer(a, np.zeros(b.shape[-1]))
+        c = np.zeros( (*a.shape, b.shape[-1]), dtype=a.dtype)
+
         for i in range(1, len(a)):
             c[i] = a[i] + c[i - 1] * (1 - b[i - 1])
             # note: a[i] + b[i] * c[i-1] does not work - not implemented
