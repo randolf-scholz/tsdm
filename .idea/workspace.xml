@@ -9,14 +9,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitlab-ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.gitlab-ci.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs/conf.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tsdm/VERSION" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tsdm/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tsdm/encoders/functional/_functional.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/encoders/functional/_functional.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -355,7 +349,7 @@
       <workItem from="1647509572563" duration="1794000" />
       <workItem from="1647523544895" duration="890000" />
       <workItem from="1647524628817" duration="2868000" />
-      <workItem from="1647527948212" duration="11975000" />
+      <workItem from="1647527948212" duration="13204000" />
     </task>
     <servers />
   </component>
