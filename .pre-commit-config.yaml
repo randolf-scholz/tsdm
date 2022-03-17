@@ -1,9 +1,47 @@
 repos:
-  - repo: local
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
     hooks:
-      - id: jupyter-nb-clear-output
-        name: jupyter-nb-clear-output
-        files: dev/.*\.ipynb$
-        stages: [commit]
-        language: system
-        entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+
+
+
+
+
+
+#repos:
+#  - repo: local
+#    hooks:
+#      - id: check-ast
+#        description: "simply checks whether the files parse as valid python."
+#      - id: check-yaml
+#        description: "checks yaml files for parseable syntax."
+#      - id: check-toml
+#        description: "checks toml files for parseable syntax."
+#      - id: check-json
+#        description: "checks json files for parseable syntax."
+#      - id: pretty-format-json
+#        description: "sets a standard for formatting json files."
+#      - id: check-added-large-files
+#        description: "prevents giant files from being committed."
+#      - id: check-builtin-literals
+#        description: "requires literal syntax when initializing empty or zero python builtin types."
+#      - id: end-of-file-fixer
+#        description: "ensures that a file is either empty, or ends with one newline."
+#      - id: jupyter-nb-clear-output
+#        name: jupyter-nb-clear-output
+#        description: Clear output cells in Jupyter notebooks
+#        files: 'dev/.*\.ipynb$'
+#        stages: [commit]
+#        language: system
+#        entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
+#      - id: blacken-docs
+#        name: blacken-docs
+#        description: Run `black` on python code blocks in documentation files
+#        entry: blacken-docs
+#        language: python
+#        language_version: python3
+#        files: '\.(rst|md|markdown|py|tex)$'

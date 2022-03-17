@@ -212,6 +212,17 @@ jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
+name = "blacken-docs"
+version = "1.12.1"
+description = "Run `black` on python code blocks in documentation files"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+black = ">=19.3b0"
+
+[[package]]
 name = "bleach"
 version = "4.1.0"
 description = "An easy safelist-based HTML-sanitizing tool."
@@ -293,6 +304,14 @@ python-versions = "*"
 
 [package.dependencies]
 pycparser = "*"
+
+[[package]]
+name = "cfgv"
+version = "3.3.1"
+description = "Validate configuration and produce human readable error messages."
+category = "dev"
+optional = false
+python-versions = ">=3.6.1"
 
 [[package]]
 name = "charset-normalizer"
@@ -823,6 +842,17 @@ genshi = ["genshi"]
 lxml = ["lxml"]
 
 [[package]]
+name = "identify"
+version = "2.4.12"
+description = "File identification library for Python"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+license = ["ukkonen"]
+
+[[package]]
 name = "idna"
 version = "3.3"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -1290,6 +1320,14 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
+name = "nodeenv"
+version = "1.6.0"
+description = "Node.js virtual environment builder"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "numba"
 version = "0.55.1"
 description = "compiling Python code using LLVM"
@@ -1525,6 +1563,22 @@ description = "Poetry PEP 517 Build Backend"
 category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+
+[[package]]
+name = "pre-commit"
+version = "2.17.0"
+description = "A framework for managing and maintaining multi-language pre-commit hooks."
+category = "dev"
+optional = false
+python-versions = ">=3.6.1"
+
+[package.dependencies]
+cfgv = ">=2.0.0"
+identify = ">=1.0.0"
+nodeenv = ">=0.11.1"
+pyyaml = ">=5.1"
+toml = "*"
+virtualenv = ">=20.0.8"
 
 [[package]]
 name = "prometheus-client"
@@ -2717,7 +2771,7 @@ modin = ["modin"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9, <3.11"
-content-hash = "ae57a41320126b56f5c3ad0d8bbaab9da710b63419909f1156de4765eb13e9fc"
+content-hash = "f84d6069eefaf7b81ee342b2f0118dd536d49de0383f7e80838c4597c2b2e25b"
 
 [metadata.files]
 absl-py = [
@@ -2883,6 +2937,10 @@ black = [
     {file = "black-22.1.0-py3-none-any.whl", hash = "sha256:3524739d76b6b3ed1132422bf9d82123cd1705086723bc3e235ca39fd21c667d"},
     {file = "black-22.1.0.tar.gz", hash = "sha256:a7c0192d35635f6fc1174be575cb7915e92e5dd629ee79fdaf0dcfa41a80afb5"},
 ]
+blacken-docs = [
+    {file = "blacken_docs-1.12.1-py2.py3-none-any.whl", hash = "sha256:385eb3db60faddceb218e54e2677821e1dbd441d0473f95cc4b7206a52d5bb62"},
+    {file = "blacken_docs-1.12.1.tar.gz", hash = "sha256:5fd22ba1f3ab10d7013427019b4e7b83f6f4aca00c898645e0481ce7966b0aa4"},
+]
 bleach = [
     {file = "bleach-4.1.0-py2.py3-none-any.whl", hash = "sha256:4d2651ab93271d1129ac9cbc679f524565cc8a1b791909c4a51eac4446a15994"},
     {file = "bleach-4.1.0.tar.gz", hash = "sha256:0900d8b37eba61a802ee40ac0061f8c2b5dee29c1927dd1d233e075ebf5a71da"},
@@ -2958,6 +3016,10 @@ cffi = [
     {file = "cffi-1.15.0-cp39-cp39-win32.whl", hash = "sha256:2a23af14f408d53d5e6cd4e3d9a24ff9e05906ad574822a10563efcef137979a"},
     {file = "cffi-1.15.0-cp39-cp39-win_amd64.whl", hash = "sha256:3773c4d81e6e818df2efbc7dd77325ca0dcb688116050fb2b3011218eda36139"},
     {file = "cffi-1.15.0.tar.gz", hash = "sha256:920f0d66a896c2d99f0adbb391f990a84091179542c205fa53ce5787aff87954"},
+]
+cfgv = [
+    {file = "cfgv-3.3.1-py2.py3-none-any.whl", hash = "sha256:c6a0883f3917a037485059700b9e75da2464e6c27051014ad85ba6aaa5884426"},
+    {file = "cfgv-3.3.1.tar.gz", hash = "sha256:f5a830efb9ce7a445376bb66ec94c638a9787422f96264c98edc6bdeed8ab736"},
 ]
 charset-normalizer = [
     {file = "charset-normalizer-2.0.12.tar.gz", hash = "sha256:2857e29ff0d34db842cd7ca3230549d1a697f96ee6d3fb071cfa6c7393832597"},
@@ -3333,6 +3395,10 @@ hiredis = [
 html5lib = [
     {file = "html5lib-1.1-py2.py3-none-any.whl", hash = "sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d"},
     {file = "html5lib-1.1.tar.gz", hash = "sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f"},
+]
+identify = [
+    {file = "identify-2.4.12-py2.py3-none-any.whl", hash = "sha256:5f06b14366bd1facb88b00540a1de05b69b310cbc2654db3c7e07fa3a4339323"},
+    {file = "identify-2.4.12.tar.gz", hash = "sha256:3f3244a559290e7d3deb9e9adc7b33594c1bc85a9dd82e0f1be519bf12a1ec17"},
 ]
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
@@ -3754,6 +3820,10 @@ nest-asyncio = [
     {file = "nest_asyncio-1.5.4-py3-none-any.whl", hash = "sha256:3fdd0d6061a2bb16f21fe8a9c6a7945be83521d81a0d15cff52e9edee50101d6"},
     {file = "nest_asyncio-1.5.4.tar.gz", hash = "sha256:f969f6013a16fadb4adcf09d11a68a4f617c6049d7af7ac2c676110169a63abd"},
 ]
+nodeenv = [
+    {file = "nodeenv-1.6.0-py2.py3-none-any.whl", hash = "sha256:621e6b7076565ddcacd2db0294c0381e01fd28945ab36bcf00f41c5daf63bef7"},
+    {file = "nodeenv-1.6.0.tar.gz", hash = "sha256:3ef13ff90291ba2a4a7a4ff9a979b63ffdd00a464dbe04acf0ea6471517a4c2b"},
+]
 numba = [
     {file = "numba-0.55.1-1-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:be56fb78303973e6c19c7c2759996a5863bac69ca87570543d9f18f2f287a441"},
     {file = "numba-0.55.1-1-cp310-cp310-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:ee71407be9cba09b4f68afa668317e97d66d5f83c37ab4caa20d8abcf5fad32b"},
@@ -3963,6 +4033,10 @@ poetry = [
 poetry-core = [
     {file = "poetry-core-1.0.8.tar.gz", hash = "sha256:951fc7c1f8d710a94cb49019ee3742125039fc659675912ea614ac2aa405b118"},
     {file = "poetry_core-1.0.8-py2.py3-none-any.whl", hash = "sha256:54b0fab6f7b313886e547a52f8bf52b8cf43e65b2633c65117f8755289061924"},
+]
+pre-commit = [
+    {file = "pre_commit-2.17.0-py2.py3-none-any.whl", hash = "sha256:725fa7459782d7bec5ead072810e47351de01709be838c2ce1726b9591dad616"},
+    {file = "pre_commit-2.17.0.tar.gz", hash = "sha256:c1a8040ff15ad3d648c70cc3e55b93e4d2d5b687320955505587fd79bbaed06a"},
 ]
 prometheus-client = [
     {file = "prometheus_client-0.13.1-py3-none-any.whl", hash = "sha256:357a447fd2359b0a1d2e9b311a0c5778c330cfbe186d880ad5a6b39884652316"},
