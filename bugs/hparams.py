@@ -4,6 +4,7 @@
 import gc
 import logging
 import os
+from collections import OrderedDict
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -11,20 +12,11 @@ from functools import update_wrapper, wraps
 from inspect import Parameter, signature
 from time import perf_counter_ns
 from types import MethodType
-from typing import Any, Final, Optional, Union, overload, TypedDict
-from typing import Dict, Any
+from typing import Any, Dict, Final, Optional, TypedDict, TypeVar, Union, overload
 
 import numpy as np
-
-
-import logging
-from collections import OrderedDict
-from typing import Any, TypeVar
-
 import torch
 from torch import Tensor, jit, nn
-
-from typing import TypeVar
 
 
 @dataclass

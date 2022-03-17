@@ -2,7 +2,7 @@ exclude: \.idea/
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
-    rev: v3.2.0
+    rev: v4.1.0
     hooks:
     -   id: check-ast
         description: "simply checks whether the files parse as valid python."
@@ -22,15 +22,22 @@ repos:
         description: "ensures that a file is either empty, or ends with one newline."
     -   id: trailing-whitespace
         description: "trims trailing whitespace.."
+# black
 -   repo: https://github.com/psf/black
     rev: 22.1.0
     hooks:
     -   id: black
     -   id: black-jupyter
+# isort
+-   repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
 -   repo: https://github.com/pycqa/flake8
     rev: 4.0.1
     hooks:
       - id: flake8
+        files: (^src/|^tests/)
         additional_dependencies:
         - flake8-annotations
         - flake8-black
@@ -43,6 +50,31 @@ repos:
         - flake8-pyi
         - flake8-rst
         - flake8-rst-docstrings
+# mypy
+#-   repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: v0.941
+#    hooks:
+#      - id: mypy
+#        files: (^src/|^tests/)
+#        args:
+#        -   --warn-unused-configs
+#        -   --ignore-missing-imports
+#        additional_dependencies:
+#        -   numpy==1.21
+#        -   types-PyYAML
+#        -   types-backports
+#        -   types-protobuf
+#        -   types-pyOpenSSL
+#        -   types-redis
+#        -   types-requests
+#        -   types-setuptools
+#        -   types-six
+#        -   types-tabulate
+#        -   types-toml
+#        -   types-futures
+#        -   types-cryptography
+#        -   types-enum34
+#        -   types-ipaddress
 -   repo: local
     hooks:
     -   id: jupyter-nb-clear-output
@@ -52,21 +84,3 @@ repos:
         stages: [commit]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
-#    -   id: black
-#        name: black
-#        description: "Black: The uncompromising Python code formatter"
-#        entry: black
-#        language: python
-#        minimum_pre_commit_version: 2.9.2
-#        require_serial: true
-#        types_or: [ python, pyi ]
-
-#repos:
-
-#      - id: blacken-docs
-#        name: blacken-docs
-#        description: Run `black` on python code blocks in documentation files
-#        entry: blacken-docs
-#        language: python
-#        language_version: python3
-#        files: '\.(rst|md|markdown|py|tex)$'

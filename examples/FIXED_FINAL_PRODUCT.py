@@ -40,10 +40,7 @@ from torchinfo import summary
 
 import tsdm
 from tsdm.encoders.modular import *
-from tsdm.logutils import (
-    log_metrics,
-    log_optimizer_state,
-)
+from tsdm.logutils import log_metrics, log_optimizer_state
 from tsdm.losses import LOSSES
 from tsdm.models import SetFuncTS
 from tsdm.optimizers import OPTIMIZERS

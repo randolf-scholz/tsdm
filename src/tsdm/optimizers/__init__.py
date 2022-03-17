@@ -22,7 +22,7 @@ __logger__ = logging.getLogger(__name__)
 Optimizer = torch.optim.Optimizer
 r"""Type hint for optimizers."""
 
-OPTIMIZERS: Final[LookupTable[type[Optimizer]]] = {
+OPTIMIZERS: Final[LookupTable[type[torch.optim.Optimizer]]] = {
     "Adadelta": torch.optim.Adadelta,
     # Implements Adadelta algorithm.
     "Adagrad": torch.optim.Adagrad,
@@ -52,7 +52,9 @@ r"""Dictionary of all available optimizers."""
 LR_Scheduler = lr_scheduler._LRScheduler  # pylint: disable=protected-access
 r"""Type hint for lr_schedulers."""
 
-LR_SCHEDULERS: Final[LookupTable[type[LR_Scheduler]]] = {
+LR_SCHEDULERS: Final[
+    LookupTable[type[lr_scheduler._LRScheduler]]
+] = {  # pylint: disable=protected-access
     "LambdaLR": lr_scheduler.LambdaLR,
     "MultiplicativeLR": lr_scheduler.MultiplicativeLR,  # type: ignore
     "StepLR": lr_scheduler.StepLR,

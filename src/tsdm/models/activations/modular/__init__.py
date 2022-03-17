@@ -24,7 +24,7 @@ __logger__ = logging.getLogger(__name__)
 ModularActivation = nn.Module
 r"""Type hint for modular activations."""
 
-ModularActivations: Final[LookupTable[type[ModularActivation]]] = {
+ModularActivations: Final[LookupTable[type[nn.Module]]] = {
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
     "ELU": nn.ELU,
     "Hardshrink": nn.Hardshrink,

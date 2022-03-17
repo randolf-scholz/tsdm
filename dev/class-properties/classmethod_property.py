@@ -12,8 +12,8 @@ print(sys.version)
 # In[2]:
 
 
-from time import sleep
 from abc import ABC, ABCMeta, abstractmethod
+from time import sleep
 
 
 def compute(obj, s):

@@ -21,10 +21,10 @@ __all__ = [
 import logging
 from typing import Optional, Union
 
+import numba
 import numpy as np
 import pandas as pd
-import numba
-from pandas import CategoricalDtype, DataFrame, Series, get_dummies
+from pandas import CategoricalDtype, DataFrame, Series
 
 __logger__ = logging.getLogger(__name__)
 

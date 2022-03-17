@@ -11,6 +11,26 @@
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.pre-commit-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/hparams.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/hparams.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/BUGS/einsum_slow.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/class-properties/classmethod_property.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/class-properties/classmethod_property.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/datasets/cross_validate_kiwi_runs.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/cross_validate_kiwi_runs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/encoders/Untitled1.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/encoders/Untitled1.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/tasks/cross_validate_kiwi_runs.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tasks/cross_validate_kiwi_runs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/CONVNET.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/CONVNET.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/FIXED_FINAL_PRODUCT.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/FIXED_FINAL_PRODUCT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT_iresnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT_iresnet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/make_sbatch.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/make_sbatch.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tsdm/encoders/functional/_functional.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/encoders/functional/_functional.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tsdm/losses/modular/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/losses/modular/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tsdm/metrics/modular/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/metrics/modular/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tsdm/models/activations/modular/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/models/activations/modular/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tsdm/optimizers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/optimizers/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tsdm/random/_random.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/random/_random.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -113,7 +133,7 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
-    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+    <property name="settings.editor.selected.configurable" value="preferences.externalTools" />
     <property name="settings.editor.splitter.proportion" value="0.2617647" />
     <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/docs/conf.py" />
   </component>
@@ -349,7 +369,7 @@
       <workItem from="1647509572563" duration="1794000" />
       <workItem from="1647523544895" duration="890000" />
       <workItem from="1647524628817" duration="2868000" />
-      <workItem from="1647527948212" duration="16088000" />
+      <workItem from="1647527948212" duration="19318000" />
     </task>
     <servers />
   </component>

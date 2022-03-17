@@ -56,8 +56,8 @@ from torchinfo import summary
 from tqdm import tqdm, trange
 
 import tsdm
-from tsdm.datasets import DATASETS
 from encoders.functional import time2float
+from tsdm.datasets import DATASETS
 from tsdm.encoders.modular import *
 from tsdm.logutils import (
     compute_metrics,

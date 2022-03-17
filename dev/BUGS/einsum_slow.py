@@ -19,10 +19,10 @@
 # In[2]:
 
 
+import gc
 from itertools import product
 from time import perf_counter
 
-import gc
 import numpy as np
 import torch
 from pandas import DataFrame, MultiIndex, Series
