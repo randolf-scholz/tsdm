@@ -106,7 +106,3 @@ df.to_csv("einsum_slow.csv")
 
 
 # In[ ]:
-
-
-
-

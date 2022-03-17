@@ -47,7 +47,7 @@
 
 %
 \begin{enumerate}%
-  \item \emph{regular}, iff $\exists \del t>0 \forall i: \del t_i = \del t$ 
+  \item \emph{regular}, iff $\exists \del t>0 \forall i: \del t_i = \del t$
   \item \emph{$\kappa$-quasi-regular}, iff $\exists \del t>0 \forall i\exists k\in \DN_{0} : \del t_i = k\del t$. In this case, given  $\del t_{\min} =  \min\limits_{\del t_i > 0} \del t_i$, and $\del t_{max} = \max\{\del t>0 : \forall i\exists k\in \DN_{0} : \del t_i = k\del t\}$ we call $\kappa = \frac{\del t_{\min}}{\del t_{\max}}$ the \emph{regularity quotient}. $\kappa$ behaves similar to a condition number: $\kappa\in[1, \infty)$, the larger $\kappa$ the farther from regular the series is. One will have to insert up to $\kappa|S|$ dummies to make the TS regular. Note that for integer data, $\del t_{max} \gcd(\{\del t_i>0\})$
   \item \emph{irregular}, iff it is neither regular nor quasi-regular.
 \end{enumerate}%
@@ -68,8 +68,8 @@ In practice, since floating-point numbers are essentially rational numbers in th
 
   %
 \begin{align}\label{eq: eps-gpd}
-\veps-\gcd(x_1, \ldots, x_n) 
-   &= \max\{ y \mid \forall i \exists k\in\DZ : x_i \in U_\veps(k\cdot y)\} 
+\veps-\gcd(x_1, \ldots, x_n)
+   &= \max\{ y \mid \forall i \exists k\in\DZ : x_i \in U_\veps(k\cdot y)\}
 \\ &= \max\{ y \mid \forall i \exists \dist(x_i, y\DZ)\le \veps \}
 \end{align}
 

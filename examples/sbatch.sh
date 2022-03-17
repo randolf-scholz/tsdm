@@ -12,4 +12,4 @@ mkdir -p logs
 
 srun python debug_info.py
 
-srun python KIWI_FINAL_PRODUCT.py  "Fluo_GFP" --split=4    
+srun python KIWI_FINAL_PRODUCT.py  "Fluo_GFP" --split=4

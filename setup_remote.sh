@@ -1,4 +1,4 @@
-for remote_name in $(git remote); do 
+for remote_name in $(git remote); do
     git remote remove "${remote_name}"
 done
 
@@ -18,4 +18,3 @@ git remote -v
 git fetch berlin
 git branch --set-upstream-to=berlin/main  main
 git push -u berlin --all
-
