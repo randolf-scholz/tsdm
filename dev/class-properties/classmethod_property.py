@@ -5,6 +5,7 @@
 
 
 import sys
+
 print(sys.version)
 
 
@@ -14,11 +15,13 @@ print(sys.version)
 from time import sleep
 from abc import ABC, ABCMeta, abstractmethod
 
+
 def compute(obj, s):
     print(f"Computing {s} of {obj} ...", end="")
     sleep(3)
     print("DONE!")
     return "Phew, that was a lot of work!"
+
 
 class MyMetaClass(ABCMeta):
     @property
@@ -26,8 +29,8 @@ class MyMetaClass(ABCMeta):
         """This may take a while to compute!"""
         return compute(cls, "metaclass property")
 
-class MyBaseClass(ABC, metaclass=MyMetaClass):
 
+class MyBaseClass(ABC, metaclass=MyMetaClass):
     @property
     @classmethod
     @property
@@ -40,7 +43,9 @@ class MyBaseClass(ABC, metaclass=MyMetaClass):
         """This may take a while to compute!"""
         return compute(self, "instance property")
 
+
 class MyClass(MyBaseClass):
     """Some subclass of MyBaseClass"""
+
 
 help(MyClass)

@@ -115,7 +115,7 @@ autosectionlabel_maxdepth = None
 intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "numba": ("https://numba.pydata.org/numba-doc/latest/", None),
-    "numpy": ('https://numpy.org/doc/stable/', None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
     "python": ("https://docs.python.org/3.10/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),

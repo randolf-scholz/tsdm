@@ -1,3 +1,4 @@
+exclude: \.idea/
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
@@ -21,6 +22,11 @@ repos:
         description: "ensures that a file is either empty, or ends with one newline."
     -   id: trailing-whitespace
         description: "trims trailing whitespace.."
+-   repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+    -   id: black
+    -   id: black-jupyter
 -   repo: local
     hooks:
     -   id: jupyter-nb-clear-output
@@ -30,12 +36,14 @@ repos:
         stages: [commit]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
-exclude: \.idea/
-
-
-
-
-
+    -   id: black
+        name: black
+        description: "Black: The uncompromising Python code formatter"
+        entry: black
+        language: python
+        minimum_pre_commit_version: 2.9.2
+        require_serial: true
+        types_or: [ python, pyi ]
 
 #repos:
 

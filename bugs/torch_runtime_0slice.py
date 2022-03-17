@@ -18,7 +18,7 @@ class MWE(nn.Module):
 
 
 xdim, ydim = 7, 10
-device = torch.device('cuda')  # bug happens both on CPU and GPU
+device = torch.device("cuda")  # bug happens both on CPU and GPU
 model = jit.script(MWE(xdim, ydim)).to(device=device)  # bug only occurs with JIT
 
 for k in range(100):
