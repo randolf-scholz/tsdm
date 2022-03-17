@@ -1,6 +1,8 @@
 r"""Random Samplers."""
 
 __all__ = [
+    # ABCs
+    "BaseSampler",
     # Classes
     "SliceSampler",
     # "TimeSliceSampler",
@@ -14,6 +16,8 @@ import logging
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from itertools import chain, count
 from typing import Any, Generic, Optional, TypeVar, Union
+from abc import ABC, abstractmethod
+
 
 import numpy as np
 from numpy.random import permutation
@@ -56,6 +60,25 @@ dt_type = Union[
 #     def __iter__(self) -> Iterator:
 #         """TODO: Add method."""
 #         return super().__iter__()
+
+
+
+class BaseSampler(Sampler, Sized, ABC):
+    #
+    # def __init__(self, data_source: Optional[Sized]) -> None:
+    #     r"""Initialize the sampler."""
+    #     super().__init__(data_source)
+
+    @abstractmethod
+    def __len__(self) -> int:
+        r"""Return the length of the sampler."""
+
+    @abstractmethod
+    def __iter__(self) -> Iterator:
+        r"""Iterate over random indices."""
+
+
+
 
 
 class SliceSampler(Sampler):

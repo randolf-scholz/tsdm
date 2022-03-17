@@ -10,16 +10,9 @@
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/datasets.ods" beforeDir="false" afterPath="$PROJECT_DIR$/data/datasets.ods" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/tasks/KIWI_RUNS_TASK-tsdm.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tasks/KIWI_RUNS_TASK-tsdm.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev/tasks/KIWI_RUNS_TASK.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tasks/KIWI_RUNS_TASK.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/recipes/parametrization.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/recipes/parametrization.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/datasets/torch/generic.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/datasets/torch/generic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/samplers/PartitionSampler.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/dev/samplers/PartitionSampler.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsdm/random/samplers/_samplers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/random/samplers/_samplers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/base/tasks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_final_product.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/tasks/kiwi_runs_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm/util/lazydict.py" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm/util/lazydict.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -122,7 +115,7 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
-    <property name="settings.editor.selected.configurable" value="preferences.externalTools" />
+    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.notebooks.jupyter.connections.configuration.JupyterServerConfigurable" />
     <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../LinODE-Net/docs/conf.py" />
   </component>
   <component name="ReaderModeSettings">
@@ -353,6 +346,7 @@
       <workItem from="1647165216124" duration="3189000" />
       <workItem from="1647259307478" duration="19937000" />
       <workItem from="1647337612166" duration="26486000" />
+      <workItem from="1647509572563" duration="1794000" />
     </task>
     <servers />
   </component>
