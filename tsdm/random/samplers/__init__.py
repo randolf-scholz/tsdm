@@ -1,6 +1,8 @@
 r"""Random Samplers."""
 
 __all__ = [
+    # ABC
+    "BaseSampler",
     # Constants
     "Sampler",
     "SAMPLERS",
@@ -24,6 +26,7 @@ from tsdm.random.samplers._samplers import (
     IntervalSampler,
     SequenceSampler,
     SliceSampler,
+    BaseSampler,
 )
 
 __logger__ = logging.getLogger(__name__)
