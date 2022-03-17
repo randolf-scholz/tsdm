@@ -23,5 +23,5 @@ __logger__ = logging.getLogger(__name__)
 ModularMetric = nn.Module
 r"""Type hint for modular losses."""
 
-ModularMetrics: Final[LookupTable[type[ModularMetric]]] = {}
+ModularMetrics: Final[LookupTable[type[nn.Module]]] = {}
 r"""Dictionary of all available modular metrics."""

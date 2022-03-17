@@ -2,8 +2,8 @@
 # coding: utf-8
 
 
-import textwrap
 import subprocess
+import textwrap
 from itertools import product
 
 for target, split in product(["OD600", "Fluo_GFP"], [0, 1, 2, 3, 4]):

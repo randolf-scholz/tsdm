@@ -135,12 +135,11 @@ def random_data(
     """
     dtype = np.dtype(dtype)
     rng = np.random.default_rng()
-
     if np.issubdtype(dtype, np.integer):
         iinfo = np.iinfo(dtype)
         data = rng.integers(low=iinfo.min, high=iinfo.max, size=size)
         result = data.astype(dtype)
-    elif np.issubdtype(dtype, np.inexact):
+    elif np.issubdtype(dtype, np.floating):
         finfo = np.finfo(dtype)
         exp = rng.integers(low=finfo.minexp, high=finfo.maxexp, size=size)
         mant = rng.uniform(low=-2, high=+2, size=size)

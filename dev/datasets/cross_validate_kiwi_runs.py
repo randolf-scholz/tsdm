@@ -1,8 +1,7 @@
 from collections import defaultdict
-
+from itertools import chain
 
 from sklearn.model_selection import ShuffleSplit
-from itertools import chain
 
 
 def create_replicate_dict(experiments_per_run):
