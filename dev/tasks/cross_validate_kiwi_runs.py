@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+
 from collections import defaultdict
 from itertools import chain
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from __future__ import print_function
 
 # Unlike the rest of the PyTorch this file must be python2 compliant.

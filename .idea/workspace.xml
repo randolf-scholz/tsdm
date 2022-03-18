@@ -9,10 +9,36 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitlab-ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.gitlab-ci.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.pre-commit-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/__module__Missing.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/__module__Missing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/abc_type_hint.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/abc_type_hint.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/abstractmethod_signatures.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/abstractmethod_signatures.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/collect_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/collect_env.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/flake8_W504.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/flake8_W504.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/hparams.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/hparams.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/jit_export_staticmethod.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/jit_export_staticmethod.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/overload_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/overload_problem.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/pickle_subclass_hook.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/tmp.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/tmp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/torch_runtime_0slice.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/torch_runtime_0slice.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/torch_sampler.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/torch_sampler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bugs/type_narrowing.py" beforeDir="false" afterPath="$PROJECT_DIR$/bugs/type_narrowing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/BUGS/einsum_slow.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/BUGS/einsum_slow.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/class-properties/ClassPropertyIdea.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/class-properties/ClassPropertyIdea.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/class-properties/classmethod_property.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/class-properties/classmethod_property.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/datasets/cross_validate_kiwi_runs.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/datasets/cross_validate_kiwi_runs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/experiments/KIWI_RUNS_EXPERIMENT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/tasks/cross_validate_kiwi_runs.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/tasks/cross_validate_kiwi_runs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/utils/decorators_2.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/utils/decorators_2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dev/utils/test_decorator.py" beforeDir="false" afterPath="$PROJECT_DIR$/dev/utils/test_decorator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/CONVNET.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/CONVNET.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/FIXED_FINAL_PRODUCT.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/FIXED_FINAL_PRODUCT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_FINAL_PRODUCT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT_iresnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/KIWI_RUNS_EXPERIMENT_iresnet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/debug_info.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/debug_info.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/make_sbatch.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/make_sbatch.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -353,7 +379,7 @@
       <workItem from="1647524628817" duration="2868000" />
       <workItem from="1647527948212" duration="19563000" />
       <workItem from="1647599946510" duration="43000" />
-      <workItem from="1647599996993" duration="501000" />
+      <workItem from="1647599996993" duration="2279000" />
     </task>
     <servers />
   </component>
