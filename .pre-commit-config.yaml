@@ -5,13 +5,21 @@ repos:
     rev: v4.1.0
     hooks:
     -   id: check-ast
-        description: "simply checks whether the files parse as valid python."
+        description: "Checks whether the files parse as valid python."
     -   id: check-yaml
-        description: "checks yaml files for parseable syntax."
+        description: "Checks yaml files for parseable syntax."
     -   id: check-toml
-        description: "checks toml files for parseable syntax."
+        description: "Checks toml files for parseable syntax."
     -   id: check-json
-        description: "checks json files for parseable syntax."
+        description: "Checks json files for parseable syntax."
+    -   id: check-xml
+        description: "Checks xml files for parseable syntax."
+    -   id: check-executables-have-shebangs
+        description: "Checks that non-binary executables have a proper shebang."
+    -   id: check-shebang-scripts-are-executable
+        description: "Checks that scripts with shebangs are executable."
+    -   id: check-symlinks
+        description: "Checks for symlinks which do not point to anything."
     -   id: pretty-format-json
         description: "sets a standard for formatting json files."
     -   id: check-added-large-files
@@ -22,6 +30,9 @@ repos:
         description: "ensures that a file is either empty, or ends with one newline."
     -   id: trailing-whitespace
         description: "trims trailing whitespace.."
+    -   id: fix-encoding-pragma
+        args: ["--remove"]
+        description: "Add # -*- coding: utf-8 -*- to the top of python files."
 # black
 -   repo: https://github.com/psf/black
     rev: 22.1.0
