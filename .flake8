@@ -47,17 +47,12 @@ exclude =
     ./dev,
 
 # Annotations plugin
-# Supress ANN200-level errors for functions that have no return (return None)
+# Suppress ANN200-level errors for functions that have no return (return None)
 suppress-none-returning = True
 allow-untyped-defs = True
 
 # docstring plugin
 docstring-convention = numpy
-
-# import-order-plugin
-# flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
-import-order-style = pep8
-application-import-names = tsdm
 
 rst-roles =
     mod,

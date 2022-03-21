@@ -13,6 +13,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "tsdm"
+packages = [{include = "tsdm", from="src"}]
 version = "0.2.3"
 description = "Time-Series Datasets and Models"
 license = "MIT"
@@ -20,12 +21,7 @@ authors = ["Randolf Scholz <rscholz@ismll.de>"]
 homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
 repository = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
 readme = "README.rst"
-include = [
-    "CHANGELOG.rst",
-    "CONTRIBUTING.rst",
-    "LICENSE.rst",
-    "README.rst",
-]
+include = ["CHANGELOG.rst", "LICENSE.rst", "CONTRIBUTING.rst"]
 keywords = ["time-series", "machine-learning"]
 documentation = "https://www.user.tu-berlin.de/randolf.scholz/tsdm"
 classifiers = [
@@ -38,7 +34,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
-packages = [{include = "tsdm", from="src"}]
 
 
 [tool.poetry.extras]
@@ -57,7 +52,7 @@ scikit-learn = ">=1.0"
 scipy = ">=1.7"
 tables = ">=3.6"
 tensorboard = ">=2.7"
-torch = ">=1.10"
+torch = ">=1.11"
 tqdm = ">=4.50"
 xarray = ">=0.20"
 
@@ -70,19 +65,19 @@ flake8-black = ">=0.2.4"
 flake8-bugbear = ">=22.1.11"
 flake8-comprehensions = ">=3.8.0"
 flake8-docstrings = ">=1.6.0"
-flake8-import-order = ">=0.18.1"
 flake8-mutable = ">=1.2.0"
 flake8-nb = ">=0.3.1"
 flake8-pyi = ">=22.1.0"
 flake8-rst = ">=0.8.0"
 flake8-rst-docstrings = ">=0.2.5"
 isort = ">=5.10.1"
-mypy = ">=0.931"
+mypy = ">=0.941"
 nbconvert = ">=6.4.4"
 poetry = ">=1.1.12"
 pre-commit = ">=2.17.0"
 pybadges = ">=3.0"
 pycodestyle = ">=2.8.0"
+pydeps = ">=1.10.12"
 pydocstyle = ">=6.1.1"
 pylint = ">=2.12.2"
 pylint-gitlab = ">=1.0.0"
