@@ -43,9 +43,9 @@ class BaseEncoder(ABC):
         :exc:`~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_func(cls.fit, None, cls._post_fit_hook)
-        cls.encode = wrap_func(cls.encode, cls._pre_encode_hook, None)
-        cls.decode = wrap_func(cls.decode, cls._pre_decode_hook, None)
+        cls.fit = wrap_func(cls.fit, after=cls._post_fit_hook)
+        cls.encode = wrap_func(cls.encode, before=cls._pre_encode_hook)
+        cls.decode = wrap_func(cls.decode, before=cls._pre_decode_hook)
 
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
