@@ -2564,7 +2564,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-protobuf"
-version = "3.19.14"
+version = "3.19.15"
 description = "Typing stubs for protobuf"
 category = "dev"
 optional = false
@@ -4722,8 +4722,8 @@ types-ipaddress = [
     {file = "types_ipaddress-1.0.8-py3-none-any.whl", hash = "sha256:4933b74da157ba877b1a705d64f6fa7742745e9ffd65e51011f370c11ebedb55"},
 ]
 types-protobuf = [
-    {file = "types-protobuf-3.19.14.tar.gz", hash = "sha256:00d59b1e07c808f2f03c6ca8ba4b077281585bb28148a3020cfbf7ec5fc7fb86"},
-    {file = "types_protobuf-3.19.14-py3-none-any.whl", hash = "sha256:8f9192068983e24358d5554d6c8e84f56f790a34836cd57666e94c215b6f1134"},
+    {file = "types-protobuf-3.19.15.tar.gz", hash = "sha256:d371d0a5b32e78c2d684329a5d4491d385e6eadcab497b37c41172ded328c5d9"},
+    {file = "types_protobuf-3.19.15-py3-none-any.whl", hash = "sha256:4673a4e56495886590c36cd87f2d855299a699a598eacb2e27d82b57eb4afb05"},
 ]
 types-pyopenssl = [
     {file = "types-pyOpenSSL-22.0.1.tar.gz", hash = "sha256:0de2af22ae8f4f7612a35d93b76b154fb683d3bfa89590ca85ba4b2fb9e7b434"},
