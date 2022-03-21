@@ -373,8 +373,8 @@ def trace(func: Callable) -> Callable:
             "\n\t".join(
                 (
                     f"{func.__qualname__}: ENTERING",
-                    f"args={(args)}",
-                    f"kwargs={(kwargs)}",
+                    f"args={args}",
+                    f"kwargs={kwargs}",
                 )
             ),
         )
