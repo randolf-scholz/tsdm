@@ -126,10 +126,14 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
     def __init_subclass__(cls, *args, **kwargs):
         r"""Add wrapper code."""
-        cls.load = wrap_func(cls.load, cls._load_pre_hook, cls._load_post_hook)
-        cls.clean = wrap_func(cls.clean, cls._load_pre_hook, cls._load_post_hook)
+        cls.load = wrap_func(
+            cls.load, before=cls._load_pre_hook, after=cls._load_post_hook
+        )
+        cls.clean = wrap_func(
+            cls.clean, before=cls._load_pre_hook, after=cls._load_post_hook
+        )
         cls.download = wrap_func(
-            cls.clean, cls._download_pre_hook, cls._download_post_hook
+            cls.clean, before=cls._download_pre_hook, after=cls._download_post_hook
         )
 
     @cached_property
