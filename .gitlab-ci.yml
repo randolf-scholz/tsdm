@@ -54,10 +54,11 @@ setup:
   - mkdir -p reports
   # python setup
   - python -V
-  - pip install --upgrade pip poetry
-  - poetry shell
+  - pip install --upgrade pip poetry virtualenv
+  - virtualenv ${VENVNAME}
+  - source ${VENVNAME}/bin/activate
   # install dependencies
-  - poetry install --no-root --extras ci --extras modin
+  - poetry install --no-root
   script:
   # build and install package
   # set version number depending on CI_PIPELINE_ID
