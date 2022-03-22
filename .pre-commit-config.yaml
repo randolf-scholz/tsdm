@@ -1,4 +1,6 @@
 exclude: \.idea/
+default_language_version:
+    python: python3.9
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   # https://pre-commit.com/hooks.html
@@ -51,11 +53,15 @@ repos:
     - flake8-rst
     - flake8-rst-docstrings
 # flake8-nb
-- repo: https://github.com/s-weigand/flake8-nb
-  rev: v0.4.0
+#- repo: https://github.com/s-weigand/flake8-nb
+#  rev: v0.4.0
+#  hooks:
+#  - id: flake8-nb
+#    files: (^examples/.*.ipynb$|^bugs/.*.ipynb$)
+- repo: https://github.com/MarcoGorelli/absolufy-imports
+  rev: v0.3.1
   hooks:
-  - id: flake8-nb
-    files: (^examples/|^bugs/)
+  - id: absolufy-imports
 - repo: https://github.com/PyCQA/pydocstyle
   rev: 6.1.1
   hooks:
@@ -63,32 +69,18 @@ repos:
     files: (^src/|^tests/)
     additional_dependencies:
     - toml
-
-  # mypy
+# mypy
 #-   repo: https://github.com/pre-commit/mirrors-mypy
 #    rev: v0.941
 #    hooks:
-#      - id: mypy
-#        files: (^src/|^tests/)
-#        args:
-#        -   --warn-unused-configs
-#        -   --ignore-missing-imports
-#        additional_dependencies:
-#        -   numpy==1.21.5
-#        -   types-PyYAML
-#        -   types-backports
-#        -   types-protobuf
-#        -   types-pyOpenSSL
-#        -   types-redis
-#        -   types-requests
-#        -   types-setuptools
-#        -   types-six
-#        -   types-tabulate
-#        -   types-toml
-#        -   types-futures
-#        -   types-cryptography
-#        -   types-enum34
-#        -   types-ipaddress
+#    - id: mypy
+#      files: (^src/|^tests/)
+#      args:
+#      -   --warn-unused-configs
+#      -   --ignore-missing-imports
+#      additional_dependencies:
+#      -   numpy==1.21.5
+#      -   types-all
 -   repo: local
     hooks:
     -   id: jupyter-nb-clear-output
