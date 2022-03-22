@@ -122,9 +122,11 @@ disable= [
     "C0144",  # non-ascii-name
     "R0801",  # similar lines
     "W0511",  # (fixme) (todos)
+    "W1113",  # keyword-arg-before-vararg
     "R0902",  # too-many-instance-attributes
     "R0915",  # too-many-statements
     "R0914",  # too-many-locals
+    "W0221",  # arguments-differ
 ]
 
 [tool.pylint.REPORTS]
@@ -133,7 +135,7 @@ disable= [
 output-format="colorized"
 
 [tool.pylint.FORMAT]
-max-line-length=100
+max-line-length=120
 
 [tool.pylint.TYPECHECK]
 # List of members which are set dynamically and missed by pylint inference system, and so shouldn't
@@ -157,6 +159,8 @@ python_version = "3.9"
 show_column_numbers = true
 show_error_codes = true
 warn_unused_ignores = true
+#disallow_untyped_defs = true
+disallow_incomplete_defs = true
 
 [[tool.mypy.overrides]]
 module = [

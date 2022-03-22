@@ -47,7 +47,6 @@ from tsdm.tasks.base import BaseTask
 from tsdm.tasks.etdataset import ETDatasetTask_Informer
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ __logger__ = logging.getLogger(__name__)
 Task = BaseTask
 r"""Type hint for tasks."""
 
-TASKS: Final[LookupTable[type[Task]]] = {
+TASKS: Final[dict[str, type[Task]]] = {
     "ETDatasetTask_Informer": ETDatasetTask_Informer,
     "KIWI_RUNS_TASK": KIWI_RUNS_TASK,
     "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,

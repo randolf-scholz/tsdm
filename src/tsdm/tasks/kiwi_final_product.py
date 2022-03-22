@@ -363,7 +363,7 @@ class _Dataset(torch.utils.data.Dataset):
         self.metadata = md
         self.observables = observables
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: tuple[tuple[int, int], slice]) -> Sample:
         r"""Return a sample from the dataset."""
         key, slc = item
         ts = self.timeseries.loc[key].copy(deep=True)

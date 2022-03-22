@@ -16,11 +16,11 @@ __all__ = [
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from functools import singledispatchmethod
-from typing import Any, Sequence
+from typing import Any, Sequence, Union, overload
 
 from tsdm.util.decorators import wrap_func
 from tsdm.util.strings import repr_sequence
+from tsdm.util.types import ObjectType
 
 __logger__ = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class BaseEncoder(ABC):
     _is_fitted: bool = False
     """Whether the encoder has been fitted."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.transform = self.encode
         self.inverse_transform = self.decode
@@ -119,11 +119,11 @@ class BaseEncoder(ABC):
 class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
-    def encode(self, data, /):
+    def encode(self, data: ObjectType, /) -> ObjectType:
         r"""Encode the input."""
         return data
 
-    def decode(self, data, /):
+    def decode(self, data: ObjectType, /) -> ObjectType:
         r"""Decode the input."""
         return data
 
@@ -169,18 +169,23 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
         r"""Return the number of the encoders."""
         return len(self.encoders)
 
-    @singledispatchmethod
-    def __getitem__(self, index):
+    @overload
+    def __getitem__(self, index: int) -> BaseEncoder:  # noqa: D105
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> ProductEncoder:  # noqa: D105
+        ...
+
+    def __getitem__(
+        self, index: Union[int, slice]
+    ) -> Union[BaseEncoder, ProductEncoder]:
         r"""Get the encoder at the given index."""
+        if isinstance(index, int):
+            return self.encoders[index]
+        if isinstance(index, slice):
+            return ProductEncoder(*self.encoders[index])
         raise ValueError(f"Index {index} not supported.")
-
-    @__getitem__.register(int)
-    def _(self, index: int) -> BaseEncoder:
-        return self.encoders[index]
-
-    @__getitem__.register(slice)
-    def _(self, index: slice) -> ProductEncoder:
-        return ProductEncoder(*self.encoders[index])
 
     def __repr__(self) -> str:
         r"""Pretty print."""
@@ -244,18 +249,23 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
         r"""Return number of chained encoders."""
         return len(self.encoders)
 
-    @singledispatchmethod
-    def __getitem__(self, index):
+    @overload
+    def __getitem__(self, index: int) -> BaseEncoder:  # noqa: D105
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> ChainedEncoder:  # noqa: D105
+        ...
+
+    def __getitem__(
+        self, index: Union[int, slice]
+    ) -> Union[BaseEncoder, ChainedEncoder]:
         r"""Get the encoder at the given index."""
+        if isinstance(index, int):
+            return self.encoders[index]
+        if isinstance(index, slice):
+            return ChainedEncoder(*self.encoders[index])
         raise ValueError(f"Index {index} not supported.")
-
-    @__getitem__.register(int)
-    def _(self, index: int) -> BaseEncoder:
-        return self.encoders[index]
-
-    @__getitem__.register(slice)
-    def _(self, index: slice) -> ChainedEncoder:
-        return ChainedEncoder(*self.encoders[index])
 
     def __repr__(self) -> str:
         r"""Pretty print."""

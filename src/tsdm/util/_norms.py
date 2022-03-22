@@ -15,9 +15,9 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from functools import singledispatch
-from typing import Optional, Union, overload
+from typing import Optional, Union, cast, overload
 
 import numpy as np
 import torch
@@ -100,8 +100,10 @@ def _torch_relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
 
 
 @overload
-def scaled_norm(  # type: ignore[misc]
+def scaled_norm(
     x: Tensor,
+    /,
+    *,
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
@@ -110,8 +112,10 @@ def scaled_norm(  # type: ignore[misc]
 
 
 @overload
-def scaled_norm(  # type: ignore[misc]
+def scaled_norm(
     x: NDArray,
+    /,
+    *,
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
@@ -121,7 +125,9 @@ def scaled_norm(  # type: ignore[misc]
 
 @overload
 def scaled_norm(
-    x: Iterable[Tensor],
+    x: Sequence[Tensor],
+    /,
+    *,
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
@@ -131,7 +137,9 @@ def scaled_norm(
 
 @overload
 def scaled_norm(
-    x: Iterable[NDArray],
+    x: Sequence[NDArray],
+    /,
+    *,
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
@@ -140,11 +148,13 @@ def scaled_norm(
 
 
 def scaled_norm(
-    x,
+    x: Union[Tensor, NDArray, Sequence[Tensor], Sequence[NDArray]],
+    /,
+    *,
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
-):
+) -> Union[Tensor, NDArray]:
     r"""Scaled `ℓ^p`-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`.
 
     .. math::
@@ -157,7 +167,6 @@ def scaled_norm(
 
     .. math::
        ∥u⊕v∥_p^p = \frac{\dim U}{\dim U⊕V} ∥u∥_p^p + \frac{\dim V}{\dim U⊕V} ∥v∥_p^p
-
 
     This choice is consistent with associativity: `∥(u⊕v)⊕w∥ = ∥u⊕(v⊕w)∥`
 
@@ -182,17 +191,17 @@ def scaled_norm(
         return _torch_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
     if isinstance(x, np.ndarray):
         return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
-    if axis is not None:
-        return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
-    if isinstance(x, Iterable) and all(isinstance(item, Tensor) for item in x):
+    if isinstance(x[0], Tensor):
+        x = cast(Sequence[Tensor], x)
         return _torch_multi_scaled_norm(x, p=p, q=p)
-    if isinstance(x, Iterable) and all(isinstance(item, np.ndarray) for item in x):
-        return _numpy_multi_scaled_norm(x, p=p, q=p)
-    return _numpy_scaled_norm(x, p=p, axis=axis, keepdims=keepdims)
+    x = cast(Sequence[NDArray], x)
+    return _numpy_multi_scaled_norm(x, p=p, q=p)
 
 
 def _torch_scaled_norm(
     x: Tensor,
+    /,
+    *,
     p: float = 2,
     axis: SizeLike = (),  # TODO: use tuple[int, ...] once supported
     keepdims: bool = False,
@@ -216,6 +225,8 @@ def _torch_scaled_norm(
 
 def _numpy_scaled_norm(
     x: NDArray,
+    /,
+    *,
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
@@ -237,7 +248,9 @@ def _numpy_scaled_norm(
 
 @overload
 def multi_scaled_norm(
-    x: Iterable[Tensor],
+    x: Sequence[Tensor],
+    /,
+    *,
     p: float = 2,
 ) -> Tensor:
     ...
@@ -245,17 +258,21 @@ def multi_scaled_norm(
 
 @overload
 def multi_scaled_norm(
-    x: Iterable[NDArray],
+    x: Sequence[NDArray],
+    /,
+    *,
     p: float = 2,
 ) -> NDArray:
     ...
 
 
 def multi_scaled_norm(
-    x,
+    x: Union[Sequence[Tensor], Sequence[NDArray]],
+    /,
+    *,
     p: float = 2,
     q: float = 2,
-):
+) -> Union[Tensor, NDArray]:
     # TODO: figure out correct normalization
     r"""Scaled Lpq-norm.
 
@@ -276,17 +293,17 @@ def multi_scaled_norm(
     p: float, default: 2
     q: float, default: 2
     """
-    if isinstance(x, Iterable) and all(isinstance(item, np.ndarray) for item in x):
-        return _numpy_multi_scaled_norm(x, p, q)
-    if isinstance(x, Iterable) and all(isinstance(item, Tensor) for item in x):
-        return _torch_multi_scaled_norm(x, p, q)
-
-    x = [np.asarray(z) for z in x]
-    return _numpy_multi_scaled_norm(x, p=p, q=q)
+    if isinstance(x[0], Tensor):
+        x = cast(Sequence[Tensor], x)
+        return _torch_multi_scaled_norm(x, p=p, q=q)
+    x = cast(Sequence[NDArray], x)
+    return _numpy_multi_scaled_norm((np.asarray(z) for z in x), p=p, q=q)
 
 
 def _torch_multi_scaled_norm(
     x: Iterable[Tensor],
+    /,
+    *,
     p: float = 2,
     q: float = 2,
 ) -> Tensor:
@@ -298,6 +315,8 @@ def _torch_multi_scaled_norm(
 
 def _numpy_multi_scaled_norm(
     x: Iterable[NDArray],
+    /,
+    *,
     p: float = 2,
     q: float = 2,
 ) -> NDArray:

@@ -25,11 +25,10 @@ from tsdm.models import MODELS
 from tsdm.models.activations import ACTIVATIONS
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.tasks import TASKS
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
-LookupTables: Final[LookupTable[LookupTable[Any]]] = {
+LookupTables: Final[dict[str, dict[str, Any]]] = {
     "activation": ACTIVATIONS,
     "dataset": DATASETS,
     "preprocessor": ENCODERS,
