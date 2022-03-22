@@ -12,16 +12,16 @@ HILDESHEIM="https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-inte
 echo -e "\nAdding remote ${BERLIN}..."
 git remote add berlin $BERLIN
 git remote set-url --add --push berlin $BERLIN
-#git remote set-url --add --push berlin $HILDESHEIM
+git remote set-url --add --push berlin $HILDESHEIM
 
 echo -e "\nAdding remote ${HILDESHEIM}..."
 git remote add hildesheim $HILDESHEIM
 git remote set-url --add --push hildesheim $HILDESHEIM
-#git remote set-url --add --push hildesheim $BERLIN
+git remote set-url --add --push hildesheim $BERLIN
 
 echo -e "\nSetting default remote:"
-git branch --set-upstream-to=berlin/main  main
 git fetch berlin
+git branch --set-upstream-to=berlin/main  main
 git push -u berlin --all
 
 echo -e "\nNew remote config:"
