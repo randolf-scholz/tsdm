@@ -13,38 +13,58 @@ Getting started
     git clone https://software.ismll.uni-hildesheim.de/rscholz/tsdm-dev
     cd tsdm-dev
 
-3. Checkout the appropriate branch, typically master. ::
+3. Setup the virtual environment
 
-    git checkout
+   3.1 Via poetry (recommended).::
 
-4. Setup the virtual environment. You may have to install ``python3.9``. ::
+        pip install --upgrade poetry
+        poetry shell
+        poetry install
 
-    which python3.9
-    sudo apt install python3.9
-    python3.9 -m virtualenv venv
-    . venv/bin/activate
-    pip install -e .
+   3.2 Via conda (You may have to rename ``tables`` ⟶ ``pytables`` and ``torch`` ⟶ ``pytorch``).::
 
-   Or with conda, if you prefer. (You may have to rename ``tables`` and ``torch``). ::
+        conda create --name tsdm-dev --file requirements.txt
+        conda activate tsdm-dev
+        conda install --file requirements-dev.txt
 
-    conda create --name tsdm-dev --file requirements.txt
-    conda activate tsdm-dev
+   3.3 Via pip.::
 
-  Verify that the installation was successful. ::
+        sudo apt install python3.9
+        python3.9 -m virtualenv venv
+        . venv/bin/activate
+        pip install -e .
+
+   Verify that the installation was successful.::
 
     python -c "import tsdm"
 
-5. Create a new working branch. Choose a descriptive name for what you are trying to achieve. ::
+4. Setup remote repositories and pre-commit hooks.::
+
+    ./run/setup_remote.sh
+    ./run/setup_precommit.sh
+
+4. Create a new working branch. Choose a descriptive name for what you are trying to achieve.::
 
     git checkout -b feature-xyz
 
-7. Write your code, bonus points for also adding unit tests.
+5. Write your code, bonus points for also adding unit tests.
 
-8. Write descriptive commit messages. Try to keep individual commits easy to understand
+   5.1 Write your code in the ``src`` directory.
+
+   5.2 Write your unit tests in the ``tests`` directory.
+
+   5.3 Check if tests are working via ``pytest``.
+
+   5.4 Check for type errors via ``mypy``.
+
+   5.5 Check for style errors via ``flake8``.
+
+   5.6 Check for code quality via ``pylint``.
+
+6. Write descriptive commit messages. Try to keep individual commits easy to understand
    (changing dozens of files, writing 100's of lines of code is not!). ::
 
     git commit -m '#42: Add useful new feature that does this.'
-
 
 9. Make sure your changes are parsimonious with the linting and do not break any tests.::
 

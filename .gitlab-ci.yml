@@ -15,13 +15,13 @@ default:
   - docker
 
 variables:
-  MODULEDIR: tsdm
+  MODULEDIR: "src/tsdm"
   MODULENAME: tsdm
   TESTDIR: test
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
   PYTEST_CACHE_DIR: "${CI_PROJECT_DIR}/.pytest_cache"
-  VENVNAME: venv
+  VENVNAME: ".venv"
   VENV_DIR: "${CI_PROJECT_DIR}/${VENVNAME}"
   TWINE_PASSWORD: "${CI_JOB_TOKEN}"
   TWINE_USERNAME: gitlab-ci-token
@@ -48,22 +48,27 @@ setup:
     paths:
     - "${VENV_DIR}"
   before_script:
+  # overrides global before_script
   # make directories
   - mkdir -p badges
   - mkdir -p reports
   # python setup
   - python -V
-  - pip install --upgrade pip virtualenv
+  - pip install --upgrade pip poetry virtualenv
   - virtualenv ${VENVNAME}
   - source ${VENVNAME}/bin/activate
-  - pip install --upgrade pip pybadges
+  # install development dependencies
+  - poetry install --no-root
   script:
-  # install dependencies
-  - pip install --upgrade -r requirements.txt
-  - pip install --upgrade -r requirements-dev.txt
   # build and install package
-  # - python setup.py sdist bdist_wheel
+  # set version number depending on CI_PIPELINE_ID
+  - VERSION=$(poetry version -s)
   - poetry version "$(poetry version -s).dev${CI_PIPELINE_IID}"
+  # verify version number OK (cf. https://peps.python.org/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
+  - regex='r"^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$"'
+  - version='"'$(poetry version -s)'"'
+  - python -c "import re; assert re.match($regex, $version)"
+  # build and install package
   - poetry build
   - pip install dist/*.whl
   - pip list
@@ -80,7 +85,7 @@ setup:
   # generate package version badge
   - python -m pybadges
     --left-text="version"
-    --right-text="$(cat "$MODULEDIR/VERSION")"
+    --right-text=version
     > badges/version.svg
   # generate license badge
   - python -m pybadges

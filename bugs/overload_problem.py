@@ -1,11 +1,11 @@
 from typing import overload
-from torch import Tensor
+
 import torch
 from pandas import DataFrame
+from torch import Tensor
 
 
 class TensorEncoder:
-
     def __init__(self):
         super().__init__()
 
@@ -23,12 +23,11 @@ class TensorEncoder:
         return torch.tensor(x.values)
 
 
-
 @overload
 def foo(x: Tensor) -> Tensor:
     ...
 
+
 @overload
 def foo(x: tuple[Tensor, ...]) -> tuple[Tensor, ...]:
     ...
-
