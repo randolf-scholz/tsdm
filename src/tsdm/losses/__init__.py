@@ -54,14 +54,13 @@ from tsdm.losses.modular import (
     Q_Quantile,
     Q_Quantile_Loss,
 )
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
 Loss = Union[FunctionalLoss, ModularLoss]
 r"""Type hint for losses."""
 
-LOSSES: Final[LookupTable[Union[FunctionalLoss, type[ModularLoss]]]] = {
+LOSSES: Final[dict[str, Union[FunctionalLoss, type[ModularLoss]]]] = {
     **FunctionalLosses,
     **ModularLosses,
 }

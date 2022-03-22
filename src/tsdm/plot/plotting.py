@@ -46,7 +46,7 @@ def visualize_distribution(
     loc: Location = "upper right",
     print_stats: bool = True,
     extra_stats: Optional[dict[str, str]] = None,
-):
+) -> None:
     r"""Plot the distribution of x in the given axis.
 
     Parameters

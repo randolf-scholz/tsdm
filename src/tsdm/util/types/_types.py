@@ -11,7 +11,6 @@ __all__ = [
     "ValueType",
     "nnModuleType",
     # Generic Types
-    "LookupTable",
     "NestedType",
     "NullableNestedType",
     # Static Types
@@ -51,11 +50,11 @@ r"""Generic type hint for return values."""
 nnModuleType = TypeVar("nnModuleType", bound=nn.Module)
 r"""Type Variable for nn.Modules."""
 
+PathType = Union[str, os.PathLike[str]]
+r"""Type for path-like objects."""
+
 _NestedType = TypeVar("_NestedType")
 r"""Type variable for nested type variables."""
-
-LookupTable = dict[str, ObjectType]
-r"""Table of objects."""
 
 NestedType = Union[
     _NestedType,
@@ -71,6 +70,3 @@ NullableNestedType = Union[
     Mapping[Any, Union[None, _NestedType, Collection[_NestedType]]],
 ]
 r"""Type for nullable nested type variables."""
-
-PathType = Union[str, os.PathLike[str]]
-r"""Type for path-like objects."""

@@ -15,14 +15,12 @@ from typing import Final
 import torch.optim
 from torch.optim import lr_scheduler
 
-from tsdm.util.types import LookupTable
-
 __logger__ = logging.getLogger(__name__)
 
 Optimizer = torch.optim.Optimizer
 r"""Type hint for optimizers."""
 
-OPTIMIZERS: Final[LookupTable[type[torch.optim.Optimizer]]] = {
+OPTIMIZERS: Final[dict[str, type[torch.optim.Optimizer]]] = {
     "Adadelta": torch.optim.Adadelta,
     # Implements Adadelta algorithm.
     "Adagrad": torch.optim.Adagrad,
@@ -49,12 +47,10 @@ OPTIMIZERS: Final[LookupTable[type[torch.optim.Optimizer]]] = {
 r"""Dictionary of all available optimizers."""
 
 # noinspection PyProtectedMember
-LR_Scheduler = lr_scheduler._LRScheduler
+LR_Scheduler = lr_scheduler._LRScheduler  # pylint: disable=protected-access
 r"""Type hint for lr_schedulers."""
 
-LR_SCHEDULERS: Final[
-    LookupTable[type[lr_scheduler._LRScheduler]]
-] = {  # pylint: disable=protected-access
+LR_SCHEDULERS: Final[dict[str, type[lr_scheduler._LRScheduler]]] = {
     "LambdaLR": lr_scheduler.LambdaLR,
     "MultiplicativeLR": lr_scheduler.MultiplicativeLR,  # type: ignore
     "StepLR": lr_scheduler.StepLR,
