@@ -8,22 +8,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7cd0f57-89ac-40ab-8b1d-d4f4de1bc0bb" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.flake8" beforeDir="false" afterPath="$PROJECT_DIR$/.flake8" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dictionaries/rscholz.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/rscholz.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.pre-commit-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CONTRIBUTING.rst" beforeDir="false" afterPath="$PROJECT_DIR$/CONTRIBUTING.rst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements-ci.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements-dev.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements-dev.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements-extras.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/pre-commit-hooks.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run/setup_precommit.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/pydeps.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run/pydeps.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tsdm/optimizers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/optimizers/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/tsdm/tasks/ushcn.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/tsdm/tasks/ushcn.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsdm.svg" beforeDir="false" afterPath="$PROJECT_DIR$/tsdm.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run/setup_remote.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run/setup_remote.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -382,7 +370,7 @@
       <workItem from="1647897100482" duration="44000" />
       <workItem from="1647897171660" duration="509000" />
       <workItem from="1647897805406" duration="996000" />
-      <workItem from="1647940192122" duration="2958000" />
+      <workItem from="1647940192122" duration="4124000" />
     </task>
     <servers />
   </component>
