@@ -4,9 +4,9 @@ CONTRIBUTING
 Getting started
 ---------------
 
-1. Fork the GitLab project from https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tdm.
+1. Fork the GitLab project from https://software.ismll.uni-hildesheim.de/ISMLL-internal/special-interest-group-time-series/tsdm.
 
-   Use your personal namespace, e.g. https://software.ismll.uni-hildesheim.de/rscholz/tsdm-dev
+   Use your personal namespace, e.g. ``https://software.ismll.uni-hildesheim.de/<user>/tsdm-dev``
 
 2. Clone the forked project locally to your machine. ::
 
