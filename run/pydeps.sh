@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 # execute pydeps and create dependency graph
-pydeps src/linodenet/ --cluster --rankdir BT --max-bacon=1
+pydeps src/tsdm/ --cluster --rankdir BT --max-bacon=1

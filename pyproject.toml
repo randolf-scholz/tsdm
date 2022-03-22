@@ -105,6 +105,7 @@ types-six = ">=1.16.10"
 types-tabulate = ">=0.8.5"
 types-toml = ">=0.10.3"
 wheel = ">=0.37.1"
+toml = "^0.10.2"
 
 [tool.poetry.scripts]
 

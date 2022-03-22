@@ -1,5 +1,6 @@
 h5py>=3.4.0
 matplotlib>=3.4
+modin[ray]>=0.12
 numba>=0.53
 numpy>=1.21
 pandas>=1.3

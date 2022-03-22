@@ -117,7 +117,6 @@ class USHCN_DeBrouwer(BaseTask):
         ----------
         key: str
             From which part of the dataset to construct the loader
-        batch_size: int = 32
         shuffle: bool = True
 
         Returns
