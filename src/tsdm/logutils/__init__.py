@@ -27,7 +27,7 @@ from tsdm.logutils._logutils import (
 __logger__ = logging.getLogger(__name__)
 
 
-Logger = Callable[..., int]
+Logger = Callable[..., None]
 
 LOGGERS: Final[dict[str, Logger]] = {
     "log_optimizer_state": log_optimizer_state,

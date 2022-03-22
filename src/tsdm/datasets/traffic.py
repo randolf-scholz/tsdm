@@ -154,7 +154,7 @@ class Traffic(Dataset):
         }
         cleaners[key]()
 
-    def _clean_data(self, use_true: bool = True):
+    def _clean_data(self, use_true: bool = True) -> None:
         r"""Create DataFrame from raw data.
 
         Parameters

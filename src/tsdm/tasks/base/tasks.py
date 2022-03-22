@@ -89,6 +89,7 @@ __all__ = [
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
+from functools import cached_property
 from typing import Any, Generic, Optional
 
 from torch import Tensor
@@ -96,6 +97,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import dataset
 from tsdm.encoders import ModularEncoder
+from tsdm.util import LazyDict
 from tsdm.util.types import KeyType
 
 __logger__ = logging.getLogger(__name__)
@@ -194,24 +196,19 @@ class BaseTask(ABC, Generic[KeyType]):
         DataLoader
         """
 
-    # @cached_property
-    # def dataloaders(self) -> Mapping[KeyType, DataLoader]:
-    #     r"""Cache dictionary of evaluation-dataloaders."""
-    #     return LazyDict(
-    #         (
-    #             key,
-    #             (
-    #                 self.get_dataloader,
-    #                 {
-    #                     "key": key,
-    #                     "batch_size": self.eval_batch_size,
-    #                     "shuffle": False,
-    #                     "drop_last": False,
-    #                 },
-    #             ),
-    #         )
-    #         for key in self.splits
-    #     )
+    @cached_property
+    def dataloaders(self) -> Mapping[Any, DataLoader]:
+        r"""Cache dictionary of evaluation-dataloaders."""
+        kwargs: dict[Any, Any] = {
+            # "key": key,
+            "batch_size": self.eval_batch_size,
+            "shuffle": False,
+            "drop_last": False,
+        }
+
+        return LazyDict(
+            {key: (self.get_dataloader, kwargs | {"key": key}) for key in self.splits}
+        )
 
     # @cached_property
     # def batchloaders(self) -> Mapping[KeyType, DataLoader]:

@@ -34,7 +34,6 @@ from tsdm.losses.modular._modular import (
     Q_Quantile,
     Q_Quantile_Loss,
 )
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ __logger__ = logging.getLogger(__name__)
 ModularLoss = nn.Module
 r"""Type hint for modular losses."""
 
-TORCH_LOSSES: Final[LookupTable[type[nn.Module]]] = {
+TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
     "L1": nn.L1Loss,
     "CosineEmbedding": nn.CosineEmbeddingLoss,
     "CrossEntropy": nn.CrossEntropyLoss,
@@ -67,7 +66,7 @@ TORCH_LOSSES: Final[LookupTable[type[nn.Module]]] = {
 }
 r"""Dictionary of all available modular losses in torch."""
 
-TORCH_ALIASES: Final[LookupTable[type[nn.Module]]] = {
+TORCH_ALIASES: Final[dict[str, type[nn.Module]]] = {
     "MAE": nn.L1Loss,
     "L2": nn.MSELoss,
     "XENT": nn.CrossEntropyLoss,
@@ -75,7 +74,7 @@ TORCH_ALIASES: Final[LookupTable[type[nn.Module]]] = {
 }
 r"""Dictionary containing additional aliases for modular losses in torch."""
 
-ModularLosses: Final[LookupTable[type[nn.Module]]] = {
+ModularLosses: Final[dict[str, type[nn.Module]]] = {
     "ND": ND,
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,

@@ -47,7 +47,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Optional, Union, overload
 from urllib.parse import urlparse
 
 from pandas import DataFrame, Series
@@ -209,27 +209,27 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             Must be implemented for any dataset class!!
         """
 
-    def _load_pre_hook(self, **_: Any) -> None:
+    def _load_pre_hook(self, *args: Any, **kwargs: Any) -> None:
         r"""Code that is executed before ``load``."""
         __logger__.debug("%s: START LOADING.", self.name)
 
-    def _load_post_hook(self, **_: Any) -> None:
+    def _load_post_hook(self, *args: Any, **kwargs: Any) -> None:
         r"""Code that is executed after ``load``."""
         __logger__.debug("%s: DONE LOADING.", self.name)
 
-    def _clean_pre_hook(self, **_: Any) -> None:
+    def _clean_pre_hook(self, *args: Any, **kwargs: Any) -> None:
         r"""Code that is executed before ``clean``."""
         __logger__.debug("%s: START CLEANING.", self.name)
 
-    def _clean_post_hook(self, **_: Any) -> None:
+    def _clean_post_hook(self, *args: Any, **kwargs: Any) -> None:
         r"""Code that is executed after ``clean``."""
         __logger__.debug("%s: DONE CLEANING.", self.name)
 
-    def _download_pre_hook(self, **_: Any) -> None:
+    def _download_pre_hook(self, *args: Any, **kwargs: Any) -> None:
         r"""Code that is executed before ``download``."""
         __logger__.debug("%s: START DOWNLOADING.", self.name)
 
-    def _download_post_hook(self, **_: Any) -> None:
+    def _download_post_hook(self, *args: Any, **kwargs: Any) -> None:
         r"""Code that is executed after ``download``."""
         __logger__.debug("%s: DONE DOWNLOADING.", self.name)
 
@@ -443,11 +443,15 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         assert isinstance(self.dataset_files, Mapping)
         return paths_exists(self.dataset_files[key])
 
-    def _clean_pre_hook(self, *, key: Optional[KeyType] = None, **_: Any) -> None:
+    def _clean_pre_hook(
+        self, *args: Any, key: Optional[KeyType] = None, **kwargs: Any
+    ) -> None:
         r"""Code that is executed before ``clean``."""
         __logger__.debug("%s/%s: START cleaning dataset!", self.name, key)
 
-    def _clean_post_hook(self, *, key: Optional[KeyType] = None, **_: Any) -> None:
+    def _clean_post_hook(
+        self, *args: Any, key: Optional[KeyType] = None, **kwargs: Any
+    ) -> None:
         r"""Code that is executed after ``clean``."""
         __logger__.debug("%s/%s: DONE cleaning dataset!", self.name, key)
 
@@ -484,21 +488,35 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
 
         self._clean(key=key)
 
-    def _load_pre_hook(self, *, key: Optional[KeyType] = None, **_: Any) -> None:
+    def _load_pre_hook(
+        self, *args: Any, key: Optional[KeyType] = None, **kwargs: Any
+    ) -> None:
         r"""Code that is executed before ``load``."""
         __logger__.debug("%s/%s: START loading dataset!", self.name, key)
 
-    def _load_post_hook(self, *, key: Optional[KeyType] = None, **_: Any) -> None:
+    def _load_post_hook(
+        self, *args: Any, key: Optional[KeyType] = None, **kwargs: Any
+    ) -> None:
         r"""Code that is executed after ``load``."""
         __logger__.debug("%s/%s: DONE loading dataset!", self.name, key)
 
     @abstractmethod
-    def _load(self, key: KeyType) -> DATASET_OBJECT:
+    def _load(self, key: KeyType) -> Any:
         r"""Clean the selected DATASET_OBJECT."""
+
+    @overload
+    def load(
+        self, *, key: None = None, force: bool = False, **kwargs: Any
+    ) -> Mapping[KeyType, Any]:
+        ...
+
+    @overload
+    def load(self, *, key: KeyType = None, force: bool = False, **kwargs: Any) -> Any:
+        ...
 
     def load(
         self, *, key: Optional[KeyType] = None, force: bool = False, **kwargs: Any
-    ) -> Union[DATASET_OBJECT, Mapping[KeyType, DATASET_OBJECT]]:
+    ) -> Union[Any, Mapping[KeyType, Any]]:
         r"""Load the selected DATASET_OBJECT.
 
         Parameters
@@ -547,11 +565,15 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         for path in flatten_nested(files, kind=Path):
             super().download(url=self.base_url + path.name)
 
-    def _download_pre_hook(self, *, key: Optional[KeyType] = None, **_: Any) -> None:
+    def _download_pre_hook(
+        self, *args: Any, key: Optional[KeyType] = None, **kwargs: Any
+    ) -> None:
         r"""Code that is executed before ``download``."""
         __logger__.debug("%s/%s: START downloading dataset!", self.name, key)
 
-    def _download_post_hook(self, *, key: Optional[KeyType] = None, **_: Any) -> None:
+    def _download_post_hook(
+        self, *args: Any, key: Optional[KeyType] = None, **kwargs: Any
+    ) -> None:
         r"""Code that is executed after ``download``."""
         __logger__.debug("%s/%s: DONE downloading dataset!", self.name, key)
 
