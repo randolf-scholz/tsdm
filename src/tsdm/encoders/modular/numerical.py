@@ -258,18 +258,18 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     @singledispatchmethod
     def fit(self, data: TensorType, /) -> None:
         r"""Compute the min and max."""
-        data = np.asarray(data)
-        rank = len(data.shape)
+        array = np.asarray(data)
+        rank = len(array.shape)
         if self.axis is None:
             self.axis = () if rank == 1 else (-1,)
 
         selection = [(a % rank) for a in self.axis]
         axes = tuple(k for k in range(rank) if k not in selection)
         # axes = self.axis
-        self.ymin = np.array(self.ymin, dtype=data.dtype)
-        self.ymax = np.array(self.ymax, dtype=data.dtype)
-        self.xmin = np.nanmin(data, axis=axes)
-        self.xmax = np.nanmax(data, axis=axes)
+        self.ymin = np.array(self.ymin, dtype=array.dtype)
+        self.ymax = np.array(self.ymax, dtype=array.dtype)
+        self.xmin = np.nanmin(array, axis=axes)
+        self.xmax = np.nanmax(array, axis=axes)
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     @fit.register(torch.Tensor)

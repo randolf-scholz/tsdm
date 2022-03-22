@@ -161,9 +161,9 @@ class ConcatEncoder(BaseEncoder):
         self.numdims = [d.ndim for d in data]
         self.maxdim = max(self.numdims)
         # pad dimensions if necessary
-        data = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
+        arrays = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
         # store the lengths of the slices
-        self.lengths = [x.shape[self.axis] for x in data]
+        self.lengths = [x.shape[self.axis] for x in arrays]
 
     def encode(self, data: tuple[Tensor, ...], /) -> Tensor:
         r"""Encode the input."""

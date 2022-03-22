@@ -29,16 +29,13 @@ from tsdm.models.activations.functional import (
     FunctionalActivations,
 )
 from tsdm.models.activations.modular import ModularActivation, ModularActivations
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
 Activation = Union[FunctionalActivation, ModularActivation]
 r"""Type hint for activations."""
 
-ACTIVATIONS: Final[
-    LookupTable[Union[FunctionalActivation, type[ModularActivation]]]
-] = {
+ACTIVATIONS: Final[dict[str, Union[FunctionalActivation, type[ModularActivation]]]] = {
     **ModularActivations,
     **FunctionalActivations,
 }

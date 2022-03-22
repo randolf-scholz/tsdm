@@ -45,8 +45,8 @@ def visualize_distribution(
     log: bool = True,
     loc: Location = "upper right",
     print_stats: bool = True,
-    extra_stats: Optional[dict[str, str]] = None,
-):
+    extra_stats: Optional[dict] = None,
+) -> None:
     r"""Plot the distribution of x in the given axis.
 
     Parameters
@@ -153,12 +153,12 @@ def shared_grid_plot(
     Figure
     Axes
     """
-    data = np.array(data)
+    array = np.array(data)
 
-    if data.ndim == 2:
-        data = np.expand_dims(data, axis=0)
+    if array.ndim == 2:
+        array = np.expand_dims(array, axis=0)
 
-    nrows, ncols = data.shape[:2]
+    nrows, ncols = array.shape[:2]
 
     _subplot_kwargs = {
         "figsize": (5 * ncols, 3 * nrows),
@@ -178,7 +178,7 @@ def shared_grid_plot(
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):  # type: ignore
-        plot_func(data[idx], ax=axes[idx], **plot_kwargs)
+        plot_func(array[idx], ax=axes[idx], **plot_kwargs)
 
     # set axes titles
     if titles is not None:

@@ -218,7 +218,7 @@ class KIWI_RUNS(Dataset):
             )
             self._clean_table(key, tables[key])
 
-    def _clean_table(self, key: str, table: Optional[DataFrame] = None):
+    def _clean_table(self, key: str, table: Optional[DataFrame] = None) -> None:
         r"""Create the DataFrames.
 
         Parameters
@@ -616,7 +616,7 @@ class KIWI_RUNS(Dataset):
 
         # add dataset statistics
         units = units.to_frame()
-        ts: DataFrame = self._load(key="timeseries")
+        ts = self._load(key="timeseries")
 
         units["min"] = ts.min()
         units["max"] = ts.max()
