@@ -27,11 +27,11 @@ Pre-Encoder:
 - namedtuple[TimeTensor] -> namedtuple[TimeTensor]
 - tuple[StaticTensor] -> tuple[StaticTensor]
 
-Problem: 
-- Certain encodings like One-Hot Endoding might create more columns in the target. 
+Problem:
+- Certain encodings like One-Hot Endoding might create more columns in the target.
 - we still need to find the target column name, to mask it for future time stamps!
 
-But even this is kind of cheating, since models that do not act auto-regressively might 
+But even this is kind of cheating, since models that do not act auto-regressively might
 far future datapoints to increase accuracy!
 => would need to feed things 1 by 1, slow!
 => Instead: Trust the user?!?

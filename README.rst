@@ -13,7 +13,8 @@ Installation guide
 
 .. code-block:: bash
 
-    pip install -e .
+    poetry shell
+    poetry install
 
 
 Multiple Origins Push

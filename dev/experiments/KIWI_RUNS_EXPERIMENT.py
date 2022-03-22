@@ -41,8 +41,8 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm, trange
 
 import tsdm
+from encoders.functional import time2float
 from tsdm.datasets import DATASETS
-from tsdm.encoders.functional import time2float
 from tsdm.logutils import (
     log_kernel_information,
     log_metrics,
@@ -52,7 +52,6 @@ from tsdm.logutils import (
 from tsdm.losses import LOSSES
 from tsdm.tasks import KIWI_RUNS_TASK
 from tsdm.util import grad_norm, multi_norm
-
 
 # # Initialize Task
 
@@ -339,7 +338,3 @@ for epoch in (epochs := trange(100)):
 
 
 # In[ ]:
-
-
-
-

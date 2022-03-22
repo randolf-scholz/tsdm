@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Sequence, Literal, Generic
+from typing import Generic, Literal, Sequence, TypeVar
 
 KEYS = TypeVar("KeyType")
 """Type hint for index"""
+
 
 class BaseClass(ABC, Generic[KEYS]):
     # index: Sequence[KeyType]
@@ -16,6 +17,7 @@ class BaseClass(ABC, Generic[KEYS]):
     @abstractmethod
     def values(self) -> dict[KEYS, int]:
         ...
+
 
 class ExampleClass(BaseClass):
     KEYS = Literal["a", "b", "c"]

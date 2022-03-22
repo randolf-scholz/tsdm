@@ -103,5 +103,3 @@ There are multiple ways of doing things:
                 Ŷ.append(predics)
 
         return torch.cat(Y, dim=0), torch.cat(Ŷ, dim=0)
-
-
