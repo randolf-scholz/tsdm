@@ -81,7 +81,7 @@ class USHCN_DeBrouwer(BaseTask):
         self,
         test_metric: Literal["MSE", "MAE"] = "MSE",
         time_encoder: str = "time2float",
-    ):
+    ) -> None:
         super().__init__()
         self._gen_folds()
         self.forecasting_horizon = 3
@@ -91,7 +91,7 @@ class USHCN_DeBrouwer(BaseTask):
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
 
-    def _gen_folds(self):
+    def _gen_folds(self) -> None:
         N = self.dataset.dataset["ID"].nunique()
         num_folds = 5
         np.random.seed(432)

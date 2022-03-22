@@ -49,14 +49,13 @@ from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.torch import IndexedArray, TimeSeriesDataset, TimeTensor
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
 dataset = BaseDataset
 r"""Type hint for dataset."""
 
-DATASETS: Final[LookupTable[type[dataset]]] = {
+DATASETS: Final[dict[str, type[dataset]]] = {
     "BeijingAirQuality": BeijingAirQuality,
     "ETT": ETT,
     "Electricity": Electricity,

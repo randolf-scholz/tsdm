@@ -22,16 +22,16 @@ def sparsity(df: DataFrame) -> tuple[float, float]:
     return col_wise, total
 
 
-def linearness():
-    r"""Quantify linear signals in the data using regularized least-squares."""
-
-
-def periodicity():
-    r"""Quantify periodic signals in the data using (Non-Uniform) FFT in O(N log N)."""
-
-
-def summary_stats():
-    r"""Summary statistics: column-wise mean/median/std/histogram. Cross-channel correlation."""
+# def linearness():
+#     r"""Quantify linear signals in the data using regularized least-squares."""
+#
+#
+# def periodicity():
+#     r"""Quantify periodic signals in the data using (Non-Uniform) FFT in O(N log N)."""
+#
+#
+# def summary_stats():
+#     r"""Summary statistics: column-wise mean/median/std/histogram. Cross-channel correlation."""
 
 
 def data_overview(df: DataFrame) -> DataFrame:
