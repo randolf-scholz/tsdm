@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Final
+from typing import Any, Final
 
 from tsdm.datasets import DATASETS
 from tsdm.encoders import ENCODERS
@@ -29,7 +29,7 @@ from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
-LookupTables: Final[LookupTable[LookupTable]] = {
+LookupTables: Final[LookupTable[LookupTable[Any]]] = {
     "activation": ACTIVATIONS,
     "dataset": DATASETS,
     "preprocessor": ENCODERS,

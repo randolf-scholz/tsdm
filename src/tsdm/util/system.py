@@ -125,7 +125,7 @@ def query_choice(
     -------
     str
     """
-    choices: set[str] = set(choices)
+    choices = set(choices)
     ids: dict[int, str] = dict(enumerate(choices))
 
     if default is not None:
