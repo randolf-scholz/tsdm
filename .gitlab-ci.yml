@@ -58,7 +58,7 @@ setup:
   - virtualenv ${VENVNAME}
   - source ${VENVNAME}/bin/activate
   # install dependencies
-  - poetry install --no-root
+  # - poetry install --no-root
   script:
   # build and install package
   # set version number depending on CI_PIPELINE_ID
