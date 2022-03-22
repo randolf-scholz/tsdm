@@ -143,8 +143,6 @@ max-line-length=120
 generated-members=["numpy.*","torch.*"]
 
 
-
-
 ######################
 # MyPy Configuration #
 ######################
@@ -182,9 +180,9 @@ ignore_missing_imports = true
 [tool.isort]
 # isort profiles: black, django, pycharm, google, open_stack, plone, attrs, hug, wemake, appnexus
 # black-compatible: black, appnexus
+py_version=39
 profile="black"
 src_paths=["src/", "test/"]
-py_version=39
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
 # black-compatible: black, appnexus
 
@@ -230,7 +228,6 @@ cov = "tsdm"
 [tool.coverage.paths]
 source = [
    "src/tsdm",
-#   ".venv/*/lib*/python*/site-packages/tsdm-*/",
 ]
 
 [tool.coverage.report]
