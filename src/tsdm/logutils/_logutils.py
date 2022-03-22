@@ -158,13 +158,14 @@ def log_model_state(
 ):
     r"""Log optimizer data.
 
-    Args:
-        i: current step
-        writer: SummaryWriter
-        model: Model
-        histograms: whether to create histograms
-        prefix: e.g. prefix:model:postfix
-        postfix: e.g. prefix:model:postfix
+    Parameters
+    ----------
+    i: current step
+    writer: SummaryWriter
+    model: Model
+    histograms: whether to create histograms
+    prefix: e.g. prefix:model:postfix
+    postfix: e.g. prefix:model:postfix
     """
     # TODO: make this compatible with optimizers other than ADAM.
     identifier = f"{prefix+':'*bool(prefix)}model{':'*bool(postfix)+postfix}"

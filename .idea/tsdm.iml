@@ -16,8 +16,6 @@
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/docs/_build" />
       <excludeFolder url="file://$MODULE_DIR$/docs/autoapi" />
-      <excludeFolder url="file://$MODULE_DIR$/examples/.ipynb_checkpoints" />
-      <excludeFolder url="file://$MODULE_DIR$/examples/.virtual_documents" />
       <excludeFolder url="file://$MODULE_DIR$/manifest/__tex__" />
       <excludeFolder url="file://$MODULE_DIR$/dev/.ipynb_checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/bugs/.mypy_cache" />
@@ -30,11 +28,6 @@
       <excludeFolder url="file://$MODULE_DIR$/dev/pics" />
       <excludeFolder url="file://$MODULE_DIR$/dev/runs" />
       <excludeFolder url="file://$MODULE_DIR$/dev/video" />
-      <excludeFolder url="file://$MODULE_DIR$/examples/checkpoints" />
-      <excludeFolder url="file://$MODULE_DIR$/examples/pics" />
-      <excludeFolder url="file://$MODULE_DIR$/examples/runs" />
-      <excludeFolder url="file://$MODULE_DIR$/examples/cluster/checkpoints" />
-      <excludeFolder url="file://$MODULE_DIR$/examples/cluster/runs" />
       <excludeFolder url="file://$MODULE_DIR$/.pyre" />
       <excludeFolder url="file://$MODULE_DIR$/.pytype" />
       <excludeFolder url="file://$MODULE_DIR$/.pytype/imports" />
@@ -42,6 +35,13 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/bugs/.ipynb_checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/docs/_autosummary" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/pics" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/cluster/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/cluster/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/.virtual_documents" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/.ipynb_checkpoints" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (tsdm)" jdkType="Python SDK" />
