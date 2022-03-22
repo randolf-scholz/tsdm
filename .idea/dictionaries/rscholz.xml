@@ -177,6 +177,7 @@
       <w>prelu</w>
       <w>prsa</w>
       <w>pydeps</w>
+      <w>pytables</w>
       <w>qflag</w>
       <w>qflags</w>
       <w>quasiregular</w>
