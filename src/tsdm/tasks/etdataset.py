@@ -29,7 +29,7 @@ from tsdm.encoders.modular import (
     Standardizer,
     TensorEncoder,
 )
-from tsdm.losses import LOSSES, Loss
+from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.util import initialize_from
@@ -98,7 +98,7 @@ class ETDatasetTask_Informer(BaseTask):
     r"""Available index."""
     dataset: DataFrame
     r"""The dataset."""
-    test_metric: Loss  # Callable[..., Tensor] | nn.Module
+    test_metric: ModularLoss  # Callable[..., Tensor] | nn.Module
     r"""The target metric."""
     accumulation_function: Callable[..., Tensor]
     r"""Accumulates residuals into loss - usually mean or sum."""
@@ -140,9 +140,7 @@ class ETDatasetTask_Informer(BaseTask):
 
         self.dataset = ETT()[dataset_id]
         self.dataset.name = dataset_id
-        self.test_metric: Loss = initialize_from(
-            LOSSES, __name__=test_metric
-        )  # type: ignore[assignment]
+        self.test_metric = initialize_from(ModularLosses, __name__=test_metric)
 
         self.horizon = self.observation_horizon + self.forecasting_horizon
         self.accumulation_function = nn.Identity()  # type: ignore[assignment]
@@ -177,8 +175,6 @@ class ETDatasetTask_Informer(BaseTask):
         self,
         key: KeyType,
         /,
-        *,
-        batch_size: int = 1,
         shuffle: bool = True,
         **kwargs: Any,
     ) -> DataLoader:
@@ -194,8 +190,6 @@ class ETDatasetTask_Informer(BaseTask):
         ----------
         key: Literal["train", "valid", "test"]
             Dataset part from which to construct the DataLoader
-        batch_size: int = 32
-            defaults to cuda if cuda is available.
         shuffle: bool = True
 
         Returns
@@ -214,4 +208,4 @@ class ETDatasetTask_Informer(BaseTask):
         dataset = TensorDataset(*tensors)
         sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)
 
-        return DataLoader(dataset, sampler=sampler, batch_size=batch_size, **kwargs)
+        return DataLoader(dataset, sampler=sampler, **kwargs)

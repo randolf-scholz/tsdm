@@ -125,7 +125,7 @@ def query_choice(
     -------
     str
     """
-    choices: set[str] = set(choices)
+    choices = set(choices)
     ids: dict[int, str] = dict(enumerate(choices))
 
     if default is not None:
@@ -156,7 +156,7 @@ def install_package(
     non_interactive: bool = False,
     installer: str = "pip",
     options: tuple[str, ...] = (),
-):
+) -> None:
     r"""Install a package via pip or other package manger.
 
     Parameters
@@ -211,7 +211,7 @@ def get_requirements(package: str, version: Optional[str] = None) -> dict[str, s
 
 def write_requirements(
     package: str, version: Optional[str] = None, path: Optional[Path] = None
-):
+) -> None:
     r"""Write a requirements dictionary to a requirements.txt file.
 
     Parameters

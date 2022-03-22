@@ -12,8 +12,10 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from typing import Any, NamedTuple, Optional, overload
+from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
+from typing import Any, Generic, NamedTuple, Union, overload
+
+from tsdm.util.types import KeyType, ObjectType
 
 __logger__ = logging.getLogger(__name__)
 
@@ -21,20 +23,20 @@ __logger__ = logging.getLogger(__name__)
 class LazyFunction(NamedTuple):
     """A placeholder for uninitialized values."""
 
-    func: Callable
-    args: Optional[Iterable] = ()
-    kwargs: Optional[Mapping] = {}
+    func: Callable[..., Any]
+    args: Iterable[Any] = ()
+    kwargs: Mapping[str, Any] = {}
 
-    def __call__(self):
-        """Execute the function and return the result."""
+    def __call__(self) -> Any:
+        r"""Execute the function and return the result."""
         return self.func(*self.args, **self.kwargs)
 
-    def __repr__(self):
-        """Return a string representation of the function."""
+    def __repr__(self) -> str:
+        r"""Return a string representation of the function."""
         return f"<LazyFunction: {self.func.__name__}>"
 
 
-class LazyDict(MutableMapping):
+class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]):
     r"""A Lazy Dictionary implementation."""
 
     @staticmethod
@@ -64,22 +66,48 @@ class LazyDict(MutableMapping):
         raise ValueError("Invalid value")
 
     @overload
-    def __init__(self, /, **kwargs: Any):
+    def __init__(self, /, **kwargs: ObjectType) -> None:
         ...
 
     @overload
-    def __init__(self, /, iterable: Iterable, **kwargs: Any):
+    def __init__(
+        self,
+        mapping: Mapping[
+            KeyType,
+            Union[
+                tuple[Callable[..., ObjectType], tuple],  # args
+                tuple[Callable[..., ObjectType], dict],  # kwargs
+                tuple[Callable[..., ObjectType], tuple, dict],  # args, kwargs
+            ],
+        ],
+        /,
+        **kwargs: ObjectType,
+    ) -> None:
         ...
 
     @overload
-    def __init__(self, /, mapping: Mapping, **kwargs: Any):
+    def __init__(
+        self,
+        iterable: Iterable[
+            tuple[
+                KeyType,
+                Union[
+                    tuple[Callable[..., ObjectType], tuple],  # args
+                    tuple[Callable[..., ObjectType], dict],  # kwargs
+                    tuple[Callable[..., ObjectType], tuple, dict],  # args, kwargs
+                ],
+            ]
+        ],
+        /,
+        **kwargs: ObjectType,
+    ) -> None:
         ...
 
-    def __init__(self, /, *args, **kwargs: Any):
+    def __init__(self, /, *args: Any, **kwargs: ObjectType) -> None:
         r"""Initialize the dictionary.
 
-        Tuples of the form (key, (Callable[..., Any), args, kwargs))
-        Dict of the form {key: (Callable[..., Any), args, kwargs)}
+        Tuples of the form (key, (Callable[..., Any], args, kwargs))
+        Dict of the form {key: (Callable[..., Any], args, kwargs)}
         """
         self._dict: dict[Any, Any] = {}
         self._initialized: dict[Any, bool] = {}
@@ -88,7 +116,7 @@ class LazyDict(MutableMapping):
             raise TypeError("Too many positional arguments")
 
         if len(args) == 0:
-            self.update(kwargs)
+            self.update(kwargs)  # type: ignore[arg-type]
             return
 
         arg = args[0]
@@ -102,7 +130,7 @@ class LazyDict(MutableMapping):
                 key, value = item
                 self[key] = value
 
-    def _initialize(self, key):
+    def _initialize(self, key: KeyType) -> None:
         """Initialize the key."""
         __logger__.info("%s: Initializing %s", self, key)
         if key not in self._dict:
@@ -111,7 +139,7 @@ class LazyDict(MutableMapping):
             self._dict[key] = self._dict[key]()
             self._initialized[key] = True
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: KeyType) -> ObjectType:
         """Get the value of the key."""
         if key not in self._dict:
             raise KeyError(key)
@@ -122,29 +150,25 @@ class LazyDict(MutableMapping):
             self._initialized[key] = True
         return self._dict[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: KeyType, value: ObjectType) -> None:
         """Set the value of the key."""
         self._dict[key] = self._validate_value(value)
         self._initialized[key] = False
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: KeyType) -> None:
         """Delete the value of the key."""
         del self._dict[key]
         del self._initialized[key]
 
-    def __contains__(self, key):
-        """Check if the key is in the dictionary."""
-        return key in self._dict
-
-    def __iter__(self):
+    def __iter__(self) -> Iterator[KeyType]:
         """Iterate over the keys."""
         return iter(self._dict)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of keys."""
         return len(self._dict)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the representation of the dictionary."""
         padding = " " * 2
         max_key_length = max(len(str(key)) for key in self.keys())

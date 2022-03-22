@@ -52,7 +52,7 @@ class Config:
         return self._autojit
 
     @autojit.setter
-    def autojit(self, value: bool):
+    def autojit(self, value: bool) -> None:
         assert isinstance(value, bool)
         self._autojit = bool(value)
         os.environ["TSDM_AUTOJIT"] = str(value)

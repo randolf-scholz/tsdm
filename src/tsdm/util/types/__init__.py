@@ -14,7 +14,6 @@ __all__ = [
     "ValueType",
     "nnModuleType",
     # Generic Types
-    "LookupTable",
     "NestedType",
     "NullableNestedType",
     # Static Types
@@ -27,7 +26,6 @@ from tsdm.util.types import abc, protocols
 from tsdm.util.types._types import (
     ClassType,
     KeyType,
-    LookupTable,
     NestedType,
     NullableNestedType,
     ObjectType,

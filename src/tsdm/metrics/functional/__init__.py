@@ -16,13 +16,11 @@ from typing import Final
 
 from torch import Tensor
 
-from tsdm.util.types import LookupTable
-
 __logger__ = logging.getLogger(__name__)
 
 
 FunctionalMetric = Callable[..., Tensor]
 r"""Type hint for functional metrics."""
 
-FunctionalMetrics: Final[LookupTable[FunctionalMetric]] = {}
+FunctionalMetrics: Final[dict[str, FunctionalMetric]] = {}
 r"""Dictionary of all available functional metrics."""
