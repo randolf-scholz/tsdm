@@ -141,13 +141,6 @@ max-line-length=100
 generated-members=["numpy.*","torch.*"]
 
 
-########################
-# PyTest Configuration #
-########################
-[tool.pytest.ini_options]
-testpaths = [ "test/" ]
-reruns = "3"
-only_rerun = "AssertionError"
 
 
 ######################
@@ -214,7 +207,41 @@ pythonVersion = "3.9"
 reportMissingImports = false
 reportUnsupportedDunderAll = false
 
+
+########################
+# PyTest Configuration #
+########################
+[tool.pytest]
+[tool.pytest.ini_options]
+testpaths = [ "test/" ]
+reruns = "3"
+only_rerun = "AssertionError"
+cov = "tsdm"
+
 ##########################
 # Coverage Configuration #
 ##########################
 [tool.coverage]
+
+[tool.coverage.paths]
+source = [
+   "src/tsdm",
+#   ".venv/*/lib*/python*/site-packages/tsdm-*/",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "@abstractmethod",
+    "@abc.abstractmethod",
+    "@overload",
+    "@typing.overload",
+    "@singledispatch",
+    "@singledispatchmethod",
+    "if typing.TYPE_CHECKING",
+]
+
+[tool.coverage.run]
+source = [
+    "tsdm/",
+    "test/",
+]
