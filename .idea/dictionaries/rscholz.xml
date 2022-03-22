@@ -65,6 +65,7 @@
       <w>dtype</w>
       <w>dunder</w>
       <w>eghbali</w>
+      <w>etdataset</w>
       <w>fillna</w>
       <w>finfo</w>
       <w>fluo</w>
@@ -92,6 +93,7 @@
       <w>inds</w>
       <w>injective</w>
       <w>invperm</w>
+      <w>isort</w>
       <w>janahan</w>
       <w>januschowski</w>
       <w>jaspreet</w>
@@ -110,6 +112,7 @@
       <w>kmin</w>
       <w>kullback</w>
       <w>kval</w>
+      <w>lazydict</w>
       <w>lbfgs</w>
       <w>leibler</w>
       <w>levelname</w>
@@ -168,9 +171,11 @@
       <w>posinf</w>
       <w>poupart</w>
       <w>prcp</w>
+      <w>precommit</w>
       <w>predics</w>
       <w>prelu</w>
       <w>prsa</w>
+      <w>pydeps</w>
       <w>qflag</w>
       <w>qflags</w>
       <w>quasiregular</w>
@@ -182,6 +187,7 @@
       <w>reconstr</w>
       <w>redef</w>
       <w>relsize</w>
+      <w>rezero</w>
       <w>rieck</w>
       <w>rishab</w>
       <w>rmse</w>

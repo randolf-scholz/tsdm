@@ -49,7 +49,7 @@ OPTIMIZERS: Final[LookupTable[type[torch.optim.Optimizer]]] = {
 r"""Dictionary of all available optimizers."""
 
 # noinspection PyProtectedMember
-LR_Scheduler = lr_scheduler._LRScheduler  # pylint: disable=protected-access
+LR_Scheduler = lr_scheduler._LRScheduler
 r"""Type hint for lr_schedulers."""
 
 LR_SCHEDULERS: Final[
