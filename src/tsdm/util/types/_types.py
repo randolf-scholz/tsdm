@@ -19,14 +19,18 @@ __all__ = [
 
 import logging
 import os
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Hashable, Mapping
 from typing import Any, TypeVar, Union
 
 from torch import nn
 
 __logger__ = logging.getLogger(__name__)
 
-KeyType = TypeVar("KeyType")
+
+ArgsType = TypeVar("ArgsType")
+r"""TypeVar for ``Mapping`` values."""
+
+KeyType = TypeVar("KeyType", bound=Hashable)
 r"""TypeVar for ``Mapping`` keys."""
 
 ValueType = TypeVar("ValueType")

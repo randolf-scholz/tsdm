@@ -372,7 +372,7 @@ class DefaultLogger:
     r"""The current epoch number."""
 
     # Lazy attributes
-    dataloaders: dict[str, DataLoader] = field(init=False)
+    dataloaders: Mapping[str, DataLoader] = field(init=False)
     r"""Pointer to the dataloaders associated with the task."""
     history: dict[str, DataFrame] = field(init=False)
     r"""Auto-updating DataFrame (similar to Keras)."""

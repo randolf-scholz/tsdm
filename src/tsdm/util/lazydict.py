@@ -12,17 +12,10 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import (
-    Callable,
-    Hashable,
-    Iterable,
-    Iterator,
-    Mapping,
-    MutableMapping,
-)
-from typing import Any, NamedTuple, overload
+from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
+from typing import Any, Generic, NamedTuple, Union, overload
 
-from tsdm.util.types import ObjectType
+from tsdm.util.types import KeyType, ObjectType
 
 __logger__ = logging.getLogger(__name__)
 
@@ -43,7 +36,7 @@ class LazyFunction(NamedTuple):
         return f"<LazyFunction: {self.func.__name__}>"
 
 
-class LazyDict(MutableMapping[Hashable, ObjectType]):
+class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]):
     r"""A Lazy Dictionary implementation."""
 
     @staticmethod
@@ -77,20 +70,44 @@ class LazyDict(MutableMapping[Hashable, ObjectType]):
         ...
 
     @overload
-    def __init__(self, iterable: Iterable[ObjectType], /, **kwargs: ObjectType) -> None:
+    def __init__(
+        self,
+        mapping: Mapping[
+            KeyType,
+            Union[
+                tuple[Callable[..., ObjectType], tuple],  # args
+                tuple[Callable[..., ObjectType], dict],  # kwargs
+                tuple[Callable[..., ObjectType], tuple, dict],  # args, kwargs
+            ],
+        ],
+        /,
+        **kwargs: ObjectType,
+    ) -> None:
         ...
 
     @overload
     def __init__(
-        self, mapping: Mapping[Hashable, ObjectType], /, **kwargs: ObjectType
+        self,
+        iterable: Iterable[
+            tuple[
+                KeyType,
+                Union[
+                    tuple[Callable[..., ObjectType], tuple],  # args
+                    tuple[Callable[..., ObjectType], dict],  # kwargs
+                    tuple[Callable[..., ObjectType], tuple, dict],  # args, kwargs
+                ],
+            ]
+        ],
+        /,
+        **kwargs: ObjectType,
     ) -> None:
         ...
 
     def __init__(self, /, *args: Any, **kwargs: ObjectType) -> None:
         r"""Initialize the dictionary.
 
-        Tuples of the form (key, (Callable[..., Any), args, kwargs))
-        Dict of the form {key: (Callable[..., Any), args, kwargs)}
+        Tuples of the form (key, (Callable[..., Any], args, kwargs))
+        Dict of the form {key: (Callable[..., Any], args, kwargs)}
         """
         self._dict: dict[Any, Any] = {}
         self._initialized: dict[Any, bool] = {}
@@ -113,7 +130,7 @@ class LazyDict(MutableMapping[Hashable, ObjectType]):
                 key, value = item
                 self[key] = value
 
-    def _initialize(self, key: Hashable) -> None:
+    def _initialize(self, key: KeyType) -> None:
         """Initialize the key."""
         __logger__.info("%s: Initializing %s", self, key)
         if key not in self._dict:
@@ -122,7 +139,7 @@ class LazyDict(MutableMapping[Hashable, ObjectType]):
             self._dict[key] = self._dict[key]()
             self._initialized[key] = True
 
-    def __getitem__(self, key: Hashable) -> ObjectType:
+    def __getitem__(self, key: KeyType) -> ObjectType:
         """Get the value of the key."""
         if key not in self._dict:
             raise KeyError(key)
@@ -133,17 +150,17 @@ class LazyDict(MutableMapping[Hashable, ObjectType]):
             self._initialized[key] = True
         return self._dict[key]
 
-    def __setitem__(self, key: Hashable, value: ObjectType) -> None:
+    def __setitem__(self, key: KeyType, value: ObjectType) -> None:
         """Set the value of the key."""
         self._dict[key] = self._validate_value(value)
         self._initialized[key] = False
 
-    def __delitem__(self, key: Hashable) -> None:
+    def __delitem__(self, key: KeyType) -> None:
         """Delete the value of the key."""
         del self._dict[key]
         del self._initialized[key]
 
-    def __iter__(self) -> Iterator[Hashable]:
+    def __iter__(self) -> Iterator[KeyType]:
         """Iterate over the keys."""
         return iter(self._dict)
 
