@@ -231,7 +231,7 @@ pytest:
   needs:
   - setup
   script:
-  - pytest --junitxml=reports/pytest.xml --cov=$MODULEDIR $TESTDIR --reruns 3 --only-rerun AssertionError
+  - pytest --junitxml=reports/pytest.xml --cov=$MODULENAME $TESTDIR --reruns 3 --only-rerun AssertionError
   - coverage xml -o reports/coverage.xml
   - coverage report
   after_script:
