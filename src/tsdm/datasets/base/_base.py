@@ -47,7 +47,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Collection, Mapping, MutableMapping, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Optional, Union, overload
 from urllib.parse import urlparse
 
 from pandas import DataFrame, Series
@@ -493,12 +493,22 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         __logger__.debug("%s/%s: DONE loading dataset!", self.name, key)
 
     @abstractmethod
-    def _load(self, key: KeyType) -> DATASET_OBJECT:
+    def _load(self, key: KeyType) -> Any:
         r"""Clean the selected DATASET_OBJECT."""
+
+    @overload
+    def load(
+        self, *, key: None = None, force: bool = False, **kwargs: Any
+    ) -> Mapping[KeyType, Any]:
+        ...
+
+    @overload
+    def load(self, *, key: KeyType = None, force: bool = False, **kwargs: Any) -> Any:
+        ...
 
     def load(
         self, *, key: Optional[KeyType] = None, force: bool = False, **kwargs: Any
-    ) -> Union[DATASET_OBJECT, Mapping[KeyType, DATASET_OBJECT]]:
+    ) -> Union[Any, Mapping[KeyType, Any]]:
         r"""Load the selected DATASET_OBJECT.
 
         Parameters

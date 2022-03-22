@@ -13,7 +13,7 @@ __all__ = [
 
 import logging
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from typing import Any, NamedTuple, Optional, overload
+from typing import Any, NamedTuple, overload
 
 __logger__ = logging.getLogger(__name__)
 
@@ -21,16 +21,16 @@ __logger__ = logging.getLogger(__name__)
 class LazyFunction(NamedTuple):
     """A placeholder for uninitialized values."""
 
-    func: Callable
-    args: Optional[Iterable] = ()
-    kwargs: Optional[Mapping] = {}
+    func: Callable[..., Any]
+    args: Iterable[Any] = ()
+    kwargs: Mapping[str, Any] = {}
 
-    def __call__(self):
-        """Execute the function and return the result."""
+    def __call__(self) -> Any:
+        r"""Execute the function and return the result."""
         return self.func(*self.args, **self.kwargs)
 
-    def __repr__(self):
-        """Return a string representation of the function."""
+    def __repr__(self) -> str:
+        r"""Return a string representation of the function."""
         return f"<LazyFunction: {self.func.__name__}>"
 
 

@@ -1,5 +1,5 @@
-**T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
-=======================================================
+Time Series Datasets and Models
+================================
 
 This repository contains tools to import important time series datasets and baseline models.
 

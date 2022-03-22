@@ -616,7 +616,7 @@ class KIWI_RUNS(Dataset):
 
         # add dataset statistics
         units = units.to_frame()
-        ts: DataFrame = self._load(key="timeseries")
+        ts = self._load(key="timeseries")
 
         units["min"] = ts.min()
         units["max"] = ts.max()
