@@ -291,9 +291,9 @@ def timefun(
 
     By default appends the execution time (in seconds) to the function call.
 
-    ``outputs, time_elapse = timefun(f, append=True)(inputs)``
+    `outputs, time_elapse = timefun(f, append=True)(inputs)`
 
-    If the function call failed, ``outputs=None`` and ``time_elapsed=float('nan')`` are returned.
+    If the function call failed, `outputs=None` and `time_elapsed=float('nan')` are returned.
 
     Parameters
     ----------
@@ -354,7 +354,7 @@ def timefun(
 
 
 def trace(func: Callable) -> Callable:
-    """Log entering and exiting of function.
+    r"""Log entering and exiting of function.
 
     Parameters
     ----------
@@ -545,7 +545,7 @@ def IterItems(obj: ObjectType) -> ObjectType:
 
 
 def IterItems(obj):
-    r"""Wrap a class such that ``__getitem__`` returns (key, value) pairs."""
+    r"""Wrap a class such that `__getitem__` returns (key, value) pairs."""
     if isinstance(obj, type):
         base_class = obj
     else:
@@ -581,7 +581,7 @@ def IterKeys(obj: ObjectType) -> ObjectType:
 
 
 def IterKeys(obj):
-    r"""Wrap a class such that ``__getitem__`` returns key instead."""
+    r"""Wrap a class such that `__getitem__` returns key instead."""
     if isinstance(obj, type):
         base_class = obj
     else:

@@ -62,7 +62,7 @@ NUMPY_INT_DTYPES: Final[dict[type[np.signedinteger], str]] = {
     np.intp: "l",
     np.longlong: "q",
 }
-r"""Dictionary of all signed :mod:`numpy` integer data types."""
+r"""Dictionary of all signed `numpy` integer data types."""
 
 NUMPY_UINT_DTYPES: Final[dict[type[np.unsignedinteger], str]] = {
     np.uint8: "B",
@@ -76,7 +76,7 @@ NUMPY_UINT_DTYPES: Final[dict[type[np.unsignedinteger], str]] = {
     np.uintp: "L",
     np.ulonglong: "Q",
 }
-r"""Dictionary of all unsigned :mod:`numpy` integer data types."""
+r"""Dictionary of all unsigned `numpy` integer data types."""
 
 NUMPY_FLOAT_DTYPES: Final[dict[type[np.floating], str]] = {
     np.float_: "d",
@@ -90,7 +90,7 @@ NUMPY_FLOAT_DTYPES: Final[dict[type[np.floating], str]] = {
     np.longdouble: "g",
     np.longfloat: "g",
 }
-r"""Dictionary of all :mod:`numpy` float data types."""
+r"""Dictionary of all `numpy` float data types."""
 
 NUMPY_COMPLEX_DTYPES: Final[dict[type[np.complexfloating], str]] = {
     np.complex64: "F",
@@ -105,19 +105,19 @@ NUMPY_COMPLEX_DTYPES: Final[dict[type[np.complexfloating], str]] = {
     np.clongfloat: "G",
     np.longcomplex: "G",
 }
-r"""Dictionary of all :mod:`numpy` complex data types."""
+r"""Dictionary of all `numpy` complex data types."""
 
 
 NUMPY_TIME_DTYPES: Final[dict[type[np.generic], str]] = {
     np.timedelta64: "M",
     np.datetime64: "m",
 }
-r"""Dictionary of all :mod:`numpy` time data types."""
+r"""Dictionary of all `numpy` time data types."""
 
 NUMPY_BOOL_DTYPES: Final[dict[type[np.generic], str]] = {
     np.bool_: "?",
 }
-r"""Dictionary of all :mod:`numpy` bool data types."""
+r"""Dictionary of all `numpy` bool data types."""
 
 NUMPY_STRING_DTYPES: Final[dict[type[np.flexible], str]] = {
     np.bytes_: "S",
@@ -126,12 +126,12 @@ NUMPY_STRING_DTYPES: Final[dict[type[np.flexible], str]] = {
     np.unicode_: "U",
     np.void: "V",
 }
-r"""Dictionary of all :mod:`numpy` string types."""
+r"""Dictionary of all `numpy` string types."""
 
 NUMPY_OTHER_DTYPES: Final[dict[type[np.generic], str]] = {
     np.object_: "O",
 }
-r"""Dictionary of all :mod:`numpy` generic data types."""
+r"""Dictionary of all `numpy` generic data types."""
 
 PANDAS_DTYPES: Final[dict[type[ExtensionDtype], str]] = {
     pandas.BooleanDtype: "boolean",
@@ -152,7 +152,7 @@ PANDAS_DTYPES: Final[dict[type[ExtensionDtype], str]] = {
     pandas.UInt64Dtype: "UInt64",
     pandas.UInt8Dtype: "UInt8",
 }
-r"""Dictionary of all :mod:`pandas` data types."""
+r"""Dictionary of all `pandas` data types."""
 
 
 NULLABLE_DTYPES: Final[

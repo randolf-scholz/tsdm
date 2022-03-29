@@ -1,4 +1,4 @@
-r"""Subclasses of :class:`torch.util.data.Dataset`."""
+r"""Subclasses of `torch.util.data.Dataset`."""
 
 __all__ = [
     # Types

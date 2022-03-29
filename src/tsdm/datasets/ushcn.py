@@ -96,10 +96,10 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
         r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
         r"master/gru_ode_bayes/datasets/Climate/small_chunked_sporadic.csv"
     )
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
 
     info_url = "https://github.com/edebrouwer/gru_ode_bayes"
-    r"""HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
 
     dataset: DataFrame
 
@@ -287,9 +287,9 @@ class USHCN(Dataset):
     """
 
     base_url = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
-    """HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
     info_url = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
-    """HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
     index = ["us_daily", "states", "stations"]

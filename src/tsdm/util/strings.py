@@ -37,7 +37,7 @@ def snake2camel(s: Iterable[str]) -> list[str]:
 
 
 def snake2camel(s):
-    """Convert ``snake_case`` to ``CamelCase``.
+    r"""Convert ``snake_case`` to ``CamelCase``.
 
     Parameters
     ----------

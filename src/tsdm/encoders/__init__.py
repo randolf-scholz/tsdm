@@ -8,7 +8,7 @@ Encoders are used in multiple contexts
     standardized features. In this case, an pre_encoder object is associated with the task that
     will perform this preprocessing at task creation time.
   - Perform data encoding tasks such as encoding of categorical variables.
-  - Transform data from one framework to another, like :mod:`numpy` → :mod:`torch`
+  - Transform data from one framework to another, like `numpy` → `torch`
 
 Specification:
   - Encoders **must** be reversible.
@@ -18,8 +18,8 @@ Specification:
 Notes
 -----
 Contains encoders in both modular and functional form.
-  - See :mod:`tsdm.encoders.functional` for functional implementations.
-  - See :mod:`tsdm.encoders.modular` for modular implementations.
+  - See `tsdm.encoders.functional` for functional implementations.
+  - See `tsdm.encoders.modular` for modular implementations.
 """
 #  TODO:
 # - Target Encoding: enc(x) = mean(enc(y|x))

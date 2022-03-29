@@ -32,13 +32,13 @@ class Time2Vec(nn.Module):
 
     # Constants
     num_dim: Final[int]
-    """Number of dimensions of the time encoding."""
+    r"""Number of dimensions of the time encoding."""
 
     # Parameters
     freq: Tensor
-    """Frequency of the time encoding."""
+    r"""Frequency of the time encoding."""
     phase: Tensor
-    """Phase of the time encoding."""
+    r"""Phase of the time encoding."""
 
     def __init__(self, num_dim: int, act: str = "sin") -> None:
         super().__init__()
@@ -56,7 +56,7 @@ class Time2Vec(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
-        r"""Signature: `[...] -> [...d]`.
+        r"""Signature: ``(..., ) -> (..., d)``.
 
         Parameters
         ----------
@@ -72,7 +72,7 @@ class Time2Vec(nn.Module):
 
     @jit.export
     def inverse(self, z: Tensor) -> Tensor:  # pylint: disable=no-self-use
-        r"""Signature: `[...d] -> [...]`.
+        r"""Signature: ``(..., d) -> (..., )``.
 
         Parameters
         ----------
@@ -123,7 +123,7 @@ class PositionalEncoder(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
-        r"""Signature: [...] -> [...2d].
+        r"""Signature: ``(..., ) -> (..., 2d)``.
 
         Note: we simple concatenate the sin and cosine terms without interleaving them.
 
@@ -140,7 +140,7 @@ class PositionalEncoder(nn.Module):
 
     @jit.export
     def inverse(self, t: Tensor) -> Tensor:  # pylint: disable=no-self-use
-        r"""Signature: [...2d] -> [...].
+        r"""Signature: ``(..., 2d) -> (..., )``.
 
         Parameters
         ----------
