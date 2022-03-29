@@ -85,7 +85,7 @@ pytest = ">=6.2.5"
 pytest-cov = ">=3.0.0"
 pytest-rerunfailures = ">=10.2"
 setuptools = ">=60.7.1"
-sphinx = ">=4.4.0"
+sphinx = ">=4.5.0"
 sphinx-autoapi = ">=1.8.4"
 sphinx-copybutton = ">=0.4.0"
 sphinx-rtd-theme = ">=1.0.0"
@@ -106,6 +106,7 @@ types-tabulate = ">=0.8.5"
 types-toml = ">=0.10.3"
 wheel = ">=0.37.1"
 toml = "^0.10.2"
+Sphinx = ">=4.5.0"
 
 [tool.poetry.scripts]
 
