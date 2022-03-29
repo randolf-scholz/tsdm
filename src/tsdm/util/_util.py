@@ -137,7 +137,7 @@ def prepend_path(
     files: NullableNestedType[PathType],
     path: Path,
 ) -> NullableNestedType[Path]:
-    """Prepends path to all files in nested iterable.
+    r"""Prepends path to all files in nested iterable.
 
     Parameters
     ----------
@@ -351,9 +351,9 @@ def paths_exists(
         None, Path, Collection[Path], Mapping[Any, Union[None, Path, Collection[Path]]]
     ]
 ) -> bool:
-    """Check whether the files exist.
+    r"""Check whether the files exist.
 
-    The input can be arbitrarily nested data-structure with :class:`Path` in leaves.
+    The input can be arbitrarily nested data-structure with `Path` in leaves.
 
     Parameters
     ----------

@@ -88,9 +88,9 @@ class Traffic(Dataset):
     """  # pylint: disable=line-too-long # noqa
 
     base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
-    r"""HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["timeseries", "labels", "randperm", "invperm"]
     r"""The names of the DataFrames associated with this dataset."""
     index: list[KEYS] = ["timeseries", "labels", "randperm", "invperm"]

@@ -18,7 +18,7 @@ __logger__ = logging.getLogger(__name__)
 
 @autojit
 class ResNetBlock(nn.Sequential):
-    """Pre-activation ResNet block.
+    r"""Pre-activation ResNet block.
 
     References
     ----------
@@ -80,7 +80,7 @@ class ResNetBlock(nn.Sequential):
 
 @autojit
 class ResNet(nn.ModuleList):
-    """A ResNet model."""
+    r"""A ResNet model."""
 
     HP = {
         "__name__": __qualname__,  # type: ignore[name-defined]

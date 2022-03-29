@@ -218,9 +218,9 @@ def write_requirements(
     ----------
     package: str
     version: Optional[str]
-        In the case of ``None``, the latest version is used.
+        In the case of `None`, the latest version is used.
     path: Optional[Path]
-        In the case of ``None``, "requirements" is used.
+        In the case of `None`, "requirements" is used.
     """
     requirements: dict[str, str] = get_requirements(package, version)
     # Note: the first entry is the package itself!

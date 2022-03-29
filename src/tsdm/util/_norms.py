@@ -45,13 +45,13 @@ SizeLike = Union[int, tuple[int, ...]]
 def relative_error(
     xhat: Union[ArrayLike, Tensor], x_true: Union[ArrayLike, Tensor]
 ) -> Union[NDArray, Tensor]:
-    r"""Relative error, works with both :class:`~torch.Tensor` and :class:`~numpy.ndarray`.
+    r"""Relative error, works with both `Tensor` and `ndarray`.
 
     .. math::
         r(x̂, x) = \tfrac{|x̂ - x|}{|x|+ε}
 
-    The tolerance parameter `ε` is determined automatically. By default,
-    `ε=2^{-24}` for single and `ε=2^{-53}` for double precision.
+    The tolerance parameter $ε$ is determined automatically. By default,
+    $ε=2^{-24}$ for single and $ε=2^{-53}$ for double precision.
 
     Parameters
     ----------
@@ -155,7 +155,7 @@ def scaled_norm(
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
 ) -> Union[Tensor, NDArray]:
-    r"""Scaled `ℓ^p`-norm, works with both :class:`torch.Tensor` and :class:`numpy.ndarray`.
+    r"""Scaled $ℓ^p$-norm, works with both `Tensor` and `ndarray`.
 
     .. math::
         ‖x‖_p = (⅟ₙ ∑_{i=1}^n |x_i|^p)^{1/p}
@@ -168,9 +168,9 @@ def scaled_norm(
     .. math::
        ∥u⊕v∥_p^p = \frac{\dim U}{\dim U⊕V} ∥u∥_p^p + \frac{\dim V}{\dim U⊕V} ∥v∥_p^p
 
-    This choice is consistent with associativity: `∥(u⊕v)⊕w∥ = ∥u⊕(v⊕w)∥`
+    This choice is consistent with associativity: $∥(u⊕v)⊕w∥ = ∥u⊕(v⊕w)∥$
 
-    In particular, given `𝓤=⨁_{i=1:n} U_i`, then
+    In particular, given $𝓤=⨁_{i=1:n} U_i$, then
 
     .. math::
         ∥u∥_p^p = ∑_{i=1:n} \frac{\dim U_i}{\dim 𝓤} ∥u_i∥_p^p

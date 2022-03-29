@@ -108,7 +108,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
     r"""Forecast the final biomass or product."""
 
     KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
-    r"""Type Hint for Keys"""
+    r"""Type Hint for Keys."""
     index: list[KeyType] = list(product(range(5), ("train", "test")))  # type: ignore[arg-type]
     r"""Available index."""
     target: Literal["Fluo_GFP", "OD600"]
@@ -122,9 +122,9 @@ class KIWI_FINAL_PRODUCT(BaseTask):
     metadata: DataFrame
     r"""The metadata."""
     controls: Series
-    r"""List of control variables"""
+    r"""List of control variables."""
     observables: Series
-    r"""List of observable variables"""
+    r"""List of observable variables."""
 
     def __init__(
         self,

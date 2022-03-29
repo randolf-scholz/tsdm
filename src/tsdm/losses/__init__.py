@@ -3,8 +3,8 @@ r"""Implementation of loss functions.
 Notes
 -----
 Contains losses in both modular and functional form.
-  - See :mod:`tsdm.losses.functional` for functional implementations.
-  - See :mod:`tsdm.losses.modular` for modular implementations.
+  - See `tsdm.losses.functional` for functional implementations.
+  - See `tsdm.losses.modular` for modular implementations.
 """
 
 __all__ = [

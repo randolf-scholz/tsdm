@@ -13,12 +13,12 @@ Idea:
 
 The Pre-Encoder must work in the following way:
 
-- ``(named)tuple[TimeTensor] → (named)tuple[TimeTensor]`` row-wise!
-- ``(named)tuple[Tensor] → (named)tuple[Tensor]``
+- `tuple[TimeTensor] → tuple[TimeTensor]` row-wise!
+- `tuple[Tensor] → tuple[Tensor]`
 
 More generally, eligible inputs are:
 
-- ``DataFrame``, ``TimeTensor``, ``tuple[DataFrame]``, ``tuple[TimeTensor]``
+- `DataFrame`, `TimeTensor`, `tuple[DataFrame]`, `tuple[TimeTensor]`
 - Product-types.
 
 Must return a `NamedTuple` that agrees with the original column names!

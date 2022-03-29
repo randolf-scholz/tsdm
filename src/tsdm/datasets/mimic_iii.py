@@ -36,9 +36,9 @@ class MIMIC_III(SimpleDataset):
     r"""MIMIC-III SimpleDataset Database."""
 
     base_url: str = r"https://physionet.org/files/mimiciii/1.4/"
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = r"https://physionet.org/content/mimiciii/1.4/"
-    r"""HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
 
     @cached_property
     def dataset_files(self) -> Path:

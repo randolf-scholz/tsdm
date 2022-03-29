@@ -19,18 +19,20 @@
    {% endif %}
    {% endblock %}
 
+
    {% block attributes %}
    {% if attributes %}
-   .. rubric:: Module attributes
+   .. rubric:: {{ _('Module Attributes') }}
 
    .. autosummary::
       :toctree:
-      :template: custom-attribute-template.rst
+      :template: autosummary-custom/custom-attribute.rst
    {% for item in attributes %}
       {{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
+
 
    {% block functions %}
    {% if functions %}
@@ -38,12 +40,12 @@
 
    .. autosummary::
       :toctree:
-      :nosignatures:
    {% for item in functions %}
       {{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
+
 
    {% block classes %}
    {% if classes %}
@@ -51,13 +53,13 @@
 
    .. autosummary::
       :toctree:
-      :template: custom-class-template.rst
-      :nosignatures:
+      :template: autosummary-custom/custom-class.rst
    {% for item in classes %}
       {{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
+
 
    {% block exceptions %}
    {% if exceptions %}
@@ -71,11 +73,14 @@
    {% endif %}
    {% endblock %}
 
+
 {% block modules %}
 {% if modules %}
+.. rubric:: Modules
+
 .. autosummary::
    :toctree:
-   :template: custom-module-template.rst
+   :template: autosummary-custom/custom-module.rst
    :recursive:
 {% for item in modules %}
    {{ item }}

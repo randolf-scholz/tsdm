@@ -16,7 +16,7 @@ __logger__ = logging.getLogger(__name__)
 
 @autojit
 class ReverseDense(nn.Module):
-    """ReverseDense module `x→A⋅ϕ(x)`."""
+    r"""ReverseDense module $x→A⋅ϕ(x)$."""
 
     HP = {
         "__name__": __qualname__,  # type: ignore[name-defined]
@@ -30,12 +30,12 @@ class ReverseDense(nn.Module):
             "inplace": False,
         },
     }
-    r"""The hyperparameter dictionary"""
+    r"""The hyperparameter dictionary."""
 
     input_size: Final[int]
-    """The size of the input"""
+    r"""The size of the input."""
     output_size: Final[int]
-    """The size of the output"""
+    r"""The size of the output."""
 
     # PARAMETERS
     weight: Tensor

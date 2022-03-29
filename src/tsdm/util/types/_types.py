@@ -28,22 +28,22 @@ __logger__ = logging.getLogger(__name__)
 
 
 ArgsType = TypeVar("ArgsType")
-r"""TypeVar for ``Mapping`` values."""
+r"""TypeVar for `Mapping` values."""
 
 KeyType = TypeVar("KeyType", bound=Hashable)
-r"""TypeVar for ``Mapping`` keys."""
+r"""TypeVar for `Mapping` keys."""
 
 ValueType = TypeVar("ValueType")
-r"""TypeVar for ``Mapping`` values."""
+r"""TypeVar for `Mapping` values."""
 
 Type = TypeVar("Type")
-r"""Generic type hint"""
+r"""Generic type hint."""
 
 Self = TypeVar("Self")
-"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
+r"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
 
 ClassType = TypeVar("ClassType", bound=type)
-r"""Generic type hint"""
+r"""Generic type hint."""
 
 ObjectType = TypeVar("ObjectType", bound=object)
 r"""Generic type hint for instances."""

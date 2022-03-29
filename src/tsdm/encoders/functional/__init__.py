@@ -3,7 +3,7 @@ r"""Implementation of encoders.
 Notes
 -----
 Contains encoders in functional form.
-  - See :mod:`tsdm.encoders.modular` for modular implementations.
+  - See `tsdm.encoders.modular` for modular implementations.
 """
 
 __all__ = [

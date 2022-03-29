@@ -50,7 +50,7 @@ def contains_nan_slice(
 
 
 def float_is_int(series: Series) -> bool:
-    """Check if all float values are integers."""
+    r"""Check if all float values are integers."""
     mask = pd.notna(series)
     return series[mask].apply(float.is_integer).all()
 

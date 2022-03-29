@@ -98,12 +98,12 @@ class BeijingAirQuality(SimpleDataset):
     """  # pylint: disable=line-too-long # noqa
 
     base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
 
     info_url: str = (
         r"https://archive.ics.uci.edu/ml/datasets/Beijing+Multi-Site+Air-Quality+Data"
     )
-    r"""HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
 
     dataset: DataFrame
 
@@ -113,12 +113,12 @@ class BeijingAirQuality(SimpleDataset):
         return self.rawdata_dir / "PRSA2017_Data_20130301-20170228.zip"
 
     def _load(self):
-        """Load the dataset from hdf-5 file."""
+        r"""Load the dataset from hdf-5 file."""
         df = read_feather(self.dataset_files)
         return df.set_index("time")
 
     def _clean(self) -> None:
-        r"""Create DataFrame with all 12 stations and :class:`pandas.DatetimeIndex`."""
+        r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
 
         def to_time(x):
             return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
