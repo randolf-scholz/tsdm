@@ -3,7 +3,7 @@ r"""Implementation of encoders.
 Notes
 -----
 Contains encoders in functional form.
-  - See :mod:`tsdm.encoders.modular` for modular implementations.
+  - See `tsdm.encoders.modular` for modular implementations.
 """
 
 __all__ = [
@@ -62,17 +62,17 @@ def triplet2dense(
 def make_dense_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to dense triplet format.
 
-    Given that `df` has `d` columns
-    with `n` rows containing `N ≤ n⋅d` observations (non-NaN entries),
-    the result is a `(N×3)` array `(t_i, v_i, x_i)_{i=1:N}`
+    Given that `df` has $d$ columns
+    with `n` rows containing $N ≤ n⋅d$ observations (non-NaN entries),
+    the result is a $(N×3)$ array $(t_i, v_i, x_i)_{i=1:N}$.
 
-    - `t_i` timestamp (index)
-    - `v_i` indicator variable
-    - `x_i` observed value
+    - $t_i$ timestamp (index)
+    - $v_i$ indicator variable
+    - $x_i$ observed value
 
     References
     ----------
-    - :func:`pandas.melt`
+    - `pandas.melt`
     - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
     Parameters
@@ -88,7 +88,7 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
         column    data type
         ========  ================================================
         index     same as input
-        variable  :class:`pandas.StringDtype`
+        variable  `pandas.StringDtype`
         value     same as input
         ========  ================================================
 
@@ -111,12 +111,12 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
 def make_sparse_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to sparse triplet format.
 
-    Given that `df` has `d` columns with `n` rows containing `N ≤ n⋅d` observations
-    (non-NaN entries), the result is a `(N×(d+1))` array `(t_i, v_i, x_i)_{i=1:N}`
+    Given that `df` has $d$ columns with $n$ rows containing $N ≤ n⋅d$ observations
+    (non-NaN entries), the result is a $N×(d+1)$ array $(t_i, v_i, x_i)_{i=1:N}$
 
-    - `t_i` timestamp (index)
-    - `v_i` one-hot encoded indicator variable
-    - `x_i` observed value
+    - $t_i$ timestamp (index)
+    - $v_i$ one-hot encoded indicator variable
+    - $x_i$ observed value
 
     Parameters
     ----------
@@ -132,13 +132,13 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
         ======  ================================================
         index   same as input
         value   same as input
-        \*      :class:`pandas.SparseDtype` ``Sparse[uint8, 0]``
+        \*      `pandas.SparseDtype` ``Sparse[uint8, 0]``
         ======  ================================================
 
     References
     ----------
-    - :func:`pandas.melt`
-    - :func:`pandas.get_dummies`
+    - `pandas.melt`
+    - `pandas.get_dummies`
     - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
     See Also
@@ -165,9 +165,9 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     x: DataFrame
         The original dataframe
     m: DataFrame
-        mask `m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}`
+        mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
     d: DataFrame
-        time delta  `δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt`, with `δ_0=0`
+        time delta  $δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt$, with $δ_0=0$
 
     References
     ----------

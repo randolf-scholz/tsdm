@@ -3,7 +3,7 @@ r"""Implementations of loss functions.
 Notes
 -----
 Contains losses in modular form.
-  - See :mod:`tsdm.losses.functional` for functional implementations.
+  - See `tsdm.losses.functional` for functional implementations.
 """
 
 __all__ = [
@@ -196,7 +196,7 @@ class WRMSE(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
-        r"""Signature: ``...𝐦, ...𝐦 → 0``.
+        r"""Signature: ``[(..., 𝐦), (..., 𝐦)] → (..., )``.
 
         Parameters
         ----------
@@ -215,7 +215,7 @@ class WRMSE(nn.Module):
         return torch.sqrt(torch.mean(r))
 
     def __repr__(self) -> str:
-        """Pretty print."""
+        r"""Pretty print."""
         with np.printoptions(precision=2):
             weights = self.w.cpu().numpy()
             return f"{self.__class__.__name__}(\n" + repr(weights) + "\n)"

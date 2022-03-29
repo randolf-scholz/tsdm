@@ -72,7 +72,7 @@ from tsdm import (
 
 __logger__ = logging.getLogger(__name__)
 __version__ = metadata.version(__package__)
-r"""The version number of the :mod:`tsdm` package."""
+r"""The version number of the `tsdm` package."""
 
 #
 # import logging

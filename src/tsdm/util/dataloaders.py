@@ -48,9 +48,9 @@ def collate_padded(
 ) -> Tensor:
     r"""Collates list of tensors of varying lengths into a single Tensor, padded with zeros.
 
-    Equivalent to :func:`torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
+    Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
 
-    Signature: `[ (l_i, ...)_{i=1:B} ] -> (B, l_{\max},...)`
+    Signature: $[ (lᵢ, ...)_{i=1:B} ] -> (B, lₘₐₓ, ...)$.
 
     Parameters
     ----------

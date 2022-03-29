@@ -25,7 +25,7 @@ __logger__ = logging.getLogger(__name__)
 
 @contextmanager
 def add_to_path(p: Path) -> Iterator:
-    """Append path to environment variable PATH.
+    r"""Append path to environment variable PATH.
 
     Parameters
     ----------
@@ -45,7 +45,7 @@ def add_to_path(p: Path) -> Iterator:
 
 
 def path_import(module_path: Path, module_name: str = None) -> ModuleType:
-    """Return python module imported from path.
+    r"""Return python module imported from path.
 
     References
     ----------

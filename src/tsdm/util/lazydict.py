@@ -21,7 +21,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 class LazyFunction(NamedTuple):
-    """A placeholder for uninitialized values."""
+    r"""A placeholder for uninitialized values."""
 
     func: Callable[..., Any]
     args: Iterable[Any] = ()
@@ -131,7 +131,7 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
                 self[key] = value
 
     def _initialize(self, key: KeyType) -> None:
-        """Initialize the key."""
+        r"""Initialize the key."""
         __logger__.info("%s: Initializing %s", self, key)
         if key not in self._dict:
             raise KeyError(key)
@@ -140,7 +140,7 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
             self._initialized[key] = True
 
     def __getitem__(self, key: KeyType) -> ObjectType:
-        """Get the value of the key."""
+        r"""Get the value of the key."""
         if key not in self._dict:
             raise KeyError(key)
         if not self._initialized[key]:
@@ -151,25 +151,25 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
         return self._dict[key]
 
     def __setitem__(self, key: KeyType, value: ObjectType) -> None:
-        """Set the value of the key."""
+        r"""Set the value of the key."""
         self._dict[key] = self._validate_value(value)
         self._initialized[key] = False
 
     def __delitem__(self, key: KeyType) -> None:
-        """Delete the value of the key."""
+        r"""Delete the value of the key."""
         del self._dict[key]
         del self._initialized[key]
 
     def __iter__(self) -> Iterator[KeyType]:
-        """Iterate over the keys."""
+        r"""Iterate over the keys."""
         return iter(self._dict)
 
     def __len__(self) -> int:
-        """Return the number of keys."""
+        r"""Return the number of keys."""
         return len(self._dict)
 
     def __repr__(self) -> str:
-        """Return the representation of the dictionary."""
+        r"""Return the representation of the dictionary."""
         padding = " " * 2
         max_key_length = max(len(str(key)) for key in self.keys())
         items = [(str(key), self._dict.get(key)) for key in self]
@@ -196,5 +196,5 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
         return string
 
     def __str__(self):
-        """Return the string representation of the dictionary."""
+        r"""Return the string representation of the dictionary."""
         return str(self._dict)

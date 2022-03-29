@@ -83,8 +83,8 @@ class ETDatasetTask_Informer(BaseTask):
     Test-Metric
     -----------
 
-    - MSE: `⅟ₙ∑_{i=1}^n |y - ŷ|^2`
-    - MAE `⅟ₙ∑_{i=1}^n |y - ŷ|`
+    - MSE: :math:`⅟ₙ∑_{i=1}^{n} | y - ŷ |^2`
+    - MAE: :math:`⅟ₙ∑_{i=1}^{n} | y - ŷ |`
 
     Results
     -------
@@ -104,9 +104,9 @@ class ETDatasetTask_Informer(BaseTask):
     r"""Accumulates residuals into loss - usually mean or sum."""
 
     train_batch_size: int = 32
-    """Default batch size."""
+    r"""Default batch size."""
     eval_batch_size: int = 128
-    """Default batch size when evaluating."""
+    r"""Default batch size when evaluating."""
 
     # additional attributes
     preprocessor: ModularEncoder

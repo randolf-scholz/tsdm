@@ -104,7 +104,7 @@ def is_empty(series: Series) -> bool:
 
 
 def get_uniques(series: Series, ignore_nan: bool = True) -> Series:
-    """Return unique values, excluding nan.
+    r"""Return unique values, excluding nan.
 
     Parameters
     ----------
@@ -187,7 +187,7 @@ def numeric_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
 
 
 def float_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
-    """Check whether float encoded column holds only integers.
+    r"""Check whether float encoded column holds only integers.
 
     Parameters
     ----------
