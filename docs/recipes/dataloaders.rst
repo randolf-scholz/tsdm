@@ -6,7 +6,7 @@ There are two ways of using dataloaders:
 1. Small Datasets (fits in RAM)
 
 - pre-encode the whole dataset and apply dataloader to the result
-- here the datalaoder already acts on a torch tensor
+- here the dataloader already acts on a torch tensor
 
 2. Large Datasets (does not fit in RAM)
 
@@ -37,7 +37,7 @@ batches -> not what we want!
               worker_init_fn=None, *, prefetch_factor=2,
               persistent_workers=False)
 
-Thankfully, we can create an appropriate trainloader by writing
+Thankfully, we can create an appropriate training dataloader by writing
 
 - `sampler` – defines the strategy to draw samples from the dataset
 - `batch_sampler`: a torch.utils.data.Sampler subclass that is responsible for collecting batches
