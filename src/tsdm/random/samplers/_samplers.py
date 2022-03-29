@@ -49,14 +49,14 @@ dt_type = Union[
 
 
 # class TimeSliceSampler(Sampler):
-#     """TODO: add class."""
+#     r"""TODO: add class."""
 #
 #     def __init__(self, data_source: Optional[Sized]):
-#         """TODO: Add method."""
+#         r"""TODO: Add method."""
 #         super().__init__(data_source)
 #
 #     def __iter__(self) -> Iterator:
-#         """TODO: Add method."""
+#         r"""TODO: Add method."""
 #         return super().__iter__()
 
 
@@ -209,14 +209,14 @@ class SequenceSampler(Sampler):
 
 
 # class CollectionSampler(Sampler):
-#     r"""Samples a single random  object from"""
+#     r"""Samples a single random  object from."""
 #
 #     def __init__(self, data_source: Sized, shuffle: bool = True):
 #         super().__init__(data_source)
 #         self.data = data_source
 #         self.shuffle = shuffle
 #         assert hasattr(data_source, "index"), "Data must have index."
-#         assert isinstance(data_source.index, Index), "Index must be ``pandas.Index``."
+#         assert isinstance(data_source.index, Index), "Index must be `pandas.Index`."
 #         self.idx = data_source.index
 #
 #     def __len__(self):
@@ -282,8 +282,8 @@ class CollectionSampler(Sampler):
     def __iter__(self):
         r"""Return indices of the samples.
 
-        When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
-        When ``early_stop=False``, it will sample all samples.
+        When `early_stop=True`, it will sample precisely `min() * len(subsamplers)` samples.
+        When `early_stop=False`, it will sample all samples.
         """
         activate_iterators = {
             key: iter(sampler) for key, sampler in self.subsamplers.items()
@@ -302,7 +302,7 @@ class CollectionSampler(Sampler):
 # class MappingSampler(Sampler):
 #     r"""Sample from a Mapping of Datasets.
 #
-#     To be used in conjunction with :class:`tsdm.datasets.torch.MappingDataset`.
+#     To be used in conjunction with `tsdm.datasets.torch.MappingDataset`.
 #     """
 #
 #     def __init__(self, data_source: Mapping[Any, TorchDataset], shuffle: bool = True):
@@ -377,7 +377,7 @@ class HierarchicalSampler(Sampler):
     def __iter__(self):
         r"""Return indices of the samples.
 
-        When ``early_stop=True``, it will sample precisely min() * len(subsamplers) samples.
+        When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
         When ``early_stop=False``, it will sample all samples.
         """
         activate_iterators = {
@@ -541,10 +541,10 @@ def grid(
     delta: TimedeltaLike,
     xoffset: Optional[TimestampLike] = None,
 ) -> list[int]:
-    r"""Compute `\{k∈ℤ∣ xₘᵢₙ ≤ x₀+k⋅Δ ≤ xₘₐₓ\}`.
+    r"""Compute $\{k∈ℤ∣ xₘᵢₙ ≤ x₀+k⋅Δ ≤ xₘₐₓ\}$.
 
-    That is, a list of all integers such that `x₀+k⋅Δ` is in the interval `[x₀, xₘₐₓ]`.
-    Special case: if `Δ=0`, returns ``[0]``
+    That is, a list of all integers such that $x₀+k⋅Δ$ is in the interval $[x₀, xₘₐₓ]$.
+    Special case: if $Δ=0$, returns $[0]$.
 
     Parameters
     ----------
@@ -585,8 +585,8 @@ def grid(
 #     Args:
 #         sampler (Sampler or Iterable): Base sampler. Can be any iterable object
 #         batch_size (int): Size of mini-batch.
-#         drop_last (bool): If ``True``, the sampler will drop the last batch if
-#             its size would be less than ``batch_size``
+#         drop_last (bool): If `True`, the sampler will drop the last batch if
+#             its size would be less than `batch_size`
 #
 #     Example:
 #         >>> list(BatchSampler(SequentialSampler(range(10)), batch_size=3, drop_last=False))

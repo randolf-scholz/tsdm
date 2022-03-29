@@ -62,7 +62,7 @@ class USHCN_DeBrouwer(BaseTask):
 
     @cached_property
     def index(self) -> list[str]:
-        """TODO: Add index."""
+        r"""TODO: Add index."""
 
     test_metric = type[ModularLoss]
 

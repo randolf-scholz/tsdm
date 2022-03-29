@@ -29,7 +29,7 @@ class BaseEncoder(ABC):
     r"""Base class that all encoders must subclass."""
 
     _is_fitted: bool = False
-    """Whether the encoder has been fitted."""
+    r"""Whether the encoder has been fitted."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -40,7 +40,7 @@ class BaseEncoder(ABC):
         r"""Initialize the subclass.
 
         The wrapping of fit/encode/decode must be done here to avoid
-        :exc:`~pickle.PickleError`!
+        `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
         cls.fit = wrap_func(cls.fit, after=cls._post_fit_hook)
@@ -56,7 +56,7 @@ class BaseEncoder(ABC):
         return ProductEncoder(self, other)
 
     def __pow__(self, power: int) -> DuplicateEncoder:
-        r"""Return the product encoder of the encoder with itself `power` times."""
+        r"""Return the product encoder of the encoder with itself power many times."""
         return DuplicateEncoder(self, power)
 
     def __repr__(self) -> str:

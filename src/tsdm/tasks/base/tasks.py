@@ -61,7 +61,7 @@ Normal Encoder
 A normal pre_encoder is an pre_encoder with the property that all output tensors
 share the same index axis.
 
-I.e. it has a signature of the form ``list[tensor[n, ...]] → list[tensor[n, ...]]``
+I.e. it has a signature of the form ``list[tensor[n, ...]] -> list[tensor[n, ...]]``.
 Pre-Encoder: Map DataFrame to torch.util.data.Dataset
 
 
@@ -109,7 +109,7 @@ class BaseTask(ABC, Generic[KeyType]):
     A task is a combination of a dataset and an evaluation protocol (EVP).
 
     The DataLoader will return batches of data consisting of tuples of the form:
-    ``(inputs, targets)``. The model will be trained on the inputs, and the targets
+    `(inputs, targets)`. The model will be trained on the inputs, and the targets
     will be used to evaluate the model.
     That is, the model must product an output of the same shape and data type of the targets.
 
@@ -132,7 +132,7 @@ class BaseTask(ABC, Generic[KeyType]):
     batchloaders: Mapping[KeyType, DataLoader]
         The main DataLoader to be used for training models.
     dataloaders: Mapping[KeyType, DataLoader]
-        Holds ``DataLoaders`` for all the index.
+        Holds `DataLoaders` for all the index.
     """
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372

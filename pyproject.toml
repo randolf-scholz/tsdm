@@ -107,6 +107,7 @@ types-toml = ">=0.10.3"
 wheel = ">=0.37.1"
 toml = "^0.10.2"
 Sphinx = ">=4.5.0"
+sphinx-math-dollar = "^1.2"
 
 [tool.poetry.scripts]
 

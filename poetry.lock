@@ -2266,6 +2266,17 @@ code_style = ["pre-commit (==2.12.1)"]
 rtd = ["sphinx", "ipython", "myst-nb", "sphinx-book-theme"]
 
 [[package]]
+name = "sphinx-math-dollar"
+version = "1.2"
+description = "Sphinx extension to let you write LaTeX math using $$"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+sphinx = "*"
+
+[[package]]
 name = "sphinx-rtd-theme"
 version = "1.0.0"
 description = "Read the Docs theme for Sphinx"
@@ -2796,7 +2807,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9, <3.11"
-content-hash = "28871e7bd7d295f64026f302b4803eef70963f5ca58707de9301843f774ec788"
+content-hash = "a6ba5674c4fb03f4acf047dd4928fb706bff1b63012cdce2c1684e61289c4ab3"
 
 [metadata.files]
 absl-py = [
@@ -4561,6 +4572,10 @@ sphinx-autoapi = [
 sphinx-copybutton = [
     {file = "sphinx-copybutton-0.5.0.tar.gz", hash = "sha256:a0c059daadd03c27ba750da534a92a63e7a36a7736dcf684f26ee346199787f6"},
     {file = "sphinx_copybutton-0.5.0-py3-none-any.whl", hash = "sha256:9684dec7434bd73f0eea58dda93f9bb879d24bff2d8b187b1f2ec08dfe7b5f48"},
+]
+sphinx-math-dollar = [
+    {file = "sphinx-math-dollar-1.2.tar.gz", hash = "sha256:04153cdf28ecf85fc109c0676e9b8eab357394e0e5eb01378b1002251b27c2e6"},
+    {file = "sphinx_math_dollar-1.2-py3-none-any.whl", hash = "sha256:6fe4fbbfddf9f5e8eab5bb044423fdff2bd9cb9cb12ec1961523d52b8622528a"},
 ]
 sphinx-rtd-theme = [
     {file = "sphinx_rtd_theme-1.0.0-py2.py3-none-any.whl", hash = "sha256:4d35a56f4508cfee4c4fb604373ede6feae2a306731d533f409ef5c3496fdbd8"},

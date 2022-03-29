@@ -28,9 +28,9 @@ __logger__ = logging.getLogger(__name__)
 
 
 class Time2Float(BaseEncoder):
-    r"""Convert ``Series`` encoded as ``datetime64`` or ``timedelta64`` to ``floating``.
+    r"""Convert `Series` encoded as `datetime64` or `timedelta64` to `floating`.
 
-    By default, the data is mapped onto the unit interval `[0,1]`
+    By default, the data is mapped onto the unit interval $[0,1]$.
     """
 
     original_dtype: np.dtype
@@ -91,7 +91,7 @@ class Time2Float(BaseEncoder):
             raise ValueError(f"{self.normalization=} not understood")
 
     def encode(self, data: Series, /) -> Series:
-        """Encode the data.
+        r"""Encode the data.
 
         Roughly equal to::
             ds ⟶ ((ds - offset)/scale).astype(float)
@@ -123,7 +123,7 @@ class Time2Float(BaseEncoder):
         return (timedeltas / common_interval).astype(float)
 
     def decode(self, data: Series, /) -> Series:
-        """Apply the inverse transformation.
+        r"""Apply the inverse transformation.
 
         Roughly equal to:
         ``ds ⟶ (scale*ds + offset).astype(original_dtype)``

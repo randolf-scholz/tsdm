@@ -181,7 +181,7 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     ymin: Union[NDArray, Tensor]
     ymax: Union[NDArray, Tensor]
     scale: Union[NDArray, Tensor]
-    """The scaling factor."""
+    r"""The scaling factor."""
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""
 
@@ -383,7 +383,7 @@ class LogEncoder(BaseEncoder):
         self.replacement = np.log2(self.threshold / 2)
 
     def encode(self, data: NDArray, /) -> NDArray:
-        """Encode data on logarithmic scale."""
+        r"""Encode data on logarithmic scale."""
         result = data.copy()
         mask = data <= 0
         result[:] = np.where(mask, self.replacement, np.log2(data))
