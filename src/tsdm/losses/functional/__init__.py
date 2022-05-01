@@ -3,7 +3,7 @@ r"""Implementations of loss functions.
 Notes
 -----
 Contains losses in functional form.
-  - See :mod:`tsdm.losses.modular` for modular implementations.
+  - See `tsdm.losses.modular` for modular implementations.
 """
 
 __all__ = [
@@ -33,7 +33,6 @@ from tsdm.losses.functional._functional import (
     q_quantile_loss,
     rmse,
 )
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ __logger__ = logging.getLogger(__name__)
 FunctionalLoss = Callable[..., Tensor]
 r"""Type hint for functional losses."""
 
-TORCH_LOSSES: Final[LookupTable[FunctionalLoss]] = {
+TORCH_LOSSES: Final[dict[str, FunctionalLoss]] = {
     "binary_cross_entropy": F.binary_cross_entropy,
     # Function that measures the Binary Cross Entropy between the target and the output.
     "binary_cross_entropy_with_logits": F.binary_cross_entropy_with_logits,
@@ -89,7 +88,7 @@ TORCH_LOSSES: Final[LookupTable[FunctionalLoss]] = {
 }
 r"""Dictionary of all available losses in torch."""
 
-TORCH_ALIASES: Final[LookupTable[FunctionalLoss]] = {
+TORCH_ALIASES: Final[dict[str, FunctionalLoss]] = {
     "mae": F.l1_loss,
     "l2": F.mse_loss,
     "xent": F.cross_entropy,
@@ -97,7 +96,7 @@ TORCH_ALIASES: Final[LookupTable[FunctionalLoss]] = {
 }
 r"""Dictionary containing additional aliases for losses in torch."""
 
-FunctionalLosses: Final[LookupTable[FunctionalLoss]] = {
+FunctionalLosses: Final[dict[str, FunctionalLoss]] = {
     "nd": nd,
     "nrmse": nrmse,
     "q_quantile": q_quantile,

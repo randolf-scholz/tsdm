@@ -72,7 +72,7 @@ class KIWI_RUNS_TASK(BaseTask):
     index: list[tuple[int, str]] = list(product(range(5), ("train", "test")))
     r"""Available index."""
     KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
-    r"""Type Hint for Keys"""
+    r"""Type Hint for Keys."""
     timeseries: DataFrame
     r"""The whole timeseries data."""
     metadata: DataFrame
@@ -326,7 +326,7 @@ class _Dataset(torch.utils.data.Dataset):
         self.targets = targets
         self.observation_horizon = observation_horizon
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: tuple[tuple[int, int], slice]) -> Sample:
         key, slc = item
         ts = self.timeseries.loc[key].iloc[slc].copy(deep=True)
         md = self.metadata.loc[key].copy(deep=True)

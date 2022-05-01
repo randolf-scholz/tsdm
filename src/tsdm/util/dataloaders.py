@@ -23,7 +23,6 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import (
     PackedSequence,
-    pack_padded_sequence,
     pack_sequence,
     pad_packed_sequence,
     pad_sequence,
@@ -49,9 +48,9 @@ def collate_padded(
 ) -> Tensor:
     r"""Collates list of tensors of varying lengths into a single Tensor, padded with zeros.
 
-    Equivalent to :func:`torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
+    Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
 
-    Signature: `[ (l_i, ...)_{i=1:B} ] -> (B, l_{\max},...)`
+    Signature: $[ (lᵢ, ...)_{i=1:B} ] -> (B, lₘₐₓ, ...)$.
 
     Parameters
     ----------
@@ -73,9 +72,7 @@ def upack_sequence(batch: PackedSequence) -> list[Tensor]:
     return [x[:l].T for x, l in zip(batch_pad_packed, lengths)]
 
 
-def unpad_sequence():
+def unpad_sequence(seq: Tensor, lengths: Tensor) -> Tensor:
     r"""Reverse operation of pad_sequence."""
-    help(pack_padded_sequence)
-
-
-# TODO: add exclusive_args decorator
+    # help(pack_padded_sequence)
+    raise NotImplementedError

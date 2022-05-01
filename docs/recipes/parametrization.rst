@@ -50,7 +50,7 @@ Signatures
 ----------
 
 We want to describe general signatures for models that operate in Hilbert spaces.
-Generally speaking, there are 3 kinds of shape informations:
+Generally speaking, there are 3 kinds of shape information:
 
 1. Fixed shape sizes.
 2. Variable shape sizes.

@@ -3,7 +3,7 @@ r"""Implementation of encoders.
 Notes
 -----
 Contains encoders in modular form.
-  - See :mod:`tsdm.encoders.functional` for functional implementations.
+  - See `tsdm.encoders.functional` for functional implementations.
 """
 
 from __future__ import annotations
@@ -161,9 +161,9 @@ class ConcatEncoder(BaseEncoder):
         self.numdims = [d.ndim for d in data]
         self.maxdim = max(self.numdims)
         # pad dimensions if necessary
-        data = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
+        arrays = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
         # store the lengths of the slices
-        self.lengths = [x.shape[self.axis] for x in data]
+        self.lengths = [x.shape[self.axis] for x in arrays]
 
     def encode(self, data: tuple[Tensor, ...], /) -> Tensor:
         r"""Encode the input."""
@@ -367,11 +367,11 @@ class DataFrameEncoder(BaseEncoder):
         return df[self.colspec.index].astype(self.colspec)  # bring cols in right order
 
     def __repr__(self) -> str:
-        """Pretty print."""
+        r"""Pretty print."""
         return f"{self.__class__.__name__}(" + self.spec.__repr__() + "\n)"
 
     def _repr_html_(self) -> str:
-        """HTML representation."""
+        r"""HTML representation."""
         html_repr = self.spec.to_html()
         return f"<h3>{self.__class__.__name__}</h3> {html_repr}"
 
@@ -596,7 +596,7 @@ class FrameIndexer(BaseEncoder):
 class FrameSplitter(BaseEncoder, Mapping):
     r"""Split DataFrame columns into multiple groups.
 
-    The special value ``...`` (:class:`Ellipsis`) can be used to indicate
+    The special value `...` (`Ellipsis`) can be used to indicate
     that all other columns belong to this group.
 
     Index mapping
@@ -748,7 +748,7 @@ class FrameSplitter(BaseEncoder, Mapping):
         if not self.has_ellipsis and set(data.columns) > self.fixed_columns:
             warnings.warn(
                 f"Unknown columns {set(data.columns) - self.fixed_columns}."
-                "If you want to encode unknown columns add a group ``...`` (Ellipsis)."
+                "If you want to encode unknown columns add a group `...` (`Ellipsis`)."
             )
 
         encoded_frames = []
@@ -807,7 +807,7 @@ class PositionalEncoder(BaseEncoder):
         assert self.scales[0] == 1.0, "Something went wrong."
 
     def encode(self, data: np.ndarray, /) -> np.ndarray:
-        r"""Signature: [...] -> [...2d].
+        r"""Signature: ``(..., ) -> (..., 2d)``.
 
         Note: we simple concatenate the sin and cosine terms without interleaving them.
 
@@ -823,7 +823,7 @@ class PositionalEncoder(BaseEncoder):
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
 
     def decode(self, data: np.ndarray, /) -> np.ndarray:
-        r"""Signature: [...2d] -> [...].
+        r"""Signature: ``(..., 2d) -> (..., )``.
 
         Parameters
         ----------
@@ -870,7 +870,7 @@ class TimeSlicer(BaseEncoder):
         ...
 
     def encode(self, data, /):
-        """Slice the data.
+        r"""Slice the data.
 
         Provide pairs of tensors (T, X) and return a list of pairs (T_sliced, X_sliced).
         """
@@ -899,7 +899,7 @@ class TimeSlicer(BaseEncoder):
         ...
 
     def decode(self, data, /):
-        """Restores the original data."""
+        r"""Restores the original data."""
         if isinstance(data[0], TimeTensor) or self.is_tensor_pair(data[0]):
             return torch.cat(data, dim=0)
         return tuple(self.decode(item) for item in data)
@@ -998,7 +998,7 @@ class TensorEncoder(BaseEncoder):
     r"""The device the tensors are stored in."""
     names: Optional[list[str]] = None
     # colspecs: list[Series]
-    # """The data types/column names of all the tensors"""
+    # r"""The data types/column names of all the tensors.""
     return_type: type = tuple
 
     def __init__(
@@ -1163,7 +1163,7 @@ class ValueEncoder(BaseEncoder):
 # class FrameSplitter(BaseEncoder, Mapping):
 #     r"""Split a DataFrame into multiple groups.
 #
-#     The special value ``...`` (:class:`Ellipsis`) can be used to indicate
+#     The special value `...` (`Ellipsis`) can be used to indicate
 #     that all other columns belong to this group.
 #
 #     This function can be used on index columns as well.
@@ -1285,7 +1285,7 @@ class ValueEncoder(BaseEncoder):
 #
 #         assert data_columns <= set(self.indices.values()), (
 #             f"Unknown columns {data_columns - set(self.indices)}."
-#             "If you want to encode unknown columns add a group ``...`` (Ellipsis)."
+#             "If you want to encode unknown columns add a group `...` (Ellipsis)."
 #         )
 #
 #         encoded = []

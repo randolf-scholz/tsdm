@@ -45,8 +45,8 @@ def visualize_distribution(
     log: bool = True,
     loc: Location = "upper right",
     print_stats: bool = True,
-    extra_stats: Optional[dict[str, str]] = None,
-):
+    extra_stats: Optional[dict] = None,
+) -> None:
     r"""Plot the distribution of x in the given axis.
 
     Parameters
@@ -135,10 +135,9 @@ def shared_grid_plot(
 
     Parameters
     ----------
-    data
-        :class:`~numpy.typing.ArrayLike`
+    data: ArrayLike
     plot_func
-        With signature plot_func(data, ax=)
+        With signature ``plot_func(data, ax=)``.
     plot_kwargs
     titles
     row_headers
@@ -146,19 +145,19 @@ def shared_grid_plot(
     xlabels
     ylabels
     subplots_kwargs
-        Default arguments: ``tight_layout=True``, ``sharex='col``, ``sharey='row'``
+        Default arguments: `tight_layout=True`, `sharex='col'`, `sharey='row'`
 
     Returns
     -------
     Figure
     Axes
     """
-    data = np.array(data)
+    array = np.array(data)
 
-    if data.ndim == 2:
-        data = np.expand_dims(data, axis=0)
+    if array.ndim == 2:
+        array = np.expand_dims(array, axis=0)
 
-    nrows, ncols = data.shape[:2]
+    nrows, ncols = array.shape[:2]
 
     _subplot_kwargs = {
         "figsize": (5 * ncols, 3 * nrows),
@@ -178,7 +177,7 @@ def shared_grid_plot(
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):  # type: ignore
-        plot_func(data[idx], ax=axes[idx], **plot_kwargs)
+        plot_func(array[idx], ax=axes[idx], **plot_kwargs)
 
     # set axes titles
     if titles is not None:
@@ -247,11 +246,11 @@ def plot_spectrum(
     style: str = "bmh"
         Which matplotlib style to use.
     axis_kwargs: Optional[dict] = None,
-        Keyword-Arguments to pass to ``Axes.set``
+        Keyword-Arguments to pass to `Axes.set`
     figure_kwargs: Optional[dict] = None
-        Keyword-Arguments to pass to ``matplotlib.pyplot.subplots``
+        Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
     scatter_kwargs: Optional[dict] = None
-        Keyword-Arguments to pass to ``matplotlib.pyplot.scatter``
+        Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
 
     Returns
     -------

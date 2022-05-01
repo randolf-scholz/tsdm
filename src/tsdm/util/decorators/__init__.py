@@ -18,7 +18,6 @@ __all__ = [
     "IterItems",
     "IterKeys",
     "wrap_func",
-    "wrapmethod",
 ]
 
 import logging
@@ -34,7 +33,6 @@ from tsdm.util.decorators._decorators import (
     trace,
     vectorize,
     wrap_func,
-    wrapmethod,
 )
 
 __logger__ = logging.getLogger(__name__)

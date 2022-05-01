@@ -61,8 +61,8 @@ tsepsis
 
     The onset time of sepsis is the earlier of tsuspicion and tSOFA as long as tSOFA occurs no more
     than 24 hours before or 12 hours after tsuspicion; otherwise, the patient is not marked as a
-    sepsis patient. Specifically, if `t_\text{suspicion}−24 ≤t_\text{SOFA}≤ t_\text{suspicion}+12`,
-    then `t_\text{sepsis}=\min(t_\text{suspicion}, t_\text{SOFA})`.
+    sepsis patient. Specifically, if $t_{\text{suspicion}}−24 ≤ t_{\text{SOFA}} ≤ t_{\text{suspicion}}+12$,
+    then $t_{\text{sepsis}} = \min(t_{\text{suspicion}}, t_{\text{SOFA}})$.
 
 Table 1: Columns in each training data file. Vital signs (columns 1-8)
 HR 	Heart rate (beats per minute)
@@ -206,9 +206,9 @@ class Physionet2019(SimpleDataset):
     """
 
     base_url: str = r"https://archive.physionet.org/users/shared/challenge-2019/"
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = r"https://physionet.org/content/challenge-2019/1.0.0/"
-    r"""HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
 
     @property
     def index(self) -> list:

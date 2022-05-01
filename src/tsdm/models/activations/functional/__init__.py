@@ -3,7 +3,7 @@ r"""Implementations of activation functions.
 Notes
 -----
 Contains activations in functional form.
-  - See :mod:`tsdm.util.activations.modular` for modular implementations.
+  - See `tsdm.util.activations.modular` for modular implementations.
 """
 
 __all__ = [
@@ -19,14 +19,12 @@ from typing import Final
 from torch import Tensor
 from torch.nn import functional as F
 
-from tsdm.util.types import LookupTable
-
 __logger__ = logging.getLogger(__name__)
 
 FunctionalActivation = Callable[..., Tensor]
 r"""Type hint for functional activations."""
 
-FunctionalActivations: Final[LookupTable[FunctionalActivation]] = {
+FunctionalActivations: Final[dict[str, FunctionalActivation]] = {
     "threshold": F.threshold,
     # Thresholds each element of the input Tensor.
     "threshold_": F.threshold_,  # type: ignore[attr-defined]

@@ -73,13 +73,15 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.autosectionlabel",
     "sphinx_copybutton",
+    "sphinx_math_dollar",
 ]
 
 # The name of a reST role (builtin or Sphinx extension) to use as the default role, that is,
 # for text marked up `like this`. This can be set to 'py:obj' to make `filter` a cross-reference
 # to the Python function “filter”. The default is None, which doesn't reassign the default role.
 default_role = (
-    "math"  # This option causes `<latex>` to behave like $<latex>$ in markdown.
+    # "math"  # This option causes `<latex>` to behave like $<latex>$ in markdown.
+    "obj"  # This option causes `<latex>` to behave like $<latex>$ in markdown.
 )
 
 # Add any paths that contain templates here, relative to this directory.
@@ -304,6 +306,25 @@ html_theme_options = {
 # See the MathJax Getting Started page for details. If you want MathJax to be available offline or without including
 # resources from a third-party site, you have to download it and set this value to a different path.
 
+mathjax_options = {}
+# The options to script tag for mathjax.
+# The default is empty {}.
+
+mathjax3_config = {}
+# The configuration options for MathJax v3 (which is used by default).
+
+mathjax2_config = {}
+# The configuration options for MathJax v2
+# The default is empty {}.
+
+mathjax_config = {
+    "tex2jax": {
+        "inlineMath": [["\\(", "\\)"]],
+        "displayMath": [["\\[", "\\]"]],
+    },
+}
+# Former name of mathjax2_config.
+
 # -- autosummary options ----------------------------------------------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
 
@@ -373,13 +394,13 @@ autodoc_default_flags = []
 # The default options for autodoc directives. They are applied to all autodoc directives automatically.
 # It must be a dictionary which maps option names to the values. For example:
 #
-# autodoc_default_options = {
-#     'members': 'var1, var2',
-#     'member-order': 'groupwise',
-#     'special-members': '__init__',
-#     'undoc-members': True,
-#     'exclude-members': '__weakref__'
-# }
+autodoc_default_options = {
+    # 'members': 'var1, var2',
+    # 'member-order': 'groupwise',
+    # 'special-members': '__init__',
+    "undoc-members": False,
+    # 'exclude-members': '__weakref__'
+}
 # Setting None or True to the value is equivalent to giving only the option name to the directives.
 # The supported options are 'members', 'member-order', 'undoc-members', 'private-members', 'special-members',
 # 'inherited-members', 'show-inheritance', 'ignore-module-all', 'imported-members', 'exclude-members' and
@@ -432,7 +453,7 @@ autodoc_type_aliases = {
     "NA": "~pandas.NA",
     "NaT": "~pandas.NaT",
     "DataFrame": "~pandas.DataFrame",
-    "Series": "~pandas.Series",
+    "Series": ":class:`~pandas.Series`",
     "Index": "~pandas.Index",
     "MultiIndex": "~pandas.MultiIndex",
     "CategoricalIndex": "~pandas.CategoricalIndex",
@@ -449,13 +470,13 @@ autodoc_type_aliases = {
 # It is used to keep type aliases not evaluated in the document. Defaults to empty ({}).
 # The type aliases are only available if your program enables Postponed Evaluation of Annotations (PEP 563)
 # feature via from __future__ import annotations.
-autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(typing)
+# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(typing)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
-autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(abc)
+# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(abc)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
 # autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(torch)
 # autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(torch.utils)
-autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
+# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
 
 autodoc_typehints_format = "short"
@@ -547,6 +568,7 @@ napoleon_preprocess_types = True
 
 napoleon_type_aliases = {
     # torch
+    "torch": ":class:`torch`",
     "Tensor": "~torch.Tensor",
     "nn.Module": "~torch.nn.Module",
     "SummaryWriter": "~torch.utils.tensorboard.writer.SummaryWriter",
