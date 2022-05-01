@@ -3,7 +3,7 @@ r"""Implementations of activation functions.
 Notes
 -----
 Contains activations in modular form.
-  - See :mod:`tsdm.util.activations.functional` for functional implementations.
+  - See `tsdm.util.activations.functional` for functional implementations.
 """
 
 __all__ = [
@@ -17,14 +17,12 @@ from typing import Final
 
 from torch import nn
 
-from tsdm.util.types import LookupTable
-
 __logger__ = logging.getLogger(__name__)
 
 ModularActivation = nn.Module
 r"""Type hint for modular activations."""
 
-ModularActivations: Final[LookupTable[type[nn.Module]]] = {
+ModularActivations: Final[dict[str, type[nn.Module]]] = {
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
     "ELU": nn.ELU,
     "Hardshrink": nn.Hardshrink,

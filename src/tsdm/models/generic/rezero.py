@@ -27,7 +27,7 @@ __logger__ = logging.getLogger(__name__)
 
 @autojit
 class ResNetBlock(nn.Sequential):
-    """Pre-activation ResNet block.
+    r"""Pre-activation ResNet block.
 
     References
     ----------
@@ -133,7 +133,7 @@ class ReZero(nn.Sequential):
 
 @autojit
 class ConcatEmbedding(nn.Module):
-    r"""Maps `x ⟼ [x,w]`.
+    r"""Maps $x ⟼ [x,w]$.
 
     Attributes
     ----------
@@ -180,7 +180,7 @@ class ConcatEmbedding(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r"""Signature: `[..., d] ⟶ [..., d+e]`.
+        r"""Signature: ``(..., d) -> (..., d+e)``.
 
         Parameters
         ----------
@@ -196,20 +196,20 @@ class ConcatEmbedding(nn.Module):
         return z
 
     @jit.export
-    def inverse(self, Z: Tensor) -> Tensor:
-        r"""Signature: `[..., d+e] ⟶ [..., d]`.
+    def inverse(self, z: Tensor) -> Tensor:
+        r"""Signature: ``(..., d+e) -> (..., d)``.
 
         The reverse of the forward. Satisfies inverse(forward(x)) = x for any input.
 
         Parameters
         ----------
-        Z: Tensor, shape=(...,LEN,LAT)
+        z: Tensor, shape=(...,LEN,LAT)
 
         Returns
         -------
         Tensor, shape=(...,LEN,DIM)
         """
-        return Z[..., : self.input_size]
+        return z[..., : self.input_size]
 
 
 @autojit

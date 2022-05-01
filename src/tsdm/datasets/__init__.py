@@ -1,6 +1,31 @@
 r"""Dataset Import Facilities.
 
-Implement your own by subclassing :class:`BaseDataset`
+Implement your own by subclassing `BaseDataset`
+
+Basic Usage
+-----------
+
+.. code-block:: python
+
+   from tsdm.dataset import Electricity
+
+   print(vars(Electricity))
+   Electricity.download()
+   Electricity.preprocess()
+   x = Electricity.load()
+
+   # or, simply:
+   x = Electricity.dataset
+
+
+Some design decisions:
+
+1. Why not use `Series` instead of Mapping for dataset?
+    - `Series[object]` has bad performance issues in construction.
+
+2. Should we have Dataset style iteration or dict style iteration?
+    - Note that for `dict`, `iter(dict)` iterates over index.
+    - For `Series`, `DataFrame`, `TorchDataset`, `__iter__` iterates over values.
 """
 
 __all__ = [
@@ -49,14 +74,13 @@ from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.torch import IndexedArray, TimeSeriesDataset, TimeTensor
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
 dataset = BaseDataset
 r"""Type hint for dataset."""
 
-DATASETS: Final[LookupTable[type[dataset]]] = {
+DATASETS: Final[dict[str, type[dataset]]] = {
     "BeijingAirQuality": BeijingAirQuality,
     "ETT": ETT,
     "Electricity": Electricity,

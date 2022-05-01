@@ -3,8 +3,8 @@ r"""Implementation of loss functions.
 Notes
 -----
 Contains losses in both modular and functional form.
-  - See :mod:`tsdm.losses.functional` for functional implementations.
-  - See :mod:`tsdm.losses.modular` for modular implementations.
+  - See `tsdm.losses.functional` for functional implementations.
+  - See `tsdm.losses.modular` for modular implementations.
 """
 
 __all__ = [
@@ -54,14 +54,13 @@ from tsdm.losses.modular import (
     Q_Quantile,
     Q_Quantile_Loss,
 )
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
 Loss = Union[FunctionalLoss, ModularLoss]
 r"""Type hint for losses."""
 
-LOSSES: Final[LookupTable[Union[FunctionalLoss, type[ModularLoss]]]] = {
+LOSSES: Final[dict[str, Union[FunctionalLoss, type[ModularLoss]]]] = {
     **FunctionalLosses,
     **ModularLosses,
 }

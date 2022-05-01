@@ -37,13 +37,7 @@ import numpy as np
 import torch
 from torch import Tensor, jit
 
-from tsdm.util.types import (
-    LookupTable,
-    NullableNestedType,
-    ObjectType,
-    PathType,
-    ReturnType,
-)
+from tsdm.util.types import NullableNestedType, ObjectType, PathType, ReturnType
 from tsdm.util.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
@@ -143,7 +137,7 @@ def prepend_path(
     files: NullableNestedType[PathType],
     path: Path,
 ) -> NullableNestedType[Path]:
-    """Prepends path to all files in nested iterable.
+    r"""Prepends path to all files in nested iterable.
 
     Parameters
     ----------
@@ -232,15 +226,26 @@ def flatten_dict(
 
 # @overload
 # def initialize_from(
-#     lookup_table: LookupTable[ObjectType], __name__: str, **kwargs: Any
+#     lookup_table: dict[str, ObjectType], __name__: str, **kwargs: Any
 # ) -> ObjectType:
 #     ...
+
+
+# partial from type
+@overload
+def initialize_from(
+    lookup_table: dict[str, type[ObjectType]],
+    /,
+    __name__: str,
+    **kwargs: Any,
+) -> ObjectType:
+    ...
 
 
 # partial from func
 @overload
 def initialize_from(
-    lookup_table: LookupTable[Callable[..., ReturnType]],
+    lookup_table: dict[str, Callable[..., ReturnType]],
     /,
     __name__: str,
     **kwargs: Any,
@@ -249,63 +254,27 @@ def initialize_from(
 
 
 # partial from type
-@overload
-def initialize_from(
-    lookup_table: LookupTable[type[ObjectType]],
-    /,
-    __name__: str,
-    **kwargs: Any,
-) -> ObjectType:
-    ...
-
-
-# partial from already initialized object
-@overload
-def initialize_from(
-    lookup_table: LookupTable[ObjectType],
-    /,
-    __name__: str,
-    **kwargs: Any,
-) -> ObjectType:
-    ...
-
-
-@overload
-def initialize_from(
-    lookup_table: LookupTable[Union[Callable[..., ReturnType], type[ObjectType]]],
-    /,
-    __name__: str,
-    **kwargs: Any,
-) -> Union[Callable[..., ReturnType], ObjectType]:
-    ...
-
-
 # @overload
 # def initialize_from(
-#     lookup_table: LookupTable[Union[Callable[..., ReturnType], ObjectType]],
+#     lookup_table: dict[str, Union[type[ObjectType], Callable[..., ReturnType]]],
 #     /,
 #     __name__: str,
 #     **kwargs: Any,
-# ) -> Union[Callable[..., ReturnType], ObjectType]:
+# ) -> Union[ObjectType, Callable[..., ReturnType]]:
 #     ...
 
 
-# @overload
-# def initialize_from(
-#     lookup_table: LookupTable[ObjectType],
-#     /,
-#     __name__: str,
-#     **kwargs: Any,
-# ) -> ObjectType:
-#     ...
-
-
-def initialize_from(
-    lookup_table,
+def initialize_from(  # type: ignore[misc]
+    lookup_table: Union[
+        dict[str, type[ObjectType]],
+        dict[str, Callable[..., ReturnType]],
+        dict[str, Union[type[ObjectType], Callable[..., ReturnType]]],
+        dict[str, Union[Callable[..., ReturnType], type[ObjectType]]],
+    ],
     /,
     __name__: str,
     **kwargs: Any,
-):
+) -> Union[ObjectType, Callable[..., ReturnType]]:
     r"""Lookup class/function from dictionary and initialize it.
 
     Roughly equivalent to:
@@ -327,7 +296,7 @@ def initialize_from(
 
     Returns
     -------
-    Callable
+    object
         The initialized class/function
     """
     obj = lookup_table[__name__]
@@ -335,9 +304,11 @@ def initialize_from(
 
     # check that obj is a class, but not metaclass or instance.
     if isinstance(obj, type) and not issubclass(obj, type):
-        return obj(**kwargs)
+        initialized_object: ObjectType = obj(**kwargs)
+        return initialized_object
     # if it is function, fix kwargs
-    return partial(obj, **kwargs)
+    initialized_callable: Callable[..., ReturnType] = partial(obj, **kwargs)  # type: ignore[assignment]
+    return initialized_callable
 
 
 def is_dunder(name: str) -> bool:
@@ -380,9 +351,9 @@ def paths_exists(
         None, Path, Collection[Path], Mapping[Any, Union[None, Path, Collection[Path]]]
     ]
 ) -> bool:
-    """Check whether the files exist.
+    r"""Check whether the files exist.
 
-    The input can be arbitrarily nested data-structure with :class:`Path` in leaves.
+    The input can be arbitrarily nested data-structure with `Path` in leaves.
 
     Parameters
     ----------

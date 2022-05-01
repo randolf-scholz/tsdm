@@ -26,7 +26,7 @@ TimeSeries specifics
    - multivariate: (ℝ×𝓢₁)⊕(ℝ×𝓢₂)⊕…⊕(ℝ×𝓢ₙ) ≃ ℝ×(𝓢₁⊕𝓢₂⊕…⊕𝓢ₙ)
 - TimeSeries -- Multiple **Aligned** Tensors
    - Observations/controls:  ℝ×(𝓞₁⊕𝓞₂⊕…⊕𝓞ₙ) ⊕ ℝ×(𝓒₁⊕𝓒₂⊕…⊕𝓒ₙ) ≃ ℝ×(𝓞⊕𝓒)
-   - Video: **I**\mage + **A**\udio + **T**\ext: (ℝ×𝐈) ⊕ (ℝ×𝐀) ⊕ (ℝ×𝐓) ≃ ℝ×(𝐈⊕𝐀⊕𝐓)
+   - Video: Image + Audio + Text: (ℝ×𝐈) ⊕ (ℝ×𝐀) ⊕ (ℝ×𝐓) ≃ ℝ×(𝐈⊕𝐀⊕𝐓)
    - Generally cannot be represented by a single tensor since 𝐈≃ℝ⊗ℝ, but 𝐀≃ℝ
    - Can be represented as an xarray.Dataset (except for duplicate indices.)
 - TimeSeries -- Static Data.
@@ -80,7 +80,7 @@ We should consider the following data-structures
 
 - TimeSeries-Tensor: a Tensor whose main index is TimeLike
 - TimeSeries-Dataset: a Tuple of TimeSeriesTensors together with a tuple of regular tensors.
-- MetaDataSet (equimodel/non-equimodal): a Collection of Dataset objects with the same/different modality over some index
+- MetaDataSet (equimodal/non-equimodal): a Collection of Dataset objects with the same/different modality over some index
 
 Example
 -------

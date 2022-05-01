@@ -41,7 +41,7 @@ Typical experimental flow, given a fixed hyperparameter combination
     trainer       = HP['trainer_cfg']
 
     metric_cls = METRICS[HP['metrics']]
-    metrics    = [metric_cls(config) for config, metric_cls in zip(metric_clss, HP['metrics_cfg'])]
+    metrics    = [metric_cls(config) for config, metric_cls in zip(metric_cls, HP['metrics_cfg'])]
 
     logger_cls = LOGGERS[HP['logger']]
     logger     = logger_cls(HP['logger_cfg'], model, optimizer, loss, metrics, ...)

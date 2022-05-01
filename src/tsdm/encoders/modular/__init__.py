@@ -3,7 +3,7 @@ r"""Implementation of encoders.
 Notes
 -----
 Contains encoders in modular form.
-  - See :mod:`tsdm.encoders.functional` for functional implementations.
+  - See `tsdm.encoders.functional` for functional implementations.
 """
 
 __all__ = [
@@ -74,12 +74,11 @@ from tsdm.encoders.modular.generic import (
     ProductEncoder,
 )
 from tsdm.encoders.modular.numerical import LogEncoder, MinMaxScaler, Standardizer
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
 
-SklearnModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
+SklearnModularEncoders: Final[dict[str, type[BaseEstimator]]] = {
     "Binarizer": sk_preprocessing.Binarizer,
     "FunctionTransformer": sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer": sk_preprocessing.KBinsDiscretizer,
@@ -105,7 +104,7 @@ ModularEncoder = BaseEncoder
 r"""Type hint for modular encoders."""
 
 
-ModularEncoders: Final[LookupTable[type[BaseEstimator]]] = {
+ModularEncoders: Final[dict[str, type[BaseEstimator]]] = {
     "ChainedEncoder": ChainedEncoder,
     "DataFrameEncoder": DataFrameEncoder,
     "DateTimeEncoder": DateTimeEncoder,

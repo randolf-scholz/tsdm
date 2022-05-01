@@ -3,7 +3,7 @@ r"""Implementation of encoders.
 Notes
 -----
 Contains encoders in functional form.
-  - See :mod:`tsdm.encoders.modular` for modular implementations.
+  - See `tsdm.encoders.modular` for modular implementations.
 """
 
 __all__ = [
@@ -55,14 +55,13 @@ from tsdm.encoders.functional._functional import (
     timefeatures,
     triplet2dense,
 )
-from tsdm.util.types import LookupTable
 
 __logger__ = logging.getLogger(__name__)
 
 FunctionalEncoder = Callable
 r"""Type hint for functional encoders."""
 
-SklearnFunctionalEncoders: Final[LookupTable[FunctionalEncoder]] = {
+SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoder]] = {
     "binarize": binarize,
     "label_binarize": label_binarize,
     "maxabs_scale": maxabs_scale,
@@ -74,7 +73,7 @@ SklearnFunctionalEncoders: Final[LookupTable[FunctionalEncoder]] = {
     "scale": scale,
 }
 
-FunctionalEncoders: Final[LookupTable[FunctionalEncoder]] = {
+FunctionalEncoders: Final[dict[str, FunctionalEncoder]] = {
     "make_dense_triplets": make_dense_triplets,
     "make_masked_format": make_masked_format,
     "make_sparse_triplets": make_sparse_triplets,

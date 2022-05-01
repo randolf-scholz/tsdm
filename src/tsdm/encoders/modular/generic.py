@@ -16,11 +16,11 @@ __all__ = [
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from functools import singledispatchmethod
-from typing import Any, Sequence
+from typing import Any, Sequence, Union, overload
 
 from tsdm.util.decorators import wrap_func
 from tsdm.util.strings import repr_sequence
+from tsdm.util.types import ObjectType
 
 __logger__ = logging.getLogger(__name__)
 
@@ -29,9 +29,9 @@ class BaseEncoder(ABC):
     r"""Base class that all encoders must subclass."""
 
     _is_fitted: bool = False
-    """Whether the encoder has been fitted."""
+    r"""Whether the encoder has been fitted."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.transform = self.encode
         self.inverse_transform = self.decode
@@ -40,12 +40,12 @@ class BaseEncoder(ABC):
         r"""Initialize the subclass.
 
         The wrapping of fit/encode/decode must be done here to avoid
-        :exc:`~pickle.PickleError`!
+        `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_func(cls.fit, None, cls._post_fit_hook)
-        cls.encode = wrap_func(cls.encode, cls._pre_encode_hook, None)
-        cls.decode = wrap_func(cls.decode, cls._pre_decode_hook, None)
+        cls.fit = wrap_func(cls.fit, after=cls._post_fit_hook)
+        cls.encode = wrap_func(cls.encode, before=cls._pre_encode_hook)
+        cls.decode = wrap_func(cls.decode, before=cls._pre_decode_hook)
 
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
@@ -56,7 +56,7 @@ class BaseEncoder(ABC):
         return ProductEncoder(self, other)
 
     def __pow__(self, power: int) -> DuplicateEncoder:
-        r"""Return the product encoder of the encoder with itself `power` times."""
+        r"""Return the product encoder of the encoder with itself power many times."""
         return DuplicateEncoder(self, power)
 
     def __repr__(self) -> str:
@@ -119,11 +119,11 @@ class BaseEncoder(ABC):
 class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
-    def encode(self, data, /):
+    def encode(self, data: ObjectType, /) -> ObjectType:
         r"""Encode the input."""
         return data
 
-    def decode(self, data, /):
+    def decode(self, data: ObjectType, /) -> ObjectType:
         r"""Decode the input."""
         return data
 
@@ -169,18 +169,23 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
         r"""Return the number of the encoders."""
         return len(self.encoders)
 
-    @singledispatchmethod
-    def __getitem__(self, index):
+    @overload
+    def __getitem__(self, index: int) -> BaseEncoder:  # noqa: D105
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> ProductEncoder:  # noqa: D105
+        ...
+
+    def __getitem__(
+        self, index: Union[int, slice]
+    ) -> Union[BaseEncoder, ProductEncoder]:
         r"""Get the encoder at the given index."""
+        if isinstance(index, int):
+            return self.encoders[index]
+        if isinstance(index, slice):
+            return ProductEncoder(*self.encoders[index])
         raise ValueError(f"Index {index} not supported.")
-
-    @__getitem__.register(int)
-    def _(self, index: int) -> BaseEncoder:
-        return self.encoders[index]
-
-    @__getitem__.register(slice)
-    def _(self, index: slice) -> ProductEncoder:
-        return ProductEncoder(*self.encoders[index])
 
     def __repr__(self) -> str:
         r"""Pretty print."""
@@ -244,18 +249,23 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
         r"""Return number of chained encoders."""
         return len(self.encoders)
 
-    @singledispatchmethod
-    def __getitem__(self, index):
+    @overload
+    def __getitem__(self, index: int) -> BaseEncoder:  # noqa: D105
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> ChainedEncoder:  # noqa: D105
+        ...
+
+    def __getitem__(
+        self, index: Union[int, slice]
+    ) -> Union[BaseEncoder, ChainedEncoder]:
         r"""Get the encoder at the given index."""
+        if isinstance(index, int):
+            return self.encoders[index]
+        if isinstance(index, slice):
+            return ChainedEncoder(*self.encoders[index])
         raise ValueError(f"Index {index} not supported.")
-
-    @__getitem__.register(int)
-    def _(self, index: int) -> BaseEncoder:
-        return self.encoders[index]
-
-    @__getitem__.register(slice)
-    def _(self, index: slice) -> ChainedEncoder:
-        return ChainedEncoder(*self.encoders[index])
 
     def __repr__(self) -> str:
         r"""Pretty print."""

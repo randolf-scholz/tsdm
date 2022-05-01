@@ -21,7 +21,7 @@ __logger__ = logging.getLogger(__name__)
 
 @autojit
 class MLP(nn.Sequential):
-    """A standard Multi-Layer Perceptron."""
+    r"""A standard Multi-Layer Perceptron."""
 
     HP: dict = {
         "__name__": __qualname__,  # type: ignore[name-defined]

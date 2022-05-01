@@ -62,7 +62,7 @@ class _TupleIndexMethodClone:
 class TimeTensor(Tensor):
     r"""Subclass of torch that holds an index.
 
-    Use :meth:`TimeTensor.loc` and meth:`TimeTensor.iloc` just like with DataFrames.
+    Use `TimeTensor.loc` and `TimeTensor.iloc` just like with DataFrames.
     """
 
     def __new__(
@@ -79,8 +79,8 @@ class TimeTensor(Tensor):
         x: Sized
             The input data.
         args: Any
-        index: Optional[Index] = None,
-            If :class:`None`, then ``range(len(x))`` will be used as the index.
+        index: Optional[Index], default None
+            If `None`, then `range(len(x))` will be used as the index.
         kwargs: Any
         """
         if isinstance(x, (DataFrame, Series)):
@@ -247,29 +247,29 @@ class TimeSeriesTuple(NamedTuple):
     r"""A tuple of Tensors describing a slice of a multivariate timeseries."""
 
     timestamps: Tensor
-    """Timestamps of the data."""
+    r"""Timestamps of the data."""
 
     observables: Tensor
-    """The observables."""
+    r"""The observables."""
 
     covariates: Tensor
-    """The controls."""
+    r"""The controls."""
 
     targets: Tensor
-    """The targets."""
+    r"""The targets."""
 
 
 class TimeSeriesBatch(NamedTuple):
-    """Inputs for the model."""
+    r"""Inputs for the model."""
 
     inputs: TimeSeriesTuple
-    """The inputs."""
+    r"""The inputs."""
 
     future: TimeSeriesTuple
-    """The future."""
+    r"""The future."""
 
     metadata: Tensor
-    """The metadata."""
+    r"""The metadata."""
 
 
 class TimeSeriesDataset(TorchDataset):

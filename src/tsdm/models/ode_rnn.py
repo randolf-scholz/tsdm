@@ -8,6 +8,7 @@ __all__ = [
 
 import logging
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
@@ -23,8 +24,8 @@ __logger__ = logging.getLogger(__name__)
 
 
 @contextmanager
-def add_to_path(p: Path):
-    """Append path to environment variable PATH.
+def add_to_path(p: Path) -> Iterator:
+    r"""Append path to environment variable PATH.
 
     Parameters
     ----------
@@ -44,7 +45,7 @@ def add_to_path(p: Path):
 
 
 def path_import(module_path: Path, module_name: str = None) -> ModuleType:
-    """Return python module imported from path.
+    r"""Return python module imported from path.
 
     References
     ----------

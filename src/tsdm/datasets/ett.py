@@ -21,7 +21,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 class ETT(Dataset):
-    """ETT-small-h1.
+    r"""ETT-small-h1.
 
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
     | Field       | date              | HUFL             | HULL              | MUFL               | MULL                | LUFL            | LULL             | OT                       |
@@ -31,9 +31,9 @@ class ETT(Dataset):
     """  # pylint: disable=line-too-long # noqa
 
     base_url: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small"
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = r"https://github.com/zhouhaoyi/ETDataset"
-    r"""HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
     dataset: DataFrame
     r"""Store cached version of dataset."""
     KEYS = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
@@ -47,7 +47,7 @@ class ETT(Dataset):
         return {key: self.rawdata_dir / f"{key}.csv" for key in self.index}
 
     def _clean(self, key: KEYS) -> None:
-        """Create DataFrame from the .csv file."""
+        r"""Create DataFrame from the .csv file."""
         with open(self.rawdata_files[key], "r", encoding="utf8") as file:
             df = read_csv(file, parse_dates=[0], index_col=0)
             df.name = self.name

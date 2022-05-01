@@ -43,7 +43,7 @@ def log_kernel_information(
     histograms: bool = False,
     prefix: str = "",
     postfix: str = "",
-):
+) -> None:
     r"""Log kernel information.
 
     Parameters
@@ -97,7 +97,7 @@ def log_optimizer_state(
     histograms: bool = False,
     prefix: str = "",
     postfix: str = "",
-):
+) -> None:
     r"""Log optimizer data.
 
     Parameters
@@ -155,16 +155,17 @@ def log_model_state(
     histograms: bool = False,
     prefix: str = "",
     postfix: str = "",
-):
+) -> None:
     r"""Log optimizer data.
 
-    Args:
-        i: current step
-        writer: SummaryWriter
-        model: Model
-        histograms: whether to create histograms
-        prefix: e.g. prefix:model:postfix
-        postfix: e.g. prefix:model:postfix
+    Parameters
+    ----------
+    i: current step
+    writer: SummaryWriter
+    model: Model
+    histograms: whether to create histograms
+    prefix: e.g. prefix:model:postfix
+    postfix: e.g. prefix:model:postfix
     """
     # TODO: make this compatible with optimizers other than ADAM.
     identifier = f"{prefix+':'*bool(prefix)}model{':'*bool(postfix)+postfix}"
@@ -192,7 +193,7 @@ def log_metrics(
     targets: Tensor,
     predics: Tensor,
     prefix: Optional[str] = None,
-):
+) -> None:
     ...
 
 
@@ -205,7 +206,7 @@ def log_metrics(
     *,
     values: dict[str, Tensor],
     prefix: Optional[str] = None,
-):
+) -> None:
     ...
 
 
@@ -218,7 +219,7 @@ def log_metrics(
     *,
     values: Sequence[Tensor],
     prefix: Optional[str] = None,
-):
+) -> None:
     ...
 
 
@@ -233,7 +234,7 @@ def log_metrics(
     values: Optional[Union[dict[str, Tensor], Sequence[Tensor]]] = None,
     prefix: str = "",
     postfix: str = "",
-):
+) -> None:
     r"""Log multiple metrics at once.
 
     Parameters
@@ -371,7 +372,7 @@ class DefaultLogger:
     r"""The current epoch number."""
 
     # Lazy attributes
-    dataloaders: dict[str, DataLoader] = field(init=False)
+    dataloaders: Mapping[str, DataLoader] = field(init=False)
     r"""Pointer to the dataloaders associated with the task."""
     history: dict[str, DataFrame] = field(init=False)
     r"""Auto-updating DataFrame (similar to Keras)."""
@@ -380,7 +381,7 @@ class DefaultLogger:
     CHECKPOINTDIR: Path = field(init=False)
     r"""The path where model checkpoints are stored."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         r"""Initialize the remaining attributes."""
         self.KEYS = set(self.dataloaders)
         self.dataloaders = self.task.dataloaders
@@ -393,7 +394,7 @@ class DefaultLogger:
             }
 
     @torch.no_grad()
-    def log_at_batch_end(self, *, targets: Tensor, predics: Tensor):
+    def log_at_batch_end(self, *, targets: Tensor, predics: Tensor) -> None:
         r"""Log metrics and optimizer state at the end of batch."""
         self.num_batch += 1
         values = compute_metrics(targets=targets, predics=predics, metrics=self.metrics)
@@ -410,7 +411,7 @@ class DefaultLogger:
         self.history["batch"].append(self._to_cpu(values))
 
     @torch.no_grad()
-    def log_at_epoch_end(self, *, targets: Tensor, predics: Tensor):
+    def log_at_epoch_end(self, *, targets: Tensor, predics: Tensor) -> None:
         r"""Log metric and optimizer state at the end of epoch."""
         self.num_epoch += 1
 
@@ -435,7 +436,7 @@ class DefaultLogger:
     def _to_cpu(scalar_dict: dict[str, Tensor]) -> dict[str, float]:
         return {key: scalar.item() for key, scalar in scalar_dict.items()}
 
-    def save_checkpoint(self):
+    def save_checkpoint(self) -> None:
         r"""Save the hyperparameter combination with validation loss."""
         torch.save(
             {

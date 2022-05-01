@@ -64,7 +64,7 @@ class MappingDataset(TorchDataset, Mapping):
     def from_dataframe(
         df: DataFrame, levels: Optional[list[str]] = None
     ) -> MappingDataset:
-        """Create a MappingDataset from a DataFrame.
+        r"""Create a MappingDataset from a DataFrame.
 
         Parameters
         ----------
@@ -114,7 +114,7 @@ class DatasetCollection(Mapping, TorchDataset):
     """
 
     dataset: dict[Any, TorchDataset]
-    """The dataset"""
+    r"""The dataset."""
 
     def __init__(self, indexed_datasets: Mapping[Any, TorchDataset]):
         super().__init__()

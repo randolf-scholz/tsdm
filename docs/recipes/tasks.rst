@@ -17,7 +17,7 @@ Train-variant
 3. model specific encoding  ``data = encode(data)``
 4. sampling of batch  ``indices: list[int] = sample()da``
 5. Collating batch ``batch = collate(data[indices])``
-6. Seperate batch ``inputs, targets = batch``
+6. Separate batch ``inputs, targets = batch``
 5. feeding batch to model ``outputs=model(*inputs)``
 6. comparing model outputs to targets ``loss(targets, outputs)``
 
@@ -27,9 +27,9 @@ Inference
 3. model specific encoding  ``data = encode(data)``
 4. sampling of batch  ``indices: list[int] = sample()da``
 5. Collating batch ``batch = collate(data[indices])``
-6. Seperate batch ``inputs, targets = batch``
+6. Separate batch ``inputs, targets = batch``
 5. feeding batch to model ``outputs=model(*inputs)``
-5b. Transforming results: ``prediction = make_preds(outputs)``
+5b. Transforming results: ``prediction = make_predictions(outputs)``
 6. comparing model outputs to targets ``metric(targets, predictions)``
 
 There are multiple ways of doing things:
@@ -63,7 +63,7 @@ There are multiple ways of doing things:
 .. code-block:: python
 
     data = preprocess(data)
-    data = preencode(data)
+    data = pre_encode(data)
     dataloader = DataLoader(data, sampler=sampler, collate_fn=collate_fn)
 
     for batch in dataloader:
@@ -90,7 +90,7 @@ There are multiple ways of doing things:
         return T, inputs, targets
 
 
-    def get_all_preds(model, dataloader):
+    def get_all_predictions(model, dataloader):
         Y, Ŷ = [], []
         for batch in tqdm(dataloader, leave=False):
             with torch.no_grad():

@@ -17,7 +17,9 @@ from io import StringIO
 from pathlib import Path
 from typing import Literal, Union
 
+import modin.pandas as mpd
 import pandas
+import ray
 from pandas import DataFrame
 
 from tsdm.datasets.base import Dataset, SimpleDataset
@@ -94,10 +96,10 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
         r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
         r"master/gru_ode_bayes/datasets/Climate/small_chunked_sporadic.csv"
     )
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
 
     info_url = "https://github.com/edebrouwer/gru_ode_bayes"
-    r"""HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
 
     dataset: DataFrame
 
@@ -285,19 +287,19 @@ class USHCN(Dataset):
     """
 
     base_url = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
-    """HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
     info_url = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
-    """HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
     index = ["us_daily", "states", "stations"]
 
     @cached_property
-    def rawdata_files(self) -> dict[str, Union[None, Path]]:
+    def rawdata_files(self) -> dict[str, Path]:
         r"""Location of (possibly compressed) data archive."""
         return {
             "metadata": self.rawdata_dir / "data_format.txt",
-            "states": None,
+            "states": Path(),
             "stations": self.rawdata_dir / "ushcn-stations.txt",
             "stations_metadata": self.rawdata_dir / "station_file_format.txt",
             "us_daily": self.rawdata_dir / "us.txt.gz",
@@ -318,7 +320,7 @@ class USHCN(Dataset):
             # df = df.set_index("COOP_ID")
         return df
 
-    def _clean(self, key: KEYS = "us_daily"):
+    def _clean(self, key: KEYS = "us_daily") -> None:
         r"""Create the DataFrames.
 
         Parameters
@@ -331,7 +333,7 @@ class USHCN(Dataset):
             "states": self._clean_states,
         }[key]()
 
-    def _clean_states(self):
+    def _clean_states(self) -> None:
         state_dtypes = {
             "ID": pandas.CategoricalDtype(ordered=True),
             "Abbr.": pandas.CategoricalDtype(ordered=True),
@@ -341,7 +343,7 @@ class USHCN(Dataset):
         states.to_feather(self.dataset_files["states"])
         __logger__.info("Finished cleaning 'states' DataFrame")
 
-    def _clean_stations(self):
+    def _clean_stations(self) -> None:
         stations_file = self.rawdata_files["stations"]
         if not stations_file.exists():
             self.download()
@@ -407,24 +409,10 @@ class USHCN(Dataset):
         stations.to_feather(path)
         __logger__.info("Finished cleaning 'stations' DataFrame")
 
-    def _clean_us_daily(self):
-        try:
-            os.environ["MODIN_ENGINE"] = "ray"
-            import modin.pandas  # pylint: disable=import-outside-toplevel
-            import ray  # pylint: disable=import-outside-toplevel
-
-            __logger__.warning("Using Modin with Ray Backend")
-        except ImportError(ray) as e:
-            __logger__.warning("Ray not found, falling back to pandas! %s", e)
-            pd = pandas
-        except ImportError(modin) as e:
-            __logger__.warning("Modin not found, falling back to pandas! %s", e)
-            pd = pandas
-        else:
-            pd = modin.pandas
-            num_cpus = max(1, (os.cpu_count() or 0) - 2)
-            __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
-            ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
+    def _clean_us_daily(self) -> None:
+        num_cpus = max(1, (os.cpu_count() or 0) - 2)
+        __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
+        ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
 
         # column: (start, stop)
         colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
@@ -478,7 +466,7 @@ class USHCN(Dataset):
 
         __logger__.info("Finished decompressing main file")
 
-        ds = pd.read_fwf(
+        ds = mpd.read_fwf(
             us_daily_file,
             colspecs=cspec,
             names=colspecs,
@@ -486,17 +474,17 @@ class USHCN(Dataset):
             dtype=dtype,
         )
         us_daily_file.unlink()
-        # ds = pd.DataFrame(ds)  # In case TextFileReader was returned.
+        # ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
         __logger__.info("Finished loading main file.")
 
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
         data_cols = [col for col in ds.columns if col not in id_cols]
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
-        columns = pd.MultiIndex.from_tuples(ds[data_cols], names=["VAR", "DAY"])
-        data = pd.DataFrame(ds[data_cols])
+        columns = mpd.MultiIndex.from_tuples(ds[data_cols], names=["VAR", "DAY"])
+        data = mpd.DataFrame(ds[data_cols])
         data.columns = columns
-        # TODO: use pd.DataFrame(ds[data_cols], columns=columns) once it works correctly in modin.
+        # TODO: use mpd.DataFrame(ds[data_cols], columns=columns) once it works correctly in modin.
 
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = data.stack(level="DAY", dropna=True).reset_index(level="DAY")
@@ -535,7 +523,7 @@ class USHCN(Dataset):
         data = data.reset_index(drop=True)
 
         __logger__.info("Creating time index.")
-        datetimes = pd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
+        datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
         data = data.drop(columns=["YEAR", "MONTH", "DAY"])
         data["time"] = datetimes
         __logger__.info("Finished creating time index.")

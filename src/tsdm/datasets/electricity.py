@@ -69,21 +69,21 @@ class Electricity(SimpleDataset):
     """  # pylint: disable=line-too-long # noqa
 
     base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
-    r"""HTTP address from where the dataset can be downloaded"""
+    r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = (
         r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"
     )
-    r"""HTTP address containing additional information about the dataset"""
+    r"""HTTP address containing additional information about the dataset."""
     dataset: DataFrame
     r"""Store cached version of dataset."""
 
     @cached_property
     def rawdata_files(self) -> Path:
-        """Path to the raw data file."""
+        r"""Path to the raw data file."""
         return self.rawdata_dir / "LD2011_2014.txt.zip"
 
     def _clean(self) -> None:
-        r"""Create DataFrame with 1 column per client and :class:`pandas.DatetimeIndex`."""
+        r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
         with ZipFile(self.rawdata_files) as files:
             with files.open(self.rawdata_files.stem, "r") as file:
                 df = read_csv(

@@ -52,19 +52,19 @@ class Config:
         return self._autojit
 
     @autojit.setter
-    def autojit(self, value: bool):
+    def autojit(self, value: bool) -> None:
         assert isinstance(value, bool)
         self._autojit = bool(value)
         os.environ["TSDM_AUTOJIT"] = str(value)
 
 
 conf: Config = Config()  # = Config(__name__, __doc__)
-r"""The unique :class:`~tsdm.config.Config` instance used to configure :mod:`tsdm`."""
+r"""The unique `~tsdm.config.Config` instance used to configure `tsdm`."""
 
 DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-r"""The default :mod:`torch` device to use."""
+r"""The default `torch` device to use."""
 DEFAULT_DTYPE = torch.float32
-r"""The default :mod:`torch` datatype to use."""
+r"""The default `torch` datatype to use."""
 
 
 with resources.open_text(config_files, "config.yaml") as file:

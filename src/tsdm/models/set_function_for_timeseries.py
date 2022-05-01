@@ -35,15 +35,15 @@ class SetFuncTS(nn.Module):
     Attributes
     ----------
     time_encoder: nn.Module, default PositionalEncoder
-        Signature: `(..., *N) -> (..., *N, dₜ)`
+        Signature: ``(..., *N) -> (..., *N, dₜ)``.
     key_encoder: nn.Module, default DeepSet
-        Signature: `(..., *N, K) -> (..., *N, dₖ)`
+        Signature: ``(..., *N, K) -> (..., *N, dₖ)``.
     value_encoder: nn.Module, default MLP
-        Signature: `(..., *N, V) -> (..., *N, dᵥ)`
-    attention: nn.Module, default :class:`~tsdm.models.ScaledDotProductAttention`
-        Signature: `(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)`
+        Signature: ``(..., *N, V) -> (..., *N, dᵥ)``.
+    attention: nn.Module, default ScaledDotProductAttention
+        Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``.
     head: nn.Module, default MLP
-        Signature: `(..., F) -> (..., E)`
+        Signature: ``(..., F) -> (..., E)``.
 
     References
     ----------
@@ -81,7 +81,7 @@ class SetFuncTS(nn.Module):
         dim_time: Optional[int] = None,
         dim_deepset: Optional[int] = None,
     ) -> None:
-        """Initialize the model.
+        r"""Initialize the model.
 
         Parameters
         ----------
@@ -119,12 +119,13 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor, v: Tensor, m: Tensor) -> Tensor:
-        r"""Signature: `(*N, dₜ), (*N, dᵥ), (*N, dₘ) → (..., F)`.
+        r"""Signature: ``(*N, dₜ), (*N, dᵥ), (*N, dₘ) -> (..., F)``.
 
-        s must be a tensor of the shape L×(2+C), sᵢ = [tᵢ, zᵢ, mᵢ], where
-        - tᵢ is timestamp
-        - zᵢ is observed value
-        - mᵢ is identifier
+        s must be a tensor of the shape $L×(2+C)4, $sᵢ = [tᵢ, zᵢ, mᵢ]$, where
+
+        - $tᵢ$ is timestamp
+        - $zᵢ$ is observed value
+        - $mᵢ$ is identifier
 
         C is the number of classes (one-hot encoded identifier)
 
@@ -159,12 +160,12 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward_tuple(self, t: tuple[Tensor, Tensor, Tensor]) -> Tensor:
-        r"""Signature: `[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] → (F, )`."""
+        r"""Signature: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (F, )``."""
         return self.forward(t[0], t[1], t[2])
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor, Tensor]]) -> Tensor:
-        r"""Signature: `[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] → (..., F)`.
+        r"""Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
 
         Parameters
         ----------
@@ -184,15 +185,15 @@ class GroupedSetFuncTS(nn.Module):
     Attributes
     ----------
     time_encoder: nn.Module, default PositionalEncoder
-        Signature: `(..., *N) -> (..., *N, dₜ)`
+        Signature: ``(..., *N) -> (..., *N, dₜ)``.
     key_encoder: nn.Module, default DeepSet
-        Signature: `(..., *N, K) -> (..., *N, dₖ)`
+        Signature: ``(..., *N, K) -> (..., *N, dₖ)``.
     value_encoder: nn.Module, default MLP
-        Signature: `(..., *N, V) -> (..., *N, dᵥ)`
-    attention: nn.Module, default :class:`~tsdm.models.ScaledDotProductAttention`
-        Signature: `(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)`
+        Signature: ``(..., *N, V) -> (..., *N, dᵥ)``.
+    attention: nn.Module, default ScaledDotProductAttention
+        Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``.
     head: nn.Module, default MLP
-        Signature: `(..., F) -> (..., E)`
+        Signature: ``(..., F) -> (..., E)``.
 
     References
     ----------
@@ -276,12 +277,12 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward(self, slow: Tensor, fast: Tensor) -> Tensor:
-        r"""Signature: `(*N, dₜ), (*N, dᵥ), (*N, dₘ) → (..., F)`.
+        r"""Signature: ``(*N, dₜ), (*N, dᵥ), (*N, dₘ) -> (..., F)``.
 
-        s must be a tensor of the shape L×(2+C), sᵢ = [tᵢ, zᵢ, mᵢ], where
-        - tᵢ is timestamp
-        - zᵢ is observed value
-        - mᵢ is identifier
+        s must be a tensor of the shape $L×(2+C)$, $sᵢ = [tᵢ, zᵢ, mᵢ]$, where
+        - $tᵢ$ is timestamp
+        - $zᵢ$ is observed value
+        - $mᵢ$ is identifier
 
         C is the number of classes (one-hot encoded identifier)
 
@@ -339,7 +340,7 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
-        r"""Signature: `[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] → (..., F)`.
+        r"""Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
 
         Parameters
         ----------
@@ -353,7 +354,7 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward_padded(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
-        r"""Signature: `[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] → (..., F)`.
+        r"""Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
 
         Parameters
         ----------

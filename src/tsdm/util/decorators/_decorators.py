@@ -12,7 +12,6 @@ __all__ = [
     "trace",
     "vectorize",
     "wrap_func",
-    "wrapmethod",
     # Class Decorators
     "autojit",
     "IterItems",
@@ -29,14 +28,12 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, signature
 from time import perf_counter_ns
-from types import MethodType
 from typing import Any, Optional, Union, overload
 
-from makefun import wraps as wraps_makefun
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import ClassType, ObjectType, ReturnType, nnModuleType
+from tsdm.util.types import ObjectType, ReturnType, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -242,44 +239,46 @@ def decorator(deco: Callable) -> Callable:
         raise ErrorHandler(
             "Decorator does not support POSITIONAL_OR_KEYWORD arguments!!",
             "Separate positional and keyword arguments using '/' and '*':"
-            ">>> def deco(func, po1, po2 , /, *, ko1, ko2, **kwargs): ...",
+            ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
             "Cf. https://www.python.org/dev/peps/pep-0570/",
         )
     if BUCKETS[POSITIONAL_ONLY, False]:
         raise ErrorHandler(
             "Decorator does not support POSITIONAL_ONLY arguments with defaults!!"
         )
+    if not len(BUCKETS[POSITIONAL_ONLY, True]) == 1:
+        raise ErrorHandler(
+            "Decorator must have exactly 1 POSITIONAL_ONLY argument: the function to be decorated."
+            ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
+        )
     if BUCKETS[VAR_POSITIONAL, True]:
         raise ErrorHandler("Decorator does not support VAR_POSITIONAL arguments!!")
-    if not len(BUCKETS[POSITIONAL_ONLY, True]) >= 1:
-        raise ErrorHandler(
-            "Decorator must have the function to be decorated as the first"
-            "POSITIONAL_ONLY argument!!"
-        )
 
     # (1b) modify the signature to add a new parameter '__func__' as the single
     # positional-only argument with a default value.
-    params = list(deco_sig.parameters.values())
-    index = _last_positional_only_arg_index(deco_sig)
-    params.insert(
-        index, Parameter("__func__", kind=Parameter.POSITIONAL_ONLY, default=_DECORATED)
-    )
-    del params[0]
-    new_sig = deco_sig.replace(parameters=params)
+    # params = list(deco_sig.parameters.values())
+    # index = _last_positional_only_arg_index(deco_sig)
+    # params.insert(
+    #     index, Parameter("__func__", kind=Parameter.POSITIONAL_ONLY, default=_DECORATED)
+    # )
+    # del params[0]
+    # new_sig = deco_sig.replace(parameters=params)
 
-    @wraps_makefun(deco, new_sig=new_sig)
-    def _parametrized_decorator(*args: Any, **kwargs: Any) -> Callable:
+    @wraps(deco)
+    def _parametrized_decorator(
+        __func__: Optional[Callable] = None, *args: Any, **kwargs: Any
+    ) -> Callable:
         __logger__.debug(
             "DECORATING \n\tfunc=%s: \n\targs=%s, \n\tkwargs=%s", deco, args, kwargs
         )
 
-        if args[-1] is _DECORATED:
+        if __func__ is None:
             __logger__.debug("%s: Decorator used in BRACKET mode.", deco)
-            return rpartial(deco, *args[:-1], **kwargs)
+            return rpartial(deco, *args, **kwargs)
 
-        assert callable(args[0]), "First argument must be callable!"
+        assert callable(__func__), "First argument must be callable!"
         __logger__.debug("%s: Decorator in FUNCTIONAL/BARE mode.", deco)
-        return deco(*args, **kwargs)
+        return deco(*(__func__, *args), **kwargs)
 
     return _parametrized_decorator
 
@@ -292,9 +291,9 @@ def timefun(
 
     By default appends the execution time (in seconds) to the function call.
 
-    ``outputs, time_elapse = timefun(f, append=True)(inputs)``
+    `outputs, time_elapse = timefun(f, append=True)(inputs)`
 
-    If the function call failed, ``outputs=None`` and ``time_elapsed=float('nan')`` are returned.
+    If the function call failed, `outputs=None` and `time_elapsed=float('nan')` are returned.
 
     Parameters
     ----------
@@ -355,7 +354,7 @@ def timefun(
 
 
 def trace(func: Callable) -> Callable:
-    """Log entering and exiting of function.
+    r"""Log entering and exiting of function.
 
     Parameters
     ----------
@@ -374,8 +373,8 @@ def trace(func: Callable) -> Callable:
             "\n\t".join(
                 (
                     f"{func.__qualname__}: ENTERING",
-                    f"args={(args)}",
-                    f"kwargs={(kwargs)}",
+                    f"args={args}",
+                    f"kwargs={kwargs}",
                 )
             ),
         )
@@ -450,10 +449,11 @@ def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
 @decorator
 def vectorize(
     func: Callable[[ObjectType], ReturnType],
+    /,
+    *,
     kind: type[CollectionType],
-    /,  # noqa: W504
 ) -> Callable[[Union[ObjectType, CollectionType]], Union[ReturnType, CollectionType]]:
-    """Vectorize a function with a single, positional-only input.
+    r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly
 
@@ -545,7 +545,7 @@ def IterItems(obj: ObjectType) -> ObjectType:
 
 
 def IterItems(obj):
-    r"""Wrap a class such that ``__getitem__`` returns (key, value) pairs."""
+    r"""Wrap a class such that `__getitem__` returns (key, value) pairs."""
     if isinstance(obj, type):
         base_class = obj
     else:
@@ -581,7 +581,7 @@ def IterKeys(obj: ObjectType) -> ObjectType:
 
 
 def IterKeys(obj):
-    r"""Wrap a class such that ``__getitem__`` returns key instead."""
+    r"""Wrap a class such that `__getitem__` returns key instead."""
     if isinstance(obj, type):
         base_class = obj
     else:
@@ -609,9 +609,10 @@ def IterKeys(obj):
 @decorator
 def wrap_func(
     func: Callable,
-    before: Optional[Callable],
-    after: Optional[Callable],
     /,
+    *,
+    before: Optional[Callable] = None,
+    after: Optional[Callable] = None,
 ) -> Callable:
     r"""Wrap a function with pre and post hooks."""
     if before is None and after is None:
@@ -715,37 +716,37 @@ def wrap_func(
 #     return wrapper
 
 
-@overload
-def wrapmethod(obj: ClassType, method: str, func: Callable) -> ClassType:
-    ...
-
-
-@overload
-def wrapmethod(obj: ObjectType, method: str, func: Callable) -> ObjectType:
-    ...
-
-
-@decorator
-def wrapmethod(obj, method, func, /):
-    r"""Wrap a method of a class/instance or instance."""
-    if isinstance(obj, type):
-        base_class = obj
-    else:
-        base_class = type(obj)
-
-    @wraps(base_class, updated=())
-    class WrappedClass(base_class):
-        r"""A simple Wrapper."""
-
-        def __repr__(self) -> str:
-            r"""Representation of the dataset."""
-            return f"wrapmethod[{method}, {func.__name__}]@" + super().__repr__()
-
-    setattr(WrappedClass, method, MethodType(func, obj))
-
-    if isinstance(obj, type):
-        return WrappedClass
-
-    obj = deepcopy(obj)  # <--- do we need this?
-    obj.__class__ = WrappedClass
-    return obj
+# @overload
+# def wrapmethod(obj: ClassType, method: str, func: Callable) -> ClassType:
+#     ...
+#
+#
+# @overload
+# def wrapmethod(obj: ObjectType, method: str, func: Callable) -> ObjectType:
+#     ...
+#
+#
+# @decorator
+# def wrapmethod(obj, method, func, /):
+#     r"""Wrap a method of a class/instance or instance."""
+#     if isinstance(obj, type):
+#         base_class = obj
+#     else:
+#         base_class = type(obj)
+#
+#     @wraps(base_class, updated=())
+#     class WrappedClass(base_class):
+#         r"""A simple Wrapper."""
+#
+#         def __repr__(self) -> str:
+#             r"""Representation of the dataset."""
+#             return f"wrapmethod[{method}, {func.__name__}]@" + super().__repr__()
+#
+#     setattr(WrappedClass, method, MethodType(func, obj))
+#
+#     if isinstance(obj, type):
+#         return WrappedClass
+#
+#     obj = deepcopy(obj)  # <--- do we need this?
+#     obj.__class__ = WrappedClass
+#     return obj
