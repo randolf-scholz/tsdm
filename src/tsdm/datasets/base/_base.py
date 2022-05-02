@@ -104,8 +104,28 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             cls.clean, before=cls._load_pre_hook, after=cls._load_post_hook
         )
         cls.download = wrap_func(
-            cls.clean, before=cls._download_pre_hook, after=cls._download_post_hook
+            cls.download, before=cls._download_pre_hook, after=cls._download_post_hook
         )
+
+    def __len__(self):
+        r"""Return the number of samples in the dataset."""
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        r"""Return the sample at index `idx`."""
+        return self.dataset[idx]
+
+    def __setitem__(self, key, value):
+        r"""Return the sample at index `idx`."""
+        self.dataset[key] = value
+
+    def __iter__(self):
+        r"""Return an iterator over the dataset."""
+        return iter(self.dataset)
+
+    def __repr__(self):
+        r"""Return a string representation of the dataset."""
+        return f"{self.name}\n{self.dataset}"
 
     @cached_property
     def dataset(self):
@@ -199,10 +219,12 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     def _download_pre_hook(self, *args: Any, **kwargs: Any) -> None:
         r"""Code that is executed before `self.download`."""
         __logger__.debug("%s: START DOWNLOADING.", self.name)
+        print(f"Downloading {self.name} _download_pre_hook...")
 
     def _download_post_hook(self, *args: Any, **kwargs: Any) -> None:
         r"""Code that is executed after `self.download`."""
         __logger__.debug("%s: DONE DOWNLOADING.", self.name)
+        print(f"Downloading {self.name} _download_post_hook...")
 
     def download(self, *, url: Optional[Union[str, Path]] = None) -> None:
         r"""Download the dataset and stores it in `self.rawdata_dir`.
@@ -215,6 +237,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
         Overwrite if you need custom downloader
         """
+        print(f"Downloading {self.name} dataset...")
         if url is None and self.base_url is None:
             __logger__.info("%s: Dataset provides no url. Assumed offline", self.name)
             return
@@ -253,26 +276,6 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             print(self.__doc__)
         else:
             webbrowser.open_new_tab(self.info_url)
-
-    def __len__(self):
-        r"""Return the number of samples in the dataset."""
-        return len(self.dataset)
-
-    def __getitem__(self, idx):
-        r"""Return the sample at index `idx`."""
-        return self.dataset[idx]
-
-    def __setitem__(self, key, value):
-        r"""Return the sample at index `idx`."""
-        self.dataset[key] = value
-
-    def __iter__(self):
-        r"""Return an iterator over the dataset."""
-        return iter(self.dataset)
-
-    def __repr__(self):
-        r"""Return a string representation of the dataset."""
-        return f"{self.name}\n{self.dataset}"
 
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
@@ -338,17 +341,6 @@ class SimpleDataset(BaseDataset):
         if hasattr(self.dataset, key):
             return getattr(self.dataset, key)
         raise AttributeError(f"{self.name} has no attribute {key}")
-
-    #
-    # def __repr__(self):
-    #     r"""Return a string representation of the dataset."""
-    #     return f"{self.name}\n{self.dataset}"
-    #
-    # def _repr_html_(self):
-    #     # if hasattr(self.dataset, "_repr_html_"):
-    #     header = f"<h3>{self.name}</h3>"
-    #     return header + self.dataset._repr_html_()
-    #     # raise NotImplementedError
 
 
 #############################################

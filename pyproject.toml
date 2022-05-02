@@ -57,7 +57,7 @@ tqdm = ">=4.50"
 xarray = ">=0.20"
 
 [tool.poetry.dev-dependencies]
-black = ">=22.1.0"
+black = {version = ">=22.1.0", extras = ["jupyter"]}
 blacken-docs = ">=1.12.1"
 flake8 = ">=4.0.1"
 flake8-annotations = ">=2.7.0"
