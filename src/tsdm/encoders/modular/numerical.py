@@ -256,7 +256,7 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         )
 
     @singledispatchmethod
-    def fit(self, data: TensorType, /) -> None:
+    def fit(self, data: TensorType, /) -> None:  # type: ignore[override]
         r"""Compute the min and max."""
         array = np.asarray(data)
         rank = len(array.shape)
