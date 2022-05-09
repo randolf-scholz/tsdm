@@ -1322,3 +1322,32 @@ class ValueEncoder(BaseEncoder):
 
 class SocialTime:
     r"""Social time encoding."""
+
+
+class PeriodicEncoder:
+    r"""Encode periodic data as sin/cos waves."""
+
+    def __init__(self, period: Optional[int] = None) -> None:
+        super().__init__()
+        self.period = period
+
+    def fit(self, x: Series) -> None:
+        r"""Fit the encoder."""
+        self.period = x.max() + 1
+        self.freq = 2 * np.pi / self.period
+        self.dtypes = x.dtypes
+        self.colname = x.name
+
+    def encode(self, x: Series) -> DataFrame:
+        r"""Encode the data."""
+        x = self.freq * (x % self.period)  # ensure 0...N-1
+        return DataFrame(
+            np.stack([np.cos(x), np.sin(x)]).T,
+            columns=[f"cos_{self.colname}", f"sin_{self.colname}"],
+        )
+
+    def decode(self, x: DataFrame) -> Series:
+        r"""Decode the data."""
+        x = np.arctan2(x[f"sin_{self.colname}"], x[f"cos_{self.colname}"])
+        x = (x / self.freq) % self.period
+        return x
