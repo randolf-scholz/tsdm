@@ -19,7 +19,6 @@ from itertools import chain, count
 from typing import Any, Generic, Optional, TypeVar, Union
 
 import numpy as np
-from numpy.random import permutation
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from torch.utils.data import Sampler
@@ -31,8 +30,11 @@ from tsdm.util.types import ValueType
 __logger__ = logging.getLogger(__name__)
 
 
+dt = np.datetime64
+td = np.timedelta64
 TimedeltaLike = TypeVar("TimedeltaLike", int, float, Timedelta)
 TimestampLike = TypeVar("TimestampLike", int, float, Timestamp)
+
 
 Boxed = Union[
     Sequence[ValueType],
@@ -169,43 +171,43 @@ class SliceSampler(Sampler):
             yield self.data[start_index : start_index + window_size]
 
 
-class SequenceSampler(Sampler):
-    r"""Samples sequences of length seq_len."""
-
-    data: Sized
-    r"""The dataset."""
-    idx: NDArray
-    r"""A list of all valid starting indices."""
-    seq_len: int
-    r"""The static sequence length."""
-    shuffle: bool
-    r"""Whether to sample in random order."""
-
-    def __init__(self, data_source: Sized, /, *, seq_len: int, shuffle: bool = True):
-        r"""Initialize the Sampler.
-
-        Parameters
-        ----------
-        data_source: Sized
-        seq_len: int
-        shuffle: bool = True
-        """
-        super().__init__(data_source)
-        self.data = data_source
-        self.seq_len = seq_len
-        self.idx = np.arange(len(self.data) - self.seq_len)
-        self.shuffle = shuffle
-
-    def __len__(self):
-        r"""Return the maximum allowed index."""
-        return len(self.idx)
-
-    def __iter__(self):
-        r"""Return Indices of the Samples."""
-        indices = self.idx[permutation(len(self))] if self.shuffle else self.idx
-
-        for i in indices:
-            yield np.arange(i, i + self.seq_len)
+# class SequenceSampler(Sampler):
+#     r"""Samples sequences of length seq_len."""
+#
+#     data: Sized
+#     r"""The dataset."""
+#     idx: NDArray
+#     r"""A list of all valid starting indices."""
+#     seq_len: int
+#     r"""The static sequence length."""
+#     shuffle: bool
+#     r"""Whether to sample in random order."""
+#
+#     def __init__(self, data_source: Sized, /, *, seq_len: int, shuffle: bool = True):
+#         r"""Initialize the Sampler.
+#
+#         Parameters
+#         ----------
+#         data_source: Sized
+#         seq_len: int
+#         shuffle: bool = True
+#         """
+#         super().__init__(data_source)
+#         self.data = data_source
+#         self.seq_len = seq_len
+#         self.idx = np.arange(len(self.data) - self.seq_len)
+#         self.shuffle = shuffle
+#
+#     def __len__(self):
+#         r"""Return the maximum allowed index."""
+#         return len(self.idx)
+#
+#     def __iter__(self):
+#         r"""Return Indices of the Samples."""
+#         indices = self.idx[permutation(len(self))] if self.shuffle else self.idx
+#
+#         for i in indices:
+#             yield np.arange(i, i + self.seq_len)
 
 
 # class CollectionSampler(Sampler):
@@ -630,3 +632,71 @@ def grid(
 #             return len(self.sampler) // self.batch_size  # type: ignore[arg-type]
 #         else:
 #             return (len(self.sampler) + self.batch_size - 1) // self.batch_size
+
+
+class SequenceSampler(BaseSampler):
+    r"""Samples sequences of length seq_len."""
+
+    def __init__(
+        self,
+        data_source: Sequence[Any],
+        *,
+        xmin: Optional[int] = None,
+        xmax: Optional[int] = None,
+        stride: int = 1,
+        seq_len: int,
+        return_mask: bool = False,
+        shuffle: bool = False,
+    ) -> None:
+        super().__init__(data_source)
+        self.data_source = data_source
+
+        xmin = xmin if xmin is not None else data_source[0]
+        xmax = xmax if xmax is not None else data_source[-1]
+
+        self.xmin = xmin if not isinstance(xmin, str) else Timestamp(xmin)
+        self.xmax = xmax if not isinstance(xmax, str) else Timestamp(xmax)
+
+        self.stride = stride if not isinstance(stride, str) else Timedelta(stride)
+        self.seq_len = seq_len if not isinstance(seq_len, str) else Timedelta(seq_len)
+        # k_max = max {k∈ℕ ∣ x_min + seq_len + k⋅stride ≤ x_max}
+        self.k_max = int((xmax - xmin - seq_len) // stride)
+        self.return_mask = return_mask
+        self.shuffle = shuffle
+
+        self.samples = np.array(
+            [
+                (x <= self.data_source) & (self.data_source < y)
+                if self.return_mask
+                else [x, y]
+                for x, y in self._iter_tuples()
+            ]
+        )
+
+    def _iter_tuples(self) -> Iterator[tuple[Any, Any]]:
+        x = self.xmin
+        y = x + self.seq_len
+        x, y = min(x, y), max(x, y)  # allows nice handling of negative seq_len
+        yield x, y
+
+        for _ in range(len(self)):
+            x += self.stride
+            y += self.stride
+            yield x, y
+
+    def __len__(self) -> int:
+        r"""Return the number of samples."""
+        return int((self.xmax - self.xmin - self.seq_len) // self.stride)
+
+    def __iter__(self) -> Iterator:
+        r"""Return an iterator over the samples."""
+        if self.shuffle:
+            perm = np.random.permutation(len(self))
+        else:
+            perm = np.arange(len(self))
+
+        return iter(self.samples[perm])
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the object."""
+        return f"{self.__class__.__name__}[{self.stride}, {self.seq_len}]"

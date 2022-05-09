@@ -8,8 +8,12 @@ __all__ = [
 import logging
 import subprocess
 from abc import ABC, abstractmethod
+from functools import cached_property
 from pathlib import Path
+from typing import Optional, Union
 from urllib.parse import urlparse
+
+from tsdm.config import MODELDIR
 
 __logger__ = logging.getLogger(__name__)
 
@@ -25,34 +29,53 @@ class BaseModel(ABC):
     """
 
     url: str
-    model_path: Path
 
-    def __init__(self) -> None:
-        r"""TODO: add docstring."""
-        raise NotImplementedError
+    @cached_property
+    def model_path(self) -> Path:
+        r"""Return the path to the model."""
+        return MODELDIR / self.__class__.__name__
 
-    @classmethod
-    def download(cls) -> None:
+    def download(self, *, url: Optional[Union[str, Path]] = None) -> None:
         r"""Download model (e.g. via git clone)."""
-        parsed_url = urlparse(cls.url)
-        __logger__.info("Obtaining model '%s' from %s", cls.__name__, cls.url)
+        target_url: str = str(self.url) if url is None else str(url)
+        parsed_url = urlparse(target_url)
 
-        if "google-research" in parsed_url.path:
+        __logger__.info(
+            "Obtaining model '%s' from %s", self.__class__.__name__, self.url
+        )
+
+        if parsed_url.netloc == "github.com":
+
+            if "tree/main" in target_url:
+                export_url = target_url.replace("tree/main", "trunk")
+            elif "tree/master" in target_url:
+                export_url = target_url.replace("tree/master", "trunk")
+            else:
+                raise ValueError(f"Unrecognized URL: {target_url}")
+
             subprocess.run(
-                f"svn export {cls.url} {cls.model_path}", shell=True, check=True
+                f"svn export --force {export_url} {self.model_path}",
+                shell=True,
+                check=True,
+            )
+        elif "google-research" in parsed_url.path:
+            subprocess.run(
+                f"svn export {self.url} {self.model_path}", shell=True, check=True
             )
             subprocess.run(
-                f"grep -qxF '{cls.model_path}' .gitignore || echo '{cls.model_path}' >> .gitignore",
+                f"grep -qxF '{self.model_path}' .gitignore || echo '{self.model_path}' >> .gitignore",
                 shell=True,
                 check=True,
             )
         else:
             subprocess.run(
-                f"git clone {cls.url} {cls.model_path}", shell=True, check=True
+                f"git clone {self.url} {self.model_path}", shell=True, check=True
             )
             # subprocess.run(F"git -C {model_path} pull", shell=True)
 
-        __logger__.info("Finished importing model '%s' from %s", cls.__name__, cls.url)
+        __logger__.info(
+            "Finished importing model '%s' from %s", self.__class__.__name__, self.url
+        )
 
     @abstractmethod
     def forward(self):
