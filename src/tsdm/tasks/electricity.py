@@ -235,7 +235,6 @@ class ElectricityTFT(BaseTask):
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
         r"""Test metric."""
-        pass
 
     @cached_property
     def dataset(self) -> pd.DataFrame:
