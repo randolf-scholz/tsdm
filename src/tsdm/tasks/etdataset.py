@@ -206,6 +206,8 @@ class ETDatasetTask_Informer(BaseTask):
         # tensors = self.encoder.encode(ds)
 
         dataset = TensorDataset(*tensors)
-        sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)
+        sampler = SequenceSampler(
+            dataset, seq_len=self.horizon, shuffle=shuffle  # type:ignore[arg-type]
+        )
 
         return DataLoader(dataset, sampler=sampler, **kwargs)

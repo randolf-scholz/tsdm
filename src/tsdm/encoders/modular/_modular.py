@@ -20,6 +20,8 @@ __all__ = [
     "TensorEncoder",
     "TripletEncoder",
     "ValueEncoder",
+    "PeriodicEncoder",
+    "SocialTimeEncoder",
 ]
 
 import logging
@@ -33,7 +35,7 @@ import pandas as pd
 import pandas.api.types
 import torch
 from numpy.typing import NDArray
-from pandas import NA, DataFrame, Index, MultiIndex, Series
+from pandas import NA, DataFrame, DatetimeIndex, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
@@ -1320,23 +1322,24 @@ class ValueEncoder(BaseEncoder):
 #         return decoded
 
 
-class SocialTime:
-    r"""Social time encoding."""
-
-
 class PeriodicEncoder:
     r"""Encode periodic data as sin/cos waves."""
 
-    def __init__(self, period: Optional[int] = None) -> None:
+    period: float
+    freq: float
+    dtype: pd.dtype
+    colname: Hashable
+
+    def __init__(self, period: Optional[float] = None) -> None:
         super().__init__()
-        self.period = period
+        self._period = period
 
     def fit(self, x: Series) -> None:
         r"""Fit the encoder."""
-        self.period = x.max() + 1
-        self.freq = 2 * np.pi / self.period
-        self.dtypes = x.dtypes
+        self.dtype = x.dtypes
         self.colname = x.name
+        self.period = x.max() + 1 if self._period is None else self._period
+        self.freq = 2 * np.pi / self.period
 
     def encode(self, x: Series) -> DataFrame:
         r"""Encode the data."""
@@ -1351,3 +1354,50 @@ class PeriodicEncoder:
         x = np.arctan2(x[f"sin_{self.colname}"], x[f"cos_{self.colname}"])
         x = (x / self.freq) % self.period
         return x
+
+
+class SocialTimeEncoder(BaseEncoder):
+    r"""Social time encoding."""
+
+    level_codes = {
+        "Y": "year",
+        "M": "month",
+        "W": "weekday",
+        "D": "day",
+        "h": "hour",
+        "m": "minute",
+        "s": "second",
+        "µ": "microsecond",
+        "n": "nanosecond",
+    }
+    original_name: Hashable
+    original_dtype: pd.dtype
+    original_type: type
+    rev_cols: list[str]
+
+    def __init__(self, levels: str = "YMWDhms") -> None:
+        super().__init__()
+        self.levels = [self.level_codes[k] for k in levels]
+
+    def fit(self, x: Series, /) -> None:
+        r"""Fit the encoder."""
+        self.original_type = type(x)
+        self.original_name = x.name
+        self.original_dtype = x.dtype
+        self.rev_cols = [level for level in self.levels if level != "weekday"]
+        # self.new_names = {level:f"{x.name}_{level}" for level in self.levels}
+        # self.rev_names = {f"{x.name}_{level}":level for level in self.levels if level != "weekday"}
+
+    def encode(self, x: Series, /) -> DataFrame:
+        r"""Encode the data."""
+        if isinstance(x, DatetimeIndex):
+            res = {level: getattr(x, level) for level in self.levels}
+        else:
+            res = {level: getattr(x, level) for level in self.levels}
+        return DataFrame.from_dict(res)
+
+    def decode(self, x: DataFrame, /) -> Series:
+        r"""Decode the data."""
+        x = x[self.rev_cols]
+        s = pd.to_datetime(x)
+        return self.original_type(s, name=self.original_name, dtype=self.original_dtype)
