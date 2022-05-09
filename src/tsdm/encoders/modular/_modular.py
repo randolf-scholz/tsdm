@@ -1318,3 +1318,7 @@ class ValueEncoder(BaseEncoder):
 #         else:
 #             decoded = columns.set_index(MultiIndex.from_frame(index))
 #         return decoded
+
+
+class SocialTime:
+    r"""Social time encoding."""

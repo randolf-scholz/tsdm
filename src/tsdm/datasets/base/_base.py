@@ -322,11 +322,6 @@ class SimpleDataset(BaseDataset):
 
     def load(self) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
-        if not self.rawdata_files_exist():
-            self.download()
-        else:
-            __logger__.debug("%s: Rawdata files already exist!", self.name)
-
         if not self.dataset_files_exist():
             self.clean()
         else:
