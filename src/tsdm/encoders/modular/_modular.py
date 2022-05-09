@@ -22,13 +22,15 @@ __all__ = [
     "ValueEncoder",
     "PeriodicEncoder",
     "SocialTimeEncoder",
+    "PeriodicSocialTimeEncoder",
 ]
 
 import logging
 import warnings
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
-from typing import Any, Final, Optional, Union, overload
+from copy import deepcopy
+from typing import Any, Final, Optional, Union, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -385,6 +387,7 @@ class FrameEncoder(BaseEncoder):
     dtypes: Series
     index_columns: Index
     index_dtypes: Series
+    duplicate: bool = False
 
     column_encoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
     r"""Encoders for the columns."""
@@ -416,10 +419,12 @@ class FrameEncoder(BaseEncoder):
         index_encoders: Optional[
             Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]
         ] = None,
+        duplicate: bool = False,
     ):
         super().__init__()
         self.column_encoders = column_encoders
         self.index_encoders = index_encoders
+        self.duplicate = duplicate
 
     def fit(self, data: DataFrame, /) -> None:
         r"""Fit the encoder."""
@@ -429,6 +434,13 @@ class FrameEncoder(BaseEncoder):
         self.dtypes = data.dtypes
         self.index_columns = index.columns
         self.index_dtypes = index.dtypes
+
+        if self.duplicate:
+            if not isinstance(self.column_encoders, BaseEncoder):
+                raise ValueError("Duplication only allowed when single encoder")
+            self.column_encoders = {
+                col: deepcopy(self.column_encoders) for col in data.columns
+            }
 
         if self.column_encoders is None:
             self.column_decoders = None
@@ -1322,7 +1334,7 @@ class ValueEncoder(BaseEncoder):
 #         return decoded
 
 
-class PeriodicEncoder:
+class PeriodicEncoder(BaseEncoder):
     r"""Encode periodic data as sin/cos waves."""
 
     period: float
@@ -1339,6 +1351,7 @@ class PeriodicEncoder:
         self.dtype = x.dtypes
         self.colname = x.name
         self.period = x.max() + 1 if self._period is None else self._period
+        self._period = self.period
         self.freq = 2 * np.pi / self.period
 
     def encode(self, x: Series) -> DataFrame:
@@ -1354,6 +1367,10 @@ class PeriodicEncoder:
         x = np.arctan2(x[f"sin_{self.colname}"], x[f"cos_{self.colname}"])
         x = (x / self.freq) % self.period
         return x
+
+    def __repr__(self):
+        """Pretty-print."""
+        return f"{self.__class__.__name__}({self._period})"
 
 
 class SocialTimeEncoder(BaseEncoder):
@@ -1374,9 +1391,12 @@ class SocialTimeEncoder(BaseEncoder):
     original_dtype: pd.dtype
     original_type: type
     rev_cols: list[str]
+    level_code: str
+    levels: list[str]
 
     def __init__(self, levels: str = "YMWDhms") -> None:
         super().__init__()
+        self.level_code = levels
         self.levels = [self.level_codes[k] for k in levels]
 
     def fit(self, x: Series, /) -> None:
@@ -1385,8 +1405,6 @@ class SocialTimeEncoder(BaseEncoder):
         self.original_name = x.name
         self.original_dtype = x.dtype
         self.rev_cols = [level for level in self.levels if level != "weekday"]
-        # self.new_names = {level:f"{x.name}_{level}" for level in self.levels}
-        # self.rev_names = {f"{x.name}_{level}":level for level in self.levels if level != "weekday"}
 
     def encode(self, x: Series, /) -> DataFrame:
         r"""Encode the data."""
@@ -1401,3 +1419,35 @@ class SocialTimeEncoder(BaseEncoder):
         x = x[self.rev_cols]
         s = pd.to_datetime(x)
         return self.original_type(s, name=self.original_name, dtype=self.original_dtype)
+
+    def __repr__(self) -> str:
+        r"""Pretty print."""
+        return f"SocialTimeEncoder('{self.level_code}')"
+
+
+class PeriodicSocialTimeEncoder(SocialTimeEncoder):
+    r"""Combines SocialTimeEncoder with PeriodicEncoder using the right frequencies."""
+
+    frequencies = {
+        "year": 1,
+        "month": 12,
+        "weekday": 7,
+        "day": 365,
+        "hour": 24,
+        "minute": 60,
+        "second": 60,
+        "microsecond": 1000,
+        "nanosecond": 1000,
+    }
+    """The frequencies of the used `PeriodicEncoder`."""
+
+    def __new__(cls, levels: str = "YMWDhms") -> PeriodicSocialTimeEncoder:
+        r"""Construct a new encoder object."""
+        self = super().__new__(cls)
+        self.__init__(levels)  # type: ignore[misc]
+        column_encoders = {
+            level: PeriodicEncoder(period=self.frequencies[level])
+            for level in self.levels
+        }
+        obj = FrameEncoder(column_encoders) @ self  # type: ignore[arg-type]
+        return cast(PeriodicSocialTimeEncoder, obj)
