@@ -30,7 +30,7 @@ class ETT(Dataset):
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
     """  # pylint: disable=line-too-long # noqa
 
-    base_url: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small"
+    base_url: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""

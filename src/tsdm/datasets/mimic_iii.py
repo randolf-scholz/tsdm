@@ -56,7 +56,7 @@ class MIMIC_III(SimpleDataset):
     def _load(self):
         r"""Load the dataset stored in hdf5 format in the path `cls.dataset_files`."""
 
-    def download(self, *, url: Optional[Union[str, Path]] = None) -> None:
+    def _download(self, *, url: Optional[Union[str, Path]] = None) -> None:
         r"""Download the dataset and stores it in `cls.rawdata_dir`.
 
         The default downloader checks if
