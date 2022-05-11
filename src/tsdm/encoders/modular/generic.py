@@ -284,7 +284,7 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
         return data
 
     def decode(self, data, /):
-        r"""Decode tne input."""
+        r"""Decode the input."""
         for encoder in self.encoders:
             data = encoder.decode(data)
         return data
