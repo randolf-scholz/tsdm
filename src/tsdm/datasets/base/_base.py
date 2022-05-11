@@ -35,13 +35,12 @@ class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
     def __init__(cls, *args, **kwargs):
-        cls.name = cls.__name__
         if os.environ.get("GENERATING_DOCS", False):
-            cls.rawdata_dir = Path(f"~/.tsdm/rawdata/{cls.name}/")
-            cls.dataset_dir = Path(f"~/.tsdm/datasets/{cls.name}/")
+            cls.rawdata_dir = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+            cls.dataset_dir = Path(f"~/.tsdm/datasets/{cls.__name__}/")
         else:
-            cls.rawdata_dir = RAWDATADIR / cls.name
-            cls.dataset_dir = DATASETDIR / cls.name
+            cls.rawdata_dir = RAWDATADIR / cls.__name__
+            cls.dataset_dir = DATASETDIR / cls.__name__
 
             cls.__logger__ = logging.getLogger(f"{__package__}.{cls.__name__}")
 
@@ -66,8 +65,6 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     r"""Location where the raw data is stored."""
     dataset_dir: Path
     r"""Location where the pre-processed data is stored."""
-    name: str
-    r"""Name of the dataset."""
     __logger__: logging.Logger
     r"""Logger for the dataset."""
 
@@ -100,7 +97,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
     def __repr__(self):
         r"""Return a string representation of the dataset."""
-        return f"{self.name}\n{self.dataset}"
+        return f"{self.__class__.__name__}\n{self.dataset}"
 
     @cached_property
     def dataset(self):
@@ -227,7 +224,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
-            header = f"<h3>{self.name}</h3>"
+            header = f"<h3>{self.__class__.__name__}</h3>"
             # noinspection PyProtectedMember
             html_repr = self.dataset._repr_html_()  # pylint: disable=protected-access
             return header + html_repr
@@ -242,15 +239,13 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 class SimpleDataset(BaseDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    @cached_property
-    def dataset_files(self) -> NullableNestedType[Path]:
-        r"""Return the path to the dataset files."""
-        return self.dataset_dir / f"{self.name}.feather"
-
-    @cached_property
-    def dataset(self) -> DATASET_OBJECT:
-        r"""Store cached version of dataset."""
-        return self.load()
+    def __getattr__(self, key):
+        r"""Attribute lookup."""
+        if key in self.dataset:
+            return self.dataset[key]
+        if hasattr(self.dataset, key):
+            return getattr(self.dataset, key)
+        raise AttributeError(f"{self.__class__.__name__} has no attribute {key}")
 
     @abstractmethod
     def _clean(self) -> None:
@@ -259,6 +254,16 @@ class SimpleDataset(BaseDataset):
     @abstractmethod
     def _load(self) -> DATASET_OBJECT:
         r"""Load the dataset."""
+
+    @cached_property
+    def dataset_files(self) -> NullableNestedType[Path]:
+        r"""Return the path to the dataset files."""
+        return self.dataset_dir / f"{self.__class__.__name__}.feather"
+
+    @cached_property
+    def dataset(self) -> DATASET_OBJECT:
+        r"""Store cached version of dataset."""
+        return self.load()
 
     def clean(self, *, force: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
@@ -283,14 +288,6 @@ class SimpleDataset(BaseDataset):
         ds = self._load()
         self.__logger__.debug("FINISHED TO LOAD DATASET.")
         return ds
-
-    def __getattr__(self, key):
-        r"""Attribute lookup."""
-        if key in self.dataset:
-            return self.dataset[key]
-        if hasattr(self.dataset, key):
-            return getattr(self.dataset, key)
-        raise AttributeError(f"{self.name} has no attribute {key}")
 
 
 #############################################
@@ -337,7 +334,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             if self.dataset[key] is None:
                 self.load(key=key)
             return self.dataset[key]
-        raise AttributeError(f"No attribute {key} in {self.name}")
+        raise AttributeError(f"No attribute {key} in {self.__class__.__name__}")
 
     def __repr__(self):
         r"""Pretty Print."""
@@ -345,8 +342,8 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             indices = list(self.index)
             selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
             selection[2] = "..."
-            return f"{self.name}({', '.join(selection)})"
-        return f"{self.name}{self.index}"
+            return f"{self.__class__.__name__}({', '.join(selection)})"
+        return f"{self.__class__.__name__}{self.index}"
 
     def rawdata_files_exist(self, key: Optional[KeyType] = None) -> bool:
         r"""Check if raw data files exist."""
