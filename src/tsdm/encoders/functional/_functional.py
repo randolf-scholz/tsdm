@@ -261,4 +261,3 @@ def time2float(ds: Series) -> Series:
 # TODO: add timefeatures
 def timefeatures():
     r"""Return time features from datetime."""
-    ...

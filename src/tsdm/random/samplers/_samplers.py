@@ -30,8 +30,8 @@ from tsdm.util.types import ValueType
 __logger__ = logging.getLogger(__name__)
 
 
-dt = np.datetime64
-td = np.timedelta64
+# dt = np.datetime64
+# td = np.timedelta64
 TimedeltaLike = TypeVar("TimedeltaLike", int, float, Timedelta)
 TimestampLike = TypeVar("TimestampLike", int, float, Timestamp)
 

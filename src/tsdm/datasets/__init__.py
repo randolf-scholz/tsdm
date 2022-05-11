@@ -39,6 +39,7 @@ __all__ = [
     "DATASETS",
     # ABCs
     "BaseDataset",
+    "SimpleDataset",
     "Dataset",
     "Template",
     # Classes
@@ -58,12 +59,11 @@ __all__ = [
     "USHCN_SmallChunkedSporadic",
 ]
 
-
 import logging
 from typing import Final
 
 from tsdm.datasets import base, synthetic, torch
-from tsdm.datasets.base import BaseDataset, Dataset, Template
+from tsdm.datasets.base import BaseDataset, Dataset, SimpleDataset, Template
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT

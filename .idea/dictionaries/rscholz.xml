@@ -6,6 +6,7 @@
       <w>adagrad</w>
       <w>adamax</w>
       <w>alkalinephos</w>
+      <w>arange</w>
       <w>arany</w>
       <w>argsort</w>
       <w>asarray</w>
