@@ -43,7 +43,6 @@ __all__ = [
     "Electricity",
 ]
 
-import logging
 from functools import cached_property
 from pathlib import Path
 from zipfile import ZipFile
@@ -52,8 +51,6 @@ import numpy as np
 from pandas import DataFrame, read_csv, read_feather
 
 from tsdm.datasets.base import SimpleDataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 class Electricity(SimpleDataset):
@@ -96,7 +93,7 @@ class Electricity(SimpleDataset):
                 )
 
         df = df.rename_axis(index="time", columns="client")
-        df.name = self.name
+        df.name = self.__class__.__name__
         df = df.reset_index()
         df.to_feather(self.dataset_files)
 
