@@ -10,18 +10,31 @@ __all__ = [
 ]
 
 import gzip
+import logging
 import os
 from functools import cached_property
 from io import StringIO
 from pathlib import Path
 from typing import Literal, Union
 
-import modin.pandas as mpd
 import pandas
-import ray
 from pandas import DataFrame
 
 from tsdm.datasets.base import Dataset, SimpleDataset
+
+__logger__ = logging.getLogger(__name__)
+
+try:
+    import modin.pandas as mpd
+    import ray
+
+    num_cpus = max(1, (os.cpu_count() or 0) - 2)
+    __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
+    ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
+except ImportError:
+    __logger__.warning("Ray/Modin not installed. Using pandas.")
+    mpd = pandas
+
 
 STATE_CODES = r"""
 ID	Abbr.	State
@@ -406,10 +419,6 @@ class USHCN(Dataset):
         self.__logger__.info("Finished cleaning 'stations' DataFrame")
 
     def _clean_us_daily(self) -> None:
-        num_cpus = max(1, (os.cpu_count() or 0) - 2)
-        self.__logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
-        ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
-
         # column: (start, stop)
         colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
             "COOP_ID": (1, 6),
