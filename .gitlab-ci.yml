@@ -55,8 +55,9 @@ setup:
     # python setup
     - python -V
     - pip install --upgrade pip poetry virtualenv
-    - virtualenv ${VENVNAME}
-    - source ${VENVNAME}/bin/activate
+    - poetry shell
+    # - virtualenv ${VENVNAME}
+    # - source ${VENVNAME}/bin/activate
     # install development dependencies
     - poetry install --no-root
   script:
