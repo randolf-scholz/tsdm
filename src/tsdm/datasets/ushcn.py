@@ -17,14 +17,23 @@ from io import StringIO
 from pathlib import Path
 from typing import Literal, Union
 
-import modin.pandas as mpd
 import pandas
-import ray
 from pandas import DataFrame
 
 from tsdm.datasets.base import Dataset, SimpleDataset
 
 __logger__ = logging.getLogger(__name__)
+
+try:
+    import modin.pandas as mpd
+    import ray
+
+    num_cpus = max(1, (os.cpu_count() or 0) - 2)
+    __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
+    ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
+except ImportError:
+    __logger__.warning("Ray/Modin not installed. Using pandas.")
+    mpd = pandas
 
 
 STATE_CODES = r"""
@@ -341,7 +350,7 @@ class USHCN(Dataset):
         }
         states = pandas.read_csv(StringIO(STATE_CODES), sep="\t", dtype=state_dtypes)
         states.to_feather(self.dataset_files["states"])
-        __logger__.info("Finished cleaning 'states' DataFrame")
+        self.__logger__.info("Finished cleaning 'states' DataFrame")
 
     def _clean_stations(self) -> None:
         stations_file = self.rawdata_files["stations"]
@@ -407,13 +416,9 @@ class USHCN(Dataset):
         stations = stations.astype(stations_new_dtypes)
         path = self.dataset_files["stations"]
         stations.to_feather(path)
-        __logger__.info("Finished cleaning 'stations' DataFrame")
+        self.__logger__.info("Finished cleaning 'stations' DataFrame")
 
     def _clean_us_daily(self) -> None:
-        num_cpus = max(1, (os.cpu_count() or 0) - 2)
-        __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
-        ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
-
         # column: (start, stop)
         colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
             "COOP_ID": (1, 6),
@@ -458,13 +463,13 @@ class USHCN(Dataset):
         # per column values to be interpreted as nan
         na_values = {("VALUE", k): -9999 for k in range(1, 32)}
         us_daily_file = self.rawdata_dir / self.rawdata_files["us_daily"].stem
-        __logger__.info("Decompressing into %s", us_daily_file)
+        self.__logger__.info("Decompressing into %s", us_daily_file)
 
         with gzip.open(self.rawdata_files["us_daily"], "rb") as compressed_file:
             with open(us_daily_file, "w", encoding="utf8") as file:
                 file.write(compressed_file.read().decode("utf-8"))
 
-        __logger__.info("Finished decompressing main file")
+        self.__logger__.info("Finished decompressing main file")
 
         ds = mpd.read_fwf(
             us_daily_file,
@@ -475,7 +480,7 @@ class USHCN(Dataset):
         )
         us_daily_file.unlink()
         # ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
-        __logger__.info("Finished loading main file.")
+        self.__logger__.info("Finished loading main file.")
 
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
@@ -488,7 +493,7 @@ class USHCN(Dataset):
 
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = data.stack(level="DAY", dropna=True).reset_index(level="DAY")
-        __logger__.info("Finished dataframe stacking.")
+        self.__logger__.info("Finished dataframe stacking.")
 
         # correct dtypes after stacking operation
         _dtypes = {k: v for k, v in dtypes.items() if k in data.columns} | {
@@ -498,7 +503,7 @@ class USHCN(Dataset):
 
         # recombine data columns with original data
         data = ds[id_cols].join(data, how="inner")
-        __logger__.info("Finished dataframe merging.")
+        self.__logger__.info("Finished dataframe merging.")
 
         # fix column order
         data = data[
@@ -517,15 +522,15 @@ class USHCN(Dataset):
 
         # optional: sorting
         data = data.sort_values(by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"])
-        __logger__.info("Finished sorting.")
+        self.__logger__.info("Finished sorting.")
 
         # drop old index which may contain duplicates
         data = data.reset_index(drop=True)
 
-        __logger__.info("Creating time index.")
+        self.__logger__.info("Creating time index.")
         datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
         data = data.drop(columns=["YEAR", "MONTH", "DAY"])
         data["time"] = datetimes
-        __logger__.info("Finished creating time index.")
+        self.__logger__.info("Finished creating time index.")
 
         data.to_feather(self.dataset_files["us_daily"])
