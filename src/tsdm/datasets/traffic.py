@@ -49,7 +49,6 @@ M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference 
 
 __all__ = ["Traffic"]
 
-import logging
 from collections.abc import Callable
 from functools import cached_property
 from io import StringIO
@@ -62,8 +61,6 @@ import pandas
 from pandas import DataFrame, Series
 
 from tsdm.datasets.base import Dataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 def _reformat(s: str, replacements: dict) -> str:

@@ -28,7 +28,6 @@ class Array(Protocol):
     @property
     def shape(self) -> tuple[int, ...]:
         r"""Shape of the array."""
-        ...
 
     # @property
     # def dtype(self) -> Any:

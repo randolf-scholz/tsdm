@@ -8,7 +8,6 @@ __all__ = [
     "ETT"
 ]
 
-import logging
 from functools import cached_property
 from pathlib import Path
 from typing import Literal
@@ -16,8 +15,6 @@ from typing import Literal
 from pandas import DataFrame, read_csv, read_feather
 
 from tsdm.datasets.base import Dataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 class ETT(Dataset):
@@ -30,7 +27,7 @@ class ETT(Dataset):
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
     """  # pylint: disable=line-too-long # noqa
 
-    base_url: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small"
+    base_url: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""
@@ -50,7 +47,7 @@ class ETT(Dataset):
         r"""Create DataFrame from the .csv file."""
         with open(self.rawdata_files[key], "r", encoding="utf8") as file:
             df = read_csv(file, parse_dates=[0], index_col=0)
-            df.name = self.name
+            df.name = self.__class__.__name__
             # Store the preprocessed dataset as h5 file
             df = df.reset_index()
             df.to_feather(self.dataset_files[key])

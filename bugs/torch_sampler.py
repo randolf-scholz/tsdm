@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+
 from abc import abstractmethod
 from collections.abc import Sized
 from typing import Generic, Iterator, Optional, TypeVar

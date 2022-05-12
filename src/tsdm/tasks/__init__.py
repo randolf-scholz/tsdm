@@ -36,6 +36,7 @@ __all__ = [
     "ETDatasetTask_Informer",
     "KIWI_RUNS_TASK",
     "KIWI_FINAL_PRODUCT",
+    "ElectricityTFT",
 ]
 
 
@@ -44,6 +45,7 @@ from typing import Final
 
 from tsdm.tasks import base
 from tsdm.tasks.base import BaseTask
+from tsdm.tasks.electricity import ElectricityTFT
 from tsdm.tasks.etdataset import ETDatasetTask_Informer
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK

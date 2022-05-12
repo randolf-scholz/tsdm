@@ -71,7 +71,6 @@ __all__ = [
     "BeijingAirQuality",
 ]
 
-import logging
 import os
 import zipfile
 from functools import cached_property
@@ -81,8 +80,6 @@ import pandas
 from pandas import DataFrame, Timestamp, concat, read_csv, read_feather
 
 from tsdm.datasets.base import SimpleDataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 class BeijingAirQuality(SimpleDataset):
@@ -129,7 +126,7 @@ class BeijingAirQuality(SimpleDataset):
             with zipfile.ZipFile(self.rawdata_files, "r") as zip_ref:
                 zip_ref.extractall(self.rawdata_dir)
 
-        __logger__.info("%s: Finished extracting dataset", self.name)
+        self.__logger__.info("Finished extracting dataset")
 
         stations = []
         for csv in os.listdir(data_path):
@@ -145,7 +142,7 @@ class BeijingAirQuality(SimpleDataset):
 
         df = concat(stations, ignore_index=True)
         data_path.unlink()
-        df.name = self.name
+        df.name = self.__class__.__name__
         df = df.set_index("time")
 
         dtypes = {

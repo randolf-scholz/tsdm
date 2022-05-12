@@ -176,7 +176,7 @@ def shared_grid_plot(
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **_subplot_kwargs)
 
     # call the plot functions
-    for idx in np.ndindex(axes.shape):  # type: ignore
+    for idx in np.ndindex(axes.shape):
         plot_func(array[idx], ax=axes[idx], **plot_kwargs)
 
     # set axes titles

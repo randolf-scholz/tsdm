@@ -38,6 +38,9 @@ __all__ = [
     "ValueEncoder",
     "DuplicateEncoder",
     "CloneEncoder",
+    "PeriodicEncoder",
+    "SocialTimeEncoder",
+    "PeriodicSocialTimeEncoder",
 ]
 
 import logging
@@ -60,7 +63,10 @@ from tsdm.encoders.modular._modular import (
     FrameEncoder,
     FrameIndexer,
     FrameSplitter,
+    PeriodicEncoder,
+    PeriodicSocialTimeEncoder,
     PositionalEncoder,
+    SocialTimeEncoder,
     TensorEncoder,
     TripletEncoder,
     ValueEncoder,
