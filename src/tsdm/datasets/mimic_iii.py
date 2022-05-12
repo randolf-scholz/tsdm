@@ -19,7 +19,6 @@ vital signs, laboratory results, and medications.
 
 __all__ = ["MIMIC_III"]
 
-import logging
 import os
 import subprocess
 from functools import cached_property
@@ -28,8 +27,6 @@ from pathlib import Path
 from typing import Optional, Union
 
 from tsdm.datasets.base import SimpleDataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 class MIMIC_III(SimpleDataset):
@@ -56,7 +53,7 @@ class MIMIC_III(SimpleDataset):
     def _load(self):
         r"""Load the dataset stored in hdf5 format in the path `cls.dataset_files`."""
 
-    def download(self, *, url: Optional[Union[str, Path]] = None) -> None:
+    def _download(self, *, url: Optional[Union[str, Path]] = None) -> None:
         r"""Download the dataset and stores it in `cls.rawdata_dir`.
 
         The default downloader checks if
@@ -72,11 +69,10 @@ class MIMIC_III(SimpleDataset):
         url: Optional[Union[str, Path]], default None
         """
         if self.url is None:
-            __logger__.info("Dataset '%s' provides no url. Assumed offline", self.name)
+            self.__logger__.info("Dataset provides no url. Assumed offline")
             return
 
-        dataset = self.name
-        __logger__.info("Obtaining dataset '%s' from %s", dataset, self.url)
+        self.__logger__.info("Obtaining dataset from %s", self.url)
 
         cut_dirs = self.url.count("/") - 3
 
@@ -94,4 +90,4 @@ class MIMIC_III(SimpleDataset):
             check=True,
         )
 
-        __logger__.info("Finished importing dataset '%s' from %s", dataset, self.url)
+        self.__logger__.info("Finished importing dataset from %s", self.url)

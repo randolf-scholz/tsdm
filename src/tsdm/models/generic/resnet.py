@@ -5,7 +5,7 @@ r"""#TODO add module summary line.
 
 import logging
 from collections import OrderedDict
-from typing import Any
+from typing import Any, TypeVar
 
 from torch import Tensor, jit, nn
 
@@ -78,6 +78,9 @@ class ResNetBlock(nn.Sequential):
         super().__init__(subblocks)
 
 
+ResNetType = TypeVar("ResNetType", bound="ResNet")
+
+
 @autojit
 class ResNet(nn.ModuleList):
     r"""A ResNet model."""
@@ -87,33 +90,42 @@ class ResNet(nn.ModuleList):
         "__module__": __module__,  # type: ignore[name-defined]
         "input_size": None,
         "num_blocks": 5,
-        "blocks": [
-            ResNetBlock.HP,
-        ],
+        "blocks": ResNetBlock.HP,
     }
 
-    def __init__(self, **HP: Any) -> None:
-        super().__init__()
-        self.CFG = HP = deep_dict_update(self.HP, HP)
+    def __new__(cls, *blocks, **hparams):
+        r"""Initialize from hyperparameters."""
+        assert len(blocks) ^ len(hparams), "Provide either blocks, or hyperparameters!"
 
-        assert HP["input_size"] is not None, "input_size is required!"
+        if hparams:
+            return cls.from_hyperparameters(**hparams)
 
-        # pass the input_size to the subblocks
-        for block_cfg in HP["blocks"]:
-            if "input_size" in block_cfg:
-                block_cfg["input_size"] = HP["input_size"]
+        return super().__new__(cls)
+
+    def __init__(self, *blocks: Any, **hparams: Any) -> None:
+        assert len(blocks) ^ len(hparams), "Provide either blocks, or hyperparameters!"
+
+        if hparams:
+            return
+        super().__init__(*blocks, **hparams)
+
+    @classmethod
+    def from_hyperparameters(
+        cls: type[ResNetType],
+        *,
+        input_size: int,
+        num_blocks: int = 5,
+        block_cfg: dict = ResNetBlock.HP,
+    ) -> ResNetType:
+        """Create a ResNet model from hyperparameters."""
+        if "input_size" in block_cfg:
+            block_cfg["input_size"] = input_size
 
         blocks: list[nn.Module] = []
-
-        for k in range(HP["num_blocks"]):
-            key = f"block{k}"
-            module = nn.Sequential(
-                *[initialize_from_config(layer) for layer in HP["blocks"]]
-            )
-            self.add_module(key, module)
+        for _ in range(num_blocks):
+            module: nn.Module = initialize_from_config(block_cfg)
             blocks.append(module)
-
-        super().__init__(blocks)
+        return cls(*blocks)
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:

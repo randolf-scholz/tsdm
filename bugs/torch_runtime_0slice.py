@@ -1,5 +1,4 @@
 #!/user/bin/env python3
-# -*- coding: utf-8 -*-
 
 import torch
 from torch import Tensor, jit, nn

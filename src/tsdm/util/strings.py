@@ -107,7 +107,7 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
         return repr_sequence(obj, **kwargs)
     try:
         return repr(obj)
-    except Exception:  # Fallback Option
+    except BaseException:  # Fallback Option
         return repr(type(obj))
 
 

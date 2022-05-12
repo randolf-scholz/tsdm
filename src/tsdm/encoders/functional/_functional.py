@@ -21,7 +21,6 @@ __all__ = [
 import logging
 from typing import Optional, Union
 
-import numba
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
@@ -185,7 +184,7 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     s[0] = 0 * s[1]
     s = pd.Index(s)
 
-    @numba.njit
+    # @numba.njit
     def get_deltas(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # using numba jit compiled for speed - pandas was too slow!
         # c = np.outer(a, np.zeros(b.shape[-1]))
@@ -261,4 +260,3 @@ def time2float(ds: Series) -> Series:
 # TODO: add timefeatures
 def timefeatures():
     r"""Return time features from datetime."""
-    ...

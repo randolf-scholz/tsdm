@@ -8,8 +8,6 @@ __all__ = [
     "InSilicoData",
 ]
 
-
-import logging
 import shutil
 from functools import cached_property
 from importlib import resources
@@ -20,8 +18,6 @@ import pandas as pd
 
 from tsdm.datasets import examples
 from tsdm.datasets.base import SimpleDataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 class InSilicoData(SimpleDataset):

@@ -1,5 +1,4 @@
 #!use/bin/env python
-# coding: utf-8
 
 # pubcls = main._all["publication"]
 #
