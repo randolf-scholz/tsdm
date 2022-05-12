@@ -363,6 +363,8 @@ def paths_exists(
     -------
     bool
     """
+    if isinstance(paths, str):
+        return Path(paths).exists()
     if paths is None:
         return True
     if isinstance(paths, Mapping):

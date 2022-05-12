@@ -6,6 +6,7 @@
       <w>adagrad</w>
       <w>adamax</w>
       <w>alkalinephos</w>
+      <w>arange</w>
       <w>arany</w>
       <w>argsort</w>
       <w>asarray</w>
@@ -46,6 +47,7 @@
       <w>classmethod</w>
       <w>cmap</w>
       <w>colenc</w>
+      <w>colname</w>
       <w>colspec</w>
       <w>colspecs</w>
       <w>configurables</w>
@@ -96,6 +98,7 @@
       <w>hematocrit</w>
       <w>hexdigest</w>
       <w>hildesheim</w>
+      <w>hparams</w>
       <w>hpcs</w>
       <w>hsiang</w>
       <w>hufl</w>

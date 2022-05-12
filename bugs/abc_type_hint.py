@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+
 from abc import ABC, abstractmethod
 from typing import Generic, Literal, Sequence, TypeVar
 

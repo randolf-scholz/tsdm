@@ -373,8 +373,8 @@ def trace(func: Callable) -> Callable:
             "\n\t".join(
                 (
                     f"{func.__qualname__}: ENTERING",
-                    f"args={args}",
-                    f"kwargs={kwargs}",
+                    f"args={tuple(type(arg).__name__ for arg in args)}",
+                    f"kwargs={str({k:type(v).__name__ for k,v in kwargs.items()})}",
                 )
             ),
         )
@@ -387,7 +387,9 @@ def trace(func: Callable) -> Callable:
             logger.error("%s: FAILURE with Exception %s", func.__qualname__, E)
             raise RuntimeError(f"Function execution failed with Exception {E}") from E
         else:
-            logger.info("%s: SUCCESS with result=%s", func.__qualname__, result)
+            logger.info(
+                "%s: SUCCESS with result=%s", func.__qualname__, type(result).__name__
+            )
         logger.info("%s", "\n\t".join((f"{func.__qualname__}: EXITING",)))
         return result
 

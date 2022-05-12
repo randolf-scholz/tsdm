@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from typing import Final
 
 import torch

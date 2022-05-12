@@ -150,7 +150,7 @@ class BaseTask(ABC, Generic[KeyType]):
         r"""Return a string representation of the object."""
         string = (
             f"{self.__class__.__name__}("
-            f"dataset={self.dataset.name}, "
+            # f"dataset={self.dataset.name}, "
             f"test_metric={type(self.test_metric).__name__})"
         )
         return string

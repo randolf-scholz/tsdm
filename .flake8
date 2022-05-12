@@ -39,6 +39,7 @@ ignore =
     W503,       # line break before binary operator
     ANN101,     # Missing type annotation for self in method
     ANN102,     # Missing type annotation for cls in classmethod
+    ANN401,     # Dynamically typed expressions (typing.Any) are disallowed
 
 extend-ignore =
     # Google Python style is not RST until after processed by Napoleon

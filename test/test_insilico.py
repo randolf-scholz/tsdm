@@ -16,7 +16,7 @@ def test_caching():
     # NOTE: this test must be executed first!!!
 
     ds = InSilicoData()
-    __logger__.info("Testing caching of dataset %s", ds.name)
+    __logger__.info("Testing caching of dataset %s", ds.__class__.__name__)
     _, pre_cache_time = timefun(lambda: ds.dataset, append=True)()
     _, post_cache_time = timefun(lambda: ds.dataset, append=True)()
 
@@ -26,7 +26,9 @@ def test_caching():
         100 * post_cache_time <= pre_cache_time
     ), f"{post_cache_time=}, {pre_cache_time=}"
 
-    __logger__.info("%s passes caching test \N{HEAVY CHECK MARK}", ds.name)
+    __logger__.info(
+        "%s passes caching test \N{HEAVY CHECK MARK}", ds.__class__.__name__
+    )
 
 
 def test_attributes():

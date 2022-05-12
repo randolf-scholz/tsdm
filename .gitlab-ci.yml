@@ -47,6 +47,9 @@ setup:
     - key: venv
       paths:
         - "${VENV_DIR}"
+    - key: poetry
+      paths:
+        - "$CI_PROJECT_DIR/.cache/pypoetry"
   before_script:
     # overrides global before_script
     # make directories
@@ -55,10 +58,10 @@ setup:
     # python setup
     - python -V
     - pip install --upgrade pip poetry virtualenv
-    - virtualenv ${VENVNAME}
+    - virtualenv ${VENVNAME} --download
     - source ${VENVNAME}/bin/activate
     # install development dependencies
-    - poetry install --no-root
+    - poetry install #--no-root
   script:
     # build and install package
     # set version number depending on CI_PIPELINE_ID
@@ -70,8 +73,8 @@ setup:
     - python -c "import re; assert re.match($regex, $version)"
     # build and install package
     - poetry build
-    - pip install dist/*.whl
-    - pip list
+  #    - pip install dist/*.whl
+  #    - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
     # generate python version badge

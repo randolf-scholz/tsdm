@@ -191,7 +191,7 @@ class KIWI_RUNS(Dataset):
     def _clean(self, key: KEYS) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         with open(self.rawdata_files, "rb") as file:
-            __logger__.info("Loading raw data from %s", self.rawdata_files)
+            self.__logger__.info("Loading raw data from %s", self.rawdata_files)
             data = pickle.load(file)
 
         DATA = [
@@ -240,7 +240,7 @@ class KIWI_RUNS(Dataset):
         else:
             cleaner(table)
 
-        __logger__.info("%s/%s Finished cleaning table!", self.name, key)
+        self.__logger__.info("%s Finished cleaning table!", key)
 
     def _clean_metadata(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()

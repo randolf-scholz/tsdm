@@ -4,7 +4,7 @@ default_language_version:
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
-    rev: v4.1.0
+    rev: v4.2.0
     hooks:
       - id: check-ast
         description: "simply checks whether the files parse as valid python."
@@ -26,12 +26,12 @@ repos:
         description: "trims trailing whitespace.."
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v2.6.0" # Use the sha or tag you want to point at
+    rev: "v2.6.2" # Use the sha or tag you want to point at
     hooks:
       - id: prettier
   # black
   - repo: https://github.com/psf/black
-    rev: 22.1.0
+    rev: 22.3.0
     hooks:
       - id: black
       - id: black-jupyter

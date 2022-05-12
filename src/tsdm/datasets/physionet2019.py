@@ -162,8 +162,6 @@ __all__ = [
     "Physionet2019",
 ]
 
-
-import logging
 import pickle
 from functools import cached_property
 from pathlib import Path
@@ -173,8 +171,6 @@ from pandas import DataFrame, HDFStore, read_csv, read_hdf
 from tqdm import tqdm
 
 from tsdm.datasets.base import SimpleDataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 class Physionet2019(SimpleDataset):
@@ -218,7 +214,7 @@ class Physionet2019(SimpleDataset):
     @cached_property
     def dataset_files(self) -> Path:
         r"""Location where the pre-processed data is stored."""
-        return self.dataset_dir / f"{self.name}.h5"
+        return self.dataset_dir / f"{self.__class__.__name__}.h5"
 
     @cached_property
     def rawdata_files(self) -> dict[str, Path]:
