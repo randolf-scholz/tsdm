@@ -60,8 +60,6 @@ setup:
     - pip install --upgrade pip poetry virtualenv
     - virtualenv ${VENVNAME} --download
     - source ${VENVNAME}/bin/activate
-    # install development dependencies
-    - poetry install #--no-root
   script:
     # build and install package
     # set version number depending on CI_PIPELINE_ID
@@ -73,8 +71,8 @@ setup:
     - python -c "import re; assert re.match($regex, $version)"
     # build and install package
     - poetry build
-  #    - pip install dist/*.whl
-  #    - pip list
+    - pip install dist/*.whl
+    - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
     # generate python version badge
