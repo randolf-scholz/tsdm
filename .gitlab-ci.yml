@@ -74,7 +74,7 @@ setup:
     - python -c "import re; assert re.match($regex, $version)"
     # build and install package.
     - poetry build
-    - pip install --upgrade --only-binary ":all:" $(ls dist/*.whl)'[all]'
+    - pip install --upgrade --only-binary ":all:" $(ls dist/*.whl)
     # update the requirements.txt files.
     - ./run/generate_requirements.sh
     # install dev dependencies.
