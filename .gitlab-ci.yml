@@ -61,17 +61,24 @@ setup:
     - virtualenv ${VENVNAME} --download
     - source ${VENVNAME}/bin/activate
   script:
+    # We first build the package and then install it. Finally we install the dev dependencies.
+    # This makes sure that the package can be built and installed.
     # build and install package
     # set version number depending on CI_PIPELINE_ID
+    - pip list
     - VERSION=$(poetry version -s)
     - poetry version "$(poetry version -s).dev${CI_PIPELINE_IID}"
     # verify version number OK (cf. https://peps.python.org/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
     - regex='r"^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$"'
     - version='"'$(poetry version -s)'"'
     - python -c "import re; assert re.match($regex, $version)"
-    # build and install package
+    # build and install package.
     - poetry build
     - pip install --upgrade --only-binary ":all:" dist/*.whl
+    # update the requirements.txt files.
+    - ./run/generate_requirements.sh
+    # install dev dependencies.
+    - pip install --upgrade --only-binary ":all:" -r requirements-dev.txt
     - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
