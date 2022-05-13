@@ -46,6 +46,7 @@
       <w>classif</w>
       <w>classmethod</w>
       <w>cmap</w>
+      <w>codeclimate</w>
       <w>colenc</w>
       <w>colname</w>
       <w>colspec</w>
@@ -165,6 +166,7 @@
       <w>mmol</w>
       <w>modeldir</w>
       <w>modin</w>
+      <w>moduledir</w>
       <w>modus</w>
       <w>mqrnn</w>
       <w>mufl</w>
@@ -206,6 +208,7 @@
       <w>prelu</w>
       <w>prsa</w>
       <w>pydeps</w>
+      <w>pypoetry</w>
       <w>pyproject</w>
       <w>pytables</w>
       <w>qflag</w>
@@ -267,6 +270,7 @@
       <w>syama</w>
       <w>symmpart</w>
       <w>tanhshrink</w>
+      <w>testdir</w>
       <w>testlabels</w>
       <w>tfrac</w>
       <w>thakur</w>
@@ -298,6 +302,7 @@
       <w>vals</w>
       <w>vecs</w>
       <w>vectorize</w>
+      <w>venvname</w>
       <w>viewcode</w>
       <w>wancai</w>
       <w>wang</w>
