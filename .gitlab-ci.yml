@@ -18,6 +18,7 @@ variables:
   MODULEDIR: "src/tsdm"
   MODULENAME: tsdm
   TESTDIR: test
+  POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pypoetry"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
   PYTEST_CACHE_DIR: "${CI_PROJECT_DIR}/.pytest_cache"
@@ -41,15 +42,14 @@ before_script:
 setup:
   stage: build
   cache:
-    - key: pip
+    - key: package_cache
       paths:
         - "${PIP_CACHE_DIR}"
+        - "${POETRY_CACHE_DIR}"
     - key: venv
       paths:
         - "${VENV_DIR}"
-    - key: poetry
-      paths:
-        - "$CI_PROJECT_DIR/.cache/pypoetry"
+      policy: push
   before_script:
     # overrides global before_script
     # make directories
