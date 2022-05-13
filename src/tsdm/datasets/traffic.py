@@ -282,7 +282,7 @@ class Traffic(Dataset):
         )
         assert len(timestamps) == 144
 
-        with ZipFile(self.rawdata_paths) as files:
+        with ZipFile(self.rawdata_files) as files:
             with files.open("stations_list") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
@@ -290,8 +290,7 @@ class Traffic(Dataset):
                     StringIO(content),
                     names=["station"],
                     dtype="category",
-                    squeeze=True,
-                )
+                ).squeeze()
                 stations = Series(stations)  # make sure its not TextFileReader
 
             with files.open("PEMS_trainlabels") as file:
@@ -301,8 +300,7 @@ class Traffic(Dataset):
                     StringIO(content),
                     names=["labels"],
                     dtype="category",
-                    squeeze=True,
-                )
+                ).squeeze()
                 train_dates = shuffled_dates[: len(trainlabels)]
                 trainlabels.index = train_dates
                 trainlabels = Series(trainlabels)  # make sure its not TextFileReader
@@ -318,8 +316,7 @@ class Traffic(Dataset):
                     StringIO(content),
                     names=["labels"],
                     dtype="category",
-                    squeeze=True,
-                )
+                ).squeeze()
                 test_dates = shuffled_dates[len(trainlabels) :]
                 testlabels.index = test_dates
                 testlabels = Series(testlabels)  # make sure its not TextFileReader
@@ -342,7 +339,7 @@ class Traffic(Dataset):
                     df = pandas.read_csv(
                         StringIO(content),
                         header=None,
-                    )
+                    ).squeeze()
                     df = DataFrame(df.values, index=stations, columns=timestamps)
                     _PEMS_train.append(df.T)
                 PEMS_train = pandas.concat(_PEMS_train, keys=train_dates)
@@ -357,7 +354,7 @@ class Traffic(Dataset):
                     df = pandas.read_csv(
                         StringIO(content),
                         header=None,
-                    )
+                    ).squeeze()
                     df = DataFrame(df.values, index=stations, columns=timestamps)
                     _PEMS_test.append(df.T)
                 PEMS_test = pandas.concat(_PEMS_test, keys=test_dates)
@@ -373,7 +370,7 @@ class Traffic(Dataset):
         labels.to_feather(self.dataset_files["labels"])
 
     def _clean_randperm(self):
-        with ZipFile(self.rawdata_paths) as files:
+        with ZipFile(self.rawdata_files) as files:
             with files.open("randperm") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
@@ -381,8 +378,7 @@ class Traffic(Dataset):
                     StringIO(content),
                     names=["randperm"],
                     dtype="uint16",
-                    squeeze=True,
-                )
+                ).squeeze()
                 randperm = randperm - 1  # we use 0-based indexing
                 invperm = randperm.copy().argsort()
                 invperm.name = "invperm"
