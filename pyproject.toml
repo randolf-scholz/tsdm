@@ -37,6 +37,8 @@ classifiers = [
 
 
 [tool.poetry.extras]
+modin = ["modin"]
+all = ["modin"]
 
 [tool.poetry.dependencies]
 python = ">=3.9, <3.10"
