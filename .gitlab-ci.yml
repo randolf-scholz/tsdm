@@ -71,7 +71,7 @@ setup:
     - python -c "import re; assert re.match($regex, $version)"
     # build and install package
     - poetry build
-    - pip install dist/*.whl
+    - pip install --upgrade dist/*.whl
     - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
