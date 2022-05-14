@@ -74,13 +74,16 @@ setup:
     - regex='r"^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$"'
     - version='"'$(poetry version -s)'"'
     - python -c "import re; assert re.match($regex, $version)"
-    # build and install package.
-    - poetry build
-    - pip install --upgrade --only-binary ":all:" $(ls dist/*.whl)
-    # update the requirements.txt files.
+    # build package.
     - ./run/generate_requirements.sh
+    - poetry build
+    # install package
+    - poetry install
+    # TODO: fix pip install errors!!!
+    # - pip install --upgrade --only-binary ":all:" $(ls dist/*.whl)
+    # update the requirements.txt files.
     # install dev dependencies.
-    - pip install --upgrade --only-binary ":all:" -r requirements-dev.txt
+    # - pip install --upgrade --only-binary ":all:" -r requirements-dev.txt
     - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
