@@ -60,9 +60,9 @@ setup:
     - mkdir -p reports
     # python setup
     - pip install --upgrade pip poetry virtualenv
-    - virtualenv ${VENVNAME} --download
+    - virtualenv ${VENVNAME}ht --download
     - source ${VENVNAME}/bin/activate
-    # - pip install --upgrade modin[ray]
+    # - pip install --upgrade --only-binary ":all:" modin[ray]
     - pip list
   script:
     # We first build the package and then install it. Finally we install the dev dependencies.
