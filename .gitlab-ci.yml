@@ -2,7 +2,7 @@
 # https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
 #
 
-image: python:3.9
+image: python:3.9-bullseye
 
 stages:
   - build
@@ -18,6 +18,7 @@ variables:
   MODULEDIR: "src/tsdm"
   MODULENAME: tsdm
   TESTDIR: test
+  POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pypoetry"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
   PYTEST_CACHE_DIR: "${CI_PROJECT_DIR}/.pytest_cache"
@@ -41,40 +42,49 @@ before_script:
 setup:
   stage: build
   cache:
-    - key: pip
+    - key: package_cache
       paths:
         - "${PIP_CACHE_DIR}"
+        - "${POETRY_CACHE_DIR}"
     - key: venv
       paths:
         - "${VENV_DIR}"
-    - key: poetry
-      paths:
-        - "$CI_PROJECT_DIR/.cache/pypoetry"
+      policy: push
   before_script:
+    # Check kernel and python version
+    - uname -a
+    - python -V
     # overrides global before_script
     # make directories
     - mkdir -p badges
     - mkdir -p reports
     # python setup
-    - python -V
     - pip install --upgrade pip poetry virtualenv
     - virtualenv ${VENVNAME} --download
     - source ${VENVNAME}/bin/activate
-    # install development dependencies
-    - poetry install #--no-root
   script:
+    # We first build the package and then install it. Finally we install the dev dependencies.
+    # This makes sure that the package can be built and installed.
     # build and install package
     # set version number depending on CI_PIPELINE_ID
+    - pip list
     - VERSION=$(poetry version -s)
     - poetry version "$(poetry version -s).dev${CI_PIPELINE_IID}"
     # verify version number OK (cf. https://peps.python.org/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
     - regex='r"^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$"'
     - version='"'$(poetry version -s)'"'
     - python -c "import re; assert re.match($regex, $version)"
-    # build and install package
+    # build package.
+    - ./run/generate_requirements.sh
     - poetry build
-  #    - pip install dist/*.whl
-  #    - pip list
+    # install package
+    - poetry install
+    # TODO: fix pip install errors!!!
+    # - pip install --upgrade --only-binary ":all:" $(ls dist/*.whl)
+    # update the requirements.txt files.
+    # install dev dependencies.
+    # - pip install --upgrade --only-binary ":all:" -r requirements-dev.txt
+    - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
     # generate python version badge

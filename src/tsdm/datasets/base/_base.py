@@ -182,14 +182,6 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
         self.__logger__.info("Finished importing files from %s", url)
 
-    def _download(self) -> None:
-        r"""Download the dataset."""
-        if self.base_url is None:
-            self.__logger__.info("Dataset provides no url. Assumed offline")
-            return
-
-        self.download_from_url(self.base_url)
-
     def download(
         self, *, url: Optional[Union[str, Path]] = None, force: bool = False
     ) -> None:
@@ -207,20 +199,23 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             self.__logger__.info("Dataset already exists. Skipping download.")
             return
 
-        if url is None and self.base_url is None:
-            self.__logger__.info("Dataset provides no url. Assumed offline")
-            return
+        if url is None:
+            if self.base_url is None:
+                self.__logger__.info("Dataset provides no url. Assumed offline")
+                return
+            url = self.base_url
 
         self.__logger__.debug("STARTING TO DOWNLOAD DATASET.")
-        self._download()
+        self.download_from_url(str(url))
         self.__logger__.debug("FINISHED TO DOWNLOAD DATASET.")
 
-    def info(self):
+    @classmethod
+    def info(cls):
         r"""Open dataset information in browser."""
-        if self.info_url is None:
-            print(self.__doc__)
+        if cls.info_url is None:
+            print(cls.__doc__)
         else:
-            webbrowser.open_new_tab(self.info_url)
+            webbrowser.open_new_tab(cls.info_url)
 
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
@@ -420,9 +415,6 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         -------
         DATASET_OBJECT | Mapping[KeyType, DATASET_OBJECT]
         """
-        if not self.rawdata_files_exist(key=key):
-            self.download(key=key, force=force, **kwargs)
-
         if not self.dataset_files_exist(key=key):
             self.clean(key=key, force=force)
 
@@ -452,7 +444,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             return
 
         if self.rawdata_files is None:
-            super()._download()
+            self.download_from_url(self.base_url)
             return
 
         if isinstance(self.rawdata_files, Mapping):

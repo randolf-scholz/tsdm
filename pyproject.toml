@@ -37,17 +37,19 @@ classifiers = [
 
 
 [tool.poetry.extras]
+# modin = ["modin"]
+# all = ["modin"]
 
 [tool.poetry.dependencies]
 python = ">=3.9, <3.10"
 h5py = ">=3.4.0"
-matplotlib = ">=3.4"
-modin = {version = ">=0.12", extras = ["ray"], optional = true}
+matplotlib = ">=3.5"
+modin = {version = ">=0.14", extras = ["ray"]}
 numpy = ">=1.21"
-pandas = ">=1.3"
-pyarrow = ">=7.0"
+pandas = ">=1.4"
+pyarrow = ">=8.0"
 pyyaml = ">=6.0"
-scikit-learn = ">=1.0"
+scikit-learn = ">=1.1"
 scipy = ">=1.7"
 tables = ">=3.6"
 tensorboard = ">=2.7"
@@ -86,8 +88,10 @@ pytest-rerunfailures = ">=10.2"
 setuptools = ">=60.7.1"
 sphinx = ">=4.5.0"
 sphinx-autoapi = ">=1.8.4"
-sphinx-copybutton = ">=0.4.0"
+sphinx-copybutton = ">=0.5.0"
+sphinx-math-dollar = ">=1.2"
 sphinx-rtd-theme = ">=1.0.0"
+toml = ">=0.10.2"
 twine = ">=3.8.0"
 types-PyYAML = ">=6.0.4"
 types-backports = ">=0.1.3"
@@ -104,9 +108,6 @@ types-six = ">=1.16.10"
 types-tabulate = ">=0.8.5"
 types-toml = ">=0.10.3"
 wheel = ">=0.37.1"
-toml = ">=0.10.2"
-Sphinx = ">=4.5.0"
-sphinx-math-dollar = ">=1.2"
 
 [tool.poetry.scripts]
 
