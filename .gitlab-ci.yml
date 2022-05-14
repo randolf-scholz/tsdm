@@ -60,10 +60,10 @@ setup:
     - mkdir -p reports
     # python setup
     - pip install --upgrade pip poetry virtualenv
-    - virtualenv ${VENVNAME}ht --download
+    - virtualenv ${VENVNAME} --download
     - source ${VENVNAME}/bin/activate
+    - pip install --upgrade pip setuptools wheel
     # - pip install --upgrade --only-binary ":all:" modin[ray]
-    - pip list
   script:
     # We first build the package and then install it. Finally we install the dev dependencies.
     # This makes sure that the package can be built and installed.
@@ -83,9 +83,9 @@ setup:
     # install package
     #- poetry install
     # TODO: fix pip install errors!!!
-    - pip install --upgrade --only-binary ":all:" $(ls dist/*.whl)
+    - pip install --upgrade $(ls dist/*.whl)
     # install dev dependencies.
-    - pip install --upgrade --only-binary ":all:" -r requirements-dev.txt
+    - pip install --upgrade -r requirements-dev.txt
     - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
