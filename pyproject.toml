@@ -45,17 +45,18 @@ python = ">=3.9, <3.10"
 h5py = ">=3.4.0"
 matplotlib = ">=3.5"
 modin = {version = ">=0.14", extras = ["ray"]}
-numpy = ">=1.21"
+ray = {version = ">=1.9", extras = ["default", "tune"]}
+numpy = ">=1.22"
 pandas = ">=1.4"
 pyarrow = ">=8.0"
 pyyaml = ">=6.0"
 scikit-learn = ">=1.1"
 scipy = ">=1.7"
 tables = ">=3.6"
-tensorboard = ">=2.7"
+tensorboard = ">=2.9"
 torch = ">=1.11"
 tqdm = ">=4.50"
-xarray = ">=0.20"
+xarray = ">=2022.3.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = ">=22.1.0", extras = ["jupyter"]}
