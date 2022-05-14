@@ -163,7 +163,6 @@ __all__ = [
 ]
 
 import pickle
-from functools import cached_property
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -205,24 +204,20 @@ class Physionet2019(SimpleDataset):
     r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = r"https://physionet.org/content/challenge-2019/1.0.0/"
     r"""HTTP address containing additional information about the dataset."""
+    rawdata_files = {"A": "training_setA.zip", "B": "training_setB.zip"}
+    dataset_files = "Physionet2019.h5"
+
+    @property
+    def rawdata_paths(self) -> dict[str, Path]:
+        r"""Absolute paths to the raw data files."""
+        return {
+            key: self.rawdata_dir / path for key, path in self.rawdata_files.items()
+        }
 
     @property
     def index(self) -> list:
         r"""Return the index of the dataset."""
         return []
-
-    @cached_property
-    def dataset_files(self) -> Path:
-        r"""Location where the pre-processed data is stored."""
-        return self.dataset_dir / f"{self.__class__.__name__}.h5"
-
-    @cached_property
-    def rawdata_files(self) -> dict[str, Path]:
-        r"""Location where the raw data is stored."""
-        return {
-            "A": self.rawdata_dir / "training_setA.zip",
-            "B": self.rawdata_dir / "training_setB.zip",
-        }
 
     def _clean(self, store="hdf"):
         r"""Create a file representation of pandas dataframes representing the tables.
@@ -292,19 +287,19 @@ class Physionet2019(SimpleDataset):
                 with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
                     print("cleaning " + fname)
                     for zi in tqdm(zipfile.infolist()):
-                        with zipfile.open(zi, "r") as zf:
+                        with zipfile.open(zi) as zf:
                             if zf.name.endswith("psv"):
                                 df = read_csv(zf, sep="|")
                                 group_name = zf.name.split(".")[-2].split("/")[1]
                                 h5file.put(f"/{prefix}/{group_name}", df)
         elif store == "pickle":
             df_dict: dict[str, DataFrame] = {}
-            dataset_file = self.dataset_files.with_suffix(".pickle")
+            dataset_file = self.dataset_paths.with_suffix(".pickle")
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
                 with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
                     print("cleaning " + fname)
                     for zi in tqdm(zipfile.infolist()):
-                        with zipfile.open(zi, "r") as zf:
+                        with zipfile.open(zi) as zf:
                             if zf.name.endswith("psv"):
                                 df = read_csv(zf, sep="|")
                                 group_name = zf.name.split(".")[-2].split("/")[1]
@@ -321,14 +316,14 @@ class Physionet2019(SimpleDataset):
         Default is HDF5 (store='hdf'), but in our case store='pickle' is faster.
         """
         if store == "hdf":
-            with HDFStore(self.dataset_files) as file:
+            with HDFStore(self.dataset_paths) as file:
                 read_dfs = {}
                 for root, _, files in file.walk():
                     for fn in tqdm(files):
                         key = f"{root}/{fn}"
                         read_dfs[key] = read_hdf(file, key=key)
         elif store == "pickle":
-            dataset_file = self.dataset_files.with_suffix(".pickle")
+            dataset_file = self.dataset_paths.with_suffix(".pickle")
             with open(dataset_file, "rb") as f:
                 read_dfs = pickle.load(f)
         else:

@@ -32,7 +32,7 @@ r"""Type Hint for pandas objects."""
 
 TensorLike = Union[Tensor, NDArray, DataFrame, Series]
 r"""Type Hint for tensor-like objects."""
-TensorType = TypeVar("TensorType", Tensor, NDArray, DataFrame, Series)
+TensorType = TypeVar("TensorType", Tensor, np.ndarray, DataFrame, Series)
 r"""TypeVar for tensor-like objects."""
 
 

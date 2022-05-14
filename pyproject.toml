@@ -150,7 +150,7 @@ generated-members=["numpy.*","torch.*"]
 # MyPy Configuration #
 ######################
 [tool.mypy]
-allow_redefinition = false
+allow_redefinition = true
 color_output = true
 error_summary = true
 files = ["src/", "test/"]
@@ -208,10 +208,21 @@ convention = "numpy"
 # pyright Configuration #
 #########################
 [tool.pyright]
+root = ""
+include = ["src/", "test/"]
 pythonVersion = "3.9"
+pythonPlatform = "Linux"
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.ipynb_checkpoints",
+]
+
+venv = ".venv"
+venvPath = "."
 reportMissingImports = false
 reportUnsupportedDunderAll = false
-
+reportPrivateImportUsage = false
 
 ########################
 # PyTest Configuration #

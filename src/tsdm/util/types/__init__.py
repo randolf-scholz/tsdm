@@ -6,16 +6,15 @@ __all__ = [
     "protocols",
     # Type Variables
     "Self",
-    "Type",
     "ClassType",
     "KeyType",
     "ObjectType",
     "ReturnType",
     "ValueType",
+    "Type",
     "nnModuleType",
     # Generic Types
-    "NestedType",
-    "NullableNestedType",
+    "Nested",
     # Static Types
     "PathType",
 ]
@@ -26,8 +25,7 @@ from tsdm.util.types import abc, protocols
 from tsdm.util.types._types import (
     ClassType,
     KeyType,
-    NestedType,
-    NullableNestedType,
+    Nested,
     ObjectType,
     PathType,
     ReturnType,

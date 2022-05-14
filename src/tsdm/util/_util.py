@@ -31,16 +31,17 @@ from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
-from typing import Any, NamedTuple, Union, overload
+from typing import Any, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 import torch
 from torch import Tensor, jit
 
-from tsdm.util.types import NullableNestedType, ObjectType, PathType, ReturnType
+from tsdm.util.types import Nested, ObjectType, PathType, ReturnType
 from tsdm.util.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
+EmptyPath: Path = Path()
 
 
 class Split(NamedTuple):
@@ -109,10 +110,10 @@ def deep_kval_update(d: dict, **new_kvals: dict) -> dict:
 
 
 def apply_nested(
-    nested: NullableNestedType[ObjectType],
+    nested: Nested[Optional[ObjectType]],
     kind: type[ObjectType],
     func: Callable[[ObjectType], ReturnType],
-) -> NullableNestedType[ReturnType]:
+) -> Nested[Optional[ReturnType]]:
     r"""Apply function to nested iterables of a given kind.
 
     Parameters
@@ -133,17 +134,51 @@ def apply_nested(
     raise TypeError(f"Unsupported type: {type(nested)}")
 
 
+@overload
 def prepend_path(
-    files: NullableNestedType[PathType],
-    path: Path,
-) -> NullableNestedType[Path]:
+    files: Nested[PathType],
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> Nested[Path]:
+    ...
+
+
+@overload
+def prepend_path(
+    files: Nested[Optional[PathType]],
+    parent: Path,
+    *,
+    keep_none: Literal[False] = False,
+) -> Nested[Path]:
+    ...
+
+
+@overload
+def prepend_path(
+    files: Nested[Optional[PathType]],
+    parent: Path,
+    *,
+    keep_none: Literal[True] = True,
+) -> Nested[Optional[Path]]:
+    ...
+
+
+def prepend_path(
+    files: Nested[Optional[PathType]],
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> Nested[Optional[Path]]:
     r"""Prepends path to all files in nested iterable.
 
     Parameters
     ----------
     files
-        Nested Datastructed with Path-objects at leave nodes.
-    path
+        Nested datastructes with Path-objects at leave nodes.
+    parent: Path
+    keep_none: bool
+        If True, None-values are kept.
 
     Returns
     -------
@@ -152,14 +187,16 @@ def prepend_path(
     # TODO: change it to apply_nested in python 3.10
 
     if files is None:
-        return None
-    if isinstance(files, (str, os.PathLike)):
-        return path / Path(files)
+        return None if keep_none else parent
+    if isinstance(files, (str, Path, os.PathLike)):
+        return parent / Path(files)
     if isinstance(files, Mapping):
-        return {k: prepend_path(v, path) for k, v in files.items()}
+        return {
+            k: prepend_path(v, parent, keep_none=keep_none) for k, v in files.items()  # type: ignore[arg-type]
+        }
     # TODO https://github.com/python/mypy/issues/11615
     if isinstance(files, Collection):
-        return [prepend_path(f, path) for f in files]  # type: ignore[misc]
+        return [prepend_path(f, parent, keep_none=keep_none) for f in files]  # type: ignore
     raise TypeError(f"Unsupported type: {type(files)}")
 
 
@@ -347,9 +384,9 @@ def initialize_from_config(config: dict[str, Any]) -> Any:
 
 
 def paths_exists(
-    paths: Union[
-        None, Path, Collection[Path], Mapping[Any, Union[None, Path, Collection[Path]]]
-    ]
+    paths: Nested[Optional[PathType]],
+    *,
+    parent: Path = EmptyPath,
 ) -> bool:
     r"""Check whether the files exist.
 
@@ -358,6 +395,7 @@ def paths_exists(
     Parameters
     ----------
     paths: None | Path | Collection[Path] | Mapping[Any, None | Path | Collection[Path]]
+    parent: Path = Path(),
 
     Returns
     -------
@@ -368,11 +406,11 @@ def paths_exists(
     if paths is None:
         return True
     if isinstance(paths, Mapping):
-        return all(paths_exists(f) for f in paths.values())
+        return all(paths_exists(f, parent=parent) for f in paths.values())
     if isinstance(paths, Collection):
-        return all(paths_exists(f) for f in paths)
+        return all(paths_exists(f, parent=parent) for f in paths)
     if isinstance(paths, Path):
-        return paths.exists()
+        return (parent / paths).exists()
 
     raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
 
@@ -470,6 +508,8 @@ def paths_exists(
 #     if isinstance(obj, type) and not issubclass(obj, type):
 #         return obj(**kwargs)
 #     return partial(obj, **kwargs)
+
+
 @jit.script
 def symmpart(x: Tensor) -> Tensor:
     r"""Symmetric part of matrix."""

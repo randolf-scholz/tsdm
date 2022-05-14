@@ -7,8 +7,6 @@ __all__ = [
     "Dataset",
     # Classes
     "SimpleDataset",
-    "Template",
 ]
 
 from tsdm.datasets.base._base import BaseDataset, Dataset, SimpleDataset
-from tsdm.datasets.base.template import Template
