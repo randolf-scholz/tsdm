@@ -5,7 +5,7 @@ This repository contains tools to import important time series datasets and base
 
 .. note::
 
-    Documentation is hosted at https://www.user.tu-berlin.de/randolf.scholz/
+    Documentation is hosted at https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm
 
 
 Installation guide
