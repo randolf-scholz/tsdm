@@ -34,20 +34,20 @@ class InSilicoData(SimpleDataset):
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """
 
+    rawdata_files = "in_silico.zip"
+
     @cached_property
-    def rawdata_files(
-        self,
-    ) -> Path:
+    def rawdata_paths(self) -> Path:
         r"""Path to the raw data files."""
         with resources.path(examples, "in_silico.zip") as path:
             return path
 
     def _clean(self) -> None:
-        with ZipFile(self.rawdata_files, "r") as files:
+        with ZipFile(self.rawdata_paths) as files:
             dfs = {}
             for fname in files.namelist():
                 key = int(fname.split(".csv")[0])
-                with files.open(fname, "r") as file:
+                with files.open(fname) as file:
                     df = pd.read_csv(file, index_col=0, parse_dates=[0])
                 df = df.rename_axis(index="time")
                 df["DOTm"] /= 100
@@ -55,10 +55,10 @@ class InSilicoData(SimpleDataset):
                 dfs[key] = df
             df = pd.concat(dfs, names=["run_id"])
             df = df.reset_index()
-            df.to_feather(self.dataset_files)
+            df.to_feather(self.dataset_paths)
 
     def _load(self) -> pd.DataFrame:
-        df = pd.read_feather(self.dataset_files)
+        df = pd.read_feather(self.dataset_paths)
         return df.set_index(["run_id", "time"])
 
     def _download(self) -> None:

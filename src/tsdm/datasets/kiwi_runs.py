@@ -11,7 +11,6 @@ __all__ = [
 import logging
 import pickle
 from collections.abc import Callable, Sequence
-from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Literal, Optional
 
@@ -148,28 +147,13 @@ class KIWI_RUNS(Dataset):
     r"""The metadata."""
     units: DataFrame
     r"""The units of the measured variables."""
+    rawdata_files = "kiwi_experiments_and_run_355.pk"
+    dataset_files = {key: f"{key}.feather" for key in index + auxiliaries}
 
-    # @cached_property
-    # def dataset(self) -> DataFrame:
-    #     r"""Store cached version of dataset."""
-    #     # What is the best practice for metaclass methods that call each other?
-    #     # https://stackoverflow.com/q/47615318/9318372
-    #     if os.environ.get("GENERATING_DOCS", False):
-    #         return "the dataset"
-    #     return self.load()
-
-    @cached_property
-    def rawdata_files(self) -> Path:
-        r"""Path of the raw data file."""
-        return self.rawdata_dir / "kiwi_experiments_and_run_355.pk"
-
-    @cached_property
-    def dataset_files(self) -> dict[str, Path]:
-        r"""Path of the dataset file for the given key."""
-        return {
-            key: self.dataset_dir / f"{key}.feather"
-            for key in self.index + self.auxiliaries
-        }
+    @property
+    def rawdata_paths(self) -> Path:
+        """Path to the rawdata."""
+        return self.rawdata_dir / self.rawdata_files
 
     def _load(self, key: KEYS = "timeseries") -> DataFrame:
         r"""Load the dataset from disk."""
@@ -190,8 +174,8 @@ class KIWI_RUNS(Dataset):
 
     def _clean(self, key: KEYS) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
-        with open(self.rawdata_files, "rb") as file:
-            self.__logger__.info("Loading raw data from %s", self.rawdata_files)
+        with open(self.rawdata_paths, "rb") as file:
+            self.__logger__.info("Loading raw data from %s", self.rawdata_paths)
             data = pickle.load(file)
 
         DATA = [

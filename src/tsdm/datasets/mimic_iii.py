@@ -21,7 +21,6 @@ __all__ = ["MIMIC_III"]
 
 import os
 import subprocess
-from functools import cached_property
 from getpass import getpass
 from pathlib import Path
 from typing import Optional, Union
@@ -36,16 +35,7 @@ class MIMIC_III(SimpleDataset):
     r"""HTTP address from where the dataset can be downloaded."""
     info_url: str = r"https://physionet.org/content/mimiciii/1.4/"
     r"""HTTP address containing additional information about the dataset."""
-
-    @cached_property
-    def dataset_files(self) -> Path:
-        r"""Path to the downloaded dataset."""
-        return self.rawdata_dir / "MIMIC-III.zip"
-
-    @cached_property
-    def rawdata_files(self) -> Path:
-        r"""Path to the raw data."""
-        return self.rawdata_dir / "rawdata"
+    rawdata_files = "MIMIC-III.zip"
 
     def _clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""

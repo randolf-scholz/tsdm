@@ -12,7 +12,6 @@ __all__ = [
 import gzip
 import logging
 import os
-from functools import cached_property
 from io import StringIO
 from pathlib import Path
 from typing import Literal, Union
@@ -109,16 +108,8 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
     r"""HTTP address containing additional information about the dataset."""
 
     dataset: DataFrame
-
-    @cached_property
-    def dataset_files(self) -> Path:
-        r"""Location where dataset is stored."""
-        return self.dataset_dir / "SmallChunkedSporadic.feather"
-
-    @cached_property
-    def rawdata_files(self) -> Path:
-        r"""Location where raw dataset is stored."""
-        return self.rawdata_dir / "small_chunked_sporadic.csv"
+    rawdata_files = "small_chunked_sporadic.csv"
+    dataset_files = "SmallChunkedSporadic.feather"
 
     def _clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
@@ -300,17 +291,14 @@ class USHCN(Dataset):
     KEYS = Literal["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
     index = ["us_daily", "states", "stations"]
-
-    @cached_property
-    def rawdata_files(self) -> dict[str, Path]:
-        r"""Location of (possibly compressed) data archive."""
-        return {
-            "metadata": self.rawdata_dir / "data_format.txt",
-            "states": Path(),
-            "stations": self.rawdata_dir / "ushcn-stations.txt",
-            "stations_metadata": self.rawdata_dir / "station_file_format.txt",
-            "us_daily": self.rawdata_dir / "us.txt.gz",
-        }
+    rawdata_files = {
+        "metadata": "data_format.txt",
+        "states": None,
+        "stations": "ushcn-stations.txt",
+        "stations_metadata": "station_file_format.txt",
+        "us_daily": "us.txt.gz",
+    }
+    rawdata_paths: dict[str, Path]
 
     def _load(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Load the dataset from disk."""
@@ -351,7 +339,7 @@ class USHCN(Dataset):
         self.__logger__.info("Finished cleaning 'states' DataFrame")
 
     def _clean_stations(self) -> None:
-        stations_file = self.rawdata_files["stations"]
+        stations_file = self.rawdata_paths["stations"]
         if not stations_file.exists():
             self.download()
 
@@ -465,25 +453,28 @@ class USHCN(Dataset):
 
         # per column values to be interpreted as nan
         na_values = {("VALUE", k): -9999 for k in range(1, 32)}
-        us_daily_file = self.rawdata_dir / self.rawdata_files["us_daily"].stem
-        self.__logger__.info("Decompressing into %s", us_daily_file)
+        us_daily_path = self.rawdata_paths["us_daily"]
 
-        with gzip.open(self.rawdata_files["us_daily"], "rb") as compressed_file:
-            with open(us_daily_file, "w", encoding="utf8") as file:
-                file.write(compressed_file.read().decode("utf-8"))
+        with gzip.open(us_daily_path, "rb") as compressed_file:
+            ds = mpd.read_fwf(
+                compressed_file,
+                colspecs=cspec,
+                names=colspecs,
+                na_values=na_values,
+                dtype=dtype,
+            )
 
-        self.__logger__.info("Finished decompressing main file")
-
-        ds = mpd.read_fwf(
-            us_daily_file,
-            colspecs=cspec,
-            names=colspecs,
-            na_values=na_values,
-            dtype=dtype,
-        )
-        us_daily_file.unlink()
-        # ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
+        ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
         self.__logger__.info("Finished loading main file.")
+
+        # us_daily_file = us_daily_path.with_suffix('')
+        # self.__logger__.info("Decompressing into %s", us_daily_file)
+        #
+        # with gzip.open(us_daily_path, "rb") as compressed_file:
+        #     with open(us_daily_file, "w", encoding="utf8") as file:
+        #         file.write(compressed_file.read().decode("utf-8"))
+        # us_daily_file.unlink()
+        # self.__logger__.info("Finished decompressing main file")
 
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]

@@ -2,7 +2,6 @@ r"""Generic types for type hints etc."""
 
 __all__ = [
     # Type Variables
-    "Type",
     "Self",
     "ClassType",
     "KeyType",
@@ -10,9 +9,9 @@ __all__ = [
     "ReturnType",
     "ValueType",
     "nnModuleType",
+    "Type",
     # Generic Types
-    "NestedType",
-    "NullableNestedType",
+    "Nested",
     # Static Types
     "PathType",
 ]
@@ -20,6 +19,7 @@ __all__ = [
 import logging
 import os
 from collections.abc import Collection, Hashable, Mapping
+from pathlib import Path
 from typing import Any, TypeVar, Union
 
 from torch import nn
@@ -37,7 +37,7 @@ ValueType = TypeVar("ValueType")
 r"""TypeVar for `Mapping` values."""
 
 Type = TypeVar("Type")
-r"""Generic type hint."""
+r"""TypeVar for `Mapping` values."""
 
 Self = TypeVar("Self")
 r"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
@@ -54,23 +54,14 @@ r"""Generic type hint for return values."""
 nnModuleType = TypeVar("nnModuleType", bound=nn.Module)
 r"""Type Variable for nn.Modules."""
 
-PathType = Union[str, os.PathLike[str]]
-r"""Type for path-like objects."""
+# PathType = TypeVar("PathType", bound=Union[str, Path])
+# r"""Type for path-like objects."""
 
-_NestedType = TypeVar("_NestedType")
-r"""Type variable for nested type variables."""
+PathType = Union[str, Path, os.PathLike[str]]
 
-NestedType = Union[
-    _NestedType,
-    Collection[_NestedType],
-    Mapping[Any, Union[_NestedType, Collection[_NestedType]]],
+Nested = Union[
+    Type,
+    Collection[Type],
+    Mapping[Any, Type],
 ]
-r"""Type for nested type variables."""
-
-NullableNestedType = Union[
-    None,
-    _NestedType,
-    Collection[_NestedType],
-    Mapping[Any, Union[None, _NestedType, Collection[_NestedType]]],
-]
-r"""Type for nullable nested type variables."""
+r"""Type for nested types (JSON-Like)."""
