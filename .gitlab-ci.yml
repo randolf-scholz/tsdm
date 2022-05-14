@@ -2,7 +2,7 @@
 # https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
 #
 
-image: python:3.9
+image: python:3.9-bullseye
 
 stages:
   - build
@@ -51,12 +51,14 @@ setup:
         - "${VENV_DIR}"
       policy: push
   before_script:
+    # Check kernel and python version
+    - uname -a
+    - python -V
     # overrides global before_script
     # make directories
     - mkdir -p badges
     - mkdir -p reports
     # python setup
-    - python -V
     - pip install --upgrade pip poetry virtualenv
     - virtualenv ${VENVNAME} --download
     - source ${VENVNAME}/bin/activate
