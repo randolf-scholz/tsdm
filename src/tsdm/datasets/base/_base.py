@@ -317,6 +317,32 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
 
     __slots__ = ()  # Do we need this?
 
+    def __init__(self, *, initialize: bool = True, reset: bool = False):
+        r"""Initialize the Dataset."""
+        super().__init__(initialize=initialize, reset=reset)
+        for key in self.index:
+            if isinstance(key, str) and not hasattr(self, key):
+                setattr(self, key, self[key])
+
+    def __getattr__(self, key):
+        r"""Attribute lookup for index."""
+        if self.index is not None and key in self.index:
+            if self.dataset[key] is None:
+                self.load(key=key)
+            return self.dataset[key]
+        raise AttributeError(f"No attribute {key} in {self.__class__.__name__}")
+
+    def __repr__(self):
+        r"""Pretty Print."""
+        if len(self.index) > 6:
+            indices = list(self.index)
+            selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
+            selection[2] = "..."
+            index_str = ", ".join(selection)
+        else:
+            index_str = repr(self.index)
+        return f"{self.__class__.__name__}{index_str}"
+
     @property
     @abstractmethod
     def index(self) -> Sequence[KeyType]:
@@ -336,7 +362,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         r"""Store cached version of dataset."""
         return {key: None for key in self.index}
 
-    @cached_property
+    @property
     @abstractmethod
     def dataset_files(self) -> Mapping[KeyType, PathType]:
         r"""Relative paths to the dataset files for each key."""
@@ -346,23 +372,6 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
     def dataset_paths(self) -> Mapping[KeyType, Path]:
         r"""Absolute paths to the dataset files for each key."""
         return {key: self.dataset_dir / self.dataset_files[key] for key in self.index}
-
-    def __getattr__(self, key):
-        r"""Attribute lookup for index."""
-        if self.index is not None and key in self.index:
-            if self.dataset[key] is None:
-                self.load(key=key)
-            return self.dataset[key]
-        raise AttributeError(f"No attribute {key} in {self.__class__.__name__}")
-
-    def __repr__(self):
-        r"""Pretty Print."""
-        if len(self.index) > 6:
-            indices = list(self.index)
-            selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
-            selection[2] = "..."
-            return f"{self.__class__.__name__}({', '.join(selection)})"
-        return f"{self.__class__.__name__}{self.index}"
 
     def rawdata_files_exist(self, key: Optional[KeyType] = None) -> bool:
         r"""Check if raw data files exist."""
@@ -407,7 +416,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             self.__logger__.debug("STARTING TO CLEAN DATASET.")
             for key_ in self.index:
                 self.clean(key=key_, force=force)
-            self.__logger__.debug("STARTING TO CLEAN DATASET.")
+            self.__logger__.debug("FINISHED TO CLEAN DATASET.")
             return
 
         self.__logger__.debug("%s: STARTING TO CLEAN DATASET.", key)
