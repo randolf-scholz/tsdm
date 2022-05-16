@@ -14,15 +14,16 @@ __all__ = [
     "ConcatEncoder",
     "DataFrameEncoder",
     "FrameEncoder",
-    "FrameSplitter",
     "FrameIndexer",
+    "FrameSplitter",
+    "PeriodicEncoder",
+    "PeriodicSocialTimeEncoder",
     "PositionalEncoder",
+    "SocialTimeEncoder",
     "TensorEncoder",
+    "TripletDecoder",
     "TripletEncoder",
     "ValueEncoder",
-    "PeriodicEncoder",
-    "SocialTimeEncoder",
-    "PeriodicSocialTimeEncoder",
 ]
 
 import logging
@@ -1101,10 +1102,18 @@ class TripletEncoder(BaseEncoder):
 
     categories: pd.CategoricalDtype
     r"""The stored categories."""
-    dtypes: Series
+    original_dtypes: Series
     r"""The original dtypes."""
+    original_columns: Index
+    r"""The original columns."""
 
-    def __init__(self, sparse: bool = True) -> None:
+    def __init__(
+        self,
+        *,
+        sparse: bool = False,
+        var_name: str = "variable",
+        value_name: str = "value",
+    ) -> None:
         r"""Initialize the encoder.
 
         Parameters
@@ -1113,6 +1122,8 @@ class TripletEncoder(BaseEncoder):
         """
         super().__init__()
         self.sparse = sparse
+        self.var_name = var_name
+        self.value_name = value_name
 
     def fit(self, data: DataFrame, /) -> None:
         r"""Fit the encoder.
@@ -1122,61 +1133,176 @@ class TripletEncoder(BaseEncoder):
         data
         """
         self.categories = pd.CategoricalDtype(data.columns)
-        self.dtypes = data.dtypes
-        # result = data.melt(ignore_index=False)
-        # # observed = result["value"].notna()
-        # # result = result[observed]
-        # variable = result.columns[0]
-        # result[variable] = result[variable].astype(pd.StringDtype())
-        # self.categories = pd.CategoricalDtype(result[variable].unique())
+        self.original_dtypes = data.dtypes
+        self.original_columns = data.columns
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         r"""Encode the data."""
-        result = data.melt(ignore_index=False).dropna()
-        # observed = result["value"].notna()
-        # result = result[observed]
-        variable = result.columns[0]
-        result[variable] = result[variable].astype(pd.StringDtype())
-        result[variable] = result[variable].astype(self.categories)
-        result.rename(columns={variable: "variable"}, inplace=True)
-        # result.index.rename("time", inplace=True)
-        # result.sort_values(by=["time", "variable"], inplace=True)
-        result = result.sort_index()
+        result = data.melt(
+            ignore_index=False,
+            var_name=self.var_name,
+            value_name=self.value_name,
+        ).dropna()
 
-        if not self.sparse:
-            return result
-        return pd.get_dummies(
-            result, columns=["variable"], sparse=True, prefix="", prefix_sep=""
-        )
+        result[self.var_name] = result[self.var_name].astype(self.categories)
+
+        if self.sparse:
+            result = pd.get_dummies(
+                result, columns=[self.var_name], sparse=True, prefix="", prefix_sep=""
+            )
+
+        result = result.sort_index()
+        return result
 
     def decode(self, data: DataFrame, /) -> DataFrame:
         r"""Decode the data."""
         if self.sparse:
             df = data.iloc[:, 1:].stack()
             df = df[df == 1]
-            df.index = df.index.rename("variable", level=-1)
+            df.index = df.index.rename(self.var_name, level=-1)
             df = df.reset_index(level=-1)
-            df["value"] = data["value"]
+            df[self.value_name] = data["self.value_name"]
         else:
             df = data
+
         df = df.pivot_table(
             # TODO: FIX with https://github.com/pandas-dev/pandas/pull/45994
             # simply use df.index.names instead then.
             index=df.index,
-            columns="variable",
-            values="value",
+            columns=self.var_name,
+            values=self.value_name,
             dropna=False,
         )
+
         if isinstance(data.index, MultiIndex):
             df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
 
         # re-add missing columns
-        for cat in self.categories.categories:
-            if cat not in df.columns:
-                df[cat] = float("nan")  # TODO: replace with pd.NA when supported
+        df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
 
+        # Finalize result
         result = df[self.categories.categories]  # fix column order
-        result = result.astype(self.dtypes)
+        result = result.astype(self.original_dtypes)
+        result = result[self.original_columns]
+        result.columns = self.original_columns
+        return result
+
+
+class TripletDecoder(BaseEncoder):
+    r"""Encode the data into triplets."""
+
+    categories: pd.CategoricalDtype
+    r"""The stored categories."""
+    original_dtypes: Series
+    r"""The original dtypes."""
+    original_columns: Index
+    r"""The original columns."""
+    value_column: Hashable
+    r"""The name of the value column."""
+    channel_columns: Union[Index, Hashable]
+    r"""The name of the channel column(s)."""
+
+    def __init__(
+        self,
+        *,
+        sparse: bool = False,
+        var_name: Optional[str] = None,
+        value_name: Optional[str] = None,
+    ) -> None:
+        r"""Initialize the encoder.
+
+        Parameters
+        ----------
+        sparse: bool = True
+        """
+        super().__init__()
+        self.sparse = sparse
+        self.var_name = var_name
+        self.value_name = value_name
+
+    def fit(self, data: DataFrame, /) -> None:
+        r"""Fit the encoder.
+
+        Parameters
+        ----------
+        data
+        """
+        self.original_dtypes = data.dtypes
+        self.original_columns = data.columns
+
+        self.value_column = self.value_name or data.columns[0]
+        self.value_name = self.value_column
+        assert self.value_column in data.columns
+
+        remaining_cols = data.columns.drop(self.value_column)
+        if self.sparse and len(remaining_cols) <= 1:
+            raise ValueError("Sparse encoding requires at least two channel columns.")
+        elif not self.sparse and len(remaining_cols) != 1:
+            raise ValueError("Dense encoding requires exactly one channel column.")
+
+        if self.sparse:
+            self.channel_columns = remaining_cols
+            categories = self.channel_columns
+            self.var_name = self.channel_columns.name or "variable"
+        else:
+            assert len(remaining_cols) == 1
+            self.channel_columns = remaining_cols.item()
+            categories = data[self.channel_columns].unique()
+            self.var_name = self.channel_columns
+
+        if pd.api.types.is_float_dtype(categories):
+            raise ValueError(
+                f"channel_ids found in '{self.var_name}' does no look like a categoricals!"
+                "\n Please specify `value_name` and/or `var_name`!"
+            )
+
+        self.categories = pd.CategoricalDtype(np.sort(categories))
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        r"""Decode the data."""
+        if self.sparse:
+            df = data.loc[:, self.channel_columns].stack()
+            df = df[df == 1]
+            df.index = df.index.rename(self.var_name, level=-1)
+            df = df.reset_index(level=-1)
+            df[self.value_name] = data[self.value_column]
+        else:
+            df = data
+
+        df = df.pivot_table(
+            # TODO: FIX with https://github.com/pandas-dev/pandas/pull/45994
+            # simply use df.index.names instead then.
+            index=df.index,
+            columns=self.var_name,
+            values=self.value_name,
+            dropna=False,
+        )
+
+        if isinstance(data.index, MultiIndex):
+            df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
+
+        # re-add missing columns
+        df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
+
+        # Finalize result
+        result = df[self.categories.categories]  # fix column order
+        return result.sort_index()
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        r"""Encode the data."""
+        result = data.melt(
+            ignore_index=False,
+            var_name=self.var_name,
+            value_name=self.value_name,
+        ).dropna()
+
+        if self.sparse:
+            result = pd.get_dummies(
+                result, columns=[self.var_name], sparse=True, prefix="", prefix_sep=""
+            )
+
+        result = result.astype(self.original_dtypes)
+        result = result.sort_index()
         return result
 
 
