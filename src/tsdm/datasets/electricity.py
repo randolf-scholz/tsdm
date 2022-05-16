@@ -93,8 +93,8 @@ class Electricity(SimpleDataset):
         df = df.rename_axis(index="time", columns="client")
         df.name = self.__class__.__name__
         df = df.reset_index()
-        df.to_feather(self.dataset_files)
+        df.to_feather(self.dataset_paths)
 
     def _load(self) -> DataFrame:
         r"""Load the dataset from disk."""
-        return read_feather(self.dataset_files).set_index("time")
+        return read_feather(self.dataset_paths).set_index("time")
