@@ -107,33 +107,44 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
     info_url = "https://github.com/edebrouwer/gru_ode_bayes"
     r"""HTTP address containing additional information about the dataset."""
 
-    dataset: DataFrame
     rawdata_files = "small_chunked_sporadic.csv"
     dataset_files = "SmallChunkedSporadic.feather"
 
     def _clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
         dtypes = {
-            "ID": pandas.UInt16Dtype(),
-            "Time": pandas.Float32Dtype(),
-            "Value_0": pandas.Float32Dtype(),
-            "Value_1": pandas.Float32Dtype(),
-            "Value_2": pandas.Float32Dtype(),
-            "Value_3": pandas.Float32Dtype(),
-            "Value_4": pandas.Float32Dtype(),
-            "Mask_0": pandas.BooleanDtype(),
-            "Mask_1": pandas.BooleanDtype(),
-            "Mask_2": pandas.BooleanDtype(),
-            "Mask_3": pandas.BooleanDtype(),
-            "Mask_4": pandas.BooleanDtype(),
+            "ID": "int16",
+            "Time": "float32",
+            "Value_0": "float32",
+            "Value_1": "float32",
+            "Value_2": "float32",
+            "Value_3": "float32",
+            "Value_4": "float32",
+            "Mask_0": "bool",
+            "Mask_1": "bool",
+            "Mask_2": "bool",
+            "Mask_3": "bool",
+            "Mask_4": "bool",
         }
-        df = pandas.read_csv(self.rawdata_files, dtype=dtypes)
-        df = DataFrame(df).reset_index()
-        df.to_feather(self.dataset_files)
+        df = pandas.read_csv(self.rawdata_paths, dtype=dtypes)
+        df = DataFrame(df)
+
+        channels = {}
+        for k in range(5):
+            key = f"CH_{k}"
+            value = f"Value_{k}"
+            channels[key] = value
+            df[key] = df[value].where(df[f"Mask_{k}"])
+
+        df = df[["ID", "Time", *channels]]
+        df = df.sort_values(["ID", "Time"])
+        df = df.reset_index(drop=True)
+        df = df.rename(columns=channels)
+        df.to_feather(self.dataset_paths)
 
     def _load(self) -> DataFrame:
         r"""Load the dataset from hdf-5 file."""
-        df = pandas.read_feather(self.dataset_files)
+        df = pandas.read_feather(self.dataset_paths)
         return df.set_index(["ID", "Time"])
 
 
@@ -305,7 +316,7 @@ class USHCN(Dataset):
         # path = self.dataset_files[key]
         # if not path.exists():
         #     self.clean(key=key)
-        df = pandas.read_feather(self.dataset_files[key])
+        df = pandas.read_feather(self.dataset_paths[key])
         if key == "us_daily":
             df = df.set_index(["time", "COOP_ID"])
         elif key == "states":
@@ -335,7 +346,7 @@ class USHCN(Dataset):
             "State": pandas.StringDtype(),
         }
         states = pandas.read_csv(StringIO(STATE_CODES), sep="\t", dtype=state_dtypes)
-        states.to_feather(self.dataset_files["states"])
+        states.to_feather(self.dataset_paths["states"])
         self.__logger__.info("Finished cleaning 'states' DataFrame")
 
     def _clean_stations(self) -> None:
@@ -400,7 +411,7 @@ class USHCN(Dataset):
             "STATE": "category",
         }
         stations = stations.astype(stations_new_dtypes)
-        path = self.dataset_files["stations"]
+        path = self.dataset_paths["stations"]
         stations.to_feather(path)
         self.__logger__.info("Finished cleaning 'stations' DataFrame")
 
@@ -527,4 +538,4 @@ class USHCN(Dataset):
         data["time"] = datetimes
         self.__logger__.info("Finished creating time index.")
 
-        data.to_feather(self.dataset_files["us_daily"])
+        data.to_feather(self.dataset_paths["us_daily"])

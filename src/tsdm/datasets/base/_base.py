@@ -227,13 +227,13 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 class SimpleDataset(BaseDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    def __getattr__(self, key):
-        r"""Attribute lookup."""
-        if key in self.dataset:
-            return self.dataset[key]
-        if hasattr(self.dataset, key):
-            return getattr(self.dataset, key)
-        raise AttributeError(f"{self.__class__.__name__} has no attribute {key}")
+    # def __getattr__(self, key):
+    #     r"""Attribute lookup."""
+    #     if key in self.dataset:
+    #         return self.dataset[key]
+    #     if hasattr(self.dataset, key):
+    #         return getattr(self.dataset, key)
+    #     raise AttributeError(f"{self.__class__.__name__} has no attribute {key}")
 
     @cached_property
     def dataset_files(self) -> PathType:
@@ -324,13 +324,13 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             if isinstance(key, str) and not hasattr(self, key):
                 setattr(self, key, self[key])
 
-    def __getattr__(self, key):
-        r"""Attribute lookup for index."""
-        if self.index is not None and key in self.index:
-            if self.dataset[key] is None:
-                self.load(key=key)
-            return self.dataset[key]
-        raise AttributeError(f"No attribute {key} in {self.__class__.__name__}")
+    # def __getattr__(self, key):
+    #     r"""Attribute lookup for index."""
+    #     if self.index is not None and key in self.index:
+    #         if self.dataset[key] is None:
+    #             self.load(key=key)
+    #         return self.dataset[key]
+    #     raise AttributeError(f"No attribute {key} in {self.__class__.__name__}")
 
     def __repr__(self):
         r"""Pretty Print."""
@@ -363,10 +363,9 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         return {key: None for key in self.index}
 
     @property
-    @abstractmethod
     def dataset_files(self) -> Mapping[KeyType, PathType]:
         r"""Relative paths to the dataset files for each key."""
-        # return {key: f"{key}.feather" for key in self.index}
+        return {key: f"{key}.feather" for key in self.index}
 
     @cached_property
     def dataset_paths(self) -> Mapping[KeyType, Path]:

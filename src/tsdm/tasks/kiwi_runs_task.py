@@ -269,11 +269,7 @@ class KIWI_RUNS_TASK(BaseTask):
         }
 
     def get_dataloader(
-        self,
-        key: KeyType,
-        /,
-        shuffle: bool = False,
-        **dataloader_kwargs: Any,
+        self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return a dataloader for the given split.
 

@@ -148,16 +148,12 @@ class KIWI_RUNS(Dataset):
     units: DataFrame
     r"""The units of the measured variables."""
     rawdata_files = "kiwi_experiments_and_run_355.pk"
+    rawdata_paths: Path
     dataset_files = {key: f"{key}.feather" for key in index + auxiliaries}
-
-    @property
-    def rawdata_paths(self) -> Path:
-        """Path to the rawdata."""
-        return self.rawdata_dir / self.rawdata_files
 
     def _load(self, key: KEYS = "timeseries") -> DataFrame:
         r"""Load the dataset from disk."""
-        table = pd.read_feather(self.dataset_files[key])
+        table = pd.read_feather(self.dataset_paths[key])
 
         if key == "units":
             return table.set_index("variable")
@@ -287,8 +283,7 @@ class KIWI_RUNS(Dataset):
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
         table.columns.name = "variable"
-        path = self.dataset_files["metadata"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["metadata"])
 
     def _clean_setpoints(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -340,8 +335,7 @@ class KIWI_RUNS(Dataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = self.dataset_files["setpoints"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["setpoints"])
 
     def _clean_measurements_reactor(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -394,8 +388,7 @@ class KIWI_RUNS(Dataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = self.dataset_files["measurements_reactor"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["measurements_reactor"])
 
     def _clean_measurements_array(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -441,8 +434,7 @@ class KIWI_RUNS(Dataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = self.dataset_files["measurements_array"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["measurements_array"])
 
     def _clean_measurements_aggregated(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -500,8 +492,7 @@ class KIWI_RUNS(Dataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = self.dataset_files["measurements_aggregated"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["measurements_aggregated"])
 
     def _clean_timeseries(self) -> None:
         md: DataFrame = self.load(key="metadata")
@@ -571,8 +562,7 @@ class KIWI_RUNS(Dataset):
         ts["measurement_time"] = ts["measurement_time"].round("s")
         # ts = ts.rename(columns={col: snake2camel(col) for col in ts})
         ts.columns.name = "variable"
-        path = self.dataset_files["timeseries"]
-        ts.to_feather(path)
+        ts.to_feather(self.dataset_paths["timeseries"])
 
     def _clean_units(self) -> None:
         ts: DataFrame = self.load(key="measurements_aggregated")
@@ -634,5 +624,4 @@ class KIWI_RUNS(Dataset):
         units[columns] = units[columns].astype("float32").apply(round_relative)
         units[percents] = units[percents].round(3)
         units = units.reset_index()
-        path = self.dataset_files["units"]
-        units.to_feather(path)
+        units.to_feather(self.dataset_paths["units"])

@@ -92,15 +92,16 @@ class Traffic(Dataset):
     index: list[KEYS] = ["timeseries", "labels", "randperm", "invperm"]
     r"""The identifiers for the dataset."""
     rawdata_files = "PEMS-SF.zip"
-
-    @property
-    def rawdata_paths(self) -> Path:
-        """Path to the rawdata."""
-        return self.rawdata_dir / self.rawdata_files
+    r"""The name of the zip file containing the raw data."""
+    rawdata_paths: Path
+    timeseries: DataFrame
+    labels: DataFrame
+    randperm: DataFrame
+    invperm: DataFrame
 
     def _load(self, key: KEYS) -> DataFrame:
         r"""Load the pre-preprocessed dataset from disk."""
-        df = pandas.read_feather(self.dataset_files[key])
+        df = pandas.read_feather(self.dataset_paths[key])
         if key == "timeseries":
             return df.set_index(["day", "time"])
         if key == "labels":
@@ -340,9 +341,9 @@ class Traffic(Dataset):
         mismatches = labels[self.invperm].map(weekdays) != dates.day_name()
         assert len(dates[mismatches]) == 0, "Mismatches in label and date weekday!"
 
-        PEMS.reset_index().to_feather(self.dataset_files["timeseries"])
+        PEMS.reset_index().to_feather(self.dataset_paths["timeseries"])
         labels = DataFrame(labels).reset_index()
-        labels.to_feather(self.dataset_files["labels"])
+        labels.to_feather(self.dataset_paths["labels"])
 
     def _clean_randperm(self):
         with ZipFile(self.rawdata_paths) as files:
@@ -358,5 +359,5 @@ class Traffic(Dataset):
                 invperm = randperm.copy().argsort()
                 invperm.name = "invperm"
                 assert (randperm[invperm] == np.arange(len(randperm))).all()
-        DataFrame(randperm).to_feather(self.dataset_files["randperm"])
-        DataFrame(invperm).to_feather(self.dataset_files["invperm"])
+        DataFrame(randperm).to_feather(self.dataset_paths["randperm"])
+        DataFrame(invperm).to_feather(self.dataset_paths["invperm"])
