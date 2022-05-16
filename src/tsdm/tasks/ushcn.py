@@ -5,24 +5,121 @@ r"""#TODO add module summary line.
 
 __all__ = ["USHCN_DeBrouwer"]
 
-import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Literal
+from typing import Any, NamedTuple
 
 import numpy as np
-from pandas import DataFrame
+import torch
+from pandas import DataFrame, Index, MultiIndex
 from sklearn.model_selection import train_test_split
 from torch import Tensor, nn
+from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import USHCN_SmallChunkedSporadic
-from tsdm.encoders import FunctionalEncoders
-from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.tasks.base import BaseTask
-from tsdm.util import Split
+from tsdm.util.strings import repr_namedtuple
 
-__logger__ = logging.getLogger(__name__)
+
+class Inputs(NamedTuple):
+    r"""A single sample of the data."""
+
+    t: Tensor
+    x: Tensor
+    t_target: Tensor
+
+    def __repr__(self) -> str:
+        return repr_namedtuple(self, recursive=False)
+
+
+class Sample(NamedTuple):
+    r"""A single sample of the data."""
+
+    key: int
+    inputs: Inputs
+    targets: Tensor
+    originals: tuple[Tensor, Tensor]
+
+    def __repr__(self) -> str:
+        return repr_namedtuple(self, recursive=False)
+
+
+class Batch(NamedTuple):
+    r"""A single sample of the data."""
+
+    T: Tensor  # B×N: the timestamps.
+    X: Tensor  # B×N×D: the observations.
+    Y: Tensor  # B×K×D: the target values.
+    M: Tensor  # B×N: which t correspond to targets.
+
+    def __repr__(self) -> str:
+        return repr_namedtuple(self, recursive=False)
+
+
+@dataclass
+class TaskDataset(torch.utils.data.Dataset, Mapping):
+    r"""Wrapper for creating samples of the dataset."""
+
+    tensors: dict[int, tuple[Tensor, Tensor]]
+    observation_time: float
+    prediction_steps: int
+
+    def __len__(self) -> int:
+        r"""Return the number of samples in the dataset."""
+        return len(self.tensors)
+
+    def __iter__(self) -> Iterator[int]:
+        r"""Return an iterator over the dataset."""
+        return iter(self.tensors)
+
+    def __getitem__(self, key: int) -> Sample:
+        t, x = self.tensors[key]
+        observation_mask = t <= self.observation_time
+        first_target = observation_mask.sum()
+        target_mask = slice(first_target, first_target + self.prediction_steps)
+        return Sample(
+            key=key,
+            inputs=Inputs(t[observation_mask], x[observation_mask], t[target_mask]),
+            targets=x[target_mask],
+            originals=(t, x),
+        )
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}"
+
+
+def my_collate(batch: list[Sample]) -> Batch:
+    r"""Collate tensors into batch."""
+    t_list: list[Tensor] = []
+    x_list: list[Tensor] = []
+    m_list: list[Tensor] = []
+    y_list: list[Tensor] = []
+
+    for sample in batch:
+        t, x, t_target = sample.inputs
+        mask = torch.cat(
+            (
+                torch.zeros_like(t, dtype=torch.bool),
+                torch.ones_like(t_target, dtype=torch.bool),
+            )
+        )
+        x_padder = torch.full((t_target.shape[0], x.shape[-1]), fill_value=torch.nan)
+        time = torch.cat((t, t_target))
+        values = torch.cat((x, x_padder))
+        idx = torch.argsort(time)
+        t_list.append(time[idx])
+        x_list.append(values[idx])
+        m_list.append(mask[idx])
+        y_list.append(sample.targets)
+
+    T = pad_sequence(t_list, batch_first=True, padding_value=torch.nan).squeeze()
+    X = pad_sequence(x_list, batch_first=True, padding_value=torch.nan).squeeze()
+    Y = pad_sequence(y_list, batch_first=True, padding_value=torch.nan).squeeze()
+    M = pad_sequence(m_list, batch_first=True, padding_value=False).squeeze()
+
+    return Batch(T, X, Y, M)
 
 
 class USHCN_DeBrouwer(BaseTask):
@@ -60,75 +157,217 @@ class USHCN_DeBrouwer(BaseTask):
         <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    @cached_property
-    def index(self) -> list[str]:
-        r"""TODO: Add index."""
+    observation_time = 150
+    prediction_steps = 3
+    num_folds = 5
+    seed = 432
+    test_size = 0.1
+    valid_size = 0.2
 
-    test_metric = type[ModularLoss]
-
-    splits: dict[int, dict[str, DataFrame]]
-    folds: list[Split]
-    observation_horizon: int
-    forecasting_horizon: int
-    accumulation_function: Callable[..., Tensor]
-
-    @cached_property
-    def dataset(self) -> USHCN_SmallChunkedSporadic:
-        r"""Return cached dataset."""
-        return USHCN_SmallChunkedSporadic()
-
-    def __init__(
-        self,
-        test_metric: Literal["MSE", "MAE"] = "MSE",
-        time_encoder: str = "time2float",
-    ) -> None:
+    def __init__(self):
         super().__init__()
-        self._gen_folds()
-        self.forecasting_horizon = 3
-        self.observation_horizon = 3
-        self.test_metric = ModularLosses[test_metric]
-        self.time_encoder = FunctionalEncoders[time_encoder]
-        self.horizon = self.observation_horizon + self.forecasting_horizon
-        self.accumulation_function = nn.Identity()  # type: ignore[assignment]
 
-    def _gen_folds(self) -> None:
-        N = self.dataset.dataset["ID"].nunique()
+        self.IDs = self.dataset.reset_index()["ID"].unique()
+
+    @cached_property
+    def dataset(self) -> DataFrame:
+        r"""Load the dataset."""
+        return USHCN_SmallChunkedSporadic().dataset
+
+    @cached_property
+    def folds(self) -> list[dict[str, Sequence[int]]]:
+        r"""Create the folds."""
         num_folds = 5
-        np.random.seed(432)
-
         folds = []
+        np.random.seed(self.seed)
         for _ in range(num_folds):
-            train_idx, test_idx = train_test_split(np.arange(N), test_size=0.1)
-            train_idx, val_idx = train_test_split(train_idx, test_size=0.2)
-            folds.append(Split(train=train_idx, valid=val_idx, test=test_idx))
+            train_idx, test_idx = train_test_split(self.IDs, test_size=self.test_size)
+            train_idx, valid_idx = train_test_split(
+                train_idx, test_size=self.valid_size
+            )
+            folds.append(
+                {
+                    "train": train_idx,
+                    "valid": valid_idx,
+                    "test": test_idx,
+                }
+            )
 
-        self.folds = folds
+        return folds
 
-    def get_dataloader(
-        self,
-        key: str,
-        /,
-        shuffle: bool = False,
-        **dataloader_kwargs: Any,
-    ) -> DataLoader:
-        r"""Return a DataLoader object for the specified split & fold.
+    @cached_property
+    def split_idx(self):
+        r"""Create the split index."""
+        fold_idx = Index(list(range(len(self.folds))), name="fold")
+        splits = DataFrame(index=self.IDs, columns=fold_idx, dtype="string")
 
-        Parameters
-        ----------
-        key: str
-            From which part of the dataset to construct the loader
-        shuffle: bool = True
+        for k in range(self.num_folds):
+            for key, split in self.folds[k].items():
+                mask = splits.index.isin(split)
+                splits[k] = splits[k].where(
+                    ~mask, key
+                )  # where cond is false is replaces with key
+        return splits
+
+    @cached_property
+    def split_idx_sparse(self) -> DataFrame:
+        r"""Return sparse table with indices for each split.
 
         Returns
         -------
-        DataLoader
+        DataFrame[bool]
         """
-        if key == "test":
-            assert not shuffle, "Don't shuffle when evaluating test-dataset!"
-        if key == "test" and "drop_last" in dataloader_kwargs:
-            assert not dataloader_kwargs[
-                "drop_last"
-            ], "Don't drop when evaluating test-dataset!"
+        df = self.split_idx
+        columns = df.columns
 
-        # the split = self.folds[fold]
-        raise NotImplementedError
+        # get categoricals
+        categories = {
+            col: df[col].astype("category").dtype.categories for col in columns
+        }
+
+        if isinstance(df.columns, MultiIndex):
+            index_tuples = [
+                (*col, cat)
+                for col, cats in zip(columns, categories)
+                for cat in categories[col]
+            ]
+            names = df.columns.names + ["partition"]
+        else:
+            index_tuples = [
+                (col, cat)
+                for col, cats in zip(columns, categories)
+                for cat in categories[col]
+            ]
+            names = [df.columns.name, "partition"]
+
+        new_columns = MultiIndex.from_tuples(index_tuples, names=names)
+        result = DataFrame(index=df.index, columns=new_columns, dtype=bool)
+
+        if isinstance(df.columns, MultiIndex):
+            for col in new_columns:
+                result[col] = df[col[:-1]] == col[-1]
+        else:
+            for col in new_columns:
+                result[col] = df[col[0]] == col[-1]
+
+        return result
+
+    @cached_property
+    def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
+        r"""The test metric."""
+        return nn.MSELoss()
+
+    @cached_property
+    def splits(self) -> Mapping:
+        r"""Create the splits."""
+        splits = {}
+        for key in self.index:
+            mask = self.split_idx_sparse[key]
+            ids = self.split_idx_sparse.index[mask]
+            splits[key] = self.dataset.loc[ids]
+        return splits
+
+    @cached_property
+    def index(self) -> MultiIndex:
+        r"""Create the index."""
+        return self.split_idx_sparse.columns
+
+    @cached_property
+    def tensors(self) -> Mapping:
+        r"""Tensor dictionary."""
+        tensors = {}
+        for _id in self.IDs:
+            s = self.dataset.loc[_id]
+            t = torch.tensor(s.index.values, dtype=torch.float32)
+            x = torch.tensor(s.values, dtype=torch.float32)
+            tensors[_id] = (t, x)
+        return tensors
+
+    def get_dataloader(
+        self, key: tuple[int, str], /, **dataloader_kwargs: Any
+    ) -> DataLoader:
+        """Return the dataloader for the given key."""
+        fold, partition = key
+        fold_idx = self.folds[fold][partition]
+        dataset = TaskDataset(
+            {idx: val for idx, val in self.tensors.items() if idx in fold_idx},
+            observation_time=self.observation_time,
+            prediction_steps=self.prediction_steps,
+        )
+
+        kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
+        return DataLoader(dataset, **kwargs)
+
+
+# @cached_property
+# def index(self) -> list[str]:
+#     r"""TODO: Add index."""
+#
+# test_metric = type[ModularLoss]
+#
+# splits: dict[int, dict[str, DataFrame]]
+# folds: list[Split]
+# observation_horizon: int
+# forecasting_horizon: int
+# accumulation_function: Callable[..., Tensor]
+#
+# @cached_property
+# def dataset(self) -> USHCN_SmallChunkedSporadic:
+#     r"""Return cached dataset."""
+#     return USHCN_SmallChunkedSporadic()
+#
+# def __init__(
+#     self,
+#     test_metric: Literal["MSE", "MAE"] = "MSE",
+#     time_encoder: str = "time2float",
+# ) -> None:
+#     super().__init__()
+#     self._gen_folds()
+#     self.forecasting_horizon = 3
+#     self.observation_horizon = 3
+#     self.test_metric = ModularLosses[test_metric]
+#     self.time_encoder = FunctionalEncoders[time_encoder]
+#     self.horizon = self.observation_horizon + self.forecasting_horizon
+#     self.accumulation_function = nn.Identity()  # type: ignore[assignment]
+#
+# def _gen_folds(self) -> None:
+#     N = self.dataset.dataset["ID"].nunique()
+#     num_folds = 5
+#     np.random.seed(432)
+#
+#     folds = []
+#     for _ in range(num_folds):
+#         train_idx, test_idx = train_test_split(np.arange(N), test_size=0.1)
+#         train_idx, val_idx = train_test_split(train_idx, test_size=0.2)
+#         folds.append(Split(train=train_idx, valid=val_idx, test=test_idx))
+#
+#     self.folds = folds
+#
+# def get_dataloader(
+#     self,
+#     key: str,
+#     /,
+#     shuffle: bool = False,
+#     **dataloader_kwargs: Any,
+# ) -> DataLoader:
+#     r"""Return a DataLoader object for the specified split & fold.
+#
+#     Parameters
+#     ----------
+#     key: str
+#         From which part of the dataset to construct the loader
+#     shuffle: bool = True
+#
+#     Returns
+#     -------
+#     DataLoader
+#     """
+#     if key == "test":
+#         assert not shuffle, "Don't shuffle when evaluating test-dataset!"
+#     if key == "test" and "drop_last" in dataloader_kwargs:
+#         assert not dataloader_kwargs[
+#             "drop_last"
+#         ], "Don't drop when evaluating test-dataset!"
+#
+#     # the split = self.folds[fold]
+#     raise NotImplementedError

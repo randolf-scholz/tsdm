@@ -35,7 +35,6 @@ from typing import Any, Final, Optional, Union, cast, overload
 
 import numpy as np
 import pandas as pd
-import pandas.api.types
 import torch
 from numpy.typing import NDArray
 from pandas import NA, DataFrame, DatetimeIndex, Index, MultiIndex, Series
@@ -44,9 +43,9 @@ from torch import Tensor
 
 from tsdm.datasets import TimeTensor
 from tsdm.encoders.modular.generic import BaseEncoder
-from tsdm.encoders.modular.numerical import PandasObject
 from tsdm.util.strings import repr_mapping
 from tsdm.util.types import PathType
+from tsdm.util.types._types import PandasObject
 from tsdm.util.types.protocols import NTuple
 
 __logger__ = logging.getLogger(__name__)
@@ -281,7 +280,7 @@ class DataFrameEncoder(BaseEncoder):
             colenc_spec = DataFrame(encoders, index=partitions)
             colenc_spec = colenc_spec.join(columns, on="encoder")
 
-        self.spec = pandas.concat(
+        self.spec = pd.concat(
             [index_spec, colenc_spec],
             keys=["index", "columns"],
             names=["section", "partition"],
@@ -1237,7 +1236,7 @@ class TripletDecoder(BaseEncoder):
         remaining_cols = data.columns.drop(self.value_column)
         if self.sparse and len(remaining_cols) <= 1:
             raise ValueError("Sparse encoding requires at least two channel columns.")
-        elif not self.sparse and len(remaining_cols) != 1:
+        if not self.sparse and len(remaining_cols) != 1:
             raise ValueError("Dense encoding requires exactly one channel column.")
 
         if self.sparse:
@@ -1277,12 +1276,14 @@ class TripletDecoder(BaseEncoder):
             values=self.value_name,
             dropna=False,
         )
-
+        print("Pivot table:", df.shape)
         if isinstance(data.index, MultiIndex):
             df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
+        print("Multiindex done")
 
         # re-add missing columns
         df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
+        print("Reindex done")
 
         # Finalize result
         result = df[self.categories.categories]  # fix column order

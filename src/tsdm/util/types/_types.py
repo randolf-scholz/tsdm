@@ -1,5 +1,7 @@
 r"""Generic types for type hints etc."""
 
+from __future__ import annotations
+
 __all__ = [
     # Type Variables
     "Self",
@@ -14,18 +16,16 @@ __all__ = [
     "Nested",
     # Static Types
     "PathType",
+    "PandasObject",
 ]
 
-import logging
 import os
 from collections.abc import Collection, Hashable, Mapping
 from pathlib import Path
 from typing import Any, TypeVar, Union
 
+from pandas import DataFrame, Index, Series
 from torch import nn
-
-__logger__ = logging.getLogger(__name__)
-
 
 ArgsType = TypeVar("ArgsType")
 r"""TypeVar for `Mapping` values."""
@@ -65,3 +65,6 @@ Nested = Union[
     Mapping[Any, Type],
 ]
 r"""Type for nested types (JSON-Like)."""
+
+PandasObject = Union[Index, Series, DataFrame]
+r"""Type Hint for pandas objects."""
