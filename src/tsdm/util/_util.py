@@ -10,22 +10,23 @@ __all__ = [
     # Functions
     "deep_dict_update",
     "deep_kval_update",
-    "initialize_from",
-    "initialize_from_config",
-    "now",
-    "skewpart",
-    "relsize_skewpart",
-    "symmpart",
-    "relsize_symmpart",
     "flatten_dict",
     "flatten_nested",
-    "prepend_path",
+    "initialize_from",
+    "initialize_from_config",
+    "is_partition",
+    "now",
     "paths_exists",
+    "prepend_path",
+    "relsize_skewpart",
+    "relsize_symmpart",
     "round_relative",
+    "skewpart",
+    "symmpart",
 ]
 
 import os
-from collections.abc import Callable, Collection, Iterable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import partial
 from importlib import import_module
@@ -360,6 +361,19 @@ def is_dunder(name: str) -> bool:
     bool
     """
     return name.startswith("__") and name.endswith("__")
+
+
+def is_partition(*partition: Collection, union: Optional[Sequence] = None) -> bool:
+    r"""Check if partition is a valid partition of union."""
+    if len(partition) == 1:
+        return is_partition(*next(iter(partition)), union=union)
+
+    sets = (set(p) for p in partition)
+    part_union = set().union(*sets)
+
+    if union is not None and part_union != set(union):
+        return False
+    return len(part_union) == sum(len(p) for p in partition)
 
 
 def initialize_from_config(config: dict[str, Any]) -> Any:
