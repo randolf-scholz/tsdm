@@ -17,6 +17,7 @@ __all__ = [
     "Nested",
     # Static Types
     "PathType",
+    "PandasObject",
 ]
 
 import logging
@@ -27,6 +28,7 @@ from tsdm.util.types._types import (
     KeyType,
     Nested,
     ObjectType,
+    PandasObject,
     PathType,
     ReturnType,
     Self,

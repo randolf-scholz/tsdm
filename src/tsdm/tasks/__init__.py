@@ -37,6 +37,8 @@ __all__ = [
     "KIWI_RUNS_TASK",
     "KIWI_FINAL_PRODUCT",
     "ElectricityTFT",
+    "MIMIC_DeBrouwer",
+    "USHCN_DeBrouwer",
 ]
 
 
@@ -49,6 +51,8 @@ from tsdm.tasks.electricity import ElectricityTFT
 from tsdm.tasks.etdataset import ETDatasetTask_Informer
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
+from tsdm.tasks.mimic_iii import MIMIC_DeBrouwer
+from tsdm.tasks.ushcn import USHCN_DeBrouwer
 
 __logger__ = logging.getLogger(__name__)
 

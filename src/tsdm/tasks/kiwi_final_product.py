@@ -22,10 +22,10 @@ from torch.nn import MSELoss
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
-from tsdm.datasets.torch import MappingDataset, TimeSeriesDataset
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.util.strings import repr_namedtuple
+from tsdm.util.torch import MappingDataset, TimeSeriesDataset
 
 __logger__ = logging.getLogger(__name__)
 
