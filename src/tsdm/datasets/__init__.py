@@ -32,7 +32,6 @@ __all__ = [
     # Sub-Packages
     "base",
     "synthetic",
-    "torch",
     # Types
     "dataset",
     # Constants
@@ -42,9 +41,6 @@ __all__ = [
     "SimpleDataset",
     "Dataset",
     # Classes
-    "IndexedArray",
-    "TimeSeriesDataset",
-    "TimeTensor",
     # Datasets
     "BeijingAirQuality",
     "ETT",
@@ -61,7 +57,7 @@ __all__ = [
 import logging
 from typing import Final
 
-from tsdm.datasets import base, synthetic, torch
+from tsdm.datasets import base, synthetic
 from tsdm.datasets.base import BaseDataset, Dataset, SimpleDataset
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
@@ -70,7 +66,6 @@ from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_runs import KIWI_RUNS
 from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.datasets.physionet2019 import Physionet2019
-from tsdm.datasets.torch import IndexedArray, TimeSeriesDataset, TimeTensor
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
 

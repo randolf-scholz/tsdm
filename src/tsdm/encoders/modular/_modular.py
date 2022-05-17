@@ -41,11 +41,10 @@ from pandas import NA, DataFrame, DatetimeIndex, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
-from tsdm.datasets import TimeTensor
 from tsdm.encoders.modular.generic import BaseEncoder
 from tsdm.util.strings import repr_mapping
-from tsdm.util.types import PathType
-from tsdm.util.types._types import PandasObject
+from tsdm.util.torch import TimeTensor
+from tsdm.util.types import PandasObject, PathType
 from tsdm.util.types.protocols import NTuple
 
 __logger__ = logging.getLogger(__name__)
@@ -1276,14 +1275,13 @@ class TripletDecoder(BaseEncoder):
             values=self.value_name,
             dropna=False,
         )
-        print("Pivot table:", df.shape)
+
         if isinstance(data.index, MultiIndex):
             df.index = MultiIndex.from_tuples(df.index, names=data.index.names)
-        print("Multiindex done")
 
         # re-add missing columns
         df = df.reindex(columns=self.categories.categories, fill_value=float("nan"))
-        print("Reindex done")
+        df.columns.name = self.var_name
 
         # Finalize result
         result = df[self.categories.categories]  # fix column order

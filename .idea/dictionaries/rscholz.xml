@@ -264,6 +264,7 @@
       <w>sprop</w>
       <w>standardizer</w>
       <w>stdv</w>
+      <w>stdvs</w>
       <w>subblock</w>
       <w>subblocks</w>
       <w>subkey</w>
@@ -303,6 +304,8 @@
       <w>upack</w>
       <w>ushcn</w>
       <w>vals</w>
+      <w>valuenorm</w>
+      <w>valuenum</w>
       <w>vecs</w>
       <w>vectorize</w>
       <w>venvname</w>

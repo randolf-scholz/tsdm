@@ -7,6 +7,7 @@ __all__ = [
     "regularity_tests",
     "system",
     "types",
+    "torch",
     # Constants
     # Classes
     "Split",
@@ -35,7 +36,7 @@ __all__ = [
 
 import logging
 
-from tsdm.util import dataloaders, decorators, regularity_tests, system, types
+from tsdm.util import dataloaders, decorators, regularity_tests, system, torch, types
 from tsdm.util._norms import grad_norm, multi_norm, relative_error, scaled_norm
 from tsdm.util._util import (
     Split,
