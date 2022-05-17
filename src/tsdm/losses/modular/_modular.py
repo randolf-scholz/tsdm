@@ -24,7 +24,7 @@ import numpy as np
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
+from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.util.decorators import autojit
 
 __logger__ = logging.getLogger(__name__)
@@ -225,6 +225,19 @@ class WRMSE(nn.Module):
 class RMSE(nn.Module):
     r"""Root Mean Square Error."""
 
+    mask_nan_targets: Final[bool]
+    """CONST: Whether to mask NaN targets, not counting them as observations."""
+
+    def __init__(self, mask_nan_targets: bool = True):
+        """Compute the RMSE.
+
+        Parameters
+        ----------
+        mask_nan_targets: bool = True
+        """
+        super().__init__()
+        self.mask_nan_targets = mask_nan_targets
+
     @jit.export
     def forward(  # pylint: disable=no-self-use
         self,
@@ -234,15 +247,47 @@ class RMSE(nn.Module):
         r"""Compute the RMSE.
 
         .. math::
-            𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[|x - x̂|^2]}
+            𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
+        """
+        if self.mask_nan_targets:
+            mask = torch.isnan(x)
+            x = x[mask]
+            xhat = xhat[mask]
+
+        return torch.sqrt(torch.mean((x - xhat) ** 2))
+
+
+@autojit
+class MSE(nn.Module):
+    r"""Root Mean Square Error."""
+
+    mask_nan_targets: Final[bool]
+    """CONST: Whether to mask NaN targets, not counting them as observations."""
+
+    def __init__(self, mask_nan_targets: bool = True):
+        """Compute the RMSE.
 
         Parameters
         ----------
+        mask_nan_targets: bool = True
+        """
+        super().__init__()
+        self.mask_nan_targets = mask_nan_targets
+
+    @jit.export
+    def forward(  # pylint: disable=no-self-use
+        self,
         x: Tensor,
         xhat: Tensor,
+    ) -> Tensor:
+        r"""Compute the RMSE.
 
-        Returns
-        -------
-        Tensor
+        .. math::
+            𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
         """
-        return rmse(x, xhat)
+        if self.mask_nan_targets:
+            mask = torch.isnan(x)
+            x = x[mask]
+            xhat = xhat[mask]
+
+        return torch.mean((x - xhat) ** 2)

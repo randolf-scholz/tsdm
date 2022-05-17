@@ -3,7 +3,7 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-__all__ = ["USHCN_DeBrouwer"]
+__all__ = ["USHCN_DeBrouwer", "ushcn_collate"]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -90,7 +90,7 @@ class TaskDataset(torch.utils.data.Dataset):
         return f"{self.__class__.__name__}"
 
 
-def my_collate(batch: list[Sample]) -> Batch:
+def ushcn_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch."""
     t_list: list[Tensor] = []
     x_list: list[Tensor] = []
@@ -114,7 +114,7 @@ def my_collate(batch: list[Sample]) -> Batch:
         m_list.append(mask[idx])
         y_list.append(sample.targets)
 
-    T = pad_sequence(t_list, batch_first=True, padding_value=torch.nan).squeeze()
+    T = pad_sequence(t_list, batch_first=True).squeeze()
     X = pad_sequence(x_list, batch_first=True, padding_value=torch.nan).squeeze()
     Y = pad_sequence(y_list, batch_first=True, padding_value=torch.nan).squeeze()
     M = pad_sequence(m_list, batch_first=True, padding_value=False).squeeze()
@@ -163,16 +163,26 @@ class USHCN_DeBrouwer(BaseTask):
     seed = 432
     test_size = 0.1
     valid_size = 0.2
+    device: torch.device
 
-    def __init__(self):
+    def __init__(self, normalize_time: bool = False, device: str = "cpu"):
         super().__init__()
-
+        self.device = torch.device(device)
+        self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["ID"].unique()
 
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        return USHCN_SmallChunkedSporadic().dataset
+        ds = USHCN_SmallChunkedSporadic().dataset
+
+        if self.normalize_time:
+            ds = ds.reset_index()
+            t_max = ds["Time"].max()
+            self.observation_time /= t_max
+            ds["Time"] /= t_max
+            ds = ds.set_index(["ID", "Time"])
+        return ds
 
     @cached_property
     def folds(self) -> list[dict[str, Sequence[int]]]:
@@ -278,8 +288,8 @@ class USHCN_DeBrouwer(BaseTask):
         tensors = {}
         for _id in self.IDs:
             s = self.dataset.loc[_id]
-            t = torch.tensor(s.index.values, dtype=torch.float32)
-            x = torch.tensor(s.values, dtype=torch.float32)
+            t = torch.tensor(s.index.values, dtype=torch.float32, device=self.device)
+            x = torch.tensor(s.values, dtype=torch.float32, device=self.device)
             tensors[_id] = (t, x)
         return tensors
 
