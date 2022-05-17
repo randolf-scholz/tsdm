@@ -309,7 +309,7 @@ def compute_metrics(
         return results
 
     for name, metric in metrics.items():
-        if isinstance(metric, nn.Module):
+        if callable(metric) | isinstance(metric, nn.Module):
             results[name] = metric(targets, predics)
         elif isinstance(metric, type) and issubclass(metric, nn.Module):
             results[name] = metric()(targets, predics)

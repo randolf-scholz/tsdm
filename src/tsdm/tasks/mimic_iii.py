@@ -114,7 +114,7 @@ def my_collate(batch: list[Sample]) -> Batch:
         m_list.append(mask[idx])
         y_list.append(sample.targets)
 
-    T = pad_sequence(t_list, batch_first=True, padding_value=torch.nan).squeeze()
+    T = pad_sequence(t_list, batch_first=True).squeeze()
     X = pad_sequence(x_list, batch_first=True, padding_value=torch.nan).squeeze()
     Y = pad_sequence(y_list, batch_first=True, padding_value=torch.nan).squeeze()
     M = pad_sequence(m_list, batch_first=True, padding_value=False).squeeze()
@@ -127,6 +127,12 @@ class MIMIC_DeBrouwer(BaseTask):
 
     Evaluation Protocol
     -------------------
+
+    We use the publicly available MIMIC-III clinical database (Johnson et al., 2016), which contains
+    EHR for more than 60,000 critical care patients. We select a subset of 21,250 patients with sufficient
+    observations and extract 96 different longitudinal real-valued measurements over a period of 48 hours
+    after patient admission. We refer the reader to Appendix K for further details on the cohort selection.
+    We focus on the predictions of the next 3 measurements after a 36-hour observation window.
 
     The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
     harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
@@ -147,22 +153,32 @@ class MIMIC_DeBrouwer(BaseTask):
         <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    observation_time = 150
+    observation_time = 75  # corresponds to 36 hours after admission
     prediction_steps = 3
     num_folds = 5
     seed = 432
     test_size = 0.1
     valid_size = 0.2
+    device: torch.device
 
-    def __init__(self):
+    def __init__(self, normalize_time: bool = False, device: str = "cpu"):
         super().__init__()
-
+        self.device = torch.device(device)
+        self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["UNIQUE_ID"].unique()
 
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        return MIMIC_III()["observations"]
+        ds = MIMIC_III()["observations"]
+
+        if self.normalize_time:
+            ds = ds.reset_index()
+            t_max = ds["Time"].max()
+            self.observation_time /= t_max
+            ds["Time"] /= t_max
+            ds = ds.set_index(["ID", "Time"])
+        return ds
 
     @cached_property
     def folds(self) -> list[dict[str, Sequence[int]]]:
@@ -268,8 +284,8 @@ class MIMIC_DeBrouwer(BaseTask):
         tensors = {}
         for _id in self.IDs:
             s = self.dataset.loc[_id]
-            t = torch.tensor(s.index.values, dtype=torch.float32)
-            x = torch.tensor(s.values, dtype=torch.float32)
+            t = torch.tensor(s.index.values, dtype=torch.float32, device=self.device)
+            x = torch.tensor(s.values, dtype=torch.float32, device=self.device)
             tensors[_id] = (t, x)
         return tensors
 
