@@ -20,6 +20,8 @@ __all__ = [
     "flatten_nested",
     "grad_norm",
     "initialize_from",
+    "initialize_from_config",
+    "is_partition",
     "multi_norm",
     "now",
     "paths_exists",
@@ -27,11 +29,10 @@ __all__ = [
     "relative_error",
     "relsize_skewpart",
     "relsize_symmpart",
+    "round_relative",
     "scaled_norm",
     "skewpart",
     "symmpart",
-    "round_relative",
-    "initialize_from_config",
 ]
 
 import logging
@@ -46,6 +47,7 @@ from tsdm.util._util import (
     flatten_nested,
     initialize_from,
     initialize_from_config,
+    is_partition,
     now,
     paths_exists,
     prepend_path,

@@ -3,7 +3,7 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-__all__ = ["MIMIC_DeBrouwer"]
+__all__ = ["MIMIC_DeBrouwer", "mimic_collate"]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import MIMIC_III
 from tsdm.tasks.base import BaseTask
+from tsdm.util import is_partition
 from tsdm.util.strings import repr_namedtuple
 
 
@@ -76,12 +77,13 @@ class TaskDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, key: int) -> Sample:
         t, x = self.tensors[key]
-        observation_mask = t <= self.observation_time
-        first_target = observation_mask.sum()
+        observations = t <= self.observation_time
+        first_target = observations.sum()
+        sample_mask = slice(0, first_target)
         target_mask = slice(first_target, first_target + self.prediction_steps)
         return Sample(
             key=key,
-            inputs=Inputs(t[observation_mask], x[observation_mask], t[target_mask]),
+            inputs=Inputs(t[sample_mask], x[sample_mask], t[target_mask]),
             targets=x[target_mask],
             originals=(t, x),
         )
@@ -90,7 +92,7 @@ class TaskDataset(torch.utils.data.Dataset):
         return f"{self.__class__.__name__}"
 
 
-def my_collate(batch: list[Sample]) -> Batch:
+def mimic_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch."""
     t_list: list[Tensor] = []
     x_list: list[Tensor] = []
@@ -191,13 +193,13 @@ class MIMIC_DeBrouwer(BaseTask):
             train_idx, valid_idx = train_test_split(
                 train_idx, test_size=self.valid_size
             )
-            folds.append(
-                {
-                    "train": train_idx,
-                    "valid": valid_idx,
-                    "test": test_idx,
-                }
-            )
+            fold = {
+                "train": train_idx,
+                "valid": valid_idx,
+                "test": test_idx,
+            }
+            assert is_partition(fold.values(), union=self.IDs)
+            folds.append(fold)
 
         return folds
 

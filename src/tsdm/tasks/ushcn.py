@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import USHCN_SmallChunkedSporadic
 from tsdm.tasks.base import BaseTask
+from tsdm.util import is_partition
 from tsdm.util.strings import repr_namedtuple
 
 
@@ -76,12 +77,13 @@ class TaskDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, key: int) -> Sample:
         t, x = self.tensors[key]
-        observation_mask = t <= self.observation_time
-        first_target = observation_mask.sum()
+        observations = t <= self.observation_time
+        first_target = observations.sum()
+        sample_mask = slice(0, first_target)
         target_mask = slice(first_target, first_target + self.prediction_steps)
         return Sample(
             key=key,
-            inputs=Inputs(t[observation_mask], x[observation_mask], t[target_mask]),
+            inputs=Inputs(t[sample_mask], x[sample_mask], t[target_mask]),
             targets=x[target_mask],
             originals=(t, x),
         )
@@ -195,13 +197,13 @@ class USHCN_DeBrouwer(BaseTask):
             train_idx, valid_idx = train_test_split(
                 train_idx, test_size=self.valid_size
             )
-            folds.append(
-                {
-                    "train": train_idx,
-                    "valid": valid_idx,
-                    "test": test_idx,
-                }
-            )
+            fold = {
+                "train": train_idx,
+                "valid": valid_idx,
+                "test": test_idx,
+            }
+            assert is_partition(fold.values(), union=self.IDs)
+            folds.append(fold)
 
         return folds
 
@@ -307,77 +309,3 @@ class USHCN_DeBrouwer(BaseTask):
 
         kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)
-
-
-# @cached_property
-# def index(self) -> list[str]:
-#     r"""TODO: Add index."""
-#
-# test_metric = type[ModularLoss]
-#
-# splits: dict[int, dict[str, DataFrame]]
-# folds: list[Split]
-# observation_horizon: int
-# forecasting_horizon: int
-# accumulation_function: Callable[..., Tensor]
-#
-# @cached_property
-# def dataset(self) -> USHCN_SmallChunkedSporadic:
-#     r"""Return cached dataset."""
-#     return USHCN_SmallChunkedSporadic()
-#
-# def __init__(
-#     self,
-#     test_metric: Literal["MSE", "MAE"] = "MSE",
-#     time_encoder: str = "time2float",
-# ) -> None:
-#     super().__init__()
-#     self._gen_folds()
-#     self.forecasting_horizon = 3
-#     self.observation_horizon = 3
-#     self.test_metric = ModularLosses[test_metric]
-#     self.time_encoder = FunctionalEncoders[time_encoder]
-#     self.horizon = self.observation_horizon + self.forecasting_horizon
-#     self.accumulation_function = nn.Identity()  # type: ignore[assignment]
-#
-# def _gen_folds(self) -> None:
-#     N = self.dataset.dataset["ID"].nunique()
-#     num_folds = 5
-#     np.random.seed(432)
-#
-#     folds = []
-#     for _ in range(num_folds):
-#         train_idx, test_idx = train_test_split(np.arange(N), test_size=0.1)
-#         train_idx, val_idx = train_test_split(train_idx, test_size=0.2)
-#         folds.append(Split(train=train_idx, valid=val_idx, test=test_idx))
-#
-#     self.folds = folds
-#
-# def get_dataloader(
-#     self,
-#     key: str,
-#     /,
-#     shuffle: bool = False,
-#     **dataloader_kwargs: Any,
-# ) -> DataLoader:
-#     r"""Return a DataLoader object for the specified split & fold.
-#
-#     Parameters
-#     ----------
-#     key: str
-#         From which part of the dataset to construct the loader
-#     shuffle: bool = True
-#
-#     Returns
-#     -------
-#     DataLoader
-#     """
-#     if key == "test":
-#         assert not shuffle, "Don't shuffle when evaluating test-dataset!"
-#     if key == "test" and "drop_last" in dataloader_kwargs:
-#         assert not dataloader_kwargs[
-#             "drop_last"
-#         ], "Don't drop when evaluating test-dataset!"
-#
-#     # the split = self.folds[fold]
-#     raise NotImplementedError
