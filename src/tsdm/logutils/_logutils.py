@@ -391,11 +391,11 @@ class StandardLogger:
         if make_checkpoint and i % make_checkpoint == 0:
             self.make_checkpoint(i)
 
-    def log_all_metrics(self, epoch: int, /) -> None:
+    def log_all_metrics(self, i: int) -> None:
         r"""Log all metrics for all dataloaders."""
-        if epoch not in self.history.index:
+        if i not in self.history.index:
             empty_row = DataFrame(
-                index=[epoch], columns=self.history.columns, dtype="Float32"
+                index=[i], columns=self.history.columns, dtype="Float32"
             )
             self.history = pd.concat([self.history, empty_row], sort=True)
 
@@ -406,10 +406,10 @@ class StandardLogger:
             )
 
             for metric, value in values.items():
-                self.history.loc[epoch, (key, metric)] = value.cpu().item()
+                self.history.loc[i, (key, metric)] = value.cpu().item()
 
             log_values(
-                epoch,
+                i,
                 writer=self.writer,
                 values=values,
                 postfix=key,
@@ -495,139 +495,3 @@ class StandardLogger:
             prefix=prefix,
             postfix=postfix,
         )
-
-
-# @torch.no_grad()
-# def get_all_predictions(model, dataloader):
-#     r"""Get all predictions from a model."""
-#     Y, Ŷ = [], []
-#     for batch in tqdm(dataloader, leave=False):
-#         # getting targets -> task / model
-#         # getting predics -> task / model
-#         OBS_HORIZON = 32
-#         times, inputs, targets = prep_batch(batch, OBS_HORIZON)
-#         outputs, _ = model(times, inputs)  # here we should apply the decoder.
-#         predics = outputs[:, OBS_HORIZON:, -1]
-#         Y.append(targets)
-#         Ŷ.append(predics)
-#
-#     return torch.cat(Y, dim=0), torch.cat(Ŷ, dim=0)
-#
-#
-# @jit.script  # This should be the pre_encoder
-# def prep_batch(
-#     batch: tuple[Tensor, Tensor, Tensor], observation_horizon: int
-# ) -> tuple[Tensor, Tensor, Tensor]:
-#     r"""Prepare a batch for training."""
-#     T, X, Y = batch
-#     timestamps = T
-#     targets = Y[..., observation_horizon:].clone()
-#     Y[..., observation_horizon:] = float("nan")  # mask future
-#     X[..., observation_horizon:, :] = float("nan")  # mask future
-#     observations = torch.cat([X, Y.unsqueeze(-1)], dim=-1)
-#     inputs = (timestamps, observations)
-#     return inputs, targets
-
-#
-# @dataclass
-# class DefaultLogger:
-#     r"""Default logger."""
-#
-#     writer: SummaryWriter
-#     r"""The SummaryWriter Instance."""
-#     model: Model
-#     r"""The model instance."""
-#     task: Task
-#     r"""The task instance."""
-#     optimizer: Optimizer
-#     r"""The optimizer instance."""
-#     encoder: Encoder
-#     r"""The used pre_encoder."""
-#     metrics: dict[str, Loss]
-#     r"""The metrics that should be logged."""
-#     num_epoch: int = 0
-#     r"""The current batch number."""
-#     num_batch: int = 0
-#     r"""The current epoch number."""
-#
-#     # Lazy attributes
-#     dataloaders: Mapping[str, DataLoader] = field(init=False)
-#     r"""Pointer to the dataloaders associated with the task."""
-#     history: dict[str, DataFrame] = field(init=False)
-#     r"""Auto-updating DataFrame (similar to Keras)."""
-#     LOGDIR: Path = field(init=False)
-#     r"""The path where logs are stored."""
-#     CHECKPOINTDIR: Path = field(init=False)
-#     r"""The path where model checkpoints are stored."""
-#
-#     def __post_init__(self) -> None:
-#         r"""Initialize the remaining attributes."""
-#         self.KEYS = set(self.dataloaders)
-#         self.dataloaders = self.task.dataloaders
-#         self.LOGDIR = Path(self.writer.log_dir)
-#         self.CHECKPOINTDIR = Path(self.writer.log_dir)
-#
-#         if self.history is None:
-#             self.history = {
-#                 key: DataFrame(columns=self.metrics) for key in self.KEYS | {"batch"}
-#             }
-#
-#     @torch.no_grad()
-#     def log_at_batch_end(self, *, targets: Tensor, predics: Tensor) -> None:
-#         r"""Log metrics and optimizer state at the end of batch."""
-#         self.num_batch += 1
-#         values = compute_metrics(targets=targets, predics=predics, metrics=self.metrics)
-#         log_metrics(
-#             self.num_batch,
-#             writer=self.writer,
-#             metrics=self.metrics,
-#             values=values,
-#             prefix="batch",
-#         )
-#         log_optimizer_state(
-#             self.num_batch, writer=self.writer, optimizer=self.optimizer, prefix="batch"
-#         )
-#         self.history["batch"].append(self._to_cpu(values))
-#
-#     @torch.no_grad()
-#     def log_at_epoch_end(self, *, targets: Tensor, predics: Tensor) -> None:
-#         r"""Log metric and optimizer state at the end of epoch."""
-#         self.num_epoch += 1
-#
-#         log_optimizer_state(
-#             self.num_epoch,
-#             writer=self.writer,
-#             optimizer=self.optimizer,
-#             histograms=True,
-#         )
-#         # log_kernel_information(self.epoch, writer, model.system.kernel, histograms=True)
-#
-#         for key in self.dataloaders:
-#             hist = compute_metrics(
-#                 targets=targets, predics=predics, metrics=self.metrics
-#             )
-#             log_metrics(
-#                 self.num_epoch, self.writer, self.metrics, values=hist, prefix=key
-#             )
-#             self.history[key].append(self._to_cpu(hist))
-#
-#     @staticmethod
-#     def _to_cpu(scalar_dict: dict[str, Tensor]) -> dict[str, float]:
-#         return {key: scalar.item() for key, scalar in scalar_dict.items()}
-#
-#     def save_checkpoint(self) -> None:
-#         r"""Save the hyperparameter combination with validation loss."""
-#         torch.save(
-#             {
-#                 "optimizer": self.optimizer,
-#                 "epoch": self.num_epoch,
-#                 "batch": self.num_batch,
-#             },
-#             self.CHECKPOINTDIR.joinpath(
-#                 f"{self.optimizer.__class__.__name__}-{self.num_epoch}"
-#             ),
-#         )
-
-# def log_hyperparameters(self):
-#     r"""Save the hyperparameter combination with validation loss."""
-#     ...
