@@ -55,7 +55,6 @@ scipy = ">=1.7"
 tables = ">=3.6"
 tensorboard = ">=2.9"
 torch = ">=1.11"
-tqdm = ">=4.50"
 xarray = ">=2022.3.0"
 
 [tool.poetry.dev-dependencies]
@@ -172,7 +171,6 @@ module = [
     "pandas.*",
     "sklearn.*",
     "scipy.*",
-    "tqdm.*",
 ]
 ignore_missing_imports = true
 

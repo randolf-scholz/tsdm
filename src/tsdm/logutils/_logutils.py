@@ -26,7 +26,6 @@ from torch import Tensor, nn
 from torch.linalg import cond, matrix_norm, slogdet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm.notebook import tqdm
 
 from tsdm.losses import Loss
 from tsdm.models import Model
@@ -303,7 +302,7 @@ class StandardLogger:
         r"""Get all predictions for a dataloader."""
         predics = []
         targets = []
-        for batch in tqdm(dataloader, "computing predictions", leave=False):
+        for batch in dataloader:
             result = self.predict_fn(self.model, batch)
 
             if isinstance(result, dict):
