@@ -10,18 +10,23 @@ __all__ = [
     "log_kernel_information",
     "log_model_state",
     "log_metrics",
+    "log_values",
+    # Classes
+    "StandardLogger",
 ]
 
 import logging
 from collections.abc import Callable
 from typing import Final
 
-from tsdm.logutils._logutils import (
+from tsdm.logutils._logutils import (  # Classes; Functions
+    StandardLogger,
     compute_metrics,
     log_kernel_information,
     log_metrics,
     log_model_state,
     log_optimizer_state,
+    log_values,
 )
 
 __logger__ = logging.getLogger(__name__)

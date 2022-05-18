@@ -79,6 +79,7 @@
       <w>endblock</w>
       <w>endfor</w>
       <w>equimodal</w>
+      <w>erank</w>
       <w>errorlevel</w>
       <w>etdataset</w>
       <w>fillna</w>

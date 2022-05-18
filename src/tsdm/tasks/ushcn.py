@@ -50,10 +50,13 @@ class Sample(NamedTuple):
 class Batch(NamedTuple):
     r"""A single sample of the data."""
 
-    T: Tensor  # B×N: the timestamps.
-    X: Tensor  # B×N×D: the observations.
-    Y: Tensor  # B×K×D: the target values.
-    M: Tensor  # B×N: which t correspond to targets.
+    TX: Tensor  # B×N:   the input timestamps.
+    VX: Tensor  # B×N×D: the input values.
+    MX: Tensor  # B×N×D: the input mask.
+
+    TY: Tensor  # B×K:   the target timestamps.
+    VY: Tensor  # B×K×D: the target values.
+    MY: Tensor  # B×K×D: teh target mask.
 
     def __repr__(self) -> str:
         return repr_namedtuple(self, recursive=False)
@@ -92,36 +95,50 @@ class TaskDataset(torch.utils.data.Dataset):
         return f"{self.__class__.__name__}"
 
 
+# @torch.jit.script  <--seems to be slower!?
 def ushcn_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch."""
-    t_list: list[Tensor] = []
-    x_list: list[Tensor] = []
-    m_list: list[Tensor] = []
-    y_list: list[Tensor] = []
+    vx_list: list[Tensor] = []
+    vy_list: list[Tensor] = []
+    tx_list: list[Tensor] = []
+    ty_list: list[Tensor] = []
+    mx_list: list[Tensor] = []
+    my_list: list[Tensor] = []
 
     for sample in batch:
         t, x, t_target = sample.inputs
-        mask = torch.cat(
+        y = sample.targets
+
+        time = torch.cat((t, t_target))
+        sorted_idx = torch.argsort(time)
+
+        mask_y = y.isfinite()
+
+        mask_x = torch.cat(
             (
-                torch.zeros_like(t, dtype=torch.bool),
-                torch.ones_like(t_target, dtype=torch.bool),
+                torch.zeros_like(x, dtype=torch.bool),
+                mask_y,
             )
         )
+
         x_padder = torch.full((t_target.shape[0], x.shape[-1]), fill_value=torch.nan)
-        time = torch.cat((t, t_target))
         values = torch.cat((x, x_padder))
-        idx = torch.argsort(time)
-        t_list.append(time[idx])
-        x_list.append(values[idx])
-        m_list.append(mask[idx])
-        y_list.append(sample.targets)
 
-    T = pad_sequence(t_list, batch_first=True).squeeze()
-    X = pad_sequence(x_list, batch_first=True, padding_value=torch.nan).squeeze()
-    Y = pad_sequence(y_list, batch_first=True, padding_value=torch.nan).squeeze()
-    M = pad_sequence(m_list, batch_first=True, padding_value=False).squeeze()
+        vx_list.append(values[sorted_idx])
+        vy_list.append(y)
+        tx_list.append(time[sorted_idx])
+        ty_list.append(t_target)
+        mx_list.append(mask_x[sorted_idx])
+        my_list.append(mask_y)
 
-    return Batch(T, X, Y, M)
+    VX = pad_sequence(vx_list, batch_first=True, padding_value=torch.nan).squeeze()
+    VY = pad_sequence(vy_list, batch_first=True, padding_value=torch.nan).squeeze()
+    TX = pad_sequence(tx_list, batch_first=True).squeeze()
+    TY = pad_sequence(ty_list, batch_first=True).squeeze()
+    MX = pad_sequence(mx_list, batch_first=True).squeeze()
+    MY = pad_sequence(my_list, batch_first=True).squeeze()
+
+    return Batch(TX, VX, MX, TY, VY, MY)
 
 
 class USHCN_DeBrouwer(BaseTask):

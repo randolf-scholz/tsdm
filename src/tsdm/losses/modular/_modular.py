@@ -239,7 +239,7 @@ class RMSE(nn.Module):
         self.mask_nan_targets = mask_nan_targets
 
     @jit.export
-    def forward(  # pylint: disable=no-self-use
+    def forward(
         self,
         x: Tensor,
         xhat: Tensor,
@@ -275,7 +275,7 @@ class MSE(nn.Module):
         self.mask_nan_targets = mask_nan_targets
 
     @jit.export
-    def forward(  # pylint: disable=no-self-use
+    def forward(
         self,
         x: Tensor,
         xhat: Tensor,
