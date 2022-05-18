@@ -8,24 +8,28 @@ __all__ = [
     # Classes
     "Split",
     # Functions
+    "col_corr",
     "deep_dict_update",
     "deep_kval_update",
+    "erank",
     "flatten_dict",
     "flatten_nested",
     "initialize_from",
     "initialize_from_config",
     "is_partition",
+    "mat_corr",
     "now",
     "paths_exists",
     "prepend_path",
-    "relsize_skewpart",
-    "relsize_symmpart",
+    "reldist_diag",
+    "reldist_skew",
+    "reldist_symm",
     "round_relative",
+    "row_corr",
     "skewpart",
     "symmpart",
-    "erank",
-    "col_corr",
-    "row_corr",
+    "orthpart",
+    "reldist_orth",
 ]
 
 import os
@@ -62,11 +66,12 @@ def col_corr(x: Tensor) -> Tensor:
 
     Signature: [..., m, n] -> [...].
     """
-    *_, m, n = x.shape
+    m, n = x.shape[-2:]
     u = torch.linalg.norm(x, dim=0)
-    xx = torch.einsum("...i -> ...ii", u)
+    xx = torch.einsum("...i, ...j -> ...ij", u, u)
     xtx = torch.einsum("...ik, ...il  -> ...kl", x, x)
-    c = torch.eye(n) - xtx / xx
+    I = torch.eye(n, dtype=x.dtype, device=x.device)
+    c = I - xtx / xx
     return c.abs().sum(dim=(-2, -1)) / (n * (n - 1))
 
 
@@ -76,12 +81,28 @@ def row_corr(x: Tensor) -> Tensor:
 
     Signature: [..., m, n] -> [...].
     """
-    *_, m, n = x.shape
+    m, n = x.shape[-2:]
     v = torch.linalg.norm(x, dim=1)
-    xx = torch.einsum("...i -> ...ii", v)
-    xtx = torch.einsum("...kj, ...lj  -> ...kl", x, x)
-    c = torch.eye(m) - xtx / xx
+    xx = torch.einsum("...i, ...j -> ...ij", v, v)
+    xxt = torch.einsum("...kj, ...lj  -> ...kl", x, x)
+    I = torch.eye(m, dtype=x.dtype, device=x.device)
+    c = I - xxt / xx
     return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
+
+
+@jit.script
+def mat_corr(x: Tensor) -> Tensor:
+    """Compute average row/col-wise correlation of a matrix.
+
+    Signature: [..., m, n] -> [...].
+
+    Since both are equal, we use the one that is cheaper to compute.
+    If x is $m×n$, then col-corr takes $𝓞(mn²)$, while row-corr takes $𝓞(m²n)$.
+    """
+    m, n = x.shape[-2:]
+    if m > n:
+        return col_corr(x)
+    return row_corr(x)
 
 
 @jit.script
@@ -577,23 +598,107 @@ def paths_exists(
 
 @jit.script
 def symmpart(x: Tensor) -> Tensor:
-    r"""Symmetric part of matrix."""
+    r"""Symmetric part of square matrix.
+
+    Signature: [..., n, n] -> [..., n, n]
+
+    .. math::
+        \argmin_{X: X^⊤ = -X} ‖A-X‖
+    """
     return (x + x.swapaxes(-1, -2)) / 2
 
 
 @jit.script
 def skewpart(x: Tensor) -> Tensor:
-    r"""Skew-Symmetric part of matrix."""
+    r"""Skew-Symmetric part of a matrix.
+
+    Signature: [..., n, n] -> [..., n, n]
+
+    .. math::
+        \argmin_{X: X^⊤ = X} ‖A-X‖
+    """
     return (x - x.swapaxes(-1, -2)) / 2
 
 
 @jit.script
-def relsize_symmpart(kernel):
-    r"""Relative magnitude of symmpart part."""
-    return torch.mean(symmpart(kernel) ** 2) / torch.mean(kernel**2)
+def orthpart(x: Tensor) -> Tensor:
+    r"""Orthogonal part of a square matrix.
+
+    Signature: [..., n, n] -> [..., n, n]
+
+    .. math::
+        \argmin_{X: XᵀX = 𝕀} ‖A-X‖
+    """
+    U, S, Vt = torch.linalg.svd(x, full_matrices=True)
+    Q = torch.einsum("...ij, ...jk->...ik", U, Vt)
+    return Q
 
 
 @jit.script
-def relsize_skewpart(kernel):
-    r"""Relative magnitude of skew-symmpart part."""
-    return torch.mean(skewpart(kernel) ** 2) / torch.mean(kernel**2)
+def diagpart(x: Tensor) -> Tensor:
+    r"""Diagonal part of a square matrix.
+
+    Signature: [..., n, n] -> [..., n, n]
+
+    .. math::
+        \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    """
+    d = torch.diagonal(x, dim1=-2, dim2=-1)
+    return torch.diag_embed(d)
+
+
+@jit.script
+def matrix_reldist(x: Tensor, y: Tensor) -> Tensor:
+    r"""Relative distance between two matrices.
+
+    Signature: [..., m, n], [..., m, n]  -> [..., n, n]
+
+    .. math::
+        ‖x-y‖/‖y‖
+    """
+    r = torch.linalg.matrix_norm(x - y, ord="fro", dim=(-2, -1))
+    yy = torch.linalg.matrix_norm(y, ord="fro", dim=(-2, -1))
+    zero = torch.tensor(0.0, dtype=torch.float32, device=x.device)
+    return torch.where(yy != 0, r / yy, zero)
+
+
+@jit.script
+def reldist_diag(x: Tensor) -> Tensor:
+    r"""Compute the relative distance to being a diagonal matrix.
+
+    Signature: [..., n, n] -> [...]
+
+    .. math::
+        ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    """
+    return matrix_reldist(diagpart(x), x)
+
+
+@jit.script
+def reldist_symm(x: Tensor) -> Tensor:
+    r"""Relative magnitude of symmpart part.
+
+    Signature: [..., n, n] -> [...]
+    """
+    return matrix_reldist(symmpart(x), x)
+
+
+@jit.script
+def reldist_skew(x: Tensor) -> Tensor:
+    r"""Relative magnitude of skew-symmpart part.
+
+    Signature: [..., n, n] -> [...]
+    """
+    return matrix_reldist(skewpart(x), x)
+
+
+@jit.script
+def reldist_orth(x: Tensor) -> Tensor:
+    r"""Relative magnitude of orthogonal part.
+
+    .. math::
+        \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
+
+    Signature: [..., n, n] -> [...]
+    """
+    return matrix_reldist(orthpart(x), x)

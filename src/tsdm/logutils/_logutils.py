@@ -12,7 +12,6 @@ __all__ = [
     "StandardLogger",
 ]
 
-import logging
 import shutil
 import warnings
 from collections.abc import Callable, Mapping, Sequence
@@ -34,237 +33,14 @@ from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.plot import kernel_heatmap, plot_spectrum
 from tsdm.util import (
-    col_corr,
     erank,
+    mat_corr,
     multi_norm,
-    relsize_skewpart,
-    relsize_symmpart,
-    row_corr,
+    reldist_diag,
+    reldist_orth,
+    reldist_skew,
+    reldist_symm,
 )
-
-__logger__ = logging.getLogger(__name__)
-
-
-@torch.no_grad()
-def log_kernel_information(
-    i: int,
-    /,
-    writer: SummaryWriter,
-    kernel: Tensor,
-    *,
-    histograms: bool = False,
-    prefix: str = "",
-    postfix: str = "",
-) -> None:
-    r"""Log kernel information.
-
-    Parameters
-    ----------
-    i: int
-    writer: SummaryWriter
-    kernel: Tensor
-    histograms: bool, default False
-    prefix: str, default ""
-    postfix: str, default ""
-    """
-    identifier = f"{prefix+':'*bool(prefix)}kernel{':'*bool(postfix)+postfix}"
-
-    K = kernel
-    assert len(K.shape) == 2 and K.shape[0] == K.shape[1]
-    inf = float("inf")
-
-    writer.add_scalar(f"{identifier}/col-corr", col_corr(K), i)
-    writer.add_scalar(f"{identifier}/row-corr", row_corr(K), i)
-
-    writer.add_scalar(f"{identifier}/skewpart", relsize_skewpart(K), i)
-    writer.add_scalar(f"{identifier}/symmpart", relsize_symmpart(K), i)
-
-    # general properties
-    writer.add_scalar(f"{identifier}/logdet", slogdet(K)[-1], i)
-    writer.add_scalar(f"{identifier}/erank", erank(K), i)
-    writer.add_scalar(f"{identifier}/trace", torch.trace(K), i)
-    writer.add_scalar(f"{identifier}/cond", cond(K), i)
-
-    # norms
-    writer.add_scalar(f"{identifier}:norms/fro", matrix_norm(K, ord="fro"), i)
-    writer.add_scalar(f"{identifier}:norms/nuc", matrix_norm(K, ord="nuc"), i)
-    writer.add_scalar(f"{identifier}:norms/l-∞", matrix_norm(K, ord=-inf), i)
-    writer.add_scalar(f"{identifier}:norms/l-2", matrix_norm(K, ord=-2), i)
-    writer.add_scalar(f"{identifier}:norms/l-1", matrix_norm(K, ord=-1), i)
-    writer.add_scalar(f"{identifier}:norms/l+1", matrix_norm(K, ord=+1), i)
-    writer.add_scalar(f"{identifier}:norms/l+2", matrix_norm(K, ord=+2), i)
-    writer.add_scalar(f"{identifier}:norms/l+∞", matrix_norm(K, ord=+inf), i)
-
-    # 2d-data is order of magnitude more expensive.
-    if histograms:
-        writer.add_histogram(f"{prefix}/histogram", K, i)
-        writer.add_image(f"{prefix}/values", kernel_heatmap(K, "CHW"), i)
-        writer.add_figure(f"{prefix}/spectrum", plot_spectrum(K), i)
-
-
-@torch.no_grad()
-def log_optimizer_state(
-    i: int,
-    /,
-    writer: SummaryWriter,
-    optimizer: Optimizer,
-    *,
-    histograms: bool = False,
-    prefix: str = "",
-    postfix: str = "",
-) -> None:
-    r"""Log optimizer data.
-
-    Parameters
-    ----------
-    i: int
-    writer: SummaryWriter
-    optimizer: Optimizer
-    histograms: bool=False
-    prefix: str = ""
-    postfix: str = ""
-    """
-    identifier = f"{prefix+':'*bool(prefix)}optim{':'*bool(postfix)+postfix}"
-
-    variables = list(optimizer.state.keys())
-    gradients = [w.grad for w in variables]
-
-    writer.add_scalar(f"{identifier}:norms/variables", multi_norm(variables), i)
-    writer.add_scalar(f"{identifier}:norms/gradients", multi_norm(gradients), i)
-
-    if histograms:
-        for j, (w, g) in enumerate(zip(variables, gradients)):
-            writer.add_histogram(f"{identifier}:variables/{j}", w, i)
-            writer.add_histogram(f"{identifier}:gradients/{j}", g, i)
-
-    # Try logging moments for momentum based optimizers.
-    try:
-        moments_1 = [d["exp_avg"] for d in optimizer.state.values()]
-        moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values()]
-    except KeyError:
-        return
-
-    writer.add_scalar(f"{identifier}:norms/moments_1", multi_norm(moments_1), i)
-    writer.add_scalar(f"{identifier}:norms/moments_2", multi_norm(moments_2), i)
-
-    if histograms:
-        for j, (a, b) in enumerate(zip(moments_1, moments_2)):
-            writer.add_histogram(f"{identifier}:moments_1/{j}", a, i)
-            writer.add_histogram(f"{identifier}:moments_2/{j}", b, i)
-
-
-@torch.no_grad()
-def log_model_state(
-    i: int,
-    /,
-    writer: SummaryWriter,
-    model: Model,
-    *,
-    histograms: bool = False,
-    prefix: str = "",
-    postfix: str = "",
-) -> None:
-    r"""Log optimizer data.
-
-    Parameters
-    ----------
-    i: current step
-    writer: SummaryWriter
-    model: Model
-    histograms: whether to create histograms
-    prefix: e.g. prefix:model:postfix
-    postfix: e.g. prefix:model:postfix
-    """
-    # TODO: make this compatible with optimizers other than ADAM.
-    identifier = f"{prefix+':'*bool(prefix)}model{':'*bool(postfix)+postfix}"
-
-    variables = list(model.parameters())
-    gradients = [w.grad for w in variables]
-
-    writer.add_scalar(f"{identifier}:norms/variables", multi_norm(variables), i)
-    writer.add_scalar(f"{identifier}:norms/gradients", multi_norm(gradients), i)
-
-    # 2d -data is order of magnitude more expensive.
-    if histograms:
-        for j, (w, g) in enumerate(zip(variables, gradients)):
-            writer.add_histogram(f"{identifier}:variables/{j}", w, i)
-            writer.add_histogram(f"{identifier}:gradients/{j}", g, i)
-
-
-#
-# # user can provide targets and predics
-# @overload
-# def log_metrics(
-#     i: int,
-#     writer: SummaryWriter,
-#     metrics: dict[str, Loss],
-#     *,
-#     targets: Tensor,
-#     predics: Tensor,
-#     prefix: Optional[str] = None,
-# ) -> None:
-#     ...
-#
-#
-# # user can provide values by dict
-# @overload
-# def log_metrics(
-#     i: int,
-#     writer: SummaryWriter,
-#     metrics: dict[str, Loss],
-#     *,
-#     values: dict[str, Tensor],
-#     prefix: Optional[str] = None,
-# ) -> None:
-#     ...
-#
-#
-# # user can provide values by list
-# @overload
-# def log_metrics(
-#     i: int,
-#     writer: SummaryWriter,
-#     metrics: Sequence[str],
-#     *,
-#     values: Sequence[Tensor],
-#     prefix: Optional[str] = None,
-# ) -> None:
-#     ...
-
-
-@torch.no_grad()
-def log_metrics(
-    i: int,
-    /,
-    writer: SummaryWriter,
-    metrics: Union[dict[str, Loss], Sequence[str]],
-    *,
-    targets: Tensor,
-    predics: Tensor,
-    prefix: str = "",
-    postfix: str = "",
-) -> None:
-    r"""Log multiple metrics at once."""
-    assert len(targets) == len(predics)
-    assert isinstance(metrics, dict)
-    values = compute_metrics(metrics, targets=targets, predics=predics)
-    log_values(i, writer, values, prefix=prefix, postfix=postfix)
-
-
-@torch.no_grad()
-def log_values(
-    i: int,
-    /,
-    writer: SummaryWriter,
-    values: dict[str, Tensor],
-    *,
-    prefix: str = "",
-    postfix: str = "",
-) -> None:
-    r"""Log multiple metrics at once."""
-    identifier = f"{prefix+':'*bool(prefix)}metrics{':'*bool(postfix)+postfix}"
-    for key in values:
-        writer.add_scalar(f"{identifier}/{key}", values[key], i)
 
 
 @torch.no_grad()
@@ -303,6 +79,178 @@ def compute_metrics(
         else:
             raise ValueError(f"{type(metric)=} not understood!")
     return results
+
+
+@torch.no_grad()
+def log_kernel_information(
+    i: int,
+    /,
+    writer: SummaryWriter,
+    kernel: Tensor,
+    *,
+    histograms: Union[bool, int] = False,
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    r"""Log kernel information.
+
+    Parameters
+    ----------
+    i: int
+    writer: SummaryWriter
+    kernel: Tensor
+    histograms: bool, default False
+    prefix: str, default ""
+    postfix: str, default ""
+    """
+    identifier = f"{prefix+':'*bool(prefix)}kernel{':'*bool(postfix)+postfix}"
+    K = kernel
+    assert len(K.shape) == 2 and K.shape[0] == K.shape[1]
+
+    # relative distance to some matrix groups
+    writer.add_scalar(f"{identifier}:reldist/diagonal", reldist_diag(K), i)
+    writer.add_scalar(f"{identifier}:reldist/skew-symmetric", reldist_skew(K), i)
+    writer.add_scalar(f"{identifier}:reldist/symmetric", reldist_symm(K), i)
+    writer.add_scalar(f"{identifier}:reldist/orthogonal", reldist_orth(K), i)
+
+    # general properties
+    writer.add_scalar(f"{identifier}:linalg/logdet", slogdet(K)[-1], i)
+    writer.add_scalar(f"{identifier}:linalg/erank", erank(K), i)
+    writer.add_scalar(f"{identifier}:linalg/trace", torch.trace(K), i)
+    writer.add_scalar(f"{identifier}:linalg/cond", cond(K), i)
+    writer.add_scalar(f"{identifier}:linalg/mean-correlation", mat_corr(K), i)
+
+    # norms
+    writer.add_scalar(f"{identifier}:norms/fro", matrix_norm(K, ord="fro"), i)
+    writer.add_scalar(f"{identifier}:norms/nuc", matrix_norm(K, ord="nuc"), i)
+    writer.add_scalar(f"{identifier}:norms/l-∞", matrix_norm(K, ord=-float("inf")), i)
+    writer.add_scalar(f"{identifier}:norms/l-2", matrix_norm(K, ord=-2), i)
+    writer.add_scalar(f"{identifier}:norms/l-1", matrix_norm(K, ord=-1), i)
+    writer.add_scalar(f"{identifier}:norms/l+1", matrix_norm(K, ord=+1), i)
+    writer.add_scalar(f"{identifier}:norms/l+2", matrix_norm(K, ord=+2), i)
+    writer.add_scalar(f"{identifier}:norms/l+∞", matrix_norm(K, ord=+float("inf")), i)
+
+    # 2d-data is order of magnitude more expensive.
+    if histograms and i % histograms == 0:
+        writer.add_histogram(f"{identifier}:histogram", K, i)
+        writer.add_image(f"{identifier}:heatmap", kernel_heatmap(K, "CHW"), i)
+        writer.add_figure(f"{identifier}:spectrum", plot_spectrum(K), i)
+
+
+def log_optimizer_state(
+    i: int,
+    /,
+    writer: SummaryWriter,
+    optimizer: Optimizer,
+    *,
+    histograms: Union[bool, int] = False,
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    r"""Log optimizer data.
+
+    Parameters
+    ----------
+    i: int
+    writer: SummaryWriter
+    optimizer: Optimizer
+    histograms: bool=False
+    prefix: str = ""
+    postfix: str = ""
+    """
+    identifier = f"{prefix+':'*bool(prefix)}optim{':'*bool(postfix)+postfix}"
+
+    variables = list(optimizer.state.keys())
+    gradients = [w.grad for w in variables]
+
+    writer.add_scalar(f"{identifier}:norms/variables", multi_norm(variables), i)
+    writer.add_scalar(f"{identifier}:norms/gradients", multi_norm(gradients), i)
+
+    try:
+        moments_1 = [d["exp_avg"] for d in optimizer.state.values()]
+        moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values()]
+    except KeyError:
+        moments_1 = []
+        moments_2 = []
+    else:
+        writer.add_scalar(f"{identifier}:norms/moments_1", multi_norm(moments_1), i)
+        writer.add_scalar(f"{identifier}:norms/moments_2", multi_norm(moments_2), i)
+
+    if histograms and i % histograms == 0:
+        for j, (w, g) in enumerate(zip(variables, gradients)):
+            writer.add_histogram(f"{identifier}:variables/{j}", w, i)
+            writer.add_histogram(f"{identifier}:gradients/{j}", g, i)
+
+        for j, (a, b) in enumerate(zip(moments_1, moments_2)):
+            writer.add_histogram(f"{identifier}:moments_1/{j}", a, i)
+            writer.add_histogram(f"{identifier}:moments_2/{j}", b, i)
+
+
+@torch.no_grad()
+def log_model_state(
+    i: int,
+    /,
+    writer: SummaryWriter,
+    model: Model,
+    *,
+    histograms: Union[bool, int] = False,
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    r"""Log model data."""
+    identifier = f"{prefix+':'*bool(prefix)}model{':'*bool(postfix)+postfix}"
+
+    weights: dict[str, Tensor] = dict(model.named_parameters())
+    grads: dict[str, Tensor] = {
+        k: w.grad for k, w in weights.items() if w.grad is not None
+    }
+
+    if weights:
+        weight_list = list(weights.values())
+        writer.add_scalar(f"{identifier}:weights", multi_norm(weight_list), i)
+    if grads:
+        grad_list = list(grads.values())
+        writer.add_scalar(f"{identifier}:gradients", multi_norm(grad_list), i)
+
+    if histograms and i % histograms == 0:
+        for key, weight in weights.items():
+            writer.add_histogram(f"{identifier}:variables/{key}", weight, i)
+
+        for key, gradient in grads.items():
+            writer.add_histogram(f"{identifier}:gradients/{key}", gradient, i)
+
+
+def log_metrics(
+    i: int,
+    /,
+    writer: SummaryWriter,
+    metrics: Union[dict[str, Loss], Sequence[str]],
+    *,
+    targets: Tensor,
+    predics: Tensor,
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    r"""Log multiple metrics at once."""
+    assert len(targets) == len(predics)
+    assert isinstance(metrics, dict)
+    values = compute_metrics(metrics, targets=targets, predics=predics)
+    log_values(i, writer, values, prefix=prefix, postfix=postfix)
+
+
+def log_values(
+    i: int,
+    /,
+    writer: SummaryWriter,
+    values: dict[str, Tensor],
+    *,
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    r"""Log multiple metrics at once."""
+    identifier = f"{prefix+':'*bool(prefix)}metrics{':'*bool(postfix)+postfix}"
+    for key in values:
+        writer.add_scalar(f"{identifier}/{key}", values[key], i)
 
 
 class ResultTuple(NamedTuple):
@@ -413,27 +361,35 @@ class StandardLogger:
             postfix=postfix,
         )
 
-    def log_batch_end(self, batch: int, *, targets: Tensor, predics: Tensor) -> None:
+    def log_batch_end(self, i: int, *, targets: Tensor, predics: Tensor) -> None:
         r"""Log batch end."""
-        self.log_metrics(batch, targets=targets, predics=predics, prefix="batch")
-        self.log_optimizer_state(batch, prefix="batch")
+        self.log_metrics(i, targets=targets, predics=predics, postfix="batch")
+        self.log_optimizer_state(i)
 
     def log_epoch_end(
-        self, epoch: int, *, make_checkpoint: Union[bool, int] = 1
+        self,
+        i: int,
+        *,
+        histograms: Union[bool, int] = True,
+        kernel_information: Union[bool, int] = 1,
+        model_state: Union[bool, int] = 10,
+        optimizer_state: Union[bool, int] = False,
+        make_checkpoint: Union[bool, int] = 10,
     ) -> None:
         r"""Log epoch end."""
-        self.log_all_metrics(epoch)
+        self.log_all_metrics(i)
 
-        if hasattr(self.model, "kernel") and isinstance(self.model.kernel, Tensor):
-            log_kernel_information(
-                epoch,
-                writer=self.writer,
-                kernel=self.model.kernel,
-                histograms=True,
-            )
+        if kernel_information and i % kernel_information == 0:
+            self.log_kernel_information(i, histograms=histograms)
 
-        if make_checkpoint and epoch % make_checkpoint == 0:
-            self.make_checkpoint(epoch)
+        if model_state and i % model_state == 0:
+            self.log_model_state(i, histograms=histograms)
+
+        if optimizer_state and i % optimizer_state == 0:
+            self.log_optimizer_state(i, histograms=histograms)
+
+        if make_checkpoint and i % make_checkpoint == 0:
+            self.make_checkpoint(i)
 
     def log_all_metrics(self, epoch: int, /) -> None:
         r"""Log all metrics for all dataloaders."""
@@ -456,7 +412,7 @@ class StandardLogger:
                 epoch,
                 writer=self.writer,
                 values=values,
-                prefix=key,
+                postfix=key,
             )
 
     def log_hparams(self) -> None:
@@ -464,7 +420,7 @@ class StandardLogger:
         # find best epoch on the smoothed validation curve
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
         test_scores = {
-            f"hparam:metrics/{key}": self.history.loc[idx, ("test", key)]
+            f"metrics:hparam/{key}": self.history.loc[idx, ("test", key)]
             for key, idx in best_epochs["valid"].items()
         }
         self.writer.add_hparams(
@@ -487,7 +443,7 @@ class StandardLogger:
         i: int,
         /,
         *,
-        histograms: bool = False,
+        histograms: Union[bool, int] = False,
         prefix: str = "",
         postfix: str = "",
     ) -> None:
@@ -496,6 +452,45 @@ class StandardLogger:
             i,
             writer=self.writer,
             optimizer=self.optimizer,
+            histograms=histograms,
+            prefix=prefix,
+            postfix=postfix,
+        )
+
+    def log_model_state(
+        self,
+        i: int,
+        /,
+        *,
+        histograms: Union[bool, int] = False,
+        prefix: str = "",
+        postfix: str = "",
+    ) -> None:
+        r"""Log model state."""
+        log_model_state(
+            i,
+            writer=self.writer,
+            model=self.model,
+            histograms=histograms,
+            prefix=prefix,
+            postfix=postfix,
+        )
+
+    def log_kernel_information(
+        self,
+        i: int,
+        /,
+        *,
+        histograms: Union[bool, int] = False,
+        prefix: str = "",
+        postfix: str = "",
+    ) -> None:
+        """Log kernel information."""
+        assert hasattr(self.model, "kernel") and isinstance(self.model.kernel, Tensor)
+        log_kernel_information(
+            i,
+            writer=self.writer,
+            kernel=self.model.kernel,
             histograms=histograms,
             prefix=prefix,
             postfix=postfix,
