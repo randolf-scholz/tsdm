@@ -167,7 +167,6 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from pandas import DataFrame, HDFStore, read_csv, read_hdf
-from tqdm import tqdm
 
 from tsdm.datasets.base import SimpleDataset
 
@@ -286,7 +285,7 @@ class Physionet2019(SimpleDataset):
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
                 with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
                     print("cleaning " + fname)
-                    for zi in tqdm(zipfile.infolist()):
+                    for zi in zipfile.infolist():
                         with zipfile.open(zi) as zf:
                             if zf.name.endswith("psv"):
                                 df = read_csv(zf, sep="|")
@@ -298,7 +297,7 @@ class Physionet2019(SimpleDataset):
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
                 with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
                     print("cleaning " + fname)
-                    for zi in tqdm(zipfile.infolist()):
+                    for zi in zipfile.infolist():
                         with zipfile.open(zi) as zf:
                             if zf.name.endswith("psv"):
                                 df = read_csv(zf, sep="|")
@@ -319,7 +318,7 @@ class Physionet2019(SimpleDataset):
             with HDFStore(self.dataset_paths) as file:
                 read_dfs = {}
                 for root, _, files in file.walk():
-                    for fn in tqdm(files):
+                    for fn in files:
                         key = f"{root}/{fn}"
                         read_dfs[key] = read_hdf(file, key=key)
         elif store == "pickle":
