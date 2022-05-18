@@ -83,9 +83,9 @@ setup:
     # install package
     #- poetry install
     # TODO: fix pip install errors!!!
-    - pip install --upgrade $(ls dist/*.whl)
+    - pip install --only-binary ":all:" --upgrade $(ls dist/*.whl)
     # install dev dependencies.
-    - pip install  --upgrade -r requirements-dev.txt
+    - pip install --only-binary ":all:" --upgrade -r requirements-dev.txt
     - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
