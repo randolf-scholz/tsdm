@@ -428,7 +428,7 @@ class StandardLogger:
         )
         print(f"{test_scores=} achieved by {self.hparam_dict=}")
 
-        # Cleanup -remove when pytorch/issues/32651 is fixed
+        # FIXME: https://github.com/pytorch/pytorch/issues/32651
         for file in (self.log_dir / "hparam").iterdir():
             shutil.move(file, self.log_dir)
         (self.log_dir / "hparam").rmdir()
