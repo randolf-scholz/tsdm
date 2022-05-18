@@ -23,6 +23,9 @@ __all__ = [
     "round_relative",
     "skewpart",
     "symmpart",
+    "erank",
+    "col_corr",
+    "row_corr",
 ]
 
 import os
@@ -51,6 +54,54 @@ class Split(NamedTuple):
     train: Any
     valid: Any
     test: Any
+
+
+@jit.script
+def col_corr(x: Tensor) -> Tensor:
+    r"""Compute average column-wise correlation of a matrix.
+
+    Signature: [..., m, n] -> [...].
+    """
+    *_, m, n = x.shape
+    u = torch.linalg.norm(x, dim=0)
+    xx = torch.einsum("...i -> ...ii", u)
+    xtx = torch.einsum("...ik, ...il  -> ...kl", x, x)
+    c = torch.eye(n) - xtx / xx
+    return c.abs().sum(dim=(-2, -1)) / (n * (n - 1))
+
+
+@jit.script
+def row_corr(x: Tensor) -> Tensor:
+    r"""Compute average column-wise correlation of a matrix.
+
+    Signature: [..., m, n] -> [...].
+    """
+    *_, m, n = x.shape
+    v = torch.linalg.norm(x, dim=1)
+    xx = torch.einsum("...i -> ...ii", v)
+    xtx = torch.einsum("...kj, ...lj  -> ...kl", x, x)
+    c = torch.eye(m) - xtx / xx
+    return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
+
+
+@jit.script
+def erank(x: Tensor) -> Tensor:
+    r"""Compute the effective rank of a matrix.
+
+    Signature: [..., m, n] -> [...].
+
+    References
+    ----------
+    - | `The effective rank: A measure of effective dimensionality
+        <https://ieeexplore.ieee.org/document/7098875>`_
+      | Olivier Roy, Martin Vetterli
+      | `15th European Signal Processing Conference (EUSIPCO), 2007
+        <https://ieeexplore.ieee.org/xpl/conhome/7067185/proceeding>`_
+    """
+    σ = torch.linalg.svdvals(x)
+    σ = σ / torch.linalg.norm(σ, ord=1, dim=-1)
+    entropy = torch.special.entr(σ).sum(dim=-1)
+    return torch.exp(entropy)
 
 
 def round_relative(x: np.ndarray, decimals: int = 2) -> np.ndarray:
