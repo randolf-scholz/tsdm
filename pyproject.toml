@@ -44,8 +44,8 @@ classifiers = [
 python = ">=3.9, <3.10"
 h5py = ">=3.4.0"
 matplotlib = ">=3.5"
-modin = {version = ">=0.14", extras = ["ray"]}
-ray = {version = ">=1.9", extras = ["default", "tune"]}
+#modin = {version = ">=0.14", extras = ["ray"]}
+#ray = {version = ">=1.9", extras = ["default", "tune"]}
 numpy = ">=1.22"
 pandas = ">=1.4"
 pyarrow = ">=8.0"

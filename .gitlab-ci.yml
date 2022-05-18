@@ -70,8 +70,6 @@ setup:
     # build and install package
     # set version number depending on CI_PIPELINE_ID
     - pip list
-    - pip install --only-binary ":all:"  modin[ray]
-    - pip list
     - VERSION=$(poetry version -s)
     - poetry version "$(poetry version -s).post${CI_PIPELINE_IID}"
     # verify version number OK (cf. https://peps.python.org/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
@@ -85,9 +83,9 @@ setup:
     # install package
     #- poetry install
     # TODO: fix pip install errors!!!
-    - pip install --only-binary ":all:" --upgrade $(ls dist/*.whl)
+    - pip install --upgrade $(ls dist/*.whl)
     # install dev dependencies.
-    - pip install --only-binary ":all:" --upgrade -r requirements-dev.txt
+    - pip install  --upgrade -r requirements-dev.txt
     - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
