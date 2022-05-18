@@ -21,7 +21,7 @@ blessed==1.19.1
 cachecontrol==0.12.11; python_version >= "3.6" and python_version < "4.0" and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.5.0")
 cachetools==5.1.0; python_version >= "3.7" and python_version < "4.0" and (python_version >= "3.6" and python_full_version < "3.0.0" or python_full_version >= "3.6.0" and python_version >= "3.6")
 cachy==0.3.0; python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.5.0"
-certifi==2021.10.8; python_version >= "3.8" and python_full_version < "3.0.0" or python_version >= "3.8" and python_full_version >= "3.6.0"
+certifi==2022.5.18; python_version >= "3.8" and python_full_version < "3.0.0" or python_version >= "3.8" and python_full_version >= "3.6.0"
 cffi==1.15.0; python_full_version >= "3.7.0" and python_version >= "3.7" and implementation_name == "pypy" and python_version < "4.0" and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.5.0") and sys_platform == "linux"
 cfgv==3.3.1; python_full_version >= "3.6.1" and python_version >= "3.7"
 charset-normalizer==2.0.12
@@ -116,7 +116,7 @@ pastel==0.2.1; python_version >= "2.7" and python_full_version < "3.0.0" or pyth
 pathspec==0.9.0; python_full_version >= "3.6.2" and python_version >= "3.7"
 pexpect==4.8.0; python_full_version >= "3.6.2" and python_version >= "3.8" and sys_platform != "win32"
 pickleshare==0.7.5; python_full_version >= "3.6.2" and python_version >= "3.8"
-pillow==9.1.0; python_version >= "3.7"
+pillow==9.1.1; python_version >= "3.7"
 pkginfo==1.8.2; python_version >= "3.7" and python_full_version < "3.0.0" or python_full_version >= "3.5.0" and python_version >= "3.7"
 platformdirs==2.5.2; python_version >= "3.7" and python_full_version >= "3.6.2" and (python_version >= "3.8" and python_full_version < "3.0.0" or python_version >= "3.8" and python_full_version >= "3.5.0")
 pluggy==1.0.0; python_version >= "3.7"
@@ -166,7 +166,7 @@ rfc3986==2.0.0; python_version >= "3.7"
 rich==12.4.1; python_full_version >= "3.6.3" and python_full_version < "4.0.0" and python_version >= "3.7"
 rsa==4.8; python_version >= "3.6" and python_version < "4" and (python_version >= "3.6" and python_full_version < "3.0.0" or python_full_version >= "3.6.0" and python_version >= "3.6")
 scikit-learn==1.1.0; python_version >= "3.8"
-scipy==1.8.0; python_version >= "3.8" and python_version < "3.11"
+scipy==1.8.1; python_version >= "3.8" and python_version < "3.11"
 secretstorage==3.3.2; python_version >= "3.7" and python_version < "4.0" and (python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.5.0") and sys_platform == "linux"
 setuptools-scm==6.4.2; python_version >= "3.7"
 shellingham==1.4.0; python_version >= "2.7" and python_version < "3.0" and python_full_version < "3.0.0" or python_version >= "2.6" and python_version < "3.0" and python_full_version >= "3.5.0" or python_version > "3.0" and python_version < "3.1" and python_full_version < "3.0.0" or python_version > "3.0" and python_version < "3.1" and python_full_version >= "3.5.0" or python_version > "3.1" and python_version < "3.2" and python_full_version < "3.0.0" or python_version > "3.1" and python_version < "3.2" and python_full_version >= "3.5.0" or python_version > "3.2" and python_version < "3.3" and python_full_version < "3.0.0" or python_version > "3.2" and python_version < "3.3" and python_full_version >= "3.5.0" or python_version > "3.3" and python_full_version < "3.0.0" or python_version > "3.3" and python_full_version >= "3.5.0"

@@ -70,6 +70,8 @@ setup:
     # build and install package
     # set version number depending on CI_PIPELINE_ID
     - pip list
+    - pip install modin[ray]
+    - pip list
     - VERSION=$(poetry version -s)
     - poetry version "$(poetry version -s).post${CI_PIPELINE_IID}"
     # verify version number OK (cf. https://peps.python.org/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
