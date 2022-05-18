@@ -67,6 +67,7 @@
       <w>deepset</w>
       <w>deltax</w>
       <w>dgiklmnorstwxz</w>
+      <w>diagpart</w>
       <w>diffeq</w>
       <w>discretizer</w>
       <w>discretizes</w>
@@ -195,6 +196,8 @@
       <w>oldvals</w>
       <w>operandi</w>
       <w>optim</w>
+      <w>orth</w>
+      <w>orthpart</w>
       <w>overfit</w>
       <w>padder</w>
       <w>pageview</w>
@@ -225,6 +228,7 @@
       <w>reconstr</w>
       <w>redef</w>
       <w>reftypes</w>
+      <w>reldist</w>
       <w>relsize</w>
       <w>rezero</w>
       <w>rieck</w>
@@ -273,6 +277,7 @@
       <w>subsamplers</w>
       <w>surjective</w>
       <w>syama</w>
+      <w>symm</w>
       <w>symmpart</w>
       <w>tanhshrink</w>
       <w>testdir</w>
@@ -298,6 +303,7 @@
       <w>tsepsis</w>
       <w>tsuspicion</w>
       <w>undoc</w>
+      <w>unindent</w>
       <w>univariate</w>
       <w>unpad</w>
       <w>unshuffle</w>
