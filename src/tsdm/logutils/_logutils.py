@@ -425,17 +425,21 @@ class StandardLogger:
         r"""Log hyperparameters."""
         # find best epoch on the smoothed validation curve
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
-        test_scores = {
-            key: float(self.history.loc[idx, ("test", key)])
-            for key, idx in best_epochs["valid"].items()
+
+        scores = {
+            split: {
+                metric: float(self.history.loc[idx, (split, metric)])
+                for metric, idx in best_epochs["valid"].items()
+            }
+            for split in ("train", "valid", "test")
         }
 
         if self.results_dir is not None:
             with open(self.results_dir / f"{i}.yaml", "w") as file:
-                file.write(yaml.dump(test_scores))
+                file.write(yaml.dump(scores))
 
         # add prefix
-        test_scores = {f"metrics:hparam/{k}": v for k, v in test_scores.items()}
+        test_scores = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
 
         self.writer.add_hparams(
             hparam_dict=self.hparam_dict, metric_dict=test_scores, run_name="hparam"
