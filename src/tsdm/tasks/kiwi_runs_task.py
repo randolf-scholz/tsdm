@@ -21,12 +21,12 @@ from torch import Tensor, jit
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
-from tsdm.datasets.torch import MappingDataset, TimeSeriesDataset
 from tsdm.encoders.modular import BaseEncoder
 from tsdm.losses.modular import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.util.strings import repr_namedtuple
+from tsdm.util.torch import MappingDataset, TimeSeriesDataset
 
 __logger__ = logging.getLogger(__name__)
 
@@ -269,11 +269,7 @@ class KIWI_RUNS_TASK(BaseTask):
         }
 
     def get_dataloader(
-        self,
-        key: KeyType,
-        /,
-        shuffle: bool = False,
-        **dataloader_kwargs: Any,
+        self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return a dataloader for the given split.
 

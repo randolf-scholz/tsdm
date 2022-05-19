@@ -8,39 +8,48 @@ __all__ = [
     # Classes
     "Split",
     # Functions
+    "col_corr",
     "deep_dict_update",
     "deep_kval_update",
-    "initialize_from",
-    "initialize_from_config",
-    "now",
-    "skewpart",
-    "relsize_skewpart",
-    "symmpart",
-    "relsize_symmpart",
+    "erank",
     "flatten_dict",
     "flatten_nested",
-    "prepend_path",
+    "initialize_from",
+    "initialize_from_config",
+    "is_partition",
+    "mat_corr",
+    "now",
     "paths_exists",
+    "prepend_path",
+    "reldist_diag",
+    "reldist_skew",
+    "reldist_symm",
     "round_relative",
+    "row_corr",
+    "skewpart",
+    "symmpart",
+    "orthpart",
+    "reldist_orth",
 ]
 
 import os
-from collections.abc import Callable, Collection, Iterable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
-from typing import Any, NamedTuple, Union, overload
+from typing import Any, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 import torch
 from torch import Tensor, jit
 
-from tsdm.util.types import NullableNestedType, ObjectType, PathType, ReturnType
+from tsdm.util.types import Nested, ObjectType, PathType, ReturnType
 from tsdm.util.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
+EmptyPath: Path = Path()
 
 
 class Split(NamedTuple):
@@ -49,6 +58,71 @@ class Split(NamedTuple):
     train: Any
     valid: Any
     test: Any
+
+
+@jit.script
+def col_corr(x: Tensor) -> Tensor:
+    r"""Compute average column-wise correlation of a matrix.
+
+    Signature: [..., m, n] -> [...].
+    """
+    m, n = x.shape[-2:]
+    u = torch.linalg.norm(x, dim=0)
+    xx = torch.einsum("...i, ...j -> ...ij", u, u)
+    xtx = torch.einsum("...ik, ...il  -> ...kl", x, x)
+    I = torch.eye(n, dtype=x.dtype, device=x.device)
+    c = I - xtx / xx
+    return c.abs().sum(dim=(-2, -1)) / (n * (n - 1))
+
+
+@jit.script
+def row_corr(x: Tensor) -> Tensor:
+    r"""Compute average column-wise correlation of a matrix.
+
+    Signature: [..., m, n] -> [...].
+    """
+    m, n = x.shape[-2:]
+    v = torch.linalg.norm(x, dim=1)
+    xx = torch.einsum("...i, ...j -> ...ij", v, v)
+    xxt = torch.einsum("...kj, ...lj  -> ...kl", x, x)
+    I = torch.eye(m, dtype=x.dtype, device=x.device)
+    c = I - xxt / xx
+    return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
+
+
+@jit.script
+def mat_corr(x: Tensor) -> Tensor:
+    """Compute average row/col-wise correlation of a matrix.
+
+    Signature: [..., m, n] -> [...].
+
+    Since both are equal, we use the one that is cheaper to compute.
+    If x is $m×n$, then col-corr takes $𝓞(mn²)$, while row-corr takes $𝓞(m²n)$.
+    """
+    m, n = x.shape[-2:]
+    if m > n:
+        return col_corr(x)
+    return row_corr(x)
+
+
+@jit.script
+def erank(x: Tensor) -> Tensor:
+    r"""Compute the effective rank of a matrix.
+
+    Signature: [..., m, n] -> [...].
+
+    References
+    ----------
+    - | `The effective rank: A measure of effective dimensionality
+        <https://ieeexplore.ieee.org/document/7098875>`_
+      | Olivier Roy, Martin Vetterli
+      | `15th European Signal Processing Conference (EUSIPCO), 2007
+        <https://ieeexplore.ieee.org/xpl/conhome/7067185/proceeding>`_
+    """
+    σ = torch.linalg.svdvals(x)
+    σ = σ / torch.linalg.norm(σ, ord=1, dim=-1)
+    entropy = torch.special.entr(σ).sum(dim=-1)
+    return torch.exp(entropy)
 
 
 def round_relative(x: np.ndarray, decimals: int = 2) -> np.ndarray:
@@ -109,10 +183,10 @@ def deep_kval_update(d: dict, **new_kvals: dict) -> dict:
 
 
 def apply_nested(
-    nested: NullableNestedType[ObjectType],
+    nested: Nested[Optional[ObjectType]],
     kind: type[ObjectType],
     func: Callable[[ObjectType], ReturnType],
-) -> NullableNestedType[ReturnType]:
+) -> Nested[Optional[ReturnType]]:
     r"""Apply function to nested iterables of a given kind.
 
     Parameters
@@ -133,17 +207,51 @@ def apply_nested(
     raise TypeError(f"Unsupported type: {type(nested)}")
 
 
+@overload
 def prepend_path(
-    files: NullableNestedType[PathType],
-    path: Path,
-) -> NullableNestedType[Path]:
+    files: Nested[PathType],
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> Nested[Path]:
+    ...
+
+
+@overload
+def prepend_path(
+    files: Nested[Optional[PathType]],
+    parent: Path,
+    *,
+    keep_none: Literal[False] = False,
+) -> Nested[Path]:
+    ...
+
+
+@overload
+def prepend_path(
+    files: Nested[Optional[PathType]],
+    parent: Path,
+    *,
+    keep_none: Literal[True] = True,
+) -> Nested[Optional[Path]]:
+    ...
+
+
+def prepend_path(
+    files: Nested[Optional[PathType]],
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> Nested[Optional[Path]]:
     r"""Prepends path to all files in nested iterable.
 
     Parameters
     ----------
     files
-        Nested Datastructed with Path-objects at leave nodes.
-    path
+        Nested datastructes with Path-objects at leave nodes.
+    parent: Path
+    keep_none: bool
+        If True, None-values are kept.
 
     Returns
     -------
@@ -152,14 +260,16 @@ def prepend_path(
     # TODO: change it to apply_nested in python 3.10
 
     if files is None:
-        return None
-    if isinstance(files, (str, os.PathLike)):
-        return path / Path(files)
+        return None if keep_none else parent
+    if isinstance(files, (str, Path, os.PathLike)):
+        return parent / Path(files)
     if isinstance(files, Mapping):
-        return {k: prepend_path(v, path) for k, v in files.items()}
+        return {
+            k: prepend_path(v, parent, keep_none=keep_none) for k, v in files.items()  # type: ignore[arg-type]
+        }
     # TODO https://github.com/python/mypy/issues/11615
     if isinstance(files, Collection):
-        return [prepend_path(f, path) for f in files]  # type: ignore[misc]
+        return [prepend_path(f, parent, keep_none=keep_none) for f in files]  # type: ignore
     raise TypeError(f"Unsupported type: {type(files)}")
 
 
@@ -325,6 +435,19 @@ def is_dunder(name: str) -> bool:
     return name.startswith("__") and name.endswith("__")
 
 
+def is_partition(*partition: Collection, union: Optional[Sequence] = None) -> bool:
+    r"""Check if partition is a valid partition of union."""
+    if len(partition) == 1:
+        return is_partition(*next(iter(partition)), union=union)
+
+    sets = (set(p) for p in partition)
+    part_union = set().union(*sets)
+
+    if union is not None and part_union != set(union):
+        return False
+    return len(part_union) == sum(len(p) for p in partition)
+
+
 def initialize_from_config(config: dict[str, Any]) -> Any:
     r"""Initialize a class from a dictionary.
 
@@ -347,9 +470,9 @@ def initialize_from_config(config: dict[str, Any]) -> Any:
 
 
 def paths_exists(
-    paths: Union[
-        None, Path, Collection[Path], Mapping[Any, Union[None, Path, Collection[Path]]]
-    ]
+    paths: Nested[Optional[PathType]],
+    *,
+    parent: Path = EmptyPath,
 ) -> bool:
     r"""Check whether the files exist.
 
@@ -358,6 +481,7 @@ def paths_exists(
     Parameters
     ----------
     paths: None | Path | Collection[Path] | Mapping[Any, None | Path | Collection[Path]]
+    parent: Path = Path(),
 
     Returns
     -------
@@ -368,11 +492,11 @@ def paths_exists(
     if paths is None:
         return True
     if isinstance(paths, Mapping):
-        return all(paths_exists(f) for f in paths.values())
+        return all(paths_exists(f, parent=parent) for f in paths.values())
     if isinstance(paths, Collection):
-        return all(paths_exists(f) for f in paths)
+        return all(paths_exists(f, parent=parent) for f in paths)
     if isinstance(paths, Path):
-        return paths.exists()
+        return (parent / paths).exists()
 
     raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
 
@@ -470,25 +594,111 @@ def paths_exists(
 #     if isinstance(obj, type) and not issubclass(obj, type):
 #         return obj(**kwargs)
 #     return partial(obj, **kwargs)
+
+
 @jit.script
 def symmpart(x: Tensor) -> Tensor:
-    r"""Symmetric part of matrix."""
+    r"""Symmetric part of square matrix.
+
+    Signature: [..., n, n] -> [..., n, n]
+
+    .. math::
+        \argmin_{X: X^⊤ = -X} ‖A-X‖
+    """
     return (x + x.swapaxes(-1, -2)) / 2
 
 
 @jit.script
 def skewpart(x: Tensor) -> Tensor:
-    r"""Skew-Symmetric part of matrix."""
+    r"""Skew-Symmetric part of a matrix.
+
+    Signature: [..., n, n] -> [..., n, n]
+
+    .. math::
+        \argmin_{X: X^⊤ = X} ‖A-X‖
+    """
     return (x - x.swapaxes(-1, -2)) / 2
 
 
 @jit.script
-def relsize_symmpart(kernel):
-    r"""Relative magnitude of symmpart part."""
-    return torch.mean(symmpart(kernel) ** 2) / torch.mean(kernel**2)
+def orthpart(x: Tensor) -> Tensor:
+    r"""Orthogonal part of a square matrix.
+
+    Signature: [..., n, n] -> [..., n, n]
+
+    .. math::
+        \argmin_{X: XᵀX = 𝕀} ‖A-X‖
+    """
+    U, S, Vt = torch.linalg.svd(x, full_matrices=True)
+    Q = torch.einsum("...ij, ...jk->...ik", U, Vt)
+    return Q
 
 
 @jit.script
-def relsize_skewpart(kernel):
-    r"""Relative magnitude of skew-symmpart part."""
-    return torch.mean(skewpart(kernel) ** 2) / torch.mean(kernel**2)
+def diagpart(x: Tensor) -> Tensor:
+    r"""Diagonal part of a square matrix.
+
+    Signature: [..., n, n] -> [..., n, n]
+
+    .. math::
+        \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    """
+    d = torch.diagonal(x, dim1=-2, dim2=-1)
+    return torch.diag_embed(d)
+
+
+@jit.script
+def matrix_reldist(x: Tensor, y: Tensor) -> Tensor:
+    r"""Relative distance between two matrices.
+
+    Signature: [..., m, n], [..., m, n]  -> [..., n, n]
+
+    .. math::
+        ‖x-y‖/‖y‖
+    """
+    r = torch.linalg.matrix_norm(x - y, ord="fro", dim=(-2, -1))
+    yy = torch.linalg.matrix_norm(y, ord="fro", dim=(-2, -1))
+    zero = torch.tensor(0.0, dtype=torch.float32, device=x.device)
+    return torch.where(yy != 0, r / yy, zero)
+
+
+@jit.script
+def reldist_diag(x: Tensor) -> Tensor:
+    r"""Compute the relative distance to being a diagonal matrix.
+
+    Signature: [..., n, n] -> [...]
+
+    .. math::
+        ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    """
+    return matrix_reldist(diagpart(x), x)
+
+
+@jit.script
+def reldist_symm(x: Tensor) -> Tensor:
+    r"""Relative magnitude of symmpart part.
+
+    Signature: [..., n, n] -> [...]
+    """
+    return matrix_reldist(symmpart(x), x)
+
+
+@jit.script
+def reldist_skew(x: Tensor) -> Tensor:
+    r"""Relative magnitude of skew-symmpart part.
+
+    Signature: [..., n, n] -> [...]
+    """
+    return matrix_reldist(skewpart(x), x)
+
+
+@jit.script
+def reldist_orth(x: Tensor) -> Tensor:
+    r"""Relative magnitude of orthogonal part.
+
+    .. math::
+        \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
+
+    Signature: [..., n, n] -> [...]
+    """
+    return matrix_reldist(orthpart(x), x)

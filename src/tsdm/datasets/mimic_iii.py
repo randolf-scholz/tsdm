@@ -21,73 +21,122 @@ __all__ = ["MIMIC_III"]
 
 import os
 import subprocess
-from functools import cached_property
 from getpass import getpass
-from pathlib import Path
-from typing import Optional, Union
 
-from tsdm.datasets.base import SimpleDataset
+import pandas as pd
+
+from tsdm.datasets.base import Dataset
+from tsdm.encoders.modular import TripletDecoder
 
 
-class MIMIC_III(SimpleDataset):
-    r"""MIMIC-III SimpleDataset Database."""
+class MIMIC_III(Dataset):
+    """MIMIC-III Clinical Database.
 
-    base_url: str = r"https://physionet.org/files/mimiciii/1.4/"
-    r"""HTTP address from where the dataset can be downloaded."""
+    MIMIC-III is a large, freely-available database comprising deidentified health-related data
+    associated with over forty thousand patients who stayed in critical care units of the Beth
+    Israel Deaconess Medical Center between 2001 and 2012. The database includes information such
+    as demographics, vital sign measurements made at the bedside (~1 data point per hour),
+    laboratory test results, procedures, medications, caregiver notes, imaging reports, and
+    mortality (including post-hospital discharge).
+
+    MIMIC supports a diverse range of analytic studies spanning epidemiology, clinical decision-rule
+    improvement, and electronic tool development. It is notable for three factors: it is freely
+    available to researchers worldwide; it encompasses a diverse and very large population of ICU
+    patients; and it contains highly granular data, including vital signs, laboratory results,
+    and medications.
+
+    Notes
+    -----
+    NOTE: TIME_STAMP = round(merged_df_short_binned["TIME_STAMP"].dt.total_seconds()*bin_k/(100*36))
+    and bin_k = 10
+    i.e. TIME_STAMP = round(dt.total_seconds()*10/3600) = round(dt.total_hours()*10)
+    i.e. TIME_STAMP ≈ 10*total_hours
+    so e.g. the last patient was roughly 250 hours, 10½ days.
+    """
+
+    base_url: str = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
     info_url: str = r"https://physionet.org/content/mimiciii/1.4/"
-    r"""HTTP address containing additional information about the dataset."""
+    dataset_files = {"observations": "observations.feather", "stats": "stats.feather"}
+    rawdata_files = "mimic-iii-clinical-database-1.4.zip"
+    index = ["observations", "stats"]
 
-    @cached_property
-    def dataset_files(self) -> Path:
-        r"""Path to the downloaded dataset."""
-        return self.rawdata_dir / "MIMIC-III.zip"
+    def _clean(self, key):
+        ts_file = self.rawdata_dir / "complete_tensor.csv"
+        if not ts_file.exists():
+            raise RuntimeError(
+                "Please apply the preprocessing code found at "
+                "https://github.com/edebrouwer/gru_ode_bayes/."
+                f"\nPut the resulting file 'complete_tensor.csv' in {self.rawdata_dir}."
+            )
 
-    @cached_property
-    def rawdata_files(self) -> Path:
-        r"""Path to the raw data."""
-        return self.rawdata_dir / "rawdata"
+        ts = pd.read_csv(ts_file, index_col=0)
 
-    def _clean(self) -> None:
-        r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
+        if ts.shape != (3082224, 7):
+            raise ValueError(
+                f"The {ts.shape=} is not correct."
+                "Please apply the modified preprocessing using bin_k=2, as outlined in"
+                "the appendix. The resulting tensor should have 3082224 rows and 7 columns."
+            )
 
-    def _load(self):
-        r"""Load the dataset stored in hdf5 format in the path `cls.dataset_files`."""
+        ts = ts.sort_values(by=["UNIQUE_ID", "TIME_STAMP"])
+        ts = ts.astype(
+            {
+                "UNIQUE_ID": "int16",
+                "TIME_STAMP": "int16",
+                "LABEL_CODE": "int16",
+                "VALUENORM": "float32",
+                "MEAN": "float32",
+                "STD": "float32",
+            }
+        )
 
-    def _download(self, *, url: Optional[Union[str, Path]] = None) -> None:
-        r"""Download the dataset and stores it in `cls.rawdata_dir`.
+        means = ts.groupby("LABEL_CODE").mean()["VALUENUM"].rename("MEANS")
+        stdvs = ts.groupby("LABEL_CODE").std()["VALUENUM"].rename("STDVS")
+        stats = pd.DataFrame([means, stdvs]).T.reset_index()
+        stats = stats.astype(
+            {
+                "LABEL_CODE": "int16",
+                "MEANS": "float32",
+                "STDVS": "float32",
+            }
+        )
 
-        The default downloader checks if
+        ts = ts[["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENORM"]]
+        ts = ts.reset_index(drop=True)
+        ts = ts.set_index(["UNIQUE_ID", "TIME_STAMP"])
+        ts = ts.sort_index()
+        encoder = TripletDecoder(value_name="VALUENORM", var_name="LABEL_CODE")
+        encoder.fit(ts)
+        encoded = encoder.encode(ts)
+        ts = encoded.reset_index()
+        ts.columns = ts.columns.astype("string")
+        stats.to_feather(self.dataset_paths["stats"])
+        ts.to_feather(self.dataset_paths["observations"])
 
-        1. The url points to kaggle.com => uses `kaggle competition download`
-        2. The url points to github.com => checkout directory with `svn`
-        3. Else simply use `wget` to download the `cls.url` content,
+    def _load(self, key):
+        # return NotImplemented
+        df = pd.read_feather(self.dataset_paths[key])
 
-        Overwrite if you need custom downloader
+        if key == "observations":
+            df = df.set_index(["UNIQUE_ID", "TIME_STAMP"])
+            df = df.sort_index()
+        elif key == "stats":
+            df = df.set_index("LABEL_CODE")
+        return df
 
-        Parameters
-        ----------
-        url: Optional[Union[str, Path]], default None
-        """
-        if self.url is None:
-            self.__logger__.info("Dataset provides no url. Assumed offline")
-            return
-
-        self.__logger__.info("Obtaining dataset from %s", self.url)
-
-        cut_dirs = self.url.count("/") - 3
-
+    def _download(self, **kwargs):
+        cut_dirs = self.base_url.count("/") - 3
         user = input("MIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)
 
         os.environ["PASSWORD"] = password
 
-        url = self.url if url is None else url
-
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            f"--cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {url}",
+            + f"--cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {self.base_url} ",
             shell=True,
             check=True,
         )
 
-        self.__logger__.info("Finished importing dataset from %s", self.url)
+        file = self.rawdata_dir / "index.html"
+        os.rename(file, self.rawdata_files)
