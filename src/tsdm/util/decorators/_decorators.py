@@ -584,10 +584,7 @@ def IterKeys(obj: ObjectType) -> ObjectType:
 
 def IterKeys(obj):
     r"""Wrap a class such that `__getitem__` returns key instead."""
-    if isinstance(obj, type):
-        base_class = obj
-    else:
-        base_class = type(obj)
+    base_class = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
     class WrappedClass(base_class):
@@ -598,7 +595,7 @@ def IterKeys(obj):
             return key
 
         def __repr__(self) -> str:
-            r"""Representation of the dataset."""
+            r"""Representation of the new object."""
             return r"IterKeys@" + super().__repr__()
 
     if isinstance(obj, type):

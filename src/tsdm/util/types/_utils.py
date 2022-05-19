@@ -134,7 +134,7 @@ def string_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
     bool
     """
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
-    uniques = get_uniques(series) if uniques is None else uniques
+    uniques: Series = get_uniques(series) if uniques is None else uniques
 
     if len(uniques) == 0 or len(uniques) > 2:
         return False
@@ -157,7 +157,9 @@ def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
     """
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
 
-    mask, uniques = get_uniques(series) if uniques is None else uniques
+    mask = pandas.notna(series)
+
+    uniques = get_uniques(series[mask]) if uniques is None else uniques
 
     mapping = next(
         set(uniques.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS

@@ -67,6 +67,7 @@
       <w>deepset</w>
       <w>deltax</w>
       <w>dgiklmnorstwxz</w>
+      <w>diagpart</w>
       <w>diffeq</w>
       <w>discretizer</w>
       <w>discretizes</w>
@@ -79,6 +80,7 @@
       <w>endblock</w>
       <w>endfor</w>
       <w>equimodal</w>
+      <w>erank</w>
       <w>errorlevel</w>
       <w>etdataset</w>
       <w>fillna</w>
@@ -187,13 +189,17 @@
       <w>notna</w>
       <w>nrmse</w>
       <w>numdims</w>
+      <w>nunique</w>
       <w>objname</w>
       <w>obsrv</w>
       <w>odeint</w>
       <w>oldvals</w>
       <w>operandi</w>
       <w>optim</w>
+      <w>orth</w>
+      <w>orthpart</w>
       <w>overfit</w>
+      <w>padder</w>
       <w>pageview</w>
       <w>pems</w>
       <w>peng</w>
@@ -222,6 +228,7 @@
       <w>reconstr</w>
       <w>redef</w>
       <w>reftypes</w>
+      <w>reldist</w>
       <w>relsize</w>
       <w>rezero</w>
       <w>rieck</w>
@@ -234,6 +241,7 @@
       <w>sahota</w>
       <w>selu</w>
       <w>sepehr</w>
+      <w>setpoints</w>
       <w>seyed</w>
       <w>sflag</w>
       <w>sflags</w>
@@ -261,6 +269,7 @@
       <w>sprop</w>
       <w>standardizer</w>
       <w>stdv</w>
+      <w>stdvs</w>
       <w>subblock</w>
       <w>subblocks</w>
       <w>subkey</w>
@@ -268,6 +277,7 @@
       <w>subsamplers</w>
       <w>surjective</w>
       <w>syama</w>
+      <w>symm</w>
       <w>symmpart</w>
       <w>tanhshrink</w>
       <w>testdir</w>
@@ -293,6 +303,7 @@
       <w>tsepsis</w>
       <w>tsuspicion</w>
       <w>undoc</w>
+      <w>unindent</w>
       <w>univariate</w>
       <w>unpad</w>
       <w>unshuffle</w>
@@ -300,6 +311,8 @@
       <w>upack</w>
       <w>ushcn</w>
       <w>vals</w>
+      <w>valuenorm</w>
+      <w>valuenum</w>
       <w>vecs</w>
       <w>vectorize</w>
       <w>venvname</w>

@@ -41,6 +41,7 @@ __all__ = [
     "PeriodicEncoder",
     "SocialTimeEncoder",
     "PeriodicSocialTimeEncoder",
+    "TripletDecoder",
 ]
 
 import logging
@@ -68,6 +69,7 @@ from tsdm.encoders.modular._modular import (
     PositionalEncoder,
     SocialTimeEncoder,
     TensorEncoder,
+    TripletDecoder,
     TripletEncoder,
     ValueEncoder,
 )
