@@ -193,17 +193,16 @@ convention = "numpy"
 #########################
 [tool.pyright]
 root = ""
-include = ["src/", "test/"]
+venv = ".venv"
+venvPath = "."
 pythonVersion = "3.9"
 pythonPlatform = "Linux"
+include = ["src/", "test/"]
 exclude = [
     "**/node_modules",
     "**/__pycache__",
     "**/.ipynb_checkpoints",
 ]
-
-venv = ".venv"
-venvPath = "."
 reportMissingImports = false
 reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false
