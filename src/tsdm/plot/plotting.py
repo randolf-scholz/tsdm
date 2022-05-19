@@ -5,10 +5,13 @@ __all__ = [
     "visualize_distribution",
     "shared_grid_plot",
     "plot_spectrum",
+    "rasterize",
+    "center_axes",
 ]
 
 import logging
 from collections.abc import Callable
+from pathlib import Path
 from typing import Literal, Optional
 
 import numpy as np
@@ -17,6 +20,7 @@ from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.pyplot import Axes, Figure
 from numpy.typing import ArrayLike, NDArray
+from PIL import Image
 from scipy.stats import mode
 from torch import Tensor
 from torch.linalg import eigvals
@@ -230,9 +234,26 @@ def shared_grid_plot(
     return fig, axes
 
 
+def rasterize(
+    fig: Figure, w: int = 3, h: int = 3, px: int = 512, py: int = 512
+) -> np.ndarray:
+    r"""Convert figure to image with specific pixel size."""
+    dpi = (px / w + py / h) // 2  # compromise
+    fig.set_dpi(dpi)
+    fig.set_size_inches(w, h)
+    file = Path(f"tmp-{hash(fig)}.png")
+    fig.savefig(file, dpi=dpi)
+    im = Image.open(file)
+    arr = np.array(im)
+    file.unlink()
+    return arr
+
+
 @torch.no_grad()
 def plot_spectrum(
     kernel: Tensor,
+    /,
+    *,
     style: str = "ggplot",
     axis_kwargs: Optional[dict] = None,
     figure_kwargs: Optional[dict] = None,
@@ -274,13 +295,32 @@ def plot_spectrum(
         "edgecolors": "none",
     } | (scatter_kwargs or {})
 
+    if not isinstance(kernel, Tensor):
+        kernel = torch.tensor(kernel, dtype=torch.float32)
+
     with plt.style.context(style):
         assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
         eigs = eigvals(kernel).detach().cpu()
         fig, ax = plt.subplots(**figure_kwargs)
         ax.set(**axis_kwargs)
         ax.scatter(eigs.real, eigs.imag, **scatter_kwargs)
-        return fig
+
+    return fig
+
+
+def center_axes(fig: Figure, /, *, remove_labels: bool = True) -> Figure:
+    r"""Center axes in figure."""
+    for ax in fig.axes:
+        ax.set(xlabel="", ylabel="")
+        ax.spines["left"].set_position(("data", 0))
+        ax.spines["left"].set_color("k")
+        ax.spines["bottom"].set_color("k")
+        ax.spines["bottom"].set_position(("data", 0))
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.plot(0.99, 0, ">k", transform=ax.get_yaxis_transform(), clip_on=True)
+        ax.plot(0, 0.99, "^k", transform=ax.get_xaxis_transform(), clip_on=True)
+    return fig
 
 
 # @torch.no_grad()

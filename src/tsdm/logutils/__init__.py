@@ -19,7 +19,7 @@ import logging
 from collections.abc import Callable
 from typing import Final
 
-from tsdm.logutils._logutils import (  # Classes; Functions
+from tsdm.logutils._logutils import (
     StandardLogger,
     compute_metrics,
     log_kernel_information,

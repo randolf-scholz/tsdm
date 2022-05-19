@@ -32,7 +32,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tsdm.losses import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
-from tsdm.plot import kernel_heatmap, plot_spectrum
+from tsdm.plot import center_axes, kernel_heatmap, plot_spectrum, rasterize
 from tsdm.util import (
     erank,
     mat_corr,
@@ -135,7 +135,11 @@ def log_kernel_information(
     if histograms and i % histograms == 0:
         writer.add_histogram(f"{identifier}:histogram", K, i)
         writer.add_image(f"{identifier}:heatmap", kernel_heatmap(K, "CHW"), i)
-        writer.add_figure(f"{identifier}:spectrum", plot_spectrum(K), i)
+
+        spectrum = plot_spectrum(K)
+        spectrum = center_axes(spectrum)
+        image = rasterize(spectrum, w=2, h=2, px=512, py=512)
+        writer.add_image(f"{identifier}:spectrum", image, i, dataformats="HWC")
 
 
 def log_optimizer_state(
@@ -447,12 +451,13 @@ class StandardLogger:
         print(f"{test_scores=} achieved by {self.hparam_dict=}")
 
         # FIXME: https://github.com/pytorch/pytorch/issues/32651
-        for file in (self.logging_dir / "hparam").iterdir():
-            shutil.move(file, self.logging_dir)
+        for files in (self.logging_dir / "hparam").iterdir():
+            shutil.move(files, self.logging_dir)
         (self.logging_dir / "hparam").rmdir()
 
     def log_history(self, i: int, /) -> None:
         r"""Store history dataframe to file (default format: parquet)."""
+        assert self.results_dir is not None
         path = self.results_dir / f"history-{i}.parquet"
         self.history.to_parquet(path)
 
