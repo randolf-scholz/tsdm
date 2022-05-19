@@ -11,8 +11,6 @@ __all__ = [
 
 import gzip
 import logging
-import os
-from functools import cached_property
 from io import StringIO
 from pathlib import Path
 from typing import Literal, Union
@@ -24,15 +22,17 @@ from tsdm.datasets.base import Dataset, SimpleDataset
 
 __logger__ = logging.getLogger(__name__)
 
-try:
-    import modin.pandas as mpd
-    import ray
-
-    use_ray = True
-except ImportError:
-    __logger__.warning("Ray/Modin not installed. Using pandas.")
-    mpd = pandas
-    use_ray = False
+mpd = pandas
+# FIXME: This is a temporary solution to get the data from the USHCN website.
+# try:
+#     import modin.pandas as mpd
+#     import ray
+#
+#     use_ray = True
+# except ImportError:
+#     __logger__.warning("Ray/Modin not installed. Using pandas.")
+#     mpd = pandas
+#     use_ray = False
 
 STATE_CODES = r"""
 ID	Abbr.	State
@@ -108,41 +108,44 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
     info_url = "https://github.com/edebrouwer/gru_ode_bayes"
     r"""HTTP address containing additional information about the dataset."""
 
-    dataset: DataFrame
-
-    @cached_property
-    def dataset_files(self) -> Path:
-        r"""Location where dataset is stored."""
-        return self.dataset_dir / "SmallChunkedSporadic.feather"
-
-    @cached_property
-    def rawdata_files(self) -> Path:
-        r"""Location where raw dataset is stored."""
-        return self.rawdata_dir / "small_chunked_sporadic.csv"
+    rawdata_files = "small_chunked_sporadic.csv"
+    dataset_files = "SmallChunkedSporadic.feather"
 
     def _clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
         dtypes = {
-            "ID": pandas.UInt16Dtype(),
-            "Time": pandas.Float32Dtype(),
-            "Value_0": pandas.Float32Dtype(),
-            "Value_1": pandas.Float32Dtype(),
-            "Value_2": pandas.Float32Dtype(),
-            "Value_3": pandas.Float32Dtype(),
-            "Value_4": pandas.Float32Dtype(),
-            "Mask_0": pandas.BooleanDtype(),
-            "Mask_1": pandas.BooleanDtype(),
-            "Mask_2": pandas.BooleanDtype(),
-            "Mask_3": pandas.BooleanDtype(),
-            "Mask_4": pandas.BooleanDtype(),
+            "ID": "int16",
+            "Time": "float32",
+            "Value_0": "float32",
+            "Value_1": "float32",
+            "Value_2": "float32",
+            "Value_3": "float32",
+            "Value_4": "float32",
+            "Mask_0": "bool",
+            "Mask_1": "bool",
+            "Mask_2": "bool",
+            "Mask_3": "bool",
+            "Mask_4": "bool",
         }
-        df = pandas.read_csv(self.rawdata_files, dtype=dtypes)
-        df = DataFrame(df).reset_index()
-        df.to_feather(self.dataset_files)
+        df = pandas.read_csv(self.rawdata_paths, dtype=dtypes)
+        df = DataFrame(df)
+
+        channels = {}
+        for k in range(5):
+            key = f"CH_{k}"
+            value = f"Value_{k}"
+            channels[key] = value
+            df[key] = df[value].where(df[f"Mask_{k}"])
+
+        df = df[["ID", "Time", *channels]]
+        df = df.sort_values(["ID", "Time"])
+        df = df.reset_index(drop=True)
+        df = df.rename(columns=channels)
+        df.to_feather(self.dataset_paths)
 
     def _load(self) -> DataFrame:
         r"""Load the dataset from hdf-5 file."""
-        df = pandas.read_feather(self.dataset_files)
+        df = pandas.read_feather(self.dataset_paths)
         return df.set_index(["ID", "Time"])
 
 
@@ -300,24 +303,21 @@ class USHCN(Dataset):
     KEYS = Literal["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
     index = ["us_daily", "states", "stations"]
-
-    @cached_property
-    def rawdata_files(self) -> dict[str, Path]:
-        r"""Location of (possibly compressed) data archive."""
-        return {
-            "metadata": self.rawdata_dir / "data_format.txt",
-            "states": Path(),
-            "stations": self.rawdata_dir / "ushcn-stations.txt",
-            "stations_metadata": self.rawdata_dir / "station_file_format.txt",
-            "us_daily": self.rawdata_dir / "us.txt.gz",
-        }
+    rawdata_files = {
+        "metadata": "data_format.txt",
+        "states": None,
+        "stations": "ushcn-stations.txt",
+        "stations_metadata": "station_file_format.txt",
+        "us_daily": "us.txt.gz",
+    }
+    rawdata_paths: dict[str, Path]
 
     def _load(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Load the dataset from disk."""
         # path = self.dataset_files[key]
         # if not path.exists():
         #     self.clean(key=key)
-        df = pandas.read_feather(self.dataset_files[key])
+        df = pandas.read_feather(self.dataset_paths[key])
         if key == "us_daily":
             df = df.set_index(["time", "COOP_ID"])
         elif key == "states":
@@ -347,11 +347,11 @@ class USHCN(Dataset):
             "State": pandas.StringDtype(),
         }
         states = pandas.read_csv(StringIO(STATE_CODES), sep="\t", dtype=state_dtypes)
-        states.to_feather(self.dataset_files["states"])
+        states.to_feather(self.dataset_paths["states"])
         self.__logger__.info("Finished cleaning 'states' DataFrame")
 
     def _clean_stations(self) -> None:
-        stations_file = self.rawdata_files["stations"]
+        stations_file = self.rawdata_paths["stations"]
         if not stations_file.exists():
             self.download()
 
@@ -412,15 +412,16 @@ class USHCN(Dataset):
             "STATE": "category",
         }
         stations = stations.astype(stations_new_dtypes)
-        path = self.dataset_files["stations"]
+        path = self.dataset_paths["stations"]
         stations.to_feather(path)
         self.__logger__.info("Finished cleaning 'stations' DataFrame")
 
     def _clean_us_daily(self) -> None:
-        if use_ray:
-            num_cpus = max(1, (os.cpu_count() or 0) - 2)
-            __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
-            ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
+        # FIXME: ray import
+        # if use_ray:
+        #     num_cpus = max(1, (os.cpu_count() or 0) - 2)
+        #     __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
+        #     ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
 
         # column: (start, stop)
         colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
@@ -465,25 +466,28 @@ class USHCN(Dataset):
 
         # per column values to be interpreted as nan
         na_values = {("VALUE", k): -9999 for k in range(1, 32)}
-        us_daily_file = self.rawdata_dir / self.rawdata_files["us_daily"].stem
-        self.__logger__.info("Decompressing into %s", us_daily_file)
+        us_daily_path = self.rawdata_paths["us_daily"]
 
-        with gzip.open(self.rawdata_files["us_daily"], "rb") as compressed_file:
-            with open(us_daily_file, "w", encoding="utf8") as file:
-                file.write(compressed_file.read().decode("utf-8"))
+        with gzip.open(us_daily_path, "rb") as compressed_file:
+            ds = mpd.read_fwf(
+                compressed_file,
+                colspecs=cspec,
+                names=colspecs,
+                na_values=na_values,
+                dtype=dtype,
+            )
 
-        self.__logger__.info("Finished decompressing main file")
-
-        ds = mpd.read_fwf(
-            us_daily_file,
-            colspecs=cspec,
-            names=colspecs,
-            na_values=na_values,
-            dtype=dtype,
-        )
-        us_daily_file.unlink()
-        # ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
+        ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
         self.__logger__.info("Finished loading main file.")
+
+        # us_daily_file = us_daily_path.with_suffix('')
+        # self.__logger__.info("Decompressing into %s", us_daily_file)
+        #
+        # with gzip.open(us_daily_path, "rb") as compressed_file:
+        #     with open(us_daily_file, "w", encoding="utf8") as file:
+        #         file.write(compressed_file.read().decode("utf-8"))
+        # us_daily_file.unlink()
+        # self.__logger__.info("Finished decompressing main file")
 
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
@@ -536,4 +540,4 @@ class USHCN(Dataset):
         data["time"] = datetimes
         self.__logger__.info("Finished creating time index.")
 
-        data.to_feather(self.dataset_files["us_daily"])
+        data.to_feather(self.dataset_paths["us_daily"])

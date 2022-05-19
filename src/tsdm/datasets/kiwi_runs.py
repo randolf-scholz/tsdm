@@ -11,7 +11,6 @@ __all__ = [
 import logging
 import pickle
 from collections.abc import Callable, Sequence
-from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Literal, Optional
 
@@ -148,32 +147,13 @@ class KIWI_RUNS(Dataset):
     r"""The metadata."""
     units: DataFrame
     r"""The units of the measured variables."""
-
-    # @cached_property
-    # def dataset(self) -> DataFrame:
-    #     r"""Store cached version of dataset."""
-    #     # What is the best practice for metaclass methods that call each other?
-    #     # https://stackoverflow.com/q/47615318/9318372
-    #     if os.environ.get("GENERATING_DOCS", False):
-    #         return "the dataset"
-    #     return self.load()
-
-    @cached_property
-    def rawdata_files(self) -> Path:
-        r"""Path of the raw data file."""
-        return self.rawdata_dir / "kiwi_experiments_and_run_355.pk"
-
-    @cached_property
-    def dataset_files(self) -> dict[str, Path]:
-        r"""Path of the dataset file for the given key."""
-        return {
-            key: self.dataset_dir / f"{key}.feather"
-            for key in self.index + self.auxiliaries
-        }
+    rawdata_files = "kiwi_experiments_and_run_355.pk"
+    rawdata_paths: Path
+    dataset_files = {key: f"{key}.feather" for key in index + auxiliaries}
 
     def _load(self, key: KEYS = "timeseries") -> DataFrame:
         r"""Load the dataset from disk."""
-        table = pd.read_feather(self.dataset_files[key])
+        table = pd.read_feather(self.dataset_paths[key])
 
         if key == "units":
             return table.set_index("variable")
@@ -190,8 +170,8 @@ class KIWI_RUNS(Dataset):
 
     def _clean(self, key: KEYS) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
-        with open(self.rawdata_files, "rb") as file:
-            self.__logger__.info("Loading raw data from %s", self.rawdata_files)
+        with open(self.rawdata_paths, "rb") as file:
+            self.__logger__.info("Loading raw data from %s", self.rawdata_paths)
             data = pickle.load(file)
 
         DATA = [
@@ -303,8 +283,7 @@ class KIWI_RUNS(Dataset):
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
         table.columns.name = "variable"
-        path = self.dataset_files["metadata"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["metadata"])
 
     def _clean_setpoints(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -356,8 +335,7 @@ class KIWI_RUNS(Dataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = self.dataset_files["setpoints"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["setpoints"])
 
     def _clean_measurements_reactor(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -410,8 +388,7 @@ class KIWI_RUNS(Dataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = self.dataset_files["measurements_reactor"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["measurements_reactor"])
 
     def _clean_measurements_array(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -457,8 +434,7 @@ class KIWI_RUNS(Dataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = self.dataset_files["measurements_array"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["measurements_array"])
 
     def _clean_measurements_aggregated(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -516,8 +492,7 @@ class KIWI_RUNS(Dataset):
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        path = self.dataset_files["measurements_aggregated"]
-        table.to_feather(path)
+        table.to_feather(self.dataset_paths["measurements_aggregated"])
 
     def _clean_timeseries(self) -> None:
         md: DataFrame = self.load(key="metadata")
@@ -587,8 +562,7 @@ class KIWI_RUNS(Dataset):
         ts["measurement_time"] = ts["measurement_time"].round("s")
         # ts = ts.rename(columns={col: snake2camel(col) for col in ts})
         ts.columns.name = "variable"
-        path = self.dataset_files["timeseries"]
-        ts.to_feather(path)
+        ts.to_feather(self.dataset_paths["timeseries"])
 
     def _clean_units(self) -> None:
         ts: DataFrame = self.load(key="measurements_aggregated")
@@ -650,5 +624,4 @@ class KIWI_RUNS(Dataset):
         units[columns] = units[columns].astype("float32").apply(round_relative)
         units[percents] = units[percents].round(3)
         units = units.reset_index()
-        path = self.dataset_files["units"]
-        units.to_feather(path)
+        units.to_feather(self.dataset_paths["units"])

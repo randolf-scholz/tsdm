@@ -18,7 +18,7 @@ from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Series
 from torch import Tensor
 
 from tsdm.encoders.modular.generic import BaseEncoder
@@ -26,13 +26,9 @@ from tsdm.util.strings import repr_namedtuple
 
 __logger__ = logging.getLogger(__name__)
 
-
-PandasObject = Union[Index, Series, DataFrame]
-r"""Type Hint for pandas objects."""
-
 TensorLike = Union[Tensor, NDArray, DataFrame, Series]
 r"""Type Hint for tensor-like objects."""
-TensorType = TypeVar("TensorType", Tensor, NDArray, DataFrame, Series)
+TensorType = TypeVar("TensorType", Tensor, np.ndarray, DataFrame, Series)
 r"""TypeVar for tensor-like objects."""
 
 

@@ -15,8 +15,8 @@ __all__ = [
 
 import logging
 
-from tsdm.datasets.torch.generic import DatasetCollection, MappingDataset
-from tsdm.datasets.torch.timeseries import (
+from tsdm.util.torch.generic import DatasetCollection, MappingDataset
+from tsdm.util.torch.timeseries import (
     IndexedArray,
     TimeSeriesBatch,
     TimeSeriesDataset,

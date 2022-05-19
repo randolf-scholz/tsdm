@@ -23,8 +23,8 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from torch.utils.data import Sampler
 
-from tsdm.datasets.torch.generic import DatasetCollection
 from tsdm.util.strings import repr_mapping
+from tsdm.util.torch.generic import DatasetCollection
 from tsdm.util.types import ValueType
 
 __logger__ = logging.getLogger(__name__)
