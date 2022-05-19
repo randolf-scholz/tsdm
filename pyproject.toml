@@ -56,6 +56,8 @@ tables = ">=3.6"
 tensorboard = ">=2.9"
 torch = ">=1.11"
 #xarray = ">=2022.3.0"
+Pillow = "^9.1.1"
+types-Pillow = "^9.0.15"
 
 [tool.poetry.dev-dependencies]
 black = {version = ">=22.1.0", extras = ["jupyter"]}

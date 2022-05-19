@@ -162,6 +162,7 @@ torch==1.11.0; python_full_version >= "3.7.0"
 tornado==6.1; python_full_version >= "3.7.0" and python_version >= "3.7"
 traitlets==5.2.1.post0; python_full_version >= "3.7.0" and python_version >= "3.8"
 twine==4.0.0; python_version >= "3.7"
+types-pillow==9.0.15
 types-protobuf==3.19.20
 types-pyyaml==6.0.7
 types-setuptools==57.4.14
