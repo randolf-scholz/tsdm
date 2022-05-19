@@ -43,7 +43,6 @@ __all__ = [
     "Electricity",
 ]
 
-from functools import cached_property
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -73,16 +72,15 @@ class Electricity(SimpleDataset):
     r"""HTTP address containing additional information about the dataset."""
     dataset: DataFrame
     r"""Store cached version of dataset."""
-
-    @cached_property
-    def rawdata_files(self) -> Path:
-        r"""Path to the raw data file."""
-        return self.rawdata_dir / "LD2011_2014.txt.zip"
+    rawdata_files: str = "LD2011_2014.txt.zip"
+    rawdata_paths: Path
+    dataset_files = "Electricity.feather"
 
     def _clean(self) -> None:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
-        with ZipFile(self.rawdata_files) as files:
-            with files.open(self.rawdata_files.stem, "r") as file:
+        with ZipFile(self.rawdata_paths) as files:
+            fname = self.rawdata_paths.with_suffix("").stem
+            with files.open(fname) as file:
                 df = read_csv(
                     file,
                     sep=";",
@@ -95,8 +93,8 @@ class Electricity(SimpleDataset):
         df = df.rename_axis(index="time", columns="client")
         df.name = self.__class__.__name__
         df = df.reset_index()
-        df.to_feather(self.dataset_files)
+        df.to_feather(self.dataset_paths)
 
     def _load(self) -> DataFrame:
         r"""Load the dataset from disk."""
-        return read_feather(self.dataset_files).set_index("time")
+        return read_feather(self.dataset_paths).set_index("time")

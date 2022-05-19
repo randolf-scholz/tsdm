@@ -8,8 +8,6 @@ __all__ = [
     "ETT"
 ]
 
-from functools import cached_property
-from pathlib import Path
 from typing import Literal
 
 from pandas import DataFrame, read_csv, read_feather
@@ -37,11 +35,9 @@ class ETT(Dataset):
     r"""The type of the index."""
     index: list[KEYS] = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     r"""IDs of the stored data-objects."""
-
-    @cached_property
-    def rawdata_files(self) -> dict[KEYS, Path]:
-        r"""Path of the raw data file."""
-        return {key: self.rawdata_dir / f"{key}.csv" for key in self.index}
+    rawdata_files = {key: f"{key}.csv" for key in index}
+    r"""Files containing the raw data."""
+    dataset_files = {key: f"{key}.feather" for key in index}
 
     def _clean(self, key: KEYS) -> None:
         r"""Create DataFrame from the .csv file."""

@@ -266,20 +266,3 @@ def to_alphanumeric(n: int) -> str:
 #     encoded = json.dumps(dictionary, sort_keys=True).encode()
 #
 #     return shake_256(inputs).hexdigest(8)
-
-# from typing import Union
-# from datetime import datetime, timedelta
-#
-# BaseTypes = Union[None, bool, int, float, str, datetime, timedelta]
-# ListType = list[BaseTypes]
-# NestedListType = Union[]
-# RecursiveListType = Union[ListType, list[ListType], list[list[ListType]]]
-# DictType = dict[str, BaseTypes]
-# ContainerTypes = Union[list[ListType], list[DictType], dict[str, ListType], dict[str, DictType]]
-# AllowedTypes = Union[BaseTypes, ListType, DictType, ContainerTypes]
-# NestedType1 = dict[str, AllowedTypes]
-# NestedType2 = dict[str, Union[AllowedTypes, ]
-#
-#
-# dict[str, AllowedTypes, NestedType]
-# JSON = dict[str, "JSON"]

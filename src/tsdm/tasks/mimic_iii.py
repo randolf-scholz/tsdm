@@ -3,7 +3,7 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-__all__ = ["USHCN_DeBrouwer", "ushcn_collate"]
+__all__ = ["MIMIC_DeBrouwer", "mimic_collate"]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -18,7 +18,7 @@ from torch import Tensor, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import USHCN_SmallChunkedSporadic
+from tsdm.datasets import MIMIC_III
 from tsdm.tasks.base import BaseTask
 from tsdm.util import is_partition
 from tsdm.util.strings import repr_namedtuple
@@ -96,7 +96,7 @@ class TaskDataset(torch.utils.data.Dataset):
 
 
 # @torch.jit.script  <--seems to be slower!?
-def ushcn_collate(batch: list[Sample]) -> Batch:
+def mimic_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch."""
     vx_list: list[Tensor] = []
     vy_list: list[Tensor] = []
@@ -141,31 +141,27 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
     return Batch(TX, VX, MX, TY, VY, MY)
 
 
-class USHCN_DeBrouwer(BaseTask):
-    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
+class MIMIC_DeBrouwer(BaseTask):
+    r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al.
 
     Evaluation Protocol
     -------------------
 
-        5.3Climate forecast
+    We use the publicly available MIMIC-III clinical database (Johnson et al., 2016), which contains
+    EHR for more than 60,000 critical care patients. We select a subset of 21,250 patients with sufficient
+    observations and extract 96 different longitudinal real-valued measurements over a period of 48 hours
+    after patient admission. We refer the reader to Appendix K for further details on the cohort selection.
+    We focus on the predictions of the next 3 measurements after a 36-hour observation window.
 
-        From short-term weather forecast to long-range prediction or assessment of systemic
-        changes, such as global warming, climatic data has always been a popular application for
-        time-series analysis. This data is often considered to be regularly sampled over long
-        periods of time, which facilitates their statistical analysis. Yet, this assumption does
-        not usually hold in practice. Missing data are a problem that is repeatedly encountered in
-        climate research because of, among others, measurement errors, sensor failure, or faulty
-        data acquisition. The actual data is then sporadic and researchers usually resort to
-        imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
-
-        We use the publicly available United State Historical Climatology Network (USHCN) daily
-        data set (Menne et al.), which contains measurements of 5 climate variables
-        (daily temperatures, precipitation, and snow) over 150 years for 1,218 meteorological
-        stations scattered over the United States. We selected a subset of 1,114 stations and an
-        observation window of 4 years (between 1996 and 2000). To make the time series sporadic, we
-        subsample the data such that each station has an average of around 60 observations over
-        those 4 years. Appendix L contains additional details regarding this procedure.
-        The task is then to predict the next 3 measurements after the first 3 years of observation.
+    The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
+    harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
+    measurements outside the 5 standard deviations interval. For models requiring binning of the time
+    series, we map the measurements in 30-minute time bins, which gives 97 bins for 48 hours. When
+    two observations fall in the same bin, they are either averaged or summed depending on the nature
+    of the observation. Using the same taxonomy as in Table 5, lab measurements are averaged, while
+    inputs, outputs, and prescriptions are summed.
+    This gives a total of 3,082,224 unique measurements across all patients, or an average of 145
+    measurements per patient over 48 hours.
 
     References
     ----------
@@ -176,7 +172,7 @@ class USHCN_DeBrouwer(BaseTask):
         <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    observation_time = 150
+    observation_time = 75  # corresponds to 36 hours after admission
     prediction_steps = 3
     num_folds = 5
     seed = 432
@@ -188,19 +184,19 @@ class USHCN_DeBrouwer(BaseTask):
         super().__init__()
         self.device = torch.device(device)
         self.normalize_time = normalize_time
-        self.IDs = self.dataset.reset_index()["ID"].unique()
+        self.IDs = self.dataset.reset_index()["UNIQUE_ID"].unique()
 
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ds = USHCN_SmallChunkedSporadic().dataset
+        ds = MIMIC_III()["observations"]
 
         if self.normalize_time:
             ds = ds.reset_index()
-            t_max = ds["Time"].max()
+            t_max = ds["TIME_STAMP"].max()
             self.observation_time /= t_max
-            ds["Time"] /= t_max
-            ds = ds.set_index(["ID", "Time"])
+            ds["TIME_STAMP"] /= t_max
+            ds = ds.set_index(["UNIQUE_ID", "TIME_STAMP"])
         return ds
 
     @cached_property

@@ -73,7 +73,6 @@ __all__ = [
 
 import os
 import zipfile
-from functools import cached_property
 from pathlib import Path
 
 import pandas
@@ -103,11 +102,8 @@ class BeijingAirQuality(SimpleDataset):
     r"""HTTP address containing additional information about the dataset."""
 
     dataset: DataFrame
-
-    @cached_property
-    def rawdata_files(self) -> Path:
-        r"""Location where the raw data is stored."""
-        return self.rawdata_dir / "PRSA2017_Data_20130301-20170228.zip"
+    rawdata_files = "PRSA2017_Data_20130301-20170228.zip"
+    rawdata_paths: Path
 
     def _load(self):
         r"""Load the dataset from hdf-5 file."""
@@ -117,31 +113,32 @@ class BeijingAirQuality(SimpleDataset):
     def _clean(self) -> None:
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
 
-        def to_time(x):
+        def _to_time(x):
             return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
 
-        data_path = self.rawdata_dir / "PRSA_Data_20130301-20170228"
+        compressed = self.rawdata_paths
+        extracted_folder = compressed.with_suffix("")
 
-        if not os.path.exists(data_path):
-            with zipfile.ZipFile(self.rawdata_files, "r") as zip_ref:
+        if not extracted_folder.exists():
+            with zipfile.ZipFile(compressed) as zip_ref:
                 zip_ref.extractall(self.rawdata_dir)
 
         self.__logger__.info("Finished extracting dataset")
 
         stations = []
-        for csv in os.listdir(data_path):
-            print(csv)
-            df = DataFrame(read_csv(data_path / csv))
+        for csv_file in os.listdir(extracted_folder):
+            print(csv_file)
+            df = DataFrame(read_csv(extracted_folder / csv_file))
 
             # Make multiple date columns to pandas.Timestamp
-            df["time"] = df.apply(to_time, axis=1)
+            df["time"] = df.apply(_to_time, axis=1)
 
             # Remove date columns and index
             df = df.drop(labels=["No", "year", "month", "day", "hour"], axis=1)
             stations.append(df)
 
         df = concat(stations, ignore_index=True)
-        data_path.unlink()
+        extracted_folder.unlink()
         df.name = self.__class__.__name__
         df = df.set_index("time")
 
