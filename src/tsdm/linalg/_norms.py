@@ -328,7 +328,7 @@ def _numpy_multi_scaled_norm(
 
 @jit.script
 def grad_norm(
-    tensors: list[Tensor], p: float = 2.0, q: float = 2.0, normalize: bool = True
+    tensors: list[Tensor], p: float = 2, q: float = 2, normalize: bool = True
 ) -> Tensor:
     r"""Return the (scaled) p-q norm of the gradients.
 
