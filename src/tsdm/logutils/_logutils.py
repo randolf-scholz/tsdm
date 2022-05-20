@@ -23,25 +23,27 @@ from typing import Any, NamedTuple, Optional, TypedDict, Union
 import pandas as pd
 import torch
 import yaml
+from matplotlib.pyplot import Figure
+from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor, nn
 from torch.linalg import cond, matrix_norm, slogdet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from tsdm.losses import Loss
-from tsdm.models import Model
-from tsdm.optimizers import Optimizer
-from tsdm.plot import center_axes, kernel_heatmap, plot_spectrum, rasterize
-from tsdm.util import (
+from tsdm.linalg._linalg import (
     erank,
     mat_corr,
-    multi_norm,
     reldist_diag,
     reldist_orth,
     reldist_skew,
     reldist_symm,
 )
+from tsdm.losses import Loss
+from tsdm.models import Model
+from tsdm.optimizers import Optimizer
+from tsdm.plot import center_axes, kernel_heatmap, plot_spectrum, rasterize
+from tsdm.util import multi_norm
 
 
 @torch.no_grad()
@@ -136,9 +138,10 @@ def log_kernel_information(
         writer.add_histogram(f"{identifier}:histogram", K, i)
         writer.add_image(f"{identifier}:heatmap", kernel_heatmap(K, "CHW"), i)
 
-        spectrum = plot_spectrum(K)
+        spectrum: Figure = plot_spectrum(K)
         spectrum = center_axes(spectrum)
         image = rasterize(spectrum, w=2, h=2, px=512, py=512)
+        close_figure(spectrum)  # Important!
         writer.add_image(f"{identifier}:spectrum", image, i, dataformats="HWC")
 
 
