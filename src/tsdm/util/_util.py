@@ -39,6 +39,20 @@ __logger__ = getLogger(__name__)
 EmptyPath: Path = Path()
 
 
+def flatten_dict(d: Mapping) -> dict:
+    r"""Flatten nested dictionary.
+
+    Parameters
+    ----------
+    d: Mapping
+
+    Returns
+    -------
+    dict
+    """
+    return {k: v for k, v in d.items() if not isinstance(v, Mapping)}
+
+
 class Split(NamedTuple):
     r"""Holds indices for train/valid/test set."""
 
@@ -218,34 +232,7 @@ def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
     raise ValueError(f"{type(nested)} is not understood")
 
 
-def flatten_dict(
-    d: dict[Any, Iterable[Any]], recursive: bool = True
-) -> list[tuple[Any, ...]]:
-    r"""Flatten a dictionary containing iterables to a list of tuples.
-
-    Parameters
-    ----------
-    d: dict
-    recursive: bool (default True)
-        If true applies flattening strategy recursively on nested dicts, yielding
-        list[tuple[key1, key2, ...., keyN, value]]
-
-    Returns
-    -------
-    list[tuple[Any, ...]]
-    """
-    result = []
-    for key, iterable in d.items():
-        for item in iterable:
-            if isinstance(item, dict) and recursive:
-                gen: list[tuple[Any, ...]] = flatten_dict(item, recursive=True)
-                result += [(key,) + tup for tup in gen]
-            else:
-                result += [(key, item)]
-    return result
-
-
-# T = TypeVar("T")
+# T = TypeVar("T")   \t\ \̃   \hy ŷ yy{̂y}    \tg g̃
 # S = TypeVar("S")
 
 
@@ -253,7 +240,7 @@ def flatten_dict(
 # FunctionalTable = dict[str, Callable[..., S]]
 # LookupTable = Union[
 #     ModularTable, FunctionalTable, dict[str, Union[type[T], Callable[..., S]]]
-# ]
+# ] \dLG 32UN650-Wcafga \d ẋ
 
 
 # @overload

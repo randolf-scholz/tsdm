@@ -12,7 +12,7 @@ __all__ = [
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import numpy as np
 import torch
@@ -131,7 +131,7 @@ def shared_grid_plot(
     col_headers: Optional[list[str]] = None,
     xlabels: Optional[list[str]] = None,
     ylabels: Optional[list[str]] = None,
-    **subplots_kwargs: dict,
+    **subplots_kwargs: Any,
 ) -> tuple[Figure, Axes]:
     r"""Create a grid plot with shared axes and row/col headers.
 
@@ -311,7 +311,8 @@ def plot_spectrum(
 def center_axes(fig: Figure, /, *, remove_labels: bool = True) -> Figure:
     r"""Center axes in figure."""
     for ax in fig.axes:
-        ax.set(xlabel="", ylabel="")
+        if remove_labels:
+            ax.set(xlabel="", ylabel="")
         ax.spines["left"].set_position(("data", 0))
         ax.spines["left"].set_color("k")
         ax.spines["bottom"].set_color("k")
