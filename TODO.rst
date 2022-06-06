@@ -1,6 +1,15 @@
 ToDo's
 ======
 
+
+- Rezero as parameterization
+- Rezero class
+- Generic classes
+
+
+
+
+
 - StandardScalar is not properly vectorized. Do custom implementation instead.
 - Exact loss function? Forecast?
 

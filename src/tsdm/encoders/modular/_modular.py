@@ -69,7 +69,9 @@ def apply_along_axes(
     axes = tuple(axes)
     rank = len(a.shape)
     source = tuple(range(rank))
-    inverse_permutation = axes + tuple(ax for ax in range(rank) if ax not in axes)
+    inverse_permutation: tuple[int, ...] = axes + tuple(
+        ax for ax in range(rank) if ax not in axes
+    )
     perm = tuple(np.argsort(inverse_permutation))
     if isinstance(a, Tensor):
         a = torch.moveaxis(a, source, perm)

@@ -299,7 +299,7 @@ class StandardLogger:
 
     def __post_init__(self) -> None:
         """Initialize logger."""
-        self.logging_dir = self.writer.log_dir
+        self.logging_dir = Path(self.writer.log_dir)
         columns = MultiIndex.from_product([self.dataloaders, self.metrics])
         index = Index([], name="epoch", dtype=int)
         self.history = DataFrame(index=index, columns=columns, dtype="Float32")
@@ -442,7 +442,7 @@ class StandardLogger:
         }
 
         if self.results_dir is not None:
-            with open(self.results_dir / f"{i}.yaml", "w") as file:
+            with open(self.results_dir / f"{i}.yaml", "w", encoding="utf8") as file:
                 file.write(yaml.dump(scores))
 
         # add prefix
@@ -453,7 +453,7 @@ class StandardLogger:
         )
         print(f"{test_scores=} achieved by {self.hparam_dict=}")
 
-        # FIXME: https://github.com/pytorch/pytorch/issues/32651
+        # FIXME: https://github.com/pytorch/pytorch/issues/32651  ∉
         for files in (self.logging_dir / "hparam").iterdir():
             shutil.move(files, self.logging_dir)
         (self.logging_dir / "hparam").rmdir()

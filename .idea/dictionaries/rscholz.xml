@@ -1,13 +1,13 @@
 <component name="ProjectDictionaryState">
   <dictionary name="rscholz">
     <words>
-      <w>abfghkmnrstuwxz</w>
       <w>adadelta</w>
       <w>adagrad</w>
       <w>adamax</w>
       <w>alkalinephos</w>
       <w>arange</w>
       <w>arany</w>
+      <w>argmin</w>
       <w>argsort</w>
       <w>asarray</w>
       <w>asctime</w>
@@ -76,13 +76,17 @@
       <w>dssm</w>
       <w>dtype</w>
       <w>dunder</w>
+      <w>edgecolors</w>
       <w>eghbali</w>
+      <w>eigs</w>
       <w>endblock</w>
       <w>endfor</w>
       <w>equimodal</w>
       <w>erank</w>
       <w>errorlevel</w>
       <w>etdataset</w>
+      <w>eusipco</w>
+      <w>figsize</w>
       <w>fillna</w>
       <w>finfo</w>
       <w>fluo</w>
@@ -179,8 +183,10 @@
       <w>nanmin</w>
       <w>nbeats</w>
       <w>ncdc</w>
+      <w>ncols</w>
       <w>ndarray</w>
       <w>ndim</w>
+      <w>nditer</w>
       <w>neginf</w>
       <w>neur</w>
       <w>newvals</w>
@@ -188,6 +194,7 @@
       <w>nonlinearity</w>
       <w>notna</w>
       <w>nrmse</w>
+      <w>nrows</w>
       <w>numdims</w>
       <w>nunique</w>
       <w>objname</w>
@@ -214,6 +221,7 @@
       <w>prelu</w>
       <w>prsa</w>
       <w>pydeps</w>
+      <w>pyplot</w>
       <w>pypoetry</w>
       <w>pyproject</w>
       <w>pytables</w>
@@ -223,6 +231,7 @@
       <w>ramanan</w>
       <w>randperm</w>
       <w>rangapuram</w>
+      <w>rasterize</w>
       <w>rawdata</w>
       <w>rawdatadir</w>
       <w>reconstr</w>
@@ -239,6 +248,7 @@
       <w>rrelu</w>
       <w>rtol</w>
       <w>sahota</w>
+      <w>scriptsize</w>
       <w>selu</w>
       <w>sepehr</w>
       <w>setpoints</w>
@@ -247,6 +257,8 @@
       <w>sflags</w>
       <w>shanghang</w>
       <w>shaoqing</w>
+      <w>sharex</w>
+      <w>sharey</w>
       <w>shiyang</w>
       <w>shorthash</w>
       <w>shuai</w>
@@ -333,6 +345,9 @@
       <w>xifeng</w>
       <w>xiong</w>
       <w>xiyou</w>
+      <w>xlabel</w>
+      <w>xlabels</w>
+      <w>xlim</w>
       <w>xmax</w>
       <w>xmin</w>
       <w>xoffset</w>
@@ -343,6 +358,9 @@
       <w>xₘₐₓ</w>
       <w>yhat</w>
       <w>yhats</w>
+      <w>ylabel</w>
+      <w>ylabels</w>
+      <w>ylim</w>
       <w>ymax</w>
       <w>ymin</w>
       <w>yuyang</w>
