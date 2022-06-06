@@ -32,27 +32,12 @@ def erank(x: Tensor) -> Tensor:
 
 
 @jit.script
-def mat_corr(x: Tensor) -> Tensor:
-    """Compute average row/col-wise correlation of a matrix.
-
-    Signature: [..., m, n] -> [...].
-
-    Since both are equal, we use the one that is cheaper to compute.
-    If x is $m×n$, then col-corr takes $𝓞(mn²)$, while row-corr takes $𝓞(m²n)$.
-    """
-    m, n = x.shape[-2:]
-    if m > n:
-        return col_corr(x)
-    return row_corr(x)
-
-
-@jit.script
 def col_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
     Signature: [..., m, n] -> [...].
     """
-    m, n = x.shape[-2:]
+    _, n = x.shape[-2:]
     u = torch.linalg.norm(x, dim=0)
     xx = torch.einsum("...i, ...j -> ...ij", u, u)
     xtx = torch.einsum("...ik, ...il  -> ...kl", x, x)
@@ -67,13 +52,28 @@ def row_corr(x: Tensor) -> Tensor:
 
     Signature: [..., m, n] -> [...].
     """
-    m, n = x.shape[-2:]
+    m, _ = x.shape[-2:]
     v = torch.linalg.norm(x, dim=1)
     xx = torch.einsum("...i, ...j -> ...ij", v, v)
     xxt = torch.einsum("...kj, ...lj  -> ...kl", x, x)
     I = torch.eye(m, dtype=x.dtype, device=x.device)
     c = I - xxt / xx
     return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
+
+
+@jit.script
+def mat_corr(x: Tensor) -> Tensor:
+    """Compute average row/col-wise correlation of a matrix.
+
+    Signature: [..., m, n] -> [...].
+
+    Since both are equal, we use the one that is cheaper to compute.
+    If x is $m×n$, then col-corr takes $𝓞(mn²)$, while row-corr takes $𝓞(m²n)$.
+    """
+    m, n = x.shape[-2:]
+    if m > n:
+        return col_corr(x)
+    return row_corr(x)
 
 
 @jit.script
@@ -109,7 +109,7 @@ def closest_orth(x: Tensor) -> Tensor:
     .. math::
         \argmin_{X: XᵀX = 𝕀} ‖A-X‖
     """
-    U, S, Vt = torch.linalg.svd(x, full_matrices=True)
+    U, _, Vt = torch.linalg.svd(x, full_matrices=True)
     Q = torch.einsum("...ij, ...jk->...ik", U, Vt)
     return Q
 
