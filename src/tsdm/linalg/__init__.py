@@ -4,6 +4,9 @@ r"""#TODO add module summary line.
 """
 
 __all__ = [
+    # Modules
+    "regularity_tests",
+    # Functions
     "erank",
     "col_corr",
     "row_corr",
@@ -23,6 +26,7 @@ __all__ = [
     "multi_norm",
 ]
 
+from tsdm.linalg import regularity_tests
 from tsdm.linalg._linalg import (
     closest_diag,
     closest_orth,
