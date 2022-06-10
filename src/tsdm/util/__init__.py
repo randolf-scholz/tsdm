@@ -4,7 +4,7 @@ __all__ = [
     # Sub-Modules
     "dataloaders",
     "decorators",
-    "regularity_tests",
+    "remote",
     "system",
     "types",
     "torch",
@@ -18,23 +18,18 @@ __all__ = [
     "deep_kval_update",
     "flatten_dict",
     "flatten_nested",
-    "grad_norm",
     "initialize_from",
     "initialize_from_config",
     "is_partition",
-    "multi_norm",
     "now",
     "paths_exists",
     "prepend_path",
-    "relative_error",
     "round_relative",
-    "scaled_norm",
 ]
 
 import logging
 
-from tsdm.linalg._norms import grad_norm, multi_norm, relative_error, scaled_norm
-from tsdm.util import dataloaders, decorators, regularity_tests, system, torch, types
+from tsdm.util import dataloaders, decorators, remote, system, torch, types
 from tsdm.util._util import (
     Split,
     deep_dict_update,

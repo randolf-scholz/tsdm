@@ -1,5 +1,10 @@
 r"""Implements a downloader for the TSDM-package."""
 
+__all__ = [
+    "hash_file",
+    "download",
+    "validate_hash",
+]
 
 import hashlib
 from pathlib import Path
