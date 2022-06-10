@@ -31,13 +31,14 @@ from torch.linalg import cond, matrix_norm, slogdet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from tsdm.linalg._linalg import (
+from tsdm.linalg import (
+    col_corr,
     erank,
-    mat_corr,
     reldist_diag,
     reldist_orth,
     reldist_skew,
     reldist_symm,
+    row_corr,
 )
 from tsdm.losses import Loss
 from tsdm.models import Model
@@ -121,7 +122,8 @@ def log_kernel_information(
     writer.add_scalar(f"{identifier}:linalg/erank", erank(K), i)
     writer.add_scalar(f"{identifier}:linalg/trace", torch.trace(K), i)
     writer.add_scalar(f"{identifier}:linalg/cond", cond(K), i)
-    writer.add_scalar(f"{identifier}:linalg/mean-correlation", mat_corr(K), i)
+    writer.add_scalar(f"{identifier}:linalg/col-corr", col_corr(K), i)
+    writer.add_scalar(f"{identifier}:linalg/row-corr", row_corr(K), i)
 
     # norms
     writer.add_scalar(f"{identifier}:norms/fro", matrix_norm(K, ord="fro"), i)

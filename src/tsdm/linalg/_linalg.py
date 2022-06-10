@@ -15,7 +15,7 @@ from torch import Tensor, jit
 def erank(x: Tensor) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
-    Signature: [..., m, n] -> [...].
+    Signature: `[..., m, n] -> [...]`.
 
     References
     ----------
@@ -35,7 +35,7 @@ def erank(x: Tensor) -> Tensor:
 def col_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
-    Signature: [..., m, n] -> [...].
+    Signature: `[..., m, n] -> [...]`.
     """
     _, n = x.shape[-2:]
     u = torch.linalg.norm(x, dim=0)
@@ -59,21 +59,6 @@ def row_corr(x: Tensor) -> Tensor:
     I = torch.eye(m, dtype=x.dtype, device=x.device)
     c = I - xxt / xx
     return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
-
-
-@jit.script
-def mat_corr(x: Tensor) -> Tensor:
-    """Compute average row/col-wise correlation of a matrix.
-
-    Signature: [..., m, n] -> [...].
-
-    Since both are equal, we use the one that is cheaper to compute.
-    If x is $m×n$, then col-corr takes $𝓞(mn²)$, while row-corr takes $𝓞(m²n)$.
-    """
-    m, n = x.shape[-2:]
-    if m > n:
-        return col_corr(x)
-    return row_corr(x)
 
 
 @jit.script

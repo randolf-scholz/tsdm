@@ -171,6 +171,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
                 f"wget -r -np -nH -N --cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {url}",
                 shell=True,
                 check=True,
+                capture_output=True,
             )
 
         self.__logger__.info("Finished importing files from %s", url)

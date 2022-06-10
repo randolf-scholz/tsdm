@@ -105,6 +105,7 @@
       <w>hematocrit</w>
       <w>hexdigest</w>
       <w>hildesheim</w>
+      <w>hparam</w>
       <w>hparams</w>
       <w>hpcs</w>
       <w>hsiang</w>
@@ -147,6 +148,7 @@
       <w>leibler</w>
       <w>levelname</w>
       <w>levelno</w>
+      <w>linalg</w>
       <w>linearness</w>
       <w>logdet</w>
       <w>logdir</w>
