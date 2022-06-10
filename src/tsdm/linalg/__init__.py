@@ -5,7 +5,6 @@ r"""#TODO add module summary line.
 
 __all__ = [
     "erank",
-    "mat_corr",
     "col_corr",
     "row_corr",
     "closest_symm",
@@ -31,7 +30,6 @@ from tsdm.linalg._linalg import (
     closest_symm,
     col_corr,
     erank,
-    mat_corr,
     matrix_reldist,
     reldist_diag,
     reldist_orth,
