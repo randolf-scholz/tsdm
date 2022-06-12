@@ -25,6 +25,7 @@ from pandas import DataFrame, Series
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.util import flatten_nested, paths_exists, prepend_path
+from tsdm.util.remote import download
 from tsdm.util.types import KeyType, Nested, PathType
 
 DATASET_OBJECT = Union[Series, DataFrame]
@@ -42,7 +43,7 @@ class BaseDatasetMetaClass(ABCMeta):
             cls.rawdata_dir = RAWDATADIR / cls.__name__
             cls.dataset_dir = DATASETDIR / cls.__name__
 
-            cls.__logger__ = logging.getLogger(f"{__package__}.{cls.__name__}")
+            cls.__logger__ = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         super().__init__(*args, **kwargs)
 
@@ -166,13 +167,16 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
                 check=True,
             )
         else:  # default parsing, including for UCI dataset
-            cut_dirs = url.count("/") - 3
-            subprocess.run(
-                f"wget -r -np -nH -N --cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {url}",
-                shell=True,
-                check=True,
-                capture_output=True,
-            )
+            fname = url.split("/")[-1]
+
+            download(url, self.rawdata_dir / fname)
+            # cut_dirs = url.count("/") - 3
+            # subprocess.run(
+            #     f"wget -r -np -nH -N --cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {url}",
+            #     shell=True,
+            #     check=True,
+            #     capture_output=True,
+            # )
 
         self.__logger__.info("Finished importing files from %s", url)
 

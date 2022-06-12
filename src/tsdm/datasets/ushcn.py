@@ -9,8 +9,11 @@ __all__ = [
     "USHCN_SmallChunkedSporadic",
 ]
 
-import gzip
+import importlib
 import logging
+import os
+from collections.abc import Callable
+from functools import wraps
 from io import StringIO
 from pathlib import Path
 from typing import Literal, Union
@@ -21,18 +24,6 @@ from pandas import DataFrame
 from tsdm.datasets.base import Dataset, SimpleDataset
 
 __logger__ = logging.getLogger(__name__)
-
-mpd = pandas
-# FIXME: This is a temporary solution to get the data from the USHCN website.
-# try:
-#     import modin.pandas as mpd
-#     import ray
-#
-#     use_ray = True
-# except ImportError:
-#     __logger__.warning("Ray/Modin not installed. Using pandas.")
-#     mpd = pandas
-#     use_ray = False
 
 STATE_CODES = r"""
 ID	Abbr.	State
@@ -85,6 +76,27 @@ ID	Abbr.	State
 47	WI	Wisconsin
 48	WY	Wyoming
 """
+
+
+def with_cluster(func: Callable) -> Callable:
+    r"""Run function with ray cluster."""
+    if importlib.util.find_spec("ray") is not None:
+        ray = importlib.import_module("ray")
+        num_cpus = max(1, (os.cpu_count() or 0) - 2)
+
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
+            ray.init(num_cpus=num_cpus)
+            try:
+                return func(*args, **kwargs)
+            finally:
+                ray.shutdown()
+
+        return _wrapper
+    else:
+        __logger__.warning("Ray not found, skipping ray cluster.")
+        return func
 
 
 class USHCN_SmallChunkedSporadic(SimpleDataset):
@@ -334,11 +346,12 @@ class USHCN(Dataset):
         ----------
         key: Literal["us_daily", "states", "stations"], default "us_daily"
         """
-        {
-            "us_daily": self._clean_us_daily,
-            "stations": self._clean_stations,
-            "states": self._clean_states,
-        }[key]()
+        if key == "us_daily":
+            self._clean_us_daily()
+        elif key == "states":
+            self._clean_states()
+        elif key == "stations":
+            self._clean_stations()
 
     def _clean_states(self) -> None:
         state_dtypes = {
@@ -416,12 +429,12 @@ class USHCN(Dataset):
         stations.to_feather(path)
         self.__logger__.info("Finished cleaning 'stations' DataFrame")
 
+    @with_cluster
     def _clean_us_daily(self) -> None:
-        # FIXME: ray import
-        # if use_ray:
-        #     num_cpus = max(1, (os.cpu_count() or 0) - 2)
-        #     __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
-        #     ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
+        if importlib.util.find_spec("modin") is not None:
+            mpd = importlib.import_module("modin.pandas")
+        else:
+            mpd = pandas
 
         # column: (start, stop)
         colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
@@ -468,35 +481,26 @@ class USHCN(Dataset):
         na_values = {("VALUE", k): -9999 for k in range(1, 32)}
         us_daily_path = self.rawdata_paths["us_daily"]
 
-        with gzip.open(us_daily_path, "rb") as compressed_file:
-            ds = mpd.read_fwf(
-                compressed_file,
-                colspecs=cspec,
-                names=colspecs,
-                na_values=na_values,
-                dtype=dtype,
-            )
-
+        ds = mpd.read_fwf(
+            us_daily_path,
+            colspecs=cspec,
+            names=colspecs,
+            na_values=na_values,
+            dtype=dtype,
+            compression="gzip",
+        )
         ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
         self.__logger__.info("Finished loading main file.")
-
-        # us_daily_file = us_daily_path.with_suffix('')
-        # self.__logger__.info("Decompressing into %s", us_daily_file)
-        #
-        # with gzip.open(us_daily_path, "rb") as compressed_file:
-        #     with open(us_daily_file, "w", encoding="utf8") as file:
-        #         file.write(compressed_file.read().decode("utf-8"))
-        # us_daily_file.unlink()
-        # self.__logger__.info("Finished decompressing main file")
 
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
         data_cols = [col for col in ds.columns if col not in id_cols]
+        columns = mpd.DataFrame(data_cols, columns=["VAR", "DAY"])
+        columns = columns.astype({"VAR": "string", "DAY": "uint8"})
+        columns = columns.astype("category")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
-        columns = mpd.MultiIndex.from_tuples(ds[data_cols], names=["VAR", "DAY"])
-        data = mpd.DataFrame(ds[data_cols])
-        data.columns = columns
-        # TODO: use mpd.DataFrame(ds[data_cols], columns=columns) once it works correctly in modin.
+        data = ds[data_cols]
+        data.columns = pandas.MultiIndex.from_frame(columns)
 
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = data.stack(level="DAY", dropna=True).reset_index(level="DAY")
@@ -528,11 +532,13 @@ class USHCN(Dataset):
         ]
 
         # optional: sorting
-        data = data.sort_values(by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"])
+        data.sort_values(
+            by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"], inplace=True
+        )
         self.__logger__.info("Finished sorting.")
 
         # drop old index which may contain duplicates
-        data = data.reset_index(drop=True)
+        data.reset_index(drop=True, inplace=True)
 
         self.__logger__.info("Creating time index.")
         datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
