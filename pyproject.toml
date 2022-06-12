@@ -41,7 +41,7 @@ classifiers = [
 # all = ["modin"]
 
 [tool.poetry.dependencies]
-python = ">=3.9, <3.11"
+python = ">=3.10, <3.11"
 h5py = ">=3.4.0"
 matplotlib = ">=3.5"
 #modin = {version = ">=0.14", extras = ["ray"]}
@@ -58,6 +58,7 @@ torch = ">=1.11"
 #xarray = ">=2022.3.0"
 Pillow = ">=9.1.1"
 types-Pillow = ">=9.0.15"
+tqdm = "^4.64.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = ">=22.1.0", extras = ["jupyter"]}
@@ -94,6 +95,7 @@ twine = ">=3.8.0"
 types-PyYAML = ">=6.0.4"
 types-protobuf = ">=3.19.8"
 types-setuptools = ">=57.4.8"
+types-requests = ">=2.27.30"
 types-six = ">=1.16.10"
 wheel = ">=0.37.1"
 
@@ -159,6 +161,7 @@ module = [
     "pandas.*",
     "sklearn.*",
     "scipy.*",
+    "tqdm.*",
 ]
 ignore_missing_imports = true
 
@@ -169,7 +172,7 @@ ignore_missing_imports = true
 [tool.isort]
 # isort profiles: black, django, pycharm, google, open_stack, plone, attrs, hug, wemake, appnexus
 # black-compatible: black, appnexus
-py_version=39
+py_version=310
 profile="black"
 src_paths=["src/", "test/"]
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
@@ -197,7 +200,7 @@ convention = "numpy"
 root = ""
 venv = ".venv"
 venvPath = "."
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 pythonPlatform = "Linux"
 include = ["src/", "test/"]
 exclude = [

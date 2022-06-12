@@ -8,10 +8,12 @@ __all__ = [
 
 import hashlib
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import requests
 from tqdm.autonotebook import tqdm
+
+from tsdm.util.types import PathType
 
 
 def hash_file(
@@ -28,14 +30,16 @@ def hash_file(
     return hash_value.hexdigest()
 
 
-def download(url: str, fname: str, chunk_size: int = 1024) -> None:
+def download(
+    url: str, fname: Optional[PathType] = None, chunk_size: int = 1024
+) -> None:
     r"""Download a file from a URL."""
     response = requests.get(url, stream=True)
     total = int(response.headers.get("content-length", 0))
-    path = Path(fname)
+    path = Path(fname if fname is not None else url.split("/")[-1])
     try:
-        with open(path, "wb") as file, tqdm(
-            desc=path,
+        with path.open("wb") as file, tqdm(
+            desc=str(path),
             total=total,
             unit="iB",
             unit_scale=True,
@@ -47,7 +51,7 @@ def download(url: str, fname: str, chunk_size: int = 1024) -> None:
     except Exception as e:
         path.unlink()
         raise RuntimeError(
-            f"Error occurred while downloading {fname}, deleting partial download."
+            f"Error '{e}' occurred while downloading {fname}, deleting partial files."
         ) from e
 
 

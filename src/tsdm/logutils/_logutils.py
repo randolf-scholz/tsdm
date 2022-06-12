@@ -34,6 +34,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tsdm.linalg import (
     col_corr,
     erank,
+    multi_norm,
     reldist_diag,
     reldist_orth,
     reldist_skew,
@@ -44,7 +45,6 @@ from tsdm.losses import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.plot import center_axes, kernel_heatmap, plot_spectrum, rasterize
-from tsdm.util import multi_norm
 
 
 @torch.no_grad()
