@@ -3,6 +3,8 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+from __future__ import annotations
+
 __all__ = [
     # Classes
     "USHCN",
@@ -15,7 +17,7 @@ import os
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal
 
 import pandas
 from pandas import DataFrame
@@ -27,12 +29,13 @@ __logger__ = logging.getLogger(__name__)
 
 def with_cluster(func: Callable) -> Callable:
     r"""Run function with ray cluster."""
-    if importlib.util.find_spec("ray") is not None:
-        ray = importlib.import_module("ray")
-        num_cpus = max(1, (os.cpu_count() or 0) - 2)
 
-        @wraps(func)
-        def _wrapper(*args, **kwargs):
+    @wraps(func)
+    def _wrapper(*args, **kwargs):
+        if importlib.util.find_spec("ray") is not None:
+            ray = importlib.import_module("ray")
+            # Only use 80% of the available CPUs.
+            num_cpus = max(1, ((os.cpu_count() or 0) * 4) // 5)
             __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
             ray.init(num_cpus=num_cpus)
             try:
@@ -40,11 +43,11 @@ def with_cluster(func: Callable) -> Callable:
             finally:
                 __logger__.warning("Tearing down ray cluster.")
                 ray.shutdown()
+        else:
+            __logger__.warning("Ray not found, skipping ray cluster.")
+            return func(*args, **kwargs)
 
-        return _wrapper
-    else:
-        __logger__.warning("Ray not found, skipping ray cluster.")
-        return func
+    return _wrapper
 
 
 class USHCN_SmallChunkedSporadic(SimpleDataset):
@@ -347,7 +350,7 @@ class USHCN(Dataset):
         }
 
         stations_na_values = {
-            "ELEVATION": -999.9,
+            "ELEVATION": "-999.9",
             "COMPONENT_1": "------",
             "COMPONENT_2": "------",
             "COMPONENT_3": "------",
@@ -366,6 +369,7 @@ class USHCN(Dataset):
 
         stations = stations.astype(stations_new_dtypes)
         stations = stations.set_index("COOP_ID")
+
         return stations
         # stations.to_parquet(self.dataset_paths["stations"])
 
@@ -377,7 +381,7 @@ class USHCN(Dataset):
             mpd = pandas
 
         # column: (start, stop)
-        colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
+        colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
             "COOP_ID": (1, 6),
             "YEAR": (7, 10),
             "MONTH": (11, 12),
@@ -398,9 +402,9 @@ class USHCN(Dataset):
         ELEMENTS = pandas.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
 
         dtypes = {
-            "COOP_ID": pandas.Int32Dtype(),
-            "YEAR": pandas.UInt16Dtype(),
-            "MONTH": pandas.UInt8Dtype(),
+            "COOP_ID": "string",
+            "YEAR": "int16",
+            "MONTH": "int8",
             "ELEMENT": ELEMENTS,
             "VALUE": pandas.Int16Dtype(),
             "MFLAG": MFLAGS,
@@ -418,7 +422,7 @@ class USHCN(Dataset):
         cspec = [(a - 1, b) for a, b in colspecs.values()]
 
         # per column values to be interpreted as nan
-        na_values = {("VALUE", k): -9999 for k in range(1, 32)}
+        na_values = {("VALUE", k): "-9999" for k in range(1, 32)}
         us_daily_path = self.rawdata_paths["us_daily"]
 
         self.__logger__.info("Loading main file...")
@@ -448,47 +452,49 @@ class USHCN(Dataset):
 
         self.__logger__.info("Merging on ID columns...")
         # correct dtypes after stacking operation
-        _dtypes = {k: v for k, v in dtypes.items() if k in data.columns} | {
-            "DAY": "int8",
-        }
-        data = data.astype(_dtypes)
+        _dtypes = {k: v for k, v in dtypes.items() if k in data.columns}
+        data = data.astype(_dtypes | {"DAY": "int8"})
 
         # recombine data columns with original data
         data = ds[id_cols].join(data, how="inner")
-        data = data.astype(dtypes | {"DAY": "int8"})
+        data = data.astype(dtypes | {"DAY": "int8", "COOP_ID": "category"})
+
+        self.__logger__.info("Creating time index...")
+        data = data.reset_index(drop=True)
+        datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
+        data = data.drop(columns=["YEAR", "MONTH", "DAY"])
+        data["TIME"] = datetimes
+        data = data.dropna(subset=["TIME"])
+
+        self.__logger__.info("Sorting index....")
+        data = data.set_index("COOP_ID")
+        data = data.sort_index()  # fast pre-sort with single index
+        data = data.set_index("TIME", append=True)
+        data = data.sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
 
         self.__logger__.info("Sorting columns....")
-        data = data[
-            [
-                "COOP_ID",
-                "YEAR",
-                "MONTH",
-                "DAY",
+        data = data.reindex(
+            columns=[
                 "ELEMENT",
                 "MFLAG",
                 "QFLAG",
                 "SFLAG",
                 "VALUE",
             ]
-        ]
+        )
 
-        self.__logger__.info("Sorting index....")
-        data = data.sort_values(by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"])
+        self.__logger__.info("Converting back to standard pandas DataFrame....")
+        try:
+            data = data._to_pandas()
+        except AttributeError:
+            pass
 
-        self.__logger__.info("Creating time index...")
-        data = data.reset_index(drop=True)
-        datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
-        data = data.drop(columns=["YEAR", "MONTH", "DAY"])
-        data["time"] = datetimes
-        data = data.astype({"COOP_ID": "category"})
-        data = data.set_index(["COOP_ID", "time"])
-        return DataFrame(data)
-        # data.to_parquet(self.dataset_paths["us_daily"], compression="brotli")
+        return data
 
     @property
     def _state_codes(self):
         return [
-            ("ID", "Abr.", "State"),
+            ("ID", "Abbr.", "State"),
             ("01", "AL", "Alabama"),
             ("02", "AZ", "Arizona"),
             ("03", "AR", "Arkansas"),

@@ -426,7 +426,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
 
         self.__logger__.debug("%s: STARTING TO CLEAN DATASET.", key)
         df = self._clean(key=key)
-        df.to_parquet(self.dataset_paths[key], compression="brotli")
+        df.to_parquet(self.dataset_paths[key], compression="gzip")
         self.__logger__.debug("%s: FINISHED TO CLEAN DATASET.", key)
 
     @overload
