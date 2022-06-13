@@ -14,7 +14,6 @@ import logging
 import os
 from collections.abc import Callable
 from functools import wraps
-from io import StringIO
 from pathlib import Path
 from typing import Literal, Union
 
@@ -24,58 +23,6 @@ from pandas import DataFrame
 from tsdm.datasets.base import Dataset, SimpleDataset
 
 __logger__ = logging.getLogger(__name__)
-
-STATE_CODES = r"""
-ID	Abbr.	State
-01	AL	Alabama
-02	AZ	Arizona
-03	AR	Arkansas
-04	CA	California
-05	CO	Colorado
-06	CT	Connecticut
-07	DE	Delaware
-08	FL	Florida
-09	GA	Georgia
-10	ID	Idaho
-11	IL	Idaho
-12	IN	Indiana
-13	IA	Iowa
-14	KS	Kansas
-15	KY	Kentucky
-16	LA	Louisiana
-17	ME	Maine
-18	MD	Maryland
-19	MA	Massachusetts
-20	MI	Michigan
-21	MN	Minnesota
-22	MS	Mississippi
-23	MO	Missouri
-24	MT	Montana
-25	NE	Nebraska
-26	NV	Nevada
-27	NH	NewHampshire
-28	NJ	NewJersey
-29	NM	NewMexico
-30	NY	NewYork
-31	NC	NorthCarolina
-32	ND	NorthDakota
-33	OH	Ohio
-34	OK	Oklahoma
-35	OR	Oregon
-36	PA	Pennsylvania
-37	RI	RhodeIsland
-38	SC	SouthCarolina
-39	SD	SouthDakota
-40	TN	Tennessee
-41	TX	Texas
-42	UT	Utah
-43	VT	Vermont
-44	VA	Virginia
-45	WA	Washington
-46	WV	WestVirginia
-47	WI	Wisconsin
-48	WY	Wyoming
-"""
 
 
 def with_cluster(func: Callable) -> Callable:
@@ -91,6 +38,7 @@ def with_cluster(func: Callable) -> Callable:
             try:
                 return func(*args, **kwargs)
             finally:
+                __logger__.warning("Tearing down ray cluster.")
                 ray.shutdown()
 
         return _wrapper
@@ -326,20 +274,9 @@ class USHCN(Dataset):
 
     def _load(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Load the dataset from disk."""
-        # path = self.dataset_files[key]
-        # if not path.exists():
-        #     self.clean(key=key)
-        df = pandas.read_feather(self.dataset_paths[key])
-        if key == "us_daily":
-            df = df.set_index(["time", "COOP_ID"])
-        elif key == "states":
-            df = df.set_index("ID")
-        elif key == "stations":
-            ...
-            # df = df.set_index("COOP_ID")
-        return df
+        return super()._load(key=key)
 
-    def _clean(self, key: KEYS = "us_daily") -> None:
+    def _clean(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Create the DataFrames.
 
         Parameters
@@ -347,23 +284,27 @@ class USHCN(Dataset):
         key: Literal["us_daily", "states", "stations"], default "us_daily"
         """
         if key == "us_daily":
-            self._clean_us_daily()
-        elif key == "states":
-            self._clean_states()
-        elif key == "stations":
-            self._clean_stations()
+            return self._clean_us_daily()
+        if key == "states":
+            return self._clean_states()
+        if key == "stations":
+            return self._clean_stations()
 
-    def _clean_states(self) -> None:
+    def _clean_states(self) -> DataFrame:
         state_dtypes = {
             "ID": pandas.CategoricalDtype(ordered=True),
             "Abbr.": pandas.CategoricalDtype(ordered=True),
             "State": pandas.StringDtype(),
         }
-        states = pandas.read_csv(StringIO(STATE_CODES), sep="\t", dtype=state_dtypes)
-        states.to_feather(self.dataset_paths["states"])
-        self.__logger__.info("Finished cleaning 'states' DataFrame")
+        state_codes = self._state_codes
+        columns = state_codes.pop(0)
+        states = pandas.DataFrame(state_codes, columns=columns)
+        states = states.astype(state_dtypes)
+        return states
+        # states.to_feather(self.dataset_paths["states"])
+        # self.__logger__.info("Finished cleaning 'states' DataFrame")
 
-    def _clean_stations(self) -> None:
+    def _clean_stations(self) -> DataFrame:
         stations_file = self.rawdata_paths["stations"]
         if not stations_file.exists():
             self.download()
@@ -385,16 +326,24 @@ class USHCN(Dataset):
         stations_cspecs = [(a - 1, b) for a, b in stations_colspecs.values()]
 
         stations_dtypes = {
-            "COOP_ID": pandas.StringDtype(),
-            "LATITUDE": pandas.Float32Dtype(),
-            "LONGITUDE": pandas.Float32Dtype(),
-            "ELEVATION": pandas.Float32Dtype(),
-            "STATE": pandas.StringDtype(),
-            "NAME": pandas.StringDtype(),
-            "COMPONENT_1": pandas.StringDtype(),
-            "COMPONENT_2": pandas.StringDtype(),
-            "COMPONENT_3": pandas.StringDtype(),
+            "COOP_ID": "string",
+            "LATITUDE": "float32",
+            "LONGITUDE": "float32",
+            "ELEVATION": "float32",
+            "STATE": "string",
+            "NAME": "string",
+            "COMPONENT_1": "string",
+            "COMPONENT_2": "string",
+            "COMPONENT_3": "string",
             "UTC_OFFSET": "timedelta64[h]",
+        }
+
+        stations_new_dtypes = {
+            "COOP_ID": "category",
+            "COMPONENT_1": "Int32",
+            "COMPONENT_2": "Int32",
+            "COMPONENT_3": "Int32",
+            "STATE": "category",
         }
 
         stations_na_values = {
@@ -411,26 +360,17 @@ class USHCN(Dataset):
             names=stations_colspecs,
             na_value=stations_na_values,
         )
-        stations = DataFrame(stations)  # in case TextFileReader is returned
 
         for col, na_value in stations_na_values.items():
             stations[col] = stations[col].replace(na_value, pandas.NA)
 
-        # Get union of all ids
-        stations_new_dtypes = {
-            "COOP_ID": "Int32",
-            "COMPONENT_1": "Int32",
-            "COMPONENT_2": "Int32",
-            "COMPONENT_3": "Int32",
-            "STATE": "category",
-        }
         stations = stations.astype(stations_new_dtypes)
-        path = self.dataset_paths["stations"]
-        stations.to_feather(path)
-        self.__logger__.info("Finished cleaning 'stations' DataFrame")
+        stations = stations.set_index("COOP_ID")
+        return stations
+        # stations.to_parquet(self.dataset_paths["stations"])
 
     @with_cluster
-    def _clean_us_daily(self) -> None:
+    def _clean_us_daily(self) -> DataFrame:
         if importlib.util.find_spec("modin") is not None:
             mpd = importlib.import_module("modin.pandas")
         else:
@@ -481,6 +421,7 @@ class USHCN(Dataset):
         na_values = {("VALUE", k): -9999 for k in range(1, 32)}
         us_daily_path = self.rawdata_paths["us_daily"]
 
+        self.__logger__.info("Loading main file...")
         ds = mpd.read_fwf(
             us_daily_path,
             colspecs=cspec,
@@ -489,9 +430,8 @@ class USHCN(Dataset):
             dtype=dtype,
             compression="gzip",
         )
-        ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
-        self.__logger__.info("Finished loading main file.")
 
+        self.__logger__.info("Cleaning up columns...")
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
         data_cols = [col for col in ds.columns if col not in id_cols]
@@ -502,21 +442,22 @@ class USHCN(Dataset):
         data = ds[data_cols]
         data.columns = pandas.MultiIndex.from_frame(columns)
 
+        self.__logger__.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = data.stack(level="DAY", dropna=True).reset_index(level="DAY")
-        self.__logger__.info("Finished dataframe stacking.")
 
+        self.__logger__.info("Merging on ID columns...")
         # correct dtypes after stacking operation
         _dtypes = {k: v for k, v in dtypes.items() if k in data.columns} | {
-            "DAY": pandas.UInt8Dtype()
+            "DAY": "int8",
         }
         data = data.astype(_dtypes)
 
         # recombine data columns with original data
         data = ds[id_cols].join(data, how="inner")
-        self.__logger__.info("Finished dataframe merging.")
+        data = data.astype(dtypes | {"DAY": "int8"})
 
-        # fix column order
+        self.__logger__.info("Sorting columns....")
         data = data[
             [
                 "COOP_ID",
@@ -531,19 +472,69 @@ class USHCN(Dataset):
             ]
         ]
 
-        # optional: sorting
-        data.sort_values(
-            by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"], inplace=True
-        )
-        self.__logger__.info("Finished sorting.")
+        self.__logger__.info("Sorting index....")
+        data = data.sort_values(by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"])
 
-        # drop old index which may contain duplicates
-        data.reset_index(drop=True, inplace=True)
-
-        self.__logger__.info("Creating time index.")
+        self.__logger__.info("Creating time index...")
+        data = data.reset_index(drop=True)
         datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
         data = data.drop(columns=["YEAR", "MONTH", "DAY"])
         data["time"] = datetimes
-        self.__logger__.info("Finished creating time index.")
+        data = data.astype({"COOP_ID": "category"})
+        data = data.set_index(["COOP_ID", "time"])
+        return DataFrame(data)
+        # data.to_parquet(self.dataset_paths["us_daily"], compression="brotli")
 
-        data.to_feather(self.dataset_paths["us_daily"])
+    @property
+    def _state_codes(self):
+        return [
+            ("ID", "Abr.", "State"),
+            ("01", "AL", "Alabama"),
+            ("02", "AZ", "Arizona"),
+            ("03", "AR", "Arkansas"),
+            ("04", "CA", "California"),
+            ("05", "CO", "Colorado"),
+            ("06", "CT", "Connecticut"),
+            ("07", "DE", "Delaware"),
+            ("08", "FL", "Florida"),
+            ("09", "GA", "Georgia"),
+            ("10", "ID", "Idaho"),
+            ("11", "IL", "Idaho"),
+            ("12", "IN", "Indiana"),
+            ("13", "IA", "Iowa"),
+            ("14", "KS", "Kansas"),
+            ("15", "KY", "Kentucky"),
+            ("16", "LA", "Louisiana"),
+            ("17", "ME", "Maine"),
+            ("18", "MD", "Maryland"),
+            ("19", "MA", "Massachusetts"),
+            ("20", "MI", "Michigan"),
+            ("21", "MN", "Minnesota"),
+            ("22", "MS", "Mississippi"),
+            ("23", "MO", "Missouri"),
+            ("24", "MT", "Montana"),
+            ("25", "NE", "Nebraska"),
+            ("26", "NV", "Nevada"),
+            ("27", "NH", "NewHampshire"),
+            ("28", "NJ", "NewJersey"),
+            ("29", "NM", "NewMexico"),
+            ("30", "NY", "NewYork"),
+            ("31", "NC", "NorthCarolina"),
+            ("32", "ND", "NorthDakota"),
+            ("33", "OH", "Ohio"),
+            ("34", "OK", "Oklahoma"),
+            ("35", "OR", "Oregon"),
+            ("36", "PA", "Pennsylvania"),
+            ("37", "RI", "RhodeIsland"),
+            ("38", "SC", "SouthCarolina"),
+            ("39", "SD", "SouthDakota"),
+            ("40", "TN", "Tennessee"),
+            ("41", "TX", "Texas"),
+            ("42", "UT", "Utah"),
+            ("43", "VT", "Vermont"),
+            ("44", "VA", "Virginia"),
+            ("45", "WA", "Washington"),
+            ("46", "WV", "WestVirginia"),
+            ("47", "WI", "Wisconsin"),
+            ("48", "WY", "Wyoming"),
+        ]
