@@ -8,9 +8,10 @@ __all__ = [
     "ETT"
 ]
 
+from pathlib import Path
 from typing import Literal
 
-from pandas import DataFrame, read_csv, read_feather
+from pandas import read_csv
 
 from tsdm.datasets.base import MultiFrameDataset
 
@@ -29,26 +30,18 @@ class ETT(MultiFrameDataset):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL: str = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""
-    dataset: DataFrame
-    r"""Store cached version of dataset."""
     KEYS = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     r"""The type of the index."""
     index: list[KEYS] = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     r"""IDs of the stored data-objects."""
     rawdata_files = {key: f"{key}.csv" for key in index}
     r"""Files containing the raw data."""
-    dataset_files = {key: f"{key}.feather" for key in index}
+    rawdata_paths: dict[KEYS, Path]
+    r"""Paths to the raw data."""
 
     def _clean(self, key: KEYS) -> None:
         r"""Create DataFrame from the .csv file."""
-        with open(self.rawdata_files[key], "r", encoding="utf8") as file:
-            df = read_csv(file, parse_dates=[0], index_col=0)
-            df.name = self.__class__.__name__
-            # Store the preprocessed dataset as h5 file
-            df = df.reset_index()
-            df.to_feather(self.dataset_files[key])
-
-    def _load(self, key: KEYS) -> DataFrame:
-        r"""Load the dataset from hdf-5 file."""
-        df = read_feather(self.dataset_files[key])
-        return df.set_index("date")
+        df = read_csv(
+            self.rawdata_paths[key], parse_dates=[0], index_col=0, dtype="float32"
+        )
+        return df
