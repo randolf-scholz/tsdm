@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Generic, Optional, Union, overload
 from urllib.parse import urlparse
 
+import pandas
 from pandas import DataFrame, Series
 
 from tsdm.config import DATASETDIR, RAWDATADIR
@@ -243,7 +244,7 @@ class SimpleDataset(BaseDataset):
     @cached_property
     def dataset_files(self) -> PathType:
         r"""Return the dataset files."""
-        return self.__class__.__name__ + ".feather"
+        return self.__class__.__name__ + ".parquet"
 
     @cached_property
     def dataset_paths(self) -> Path:
@@ -254,9 +255,9 @@ class SimpleDataset(BaseDataset):
     def _clean(self) -> None:
         r"""Clean the dataset."""
 
-    @abstractmethod
     def _load(self) -> DATASET_OBJECT:
         r"""Load the dataset."""
+        return pandas.read_parquet(self.dataset_paths)
 
     def _download(self) -> None:
         r"""Download the dataset."""
@@ -354,12 +355,12 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         r"""Return the index of the dataset."""
         # implement loading of dataset
 
-    @abstractmethod
-    def _load(self, key: KeyType) -> Any:
-        r"""Clean the selected DATASET_OBJECT."""
+    def _load(self, key: KeyType) -> DATASET_OBJECT:
+        r"""Load the selected DATASET_OBJECT."""
+        return pandas.read_parquet(self.dataset_paths[key])
 
     @abstractmethod
-    def _clean(self, key: KeyType) -> None:
+    def _clean(self, key: KeyType) -> DATASET_OBJECT:
         r"""Clean the selected DATASET_OBJECT."""
 
     @cached_property
@@ -370,7 +371,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
     @property
     def dataset_files(self) -> Mapping[KeyType, PathType]:
         r"""Relative paths to the dataset files for each key."""
-        return {key: f"{key}.feather" for key in self.index}
+        return {key: f"{key}.parquet" for key in self.index}
 
     @cached_property
     def dataset_paths(self) -> Mapping[KeyType, Path]:
@@ -424,7 +425,8 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             return
 
         self.__logger__.debug("%s: STARTING TO CLEAN DATASET.", key)
-        self._clean(key=key)
+        df = self._clean(key=key)
+        df.to_parquet(self.dataset_paths[key], compression="brotli")
         self.__logger__.debug("%s: FINISHED TO CLEAN DATASET.", key)
 
     @overload
