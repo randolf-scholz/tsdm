@@ -10,6 +10,7 @@ __all__ = [
     "MultiFrameDataset",
 ]
 
+import inspect
 import logging
 import os
 import subprocess
@@ -68,8 +69,9 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the dataset."""
-        self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
-        self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
+        if not inspect.isabstract(self):
+            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
+            self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
         if reset:
             self.clean()
