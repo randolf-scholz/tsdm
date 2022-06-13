@@ -48,10 +48,10 @@ from zipfile import ZipFile
 
 from pandas import DataFrame, read_csv
 
-from tsdm.datasets.base import SimpleDataset
+from tsdm.datasets.base import SingleFrameDataset
 
 
-class Electricity(SimpleDataset):
+class Electricity(SingleFrameDataset):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -63,9 +63,9 @@ class Electricity(SimpleDataset):
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa
 
-    base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
+    BASE_URL: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
     r"""HTTP address from where the dataset can be downloaded."""
-    info_url: str = (
+    INFO_URL: str = (
         r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"
     )
     r"""HTTP address containing additional information about the dataset."""

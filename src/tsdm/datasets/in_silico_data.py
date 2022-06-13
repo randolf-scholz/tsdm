@@ -17,10 +17,10 @@ from zipfile import ZipFile
 import pandas as pd
 
 from tsdm.datasets import examples
-from tsdm.datasets.base import SimpleDataset
+from tsdm.datasets.base import SingleFrameDataset
 
 
-class InSilicoData(SimpleDataset):
+class InSilicoData(SingleFrameDataset):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -64,4 +64,4 @@ class InSilicoData(SimpleDataset):
     def _download(self) -> None:
         r"""Download the dataset."""
         with resources.path(examples, "examples/in_silico.zip") as path:
-            shutil.copy(path, self.rawdata_dir)
+            shutil.copy(path, self.RAWDATA_DIR)

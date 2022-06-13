@@ -12,10 +12,10 @@ from typing import Literal
 
 from pandas import DataFrame, read_csv, read_feather
 
-from tsdm.datasets.base import Dataset
+from tsdm.datasets.base import MultiFrameDataset
 
 
-class ETT(Dataset):
+class ETT(MultiFrameDataset):
     r"""ETT-small-h1.
 
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
@@ -25,9 +25,9 @@ class ETT(Dataset):
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
     """  # pylint: disable=line-too-long # noqa
 
-    base_url: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
+    BASE_URL: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
-    info_url: str = r"https://github.com/zhouhaoyi/ETDataset"
+    INFO_URL: str = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""
     dataset: DataFrame
     r"""Store cached version of dataset."""
