@@ -67,8 +67,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     r"""Logger for the dataset."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
-        """Initialize the dataset."""
-        # Create folders
+        r"""Initialize the dataset."""
         self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
         self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
