@@ -49,7 +49,6 @@ M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference 
 
 __all__ = ["Traffic"]
 
-from collections.abc import Callable
 from io import StringIO
 from pathlib import Path
 from typing import Literal
@@ -99,18 +98,18 @@ class Traffic(MultiFrameDataset):
     randperm: DataFrame
     invperm: DataFrame
 
-    def _load(self, key: KEYS) -> DataFrame:
-        r"""Load the pre-preprocessed dataset from disk."""
-        df = pandas.read_feather(self.dataset_paths[key])
-        if key == "timeseries":
-            return df.set_index(["day", "time"])
-        if key == "labels":
-            return df.set_index("day").squeeze()
-        if key == "invperm":
-            return df.squeeze()
-        if key == "randperm":
-            return df.squeeze()
-        raise KeyError(f"{key} is not a valid key")
+    # def _load(self, key: KEYS) -> DataFrame:
+    #     r"""Load the pre-preprocessed dataset from disk."""
+    #     df = pandas.read_feather(self.dataset_paths[key])
+    #     if key == "timeseries":
+    #         return df.set_index(["day", "time"])
+    #     if key == "labels":
+    #         return df.set_index("day").squeeze()
+    #     if key == "invperm":
+    #         return df.squeeze()
+    #     if key == "randperm":
+    #         return df.squeeze()
+    #     raise KeyError(f"{key} is not a valid key")
 
     def _clean(self, key: KEYS) -> None:
         r"""Create the DataFrames.
@@ -119,20 +118,22 @@ class Traffic(MultiFrameDataset):
         ----------
         key: Literal["us_daily", "states", "stations"], default "us_daily"
         """
-        cleaners: dict[str, Callable[[], None]] = {
-            "timeseries": self._clean_data,
-            "labels": self._clean_data,
-            "invperm": self._clean_randperm,
-            "randperm": self._clean_randperm,
-        }
-        cleaners[key]()
+        if key == "timeseries":
+            return self._clean_data()
+        if key == "labels":
+            return self._clean_data()
+        if key == "randperm":
+            return self._clean_randperm()
+        if key == "invperm":
+            return self._clean_randperm()
 
-    def _clean_data(self, use_true: bool = True) -> None:
+    def _clean_data(self, *, use_corrected_dates: bool = True) -> None:
         r"""Create DataFrame from raw data.
 
         Parameters
         ----------
-        use_true: Use correct dates and anomalies found through reverse engineering the dataset.
+        use_corrected_dates: bool (default True)
+            Use correct dates and anomalies found through reverse engineering the dataset.
 
         Notes
         -----
@@ -241,9 +242,9 @@ class Traffic(MultiFrameDataset):
             "7": "Sunday",
         }
 
-        dates = true_dates if use_true else false_dates
-        anomalies = true_anomalies if use_true else false_anomalies
-        weekdays = true_weekdays if use_true else false_weekdays
+        dates = true_dates if use_corrected_dates else false_dates
+        anomalies = true_anomalies if use_corrected_dates else false_anomalies
+        weekdays = true_weekdays if use_corrected_dates else false_weekdays
 
         # remove anomalies
         mask = dates.isin(anomalies)
@@ -359,5 +360,7 @@ class Traffic(MultiFrameDataset):
                 invperm = randperm.copy().argsort()
                 invperm.name = "invperm"
                 assert (randperm[invperm] == np.arange(len(randperm))).all()
-        DataFrame(randperm).to_feather(self.dataset_paths["randperm"])
-        DataFrame(invperm).to_feather(self.dataset_paths["invperm"])
+        DataFrame(randperm).to_parquet(
+            self.dataset_paths["randperm"], compression="gzip"
+        )
+        DataFrame(invperm).to_parquet(self.dataset_paths["invperm"], compression="gzip")

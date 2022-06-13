@@ -62,6 +62,10 @@ r"""Type Variable for nn.Modules."""
 # r"""Type for path-like objects."""
 
 PathType = Union[str, Path, os.PathLike[str]]
+r"""Type for path-like objects."""
+
+PathVar = TypeVar("PathVar", str, Path, os.PathLike[str])
+r"""TypeVar for path-like objects."""
 
 Nested = Union[
     Type,
