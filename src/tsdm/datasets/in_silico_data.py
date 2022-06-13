@@ -53,13 +53,13 @@ class InSilicoData(SingleFrameDataset):
                 df["DOTm"] /= 100
                 df.name = key
                 dfs[key] = df
-            df = pd.concat(dfs, names=["run_id"])
-            df = df.reset_index()
-            df.to_feather(self.dataset_paths)
-
-    def _load(self) -> pd.DataFrame:
-        df = pd.read_feather(self.dataset_paths)
-        return df.set_index(["run_id", "time"])
+        ds = pd.concat(dfs, names=["run_id"])
+        ds = ds.reset_index()
+        ds = ds.astype({"run_id": "string"}).astype({"run_id": "category"})
+        ds = ds.set_index(["run_id", "time"])
+        ds = ds.sort_values(by=["run_id", "time"])
+        ds = ds.astype("Float32")
+        return ds
 
     def _download(self) -> None:
         r"""Download the dataset."""
