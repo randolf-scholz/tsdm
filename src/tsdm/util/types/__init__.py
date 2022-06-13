@@ -13,6 +13,7 @@ __all__ = [
     "ValueType",
     "Type",
     "nnModuleType",
+    "Parameters",
     # Generic Types
     "Nested",
     # Static Types
@@ -29,6 +30,7 @@ from tsdm.util.types._types import (
     Nested,
     ObjectType,
     PandasObject,
+    Parameters,
     PathType,
     ReturnType,
     Self,
