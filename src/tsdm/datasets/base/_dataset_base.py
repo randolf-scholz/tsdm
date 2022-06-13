@@ -289,10 +289,13 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
-        super().__init__(initialize=initialize, reset=reset)
         for key in self.index:
             if isinstance(key, str) and not hasattr(self, key):
-                setattr(self, key, self[key])
+                # load_key = partial(self.load, key=key)
+                setattr(self, key, property(lambda obj: obj.load(key=key)))
+                # setattr(self, key, property(partial(self.load, key=key)))
+
+        super().__init__(initialize=initialize, reset=reset)
 
     def __repr__(self):
         r"""Pretty Print."""
@@ -340,7 +343,7 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
         return pandas.read_parquet(self.dataset_paths[key])
 
     @abstractmethod
-    def _clean(self, key: KeyType) -> DATASET_OBJECT:
+    def _clean(self, key: KeyType) -> DATASET_OBJECT | None:
         r"""Clean the selected DATASET_OBJECT."""
 
     def rawdata_files_exist(self, key: Optional[KeyType] = None) -> bool:
@@ -391,7 +394,8 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
 
         self.LOGGER.debug("%s: STARTING TO CLEAN DATASET.", key)
         df = self._clean(key=key)
-        df.to_parquet(self.dataset_paths[key], compression="gzip")
+        if df is not None:
+            df.to_parquet(self.dataset_paths[key], compression="gzip")
         self.LOGGER.debug("%s: FINISHED TO CLEAN DATASET.", key)
 
     @overload

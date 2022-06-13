@@ -290,6 +290,28 @@ def decorator(deco: Callable) -> Callable:
     return _parametrized_decorator
 
 
+def attribute(func):
+    r"""Create decorator that converts method to attribute."""
+
+    @wraps(func, updated=())
+    class _attribute:
+        __slots__ = ("func", "payload")
+        sentinel = object()
+
+        def __init__(self, func):
+            self.func = func
+            self.payload = self.sentinel
+
+        def __get__(self, obj, obj_type=None):
+            if obj is None:
+                return self
+            if self.payload is self.sentinel:
+                self.payload = self.func(obj)
+            return self.payload
+
+    return _attribute(func)
+
+
 @decorator
 def timefun(
     fun: Callable[Parameters, ReturnType],
