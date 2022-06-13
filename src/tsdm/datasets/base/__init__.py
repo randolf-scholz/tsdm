@@ -9,4 +9,8 @@ __all__ = [
     "SingleFrameDataset",
 ]
 
-from tsdm.datasets.base._base import BaseDataset, MultiFrameDataset, SingleFrameDataset
+from tsdm.datasets.base._dataset_base import (
+    BaseDataset,
+    MultiFrameDataset,
+    SingleFrameDataset,
+)

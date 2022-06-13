@@ -71,12 +71,10 @@ __all__ = [
     "BeijingAirQuality",
 ]
 
-import os
 import zipfile
 from pathlib import Path
 
-import pandas
-from pandas import DataFrame, Timestamp, concat, read_csv
+from pandas import Timestamp, concat, read_csv
 
 from tsdm.datasets.base import SingleFrameDataset
 
@@ -101,7 +99,6 @@ class BeijingAirQuality(SingleFrameDataset):
     )
     r"""HTTP address containing additional information about the dataset."""
 
-    dataset: DataFrame
     rawdata_files = "PRSA2017_Data_20130301-20170228.zip"
     rawdata_paths: Path
 
@@ -111,39 +108,41 @@ class BeijingAirQuality(SingleFrameDataset):
         def _to_time(x):
             return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
 
-        compressed = self.rawdata_paths
-        extracted_folder = compressed.with_suffix("")
-
-        if not extracted_folder.exists():
-            with zipfile.ZipFile(compressed) as zip_ref:
-                zip_ref.extractall(self.RAWDATA_DIR)
-
-        self.LOGGER.info("Finished extracting dataset")
-
-        stations = []
-        for csv_file in os.listdir(extracted_folder):
-            print(csv_file)
-            df = DataFrame(read_csv(extracted_folder / csv_file))
-
-            # Make multiple date columns to pandas.Timestamp
-            df["time"] = df.apply(_to_time, axis=1)
-
-            # Remove date columns and index
-            df = df.drop(labels=["No", "year", "month", "day", "hour"], axis=1)
-            stations.append(df)
-
-        df = concat(stations, ignore_index=True)
-        extracted_folder.unlink()
-        df.name = self.__class__.__name__
-        df = df.set_index("time")
-
         dtypes = {
-            "wd": pandas.CategoricalDtype(),
-            "station": pandas.CategoricalDtype(),
+            "wd": "string",
+            "station": "string",
         }
-        for col in df.columns:
-            if col not in dtypes:
-                dtypes[col] = "float32"
 
-        df = df.astype(dtypes)
+        new_dtypes = {
+            "wd": "category",
+            "station": "category",
+        }
+
+        self.LOGGER.info("Extracting Data.")
+        with zipfile.ZipFile(self.rawdata_paths) as compressed_file:
+            stations = []
+            for csv_file in compressed_file.namelist():
+                if not csv_file.endswith(".csv"):
+                    continue
+                df = read_csv(compressed_file.open(csv_file), dtype=dtypes)
+                # Make multiple date columns to pandas.Timestamp
+                df["time"] = df.apply(_to_time, axis=1)
+                # Remove date columns and index
+                df = df.drop(labels=["No", "year", "month", "day", "hour"], axis=1)
+                stations.append(df)
+
+        self.LOGGER.info("Merging Stations.")
+        df = concat(stations, ignore_index=True)
+
+        self.LOGGER.info("Setting dtypes.")
+        other_columns = {
+            col for col in df.columns if col not in ["time", "station", "wd"]
+        }
+        new_dtypes |= {col: "float32" for col in other_columns}
+        df = df.astype(new_dtypes)
+
+        self.LOGGER.info("Setting Index.")
+        df = df.sort_values(by=["station", "time"])
+        df = df.set_index(["station", "time"])
+
         return df
