@@ -252,7 +252,7 @@ class SimpleDataset(BaseDataset):
         return self.dataset_dir / (self.dataset_files or "")
 
     @abstractmethod
-    def _clean(self) -> None:
+    def _clean(self) -> DATASET_OBJECT:
         r"""Clean the dataset."""
 
     def _load(self) -> DATASET_OBJECT:
@@ -261,8 +261,13 @@ class SimpleDataset(BaseDataset):
 
     def _download(self) -> None:
         r"""Download the dataset."""
-        assert self.base_url is not None
-        self.download_from_url(self.base_url)
+        assert self.base_url is not None, "base_url is not set!"
+
+        files: Nested[Path] = prepend_path(self.rawdata_files, Path(), keep_none=False)
+        files: set[Path] = flatten_nested(files, kind=Path)
+
+        for file in files:
+            self.download_from_url(self.base_url + file.name)
 
     @cached_property
     def dataset(self) -> DATASET_OBJECT:
@@ -291,7 +296,8 @@ class SimpleDataset(BaseDataset):
             self.download()
 
         self.__logger__.debug("STARTING TO CLEAN DATASET.")
-        self._clean()
+        df = self._clean()
+        df.to_parquet(self.dataset_paths, compression="gzip")
         self.__logger__.debug("FINISHED TO CLEAN DATASET.")
 
     def download(self, *, force: bool = True) -> None:
