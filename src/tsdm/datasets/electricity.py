@@ -46,8 +46,7 @@ __all__ = [
 from pathlib import Path
 from zipfile import ZipFile
 
-import numpy as np
-from pandas import DataFrame, read_csv, read_feather
+from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import SimpleDataset
 
@@ -74,12 +73,11 @@ class Electricity(SimpleDataset):
     r"""Store cached version of dataset."""
     rawdata_files: str = "LD2011_2014.txt.zip"
     rawdata_paths: Path
-    dataset_files = "Electricity.feather"
 
-    def _clean(self) -> None:
+    def _clean(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
         with ZipFile(self.rawdata_paths) as files:
-            fname = self.rawdata_paths.with_suffix("").stem
+            fname = self.rawdata_paths.with_suffix("").name
             with files.open(fname) as file:
                 df = read_csv(
                     file,
@@ -87,14 +85,6 @@ class Electricity(SimpleDataset):
                     decimal=",",
                     parse_dates=[0],
                     index_col=0,
-                    dtype=np.float64,
+                    dtype="float32",
                 )
-
-        df = df.rename_axis(index="time", columns="client")
-        df.name = self.__class__.__name__
-        df = df.reset_index()
-        df.to_feather(self.dataset_paths)
-
-    def _load(self) -> DataFrame:
-        r"""Load the dataset from disk."""
-        return read_feather(self.dataset_paths).set_index("time")
+        return df.rename_axis(index="time", columns="client")

@@ -448,7 +448,7 @@ class USHCN(Dataset):
 
         self.__logger__.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
-        data = data.stack(level="DAY", dropna=True).reset_index(level="DAY")
+        data = data.stack(level="DAY", dropna=False).reset_index(level="DAY")
 
         self.__logger__.info("Merging on ID columns...")
         # correct dtypes after stacking operation
@@ -466,11 +466,16 @@ class USHCN(Dataset):
         data["TIME"] = datetimes
         data = data.dropna(subset=["TIME"])
 
-        self.__logger__.info("Sorting index....")
+        self.__logger__.info("Pre-Sorting index....")
         data = data.set_index("COOP_ID")
         data = data.sort_index()  # fast pre-sort with single index
         data = data.set_index("TIME", append=True)
-        data = data.sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
+
+        self.__logger__.info("Converting back to standard pandas DataFrame....")
+        try:
+            data = data._to_pandas()
+        except AttributeError:
+            pass
 
         self.__logger__.info("Sorting columns....")
         data = data.reindex(
@@ -482,12 +487,8 @@ class USHCN(Dataset):
                 "VALUE",
             ]
         )
-
-        self.__logger__.info("Converting back to standard pandas DataFrame....")
-        try:
-            data = data._to_pandas()
-        except AttributeError:
-            pass
+        self.__logger__.info("Sorting index....")
+        data = data.sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
 
         return data
 
