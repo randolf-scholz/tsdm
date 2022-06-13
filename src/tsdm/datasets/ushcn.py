@@ -22,7 +22,7 @@ from typing import Literal
 import pandas
 from pandas import DataFrame
 
-from tsdm.datasets.base import Dataset, SimpleDataset
+from tsdm.datasets.base import MultiFrameDataset, SingleFrameDataset
 
 __logger__ = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def with_cluster(func: Callable) -> Callable:
     return _wrapper
 
 
-class USHCN_SmallChunkedSporadic(SimpleDataset):
+class USHCN_SmallChunkedSporadic(SingleFrameDataset):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
 
     References
@@ -62,13 +62,13 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
         <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    base_url = (
+    BASE_URL = (
         r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
         r"master/gru_ode_bayes/datasets/Climate/small_chunked_sporadic.csv"
     )
     r"""HTTP address from where the dataset can be downloaded."""
 
-    info_url = "https://github.com/edebrouwer/gru_ode_bayes"
+    INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
     r"""HTTP address containing additional information about the dataset."""
 
     rawdata_files = "small_chunked_sporadic.csv"
@@ -112,7 +112,7 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
         return df.set_index(["ID", "Time"])
 
 
-class USHCN(Dataset):
+class USHCN(MultiFrameDataset):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -259,9 +259,9 @@ class USHCN(Dataset):
       at the station (i.e., the number of hours that must be added to local standard time to match UTC).
     """
 
-    base_url = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
+    BASE_URL = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
     r"""HTTP address from where the dataset can be downloaded."""
-    info_url = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
+    INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
@@ -425,7 +425,7 @@ class USHCN(Dataset):
         na_values = {("VALUE", k): "-9999" for k in range(1, 32)}
         us_daily_path = self.rawdata_paths["us_daily"]
 
-        self.__logger__.info("Loading main file...")
+        self.LOGGER.info("Loading main file...")
         ds = mpd.read_fwf(
             us_daily_path,
             colspecs=cspec,
@@ -435,7 +435,7 @@ class USHCN(Dataset):
             compression="gzip",
         )
 
-        self.__logger__.info("Cleaning up columns...")
+        self.LOGGER.info("Cleaning up columns...")
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
         data_cols = [col for col in ds.columns if col not in id_cols]
@@ -446,11 +446,11 @@ class USHCN(Dataset):
         data = ds[data_cols]
         data.columns = pandas.MultiIndex.from_frame(columns)
 
-        self.__logger__.info("Stacking on FLAGS and VALUES columns...")
+        self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
         data = data.stack(level="DAY", dropna=False).reset_index(level="DAY")
 
-        self.__logger__.info("Merging on ID columns...")
+        self.LOGGER.info("Merging on ID columns...")
         # correct dtypes after stacking operation
         _dtypes = {k: v for k, v in dtypes.items() if k in data.columns}
         data = data.astype(_dtypes | {"DAY": "int8"})
@@ -459,25 +459,25 @@ class USHCN(Dataset):
         data = ds[id_cols].join(data, how="inner")
         data = data.astype(dtypes | {"DAY": "int8", "COOP_ID": "category"})
 
-        self.__logger__.info("Creating time index...")
+        self.LOGGER.info("Creating time index...")
         data = data.reset_index(drop=True)
         datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
         data = data.drop(columns=["YEAR", "MONTH", "DAY"])
         data["TIME"] = datetimes
         data = data.dropna(subset=["TIME"])
 
-        self.__logger__.info("Pre-Sorting index....")
+        self.LOGGER.info("Pre-Sorting index....")
         data = data.set_index("COOP_ID")
         data = data.sort_index()  # fast pre-sort with single index
         data = data.set_index("TIME", append=True)
 
-        self.__logger__.info("Converting back to standard pandas DataFrame....")
+        self.LOGGER.info("Converting back to standard pandas DataFrame....")
         try:
             data = data._to_pandas()
         except AttributeError:
             pass
 
-        self.__logger__.info("Sorting columns....")
+        self.LOGGER.info("Sorting columns....")
         data = data.reindex(
             columns=[
                 "ELEMENT",
@@ -487,7 +487,7 @@ class USHCN(Dataset):
                 "VALUE",
             ]
         )
-        self.__logger__.info("Sorting index....")
+        self.LOGGER.info("Sorting index....")
         data = data.sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
 
         return data

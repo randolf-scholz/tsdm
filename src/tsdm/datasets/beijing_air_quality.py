@@ -76,12 +76,12 @@ import zipfile
 from pathlib import Path
 
 import pandas
-from pandas import DataFrame, Timestamp, concat, read_csv, read_feather
+from pandas import DataFrame, Timestamp, concat, read_csv
 
-from tsdm.datasets.base import SimpleDataset
+from tsdm.datasets.base import SingleFrameDataset
 
 
-class BeijingAirQuality(SimpleDataset):
+class BeijingAirQuality(SingleFrameDataset):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -93,10 +93,10 @@ class BeijingAirQuality(SimpleDataset):
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa
 
-    base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
+    BASE_URL: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
     r"""HTTP address from where the dataset can be downloaded."""
 
-    info_url: str = (
+    INFO_URL: str = (
         r"https://archive.ics.uci.edu/ml/datasets/Beijing+Multi-Site+Air-Quality+Data"
     )
     r"""HTTP address containing additional information about the dataset."""
@@ -104,11 +104,6 @@ class BeijingAirQuality(SimpleDataset):
     dataset: DataFrame
     rawdata_files = "PRSA2017_Data_20130301-20170228.zip"
     rawdata_paths: Path
-
-    def _load(self):
-        r"""Load the dataset from hdf-5 file."""
-        df = read_feather(self.dataset_files)
-        return df.set_index("time")
 
     def _clean(self) -> None:
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
@@ -121,9 +116,9 @@ class BeijingAirQuality(SimpleDataset):
 
         if not extracted_folder.exists():
             with zipfile.ZipFile(compressed) as zip_ref:
-                zip_ref.extractall(self.rawdata_dir)
+                zip_ref.extractall(self.RAWDATA_DIR)
 
-        self.__logger__.info("Finished extracting dataset")
+        self.LOGGER.info("Finished extracting dataset")
 
         stations = []
         for csv_file in os.listdir(extracted_folder):
@@ -151,5 +146,4 @@ class BeijingAirQuality(SimpleDataset):
                 dtypes[col] = "float32"
 
         df = df.astype(dtypes)
-        df = df.reset_index()
-        df.to_feather(self.dataset_files)
+        return df

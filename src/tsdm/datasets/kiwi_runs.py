@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
-from tsdm.datasets.base import Dataset
+from tsdm.datasets.base import MultiFrameDataset
 from tsdm.util import round_relative
 
 __logger__ = logging.getLogger(__name__)
@@ -87,7 +87,7 @@ def get_useless_cols(
     return useless_cols
 
 
-class KIWI_RUNS(Dataset):
+class KIWI_RUNS(MultiFrameDataset):
     r"""KIWI RUN Data.
 
     The cleaned data will consist of 2 parts:
@@ -112,7 +112,7 @@ class KIWI_RUNS(Dataset):
         ]
     """
 
-    base_url: str = (
+    BASE_URL: str = (
         "https://owncloud.innocampus.tu-berlin.de/index.php/s"
         "/fRBSr82NxY7ratK/download/kiwi_experiments_and_run_355.pk"
     )
@@ -171,7 +171,7 @@ class KIWI_RUNS(Dataset):
     def _clean(self, key: KEYS) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         with open(self.rawdata_paths, "rb") as file:
-            self.__logger__.info("Loading raw data from %s", self.rawdata_paths)
+            self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
             data = pickle.load(file)
 
         DATA = [
@@ -220,7 +220,7 @@ class KIWI_RUNS(Dataset):
         else:
             cleaner(table)
 
-        self.__logger__.info("%s Finished cleaning table!", key)
+        self.LOGGER.info("%s Finished cleaning table!", key)
 
     def _clean_metadata(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()

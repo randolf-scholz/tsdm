@@ -59,7 +59,7 @@ import numpy as np
 import pandas
 from pandas import DataFrame, Series
 
-from tsdm.datasets.base import Dataset
+from tsdm.datasets.base import MultiFrameDataset
 
 
 def _reformat(s: str, replacements: dict) -> str:
@@ -71,7 +71,7 @@ def _reformat(s: str, replacements: dict) -> str:
     return result
 
 
-class Traffic(Dataset):
+class Traffic(MultiFrameDataset):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -83,9 +83,9 @@ class Traffic(Dataset):
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa
 
-    base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
+    BASE_URL: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
     r"""HTTP address from where the dataset can be downloaded."""
-    info_url: str = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
+    INFO_URL: str = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
     r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["timeseries", "labels", "randperm", "invperm"]
     r"""The names of the DataFrames associated with this dataset."""
