@@ -11,6 +11,7 @@ __all__ = [
     "ReturnType",
     "ValueType",
     "nnModuleType",
+    "Parameters",
     "Type",
     # Generic Types
     "Nested",
@@ -22,7 +23,7 @@ __all__ = [
 import os
 from collections.abc import Collection, Hashable, Mapping
 from pathlib import Path
-from typing import Any, TypeVar, Union
+from typing import Any, ParamSpec, TypeVar, Union
 
 from pandas import DataFrame, Index, Series
 from torch import nn
@@ -44,6 +45,9 @@ r"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
 
 ClassType = TypeVar("ClassType", bound=type)
 r"""Generic type hint."""
+
+Parameters = ParamSpec("Parameters")
+r"""TypeVar for decorated function inputs values."""
 
 ObjectType = TypeVar("ObjectType", bound=object)
 r"""Generic type hint for instances."""

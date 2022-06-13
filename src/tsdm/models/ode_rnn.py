@@ -120,7 +120,6 @@ class ODE_RNN(BaseModel, nn.Module):
         Configuration parameters for the ODE-RNN
     """
 
-    model: type
     model_path: Path
     url: str = r"https://github.com/YuliaRubanova/latent_ode.git"
 
