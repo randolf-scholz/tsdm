@@ -33,14 +33,7 @@ from typing import Any, Optional, Union, overload
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import (
-    ClassType,
-    ObjectType,
-    Parameters,
-    ReturnType,
-    Type,
-    nnModuleType,
-)
+from tsdm.util.types import ClassType, ObjectType, ReturnType, Type, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -314,12 +307,12 @@ def attribute(func):
 
 @decorator
 def timefun(
-    fun: Callable[Parameters, ReturnType],
+    fun: Callable[..., ReturnType],
     /,
     *,
     append: bool = False,
     loglevel: int = logging.WARNING,
-) -> Callable[Parameters, ReturnType]:
+) -> Callable[..., ReturnType]:
     r"""Log the execution time of the function. Use as decorator.
 
     By default appends the execution time (in seconds) to the function call.
@@ -386,7 +379,7 @@ def timefun(
 #     return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
 
 
-def trace(func: Callable[Parameters, ReturnType]) -> Callable[Parameters, ReturnType]:
+def trace(func: Callable[..., ReturnType]) -> Callable[..., ReturnType]:
     r"""Log entering and exiting of function.
 
     Parameters
@@ -637,12 +630,12 @@ def IterKeys(obj: Type) -> Type:
 
 @decorator
 def wrap_func(
-    func: Callable[Parameters, ReturnType],
+    func: Callable[..., ReturnType],
     /,
     *,
-    before: Optional[Callable[Parameters, Any]] = None,
-    after: Optional[Callable[Parameters, Any]] = None,
-) -> Callable[Parameters, ReturnType]:
+    before: Optional[Callable[..., Any]] = None,
+    after: Optional[Callable[..., Any]] = None,
+) -> Callable[..., ReturnType]:
     r"""Wrap a function with pre and post hooks."""
     if before is None and after is None:
         __logger__.debug("No hooks added to %s", func)

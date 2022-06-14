@@ -21,12 +21,19 @@ __all__ = [
 ]
 
 import os
+import sys
+import typing
 from collections.abc import Collection, Hashable, Mapping
 from pathlib import Path
-from typing import Any, ParamSpec, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 from pandas import DataFrame, Index, Series
 from torch import nn
+
+if sys.version_info >= (3, 10):
+    ParamSpec = getattr(typing, "ParamSpec")  # noqa: B009
+else:
+    ParamSpec = typing.TypeVar
 
 ArgsType = TypeVar("ArgsType")
 r"""TypeVar for `Mapping` values."""

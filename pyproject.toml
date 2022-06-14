@@ -41,7 +41,7 @@ classifiers = [
 # all = ["modin"]
 
 [tool.poetry.dependencies]
-python = "~3.10"
+python = ">=3.9, <3.11"
 h5py = ">=3.4.0"
 matplotlib = ">=3.5"
 #modin = {version = ">=0.14", extras = ["ray"]}
@@ -145,7 +145,7 @@ error_summary = true
 files = ["src/", "test/"]
 plugins = "numpy.typing.mypy_plugin"
 pretty = true
-python_version = "3.10"
+python_version = "3.9"
 check_untyped_defs = true
 show_column_numbers = true
 show_error_codes = true
@@ -201,7 +201,7 @@ convention = "numpy"
 root = ""
 venv = ".venv"
 venvPath = "."
-pythonVersion = "3.10"
+pythonVersion = "3.9"
 pythonPlatform = "Linux"
 include = ["src/", "test/"]
 exclude = [
