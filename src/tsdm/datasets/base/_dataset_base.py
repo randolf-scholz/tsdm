@@ -17,7 +17,7 @@ import subprocess
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from pathlib import Path
 from typing import Any, Generic, Optional, Union, overload
 from urllib.parse import urlparse
@@ -293,10 +293,7 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
         self.LOGGER.info("Adding keys as attributes.")
         for key in self.index:
             if isinstance(key, str) and not hasattr(self, key):
-
-                def _get_dataset(obj):
-                    return obj.load(key=key)
-
+                _get_dataset = partial(self.__class__.load, key=key)
                 _get_dataset.__doc__ = f"Load dataset for {key=}."
                 setattr(self.__class__, key, property(_get_dataset))
 
