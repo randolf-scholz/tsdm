@@ -27,6 +27,7 @@ from pandas import DataFrame, Series
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.util import flatten_nested, paths_exists, prepend_path
+from tsdm.util.decorators import trace
 from tsdm.util.remote import download
 from tsdm.util.types import KeyType, Nested, PathType
 
@@ -289,11 +290,15 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
+        self.LOGGER.info("Adding keys as attributes.")
         for key in self.index:
             if isinstance(key, str) and not hasattr(self, key):
-                # load_key = partial(self.load, key=key)
-                setattr(self, key, property(lambda obj: obj.load(key=key)))
-                # setattr(self, key, property(partial(self.load, key=key)))
+
+                def _get_dataset(obj):
+                    return obj.load(key=key)
+
+                _get_dataset.__doc__ = f"Load dataset for {key=}."
+                setattr(self.__class__, key, property(_get_dataset))
 
         super().__init__(initialize=initialize, reset=reset)
 
@@ -408,6 +413,7 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
     def load(self, *, key: KeyType = None, force: bool = False, **kwargs: Any) -> Any:
         ...
 
+    @trace
     def load(
         self, *, key: Optional[KeyType] = None, force: bool = False, **kwargs: Any
     ) -> Union[Any, Mapping[KeyType, Any]]:
