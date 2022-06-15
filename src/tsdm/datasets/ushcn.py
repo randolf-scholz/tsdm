@@ -64,7 +64,7 @@ class USHCN_SmallChunkedSporadic(SingleFrameDataset):
 
     BASE_URL = (
         r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
-        r"master/gru_ode_bayes/datasets/Climate/small_chunked_sporadic.csv"
+        r"master/gru_ode_bayes/datasets/Climate/"
     )
     r"""HTTP address from where the dataset can be downloaded."""
 
@@ -72,7 +72,7 @@ class USHCN_SmallChunkedSporadic(SingleFrameDataset):
     r"""HTTP address containing additional information about the dataset."""
 
     rawdata_files = "small_chunked_sporadic.csv"
-    dataset_files = "SmallChunkedSporadic.feather"
+    # dataset_files = "SmallChunkedSporadic.feather"
 
     def _clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
@@ -102,14 +102,16 @@ class USHCN_SmallChunkedSporadic(SingleFrameDataset):
 
         df = df[["ID", "Time", *channels]]
         df = df.sort_values(["ID", "Time"])
-        df = df.reset_index(drop=True)
+        df = df.set_index(["ID", "Time"])
+        # df = df.reset_index(drop=True)
         df = df.rename(columns=channels)
-        df.to_feather(self.dataset_paths)
+        return df
+        # df.to_feather(self.dataset_paths)
 
-    def _load(self) -> DataFrame:
-        r"""Load the dataset from hdf-5 file."""
-        df = pandas.read_feather(self.dataset_paths)
-        return df.set_index(["ID", "Time"])
+    # def _load(self) -> DataFrame:
+    #     r"""Load the dataset from hdf-5 file."""
+    #     df = pandas.read_feather(self.dataset_paths)
+    #     return df.set_index(["ID", "Time"])
 
 
 class USHCN(MultiFrameDataset):
