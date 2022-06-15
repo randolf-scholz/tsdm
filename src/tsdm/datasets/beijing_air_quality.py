@@ -125,7 +125,7 @@ class BeijingAirQuality(SingleFrameDataset):
                 if not csv_file.endswith(".csv"):
                     continue
                 with compressed_archive.open(csv_file) as compressed_file:
-                    df: DataFrame = read_csv(compressed_file, dtype=dtypes)
+                    df = read_csv(compressed_file, dtype=dtypes)
                 # Make multiple date columns to pandas.Timestamp
                 df["time"] = df.apply(_to_time, axis=1)
                 # Remove date columns and index

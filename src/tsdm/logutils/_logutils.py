@@ -339,9 +339,7 @@ class StandardLogger:
                 targets.append(result[0])
                 predics.append(result[1])
 
-        predics = torch.cat(predics)
-        targets = torch.cat(targets)
-        return ResultTuple(targets=targets, predics=predics)
+        return ResultTuple(targets=torch.cat(targets), predics=torch.cat(predics))
 
     def make_checkpoint(self, i: int, /) -> None:
         r"""Make checkpoint."""
