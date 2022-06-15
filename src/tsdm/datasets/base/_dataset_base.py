@@ -351,14 +351,16 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
         return {key: None for key in self.index}
 
     @cached_property
-    def dataset_files(self) -> Mapping[KeyType, PathType]:
+    def dataset_files(self) -> Mapping[KeyType, str]:
         r"""Relative paths to the dataset files for each key."""
         return {key: f"{key}.{self.default_format}" for key in self.index}
 
     @cached_property
     def dataset_paths(self) -> Mapping[KeyType, Path]:
         r"""Absolute paths to the dataset files for each key."""
-        return {key: self.DATASET_DIR / self.dataset_files[key] for key in self.index}
+        return {
+            key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
+        }
 
     def _load(self, key: KeyType) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
