@@ -139,7 +139,7 @@ generated-members=["numpy.*","torch.*"]
 # MyPy Configuration #
 ######################
 [tool.mypy]
-allow_redefinition = true
+allow_redefinition = false
 color_output = true
 error_summary = true
 files = ["src/", "test/"]

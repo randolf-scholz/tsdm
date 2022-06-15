@@ -197,9 +197,14 @@ class FrameDataset(BaseDataset, ABC):
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
         file_type = file_type[1:]
+
+        if isinstance(frame, Series):
+            frame = frame.to_frame()
+
         if hasattr(frame, f"to_{file_type}"):
-            pandas_writer = getattr(frame, f"read_{file_type}")
+            pandas_writer = getattr(frame, f"to_{file_type}")
             pandas_writer(path, **kwargs)
+            return
 
         raise NotImplementedError(f"No loader for {file_type=}")
 
