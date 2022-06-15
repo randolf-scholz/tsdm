@@ -92,6 +92,8 @@ class Traffic(MultiFrameDataset):
     r"""The identifiers for the dataset."""
     rawdata_files = "PEMS-SF.zip"
     r"""The name of the zip file containing the raw data."""
+    default_format = "parquet"
+
     rawdata_paths: Path
     timeseries: DataFrame
     labels: DataFrame
@@ -342,9 +344,15 @@ class Traffic(MultiFrameDataset):
         mismatches = labels[self.invperm].map(weekdays) != dates.day_name()
         assert len(dates[mismatches]) == 0, "Mismatches in label and date weekday!"
 
-        PEMS.reset_index().to_feather(self.dataset_paths["timeseries"])
-        labels = DataFrame(labels).reset_index()
-        labels.to_feather(self.dataset_paths["labels"])
+        PEMS = PEMS.reset_index()
+
+        PEMS["time"] = PEMS["day"] + PEMS["time"]
+        PEMS = PEMS.drop(columns="day")
+        PEMS = PEMS.set_index("time")
+        PEMS = PEMS.astype("float32")
+        PEMS.columns = PEMS.columns.astype("string")
+        PEMS.to_parquet(self.dataset_paths["timeseries"], compression="gzip")
+        DataFrame(labels).to_parquet(self.dataset_paths["labels"], compression="gzip")
 
     def _clean_randperm(self):
         with ZipFile(self.rawdata_paths) as files:
@@ -361,5 +369,7 @@ class Traffic(MultiFrameDataset):
                 invperm.name = "invperm"
                 assert (randperm[invperm] == np.arange(len(randperm))).all()
 
-        randperm.to_parquet(self.dataset_paths["randperm"], compression="gzip")
-        invperm.to_parquet(self.dataset_paths["invperm"], compression="gzip")
+        DataFrame(randperm).to_parquet(
+            self.dataset_paths["randperm"], compression="gzip"
+        )
+        DataFrame(invperm).to_parquet(self.dataset_paths["invperm"], compression="gzip")
