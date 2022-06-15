@@ -124,7 +124,7 @@ class MIMIC_III(MultiFrameDataset):
             df = df.set_index("LABEL_CODE")
         return df
 
-    def _download(self, **kwargs):
+    def _download(self, **_):
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)

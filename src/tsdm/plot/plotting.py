@@ -171,12 +171,12 @@ def shared_grid_plot(
         "tight_layout": True,
     }
 
-    if subplots_kwargs is not None:
-        _subplot_kwargs.update(subplots_kwargs)
+    _subplot_kwargs.update(subplots_kwargs or {})
 
     plot_kwargs = {} if plot_kwargs is None else plot_kwargs
 
     axes: NDArray[Axes]
+    fig: Figure
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **_subplot_kwargs)
 
     # call the plot functions

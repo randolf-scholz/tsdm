@@ -184,16 +184,6 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
         cls.LOGGER.info("Finished importing files from %s", url)
 
-    @staticmethod
-    def serialize(df: DATASET_OBJECT, /, *, path: PathType) -> None:
-        r"""Serialize the dataset."""
-        df.to_parquet(path, compression="gzip")
-
-    @staticmethod
-    def deserialize(path: PathType, /) -> DATASET_OBJECT:
-        r"""Deserialize the dataset."""
-        return pandas.read_parquet(path)
-
 
 class FrameDataset(BaseDataset, ABC):
     r"""Base class for datasets that are stored as pandas.DataFrame."""
@@ -202,7 +192,7 @@ class FrameDataset(BaseDataset, ABC):
     r"""Default format for the dataset."""
 
     @staticmethod
-    def serialize(frame: DATASET_OBJECT, path: PathType, /, **kwargs: Any) -> None:
+    def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
         r"""Serialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
@@ -214,7 +204,7 @@ class FrameDataset(BaseDataset, ABC):
         raise NotImplementedError(f"No loader for {file_type=}")
 
     @staticmethod
-    def deserialize(path: PathType, /, *, squeeze: bool = True) -> DATASET_OBJECT:
+    def deserialize(path: Path, /, *, squeeze: bool = True) -> DATASET_OBJECT:
         r"""Deserialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
