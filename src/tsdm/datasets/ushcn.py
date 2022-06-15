@@ -293,6 +293,8 @@ class USHCN(MultiFrameDataset):
         if key == "stations":
             return self._clean_stations()
 
+        raise KeyError(f"Unknown key: {key}")
+
     def _clean_states(self) -> DataFrame:
         state_dtypes = {
             "ID": pandas.CategoricalDtype(ordered=True),
@@ -473,7 +475,7 @@ class USHCN(MultiFrameDataset):
 
         self.LOGGER.info("Converting back to standard pandas DataFrame....")
         try:
-            data = data._to_pandas()
+            data = data._to_pandas()  # pylint: disable=protected-access
         except AttributeError:
             pass
 

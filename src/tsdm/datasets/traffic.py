@@ -129,6 +129,8 @@ class Traffic(MultiFrameDataset):
         if key == "invperm":
             return self._clean_randperm()
 
+        raise KeyError(f"{key} is not a valid key")
+
     def _clean_data(self, *, use_corrected_dates: bool = True) -> None:
         r"""Create DataFrame from raw data.
 

@@ -57,7 +57,7 @@ class ConvBlock(nn.Sequential):
             "zeros", "reflect", "replicate", "circular", "zeros"
         ] = "replicate",
         num_subblocks: int = 3,
-        activation: Literal["relu", "leaky_relu", "tanh", "sigmoid"] = "relu",
+        activation: Literal["ReLU", "leaky_relu", "Tanh", "Sigmoid"] = "ReLU",
     ):
         super().__init__()
 
@@ -75,10 +75,13 @@ class ConvBlock(nn.Sequential):
 
         subblocks: OrderedDict[str, nn.Module] = OrderedDict()
 
+        assert hasattr(nn, activation)
+        activation_class: type[nn.Module] = getattr(nn, activation)
+
         for k in range(num_subblocks):
             key = f"subblock{k}"
             module = nn.Sequential(
-                nn.ReLU(),
+                activation_class(),
                 nn.Conv1d(**self.conv_kwargs),
             )
             self.add_module(key, module)

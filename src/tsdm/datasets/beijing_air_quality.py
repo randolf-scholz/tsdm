@@ -119,12 +119,13 @@ class BeijingAirQuality(SingleFrameDataset):
         }
 
         self.LOGGER.info("Extracting Data.")
-        with zipfile.ZipFile(self.rawdata_paths) as compressed_file:
+        with zipfile.ZipFile(self.rawdata_paths) as compressed_archive:
             stations = []
-            for csv_file in compressed_file.namelist():
+            for csv_file in compressed_archive.namelist():
                 if not csv_file.endswith(".csv"):
                     continue
-                df = read_csv(compressed_file.open(csv_file), dtype=dtypes)
+                with compressed_archive.open(csv_file) as compressed_file:
+                    df = read_csv(compressed_file, dtype=dtypes)
                 # Make multiple date columns to pandas.Timestamp
                 df["time"] = df.apply(_to_time, axis=1)
                 # Remove date columns and index

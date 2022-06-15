@@ -18,7 +18,7 @@ __logger__ = logging.getLogger(__name__)
 class ReverseDense(nn.Module):
     r"""ReverseDense module $x→A⋅ϕ(x)$."""
 
-    HP = {
+    HP: Final[dict] = {
         "__name__": __qualname__,  # type: ignore[name-defined]
         "__module__": __module__,  # type: ignore[name-defined]
         "input_size": None,
