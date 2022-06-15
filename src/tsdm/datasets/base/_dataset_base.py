@@ -261,8 +261,10 @@ class SingleFrameDataset(FrameDataset):
         r"""Download the dataset."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
-        files: Nested[Path] = prepend_path(self.rawdata_files, Path(), keep_none=False)
-        files: set[Path] = flatten_nested(files, kind=Path)
+        nested_files: Nested[Path] = prepend_path(
+            self.rawdata_files, Path(), keep_none=False
+        )
+        files: set[Path] = flatten_nested(nested_files, kind=Path)
 
         for file in files:
             self.download_from_url(self.BASE_URL + file.name)
@@ -467,14 +469,16 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
-        files: Nested[Optional[str]]
+        rawdata_files: Nested[Optional[str]]
         if isinstance(self.rawdata_files, Mapping):
-            files = self.rawdata_files[key]  # type: ignore[assignment]
+            rawdata_files = self.rawdata_files[key]  # type: ignore[assignment]
         else:
-            files = self.rawdata_files  # type: ignore[assignment]
+            rawdata_files = self.rawdata_files  # type: ignore[assignment]
 
-        files: Nested[Path] = prepend_path(files, Path(), keep_none=False)
-        files: set[Path] = flatten_nested(files, kind=Path)
+        nested_files: Nested[Path] = prepend_path(
+            rawdata_files, Path(), keep_none=False
+        )
+        files: set[Path] = flatten_nested(nested_files, kind=Path)
 
         for file in files:
             self.download_from_url(self.BASE_URL + file.name)
