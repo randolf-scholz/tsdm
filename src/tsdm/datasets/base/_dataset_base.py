@@ -27,7 +27,6 @@ from pandas import DataFrame, Series
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.util import flatten_nested, paths_exists, prepend_path
-from tsdm.util.decorators import trace
 from tsdm.util.remote import download
 from tsdm.util.types import KeyType, Nested, PathType
 
@@ -196,7 +195,40 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
         return pandas.read_parquet(path)
 
 
-class SingleFrameDataset(BaseDataset):
+class FrameDataset(BaseDataset, ABC):
+    r"""Base class for datasets that are stored as pandas.DataFrame."""
+
+    default_format: str = "parquet"
+    r"""Default format for the dataset."""
+
+    @staticmethod
+    def serialize(frame: DATASET_OBJECT, path: PathType, /, **kwargs: Any) -> None:
+        r"""Serialize the dataset."""
+        file_type = path.suffix
+        assert file_type.startswith("."), "File must have a suffix!"
+        file_type = file_type[1:]
+        if hasattr(frame, f"to_{file_type}"):
+            pandas_writer = getattr(frame, f"read_{file_type}")
+            pandas_writer(path, **kwargs)
+
+        raise NotImplementedError(f"No loader for {file_type=}")
+
+    @staticmethod
+    def deserialize(path: PathType, /, *, squeeze: bool = True) -> DATASET_OBJECT:
+        r"""Deserialize the dataset."""
+        file_type = path.suffix
+        assert file_type.startswith("."), "File must have a suffix!"
+        file_type = file_type[1:]
+
+        if hasattr(pandas, f"read_{file_type}"):
+            pandas_loader = getattr(pandas, f"read_{file_type}")
+            pandas_object = pandas_loader(path)
+            return pandas_object.squeeze() if squeeze else pandas_object
+
+        raise NotImplementedError(f"No loader for {file_type=}")
+
+
+class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
     def _repr_html_(self):
@@ -215,7 +247,7 @@ class SingleFrameDataset(BaseDataset):
     @cached_property
     def dataset_files(self) -> PathType:
         r"""Return the dataset files."""
-        return self.__class__.__name__ + ".parquet"
+        return self.__class__.__name__ + f".{self.default_format}"
 
     @cached_property
     def dataset_paths(self) -> Path:
@@ -223,7 +255,7 @@ class SingleFrameDataset(BaseDataset):
         return self.DATASET_DIR / (self.dataset_files or "")
 
     @abstractmethod
-    def _clean(self) -> DATASET_OBJECT:
+    def _clean(self) -> DATASET_OBJECT | None:
         r"""Clean the dataset."""
 
     def _load(self) -> DATASET_OBJECT:
@@ -263,7 +295,8 @@ class SingleFrameDataset(BaseDataset):
 
         self.LOGGER.debug("STARTING TO CLEAN DATASET.")
         df = self._clean()
-        self.serialize(df, path=self.dataset_paths)
+        if df is not None:
+            self.serialize(df, self.dataset_paths)
         self.LOGGER.debug("FINISHED TO CLEAN DATASET.")
 
     def download(self, *, force: bool = True) -> None:
@@ -281,7 +314,7 @@ class SingleFrameDataset(BaseDataset):
         self.LOGGER.debug("FINISHED TO DOWNLOAD DATASET.")
 
 
-class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
+class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
     r"""Dataset class that consists of a multiple DataFrames.
 
     The Datasets are accessed by their index.
@@ -323,33 +356,16 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
     @cached_property
     def dataset_files(self) -> Mapping[KeyType, PathType]:
         r"""Relative paths to the dataset files for each key."""
-        return {key: f"{key}.parquet" for key in self.index}
+        return {key: f"{key}.{self.default_format}" for key in self.index}
 
     @cached_property
     def dataset_paths(self) -> Mapping[KeyType, Path]:
         r"""Absolute paths to the dataset files for each key."""
         return {key: self.DATASET_DIR / self.dataset_files[key] for key in self.index}
 
-    @staticmethod
-    def serialize(df: DATASET_OBJECT, /, *, path: PathType) -> None:
-        r"""Serialize the dataset."""
-        df.to_parquet(path, compression="gzip")
-
-    @staticmethod
-    def deserialize(path: PathType, /) -> DATASET_OBJECT:
-        r"""Deserialize the dataset."""
-        return pandas.read_parquet(path)
-
     def _load(self, key: KeyType) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
-        path = self.dataset_paths[key]
-        file_type = path.suffix
-
-        if hasattr(pandas, f"read_{file_type}"):
-            pandas_loader = getattr(pandas, f"read_{file_type}")
-            return pandas_loader(path)
-
-        raise NotImplementedError(f"No loader for {file_type=}")
+        return self.deserialize(self.dataset_paths[key])
 
     @abstractmethod
     def _clean(self, key: KeyType) -> DATASET_OBJECT | None:
@@ -383,7 +399,7 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
         """
         # TODO: Do we need this code block?
         if not self.rawdata_files_exist(key=key):
-            self.LOGGER.debug("%s: missing, fetching it now!", key)
+            self.LOGGER.debug("Raw files missing, fetching it now! <%s>", key)
             self.download(key=key, force=force)
 
         if (
@@ -391,21 +407,21 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
             and self.dataset_files_exist(key=key)
             and not force
         ):
-            self.LOGGER.debug("%s: already exists, skipping.", key)
+            self.LOGGER.debug("Clean files already exists, skipping <%s>", key)
             return
 
         if key is None:
-            self.LOGGER.debug("STARTING TO CLEAN DATASET.")
+            self.LOGGER.debug("Starting to clean dataset.")
             for key_ in self.index:
                 self.clean(key=key_, force=force)
-            self.LOGGER.debug("FINISHED TO CLEAN DATASET.")
+            self.LOGGER.debug("Finished cleaning dataset.")
             return
 
-        self.LOGGER.debug("%s: STARTING TO CLEAN DATASET.", key)
+        self.LOGGER.debug("Starting to clean dataset <%s>", key)
         df = self._clean(key=key)
         if df is not None:
-            df.to_parquet(self.dataset_paths[key], compression="gzip")
-        self.LOGGER.debug("%s: FINISHED TO CLEAN DATASET.", key)
+            self.serialize(df, self.dataset_paths[key])
+        self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
     @overload
     def load(
@@ -417,7 +433,6 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
     def load(self, *, key: KeyType = None, force: bool = False, **kwargs: Any) -> Any:
         ...
 
-    @trace
     def load(
         self, *, key: Optional[KeyType] = None, force: bool = False, **kwargs: Any
     ) -> Union[Any, Mapping[KeyType, Any]]:
@@ -438,19 +453,19 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
 
         if key is None:
             # Download full dataset
-            self.LOGGER.debug("STARTING TO LOAD DATASET.")
+            self.LOGGER.debug("Starting to load  dataset.")
             ds = {k: self.load(key=k, force=force, **kwargs) for k in self.index}
-            self.LOGGER.debug("FINISHED TO LOAD DATASET.")
+            self.LOGGER.debug("Finished loading  dataset.")
             return ds
 
         # download specific key
         if key in self.dataset and self.dataset[key] is not None and not force:
-            self.LOGGER.debug("%s: dataset already exists, skipping!", key)
+            self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
             return self.dataset[key]
 
-        self.LOGGER.debug("%s: STARTING TO LOAD DATASET.", key)
+        self.LOGGER.debug("Starting to load  dataset <%s>", key)
         self.dataset[key] = self._load(key=key)
-        self.LOGGER.debug("%s: FINISHED TO LOAD DATASET.", key)
+        self.LOGGER.debug("Finished loading  dataset <%s>", key)
         return self.dataset[key]
 
     def _download(self, *, key: KeyType = None) -> None:
@@ -493,21 +508,21 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
             return
 
         if not force and self.rawdata_files_exist(key=key):
-            self.LOGGER.debug("%s: Rawdata files already exist, skipping.", str(key))
+            self.LOGGER.debug("Rawdata files already exist, skipping. <%s>", str(key))
             return
 
         if key is None:
             # Download full dataset
-            self.LOGGER.debug("STARTING TO DOWNLOAD DATASET.")
+            self.LOGGER.debug("Starting to download dataset.")
             if isinstance(self.rawdata_files, Mapping):
                 for key_ in self.rawdata_files:
                     self.download(key=key_, force=force, **kwargs)
             else:
                 self._download()
-            self.LOGGER.debug("FINISHED TO DOWNLOAD DATASET.")
+            self.LOGGER.debug("Finished downloading dataset.")
             return
 
         # Download specific key
-        self.LOGGER.debug("%s: STARTING TO DOWNLOAD DATASET.", key)
+        self.LOGGER.debug("Starting to download dataset <%s>", key)
         self._download(key=key)
-        self.LOGGER.debug("%s: FINISHED TO DOWNLOAD DATASET.", key)
+        self.LOGGER.debug("Finished downloading dataset <%s>", key)
