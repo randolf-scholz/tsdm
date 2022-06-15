@@ -17,10 +17,10 @@ from zipfile import ZipFile
 import pandas as pd
 
 from tsdm.datasets import examples
-from tsdm.datasets.base import SimpleDataset
+from tsdm.datasets.base import SingleFrameDataset
 
 
-class InSilicoData(SimpleDataset):
+class InSilicoData(SingleFrameDataset):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -53,15 +53,15 @@ class InSilicoData(SimpleDataset):
                 df["DOTm"] /= 100
                 df.name = key
                 dfs[key] = df
-            df = pd.concat(dfs, names=["run_id"])
-            df = df.reset_index()
-            df.to_feather(self.dataset_paths)
-
-    def _load(self) -> pd.DataFrame:
-        df = pd.read_feather(self.dataset_paths)
-        return df.set_index(["run_id", "time"])
+        ds = pd.concat(dfs, names=["run_id"])
+        ds = ds.reset_index()
+        ds = ds.astype({"run_id": "string"}).astype({"run_id": "category"})
+        ds = ds.set_index(["run_id", "time"])
+        ds = ds.sort_values(by=["run_id", "time"])
+        ds = ds.astype("Float32")
+        return ds
 
     def _download(self) -> None:
         r"""Download the dataset."""
         with resources.path(examples, "examples/in_silico.zip") as path:
-            shutil.copy(path, self.rawdata_dir)
+            shutil.copy(path, self.RAWDATA_DIR)

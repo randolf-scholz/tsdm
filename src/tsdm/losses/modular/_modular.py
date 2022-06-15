@@ -49,7 +49,7 @@ class ND(nn.Module):
     """
 
     @jit.export
-    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:  # pylint: disable=no-self-use
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters
@@ -78,7 +78,7 @@ class NRMSE(nn.Module):
     """
 
     @jit.export
-    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:  # pylint: disable=no-self-use
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters
@@ -107,7 +107,7 @@ class Q_Quantile(nn.Module):
     """
 
     @jit.export
-    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:  # pylint: disable=no-self-use
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters
@@ -136,7 +136,7 @@ class Q_Quantile_Loss(nn.Module):
     """
 
     @jit.export
-    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:  # pylint: disable=no-self-use
+    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
         r"""Compute the loss value.
 
         Parameters

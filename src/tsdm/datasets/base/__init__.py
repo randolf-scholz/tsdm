@@ -4,9 +4,13 @@ __all__ = [
     # Types
     # ABCs
     "BaseDataset",
-    "Dataset",
+    "MultiFrameDataset",
     # Classes
-    "SimpleDataset",
+    "SingleFrameDataset",
 ]
 
-from tsdm.datasets.base._base import BaseDataset, Dataset, SimpleDataset
+from tsdm.datasets.base._dataset_base import (
+    BaseDataset,
+    MultiFrameDataset,
+    SingleFrameDataset,
+)

@@ -168,10 +168,10 @@ from zipfile import ZipFile
 
 from pandas import DataFrame, HDFStore, read_csv, read_hdf
 
-from tsdm.datasets.base import SimpleDataset
+from tsdm.datasets.base import SingleFrameDataset
 
 
-class Physionet2019(SimpleDataset):
+class Physionet2019(SingleFrameDataset):
     r"""Physionet Challenge 2019.
 
     Each training data file provides a table with measurements over time. Each column of the table
@@ -199,9 +199,9 @@ class Physionet2019(SimpleDataset):
     indicate that there was no recorded measurement of a variable at the time interval.
     """
 
-    base_url: str = r"https://archive.physionet.org/users/shared/challenge-2019/"
+    BASE_URL: str = r"https://archive.physionet.org/users/shared/challenge-2019/"
     r"""HTTP address from where the dataset can be downloaded."""
-    info_url: str = r"https://physionet.org/content/challenge-2019/1.0.0/"
+    INFO_URL: str = r"https://physionet.org/content/challenge-2019/1.0.0/"
     r"""HTTP address containing additional information about the dataset."""
     rawdata_files = {"A": "training_setA.zip", "B": "training_setB.zip"}
     dataset_files = "Physionet2019.h5"
@@ -210,7 +210,7 @@ class Physionet2019(SimpleDataset):
     def rawdata_paths(self) -> dict[str, Path]:
         r"""Absolute paths to the raw data files."""
         return {
-            key: self.rawdata_dir / path for key, path in self.rawdata_files.items()
+            key: self.RAWDATA_DIR / path for key, path in self.rawdata_files.items()
         }
 
     @property
@@ -283,7 +283,7 @@ class Physionet2019(SimpleDataset):
         if store == "hdf":
             h5file = HDFStore(self.dataset_files)
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
-                with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
+                with ZipFile(self.RAWDATA_DIR.joinpath(fname + ".zip")) as zipfile:
                     print("cleaning " + fname)
                     for zi in zipfile.infolist():
                         with zipfile.open(zi) as zf:
@@ -295,7 +295,7 @@ class Physionet2019(SimpleDataset):
             df_dict: dict[str, DataFrame] = {}
             dataset_file = self.dataset_paths.with_suffix(".pickle")
             for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
-                with ZipFile(self.rawdata_dir.joinpath(fname + ".zip")) as zipfile:
+                with ZipFile(self.RAWDATA_DIR.joinpath(fname + ".zip")) as zipfile:
                     print("cleaning " + fname)
                     for zi in zipfile.infolist():
                         with zipfile.open(zi) as zf:

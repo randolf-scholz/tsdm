@@ -11,6 +11,7 @@ __all__ = [
     "ReturnType",
     "ValueType",
     "nnModuleType",
+    "Parameters",
     "Type",
     # Generic Types
     "Nested",
@@ -20,12 +21,19 @@ __all__ = [
 ]
 
 import os
+import sys
+import typing
 from collections.abc import Collection, Hashable, Mapping
 from pathlib import Path
 from typing import Any, TypeVar, Union
 
 from pandas import DataFrame, Index, Series
 from torch import nn
+
+if sys.version_info >= (3, 10):
+    ParamSpec = getattr(typing, "ParamSpec")  # noqa: B009
+else:
+    ParamSpec = typing.TypeVar
 
 ArgsType = TypeVar("ArgsType")
 r"""TypeVar for `Mapping` values."""
@@ -45,6 +53,9 @@ r"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
 ClassType = TypeVar("ClassType", bound=type)
 r"""Generic type hint."""
 
+Parameters = ParamSpec("Parameters")
+r"""TypeVar for decorated function inputs values."""
+
 ObjectType = TypeVar("ObjectType", bound=object)
 r"""Generic type hint for instances."""
 
@@ -58,6 +69,10 @@ r"""Type Variable for nn.Modules."""
 # r"""Type for path-like objects."""
 
 PathType = Union[str, Path, os.PathLike[str]]
+r"""Type for path-like objects."""
+
+PathVar = TypeVar("PathVar", str, Path, os.PathLike[str])
+r"""TypeVar for path-like objects."""
 
 Nested = Union[
     Type,

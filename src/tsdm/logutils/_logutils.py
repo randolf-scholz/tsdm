@@ -12,6 +12,7 @@ __all__ = [
     "StandardLogger",
 ]
 
+
 import shutil
 import warnings
 from collections.abc import Callable, Mapping, Sequence
@@ -21,25 +22,29 @@ from typing import Any, NamedTuple, Optional, TypedDict, Union
 
 import pandas as pd
 import torch
+import yaml
+from matplotlib.pyplot import Figure
+from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor, nn
 from torch.linalg import cond, matrix_norm, slogdet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from tsdm.losses import Loss
-from tsdm.models import Model
-from tsdm.optimizers import Optimizer
-from tsdm.plot import kernel_heatmap, plot_spectrum
-from tsdm.util import (
+from tsdm.linalg import (
+    col_corr,
     erank,
-    mat_corr,
     multi_norm,
     reldist_diag,
     reldist_orth,
     reldist_skew,
     reldist_symm,
+    row_corr,
 )
+from tsdm.losses import Loss
+from tsdm.models import Model
+from tsdm.optimizers import Optimizer
+from tsdm.plot import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 
 @torch.no_grad()
@@ -117,7 +122,8 @@ def log_kernel_information(
     writer.add_scalar(f"{identifier}:linalg/erank", erank(K), i)
     writer.add_scalar(f"{identifier}:linalg/trace", torch.trace(K), i)
     writer.add_scalar(f"{identifier}:linalg/cond", cond(K), i)
-    writer.add_scalar(f"{identifier}:linalg/mean-correlation", mat_corr(K), i)
+    writer.add_scalar(f"{identifier}:linalg/col-corr", col_corr(K), i)
+    writer.add_scalar(f"{identifier}:linalg/row-corr", row_corr(K), i)
 
     # norms
     writer.add_scalar(f"{identifier}:norms/fro", matrix_norm(K, ord="fro"), i)
@@ -133,7 +139,12 @@ def log_kernel_information(
     if histograms and i % histograms == 0:
         writer.add_histogram(f"{identifier}:histogram", K, i)
         writer.add_image(f"{identifier}:heatmap", kernel_heatmap(K, "CHW"), i)
-        writer.add_figure(f"{identifier}:spectrum", plot_spectrum(K), i)
+
+        spectrum: Figure = plot_spectrum(K)
+        spectrum = center_axes(spectrum)
+        image = rasterize(spectrum, w=2, h=2, px=512, py=512)
+        close_figure(spectrum)  # Important!
+        writer.add_image(f"{identifier}:spectrum", image, i, dataformats="HWC")
 
 
 def log_optimizer_state(
@@ -283,15 +294,20 @@ class StandardLogger:
     checkpoint_dir: Path
 
     history: DataFrame = field(init=False)
-    log_dir: Path = field(init=False)
+    logging_dir: Path = field(init=False)
+    results_dir: Optional[Path] = None
+
     _warned_tuple: bool = False
 
     def __post_init__(self) -> None:
         """Initialize logger."""
-        self.log_dir = self.writer.log_dir
+        self.logging_dir = Path(self.writer.log_dir)
         columns = MultiIndex.from_product([self.dataloaders, self.metrics])
         index = Index([], name="epoch", dtype=int)
         self.history = DataFrame(index=index, columns=columns, dtype="Float32")
+
+        if self.results_dir is not None:
+            self.results_dir = Path(self.results_dir)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""
@@ -323,9 +339,7 @@ class StandardLogger:
                 targets.append(result[0])
                 predics.append(result[1])
 
-        predics = torch.cat(predics)
-        targets = torch.cat(targets)
-        return ResultTuple(targets=targets, predics=predics)
+        return ResultTuple(targets=torch.cat(targets), predics=torch.cat(predics))
 
     def make_checkpoint(self, i: int, /) -> None:
         r"""Make checkpoint."""
@@ -414,27 +428,40 @@ class StandardLogger:
                 postfix=key,
             )
 
-    def log_hparams(self) -> None:
+    def log_hparams(self, i: int, /) -> None:
         r"""Log hyperparameters."""
         # find best epoch on the smoothed validation curve
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
-        test_scores = {
-            f"metrics:hparam/{key}": self.history.loc[idx, ("test", key)]
-            for key, idx in best_epochs["valid"].items()
+
+        scores = {
+            split: {
+                metric: float(self.history.loc[idx, (split, metric)])
+                for metric, idx in best_epochs["valid"].items()
+            }
+            for split in ("train", "valid", "test")
         }
+
+        if self.results_dir is not None:
+            with open(self.results_dir / f"{i}.yaml", "w", encoding="utf8") as file:
+                file.write(yaml.dump(scores))
+
+        # add prefix
+        test_scores = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
+
         self.writer.add_hparams(
             hparam_dict=self.hparam_dict, metric_dict=test_scores, run_name="hparam"
         )
         print(f"{test_scores=} achieved by {self.hparam_dict=}")
 
         # FIXME: https://github.com/pytorch/pytorch/issues/32651
-        for file in (self.log_dir / "hparam").iterdir():
-            shutil.move(file, self.log_dir)
-        (self.log_dir / "hparam").rmdir()
+        for files in (self.logging_dir / "hparam").iterdir():
+            shutil.move(files, self.logging_dir)
+        (self.logging_dir / "hparam").rmdir()
 
-    def log_history(self, path: Optional[Path] = None) -> None:
+    def log_history(self, i: int, /) -> None:
         r"""Store history dataframe to file (default format: parquet)."""
-        path = path if path is not None else self.log_dir / "history.parquet"
+        assert self.results_dir is not None
+        path = self.results_dir / f"history-{i}.parquet"
         self.history.to_parquet(path)
 
     def log_optimizer_state(

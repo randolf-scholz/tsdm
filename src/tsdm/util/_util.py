@@ -8,28 +8,17 @@ __all__ = [
     # Classes
     "Split",
     # Functions
-    "col_corr",
     "deep_dict_update",
     "deep_kval_update",
-    "erank",
     "flatten_dict",
     "flatten_nested",
     "initialize_from",
     "initialize_from_config",
     "is_partition",
-    "mat_corr",
     "now",
     "paths_exists",
     "prepend_path",
-    "reldist_diag",
-    "reldist_skew",
-    "reldist_symm",
     "round_relative",
-    "row_corr",
-    "skewpart",
-    "symmpart",
-    "orthpart",
-    "reldist_orth",
 ]
 
 import os
@@ -42,8 +31,6 @@ from pathlib import Path
 from typing import Any, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
-import torch
-from torch import Tensor, jit
 
 from tsdm.util.types import Nested, ObjectType, PathType, ReturnType
 from tsdm.util.types.abc import HashableType
@@ -52,77 +39,26 @@ __logger__ = getLogger(__name__)
 EmptyPath: Path = Path()
 
 
+def flatten_dict(d: Mapping) -> dict:
+    r"""Flatten nested dictionary.
+
+    Parameters
+    ----------
+    d: Mapping
+
+    Returns
+    -------
+    dict
+    """
+    return {k: v for k, v in d.items() if not isinstance(v, Mapping)}
+
+
 class Split(NamedTuple):
     r"""Holds indices for train/valid/test set."""
 
     train: Any
     valid: Any
     test: Any
-
-
-@jit.script
-def col_corr(x: Tensor) -> Tensor:
-    r"""Compute average column-wise correlation of a matrix.
-
-    Signature: [..., m, n] -> [...].
-    """
-    m, n = x.shape[-2:]
-    u = torch.linalg.norm(x, dim=0)
-    xx = torch.einsum("...i, ...j -> ...ij", u, u)
-    xtx = torch.einsum("...ik, ...il  -> ...kl", x, x)
-    I = torch.eye(n, dtype=x.dtype, device=x.device)
-    c = I - xtx / xx
-    return c.abs().sum(dim=(-2, -1)) / (n * (n - 1))
-
-
-@jit.script
-def row_corr(x: Tensor) -> Tensor:
-    r"""Compute average column-wise correlation of a matrix.
-
-    Signature: [..., m, n] -> [...].
-    """
-    m, n = x.shape[-2:]
-    v = torch.linalg.norm(x, dim=1)
-    xx = torch.einsum("...i, ...j -> ...ij", v, v)
-    xxt = torch.einsum("...kj, ...lj  -> ...kl", x, x)
-    I = torch.eye(m, dtype=x.dtype, device=x.device)
-    c = I - xxt / xx
-    return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
-
-
-@jit.script
-def mat_corr(x: Tensor) -> Tensor:
-    """Compute average row/col-wise correlation of a matrix.
-
-    Signature: [..., m, n] -> [...].
-
-    Since both are equal, we use the one that is cheaper to compute.
-    If x is $m×n$, then col-corr takes $𝓞(mn²)$, while row-corr takes $𝓞(m²n)$.
-    """
-    m, n = x.shape[-2:]
-    if m > n:
-        return col_corr(x)
-    return row_corr(x)
-
-
-@jit.script
-def erank(x: Tensor) -> Tensor:
-    r"""Compute the effective rank of a matrix.
-
-    Signature: [..., m, n] -> [...].
-
-    References
-    ----------
-    - | `The effective rank: A measure of effective dimensionality
-        <https://ieeexplore.ieee.org/document/7098875>`_
-      | Olivier Roy, Martin Vetterli
-      | `15th European Signal Processing Conference (EUSIPCO), 2007
-        <https://ieeexplore.ieee.org/xpl/conhome/7067185/proceeding>`_
-    """
-    σ = torch.linalg.svdvals(x)
-    σ = σ / torch.linalg.norm(σ, ord=1, dim=-1)
-    entropy = torch.special.entr(σ).sum(dim=-1)
-    return torch.exp(entropy)
 
 
 def round_relative(x: np.ndarray, decimals: int = 2) -> np.ndarray:
@@ -296,34 +232,7 @@ def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
     raise ValueError(f"{type(nested)} is not understood")
 
 
-def flatten_dict(
-    d: dict[Any, Iterable[Any]], recursive: bool = True
-) -> list[tuple[Any, ...]]:
-    r"""Flatten a dictionary containing iterables to a list of tuples.
-
-    Parameters
-    ----------
-    d: dict
-    recursive: bool (default True)
-        If true applies flattening strategy recursively on nested dicts, yielding
-        list[tuple[key1, key2, ...., keyN, value]]
-
-    Returns
-    -------
-    list[tuple[Any, ...]]
-    """
-    result = []
-    for key, iterable in d.items():
-        for item in iterable:
-            if isinstance(item, dict) and recursive:
-                gen: list[tuple[Any, ...]] = flatten_dict(item, recursive=True)
-                result += [(key,) + tup for tup in gen]
-            else:
-                result += [(key, item)]
-    return result
-
-
-# T = TypeVar("T")
+# T = TypeVar("T")   \t\ \̃   \hy ŷ yy{̂y}    \tg g̃
 # S = TypeVar("S")
 
 
@@ -331,7 +240,7 @@ def flatten_dict(
 # FunctionalTable = dict[str, Callable[..., S]]
 # LookupTable = Union[
 #     ModularTable, FunctionalTable, dict[str, Union[type[T], Callable[..., S]]]
-# ]
+# ] \dLG 32UN650-Wcafga \d ẋ
 
 
 # @overload
@@ -499,206 +408,3 @@ def paths_exists(
         return (parent / paths).exists()
 
     raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
-
-
-# @initialize_from.register  # type: ignore[no-redef]
-# # Modular Only
-# def _(lookup_table: dict[str, type[T]], __name__: str, **kwargs: Any) -> T:
-#     obj = lookup_table[__name__]
-#     assert callable(obj), f"Looked up object {obj} not callable class/function."
-#     return obj(**kwargs)
-#
-#
-# @initialize_from.register  # type: ignore[no-redef]
-# # Functional Only
-# def _(lookup_table: dict[str, Callable[..., S]], __name__: str, **kwargs: Any) -> S:
-#     obj = lookup_table[__name__]
-#     assert callable(obj), f"Looked up object {obj} not callable class/function."
-#     return partial(obj, **kwargs)
-#
-#
-# @initialize_from.register  # type: ignore[no-redef]
-# # Both Modular or Functional
-# def _(
-#     lookup_table: dict[str, Union[type[T], Callable[..., S]]],
-#     __name__: str,
-#     **kwargs: Any,
-# ) -> Union[T, Callable[..., S]]:
-#     obj = lookup_table[__name__]
-#     assert callable(obj), f"Looked up object {obj} not callable class/function."
-#
-#     # check that obj is a class, but not metaclass or instance.
-#     if isinstance(obj, type) and not issubclass(obj, type):
-#         return obj(**kwargs)
-#     return partial(obj, **kwargs)
-#
-#
-
-# @singledispatch
-# def initialize_from(lookup_table, __name__: str, **kwargs: Any):
-#     """Lookup class/function from dictionary and initialize it.
-#
-#     Roughly equivalent to:
-#
-#     .. code-block:: python
-#
-#         obj = lookup_table[__name__]
-#         if isclass(obj):
-#             return obj(**kwargs)
-#         return partial(obj, **kwargs)
-#
-#
-#     Parameters
-#     ----------
-#     lookup_table: dict[str, Callable]
-#     __name__: str
-#         The name of the class/function
-#     kwargs: Any
-#         Optional arguments to initialize class/function
-#
-#     Returns
-#     -------
-#     Callable
-#         The initialized class/function
-#     """
-#     ...
-#
-#
-# @initialize_from.register  # type: ignore[no-redef]
-# # Modular Only
-# def _(lookup_table: dict[str, type[T]], __name__: str, **kwargs: Any) -> T:
-#     obj = lookup_table[__name__]
-#     assert callable(obj), f"Looked up object {obj} not callable class/function."
-#     return obj(**kwargs)
-#
-#
-# @initialize_from.register  # type: ignore[no-redef]
-# # Functional Only
-# def _(lookup_table: dict[str, Callable[..., S]], __name__: str, **kwargs: Any) -> S:
-#     obj = lookup_table[__name__]
-#     assert callable(obj), f"Looked up object {obj} not callable class/function."
-#     return partial(obj, **kwargs)
-#
-#
-# @initialize_from.register  # type: ignore[no-redef]
-# # Both Modular or Functional
-# def _(
-#     lookup_table: dict[str, Union[type[T], Callable[..., S]]],
-#     __name__: str,
-#     **kwargs: Any,
-# ) -> Union[T, Callable[..., S]]:
-#     obj = lookup_table[__name__]
-#     assert callable(obj), f"Looked up object {obj} not callable class/function."
-#
-#     # check that obj is a class, but not metaclass or instance.
-#     if isinstance(obj, type) and not issubclass(obj, type):
-#         return obj(**kwargs)
-#     return partial(obj, **kwargs)
-
-
-@jit.script
-def symmpart(x: Tensor) -> Tensor:
-    r"""Symmetric part of square matrix.
-
-    Signature: [..., n, n] -> [..., n, n]
-
-    .. math::
-        \argmin_{X: X^⊤ = -X} ‖A-X‖
-    """
-    return (x + x.swapaxes(-1, -2)) / 2
-
-
-@jit.script
-def skewpart(x: Tensor) -> Tensor:
-    r"""Skew-Symmetric part of a matrix.
-
-    Signature: [..., n, n] -> [..., n, n]
-
-    .. math::
-        \argmin_{X: X^⊤ = X} ‖A-X‖
-    """
-    return (x - x.swapaxes(-1, -2)) / 2
-
-
-@jit.script
-def orthpart(x: Tensor) -> Tensor:
-    r"""Orthogonal part of a square matrix.
-
-    Signature: [..., n, n] -> [..., n, n]
-
-    .. math::
-        \argmin_{X: XᵀX = 𝕀} ‖A-X‖
-    """
-    U, S, Vt = torch.linalg.svd(x, full_matrices=True)
-    Q = torch.einsum("...ij, ...jk->...ik", U, Vt)
-    return Q
-
-
-@jit.script
-def diagpart(x: Tensor) -> Tensor:
-    r"""Diagonal part of a square matrix.
-
-    Signature: [..., n, n] -> [..., n, n]
-
-    .. math::
-        \argmin_{X: X⊙𝕀 = X} ‖A-X‖
-    """
-    d = torch.diagonal(x, dim1=-2, dim2=-1)
-    return torch.diag_embed(d)
-
-
-@jit.script
-def matrix_reldist(x: Tensor, y: Tensor) -> Tensor:
-    r"""Relative distance between two matrices.
-
-    Signature: [..., m, n], [..., m, n]  -> [..., n, n]
-
-    .. math::
-        ‖x-y‖/‖y‖
-    """
-    r = torch.linalg.matrix_norm(x - y, ord="fro", dim=(-2, -1))
-    yy = torch.linalg.matrix_norm(y, ord="fro", dim=(-2, -1))
-    zero = torch.tensor(0.0, dtype=torch.float32, device=x.device)
-    return torch.where(yy != 0, r / yy, zero)
-
-
-@jit.script
-def reldist_diag(x: Tensor) -> Tensor:
-    r"""Compute the relative distance to being a diagonal matrix.
-
-    Signature: [..., n, n] -> [...]
-
-    .. math::
-        ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
-    """
-    return matrix_reldist(diagpart(x), x)
-
-
-@jit.script
-def reldist_symm(x: Tensor) -> Tensor:
-    r"""Relative magnitude of symmpart part.
-
-    Signature: [..., n, n] -> [...]
-    """
-    return matrix_reldist(symmpart(x), x)
-
-
-@jit.script
-def reldist_skew(x: Tensor) -> Tensor:
-    r"""Relative magnitude of skew-symmpart part.
-
-    Signature: [..., n, n] -> [...]
-    """
-    return matrix_reldist(skewpart(x), x)
-
-
-@jit.script
-def reldist_orth(x: Tensor) -> Tensor:
-    r"""Relative magnitude of orthogonal part.
-
-    .. math::
-        \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
-
-    Signature: [..., n, n] -> [...]
-    """
-    return matrix_reldist(orthpart(x), x)

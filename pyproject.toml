@@ -14,7 +14,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
-version = "0.2.6"
+version = "0.2.7"
 description = "Time-Series Datasets and Models"
 license = "MIT"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
@@ -41,7 +41,7 @@ classifiers = [
 # all = ["modin"]
 
 [tool.poetry.dependencies]
-python = ">=3.9, <3.10"
+python = ">=3.9, <3.11"
 h5py = ">=3.4.0"
 matplotlib = ">=3.5"
 #modin = {version = ">=0.14", extras = ["ray"]}
@@ -56,6 +56,9 @@ tables = ">=3.6"
 tensorboard = ">=2.9"
 torch = ">=1.11"
 #xarray = ">=2022.3.0"
+Pillow = ">=9.1.1"
+types-Pillow = ">=9.0.15"
+tqdm = "^4.64.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = ">=22.1.0", extras = ["jupyter"]}
@@ -92,6 +95,7 @@ twine = ">=3.8.0"
 types-PyYAML = ">=6.0.4"
 types-protobuf = ">=3.19.8"
 types-setuptools = ">=57.4.8"
+types-requests = ">=2.27.30"
 types-six = ">=1.16.10"
 wheel = ">=0.37.1"
 
@@ -135,13 +139,14 @@ generated-members=["numpy.*","torch.*"]
 # MyPy Configuration #
 ######################
 [tool.mypy]
-allow_redefinition = true
+allow_redefinition = false
 color_output = true
 error_summary = true
 files = ["src/", "test/"]
 plugins = "numpy.typing.mypy_plugin"
 pretty = true
 python_version = "3.9"
+check_untyped_defs = true
 show_column_numbers = true
 show_error_codes = true
 warn_unused_ignores = true
@@ -157,6 +162,7 @@ module = [
     "pandas.*",
     "sklearn.*",
     "scipy.*",
+    "tqdm.*",
 ]
 ignore_missing_imports = true
 
@@ -167,7 +173,7 @@ ignore_missing_imports = true
 [tool.isort]
 # isort profiles: black, django, pycharm, google, open_stack, plone, attrs, hug, wemake, appnexus
 # black-compatible: black, appnexus
-py_version=39
+py_version=310
 profile="black"
 src_paths=["src/", "test/"]
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
@@ -193,17 +199,16 @@ convention = "numpy"
 #########################
 [tool.pyright]
 root = ""
-include = ["src/", "test/"]
+venv = ".venv"
+venvPath = "."
 pythonVersion = "3.9"
 pythonPlatform = "Linux"
+include = ["src/", "test/"]
 exclude = [
     "**/node_modules",
     "**/__pycache__",
     "**/.ipynb_checkpoints",
 ]
-
-venv = ".venv"
-venvPath = "."
 reportMissingImports = false
 reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false

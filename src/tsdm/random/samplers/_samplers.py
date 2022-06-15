@@ -294,7 +294,13 @@ class CollectionSampler(Sampler):
 
         for key in perm:
             # This won't raise StopIteration, because the length is matched.
-            yield key, next(activate_iterators[key])
+            # value = yield from activate_iterators[key]
+            try:
+                value = next(activate_iterators[key])
+            except StopIteration as E:
+                raise RuntimeError(f"Iterator of {key=} exhausted prematurely.") from E
+            else:
+                yield key, value
 
     def __getitem__(self, key: Any) -> Sampler:
         r"""Return the subsampler for the given key."""
@@ -393,7 +399,12 @@ class HierarchicalSampler(Sampler):
 
         for key in perm:
             # This won't raise StopIteration, because the length is matched.
-            yield key, next(activate_iterators[key])
+            try:
+                value = next(activate_iterators[key])
+            except StopIteration as E:
+                raise RuntimeError(f"Iterator of {key=} exhausted prematurely.") from E
+            else:
+                yield key, value
 
     def __getitem__(self, key: Any) -> Sampler:
         r"""Return the subsampler for the given key."""
