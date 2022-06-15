@@ -74,7 +74,7 @@ __all__ = [
 import zipfile
 from pathlib import Path
 
-from pandas import Timestamp, concat, read_csv
+from pandas import DataFrame, Timestamp, concat, read_csv
 
 from tsdm.datasets.base import SingleFrameDataset
 
@@ -102,7 +102,7 @@ class BeijingAirQuality(SingleFrameDataset):
     rawdata_files = "PRSA2017_Data_20130301-20170228.zip"
     rawdata_paths: Path
 
-    def _clean(self) -> None:
+    def _clean(self) -> DataFrame:
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
 
         def _to_time(x):
@@ -125,7 +125,7 @@ class BeijingAirQuality(SingleFrameDataset):
                 if not csv_file.endswith(".csv"):
                     continue
                 with compressed_archive.open(csv_file) as compressed_file:
-                    df = read_csv(compressed_file, dtype=dtypes)
+                    df: DataFrame = read_csv(compressed_file, dtype=dtypes)
                 # Make multiple date columns to pandas.Timestamp
                 df["time"] = df.apply(_to_time, axis=1)
                 # Remove date columns and index
