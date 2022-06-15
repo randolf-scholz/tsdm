@@ -162,7 +162,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     @classmethod
     def download_from_url(cls, url: str) -> None:
         r"""Download files from a URL."""
-        cls.LOGGER.info("Obtaining files from %s", url)
+        cls.LOGGER.info("Downloading from %s", url)
         parsed_url = urlparse(url)
 
         if parsed_url.netloc == "www.kaggle.com":
@@ -181,8 +181,6 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
         else:  # default parsing, including for UCI dataset
             fname = url.split("/")[-1]
             download(url, cls.RAWDATA_DIR / fname)
-
-        cls.LOGGER.info("Finished importing files from %s", url)
 
 
 class FrameDataset(BaseDataset, ABC):
@@ -276,9 +274,9 @@ class SingleFrameDataset(FrameDataset):
         else:
             self.LOGGER.debug("Dataset files already exist!")
 
-        self.LOGGER.debug("STARTING TO LOAD DATASET.")
+        self.LOGGER.debug("Starting to load dataset.")
         ds = self._load()
-        self.LOGGER.debug("FINISHED TO LOAD DATASET.")
+        self.LOGGER.debug("Finished loading dataset.")
         return ds
 
     def clean(self, *, force: bool = True) -> None:
@@ -290,11 +288,12 @@ class SingleFrameDataset(FrameDataset):
         if not self.rawdata_files_exist():
             self.download()
 
-        self.LOGGER.debug("STARTING TO CLEAN DATASET.")
+        self.LOGGER.debug("Starting to clean dataset.")
         df = self._clean()
         if df is not None:
+            self.LOGGER.info("Serializing dataset.")
             self.serialize(df, self.dataset_paths)
-        self.LOGGER.debug("FINISHED TO CLEAN DATASET.")
+        self.LOGGER.debug("Finished cleaning dataset.")
 
     def download(self, *, force: bool = True) -> None:
         r"""Download the dataset."""
@@ -306,9 +305,9 @@ class SingleFrameDataset(FrameDataset):
             self.LOGGER.info("Dataset provides no url. Assumed offline")
             return
 
-        self.LOGGER.debug("STARTING TO DOWNLOAD DATASET.")
+        self.LOGGER.debug("Starting to download dataset.")
         self._download()
-        self.LOGGER.debug("FINISHED TO DOWNLOAD DATASET.")
+        self.LOGGER.debug("Starting downloading dataset.")
 
 
 class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
@@ -420,6 +419,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
         df = self._clean(key=key)
         if df is not None:
+            self.LOGGER.info("Serializing dataset <%s>", key)
             self.serialize(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
