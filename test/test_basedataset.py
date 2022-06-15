@@ -13,10 +13,10 @@ def test_methods_attributes():
 
     attrs = {
         "__dir__",
-        "base_url",
+        "BASE_URL",
+        "RAWDATA_DIR",
+        "DATASET_DIR",
         "dataset",
-        "rawdata_dir",
-        "dataset_dir",
         "dataset_files",
         "load",
         "download",
