@@ -3,91 +3,54 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+from __future__ import annotations
+
 __all__ = [
     # Classes
     "USHCN",
     "USHCN_SmallChunkedSporadic",
 ]
 
-import gzip
+import importlib
 import logging
-from io import StringIO
+import os
+from collections.abc import Callable
+from functools import wraps
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal
 
 import pandas
 from pandas import DataFrame
 
-from tsdm.datasets.base import Dataset, SimpleDataset
+from tsdm.datasets.base import MultiFrameDataset, SingleFrameDataset
 
 __logger__ = logging.getLogger(__name__)
 
-mpd = pandas
-# FIXME: This is a temporary solution to get the data from the USHCN website.
-# try:
-#     import modin.pandas as mpd
-#     import ray
-#
-#     use_ray = True
-# except ImportError:
-#     __logger__.warning("Ray/Modin not installed. Using pandas.")
-#     mpd = pandas
-#     use_ray = False
 
-STATE_CODES = r"""
-ID	Abbr.	State
-01	AL	Alabama
-02	AZ	Arizona
-03	AR	Arkansas
-04	CA	California
-05	CO	Colorado
-06	CT	Connecticut
-07	DE	Delaware
-08	FL	Florida
-09	GA	Georgia
-10	ID	Idaho
-11	IL	Idaho
-12	IN	Indiana
-13	IA	Iowa
-14	KS	Kansas
-15	KY	Kentucky
-16	LA	Louisiana
-17	ME	Maine
-18	MD	Maryland
-19	MA	Massachusetts
-20	MI	Michigan
-21	MN	Minnesota
-22	MS	Mississippi
-23	MO	Missouri
-24	MT	Montana
-25	NE	Nebraska
-26	NV	Nevada
-27	NH	NewHampshire
-28	NJ	NewJersey
-29	NM	NewMexico
-30	NY	NewYork
-31	NC	NorthCarolina
-32	ND	NorthDakota
-33	OH	Ohio
-34	OK	Oklahoma
-35	OR	Oregon
-36	PA	Pennsylvania
-37	RI	RhodeIsland
-38	SC	SouthCarolina
-39	SD	SouthDakota
-40	TN	Tennessee
-41	TX	Texas
-42	UT	Utah
-43	VT	Vermont
-44	VA	Virginia
-45	WA	Washington
-46	WV	WestVirginia
-47	WI	Wisconsin
-48	WY	Wyoming
-"""
+def with_cluster(func: Callable) -> Callable:
+    r"""Run function with ray cluster."""
+
+    @wraps(func)
+    def _wrapper(*args, **kwargs):
+        if importlib.util.find_spec("ray") is not None:
+            ray = importlib.import_module("ray")
+            # Only use 80% of the available CPUs.
+            num_cpus = max(1, ((os.cpu_count() or 0) * 4) // 5)
+            __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
+            ray.init(num_cpus=num_cpus)
+            try:
+                return func(*args, **kwargs)
+            finally:
+                __logger__.warning("Tearing down ray cluster.")
+                ray.shutdown()
+        else:
+            __logger__.warning("Ray not found, skipping ray cluster.")
+            return func(*args, **kwargs)
+
+    return _wrapper
 
 
-class USHCN_SmallChunkedSporadic(SimpleDataset):
+class USHCN_SmallChunkedSporadic(SingleFrameDataset):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
 
     References
@@ -99,17 +62,17 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
         <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    base_url = (
+    BASE_URL = (
         r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
-        r"master/gru_ode_bayes/datasets/Climate/small_chunked_sporadic.csv"
+        r"master/gru_ode_bayes/datasets/Climate/"
     )
     r"""HTTP address from where the dataset can be downloaded."""
 
-    info_url = "https://github.com/edebrouwer/gru_ode_bayes"
+    INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
     r"""HTTP address containing additional information about the dataset."""
 
     rawdata_files = "small_chunked_sporadic.csv"
-    dataset_files = "SmallChunkedSporadic.feather"
+    # dataset_files = "SmallChunkedSporadic.feather"
 
     def _clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
@@ -139,17 +102,19 @@ class USHCN_SmallChunkedSporadic(SimpleDataset):
 
         df = df[["ID", "Time", *channels]]
         df = df.sort_values(["ID", "Time"])
-        df = df.reset_index(drop=True)
+        df = df.set_index(["ID", "Time"])
+        # df = df.reset_index(drop=True)
         df = df.rename(columns=channels)
-        df.to_feather(self.dataset_paths)
+        return df
+        # df.to_feather(self.dataset_paths)
 
-    def _load(self) -> DataFrame:
-        r"""Load the dataset from hdf-5 file."""
-        df = pandas.read_feather(self.dataset_paths)
-        return df.set_index(["ID", "Time"])
+    # def _load(self) -> DataFrame:
+    #     r"""Load the dataset from hdf-5 file."""
+    #     df = pandas.read_feather(self.dataset_paths)
+    #     return df.set_index(["ID", "Time"])
 
 
-class USHCN(Dataset):
+class USHCN(MultiFrameDataset):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -296,9 +261,9 @@ class USHCN(Dataset):
       at the station (i.e., the number of hours that must be added to local standard time to match UTC).
     """
 
-    base_url = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
+    BASE_URL = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
     r"""HTTP address from where the dataset can be downloaded."""
-    info_url = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
+    INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
@@ -314,43 +279,39 @@ class USHCN(Dataset):
 
     def _load(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Load the dataset from disk."""
-        # path = self.dataset_files[key]
-        # if not path.exists():
-        #     self.clean(key=key)
-        df = pandas.read_feather(self.dataset_paths[key])
-        if key == "us_daily":
-            df = df.set_index(["time", "COOP_ID"])
-        elif key == "states":
-            df = df.set_index("ID")
-        elif key == "stations":
-            ...
-            # df = df.set_index("COOP_ID")
-        return df
+        return super()._load(key=key)
 
-    def _clean(self, key: KEYS = "us_daily") -> None:
+    def _clean(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Create the DataFrames.
 
         Parameters
         ----------
         key: Literal["us_daily", "states", "stations"], default "us_daily"
         """
-        {
-            "us_daily": self._clean_us_daily,
-            "stations": self._clean_stations,
-            "states": self._clean_states,
-        }[key]()
+        if key == "us_daily":
+            return self._clean_us_daily()
+        if key == "states":
+            return self._clean_states()
+        if key == "stations":
+            return self._clean_stations()
 
-    def _clean_states(self) -> None:
+        raise KeyError(f"Unknown key: {key}")
+
+    def _clean_states(self) -> DataFrame:
         state_dtypes = {
             "ID": pandas.CategoricalDtype(ordered=True),
             "Abbr.": pandas.CategoricalDtype(ordered=True),
             "State": pandas.StringDtype(),
         }
-        states = pandas.read_csv(StringIO(STATE_CODES), sep="\t", dtype=state_dtypes)
-        states.to_feather(self.dataset_paths["states"])
-        self.__logger__.info("Finished cleaning 'states' DataFrame")
+        state_codes = self._state_codes
+        columns = state_codes.pop(0)
+        states = pandas.DataFrame(state_codes, columns=columns)
+        states = states.astype(state_dtypes)
+        return states
+        # states.to_feather(self.dataset_paths["states"])
+        # self.__logger__.info("Finished cleaning 'states' DataFrame")
 
-    def _clean_stations(self) -> None:
+    def _clean_stations(self) -> DataFrame:
         stations_file = self.rawdata_paths["stations"]
         if not stations_file.exists():
             self.download()
@@ -372,20 +333,28 @@ class USHCN(Dataset):
         stations_cspecs = [(a - 1, b) for a, b in stations_colspecs.values()]
 
         stations_dtypes = {
-            "COOP_ID": pandas.StringDtype(),
-            "LATITUDE": pandas.Float32Dtype(),
-            "LONGITUDE": pandas.Float32Dtype(),
-            "ELEVATION": pandas.Float32Dtype(),
-            "STATE": pandas.StringDtype(),
-            "NAME": pandas.StringDtype(),
-            "COMPONENT_1": pandas.StringDtype(),
-            "COMPONENT_2": pandas.StringDtype(),
-            "COMPONENT_3": pandas.StringDtype(),
+            "COOP_ID": "string",
+            "LATITUDE": "float32",
+            "LONGITUDE": "float32",
+            "ELEVATION": "float32",
+            "STATE": "string",
+            "NAME": "string",
+            "COMPONENT_1": "string",
+            "COMPONENT_2": "string",
+            "COMPONENT_3": "string",
             "UTC_OFFSET": "timedelta64[h]",
         }
 
+        stations_new_dtypes = {
+            "COOP_ID": "category",
+            "COMPONENT_1": "Int32",
+            "COMPONENT_2": "Int32",
+            "COMPONENT_3": "Int32",
+            "STATE": "category",
+        }
+
         stations_na_values = {
-            "ELEVATION": -999.9,
+            "ELEVATION": "-999.9",
             "COMPONENT_1": "------",
             "COMPONENT_2": "------",
             "COMPONENT_3": "------",
@@ -398,33 +367,25 @@ class USHCN(Dataset):
             names=stations_colspecs,
             na_value=stations_na_values,
         )
-        stations = DataFrame(stations)  # in case TextFileReader is returned
 
         for col, na_value in stations_na_values.items():
             stations[col] = stations[col].replace(na_value, pandas.NA)
 
-        # Get union of all ids
-        stations_new_dtypes = {
-            "COOP_ID": "Int32",
-            "COMPONENT_1": "Int32",
-            "COMPONENT_2": "Int32",
-            "COMPONENT_3": "Int32",
-            "STATE": "category",
-        }
         stations = stations.astype(stations_new_dtypes)
-        path = self.dataset_paths["stations"]
-        stations.to_feather(path)
-        self.__logger__.info("Finished cleaning 'stations' DataFrame")
+        stations = stations.set_index("COOP_ID")
 
-    def _clean_us_daily(self) -> None:
-        # FIXME: ray import
-        # if use_ray:
-        #     num_cpus = max(1, (os.cpu_count() or 0) - 2)
-        #     __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
-        #     ray.init(num_cpus=num_cpus, ignore_reinit_error=True)
+        return stations
+        # stations.to_parquet(self.dataset_paths["stations"])
+
+    @with_cluster
+    def _clean_us_daily(self) -> DataFrame:
+        if importlib.util.find_spec("modin") is not None:
+            mpd = importlib.import_module("modin.pandas")
+        else:
+            mpd = pandas
 
         # column: (start, stop)
-        colspecs: dict[Union[str, tuple[str, int]], tuple[int, int]] = {
+        colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
             "COOP_ID": (1, 6),
             "YEAR": (7, 10),
             "MONTH": (11, 12),
@@ -445,9 +406,9 @@ class USHCN(Dataset):
         ELEMENTS = pandas.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
 
         dtypes = {
-            "COOP_ID": pandas.Int32Dtype(),
-            "YEAR": pandas.UInt16Dtype(),
-            "MONTH": pandas.UInt8Dtype(),
+            "COOP_ID": "string",
+            "YEAR": "int16",
+            "MONTH": "int8",
             "ELEMENT": ELEMENTS,
             "VALUE": pandas.Int16Dtype(),
             "MFLAG": MFLAGS,
@@ -465,79 +426,126 @@ class USHCN(Dataset):
         cspec = [(a - 1, b) for a, b in colspecs.values()]
 
         # per column values to be interpreted as nan
-        na_values = {("VALUE", k): -9999 for k in range(1, 32)}
+        na_values = {("VALUE", k): "-9999" for k in range(1, 32)}
         us_daily_path = self.rawdata_paths["us_daily"]
 
-        with gzip.open(us_daily_path, "rb") as compressed_file:
-            ds = mpd.read_fwf(
-                compressed_file,
-                colspecs=cspec,
-                names=colspecs,
-                na_values=na_values,
-                dtype=dtype,
-            )
+        self.LOGGER.info("Loading main file...")
+        ds = mpd.read_fwf(
+            us_daily_path,
+            colspecs=cspec,
+            names=colspecs,
+            na_values=na_values,
+            dtype=dtype,
+            compression="gzip",
+        )
 
-        ds = mpd.DataFrame(ds)  # In case TextFileReader was returned.
-        self.__logger__.info("Finished loading main file.")
-
-        # us_daily_file = us_daily_path.with_suffix('')
-        # self.__logger__.info("Decompressing into %s", us_daily_file)
-        #
-        # with gzip.open(us_daily_path, "rb") as compressed_file:
-        #     with open(us_daily_file, "w", encoding="utf8") as file:
-        #         file.write(compressed_file.read().decode("utf-8"))
-        # us_daily_file.unlink()
-        # self.__logger__.info("Finished decompressing main file")
-
+        self.LOGGER.info("Cleaning up columns...")
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
         data_cols = [col for col in ds.columns if col not in id_cols]
+        columns = mpd.DataFrame(data_cols, columns=["VAR", "DAY"])
+        columns = columns.astype({"VAR": "string", "DAY": "uint8"})
+        columns = columns.astype("category")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
-        columns = mpd.MultiIndex.from_tuples(ds[data_cols], names=["VAR", "DAY"])
-        data = mpd.DataFrame(ds[data_cols])
-        data.columns = columns
-        # TODO: use mpd.DataFrame(ds[data_cols], columns=columns) once it works correctly in modin.
+        data = ds[data_cols]
+        data.columns = pandas.MultiIndex.from_frame(columns)
 
+        self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
-        data = data.stack(level="DAY", dropna=True).reset_index(level="DAY")
-        self.__logger__.info("Finished dataframe stacking.")
+        data = data.stack(level="DAY", dropna=False).reset_index(level="DAY")
 
+        self.LOGGER.info("Merging on ID columns...")
         # correct dtypes after stacking operation
-        _dtypes = {k: v for k, v in dtypes.items() if k in data.columns} | {
-            "DAY": pandas.UInt8Dtype()
-        }
-        data = data.astype(_dtypes)
+        _dtypes = {k: v for k, v in dtypes.items() if k in data.columns}
+        data = data.astype(_dtypes | {"DAY": "int8"})
 
         # recombine data columns with original data
         data = ds[id_cols].join(data, how="inner")
-        self.__logger__.info("Finished dataframe merging.")
+        data = data.astype(dtypes | {"DAY": "int8", "COOP_ID": "category"})
 
-        # fix column order
-        data = data[
-            [
-                "COOP_ID",
-                "YEAR",
-                "MONTH",
-                "DAY",
+        self.LOGGER.info("Creating time index...")
+        data = data.reset_index(drop=True)
+        datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
+        data = data.drop(columns=["YEAR", "MONTH", "DAY"])
+        data["TIME"] = datetimes
+        data = data.dropna(subset=["TIME"])
+
+        self.LOGGER.info("Pre-Sorting index....")
+        data = data.set_index("COOP_ID")
+        data = data.sort_index()  # fast pre-sort with single index
+        data = data.set_index("TIME", append=True)
+
+        self.LOGGER.info("Converting back to standard pandas DataFrame....")
+        try:
+            data = data._to_pandas()  # pylint: disable=protected-access
+        except AttributeError:
+            pass
+
+        self.LOGGER.info("Sorting columns....")
+        data = data.reindex(
+            columns=[
                 "ELEMENT",
                 "MFLAG",
                 "QFLAG",
                 "SFLAG",
                 "VALUE",
             ]
+        )
+        self.LOGGER.info("Sorting index....")
+        data = data.sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
+
+        return data
+
+    @property
+    def _state_codes(self):
+        return [
+            ("ID", "Abbr.", "State"),
+            ("01", "AL", "Alabama"),
+            ("02", "AZ", "Arizona"),
+            ("03", "AR", "Arkansas"),
+            ("04", "CA", "California"),
+            ("05", "CO", "Colorado"),
+            ("06", "CT", "Connecticut"),
+            ("07", "DE", "Delaware"),
+            ("08", "FL", "Florida"),
+            ("09", "GA", "Georgia"),
+            ("10", "ID", "Idaho"),
+            ("11", "IL", "Idaho"),
+            ("12", "IN", "Indiana"),
+            ("13", "IA", "Iowa"),
+            ("14", "KS", "Kansas"),
+            ("15", "KY", "Kentucky"),
+            ("16", "LA", "Louisiana"),
+            ("17", "ME", "Maine"),
+            ("18", "MD", "Maryland"),
+            ("19", "MA", "Massachusetts"),
+            ("20", "MI", "Michigan"),
+            ("21", "MN", "Minnesota"),
+            ("22", "MS", "Mississippi"),
+            ("23", "MO", "Missouri"),
+            ("24", "MT", "Montana"),
+            ("25", "NE", "Nebraska"),
+            ("26", "NV", "Nevada"),
+            ("27", "NH", "NewHampshire"),
+            ("28", "NJ", "NewJersey"),
+            ("29", "NM", "NewMexico"),
+            ("30", "NY", "NewYork"),
+            ("31", "NC", "NorthCarolina"),
+            ("32", "ND", "NorthDakota"),
+            ("33", "OH", "Ohio"),
+            ("34", "OK", "Oklahoma"),
+            ("35", "OR", "Oregon"),
+            ("36", "PA", "Pennsylvania"),
+            ("37", "RI", "RhodeIsland"),
+            ("38", "SC", "SouthCarolina"),
+            ("39", "SD", "SouthDakota"),
+            ("40", "TN", "Tennessee"),
+            ("41", "TX", "Texas"),
+            ("42", "UT", "Utah"),
+            ("43", "VT", "Vermont"),
+            ("44", "VA", "Virginia"),
+            ("45", "WA", "Washington"),
+            ("46", "WV", "WestVirginia"),
+            ("47", "WI", "Wisconsin"),
+            ("48", "WY", "Wyoming"),
         ]
-
-        # optional: sorting
-        data = data.sort_values(by=["YEAR", "MONTH", "DAY", "COOP_ID", "ELEMENT"])
-        self.__logger__.info("Finished sorting.")
-
-        # drop old index which may contain duplicates
-        data = data.reset_index(drop=True)
-
-        self.__logger__.info("Creating time index.")
-        datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
-        data = data.drop(columns=["YEAR", "MONTH", "DAY"])
-        data["time"] = datetimes
-        self.__logger__.info("Finished creating time index.")
-
-        data.to_feather(self.dataset_paths["us_daily"])

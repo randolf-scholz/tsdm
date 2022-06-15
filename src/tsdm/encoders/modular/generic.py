@@ -36,16 +36,16 @@ class BaseEncoder(ABC):
         self.transform = self.encode
         self.inverse_transform = self.decode
 
-    def __init_subclass__(cls, /, *args, **kwargs):
+    def __init_subclass__(cls, /, *args: Any, **kwargs: Any) -> None:
         r"""Initialize the subclass.
 
         The wrapping of fit/encode/decode must be done here to avoid
         `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_func(cls.fit, after=cls._post_fit_hook)
-        cls.encode = wrap_func(cls.encode, before=cls._pre_encode_hook)
-        cls.decode = wrap_func(cls.decode, before=cls._pre_decode_hook)
+        cls.fit = wrap_func(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
+        cls.encode = wrap_func(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
+        cls.decode = wrap_func(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
 
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""

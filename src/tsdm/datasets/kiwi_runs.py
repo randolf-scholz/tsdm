@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
-from tsdm.datasets.base import Dataset
+from tsdm.datasets.base import MultiFrameDataset
 from tsdm.util import round_relative
 
 __logger__ = logging.getLogger(__name__)
@@ -87,7 +87,7 @@ def get_useless_cols(
     return useless_cols
 
 
-class KIWI_RUNS(Dataset):
+class KIWI_RUNS(MultiFrameDataset):
     r"""KIWI RUN Data.
 
     The cleaned data will consist of 2 parts:
@@ -112,10 +112,10 @@ class KIWI_RUNS(Dataset):
         ]
     """
 
-    base_url: str = (
-        "https://owncloud.innocampus.tu-berlin.de/index.php/s"
-        "/fRBSr82NxY7ratK/download/kiwi_experiments_and_run_355.pk"
+    BASE_URL: str = (
+        "https://owncloud.innocampus.tu-berlin.de/index.php/s/fRBSr82NxY7ratK/download/"
     )
+
     index: Final[list[str]] = [
         "timeseries",
         "metadata",
@@ -149,29 +149,29 @@ class KIWI_RUNS(Dataset):
     r"""The units of the measured variables."""
     rawdata_files = "kiwi_experiments_and_run_355.pk"
     rawdata_paths: Path
-    dataset_files = {key: f"{key}.feather" for key in index + auxiliaries}
+    dataset_files = {key: f"{key}.parquet" for key in index + auxiliaries}
 
-    def _load(self, key: KEYS = "timeseries") -> DataFrame:
-        r"""Load the dataset from disk."""
-        table = pd.read_feather(self.dataset_paths[key])
-
-        if key == "units":
-            return table.set_index("variable")
-
-        # fix index dtype (groupby messes it up....)
-        table = table.astype({"run_id": "int32", "experiment_id": "int32"})
-        if "measurements" in key or key == "timeseries":
-            table = table.set_index(["run_id", "experiment_id", "measurement_time"])
-            table.columns.name = "variable"
-        else:
-            table = table.set_index(["run_id", "experiment_id"])
-
-        return table
+    # def _load(self, key: KEYS = "timeseries") -> DataFrame:
+    #     r"""Load the dataset from disk."""
+    #     table = pd.read_feather(self.dataset_paths[key])
+    #
+    #     if key == "units":
+    #         return table.set_index("variable")
+    #
+    #     # fix index dtype (groupby messes it up....)
+    #     table = table.astype({"run_id": "int32", "experiment_id": "int32"})
+    #     if "measurements" in key or key == "timeseries":
+    #         table = table.set_index(["run_id", "experiment_id", "measurement_time"])
+    #         table.columns.name = "variable"
+    #     else:
+    #         table = table.set_index(["run_id", "experiment_id"])
+    #
+    #     return table
 
     def _clean(self, key: KEYS) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         with open(self.rawdata_paths, "rb") as file:
-            self.__logger__.info("Loading raw data from %s", self.rawdata_paths)
+            self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
             data = pickle.load(file)
 
         DATA = [
@@ -220,11 +220,11 @@ class KIWI_RUNS(Dataset):
         else:
             cleaner(table)
 
-        self.__logger__.info("%s Finished cleaning table!", key)
+        self.LOGGER.info("%s Finished cleaning table!", key)
 
     def _clean_metadata(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
-        run_masks: list[Series[bool]] = [table["run_id"] == run for run in runs]
+        run_masks: list[Series] = [table["run_id"] == run for run in runs]
 
         table_columns = set(table.columns)
         useless_cols = get_useless_cols(table, slices=run_masks) | {
@@ -277,13 +277,14 @@ class KIWI_RUNS(Dataset):
             selected_columns
         ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
 
-        table = table[selected_columns]
+        table = table[selected_columns.keys()]
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
+        table = table.set_index(["run_id", "experiment_id"])
         # table = table.rename(columns={col: snake2camel(col) for col in table})
         table.columns.name = "variable"
-        table.to_feather(self.dataset_paths["metadata"])
+        table.to_parquet(self.dataset_paths["metadata"], compression="gzip")
 
     def _clean_setpoints(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -330,12 +331,13 @@ class KIWI_RUNS(Dataset):
         ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
 
         table["unit"] = table["unit"].replace(to_replace="-", value=pd.NA)
-        table = table[selected_columns]
+        table = table[selected_columns.keys()]
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
+        table = table.set_index(["run_id", "experiment_id"])
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        table.to_feather(self.dataset_paths["setpoints"])
+        table.to_parquet(self.dataset_paths["setpoints"], compression="gzip")
 
     def _clean_measurements_reactor(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -383,12 +385,13 @@ class KIWI_RUNS(Dataset):
         ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
 
         table["unit"] = table["unit"].replace(to_replace="-", value=pd.NA)
-        table = table[selected_columns]
+        table = table[selected_columns.keys()]
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
+        table = table.set_index(["run_id", "experiment_id", "measurement_time"])
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        table.to_feather(self.dataset_paths["measurements_reactor"])
+        table.to_parquet(self.dataset_paths["measurements_reactor"], compression="gzip")
 
     def _clean_measurements_array(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -412,9 +415,7 @@ class KIWI_RUNS(Dataset):
             "Temperature": "Float32",
         }
 
-        categorical_columns: dict[str, str] = {
-            "unit": "category",
-        }
+        categorical_columns: dict[str, str] = {"unit": "category"}
 
         assert (
             selected_columns.keys() >= remaining_cols
@@ -429,12 +430,13 @@ class KIWI_RUNS(Dataset):
         ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
 
         table["unit"] = table["unit"].replace(to_replace="-", value=pd.NA)
-        table = table[selected_columns]
+        table = table[selected_columns.keys()]
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
+        table = table.set_index(["run_id", "experiment_id", "measurement_time"])
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        table.to_feather(self.dataset_paths["measurements_array"])
+        table.to_parquet(self.dataset_paths["measurements_array"], compression="gzip")
 
     def _clean_measurements_aggregated(self, table: DataFrame) -> None:
         runs = table["run_id"].dropna().unique()
@@ -487,12 +489,15 @@ class KIWI_RUNS(Dataset):
         ), f"Superfluous encoding: {set(categorical_columns) - set(selected_columns)}"
 
         table["unit"] = table["unit"].replace(to_replace="-", value=pd.NA)
-        table = table[selected_columns]
+        table = table[selected_columns.keys()]
         table = table.astype(selected_columns)
         table = table.astype(categorical_columns)
         table = table.reset_index(drop=True)
+        table = table.set_index(["run_id", "experiment_id", "measurement_time"])
         # table = table.rename(columns={col: snake2camel(col) for col in table})
-        table.to_feather(self.dataset_paths["measurements_aggregated"])
+        table.to_parquet(
+            self.dataset_paths["measurements_aggregated"], compression="gzip"
+        )
 
     def _clean_timeseries(self) -> None:
         md: DataFrame = self.load(key="metadata")
@@ -562,7 +567,8 @@ class KIWI_RUNS(Dataset):
         ts["measurement_time"] = ts["measurement_time"].round("s")
         # ts = ts.rename(columns={col: snake2camel(col) for col in ts})
         ts.columns.name = "variable"
-        ts.to_feather(self.dataset_paths["timeseries"])
+        ts = ts.set_index(["run_id", "experiment_id", "measurement_time"])
+        ts.to_parquet(self.dataset_paths["timeseries"], compression="gzip")
 
     def _clean_units(self) -> None:
         ts: DataFrame = self.load(key="measurements_aggregated")
@@ -623,5 +629,4 @@ class KIWI_RUNS(Dataset):
 
         units[columns] = units[columns].astype("float32").apply(round_relative)
         units[percents] = units[percents].round(3)
-        units = units.reset_index()
-        units.to_feather(self.dataset_paths["units"])
+        units.to_parquet(self.dataset_paths["units"], compression="gzip")

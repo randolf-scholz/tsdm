@@ -303,7 +303,9 @@ class ElectricityTFT(BaseTask):
     #         "persistent_workers": False,
     #     }
 
-    def get_dataloader(self, key: KeyType, /, **dataloader_kwargs: Any) -> DataLoader:
+    def get_dataloader(
+        self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
+    ) -> DataLoader:
         r"""Return the dataloader for the given key."""
         ds = self.splits[key]
         encoded = self.preprocessor.encode(ds)
@@ -314,7 +316,7 @@ class ElectricityTFT(BaseTask):
             seq_len=self.observation_period + self.forecasting_period,
             stride="1d",  # type: ignore[arg-type]
             return_mask=True,
-            shuffle=True,
+            shuffle=shuffle,
         )
         dataset = TensorDataset(tensor)
 

@@ -6,25 +6,28 @@ __all__ = [
     # Classes
     "BaseDataset",
     "BaseDatasetMetaClass",
-    "SimpleDataset",
-    "Dataset",
+    "SingleFrameDataset",
+    "MultiFrameDataset",
 ]
 
+import inspect
 import logging
 import os
 import subprocess
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Mapping, MutableMapping, Sequence
-from functools import cached_property
+from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
+from functools import cached_property, partial
 from pathlib import Path
 from typing import Any, Generic, Optional, Union, overload
 from urllib.parse import urlparse
 
+import pandas
 from pandas import DataFrame, Series
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.util import flatten_nested, paths_exists, prepend_path
+from tsdm.util.remote import download
 from tsdm.util.types import KeyType, Nested, PathType
 
 DATASET_OBJECT = Union[Series, DataFrame]
@@ -35,14 +38,14 @@ class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
     def __init__(cls, *args, **kwargs):
-        if os.environ.get("GENERATING_DOCS", False):
-            cls.rawdata_dir = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
-            cls.dataset_dir = Path(f"~/.tsdm/datasets/{cls.__name__}/")
-        else:
-            cls.rawdata_dir = RAWDATADIR / cls.__name__
-            cls.dataset_dir = DATASETDIR / cls.__name__
+        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
-            cls.__logger__ = logging.getLogger(f"{__package__}.{cls.__name__}")
+        if os.environ.get("GENERATING_DOCS", False):
+            cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+            cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
+        else:
+            cls.RAWDATA_DIR = RAWDATADIR / cls.__name__
+            cls.DATASET_DIR = DATASETDIR / cls.__name__
 
         super().__init__(*args, **kwargs)
 
@@ -53,54 +56,63 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     Implements methods that are available for all dataset classes.
     """
 
-    __slots__ = ()
-
-    base_url: Optional[str] = None
+    BASE_URL: Optional[str] = None
     r"""HTTP address from where the dataset can be downloaded."""
-    info_url: Optional[str] = None
+    INFO_URL: Optional[str] = None
     r"""HTTP address containing additional information about the dataset."""
-    _initialized: bool = False
-    r"""Whether the dataset has been initialized or not."""
-    rawdata_dir: Path
+    RAWDATA_DIR: Path
     r"""Location where the raw data is stored."""
-    dataset_dir: Path
+    DATASET_DIR: Path
     r"""Location where the pre-processed data is stored."""
-    __logger__: logging.Logger
+    LOGGER: logging.Logger
     r"""Logger for the dataset."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
-        """Initialize the dataset."""
-        # Create folders
-        self.rawdata_dir.mkdir(parents=True, exist_ok=True)
-        self.dataset_dir.mkdir(parents=True, exist_ok=True)
+        r"""Initialize the dataset."""
+        if not inspect.isabstract(self):
+            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
+            self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
         if reset:
             self.clean()
         if initialize:
             self.load()
 
-    def __len__(self):
+    def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""
-        return len(self.dataset)
+        return self.dataset.__len__()
 
     def __getitem__(self, idx):
         r"""Return the sample at index `idx`."""
-        return self.dataset[idx]
+        return self.dataset.__getitem__(idx)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Hashable, value: Any) -> None:
         r"""Return the sample at index `idx`."""
         self.dataset[key] = value
 
-    def __iter__(self):
+    def __delitem__(self, key: Hashable, /) -> None:
+        r"""Return the sample at index `idx`."""
+        self.dataset.__delitem__(key)
+
+    def __iter__(self) -> Iterator:
         r"""Return an iterator over the dataset."""
-        return iter(self.dataset)
+        return self.dataset.__iter__()
 
     def __repr__(self):
         r"""Return a string representation of the dataset."""
         return f"{self.__class__.__name__}\n{self.dataset}"
 
+    @classmethod
+    def info(cls):
+        r"""Open dataset information in browser."""
+        if cls.INFO_URL is None:
+            print(cls.__doc__)
+        else:
+            webbrowser.open_new_tab(cls.INFO_URL)
+
     @cached_property
-    def dataset(self):
+    @abstractmethod
+    def dataset(self) -> MutableMapping:
         r"""Store cached version of dataset."""
         return self.load()
 
@@ -117,12 +129,12 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     @cached_property
     def rawdata_paths(self) -> Nested[Path]:
         r"""Absolute paths to the raw dataset file(s)."""
-        return prepend_path(self.rawdata_files, parent=self.rawdata_dir)
+        return prepend_path(self.rawdata_files, parent=self.RAWDATA_DIR)
 
     @cached_property
     def dataset_paths(self) -> Nested[Path]:
         r"""Absolute paths to the raw dataset file(s)."""
-        return prepend_path(self.dataset_files, parent=self.rawdata_dir)
+        return prepend_path(self.dataset_files, parent=self.RAWDATA_DIR)
 
     def rawdata_files_exist(self) -> bool:
         r"""Check if raw data files exist."""
@@ -147,68 +159,72 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     def download(self) -> None:
         r"""Download the raw data."""
 
-    def download_from_url(self, url: str) -> None:
+    @classmethod
+    def download_from_url(cls, url: str) -> None:
         r"""Download files from a URL."""
-        self.__logger__.info("Obtaining files from %s", url)
+        cls.LOGGER.info("Obtaining files from %s", url)
         parsed_url = urlparse(url)
 
         if parsed_url.netloc == "www.kaggle.com":
             kaggle_name = Path(parsed_url.path).name
             subprocess.run(
-                f"kaggle competitions download -p {self.rawdata_dir} -c {kaggle_name}",
+                f"kaggle competitions download -p {cls.RAWDATA_DIR} -c {kaggle_name}",
                 shell=True,
                 check=True,
             )
         elif parsed_url.netloc == "github.com":
             subprocess.run(
-                f"svn export --force {url.replace('tree/main', 'trunk')} {self.rawdata_dir}",
+                f"svn export --force {url.replace('tree/main', 'trunk')} {cls.RAWDATA_DIR}",
                 shell=True,
                 check=True,
             )
         else:  # default parsing, including for UCI dataset
-            cut_dirs = url.count("/") - 3
-            subprocess.run(
-                f"wget -r -np -nH -N --cut-dirs {cut_dirs} -P '{self.rawdata_dir}' {url}",
-                shell=True,
-                check=True,
-            )
+            fname = url.split("/")[-1]
+            download(url, cls.RAWDATA_DIR / fname)
 
-        self.__logger__.info("Finished importing files from %s", url)
+        cls.LOGGER.info("Finished importing files from %s", url)
 
-    # def download(
-    #     self, *, url: Optional[Union[str, Path]] = None, force: bool = False
-    # ) -> None:
-    #     r"""Download the dataset and stores it in `self.rawdata_dir`.
-    #
-    #     The default downloader checks if
-    #
-    #     1. The url points to kaggle.com => uses `kaggle competition download`
-    #     2. The url points to github.com => checkout directory with `svn`
-    #     3. Else simply use `wget` to download the `cls.url` content,
-    #
-    #     Overwrite if you need custom downloader
-    #     """
-    #     if self.rawdata_files_exist() and not force:
-    #         self.__logger__.info("Dataset already exists. Skipping download.")
-    #         return
-    #
-    #     if url is None:
-    #         if self.base_url is None:
-    #             self.__logger__.info("Dataset provides no url. Assumed offline")
-    #             return
-    #         url = self.base_url
-    #
-    #     self.__logger__.debug("STARTING TO DOWNLOAD DATASET.")
-    #     self.download_from_url(str(url))
-    #     self.__logger__.debug("FINISHED TO DOWNLOAD DATASET.")
 
-    @classmethod
-    def info(cls):
-        r"""Open dataset information in browser."""
-        if cls.info_url is None:
-            print(cls.__doc__)
-        else:
-            webbrowser.open_new_tab(cls.info_url)
+class FrameDataset(BaseDataset, ABC):
+    r"""Base class for datasets that are stored as pandas.DataFrame."""
+
+    default_format: str = "parquet"
+    r"""Default format for the dataset."""
+
+    @staticmethod
+    def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
+        r"""Serialize the dataset."""
+        file_type = path.suffix
+        assert file_type.startswith("."), "File must have a suffix!"
+        file_type = file_type[1:]
+
+        if isinstance(frame, Series):
+            frame = frame.to_frame()
+
+        if hasattr(frame, f"to_{file_type}"):
+            pandas_writer = getattr(frame, f"to_{file_type}")
+            pandas_writer(path, **kwargs)
+            return
+
+        raise NotImplementedError(f"No loader for {file_type=}")
+
+    @staticmethod
+    def deserialize(path: Path, /, *, squeeze: bool = True) -> DATASET_OBJECT:
+        r"""Deserialize the dataset."""
+        file_type = path.suffix
+        assert file_type.startswith("."), "File must have a suffix!"
+        file_type = file_type[1:]
+
+        if hasattr(pandas, f"read_{file_type}"):
+            pandas_loader = getattr(pandas, f"read_{file_type}")
+            pandas_object = pandas_loader(path)
+            return pandas_object.squeeze() if squeeze else pandas_object
+
+        raise NotImplementedError(f"No loader for {file_type=}")
+
+
+class SingleFrameDataset(FrameDataset):
+    r"""Dataset class that consists of a singular DataFrame."""
 
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
@@ -218,119 +234,101 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             return header + html_repr
         raise NotImplementedError
 
-
-##########################################
-# Dataset consisting of Single DataFrame #
-##########################################
-
-
-class SimpleDataset(BaseDataset):
-    r"""Dataset class that consists of a singular DataFrame."""
-
-    # def __getattr__(self, key):
-    #     r"""Attribute lookup."""
-    #     if key in self.dataset:
-    #         return self.dataset[key]
-    #     if hasattr(self.dataset, key):
-    #         return getattr(self.dataset, key)
-    #     raise AttributeError(f"{self.__class__.__name__} has no attribute {key}")
-
-    @cached_property
-    def dataset_files(self) -> PathType:
-        r"""Return the dataset files."""
-        return self.__class__.__name__ + ".feather"
-
-    @cached_property
-    def dataset_paths(self) -> Path:
-        r"""Path to raw data."""
-        return self.dataset_dir / (self.dataset_files or "")
-
-    @abstractmethod
-    def _clean(self) -> None:
-        r"""Clean the dataset."""
-
-    @abstractmethod
-    def _load(self) -> DATASET_OBJECT:
-        r"""Load the dataset."""
-
-    def _download(self) -> None:
-        r"""Download the dataset."""
-        assert self.base_url is not None
-        self.download_from_url(self.base_url)
-
     @cached_property
     def dataset(self) -> DATASET_OBJECT:
         r"""Store cached version of dataset."""
         return self.load()
+
+    @cached_property
+    def dataset_files(self) -> PathType:
+        r"""Return the dataset files."""
+        return self.__class__.__name__ + f".{self.default_format}"
+
+    @cached_property
+    def dataset_paths(self) -> Path:
+        r"""Path to raw data."""
+        return self.DATASET_DIR / (self.dataset_files or "")
+
+    @abstractmethod
+    def _clean(self) -> DATASET_OBJECT | None:
+        r"""Clean the dataset."""
+
+    def _load(self) -> DATASET_OBJECT:
+        r"""Load the dataset."""
+        return self.deserialize(self.dataset_paths)
+
+    def _download(self) -> None:
+        r"""Download the dataset."""
+        assert self.BASE_URL is not None, "base_url is not set!"
+
+        nested_files: Nested[Path] = prepend_path(
+            self.rawdata_files, Path(), keep_none=False
+        )
+        files: set[Path] = flatten_nested(nested_files, kind=Path)
+
+        for file in files:
+            self.download_from_url(self.BASE_URL + file.name)
 
     def load(self) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
         if not self.dataset_files_exist():
             self.clean()
         else:
-            self.__logger__.debug("Dataset files already exist!")
+            self.LOGGER.debug("Dataset files already exist!")
 
-        self.__logger__.debug("STARTING TO LOAD DATASET.")
+        self.LOGGER.debug("STARTING TO LOAD DATASET.")
         ds = self._load()
-        self.__logger__.debug("FINISHED TO LOAD DATASET.")
+        self.LOGGER.debug("FINISHED TO LOAD DATASET.")
         return ds
 
     def clean(self, *, force: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
         if self.dataset_files_exist() and not force:
-            self.__logger__.debug("Dataset files already exist, skipping.")
+            self.LOGGER.debug("Dataset files already exist, skipping.")
             return
 
         if not self.rawdata_files_exist():
             self.download()
 
-        self.__logger__.debug("STARTING TO CLEAN DATASET.")
-        self._clean()
-        self.__logger__.debug("FINISHED TO CLEAN DATASET.")
+        self.LOGGER.debug("STARTING TO CLEAN DATASET.")
+        df = self._clean()
+        if df is not None:
+            self.serialize(df, self.dataset_paths)
+        self.LOGGER.debug("FINISHED TO CLEAN DATASET.")
 
     def download(self, *, force: bool = True) -> None:
         r"""Download the dataset."""
         if self.rawdata_files_exist() and not force:
-            self.__logger__.info("Dataset already exists. Skipping download.")
+            self.LOGGER.info("Dataset already exists. Skipping download.")
             return
 
-        if self.base_url is None:
-            self.__logger__.info("Dataset provides no url. Assumed offline")
+        if self.BASE_URL is None:
+            self.LOGGER.info("Dataset provides no url. Assumed offline")
             return
 
-        self.__logger__.debug("STARTING TO DOWNLOAD DATASET.")
+        self.LOGGER.debug("STARTING TO DOWNLOAD DATASET.")
         self._download()
-        self.__logger__.debug("FINISHED TO DOWNLOAD DATASET.")
+        self.LOGGER.debug("FINISHED TO DOWNLOAD DATASET.")
 
 
-#############################################
-# Dataset consisting of Multiple DataFrames #
-#############################################
-
-
-class Dataset(BaseDataset, Mapping, Generic[KeyType]):
+class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
     r"""Dataset class that consists of a multiple DataFrames.
 
     The Datasets are accessed by their index.
     We subclass Mapping to provide the mapping interface.
     """
 
-    __slots__ = ()  # Do we need this?
-
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
-        super().__init__(initialize=initialize, reset=reset)
+        self.LOGGER.info("Adding keys as attributes.")
+
         for key in self.index:
             if isinstance(key, str) and not hasattr(self, key):
-                setattr(self, key, self[key])
+                _get_dataset = partial(self.__class__.load, key=key)
+                _get_dataset.__doc__ = f"Load dataset for {key=}."
+                setattr(self.__class__, key, property(_get_dataset))
 
-    # def __getattr__(self, key):
-    #     r"""Attribute lookup for index."""
-    #     if self.index is not None and key in self.index:
-    #         if self.dataset[key] is None:
-    #             self.load(key=key)
-    #         return self.dataset[key]
-    #     raise AttributeError(f"No attribute {key} in {self.__class__.__name__}")
+        super().__init__(initialize=initialize, reset=reset)
 
     def __repr__(self):
         r"""Pretty Print."""
@@ -347,30 +345,31 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
     @abstractmethod
     def index(self) -> Sequence[KeyType]:
         r"""Return the index of the dataset."""
-        # implement loading of dataset
-
-    @abstractmethod
-    def _load(self, key: KeyType) -> Any:
-        r"""Clean the selected DATASET_OBJECT."""
-
-    @abstractmethod
-    def _clean(self, key: KeyType) -> None:
-        r"""Clean the selected DATASET_OBJECT."""
 
     @cached_property
     def dataset(self) -> MutableMapping[KeyType, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
         return {key: None for key in self.index}
 
-    @property
-    def dataset_files(self) -> Mapping[KeyType, PathType]:
+    @cached_property
+    def dataset_files(self) -> Mapping[KeyType, str]:
         r"""Relative paths to the dataset files for each key."""
-        return {key: f"{key}.feather" for key in self.index}
+        return {key: f"{key}.{self.default_format}" for key in self.index}
 
     @cached_property
     def dataset_paths(self) -> Mapping[KeyType, Path]:
         r"""Absolute paths to the dataset files for each key."""
-        return {key: self.dataset_dir / self.dataset_files[key] for key in self.index}
+        return {
+            key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
+        }
+
+    def _load(self, key: KeyType) -> DATASET_OBJECT:
+        r"""Load the selected DATASET_OBJECT."""
+        return self.deserialize(self.dataset_paths[key])
+
+    @abstractmethod
+    def _clean(self, key: KeyType) -> DATASET_OBJECT | None:
+        r"""Clean the selected DATASET_OBJECT."""
 
     def rawdata_files_exist(self, key: Optional[KeyType] = None) -> bool:
         r"""Check if raw data files exist."""
@@ -400,7 +399,7 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         """
         # TODO: Do we need this code block?
         if not self.rawdata_files_exist(key=key):
-            self.__logger__.debug("%s: missing, fetching it now!", key)
+            self.LOGGER.debug("Raw files missing, fetching it now! <%s>", key)
             self.download(key=key, force=force)
 
         if (
@@ -408,19 +407,21 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
             and self.dataset_files_exist(key=key)
             and not force
         ):
-            self.__logger__.debug("%s: already exists, skipping.", key)
+            self.LOGGER.debug("Clean files already exists, skipping <%s>", key)
             return
 
         if key is None:
-            self.__logger__.debug("STARTING TO CLEAN DATASET.")
+            self.LOGGER.debug("Starting to clean dataset.")
             for key_ in self.index:
                 self.clean(key=key_, force=force)
-            self.__logger__.debug("FINISHED TO CLEAN DATASET.")
+            self.LOGGER.debug("Finished cleaning dataset.")
             return
 
-        self.__logger__.debug("%s: STARTING TO CLEAN DATASET.", key)
-        self._clean(key=key)
-        self.__logger__.debug("%s: FINISHED TO CLEAN DATASET.", key)
+        self.LOGGER.debug("Starting to clean dataset <%s>", key)
+        df = self._clean(key=key)
+        if df is not None:
+            self.serialize(df, self.dataset_paths[key])
+        self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
     @overload
     def load(
@@ -452,36 +453,38 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
 
         if key is None:
             # Download full dataset
-            self.__logger__.debug("STARTING TO LOAD DATASET.")
+            self.LOGGER.debug("Starting to load  dataset.")
             ds = {k: self.load(key=k, force=force, **kwargs) for k in self.index}
-            self.__logger__.debug("FINISHED TO LOAD DATASET.")
+            self.LOGGER.debug("Finished loading  dataset.")
             return ds
 
         # download specific key
         if key in self.dataset and self.dataset[key] is not None and not force:
-            self.__logger__.debug("%s: dataset already exists, skipping!", key)
+            self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
             return self.dataset[key]
 
-        self.__logger__.debug("%s: STARTING TO LOAD DATASET.", key)
+        self.LOGGER.debug("Starting to load  dataset <%s>", key)
         self.dataset[key] = self._load(key=key)
-        self.__logger__.debug("%s: FINISHED TO LOAD DATASET.", key)
+        self.LOGGER.debug("Finished loading  dataset <%s>", key)
         return self.dataset[key]
 
     def _download(self, *, key: KeyType = None) -> None:
         r"""Download the selected DATASET_OBJECT."""
-        assert self.base_url is not None, "base_url is not set!"
+        assert self.BASE_URL is not None, "base_url is not set!"
 
-        files: Nested[Optional[str]]
+        rawdata_files: Nested[Optional[str]]
         if isinstance(self.rawdata_files, Mapping):
-            files = self.rawdata_files[key]  # type: ignore[assignment]
+            rawdata_files = self.rawdata_files[key]  # type: ignore[assignment]
         else:
-            files = self.rawdata_files  # type: ignore[assignment]
+            rawdata_files = self.rawdata_files  # type: ignore[assignment]
 
-        files: Nested[Path] = prepend_path(files, Path(), keep_none=False)
-        files: set[Path] = flatten_nested(files, kind=Path)
+        nested_files: Nested[Path] = prepend_path(
+            rawdata_files, Path(), keep_none=False
+        )
+        files: set[Path] = flatten_nested(nested_files, kind=Path)
 
         for file in files:
-            self.download_from_url(self.base_url + file.name)
+            self.download_from_url(self.BASE_URL + file.name)
 
     def download(
         self,
@@ -498,32 +501,30 @@ class Dataset(BaseDataset, Mapping, Generic[KeyType]):
         force: bool = False
             Force re-downloading of dataset.
         """
-        if self.base_url is None:
-            self.__logger__.debug("Dataset provides no base_url. Assumed offline")
+        if self.BASE_URL is None:
+            self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 
         if self.rawdata_files is None:
-            self.__logger__.debug("Dataset needs no raw data files. Skipping.")
+            self.LOGGER.debug("Dataset needs no raw data files. Skipping.")
             return
 
         if not force and self.rawdata_files_exist(key=key):
-            self.__logger__.debug(
-                "%s: Rawdata files already exist, skipping.", str(key)
-            )
+            self.LOGGER.debug("Rawdata files already exist, skipping. <%s>", str(key))
             return
 
         if key is None:
             # Download full dataset
-            self.__logger__.debug("STARTING TO DOWNLOAD DATASET.")
+            self.LOGGER.debug("Starting to download dataset.")
             if isinstance(self.rawdata_files, Mapping):
                 for key_ in self.rawdata_files:
                     self.download(key=key_, force=force, **kwargs)
             else:
                 self._download()
-            self.__logger__.debug("FINISHED TO DOWNLOAD DATASET.")
+            self.LOGGER.debug("Finished downloading dataset.")
             return
 
         # Download specific key
-        self.__logger__.debug("%s: STARTING TO DOWNLOAD DATASET.", key)
+        self.LOGGER.debug("Starting to download dataset <%s>", key)
         self._download(key=key)
-        self.__logger__.debug("%s: FINISHED TO DOWNLOAD DATASET.", key)
+        self.LOGGER.debug("Finished downloading dataset <%s>", key)

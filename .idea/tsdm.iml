@@ -42,9 +42,10 @@
       <excludeFolder url="file://$MODULE_DIR$/experiments/.virtual_documents" />
       <excludeFolder url="file://$MODULE_DIR$/experiments/runs" />
       <excludeFolder url="file://$MODULE_DIR$/experiments/.ipynb_checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/bugs" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.9 (tsdm)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PackageRequirementsSettings">

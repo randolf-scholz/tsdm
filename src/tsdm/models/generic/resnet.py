@@ -5,7 +5,7 @@ r"""#TODO add module summary line.
 
 import logging
 from collections import OrderedDict
-from typing import Any, TypeVar
+from typing import Any, Final, TypeVar
 
 from torch import Tensor, jit, nn
 
@@ -28,7 +28,7 @@ class ResNetBlock(nn.Sequential):
       | https://link.springer.com/chapter/10.1007/978-3-319-46493-0_38
     """
 
-    HP = {
+    HP: Final[dict] = {
         "__name__": __qualname__,  # type: ignore[name-defined]
         "__module__": __module__,  # type: ignore[name-defined]
         "input_size": None,
@@ -85,7 +85,7 @@ ResNetType = TypeVar("ResNetType", bound="ResNet")
 class ResNet(nn.ModuleList):
     r"""A ResNet model."""
 
-    HP = {
+    HP: Final[dict] = {
         "__name__": __qualname__,  # type: ignore[name-defined]
         "__module__": __module__,  # type: ignore[name-defined]
         "input_size": None,

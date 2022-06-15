@@ -18,7 +18,6 @@ from collections.abc import Mapping, Sized
 from typing import Any, NamedTuple, Optional, Union
 
 import numpy as np
-from numpy.typing import ArrayLike
 from pandas import DataFrame, Index, Series, Timedelta
 from torch import Tensor
 from torch.utils.data import Dataset as TorchDataset
@@ -30,7 +29,7 @@ from tsdm.util.strings import repr_array, repr_sequence
 class _IndexMethodClone:
     r"""Clone .loc and similar methods to tensor-like object."""
 
-    def __init__(self, data: ArrayLike, index: Index, method: str = "loc"):
+    def __init__(self, data: Tensor, index: Index, method: str = "loc"):
         self.data = data
         self.index = index
         self.index_method = getattr(self.index, method)
@@ -48,7 +47,7 @@ class _TupleIndexMethodClone:
     r"""Clone .loc and similar methods to tensor-like object."""
 
     def __init__(
-        self, data: tuple[ArrayLike, ...], index: tuple[Index, ...], method: str = "loc"
+        self, data: tuple[Tensor, ...], index: tuple[Index, ...], method: str = "loc"
     ):
         self.data = data
         self.index = index

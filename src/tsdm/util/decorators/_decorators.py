@@ -33,7 +33,7 @@ from typing import Any, Optional, Union, overload
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import ObjectType, ReturnType, nnModuleType
+from tsdm.util.types import ClassType, ObjectType, ReturnType, Type, nnModuleType
 from tsdm.util.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -283,10 +283,36 @@ def decorator(deco: Callable) -> Callable:
     return _parametrized_decorator
 
 
+def attribute(func):
+    r"""Create decorator that converts method to attribute."""
+
+    @wraps(func, updated=())
+    class _attribute:
+        __slots__ = ("func", "payload")
+        sentinel = object()
+
+        def __init__(self, func):
+            self.func = func
+            self.payload = self.sentinel
+
+        def __get__(self, obj, obj_type=None):
+            if obj is None:
+                return self
+            if self.payload is self.sentinel:
+                self.payload = self.func(obj)
+            return self.payload
+
+    return _attribute(func)
+
+
 @decorator
 def timefun(
-    fun: Callable, /, *, append: bool = False, loglevel: int = logging.WARNING
-) -> Callable:
+    fun: Callable[..., ReturnType],
+    /,
+    *,
+    append: bool = False,
+    loglevel: int = logging.WARNING,
+) -> Callable[..., ReturnType]:
     r"""Log the execution time of the function. Use as decorator.
 
     By default appends the execution time (in seconds) to the function call.
@@ -353,7 +379,7 @@ def timefun(
 #     return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
 
 
-def trace(func: Callable) -> Callable:
+def trace(func: Callable[..., ReturnType]) -> Callable[..., ReturnType]:
     r"""Log entering and exiting of function.
 
     Parameters
@@ -496,7 +522,7 @@ def vectorize(
     def _wrapper(arg, *args):
         if not args:
             return func(arg)
-        return kind(func(x) for x in (arg, *args))
+        return kind(func(x) for x in (arg, *args))  # type: ignore[call-arg]
 
     return _wrapper
 
@@ -537,7 +563,7 @@ def vectorize(
 
 
 @overload
-def IterItems(obj: type[ObjectType]) -> type[ObjectType]:
+def IterItems(obj: ClassType) -> ClassType:
     ...
 
 
@@ -546,15 +572,12 @@ def IterItems(obj: ObjectType) -> ObjectType:
     ...
 
 
-def IterItems(obj):
+def IterItems(obj: Type) -> Type:
     r"""Wrap a class such that `__getitem__` returns (key, value) pairs."""
-    if isinstance(obj, type):
-        base_class = obj
-    else:
-        base_class = type(obj)
+    base_class = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
-    class WrappedClass(base_class):
+    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
         r"""A simple Wrapper."""
 
         def __getitem__(self, key: Any) -> tuple[Any, Any]:
@@ -566,14 +589,14 @@ def IterItems(obj):
             return r"IterItems@" + super().__repr__()
 
     if isinstance(obj, type):
-        return WrappedClass
+        return WrappedClass  # type: ignore[return-value]
     obj = deepcopy(obj)
     obj.__class__ = WrappedClass
     return obj
 
 
 @overload
-def IterKeys(obj: type[ObjectType]) -> type[ObjectType]:
+def IterKeys(obj: ClassType) -> ClassType:
     ...
 
 
@@ -582,12 +605,12 @@ def IterKeys(obj: ObjectType) -> ObjectType:
     ...
 
 
-def IterKeys(obj):
+def IterKeys(obj: Type) -> Type:
     r"""Wrap a class such that `__getitem__` returns key instead."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
-    class WrappedClass(base_class):
+    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
         r"""A simple Wrapper."""
 
         def __getitem__(self, key: Any) -> tuple[Any, Any]:
@@ -599,7 +622,7 @@ def IterKeys(obj):
             return r"IterKeys@" + super().__repr__()
 
     if isinstance(obj, type):
-        return WrappedClass
+        return WrappedClass  # type: ignore[return-value]
     obj = deepcopy(obj)
     obj.__class__ = WrappedClass
     return obj
@@ -607,12 +630,12 @@ def IterKeys(obj):
 
 @decorator
 def wrap_func(
-    func: Callable,
+    func: Callable[..., ReturnType],
     /,
     *,
-    before: Optional[Callable] = None,
-    after: Optional[Callable] = None,
-) -> Callable:
+    before: Optional[Callable[..., Any]] = None,
+    after: Optional[Callable[..., Any]] = None,
+) -> Callable[..., ReturnType]:
     r"""Wrap a function with pre and post hooks."""
     if before is None and after is None:
         __logger__.debug("No hooks added to %s", func)
@@ -623,7 +646,7 @@ def wrap_func(
 
         @wraps(func)
         def _wrapper(*args, **kwargs):
-            before(*args, **kwargs)
+            before(*args, **kwargs)  # type: ignore[misc]
             result = func(*args, **kwargs)
             return result
 
@@ -635,7 +658,7 @@ def wrap_func(
         @wraps(func)
         def _wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
-            after(*args, **kwargs)
+            after(*args, **kwargs)  # type: ignore[misc]
             return result
 
         return _wrapper
@@ -646,9 +669,9 @@ def wrap_func(
 
         @wraps(func)
         def _wrapper(*args, **kwargs):
-            before(*args, **kwargs)
+            before(*args, **kwargs)  # type: ignore[misc]
             result = func(*args, **kwargs)
-            after(*args, **kwargs)
+            after(*args, **kwargs)  # type: ignore[misc]
             return result
 
         return _wrapper

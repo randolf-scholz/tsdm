@@ -71,7 +71,7 @@ class Time2Vec(nn.Module):
         return torch.cat([t.unsqueeze(dim=-1), z], dim=-1)
 
     @jit.export
-    def inverse(self, z: Tensor) -> Tensor:  # pylint: disable=no-self-use
+    def inverse(self, z: Tensor) -> Tensor:
         r"""Signature: ``(..., d) -> (..., )``.
 
         Parameters
@@ -139,7 +139,7 @@ class PositionalEncoder(nn.Module):
         return torch.cat([torch.sin(z), torch.cos(z)], dim=-1)
 
     @jit.export
-    def inverse(self, t: Tensor) -> Tensor:  # pylint: disable=no-self-use
+    def inverse(self, t: Tensor) -> Tensor:
         r"""Signature: ``(..., 2d) -> (..., )``.
 
         Parameters

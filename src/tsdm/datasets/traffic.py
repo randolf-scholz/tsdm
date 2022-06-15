@@ -49,7 +49,6 @@ M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference 
 
 __all__ = ["Traffic"]
 
-from collections.abc import Callable
 from io import StringIO
 from pathlib import Path
 from typing import Literal
@@ -59,7 +58,7 @@ import numpy as np
 import pandas
 from pandas import DataFrame, Series
 
-from tsdm.datasets.base import Dataset
+from tsdm.datasets.base import MultiFrameDataset
 
 
 def _reformat(s: str, replacements: dict) -> str:
@@ -71,7 +70,7 @@ def _reformat(s: str, replacements: dict) -> str:
     return result
 
 
-class Traffic(Dataset):
+class Traffic(MultiFrameDataset):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -83,9 +82,9 @@ class Traffic(Dataset):
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa
 
-    base_url: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
+    BASE_URL: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
     r"""HTTP address from where the dataset can be downloaded."""
-    info_url: str = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
+    INFO_URL: str = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
     r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["timeseries", "labels", "randperm", "invperm"]
     r"""The names of the DataFrames associated with this dataset."""
@@ -93,24 +92,26 @@ class Traffic(Dataset):
     r"""The identifiers for the dataset."""
     rawdata_files = "PEMS-SF.zip"
     r"""The name of the zip file containing the raw data."""
+    default_format = "parquet"
+
     rawdata_paths: Path
     timeseries: DataFrame
     labels: DataFrame
     randperm: DataFrame
     invperm: DataFrame
 
-    def _load(self, key: KEYS) -> DataFrame:
-        r"""Load the pre-preprocessed dataset from disk."""
-        df = pandas.read_feather(self.dataset_paths[key])
-        if key == "timeseries":
-            return df.set_index(["day", "time"])
-        if key == "labels":
-            return df.set_index("day").squeeze()
-        if key == "invperm":
-            return df.squeeze()
-        if key == "randperm":
-            return df.squeeze()
-        raise KeyError(f"{key} is not a valid key")
+    # def _load(self, key: KEYS) -> DataFrame:
+    #     r"""Load the pre-preprocessed dataset from disk."""
+    #     df = pandas.read_feather(self.dataset_paths[key])
+    #     if key == "timeseries":
+    #         return df.set_index(["day", "time"])
+    #     if key == "labels":
+    #         return df.set_index("day").squeeze()
+    #     if key == "invperm":
+    #         return df.squeeze()
+    #     if key == "randperm":
+    #         return df.squeeze()
+    #     raise KeyError(f"{key} is not a valid key")
 
     def _clean(self, key: KEYS) -> None:
         r"""Create the DataFrames.
@@ -119,20 +120,24 @@ class Traffic(Dataset):
         ----------
         key: Literal["us_daily", "states", "stations"], default "us_daily"
         """
-        cleaners: dict[str, Callable[[], None]] = {
-            "timeseries": self._clean_data,
-            "labels": self._clean_data,
-            "invperm": self._clean_randperm,
-            "randperm": self._clean_randperm,
-        }
-        cleaners[key]()
+        if key == "timeseries":
+            return self._clean_data()
+        if key == "labels":
+            return self._clean_data()
+        if key == "randperm":
+            return self._clean_randperm()
+        if key == "invperm":
+            return self._clean_randperm()
 
-    def _clean_data(self, use_true: bool = True) -> None:
+        raise KeyError(f"{key} is not a valid key")
+
+    def _clean_data(self, *, use_corrected_dates: bool = True) -> None:
         r"""Create DataFrame from raw data.
 
         Parameters
         ----------
-        use_true: Use correct dates and anomalies found through reverse engineering the dataset.
+        use_corrected_dates: bool (default True)
+            Use correct dates and anomalies found through reverse engineering the dataset.
 
         Notes
         -----
@@ -241,9 +246,9 @@ class Traffic(Dataset):
             "7": "Sunday",
         }
 
-        dates = true_dates if use_true else false_dates
-        anomalies = true_anomalies if use_true else false_anomalies
-        weekdays = true_weekdays if use_true else false_weekdays
+        dates = true_dates if use_corrected_dates else false_dates
+        anomalies = true_anomalies if use_corrected_dates else false_anomalies
+        weekdays = true_weekdays if use_corrected_dates else false_weekdays
 
         # remove anomalies
         mask = dates.isin(anomalies)
@@ -341,9 +346,15 @@ class Traffic(Dataset):
         mismatches = labels[self.invperm].map(weekdays) != dates.day_name()
         assert len(dates[mismatches]) == 0, "Mismatches in label and date weekday!"
 
-        PEMS.reset_index().to_feather(self.dataset_paths["timeseries"])
-        labels = DataFrame(labels).reset_index()
-        labels.to_feather(self.dataset_paths["labels"])
+        PEMS = PEMS.reset_index()
+
+        PEMS["time"] = PEMS["day"] + PEMS["time"]
+        PEMS = PEMS.drop(columns="day")
+        PEMS = PEMS.set_index("time")
+        PEMS = PEMS.astype("float32")
+        PEMS.columns = PEMS.columns.astype("string")
+        PEMS.to_parquet(self.dataset_paths["timeseries"], compression="gzip")
+        DataFrame(labels).to_parquet(self.dataset_paths["labels"], compression="gzip")
 
     def _clean_randperm(self):
         with ZipFile(self.rawdata_paths) as files:
@@ -359,5 +370,8 @@ class Traffic(Dataset):
                 invperm = randperm.copy().argsort()
                 invperm.name = "invperm"
                 assert (randperm[invperm] == np.arange(len(randperm))).all()
-        DataFrame(randperm).to_feather(self.dataset_paths["randperm"])
-        DataFrame(invperm).to_feather(self.dataset_paths["invperm"])
+
+        DataFrame(randperm).to_parquet(
+            self.dataset_paths["randperm"], compression="gzip"
+        )
+        DataFrame(invperm).to_parquet(self.dataset_paths["invperm"], compression="gzip")
