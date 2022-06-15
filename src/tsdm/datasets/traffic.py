@@ -360,7 +360,6 @@ class Traffic(MultiFrameDataset):
                 invperm = randperm.copy().argsort()
                 invperm.name = "invperm"
                 assert (randperm[invperm] == np.arange(len(randperm))).all()
-        DataFrame(randperm).to_parquet(
-            self.dataset_paths["randperm"], compression="gzip"
-        )
-        DataFrame(invperm).to_parquet(self.dataset_paths["invperm"], compression="gzip")
+
+        randperm.to_parquet(self.dataset_paths["randperm"], compression="gzip")
+        invperm.to_parquet(self.dataset_paths["invperm"], compression="gzip")

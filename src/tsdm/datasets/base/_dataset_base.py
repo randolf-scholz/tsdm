@@ -342,7 +342,14 @@ class MultiFrameDataset(BaseDataset, Mapping, Generic[KeyType]):
 
     def _load(self, key: KeyType) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
-        return pandas.read_parquet(self.dataset_paths[key])
+        path = self.dataset_paths[key]
+        file_type = path.suffix
+
+        if hasattr(pandas, f"read_{file_type}"):
+            pandas_loader = getattr(pandas, f"read_{file_type}")
+            return pandas_loader(path)
+
+        raise NotImplementedError(f"No loader for {file_type=}")
 
     @abstractmethod
     def _clean(self, key: KeyType) -> DATASET_OBJECT | None:
