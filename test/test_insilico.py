@@ -36,14 +36,14 @@ def test_attributes():
     ds = InSilicoData()
     base_attrs = copy(set(dir(ds)))
     attrs = {
+        "BASE_URL",
+        "RAWDATA_DIR",
+        "DATASET_DIR",
         "clean",
         "dataset",
         "dataset_files",
-        "dataset_dir",
         "download",
         "load",
-        "rawdata_dir",
-        "base_url",
     }
 
     assert attrs <= base_attrs, f"{attrs - base_attrs} missing!"
