@@ -162,11 +162,13 @@ __all__ = [
     "Physionet2019",
 ]
 
-import pickle
+from functools import cached_property
 from pathlib import Path
 from zipfile import ZipFile
 
-from pandas import DataFrame, HDFStore, read_csv, read_hdf
+import pandas as pd
+from pandas import DataFrame
+from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import SingleFrameDataset
 
@@ -200,132 +202,113 @@ class Physionet2019(SingleFrameDataset):
     """
 
     BASE_URL: str = r"https://archive.physionet.org/users/shared/challenge-2019/"
-    r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL: str = r"https://physionet.org/content/challenge-2019/1.0.0/"
-    r"""HTTP address containing additional information about the dataset."""
-    rawdata_files = {"A": "training_setA.zip", "B": "training_setB.zip"}
-    dataset_files = "Physionet2019.h5"
+    r"""HTTP address from where the dataset can be downloaded"""
+    INFO_URL: str = r"https://physionet.org/content/challenge-2019/"
+    r"""HTTP address containing additional information about the dataset"""
 
-    @property
-    def rawdata_paths(self) -> dict[str, Path]:
-        r"""Absolute paths to the raw data files."""
-        return {
-            key: self.RAWDATA_DIR / path for key, path in self.rawdata_files.items()
-        }
+    rawdata_files: dict[str, str] = {"A": "training_setA.zip", "B": "training_setB.zip"}
+    rawdata_paths: dict[str, Path]
 
-    @property
-    def index(self) -> list:
-        r"""Return the index of the dataset."""
-        return []
-
-    def _clean(self, store="hdf"):
-        r"""Create a file representation of pandas dataframes representing the tables.
-
-        The groups are A and B, the subgroups are the ids of the patients.
-
-        The default is HDF5 (store='hdf'),  but in the case of this dataset it is
-        much faster to pickle a dictionary of pandas data frames (store='pickle')
-        In order not to change the package I override the signature in this module
-        only.
-        """
-        dtypes = {
+    @cached_property
+    def units(self) -> DataFrame:
+        r"""Metadata for each unit."""
+        _units = [
             # Vital signs (columns 1-8)
-            "HR": None,  # Heart rate (beats per minute)
-            "O2Sat": None,  # Pulse oximetry (%)
-            "Temp": None,  # Temperature (Deg C)
-            "SBP": None,  # Systolic BP (mm Hg)
-            "MAP": None,  # Mean arterial pressure (mm Hg)
-            "DBP": None,  # Diastolic BP (mm Hg)
-            "Resp": None,  # Respiration rate (breaths per minute)
-            "EtCO2": None,  # End tidal carbon dioxide (mm Hg)
+            ("HR", "Heart rate", "beats per minute"),
+            ("O2Sat", "Pulse oximetry", "%"),
+            ("Temp", "Temperature", "Deg C"),
+            ("SBP", "Systolic BP", "mm Hg"),
+            ("MAP", "Mean arterial pressure", "mm Hg"),
+            ("DBP", "Diastolic BP", "mm Hg"),
+            ("Resp", "Respiration rate", "breaths per minute"),
+            ("EtCO2", "End tidal carbon dioxide", "mm Hg"),
             # Laboratory values (columns 9-34)
-            "BaseExcess": None,  # Measure of excess bicarbonate (mmol/L)
-            "HCO3": None,  # Bicarbonate (mmol/L)
-            "FiO2": None,  # Fraction of inspired oxygen (%)
-            "pH": None,  # N/A
-            "PaCO2": None,  # Partial pressure of carbon dioxide from arterial blood (mm Hg)
-            "SaO2": None,  # Oxygen saturation from arterial blood (%)
-            "AST": None,  # Aspartate transaminase (IU/L)
-            "BUN": None,  # Blood urea nitrogen (mg/dL)
-            "Alkalinephos": None,  # Alkaline phosphatase (IU/L)
-            "Calcium": None,  # (mg/dL)
-            "Chloride": None,  # (mmol/L)
-            "Creatinine": None,  # (mg/dL)
-            "Bilirubin_direct": None,  # Bilirubin direct (mg/dL)
-            "Glucose": None,  # Serum glucose (mg/dL)
-            "Lactate": None,  # Lactic acid (mg/dL)
-            "Magnesium": None,  # (mmol/dL)
-            "Phosphate": None,  # (mg/dL)
-            "Potassium": None,  # (mmol/L)
-            "Bilirubin_total": None,  # Total bilirubin (mg/dL)
-            "TroponinI": None,  # Troponin I (ng/mL)
-            "Hct": None,  # Hematocrit (%)
-            "Hgb": None,  # Hemoglobin (g/dL)
-            "PTT": None,  # partial thromboplastin time (seconds)
-            "WBC": None,  # Leukocyte count (count*10^3/µL)
-            "Fibrinogen": None,  # (mg/dL)
-            "Platelets": None,  # (count*10^3/µL)
+            ("BaseExcess", "Measure of excess bicarbonate", "mmol/L"),
+            ("HCO3", "Bicarbonate", "mmol/L"),
+            ("FiO2", "Fraction of inspired oxygen", "%"),
+            ("pH", "N/A", "N/A"),
+            (
+                "PaCO2",
+                "Partial pressure of carbon dioxide from arterial blood",
+                "mm Hg",
+            ),
+            ("SaO2", "Oxygen saturation from arterial blood", "%"),
+            ("AST", "Aspartate transaminase", "IU/L"),
+            ("BUN", "Blood urea nitrogen", "mg/dL"),
+            ("Alkalinephos", "Alkaline phosphatase", "IU/L"),
+            ("Calcium", "N/A", "mg/dL"),
+            ("Chloride", "N/A", "mmol/L"),
+            ("Creatinine", "N/A", "mg/dL"),
+            ("Bilirubin_direct", "Bilirubin direct", "mg/dL"),
+            ("Glucose", "Serum glucose", "mg/dL"),
+            ("Lactate", "Lactic acid", "mg/dL"),
+            ("Magnesium", "N/A", "mmol/dL"),
+            ("Phosphate", "N/A", "mg/dL"),
+            ("Potassium", "N/A", "mmol/L"),
+            ("Bilirubin_total", "Total bilirubin", "mg/dL"),
+            ("TroponinI", "Troponin I", "ng/mL"),
+            ("Hct", "Hematocrit", "%"),
+            ("Hgb", "Hemoglobin", "g/dL"),
+            ("PTT", "partial thromboplastin time", "seconds"),
+            ("WBC", "Leukocyte count", "count*10^3/µL"),
+            ("Fibrinogen", "N/A", "mg/dL"),
+            ("Platelets", "N/A", "count*10^3/µL"),
             # Demographics (columns 35-40)
-            "Age": None,  # Years (100 for patients 90 or above)
-            "Gender": None,  # Female (0) or Male (1)
-            "Unit1": None,  # Administrative identifier for ICU unit (MICU)
-            "Unit2": None,  # Administrative identifier for ICU unit (SICU)
-            "HospAdmTime": None,  # Hours between hospital admit and ICU admit
-            "ICULOS": None,  # ICU length-of-stay (hours since ICU admit)
+            ("Age", "Years (100 for patients 90 or above)"),
+            ("Gender", "Female (0) or Male (1)", "N/A"),
+            ("Unit1", "Administrative identifier for ICU unit", "MICU"),
+            ("Unit2", "Administrative identifier for ICU unit", "SICU"),
+            ("HospAdmTime", "Hours between hospital admit and ICU admit", "N/A"),
+            ("ICULOS", "ICU length-of-stay (hours since ICU admit)", "N/A"),
             # Outcome (column 41)
-            # For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6
-            # and 0 if t<tsepsis−6. For non-sepsis patients, SepsisLabel is 0.
-            "SepsisLabel": None,
+            (
+                "SepsisLabel",
+                "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and 0 if t<tsepsis−6. "
+                "For non-sepsis patients, SepsisLabel is 0.",
+                "N/A",
+            ),
+        ]
+
+        units = DataFrame(
+            _units, columns=["variable", "description", "unit"], dtype="string"
+        )
+        units = units.replace("N/A", pd.NA)
+        units = units.set_index("variable")
+
+        dtypes = {key: "Float32" for key in units.index} | {
+            "Gender": "boolean",
+            "Unit1": "boolean",
+            "Unit2": "boolean",
+            "ICULOS": "Int32",
+            "SepsisLabel": "boolean",
         }
 
-        print(dtypes)
+        units["dtype"] = pd.Series(dtypes)
+        return units
 
-        if store == "hdf":
-            h5file = HDFStore(self.dataset_files)
-            for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
-                with ZipFile(self.RAWDATA_DIR.joinpath(fname + ".zip")) as zipfile:
-                    print("cleaning " + fname)
-                    for zi in zipfile.infolist():
-                        with zipfile.open(zi) as zf:
-                            if zf.name.endswith("psv"):
-                                df = read_csv(zf, sep="|")
-                                group_name = zf.name.split(".")[-2].split("/")[1]
-                                h5file.put(f"/{prefix}/{group_name}", df)
-        elif store == "pickle":
-            df_dict: dict[str, DataFrame] = {}
-            dataset_file = self.dataset_paths.with_suffix(".pickle")
-            for fname, prefix in [("training_setA", "A"), ("training_setB", "B")]:
-                with ZipFile(self.RAWDATA_DIR.joinpath(fname + ".zip")) as zipfile:
-                    print("cleaning " + fname)
-                    for zi in zipfile.infolist():
-                        with zipfile.open(zi) as zf:
-                            if zf.name.endswith("psv"):
-                                df = read_csv(zf, sep="|")
-                                group_name = zf.name.split(".")[-2].split("/")[1]
-                                df_dict[f"/{prefix}/{group_name}"] = df
+    def _get_frame(self, path: Path) -> DataFrame:
+        with ZipFile(path) as archive, tqdm(archive.namelist()) as progress_bar:
+            frames = {}
+            progress_bar.set_description(f"Loading patient data {path.stem}")
 
-            with open(dataset_file, "wb") as f:
-                pickle.dump(df_dict, f)
-        else:
-            raise Exception("store ", store, "not supported")
+            for compressed_file in progress_bar:
+                path = Path(compressed_file)
+                name = path.stem[1:]
+                if not path.suffix == ".psv":
+                    continue
+                with archive.open(compressed_file) as file:
+                    df = pd.read_csv(file, sep="|", header=0)
+                    frames[name] = df
 
-    def _load(self, store: str = "hdf") -> DataFrame:
-        r"""Load the dataset from file.
+        self.LOGGER.info("Concatenating DataFrames")
+        frame = pd.concat(frames, names=["patient", "time"])
+        frame = frame.astype(self.units["dtype"])
+        frame.columns.name = "variable"
+        return frame
 
-        Default is HDF5 (store='hdf'), but in our case store='pickle' is faster.
-        """
-        if store == "hdf":
-            with HDFStore(self.dataset_paths) as file:
-                read_dfs = {}
-                for root, _, files in file.walk():
-                    for fn in files:
-                        key = f"{root}/{fn}"
-                        read_dfs[key] = read_hdf(file, key=key)
-        elif store == "pickle":
-            dataset_file = self.dataset_paths.with_suffix(".pickle")
-            with open(dataset_file, "rb") as f:
-                read_dfs = pickle.load(f)
-        else:
-            raise Exception("store ", store, "not supported")
-
-        return read_dfs
+    def _clean(self) -> DataFrame:
+        frames = {
+            key: self._get_frame(path) for key, path in self.rawdata_paths.items()
+        }
+        frame = pd.concat(frames, names=["set"])
+        return frame
