@@ -366,7 +366,7 @@ class Traffic(MultiFrameDataset):
                     names=["randperm"],
                     dtype="uint16",
                 ).squeeze()
-                randperm = randperm - 1  # we use 0-based indexing
+                randperm -= 1  # we use 0-based indexing
                 invperm = randperm.copy().argsort()
                 invperm.name = "invperm"
                 assert (randperm[invperm] == np.arange(len(randperm))).all()
