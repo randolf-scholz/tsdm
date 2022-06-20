@@ -46,7 +46,7 @@ def cumulative_or(x: Tensor, dim: Union[None, int] = None) -> Tensor:
 @jit.script
 def aggregate_and(
     x: Tensor,
-    dim: Union[None, int, list[int]] = None,
+    dim: Union[None, int, list[int], Tensor] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``AND`` across dim."""
@@ -56,6 +56,14 @@ def aggregate_and(
         dims = [dim]
     else:
         dims = dim
+
+    if isinstance(dims, Tensor):
+        if keepdim:
+            for d in dims:
+                x = torch.all(x, dim=d, keepdim=keepdim)
+        else:
+            for i, d in enumerate(dims):
+                x = torch.all(x, dim=d - i, keepdim=keepdim)
 
     if keepdim:
         for d in dims:
@@ -70,7 +78,7 @@ def aggregate_and(
 @jit.script
 def aggregate_or(
     x: Tensor,
-    dim: Union[None, int, list[int]] = None,
+    dim: Union[None, int, list[int], Tensor] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``OR`` across dim."""
