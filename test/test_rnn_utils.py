@@ -1,8 +1,6 @@
 #!usr/bin/env python
 r"""Test RNN utils."""
 
-from typing import Optional
-
 import torch
 from pytest import mark
 from torch import Tensor
