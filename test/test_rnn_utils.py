@@ -1,4 +1,4 @@
-#!usr/bin/env python
+#!/usr/bin/env python
 r"""Test RNN utils."""
 
 import torch

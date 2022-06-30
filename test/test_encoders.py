@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 r"""Test converters to masked format etc."""
 
 import logging

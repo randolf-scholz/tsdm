@@ -1,7 +1,5 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+#!/usr/bin/env python
+r"""Test the standardizer encoder."""
 
 import logging
 
@@ -55,3 +53,7 @@ def test_standardizer(Encoder):
     # decoded = encoder.decode(encoded)
     # assert np.allclose(X, decoded)
     # assert encoder.param[0].shape == (2, 3)
+
+
+if __name__ == "__main__":
+    test_standardizer()

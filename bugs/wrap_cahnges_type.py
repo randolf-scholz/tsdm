@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+#!/usr/bin/env python
 
 from collections.abc import Callable
 from functools import wraps
