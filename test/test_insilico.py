@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 r"""Testing of Electricity dataset, as a token for the whole BaseDataset architecture."""
 
 import logging

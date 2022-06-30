@@ -1,7 +1,5 @@
-r"""#TODO add module summary line.
+#!/usr/bin/env python
 
-#TODO add module description.
-"""
 
 import logging
 

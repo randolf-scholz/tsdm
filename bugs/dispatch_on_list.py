@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from collections.abc import Sequence
 from functools import singledispatch
 from typing import Union
