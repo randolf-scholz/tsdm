@@ -18,12 +18,12 @@ variables:
   MODULEDIR: "src/tsdm"
   MODULENAME: tsdm
   TESTDIR: test
-  POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pypoetry"
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
-  PYTEST_CACHE_DIR: "${CI_PROJECT_DIR}/.pytest_cache"
+  POETRY_CACHE_DIR: ".cache/pypoetry"
+  PIP_CACHE_DIR: ".cache/pip"
+  MYPY_CACHE_DIR: ".mypy_cache"
+  PYTEST_CACHE_DIR: ".pytest_cache"
   VENVNAME: ".venv"
-  VENV_DIR: "${CI_PROJECT_DIR}/${VENVNAME}"
+  VENV_DIR: ".venv"
   TWINE_PASSWORD: "${CI_JOB_TOKEN}"
   TWINE_USERNAME: gitlab-ci-token
   TWINE_REPOSITORY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi"
