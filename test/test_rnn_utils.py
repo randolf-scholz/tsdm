@@ -14,9 +14,9 @@ __logger__ = logging.getLogger(__name__)
 
 
 TESTCASES = [
-    [torch.randn(abs(n - 3)) for n in range(6)],
-    # [torch.randn(abs(n - 3), 2) for n in range(6)],
-    # [torch.randn(abs(n - 3), 2, 3) for n in range(6)],
+    # [torch.randn(abs(n - 3)) for n in range(6)],  #FIXME: github.com/pytorch/pytorch/issues/80605
+    [torch.randn(abs(n - 3), 2) for n in range(6)],
+    [torch.randn(abs(n - 3), 2, 3) for n in range(6)],
 ]
 
 
@@ -71,7 +71,8 @@ def test_unpad_sequence_nan(tensors: list[Tensor]) -> None:
     for i, t in enumerate(tensors):
         if len(t) > 0:
             tensors[i][0] = padding_value
-
+    print(tensors)
+    # if len(tensors)
     padded_seq = pad_sequence(tensors, batch_first=True, padding_value=padding_value)
     unpadded = unpad_sequence(padded_seq, batch_first=True, padding_value=padding_value)
 
