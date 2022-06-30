@@ -98,7 +98,7 @@ FunctionalActivations: Final[dict[str, FunctionalActivation]] = {
     "group_norm": F.group_norm,
     # Applies Group Normalization for last certain number of dimensions.
     "instance_norm": F.instance_norm,
-    # Applies Instance Normalization for each channel in each data sample in a batch.  # noqa
+    # Applies Instance Normalization for each channel in each data sample in a batch.
     "layer_norm": F.layer_norm,
     # Applies Layer Normalization for last certain number of dimensions.
     "local_response_norm": F.local_response_norm,

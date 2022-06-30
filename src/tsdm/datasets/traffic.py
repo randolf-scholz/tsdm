@@ -45,7 +45,7 @@ Relevant Papers
 ---------------
 
 M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference on Machine Learning 2011.
-"""  # pylint: disable=line-too-long # noqa
+"""  # pylint: disable=line-too-long # noqa: E501
 
 __all__ = ["Traffic"]
 
@@ -80,7 +80,7 @@ class Traffic(MultiFrameDataset):
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**           | Classification            | **Missing Values?**       | N/A    | **Number of Web Hits:** | 79749      |
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
-    """  # pylint: disable=line-too-long # noqa
+    """  # pylint: disable=line-too-long # noqa: E501
 
     BASE_URL: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
     r"""HTTP address from where the dataset can be downloaded."""

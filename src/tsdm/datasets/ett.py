@@ -24,7 +24,7 @@ class ETT(MultiFrameDataset):
     +=============+===================+==================+===================+====================+=====================+=================+==================+==========================+
     | Description | The recorded date | High UseFul Load | High UseLess Load | Middle UseFul Load | Middle UseLess Load | Low UseFul Load | Low UseLess Load | Oil Temperature (target) |
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
-    """  # pylint: disable=line-too-long # noqa
+    """  # pylint: disable=line-too-long # noqa: E501
 
     BASE_URL: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
