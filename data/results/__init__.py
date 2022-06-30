@@ -1,7 +1,4 @@
-r"""Module Summary Line.
-
-Module description
-"""  # pylint: disable=line-too-long # noqa
+r"""Contains results."""
 
 from __future__ import annotations
 

@@ -434,7 +434,7 @@ autodoc_typehints = "signature"
 autodoc_typehints_description_target = "documented"
 # This value controls whether the types of undocumented parameters and return values are
 # documented when autodoc_typehints is set to description. The default value is "all", meaning that
-# types are documented for all parameters and return values, whether they are documented or not.
+# the types are documented for all parameters and return values, whether they are documented or not.
 # When set to "documented", types will only be documented for a parameter or a return value that is
 # already documented by the docstring.
 
