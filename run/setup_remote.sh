@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo -e "\n" "Current remotes:"
 git remote -v
 
