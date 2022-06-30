@@ -65,7 +65,7 @@ setup:
     - pip install --upgrade pip setuptools wheel
     # - pip install --upgrade --only-binary ":all:" modin[ray]
   script:
-    # We first build the package and then install it. Finally we install the dev dependencies.
+    # We first build the package and then install it. Finally, we install the dev dependencies.
     # This makes sure that the package can be built and installed.
     # build and install package
     # set version number depending on CI_PIPELINE_ID
@@ -247,7 +247,7 @@ pytest:
     - setup
   script:
     - pytest --junitxml=reports/pytest.xml --cov=$MODULENAME $TESTDIR --reruns 3 --only-rerun AssertionError
-    - coverage xml -o reports/coverage.xml
+    - coverage xml -o reports/cobertura-coverage.xml
     - coverage report
   after_script:
     - source ${VENVNAME}/bin/activate
@@ -265,7 +265,9 @@ pytest:
   artifacts:
     # https://software.ismll.uni-hildesheim.de/help/ci/unit_test_reports
     reports:
-      cobertura: reports/coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: reports/cobertura-coverage.xml
       junit: reports/pytest.xml
     paths:
       - badges/
