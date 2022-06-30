@@ -457,7 +457,7 @@ def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
     assert issubclass(base_class, nn.Module)
 
     @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type: ignore  # pylint: disable=too-few-public-methods
+    class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
         r"""A simple Wrapper."""
 
         def __new__(cls, *args: Any, **kwargs: Any) -> nnModuleType:  # type: ignore[misc]

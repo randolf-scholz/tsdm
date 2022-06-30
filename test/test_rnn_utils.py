@@ -8,15 +8,15 @@ from torch.nn.utils.rnn import pack_sequence, pad_sequence
 
 from tsdm.util.dataloaders import unpack_sequence, unpad_sequence
 
-test_cases = [
+TESTCASES = [
     [torch.randn(abs(n - 3)) for n in range(6)],
     # [torch.randn(abs(n - 3), 2) for n in range(6)],
     # [torch.randn(abs(n - 3), 2, 3) for n in range(6)],
 ]
 
 
-@mark.parametrize("tensors", test_cases)
-def test_unpack_sequence(tensors: list[Tensor]):
+@mark.parametrize("tensors", TESTCASES)
+def test_unpack_sequence(tensors: list[Tensor]) -> None:
     r"""Test if `unpack_sequence` is inverse to `torch.nn.utils.rnn.pack_sequence`."""
     tensors = [t for t in tensors if len(t) > 0]
 
@@ -29,11 +29,11 @@ def test_unpack_sequence(tensors: list[Tensor]):
         assert torch.all(x == y)
 
 
-@mark.parametrize("tensors", test_cases)
+@mark.parametrize("tensors", TESTCASES)
 def test_unpad_lengths(tensors: list[Tensor]) -> None:
     r"""Test if `test_unpad` is inverse to `torch.nn.utils.rnn.pad_sequence`."""
     padding_value = float("nan")
-    lengths = [len(t) for t in tensors]
+    lengths = torch.tensor([len(t) for t in tensors], dtype=torch.int32)
 
     for i, t in enumerate(tensors):
         if len(t) > 0:
@@ -51,7 +51,7 @@ def test_unpad_lengths(tensors: list[Tensor]) -> None:
         assert torch.all(x[~mask_x] == y[~mask_y])
 
 
-@mark.parametrize("tensors", test_cases)
+@mark.parametrize("tensors", TESTCASES)
 def test_unpad_sequence_nan(tensors: list[Tensor]) -> None:
     r"""Test if `test_unpad` is inverse to `torch.nn.utils.rnn.pad_sequence`."""
     padding_value = float("nan")
@@ -72,7 +72,7 @@ def test_unpad_sequence_nan(tensors: list[Tensor]) -> None:
         assert torch.all(x[~mask_x] == y[~mask_y])
 
 
-@mark.parametrize("tensors", test_cases)
+@mark.parametrize("tensors", TESTCASES)
 def test_unpad_sequence_float(tensors: list[Tensor]) -> None:
     r"""Test if `test_unpad` is inverse to `torch.nn.utils.rnn.pad_sequence`."""
     padding_value = 0.0
@@ -95,6 +95,7 @@ def test_unpad_sequence_float(tensors: list[Tensor]) -> None:
 
 if __name__ == "__main__":
     # main program
-    test_unpack_sequence()
-    test_unpad_sequence_nan()
-    test_unpad_sequence_float()
+    for tensors in TESTCASES:
+        test_unpack_sequence(tensors)
+        test_unpad_sequence_nan(tensors)
+        test_unpad_sequence_float(tensors)

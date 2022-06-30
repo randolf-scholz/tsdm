@@ -162,10 +162,10 @@ class ETDatasetTask_Informer(BaseTask):
     def splits(self) -> Mapping[KeyType, DataFrame]:
         r"""Split the dataset into train, test and validation."""
         _splits: dict[Any, DataFrame] = {
-            "train": self.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore
-            "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore
-            "joint": self.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore
-            "trial": self.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore
+            "train": self.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore[misc]
+            "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore[misc]
+            "joint": self.dataset.loc["2016-07-01":"2017-10-31"],  # type: ignore[misc]
+            "trial": self.dataset.loc["2017-11-01":"2018-02-28"],  # type: ignore[misc]
             "whole": self.dataset,
         }
         _splits["test"] = _splits["trial"]  # alias
