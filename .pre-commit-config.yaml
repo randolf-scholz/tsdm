@@ -1,37 +1,62 @@
-exclude: \.idea/
+exclude: (\.idea/|\docs/_build/|\.git/|\.venv/)
 default_language_version:
   python: python3.9
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
-    rev: v4.2.0
+    rev: v4.3.0
     hooks:
-      - id: check-ast
-        description: "simply checks whether the files parse as valid python."
-      - id: check-yaml
-        description: "checks yaml files for parseable syntax."
-      - id: check-toml
-        description: "checks toml files for parseable syntax."
-      - id: check-json
-        description: "checks json files for parseable syntax."
-      - id: pretty-format-json
-        description: "sets a standard for formatting json files."
       - id: check-added-large-files
         description: "prevents giant files from being committed."
+      - id: check-ast
+        description: "simply checks whether the files parse as valid python."
       - id: check-builtin-literals
         description: "requires literal syntax when initializing empty or zero python builtin types."
+      - id: check-json
+        description: "checks json files for parseable syntax."
+      - id: check-executables-have-shebangs
+        description: "ensures that (non-binary) executables have a shebang."
+      - id: check-shebang-scripts-are-executable
+        description: "ensures that (non-binary) files with a shebang are executable."
+      - id: check-symlinks
+        description: "checks for symlinks which do not point to anything."
+      - id: check-toml
+        description: "checks toml files for parseable syntax."
+      - id: check-xml
+        description: "checks xml files for parseable syntax."
+      - id: check-yaml
+        description: "checks yaml files for parseable syntax."
+      - id: pretty-format-json
+        description: "sets a standard for formatting json files."
       - id: end-of-file-fixer
         description: "ensures that a file is either empty, or ends with one newline."
       - id: trailing-whitespace
         description: "trims trailing whitespace.."
+      - id: requirements-txt-fixer
+        description: "sorts entries in requirements.txt"
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: "v1.9.0" # Use the ref you want to point at
+    hooks:
+      - id: python-check-blanket-noqa
+        description: "Enforce that `noqa` annotations always occur with specific codes. Sample annotations: `# noqa: F401`, `# noqa: F401,W203`"
+      - id: python-check-blanket-type-ignore
+        description: "Enforce that `type: ignore` annotations always occur with specific codes. Sample annotations: `# type: ignore`, `# type: ignore,W203`"
+      - id: python-no-eval
+        description: "Enforce that `eval` is not used."
+      - id: python-use-type-annotations
+        description: "Enforce that type annotations are used."
+      - id: rst-directive-colons
+        description: "Enforce that RST directives have colons."
+      - id: rst-inline-touching-normal
+        description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v2.6.2" # Use the sha or tag you want to point at
+    rev: "v2.7.1" # Use the sha or tag you want to point at
     hooks:
       - id: prettier
   # black
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 22.6.0
     hooks:
       - id: black
       - id: black-jupyter
@@ -45,7 +70,7 @@ repos:
     rev: 4.0.1
     hooks:
       - id: flake8
-        files: (^src/|^tests/)
+        files: (^src/|^test/)
         additional_dependencies:
           - flake8-annotations
           - flake8-black
@@ -71,7 +96,7 @@ repos:
     rev: 6.1.1
     hooks:
       - id: pydocstyle
-        files: (^src/|^tests/)
+        files: (^src/|^test/)
         additional_dependencies:
           - toml
   # mypy
@@ -79,7 +104,7 @@ repos:
   #    rev: v0.941
   #    hooks:
   #    - id: mypy
-  #      files: (^src/|^tests/)
+  #      files: (^src/|^test/)
   #      args:
   #      -   --warn-unused-configs
   #      -   --ignore-missing-imports
