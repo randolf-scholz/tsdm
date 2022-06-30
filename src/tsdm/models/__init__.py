@@ -1,4 +1,10 @@
-r"""Implementation / loading mechanism for models."""
+r"""Implementation / loading mechanism for models.
+
+There are two types of models:
+
+- Core models: These consist of only a a pytorch/tensorflow/mxnet/jax model class.
+- Extended models: These consist of a core model and an encoder.
+"""
 
 __all__ = [
     # Sub-Packages
