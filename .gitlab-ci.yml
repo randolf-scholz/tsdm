@@ -44,11 +44,11 @@ setup:
   cache:
     - key: package_cache
       paths:
-        - "${PIP_CACHE_DIR}"
-        - "${POETRY_CACHE_DIR}"
+        - "$PIP_CACHE_DIR"
+        - "$POETRY_CACHE_DIR"
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: push
   before_script:
     # Check kernel and python version
@@ -123,7 +123,7 @@ pylint:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
   needs:
     - setup
@@ -163,7 +163,7 @@ flake8:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
   needs:
     - setup
@@ -199,10 +199,10 @@ mypy:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
     - key: mypy
       paths:
-        - "${MYPY_CACHE_DIR}"
+        - "$MYPY_CACHE_DIR"
   needs:
     - setup
   allow_failure: true
@@ -238,11 +238,11 @@ pytest:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
     - key: pytest
       paths:
-        - "${PYTEST_CACHE_DIR}"
+        - "$PYTEST_CACHE_DIR"
   needs:
     - setup
   script:
@@ -282,7 +282,7 @@ pypi:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
   needs:
     - setup
@@ -314,7 +314,7 @@ pages:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
   needs:
     - setup
