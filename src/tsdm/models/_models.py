@@ -115,13 +115,11 @@ class PreTrainedModel(ABC):
 
     @abstractmethod
     def download(self) -> None:
-        ...
+        r"""Download the model."""
 
     @abstractmethod
     def forward(self):
         r"""Give the model output given encoded data."""
-        ...
 
     def predict(self):
         r"""Wrap the forward with encode and decode."""
-        ...
