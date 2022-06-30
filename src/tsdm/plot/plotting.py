@@ -185,19 +185,19 @@ def shared_grid_plot(
 
     # set axes titles
     if titles is not None:
-        # for ax, title in np.nditer([axes, titles]):  # type: ignore
+        # for ax, title in np.nditer([axes, titles]):
         for ax, title in zip(axes.flat, np.asarray(titles).flat):
             ax.set_title(title)
 
     # set axes x-labels
     if xlabels is not None:
-        # for ax, xlabel in np.nditer([axes[-1], xlabels], flags=["refs_ok"]):  # type: ignore
+        # for ax, xlabel in np.nditer([axes[-1], xlabels], flags=["refs_ok"]):
         for ax, xlabel in zip(axes[-1], np.asarray(xlabels).flat):
             ax.item().set_xlabel(xlabel)
 
     # set axes y-labels
     if ylabels is not None:
-        # for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=["refs_ok"]):  # type: ignore
+        # for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=["refs_ok"]):
         for ax, ylabel in zip(axes[:, 0], np.asarray(ylabels).flat):
             ax.item().set_ylabel(ylabel)
 
