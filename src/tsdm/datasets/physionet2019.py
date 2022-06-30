@@ -294,7 +294,7 @@ class Physionet2019(SingleFrameDataset):
             for compressed_file in progress_bar:
                 path = Path(compressed_file)
                 name = path.stem[1:]
-                if not path.suffix == ".psv":
+                if path.suffix != ".psv":
                     continue
                 with archive.open(compressed_file) as file:
                     df = pd.read_csv(file, sep="|", header=0)
