@@ -30,9 +30,7 @@ variables:
 
 # global before_script is run before each and every job.
 before_script:
-  - mkdir -p public
-  - mkdir -p reports
-  - mkdir -p badges
+  - mkdir -p $MAIN_CACHE public reports badges
   - source ${VENVNAME}/bin/activate
 
 ################
@@ -50,6 +48,7 @@ setup:
         - "$VENV_DIR"
       policy: push
   before_script:
+    - mkdir -p $MAIN_CACHE public reports badges
     - echo "${CI_RUNNER_ID}"
     - echo "${CI_RUNNER_TAGS}"
     - du -h --max-depth=1 "${CI_PROJECT_DIR}/.cache"
