@@ -138,6 +138,7 @@
       <w>junninen</w>
       <w>kaiming</w>
       <w>kazemi</w>
+      <w>keepdim</w>
       <w>keepdims</w>
       <w>kmax</w>
       <w>kmin</w>
@@ -320,6 +321,7 @@
       <w>unindent</w>
       <w>univariate</w>
       <w>unpad</w>
+      <w>unpadded</w>
       <w>unshuffle</w>
       <w>unsqueeze</w>
       <w>upack</w>

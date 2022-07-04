@@ -18,7 +18,7 @@ variables:
   MODULEDIR: "src/tsdm"
   MODULENAME: tsdm
   TESTDIR: test
-  POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pypoetry"
+  MAIN_CACHE: "$CI_PROJECT_DIR/.cache"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
   PYTEST_CACHE_DIR: "${CI_PROJECT_DIR}/.pytest_cache"
@@ -44,13 +44,15 @@ setup:
   cache:
     - key: package_cache
       paths:
-        - "${PIP_CACHE_DIR}"
-        - "${POETRY_CACHE_DIR}"
+        - "$MAIN_CACHE"
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: push
   before_script:
+    - echo "${CI_RUNNER_ID}"
+    - echo "${CI_RUNNER_TAGS}"
+    - du -h --max-depth=1 "${CI_PROJECT_DIR}/.cache"
     # Check kernel and python version
     - uname -a
     - python -V
@@ -65,7 +67,7 @@ setup:
     - pip install --upgrade pip setuptools wheel
     # - pip install --upgrade --only-binary ":all:" modin[ray]
   script:
-    # We first build the package and then install it. Finally we install the dev dependencies.
+    # We first build the package and then install it. Finally, we install the dev dependencies.
     # This makes sure that the package can be built and installed.
     # build and install package
     # set version number depending on CI_PIPELINE_ID
@@ -123,7 +125,7 @@ pylint:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
   needs:
     - setup
@@ -163,7 +165,7 @@ flake8:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
   needs:
     - setup
@@ -199,10 +201,10 @@ mypy:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
     - key: mypy
       paths:
-        - "${MYPY_CACHE_DIR}"
+        - "$MYPY_CACHE_DIR"
   needs:
     - setup
   allow_failure: true
@@ -238,16 +240,16 @@ pytest:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
     - key: pytest
       paths:
-        - "${PYTEST_CACHE_DIR}"
+        - "$PYTEST_CACHE_DIR"
   needs:
     - setup
   script:
     - pytest --junitxml=reports/pytest.xml --cov=$MODULENAME $TESTDIR --reruns 3 --only-rerun AssertionError
-    - coverage xml -o reports/coverage.xml
+    - coverage xml -o reports/cobertura-coverage.xml
     - coverage report
   after_script:
     - source ${VENVNAME}/bin/activate
@@ -267,7 +269,7 @@ pytest:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: reports/coverage.xml
+        path: reports/cobertura-coverage.xml
       junit: reports/pytest.xml
     paths:
       - badges/
@@ -282,7 +284,7 @@ pypi:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
   needs:
     - setup
@@ -314,7 +316,7 @@ pages:
   cache:
     - key: venv
       paths:
-        - "${VENV_DIR}"
+        - "$VENV_DIR"
       policy: pull
   needs:
     - setup

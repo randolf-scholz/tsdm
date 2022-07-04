@@ -11,10 +11,20 @@ __all__ = [
     "DatasetCollection",
     "MappingDataset",
     # Functions
+    "aggregate_and",
+    "aggregate_or",
+    "cumulative_and",
+    "cumulative_or",
 ]
 
 import logging
 
+from tsdm.util.torch._utils import (
+    aggregate_and,
+    aggregate_or,
+    cumulative_and,
+    cumulative_or,
+)
 from tsdm.util.torch.generic import DatasetCollection, MappingDataset
 from tsdm.util.torch.timeseries import (
     IndexedArray,

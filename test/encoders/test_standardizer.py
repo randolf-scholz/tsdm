@@ -1,7 +1,5 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+#!/usr/bin/env python
+r"""Test the standardizer encoder."""
 
 import logging
 
@@ -15,7 +13,8 @@ __logger__ = logging.getLogger(__name__)
 
 @mark.parametrize("Encoder", (Standardizer, MinMaxScaler))
 def test_standardizer(Encoder):
-    """Check whether the Standardizer encoder works as expected."""
+    r"""Check whether the Standardizer encoder works as expected."""
+    __logger__.info("Testing %s started!", Encoder.__name__)
     X = np.random.rand(3)
     encoder = Encoder()
     encoder.fit(X)
@@ -55,3 +54,15 @@ def test_standardizer(Encoder):
     # decoded = encoder.decode(encoded)
     # assert np.allclose(X, decoded)
     # assert encoder.param[0].shape == (2, 3)
+
+    __logger__.info("Testing %s finished!", Encoder.__name__)
+
+
+def __main__():
+    logging.basicConfig(level=logging.INFO)
+    test_standardizer(Standardizer)
+    test_standardizer(MinMaxScaler)
+
+
+if __name__ == "__main__":
+    __main__()

@@ -68,8 +68,8 @@ def path_import(module_path: Path, module_name: str = None) -> ModuleType:
 
     with add_to_path(module_path):
         spec = spec_from_file_location(module_name, str(module_init))
-        the_module = module_from_spec(spec)  # type: ignore
-        spec.loader.exec_module(the_module)  # type: ignore
+        the_module = module_from_spec(spec)  # type: ignore[arg-type]
+        spec.loader.exec_module(the_module)  # type: ignore[union-attr]
         return the_module
 
 

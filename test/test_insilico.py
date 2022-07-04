@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 r"""Testing of Electricity dataset, as a token for the whole BaseDataset architecture."""
 
 import logging
@@ -59,13 +60,8 @@ def test_attributes():
 
 def __main__():
     logging.basicConfig(level=logging.INFO)
-    __logger__.info("Testing CACHING started!")
     test_caching()
-    __logger__.info("Testing CACHING finished!")
-
-    __logger__.info("Testing ATTRIBUTES started!")
     test_attributes()
-    __logger__.info("Testing ATTRIBUTES finished!")
 
 
 if __name__ == "__main__":
