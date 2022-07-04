@@ -3,20 +3,22 @@ r"""Physionet Challenge 2012.
 Physionet Challenge 2012 Data Set
 =================================
 
-The data used for the challenge consist of records from 12,000 ICU stays. All patients were adults who were admitted for
-a wide variety of reasons to cardiac, medical, surgical, and trauma ICUs. ICU stays of less than 48 hours have been
-excluded. Patients with DNR (do not resuscitate) or CMO (comfort measures only) directives were not excluded.
+The data used for the challenge consist of records from 12,000 ICU stays. All patients were
+adults who were admitted for a wide variety of reasons to cardiac, medical, surgical, and
+trauma ICUs. ICU stays of less than 48 hours have been excluded. Patients with DNR
+(do not resuscitate) or CMO (comfort measures only) directives were not excluded.
 
 Four thousand records comprise training set A, and the remaining records form test sets B and C.
 Outcomes are provided for the training set records, and are withheld for the test set records.
 
-Up to 42 variables were recorded at least once during the first 48 hours after admission to the ICU.
-Not all variables are available in all cases, however. Six of these variables are general descriptors
-(collected on admission), and the remainder are time series, for which multiple observations may be available.
+Up to 42 variables were recorded at least once during the first 48 hours after admission
+to the ICU. Not all variables are available in all cases, however. Six of these variables
+are general descriptors (collected on admission), and the remainder are time series,
+for which multiple observations may be available.
 
-Each observation has an associated time-stamp indicating the elapsed time of the observation since ICU admission
-in each case, in hours and minutes. Thus, for example, a time stamp of 35:19 means that the associated observation was
-made 35 hours and 19 minutes after the patient was admitted to the ICU.
+Each observation has an associated time-stamp indicating the elapsed time of the observation since
+ICU admission in each case, in hours and minutes. Thus, for example, a time stamp of 35:19 means that
+the associated observation was made 35 hours and 19 minutes after the patient was admitted to the ICU.
 
 Each record is stored as a comma-separated value (CSV) text file. To simplify downloading, participants may download
 a zip file or tarball containing all of training set A or test set B. Test set C will be used for validation only and
@@ -90,8 +92,8 @@ The time series measurements are recorded in chronological order within each rec
 indicate the elapsed time since admission to the ICU. Measurements may be recorded at regular intervals ranging from
 hourly to daily, or at irregular intervals as required. Not all time series are available in all cases.
 
-In a few cases, such as blood pressure, different measurements made using two or more methods or sensors may be recorded
-with the same or only slightly different time-stamps. Occasional outliers should be expected as well.
+In a few cases, such as blood pressure, different measurements made using two or more methods or sensors
+may be recorded with the same or only slightly different time-stamps. Occasional outliers should be expected as well.
 
  Note that Weight is both a general descriptor (recorded on admission) and a time series variable (often measured
  hourly, for estimating fluid balance).
@@ -122,12 +124,19 @@ __all__ = [
     "Physionet2012",
 ]
 
-from typing import Any
+import os
+import tarfile
+import tempfile
+from collections.abc import Mapping
+from pathlib import Path
+from typing import IO, Any
 
 import numpy as np
 import pandas as pd
+from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import DATASET_OBJECT, MultiFrameDataset
+from tsdm.encoders.modular import TripletDecoder
 from tsdm.util.types import PathType
 
 GENERAL_DESCRIPTORS = {
@@ -139,14 +148,17 @@ GENERAL_DESCRIPTORS = {
 }
 
 
-def append_record(d, r):
+def _append_record(d: dict[str, list], r: Mapping) -> dict[str, list]:
     for key in d:
         d[key].append(r[key])
 
     return d
 
 
-def read_physionet_record(f, unravel_triplets=False):
+def read_physionet_record(
+    f: IO[bytes], unravel_triplets: bool = False
+) -> tuple[int, dict, DATASET_OBJECT]:
+    r"""Read a single record."""
     lines = iter(f)
 
     # header
@@ -159,23 +171,28 @@ def read_physionet_record(f, unravel_triplets=False):
     timeseries: dict[str, Any] = {"Parameter": [], "Value": []}
 
     for line in lines:
-        time, parameter, value = (token.strip() for token in line.split(b","))
+        time, parameter_bytes, value_bytes = (
+            token.strip() for token in line.split(b",")
+        )
         hours, minutes = time.split(b":")
         time_minutes = int(hours) * 60 + int(minutes)
-        parameter = str(parameter, encoding="utf-8")
+        parameter = parameter_bytes.decode(encoding="utf-8")
 
         if parameter == "RecordID":
-            record_id = int(value)
+            record_id = int(value_bytes.decode())
 
         elif parameter in GENERAL_DESCRIPTORS and time_minutes == 0:
-            v = GENERAL_DESCRIPTORS[parameter](value)
+            v = GENERAL_DESCRIPTORS[parameter](value_bytes.decode())
             general_descriptors[parameter] = v if v > -1 else np.nan
 
         else:
-            value = float(value)
+            value = float(value_bytes.decode())
             timestamps.append(time_minutes)
             timeseries["Parameter"].append(parameter)
             timeseries["Value"].append(value)
+
+    if record_id is None:
+        raise ValueError("RecordID not found")
 
     for key in GENERAL_DESCRIPTORS:
         assert key in general_descriptors, "incomplete metadata"
@@ -188,8 +205,6 @@ def read_physionet_record(f, unravel_triplets=False):
     )
 
     if unravel_triplets:
-        from tsdm.encoders.modular import TripletDecoder
-
         decoder = TripletDecoder(sparse=False, var_name="Parameter", value_name="Value")
         decoder.fit(df)
         ts = decoder.encode(df)
@@ -250,6 +265,8 @@ class Physionet2012(MultiFrameDataset):
     INFO_URL: str = r"https://archive.physionet.org/challenge/2012/"
     r"""HTTP address containing additional information about the dataset."""
     rawdata_files = {"A": "set-a.tar.gz", "B": "set-b.tar.gz", "C": "set-c.tar.gz"}
+    rawdata_paths: dict[str, Path]
+    unravel_triplets: bool
 
     @property
     def dataset_files(self):
@@ -261,10 +278,9 @@ class Physionet2012(MultiFrameDataset):
             "C": f"Physionet2019-set-C-{postfix}.tar",
         }
 
-    def __init__(self, unravel_triplets=False):
+    def __init__(self, *, unravel_triplets: bool = False):
+        super().__init__()
         self.unravel_triplets = unravel_triplets
-
-        super(Physionet2012, self).__init__()
 
     @property
     def index(self) -> list:
@@ -272,18 +288,20 @@ class Physionet2012(MultiFrameDataset):
         return list(self.dataset_files.keys())
 
     def _clean(self, key):
-        import tarfile
-
         record_ids_list = []
         metadata: dict[str, list[float]] = {key: [] for key in GENERAL_DESCRIPTORS}
         time_series = []
 
-        with tarfile.open(self.rawdata_paths[key], "r:gz") as f:  # type: ignore
-            for member in f.getmembers():
+        with (
+            tarfile.open(str(self.rawdata_paths[key]), "r:gz") as archive,
+            tqdm(archive.getmembers()) as progress_bar,
+        ):
+            for member in progress_bar:
+                progress_bar.set_description(f"Loading patient data {member}")
+
                 if not member.isreg():
                     continue
-
-                with f.extractfile(member) as record_f:  # type: ignore
+                with archive.extractfile(member) as record_f:  # type: ignore[union-attr]
                     record_id, descriptors, observations = read_physionet_record(
                         record_f, unravel_triplets=self.unravel_triplets
                     )
@@ -321,16 +339,11 @@ class Physionet2012(MultiFrameDataset):
         return metadata_df, time_series_df
 
     @staticmethod
-    def serialize(frames: DATASET_OBJECT, path: PathType, /, **kwargs: Any) -> None:
-        """Store the dataset as a tar archive with two feather dataframes."""
-        import os
-        import tarfile
-        import tempfile
-
-        try:
-            metadata, series = frames
-        except ValueError:
-            raise
+    def serialize(
+        frames: tuple[DATASET_OBJECT, DATASET_OBJECT], path: PathType, /, **kwargs: Any
+    ) -> None:
+        r"""Store the dataset as a tar archive with two feather dataframes."""
+        metadata, series = frames
 
         with tarfile.open(path, mode="w") as archive:
             with tempfile.TemporaryDirectory(prefix="tsdm") as tmp_dir:
@@ -350,15 +363,13 @@ class Physionet2012(MultiFrameDataset):
     def deserialize(
         path: PathType, /, *, squeeze: bool = True
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Read provided tar archive."""
-        import tarfile
-
+        r"""Read provided tar archive."""
         with tarfile.open(path, mode="r") as archive:
-            with archive.extractfile(archive.getmember("metadata.feather")) as meta_f:  # type: ignore
+            with archive.extractfile(archive.getmember("metadata.feather")) as meta_f:
                 metadata = pd.read_feather(meta_f)
             metadata.set_index(keys="RecordID", drop=True, inplace=True)
 
-            with archive.extractfile(archive.getmember("series.feather")) as series_f:  # type: ignore
+            with archive.extractfile(archive.getmember("series.feather")) as series_f:
                 series = pd.read_feather(series_f)
             series.set_index(["RecordID", "Time"], drop=True, inplace=True)
 

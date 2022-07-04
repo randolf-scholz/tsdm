@@ -32,7 +32,7 @@ from tsdm.util import flatten_nested, paths_exists, prepend_path
 from tsdm.util.remote import download
 from tsdm.util.types import KeyType, Nested, PathType
 
-DATASET_OBJECT = Union[Series, DataFrame, tuple[DataFrame, ...]]
+DATASET_OBJECT = Union[Series, DataFrame]
 r"""Type hint for pandas objects."""
 
 

@@ -287,7 +287,10 @@ class Physionet2019(SingleFrameDataset):
         return units
 
     def _get_frame(self, path: Path) -> DataFrame:
-        with ZipFile(path) as archive, tqdm(archive.namelist()) as progress_bar:
+        with (
+            ZipFile(path) as archive,
+            tqdm(archive.namelist()) as progress_bar,
+        ):
             frames = {}
             progress_bar.set_description(f"Loading patient data {path.stem}")
 
