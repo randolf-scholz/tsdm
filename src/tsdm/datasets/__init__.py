@@ -34,6 +34,7 @@ __all__ = [
     "synthetic",
     # Types
     "dataset",
+    "DATASET_OBJECT",
     # Constants
     "DATASETS",
     # ABCs
@@ -49,6 +50,7 @@ __all__ = [
     "KIWI_RUNS",
     "MIMIC_III",
     "Physionet2019",
+    "Physionet2012",
     "Traffic",
     "USHCN",
     "USHCN_SmallChunkedSporadic",
@@ -58,13 +60,19 @@ import logging
 from typing import Final
 
 from tsdm.datasets import base, synthetic
-from tsdm.datasets.base import BaseDataset, MultiFrameDataset, SingleFrameDataset
+from tsdm.datasets.base import (
+    DATASET_OBJECT,
+    BaseDataset,
+    MultiFrameDataset,
+    SingleFrameDataset,
+)
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_runs import KIWI_RUNS
 from tsdm.datasets.mimic_iii import MIMIC_III
+from tsdm.datasets.physionet2012 import Physionet2012
 from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
@@ -82,6 +90,7 @@ DATASETS: Final[dict[str, type[dataset]]] = {
     "KIWI_RUNS_TASK": KIWI_RUNS,
     "MIMIC_III": MIMIC_III,
     "Physionet2019": Physionet2019,
+    "Physionet2012": Physionet2012,
     "Traffic": Traffic,
     "USHCN": USHCN,
     "USHCN_SmallChunkedSporadic": USHCN_SmallChunkedSporadic,
