@@ -1,4 +1,4 @@
-#!usr/bin/env python
+#!/usr/bin/env python
 r"""Test PhysioNet 2012."""
 
 import logging

@@ -279,8 +279,8 @@ class Physionet2012(MultiFrameDataset):
         }
 
     def __init__(self, *, unravel_triplets: bool = False):
-        super().__init__()
         self.unravel_triplets = unravel_triplets
+        super().__init__()
 
     @property
     def index(self) -> list:
