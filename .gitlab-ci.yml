@@ -42,7 +42,6 @@ before_script:
 
 setup:
   stage: build
-  tags: ["$PICKED_RUNNER"]
   cache:
     - key: package_cache
       paths:
@@ -53,6 +52,7 @@ setup:
         - "$VENV_DIR"
       policy: push
   before_script:
+    - echo "$PICKED_RUNNER"
     # Check kernel and python version
     - uname -a
     - python -V
