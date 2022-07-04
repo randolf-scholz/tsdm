@@ -365,11 +365,11 @@ class Physionet2012(MultiFrameDataset):
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
         r"""Read provided tar archive."""
         with tarfile.open(path, mode="r") as archive:
-            with archive.extractfile(archive.getmember("metadata.feather")) as meta_f:
+            with archive.extractfile(archive.getmember("metadata.feather")) as meta_f:  # type: ignore[union-attr]
                 metadata = pd.read_feather(meta_f)
             metadata.set_index(keys="RecordID", drop=True, inplace=True)
 
-            with archive.extractfile(archive.getmember("series.feather")) as series_f:
+            with archive.extractfile(archive.getmember("series.feather")) as series_f:  # type: ignore[union-attr]
                 series = pd.read_feather(series_f)
             series.set_index(["RecordID", "Time"], drop=True, inplace=True)
 
