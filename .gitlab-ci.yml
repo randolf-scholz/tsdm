@@ -18,7 +18,7 @@ variables:
   MODULEDIR: "src/tsdm"
   MODULENAME: tsdm
   TESTDIR: test
-  POETRY_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pypoetry"
+  MAIN_CACHE: "$CI_PROJECT_DIR/.cache"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
   PYTEST_CACHE_DIR: "${CI_PROJECT_DIR}/.pytest_cache"
@@ -44,8 +44,7 @@ setup:
   cache:
     - key: package_cache
       paths:
-        - "$PIP_CACHE_DIR"
-        - "$POETRY_CACHE_DIR"
+        - "$MAIN_CACHE"
     - key: venv
       paths:
         - "$VENV_DIR"
