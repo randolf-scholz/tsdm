@@ -173,7 +173,7 @@ dmypy.json
 .pytype/
 
 # PyCharm
-# .idea
+# .idea/
 
 # VSCode
 .virtual_documents

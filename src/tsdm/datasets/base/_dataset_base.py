@@ -8,6 +8,8 @@ __all__ = [
     "BaseDatasetMetaClass",
     "SingleFrameDataset",
     "MultiFrameDataset",
+    # Types
+    "DATASET_OBJECT",
 ]
 
 import inspect
@@ -30,7 +32,7 @@ from tsdm.util import flatten_nested, paths_exists, prepend_path
 from tsdm.util.remote import download
 from tsdm.util.types import KeyType, Nested, PathType
 
-DATASET_OBJECT = Union[Series, DataFrame]
+DATASET_OBJECT = Union[Series, DataFrame, tuple[DataFrame, ...]]
 r"""Type hint for pandas objects."""
 
 
@@ -112,7 +114,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
     @cached_property
     @abstractmethod
-    def dataset(self) -> MutableMapping:
+    def dataset(self) -> Any | MutableMapping:
         r"""Store cached version of dataset."""
         return self.load()
 
