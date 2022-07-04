@@ -53,7 +53,7 @@ setup:
   before_script:
     - echo "${CI_RUNNER_ID}"
     - echo "${CI_RUNNER_TAGS}"
-    - du -h ~/.cache --max-depth=1
+    - du -h --max-depth=1 "${CI_PROJECT_DIR}/.cache"
     # Check kernel and python version
     - uname -a
     - python -V
