@@ -27,8 +27,6 @@ variables:
   TWINE_PASSWORD: "${CI_JOB_TOKEN}"
   TWINE_USERNAME: gitlab-ci-token
   TWINE_REPOSITORY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi"
-  PICKED_RUNNER: "${CI_RUNNER_ID}"
-  RUNNER_TAGS: "${CI_RUNNER_TAGS}"
 
 # global before_script is run before each and every job.
 before_script:
@@ -53,8 +51,9 @@ setup:
         - "$VENV_DIR"
       policy: push
   before_script:
-    - echo "$PICKED_RUNNER"
-    - echo "$RUNNER_TAGS"
+    - echo "${CI_RUNNER_ID}"
+    - echo "${CI_RUNNER_TAGS}"
+    - du -h ~/.cache --max-depth=1
     # Check kernel and python version
     - uname -a
     - python -V
@@ -124,7 +123,6 @@ setup:
 pylint:
   # see .pylintrc for configuration
   stage: analysis
-  tags: ["$RUNNER_TAGS"]
   cache:
     - key: venv
       paths:
@@ -165,7 +163,6 @@ pylint:
 flake8:
   # see .flake8 for configuration
   stage: analysis
-  tags: ["$RUNNER_TAGS"]
   cache:
     - key: venv
       paths:
@@ -202,7 +199,6 @@ flake8:
 mypy:
   # see pyproject.toml for configuration
   stage: analysis
-  tags: ["$RUNNER_TAGS"]
   cache:
     - key: venv
       paths:
@@ -242,7 +238,6 @@ mypy:
 pytest:
   # see pytest.ini for configuration
   stage: test
-  tags: ["$RUNNER_TAGS"]
   cache:
     - key: venv
       paths:
@@ -287,7 +282,6 @@ pytest:
 pypi:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
-  tags: ["$RUNNER_TAGS"]
   cache:
     - key: venv
       paths:
@@ -320,7 +314,6 @@ pypi:
 pages:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
-  tags: ["$RUNNER_TAGS"]
   cache:
     - key: venv
       paths:
