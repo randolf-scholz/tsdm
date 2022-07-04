@@ -140,7 +140,7 @@ def random_data(
         data = rng.integers(low=iinfo.min, high=iinfo.max, size=size)
         result = data.astype(dtype)
     elif np.issubdtype(dtype, np.floating):
-        finfo = np.finfo(dtype)  # type: ignore
+        finfo = np.finfo(dtype)  # type: ignore[arg-type]
         exp = rng.integers(low=finfo.minexp, high=finfo.maxexp, size=size)
         mant = rng.uniform(low=-2, high=+2, size=size)
         result = (mant * 2**exp).astype(dtype)

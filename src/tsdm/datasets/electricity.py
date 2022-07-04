@@ -36,7 +36,7 @@ Attribute Information
 Data set were saved as txt using csv format, using semi colon (;).
 First column present date and time as a string with the following format 'yyyy-mm-dd hh:mm:ss'
 Other columns present float values with consumption in kW
-"""  # pylint: disable=line-too-long # noqa
+"""  # pylint: disable=line-too-long # noqa: E501
 
 __all__ = [
     # Classes
@@ -61,7 +61,7 @@ class Electricity(SingleFrameDataset):
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**          | Regression, Clustering | **Missing Values?**       | N/A    | **Number of Web Hits:** | 93733      |
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
-    """  # pylint: disable=line-too-long # noqa
+    """  # pylint: disable=line-too-long # noqa: E501
 
     BASE_URL: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
     r"""HTTP address from where the dataset can be downloaded."""

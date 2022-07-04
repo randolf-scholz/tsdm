@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 r"""Testing of Base Dataset."""
 
 import logging
@@ -9,6 +10,8 @@ __logger__ = logging.getLogger(__name__)
 
 def test_methods_attributes():
     r"""Test if all attributes are present."""
+    __logger__.info("Testing METHODS_ATTRIBUTES started!")
+
     dataset = InSilicoData()
 
     attrs = {
@@ -26,12 +29,12 @@ def test_methods_attributes():
     for attr in attrs:
         assert hasattr(dataset, attr)
 
+    __logger__.info("Testing METHODS_ATTRIBUTES finished!")
+
 
 def __main__():
     logging.basicConfig(level=logging.INFO)
-    __logger__.info("Testing METHODS_ATTRIBUTES started!")
     test_methods_attributes()
-    __logger__.info("Testing METHODS_ATTRIBUTES finished!")
 
 
 if __name__ == "__main__":

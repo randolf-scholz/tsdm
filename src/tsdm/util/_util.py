@@ -205,7 +205,7 @@ def prepend_path(
         }
     # TODO https://github.com/python/mypy/issues/11615
     if isinstance(files, Collection):
-        return [prepend_path(f, parent, keep_none=keep_none) for f in files]  # type: ignore
+        return [prepend_path(f, parent, keep_none=keep_none) for f in files]  # type: ignore[misc,arg-type]
     raise TypeError(f"Unsupported type: {type(files)}")
 
 

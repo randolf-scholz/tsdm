@@ -32,7 +32,7 @@ from tsdm.encoders.modular import TripletDecoder
 class MIMIC_III(MultiFrameDataset):
     """MIMIC-III Clinical Database.
 
-    MIMIC-III is a large, freely-available database comprising deidentified health-related data
+    MIMIC-III is a large, freely-available database comprising de-identified health-related data
     associated with over forty thousand patients who stayed in critical care units of the Beth
     Israel Deaconess Medical Center between 2001 and 2012. The database includes information such
     as demographics, vital sign measurements made at the bedside (~1 data point per hour),

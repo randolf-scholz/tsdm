@@ -84,7 +84,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
     ):
         super().__init__()
         self.ignore_nan = ignore_nan
-        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore
+        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore[assignment]
         self.mean = mean
         self.stdv = stdv
 
@@ -219,7 +219,7 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         self.ymin = np.array(0.0 if ymin is None else ymin)
         self.ymax = np.array(1.0 if ymax is None else ymax)
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore
+        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore[assignment]
 
     def __getitem__(self, item: Any) -> MinMaxScaler:
         r"""Return a slice of the MinMaxScaler."""

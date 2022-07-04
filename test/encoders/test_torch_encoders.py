@@ -1,7 +1,5 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+#!/usr/bin/env python
+r"""Test the torch encoders."""
 
 import logging
 

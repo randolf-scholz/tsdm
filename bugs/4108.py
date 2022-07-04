@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from collections.abc import Iterable, Sequence
 from functools import singledispatchmethod
 from typing import Union, cast, overload

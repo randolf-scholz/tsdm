@@ -12,7 +12,7 @@ __all__ = [
 
 import logging
 
-from tsdm.tasks.base.tasks import BaseTask
+from tsdm.tasks.base._base_tasks import BaseTask
 from tsdm.tasks.base.template import ExampleTask
 
 __logger__ = logging.getLogger(__name__)
