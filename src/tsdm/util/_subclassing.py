@@ -54,4 +54,4 @@ class PatchedABCMeta(ABCMeta, Generic[T]):
                 f"Can't instantiate abstract class {cls.__name__} with"
                 f" abstract attributes: f{', '.join(abstract_attributes)}"
             )
-        return instance
+        return cast(T, instance)
