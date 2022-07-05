@@ -16,12 +16,15 @@ __all__ = [
 ]
 
 import logging
+import math
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
+from datetime import timedelta as py_td
 from itertools import chain, count
 from typing import Any, Generic, Literal, Optional, Union, cast
 
 import numpy as np
+import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
@@ -555,6 +558,7 @@ def grid(
     tmin: Union[str, TDVar],
     tmax: Union[str, TDVar],
     timedelta: Union[str, TDVar],
+    *,
     offset: Union[None, str, TDVar] = None,
 ) -> list[int]:
     r"""Compute $\{k∈ℤ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
@@ -585,18 +589,13 @@ def grid(
     if timedelta == zero_dt:
         return [0]
 
-    assert timedelta > zero_dt, "Assumption delta>0 violated!"
-    assert tmin <= offset <= tmax, "Assumption: xmin≤xoffset≤xmax violated!"
+    assert timedelta > zero_dt, "Assumption ∆t>0 violated!"
+    assert tmin <= offset <= tmax, "Assumption: tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!"
 
     a = tmin - offset
     b = tmax - offset
-    kmax = int(b // timedelta)  # need int() in case both are floats
-    kmin = int(a // timedelta)
-
-    assert tmin <= offset + kmin * timedelta
-    assert tmin > offset + (kmin - 1) * timedelta
-    assert tmax >= offset + kmax * timedelta
-    assert tmax < offset + (kmax + 1) * timedelta
+    kmax = math.floor(b / timedelta)
+    kmin = math.ceil(a / timedelta)
 
     return list(range(kmin, kmax + 1))
 
@@ -743,7 +742,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
     data: NDArray[NumpyDTVar]
     grid: NDArray[np.integer]
-    horizons: NDArray[NumpyTDVar]
+    horizons: Union[NumpyTDVar, NDArray[NumpyTDVar]]
     mode: Literal["masks", "slices", "points"]
     shuffle: bool
     start_values: NDArray[NumpyDTVar]
@@ -753,6 +752,8 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
     offset: NumpyDTVar
     total_horizon: NumpyTDVar
     zero_td: NumpyTDVar
+    multi_horizon: bool
+    cumulative_horizons: NDArray[NumpyTDVar]
 
     def __init__(
         self,
@@ -766,33 +767,23 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         mode: Literal["masks", "slices", "points"] = "masks",
         shuffle: bool = False,
     ):
-        if isinstance(data_source, (Index, Series, DataFrame)):
-            data_source = data_source.values
         super().__init__(data_source)
+
+        # coerce non-numpy types to numpy.
+        horizons = Timedelta(horizons) if isinstance(horizons, str) else horizons
+        stride = Timedelta(stride) if isinstance(stride, str) else stride
+        tmin = Timestamp(tmin) if isinstance(tmin, str) else tmin
+        tmax = Timestamp(tmax) if isinstance(tmax, str) else tmax
 
         self.shuffle = shuffle
         self.mode = mode
-
-        if isinstance(horizons, str):
-            self.horizons = np.array([Timedelta(horizons)])
-        elif isinstance(horizons, Sequence):
-            if isinstance(horizons[0], str):
-                self.horizons = np.array([Timedelta(h) for h in horizons])
-            else:
-                self.horizons = np.array(horizons)
-        else:
-            self.horizons = np.array([horizons])
-
-        self.total_horizon = self.horizons.sum()
-        self.stride = Timedelta(stride) if isinstance(stride, str) else stride
+        self.stride = stride
 
         if tmin is None:
             if isinstance(self.data, (Series, DataFrame)):
                 self.tmin = self.data.iloc[0]
             else:
                 self.tmin = self.data[0]
-        elif isinstance(tmin, str):
-            self.tmin = Timestamp(tmin)
         else:
             self.tmin = tmin
 
@@ -801,24 +792,33 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
                 self.tmax = self.data.iloc[-1]
             else:
                 self.tmax = self.data[-1]
-        elif isinstance(tmax, str):
-            self.tmax = Timestamp(tmax)
         else:
             self.tmax = tmax
 
         # this gives us the correct zero, depending on the dtype
         self.zero_td = cast(NumpyTDVar, self.tmin - self.tmin)
-
         assert self.stride > self.zero_td, "stride cannot be zero."
 
-        cumulative_horizons: NDArray[NumpyTDVar] = np.concatenate(
-            [np.array([self.zero_td]), self.horizons]
-        )
-        cumulative_horizons = np.cumsum(cumulative_horizons)
+        if isinstance(horizons, Sequence):
+            self.multi_horizon = True
+            if isinstance(horizons[0], (str, Timedelta, py_td)):
+                self.horizons = pd.to_timedelta(horizons)
+                concat_horizons = self.horizons.insert(0, self.zero_td)
+            else:
+                self.horizons = np.array(horizons)
+                concat_horizons = np.concatenate(([self.zero_td], self.horizons))
+
+            self.cumulative_horizons = np.cumsum(concat_horizons)
+            self.total_horizon = self.cumulative_horizons[-1]
+        else:
+            self.multi_horizon = False
+            self.horizons = horizons
+            self.total_horizon = self.horizons
+            self.cumulative_horizons = np.cumsum([self.zero_td, self.horizons])
 
         self.start_values = cast(
             NDArray[NumpyDTVar],
-            self.tmin + cumulative_horizons,  # type: ignore[call-overload, operator]
+            self.tmin + self.cumulative_horizons,  # type: ignore[call-overload, operator]
         )
 
         self.offset = cast(
@@ -827,7 +827,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         )
 
         # precompute the possible slices
-        self.grid = np.array(grid(self.tmin, self.tmax, self.stride))
+        self.grid = grid(self.tmin, self.tmax, self.stride, offset=self.offset)
 
     def __len__(self):
         r"""Return the number of samples."""
@@ -876,13 +876,12 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         if self.mode == "points":
             yield_fn = self.__make__points__
         else:
-            single_horizon = len(self.horizons) == 1
             yield_fn = {
-                ("masks", True): self.__make__mask__,
-                ("masks", False): self.__make__masks__,
-                ("slices", True): self.__make__slice__,
-                ("slices", False): self.__make__slices__,
-            }[(self.mode, single_horizon)]
+                ("masks", False): self.__make__mask__,
+                ("masks", True): self.__make__masks__,
+                ("slices", False): self.__make__slice__,
+                ("slices", True): self.__make__slices__,
+            }[(self.mode, self.multi_horizon)]
 
         if self.shuffle:
             perm = np.random.permutation(len(self.grid))
