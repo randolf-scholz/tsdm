@@ -13,9 +13,11 @@ __all__ = [
     "CollectionSampler",
     "IntervalSampler",
     "HierarchicalSampler",
+    "SlidingWindowSampler",
+    # Functions
+    "grid",
 ]
 
-import logging
 from typing import Final
 
 from torch.utils import data as torch_utils_data
@@ -27,9 +29,9 @@ from tsdm.random.samplers._samplers import (
     IntervalSampler,
     SequenceSampler,
     SliceSampler,
+    SlidingWindowSampler,
+    grid,
 )
-
-__logger__ = logging.getLogger(__name__)
 
 Sampler = torch_utils_data.Sampler
 r"""Type hint for samplers."""

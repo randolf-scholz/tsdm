@@ -10,9 +10,12 @@ __all__ = [
     "torch",
     # Constants
     # Classes
+    "PatchedABCMeta",
     "Split",
     "LazyDict",
     "LazyFunction",
+    # decorators
+    "abstractattribute",
     # Functions
     "deep_dict_update",
     "deep_kval_update",
@@ -30,6 +33,7 @@ __all__ = [
 import logging
 
 from tsdm.util import dataloaders, decorators, remote, system, torch, types
+from tsdm.util._subclassing import PatchedABCMeta, abstractattribute
 from tsdm.util._util import (
     Split,
     deep_dict_update,
