@@ -12,7 +12,7 @@ __all__ = [
     "HierarchicalSampler",
     "SlidingWindowSampler",
     # Functions
-    "grid",
+    "compute_grid",
 ]
 
 import logging
@@ -33,7 +33,7 @@ from torch.utils.data import Sampler
 from tsdm.util.strings import repr_mapping
 from tsdm.util.torch.generic import DatasetCollection
 from tsdm.util.types import ObjectType, ValueType
-from tsdm.util.types.time import NumpyDTVar, NumpyTDVar, TDVar
+from tsdm.util.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
 
@@ -509,8 +509,8 @@ class IntervalSampler(Sampler, Generic[TDVar]):
             x0 = self._get_value(offset, k)
 
             # get valid interval bounds, probably there is an easier way to do it...
-            stride_left: list[int] = grid(xmin, xmax, st, x0)
-            stride_right: list[int] = grid(xmin, xmax, st, x0 + dt)
+            stride_left: list[int] = compute_grid(xmin, xmax, st, offset=x0)
+            stride_right: list[int] = compute_grid(xmin, xmax, st, offset=x0 + dt)
             valid_strides: set[int] = set.intersection(
                 set(stride_left), set(stride_right)
             )
@@ -554,14 +554,14 @@ class IntervalSampler(Sampler, Generic[TDVar]):
         return self.intervals[key]
 
 
-def grid(
-    tmin: Union[str, TDVar],
-    tmax: Union[str, TDVar],
+def compute_grid(
+    tmin: Union[str, DTVar],
+    tmax: Union[str, DTVar],
     timedelta: Union[str, TDVar],
     *,
-    offset: Union[None, str, TDVar] = None,
-) -> list[int]:
-    r"""Compute $\{k∈ℤ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
+    offset: Union[None, str, DTVar] = None,
+) -> Sequence[int]:
+    r"""Compute $\{k∈ℤ∣tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
 
     That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
     Special case: if $Δt=0$, returns $[0]$.
@@ -586,18 +586,13 @@ def grid(
     offset = tmin if offset is None else offset
     zero_dt = tmin - tmin  # generates zero variable of correct type
 
-    if timedelta == zero_dt:
-        return [0]
-
     assert timedelta > zero_dt, "Assumption ∆t>0 violated!"
     assert tmin <= offset <= tmax, "Assumption: tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!"
 
-    a = tmin - offset
-    b = tmax - offset
-    kmax = math.floor(b / timedelta)
-    kmin = math.ceil(a / timedelta)
+    kmax = math.floor((tmax - offset) / timedelta)
+    kmin = math.ceil((tmin - offset) / timedelta)
 
-    return list(range(kmin, kmax + 1))
+    return cast(Sequence[int], np.arange(kmin, kmax + 1))
 
 
 # class BatchSampler(Sampler[list[int]]):
@@ -803,7 +798,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
             self.multi_horizon = True
             if isinstance(horizons[0], (str, Timedelta, py_td)):
                 self.horizons = pd.to_timedelta(horizons)
-                concat_horizons = self.horizons.insert(0, self.zero_td)
+                concat_horizons = self.horizons.insert(0, self.zero_td)  # type: ignore[union-attr]
             else:
                 self.horizons = np.array(horizons)
                 concat_horizons = np.concatenate(([self.zero_td], self.horizons))
@@ -813,7 +808,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         else:
             self.multi_horizon = False
             self.horizons = horizons
-            self.total_horizon = self.horizons
+            self.total_horizon = self.horizons  # type: ignore[assignment]
             self.cumulative_horizons = np.cumsum([self.zero_td, self.horizons])
 
         self.start_values = cast(
@@ -827,7 +822,8 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         )
 
         # precompute the possible slices
-        self.grid = grid(self.tmin, self.tmax, self.stride, offset=self.offset)
+        grid = compute_grid(self.tmin, self.tmax, self.stride, offset=self.offset)
+        self.grid = grid[grid >= 0]  # type: ignore[assignment, operator]
 
     def __len__(self):
         r"""Return the number of samples."""
@@ -885,13 +881,10 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
         if self.shuffle:
             perm = np.random.permutation(len(self.grid))
-            for k in self.grid[perm]:
-                vals = self.start_values + k * self.stride
-                yield yield_fn(vals)
-            return
+            grid = self.grid[perm]
+        else:
+            grid = self.grid
 
-        # faster non-shuffle code path
-        vals = self.start_values
-        for _ in self.grid:
-            vals += self.stride
+        for k in grid:
+            vals = self.start_values + k * self.stride
             yield yield_fn(vals)

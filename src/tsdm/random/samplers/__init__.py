@@ -15,7 +15,7 @@ __all__ = [
     "HierarchicalSampler",
     "SlidingWindowSampler",
     # Functions
-    "grid",
+    "compute_grid",
 ]
 
 from typing import Final
@@ -30,7 +30,7 @@ from tsdm.random.samplers._samplers import (
     SequenceSampler,
     SliceSampler,
     SlidingWindowSampler,
-    grid,
+    compute_grid,
 )
 
 Sampler = torch_utils_data.Sampler
