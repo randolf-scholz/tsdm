@@ -10,13 +10,16 @@ __all__ = [
     "CollectionSampler",
     "IntervalSampler",
     "HierarchicalSampler",
+    "SlidingWindowSampler",
+    # Functions
+    "grid",
 ]
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence, Sized
 from itertools import chain, count
-from typing import Any, Generic, Optional, TypeVar, Union
+from typing import Any, Generic, Literal, Optional, Union, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -25,15 +28,10 @@ from torch.utils.data import Sampler
 
 from tsdm.util.strings import repr_mapping
 from tsdm.util.torch.generic import DatasetCollection
-from tsdm.util.types import ValueType
+from tsdm.util.types import ObjectType, ValueType
+from tsdm.util.types.time import NumpyDTVar, NumpyTDVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
-
-
-# dt = np.datetime64
-# td = np.timedelta64
-TimedeltaLike = TypeVar("TimedeltaLike", int, float, Timedelta)
-TimestampLike = TypeVar("TimestampLike", int, float, Timestamp)
 
 
 Boxed = Union[
@@ -42,11 +40,11 @@ Boxed = Union[
     Callable[[int], ValueType],
 ]
 
-dt_type = Union[
-    TimedeltaLike,
-    Sequence[TimedeltaLike],
-    Mapping[int, TimedeltaLike],
-    Callable[[int], TimedeltaLike],
+Nested = Union[
+    ObjectType,
+    Sequence[ObjectType],
+    Mapping[int, ObjectType],
+    Callable[[int], ObjectType],
 ]
 
 
@@ -65,9 +63,13 @@ dt_type = Union[
 class BaseSampler(Sampler, Sized, ABC):
     r"""Abstract Base Class for all Samplers."""
 
-    # def __init__(self, data_source: Optional[Sized]) -> None:
-    #     r"""Initialize the sampler."""
-    #     super().__init__(data_source)
+    data: Sized
+    r"""Copy of the original Data source."""
+
+    def __init__(self, data_source: Sized, /) -> None:
+        r"""Initialize the sampler."""
+        super().__init__(data_source)
+        self.data = data_source
 
     @abstractmethod
     def __len__(self) -> int:
@@ -415,7 +417,7 @@ class HierarchicalSampler(Sampler):
         return repr_mapping(self.subsamplers)
 
 
-class IntervalSampler(Sampler, Generic[TimedeltaLike]):
+class IntervalSampler(Sampler, Generic[TDVar]):
     r"""Returns all intervals `[a, b]`.
 
     The intervals must satisfy:
@@ -428,16 +430,14 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
     - `sₖ` is the stride corresponding to intervals of size `Δtₖ`.
     """
 
-    offset: TimedeltaLike
-    deltax: dt_type
-    stride: dt_type
+    offset: TDVar
+    deltax: Nested[TDVar]
+    stride: Nested[TDVar]
     shuffle: bool
     intervals: DataFrame
 
     @staticmethod
-    def _get_value(
-        obj: Union[TimedeltaLike, Boxed[TimedeltaLike]], k: int
-    ) -> TimedeltaLike:
+    def _get_value(obj: Union[TDVar, Boxed[TDVar]], k: int) -> TDVar:
         if callable(obj):
             return obj(k)
         if isinstance(obj, Sequence):
@@ -450,12 +450,12 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
     def __init__(
         self,
         *,
-        xmin: TimedeltaLike,
-        xmax: TimedeltaLike,
-        deltax: dt_type,
-        stride: Optional[dt_type] = None,
+        xmin: TDVar,
+        xmax: TDVar,
+        deltax: Nested[TDVar],
+        stride: Optional[Nested[TDVar]] = None,
         levels: Optional[Sequence[int]] = None,
-        offset: Optional[TimedeltaLike] = None,
+        offset: Optional[TDVar] = None,
         shuffle: bool = True,
     ) -> None:
         super().__init__(None)
@@ -469,7 +469,7 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
         assert xmin <= offset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
 
         # determine delta_max
-        delta_max = max(offset - xmin, xmax - offset)
+        delta_max = max(offset - xmin, xmax - offset)  # type: ignore[call-overload]
 
         # determine levels
         if levels is None:
@@ -494,7 +494,9 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
         # validate levels
         assert all(self._get_value(deltax, k) <= delta_max for k in levels)
         # compute valid intervals
-        intervals: list[tuple[dt_type, dt_type, dt_type, dt_type]] = []
+        intervals: list[
+            tuple[Nested[TDVar], Nested[TDVar], Nested[TDVar], Nested[TDVar]]
+        ] = []
 
         # for each level, get all intervals
         for k in levels:
@@ -549,45 +551,42 @@ class IntervalSampler(Sampler, Generic[TimedeltaLike]):
 
 
 def grid(
-    xmin: TimestampLike,
-    xmax: TimestampLike,
-    delta: TimedeltaLike,
-    xoffset: Optional[TimestampLike] = None,
+    tmin: TDVar, tmax: TDVar, timedelta: TDVar, offset: Optional[TDVar] = None
 ) -> list[int]:
-    r"""Compute $\{k∈ℤ∣ xₘᵢₙ ≤ x₀+k⋅Δ ≤ xₘₐₓ\}$.
+    r"""Compute $\{k∈ℤ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
 
-    That is, a list of all integers such that $x₀+k⋅Δ$ is in the interval $[x₀, xₘₐₓ]$.
-    Special case: if $Δ=0$, returns $[0]$.
+    That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
+    Special case: if $Δt=0$, returns $[0]$.
 
     Parameters
     ----------
-    xmin
-    xmax
-    delta
-    xoffset
+    tmin
+    tmax
+    timedelta
+    offset
 
     Returns
     -------
     list[int]
     """
-    xoffset = xmin if xoffset is None else xoffset
-    zero = type(delta)(0)
+    offset = tmin if offset is None else offset
+    zero_dt = tmin - tmin  # generates zero variable of correct type
 
-    if delta == zero:
+    if timedelta == zero_dt:
         return [0]
 
-    assert delta > zero, "Assumption delta>0 violated!"
-    assert xmin <= xoffset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
+    assert timedelta > zero_dt, "Assumption delta>0 violated!"
+    assert tmin <= offset <= tmax, "Assumption: xmin≤xoffset≤xmax violated!"
 
-    a = xmin - xoffset
-    b = xmax - xoffset
-    kmax = int(b // delta)  # need int() in case both are floats
-    kmin = int(a // delta)
+    a = tmin - offset
+    b = tmax - offset
+    kmax = int(b // timedelta)  # need int() in case both are floats
+    kmin = int(a // timedelta)
 
-    assert xmin <= xoffset + kmin * delta
-    assert xmin > xoffset + (kmin - 1) * delta
-    assert xmax >= xoffset + kmax * delta
-    assert xmax < xoffset + (kmax + 1) * delta
+    assert tmin <= offset + kmin * timedelta
+    assert tmin > offset + (kmin - 1) * timedelta
+    assert tmax >= offset + kmax * timedelta
+    assert tmax < offset + (kmax + 1) * timedelta
 
     return list(range(kmin, kmax + 1))
 
@@ -711,3 +710,130 @@ class SequenceSampler(BaseSampler):
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""
         return f"{self.__class__.__name__}[{self.stride}, {self.seq_len}]"
+
+
+class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
+    r"""Sampler that generates sliding windows over an interval.
+
+    The `SlidingWindowSampler` generates tuples.
+
+    Inputs:
+    - Ordered timestamps T
+    - Starting time t_0
+    - Final time t_f
+    - stride ∆t (how much the sampler advances at each step)
+        default, depending on data type of T:
+           - integer: GCD(∆T)
+           - float: max(⌊AVG(∆T)⌋, ε)
+           - timestamp: resolution dependent.
+    - horizons: TimeDelta or Tuple[TimeDelta]
+
+    The sampler will return tuples of len(horizons)+1.
+    """
+
+    data: Sequence[NumpyDTVar]
+    grid: NDArray[np.integer]
+    horizons: NDArray[NumpyTDVar]
+    mode: Literal["masks", "slices", "points"]
+    shuffle: bool
+    start_values: NDArray[NumpyDTVar]
+    stride: NumpyTDVar
+    tmax: NumpyDTVar
+    tmin: NumpyDTVar
+    total_horizon: NumpyTDVar
+    zero_td: NumpyTDVar
+
+    def __init__(
+        self,
+        data_source: Sequence[NumpyDTVar],
+        /,
+        *,
+        stride: NumpyTDVar,
+        horizons: Union[NumpyTDVar, Sequence[NumpyTDVar]],
+        shuffle: bool = False,
+        tmin: Optional[NumpyDTVar] = None,
+        tmax: Optional[NumpyDTVar] = None,
+        mode: Literal["masks", "slices", "points"] = "masks",
+    ):
+        super().__init__(data_source)
+        self.shuffle = shuffle
+        self.horizons = np.array(
+            horizons if isinstance(horizons, Iterable) else [horizons]
+        )
+        self.total_horizon = self.horizons.sum()
+        self.mode = mode
+        self.stride = stride
+
+        self.tmin = self.data[0] if tmin is None else tmin
+        self.tmax = self.data[-1] if tmax is None else tmax
+
+        # this gives us the correct zero, depending on the dtype
+        self.zero_td = cast(NumpyTDVar, self.tmin - self.tmin)
+
+        assert self.stride > self.zero_td, "stride cannot be zero."
+
+        cumulative_horizons: NDArray[NumpyTDVar] = np.concatenate(
+            [[self.zero_td], self.horizons]
+        )
+        cumulative_horizons = np.cumsum(cumulative_horizons)
+
+        self.start_values = cast(
+            NDArray[NumpyDTVar], self.tmin + cumulative_horizons  # type: ignore[call-overload, operator]
+        )
+
+        # precompute the possible slices
+        self.grid = np.array(grid(self.tmin, self.tmax, self.total_horizon))
+
+    def __len__(self):
+        r"""Return the number of samples."""
+        return len(self.data)
+
+    @staticmethod
+    def __make__points__(vals: NDArray[NumpyDTVar]) -> NDArray[NumpyDTVar]:
+        """Return the points as-is."""
+        return vals
+
+    @staticmethod
+    def __make__slices__(vals: NDArray[NumpyDTVar]) -> Sequence[slice]:
+        """Return a tuple of slices."""
+        return tuple(slice(x, y) for x, y in zip(vals[:-1], vals[1:]))
+
+    def __make__masks__(
+        self, vals: NDArray[NumpyDTVar]
+    ) -> tuple[NDArray[np.bool_], ...]:
+        r"""Return a tuple of masks."""
+        return tuple(
+            (x <= self.data) & (self.data < y) for x, y in zip(vals[:-1], vals[1:])
+        )
+
+    def __iter__(self) -> Iterator[Sequence]:
+        """Iterate through.
+
+        For each k, we return a tuple:
+
+        if return_stops:
+        - $(x₀ + k⋅∆t, x₁+k⋅∆t, …, xₘ+k⋅∆t)$
+        if return_slices:
+        - $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
+        if return_masks:
+        - $(mask₁, …, maskₘ$
+
+        """
+        yield_fn: Callable[[NDArray[NumpyDTVar]], Any] = {
+            "masks": self.__make__masks__,
+            "points": self.__make__points__,
+            "slices": self.__make__slices__,
+        }[self.mode]
+
+        if self.shuffle:
+            perm = np.random.permutation(len(self.grid))
+            for k in self.grid[perm]:
+                vals = self.start_values + k * self.stride
+                yield yield_fn(vals)
+            return
+
+        # faster non-shuffle code path
+        vals = self.start_values
+        for _ in self.grid:
+            vals += self.stride
+            yield yield_fn(vals)

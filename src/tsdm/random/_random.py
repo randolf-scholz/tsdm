@@ -8,24 +8,25 @@ __all__ = [
 
 
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
-from tsdm.util.dtypes import BOOLS, EMOJIS, STRINGS, TimeDeltaLike, TimeStampLike
+from tsdm.util.dtypes import BOOLS, EMOJIS, STRINGS
+from tsdm.util.types.time import DTVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
 
 
 # noinspection PyTypeChecker
 def sample_timestamps(
-    start: TimeStampLike = "today",
-    final: TimeStampLike = None,
+    start: Union[str, DTVar] = "today",
+    final: Optional[DTVar] = None,
     *,
     size: int,
-    freq: TimeDeltaLike = "1s",
+    freq: Union[str, TDVar] = "1s",
     replace: bool = False,
     include_start: bool = True,
     include_final: bool = False,
@@ -50,14 +51,14 @@ def sample_timestamps(
     -------
     NDArray
     """
-    start = Timestamp(start)
-    final = start + Timedelta("24h") if final is None else Timestamp(final)
-    freq = Timedelta(freq)
-    start, final = start.round(freq), final.round(freq)
+    start_dt = Timestamp(start)
+    final_dt = start_dt + Timedelta("24h") if final is None else Timestamp(final)
+    freq_td = Timedelta(freq)
+    start_dt, final_dt = start_dt.round(freq_td), final_dt.round(freq_td)
 
     # randomly sample timestamps
     rng = np.random.default_rng()
-    timestamps = date_range(start, final, freq=freq)
+    timestamps = date_range(start_dt, final_dt, freq=freq_td)
     timestamps = rng.choice(
         timestamps[include_start : -include_final or None],
         size - include_start - include_final,
@@ -67,24 +68,24 @@ def sample_timestamps(
 
     # add boundary if requested
     if include_start:
-        timestamps = np.insert(timestamps, 0, start)
+        timestamps = np.insert(timestamps, 0, start_dt)
     if include_final:
-        timestamps = np.insert(timestamps, -1, final)
+        timestamps = np.insert(timestamps, -1, final_dt)
 
     # Convert to base unit based on freq
     units = {
         u: np.timedelta64(1, u)
         for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
     }
-    base_unit = next(u for u, val in units.items() if freq >= val)
+    base_unit = next(u for u, val in units.items() if freq_td >= val)
     return timestamps.astype(f"datetime64[{base_unit}]")
 
 
 def sample_timedeltas(
-    low: Optional[TimeDeltaLike] = "0s",
-    high: Optional[TimeDeltaLike] = "1h",
+    low: Union[str, TDVar] = "0s",
+    high: Union[str, TDVar] = "1h",
     size: Optional[int] = None,
-    freq: Optional[TimeDeltaLike] = "1s",
+    freq: Union[str, TDVar] = "1s",
 ) -> NDArray:
     r"""Create randomly sampled timedeltas.
 
@@ -99,14 +100,14 @@ def sample_timedeltas(
     -------
     NDArray
     """
-    low = Timedelta(low)
-    high = Timedelta(high)
-    freq = Timedelta(freq)
-    low, high = low.round(freq), high.round(freq)
+    low_dt = Timedelta(low)
+    high_dt = Timedelta(high)
+    freq_dt = Timedelta(freq)
+    low_dt, high_dt = low_dt.round(freq_dt), high_dt.round(freq_dt)
 
     # randomly sample timedeltas
     rng = np.random.default_rng()
-    timedeltas = timedelta_range(low, high, freq=freq)
+    timedeltas = timedelta_range(low_dt, high_dt, freq=freq_dt)
     timedeltas = rng.choice(timedeltas, size=size)
 
     # Convert to base unit based on freq
@@ -114,7 +115,7 @@ def sample_timedeltas(
         u: np.timedelta64(1, u)
         for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
     }
-    base_unit = next(u for u, val in units.items() if freq >= val)
+    base_unit = next(u for u, val in units.items() if freq_dt >= val)
     return timedeltas.astype(f"timedelta64[{base_unit}]")
 
 

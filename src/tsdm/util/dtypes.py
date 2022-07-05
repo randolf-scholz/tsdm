@@ -10,13 +10,8 @@ __all__ = [
     "PRECISION",
     "EMOJIS",
     "STRINGS",
-    "TimeLike",
-    "TimeStampLike",
-    "TimeDeltaLike",
 ]
 
-import datetime
-import logging
 from collections import namedtuple
 from typing import Final, Union
 
@@ -24,18 +19,6 @@ import numpy as np
 import pandas
 import torch
 from pandas.api.extensions import ExtensionDtype
-
-__logger__ = logging.getLogger(__name__)
-
-
-# TODO: Use TypeAlias Once Python 3.10 comes out.
-TimeStampLike = Union[str, datetime.datetime, np.datetime64, pandas.Timestamp]
-r"""Represents a location in time."""
-TimeDeltaLike = Union[str, datetime.timedelta, np.timedelta64, pandas.Timedelta]
-r"""Represents a unit of time duration."""
-TimeLike = Union[TimeStampLike, TimeDeltaLike]
-r"""Represents arbitrary time type."""
-
 
 PRECISION: Final[dict] = {
     16: 2**-11,
