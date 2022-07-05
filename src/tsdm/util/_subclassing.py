@@ -12,6 +12,8 @@ R = TypeVar("R")
 class DummyAttribute:
     r"""Sentinel for abstract attributes."""
 
+    __is_abstract_attribute__ = True
+
 
 def abstractattribute(obj: Callable[[T], R] = None) -> R:
     r"""Decorate method as abstract attribute."""
