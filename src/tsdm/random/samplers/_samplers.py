@@ -17,7 +17,7 @@ __all__ = [
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence, Sized
+from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from itertools import chain, count
 from typing import Any, Generic, Literal, Optional, Union, cast
 
@@ -748,24 +748,43 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         data_source: Sequence[NumpyDTVar],
         /,
         *,
-        stride: NumpyTDVar,
-        horizons: Union[NumpyTDVar, Sequence[NumpyTDVar]],
-        shuffle: bool = False,
-        tmin: Optional[NumpyDTVar] = None,
-        tmax: Optional[NumpyDTVar] = None,
+        stride: Union[str, NumpyTDVar],
+        horizons: Union[str, Sequence[str], NumpyTDVar, Sequence[NumpyTDVar]],
+        tmin: Union[None, str, NumpyDTVar] = None,
+        tmax: Union[None, str, NumpyDTVar] = None,
         mode: Literal["masks", "slices", "points"] = "masks",
+        shuffle: bool = False,
     ):
         super().__init__(data_source)
         self.shuffle = shuffle
-        self.horizons = np.array(
-            horizons if isinstance(horizons, Iterable) else [horizons]
-        )
-        self.total_horizon = self.horizons.sum()
         self.mode = mode
-        self.stride = stride
 
-        self.tmin = self.data[0] if tmin is None else tmin
-        self.tmax = self.data[-1] if tmax is None else tmax
+        if isinstance(horizons, str):
+            self.horizons = np.array([Timedelta(horizons)])
+        elif isinstance(horizons, Sequence):
+            if isinstance(horizons[0], str):
+                self.horizons = np.array([Timedelta(h) for h in horizons])
+            else:
+                self.horizons = np.array(horizons)
+        else:
+            self.horizons = np.array([horizons])
+
+        self.total_horizon = self.horizons.sum()
+        self.stride = Timedelta(stride) if isinstance(stride, str) else stride
+
+        if tmin is None:
+            self.tmin = self.data[0]
+        elif isinstance(tmin, str):
+            self.tmin = Timestamp(tmin)
+        else:
+            self.tmin = tmin
+
+        if tmax is None:
+            self.tmax = self.data[-1]
+        elif isinstance(tmax, str):
+            self.tmax = Timestamp(tmax)
+        else:
+            self.tmax = tmax
 
         # this gives us the correct zero, depending on the dtype
         self.zero_td = cast(NumpyTDVar, self.tmin - self.tmin)
