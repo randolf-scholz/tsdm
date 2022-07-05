@@ -19,6 +19,8 @@ __all__ = [
     "PathType",
     "PandasObject",
     # Time Types
+    "PandasVar",
+    "TensorVar",
 ]
 
 import os
@@ -28,8 +30,9 @@ from collections.abc import Collection, Hashable, Mapping
 from pathlib import Path
 from typing import Any, TypeVar, Union
 
+from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series
-from torch import nn
+from torch import Tensor, nn
 
 if sys.version_info >= (3, 10):
     ParamSpec = getattr(typing, "ParamSpec")  # noqa: B009
@@ -84,3 +87,8 @@ r"""Type for nested types (JSON-Like)."""
 
 PandasObject = Union[Index, Series, DataFrame]
 r"""Type Hint for pandas objects."""
+
+PandasVar = TypeVar("PandasVar", Index, Series, DataFrame)
+r"""Type Hint for pandas objects."""
+
+TensorVar = TypeVar("TensorVar", Tensor, NDArray)

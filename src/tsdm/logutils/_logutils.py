@@ -289,6 +289,7 @@ class StandardLogger:
     hparam_dict: dict[str, Any]
     predict_fn: Union[
         Callable[[nn.Module, tuple], ResultTuple],
+        Callable[[nn.Module, tuple], tuple],
         Callable[[nn.Module, tuple], ResultDict],
     ]
     checkpoint_dir: Path
