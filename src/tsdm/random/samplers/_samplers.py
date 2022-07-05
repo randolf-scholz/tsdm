@@ -509,8 +509,8 @@ class IntervalSampler(Sampler, Generic[TDVar]):
             x0 = self._get_value(offset, k)
 
             # get valid interval bounds, probably there is an easier way to do it...
-            stride_left: list[int] = compute_grid(xmin, xmax, st, offset=x0)
-            stride_right: list[int] = compute_grid(xmin, xmax, st, offset=x0 + dt)
+            stride_left: Sequence[int] = compute_grid(xmin, xmax, st, offset=x0)
+            stride_right: Sequence[int] = compute_grid(xmin, xmax, st, offset=x0 + dt)
             valid_strides: set[int] = set.intersection(
                 set(stride_left), set(stride_right)
             )
@@ -653,28 +653,28 @@ class SequenceSampler(BaseSampler):
 
     def __init__(
         self,
-        data_source: Sequence[Any],
+        data_source: Sequence,
         *,
-        xmin: Optional[int] = None,
-        xmax: Optional[int] = None,
-        stride: int = 1,
-        seq_len: int,
+        tmin: Optional[int] = None,
+        tmax: Optional[int] = None,
+        stride: Union[str, int] = 1,
+        seq_len: Union[int, str],
         return_mask: bool = False,
         shuffle: bool = False,
     ) -> None:
         super().__init__(data_source)
         self.data_source = data_source
 
-        xmin = xmin if xmin is not None else data_source[0]
-        xmax = xmax if xmax is not None else data_source[-1]
+        tmin = tmin if tmin is not None else data_source[0]
+        tmax = tmax if tmax is not None else data_source[-1]
 
-        self.xmin = xmin if not isinstance(xmin, str) else Timestamp(xmin)
-        self.xmax = xmax if not isinstance(xmax, str) else Timestamp(xmax)
+        self.xmin = Timestamp(tmin) if isinstance(tmin, str) else tmin
+        self.xmax = Timestamp(tmax) if isinstance(tmax, str) else tmax
+        self.stride = Timedelta(stride) if isinstance(stride, str) else stride
+        self.seq_len = Timedelta(seq_len) if isinstance(seq_len, str) else seq_len
 
-        self.stride = stride if not isinstance(stride, str) else Timedelta(stride)
-        self.seq_len = seq_len if not isinstance(seq_len, str) else Timedelta(seq_len)
         # k_max = max {k∈ℕ ∣ x_min + seq_len + k⋅stride ≤ x_max}
-        self.k_max = int((xmax - xmin - seq_len) // stride)
+        self.k_max = int((tmax - tmin - seq_len) // stride)
         self.return_mask = return_mask
         self.shuffle = shuffle
 
@@ -791,7 +791,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
             self.tmax = tmax
 
         # this gives us the correct zero, depending on the dtype
-        self.zero_td = cast(NumpyTDVar, self.tmin - self.tmin)
+        self.zero_td = self.tmin - self.tmin  # type: ignore[assignment]
         assert self.stride > self.zero_td, "stride cannot be zero."
 
         if isinstance(horizons, Sequence):
@@ -811,15 +811,9 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
             self.total_horizon = self.horizons  # type: ignore[assignment]
             self.cumulative_horizons = np.cumsum([self.zero_td, self.horizons])
 
-        self.start_values = cast(
-            NDArray[NumpyDTVar],
-            self.tmin + self.cumulative_horizons,  # type: ignore[call-overload, operator]
-        )
+        self.start_values = self.tmin + self.cumulative_horizons  # type: ignore[assignment, call-overload, operator]
 
-        self.offset = cast(
-            NumpyDTVar,
-            self.tmin + self.total_horizon,  # type: ignore[call-overload, operator]
-        )
+        self.offset = self.tmin + self.total_horizon  # type: ignore[assignment, call-overload, operator]
 
         # precompute the possible slices
         grid = compute_grid(self.tmin, self.tmax, self.stride, offset=self.offset)

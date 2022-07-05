@@ -313,8 +313,8 @@ class ElectricityTFT(BaseTask):
 
         sampler = SequenceSampler(
             encoded.index,
+            stride="1d",
             seq_len=self.observation_period + self.forecasting_period,
-            stride="1d",  # type: ignore[arg-type]
             return_mask=True,
             shuffle=shuffle,
         )

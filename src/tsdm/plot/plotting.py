@@ -12,7 +12,7 @@ __all__ = [
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import numpy as np
 import torch
@@ -251,7 +251,7 @@ def rasterize(
 
 @torch.no_grad()
 def plot_spectrum(
-    kernel: Tensor,
+    kernel: Union[Tensor, NDArray],
     /,
     *,
     style: str = "ggplot",
