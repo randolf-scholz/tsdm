@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Union
+from typing import Union, cast
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -109,7 +109,7 @@ def float_gcd(x: ArrayLike) -> float:
     z_int = np.rint(z).astype(int)
     assert np.allclose(z, z_int), "Not a GCD!"
     assert np.gcd.reduce(z_int) == 1, "something went wrong"
-    return gcd
+    return cast(float, gcd)
 
 
 def is_quasiregular(s: Union[Series, DataFrame]) -> bool:
@@ -191,7 +191,8 @@ def regularity_coefficient(
         Δt = Δt[Δt > zero]
     # Δt_min = np.min(Δt)
     # return Δt_min / gcd
-    return ((np.max(s) - np.min(s)) / gcd) / len(Δt)
+    coef: float = ((np.max(s) - np.min(s)) / gcd) / len(Δt)
+    return coef
 
 
 def time_gcd(s: Series) -> float:

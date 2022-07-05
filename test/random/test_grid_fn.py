@@ -74,7 +74,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
             pd_td("1h"),
             pd_dt("2000-01-15"),
         )
-    elif mode == "python":
+    if mode == "python":
         # noinspection PyArgumentList
         return GridTuple(
             py_dt(2000, 1, 1),
@@ -82,7 +82,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
             py_td(hours=1),
             py_dt(2000, 1, 15),
         )
-    elif mode == "np_int":
+    if mode == "np_int":
         # noinspection PyArgumentList
         return GridTuple(
             np_int(0),
@@ -90,7 +90,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
             np_int(1),
             np_int(1),
         )
-    elif mode == "np_float":
+    if mode == "np_float":
         # noinspection PyArgumentList
         return GridTuple(
             np_float(0.0),
@@ -98,7 +98,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
             np_float(0.6),
             np_float(1.4),
         )
-    elif mode == "int":
+    if mode == "int":
         # noinspection PyArgumentList
         return GridTuple(
             int(0),
@@ -106,7 +106,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
             int(1),
             int(1),
         )
-    elif mode == "float":
+    if mode == "float":
         # noinspection PyArgumentList
         return GridTuple(
             float(0.0),
