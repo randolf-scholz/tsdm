@@ -551,7 +551,10 @@ class IntervalSampler(Sampler, Generic[TDVar]):
 
 
 def grid(
-    tmin: TDVar, tmax: TDVar, timedelta: TDVar, offset: Optional[TDVar] = None
+    tmin: Union[str, TDVar],
+    tmax: Union[str, TDVar],
+    timedelta: Union[str, TDVar],
+    offset: Union[None, str, TDVar] = None,
 ) -> list[int]:
     r"""Compute $\{k∈ℤ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
 
@@ -569,6 +572,12 @@ def grid(
     -------
     list[int]
     """
+    # cast strings to timestamp/timedelta
+    tmin = Timestamp(tmin) if isinstance(tmin, str) else tmin
+    tmax = Timestamp(tmax) if isinstance(tmax, str) else tmax
+    timedelta = Timedelta(timedelta) if isinstance(timedelta, str) else timedelta
+    offset = Timestamp(offset) if isinstance(offset, str) else offset
+
     offset = tmin if offset is None else offset
     zero_dt = tmin - tmin  # generates zero variable of correct type
 
@@ -773,14 +782,20 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
 
         if tmin is None:
-            self.tmin = self.data[0]
+            if isinstance(self.data, (Series, DataFrame)):
+                self.tmin = self.data.iloc[0]
+            else:
+                self.tmin = self.data[0]
         elif isinstance(tmin, str):
             self.tmin = Timestamp(tmin)
         else:
             self.tmin = tmin
 
         if tmax is None:
-            self.tmax = self.data[-1]
+            if isinstance(self.data, (Series, DataFrame)):
+                self.tmax = self.data.iloc[-1]
+            else:
+                self.tmax = self.data[-1]
         elif isinstance(tmax, str):
             self.tmax = Timestamp(tmax)
         else:
