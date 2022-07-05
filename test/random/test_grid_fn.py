@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-r"""Test grid function."""
+r"""Test compute_grid function."""
 
 import logging
 from datetime import datetime as py_dt
 from datetime import timedelta as py_td
-from typing import Any
+from typing import Generic
 
 import pandas as pd
 from numpy import datetime64 as np_dt
@@ -14,15 +14,17 @@ from numpy import timedelta64 as np_td
 from pandas import Timedelta as pd_td
 from pandas import Timestamp as pd_dt
 from pytest import mark
+from typing_extensions import NamedTuple  # type: ignore[attr-defined]
 
-from tsdm.random.samplers import grid
+from tsdm.random.samplers import compute_grid
+from tsdm.util.types.time import DTVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
 MODES = ["numpy", "pandas", "python", "np_int", "np_float", "int", "float"]
 
 
 def _validate_grid_results(tmin, tmax, timedelta, offset):
-    result = grid(tmin, tmax, timedelta, offset=offset)
+    result = compute_grid(tmin, tmax, timedelta, offset=offset)
     kmin, kmax = result[0], result[-1]
 
     try:
@@ -46,61 +48,91 @@ def _validate_grid_results(tmin, tmax, timedelta, offset):
         raise AssertionError(f"Failed with values {values=}") from E
 
 
+class GridTuple(NamedTuple, Generic[DTVar, TDVar]):
+    r"""Input tuple for `compute_grid`."""
+
+    tmin: DTVar
+    tmax: DTVar
+    timedelta: TDVar
+    offset: TDVar
+
+
+def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
+    if mode == "numpy":
+        # noinspection PyArgumentList
+        return GridTuple(
+            np_dt("2000-01-01"),
+            np_dt("2001-01-01"),
+            np_td(1, "h"),
+            np_dt("2000-01-15"),
+        )
+    if mode == "pandas":
+        # noinspection PyArgumentList
+        return GridTuple(
+            pd_dt("2000-01-01"),
+            pd_dt("2001-01-01"),
+            pd_td("1h"),
+            pd_dt("2000-01-15"),
+        )
+    elif mode == "python":
+        # noinspection PyArgumentList
+        return GridTuple(
+            py_dt(2000, 1, 1),
+            py_dt(2001, 1, 1),
+            py_td(hours=1),
+            py_dt(2000, 1, 15),
+        )
+    elif mode == "np_int":
+        # noinspection PyArgumentList
+        return GridTuple(
+            np_int(0),
+            np_int(100),
+            np_int(1),
+            np_int(1),
+        )
+    elif mode == "np_float":
+        # noinspection PyArgumentList
+        return GridTuple(
+            np_float(0.0),
+            np_float(99.9),
+            np_float(0.6),
+            np_float(1.4),
+        )
+    elif mode == "int":
+        # noinspection PyArgumentList
+        return GridTuple(
+            int(0),
+            int(100),
+            int(1),
+            int(1),
+        )
+    elif mode == "float":
+        # noinspection PyArgumentList
+        return GridTuple(
+            float(0.0),
+            float(99.9),
+            float(0.6),
+            float(1.4),
+        )
+    raise ValueError(f"Unknown mode: {mode}")
+    # return tmin, tmax, timedelta, offset  # type: ignore[return-value]
+
+
 @mark.parametrize("mode", MODES)
 def test_grid_pandas(mode):
-    r"""Test grid function with various input types."""
-    __logger__.info("Testing  grid with mode: %s", mode)
+    r"""Test compute_grid function with various input types."""
+    __logger__.info("Testing  compute_grid with mode: %s", mode)
 
-    tmin: Any
-    tmax: Any
-    timedelta: Any
-
-    if mode == "numpy":
-        tmin = np_dt("2000-01-01")
-        tmax = np_dt("2001-01-01")
-        timedelta = np_td(1, "h")
-        offset = np_dt("2000-01-15")
-    elif mode == "pandas":
-        tmin = pd_dt("2000-01-01")
-        tmax = pd_dt("2001-01-01")
-        timedelta = pd_td("1h")
-        offset = pd_dt("2000-01-15")
-    elif mode == "python":
-        tmin = py_dt(2000, 1, 1)
-        tmax = py_dt(2001, 1, 1)
-        timedelta = py_td(hours=1)
-        offset = py_dt(2000, 1, 15)
-    elif mode == "np_int":
-        tmin = np_int(0)
-        tmax = np_int(100)
-        timedelta = np_int(1)
-        offset = np_int(1)
-    elif mode == "np_float":
-        tmin = np_float(0.0)
-        tmax = np_float(99.9)
-        timedelta = np_float(0.6)
-        offset = np_float(1.4)
-    elif mode == "int":
-        tmin = int(0)
-        tmax = int(100)
-        timedelta = int(1)
-        offset = int(1)
-    elif mode == "float":
-        tmin = float(0.0)
-        tmax = float(99.9)
-        timedelta = float(0.6)
-        offset = float(1.4)
-    else:
-        raise ValueError(f"Unknown mode: {mode}")
+    tmin, tmax, timedelta, offset = _make_inputs(mode)
 
     _validate_grid_results(tmin, tmax, timedelta, offset)
 
-    __logger__.info("Finished grid with mode: %s", mode)
+    __logger__.info("Finished compute_grid with mode: %s", mode)
 
 
 def test_grid_extra():
     r"""Test on some intervals."""
-    __logger__.info("Testing  grid on extra data")
+    __logger__.info("Testing  compute_grid on extra data")
 
     tmin = pd.Timestamp(0)
     tmax = tmin + pd.Timedelta(2, "h")
@@ -109,7 +141,7 @@ def test_grid_extra():
 
     _validate_grid_results(tmin, tmax, timedelta, offset)
 
-    __logger__.info("Finished grid on extra data")
+    __logger__.info("Finished compute_grid on extra data")
 
 
 def __main__():

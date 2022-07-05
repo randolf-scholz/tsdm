@@ -133,7 +133,7 @@ def shared_grid_plot(
     ylabels: Optional[list[str]] = None,
     **subplots_kwargs: Any,
 ) -> tuple[Figure, Axes]:
-    r"""Create a grid plot with shared axes and row/col headers.
+    r"""Create a compute_grid plot with shared axes and row/col headers.
 
     Based on https://stackoverflow.com/a/25814386/9318372
 
