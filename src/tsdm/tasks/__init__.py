@@ -39,6 +39,7 @@ __all__ = [
     "ElectricityTFT",
     "MIMIC_DeBrouwer",
     "USHCN_DeBrouwer",
+    "Kiwi_BioProcessTask",
 ]
 
 
@@ -48,6 +49,7 @@ from tsdm.tasks import base
 from tsdm.tasks.base import BaseTask
 from tsdm.tasks.electricity import ElectricityTFT
 from tsdm.tasks.etdataset import ETDatasetTask_Informer
+from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
 from tsdm.tasks.mimic_iii import MIMIC_DeBrouwer
@@ -60,5 +62,6 @@ TASKS: Final[dict[str, type[Task]]] = {
     "ETDatasetTask_Informer": ETDatasetTask_Informer,
     "KIWI_RUNS_TASK": KIWI_RUNS_TASK,
     "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
+    "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
 }
 r"""Dictionary of all available tasks."""

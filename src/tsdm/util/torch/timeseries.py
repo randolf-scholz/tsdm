@@ -394,3 +394,7 @@ class TimeSeriesDataset(TorchDataset):
         r"""Iterate over each timeseries."""
         yield self.timeseries
         yield self.metadata
+
+
+# TODO: create variant of TimeSeriesDataset that only contains a single TimeTensor,
+#       but exposes the index as a property.
