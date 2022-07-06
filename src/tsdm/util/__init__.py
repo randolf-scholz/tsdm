@@ -29,6 +29,7 @@ __all__ = [
     "paths_exists",
     "prepend_path",
     "round_relative",
+    "pairwise_disjoint",
 ]
 
 from tsdm.util import (
@@ -51,6 +52,7 @@ from tsdm.util._util import (
     initialize_from_config,
     is_partition,
     now,
+    pairwise_disjoint,
     paths_exists,
     prepend_path,
     round_relative,

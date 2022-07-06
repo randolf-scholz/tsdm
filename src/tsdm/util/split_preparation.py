@@ -4,22 +4,58 @@ __all__ = [
     # functions
     "folds_as_frame",
     "fold_frame_sparse",
+    "folds_from_groups",
 ]
 
 from collections.abc import Mapping, Sequence
-from typing import Literal, Optional, Union
+from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
-FOLDS = Sequence[Mapping[Literal["train", "valid", "test"], Union[Series, NDArray]]]
+FOLDS = Sequence[Mapping[str, Series]]
+
+
+def folds_from_groups(
+    groups: Series, /, *, num_folds: int = 5, seed: Optional[int] = None, **splits: int
+) -> FOLDS:
+    r"""Create folds from a Series of groups."""
+    assert splits, "No splits provided"
+    num_chunks = sum(splits.values())
+    q, remainder = divmod(num_chunks, num_folds)
+    assert remainder == 0, "Sum of chunks must be a multiple of num_folds"
+
+    unique_groups = groups.unique()
+    generator = np.random.default_rng(seed)
+    shuffled = generator.permutation(unique_groups)
+    chunks = np.array_split(shuffled, num_chunks)
+    chunks = np.array(chunks, dtype=object)
+
+    slices, a, b = {}, 0, 0
+    for key, size in splits.items():
+        a, b = b, b + size
+        slices[key] = np.arange(a, b)
+
+    print(slices)
+
+    folds = []
+    for k in range(num_folds):
+        fold = {}
+        for key in splits:
+            mask = (slices[key] + q * k) % num_chunks
+            selection = chunks[mask]
+            chunk = np.concatenate(selection)
+            fold[key] = groups.isin(chunk)
+        folds.append(fold)
+
+    return folds
 
 
 def folds_as_frame(
     folds: FOLDS, *, index: Optional[Mapping | NDArray] = None, sparse: bool = False
 ) -> DataFrame:
-    r"""Create a table holding the fold information..
+    r"""Create a table holding the fold information.
 
     +-------+-------+-------+-------+-------+-------+
     | fold  | 0     | 1     | 2     | 3     | 4     |
