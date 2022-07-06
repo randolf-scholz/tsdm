@@ -30,7 +30,6 @@ __all__ = [
     "scale",
 ]
 
-import logging
 from collections.abc import Callable
 from typing import Final
 
@@ -55,8 +54,6 @@ from tsdm.encoders.functional._functional import (
     timefeatures,
     triplet2dense,
 )
-
-__logger__ = logging.getLogger(__name__)
 
 FunctionalEncoder = Callable
 r"""Type hint for functional encoders."""

@@ -14,8 +14,6 @@ __all__ = [
     "TASKS",
 ]
 
-import logging
-
 from tsdm.hyperopt._hyperopt import (
     ACTIVATIONS,
     DATASETS,
@@ -28,5 +26,3 @@ from tsdm.hyperopt._hyperopt import (
     TASKS,
     LookupTables,
 )
-
-__logger__ = logging.getLogger(__name__)

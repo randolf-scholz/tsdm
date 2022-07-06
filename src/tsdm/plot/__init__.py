@@ -12,8 +12,6 @@ __all__ = [
     "center_axes",
 ]
 
-import logging
-
 from tsdm.plot import __setup__
 from tsdm.plot.image import kernel_heatmap
 from tsdm.plot.plotting import (
@@ -23,5 +21,3 @@ from tsdm.plot.plotting import (
     shared_grid_plot,
     visualize_distribution,
 )
-
-__logger__ = logging.getLogger(__name__)

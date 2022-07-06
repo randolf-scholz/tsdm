@@ -26,7 +26,6 @@ __all__ = [
     "ValueEncoder",
 ]
 
-import logging
 import warnings
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
@@ -42,17 +41,16 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.encoders.modular.generic import BaseEncoder
+from tsdm.util import pairwise_disjoint
 from tsdm.util.strings import repr_mapping
 from tsdm.util.torch import TimeTensor
-from tsdm.util.types import PandasObject, PathType
+from tsdm.util.types import PandasObject, PathType, TensorVar
 from tsdm.util.types.protocols import NTuple
-
-__logger__ = logging.getLogger(__name__)
 
 
 def apply_along_axes(
-    a: Tensor, b: Tensor, op: Callable, axes: tuple[int, ...]
-) -> Tensor:
+    a: TensorVar, b: TensorVar, op: Callable, axes: tuple[int, ...]
+) -> TensorVar:
     r"""Apply a function to multiple axes of a tensor.
 
     Parameters
@@ -82,12 +80,6 @@ def apply_along_axes(
         a = op(a, b)
         a = np.moveaxis(a, source, inverse_permutation)
     return a
-
-
-def pairwise_disjoint(sets: Iterable[set]) -> bool:
-    r"""Check if sets are pairwise disjoint."""
-    union = set().union(*sets)
-    return len(union) == sum(len(s) for s in sets)
 
 
 class CSVEncoder(BaseEncoder):

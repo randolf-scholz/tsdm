@@ -3,15 +3,12 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-import logging
 from typing import Any, Final, Optional
 
 from torch import Tensor, jit, nn
 
 from tsdm.util import deep_dict_update, initialize_from_config
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit

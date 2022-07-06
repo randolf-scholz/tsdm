@@ -50,15 +50,11 @@ __all__ = [
     "METRICS",
 ]
 
-import logging
 from typing import Final, Union
 
 from tsdm.metrics import functional, modular
 from tsdm.metrics.functional import FunctionalMetric, FunctionalMetrics
 from tsdm.metrics.modular import ModularMetric, ModularMetrics
-
-__logger__ = logging.getLogger(__name__)
-
 
 Metric = Union[FunctionalMetric, ModularMetric]
 r"""Type hint for metrics."""

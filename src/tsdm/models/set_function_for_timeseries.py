@@ -9,7 +9,6 @@ __all__ = [
     "GroupedSetFuncTS",
 ]
 
-import logging
 from typing import Optional
 
 import torch
@@ -24,8 +23,6 @@ from tsdm.models.generic import (
     ScaledDotProductAttention,
 )
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit

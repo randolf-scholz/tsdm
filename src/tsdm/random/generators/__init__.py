@@ -14,10 +14,7 @@ __all__ = [
     "GENERATORS",
 ]
 
-import logging
 from typing import Any, Final
-
-__logger__ = logging.getLogger(__name__)
 
 Generator = Any
 r"""Type hint for generators."""

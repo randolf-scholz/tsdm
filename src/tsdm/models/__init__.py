@@ -26,7 +26,6 @@ __all__ = [
     "ScaledDotProductAttention",
 ]
 
-import logging
 from typing import Final
 
 from torch import nn
@@ -36,8 +35,6 @@ from tsdm.models._models import BaseModel
 from tsdm.models.generic import MLP, DeepSet, ScaledDotProductAttention
 from tsdm.models.ode_rnn import ODE_RNN
 from tsdm.models.set_function_for_timeseries import GroupedSetFuncTS, SetFuncTS
-
-__logger__ = logging.getLogger(__name__)
 
 Model = nn.Module
 r"""Type hint for models."""

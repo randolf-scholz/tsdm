@@ -1,12 +1,5 @@
 r"""Tasks associated with the Traffic dataset."""
 
-import logging
-
-# __all__ = []
-
-
-__logger__ = logging.getLogger(__name__)
-
 
 class TrafficTFT:
     r"""Experiments as performed by the "TFT" paper.

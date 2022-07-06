@@ -26,8 +26,6 @@ __all__ = [
     "Config",
 ]
 
-import logging
-
 from tsdm.config._config import (
     BASEDIR,
     CONFIG,
@@ -44,5 +42,3 @@ from tsdm.config._config import (
     Config,
     conf,
 )
-
-__logger__ = logging.getLogger(__name__)

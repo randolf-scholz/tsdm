@@ -12,7 +12,7 @@ __all__ = [
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import numpy as np
 import torch
@@ -133,7 +133,7 @@ def shared_grid_plot(
     ylabels: Optional[list[str]] = None,
     **subplots_kwargs: Any,
 ) -> tuple[Figure, Axes]:
-    r"""Create a grid plot with shared axes and row/col headers.
+    r"""Create a compute_grid plot with shared axes and row/col headers.
 
     Based on https://stackoverflow.com/a/25814386/9318372
 
@@ -251,7 +251,7 @@ def rasterize(
 
 @torch.no_grad()
 def plot_spectrum(
-    kernel: Tensor,
+    kernel: Union[Tensor, NDArray],
     /,
     *,
     style: str = "ggplot",

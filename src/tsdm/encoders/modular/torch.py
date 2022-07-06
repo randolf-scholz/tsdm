@@ -7,15 +7,12 @@ __all__ = [
     "PositionalEncoder",
 ]
 
-import logging
 from typing import Final
 
 import torch
 from torch import Tensor, jit, nn
 
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit

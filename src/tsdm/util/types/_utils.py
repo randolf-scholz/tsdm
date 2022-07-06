@@ -21,7 +21,7 @@ Numerical Type Hierarchy:
 """
 
 import logging
-from typing import Final, Optional, Union
+from typing import Final, Optional, Union, cast
 
 import numpy as np
 import pandas
@@ -100,7 +100,7 @@ def is_empty(series: Series) -> bool:
     -------
     bool
     """
-    return pandas.isna(series).all()
+    return cast(bool, pandas.isna(series).all())
 
 
 def get_uniques(series: Series, ignore_nan: bool = True) -> Series:
@@ -202,7 +202,7 @@ def float_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
     """
     assert pandas.api.types.is_float_dtype(series), "Series must be 'float' dtype!"
     uniques = get_uniques(series) if uniques is None else uniques
-    return uniques.apply(float.is_integer).all()
+    return cast(bool, uniques.apply(float.is_integer).all())
 
 
 #

@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""MIMIC-II clinical dataset."""
 
 __all__ = ["MIMIC_DeBrouwer", "mimic_collate"]
 

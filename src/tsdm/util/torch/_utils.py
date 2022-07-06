@@ -57,8 +57,8 @@ def aggregate_and(
     else:
         dims = dim
 
-    if isinstance(dims, Tensor):
-        if keepdim:
+    if isinstance(dims, Tensor):  # type: ignore[unreachable]
+        if keepdim:  # type: ignore[unreachable]
             for d in dims:
                 x = torch.all(x, dim=d, keepdim=keepdim)
         else:

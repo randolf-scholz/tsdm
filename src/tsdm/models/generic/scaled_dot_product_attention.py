@@ -8,7 +8,6 @@ __all__ = [
     "ScaledDotProductAttention",
 ]
 
-import logging
 from math import sqrt
 from typing import Optional
 
@@ -17,8 +16,6 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit

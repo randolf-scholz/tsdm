@@ -9,14 +9,11 @@ __all__ = [
 ]
 
 
-import logging
 from typing import Optional
 
 from torch import nn
 
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit
