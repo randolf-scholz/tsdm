@@ -11,10 +11,5 @@ __all__ = [
     "sample_timedeltas",
 ]
 
-
-import logging
-
 from tsdm.random import generators, samplers, stats
 from tsdm.random._random import sample_timedeltas, sample_timestamps
-
-__logger__ = logging.getLogger(__name__)

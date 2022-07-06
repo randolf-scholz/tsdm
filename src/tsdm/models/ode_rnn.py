@@ -6,7 +6,6 @@ __all__ = [
 ]
 
 
-import logging
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -19,8 +18,6 @@ from torch import nn
 
 from tsdm.models._models import BaseModel
 from tsdm.util import deep_dict_update
-
-__logger__ = logging.getLogger(__name__)
 
 
 @contextmanager

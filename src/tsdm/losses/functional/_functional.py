@@ -14,12 +14,9 @@ __all__ = [  # Functions
     "q_quantile_loss",
 ]
 
-import logging
 
 import torch
 from torch import Tensor, jit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @jit.script

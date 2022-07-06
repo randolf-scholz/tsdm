@@ -52,14 +52,11 @@ __all__ = [
     "FunctionalEncoders",
 ]
 
-import logging
 from typing import Final, Union
 
 from tsdm.encoders import functional, modular
 from tsdm.encoders.functional import FunctionalEncoder, FunctionalEncoders
 from tsdm.encoders.modular import ModularEncoder, ModularEncoders
-
-__logger__ = logging.getLogger(__name__)
 
 Encoder = Union[FunctionalEncoder, ModularEncoder]
 r"""Type hint for encoders."""

@@ -17,8 +17,6 @@ __all__ = [
     "cumulative_or",
 ]
 
-import logging
-
 from tsdm.util.torch._utils import (
     aggregate_and,
     aggregate_or,
@@ -33,5 +31,3 @@ from tsdm.util.torch.timeseries import (
     TimeSeriesTuple,
     TimeTensor,
 )
-
-__logger__ = logging.getLogger(__name__)

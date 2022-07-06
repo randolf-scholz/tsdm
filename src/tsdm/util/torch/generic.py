@@ -8,7 +8,6 @@ __all__ = [
     "DatasetCollection",
 ]
 
-import logging
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any, Optional
 
@@ -16,8 +15,6 @@ from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.util.strings import repr_mapping
-
-__logger__ = logging.getLogger(__name__)
 
 
 class MappingDataset(TorchDataset, Mapping):

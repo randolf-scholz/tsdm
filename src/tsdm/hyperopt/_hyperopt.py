@@ -14,7 +14,6 @@ __all__ = [
     "TASKS",
 ]
 
-import logging
 from typing import Any, Final
 
 from tsdm.datasets import DATASETS
@@ -25,8 +24,6 @@ from tsdm.models import MODELS
 from tsdm.models.activations import ACTIVATIONS
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.tasks import TASKS
-
-__logger__ = logging.getLogger(__name__)
 
 LookupTables: Final[dict[str, dict[str, Any]]] = {
     "activation": ACTIVATIONS,

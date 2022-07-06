@@ -21,7 +21,6 @@ __all__ = [
 ]
 
 
-import logging
 from typing import Final
 
 from torch import nn
@@ -34,9 +33,6 @@ from tsdm.losses.modular._modular import (
     Q_Quantile,
     Q_Quantile_Loss,
 )
-
-__logger__ = logging.getLogger(__name__)
-
 
 ModularLoss = nn.Module
 r"""Type hint for modular losses."""
