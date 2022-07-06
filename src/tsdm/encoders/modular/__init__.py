@@ -44,7 +44,6 @@ __all__ = [
     "TripletDecoder",
 ]
 
-import logging
 from typing import Final
 
 from sklearn import preprocessing as sk_preprocessing
@@ -82,9 +81,6 @@ from tsdm.encoders.modular.generic import (
     ProductEncoder,
 )
 from tsdm.encoders.modular.numerical import LogEncoder, MinMaxScaler, Standardizer
-
-__logger__ = logging.getLogger(__name__)
-
 
 SklearnModularEncoders: Final[dict[str, type[BaseEstimator]]] = {
     "Binarizer": sk_preprocessing.Binarizer,

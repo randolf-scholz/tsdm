@@ -3,15 +3,12 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-import logging
 from collections import OrderedDict
 from typing import Any, Literal
 
 from torch import nn
 
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit

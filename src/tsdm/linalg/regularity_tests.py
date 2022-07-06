@@ -13,14 +13,12 @@ __all__ = [
     "regularity_coefficient",
 ]
 
-import logging
+import warnings
 from typing import Union, cast
 
 import numpy as np
 from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
-
-__logger__ = logging.getLogger(__name__)
 
 
 def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> float:
@@ -46,7 +44,7 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
     ----------
     - <https://stackoverflow.com/q/45323619/9318372>
     """
-    __logger__.warning(
+    warnings.warn(
         "The implementation of approx_float_gcd does not work 100% correctly yet!"
     )
     x = np.asanyarray(x)

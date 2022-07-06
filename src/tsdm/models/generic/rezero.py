@@ -9,7 +9,6 @@ __all__ = [
     "ResNetBlock",
 ]
 
-import logging
 from collections import OrderedDict
 from math import ceil, log2
 from typing import Any, Final, Optional, Union
@@ -21,8 +20,6 @@ from torch._jit_internal import _copy_to_script_wrapper
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.util import deep_dict_update, initialize_from_config
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit

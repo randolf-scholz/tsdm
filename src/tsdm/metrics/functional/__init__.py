@@ -10,14 +10,10 @@ __all__ = [
     "FunctionalMetrics",
 ]
 
-import logging
 from collections.abc import Callable
 from typing import Final
 
 from torch import Tensor
-
-__logger__ = logging.getLogger(__name__)
-
 
 FunctionalMetric = Callable[..., Tensor]
 r"""Type hint for functional metrics."""

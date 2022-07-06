@@ -26,7 +26,6 @@ __all__ = [
     "ValueEncoder",
 ]
 
-import logging
 import warnings
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
@@ -46,8 +45,6 @@ from tsdm.util.strings import repr_mapping
 from tsdm.util.torch import TimeTensor
 from tsdm.util.types import PandasObject, PathType, TensorVar
 from tsdm.util.types.protocols import NTuple
-
-__logger__ = logging.getLogger(__name__)
 
 
 def apply_along_axes(

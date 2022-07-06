@@ -33,7 +33,6 @@ __all__ = [
 ]
 
 
-import logging
 from typing import Final, Union
 
 from tsdm.losses import functional, modular
@@ -54,8 +53,6 @@ from tsdm.losses.modular import (
     Q_Quantile,
     Q_Quantile_Loss,
 )
-
-__logger__ = logging.getLogger(__name__)
 
 Loss = Union[FunctionalLoss, ModularLoss]
 r"""Type hint for losses."""

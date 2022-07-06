@@ -10,13 +10,9 @@ __all__ = [
     "ModularMetrics",
 ]
 
-import logging
 from typing import Final
 
 from torch import nn
-
-__logger__ = logging.getLogger(__name__)
-
 
 ModularMetric = nn.Module
 r"""Type hint for modular losses."""

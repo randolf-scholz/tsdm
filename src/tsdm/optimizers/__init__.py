@@ -9,13 +9,10 @@ __all__ = [
     "LR_SCHEDULERS",
 ]
 
-import logging
 from typing import Final
 
 import torch.optim
 from torch.optim import lr_scheduler
-
-__logger__ = logging.getLogger(__name__)
 
 Optimizer = torch.optim.Optimizer
 r"""Type hint for optimizers."""

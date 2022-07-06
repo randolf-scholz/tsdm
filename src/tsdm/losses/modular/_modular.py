@@ -17,7 +17,6 @@ __all__ = [
 ]
 
 
-import logging
 from typing import Final
 
 import numpy as np
@@ -26,8 +25,6 @@ from torch import Tensor, jit, nn
 
 from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit

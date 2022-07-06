@@ -42,7 +42,6 @@ __all__ = [
 ]
 
 
-import logging
 from typing import Final
 
 from tsdm.tasks import base
@@ -53,9 +52,6 @@ from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
 from tsdm.tasks.mimic_iii import MIMIC_DeBrouwer
 from tsdm.tasks.ushcn import USHCN_DeBrouwer
-
-__logger__ = logging.getLogger(__name__)
-
 
 Task = BaseTask
 r"""Type hint for tasks."""

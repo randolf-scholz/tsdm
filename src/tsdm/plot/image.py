@@ -5,7 +5,6 @@ TODO: Module summary.
 
 __all__ = ["kernel_heatmap"]
 
-import logging
 from typing import Literal, Union
 
 import numpy as np
@@ -13,8 +12,6 @@ import torch
 from matplotlib import cm
 from numpy.typing import NDArray
 from torch import Tensor
-
-logger = logging.getLogger(__name__)
 
 
 @torch.no_grad()
