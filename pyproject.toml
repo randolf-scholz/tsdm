@@ -14,7 +14,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
-version = "0.2.8"
+version = "0.2.9"
 description = "Time-Series Datasets and Models"
 license = "MIT"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]

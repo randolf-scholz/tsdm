@@ -50,7 +50,7 @@ def pairwise_disjoint(sets: Iterable[set]) -> bool:
 
 def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
     r"""Check if masks are pairwise disjoint."""
-    return all(sum(masks) == 1)
+    return all(sum(masks) == 1)  # type: ignore[arg-type]
 
 
 def flatten_dict(d: Mapping) -> dict:
