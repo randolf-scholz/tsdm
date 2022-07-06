@@ -19,6 +19,7 @@ __all__ = [
     "paths_exists",
     "prepend_path",
     "round_relative",
+    "pairwise_disjoint",
 ]
 
 import os
@@ -37,6 +38,12 @@ from tsdm.util.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
 EmptyPath: Path = Path()
+
+
+def pairwise_disjoint(sets: Iterable[set]) -> bool:
+    r"""Check if sets are pairwise disjoint."""
+    union = set().union(*sets)
+    return len(union) == sum(len(s) for s in sets)
 
 
 def flatten_dict(d: Mapping) -> dict:

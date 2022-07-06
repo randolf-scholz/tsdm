@@ -41,6 +41,7 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.encoders.modular.generic import BaseEncoder
+from tsdm.util import pairwise_disjoint
 from tsdm.util.strings import repr_mapping
 from tsdm.util.torch import TimeTensor
 from tsdm.util.types import PandasObject, PathType, TensorVar
@@ -79,12 +80,6 @@ def apply_along_axes(
         a = op(a, b)
         a = np.moveaxis(a, source, inverse_permutation)
     return a
-
-
-def pairwise_disjoint(sets: Iterable[set]) -> bool:
-    r"""Check if sets are pairwise disjoint."""
-    union = set().union(*sets)
-    return len(union) == sum(len(s) for s in sets)
 
 
 class CSVEncoder(BaseEncoder):
