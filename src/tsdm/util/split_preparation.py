@@ -89,11 +89,13 @@ def folds_as_frame(
 
     if not sparse:
         return splits
+
     return fold_frame_sparse(splits)
 
 
 def fold_frame_sparse(df: DataFrame, /) -> DataFrame:
     r"""Create a sparse table holding the fold information."""
+    # TODO: simplify this code. It should just be pd.concat(folds)
     columns = df.columns
 
     # get categoricals

@@ -87,7 +87,7 @@ __all__ = [
 ]
 
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import Any, Generic, Optional
@@ -100,10 +100,16 @@ from tsdm.encoders import ModularEncoder
 from tsdm.util import LazyDict
 from tsdm.util.types import KeyType
 
-__logger__ = logging.getLogger(__name__)
+
+class BaseTaskMetaClass(ABCMeta):
+    r"""Metaclass for BaseTask."""
+
+    def __init__(cls, *args, **kwargs):
+        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+        super().__init__(*args, **kwargs)
 
 
-class BaseTask(ABC, Generic[KeyType]):
+class BaseTask(ABC, Generic[KeyType], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).

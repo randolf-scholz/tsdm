@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Predicting Final in BioProcesses."""
 
 __all__ = [
     # Classes
