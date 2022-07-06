@@ -8,7 +8,6 @@ __all__ = [
     "KIWI_RUNS_TASK",
 ]
 
-import logging
 from collections.abc import Callable
 from functools import cached_property
 from itertools import product
@@ -27,8 +26,6 @@ from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.util.strings import repr_namedtuple
 from tsdm.util.torch import MappingDataset, TimeSeriesDataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 class Sample(NamedTuple):

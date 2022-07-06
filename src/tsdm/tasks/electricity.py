@@ -1,7 +1,4 @@
-r"""Tasks associated with the Electricity dataset.
-
-TODO: Module summary.
-"""
+r"""Tasks associated with the Electricity dataset."""
 
 
 __all__ = [
@@ -13,7 +10,6 @@ __all__ = [
     "ElectricityELBMBTTF",
 ]
 
-import logging
 from functools import cached_property
 from typing import Any, Callable, Literal, Mapping, Sequence
 
@@ -27,8 +23,6 @@ from tsdm.datasets import Electricity
 from tsdm.encoders.modular import BaseEncoder, Standardizer
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
-
-__logger__ = logging.getLogger(__name__)
 
 
 class ElectricityDeepState:

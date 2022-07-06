@@ -1,7 +1,4 @@
-r"""TODO: Module Summary Line.
-
-TODO: Module description
-"""
+r"""Predicting transformer oil temperatures."""
 
 __all__ = [
     # Classes
@@ -9,7 +6,6 @@ __all__ = [
 ]
 
 
-import logging
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import Any, Literal
@@ -33,8 +29,6 @@ from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.util import initialize_from
-
-__logger__ = logging.getLogger(__name__)
 
 
 class ETDatasetTask_Informer(BaseTask):

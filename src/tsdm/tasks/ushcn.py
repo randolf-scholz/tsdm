@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""USHCN climate dataset."""
 
 __all__ = ["USHCN_DeBrouwer", "ushcn_collate"]
 
