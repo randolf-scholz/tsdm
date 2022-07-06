@@ -384,9 +384,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
         r"""Check if dataset files exist."""
         if key is None:
             return paths_exists(self.dataset_paths)
-        if isinstance(self.dataset_paths, Mapping):
-            return paths_exists(self.dataset_paths[key])
-        return paths_exists(self.dataset_paths)
+        return paths_exists(self.dataset_paths[key])
 
     def clean(self, key: Optional[KeyType] = None, force: bool = False) -> None:
         r"""Clean the selected DATASET_OBJECT.

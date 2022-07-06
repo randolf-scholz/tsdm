@@ -5,16 +5,12 @@ Enable LaTeX rendering by default, if installed.
 
 __all__ = []  # type: ignore[var-annotated]
 
-import logging
 import warnings
 from typing import Final
 
 import matplotlib
 
-__logger__ = logging.getLogger(__name__)
-
 USE_TEX: Final[bool] = matplotlib.checkdep_usetex(True)
-
 
 if USE_TEX:
     try:

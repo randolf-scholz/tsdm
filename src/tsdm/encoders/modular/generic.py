@@ -13,7 +13,6 @@ __all__ = [
     "CloneEncoder",
 ]
 
-import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Sequence, Union, overload
@@ -21,8 +20,6 @@ from typing import Any, Sequence, Union, overload
 from tsdm.util.decorators import wrap_func
 from tsdm.util.strings import repr_sequence
 from tsdm.util.types import ObjectType
-
-__logger__ = logging.getLogger(__name__)
 
 
 class BaseEncoder(ABC):

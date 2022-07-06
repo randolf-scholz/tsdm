@@ -9,7 +9,6 @@ __all__ = [
     "DeepSetReZero",
 ]
 
-import logging
 from typing import Optional
 
 import torch
@@ -18,8 +17,6 @@ from torch import Tensor, nn
 from tsdm.models.generic.mlp import MLP
 from tsdm.models.generic.rezero import ReZeroMLP
 from tsdm.util.decorators import autojit
-
-__logger__ = logging.getLogger(__name__)
 
 
 @autojit

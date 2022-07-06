@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Base Class for Tasks."""
 
 __all__ = [
     # Classes
@@ -9,10 +6,5 @@ __all__ = [
     "ExampleTask",
 ]
 
-
-import logging
-
 from tsdm.tasks.base._base_tasks import BaseTask
 from tsdm.tasks.base.template import ExampleTask
-
-__logger__ = logging.getLogger(__name__)

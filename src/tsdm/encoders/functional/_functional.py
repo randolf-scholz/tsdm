@@ -18,14 +18,12 @@ __all__ = [
 ]
 
 
-import logging
+import warnings
 from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
-
-__logger__ = logging.getLogger(__name__)
 
 
 def infer_categories(s: Series) -> set:
@@ -247,7 +245,7 @@ def time2float(ds: Series) -> Series:
     elif np.issubdtype(ds.dtype, np.timedelta64):
         timedeltas = ds.view("timedelta64[ns]")
     elif np.issubdtype(ds.dtype, np.floating):
-        __logger__.warning("Array is already floating dtype.")
+        warnings.warn("Array is already floating dtype.")
         return ds
     else:
         raise ValueError(f"{ds.dtype=} not supported")

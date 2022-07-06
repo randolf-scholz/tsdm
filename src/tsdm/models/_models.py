@@ -16,8 +16,6 @@ from urllib.parse import urlparse
 
 from tsdm.config import MODELDIR
 
-__logger__ = logging.getLogger(__name__)
-
 
 class BaseModelMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""

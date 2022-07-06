@@ -1,7 +1,4 @@
-r"""TODO: Module Summary Line.
-
-TODO: Module description
-"""
+r"""Predicting transformer oil temperatures."""
 
 __all__ = [
     # Classes
@@ -9,7 +6,6 @@ __all__ = [
 ]
 
 
-import logging
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import Any, Literal
@@ -33,8 +29,6 @@ from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.util import initialize_from
-
-__logger__ = logging.getLogger(__name__)
 
 
 class ETDatasetTask_Informer(BaseTask):
@@ -204,10 +198,7 @@ class ETDatasetTask_Informer(BaseTask):
         ds = self.splits[key]
         tensors = self.preprocessor.transform(ds)
         # tensors = self.encoder.encode(ds)
-
         dataset = TensorDataset(*tensors)
-        sampler = SequenceSampler(
-            dataset, seq_len=self.horizon, shuffle=shuffle  # type:ignore[arg-type]
-        )
+        sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)  # type: ignore[arg-type]
 
         return DataLoader(dataset, sampler=sampler, **kwargs)

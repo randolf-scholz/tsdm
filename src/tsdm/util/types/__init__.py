@@ -19,6 +19,8 @@ __all__ = [
     # Static Types
     "PathType",
     "PandasObject",
+    "PandasVar",
+    "TensorVar",
 ]
 
 import logging
@@ -30,10 +32,12 @@ from tsdm.util.types._types import (
     Nested,
     ObjectType,
     PandasObject,
+    PandasVar,
     Parameters,
     PathType,
     ReturnType,
     Self,
+    TensorVar,
     Type,
     ValueType,
     nnModuleType,

@@ -56,7 +56,6 @@ __all__ = [
     "USHCN_SmallChunkedSporadic",
 ]
 
-import logging
 from typing import Final
 
 from tsdm.datasets import base, synthetic
@@ -76,8 +75,6 @@ from tsdm.datasets.physionet2012 import Physionet2012
 from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
-
-__logger__ = logging.getLogger(__name__)
 
 dataset = BaseDataset
 r"""Type hint for dataset."""

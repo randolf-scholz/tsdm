@@ -1,12 +1,5 @@
 r"""Example Task Implementation."""
 
-import logging
-
-# __all__ = []
-
-
-__logger__ = logging.getLogger(__name__)
-
 
 class ExampleTask:
     r"""Example of how a Task should be documented / implemented.

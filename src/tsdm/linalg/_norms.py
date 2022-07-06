@@ -14,7 +14,6 @@ __all__ = [
     "multi_norm",
 ]
 
-import logging
 from collections.abc import Iterable, Sequence
 from functools import singledispatch
 from typing import Optional, Union, cast, overload
@@ -23,8 +22,6 @@ import numpy as np
 import torch
 from numpy.typing import ArrayLike, NDArray
 from torch import Tensor, jit
-
-__logger__ = logging.getLogger(__name__)
 
 SizeLike = Union[int, tuple[int, ...]]
 """Type hint for a size-like object."""

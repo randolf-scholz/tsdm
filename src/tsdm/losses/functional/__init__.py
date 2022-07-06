@@ -19,7 +19,6 @@ __all__ = [
     "q_quantile_loss",
 ]
 
-import logging
 from collections.abc import Callable
 from typing import Final
 
@@ -33,8 +32,6 @@ from tsdm.losses.functional._functional import (
     q_quantile_loss,
     rmse,
 )
-
-__logger__ = logging.getLogger(__name__)
 
 # TODO: use better definition [Tensor, Tensor, ...] -> Tensor once supported
 FunctionalLoss = Callable[..., Tensor]

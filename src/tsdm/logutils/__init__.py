@@ -15,7 +15,6 @@ __all__ = [
     "StandardLogger",
 ]
 
-import logging
 from collections.abc import Callable
 from typing import Final
 
@@ -28,9 +27,6 @@ from tsdm.logutils._logutils import (
     log_optimizer_state,
     log_values,
 )
-
-__logger__ = logging.getLogger(__name__)
-
 
 Logger = Callable[..., None]
 

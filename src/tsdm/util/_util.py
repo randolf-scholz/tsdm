@@ -19,6 +19,8 @@ __all__ = [
     "paths_exists",
     "prepend_path",
     "round_relative",
+    "pairwise_disjoint",
+    "pairwise_disjoint_masks",
 ]
 
 import os
@@ -31,12 +33,24 @@ from pathlib import Path
 from typing import Any, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
+from numpy.typing import NDArray
 
 from tsdm.util.types import Nested, ObjectType, PathType, ReturnType
 from tsdm.util.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
 EmptyPath: Path = Path()
+
+
+def pairwise_disjoint(sets: Iterable[set]) -> bool:
+    r"""Check if sets are pairwise disjoint."""
+    union = set().union(*sets)
+    return len(union) == sum(len(s) for s in sets)
+
+
+def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
+    r"""Check if masks are pairwise disjoint."""
+    return all(sum(masks) == 1)
 
 
 def flatten_dict(d: Mapping) -> dict:
