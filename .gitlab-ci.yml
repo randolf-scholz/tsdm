@@ -263,6 +263,7 @@ pytest:
       > badges/pytest.svg
   # --logo="https://raw.githubusercontent.com/pytest-dev/pytest/main/doc/en/img/pytest_logo_curves.svg"
   # --embed-logo
+  coverage: '/TOTAL.*\s+(\d+\%)/'
   artifacts:
     # https://software.ismll.uni-hildesheim.de/help/ci/unit_test_reports
     reports:
