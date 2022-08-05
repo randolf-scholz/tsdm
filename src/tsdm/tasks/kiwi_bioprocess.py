@@ -157,8 +157,8 @@ class Kiwi_BioProcessTask(BaseTask):
     def dataset(self) -> KIWI_RUNS:
         r"""Return the cached dataset."""
         dataset = KIWI_RUNS()
-        dataset.metadata.drop([355, 482], inplace=True)
-        dataset.timeseries.drop([355, 482], inplace=True)
+        dataset.metadata.drop([482], inplace=True)
+        dataset.timeseries.drop([482], inplace=True)
         return dataset
 
     @cached_property

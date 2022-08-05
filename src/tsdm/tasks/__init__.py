@@ -63,5 +63,8 @@ TASKS: Final[dict[str, type[Task]]] = {
     "KIWI_RUNS_TASK": KIWI_RUNS_TASK,
     "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
     "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
+    "ElectricityTFT": ElectricityTFT,
+    "MIMIC_DeBrouwer": MIMIC_DeBrouwer,
+    "USHCN_DeBrouwer": USHCN_DeBrouwer,
 }
 r"""Dictionary of all available tasks."""
