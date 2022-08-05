@@ -137,7 +137,7 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import DATASET_OBJECT, MultiFrameDataset
 from tsdm.encoders.modular import TripletDecoder
-from tsdm.util.types import PathType
+from tsdm.utils.types import PathType
 
 GENERAL_DESCRIPTORS = {
     "Age": int,

@@ -18,8 +18,8 @@ from torch import Tensor, jit, nn
 from torch._jit_internal import _copy_to_script_wrapper
 
 from tsdm.models.generic.dense import ReverseDense
-from tsdm.util import deep_dict_update, initialize_from_config
-from tsdm.util.decorators import autojit
+from tsdm.utils import deep_dict_update, initialize_from_config
+from tsdm.utils.decorators import autojit
 
 
 @autojit

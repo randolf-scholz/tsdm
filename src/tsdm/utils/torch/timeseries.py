@@ -23,7 +23,7 @@ from torch import Tensor
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import TensorDataset
 
-from tsdm.util.strings import repr_array, repr_sequence
+from tsdm.utils.strings import repr_array, repr_sequence
 
 
 class _IndexMethodClone:

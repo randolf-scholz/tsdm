@@ -28,7 +28,7 @@ from tsdm.encoders.modular import (
 from tsdm.losses import ModularLoss, ModularLosses
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.util import initialize_from
+from tsdm.utils import initialize_from
 
 
 class ETDatasetTask_Informer(BaseTask):

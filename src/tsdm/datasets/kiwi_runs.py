@@ -19,7 +19,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 
 from tsdm.datasets.base import MultiFrameDataset
-from tsdm.util import round_relative
+from tsdm.utils import round_relative
 
 __logger__ = logging.getLogger(__name__)
 

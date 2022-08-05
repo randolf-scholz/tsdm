@@ -25,8 +25,8 @@ __all__ = [
 
 import logging
 
-from tsdm.util.types import abc, protocols
-from tsdm.util.types._types import (
+from tsdm.utils.types import abc, protocols
+from tsdm.utils.types._types import (
     ClassType,
     KeyType,
     Nested,

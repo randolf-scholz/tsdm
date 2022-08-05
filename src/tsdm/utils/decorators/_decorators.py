@@ -33,8 +33,8 @@ from typing import Any, Optional, Union, overload
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.util.types import ClassType, ObjectType, ReturnType, Type, nnModuleType
-from tsdm.util.types.abc import CollectionType
+from tsdm.utils.types import ClassType, ObjectType, ReturnType, Type, nnModuleType
+from tsdm.utils.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
 

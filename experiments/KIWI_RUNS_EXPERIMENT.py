@@ -274,7 +274,7 @@ for o in (-np.infty, -2, -1, 1, 2, np.infty, "fro", "nuc"):
 
 
 from tsdm.optimizers import OPTIMIZERS
-from tsdm.util import initialize_from
+from tsdm.utils import initialize_from
 
 # In[15]:
 
@@ -381,7 +381,7 @@ model.zero_grad()
 # In[20]:
 
 
-RUN_START = tsdm.util.now()
+RUN_START = tsdm.utils.now()
 CHECKPOINTDIR = Path(
     f"checkpoints/{MODEL.__name__}/{DATASET.name}/{RUN_NAME}/{RUN_START}"
 )

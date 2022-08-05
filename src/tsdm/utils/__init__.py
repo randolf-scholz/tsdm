@@ -32,7 +32,7 @@ __all__ = [
     "pairwise_disjoint",
 ]
 
-from tsdm.util import (
+from tsdm.utils import (
     dataloaders,
     decorators,
     remote,
@@ -41,8 +41,8 @@ from tsdm.util import (
     torch,
     types,
 )
-from tsdm.util._subclassing import PatchedABCMeta, abstractattribute
-from tsdm.util._util import (
+from tsdm.utils._subclassing import PatchedABCMeta, abstractattribute
+from tsdm.utils._util import (
     Split,
     deep_dict_update,
     deep_kval_update,
@@ -57,4 +57,4 @@ from tsdm.util._util import (
     prepend_path,
     round_relative,
 )
-from tsdm.util.lazydict import LazyDict, LazyFunction
+from tsdm.utils.lazydict import LazyDict, LazyFunction

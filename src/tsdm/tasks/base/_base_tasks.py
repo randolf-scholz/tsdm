@@ -97,8 +97,8 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import dataset
 from tsdm.encoders import ModularEncoder
-from tsdm.util import LazyDict
-from tsdm.util.types import KeyType
+from tsdm.utils import LazyDict
+from tsdm.utils.types import KeyType
 
 
 class BaseTaskMetaClass(ABCMeta):

@@ -14,7 +14,7 @@ from typing import Any, Optional
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
 
-from tsdm.util.strings import repr_mapping
+from tsdm.utils.strings import repr_mapping
 
 
 class MappingDataset(TorchDataset, Mapping):

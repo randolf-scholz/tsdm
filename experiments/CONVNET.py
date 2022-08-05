@@ -70,8 +70,8 @@ from tsdm.models import SetFuncTS
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.random.samplers import *
 from tsdm.tasks import KIWI_FINAL_PRODUCT
-from tsdm.util import grad_norm, initialize_from, multi_norm
-from tsdm.util.strings import *
+from tsdm.utils import grad_norm, initialize_from, multi_norm
+from tsdm.utils.strings import *
 
 
 def header(s: str, pad=3):
@@ -304,7 +304,7 @@ header("INITIALIZE LOGGING ")  #
 ################################
 
 
-RUN_START = tsdm.util.now()
+RUN_START = tsdm.utils.now()
 CHECKPOINTDIR = Path(
     f"checkpoints/{MODEL.__name__}/{DATASET.name}/{RUN_NAME}/{RUN_START}"
 )

@@ -24,8 +24,8 @@ from tsdm.encoders.modular import BaseEncoder
 from tsdm.losses.modular import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.util.strings import repr_namedtuple
-from tsdm.util.torch import MappingDataset, TimeSeriesDataset
+from tsdm.utils.strings import repr_namedtuple
+from tsdm.utils.torch import MappingDataset, TimeSeriesDataset
 
 
 class Sample(NamedTuple):

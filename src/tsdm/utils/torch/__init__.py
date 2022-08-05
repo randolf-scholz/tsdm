@@ -17,14 +17,14 @@ __all__ = [
     "cumulative_or",
 ]
 
-from tsdm.util.torch._utils import (
+from tsdm.utils.torch._utils import (
     aggregate_and,
     aggregate_or,
     cumulative_and,
     cumulative_or,
 )
-from tsdm.util.torch.generic import DatasetCollection, MappingDataset
-from tsdm.util.torch.timeseries import (
+from tsdm.utils.torch.generic import DatasetCollection, MappingDataset
+from tsdm.utils.torch.timeseries import (
     IndexedArray,
     TimeSeriesBatch,
     TimeSeriesDataset,

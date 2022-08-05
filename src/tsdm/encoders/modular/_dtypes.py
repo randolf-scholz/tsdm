@@ -22,7 +22,7 @@ import pandas
 from pandas import DatetimeIndex, Series, Timedelta, Timestamp
 
 from tsdm.encoders.modular.generic import BaseEncoder
-from tsdm.util.types._types import PandasObject
+from tsdm.utils.types._types import PandasObject
 
 __logger__ = logging.getLogger(__name__)
 

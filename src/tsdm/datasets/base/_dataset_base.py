@@ -28,9 +28,9 @@ import pandas
 from pandas import DataFrame, Series
 
 from tsdm.config import DATASETDIR, RAWDATADIR
-from tsdm.util import flatten_nested, paths_exists, prepend_path
-from tsdm.util.remote import download
-from tsdm.util.types import KeyType, Nested, PathType
+from tsdm.utils import flatten_nested, paths_exists, prepend_path
+from tsdm.utils.remote import download
+from tsdm.utils.types import KeyType, Nested, PathType
 
 DATASET_OBJECT = Union[Series, DataFrame]
 r"""Type hint for pandas objects."""

@@ -41,11 +41,11 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.encoders.modular.generic import BaseEncoder
-from tsdm.util import pairwise_disjoint
-from tsdm.util.strings import repr_mapping
-from tsdm.util.torch import TimeTensor
-from tsdm.util.types import PandasObject, PathType, TensorVar
-from tsdm.util.types.protocols import NTuple
+from tsdm.utils import pairwise_disjoint
+from tsdm.utils.strings import repr_mapping
+from tsdm.utils.torch import TimeTensor
+from tsdm.utils.types import PandasObject, PathType, TensorVar
+from tsdm.utils.types.protocols import NTuple
 
 
 def apply_along_axes(

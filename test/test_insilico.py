@@ -7,7 +7,7 @@ from copy import copy
 from pandas import DataFrame
 
 from tsdm.datasets import BaseDataset, InSilicoData
-from tsdm.util.decorators import timefun
+from tsdm.utils.decorators import timefun
 
 __logger__ = logging.getLogger(__name__)
 

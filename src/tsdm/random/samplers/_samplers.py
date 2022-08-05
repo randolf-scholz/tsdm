@@ -30,10 +30,10 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from torch.utils.data import Sampler
 
-from tsdm.util.strings import repr_mapping
-from tsdm.util.torch.generic import DatasetCollection
-from tsdm.util.types import ObjectType, ValueType
-from tsdm.util.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
+from tsdm.utils.strings import repr_mapping
+from tsdm.utils.torch.generic import DatasetCollection
+from tsdm.utils.types import ObjectType, ValueType
+from tsdm.utils.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
 

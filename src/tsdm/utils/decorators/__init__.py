@@ -23,7 +23,7 @@ __all__ = [
 from collections.abc import Callable
 from typing import Final
 
-from tsdm.util.decorators._decorators import (
+from tsdm.utils.decorators._decorators import (
     IterItems,
     IterKeys,
     autojit,

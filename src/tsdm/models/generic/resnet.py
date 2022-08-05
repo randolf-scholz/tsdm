@@ -9,8 +9,8 @@ from typing import Any, Final, TypeVar
 from torch import Tensor, jit, nn
 
 from tsdm.models.generic.dense import ReverseDense
-from tsdm.util import deep_dict_update, initialize_from_config
-from tsdm.util.decorators import autojit
+from tsdm.utils import deep_dict_update, initialize_from_config
+from tsdm.utils.decorators import autojit
 
 
 @autojit

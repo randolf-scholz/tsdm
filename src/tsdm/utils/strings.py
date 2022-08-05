@@ -21,7 +21,7 @@ from typing import Any, Optional, Union, overload
 from pandas import DataFrame, Series
 from torch import Tensor
 
-from tsdm.util.types.protocols import Array, NTuple
+from tsdm.utils.types.protocols import Array, NTuple
 
 __logger__ = logging.getLogger(__name__)
 
