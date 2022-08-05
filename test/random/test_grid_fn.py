@@ -14,7 +14,7 @@ from numpy import timedelta64 as np_td
 from pandas import Timedelta as pd_td
 from pandas import Timestamp as pd_dt
 from pytest import mark
-from typing_extensions import NamedTuple  # type: ignore[attr-defined]
+from typing_extensions import NamedTuple
 
 from tsdm.random.samplers import compute_grid
 from tsdm.utils.types.time import DTVar, TDVar
@@ -57,10 +57,10 @@ class GridTuple(NamedTuple, Generic[DTVar, TDVar]):
     offset: TDVar
 
 
-def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
+def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
     if mode == "numpy":
         # noinspection PyArgumentList
-        return GridTuple(
+        return GridTuple(  # type: ignore[call-overload]
             np_dt("2000-01-01"),
             np_dt("2001-01-01"),
             np_td(1, "h"),
@@ -68,7 +68,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
         )
     if mode == "pandas":
         # noinspection PyArgumentList
-        return GridTuple(
+        return GridTuple(  # type: ignore[call-overload]
             pd_dt("2000-01-01"),
             pd_dt("2001-01-01"),
             pd_td("1h"),
@@ -76,7 +76,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
         )
     if mode == "python":
         # noinspection PyArgumentList
-        return GridTuple(
+        return GridTuple(  # type: ignore[call-overload]
             py_dt(2000, 1, 1),
             py_dt(2001, 1, 1),
             py_td(hours=1),
@@ -84,7 +84,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
         )
     if mode == "np_int":
         # noinspection PyArgumentList
-        return GridTuple(
+        return GridTuple(  # type: ignore[call-overload]
             np_int(0),
             np_int(100),
             np_int(1),
@@ -92,7 +92,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
         )
     if mode == "np_float":
         # noinspection PyArgumentList
-        return GridTuple(
+        return GridTuple(  # type: ignore[call-overload]
             np_float(0.0),
             np_float(99.9),
             np_float(0.6),
@@ -100,7 +100,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
         )
     if mode == "int":
         # noinspection PyArgumentList
-        return GridTuple(
+        return GridTuple(  # type: ignore[call-overload]
             int(0),
             int(100),
             int(1),
@@ -108,7 +108,7 @@ def _make_inputs(mode: str) -> tuple[DTVar, DTVar, TDVar, DTVar]:
         )
     if mode == "float":
         # noinspection PyArgumentList
-        return GridTuple(
+        return GridTuple(  # type: ignore[call-overload]
             float(0.0),
             float(99.9),
             float(0.6),
