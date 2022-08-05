@@ -17,8 +17,8 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import USHCN_SmallChunkedSporadic
 from tsdm.tasks.base import BaseTask
-from tsdm.util import is_partition
-from tsdm.util.strings import repr_namedtuple
+from tsdm.utils import is_partition
+from tsdm.utils.strings import repr_namedtuple
 
 
 class Inputs(NamedTuple):

@@ -15,7 +15,7 @@ import logging
 from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
 from typing import Any, Generic, NamedTuple, Union, overload
 
-from tsdm.util.types import KeyType, ObjectType
+from tsdm.utils.types import KeyType, ObjectType
 
 __logger__ = logging.getLogger(__name__)
 

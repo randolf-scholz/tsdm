@@ -22,7 +22,7 @@ from pandas import DataFrame, Series
 from torch import Tensor
 
 from tsdm.encoders.modular.generic import BaseEncoder
-from tsdm.util.strings import repr_namedtuple
+from tsdm.utils.strings import repr_namedtuple
 
 __logger__ = logging.getLogger(__name__)
 

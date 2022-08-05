@@ -35,8 +35,8 @@ from typing import Any, Literal, NamedTuple, Optional, Union, overload
 import numpy as np
 from numpy.typing import NDArray
 
-from tsdm.util.types import Nested, ObjectType, PathType, ReturnType
-from tsdm.util.types.abc import HashableType
+from tsdm.utils.types import Nested, ObjectType, PathType, ReturnType
+from tsdm.utils.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
 EmptyPath: Path = Path()

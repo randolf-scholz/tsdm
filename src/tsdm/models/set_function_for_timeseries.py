@@ -22,7 +22,7 @@ from tsdm.models.generic import (
     ReZeroMLP,
     ScaledDotProductAttention,
 )
-from tsdm.util.decorators import autojit
+from tsdm.utils.decorators import autojit
 
 
 @autojit

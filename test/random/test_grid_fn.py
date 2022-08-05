@@ -17,7 +17,7 @@ from pytest import mark
 from typing_extensions import NamedTuple  # type: ignore[attr-defined]
 
 from tsdm.random.samplers import compute_grid
-from tsdm.util.types.time import DTVar, TDVar
+from tsdm.utils.types.time import DTVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
 MODES = ["numpy", "pandas", "python", "np_int", "np_float", "int", "float"]

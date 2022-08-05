@@ -15,7 +15,7 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from tsdm.util.decorators import autojit
+from tsdm.utils.decorators import autojit
 
 
 @autojit

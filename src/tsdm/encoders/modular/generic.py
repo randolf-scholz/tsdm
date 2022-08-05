@@ -17,9 +17,9 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Sequence, Union, overload
 
-from tsdm.util.decorators import wrap_func
-from tsdm.util.strings import repr_sequence
-from tsdm.util.types import ObjectType
+from tsdm.utils.decorators import wrap_func
+from tsdm.utils.strings import repr_sequence
+from tsdm.utils.types import ObjectType
 
 
 class BaseEncoder(ABC):

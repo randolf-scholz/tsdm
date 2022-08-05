@@ -17,7 +17,7 @@ import torch
 from torch import nn
 
 from tsdm.models._models import BaseModel
-from tsdm.util import deep_dict_update
+from tsdm.utils import deep_dict_update
 
 
 @contextmanager

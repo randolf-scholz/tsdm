@@ -40,7 +40,7 @@ __all__ = [
     "plot",
     "random",
     "tasks",
-    "util",
+    "utils",
 ]
 
 import logging
@@ -65,7 +65,7 @@ from tsdm import (
     plot,
     random,
     tasks,
-    util,
+    utils,
 )
 
 # pylint: enable=wrong-import-position

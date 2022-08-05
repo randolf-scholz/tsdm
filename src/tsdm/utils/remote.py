@@ -13,7 +13,7 @@ from typing import Any, Optional
 import requests
 from tqdm.autonotebook import tqdm
 
-from tsdm.util.types import PathType
+from tsdm.utils.types import PathType
 
 
 def hash_file(

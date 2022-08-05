@@ -8,7 +8,7 @@ from pytest import mark
 from torch import Tensor
 from torch.nn.utils.rnn import pack_sequence, pad_sequence
 
-from tsdm.util.dataloaders import unpack_sequence, unpad_sequence
+from tsdm.utils.dataloaders import unpack_sequence, unpad_sequence
 
 __logger__ = logging.getLogger(__name__)
 

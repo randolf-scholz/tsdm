@@ -28,7 +28,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
-from tsdm.util.strings import repr_mapping
+from tsdm.utils.strings import repr_mapping
 
 __logger__ = logging.getLogger(__name__)
 
