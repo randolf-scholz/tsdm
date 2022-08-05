@@ -1,4 +1,4 @@
-"""TODO: add package summary.
+r"""TODO: add package summary.
 
 TODO: add package description.
 """

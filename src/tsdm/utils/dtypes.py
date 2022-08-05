@@ -31,7 +31,7 @@ PRECISION: Final[dict] = {
     np.float32: 2**-24,
     np.float64: 2**-53,
 }
-"""Maps precision to the corresponding precision factor."""
+r"""Maps precision to the corresponding precision factor."""
 
 NUMPY_INT_DTYPES: Final[dict[type[np.signedinteger], str]] = {
     np.int8: "b",

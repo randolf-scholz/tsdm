@@ -270,7 +270,7 @@ class Physionet2012(MultiFrameDataset):
 
     @property
     def dataset_files(self):
-        """Map splits into filenames."""
+        r"""Map splits into filenames."""
         postfix = "triplet" if self.unravel_triplets else "sparse"
         return {
             "A": f"Physionet2019-set-A-{postfix}.tar",

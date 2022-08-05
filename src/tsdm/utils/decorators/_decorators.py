@@ -360,7 +360,7 @@ def timefun(
 
 # @decorator
 # def sphinx_value(func: Callable, value: Any, /) -> Callable:
-#     """Use alternative attribute value during sphinx compilation - useful for attributes.
+#     r"""Use alternative attribute value during sphinx compilation - useful for attributes.
 #
 #     Parameters
 #     ----------
@@ -714,7 +714,7 @@ def wrap_func(
 #     before: Optional[Callable] = None,
 #     after: Optional[Callable] = None,
 # ) -> Callable:
-#     """Chain a function with pre and post func.
+#     r"""Chain a function with pre and post func.
 #
 #     Parameters
 #     ----------

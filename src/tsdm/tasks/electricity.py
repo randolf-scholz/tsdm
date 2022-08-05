@@ -386,8 +386,8 @@ class ElectricityELBMBTTF:
 
 
 class ElectricityNBEATS:
-    """NBEATS."""
+    r"""NBEATS."""
 
 
 class ElectricityNHITS:
-    """NHITS."""
+    r"""NHITS."""

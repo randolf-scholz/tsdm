@@ -24,7 +24,7 @@ from numpy.typing import ArrayLike, NDArray
 from torch import Tensor, jit
 
 SizeLike = Union[int, tuple[int, ...]]
-"""Type hint for a size-like object."""
+r"""Type hint for a size-like object."""
 
 
 # def _torch_is_float_dtype(x: Tensor) -> bool:

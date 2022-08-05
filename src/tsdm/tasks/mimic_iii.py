@@ -308,7 +308,7 @@ class MIMIC_DeBrouwer(BaseTask):
     def get_dataloader(
         self, key: tuple[int, str], /, **dataloader_kwargs: Any
     ) -> DataLoader:
-        """Return the dataloader for the given key."""
+        r"""Return the dataloader for the given key."""
         fold, partition = key
         fold_idx = self.folds[fold][partition]
         dataset = TaskDataset(

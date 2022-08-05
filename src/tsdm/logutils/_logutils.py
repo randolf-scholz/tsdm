@@ -301,7 +301,7 @@ class StandardLogger:
     _warned_tuple: bool = False
 
     def __post_init__(self) -> None:
-        """Initialize logger."""
+        r"""Initialize logger."""
         self.logging_dir = Path(self.writer.log_dir)
         columns = MultiIndex.from_product([self.dataloaders, self.metrics])
         index = Index([], name="epoch", dtype=int)
@@ -512,7 +512,7 @@ class StandardLogger:
         prefix: str = "",
         postfix: str = "",
     ) -> None:
-        """Log kernel information."""
+        r"""Log kernel information."""
         assert hasattr(self.model, "kernel") and isinstance(self.model.kernel, Tensor)
         log_kernel_information(
             i,
