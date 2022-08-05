@@ -3,7 +3,7 @@ r"""Utility function to process folds and splits."""
 __all__ = [
     # functions
     "folds_as_frame",
-    "fold_frame_sparse",
+    "folds_as_sparse_frame",
     "folds_from_groups",
 ]
 
@@ -20,7 +20,11 @@ FOLDS = Sequence[Mapping[str, Series]]
 def folds_from_groups(
     groups: Series, /, *, num_folds: int = 5, seed: Optional[int] = None, **splits: int
 ) -> FOLDS:
-    r"""Create folds from a Series of groups."""
+    r"""Create folds from a Series of groups.
+
+    This is useful, when the data needs to be grouped, e.g. due to replicate experiments.
+    Simply use `pandas.groupby` and pass the result to this function.
+    """
     assert splits, "No splits provided"
     num_chunks = sum(splits.values())
     q, remainder = divmod(num_chunks, num_folds)
@@ -90,10 +94,10 @@ def folds_as_frame(
     if not sparse:
         return splits
 
-    return fold_frame_sparse(splits)
+    return folds_as_sparse_frame(splits)
 
 
-def fold_frame_sparse(df: DataFrame, /) -> DataFrame:
+def folds_as_sparse_frame(df: DataFrame, /) -> DataFrame:
     r"""Create a sparse table holding the fold information."""
     # TODO: simplify this code. It should just be pd.concat(folds)
     columns = df.columns
