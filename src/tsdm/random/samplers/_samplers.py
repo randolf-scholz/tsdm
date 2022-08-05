@@ -825,17 +825,17 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
     @staticmethod
     def __make__points__(bounds: NDArray[NumpyDTVar]) -> NDArray[NumpyDTVar]:
-        """Return the points as-is."""
+        r"""Return the points as-is."""
         return bounds
 
     @staticmethod
     def __make__slice__(window: NDArray[NumpyDTVar]) -> slice:
-        """Return a tuple of slices."""
+        r"""Return a tuple of slices."""
         return slice(window[0], window[-1])
 
     @staticmethod
     def __make__slices__(bounds: NDArray[NumpyDTVar]) -> tuple[slice, ...]:
-        """Return a tuple of slices."""
+        r"""Return a tuple of slices."""
         return tuple(
             slice(start, stop) for start, stop in sliding_window_view(bounds, 2)
         )

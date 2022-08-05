@@ -1665,7 +1665,7 @@ class PeriodicEncoder(BaseEncoder):
         return Series(x, dtype=self.dtype, name=self.colname)
 
     def __repr__(self):
-        """Pretty-print."""
+        r"""Pretty-print."""
         return f"{self.__class__.__name__}({self._period})"
 
 
@@ -1735,7 +1735,7 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
         "microsecond": 1000,
         "nanosecond": 1000,
     }
-    """The frequencies of the used `PeriodicEncoder`."""
+    r"""The frequencies of the used `PeriodicEncoder`."""
 
     def __new__(cls, levels: str = "YMWDhms") -> PeriodicSocialTimeEncoder:
         r"""Construct a new encoder object."""

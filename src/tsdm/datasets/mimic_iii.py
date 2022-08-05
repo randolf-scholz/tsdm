@@ -30,7 +30,7 @@ from tsdm.encoders.modular import TripletDecoder
 
 
 class MIMIC_III(MultiFrameDataset):
-    """MIMIC-III Clinical Database.
+    r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
     associated with over forty thousand patients who stayed in critical care units of the Beth

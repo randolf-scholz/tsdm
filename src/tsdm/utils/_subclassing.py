@@ -1,4 +1,4 @@
-"""Code for abstract attributes."""
+r"""Code for abstract attributes."""
 
 __all__ = ["abstractattribute", "DummyAttribute", "PatchedABCMeta"]
 

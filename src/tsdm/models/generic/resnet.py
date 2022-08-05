@@ -114,7 +114,7 @@ class ResNet(nn.ModuleList):
         num_blocks: int = 5,
         block_cfg: dict = ResNetBlock.HP,
     ) -> ResNetType:
-        """Create a ResNet model from hyperparameters."""
+        r"""Create a ResNet model from hyperparameters."""
         if "input_size" in block_cfg:
             block_cfg["input_size"] = input_size
 

@@ -1,4 +1,4 @@
-"""Types related to time."""
+r"""Types related to time."""
 
 
 __all__ = [

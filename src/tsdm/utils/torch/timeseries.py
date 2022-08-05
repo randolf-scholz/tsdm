@@ -1,4 +1,4 @@
-"""Representation of Time Series Datasets."""
+r"""Representation of Time Series Datasets."""
 
 from __future__ import annotations
 
@@ -124,7 +124,7 @@ class AlignedTimeSeriesDataset(TensorDataset):
 
 
 # class TimeSeriesDataset(TensorDataset):
-#     """A general Time Series Dataset.
+#     r"""A general Time Series Dataset.
 #
 #     Consists of 2 things
 #     - timeseries: TimeTensor / tuple[TimeTensor]

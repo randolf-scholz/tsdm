@@ -223,10 +223,10 @@ class RMSE(nn.Module):
     r"""Root Mean Square Error."""
 
     mask_nan_targets: Final[bool]
-    """CONST: Whether to mask NaN targets, not counting them as observations."""
+    r"""CONST: Whether to mask NaN targets, not counting them as observations."""
 
     def __init__(self, mask_nan_targets: bool = True):
-        """Compute the RMSE.
+        r"""Compute the RMSE.
 
         Parameters
         ----------
@@ -259,10 +259,10 @@ class MSE(nn.Module):
     r"""Root Mean Square Error."""
 
     mask_nan_targets: Final[bool]
-    """CONST: Whether to mask NaN targets, not counting them as observations."""
+    r"""CONST: Whether to mask NaN targets, not counting them as observations."""
 
     def __init__(self, mask_nan_targets: bool = True):
-        """Compute the RMSE.
+        r"""Compute the RMSE.
 
         Parameters
         ----------

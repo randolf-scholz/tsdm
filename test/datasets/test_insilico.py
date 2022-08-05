@@ -13,7 +13,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_caching():
-    """Check if dataset caching works (should be way faster)."""
+    r"""Check if dataset caching works (should be way faster)."""
     # NOTE: this test must be executed first!!!
 
     ds = InSilicoData()
