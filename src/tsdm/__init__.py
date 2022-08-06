@@ -43,13 +43,12 @@ __all__ = [
     "utils",
 ]
 
-import logging
 import sys
 from importlib import metadata
 
 # version check
-if sys.version_info < (3, 9):
-    raise RuntimeError("Python >= 3.9 required")
+if sys.version_info < (3, 10):
+    raise RuntimeError("Python >= 3.10 required")
 
 # pylint: disable=wrong-import-position
 
@@ -70,10 +69,11 @@ from tsdm import (
 
 # pylint: enable=wrong-import-position
 
-__logger__ = logging.getLogger(__name__)
 __version__ = metadata.version(__package__)
 r"""The version number of the `tsdm` package."""
 
+
+# __logger__ = logging.getLogger(__name__)
 #
 # import logging
 # from datetime import datetime
