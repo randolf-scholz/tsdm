@@ -722,17 +722,17 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
     The `SlidingWindowSampler` generates tuples.
 
     Inputs:
+
     - Ordered timestamps T
     - Starting time t_0
     - Final time t_f
-    - stride ∆t (how much the sampler advances at each step)
-        default, depending on data type of T:
-           - integer: GCD(∆T)
-           - float: max(⌊AVG(∆T)⌋, ε)
-           - timestamp: resolution dependent.
+    - stride ∆t (how much the sampler advances at each step) default, depending on data type of T:
+        - integer: GCD(∆T)
+        - float: max(⌊AVG(∆T)⌋, ε)
+        - timestamp: resolution dependent.
     - horizons: TimeDelta or Tuple[TimeDelta]
 
-    The sampler will return tuples of len(horizons)+1.
+    The sampler will return tuples of ``len(horizons)+1``.
     """
 
     data: NDArray[NumpyDTVar]

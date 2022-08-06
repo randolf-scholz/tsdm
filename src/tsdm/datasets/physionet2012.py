@@ -3,6 +3,21 @@ r"""Physionet Challenge 2012.
 Physionet Challenge 2012 Data Set
 =================================
 
+The development of methods for prediction of mortality rates in Intensive Care Unit (ICU) populations has been
+motivated primarily by the need to compare the efficacy of medications, care guidelines, surgery, and other
+interventions when, as is common, it is necessary to control for differences in severity of illness or trauma, age,
+and other factors. For example, comparing overall mortality rates between trauma units in a community hospital,
+a teaching hospital, and a military field hospital is likely to reflect the differences in the patient populations more
+than any differences in standards of care. Acuity scores such as APACHE and SAPS-II are widely used to account for
+these differences in the context of such studies.
+
+By contrast, the focus of the PhysioNet/CinC Challenge 2012 is to develop methods for patient-specific prediction of in
+hospital mortality. Participants will use information collected during the first two days of an ICU stay to predict
+which patients survive their hospitalizations, and which patients do not.
+
+Data for the Challenge
+----------------------
+
 The data used for the challenge consist of records from 12,000 ICU stays. All patients were
 adults who were admitted for a wide variety of reasons to cardiac, medical, surgical, and
 trauma ICUs. ICU stays of less than 48 hours have been excluded. Patients with DNR
@@ -36,6 +51,8 @@ All valid values for general descriptors, time series variables, and outcome-rel
 A value of -1 indicates missing or unknown data (for example, if a patient's height was not recorded).
 
 General descriptors
+-------------------
+
 As noted, these six descriptors are collected at the time the patient is admitted to the ICU.
 Their associated time-stamps are set to 00:00 (thus they appear at the beginning of each patient's record).
 
@@ -48,6 +65,8 @@ Weight (kg)*.
 The ICUType was added for use in Phase 2; it specifies the type of ICU to which the patient has been admitted.
 
 Time Series
+-----------
+
 These 37 variables may be observed once, more than once, or not at all in some cases:
 
 - Albumin (g/dL)
@@ -95,28 +114,33 @@ hourly to daily, or at irregular intervals as required. Not all time series are 
 In a few cases, such as blood pressure, different measurements made using two or more methods or sensors
 may be recorded with the same or only slightly different time-stamps. Occasional outliers should be expected as well.
 
- Note that Weight is both a general descriptor (recorded on admission) and a time series variable (often measured
- hourly, for estimating fluid balance).
+Note that Weight is both a general descriptor (recorded on admission) and a time series variable
+(often measured hourly, for estimating fluid balance).
 
 Outcome-related Descriptors
+---------------------------
+
 The outcome-related descriptors are kept in a separate CSV text file for each of the three record sets; as noted, only
 the file associated with training set A is available to participants. Each line of the outcomes file contains these
 descriptors:
+
 - RecordID (defined as above)
 - SAPS-I score (Le Gall et al., 1984)
 - SOFA score (Ferreira et al., 2001)
 - Length of stay (days)
 - Survival (days)
 - In-hospital death (0: survivor, or 1: died in-hospital)
-- The Length of stay is the number of days between the patient's admission to the ICU and the end of hospitalization
+
+The Length of stay is the number of days between the patient's admission to the ICU and the end of hospitalization
 (including any time spent in the hospital after discharge from the ICU).
 If the patient's death was recorded (in or out of hospital), then Survival is the number of days between ICU admission
 and death; otherwise, Survival is assigned the value -1. Since patients who spent less than 48 hours in the ICU have
 been excluded, Length of stay and Survival never have the values 0 or 1 in the challenge data sets.
 Given these definitions and constraints,
-    Survival > Length of stay  =>  Survivor
-    Survival = -1  =>  Survivor
-    2 <= Survival <= Length of stay  =>  In-hospital death
+
+-  Survival > Length of stay  =>  Survivor
+-  Survival = -1  =>  Survivor
+-  2 <= Survival <= Length of stay  =>  In-hospital death
 """
 
 __all__ = [
@@ -220,19 +244,31 @@ class Physionet2012(MultiFrameDataset):
     Each training data file provides two tables.
     The first table provides general descriptors of patients:
 
-                  Age  Gender  Height  ICUType  Weight
-        RecordID
-        141834     52     1.0   172.7        2    73.0
-        133786     46     0.0   157.5        1    52.3
-        141492     84     0.0   152.4        3    61.2
-        142386     87     0.0   160.0        4    73.0
-        142258     71     1.0     NaN        3    72.9
-        ...       ...     ...     ...      ...     ...
-        142430     39     0.0   157.5        2    65.9
-        134614     77     0.0   165.1        1    66.6
-        139802     57     1.0     NaN        4     NaN
-        136653     57     1.0     NaN        3   103.9
-        136047     67     1.0     NaN        3   169.0
+    +----------+-----+--------+--------+---------+--------+
+    | RecordID | Age | Gender | Height | ICUType | Weight |
+    +==========+=====+========+========+=========+========+
+    | 141834   | 52  | 1.0    | 172.7  | 2       | 73.0   |
+    +----------+-----+--------+--------+---------+--------+
+    | 133786   | 46  | 0.0    | 157.5  | 1       | 52.3   |
+    +----------+-----+--------+--------+---------+--------+
+    | 141492   | 84  | 0.0    | 152.4  | 3       | 61.2   |
+    +----------+-----+--------+--------+---------+--------+
+    | 142386   | 87  | 0.0    | 160.0  | 4       | 73.0   |
+    +----------+-----+--------+--------+---------+--------+
+    | 142258   | 71  | 1.0    | NaN    | 3       | 72.9   |
+    +----------+-----+--------+--------+---------+--------+
+    | ...      | ... | ...    | ...    | ...     | ...    |
+    +----------+-----+--------+--------+---------+--------+
+    | 142430   | 39  | 0.0    | 157.5  | 2       | 65.9   |
+    +----------+-----+--------+--------+---------+--------+
+    | 134614   | 77  | 0.0    | 165.1  | 1       | 66.6   |
+    +----------+-----+--------+--------+---------+--------+
+    | 139802   | 57  | 1.0    | NaN    | 4       | NaN    |
+    +----------+-----+--------+--------+---------+--------+
+    | 136653   | 57  | 1.0    | NaN    | 3       | 103.9  |
+    +----------+-----+--------+--------+---------+--------+
+    | 136047   | 67  | 1.0    | NaN    | 3       | 169.0  |
+    +----------+-----+--------+--------+---------+--------+
 
     where `RecordID` defines unique ID of an admission.
 
@@ -243,19 +279,29 @@ class Physionet2012(MultiFrameDataset):
 
     The table is formatted in the following way:
 
-                          BUN  Creatinine  DiasABP  ...  Cholesterol  TroponinT  TroponinI
-        RecordID Time                            ...
-        141834   27    NaN         NaN      NaN  ...          NaN        NaN        NaN
-                 107   NaN         NaN      NaN  ...          NaN        NaN        NaN
-                 112   NaN         NaN     77.0  ...          NaN        NaN        NaN
-                 127   NaN         NaN     81.0  ...          NaN        NaN        NaN
-                 142   NaN         NaN     74.0  ...          NaN        NaN        NaN
-        ...            ...         ...      ...  ...          ...        ...        ...
-        136047   2618  NaN         NaN      NaN  ...          NaN        NaN        NaN
-                 2678  NaN         NaN      NaN  ...          NaN        NaN        NaN
-                 2738  NaN         NaN      NaN  ...          NaN        NaN        NaN
-                 2798  NaN         NaN      NaN  ...          NaN        NaN        NaN
-                 2858  NaN         NaN      NaN...
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    | RecordID | Time | BUN | Creatinine | DiasABP | ... | Cholesterol | TroponinT | TroponinI |
+    +==========+======+=====+============+=========+=====+=============+===========+===========+
+    | 141834   | 27   | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    |          | 107  | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    |          | 112  | NaN | NaN        | 77.0    | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    |          | 127  | NaN | NaN        | 81.0    | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    |          | 142  | NaN | NaN        | 74.0    | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    | ...      |      | ... | ...        | ...     | ... | ...         | ...       | ...       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    | 136047   | 2618 | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    |          | 2678 | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    |          | 2738 | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
+    |          | 2798 | NaN | NaN        | NaN     | ... | NaN         | NaN       | NaN       |
+    +----------+------+-----+------------+---------+-----+-------------+-----------+-----------+
 
     Entries of NaN (not a number) indicate that there was no recorded measurement of a variable at the time.
     """

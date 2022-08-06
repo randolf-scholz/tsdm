@@ -7,22 +7,13 @@ Basic Usage
 
 .. code-block:: python
 
-   from tsdm.dataset import Electricity
-
-   print(vars(Electricity))
-   Electricity.download()
-   Electricity.preprocess()
-   x = Electricity.load()
-
-   # or, simply:
-   x = Electricity.dataset
-
+    from tsdm.dataset import Electricity
+    dataset = Electricity()
 
 Some design decisions:
 
 1. Why not use `Series` instead of Mapping for dataset?
     - `Series[object]` has bad performance issues in construction.
-
 2. Should we have Dataset style iteration or dict style iteration?
     - Note that for `dict`, `iter(dict)` iterates over index.
     - For `Series`, `DataFrame`, `TorchDataset`, `__iter__` iterates over values.
