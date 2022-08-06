@@ -44,7 +44,7 @@ from tsdm.linalg import (
 from tsdm.losses import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
-from tsdm.plot import center_axes, kernel_heatmap, plot_spectrum, rasterize
+from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 
 @torch.no_grad()

@@ -37,7 +37,7 @@ __all__ = [
     "losses",
     "models",
     "optimizers",
-    "plot",
+    "viz",
     "random",
     "tasks",
     "utils",
@@ -61,10 +61,10 @@ from tsdm import (
     losses,
     models,
     optimizers,
-    plot,
     random,
     tasks,
     utils,
+    viz,
 )
 
 # pylint: enable=wrong-import-position

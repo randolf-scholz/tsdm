@@ -1,8 +1,8 @@
 r"""Plotting Functionality."""
 
 __all__ = [
-    # Sub-Modules
-    "__setup__",
+    # Constants
+    "USE_TEX",
     # Functions
     "shared_grid_plot",
     "visualize_distribution",
@@ -12,9 +12,9 @@ __all__ = [
     "center_axes",
 ]
 
-from tsdm.plot import __setup__
-from tsdm.plot.image import kernel_heatmap
-from tsdm.plot.plotting import (
+from tsdm.viz._config import USE_TEX
+from tsdm.viz._image import kernel_heatmap
+from tsdm.viz._plotting import (
     center_axes,
     plot_spectrum,
     rasterize,

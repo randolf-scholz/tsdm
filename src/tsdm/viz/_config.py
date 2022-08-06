@@ -3,7 +3,10 @@ r"""Initialize the plotting module.
 Enable LaTeX rendering by default, if installed.
 """
 
-__all__ = []  # type: ignore[var-annotated]
+__all__ = [
+    # CONSTANTS
+    "USE_TEX",
+]
 
 import warnings
 from typing import Final
@@ -11,6 +14,8 @@ from typing import Final
 import matplotlib
 
 USE_TEX: Final[bool] = matplotlib.checkdep_usetex(True)
+r"""Whether to use LaTeX rendering."""
+
 
 if USE_TEX:
     try:
