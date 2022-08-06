@@ -37,14 +37,19 @@ __logger__ = logging.getLogger(__name__)
 os.environ["TSDM_AUTOJIT"] = "True"
 r"""Default value."""
 
+NAME = __name__
+r"""Name of the module."""
+FILE = __file__
+r"""Path to the current file."""
+
 
 class Config:
     r"""Configuration Interface."""
 
     # TODO: Should be initialized by a init/toml file.
     _autojit: bool = True
-    __name__ = __name__
-    __file__ = __file__
+    __name__ = NAME
+    __file__ = FILE
 
     @property
     def autojit(self) -> bool:
