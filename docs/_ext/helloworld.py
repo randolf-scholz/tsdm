@@ -11,12 +11,16 @@ from docutils.parsers.rst import Directive
 
 
 class HelloWorld(Directive):
+    r"""Hello World directive."""
+
     def run(self):
+        r"""Run the directive."""
         paragraph_node = nodes.paragraph(text="Hello World!")
         return [paragraph_node]
 
 
 def setup(app):
+    r"""Install the extension."""
     app.add_directive("helloworld", HelloWorld)
 
     return {
