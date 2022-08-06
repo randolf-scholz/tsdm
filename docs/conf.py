@@ -1,7 +1,6 @@
 r"""Configuration file for the Sphinx documentation builder.
 
-This file only contains a selection of the most common options. For a full
-list see the documentation:
+This file only contains a selection of the most common options. For a full list see the documentation:
 https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
@@ -12,7 +11,6 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 import datetime
-import logging
 import os
 import sys
 import typing
@@ -21,24 +19,15 @@ from importlib import metadata
 
 import tsdm
 
-__logger__ = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
 os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
+sys.path.append(os.path.abspath("./_ext"))
 
+AUTHOR = "Randolf Scholz"
 MODULE = "tsdm"
 MODULE_DIR = "src/tsdm"
 VERSION = metadata.version(MODULE)
-AUTHOR = "Randolf Scholz"
 YEAR = datetime.datetime.now().year
-
-import os
-import sys
-
-sys.path.append(os.path.abspath("./_ext"))
-
-# extensions = ['helloworld']
 
 
 # region Project Information ------------------------------------------------------------------------------------------
@@ -240,7 +229,8 @@ html_sidebars = {}
 
 extensions.append("sphinx_typo3_theme")
 
-html_theme = "pydata_sphinx_theme"  # piccolo_theme, karma_sphinx_theme, sphinx_rtd_theme, pydata_sphinx_theme, sphinx_typo3_theme
+# piccolo_theme, karma_sphinx_theme, sphinx_rtd_theme, pydata_sphinx_theme, sphinx_typo3_theme
+html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
 html_theme_path = []
