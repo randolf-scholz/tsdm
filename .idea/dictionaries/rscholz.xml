@@ -5,6 +5,9 @@
       <w>adagrad</w>
       <w>adamax</w>
       <w>alkalinephos</w>
+      <w>amsfonts</w>
+      <w>amsmath</w>
+      <w>amssymb</w>
       <w>arange</w>
       <w>arany</w>
       <w>argmin</w>
@@ -91,6 +94,10 @@
       <w>finfo</w>
       <w>fluo</w>
       <w>fname</w>
+      <w>fontenc</w>
+      <w>fontset</w>
+      <w>fontspec</w>
+      <w>fonttype</w>
       <w>forcedly</w>
       <w>gasthaus</w>
       <w>gcos</w>
@@ -119,6 +126,7 @@
       <w>includehidden</w>
       <w>inds</w>
       <w>injective</w>
+      <w>inputenc</w>
       <w>intersphinx</w>
       <w>invperm</w>
       <w>iscore</w>
@@ -158,8 +166,10 @@
       <w>logsigmoid</w>
       <w>logutils</w>
       <w>lstf</w>
+      <w>lualatex</w>
       <w>lufl</w>
       <w>mant</w>
+      <w>mathtext</w>
       <w>maxabs</w>
       <w>maxdepth</w>
       <w>maxdim</w>
@@ -297,6 +307,7 @@
       <w>tanhshrink</w>
       <w>testdir</w>
       <w>testlabels</w>
+      <w>texsystem</w>
       <w>tfrac</w>
       <w>thakur</w>
       <w>thromboplastin</w>
@@ -325,6 +336,8 @@
       <w>unshuffle</w>
       <w>unsqueeze</w>
       <w>upack</w>
+      <w>usepackage</w>
+      <w>usetex</w>
       <w>ushcn</w>
       <w>vals</w>
       <w>valuenorm</w>
