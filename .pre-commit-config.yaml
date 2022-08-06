@@ -12,6 +12,8 @@ repos:
         description: "simply checks whether the files parse as valid python."
       - id: check-builtin-literals
         description: "requires literal syntax when initializing empty or zero python builtin types."
+      - id: check-byte-order-marker
+        description: "forbids files which have a utf-8 byte-order marker."
       - id: check-json
         description: "checks json files for parseable syntax."
       - id: check-executables-have-shebangs
@@ -26,16 +28,16 @@ repos:
         description: "checks xml files for parseable syntax."
       - id: check-yaml
         description: "checks yaml files for parseable syntax."
-      - id: pretty-format-json
-        description: "sets a standard for formatting json files."
       - id: end-of-file-fixer
         description: "ensures that a file is either empty, or ends with one newline."
-      - id: trailing-whitespace
-        description: "trims trailing whitespace.."
+      - id: pretty-format-json
+        description: "sets a standard for formatting json files."
       - id: requirements-txt-fixer
         description: "sorts entries in requirements.txt"
+      - id: trailing-whitespace
+        description: "trims trailing whitespace.."
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: "v1.9.0" # Use the ref you want to point at
+    rev: "v1.9.0"
     hooks:
       - id: python-check-blanket-noqa
         description: "Enforce that `noqa` annotations always occur with specific codes. Sample annotations: `# noqa: F401`, `# noqa: F401,W203`"
@@ -43,6 +45,8 @@ repos:
         description: "Enforce that `type: ignore` annotations always occur with specific codes. Sample annotations: `# type: ignore`, `# type: ignore,W203`"
       - id: python-no-eval
         description: "Enforce that `eval` is not used."
+      - id: python-no-log-warn
+        description: "Enforce that `logging.warn` is not used."
       - id: python-use-type-annotations
         description: "Enforce that type annotations are used."
       - id: rst-directive-colons
@@ -60,6 +64,14 @@ repos:
     hooks:
       - id: black
       - id: black-jupyter
+  # pydocstyle
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.1.1
+    hooks:
+      - id: pydocstyle
+        files: (^src/|^test/)
+        additional_dependencies:
+          - toml
   # isort
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
@@ -92,13 +104,6 @@ repos:
     rev: v0.3.1
     hooks:
       - id: absolufy-imports
-  - repo: https://github.com/PyCQA/pydocstyle
-    rev: 6.1.1
-    hooks:
-      - id: pydocstyle
-        files: (^src/|^test/)
-        additional_dependencies:
-          - toml
   # mypy
   #-   repo: https://github.com/pre-commit/mirrors-mypy
   #    rev: v0.941
@@ -120,3 +125,6 @@ repos:
         stages: [commit]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
+#  - repo: github.com/asottile/blacken-docs
+#    id: blacken-docs
+#    description: " Run `black` on python code blocks in documentation files "
