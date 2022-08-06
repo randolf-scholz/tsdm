@@ -30,7 +30,7 @@ from collections.abc import Collection, Hashable, Mapping
 from pathlib import Path
 from typing import Any, TypeVar, Union
 
-from numpy.typing import NDArray
+from numpy import ndarray
 from pandas import DataFrame, Index, Series
 from torch import Tensor, nn
 
@@ -67,7 +67,7 @@ ReturnType = TypeVar("ReturnType")
 r"""Generic type hint for return values."""
 
 nnModuleType = TypeVar("nnModuleType", bound=nn.Module)
-r"""Type Variable for nn.Modules."""
+r"""Type Variable for `torch.nn.Modules`."""
 
 # PathType = TypeVar("PathType", bound=Union[str, Path])
 # r"""Type for path-like objects."""
@@ -86,9 +86,10 @@ Nested = Union[
 r"""Type for nested types (JSON-Like)."""
 
 PandasObject = Union[Index, Series, DataFrame]
-r"""Type Hint for pandas objects."""
+r"""Type Hint for `pandas` objects."""
 
 PandasVar = TypeVar("PandasVar", Index, Series, DataFrame)
-r"""Type Hint for pandas objects."""
+r"""Type Variable for `pandas` objects."""
 
-TensorVar = TypeVar("TensorVar", Tensor, NDArray)
+TensorVar = TypeVar("TensorVar", Tensor, ndarray)
+r"""Type Variable for `torch.Tensor` or `numpy.ndarray` objects."""

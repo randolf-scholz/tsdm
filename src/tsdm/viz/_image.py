@@ -1,9 +1,9 @@
-r"""TODO: Module Docstring.
+r"""Visualization Utilities for image data."""
 
-TODO: Module summary.
-"""
-
-__all__ = ["kernel_heatmap"]
+__all__ = [
+    # Functions
+    "kernel_heatmap",
+]
 
 from typing import Literal, Union
 
