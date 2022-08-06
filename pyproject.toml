@@ -39,13 +39,15 @@ classifiers = [
 [tool.poetry.extras]
 # modin = ["modin"]
 # all = ["modin"]
+#modin = {version = ">=0.14", extras = ["ray"]}
+#ray = {version = ">=1.9", extras = ["default", "tune"]}
+
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
+Pillow = ">=9.1.1"
 h5py = ">=3.4.0"
 matplotlib = ">=3.5"
-#modin = {version = ">=0.14", extras = ["ray"]}
-#ray = {version = ">=1.9", extras = ["default", "tune"]}
 numpy = ">=1.22"
 pandas = ">=1.4"
 pyarrow = ">=8.0"
@@ -55,10 +57,8 @@ scipy = ">=1.7"
 tables = ">=3.6"
 tensorboard = ">=2.9"
 torch = ">=1.12"
-#xarray = ">=2022.3.0"
-Pillow = ">=9.1.1"
+tqdm = ">=4.64.0"
 typing-extensions = ">=4.3.0"
-tqdm = "^4.64.0"
 
 [tool.poetry.dev-dependencies]
 black = {version = ">=22.1.0", extras = ["jupyter"]}
@@ -73,6 +73,8 @@ flake8-pyi = ">=22.1.0"
 flake8-rst = ">=0.8.0"
 flake8-rst-docstrings = ">=0.2.5"
 isort = ">=5.10.1"
+jupyter = ">=1.0.0"
+jupyterlab = ">=3.4.4"
 mypy = ">=0.941"
 pre-commit = ">=2.17.0"
 pybadges = ">=3.0"
@@ -99,6 +101,7 @@ types-setuptools = ">=57.4.8"
 types-six = ">=1.16.10"
 types-typing-extensions = ">=3.7.0"
 wheel = ">=0.37.1"
+
 
 [tool.poetry.scripts]
 
