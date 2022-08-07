@@ -7,6 +7,7 @@ __all__ = [
 ]
 
 import hashlib
+import string
 from pathlib import Path
 from typing import Any, Optional
 
@@ -58,3 +59,41 @@ def download(
 def validate_hash(fname: str, hash_value: str, hash_type: str = "sha256") -> bool:
     r"""Validate a file against a hash value."""
     return hash_file(fname, algorithm=hash_type) == hash_value
+
+
+def to_base(n: int, b: int) -> list[int]:
+    r"""Convert non-negative integer to any basis.
+
+    References
+    ----------
+    - https://stackoverflow.com/a/28666223/9318372
+
+    Parameters
+    ----------
+    n: int
+    b: int
+
+    Returns
+    -------
+    digits: list[int]
+        Satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
+    """
+    digits = []
+    while n:
+        n, d = divmod(n, b)
+        digits.append(d)
+    return digits[::-1] or [0]
+
+
+def to_alphanumeric(n: int) -> str:
+    r"""Convert integer to alphanumeric code."""
+    chars = string.ascii_uppercase + string.digits
+    digits = to_base(n, len(chars))
+    return "".join(chars[i] for i in digits)
+
+
+# def shorthash(inputs) -> str:
+#     r"""Roughly good for 2¹⁶=65536 items."""
+#     encoded = json.dumps(dictionary, sort_keys=True).encode()
+#
+#     return shake_256(inputs).hexdigest(8)

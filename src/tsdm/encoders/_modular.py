@@ -33,8 +33,8 @@ from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils import pairwise_disjoint
+from tsdm.utils.data import TimeTensor
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.torch import TimeTensor
 from tsdm.utils.types import PandasObject, PathType, TensorVar
 from tsdm.utils.types.protocols import NTuple
 

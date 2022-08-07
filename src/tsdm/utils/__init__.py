@@ -1,14 +1,13 @@
 r"""Provides utility functions."""
 
 __all__ = [
-    # Sub-Modules
-    "dataloaders",
+    # Sub-Packages
+    "data",
     "decorators",
+    "types",
+    # Sub-Modules
     "remote",
     "system",
-    "types",
-    "torch",
-    "split_preparation",
     # Constants
     # Classes
     "PatchedABCMeta",
@@ -32,15 +31,7 @@ __all__ = [
     "pairwise_disjoint",
 ]
 
-from tsdm.utils import (
-    dataloaders,
-    decorators,
-    remote,
-    split_preparation,
-    system,
-    torch,
-    types,
-)
+from tsdm.utils import data, decorators, remote, system, types
 from tsdm.utils._subclassing import PatchedABCMeta, abstractattribute
 from tsdm.utils._util import (
     Split,

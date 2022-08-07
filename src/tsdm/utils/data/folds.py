@@ -15,6 +15,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
 FOLDS = Sequence[Mapping[str, Series]]
+r"""Type Hint for Folds"""
 
 
 def folds_from_groups(

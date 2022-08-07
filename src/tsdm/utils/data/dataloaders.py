@@ -29,7 +29,7 @@ from torch.nn.utils.rnn import (
     pad_sequence,
 )
 
-from tsdm.utils.torch import aggregate_and, cumulative_and
+from tsdm.linalg import aggregate_and, cumulative_and
 
 __logger__ = logging.getLogger(__name__)
 

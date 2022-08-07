@@ -87,23 +87,7 @@ class MappingDataset(TorchDataset, Mapping):
         return repr_mapping(self)
 
 
-# class TupleDataset(Torch_Dataset):
-#     r"""Sequential Dataset."""
-#
-#     def __init__(self, *tensors: Tensor, **named_tensors: Tensor):
-#         assert all(len(x) == len(tensors[0]) for x in tensors)
-#         self.tensors = tensors
-#
-#     def __len__(self):
-#         r"""Length of the dataset."""
-#         return len(self.tensors[0])
-#
-#     def __getitem__(self, idx):
-#         r"""Get the same slice from each tensor."""
-#         return tuple(x[idx] for x in self.tensors)
-
-
-class DatasetCollection(Mapping, TorchDataset):
+class DatasetCollection(TorchDataset, Mapping):
     r"""Represents a ``mapping[index → torch.Datasets]``.
 
     All tensors must have a shared index,
@@ -169,3 +153,19 @@ class DatasetCollection(Mapping, TorchDataset):
 #
 #     def __iter__(self):
 #         r"""Forward to wrapped object."""
+
+
+# class TupleDataset(Torch_Dataset):
+#     r"""Sequential Dataset."""
+#
+#     def __init__(self, *tensors: Tensor, **named_tensors: Tensor):
+#         assert all(len(x) == len(tensors[0]) for x in tensors)
+#         self.tensors = tensors
+#
+#     def __len__(self):
+#         r"""Length of the dataset."""
+#         return len(self.tensors[0])
+#
+#     def __getitem__(self, idx):
+#         r"""Get the same slice from each tensor."""
+#         return tuple(x[idx] for x in self.tensors)
