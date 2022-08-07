@@ -22,7 +22,6 @@ Some design decisions:
 __all__ = [
     # Sub-Packages
     "base",
-    "synthetic",
     # Types
     "dataset",
     "DATASET_OBJECT",
@@ -49,7 +48,7 @@ __all__ = [
 
 from typing import Final
 
-from tsdm.datasets import base, synthetic
+from tsdm.datasets import base
 from tsdm.datasets.base import (
     DATASET_OBJECT,
     BaseDataset,
