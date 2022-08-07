@@ -41,7 +41,7 @@ from tsdm.linalg import (
     reldist_symm,
     row_corr,
 )
-from tsdm.losses import Loss
+from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize

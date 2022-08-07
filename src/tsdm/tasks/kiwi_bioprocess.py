@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
 from tsdm.encoders import BaseEncoder
-from tsdm.losses import WRMSE
+from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.utils.split_preparation import folds_as_frame, folds_from_groups

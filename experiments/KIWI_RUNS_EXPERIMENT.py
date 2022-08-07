@@ -49,7 +49,7 @@ from tsdm.logutils import (
     log_model_state,
     log_optimizer_state,
 )
-from tsdm.losses import LOSSES
+from tsdm.metrics import LOSSES
 from tsdm.tasks import KIWI_RUNS_TASK
 
 # In[4]:
