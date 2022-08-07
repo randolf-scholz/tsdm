@@ -20,7 +20,6 @@ from tsdm.utils.types.time import DTVar, TDVar
 __logger__ = logging.getLogger(__name__)
 
 
-# noinspection PyTypeChecker
 def sample_timestamps(
     start: Union[str, DTVar] = "today",
     final: Optional[DTVar] = None,

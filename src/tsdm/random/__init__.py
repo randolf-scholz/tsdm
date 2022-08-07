@@ -3,7 +3,6 @@ r"""Statistical functions for random variables."""
 
 __all__ = [
     # Sub-Packages
-    "generators",
     "samplers",
     "stats",
     # Functions
@@ -11,5 +10,5 @@ __all__ = [
     "sample_timedeltas",
 ]
 
-from tsdm.random import generators, samplers, stats
+from tsdm.random import samplers, stats
 from tsdm.random._random import sample_timedeltas, sample_timestamps

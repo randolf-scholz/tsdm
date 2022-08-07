@@ -1,8 +1,6 @@
 r"""Linear Algebra Subroutines."""
 
 __all__ = [
-    # Modules
-    "regularity_tests",
     # Functions
     "erank",
     "col_corr",
@@ -27,7 +25,6 @@ __all__ = [
     "cumulative_or",
 ]
 
-from tsdm.linalg import regularity_tests
 from tsdm.linalg._logical_operators import (
     aggregate_and,
     aggregate_or,
