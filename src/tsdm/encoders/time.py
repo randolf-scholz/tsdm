@@ -15,7 +15,6 @@ __all__ = [
 from typing import Any, Hashable, Literal, Optional, Union, cast
 
 import numpy as np
-import pandas
 import pandas as pd
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
 
@@ -177,7 +176,7 @@ class DateTimeEncoder(BaseEncoder):
     def decode(self, data: Series, /) -> Union[Series, DatetimeIndex]:
         r"""Decode the input."""
         self.LOGGER.debug("Decoding %s", type(data))
-        converted = pandas.to_timedelta(data, unit=self.unit)
+        converted = pd.to_timedelta(data, unit=self.unit)
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
         if self.kind == Series:
             return datetimes.round(self.base_freq)

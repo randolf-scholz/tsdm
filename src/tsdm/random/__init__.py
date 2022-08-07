@@ -6,9 +6,10 @@ __all__ = [
     "samplers",
     "stats",
     # Functions
+    "random_data",
     "sample_timestamps",
     "sample_timedeltas",
 ]
 
 from tsdm.random import samplers, stats
-from tsdm.random._random import sample_timedeltas, sample_timestamps
+from tsdm.random._random import random_data, sample_timedeltas, sample_timestamps

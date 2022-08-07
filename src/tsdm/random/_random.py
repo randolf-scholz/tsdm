@@ -2,6 +2,7 @@ r"""Utility functions for random number generation."""
 
 __all__ = [
     # Functions
+    "random_data",
     "sample_timestamps",
     "sample_timedeltas",
 ]
