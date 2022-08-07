@@ -111,7 +111,7 @@ def closest_diag(x: Tensor) -> Tensor:
 
 
 @jit.script
-def matrix_reldist(x: Tensor, y: Tensor) -> Tensor:
+def reldist(x: Tensor, y: Tensor) -> Tensor:
     r"""Relative distance between two matrices.
 
     .. Signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
@@ -132,7 +132,7 @@ def reldist_diag(x: Tensor) -> Tensor:
 
     .. math:: ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
     """
-    return matrix_reldist(closest_diag(x), x)
+    return reldist(closest_diag(x), x)
 
 
 @jit.script
@@ -141,7 +141,7 @@ def reldist_symm(x: Tensor) -> Tensor:
 
     .. Signature:: ``(..., n, n) -> ...``
     """
-    return matrix_reldist(closest_symm(x), x)
+    return reldist(closest_symm(x), x)
 
 
 @jit.script
@@ -150,7 +150,7 @@ def reldist_skew(x: Tensor) -> Tensor:
 
     .. Signature:: ``(..., n, n) -> ...``
     """
-    return matrix_reldist(closest_skew(x), x)
+    return reldist(closest_skew(x), x)
 
 
 @jit.script
@@ -161,4 +161,4 @@ def reldist_orth(x: Tensor) -> Tensor:
 
     .. math:: \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
     """
-    return matrix_reldist(closest_orth(x), x)
+    return reldist(closest_orth(x), x)

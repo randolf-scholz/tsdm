@@ -13,15 +13,12 @@ __all__ = [
     "install_package",
     "query_bool",
     "query_choice",
-    "to_alphanumeric",
-    "to_base",
     "write_requirements",
 ]
 
 import importlib
 import inspect
 import logging
-import string
 import subprocess
 import sys
 from pathlib import Path
@@ -228,41 +225,3 @@ def write_requirements(
     path = Path("requirements") if path is None else Path(path)
     with open(path.joinpath(fname), "w", encoding="utf8") as file:
         file.write("\n".join(f"{k}=={requirements[k]}" for k in sorted(requirements)))
-
-
-def to_base(n: int, b: int) -> list[int]:
-    r"""Convert non-negative integer to any basis.
-
-    References
-    ----------
-    - https://stackoverflow.com/a/28666223/9318372
-
-    Parameters
-    ----------
-    n: int
-    b: int
-
-    Returns
-    -------
-    digits: list[int]
-        Satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
-    """
-    digits = []
-    while n:
-        n, d = divmod(n, b)
-        digits.append(d)
-    return digits[::-1] or [0]
-
-
-def to_alphanumeric(n: int) -> str:
-    r"""Convert integer to alphanumeric code."""
-    chars = string.ascii_uppercase + string.digits
-    digits = to_base(n, len(chars))
-    return "".join(chars[i] for i in digits)
-
-
-# def shorthash(inputs) -> str:
-#     r"""Roughly good for 2¹⁶=65536 items."""
-#     encoded = json.dumps(dictionary, sort_keys=True).encode()
-#
-#     return shake_256(inputs).hexdigest(8)

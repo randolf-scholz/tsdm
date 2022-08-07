@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Linear Algebra Subroutines."""
 
 __all__ = [
     # Modules
@@ -14,7 +11,7 @@ __all__ = [
     "closest_skew",
     "closest_orth",
     "closest_diag",
-    "matrix_reldist",
+    "reldist",
     "reldist_diag",
     "reldist_symm",
     "reldist_skew",
@@ -24,17 +21,27 @@ __all__ = [
     "grad_norm",
     "multi_scaled_norm",
     "multi_norm",
+    "aggregate_and",
+    "aggregate_or",
+    "cumulative_and",
+    "cumulative_or",
 ]
 
 from tsdm.linalg import regularity_tests
-from tsdm.linalg._linalg import (
+from tsdm.linalg._logical_operators import (
+    aggregate_and,
+    aggregate_or,
+    cumulative_and,
+    cumulative_or,
+)
+from tsdm.linalg._matrix_functions import (
     closest_diag,
     closest_orth,
     closest_skew,
     closest_symm,
     col_corr,
     erank,
-    matrix_reldist,
+    reldist,
     reldist_diag,
     reldist_orth,
     reldist_skew,

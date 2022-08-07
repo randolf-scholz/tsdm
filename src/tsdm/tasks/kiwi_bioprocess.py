@@ -20,9 +20,13 @@ from tsdm.encoders import BaseEncoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.utils.split_preparation import folds_as_frame, folds_from_groups
+from tsdm.utils.data import (
+    MappingDataset,
+    TimeSeriesDataset,
+    folds_as_frame,
+    folds_from_groups,
+)
 from tsdm.utils.strings import repr_namedtuple
-from tsdm.utils.torch import MappingDataset, TimeSeriesDataset
 
 
 class Sample(NamedTuple):
