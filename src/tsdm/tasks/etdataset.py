@@ -15,7 +15,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import ETT
-from tsdm.encoders.modular import (
+from tsdm.encoders import (
     ChainedEncoder,
     DataFrameEncoder,
     DateTimeEncoder,

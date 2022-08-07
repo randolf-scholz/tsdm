@@ -2,6 +2,7 @@ r"""#TODO add module summary line.
 
 #TODO add module description.
 """
+
 from __future__ import annotations
 
 __all__ = [
@@ -9,22 +10,17 @@ __all__ = [
     "Time2Float",
     "DateTimeEncoder",
     "TimeDeltaEncoder",
-    "FloatEncoder",
-    "IntEncoder",
 ]
 
-
-import logging
-from typing import Any, Literal, Optional, Union
+from typing import Any, Hashable, Literal, Optional, Union, cast
 
 import numpy as np
 import pandas
-from pandas import DatetimeIndex, Series, Timedelta, Timestamp
+import pandas as pd
+from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
 
-from tsdm.encoders.modular.generic import BaseEncoder
-from tsdm.utils.types._types import PandasObject
-
-__logger__ = logging.getLogger(__name__)
+from tsdm.encoders._modular import FrameEncoder
+from tsdm.encoders.base import BaseEncoder
 
 
 class Time2Float(BaseEncoder):
@@ -76,7 +72,7 @@ class Time2Float(BaseEncoder):
         elif np.issubdtype(ds.dtype, np.integer):
             timedeltas = ds.view("timedelta64[ns]")
         elif np.issubdtype(ds.dtype, np.floating):
-            __logger__.warning("Array is already floating dtype.")
+            self.LOGGER.warning("Array is already floating dtype.")
             timedeltas = ds
         else:
             raise ValueError(f"{ds.dtype=} not supported")
@@ -113,7 +109,7 @@ class Time2Float(BaseEncoder):
         elif np.issubdtype(data.dtype, np.timedelta64):
             timedeltas = data.view("timedelta64[ns]")
         elif np.issubdtype(data.dtype, np.floating):
-            __logger__.warning("Array is already floating dtype.")
+            self.LOGGER.warning("Array is already floating dtype.")
             return data
         else:
             raise ValueError(f"{data.dtype=} not supported")
@@ -180,7 +176,7 @@ class DateTimeEncoder(BaseEncoder):
 
     def decode(self, data: Series, /) -> Union[Series, DatetimeIndex]:
         r"""Decode the input."""
-        __logger__.debug("Decoding %s", type(data))
+        self.LOGGER.debug("Decoding %s", type(data))
         converted = pandas.to_timedelta(data, unit=self.unit)
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
         if self.kind == Series:
@@ -231,51 +227,120 @@ class TimeDeltaEncoder(BaseEncoder):
         return f"{self.__class__.__name__}(unit={self.unit!r})"
 
 
-class FloatEncoder(BaseEncoder):
-    r"""Converts all columns of DataFrame to float32."""
+class PeriodicEncoder(BaseEncoder):
+    r"""Encode periodic data as sin/cos waves."""
 
-    dtypes: Series = None
-    r"""The original dtypes."""
+    period: float
+    freq: float
+    dtype: pd.dtype
+    colname: Hashable
 
-    def __init__(self, dtype: str = "float32"):
-        self.target_dtype = dtype
+    def __init__(self, period: Optional[float] = None) -> None:
         super().__init__()
+        self._period = period
 
-    def fit(self, data: PandasObject, /) -> None:
-        r"""Remember the original dtypes."""
-        self.dtypes = data.dtypes if hasattr(data, "dtypes") else data.dtype
+    def fit(self, x: Series) -> None:
+        r"""Fit the encoder."""
+        self.dtype = x.dtype
+        self.colname = x.name
+        self.period = x.max() + 1 if self._period is None else self._period
+        self._period = self.period
+        self.freq = 2 * np.pi / self.period
 
-    def encode(self, data: PandasObject, /) -> PandasObject:
-        r"""Make everything float32."""
-        return data.astype(self.target_dtype)
+    def encode(self, x: Series) -> DataFrame:
+        r"""Encode the data."""
+        x = self.freq * (x % self.period)  # ensure 0...N-1
+        return DataFrame(
+            np.stack([np.cos(x), np.sin(x)]).T,
+            columns=[f"cos_{self.colname}", f"sin_{self.colname}"],
+        )
 
-    def decode(self, data: PandasObject, /) -> PandasObject:
-        r"""Restore original dtypes."""
-        return data.astype(self.dtypes)
-
-    def __repr__(self):
-        r"""Pretty print."""
-        return f"{self.__class__.__name__}()"
-
-
-class IntEncoder(BaseEncoder):
-    r"""Converts all columns of DataFrame to int32."""
-
-    dtypes: Series = None
-    r"""The original dtypes."""
-
-    def fit(self, data: PandasObject, /) -> None:
-        r"""Remember the original dtypes."""
-        self.dtypes = data.dtypes
-
-    def encode(self, data: PandasObject, /) -> PandasObject:
-        r"""Make everything int32."""
-        return data.astype("int32")
-
-    def decode(self, data, /):
-        r"""Restore original dtypes."""
-        return data.astype(self.dtypes)
+    def decode(self, x: DataFrame) -> Series:
+        r"""Decode the data."""
+        x = np.arctan2(x[f"sin_{self.colname}"], x[f"cos_{self.colname}"])
+        x = (x / self.freq) % self.period
+        return Series(x, dtype=self.dtype, name=self.colname)
 
     def __repr__(self):
+        r"""Pretty-print."""
+        return f"{self.__class__.__name__}({self._period})"
+
+
+class SocialTimeEncoder(BaseEncoder):
+    r"""Social time encoding."""
+
+    level_codes = {
+        "Y": "year",
+        "M": "month",
+        "W": "weekday",
+        "D": "day",
+        "h": "hour",
+        "m": "minute",
+        "s": "second",
+        "µ": "microsecond",
+        "n": "nanosecond",
+    }
+    original_name: Hashable
+    original_dtype: pd.dtype
+    original_type: type
+    rev_cols: list[str]
+    level_code: str
+    levels: list[str]
+
+    def __init__(self, levels: str = "YMWDhms") -> None:
+        super().__init__()
+        self.level_code = levels
+        self.levels = [self.level_codes[k] for k in levels]
+
+    def fit(self, x: Series, /) -> None:
+        r"""Fit the encoder."""
+        self.original_type = type(x)
+        self.original_name = x.name
+        self.original_dtype = x.dtype
+        self.rev_cols = [level for level in self.levels if level != "weekday"]
+
+    def encode(self, x: Series, /) -> DataFrame:
+        r"""Encode the data."""
+        if isinstance(x, DatetimeIndex):
+            res = {level: getattr(x, level) for level in self.levels}
+        else:
+            res = {level: getattr(x, level) for level in self.levels}
+        return DataFrame.from_dict(res)
+
+    def decode(self, x: DataFrame, /) -> Series:
+        r"""Decode the data."""
+        x = x[self.rev_cols]
+        s = pd.to_datetime(x)
+        return self.original_type(s, name=self.original_name, dtype=self.original_dtype)
+
+    def __repr__(self) -> str:
         r"""Pretty print."""
-        return f"{self.__class__.__name__}()"
+        return f"SocialTimeEncoder('{self.level_code}')"
+
+
+class PeriodicSocialTimeEncoder(SocialTimeEncoder):
+    r"""Combines SocialTimeEncoder with PeriodicEncoder using the right frequencies."""
+
+    frequencies = {
+        "year": 1,
+        "month": 12,
+        "weekday": 7,
+        "day": 365,
+        "hour": 24,
+        "minute": 60,
+        "second": 60,
+        "microsecond": 1000,
+        "nanosecond": 1000,
+    }
+    r"""The frequencies of the used `PeriodicEncoder`."""
+
+    def __new__(cls, levels: str = "YMWDhms") -> PeriodicSocialTimeEncoder:
+        r"""Construct a new encoder object."""
+        self = super().__new__(cls)
+        self.__init__(levels)  # type: ignore[misc]
+        column_encoders = {
+            level: PeriodicEncoder(period=self.frequencies[level])
+            for level in self.levels
+        }
+        obj = FrameEncoder(column_encoders) @ self  # type: ignore[arg-type]
+        return cast(PeriodicSocialTimeEncoder, obj)

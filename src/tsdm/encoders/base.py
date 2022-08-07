@@ -1,4 +1,4 @@
-r"""Generic Modular Encoders."""
+r"""Base Classes for Encoders."""
 
 
 from __future__ import annotations
@@ -13,7 +13,9 @@ __all__ = [
     "CloneEncoder",
 ]
 
-from abc import ABC, abstractmethod
+
+import logging
+from abc import ABC, ABCMeta, abstractmethod
 from copy import deepcopy
 from typing import Any, Sequence, Union, overload
 
@@ -22,8 +24,19 @@ from tsdm.utils.strings import repr_sequence
 from tsdm.utils.types import ObjectType
 
 
-class BaseEncoder(ABC):
+class BaseEncoderMetaClass(ABCMeta):
+    r"""Metaclass for BaseDataset."""
+
+    def __init__(cls, *args, **kwargs):
+        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+        super().__init__(*args, **kwargs)
+
+
+class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
     r"""Base class that all encoders must subclass."""
+
+    LOGGER: logging.Logger
+    r"""Logger for the Encoder."""
 
     _is_fitted: bool = False
     r"""Whether the encoder has been fitted."""

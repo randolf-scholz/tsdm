@@ -26,7 +26,7 @@ from getpass import getpass
 import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
-from tsdm.encoders.modular import TripletDecoder
+from tsdm.encoders import TripletDecoder
 
 
 class MIMIC_III(MultiFrameDataset):

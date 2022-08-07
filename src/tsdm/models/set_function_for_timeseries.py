@@ -14,7 +14,7 @@ from typing import Optional
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.encoders.modular.torch import PositionalEncoder, Time2Vec
+from tsdm.encoders.torch import PositionalEncoder, Time2Vec
 from tsdm.models.generic import (
     MLP,
     DeepSet,

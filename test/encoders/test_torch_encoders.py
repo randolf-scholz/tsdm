@@ -6,9 +6,9 @@ import logging
 import numpy as np
 import torch
 
-from tsdm.encoders.modular import PositionalEncoder
-from tsdm.encoders.modular.torch import PositionalEncoder as PositionalEncoder_Torch
-from tsdm.encoders.modular.torch import Time2Vec
+from tsdm.encoders import PositionalEncoder
+from tsdm.encoders.torch import PositionalEncoder as PositionalEncoder_Torch
+from tsdm.encoders.torch import Time2Vec
 
 __logger__ = logging.getLogger(__name__)
 

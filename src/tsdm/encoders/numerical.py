@@ -1,7 +1,5 @@
-r"""#TODO add module summary line.
+r"""Numerical Transformations, Standardization, Log-Transforms, etc."""
 
-#TODO add module description.
-"""
 from __future__ import annotations
 
 __all__ = [
@@ -11,7 +9,6 @@ __all__ = [
     "LogEncoder",
 ]
 
-import logging
 from functools import singledispatchmethod
 from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union
 
@@ -21,10 +18,9 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Series
 from torch import Tensor
 
-from tsdm.encoders.modular.generic import BaseEncoder
+from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.strings import repr_namedtuple
-
-__logger__ = logging.getLogger(__name__)
+from tsdm.utils.types import PandasObject
 
 TensorLike = Union[Tensor, NDArray, DataFrame, Series]
 r"""Type Hint for tensor-like objects."""
@@ -151,9 +147,9 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         if self.mean is None:
             raise RuntimeError("Needs to be fitted first!")
 
-        __logger__.debug("Encoding data %s", data)
+        self.LOGGER.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, self.axis)
-        __logger__.debug("Broadcasting to %s", broadcast)
+        self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         return (data - self.mean[broadcast]) / self.stdv[broadcast]
 
@@ -162,9 +158,9 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         if self.mean is None:
             raise RuntimeError("Needs to be fitted first!")
 
-        __logger__.debug("Encoding data %s", data)
+        self.LOGGER.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, self.axis)
-        __logger__.debug("Broadcasting to %s", broadcast)
+        self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         return data * self.stdv[broadcast] + self.mean[broadcast]
 
@@ -283,9 +279,9 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
 
     def encode(self, data: TensorType, /) -> TensorType:
         r"""Encode the input."""
-        __logger__.debug("Encoding data %s", data)
+        self.LOGGER.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, self.axis)
-        __logger__.debug("Broadcasting to %s", broadcast)
+        self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
         scale = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
@@ -295,9 +291,9 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
 
     def decode(self, data: TensorType, /) -> TensorType:
         r"""Decode the input."""
-        __logger__.debug("Decoding data %s", data)
+        self.LOGGER.debug("Decoding data %s", data)
         broadcast = get_broadcast(data, self.axis)
-        __logger__.debug("Broadcasting to %s", broadcast)
+        self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
         scale = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
@@ -391,3 +387,53 @@ class LogEncoder(BaseEncoder):
         mask = result < self.threshold
         result[:] = np.where(mask, 0, result)
         return result
+
+
+class FloatEncoder(BaseEncoder):
+    r"""Converts all columns of DataFrame to float32."""
+
+    dtypes: Series = None
+    r"""The original dtypes."""
+
+    def __init__(self, dtype: str = "float32"):
+        self.target_dtype = dtype
+        super().__init__()
+
+    def fit(self, data: PandasObject, /) -> None:
+        r"""Remember the original dtypes."""
+        self.dtypes = data.dtypes if hasattr(data, "dtypes") else data.dtype
+
+    def encode(self, data: PandasObject, /) -> PandasObject:
+        r"""Make everything float32."""
+        return data.astype(self.target_dtype)
+
+    def decode(self, data: PandasObject, /) -> PandasObject:
+        r"""Restore original dtypes."""
+        return data.astype(self.dtypes)
+
+    def __repr__(self):
+        r"""Pretty print."""
+        return f"{self.__class__.__name__}()"
+
+
+class IntEncoder(BaseEncoder):
+    r"""Converts all columns of DataFrame to int32."""
+
+    dtypes: Series = None
+    r"""The original dtypes."""
+
+    def fit(self, data: PandasObject, /) -> None:
+        r"""Remember the original dtypes."""
+        self.dtypes = data.dtypes
+
+    def encode(self, data: PandasObject, /) -> PandasObject:
+        r"""Make everything int32."""
+        return data.astype("int32")
+
+    def decode(self, data, /):
+        r"""Restore original dtypes."""
+        return data.astype(self.dtypes)
+
+    def __repr__(self):
+        r"""Pretty print."""
+        return f"{self.__class__.__name__}()"

@@ -6,7 +6,7 @@ import logging
 import numpy as np
 from pytest import mark
 
-from tsdm.encoders.modular import MinMaxScaler, Standardizer
+from tsdm.encoders import MinMaxScaler, Standardizer
 
 __logger__ = logging.getLogger(__name__)
 
