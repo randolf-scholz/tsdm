@@ -84,7 +84,7 @@ root_doc = "index"
 # The document name of the “root” document, that is, the document that contains the root toctree directive.
 # Default is 'index'.
 
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "_**"]
 # A list of glob-style patterns that should be excluded when looking for source files. They are matched against the
 # source file names relative to the source directory, using slashes as directory separators on all platforms.
 
@@ -227,7 +227,7 @@ html_sidebars = {}
 # region Theme Configuration -----------------------------------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/theming.html
 
-extensions.append("sphinx_typo3_theme")
+# extensions.append("sphinx_typo3_theme")
 
 # piccolo_theme, karma_sphinx_theme, sphinx_rtd_theme, pydata_sphinx_theme, sphinx_typo3_theme
 html_theme = "pydata_sphinx_theme"

@@ -21,11 +21,9 @@ from pandas import DataFrame, Series
 def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> float:
     r"""Compute approximate GCD of multiple floats.
 
-    .. math::
-        𝗀𝖼𝖽_ϵ(x) = 𝗆𝖺𝗑\{y∣ ∀i : 𝖽𝗂𝗌𝗍(x_i, yℤ)≤ϵ\}
+    .. math:: 𝗀𝖼𝖽_ϵ(x) = 𝗆𝖺𝗑\{y∣ ∀i : 𝖽𝗂𝗌𝗍(x_i, yℤ)≤ϵ\}
 
-    .. warning::
-       This implementation does not work 100% correctly yet!
+    .. warning:: This implementation does not work 100% correctly yet!
 
     Parameters
     ----------
@@ -39,7 +37,7 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
 
     References
     ----------
-    - <https://stackoverflow.com/q/45323619/9318372>
+    - https://stackoverflow.com/q/45323619/9318372
     """
     warnings.warn(
         "The implementation of approx_float_gcd does not work 100% correctly yet!"
@@ -157,12 +155,10 @@ def regularity_coefficient(
     The regularity coefficient is equal to the ratio of length of the smallest regular time-series
     that contains s and the length of s.
 
-    .. math::
-       κ(𝐭) = \frac{(t_\max-t_\min)/𝗀𝖼𝖽(𝐭)}{|𝐭|}
+    .. math:: κ(𝐭) = \frac{(t_\max-t_\min)/𝗀𝖼𝖽(𝐭)}{|𝐭|}
 
-    In particular, if the time-series is regular, $κ=1$, and if it is irregular,
-    $κ=∞$. To make the time-series regular, one would have to insert an additional
-    $(κ(𝐭)-1)|𝐭|$ data-points.
+    In particular, if the time-series is regular, $κ=1$, and if it is irregular, $κ=∞$.
+    To make the time-series regular, one would have to insert an additional $(κ(𝐭)-1)|𝐭|$ data-points.
 
     Parameters
     ----------
