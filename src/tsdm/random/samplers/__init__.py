@@ -1,18 +1,18 @@
 r"""Random Samplers."""
 
 __all__ = [
-    # ABC
-    "BaseSampler",
     # Constants
     "Sampler",
     "SAMPLERS",
+    # ABC
+    "BaseSampler",
+    "BaseSamplerMetaClass",
     # Classes
-    "SliceSampler",
-    # "TimeSliceSampler",
-    "SequenceSampler",
     "CollectionSampler",
-    "IntervalSampler",
     "HierarchicalSampler",
+    "IntervalSampler",
+    "SequenceSampler",
+    "SliceSampler",
     "SlidingWindowSampler",
     # Functions
     "compute_grid",
@@ -24,6 +24,7 @@ from torch.utils import data as torch_utils_data
 
 from tsdm.random.samplers._samplers import (
     BaseSampler,
+    BaseSamplerMetaClass,
     CollectionSampler,
     HierarchicalSampler,
     IntervalSampler,

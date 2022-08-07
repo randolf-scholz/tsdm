@@ -6,12 +6,8 @@ __all__ = [
     "sparsity",
 ]
 
-import logging
-
 import pandas
 from pandas import DataFrame, Series
-
-__logger__ = logging.getLogger(__name__)
 
 
 def sparsity(df: DataFrame) -> tuple[float, float]:

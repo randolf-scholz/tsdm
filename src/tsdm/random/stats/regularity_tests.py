@@ -1,16 +1,13 @@
-r"""Test for checking how regular time series is.
-
-TODO: Module description.
-"""
+r"""Test for checking how regular time series is."""
 
 __all__ = [
     # Functions
-    "float_gcd",
     "approx_float_gcd",
-    "is_regular",
+    "float_gcd",
     "is_quasiregular",
-    "time_gcd",
+    "is_regular",
     "regularity_coefficient",
+    "time_gcd",
 ]
 
 import warnings
@@ -50,7 +47,6 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
     x = np.asanyarray(x)
     x = np.abs(x).flatten()
 
-    # @numba.njit
     def _float_gcd(z: np.ndarray) -> float:
         n = len(z)
         t = np.min(z)
@@ -225,8 +221,7 @@ def distributiveness(s: Series) -> float:
 
     For a given irregular timeseries, we define this as the minimum:
 
-    .. math::
-        σ(TS) = \min\{ d(TS, TS') ∣ 𝐄[∆t(TS')] = 𝐄[∆t(TS)], TS' regular  \}
+    .. math:: σ(TS) = \min\{ d(TS, TS') ∣ 𝐄[∆t(TS')] = 𝐄[∆t(TS)], TS' regular \}
 
     I.e. the minimum distance (for example Dynamic Time Warping) between the time series,
     and a regular time series with the same average frequency.
