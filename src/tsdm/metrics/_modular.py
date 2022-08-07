@@ -31,8 +31,7 @@ from tsdm.utils.decorators import autojit
 class ND(nn.Module):
     r"""Compute the normalized deviation score.
 
-    .. math::
-        𝖭𝖣(x, x̂) = \frac{∑_{t,k} |x̂_{t,k} -  x_{t,k}|}{∑_{t,k} |x_{t,k}|}
+    .. math:: 𝖭𝖣(x, x̂) = \frac{∑_{t,k} |x̂_{t,k} -  x_{t,k}|}{∑_{t,k} |x_{t,k}|}
 
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
@@ -65,8 +64,7 @@ class ND(nn.Module):
 class NRMSE(nn.Module):
     r"""Compute the normalized deviation score.
 
-    .. math::
-        𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
 
     References
     ----------
@@ -94,8 +92,7 @@ class NRMSE(nn.Module):
 class Q_Quantile(nn.Module):
     r"""The q-quantile.
 
-    .. math::
-        𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
+    .. math:: 𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
 
     References
     ----------
@@ -123,8 +120,7 @@ class Q_Quantile(nn.Module):
 class Q_Quantile_Loss(nn.Module):
     r"""The q-quantile loss.
 
-    .. math::
-        𝖰𝖫_q(x,x̂) = 2\frac{∑_{it}𝖯_q(x_{it},x̂_{it})}{∑_{it}|x_{it}|}
+    .. math:: 𝖰𝖫_q(x,x̂) = 2\frac{∑_{it}𝖯_q(x_{it},x̂_{it})}{∑_{it}|x_{it}|}
 
     References
     ----------
@@ -152,9 +148,7 @@ class Q_Quantile_Loss(nn.Module):
 class WRMSE(nn.Module):
     r"""Weighted Root Mean Square Error.
 
-    .. math::
-
-        (1/m)∑_m (1/n)∑_n w(x_{n,m}- x_{n,m})^2
+    .. math:: (1/m)∑_m (1/n)∑_n w(x_{n,m}- x_{n,m})^2
     """
 
     # Constants
@@ -243,8 +237,7 @@ class RMSE(nn.Module):
     ) -> Tensor:
         r"""Compute the RMSE.
 
-        .. math::
-            𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
+        .. math:: 𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
         """
         if self.mask_nan_targets:
             mask = torch.isnan(x)
@@ -279,8 +272,7 @@ class MSE(nn.Module):
     ) -> Tensor:
         r"""Compute the RMSE.
 
-        .. math::
-            𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
+        .. math:: 𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
         """
         if self.mask_nan_targets:
             mask = torch.isnan(x)

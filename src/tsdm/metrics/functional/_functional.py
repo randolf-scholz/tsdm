@@ -23,8 +23,7 @@ from torch import Tensor, jit
 def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
-    .. math::
-        𝖭𝖣(x, x̂) = \frac{∑_{t,k} |x̂_{t,k} -  x_{t,k}|}{∑_{t,k} |x_{t,k}|}
+    .. math:: 𝖭𝖣(x, x̂) = \frac{∑_{t,k} |x̂_{t,k} -  x_{t,k}|}{∑_{t,k} |x_{t,k}|}
 
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
@@ -58,8 +57,7 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
 def nrmse(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
-    .. math::
-        𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
+    .. math:: 𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
 
     Parameters
     ----------
@@ -88,8 +86,7 @@ def nrmse(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
 def q_quantile(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile.
 
-    .. math::
-        𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
+    .. math:: 𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
 
     References
     ----------
@@ -117,8 +114,7 @@ def q_quantile(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
 def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
     r"""Return the q-quantile loss.
 
-    .. math::
-        𝖰𝖫_q(x,x̂) = 2\frac{∑_{it}𝖯_q(x_{it},x̂_{it})}{∑_{it}|x_{it}|}
+    .. math:: 𝖰𝖫_q(x,x̂) = 2\frac{∑_{it}𝖯_q(x_{it},x̂_{it})}{∑_{it}|x_{it}|}
 
     References
     ----------
@@ -148,8 +144,7 @@ def rmse(
 ) -> Tensor:
     r"""Compute the RMSE.
 
-    .. math::
-        𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[|x - x̂|^2]}
+    .. math:: 𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[|x - x̂|^2]}
 
     Parameters
     ----------

@@ -105,12 +105,7 @@ class CSVEncoder(BaseEncoder):
         self.to_csv_kwargs = to_csv_kwargs or {}
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit the encoder.
-
-        Parameters
-        ----------
-        data
-        """
+        r"""Fit the encoder."""
         self.dtypes = data.dtypes
 
     def encode(self, data: DataFrame, /) -> PathType:
@@ -135,12 +130,7 @@ class ConcatEncoder(BaseEncoder):
     maxdim: int
 
     def __init__(self, axis: int = 0) -> None:
-        r"""Concatenate tensors along the specified axis.
-
-        Parameters
-        ----------
-        axis: int
-        """
+        r"""Concatenate tensors along the specified axis."""
         super().__init__()
         self.axis = axis
 
@@ -595,16 +585,8 @@ class FrameIndexer(BaseEncoder):
 class FrameSplitter(BaseEncoder, Mapping):
     r"""Split DataFrame columns into multiple groups.
 
-    The special value `...` (`Ellipsis`) can be used to indicate
-    that all other columns belong to this group.
-
-    Index mapping
-
-    [0|1|2|3|4|5]
-
-    [2|0|1], [5|4]
-
-    corresponds to mapping
+    The special value `...` (`Ellipsis`) can be used to indicate that all other columns belong to this group.
+    The index mapping `[0|1|2|3|4|5]` to `[2|0|1], [5|4]` corresponds to mapping
 
     +---+---+---+---+---+---+
     | 0 | 1 | 2 | 3 | 4 | 5 |
@@ -808,29 +790,12 @@ class PositionalEncoder(BaseEncoder):
         r"""Signature: ``... -> (..., 2d)``.
 
         Note: we simple concatenate the sin and cosine terms without interleaving them.
-
-        Parameters
-        ----------
-        data: Tensor
-
-        Returns
-        -------
-        Tensor
         """
         z = np.einsum("..., d -> ...d", data, self.scales)
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
 
     def decode(self, data: np.ndarray, /) -> np.ndarray:
-        r""".. Signature:: ``(..., 2d) -> ...``.
-
-        Parameters
-        ----------
-        data: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``(..., 2d) -> ...``."""
         return np.arcsin(data[..., 0])
 
 
@@ -932,12 +897,7 @@ class TripletEncoder(BaseEncoder):
         self.value_name = value_name
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit the encoder.
-
-        Parameters
-        ----------
-        data
-        """
+        r"""Fit the encoder."""
         self.categories = pd.CategoricalDtype(data.columns)
         self.original_dtypes = data.dtypes
         self.original_columns = data.columns
@@ -1027,12 +987,7 @@ class TripletDecoder(BaseEncoder):
         self.value_name = value_name
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit the encoder.
-
-        Parameters
-        ----------
-        data
-        """
+        r"""Fit the encoder."""
         self.original_dtypes = data.dtypes
         self.original_columns = data.columns
 

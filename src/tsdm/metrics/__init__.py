@@ -1,23 +1,14 @@
 r"""Implementation of loss functions.
 
-Notes
------
-Contains losses in both modular and functional form.
-  - See `tsdm.losses.functional` for functional implementations.
-  - See `tsdm.losses` for modular implementations.
-
 Theory
 ------
 We define the following
 
 1. A metric is a  function
 
-    .. math::
-        𝔪： 𝓟_0(𝓨×𝓨) ⟶ ℝ_{≥0}
+    .. math:: 𝔪： 𝓟_0(𝓨×𝓨) ⟶ ℝ_{≥0}
 
-    such that
-
-    - $𝔪(\{ (y_i, \hat{y}_i) ∣ i=1:n \}) = 0$ if and only if $y_i=\hat{y}_i∀i$
+    such that $𝔪(\{ (y_i, \hat{y}_i) ∣ i=1:n \}) = 0$ if and only if $y_i=\hat{y}_i∀i$
 
 2. A metric is called decomposable, if it can be written as a function
 
@@ -42,6 +33,12 @@ We define the following
    - It is non-constant, at least on some open set.
 
 Note that in the context of time-series, we allow the accumulator to depend on the time variable.
+
+Notes
+-----
+Contains losses in both modular and functional form.
+  - See `tsdm.losses.functional` for functional implementations.
+  - See `tsdm.losses` for modular implementations.
 """
 
 __all__ = [

@@ -138,9 +138,9 @@ and death; otherwise, Survival is assigned the value -1. Since patients who spen
 been excluded, Length of stay and Survival never have the values 0 or 1 in the challenge data sets.
 Given these definitions and constraints,
 
--  Survival > Length of stay  =>  Survivor
--  Survival = -1  =>  Survivor
--  2 <= Survival <= Length of stay  =>  In-hospital death
+- Survival > Length of stay  =>  Survivor
+- Survival = -1  =>  Survivor
+- 2 <= Survival <= Length of stay  =>  In-hospital death
 """
 
 __all__ = [

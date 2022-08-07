@@ -185,13 +185,7 @@ class ElectricityTFT(BaseTask):
     -----------
     Evaluation: $q$-Risk ($q=50$ and $q=90$)
 
-    .. math::
-
-        q-Risk = 2\frac{
-            ∑_{y_t} ∑_{τ} QL(y(t), ŷ(t-τ), q)
-        }{
-            ∑_y ∑_{τ} |y(t)|
-        }
+    .. math:: q-Risk = 2\frac{∑_{y_t} ∑_{τ} QL(y(t), ŷ(t-τ), q)}{∑_y ∑_{τ} |y(t)|}
 
     Results
     -------
