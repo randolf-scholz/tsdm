@@ -53,7 +53,7 @@ class Time2Vec(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
-        r"""Signature: ``(..., ) -> (..., d)``.
+        r""".. Signature:: ``... -> (..., d)``.
 
         Parameters
         ----------
@@ -69,7 +69,7 @@ class Time2Vec(nn.Module):
 
     @jit.export
     def inverse(self, z: Tensor) -> Tensor:
-        r"""Signature: ``(..., d) -> (..., )``.
+        r""".. Signature:: ``(..., d) -> ...``.
 
         Parameters
         ----------
@@ -120,7 +120,7 @@ class PositionalEncoder(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
-        r"""Signature: ``(..., ) -> (..., 2d)``.
+        r""".. Signature:: ``... -> (..., 2d)``.
 
         Note: we simple concatenate the sin and cosine terms without interleaving them.
 
@@ -137,7 +137,7 @@ class PositionalEncoder(nn.Module):
 
     @jit.export
     def inverse(self, t: Tensor) -> Tensor:
-        r"""Signature: ``(..., 2d) -> (..., )``.
+        r""".. Signature:: ``(..., 2d) -> ...``.
 
         Parameters
         ----------

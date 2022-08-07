@@ -12,7 +12,12 @@ from torch import Tensor, jit
 def erank(x: Tensor) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
-    Signature: `[..., m, n] -> [...]`.
+    .. Signature:: ``(..., m, n) -> ...``
+
+    By definition, the effective rank is equal to the exponential of the entropy of the
+    distribution of the singular values.
+
+    .. math:: \operatorname{erank}(A) = e^{H(\tfrac{𝛔}{‖𝛔‖_1})} = ∏ σ_{i}^{-σ_i}
 
     References
     ----------
@@ -32,7 +37,7 @@ def erank(x: Tensor) -> Tensor:
 def col_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
-    Signature: `[..., m, n] -> [...]`.
+    .. Signature:: ``(..., m, n) -> ...``
     """
     _, n = x.shape[-2:]
     u = torch.linalg.norm(x, dim=0)
@@ -47,7 +52,7 @@ def col_corr(x: Tensor) -> Tensor:
 def row_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
-    Signature: [..., m, n] -> [...].
+    .. Signature:: ``(..., m, n) -> ...``
     """
     m, _ = x.shape[-2:]
     v = torch.linalg.norm(x, dim=1)
@@ -62,10 +67,9 @@ def row_corr(x: Tensor) -> Tensor:
 def closest_symm(x: Tensor) -> Tensor:
     r"""Symmetric part of square matrix.
 
-    Signature: [..., n, n] -> [..., n, n]
+    .. Signature:: ``(..., n, n) -> (..., n, n)``
 
-    .. math::
-        \argmin_{X: X^⊤ = -X} ‖A-X‖
+    .. math:: \argmin_{X: X^⊤ = -X} ‖A-X‖
     """
     return (x + x.swapaxes(-1, -2)) / 2
 
@@ -74,10 +78,9 @@ def closest_symm(x: Tensor) -> Tensor:
 def closest_skew(x: Tensor) -> Tensor:
     r"""Skew-Symmetric part of a matrix.
 
-    Signature: [..., n, n] -> [..., n, n]
+    .. Signature:: ``(..., n, n) -> (..., n, n)``
 
-    .. math::
-        \argmin_{X: X^⊤ = X} ‖A-X‖
+    .. math:: \argmin_{X: X^⊤ = X} ‖A-X‖
     """
     return (x - x.swapaxes(-1, -2)) / 2
 
@@ -86,10 +89,9 @@ def closest_skew(x: Tensor) -> Tensor:
 def closest_orth(x: Tensor) -> Tensor:
     r"""Orthogonal part of a square matrix.
 
-    Signature: [..., n, n] -> [..., n, n]
+    .. Signature:: ``(..., n, n) -> (..., n, n)``
 
-    .. math::
-        \argmin_{X: XᵀX = 𝕀} ‖A-X‖
+    .. math:: \argmin_{X: XᵀX = 𝕀} ‖A-X‖
     """
     U, _, Vt = torch.linalg.svd(x, full_matrices=True)
     Q = torch.einsum("...ij, ...jk->...ik", U, Vt)
@@ -100,10 +102,9 @@ def closest_orth(x: Tensor) -> Tensor:
 def closest_diag(x: Tensor) -> Tensor:
     r"""Diagonal part of a square matrix.
 
-    Signature: [..., n, n] -> [..., n, n]
+    .. Signature:: ``(..., n, n) -> (..., n, n)``
 
-    .. math::
-        \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    .. math:: \argmin_{X: X⊙𝕀 = X} ‖A-X‖
     """
     d = torch.diagonal(x, dim1=-2, dim2=-1)
     return torch.diag_embed(d)
@@ -113,10 +114,9 @@ def closest_diag(x: Tensor) -> Tensor:
 def matrix_reldist(x: Tensor, y: Tensor) -> Tensor:
     r"""Relative distance between two matrices.
 
-    Signature: [..., m, n], [..., m, n]  -> [..., n, n]
+    .. Signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
 
-    .. math::
-        ‖x-y‖/‖y‖
+    .. math::  ‖x-y‖/‖y‖
     """
     r = torch.linalg.matrix_norm(x - y, ord="fro", dim=(-2, -1))
     yy = torch.linalg.matrix_norm(y, ord="fro", dim=(-2, -1))
@@ -128,10 +128,9 @@ def matrix_reldist(x: Tensor, y: Tensor) -> Tensor:
 def reldist_diag(x: Tensor) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
-    Signature: [..., n, n] -> [...]
+    .. Signature:: ``(..., n, n) -> ...``
 
-    .. math::
-        ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    .. math:: ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
     """
     return matrix_reldist(closest_diag(x), x)
 
@@ -140,7 +139,7 @@ def reldist_diag(x: Tensor) -> Tensor:
 def reldist_symm(x: Tensor) -> Tensor:
     r"""Relative magnitude of closest_symm part.
 
-    Signature: [..., n, n] -> [...]
+    .. Signature:: ``(..., n, n) -> ...``
     """
     return matrix_reldist(closest_symm(x), x)
 
@@ -149,7 +148,7 @@ def reldist_symm(x: Tensor) -> Tensor:
 def reldist_skew(x: Tensor) -> Tensor:
     r"""Relative magnitude of skew-closest_symm part.
 
-    Signature: [..., n, n] -> [...]
+    .. Signature:: ``(..., n, n) -> ...``
     """
     return matrix_reldist(closest_skew(x), x)
 
@@ -158,9 +157,8 @@ def reldist_skew(x: Tensor) -> Tensor:
 def reldist_orth(x: Tensor) -> Tensor:
     r"""Relative magnitude of orthogonal part.
 
-    .. math::
-        \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
+    .. Signature:: ``(..., n, n) -> ...``
 
-    Signature: [..., n, n] -> [...]
+    .. math:: \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
     """
     return matrix_reldist(closest_orth(x), x)

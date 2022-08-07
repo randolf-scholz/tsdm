@@ -177,7 +177,7 @@ class ConcatEmbedding(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r"""Signature: ``(..., d) -> (..., d+e)``.
+        r""".. Signature:: ``(..., d) -> (..., d+e)``.
 
         Parameters
         ----------
@@ -194,7 +194,7 @@ class ConcatEmbedding(nn.Module):
 
     @jit.export
     def inverse(self, z: Tensor) -> Tensor:
-        r"""Signature: ``(..., d+e) -> (..., d)``.
+        r""".. Signature:: ``(..., d+e) -> (..., d)``.
 
         The reverse of the forward. Satisfies inverse(forward(x)) = x for any input.
 
