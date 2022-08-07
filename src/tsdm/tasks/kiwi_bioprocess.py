@@ -16,7 +16,7 @@ from torch import Tensor, jit
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
-from tsdm.encoders.modular import BaseEncoder
+from tsdm.encoders import BaseEncoder
 from tsdm.losses.modular import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask

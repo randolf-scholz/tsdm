@@ -123,7 +123,7 @@ ds.index
 # In[10]:
 
 
-from tsdm.encoders.modular import *
+from tsdm.encoders import *
 
 # In[11]:
 

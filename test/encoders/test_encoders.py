@@ -5,7 +5,7 @@ import logging
 
 from pandas import Series, date_range, testing
 
-from tsdm.encoders.modular import DateTimeEncoder
+from tsdm.encoders import DateTimeEncoder
 
 __logger__ = logging.getLogger(__name__)
 
