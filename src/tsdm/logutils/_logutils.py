@@ -41,10 +41,10 @@ from tsdm.linalg import (
     reldist_symm,
     row_corr,
 )
-from tsdm.losses import Loss
+from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
-from tsdm.plot import center_axes, kernel_heatmap, plot_spectrum, rasterize
+from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 
 @torch.no_grad()
@@ -301,7 +301,7 @@ class StandardLogger:
     _warned_tuple: bool = False
 
     def __post_init__(self) -> None:
-        """Initialize logger."""
+        r"""Initialize logger."""
         self.logging_dir = Path(self.writer.log_dir)
         columns = MultiIndex.from_product([self.dataloaders, self.metrics])
         index = Index([], name="epoch", dtype=int)
@@ -512,7 +512,7 @@ class StandardLogger:
         prefix: str = "",
         postfix: str = "",
     ) -> None:
-        """Log kernel information."""
+        r"""Log kernel information."""
         assert hasattr(self.model, "kernel") and isinstance(self.model.kernel, Tensor)
         log_kernel_information(
             i,

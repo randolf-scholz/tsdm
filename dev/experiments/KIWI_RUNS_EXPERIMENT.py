@@ -48,9 +48,9 @@ from tsdm.logutils import (
     log_model_state,
     log_optimizer_state,
 )
-from tsdm.losses import LOSSES
+from tsdm.metrics import LOSSES
 from tsdm.tasks import KIWI_RUNS_TASK
-from tsdm.util import grad_norm, multi_norm
+from tsdm.utils import grad_norm, multi_norm
 
 # # Initialize Task
 
@@ -221,7 +221,7 @@ model.zero_grad()
 # In[15]:
 
 
-RUN_START = tsdm.util.now()
+RUN_START = tsdm.utils.now()
 CHECKPOINTDIR = Path(f"checkpoints/{RUN_START}/")
 CHECKPOINTDIR.mkdir(parents=True, exist_ok=True)
 

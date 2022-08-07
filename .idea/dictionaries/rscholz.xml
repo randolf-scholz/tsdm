@@ -1,10 +1,14 @@
 <component name="ProjectDictionaryState">
   <dictionary name="rscholz">
     <words>
+      <w>abstractattribute</w>
       <w>adadelta</w>
       <w>adagrad</w>
       <w>adamax</w>
       <w>alkalinephos</w>
+      <w>amsfonts</w>
+      <w>amsmath</w>
+      <w>amssymb</w>
       <w>arange</w>
       <w>arany</w>
       <w>argmin</w>
@@ -46,7 +50,9 @@
       <w>classif</w>
       <w>classmethod</w>
       <w>cmap</w>
+      <w>codeauthor</w>
       <w>codeclimate</w>
+      <w>coef</w>
       <w>colenc</w>
       <w>colname</w>
       <w>colspec</w>
@@ -91,6 +97,10 @@
       <w>finfo</w>
       <w>fluo</w>
       <w>fname</w>
+      <w>fontenc</w>
+      <w>fontset</w>
+      <w>fontspec</w>
+      <w>fonttype</w>
       <w>forcedly</w>
       <w>gasthaus</w>
       <w>gcos</w>
@@ -119,6 +129,7 @@
       <w>includehidden</w>
       <w>inds</w>
       <w>injective</w>
+      <w>inputenc</w>
       <w>intersphinx</w>
       <w>invperm</w>
       <w>iscore</w>
@@ -158,8 +169,10 @@
       <w>logsigmoid</w>
       <w>logutils</w>
       <w>lstf</w>
+      <w>lualatex</w>
       <w>lufl</w>
       <w>mant</w>
+      <w>mathtext</w>
       <w>maxabs</w>
       <w>maxdepth</w>
       <w>maxdim</w>
@@ -193,6 +206,7 @@
       <w>neginf</w>
       <w>neur</w>
       <w>newvals</w>
+      <w>nitpicky</w>
       <w>noninfringement</w>
       <w>nonlinearity</w>
       <w>notna</w>
@@ -252,6 +266,7 @@
       <w>rtol</w>
       <w>sahota</w>
       <w>scriptsize</w>
+      <w>sectionauthor</w>
       <w>selu</w>
       <w>sepehr</w>
       <w>setpoints</w>
@@ -272,6 +287,7 @@
       <w>singledispatchmethod</w>
       <w>skewpart</w>
       <w>slicesampler</w>
+      <w>smartquotes</w>
       <w>smyth</w>
       <w>snwd</w>
       <w>softmin</w>
@@ -280,6 +296,7 @@
       <w>softsign</w>
       <w>sourcedir</w>
       <w>sphinxbuild</w>
+      <w>sphinxcontrib</w>
       <w>sphinxopts</w>
       <w>sprop</w>
       <w>standardizer</w>
@@ -297,6 +314,7 @@
       <w>tanhshrink</w>
       <w>testdir</w>
       <w>testlabels</w>
+      <w>texsystem</w>
       <w>tfrac</w>
       <w>thakur</w>
       <w>thromboplastin</w>
@@ -325,6 +343,8 @@
       <w>unshuffle</w>
       <w>unsqueeze</w>
       <w>upack</w>
+      <w>usepackage</w>
+      <w>usetex</w>
       <w>ushcn</w>
       <w>vals</w>
       <w>valuenorm</w>

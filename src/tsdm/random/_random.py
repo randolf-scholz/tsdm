@@ -2,6 +2,7 @@ r"""Utility functions for random number generation."""
 
 __all__ = [
     # Functions
+    "random_data",
     "sample_timestamps",
     "sample_timedeltas",
 ]
@@ -14,13 +15,12 @@ import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
-from tsdm.util.dtypes import BOOLS, EMOJIS, STRINGS
-from tsdm.util.types.time import DTVar, TDVar
+from tsdm.utils.dtypes import BOOLS, EMOJIS, STRINGS
+from tsdm.utils.types.time import DTVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
 
 
-# noinspection PyTypeChecker
 def sample_timestamps(
     start: Union[str, DTVar] = "today",
     final: Optional[DTVar] = None,

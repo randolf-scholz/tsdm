@@ -16,13 +16,17 @@ from torch import Tensor, jit
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
-from tsdm.encoders.modular import BaseEncoder
-from tsdm.losses.modular import WRMSE
+from tsdm.encoders import BaseEncoder
+from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.util.split_preparation import folds_as_frame, folds_from_groups
-from tsdm.util.strings import repr_namedtuple
-from tsdm.util.torch import MappingDataset, TimeSeriesDataset
+from tsdm.utils.data import (
+    MappingDataset,
+    TimeSeriesDataset,
+    folds_as_frame,
+    folds_from_groups,
+)
+from tsdm.utils.strings import repr_namedtuple
 
 
 class Sample(NamedTuple):
@@ -157,8 +161,8 @@ class Kiwi_BioProcessTask(BaseTask):
     def dataset(self) -> KIWI_RUNS:
         r"""Return the cached dataset."""
         dataset = KIWI_RUNS()
-        dataset.metadata.drop([355, 482], inplace=True)
-        dataset.timeseries.drop([355, 482], inplace=True)
+        dataset.metadata.drop([482], inplace=True)
+        dataset.timeseries.drop([482], inplace=True)
         return dataset
 
     @cached_property
@@ -264,7 +268,12 @@ class _Dataset(torch.utils.data.Dataset):
         self.targets = targets
         self.observation_horizon = observation_horizon
 
+    def __len__(self) -> int:
+        r"""Return the number of samples in the dataset."""
+        return len(self.metadata)
+
     def __getitem__(self, item: tuple[tuple[int, int], slice]) -> Sample:
+        r"""Return a sample from the dataset."""
         key, slc = item
         ts = self.timeseries.loc[key].iloc[slc].copy(deep=True)
         md = self.metadata.loc[key].copy(deep=True)

@@ -6,15 +6,15 @@ import logging
 import numpy as np
 import torch
 
-from tsdm.encoders.modular import PositionalEncoder
-from tsdm.encoders.modular.torch import PositionalEncoder as PositionalEncoder_Torch
-from tsdm.encoders.modular.torch import Time2Vec
+from tsdm.encoders import PositionalEncoder
+from tsdm.encoders.torch import PositionalEncoder as PositionalEncoder_Torch
+from tsdm.encoders.torch import Time2Vec
 
 __logger__ = logging.getLogger(__name__)
 
 
 def test_PositionalEncoder() -> None:
-    """Test the PositionalEncoder class."""
+    r"""Test the PositionalEncoder class."""
     scale = 1.23
     N = 10
     num_dim = 6
@@ -50,7 +50,7 @@ def test_PositionalEncoder() -> None:
 
 
 def test_PositionalEncoder_Torch() -> None:
-    """Test the PositionalEncoder class."""
+    r"""Test the PositionalEncoder class."""
     scale = 1.23
     N = 10
     num_dim = 6
@@ -85,7 +85,7 @@ def test_PositionalEncoder_Torch() -> None:
 
 
 def test_Time2Vec() -> None:
-    """Test the Time2Vec class."""
+    r"""Test the Time2Vec class."""
     N = 10
     num_dim = 6
     t = torch.rand(N).sort().values

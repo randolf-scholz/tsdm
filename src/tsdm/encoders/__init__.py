@@ -19,7 +19,7 @@ Notes
 -----
 Contains encoders in both modular and functional form.
   - See `tsdm.encoders.functional` for functional implementations.
-  - See `tsdm.encoders.modular` for modular implementations.
+  - See `tsdm.encoders` for modular implementations.
 """
 #  TODO:
 # - Target Encoding: enc(x) = mean(enc(y|x))
@@ -40,9 +40,13 @@ Contains encoders in both modular and functional form.
 # - Backward Difference Coding:
 
 __all__ = [
-    # Sub-Modules
+    # Sub-Packages
     "functional",
-    "modular",
+    # Modules
+    "base",
+    "numerical",
+    "time",
+    "torch",
     # Constants
     "Encoder",
     "ENCODERS",
@@ -50,13 +54,98 @@ __all__ = [
     "ModularEncoders",
     "FunctionalEncoder",
     "FunctionalEncoders",
+    # ABC
+    "BaseEncoder",
+    # Classes
+    "ChainedEncoder",
+    "CloneEncoder",
+    "ConcatEncoder",
+    "DataFrameEncoder",
+    "DateTimeEncoder",
+    "DuplicateEncoder",
+    "FrameEncoder",
+    "FrameIndexer",
+    "FrameSplitter",
+    "IdentityEncoder",
+    "LogEncoder",
+    "MinMaxScaler",
+    "PeriodicEncoder",
+    "PeriodicSocialTimeEncoder",
+    "PositionalEncoder",
+    "ProductEncoder",
+    "SocialTimeEncoder",
+    "Standardizer",
+    "TensorEncoder",
+    "Time2Float",
+    "TimeDeltaEncoder",
+    "TripletDecoder",
+    "TripletEncoder",
+    "ValueEncoder",
 ]
 
 from typing import Final, Union
 
-from tsdm.encoders import functional, modular
+from sklearn import preprocessing as sk_preprocessing
+from sklearn.base import BaseEstimator
+
+from tsdm.encoders import base, functional, numerical, time, torch
+from tsdm.encoders._modular import (
+    ConcatEncoder,
+    DataFrameEncoder,
+    FrameEncoder,
+    FrameIndexer,
+    FrameSplitter,
+    PositionalEncoder,
+    TensorEncoder,
+    TripletDecoder,
+    TripletEncoder,
+    ValueEncoder,
+)
+from tsdm.encoders.base import (
+    BaseEncoder,
+    ChainedEncoder,
+    CloneEncoder,
+    DuplicateEncoder,
+    IdentityEncoder,
+    ProductEncoder,
+)
 from tsdm.encoders.functional import FunctionalEncoder, FunctionalEncoders
-from tsdm.encoders.modular import ModularEncoder, ModularEncoders
+from tsdm.encoders.numerical import (
+    FloatEncoder,
+    IntEncoder,
+    LogEncoder,
+    MinMaxScaler,
+    Standardizer,
+)
+from tsdm.encoders.time import (
+    DateTimeEncoder,
+    PeriodicEncoder,
+    PeriodicSocialTimeEncoder,
+    SocialTimeEncoder,
+    Time2Float,
+    TimeDeltaEncoder,
+)
+
+ModularEncoder = BaseEncoder
+r"""Type hint for modular encoders."""
+
+
+ModularEncoders: Final[dict[str, type[BaseEstimator]]] = {
+    "ChainedEncoder": ChainedEncoder,
+    "DataFrameEncoder": DataFrameEncoder,
+    "DateTimeEncoder": DateTimeEncoder,
+    "FloatEncoder": FloatEncoder,
+    "IdentityEncoder": IdentityEncoder,
+    "MinMaxScaler": MinMaxScaler,
+    "Standardizer": Standardizer,
+    "TensorEncoder": TensorEncoder,
+    "Time2Float": Time2Float,
+    "IntEncoder": IntEncoder,
+    "TripletEncoder": TripletEncoder,
+    "ConcatEncoder": ConcatEncoder,
+}
+r"""Dictionary of all available modular encoders."""
+
 
 Encoder = Union[FunctionalEncoder, ModularEncoder]
 r"""Type hint for encoders."""
@@ -66,3 +155,26 @@ ENCODERS: Final[dict[str, Union[FunctionalEncoder, type[ModularEncoder]]]] = {
     **FunctionalEncoders,
 }
 r"""Dictionary of all available encoders."""
+
+
+SklearnModularEncoders: Final[dict[str, type[BaseEstimator]]] = {
+    "Binarizer": sk_preprocessing.Binarizer,
+    "FunctionTransformer": sk_preprocessing.FunctionTransformer,
+    "KBinsDiscretizer": sk_preprocessing.KBinsDiscretizer,
+    "KernelCenterer": sk_preprocessing.KernelCenterer,
+    "LabelBinarizer": sk_preprocessing.LabelBinarizer,
+    "LabelEncoder": sk_preprocessing.LabelEncoder,
+    "MaxAbsScaler": sk_preprocessing.MaxAbsScaler,
+    "MinMaxScaler": sk_preprocessing.MinMaxScaler,
+    "MultiLabelBinarizer": sk_preprocessing.MultiLabelBinarizer,
+    "Normalizer": sk_preprocessing.Normalizer,
+    "OneHotEncoder": sk_preprocessing.OneHotEncoder,
+    "OrdinalEncoder": sk_preprocessing.OrdinalEncoder,
+    "PolynomialFeatures": sk_preprocessing.PolynomialFeatures,
+    "PowerTransformer": sk_preprocessing.PowerTransformer,
+    "QuantileTransformer": sk_preprocessing.QuantileTransformer,
+    "RobustScaler": sk_preprocessing.RobustScaler,
+    "SplineTransformer": sk_preprocessing.SplineTransformer,
+    "StandardScaler": sk_preprocessing.StandardScaler,
+}
+r"""Dictionary of all available sklearn encoders."""

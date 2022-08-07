@@ -17,8 +17,8 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import MIMIC_III
 from tsdm.tasks.base import BaseTask
-from tsdm.util import is_partition
-from tsdm.util.strings import repr_namedtuple
+from tsdm.utils import is_partition
+from tsdm.utils.strings import repr_namedtuple
 
 
 class Inputs(NamedTuple):
@@ -308,7 +308,7 @@ class MIMIC_DeBrouwer(BaseTask):
     def get_dataloader(
         self, key: tuple[int, str], /, **dataloader_kwargs: Any
     ) -> DataLoader:
-        """Return the dataloader for the given key."""
+        r"""Return the dataloader for the given key."""
         fold, partition = key
         fold_idx = self.folds[fold][partition]
         dataset = TaskDataset(

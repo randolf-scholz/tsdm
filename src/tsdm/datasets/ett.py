@@ -1,4 +1,4 @@
-"""Electricity Transformer Dataset (ETDataset).
+r"""Electricity Transformer Dataset (ETDataset).
 
 **Source:** https://github.com/zhouhaoyi/ETDataset
 """

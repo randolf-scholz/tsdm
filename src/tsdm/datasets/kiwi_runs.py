@@ -19,7 +19,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 
 from tsdm.datasets.base import MultiFrameDataset
-from tsdm.util import round_relative
+from tsdm.utils import round_relative
 
 __logger__ = logging.getLogger(__name__)
 
@@ -630,3 +630,29 @@ class KIWI_RUNS(MultiFrameDataset):
         units[columns] = units[columns].astype("float32").apply(round_relative)
         units[percents] = units[percents].round(3)
         units.to_parquet(self.dataset_paths["units"], compression="gzip")
+
+
+# Types of variables:
+# - bounded above, unknown upper bound (concentration)
+# - bounded above, known upper bound (value)
+# - bounded above, known upper bound (percent)
+# - lower bound =0 ⟶ log transform not applicable
+# - lower bound ≠0 ⟶ log transform applicable
+
+_BOUNDS = {
+    "Acetate": (0, 2.5),  # concentration like
+    "Glucose": (0, 20),  # concentration like
+    "DOT": (0, 100),  # percent like
+    "OD600": (0, 100),  # percent like
+    "FlowAir": (0, None),  # possibly log-transform
+    "Base": (0, None),  # possibly log-transform
+    "Volume": (0, None),  # possibly log-transform
+    "CumulatedFeedGlucose": (0, None),  # possibly log-transform
+    "CumulatedFeedMedium": (0, None),  # possibly log-transform
+    "ProbeVolume": (0, None),  # possibly log-transform
+    "StirringSpeed": (0, None),  # possibly log-transform
+    "InducerConcentration": (0, None),  # possibly log-transform
+    "FluoGFP": (0, 1_000_000),
+    "pH": (4, 10),  # log scale
+    "Temperature": (20, 45),
+}

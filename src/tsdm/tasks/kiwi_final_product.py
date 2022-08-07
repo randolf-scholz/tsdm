@@ -21,8 +21,8 @@ from torch.utils.data import DataLoader
 from tsdm.datasets import KIWI_RUNS
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.util.strings import repr_namedtuple
-from tsdm.util.torch import MappingDataset, TimeSeriesDataset
+from tsdm.utils.data import MappingDataset, TimeSeriesDataset
+from tsdm.utils.strings import repr_namedtuple
 
 __logger__ = logging.getLogger(__name__)
 
@@ -359,6 +359,10 @@ class _Dataset(torch.utils.data.Dataset):
         self.timeseries = ts
         self.metadata = md
         self.observables = observables
+
+    def __len__(self) -> int:
+        r"""Return the number of samples in the dataset."""
+        return len(self.metadata)
 
     def __getitem__(self, item: tuple[tuple[int, int], slice]) -> Sample:
         r"""Return a sample from the dataset."""
