@@ -16,7 +16,7 @@ class Signature(Directive):
     - https://docutils.sourceforge.io/docutils/parsers/rst/directives/admonitions.py
     """
 
-    required_arguments = 1
+    required_arguments = 0
     r"""The number of required arguments (default: 0)."""
     optional_arguments = 0
     r"""The number of optional arguments (default: 0)."""
@@ -55,8 +55,7 @@ class Signature(Directive):
 
 def setup(app: Sphinx) -> dict:
     r"""Install the extension."""
-    print(app, type(app))
-    app.add_directive("Signature", Signature)
+    app.add_directive("signature", Signature)
     return {
         "version": "0.1",
         "parallel_read_safe": True,

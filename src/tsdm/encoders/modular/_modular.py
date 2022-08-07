@@ -991,7 +991,7 @@ class PositionalEncoder(BaseEncoder):
         assert self.scales[0] == 1.0, "Something went wrong."
 
     def encode(self, data: np.ndarray, /) -> np.ndarray:
-        r"""Signature: ``(..., ) -> (..., 2d)``.
+        r"""Signature: ``... -> (..., 2d)``.
 
         Note: we simple concatenate the sin and cosine terms without interleaving them.
 
@@ -1007,7 +1007,7 @@ class PositionalEncoder(BaseEncoder):
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
 
     def decode(self, data: np.ndarray, /) -> np.ndarray:
-        r"""Signature: ``(..., 2d) -> (..., )``.
+        r""".. Signature:: ``(..., 2d) -> ...``.
 
         Parameters
         ----------

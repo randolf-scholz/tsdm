@@ -193,7 +193,7 @@ class WRMSE(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
-        r"""Signature: ``[(..., 𝐦), (..., 𝐦)] → (..., )``.
+        r""".. Signature:: ``[(..., m), (..., m)] → ...``.
 
         Parameters
         ----------

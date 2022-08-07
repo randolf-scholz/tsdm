@@ -53,7 +53,7 @@ def collate_padded(
 
     Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
 
-    Signature: $[ (lᵢ, ...)_{i=1:B} ] -> (B, lₘₐₓ, ...)$.
+    .. Signature:: $[ (lᵢ, ...)_{i=1:B} ] -> (B, lₘₐₓ, ...)$.
 
     Parameters
     ----------
