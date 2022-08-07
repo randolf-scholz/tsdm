@@ -20,7 +20,7 @@ Some design decisions:
 """
 
 __all__ = [
-    # Sub-Packages
+    # Sub-Modules
     "base",
     # Types
     "dataset",
