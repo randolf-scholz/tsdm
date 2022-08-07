@@ -23,7 +23,7 @@ import numpy as np
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.losses.functional import nd, nrmse, q_quantile, q_quantile_loss
+from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.utils.decorators import autojit
 
 

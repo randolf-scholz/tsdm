@@ -25,7 +25,7 @@ from tsdm.encoders import (
     Standardizer,
     TensorEncoder,
 )
-from tsdm.losses import ModularLoss, ModularLosses
+from tsdm.metrics import ModularLoss, ModularLosses
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
 from tsdm.utils import initialize_from
