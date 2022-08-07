@@ -18,8 +18,8 @@ from torch import Tensor, jit, nn
 from torch._jit_internal import _copy_to_script_wrapper
 
 from tsdm.models.generic.dense import ReverseDense
-from tsdm.util import deep_dict_update, initialize_from_config
-from tsdm.util.decorators import autojit
+from tsdm.utils import deep_dict_update, initialize_from_config
+from tsdm.utils.decorators import autojit
 
 
 @autojit
@@ -177,7 +177,7 @@ class ConcatEmbedding(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r"""Signature: ``(..., d) -> (..., d+e)``.
+        r""".. Signature:: ``(..., d) -> (..., d+e)``.
 
         Parameters
         ----------
@@ -194,7 +194,7 @@ class ConcatEmbedding(nn.Module):
 
     @jit.export
     def inverse(self, z: Tensor) -> Tensor:
-        r"""Signature: ``(..., d+e) -> (..., d)``.
+        r""".. Signature:: ``(..., d+e) -> (..., d)``.
 
         The reverse of the forward. Satisfies inverse(forward(x)) = x for any input.
 

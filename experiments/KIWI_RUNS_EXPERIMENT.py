@@ -49,7 +49,7 @@ from tsdm.logutils import (
     log_model_state,
     log_optimizer_state,
 )
-from tsdm.losses import LOSSES
+from tsdm.metrics import LOSSES
 from tsdm.tasks import KIWI_RUNS_TASK
 
 # In[4]:
@@ -274,7 +274,7 @@ for o in (-np.infty, -2, -1, 1, 2, np.infty, "fro", "nuc"):
 
 
 from tsdm.optimizers import OPTIMIZERS
-from tsdm.util import initialize_from
+from tsdm.utils import initialize_from
 
 # In[15]:
 
@@ -381,7 +381,7 @@ model.zero_grad()
 # In[20]:
 
 
-RUN_START = tsdm.util.now()
+RUN_START = tsdm.utils.now()
 CHECKPOINTDIR = Path(
     f"checkpoints/{MODEL.__name__}/{DATASET.name}/{RUN_NAME}/{RUN_START}"
 )

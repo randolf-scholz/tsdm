@@ -9,8 +9,8 @@ from typing import Any, Final, TypeVar
 from torch import Tensor, jit, nn
 
 from tsdm.models.generic.dense import ReverseDense
-from tsdm.util import deep_dict_update, initialize_from_config
-from tsdm.util.decorators import autojit
+from tsdm.utils import deep_dict_update, initialize_from_config
+from tsdm.utils.decorators import autojit
 
 
 @autojit
@@ -114,7 +114,7 @@ class ResNet(nn.ModuleList):
         num_blocks: int = 5,
         block_cfg: dict = ResNetBlock.HP,
     ) -> ResNetType:
-        """Create a ResNet model from hyperparameters."""
+        r"""Create a ResNet model from hyperparameters."""
         if "input_size" in block_cfg:
             block_cfg["input_size"] = input_size
 

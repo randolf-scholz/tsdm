@@ -14,7 +14,7 @@ from typing import Optional
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.encoders.modular.torch import PositionalEncoder, Time2Vec
+from tsdm.encoders.torch import PositionalEncoder, Time2Vec
 from tsdm.models.generic import (
     MLP,
     DeepSet,
@@ -22,7 +22,7 @@ from tsdm.models.generic import (
     ReZeroMLP,
     ScaledDotProductAttention,
 )
-from tsdm.util.decorators import autojit
+from tsdm.utils.decorators import autojit
 
 
 @autojit
@@ -32,15 +32,15 @@ class SetFuncTS(nn.Module):
     Attributes
     ----------
     time_encoder: nn.Module, default PositionalEncoder
-        Signature: ``(..., *N) -> (..., *N, dₜ)``.
+        Signature: ``(..., *N) -> (..., *N, dₜ)``
     key_encoder: nn.Module, default DeepSet
-        Signature: ``(..., *N, K) -> (..., *N, dₖ)``.
+        Signature ``(..., *N, K) -> (..., *N, dₖ)``
     value_encoder: nn.Module, default MLP
-        Signature: ``(..., *N, V) -> (..., *N, dᵥ)``.
+        Signature: ``(..., *N, V) -> (..., *N, dᵥ)``
     attention: nn.Module, default ScaledDotProductAttention
-        Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``.
+        Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``
     head: nn.Module, default MLP
-        Signature: ``(..., F) -> (..., E)``.
+        Signature: ``(..., F) -> (..., E)``
 
     References
     ----------
@@ -116,7 +116,7 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor, v: Tensor, m: Tensor) -> Tensor:
-        r"""Signature: ``(*N, dₜ), (*N, dᵥ), (*N, dₘ) -> (..., F)``.
+        r"""Signature: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
 
         s must be a tensor of the shape $L×(2+C)4, $sᵢ = [tᵢ, zᵢ, mᵢ]$, where
 
@@ -157,12 +157,12 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward_tuple(self, t: tuple[Tensor, Tensor, Tensor]) -> Tensor:
-        r"""Signature: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (F, )``."""
+        r"""Signature: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> F``."""
         return self.forward(t[0], t[1], t[2])
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor, Tensor]]) -> Tensor:
-        r"""Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
+        r"""Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
 
         Parameters
         ----------
@@ -182,15 +182,15 @@ class GroupedSetFuncTS(nn.Module):
     Attributes
     ----------
     time_encoder: nn.Module, default PositionalEncoder
-        Signature: ``(..., *N) -> (..., *N, dₜ)``.
+        Signature: ``(..., *N) -> (..., *N, dₜ)``
     key_encoder: nn.Module, default DeepSet
-        Signature: ``(..., *N, K) -> (..., *N, dₖ)``.
+        Signature: ``(..., *N, K) -> (..., *N, dₖ)``
     value_encoder: nn.Module, default MLP
-        Signature: ``(..., *N, V) -> (..., *N, dᵥ)``.
+        Signature: ``(..., *N, V) -> (..., *N, dᵥ)``
     attention: nn.Module, default ScaledDotProductAttention
-        Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``.
+        Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``
     head: nn.Module, default MLP
-        Signature: ``(..., F) -> (..., E)``.
+        Signature: ``(..., F) -> (..., E)``
 
     References
     ----------
@@ -274,7 +274,7 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward(self, slow: Tensor, fast: Tensor) -> Tensor:
-        r"""Signature: ``(*N, dₜ), (*N, dᵥ), (*N, dₘ) -> (..., F)``.
+        r""".. Signature:: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
 
         s must be a tensor of the shape $L×(2+C)$, $sᵢ = [tᵢ, zᵢ, mᵢ]$, where
         - $tᵢ$ is timestamp
@@ -337,7 +337,7 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
-        r"""Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
+        r""".. Signature:: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
 
         Parameters
         ----------
@@ -351,7 +351,7 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward_padded(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
-        r"""Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
+        r""".. Signature:: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
 
         Parameters
         ----------

@@ -15,7 +15,7 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from tsdm.util.decorators import autojit
+from tsdm.utils.decorators import autojit
 
 
 @autojit
@@ -69,14 +69,14 @@ class ScaledDotProductAttention(nn.Module):
         self.register_buffer("attention_weights", torch.tensor([]))
 
     def forward(self, K: Tensor, V: Tensor, mask: Optional[Tensor] = None) -> Tensor:
-        r"""Signature: ``(..., L, d), (..., L, e) -> (..., k)``.
+        r""".. Signature:: ``(..., *L, d), (..., *L, e) -> (..., k)``.
 
         After a forward pass is performed, the attention weights can be
         accessed via the `attention_weights` buffer.
 
-        Q: (h, dim_k)
-        K: (..., L, dim_k)
-        V: (..., L, dim_v)
+        - Q: `(h, dim_k)`
+        - K: `(..., *L, dim_k)`
+        - V: `(..., *L, dim_v)`
         """
         if mask is None:
             mask = torch.isnan(K[..., 0])

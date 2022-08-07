@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 from torch import nn
 
-from tsdm.util.decorators import autojit
+from tsdm.utils.decorators import autojit
 
 
 @autojit

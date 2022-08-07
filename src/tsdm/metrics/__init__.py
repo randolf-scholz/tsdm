@@ -1,15 +1,14 @@
-r"""METRICS (non-differentiable losses).
+r"""Implementation of loss functions.
 
+Theory
+------
 We define the following
 
 1. A metric is a  function
 
-    .. math::
-        𝔪： 𝓟_0(𝓨×𝓨) ⟶ ℝ_{≥0}
+    .. math:: 𝔪： 𝓟_0(𝓨×𝓨) ⟶ ℝ_{≥0}
 
-    such that
-
-    - $𝔪(\{ (y_i, \hat{y}_i) ∣ i=1:n \}) = 0$ if and only if $y_i=\hat{y}_i∀i$
+    such that $𝔪(\{ (y_i, \hat{y}_i) ∣ i=1:n \}) = 0$ if and only if $y_i=\hat{y}_i∀i$
 
 2. A metric is called decomposable, if it can be written as a function
 
@@ -34,33 +33,107 @@ We define the following
    - It is non-constant, at least on some open set.
 
 Note that in the context of time-series, we allow the accumulator to depend on the time variable.
+
+Notes
+-----
+Contains losses in both modular and functional form.
+  - See `tsdm.losses.functional` for functional implementations.
+  - See `tsdm.losses` for modular implementations.
 """
 
 __all__ = [
-    # Sub-Module
+    # Sub-Modules
     "functional",
-    "modular",
     # Types
-    "FunctionalMetric",
-    "ModularMetric",
-    "Metric",
+    "Loss",
+    "FunctionalLoss",
+    "ModularLoss",
     # Constants
-    "FunctionalMetrics",
-    "ModularMetrics",
-    "METRICS",
+    "LOSSES",
+    "FunctionalLosses",
+    "ModularLosses",
+    # Classes
+    "ND",
+    "NRMSE",
+    "Q_Quantile",
+    "Q_Quantile_Loss",
+    "WRMSE",
+    "RMSE",
+    # Functions
+    "nd",
+    "nrmse",
+    "rmse",
+    "q_quantile",
+    "q_quantile_loss",
 ]
+
 
 from typing import Final, Union
 
-from tsdm.metrics import functional, modular
-from tsdm.metrics.functional import FunctionalMetric, FunctionalMetrics
-from tsdm.metrics.modular import ModularMetric, ModularMetrics
+from torch import nn
 
-Metric = Union[FunctionalMetric, ModularMetric]
-r"""Type hint for metrics."""
+from tsdm.metrics._modular import ND, NRMSE, RMSE, WRMSE, Q_Quantile, Q_Quantile_Loss
+from tsdm.metrics.functional import (
+    FunctionalLoss,
+    FunctionalLosses,
+    nd,
+    nrmse,
+    q_quantile,
+    q_quantile_loss,
+    rmse,
+)
 
-METRICS: Final[dict[str, Union[FunctionalMetric, type[ModularMetric]]]] = {
-    **FunctionalMetrics,
-    **ModularMetrics,
+ModularLoss = nn.Module
+r"""Type hint for modular losses."""
+
+TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
+    "L1": nn.L1Loss,
+    "CosineEmbedding": nn.CosineEmbeddingLoss,
+    "CrossEntropy": nn.CrossEntropyLoss,
+    "CTC": nn.CTCLoss,
+    "NLL": nn.NLLLoss,
+    "PoissonNLL": nn.PoissonNLLLoss,
+    "GaussianNLL": nn.GaussianNLLLoss,
+    "KLDiv": nn.KLDivLoss,
+    "BCE": nn.BCELoss,
+    "BCEWithLogits": nn.BCEWithLogitsLoss,
+    "MarginRanking": nn.MarginRankingLoss,
+    "MSE": nn.MSELoss,
+    "HingeEmbedding": nn.HingeEmbeddingLoss,
+    "Huber": nn.HuberLoss,
+    "SmoothL1": nn.SmoothL1Loss,
+    "SoftMargin": nn.SoftMarginLoss,
+    "MultiMargin": nn.MultiMarginLoss,
+    "MultiLabelMargin": nn.MultiLabelMarginLoss,
+    "MultiLabelSoftMargin": nn.MultiLabelSoftMarginLoss,
+    "TripletMargin": nn.TripletMarginLoss,
+    "TripletMarginWithDistance": nn.TripletMarginWithDistanceLoss,
 }
-r"""Dictionary of all available  metrics."""
+r"""Dictionary of all available modular losses in torch."""
+
+TORCH_ALIASES: Final[dict[str, type[nn.Module]]] = {
+    "MAE": nn.L1Loss,
+    "L2": nn.MSELoss,
+    "XENT": nn.CrossEntropyLoss,
+    "KL": nn.KLDivLoss,
+}
+r"""Dictionary containing additional aliases for modular losses in torch."""
+
+ModularLosses: Final[dict[str, type[nn.Module]]] = {
+    "ND": ND,
+    "NRMSE": NRMSE,
+    "Q_Quantile": Q_Quantile,
+    "Q_Quantile_Loss": Q_Quantile_Loss,
+    "RMSE": RMSE,
+} | (TORCH_LOSSES | TORCH_ALIASES)
+r"""Dictionary of all available modular losses."""
+
+
+Loss = Union[FunctionalLoss, ModularLoss]
+r"""Type hint for losses."""
+
+LOSSES: Final[dict[str, Union[FunctionalLoss, type[ModularLoss]]]] = {
+    **FunctionalLosses,
+    **ModularLosses,
+}
+r"""Dictionary of all available losses."""

@@ -50,13 +50,13 @@ from torchinfo import summary
 import tsdm
 from tsdm.encoders.modular import *
 from tsdm.logutils import log_metrics, log_optimizer_state
-from tsdm.losses import LOSSES
+from tsdm.metrics import LOSSES
 from tsdm.models import SetFuncTS
 from tsdm.optimizers import OPTIMIZERS
 from tsdm.random.samplers import *
 from tsdm.tasks import KIWI_FINAL_PRODUCT
-from tsdm.util import initialize_from
-from tsdm.util.strings import *
+from tsdm.utils import initialize_from
+from tsdm.utils.strings import *
 
 ###############################################################################
 header("Configuration")  #
@@ -255,7 +255,7 @@ header("INITIALIZE LOGGING ")  #
 ################################
 
 
-RUN_START = tsdm.util.now()
+RUN_START = tsdm.utils.now()
 CHECKPOINTDIR = Path(
     f"checkpoints/{MODEL.__name__}/{DATASET.name}/{RUN_NAME}/{RUN_START}"
 )

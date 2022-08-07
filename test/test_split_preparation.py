@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Test the fold generation code."""
+r"""Test the fold generation code."""
 
 # def __main__():
 #     assert all(sum([fold["test"] for fold in folds]) == 1)

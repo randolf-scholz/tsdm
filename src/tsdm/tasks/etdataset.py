@@ -15,7 +15,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import ETT
-from tsdm.encoders.modular import (
+from tsdm.encoders import (
     ChainedEncoder,
     DataFrameEncoder,
     DateTimeEncoder,
@@ -25,10 +25,10 @@ from tsdm.encoders.modular import (
     Standardizer,
     TensorEncoder,
 )
-from tsdm.losses import ModularLoss, ModularLosses
+from tsdm.metrics import ModularLoss, ModularLosses
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.util import initialize_from
+from tsdm.utils import initialize_from
 
 
 class ETDatasetTask_Informer(BaseTask):

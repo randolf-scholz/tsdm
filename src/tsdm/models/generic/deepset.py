@@ -16,7 +16,7 @@ from torch import Tensor, nn
 
 from tsdm.models.generic.mlp import MLP
 from tsdm.models.generic.rezero import ReZeroMLP
-from tsdm.util.decorators import autojit
+from tsdm.utils.decorators import autojit
 
 
 @autojit
@@ -61,12 +61,12 @@ class DeepSet(nn.ModuleDict):
         self.decoder = self["decoder"]
 
     def forward(self, x: Tensor) -> Tensor:
-        r"""Signature: ``(..., <Var>, D) -> (..., F)``.
+        r""".. Signature:: ``(..., *V, D) -> (..., F)``.
 
         Components:
-          - Encoder: [..., D] -> [..., E]
-          - Aggregation: [..., V, E] -> [..., E]
-          - Decoder: [..., E] -> [..., F]
+          - Encoder: `(..., D) -> (..., E)`
+          - Aggregation: `(..., *V, E) -> (..., E)`
+          - Decoder: `(..., E) -> (..., F)`
 
         Parameters
         ----------
@@ -124,11 +124,11 @@ class DeepSetReZero(nn.ModuleDict):
         self.decoder = self["decoder"]
 
     def forward(self, x: Tensor) -> Tensor:
-        r"""Signature: `(..., <Var>, D) -> (..., F)`.
+        r""".. Signature:: `(..., *V, D) -> (..., F)`.
 
         Components:
           - Encoder: ``(..., D) -> (..., E)``.
-          - Aggregation: ``(..., V, E) -> (..., E)``.
+          - Aggregation: ``(..., *V, E) -> (..., E)``.
           - Decoder: ``(..., E) -> (..., F)``.
 
         Parameters

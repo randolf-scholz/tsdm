@@ -80,3 +80,6 @@ rst-roles =
     attr,
     exc,
     obj,
+
+rst-directives=
+    Signature,

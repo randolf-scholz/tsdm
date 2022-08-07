@@ -20,7 +20,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import Electricity
-from tsdm.encoders.modular import BaseEncoder, Standardizer
+from tsdm.encoders import BaseEncoder, Standardizer
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
 
@@ -39,8 +39,10 @@ class ElectricityDeepState:
     Evaluation Protocol
     -------------------
 
+    .. epigraph::
+
         We train each method on all time series of these dataset but vary the size of the training
-        range Tᵢ∈ {14, 21, 28} days. We evaluate all the methods on the next τ = 7 days after the
+        range $Tᵢ∈\{14, 21, 28\}$ days. We evaluate all the methods on the next $τ=7$ days after the
         forecast start time using the standard p50 and p90- quantile losses.
 
     Test-Metric
@@ -62,12 +64,12 @@ class ElectricityDeepAR:
 
     Paper
     -----
-
     - | DeepAR: Probabilistic forecasting with autoregressive recurrent networks
       | http://www.sciencedirect.com/science/article/pii/S0169207019301888>
 
     Evaluation Protocol
     -------------------
+    .. epigraph::
 
         For electricity we train with data between 2014-01-01 and 2014-09-01, for traffic we train
         all the data available before 2008-06-15. The results for electricity and traffic are
@@ -88,12 +90,13 @@ class ElectricityTRMF:
 
     Paper
     -----
-
     - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
       | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
 
     Evaluation Protocol
     -------------------
+
+    .. epigraph::
 
         5.1 Forecasting
         [...]
@@ -108,7 +111,6 @@ class ElectricityTRMF:
 
     Test-Metric
     -----------
-
     **Normalized deviation (ND)**
 
     .. math::
@@ -140,8 +142,9 @@ class ElectricityTFT(BaseTask):
     > We convert the data to reflect hourly consumption, by aggregating blocks of 4 columns,
 
     Issues:
+
     - They report in the paper: 90% train, 10% validation. However, this is wrong.
-      They split the array not on the % of samples, but instead tehy use the first 218 days
+      They split the array not on the % of samples, but instead they use the first 218 days
       as train and the following 23 days ("2014-08-08" ≤ t < "2014-09-01" ) as validation,
       leading to a split of 90.12% train and 9.88% validation.
     - preprocessing: what partitions of the dataset are mean and variance computed over?
@@ -159,12 +162,13 @@ class ElectricityTFT(BaseTask):
 
     Paper
     -----
-
     - | Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting
       | https://www.sciencedirect.com/science/article/pii/S0169207021000637
 
     Evaluation Protocol
     -------------------
+    .. epigraph::
+
         In accordance with [9], we use the past week (i.e. 168 hours) to
         forecast over the next 24 hours.
 
@@ -179,20 +183,12 @@ class ElectricityTFT(BaseTask):
 
     Test-Metric
     -----------
+    Evaluation: $q$-Risk ($q=50$ and $q=90$)
 
-        Evaluation: $q$-Risk ($q=50$ and $q=90$)
-
-        .. math::
-
-            q-Risk = 2\frac{
-                ∑_{y_t} ∑_{τ} QL(y(t), ŷ(t-τ), q)
-            }{
-                ∑_y ∑_{τ} |y(t)|
-            }
+    .. math:: q-Risk = 2\frac{∑_{y_t} ∑_{τ} QL(y(t), ŷ(t-τ), q)}{∑_y ∑_{τ} |y(t)|}
 
     Results
     -------
-
     +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
     | Model | ARIMA | ConvTrans | DSSM  | DeepAR | ETS   | MQRNN | Seq2Seq | TFT   | TRMF  |
     +=======+=======+===========+=======+========+=======+=======+=========+=======+=======+
@@ -331,6 +327,8 @@ class ElectricityELBMBTTF:
     Evaluation Protocol
     -------------------
 
+    .. epigraph::
+
         For short-term forecasting, we evaluate rolling-day forecasts for seven days ( i.e.,
         prediction horizon is one day and forecasts start time is shifted by one day after
         evaluating the prediction for the current day [6]). For long-term forecasting, we directly
@@ -349,17 +347,16 @@ class ElectricityELBMBTTF:
 
     Test-Metric
     -----------
-
     R₀,₅ R₀,₉ losses
 
     Results
     -------
+    .. epigraph::
 
         Table 1: Results summary (R₀,₅/R₀,₉ -loss) of all methods. e-c and t-c represent
         electricity-c and traffic-c, respectively. In the 1st and 3rd row, we perform rolling-day
         prediction of 7 days while in the 2nd and 4th row, we directly forecast 7 days ahead.
         TRMF outputs points predictions, so we only report R₀,₅.
-
 
     +------+-------------+-------------+------------+-------------+-------------+-------------+
     |      | ARIMA       | ETS         | TRMF       | DeepAR      | DeepState   | Ours        |
@@ -386,8 +383,8 @@ class ElectricityELBMBTTF:
 
 
 class ElectricityNBEATS:
-    """NBEATS."""
+    r"""NBEATS."""
 
 
 class ElectricityNHITS:
-    """NHITS."""
+    r"""NHITS."""
