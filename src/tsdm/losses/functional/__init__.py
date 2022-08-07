@@ -3,7 +3,6 @@ r"""Implementations of loss functions.
 Notes
 -----
 Contains losses in functional form.
-  - See `tsdm.losses.modular` for modular implementations.
 """
 
 __all__ = [
