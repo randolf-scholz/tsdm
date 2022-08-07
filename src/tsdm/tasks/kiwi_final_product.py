@@ -360,6 +360,10 @@ class _Dataset(torch.utils.data.Dataset):
         self.metadata = md
         self.observables = observables
 
+    def __len__(self) -> int:
+        r"""Return the number of samples in the dataset."""
+        return len(self.metadata)
+
     def __getitem__(self, item: tuple[tuple[int, int], slice]) -> Sample:
         r"""Return a sample from the dataset."""
         key, slc = item
