@@ -13,20 +13,20 @@ DataLoaders for Training
 4. sampling of batch  ``indices: list[int] = sample()``
 5. Collating batch ``batch = collate(data[indices])``
 6. Separate batch ``inputs, targets = batch``
-5. feeding batch to model ``outputs=model(*inputs)``
-6. comparing model outputs to targets ``loss(targets, outputs)``
+7. feeding batch to model ``outputs=model(*inputs)``
+8. comparing model outputs to targets ``loss(targets, outputs)``
 
 DataLoaders for Inference
-""""""""""""""""""""""""
+"""""""""""""""""""""""""
 1. raw data
 2. task specific preprocessing ``data = preprocess(data)``
 3. model specific encoding  ``data = encode(data)``
 4. sampling of batch  ``indices: list[int] = sample()``
 5. Collating batch ``batch = collate(data[indices])``
 6. Separate batch ``inputs, targets = batch``
-5. feeding batch to model ``outputs=model(*inputs)``
-5b. Transforming results: ``prediction = make_predictions(outputs)``
-6. comparing model outputs to targets ``metric(targets, predictions)``
+7. feeding batch to model ``outputs=model(*inputs)``
+8. Transforming results: ``prediction = make_predictions(outputs)``
+9. comparing model outputs to targets ``metric(targets, predictions)``
 
 There are multiple ways of doing things:
 
