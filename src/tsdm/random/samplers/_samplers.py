@@ -422,7 +422,7 @@ class IntervalSampler(Sampler, Generic[TDVar]):
         assert xmin <= offset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
 
         # determine delta_max
-        delta_max = max(offset - xmin, xmax - offset)  # type: ignore[call-overload]
+        delta_max = max(offset - xmin, xmax - offset)
 
         # determine levels
         if levels is None:
