@@ -1,5 +1,5 @@
-tsdm - **T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
-==============================================================
+tsdm - 𝗧ime 𝗦eries 𝗗atasets and 𝗠odels
+=======================================
 
 .. toctree::
    :titlesonly:
