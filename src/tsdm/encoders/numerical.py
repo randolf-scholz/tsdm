@@ -28,21 +28,27 @@ TensorType = TypeVar("TensorType", Tensor, np.ndarray, DataFrame, Series)
 r"""TypeVar for tensor-like objects."""
 
 
-def get_broadcast(data: Any, axis: tuple[int, ...]) -> tuple[Union[None, slice], ...]:
-    r"""Get the broadcast transform.
+def get_broadcast(
+    data: Any, /, *, axis: tuple[int, ...] | None
+) -> tuple[slice | None, ...]:
+    r"""Creates an indexer for axis specific broadcasting.
 
     Example
     -------
-    data is (2,3,4,5,6,7)
-    axis is (0,2,-1)
-    broadcast is (:, None, :, None, None, :)
-    then, given a tensor x of shape (2, 4, 7), we can perform
-    element-wise operations via data + x[broadcast]
+    data is of shape  ``(2,3,4,5,6,7)``
+    axis is the tuple ``(0,2,-1)``
+    broadcast is ``(:, None, :, None, None, :)``
+
+    Then, given a tensor ``x`` of shape ``(2, 4, 7)``, we can perform element-wise
+    operations via ``data + x[broadcast]``.
     """
     rank = len(data.shape)
-    axes = list(range(rank))
+
+    if axis is None:
+        return (slice(None),) * rank
+
     axis = tuple(a % rank for a in axis)
-    broadcast = tuple(slice(None) if a in axis else None for a in axes)
+    broadcast = tuple(slice(None) if a in axis else None for a in range(rank))
     return broadcast
 
 
@@ -55,7 +61,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
     r"""The standard-deviation."""
     ignore_nan: bool = True
     r"""Whether to ignore nan-values while fitting."""
-    axis: tuple[int, ...]
+    axis: tuple[int, ...] | None
     r"""The axis to perform the scaling. If None, automatically select the axis."""
 
     class Parameters(NamedTuple):
@@ -63,7 +69,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 
         mean: TensorLike
         stdv: TensorLike
-        axis: tuple[int, ...]
+        axis: tuple[int, ...] | None
 
         def __repr__(self) -> str:
             r"""Pretty print."""
@@ -76,11 +82,11 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         stdv: Optional[Tensor] = None,
         *,
         ignore_nan: bool = True,
-        axis: Optional[Union[int, tuple[int, ...]]] = None,
+        axis: Optional[int | tuple[int, ...]] = None,
     ):
         super().__init__()
         self.ignore_nan = ignore_nan
-        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore[assignment]
+        self.axis = (axis,) if isinstance(axis, int) else axis
         self.mean = mean
         self.stdv = stdv
 
@@ -90,9 +96,8 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 
     def __getitem__(self, item: Any) -> Standardizer:
         r"""Return a slice of the Standardizer."""
-        encoder = Standardizer(
-            mean=self.mean[item], stdv=self.stdv[item], axis=self.axis[1:]
-        )
+        axis = self.axis if self.axis is None else self.axis[1:]
+        encoder = Standardizer(mean=self.mean[item], stdv=self.stdv[item], axis=axis)
         encoder._is_fitted = self._is_fitted
         return encoder
 
@@ -104,6 +109,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
     def fit(self, data: TensorType, /) -> None:
         r"""Compute the mean and stdv."""
         rank = len(data.shape)
+
         if self.axis is None:
             self.axis = () if rank == 1 else (-1,)
 
@@ -148,7 +154,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
             raise RuntimeError("Needs to be fitted first!")
 
         self.LOGGER.debug("Encoding data %s", data)
-        broadcast = get_broadcast(data, self.axis)
+        broadcast = get_broadcast(data, axis=self.axis)
         self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         return (data - self.mean[broadcast]) / self.stdv[broadcast]
@@ -159,7 +165,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
             raise RuntimeError("Needs to be fitted first!")
 
         self.LOGGER.debug("Encoding data %s", data)
-        broadcast = get_broadcast(data, self.axis)
+        broadcast = get_broadcast(data, axis=self.axis)
         self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         return data * self.stdv[broadcast] + self.mean[broadcast]
@@ -280,7 +286,7 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     def encode(self, data: TensorType, /) -> TensorType:
         r"""Encode the input."""
         self.LOGGER.debug("Encoding data %s", data)
-        broadcast = get_broadcast(data, self.axis)
+        broadcast = get_broadcast(data, axis=self.axis)
         self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
@@ -292,7 +298,7 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     def decode(self, data: TensorType, /) -> TensorType:
         r"""Decode the input."""
         self.LOGGER.debug("Decoding data %s", data)
-        broadcast = get_broadcast(data, self.axis)
+        broadcast = get_broadcast(data, axis=self.axis)
         self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin

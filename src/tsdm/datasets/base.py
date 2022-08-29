@@ -472,11 +472,11 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
-        rawdata_files: Nested[Optional[str]]
+        rawdata_files: Nested[Optional[PathType]]
         if isinstance(self.rawdata_files, Mapping):
-            rawdata_files = self.rawdata_files[key]  # type: ignore[assignment]
+            rawdata_files = self.rawdata_files[key]
         else:
-            rawdata_files = self.rawdata_files  # type: ignore[assignment]
+            rawdata_files = self.rawdata_files
 
         nested_files: Nested[Path] = prepend_path(
             rawdata_files, Path(), keep_none=False

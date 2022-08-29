@@ -84,7 +84,7 @@ class TimeTensor(Tensor):
         if isinstance(x, (DataFrame, Series)):
             assert index is None, "Index given, but x is DataFrame/Series"
             x = x.values
-        return super().__new__(cls, x, *args, **kwargs)  # type: ignore[call-arg]
+        return super().__new__(cls, *(x, *args), **kwargs)
 
     def __init__(
         self,
