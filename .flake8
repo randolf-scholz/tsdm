@@ -41,6 +41,7 @@ ignore =
     ANN102,  # Missing type annotation for cls in classmethod
     ANN401,  # Dynamically typed expressions (typing.Any) are disallowed
     E741,    # ambiguous variable nam
+    B024,    # BaseDatasetMetaClass is an abstract base class, but it has no abstract methods
 
 extend-ignore =
     # Google Python style is not RST until after processed by Napoleon
