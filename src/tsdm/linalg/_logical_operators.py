@@ -17,10 +17,13 @@ from torch import Tensor, jit
 @jit.script
 def aggregate_and(
     x: Tensor,
-    dim: Union[None, int, list[int]] = None,
+    dim: Union[None, int, list[int], Tensor] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``AND`` across dim."""
+
+    dims: Union[list[int], Tensor]
+
     if dim is None:
         dims = list(range(x.ndim))
     elif isinstance(dim, int):
@@ -28,8 +31,8 @@ def aggregate_and(
     else:
         dims = dim
 
-    if isinstance(dims, Tensor):  # type: ignore[unreachable]
-        if keepdim:  # type: ignore[unreachable]
+    if isinstance(dims, Tensor):
+        if keepdim:
             for d in dims:
                 x = torch.all(x, dim=d, keepdim=keepdim)
         else:

@@ -27,12 +27,17 @@ __logger__ = logging.getLogger(__name__)
 
 
 @overload
-def snake2camel(s: str) -> str:  # type: ignore[misc]
+def snake2camel(s: str) -> str:
     ...
 
 
 @overload
-def snake2camel(s: Iterable[str]) -> list[str]:
+def snake2camel(s: list[str]) -> list[str]:
+    ...
+
+
+@overload
+def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]:
     ...
 
 
@@ -47,11 +52,18 @@ def snake2camel(s):
     -------
     str | Iterable[str]
     """
+
+    if isinstance(s, tuple):
+        return tuple(snake2camel(x) for x in s)
+
     if isinstance(s, Iterable) and not isinstance(s, str):
         return [snake2camel(x) for x in s]
 
-    substrings = s.split("_")
-    return "".join(s[0].capitalize() + s[1:] for s in substrings)
+    if isinstance(s, str):
+        substrings = s.split("_")
+        return "".join(s[0].capitalize() + s[1:] for s in substrings)
+
+    raise TypeError(f"Type {type(s)} nor understood, expected string or iterable.")
 
 
 def tensor_info(x: Tensor) -> str:

@@ -116,7 +116,7 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
             raise TypeError("Too many positional arguments")
 
         if len(args) == 0:
-            self.update(kwargs)  # type: ignore[arg-type]
+            self.update(**kwargs)
             return
 
         arg = args[0]

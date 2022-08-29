@@ -79,9 +79,9 @@ PathVar = TypeVar("PathVar", str, Path, os.PathLike[str])
 r"""TypeVar for path-like objects."""
 
 Nested = Union[
-    Type,
     Collection[Type],
     Mapping[Any, Type],
+    Type,
 ]
 r"""Type for nested types (JSON-Like)."""
 
