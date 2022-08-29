@@ -787,7 +787,7 @@ class PositionalEncoder(BaseEncoder):
         assert self.scales[0] == 1.0, "Something went wrong."
 
     def encode(self, data: np.ndarray, /) -> np.ndarray:
-        r"""Signature: ``... -> (..., 2d)``.
+        r""".. Signature: ``... -> (..., 2d)``.
 
         Note: we simple concatenate the sin and cosine terms without interleaving them.
         """

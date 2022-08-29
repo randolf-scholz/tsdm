@@ -21,9 +21,7 @@ def aggregate_and(
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``AND`` across dim."""
-
     dims: Union[list[int], Tensor]
-
     if dim is None:
         dims = list(range(x.ndim))
     elif isinstance(dim, int):

@@ -116,7 +116,7 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor, v: Tensor, m: Tensor) -> Tensor:
-        r"""Signature: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
+        r""".. Signature: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
 
         s must be a tensor of the shape $L×(2+C)4, $sᵢ = [tᵢ, zᵢ, mᵢ]$, where
 
@@ -157,12 +157,12 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward_tuple(self, t: tuple[Tensor, Tensor, Tensor]) -> Tensor:
-        r"""Signature: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> F``."""
+        r""".. Signature: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> F``."""
         return self.forward(t[0], t[1], t[2])
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor, Tensor]]) -> Tensor:
-        r"""Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
+        r""".. Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
 
         Parameters
         ----------
