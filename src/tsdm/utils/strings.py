@@ -52,7 +52,6 @@ def snake2camel(s):
     -------
     str | Iterable[str]
     """
-
     if isinstance(s, tuple):
         return tuple(snake2camel(x) for x in s)
 

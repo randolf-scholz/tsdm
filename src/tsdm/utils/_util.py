@@ -30,7 +30,7 @@ from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Optional, Union, overload, cast
+from typing import Any, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 from numpy.typing import NDArray

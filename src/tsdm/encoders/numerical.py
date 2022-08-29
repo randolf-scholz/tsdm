@@ -31,7 +31,7 @@ r"""TypeVar for tensor-like objects."""
 def get_broadcast(
     data: Any, /, *, axis: tuple[int, ...] | None
 ) -> tuple[slice | None, ...]:
-    r"""Creates an indexer for axis specific broadcasting.
+    r"""Create an indexer for axis specific broadcasting.
 
     Example
     -------
