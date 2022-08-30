@@ -314,13 +314,13 @@ autoapi_generate_api_docs = True
 # Default: True
 
 autoapi_options = [
-    "members",
-    "undoc-members",
-    # "private-members",
-    "show-inheritance",
-    "show-module-summary",
-    "special-members",
+    # "members",
+    # "special-members",
     "imported-members",
+    # "undoc-members",
+    # "private-members",
+    # "show-inheritance",
+    # "show-module-summary",
 ]
 # Options for display of the generated documentation.
 # Default: [ 'members', 'undoc-members', 'private-members', 'show-inheritance', 'show-module-summary',
