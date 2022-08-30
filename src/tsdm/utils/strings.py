@@ -289,7 +289,7 @@ def repr_namedtuple(
 
 
 def repr_array(obj: Array, *, title: Optional[str] = None) -> str:
-    r"""Return a string representation of a array object.
+    r"""Return a string representation of an array object.
 
     Parameters
     ----------

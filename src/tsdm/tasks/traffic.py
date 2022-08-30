@@ -14,7 +14,7 @@ class TrafficTFT:
         500k training samples taken before 2008-06-15 as per [9], and key in the same way as the
         Electricity dataset. For testing, we use the 7 days immediately following the training set,
         and z-score normalization was applied across all entities. For inputs, we also take traffic
-        occupancy, day-of-week, hour-of-day and and a time index as real-valued inputs, and the
+        occupancy, day-of-week, hour-of-day and a time index as real-valued inputs, and the
         entity identifier as a categorical variable.
 
     Test-Metric
@@ -53,7 +53,7 @@ class TrafficTRMF:
         [...]
         traffic 4 : A collection of 15 months of daily data from the California Department of
         Transportation. The data describes the occupancy rate, between 0 and 1, of different car
-        lanes of San Francisco bay area freeways. The data was sampled every 10 minutes, and we
+        lanes of San Francisco Bay Area freeways. The data was sampled every 10 minutes, and we
         again aggregate the columns to obtain hourly traffic data to finally get n = 963,
         T = 10, 560. The coefficient of variation for traffic is 0.8565.
 

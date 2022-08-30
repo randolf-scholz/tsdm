@@ -7,7 +7,7 @@ __all__ = [
     "cumulative_and",
     "cumulative_or",
 ]
-from typing import Optional
+from typing import Optional, Union
 
 import torch
 from torch import Tensor, jit
@@ -16,11 +16,10 @@ from torch import Tensor, jit
 @jit.script
 def aggregate_and(
     x: Tensor,
-    dim: Optional[int | list[int] | Tensor] = None,
+    dim: Union[None, int, list[int]] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``AND`` across dim."""
-    dims: list[int] | Tensor
     if dim is None:
         dims = list(range(x.ndim))
     elif isinstance(dim, int):
@@ -28,28 +27,19 @@ def aggregate_and(
     else:
         dims = dim
 
-    if isinstance(dims, Tensor):
-        if keepdim:
-            for d in dims:
-                x = torch.all(x, dim=d, keepdim=keepdim)
-        else:
-            for i, d in enumerate(dims):
-                x = torch.all(x, dim=d - i, keepdim=keepdim)
-
     if keepdim:
         for d in dims:
             x = torch.all(x, dim=d, keepdim=keepdim)
     else:
         for i, d in enumerate(dims):
             x = torch.all(x, dim=d - i, keepdim=keepdim)
-
     return x
 
 
 @jit.script
 def aggregate_or(
     x: Tensor,
-    dim: Optional[int | list[int]] = None,
+    dim: Union[None, int, list[int]] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``OR`` across dim."""
@@ -66,7 +56,6 @@ def aggregate_or(
     else:
         for i, d in enumerate(dims):
             x = torch.any(x, dim=d - i, keepdim=keepdim)
-
     return x
 
 

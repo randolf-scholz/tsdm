@@ -16,7 +16,7 @@ def test_make_masked_format():
     References
     ----------
     1. Recurrent Neural Networks for Multivariate Time Series with Missing Values
-       Che et. al., Nature 2017
+       Che et al., Nature 2017
     """
     __logger__.info("Testing %s started!", make_masked_format.__name__)
 

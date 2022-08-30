@@ -28,8 +28,6 @@ from pandas import CategoricalDtype, DataFrame, Series
 
 def infer_categories(s: Series) -> set:
     r"""Return categories."""
-    # assert is_categorical_dtype(s) or is_string_dtype(s) or is_object_dtype(s), \
-    #     F"Series {s=}  with {s.dtype=} does not look like categorical data"
     categories = s.astype(CategoricalDtype()).categories
 
     return set(categories)

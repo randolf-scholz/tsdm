@@ -155,7 +155,7 @@ class MIMIC_DeBrouwer(BaseTask):
 
     The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
     harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
-    measurements outside the 5 standard deviations interval. For models requiring binning of the time
+    measurements outside the 5 standard deviation interval. For models requiring binning of the time
     series, we map the measurements in 30-minute time bins, which gives 97 bins for 48 hours. When
     two observations fall in the same bin, they are either averaged or summed depending on the nature
     of the observation. Using the same taxonomy as in Table 5, lab measurements are averaged, while

@@ -104,7 +104,7 @@ TORCH_FUNCTIONAL_ACTIVATIONS: Final[dict[str, FunctionalActivation]] = {
     "sigmoid": nn.functional.sigmoid,
     # Applies the element-wise function `Sigmoid(x)=1/(1+\exp(−x))`.
     "hardsigmoid": nn.functional.hardsigmoid,
-    # Applies the element-wise function.
+    # Applies the hardsigmoid function element-wise.
     "silu": nn.functional.silu,
     # Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
     "mish": nn.functional.mish,

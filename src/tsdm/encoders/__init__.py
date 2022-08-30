@@ -5,7 +5,7 @@ Role & Specification
 
 Encoders are used in multiple contexts
   - Perform preprocessing for task objects: For example, a task might ask to evaluate on
-    standardized features. In this case, an pre_encoder object is associated with the task that
+    standardized features. In this case, a pre_encoder object is associated with the task that
     will perform this preprocessing at task creation time.
   - Perform data encoding tasks such as encoding of categorical variables.
   - Transform data from one framework to another, like `numpy` → `torch`

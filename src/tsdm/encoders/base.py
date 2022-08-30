@@ -98,7 +98,7 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
         return self.is_surjective and self.is_injective
 
     def fit(self, data: Any, /) -> None:
-        r"""By default does nothing."""
+        r"""Implement as necessary."""
 
     @abstractmethod
     def encode(self, data, /):

@@ -431,7 +431,7 @@ class StandardLogger:
 
     def log_hparams(self, i: int, /) -> None:
         r"""Log hyperparameters."""
-        # find best epoch on the smoothed validation curve
+        # Find the best epoch on the smoothed validation curve
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
 
         scores = {

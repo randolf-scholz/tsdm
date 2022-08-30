@@ -200,7 +200,7 @@ def prepend_path(
     Parameters
     ----------
     files
-        Nested datastructes with Path-objects at leave nodes.
+        Nested datastructures with Path-objects at leave nodes.
     parent: Path
     keep_none: bool
         If True, None-values are kept.
@@ -246,24 +246,6 @@ def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
     if isinstance(nested, Iterable):
         return set.union(*(flatten_nested(v, kind) for v in nested))
     raise ValueError(f"{type(nested)} is not understood")
-
-
-# T = TypeVar("T")   \t\ \̃   \hy ŷ yy{̂y}    \tg g̃
-# S = TypeVar("S")
-
-
-# ModularTable = dict[str, type[T]]
-# FunctionalTable = dict[str, Callable[..., S]]
-# LookupTable = Union[
-#     ModularTable, FunctionalTable, dict[str, Union[type[T], Callable[..., S]]]
-# ] \dLG 32UN650-Wcafga \d ẋ
-
-
-# @overload
-# def initialize_from(
-#     lookup_table: dict[str, ObjectType], __name__: str, **kwargs: Any
-# ) -> ObjectType:
-#     ...
 
 
 # partial from type

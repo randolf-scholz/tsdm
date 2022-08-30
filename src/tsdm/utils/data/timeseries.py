@@ -176,7 +176,7 @@ class TimeSeriesDataset(TorchDataset):
     ):
         super().__init__()
 
-        # Setup the timeseries
+        # Set up the timeseries
         if isinstance(timeseries, Mapping):
             self.ts_type = namedtuple("timeseries", timeseries.keys())  # type: ignore[misc]
             self.timeseries = self.ts_type(**timeseries)
@@ -191,7 +191,7 @@ class TimeSeriesDataset(TorchDataset):
         else:
             self.timeseries = timeseries
 
-        # Setup the metadata
+        # Set up the metadata
         if isinstance(metadata, Mapping):
             self.md_type = namedtuple("metadata", metadata.keys())  # type: ignore[misc]
             self.timeseries = self.md_type(**timeseries)

@@ -54,7 +54,7 @@ class KIWI_RUNS_TASK(BaseTask):
     - metadata for each run_id and experiment_id
 
     When first do a train/test split.
-    Then the goal is to learn a model in a multi-task fashion on all the ts.
+    Then the goal is to learn a model in a multitask fashion on all the ts.
 
     To train, we sample
     1. random TS from the dataset

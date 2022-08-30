@@ -143,7 +143,7 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
 
 
 class USHCN_DeBrouwer(BaseTask):
-    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
+    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     Evaluation Protocol
     -------------------
@@ -159,7 +159,7 @@ class USHCN_DeBrouwer(BaseTask):
         data acquisition. The actual data is then sporadic and researchers usually resort to
         imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
 
-        We use the publicly available United State Historical Climatology Network (USHCN) daily
+        We use the publicly available United States Historical Climatology Network (USHCN) daily
         data set (Menne et al.), which contains measurements of 5 climate variables
         (daily temperatures, precipitation, and snow) over 150 years for 1,218 meteorological
         stations scattered over the United States. We selected a subset of 1,114 stations and an
