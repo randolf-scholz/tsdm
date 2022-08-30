@@ -11,7 +11,7 @@ __all__ = [
 
 from collections import OrderedDict
 from math import ceil, log2
-from typing import Any, Final, Optional, Union
+from typing import Any, Final, Optional
 
 import torch
 from torch import Tensor, jit, nn
@@ -114,8 +114,8 @@ class ReZero(nn.Sequential):
 
     @_copy_to_script_wrapper
     def __getitem__(
-        self: nn.Sequential, item: Union[int, slice]
-    ) -> Union[nn.Module, nn.Sequential]:
+        self: nn.Sequential, item: int | slice
+    ) -> nn.Module | nn.Sequential:
         r"""Get a sub-model."""
         modules: list[nn.Module] = list(self._modules.values())
         if isinstance(item, slice):

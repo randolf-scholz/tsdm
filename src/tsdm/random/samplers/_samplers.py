@@ -22,7 +22,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from datetime import timedelta as py_td
 from itertools import chain, count
-from typing import Any, Generic, Literal, Optional, Union, cast
+from typing import Any, Generic, Literal, Optional, Union, cast, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -36,13 +36,13 @@ from tsdm.utils.strings import repr_mapping
 from tsdm.utils.types import ObjectType, ValueType
 from tsdm.utils.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 
-Boxed = Union[
+Boxed: TypeAlias = Union[
     Sequence[ValueType],
     Mapping[int, ValueType],
     Callable[[int], ValueType],
 ]
 
-Nested = Union[
+Nested: TypeAlias = Union[
     ObjectType,
     Sequence[ObjectType],
     Mapping[int, ObjectType],
@@ -51,11 +51,11 @@ Nested = Union[
 
 
 def compute_grid(
-    tmin: Union[str, DTVar],
-    tmax: Union[str, DTVar],
-    timedelta: Union[str, TDVar],
+    tmin: str | DTVar,
+    tmax: str | DTVar,
+    timedelta: str | TDVar,
     *,
-    offset: Union[None, str, DTVar] = None,
+    offset: Optional[str | DTVar] = None,
 ) -> Sequence[int]:
     r"""Compute $\{k∈ℤ∣tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
 
@@ -162,7 +162,7 @@ class SliceSampler(Sampler):
         data_source: Sequence,
         /,
         *,
-        slice_sampler: Optional[Union[int, Callable[[], int]]] = None,
+        slice_sampler: Optional[int | Callable[[], int]] = None,
         sampler: Optional[Callable[[], tuple[int, int]]] = None,
         generator: Optional[np.random.Generator] = None,
     ):
@@ -390,7 +390,7 @@ class IntervalSampler(Sampler, Generic[TDVar]):
     intervals: DataFrame
 
     @staticmethod
-    def _get_value(obj: Union[TDVar, Boxed[TDVar]], k: int) -> TDVar:
+    def _get_value(obj: TDVar | Boxed[TDVar], k: int) -> TDVar:
         if callable(obj):
             return obj(k)
         if isinstance(obj, Sequence):
@@ -512,8 +512,8 @@ class SequenceSampler(BaseSampler):
         *,
         tmin: Optional[int] = None,
         tmax: Optional[int] = None,
-        stride: Union[str, int] = 1,
-        seq_len: Union[int, str],
+        stride: str | int = 1,
+        seq_len: int | str,
         return_mask: bool = False,
         shuffle: bool = False,
     ) -> None:
@@ -592,7 +592,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
     data: NDArray[NumpyDTVar]
     grid: NDArray[np.integer]
-    horizons: Union[NumpyTDVar, NDArray[NumpyTDVar]]
+    horizons: NumpyTDVar | NDArray[NumpyTDVar]
     mode: Literal["masks", "slices", "points"]
     shuffle: bool
     start_values: NDArray[NumpyDTVar]
@@ -610,10 +610,10 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         data_source: Sequence[NumpyDTVar],
         /,
         *,
-        stride: Union[str, NumpyTDVar],
-        horizons: Union[str, Sequence[str], NumpyTDVar, Sequence[NumpyTDVar]],
-        tmin: Union[None, str, NumpyDTVar] = None,
-        tmax: Union[None, str, NumpyDTVar] = None,
+        stride: str | NumpyTDVar,
+        horizons: str | Sequence[str] | NumpyTDVar | Sequence[NumpyTDVar],
+        tmin: Optional[str | NumpyDTVar] = None,
+        tmax: Optional[str | NumpyDTVar] = None,
         mode: Literal["masks", "slices", "points"] = "masks",
         shuffle: bool = False,
     ):

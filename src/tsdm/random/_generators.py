@@ -14,9 +14,9 @@ __all__ = [
     "GENERATORS",
 ]
 
-from typing import Any, Final
+from typing import Any, Final, TypeAlias
 
-Generator = Any
+Generator: TypeAlias = Any
 r"""Type hint for generators."""
 
 GENERATORS: Final[dict[str, Generator]] = {}

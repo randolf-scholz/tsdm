@@ -11,7 +11,7 @@ import subprocess
 from abc import ABC, ABCMeta, abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Optional, Protocol, Union
+from typing import Optional, Protocol
 from urllib.parse import urlparse
 
 from tsdm.config import MODELDIR
@@ -48,7 +48,7 @@ class BaseModel(ABC):
         r"""Return the path to the model."""
         return MODELDIR / self.__class__.__name__
 
-    def download(self, *, url: Optional[Union[str, Path]] = None) -> None:
+    def download(self, *, url: Optional[str | Path] = None) -> None:
         r"""Download model (e.g. via git clone)."""
         target_url: str = str(self.SOURCE_URL) if url is None else str(url)
         parsed_url = urlparse(target_url)

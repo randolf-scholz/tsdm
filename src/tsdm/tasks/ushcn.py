@@ -20,7 +20,8 @@ from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
-NAN = torch.nan
+
+NAN: float = torch.nan
 r"""Not a number constant."""
 
 
@@ -32,6 +33,7 @@ class Inputs(NamedTuple):
     t_target: Tensor
 
     def __repr__(self) -> str:
+        r"""Return string representation."""
         return repr_namedtuple(self, recursive=False)
 
 
