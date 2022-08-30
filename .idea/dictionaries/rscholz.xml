@@ -2,6 +2,7 @@
   <dictionary name="rscholz">
     <words>
       <w>abfghkmnrstuwxz</w>
+      <w>absolufy</w>
       <w>abstractattribute</w>
       <w>adadelta</w>
       <w>adagrad</w>
@@ -19,8 +20,10 @@
       <w>asctime</w>
       <w>asdict</w>
       <w>asgd</w>
+      <w>asottile</w>
       <w>aspartate</w>
       <w>astype</w>
+      <w>atasets</w>
       <w>auroc</w>
       <w>autoapi</w>
       <w>autoclass</w>
@@ -96,6 +99,7 @@
       <w>elergone</w>
       <w>endblock</w>
       <w>endfor</w>
+      <w>equalto</w>
       <w>equimodal</w>
       <w>erank</w>
       <w>errorlevel</w>
@@ -117,6 +121,7 @@
       <w>gasthaus</w>
       <w>gcos</w>
       <w>gelu</w>
+      <w>genindex</w>
       <w>goel</w>
       <w>groupby</w>
       <w>guanghua</w>
@@ -191,6 +196,8 @@
       <w>lufl</w>
       <w>lₘₐₓ</w>
       <w>mant</w>
+      <w>mastertoc</w>
+      <w>mathdefault</w>
       <w>mathtext</w>
       <w>maxabs</w>
       <w>maxdepth</w>
@@ -210,6 +217,7 @@
       <w>mmol</w>
       <w>modeldir</w>
       <w>modin</w>
+      <w>modindex</w>
       <w>moduledir</w>
       <w>modus</w>
       <w>mqrnn</w>
@@ -241,8 +249,10 @@
       <w>numdims</w>
       <w>nunique</w>
       <w>objname</w>
+      <w>objtype</w>
       <w>obsrv</w>
       <w>odeint</w>
+      <w>odels</w>
       <w>oldvals</w>
       <w>operandi</w>
       <w>operatorname</w>
@@ -265,6 +275,7 @@
       <w>prelu</w>
       <w>prsa</w>
       <w>puls</w>
+      <w>pushd</w>
       <w>pydeps</w>
       <w>pyplot</w>
       <w>pypoetry</w>
@@ -283,6 +294,7 @@
       <w>reconstr</w>
       <w>redef</w>
       <w>reftypes</w>
+      <w>rejectattr</w>
       <w>reldist</w>
       <w>relsize</w>
       <w>rezero</w>
@@ -292,10 +304,12 @@
       <w>rpartial</w>
       <w>rprop</w>
       <w>rrelu</w>
+      <w>rscholz</w>
       <w>rtol</w>
       <w>sahota</w>
       <w>scriptsize</w>
       <w>sectionauthor</w>
+      <w>selectattr</w>
       <w>selu</w>
       <w>sepehr</w>
       <w>setpoint</w>
@@ -428,6 +442,7 @@
       <w>ylim</w>
       <w>ymax</w>
       <w>ymin</w>
+      <w>ytick</w>
       <w>yuyang</w>
     </words>
   </dictionary>

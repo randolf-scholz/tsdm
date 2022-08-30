@@ -16,7 +16,7 @@ ToDo's
 - Without Standard-scaling
 - RMSE **NOT** channel wise, but flattened
 - accumulate cross-validation: RMSE
-- horizon 1h / 2h / 6h  ↭ avg number of timesteps
+- horizon 1h / 2h / 6h  ↭ avg number of timestamps
 - horizons: 150+100, 300+300, 400+600
 - In TS split: first snippet that fits until last snippet
 
