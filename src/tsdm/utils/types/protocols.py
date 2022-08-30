@@ -13,10 +13,7 @@ __all__ = [
     "NTuple",
 ]
 
-import logging
 from typing import Protocol, runtime_checkable
-
-__logger__ = logging.getLogger(__name__)
 
 
 @runtime_checkable

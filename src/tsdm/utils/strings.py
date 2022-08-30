@@ -15,7 +15,7 @@ __all__ = [
 ]
 import builtins
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
-from typing import Any, Optional, overload
+from typing import Any, NamedTuple, Optional, cast, overload
 
 from pandas import DataFrame, Series
 from torch import Tensor
@@ -110,6 +110,7 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
     if isinstance(obj, Mapping):
         return repr_mapping(obj, **kwargs)
     if isinstance(obj, NTuple):
+        obj = cast(NamedTuple, obj)
         return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, **kwargs)
@@ -247,7 +248,7 @@ def repr_sequence(
 
 
 def repr_namedtuple(
-    obj: NTuple,
+    obj: NamedTuple,
     *,
     linebreaks: bool = True,
     maxitems: int = 6,
@@ -273,6 +274,9 @@ def repr_namedtuple(
     str
     """
     title = type(obj).__name__ if title is None else title
+
+    # if not hasattr(obj, "_asdict"):
+
     return repr_mapping(
         obj._asdict(),
         padding=padding,

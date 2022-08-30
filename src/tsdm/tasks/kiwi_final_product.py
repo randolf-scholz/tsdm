@@ -6,10 +6,11 @@ __all__ = [
 ]
 
 import logging
+from collections.abc import Callable
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
-from collections.abc import Callable
+
 import pandas as pd
 import torch
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp

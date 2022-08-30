@@ -22,7 +22,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from datetime import timedelta as py_td
 from itertools import chain, count
-from typing import Any, Generic, Literal, Optional, Union, cast, TypeAlias
+from typing import Any, Generic, Literal, Optional, TypeAlias, Union, cast
 
 import numpy as np
 import pandas as pd
