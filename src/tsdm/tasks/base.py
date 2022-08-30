@@ -58,7 +58,7 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 Normal Encoder
 --------------
 
-A normal pre_encoder is an pre_encoder with the property that all output tensors
+A normal pre_encoder is a pre_encoder with the property that all output tensors
 share the same index axis.
 
 I.e. it has a signature of the form ``list[tensor[n, ...]] -> list[tensor[n, ...]]``.

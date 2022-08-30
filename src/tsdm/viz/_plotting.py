@@ -59,7 +59,7 @@ def visualize_distribution(
     ax: Axes
     num_bins: int or Sequence[int]
     log: bool or float, default False
-        if True, use log base 10, if float, use  log w.r.t. this base
+        if True, use log base 10, if `float`, use  log w.r.t. this base
     loc: Location
     print_stats: bool
     extra_stats: Optional[dict[str, str]]

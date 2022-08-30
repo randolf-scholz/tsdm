@@ -143,7 +143,7 @@ class Traffic(MultiFrameDataset):
         -----
         Sampling rate = 10 minutes => 144 samples/day
 
-        PEMS_train: 267 rows, each row encodes a
+        PEMS_train: 267 rows
            - each row is data for 1 day.
            - each row encodes a 963×144 matrix (stations×timestamps)
 
@@ -272,7 +272,7 @@ class Traffic(MultiFrameDataset):
                     names=["station"],
                     dtype="category",
                 ).squeeze()
-                stations = Series(stations)  # make sure its not TextFileReader
+                stations = Series(stations)  # make sure it's not TextFileReader
 
             with files.open("PEMS_trainlabels") as file:
                 content = file.read().decode("utf8")
@@ -284,7 +284,7 @@ class Traffic(MultiFrameDataset):
                 ).squeeze()
                 train_dates = shuffled_dates[: len(trainlabels)]
                 trainlabels.index = train_dates
-                trainlabels = Series(trainlabels)  # make sure its not TextFileReader
+                trainlabels = Series(trainlabels)  # make sure it's not TextFileReader
             # Check that the labels match with the actual weekdays
             assert (
                 trainlabels.index.day_name() == trainlabels.values.map(weekdays)
@@ -300,7 +300,7 @@ class Traffic(MultiFrameDataset):
                 ).squeeze()
                 test_dates = shuffled_dates[len(trainlabels) :]
                 testlabels.index = test_dates
-                testlabels = Series(testlabels)  # make sure its not TextFileReader
+                testlabels = Series(testlabels)  # make sure it's not TextFileReader
 
             # Check that the labels match with the actual weekdays
             assert (

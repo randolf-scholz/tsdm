@@ -89,9 +89,8 @@ class BaseModel(ABC):
         self.LOGGER.info("Finished importing model from %s", self.SOURCE_URL)
 
     @abstractmethod
-    def forward(self):
+    def forward(self, *args):
         r"""Synonym for forward and __call__."""
-        raise NotImplementedError
 
 
 class RemoteModelProtocol(Protocol):

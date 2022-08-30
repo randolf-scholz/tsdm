@@ -1,11 +1,13 @@
 <component name="ProjectDictionaryState">
   <dictionary name="rscholz">
     <words>
+      <w>abfghkmnrstuwxz</w>
       <w>abstractattribute</w>
       <w>adadelta</w>
       <w>adagrad</w>
       <w>adamax</w>
       <w>alkalinephos</w>
+      <w>allclose</w>
       <w>amsfonts</w>
       <w>amsmath</w>
       <w>amssymb</w>
@@ -47,6 +49,7 @@
       <w>centerer</w>
       <w>checkpointdir</w>
       <w>chronologic</w>
+      <w>classattribute</w>
       <w>classif</w>
       <w>classmethod</w>
       <w>cmap</w>
@@ -65,6 +68,7 @@
       <w>covariates</w>
       <w>cspec</w>
       <w>cspecs</w>
+      <w>cuturi</w>
       <w>dataloaders</w>
       <w>datapoints</w>
       <w>datasetdir</w>
@@ -98,6 +102,7 @@
       <w>etdataset</w>
       <w>eusipco</w>
       <w>feder</w>
+      <w>ferreira</w>
       <w>ffill</w>
       <w>figsize</w>
       <w>fillna</w>
@@ -166,11 +171,13 @@
       <w>kmin</w>
       <w>kullback</w>
       <w>kval</w>
+      <w>kvals</w>
       <w>lazydict</w>
       <w>lbfgs</w>
       <w>leibler</w>
       <w>levelname</w>
       <w>levelno</w>
+      <w>levelv</w>
       <w>linalg</w>
       <w>linearness</w>
       <w>logdet</w>
@@ -182,6 +189,7 @@
       <w>lstf</w>
       <w>lualatex</w>
       <w>lufl</w>
+      <w>lₘₐₓ</w>
       <w>mant</w>
       <w>mathtext</w>
       <w>maxabs</w>
@@ -189,6 +197,7 @@
       <w>maxdim</w>
       <w>maxitems</w>
       <w>maxs</w>
+      <w>mcuturi</w>
       <w>megaconsistency</w>
       <w>membername</w>
       <w>menne</w>
@@ -212,6 +221,7 @@
       <w>nanmin</w>
       <w>nbeats</w>
       <w>ncdc</w>
+      <w>ncde</w>
       <w>ncols</w>
       <w>ndarray</w>
       <w>ndim</w>
@@ -219,6 +229,7 @@
       <w>neginf</w>
       <w>neur</w>
       <w>newvals</w>
+      <w>nhits</w>
       <w>nimap</w>
       <w>nitpicky</w>
       <w>njit</w>
@@ -234,6 +245,7 @@
       <w>odeint</w>
       <w>oldvals</w>
       <w>operandi</w>
+      <w>operatorname</w>
       <w>optim</w>
       <w>orth</w>
       <w>orthpart</w>
@@ -262,6 +274,7 @@
       <w>qflags</w>
       <w>quasiregular</w>
       <w>ramanan</w>
+      <w>randn</w>
       <w>randperm</w>
       <w>rangapuram</w>
       <w>rasterize</w>
@@ -317,6 +330,8 @@
       <w>sphinxopts</w>
       <w>sprop</w>
       <w>standardizer</w>
+      <w>staticattribute</w>
+      <w>stdev</w>
       <w>stdv</w>
       <w>stdvs</w>
       <w>subblock</w>
@@ -324,6 +339,7 @@
       <w>subkey</w>
       <w>subsampler</w>
       <w>subsamplers</w>
+      <w>sundar</w>
       <w>surjective</w>
       <w>syama</w>
       <w>symm</w>
@@ -346,6 +362,7 @@
       <w>tmin</w>
       <w>toctree</w>
       <w>tqdm</w>
+      <w>trainlabel</w>
       <w>trainlabels</w>
       <w>traj</w>
       <w>transaminase</w>
@@ -355,6 +372,8 @@
       <w>tsdm</w>
       <w>tsepsis</w>
       <w>tsuspicion</w>
+      <w>tₘᵢₙ</w>
+      <w>tₘₐₓ</w>
       <w>undoc</w>
       <w>unindent</w>
       <w>univariate</w>
@@ -366,6 +385,7 @@
       <w>usepackage</w>
       <w>usetex</w>
       <w>ushcn</w>
+      <w>uwave</w>
       <w>vals</w>
       <w>valuenorm</w>
       <w>valuenum</w>

@@ -35,7 +35,7 @@ def download(
     url: str, fname: Optional[PathType] = None, chunk_size: int = 1024
 ) -> None:
     r"""Download a file from a URL."""
-    response = requests.get(url, stream=True)
+    response = requests.get(url, stream=True, timeout=10)
     total = int(response.headers.get("content-length", 0))
     path = Path(fname if fname is not None else url.split("/")[-1])
     try:

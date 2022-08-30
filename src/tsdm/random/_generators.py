@@ -1,7 +1,7 @@
 r"""Generators for synthetic time series dataset.
 
-Contrary to tsdm.dataset, which contains static, real-world dataset, this module
-contains generators for synthetic dataset. By design each generators consists of
+Contrary to `tsdm.dataset`, which contains static, real-world dataset, this module
+contains generators for synthetic dataset. By design each generator consists of
 
 - Configuration parameters, e.g. number of dimensions etc.
 - Allows sampling from the data ground truth distribution p(x,y)

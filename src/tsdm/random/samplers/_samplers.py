@@ -57,7 +57,7 @@ def compute_grid(
     *,
     offset: Optional[str | DTVar] = None,
 ) -> Sequence[int]:
-    r"""Compute $\{k∈ℤ∣tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
+    r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
 
     That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
     Special case: if $Δt=0$, returns $[0]$.
@@ -715,7 +715,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
         - mode=points: $(x₀ + k⋅∆t, x₁+k⋅∆t, …, xₘ+k⋅∆t)$
         - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
-        - mode=masks: $(mask₁, …, maskₘ)$
+        - mode=masks: $(mask_1, …, mask_m)$
         """
         yield_fn: Callable[[NDArray[NumpyDTVar]], Any]
         if self.mode == "points":
