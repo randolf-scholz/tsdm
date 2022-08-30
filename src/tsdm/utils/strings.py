@@ -14,16 +14,13 @@ __all__ = [
     "dict2string",
 ]
 import builtins
-import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, overload
 
 from pandas import DataFrame, Series
 from torch import Tensor
 
 from tsdm.utils.types.protocols import Array, NTuple
-
-__logger__ = logging.getLogger(__name__)
 
 
 @overload
@@ -129,7 +126,7 @@ def repr_mapping(
     linebreaks: bool = True,
     maxitems: int = 6,
     padding: int = 4,
-    recursive: Union[bool, int] = True,
+    recursive: bool | int = True,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
     align: bool = False,
@@ -201,7 +198,7 @@ def repr_sequence(
     linebreaks: bool = True,
     maxitems: int = 6,
     padding: int = 4,
-    recursive: Union[bool, int] = True,
+    recursive: bool | int = True,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
@@ -255,7 +252,7 @@ def repr_namedtuple(
     linebreaks: bool = True,
     maxitems: int = 6,
     padding: int = 4,
-    recursive: Union[bool, int] = True,
+    recursive: bool | int = True,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
