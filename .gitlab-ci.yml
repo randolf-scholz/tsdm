@@ -135,6 +135,7 @@ pylint:
       --load-plugins=pylint_gitlab
       --output-format=gitlab-codeclimate
       > reports/codeclimate.json
+    - ls reports
     # colorized for human readability
     - pylint $TESTDIR --exit-zero --output-format=colorized
     - pylint $MODULEDIR --exit-zero --output-format=colorized | tee pylint.log
