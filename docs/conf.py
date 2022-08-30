@@ -472,7 +472,7 @@ autodoc_type_aliases = {
     "NA": "~pandas.NA",
     "NaT": "~pandas.NaT",
     "DataFrame": "~pandas.DataFrame",
-    "Series": ":class:`~pandas.Series`",
+    "Series": "`~pandas.Series`",
     "Index": "~pandas.Index",
     "MultiIndex": "~pandas.MultiIndex",
     "CategoricalIndex": "~pandas.CategoricalIndex",
@@ -618,19 +618,25 @@ mathjax_options = {}
 # The options to script tag for mathjax.
 # The default is empty {}.
 
-mathjax3_config = {}
+mathjax3_config = {
+    "loader": {"load": [r"[tex]/physics"]},
+    "tex": {
+        "inlineMath": [[r"\(", r"\)"]],
+        "displayMath": [[r"\[", r"\]"]],
+        "packages": {"[+]": ["physics"]},
+        "macros": {
+            "diag": r"\operatorname{diag}",
+            "relu": r"\operatorname{ReLU}",
+        },
+    },
+}
 # The configuration options for MathJax v3 (which is used by default).
 
 mathjax2_config = {}
 # The configuration options for MathJax v2
 # The default is empty {}.
 
-mathjax_config = {
-    "tex2jax": {
-        "inlineMath": [["\\(", "\\)"]],
-        "displayMath": [["\\[", "\\]"]],
-    },
-}
+mathjax_config = {}
 # Former name of mathjax2_config.
 
 # endregion sphinx.ext.mathjax configuration --------------------------------------------------------------------------
@@ -707,7 +713,7 @@ napoleon_preprocess_types = True
 
 napoleon_type_aliases = {
     # torch
-    "torch": ":class:`torch`",
+    "torch": "`torch`",
     "Tensor": "~torch.Tensor",
     "nn.Module": "~torch.nn.Module",
     "SummaryWriter": "~torch.utils.tensorboard.writer.SummaryWriter",
