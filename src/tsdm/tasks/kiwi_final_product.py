@@ -8,8 +8,8 @@ __all__ = [
 import logging
 from functools import cached_property
 from itertools import product
-from typing import Any, Callable, Literal, NamedTuple, Optional, Union
-
+from typing import Any, Literal, NamedTuple, Optional
+from collections.abc import Callable
 import pandas as pd
 import torch
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
@@ -36,10 +36,11 @@ class Sample(NamedTuple):
     originals: Optional[tuple[DataFrame, DataFrame]] = None
 
     def __repr__(self) -> str:
+        r"""Return string representation."""
         return repr_namedtuple(self, recursive=1)
 
 
-def get_induction_time(s: Series) -> Union[Timestamp, type[pd.NA]]:
+def get_induction_time(s: Series) -> Timestamp | type[pd.NA]:
     r"""Compute the induction time."""
     # s = ts.loc[run_id, exp_id]
     inducer = s["InducerConcentration"]
@@ -66,7 +67,7 @@ def get_final_product(s: Series, target: str) -> Timestamp:
 
 
 def get_time_table(
-    ts: DataFrame, target: str = "Fluo_GFP", t_min: Union[str, Timedelta] = "0.6h"
+    ts: DataFrame, target: str = "Fluo_GFP", t_min: str | Timedelta = "0.6h"
 ) -> DataFrame:
     r"""Compute the induction time and final product time for each run and experiment."""
     columns = [

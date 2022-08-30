@@ -38,6 +38,7 @@ class Sample(NamedTuple):
     originals: Optional[tuple[DataFrame, DataFrame]] = None
 
     def __repr__(self) -> str:
+        r"""Return string representation."""
         return repr_namedtuple(self, recursive=1)
 
 

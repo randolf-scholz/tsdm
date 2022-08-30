@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 import warnings
-from typing import Union, cast
+from typing import cast
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -104,7 +104,7 @@ def float_gcd(x: ArrayLike) -> float:
     return cast(float, gcd)
 
 
-def is_quasiregular(s: Union[Series, DataFrame]) -> bool:
+def is_quasiregular(s: Series | DataFrame) -> bool:
     r"""Test if time series is quasi-regular.
 
     By definition, this is the case if all timedeltas are
@@ -128,7 +128,7 @@ def is_quasiregular(s: Union[Series, DataFrame]) -> bool:
     return np.allclose(z, np.rint(z))
 
 
-def is_regular(s: Union[Series, DataFrame]) -> bool:
+def is_regular(s: Series | DataFrame) -> bool:
     r"""Test if time series is regular, i.e. iff $Δt_i$ is constant.
 
     Parameters
@@ -148,7 +148,7 @@ def is_regular(s: Union[Series, DataFrame]) -> bool:
 
 
 def regularity_coefficient(
-    s: Union[Series, DataFrame], ignore_duplicates: bool = True
+    s: Series | DataFrame, ignore_duplicates: bool = True
 ) -> float:
     r"""Compute the regularity coefficient of a time series.
 
