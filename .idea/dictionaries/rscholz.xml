@@ -57,6 +57,7 @@
       <w>colname</w>
       <w>colspec</w>
       <w>colspecs</w>
+      <w>conc</w>
       <w>configurables</w>
       <w>connectionist</w>
       <w>conus</w>
@@ -72,7 +73,10 @@
       <w>datzilla</w>
       <w>deepset</w>
       <w>deltax</w>
+      <w>dewp</w>
+      <w>dextrine</w>
       <w>dgiklmnorstwxz</w>
+      <w>dhms</w>
       <w>diagpart</w>
       <w>diffeq</w>
       <w>discretizer</w>
@@ -85,6 +89,7 @@
       <w>edgecolors</w>
       <w>eghbali</w>
       <w>eigs</w>
+      <w>elergone</w>
       <w>endblock</w>
       <w>endfor</w>
       <w>equimodal</w>
@@ -92,6 +97,8 @@
       <w>errorlevel</w>
       <w>etdataset</w>
       <w>eusipco</w>
+      <w>feder</w>
+      <w>ffill</w>
       <w>figsize</w>
       <w>fillna</w>
       <w>finfo</w>
@@ -106,6 +113,8 @@
       <w>gcos</w>
       <w>gelu</w>
       <w>goel</w>
+      <w>groupby</w>
+      <w>guanghua</w>
       <w>haoyi</w>
       <w>hardshrink</w>
       <w>hardsigmoid</w>
@@ -134,7 +143,9 @@
       <w>invperm</w>
       <w>iscore</w>
       <w>iscores</w>
+      <w>isna</w>
       <w>isort</w>
+      <w>issubdtype</w>
       <w>janahan</w>
       <w>januschowski</w>
       <w>jaspreet</w>
@@ -177,6 +188,7 @@
       <w>maxdepth</w>
       <w>maxdim</w>
       <w>maxitems</w>
+      <w>maxs</w>
       <w>megaconsistency</w>
       <w>membername</w>
       <w>menne</w>
@@ -184,6 +196,7 @@
       <w>mflag</w>
       <w>mflags</w>
       <w>micu</w>
+      <w>mins</w>
       <w>mish</w>
       <w>mmol</w>
       <w>modeldir</w>
@@ -206,7 +219,9 @@
       <w>neginf</w>
       <w>neur</w>
       <w>newvals</w>
+      <w>nimap</w>
       <w>nitpicky</w>
+      <w>njit</w>
       <w>noninfringement</w>
       <w>nonlinearity</w>
       <w>notna</w>
@@ -237,6 +252,7 @@
       <w>predics</w>
       <w>prelu</w>
       <w>prsa</w>
+      <w>puls</w>
       <w>pydeps</w>
       <w>pyplot</w>
       <w>pypoetry</w>
@@ -269,6 +285,7 @@
       <w>sectionauthor</w>
       <w>selu</w>
       <w>sepehr</w>
+      <w>setpoint</w>
       <w>setpoints</w>
       <w>seyed</w>
       <w>sflag</w>
@@ -332,7 +349,9 @@
       <w>trainlabels</w>
       <w>traj</w>
       <w>transaminase</w>
+      <w>trindade</w>
       <w>trmf</w>
+      <w>trop</w>
       <w>tsdm</w>
       <w>tsepsis</w>
       <w>tsuspicion</w>
@@ -361,6 +380,7 @@
       <w>wenhu</w>
       <w>wrapmethod</w>
       <w>wrmse</w>
+      <w>wspm</w>
       <w>xarray</w>
       <w>xent</w>
       <w>xhat</w>

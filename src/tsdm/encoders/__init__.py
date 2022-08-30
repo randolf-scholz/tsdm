@@ -47,13 +47,16 @@ __all__ = [
     "numerical",
     "time",
     "torch",
-    # Constants
+    # Types
     "Encoder",
-    "ENCODERS",
     "ModularEncoder",
-    "ModularEncoders",
     "FunctionalEncoder",
-    "FunctionalEncoders",
+    # Constants
+    "ENCODERS",
+    "MODULAR_ENCODERS",
+    "FUNCTIONAL_ENCODERS",
+    "SKLEARN_MODULAR_ENCODERS",
+    "SKLEARN_FUNCTIONAL_ENCODERS",
     # ABC
     "BaseEncoder",
     # Classes
@@ -83,7 +86,7 @@ __all__ = [
     "ValueEncoder",
 ]
 
-from typing import Final, Union
+from typing import Final, TypeAlias
 
 from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
@@ -109,7 +112,11 @@ from tsdm.encoders.base import (
     IdentityEncoder,
     ProductEncoder,
 )
-from tsdm.encoders.functional import FunctionalEncoder, FunctionalEncoders
+from tsdm.encoders.functional import (
+    FUNCTIONAL_ENCODERS,
+    SKLEARN_FUNCTIONAL_ENCODERS,
+    FunctionalEncoder,
+)
 from tsdm.encoders.numerical import (
     FloatEncoder,
     IntEncoder,
@@ -126,38 +133,13 @@ from tsdm.encoders.time import (
     TimeDeltaEncoder,
 )
 
-ModularEncoder = BaseEncoder
+ModularEncoder: TypeAlias = BaseEncoder
 r"""Type hint for modular encoders."""
 
-
-ModularEncoders: Final[dict[str, type[BaseEstimator]]] = {
-    "ChainedEncoder": ChainedEncoder,
-    "DataFrameEncoder": DataFrameEncoder,
-    "DateTimeEncoder": DateTimeEncoder,
-    "FloatEncoder": FloatEncoder,
-    "IdentityEncoder": IdentityEncoder,
-    "MinMaxScaler": MinMaxScaler,
-    "Standardizer": Standardizer,
-    "TensorEncoder": TensorEncoder,
-    "Time2Float": Time2Float,
-    "IntEncoder": IntEncoder,
-    "TripletEncoder": TripletEncoder,
-    "ConcatEncoder": ConcatEncoder,
-}
-r"""Dictionary of all available modular encoders."""
-
-
-Encoder = Union[FunctionalEncoder, ModularEncoder]
+Encoder: TypeAlias = FunctionalEncoder | ModularEncoder
 r"""Type hint for encoders."""
 
-ENCODERS: Final[dict[str, Union[FunctionalEncoder, type[ModularEncoder]]]] = {
-    **ModularEncoders,
-    **FunctionalEncoders,
-}
-r"""Dictionary of all available encoders."""
-
-
-SklearnModularEncoders: Final[dict[str, type[BaseEstimator]]] = {
+SKLEARN_MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "Binarizer": sk_preprocessing.Binarizer,
     "FunctionTransformer": sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer": sk_preprocessing.KBinsDiscretizer,
@@ -178,3 +160,25 @@ SklearnModularEncoders: Final[dict[str, type[BaseEstimator]]] = {
     "StandardScaler": sk_preprocessing.StandardScaler,
 }
 r"""Dictionary of all available sklearn encoders."""
+
+MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
+    "ChainedEncoder": ChainedEncoder,
+    "DataFrameEncoder": DataFrameEncoder,
+    "DateTimeEncoder": DateTimeEncoder,
+    "FloatEncoder": FloatEncoder,
+    "IdentityEncoder": IdentityEncoder,
+    "MinMaxScaler": MinMaxScaler,
+    "Standardizer": Standardizer,
+    "TensorEncoder": TensorEncoder,
+    "Time2Float": Time2Float,
+    "IntEncoder": IntEncoder,
+    "TripletEncoder": TripletEncoder,
+    "ConcatEncoder": ConcatEncoder,
+}
+r"""Dictionary of all available modular encoders."""
+
+ENCODERS: Final[dict[str, FunctionalEncoder | type[ModularEncoder]]] = {
+    **FUNCTIONAL_ENCODERS,
+    **MODULAR_ENCODERS,
+}
+r"""Dictionary of all available encoders."""

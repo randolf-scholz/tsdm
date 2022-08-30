@@ -4,92 +4,86 @@ from __future__ import annotations
 
 __all__ = [
     # Type Variables
-    "Self",
+    "ArgsType",
     "ClassType",
     "KeyType",
-    "ObjectType",
-    "ReturnType",
-    "ValueType",
     "nnModuleType",
-    "Parameters",
-    "Type",
-    # Generic Types
-    "Nested",
-    # Static Types
-    "PathType",
-    "PandasObject",
-    # Time Types
+    "ObjectType",
     "PandasVar",
+    "PathVar",
+    "ReturnType",
+    "Self",
     "TensorVar",
+    "Type",
+    "ValueType",
+    # Type Aliases
+    "PathType",
+    "Nested",
+    "PandasObject",
+    # ParamSpec
+    "Parameters",
 ]
 
 import os
-import sys
-import typing
 from collections.abc import Collection, Hashable, Mapping
 from pathlib import Path
-from typing import Any, TypeVar, Union
+from typing import Any, ParamSpec, TypeAlias, TypeVar
 
 from numpy import ndarray
 from pandas import DataFrame, Index, Series
 from torch import Tensor, nn
 
-if sys.version_info >= (3, 10):
-    ParamSpec = getattr(typing, "ParamSpec")  # noqa: B009
-else:
-    ParamSpec = typing.TypeVar
+Parameters = ParamSpec("Parameters")
+r"""TypeVar for decorated function inputs values."""
+
+# region TypeVars
 
 ArgsType = TypeVar("ArgsType")
 r"""TypeVar for `Mapping` values."""
 
-KeyType = TypeVar("KeyType", bound=Hashable)
-r"""TypeVar for `Mapping` keys."""
-
-ValueType = TypeVar("ValueType")
-r"""TypeVar for `Mapping` values."""
-
-Type = TypeVar("Type")
-r"""TypeVar for `Mapping` values."""
-
-Self = TypeVar("Self")
-r"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
-
 ClassType = TypeVar("ClassType", bound=type)
 r"""Generic type hint."""
 
-Parameters = ParamSpec("Parameters")
-r"""TypeVar for decorated function inputs values."""
-
-ObjectType = TypeVar("ObjectType", bound=object)
-r"""Generic type hint for instances."""
-
-ReturnType = TypeVar("ReturnType")
-r"""Generic type hint for return values."""
+KeyType = TypeVar("KeyType", bound=Hashable)
+r"""TypeVar for `Mapping` keys."""
 
 nnModuleType = TypeVar("nnModuleType", bound=nn.Module)
 r"""Type Variable for `torch.nn.Modules`."""
 
-# PathType = TypeVar("PathType", bound=Union[str, Path])
-# r"""Type for path-like objects."""
-
-PathType = Union[str, Path, os.PathLike[str]]
-r"""Type for path-like objects."""
-
-PathVar = TypeVar("PathVar", str, Path, os.PathLike[str])
-r"""TypeVar for path-like objects."""
-
-Nested = Union[
-    Collection[Type],
-    Mapping[Any, Type],
-    Type,
-]
-r"""Type for nested types (JSON-Like)."""
-
-PandasObject = Union[Index, Series, DataFrame]
-r"""Type Hint for `pandas` objects."""
+ObjectType = TypeVar("ObjectType", bound=object)
+r"""Generic type hint for instances."""
 
 PandasVar = TypeVar("PandasVar", Index, Series, DataFrame)
 r"""Type Variable for `pandas` objects."""
 
+PathVar = TypeVar("PathVar", str, Path, os.PathLike[str])
+r"""TypeVar for path-like objects."""
+
+ReturnType = TypeVar("ReturnType")
+r"""Generic type hint for return values."""
+
+Self = TypeVar("Self")
+r"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
+
 TensorVar = TypeVar("TensorVar", Tensor, ndarray)
 r"""Type Variable for `torch.Tensor` or `numpy.ndarray` objects."""
+
+Type = TypeVar("Type")
+r"""TypeVar for `Mapping` values."""
+ValueType = TypeVar("ValueType")
+r"""TypeVar for `Mapping` values."""
+
+# endregion
+
+# region TypeAliases
+
+PathType: TypeAlias = str | Path | os.PathLike[str]
+r"""Type for path-like objects."""
+
+Nested: TypeAlias = Type | Collection[Type] | Mapping[Any, Type]
+r"""Type for nested types (JSON-Like)."""
+
+PandasObject: TypeAlias = Index | Series | DataFrame
+r"""Type Hint for `pandas` objects."""
+
+# endregion

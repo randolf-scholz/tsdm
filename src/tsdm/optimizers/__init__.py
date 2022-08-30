@@ -9,7 +9,7 @@ __all__ = [
     "LR_SCHEDULERS",
 ]
 
-from typing import Final,TypeAlias
+from typing import Final, TypeAlias
 
 import torch.optim
 from torch.optim import lr_scheduler

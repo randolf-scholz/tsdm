@@ -21,7 +21,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Any, Generic, Optional, Union, overload
+from typing import Any, Generic, Optional, TypeAlias, overload
 from urllib.parse import urlparse
 
 import pandas
@@ -32,7 +32,7 @@ from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.remote import download
 from tsdm.utils.types import KeyType, Nested, PathType
 
-DATASET_OBJECT = Union[Series, DataFrame]
+DATASET_OBJECT: TypeAlias = Series | DataFrame
 r"""Type hint for pandas objects."""
 
 
@@ -316,7 +316,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
     r"""Dataset class that consists of a multiple DataFrames.
 
     The Datasets are accessed by their index.
-    We subclass Mapping to provide the mapping interface.
+    We subclass `Mapping` to provide the mapping interface.
     """
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
@@ -435,7 +435,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
 
     def load(
         self, *, key: Optional[KeyType] = None, force: bool = False, **kwargs: Any
-    ) -> Union[Any, Mapping[KeyType, Any]]:
+    ) -> Mapping[KeyType, DATASET_OBJECT] | DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT.
 
         Parameters

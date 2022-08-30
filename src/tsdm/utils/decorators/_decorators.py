@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, signature
 from time import perf_counter_ns
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, overload
 
 from torch import jit, nn
 
@@ -181,7 +181,7 @@ def decorator(deco: Callable) -> Callable:
     In either case the decorator sees as input (callable, None, None) and so it cannot distinguish
     whether the first input is a wrapping, or the wrapped.
 
-    Thus we either need to abandon positional arguments with default values.
+    Thus, we either need to abandon positional arguments with default values.
 
     Note however, that it is possible so save the situation by adding at least one
     mandatory positional argument:
@@ -291,8 +291,8 @@ def attribute(func):
         __slots__ = ("func", "payload")
         sentinel = object()
 
-        def __init__(self, func):
-            self.func = func
+        def __init__(self, function):
+            self.func = function
             self.payload = self.sentinel
 
         def __get__(self, obj, obj_type=None):
@@ -315,7 +315,7 @@ def timefun(
 ) -> Callable[..., ReturnType]:
     r"""Log the execution time of the function. Use as decorator.
 
-    By default appends the execution time (in seconds) to the function call.
+    By default, appends the execution time (in seconds) to the function call.
 
     `outputs, time_elapse = timefun(f, append=True)(inputs)`
 
@@ -480,7 +480,7 @@ def vectorize(
     /,
     *,
     kind: type[CollectionType],
-) -> Callable[[Union[ObjectType, CollectionType]], Union[ReturnType, CollectionType]]:
+) -> Callable[[ObjectType | CollectionType], ReturnType | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly
@@ -636,7 +636,7 @@ def wrap_func(
     before: Optional[Callable[..., Any]] = None,
     after: Optional[Callable[..., Any]] = None,
 ) -> Callable[..., ReturnType]:
-    r"""Wrap a function with pre and post hooks."""
+    r"""Wrap a function with pre- and post-hooks."""
     if before is None and after is None:
         __logger__.debug("No hooks added to %s", func)
         return func
@@ -729,7 +729,7 @@ def wrap_func(
 #
 #     @wraps(func)
 #     def wrapper(*args, **kwargs):
-#         r"""Wrap a function with pre and post hooks."""
+#         r"""Wrap a function with pre- and post-hooks."""
 #         pre_result = before(*args, **kwargs)
 #         result = func(pre_result)
 #         post_result = after(result)

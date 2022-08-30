@@ -7,8 +7,7 @@ __all__ = [
     "cumulative_and",
     "cumulative_or",
 ]
-
-from typing import Union
+from typing import Optional
 
 import torch
 from torch import Tensor, jit
@@ -17,11 +16,11 @@ from torch import Tensor, jit
 @jit.script
 def aggregate_and(
     x: Tensor,
-    dim: Union[None, int, list[int], Tensor] = None,
+    dim: Optional[int | list[int] | Tensor] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``AND`` across dim."""
-    dims: Union[list[int], Tensor]
+    dims: list[int] | Tensor
     if dim is None:
         dims = list(range(x.ndim))
     elif isinstance(dim, int):
@@ -50,7 +49,7 @@ def aggregate_and(
 @jit.script
 def aggregate_or(
     x: Tensor,
-    dim: Union[None, int, list[int]] = None,
+    dim: Optional[int | list[int]] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Compute logical ``OR`` across dim."""
@@ -72,7 +71,7 @@ def aggregate_or(
 
 
 @jit.script
-def cumulative_and(x: Tensor, dim: Union[None, int] = None) -> Tensor:
+def cumulative_and(x: Tensor, dim: Optional[int] = None) -> Tensor:
     r"""Cumulative aggregation with logical ``AND`` $yᵢ = ⋀_{j≤i} xⱼ$."""
     # TODO: rewrite with enumerate and &= when BUGS are fixed
     # BUG: https://github.com/pytorch/pytorch/issues/67142
@@ -85,7 +84,7 @@ def cumulative_and(x: Tensor, dim: Union[None, int] = None) -> Tensor:
 
 
 @jit.script
-def cumulative_or(x: Tensor, dim: Union[None, int] = None) -> Tensor:
+def cumulative_or(x: Tensor, dim: Optional[int] = None) -> Tensor:
     r"""Cumulative aggregation with logical ``OR`` $yᵢ = ⋁_{j≤i} xⱼ$."""
     # TODO: rewrite with enumerate and &= when BUGS are fixed
     # BUG: https://github.com/pytorch/pytorch/issues/67142

@@ -10,9 +10,10 @@ __all__ = [
     "ElectricityELBMBTTF",
 ]
 
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import Any, Literal
-from collections.abc import Callable, Mapping, Sequence
+
 import numpy as np
 import pandas as pd
 import torch

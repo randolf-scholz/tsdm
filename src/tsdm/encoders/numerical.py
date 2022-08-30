@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 from functools import singledispatchmethod
-from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union
+from typing import Any, Generic, NamedTuple, Optional, TypeAlias, TypeVar
 
 import numpy as np
 import torch
@@ -22,7 +22,7 @@ from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.strings import repr_namedtuple
 from tsdm.utils.types import PandasObject
 
-TensorLike = Union[Tensor, NDArray, DataFrame, Series]
+TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
 r"""Type Hint for tensor-like objects."""
 TensorType = TypeVar("TensorType", Tensor, np.ndarray, DataFrame, Series)
 r"""TypeVar for tensor-like objects."""
@@ -174,11 +174,11 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
 
-    xmin: Union[NDArray, Tensor]
-    xmax: Union[NDArray, Tensor]
-    ymin: Union[NDArray, Tensor]
-    ymax: Union[NDArray, Tensor]
-    scale: Union[NDArray, Tensor]
+    xmin: NDArray | Tensor
+    xmax: NDArray | Tensor
+    ymin: NDArray | Tensor
+    ymax: NDArray | Tensor
+    scale: NDArray | Tensor
     r"""The scaling factor."""
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""
@@ -200,12 +200,12 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     def __init__(
         self,
         /,
-        ymin: Optional[Union[float, TensorType]] = None,
-        ymax: Optional[Union[float, TensorType]] = None,
-        xmin: Optional[Union[float, TensorType]] = None,
-        xmax: Optional[Union[float, TensorType]] = None,
+        ymin: Optional[float | TensorType] = None,
+        ymax: Optional[float | TensorType] = None,
+        xmin: Optional[float | TensorType] = None,
+        xmax: Optional[float | TensorType] = None,
         *,
-        axis: Optional[Union[int, tuple[int, ...]]] = None,
+        axis: Optional[int | tuple[int, ...]] = None,
     ):
         r"""Initialize the MinMaxScaler.
 

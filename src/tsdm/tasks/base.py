@@ -95,7 +95,7 @@ from typing import Any, Generic, Optional
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import dataset
+from tsdm.datasets import Dataset
 from tsdm.encoders import ModularEncoder
 from tsdm.utils import LazyDict
 from tsdm.utils.types import KeyType
@@ -168,7 +168,7 @@ class BaseTask(ABC, Generic[KeyType], metaclass=BaseTaskMetaClass):
 
     @property
     @abstractmethod
-    def dataset(self) -> dataset:
+    def dataset(self) -> Dataset:
         r"""Return the cached dataset associated with the task."""
 
     @property

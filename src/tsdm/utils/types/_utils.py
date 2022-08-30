@@ -20,14 +20,12 @@ Numerical Type Hierarchy:
 - empty (contains only NA)
 """
 
-import logging
-from typing import Final, Optional, Union, cast
+from typing import Final, Optional, cast
 
 import numpy as np
 import pandas
+from numpy.typing import NDArray
 from pandas import Series
-
-__logger__ = logging.getLogger(__name__)
 
 NA_STRINGS: Final[set[str]] = {
     r"",
@@ -54,7 +52,7 @@ NA_VALUES: Final[set] = {
     np.datetime64("NaT"),
 }
 
-BOOLEAN_PAIRS: Final[list[dict[Union[str, int, float], bool]]] = [
+BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
     {"f": False, "t": True},
     {"false": False, "true": True},
     {"n": False, "y": True},
@@ -81,7 +79,7 @@ BOOLEAN_PAIRS: Final[list[dict[Union[str, int, float], bool]]] = [
 #         return None
 #
 #     values = series[mask]
-#     uniques = values.unqiue()
+#     uniques = values.unique()
 #
 #     # if string do string downcast
 #     if pandas.api.types.is_string_dtype(series):
@@ -103,7 +101,7 @@ def is_empty(series: Series) -> bool:
     return cast(bool, pandas.isna(series).all())
 
 
-def get_uniques(series: Series, ignore_nan: bool = True) -> Series:
+def get_uniques(series: Series, ignore_nan: bool = True) -> NDArray:
     r"""Return unique values, excluding nan.
 
     Parameters

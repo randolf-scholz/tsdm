@@ -20,7 +20,6 @@ from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
-
 NAN: float = torch.nan
 r"""Not a number constant."""
 

@@ -21,7 +21,7 @@ import warnings
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from copy import deepcopy
-from typing import Any, Final, Optional, Union, overload
+from typing import Any, Final, Optional, overload
 
 import numpy as np
 import pandas as pd
@@ -161,9 +161,9 @@ class DataFrameEncoder(BaseEncoder):
     It is assumed that the DataFrame Modality doesn't change.
     """
 
-    column_encoders: Union[BaseEncoder, Mapping[Any, BaseEncoder]]
+    column_encoders: BaseEncoder | Mapping[Hashable, BaseEncoder]
     r"""Encoders for the columns."""
-    index_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]] = None
+    index_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]] = None
     r"""Optional Encoder for the index."""
     colspec: Series
     r"""The columns-specification of the DataFrame."""
@@ -176,9 +176,9 @@ class DataFrameEncoder(BaseEncoder):
 
     def __init__(
         self,
-        column_encoders: Union[BaseEncoder, Mapping[Any, BaseEncoder]],
+        column_encoders: BaseEncoder | Mapping[Hashable, BaseEncoder],
         *,
-        index_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]] = None,
+        index_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]] = None,
     ):
         r"""Set up the individual encoders.
 
@@ -363,19 +363,17 @@ class FrameEncoder(BaseEncoder):
     index_dtypes: Series
     duplicate: bool = False
 
-    column_encoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+    column_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]]
     r"""Encoders for the columns."""
-    index_encoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+    index_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]]
     r"""Optional Encoder for the index."""
-    column_decoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+    column_decoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]]
     r"""Reverse Dictionary from encoded column name -> encoder"""
-    index_decoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+    index_decoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]]
     r"""Reverse Dictionary from encoded index name -> encoder"""
 
     @staticmethod
-    def _names(
-        obj: Union[Index, Series, DataFrame]
-    ) -> Union[Hashable, FrozenList[Hashable]]:
+    def _names(obj: Index | Series | DataFrame) -> Hashable | FrozenList[Hashable]:
         if isinstance(obj, MultiIndex):
             return FrozenList(obj.names)
         if isinstance(obj, (Series, Index)):
@@ -386,13 +384,9 @@ class FrameEncoder(BaseEncoder):
 
     def __init__(
         self,
-        column_encoders: Optional[
-            Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]
-        ] = None,
+        column_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]] = None,
         *,
-        index_encoders: Optional[
-            Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]
-        ] = None,
+        index_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]] = None,
         duplicate: bool = False,
     ):
         super().__init__()
@@ -540,9 +534,9 @@ class FrameIndexer(BaseEncoder):
     index_columns: Index
     index_dtypes: Series
     index_indices: list[int]
-    reset: Union[Hashable, list[Hashable]]
+    reset: Hashable | list[Hashable]
 
-    def __init__(self, *, reset: Optional[Union[Hashable, list[Hashable]]] = None):
+    def __init__(self, *, reset: Optional[Hashable | list[Hashable]] = None):
         super().__init__()
         if reset is None:
             self.reset = []
@@ -607,7 +601,7 @@ class FrameSplitter(BaseEncoder, Mapping):
     original_dtypes: Series
 
     # FIXME: Union[types.EllipsisType, set[Hashable]] in 3.10
-    groups: dict[Hashable, Union[Hashable, list[Hashable]]]
+    groups: dict[Hashable, Hashable | list[Hashable]]
     group_indices: dict[Hashable, list[int]]
 
     has_ellipsis: bool = False
@@ -620,7 +614,7 @@ class FrameSplitter(BaseEncoder, Mapping):
 
     def __init__(
         self,
-        groups: Union[Iterable[Hashable], Mapping[Hashable, Hashable]],
+        groups: Iterable[Hashable] | Mapping[Hashable, Hashable],
         /,
         dropna: bool = False,
         fillna: bool = True,
@@ -965,7 +959,7 @@ class TripletDecoder(BaseEncoder):
     r"""The original columns."""
     value_column: Hashable
     r"""The name of the value column."""
-    channel_columns: Union[Index, Hashable]
+    channel_columns: Index | Hashable
     r"""The name of the channel column(s)."""
 
     def __init__(
@@ -1077,7 +1071,7 @@ class TensorEncoder(BaseEncoder):
     r"""The device the tensors are stored in."""
     names: Optional[list[str]] = None
     # colspecs: list[Series]
-    # r"""The data types/column names of all the tensors.""
+    # r"""The data types/column names of all the tensors."""
     return_type: type = tuple
 
     def __init__(

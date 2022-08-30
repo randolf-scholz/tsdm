@@ -17,7 +17,7 @@ __all__ = [
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from copy import deepcopy
-from typing import Any, Sequence, Union, overload
+from typing import Any, Sequence, overload
 
 from tsdm.utils.decorators import wrap_func
 from tsdm.utils.strings import repr_sequence
@@ -187,9 +187,7 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
     def __getitem__(self, index: slice) -> ProductEncoder:  # noqa: D105
         ...
 
-    def __getitem__(
-        self, index: Union[int, slice]
-    ) -> Union[BaseEncoder, ProductEncoder]:
+    def __getitem__(self, index: int | slice) -> BaseEncoder | ProductEncoder:
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]
@@ -267,9 +265,7 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
     def __getitem__(self, index: slice) -> ChainedEncoder:  # noqa: D105
         ...
 
-    def __getitem__(
-        self, index: Union[int, slice]
-    ) -> Union[BaseEncoder, ChainedEncoder]:
+    def __getitem__(self, index: int | slice) -> BaseEncoder | ChainedEncoder:
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]

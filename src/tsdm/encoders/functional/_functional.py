@@ -19,7 +19,7 @@ __all__ = [
 
 
 import warnings
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -36,7 +36,7 @@ def infer_categories(s: Series) -> set:
 
 
 def triplet2dense(
-    df: DataFrame, cat_features: Optional[Union[dict[str, set], set]] = None
+    df: DataFrame, cat_features: Optional[set | dict[str, set]] = None
 ) -> DataFrame:
     r"""Convert a DataFrame in triplet format to dense format. Inverse operation of dense2triplet.
 
