@@ -324,6 +324,7 @@
       <w>timepoints</w>
       <w>timeseries</w>
       <w>timeslices</w>
+      <w>titlesonly</w>
       <w>tmax</w>
       <w>tmin</w>
       <w>toctree</w>
