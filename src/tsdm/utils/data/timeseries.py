@@ -15,7 +15,7 @@ __all__ = [
 
 from collections import namedtuple
 from collections.abc import Mapping, Sized
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, TypeAlias, Union
 
 import numpy as np
 from pandas import DataFrame, Index, Series, Timedelta
@@ -105,7 +105,7 @@ class TimeTensor(Tensor):
         self.iat = _IndexMethodClone(self, self.index, "iat")
 
 
-IndexedArray = Union[Series, DataFrame, TimeTensor]
+IndexedArray: TypeAlias = Series | DataFrame | TimeTensor
 r"""Type Hint for IndexedArrays."""
 
 
@@ -158,8 +158,8 @@ class TimeSeriesDataset(TorchDataset):
     - ds[t₀:t₁] = tuple[X[t₀:t₁] for X in self.timeseries], metadata
     """
 
-    timeseries: Union[IndexedArray, tuple[IndexedArray, ...]]
-    metadata: Optional[Union[IndexedArray, tuple[IndexedArray, ...]]] = None
+    timeseries: IndexedArray | tuple[IndexedArray, ...]
+    metadata: Optional[IndexedArray | tuple[IndexedArray, ...]] = None
     ts_type: type[tuple] = tuple
     r"""The type of the timeseries."""
     md_type: type[tuple] = tuple
@@ -172,7 +172,7 @@ class TimeSeriesDataset(TorchDataset):
             tuple[IndexedArray, ...],
             Mapping[str, IndexedArray],
         ],
-        metadata: Optional[Union[Any, tuple[Any, ...], dict[str, Any]]] = None,
+        metadata: Optional[Any | tuple[Any, ...] | dict[str, Any]] = None,
     ):
         super().__init__()
 

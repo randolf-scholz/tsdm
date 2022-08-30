@@ -8,13 +8,13 @@ __all__ = [
 ]
 
 from collections.abc import Mapping, Sequence
-from typing import Optional
+from typing import Optional, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
-FOLDS = Sequence[Mapping[str, Series]]
+FOLDS: TypeAlias = Sequence[Mapping[str, Series]]
 r"""Type Hint for Folds"""
 
 

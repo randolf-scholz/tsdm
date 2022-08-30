@@ -39,7 +39,9 @@ from tsdm.utils.types import Nested, ObjectType, PathType, ReturnType
 from tsdm.utils.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
-EmptyPath: Path = Path()
+
+EMPTY_PATH: Path = Path()
+r"""Constant: Blank path."""
 
 
 def pairwise_disjoint(sets: Iterable[set]) -> bool:
@@ -301,13 +303,12 @@ def initialize_from(  # type: ignore[misc]
     lookup_table: Union[
         dict[str, type[ObjectType]],
         dict[str, Callable[..., ReturnType]],
-        dict[str, Union[type[ObjectType], Callable[..., ReturnType]]],
-        dict[str, Union[Callable[..., ReturnType], type[ObjectType]]],
+        dict[str, type[ObjectType] | Callable[..., ReturnType]],
     ],
     /,
     __name__: str,
     **kwargs: Any,
-) -> Union[ObjectType, Callable[..., ReturnType]]:
+) -> ObjectType | Callable[..., ReturnType]:
     r"""Lookup class/function from dictionary and initialize it.
 
     Roughly equivalent to:
@@ -395,7 +396,7 @@ def initialize_from_config(config: dict[str, Any]) -> Any:
 def paths_exists(
     paths: Nested[Optional[PathType]],
     *,
-    parent: Path = EmptyPath,
+    parent: Path = EMPTY_PATH,
 ) -> bool:
     r"""Check whether the files exist.
 
