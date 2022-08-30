@@ -47,7 +47,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="linodenet" />
     <orderEntry type="module" module-name="neurips-2022" />
   </component>
   <component name="PackageRequirementsSettings">
