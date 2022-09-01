@@ -26,11 +26,9 @@ keywords = ["time-series", "machine-learning"]
 documentation = "https://www.user.tu-berlin.de/randolf.scholz/tsdm"
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Environment :: GPU :: NVIDIA CUDA :: 11.3",
-    "Environment :: GPU :: NVIDIA CUDA",
+    "Environment :: GPU :: NVIDIA CUDA :: 11.6",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
@@ -45,11 +43,11 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
-Pillow = ">=9.1.1"
 h5py = ">=3.4.0"
 matplotlib = ">=3.5"
 numpy = ">=1.22"
 pandas = ">=1.4"
+pillow = ">=9.1.1"
 pyarrow = ">=8.0"
 pyyaml = ">=6.0"
 scikit-learn = ">=1.1"
