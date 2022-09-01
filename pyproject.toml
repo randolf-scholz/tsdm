@@ -149,7 +149,7 @@ generated-members=["numpy.*","torch.*"]
 allow_redefinition = true
 color_output = true
 error_summary = true
-files = ["src/", "test/"]
+files = ["src/", "tests/"]
 plugins = ["numpy.typing.mypy_plugin"]
 pretty = true
 python_version = "3.10"
@@ -187,7 +187,7 @@ ignore_missing_imports = true
 # black-compatible: black, appnexus
 py_version=310
 profile="black"
-src_paths=["src/", "test/"]
+src_paths=["src/", "tests/"]
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
 # black-compatible: black, appnexus
 
@@ -196,7 +196,7 @@ src_paths=["src/", "test/"]
 #######################
 [tool.black]
 line-length = 88
-target-version = ['py39']
+target-version = ['py310']
 color = true
 
 ############################
@@ -215,7 +215,7 @@ venv = ".venv"
 venvPath = "."
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
-include = ["src/", "test/"]
+include = ["src/", "tests/"]
 exclude = [
     "**/node_modules",
     "**/__pycache__",
@@ -230,7 +230,7 @@ reportPrivateImportUsage = false
 ########################
 [tool.pytest]
 [tool.pytest.ini_options]
-testpaths = [ "test/" ]
+testpaths = [ "tests/" ]
 reruns = "3"
 only_rerun = "AssertionError"
 cov = "tsdm"
@@ -259,5 +259,5 @@ exclude_lines = [
 [tool.coverage.run]
 source = [
     "tsdm/",
-    "test/",
+    "tests/",
 ]
