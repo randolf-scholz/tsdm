@@ -16,9 +16,9 @@ default:
 
 variables:
   PYTHON_VERSION: "3.10"
-  MODULEDIR: "src/tsdm"
+  MODULEDIR: "src/tsdm/"
   MODULENAME: "tsdm"
-  TESTDIR: "tests"
+  TESTDIR: "tests/"
   MAIN_CACHE: "$CI_PROJECT_DIR/.cache"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
@@ -65,7 +65,6 @@ setup:
     - virtualenv ${VENVNAME} --download
     - source ${VENVNAME}/bin/activate
     - pip install --upgrade pip setuptools wheel
-    # - pip install --upgrade --only-binary ":all:" modin[ray]
   script:
     # We first build the package and then install it. Finally, we install the dev dependencies.
     # This makes sure that the package can be built and installed.
@@ -136,7 +135,6 @@ pylint:
       --load-plugins=pylint_gitlab
       --output-format=gitlab-codeclimate
       > reports/codeclimate.json
-    - ls reports
     # colorized for human readability
     - pylint $TESTDIR --exit-zero --output-format=colorized
     - pylint $MODULEDIR --exit-zero --output-format=colorized | tee pylint.log
