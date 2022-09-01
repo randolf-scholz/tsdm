@@ -104,7 +104,7 @@ types-setuptools = ">=65.3"
 types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 wheel = ">=0.37"
-pyre-check = "^0.9.15"
+pyre-check = ">=0.9"
 
 
 [tool.poetry.scripts]
@@ -214,20 +214,41 @@ convention = "numpy"
 # pyright Configuration #
 #########################
 [tool.pyright]
-root = ""
-venv = ".venv"
-venvPath = "."
-pythonVersion = "3.10"
-pythonPlatform = "Linux"
-include = ["src/", "tests/"]
+include = ["src/"]
 exclude = [
     "**/node_modules",
     "**/__pycache__",
     "**/.ipynb_checkpoints",
+    ".venv/lib/python3.10/site-packages/torch",
 ]
-reportMissingImports = false
+#defineConstant
+#ignore
+#strict
+#stubPath = ""
+#typeshedPath=
+#useLibraryCodeForTypes=
+#verboseOutput=
+pythonPlatform = "Linux"
+pythonVersion = "3.10"
+#typeCheckingMode = "off"
+venv = ".venv/"
+venvPath = "."
+
+executionEnvironments = [
+    {root = "src/", pythonVersion = "3.10", pythonPlatform = "Linux", extraPaths = [""]}
+]
+
+# region Type Check Diagnostics Settings
+
+reportMissingImports = "off"
+reportMissingTypeStubs = false
 reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false
+
+# endregion
+
+
+
 
 ########################
 # PyTest Configuration #
