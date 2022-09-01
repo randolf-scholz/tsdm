@@ -69,7 +69,7 @@ repos:
     rev: 6.1.1
     hooks:
       - id: pydocstyle
-        files: (^src/|^test/)
+        files: (^src/|^tests/)
         additional_dependencies:
           - toml
   # isort
@@ -82,7 +82,7 @@ repos:
     rev: 5.0.4
     hooks:
       - id: flake8
-        files: (^src/|^test/)
+        files: (^src/|^tests/)
         additional_dependencies:
           - flake8-annotations
           - flake8-black

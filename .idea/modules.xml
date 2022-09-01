@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../neurips-2022/.idea/neurips-2022.iml" filepath="$PROJECT_DIR$/../neurips-2022/.idea/neurips-2022.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../python-venv/.idea/python-venv.iml" filepath="$PROJECT_DIR$/../python-venv/.idea/python-venv.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/tsdm.iml" filepath="$PROJECT_DIR$/.idea/tsdm.iml" />
     </modules>
   </component>

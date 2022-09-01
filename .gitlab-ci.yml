@@ -15,9 +15,10 @@ default:
     - docker
 
 variables:
+  PYTHON_VERSION: "3.10"
   MODULEDIR: "src/tsdm"
-  MODULENAME: tsdm
-  TESTDIR: test
+  MODULENAME: "tsdm"
+  TESTDIR: "tests"
   MAIN_CACHE: "$CI_PROJECT_DIR/.cache"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
@@ -25,7 +26,7 @@ variables:
   VENVNAME: ".venv"
   VENV_DIR: "${CI_PROJECT_DIR}/${VENVNAME}"
   TWINE_PASSWORD: "${CI_JOB_TOKEN}"
-  TWINE_USERNAME: gitlab-ci-token
+  TWINE_USERNAME: "gitlab-ci-token"
   TWINE_REPOSITORY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi"
 
 # global before_script is run before each and every job.
@@ -93,7 +94,7 @@ setup:
     # generate python version badge
     - python -m pybadges
       --left-text="python"
-      --right-text="3.9"
+      --right-text="$PYTHON_VERSION"
       --whole-link="https://www.python.org/"
       --logo="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg"
       --embed-logo

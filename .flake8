@@ -56,11 +56,13 @@ extend-ignore =
     D407,       # Missing dashed underline after section
 
 exclude =
+    *.pyi,
     ./.git,
+    ./.idea,
     ./build,
     ./scripts,
+    ./.venv,
     ./venv,
-    *.pyi,
     ./dev,
 
 # Annotations plugin
