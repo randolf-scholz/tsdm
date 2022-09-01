@@ -43,23 +43,24 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
-h5py = ">=3.4.0"
+h5py = ">=3.7"
 matplotlib = ">=3.5"
-numpy = ">=1.22"
+numpy = ">=1.23"
 pandas = ">=1.4"
-pillow = ">=9.1.1"
-pyarrow = ">=8.0"
+pillow = ">=9.2"
+pyarrow = ">=9.0"
 pyyaml = ">=6.0"
 scikit-learn = ">=1.1"
-scipy = ">=1.7"
-tables = ">=3.6"
+scipy = ">=1.9"
+tables = ">=3.7"
 tensorboard = ">=2.9"
 torch = ">=1.12"
 tqdm = ">=4.64"
 typing-extensions = ">=4.3"
 
-[tool.poetry.dev-dependencies]
-black = {version = ">=22.6", extras = ["jupyter"]}
+
+[tool.poetry.group.dev.dependencies]
+black = {version = ">=22.8", extras = ["jupyter"]}
 blacken-docs = ">=1.12"
 docutils = ">=0.19"
 flake8 = ">=5.0"
@@ -83,6 +84,7 @@ pydata-sphinx-theme = ">=0.10"
 pydocstyle = ">=6.1"
 pylint = ">=2.15"
 pylint-gitlab = ">=1.1"
+pyright = ">=1.1"
 pytest = ">=7.1"
 pytest-cov = ">=3.0"
 pytest-rerunfailures = ">=10.2"
@@ -102,6 +104,7 @@ types-setuptools = ">=65.3"
 types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 wheel = ">=0.37"
+pyre-check = "^0.9.15"
 
 
 [tool.poetry.scripts]
@@ -109,6 +112,9 @@ wheel = ">=0.37"
 ########################
 # PyLint Configuration #
 ########################
+
+
+
 [tool.pylint]
 [tool.pylint."MESSAGES CONTROL"]
 enable= [
