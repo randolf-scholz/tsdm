@@ -58,7 +58,7 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 Normal Encoder
 --------------
 
-A normal pre_encoder is an pre_encoder with the property that all output tensors
+A normal pre_encoder is a pre_encoder with the property that all output tensors
 share the same index axis.
 
 I.e. it has a signature of the form ``list[tensor[n, ...]] -> list[tensor[n, ...]]``.
@@ -95,7 +95,7 @@ from typing import Any, Generic, Optional
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import dataset
+from tsdm.datasets import Dataset
 from tsdm.encoders import ModularEncoder
 from tsdm.utils import LazyDict
 from tsdm.utils.types import KeyType
@@ -168,7 +168,7 @@ class BaseTask(ABC, Generic[KeyType], metaclass=BaseTaskMetaClass):
 
     @property
     @abstractmethod
-    def dataset(self) -> dataset:
+    def dataset(self) -> Dataset:
         r"""Return the cached dataset associated with the task."""
 
     @property

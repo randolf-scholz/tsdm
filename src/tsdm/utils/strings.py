@@ -14,25 +14,27 @@ __all__ = [
     "dict2string",
 ]
 import builtins
-import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
-from typing import Any, Optional, Union, overload
+from typing import Any, NamedTuple, Optional, cast, overload
 
 from pandas import DataFrame, Series
 from torch import Tensor
 
 from tsdm.utils.types.protocols import Array, NTuple
 
-__logger__ = logging.getLogger(__name__)
-
 
 @overload
-def snake2camel(s: str) -> str:  # type: ignore[misc]
+def snake2camel(s: str) -> str:
     ...
 
 
 @overload
-def snake2camel(s: Iterable[str]) -> list[str]:
+def snake2camel(s: list[str]) -> list[str]:
+    ...
+
+
+@overload
+def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]:
     ...
 
 
@@ -47,11 +49,17 @@ def snake2camel(s):
     -------
     str | Iterable[str]
     """
+    if isinstance(s, tuple):
+        return tuple(snake2camel(x) for x in s)
+
     if isinstance(s, Iterable) and not isinstance(s, str):
         return [snake2camel(x) for x in s]
 
-    substrings = s.split("_")
-    return "".join(s[0].capitalize() + s[1:] for s in substrings)
+    if isinstance(s, str):
+        substrings = s.split("_")
+        return "".join(s[0].capitalize() + s[1:] for s in substrings)
+
+    raise TypeError(f"Type {type(s)} nor understood, expected string or iterable.")
 
 
 def tensor_info(x: Tensor) -> str:
@@ -102,6 +110,7 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
     if isinstance(obj, Mapping):
         return repr_mapping(obj, **kwargs)
     if isinstance(obj, NTuple):
+        obj = cast(NamedTuple, obj)
         return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, **kwargs)
@@ -118,7 +127,7 @@ def repr_mapping(
     linebreaks: bool = True,
     maxitems: int = 6,
     padding: int = 4,
-    recursive: Union[bool, int] = True,
+    recursive: bool | int = True,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
     align: bool = False,
@@ -190,7 +199,7 @@ def repr_sequence(
     linebreaks: bool = True,
     maxitems: int = 6,
     padding: int = 4,
-    recursive: Union[bool, int] = True,
+    recursive: bool | int = True,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
@@ -239,12 +248,12 @@ def repr_sequence(
 
 
 def repr_namedtuple(
-    obj: NTuple,
+    obj: NamedTuple,
     *,
     linebreaks: bool = True,
     maxitems: int = 6,
     padding: int = 4,
-    recursive: Union[bool, int] = True,
+    recursive: bool | int = True,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
@@ -265,6 +274,9 @@ def repr_namedtuple(
     str
     """
     title = type(obj).__name__ if title is None else title
+
+    # if not hasattr(obj, "_asdict"):
+
     return repr_mapping(
         obj._asdict(),
         padding=padding,
@@ -277,7 +289,7 @@ def repr_namedtuple(
 
 
 def repr_array(obj: Array, *, title: Optional[str] = None) -> str:
-    r"""Return a string representation of a array object.
+    r"""Return a string representation of an array object.
 
     Parameters
     ----------

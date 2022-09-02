@@ -1,7 +1,4 @@
-r"""In silico experiments.
-
-TODO: Module Summary
-"""
+r"""In silico experiments."""
 
 __all__ = [
     # Classes

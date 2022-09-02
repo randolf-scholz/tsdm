@@ -16,14 +16,14 @@ __all__ = [
 
 from collections.abc import Iterable, Sequence
 from functools import singledispatch
-from typing import Optional, Union, cast, overload
+from typing import Optional, TypeAlias, cast, overload
 
 import numpy as np
 import torch
 from numpy.typing import ArrayLike, NDArray
 from torch import Tensor, jit
 
-SizeLike = Union[int, tuple[int, ...]]
+SizeLike: TypeAlias = int | tuple[int, ...]
 r"""Type hint for a size-like object."""
 
 
@@ -40,8 +40,8 @@ r"""Type hint for a size-like object."""
 
 @singledispatch
 def relative_error(
-    xhat: Union[ArrayLike, Tensor], x_true: Union[ArrayLike, Tensor]
-) -> Union[NDArray, Tensor]:
+    xhat: ArrayLike | Tensor, x_true: ArrayLike | Tensor
+) -> NDArray | Tensor:
     r"""Relative error, works with both `Tensor` and `ndarray`.
 
     .. math:: r(x̂, x) = \tfrac{|x̂ - x|}{|x|+ε}
@@ -144,13 +144,13 @@ def scaled_norm(
 
 
 def scaled_norm(
-    x: Union[Tensor, NDArray, Sequence[Tensor], Sequence[NDArray]],
+    x: Tensor | NDArray | Sequence[Tensor] | Sequence[NDArray],
     /,
     *,
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
-) -> Union[Tensor, NDArray]:
+) -> Tensor | NDArray:
     r"""Scaled $ℓ^p$-norm, works with both `Tensor` and `ndarray`.
 
     .. math:: ‖x‖_p = (⅟ₙ ∑_{i=1}^n |x_i|^p)^{1/p}
@@ -259,12 +259,12 @@ def multi_scaled_norm(
 
 
 def multi_scaled_norm(
-    x: Union[Sequence[Tensor], Sequence[NDArray]],
+    x: Sequence[Tensor] | Sequence[NDArray],
     /,
     *,
     p: float = 2,
     q: float = 2,
-) -> Union[Tensor, NDArray]:
+) -> Tensor | NDArray:
     # TODO: figure out correct normalization
     r"""Scaled Lpq-norm.
 

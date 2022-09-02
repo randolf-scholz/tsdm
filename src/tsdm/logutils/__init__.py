@@ -16,7 +16,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from typing import Final
+from typing import Final, TypeAlias
 
 from tsdm.logutils._logutils import (
     StandardLogger,
@@ -28,7 +28,7 @@ from tsdm.logutils._logutils import (
     log_values,
 )
 
-Logger = Callable[..., None]
+Logger: TypeAlias = Callable[..., None]
 
 LOGGERS: Final[dict[str, Logger]] = {
     "log_optimizer_state": log_optimizer_state,

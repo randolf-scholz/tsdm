@@ -13,7 +13,8 @@ from docutils.parsers.rst import Directive
 class HelloWorld(Directive):
     r"""Hello World directive."""
 
-    def run(self):
+    @staticmethod
+    def run():
         r"""Run the directive."""
         paragraph_node = nodes.paragraph(text="Hello World!")
         return [paragraph_node]

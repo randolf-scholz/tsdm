@@ -1,7 +1,7 @@
 r"""Statistical Analysis."""
 
 __all__ = [
-    #
+    # Sub-Modules
     "regularity_tests",
     # Functions
     "data_overview",

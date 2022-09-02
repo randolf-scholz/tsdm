@@ -28,12 +28,8 @@ __all__ = [
     "AsyncGeneratorType",
 ]
 
-import logging
 from collections import abc
 from typing import TypeVar
-
-__logger__ = logging.getLogger(__name__)
-
 
 ContainerType = TypeVar("ContainerType", bound=abc.Container)
 r"""Type variable for Containers."""

@@ -49,7 +49,7 @@ from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 @torch.no_grad()
 def compute_metrics(
-    metrics: Union[dict[str, Any], list[Any]], *, targets: Tensor, predics: Tensor
+    metrics: list | dict[str, Any], *, targets: Tensor, predics: Tensor
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics.
 
@@ -92,7 +92,7 @@ def log_kernel_information(
     writer: SummaryWriter,
     kernel: Tensor,
     *,
-    histograms: Union[bool, int] = False,
+    histograms: bool | int = False,
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -153,7 +153,7 @@ def log_optimizer_state(
     writer: SummaryWriter,
     optimizer: Optimizer,
     *,
-    histograms: Union[bool, int] = False,
+    histograms: bool | int = False,
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -203,7 +203,7 @@ def log_model_state(
     writer: SummaryWriter,
     model: Model,
     *,
-    histograms: Union[bool, int] = False,
+    histograms: bool | int = False,
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -234,7 +234,7 @@ def log_metrics(
     i: int,
     /,
     writer: SummaryWriter,
-    metrics: Union[dict[str, Loss], Sequence[str]],
+    metrics: Sequence[str] | dict[str, Loss],
     *,
     targets: Tensor,
     predics: Tensor,
@@ -288,8 +288,8 @@ class StandardLogger:
     dataloaders: Mapping[str, DataLoader]
     hparam_dict: dict[str, Any]
     predict_fn: Union[
-        Callable[[nn.Module, tuple], ResultTuple],
         Callable[[nn.Module, tuple], tuple],
+        Callable[[nn.Module, tuple], ResultTuple],
         Callable[[nn.Module, tuple], ResultDict],
     ]
     checkpoint_dir: Path
@@ -384,11 +384,11 @@ class StandardLogger:
         self,
         i: int,
         *,
-        histograms: Union[bool, int] = True,
-        kernel_information: Union[bool, int] = 1,
-        model_state: Union[bool, int] = 10,
-        optimizer_state: Union[bool, int] = False,
-        make_checkpoint: Union[bool, int] = 10,
+        histograms: bool | int = True,
+        kernel_information: bool | int = 1,
+        model_state: bool | int = 10,
+        optimizer_state: bool | int = False,
+        make_checkpoint: bool | int = 10,
     ) -> None:
         r"""Log epoch end."""
         self.log_all_metrics(i)
@@ -431,7 +431,7 @@ class StandardLogger:
 
     def log_hparams(self, i: int, /) -> None:
         r"""Log hyperparameters."""
-        # find best epoch on the smoothed validation curve
+        # Find the best epoch on the smoothed validation curve
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
 
         scores = {
@@ -470,7 +470,7 @@ class StandardLogger:
         i: int,
         /,
         *,
-        histograms: Union[bool, int] = False,
+        histograms: bool | int = False,
         prefix: str = "",
         postfix: str = "",
     ) -> None:
@@ -489,7 +489,7 @@ class StandardLogger:
         i: int,
         /,
         *,
-        histograms: Union[bool, int] = False,
+        histograms: bool | int = False,
         prefix: str = "",
         postfix: str = "",
     ) -> None:
@@ -508,7 +508,7 @@ class StandardLogger:
         i: int,
         /,
         *,
-        histograms: Union[bool, int] = False,
+        histograms: bool | int = False,
         prefix: str = "",
         postfix: str = "",
     ) -> None:
