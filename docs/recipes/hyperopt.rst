@@ -23,7 +23,6 @@ Without parallelization
         score[model, outer_split] = evaluate(model, outer_split.test)
     return aggregate(score, splits)
 
-
 With parallelization
 
 .. code-block:: python

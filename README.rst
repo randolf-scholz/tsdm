@@ -33,7 +33,7 @@ To push to both repositories do the following
     git remote -v
     git remote remove ...
 
-2. Add origin either berlin or hildseheim
+2. Add origin either berlin or hildesheim
 
 .. code-block:: shell
 

@@ -18,7 +18,7 @@ __all__ = [
     "compute_grid",
 ]
 
-from typing import Final
+from typing import Final, TypeAlias
 
 from torch.utils import data as torch_utils_data
 
@@ -34,7 +34,7 @@ from tsdm.random.samplers._samplers import (
     compute_grid,
 )
 
-Sampler = torch_utils_data.Sampler
+Sampler: TypeAlias = torch_utils_data.Sampler
 r"""Type hint for samplers."""
 
 SAMPLERS: Final[dict[str, type[Sampler]]] = {

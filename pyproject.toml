@@ -14,7 +14,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
-version = "0.3.0"
+version = "0.3.1"
 description = "Time-Series Datasets and Models"
 license = "MIT"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
@@ -26,11 +26,9 @@ keywords = ["time-series", "machine-learning"]
 documentation = "https://www.user.tu-berlin.de/randolf.scholz/tsdm"
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Environment :: GPU :: NVIDIA CUDA :: 11.3",
-    "Environment :: GPU :: NVIDIA CUDA",
+    "Environment :: GPU :: NVIDIA CUDA :: 11.6",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
@@ -45,64 +43,68 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
-Pillow = ">=9.1.1"
-h5py = ">=3.4.0"
+h5py = ">=3.7"
 matplotlib = ">=3.5"
-numpy = ">=1.22"
+numpy = ">=1.23"
 pandas = ">=1.4"
-pyarrow = ">=8.0"
+pillow = ">=9.2"
+pyarrow = ">=9.0"
 pyyaml = ">=6.0"
 scikit-learn = ">=1.1"
-scipy = ">=1.7"
-tables = ">=3.6"
+scipy = ">=1.9"
+tables = ">=3.7"
 tensorboard = ">=2.9"
 torch = ">=1.12"
-tqdm = ">=4.64.0"
-typing-extensions = ">=4.3.0"
+tqdm = ">=4.64"
+typing-extensions = ">=4.3"
 
-[tool.poetry.dev-dependencies]
-black = {version = ">=22.1.0", extras = ["jupyter"]}
-blacken-docs = ">=1.12.1"
+
+[tool.poetry.group.dev.dependencies]
+black = {version = ">=22.8", extras = ["jupyter"]}
+blacken-docs = ">=1.12"
 docutils = ">=0.19"
 flake8 = ">=5.0"
-flake8-annotations = ">=2.7.0"
-flake8-black = ">=0.2.4"
-flake8-bugbear = ">=22.1.11"
-flake8-comprehensions = ">=3.8.0"
-flake8-docstrings = ">=1.6.0"
-flake8-pyi = ">=22.1.0"
-flake8-rst = ">=0.8.0"
-flake8-rst-docstrings = ">=0.2.5"
-isort = ">=5.10.1"
+flake8-annotations = ">=2.9"
+flake8-black = ">=0.3"
+flake8-bugbear = ">=22.8"
+flake8-comprehensions = ">=3.10"
+flake8-docstrings = ">=1.6"
+flake8-pyi = ">=22.8"
+flake8-rst = ">=0.8"
+flake8-rst-docstrings = ">=0.2"
+isort = ">=5.10"
 jupyter = ">=1.0.0"
-jupyterlab = ">=3.4.4"
-mypy = ">=0.941"
-pre-commit = ">=2.17.0"
+jupyterlab = ">=3.4"
+mypy = ">=0.971"
+pre-commit = ">=2.20"
 pybadges = ">=3.0"
-pycodestyle = ">=2.8.0"
-pydeps = ">=1.10.12"
-pydata-sphinx-theme = ">=0.9.0"
-pydocstyle = ">=6.1.1"
-pylint = ">=2.12.2"
-pylint-gitlab = ">=1.0.0"
-pytest = ">=6.2.5"
-pytest-cov = ">=3.0.0"
+pycodestyle = ">=2.9"
+pydata-sphinx-theme = ">=0.10"
+pydeps = ">=1.10"
+pydocstyle = ">=6.1"
+pylint = ">=2.15"
+pylint-gitlab = ">=1.1"
+pyre-check = ">=0.9"
+pyright = ">=1.1"
+pytest = ">=7.1"
+pytest-cov = ">=3.0"
 pytest-rerunfailures = ">=10.2"
-setuptools = ">=60.7.1"
+setuptools = ">=65.3"
 sphinx = ">=5.1"
-sphinx-autoapi = ">=1.8.4"
-sphinx-copybutton = ">=0.5.0"
+sphinx-autoapi = ">=1.9"
+sphinx-copybutton = ">=0.5"
 sphinx-math-dollar = ">=1.2"
-twine = ">=3.8.0"
-types-docutils = ">=0.19.0"
-types-pillow = ">=9.0.15"
-types-pyyaml = ">=6.0.4"
-types-protobuf = ">=3.19.8"
-types-requests = ">=2.27.30"
-types-setuptools = ">=57.4.8"
-types-six = ">=1.16.10"
-types-typing-extensions = ">=3.7.0"
-wheel = ">=0.37.1"
+tqdm = ">=4.64"
+twine = ">=4.0"
+types-docutils = ">=0.19"
+types-pillow = ">=9.2"
+types-protobuf = ">=3.20"
+types-pyyaml = ">=6.0"
+types-requests = ">=2.28"
+types-setuptools = ">=65.3"
+types-six = ">=1.16"
+types-typing-extensions = ">=3.7"
+wheel = ">=0.37"
 
 
 [tool.poetry.scripts]
@@ -110,6 +112,9 @@ wheel = ">=0.37.1"
 ########################
 # PyLint Configuration #
 ########################
+
+
+
 [tool.pylint]
 [tool.pylint."MESSAGES CONTROL"]
 enable= [
@@ -148,7 +153,7 @@ generated-members=["numpy.*","torch.*"]
 allow_redefinition = true
 color_output = true
 error_summary = true
-files = ["src/", "test/"]
+files = ["src/", "tests/"]
 plugins = ["numpy.typing.mypy_plugin"]
 pretty = true
 python_version = "3.10"
@@ -186,7 +191,7 @@ ignore_missing_imports = true
 # black-compatible: black, appnexus
 py_version=310
 profile="black"
-src_paths=["src/", "test/"]
+src_paths=["src/", "tests/"]
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
 # black-compatible: black, appnexus
 
@@ -195,7 +200,7 @@ src_paths=["src/", "test/"]
 #######################
 [tool.black]
 line-length = 88
-target-version = ['py39']
+target-version = ['py310']
 color = true
 
 ############################
@@ -209,27 +214,48 @@ convention = "numpy"
 # pyright Configuration #
 #########################
 [tool.pyright]
-root = ""
-venv = ".venv"
-venvPath = "."
-pythonVersion = "3.10"
-pythonPlatform = "Linux"
-include = ["src/", "test/"]
+include = ["src/"]
 exclude = [
     "**/node_modules",
     "**/__pycache__",
     "**/.ipynb_checkpoints",
+    ".venv/lib/python3.10/site-packages/torch",
 ]
-reportMissingImports = false
+#defineConstant
+#ignore
+#strict
+#stubPath = ""
+#typeshedPath=
+#useLibraryCodeForTypes=
+#verboseOutput=
+pythonPlatform = "Linux"
+pythonVersion = "3.10"
+#typeCheckingMode = "off"
+venv = ".venv/"
+venvPath = "."
+
+executionEnvironments = [
+    {root = "src/", pythonVersion = "3.10", pythonPlatform = "Linux", extraPaths = [""]}
+]
+
+# region Type Check Diagnostics Settings
+
+reportMissingImports = "off"
+reportMissingTypeStubs = false
 reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false
+
+# endregion
+
+
+
 
 ########################
 # PyTest Configuration #
 ########################
 [tool.pytest]
 [tool.pytest.ini_options]
-testpaths = [ "test/" ]
+testpaths = [ "tests/" ]
 reruns = "3"
 only_rerun = "AssertionError"
 cov = "tsdm"
@@ -258,5 +284,5 @@ exclude_lines = [
 [tool.coverage.run]
 source = [
     "tsdm/",
-    "test/",
+    "tests/",
 ]

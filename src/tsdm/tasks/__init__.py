@@ -43,7 +43,7 @@ __all__ = [
 ]
 
 
-from typing import Final
+from typing import Final, TypeAlias
 
 from tsdm.tasks import base
 from tsdm.tasks.base import BaseTask
@@ -55,7 +55,7 @@ from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
 from tsdm.tasks.mimic_iii import MIMIC_DeBrouwer
 from tsdm.tasks.ushcn import USHCN_DeBrouwer
 
-Task = BaseTask
+Task: TypeAlias = BaseTask
 r"""Type hint for tasks."""
 
 TASKS: Final[dict[str, type[Task]]] = {

@@ -39,7 +39,9 @@ from tsdm.utils.types import Nested, ObjectType, PathType, ReturnType
 from tsdm.utils.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
-EmptyPath: Path = Path()
+
+EMPTY_PATH: Path = Path()
+r"""Constant: Blank path."""
 
 
 def pairwise_disjoint(sets: Iterable[set]) -> bool:
@@ -198,7 +200,7 @@ def prepend_path(
     Parameters
     ----------
     files
-        Nested datastructes with Path-objects at leave nodes.
+        Nested datastructures with Path-objects at leave nodes.
     parent: Path
     keep_none: bool
         If True, None-values are kept.
@@ -246,24 +248,6 @@ def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
     raise ValueError(f"{type(nested)} is not understood")
 
 
-# T = TypeVar("T")   \t\ \̃   \hy ŷ yy{̂y}    \tg g̃
-# S = TypeVar("S")
-
-
-# ModularTable = dict[str, type[T]]
-# FunctionalTable = dict[str, Callable[..., S]]
-# LookupTable = Union[
-#     ModularTable, FunctionalTable, dict[str, Union[type[T], Callable[..., S]]]
-# ] \dLG 32UN650-Wcafga \d ẋ
-
-
-# @overload
-# def initialize_from(
-#     lookup_table: dict[str, ObjectType], __name__: str, **kwargs: Any
-# ) -> ObjectType:
-#     ...
-
-
 # partial from type
 @overload
 def initialize_from(
@@ -301,13 +285,12 @@ def initialize_from(  # type: ignore[misc]
     lookup_table: Union[
         dict[str, type[ObjectType]],
         dict[str, Callable[..., ReturnType]],
-        dict[str, Union[type[ObjectType], Callable[..., ReturnType]]],
-        dict[str, Union[Callable[..., ReturnType], type[ObjectType]]],
+        dict[str, type[ObjectType] | Callable[..., ReturnType]],
     ],
     /,
     __name__: str,
     **kwargs: Any,
-) -> Union[ObjectType, Callable[..., ReturnType]]:
+) -> ObjectType | Callable[..., ReturnType]:
     r"""Lookup class/function from dictionary and initialize it.
 
     Roughly equivalent to:
@@ -395,7 +378,7 @@ def initialize_from_config(config: dict[str, Any]) -> Any:
 def paths_exists(
     paths: Nested[Optional[PathType]],
     *,
-    parent: Path = EmptyPath,
+    parent: Path = EMPTY_PATH,
 ) -> bool:
     r"""Check whether the files exist.
 

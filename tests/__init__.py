@@ -1,15 +1,7 @@
-r"""Tests.
+r"""Tests for tsdm."""
 
-This is only here to make `pylint test` possible.
-The test folder should be ignored in setup.py anyway.
-"""
-
-#
-import logging
-
-__logger__ = logging.getLogger(__name__)
-
-
+# import logging
+# __logger__ = logging.getLogger(__name__)
 #
 # TEST_LEVELV_NUM = 9
 # logging.addLevelName(TEST_LEVELV_NUM, "TEST")

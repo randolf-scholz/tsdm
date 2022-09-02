@@ -50,7 +50,7 @@ __all__ = [
     "ModularLoss",
     # Constants
     "LOSSES",
-    "FunctionalLosses",
+    "FUNCTIONAL_LOSSES",
     "ModularLosses",
     # Classes
     "ND",
@@ -68,14 +68,14 @@ __all__ = [
 ]
 
 
-from typing import Final, Union
+from typing import Final, TypeAlias
 
 from torch import nn
 
 from tsdm.metrics._modular import ND, NRMSE, RMSE, WRMSE, Q_Quantile, Q_Quantile_Loss
 from tsdm.metrics.functional import (
+    FUNCTIONAL_LOSSES,
     FunctionalLoss,
-    FunctionalLosses,
     nd,
     nrmse,
     q_quantile,
@@ -83,8 +83,11 @@ from tsdm.metrics.functional import (
     rmse,
 )
 
-ModularLoss = nn.Module
+ModularLoss: TypeAlias = nn.Module
 r"""Type hint for modular losses."""
+
+Loss: TypeAlias = FunctionalLoss | ModularLoss
+r"""Type hint for losses."""
 
 TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
     "L1": nn.L1Loss,
@@ -129,11 +132,8 @@ ModularLosses: Final[dict[str, type[nn.Module]]] = {
 r"""Dictionary of all available modular losses."""
 
 
-Loss = Union[FunctionalLoss, ModularLoss]
-r"""Type hint for losses."""
-
-LOSSES: Final[dict[str, Union[FunctionalLoss, type[ModularLoss]]]] = {
-    **FunctionalLosses,
+LOSSES: Final[dict[str, FunctionalLoss | type[ModularLoss]]] = {
+    **FUNCTIONAL_LOSSES,
     **ModularLosses,
 }
 r"""Dictionary of all available losses."""

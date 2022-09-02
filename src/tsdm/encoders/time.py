@@ -12,7 +12,7 @@ __all__ = [
     "TimeDeltaEncoder",
 ]
 
-from typing import Any, Hashable, Literal, Optional, Union, cast
+from typing import Any, Hashable, Literal, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -134,7 +134,7 @@ class DateTimeEncoder(BaseEncoder):
     r"""The frequency the decoding should be rounded to."""
     offset: Timestamp
     r"""The starting point of the timeseries."""
-    kind: Union[type[Series], type[DatetimeIndex]]
+    kind: type[Series] | type[DatetimeIndex]
     r"""Whether to encode as index of Series."""
     name: Optional[str] = None
     r"""The name of the original Series."""
@@ -154,7 +154,7 @@ class DateTimeEncoder(BaseEncoder):
         self.unit = unit
         self.base_freq = base_freq
 
-    def fit(self, data: Union[Series, DatetimeIndex], /) -> None:
+    def fit(self, data: Series | DatetimeIndex, /) -> None:
         r"""Store the offset."""
         if isinstance(data, Series):
             self.kind = Series
@@ -169,11 +169,11 @@ class DateTimeEncoder(BaseEncoder):
         if isinstance(data, DatetimeIndex):
             self.freq = data.freq
 
-    def encode(self, data: Union[Series, DatetimeIndex], /) -> Series:
+    def encode(self, data: Series | DatetimeIndex, /) -> Series:
         r"""Encode the input."""
         return (data - self.offset) / Timedelta(1, unit=self.unit)
 
-    def decode(self, data: Series, /) -> Union[Series, DatetimeIndex]:
+    def decode(self, data: Series, /) -> Series | DatetimeIndex:
         r"""Decode the input."""
         self.LOGGER.debug("Decoding %s", type(data))
         converted = pd.to_timedelta(data, unit=self.unit)

@@ -10,8 +10,6 @@ We want to create models that can be initialized from config files.
 
    - This requires that the submodule has a ``from_dict`` method.
 
-
-
 How should the recursion be performed?
 
 Desiderata:
@@ -33,20 +31,6 @@ Usage
        output_size: int
        latent_size: int
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Signatures
 ----------
 
@@ -57,10 +41,9 @@ Generally speaking, there are 3 kinds of shape information:
 2. Variable shape sizes.
 3. Outer shape sizes.
 
-
 There are multiple levels at which this can be done.
 
-1. Limited recursion: ``tuple[tuple[int, ...]]``
+1. Limited recursion: `tuple[tuple[int, ...]]`
 2. Full recursion.
 3. Shapes + dtypes / full specification of composite types.
 
@@ -71,4 +54,4 @@ Examples
 
 Similarity between two images of fixed size:
 
-- ``(..., ((H, W, C), (H, W, C)) -> ...``
+- `[..., [(H, W, C), (H, W, C)]] -> ...`

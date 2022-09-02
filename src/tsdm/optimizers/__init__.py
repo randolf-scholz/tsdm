@@ -9,12 +9,12 @@ __all__ = [
     "LR_SCHEDULERS",
 ]
 
-from typing import Final
+from typing import Final, TypeAlias
 
 import torch.optim
 from torch.optim import lr_scheduler
 
-Optimizer = torch.optim.Optimizer
+Optimizer: TypeAlias = torch.optim.Optimizer
 r"""Type hint for optimizers."""
 
 OPTIMIZERS: Final[dict[str, type[torch.optim.Optimizer]]] = {

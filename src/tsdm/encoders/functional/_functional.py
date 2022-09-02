@@ -19,7 +19,7 @@ __all__ = [
 
 
 import warnings
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -28,15 +28,13 @@ from pandas import CategoricalDtype, DataFrame, Series
 
 def infer_categories(s: Series) -> set:
     r"""Return categories."""
-    # assert is_categorical_dtype(s) or is_string_dtype(s) or is_object_dtype(s), \
-    #     F"Series {s=}  with {s.dtype=} does not look like categorical data"
     categories = s.astype(CategoricalDtype()).categories
 
     return set(categories)
 
 
 def triplet2dense(
-    df: DataFrame, cat_features: Optional[Union[dict[str, set], set]] = None
+    df: DataFrame, cat_features: Optional[set | dict[str, set]] = None
 ) -> DataFrame:
     r"""Convert a DataFrame in triplet format to dense format. Inverse operation of dense2triplet.
 
