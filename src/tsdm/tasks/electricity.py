@@ -10,8 +10,9 @@ __all__ = [
     "ElectricityELBMBTTF",
 ]
 
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Callable, Literal, Mapping, Sequence
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -64,8 +65,8 @@ class ElectricityDeepAR:
 
     Paper
     -----
-    - | DeepAR: Probabilistic forecasting with autoregressive recurrent networks
-      | http://www.sciencedirect.com/science/article/pii/S0169207019301888>
+    - | `DeepAR: Probabilistic forecasting with autoregressive recurrent networks
+        <https://www.sciencedirect.com/science/article/pii/S0169207019301888>`_
 
     Evaluation Protocol
     -------------------
@@ -158,7 +159,7 @@ class ElectricityTFT(BaseTask):
       Does not tell the stride, i.e. how much the sliding window is moved. We assume this to be
       24h.
     - Is the loss computed on the original scale, or on the pre-processed (i.e. z-score normalized)
-      scale? The code reveals that apparantly the loss is computed on the original scale!
+      scale? The code reveals that apparently the loss is computed on the original scale!
 
     Paper
     -----
@@ -177,7 +178,7 @@ class ElectricityTFT(BaseTask):
         7 days immediately following the training set – as described in [9, 32]. Given the large
         differences in magnitude between trajectories, we also apply z-score normalization
         separately to each entity for real-valued inputs. In line with previous work, we consider
-        the electricity usage, day-of-week, hour-of-day and and a time index – i.e. the number of
+        the electricity usage, day-of-week, hour-of-day and a time index – i.e. the number of
         time steps from the first observation – as real-valued inputs, and treat the entity
         identifier as a categorical variable.
 
@@ -225,6 +226,7 @@ class ElectricityTFT(BaseTask):
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
         r"""Test metric."""
+        raise NotImplementedError
 
     @cached_property
     def dataset(self) -> pd.DataFrame:
@@ -322,7 +324,7 @@ class ElectricityELBMBTTF:
         on Time Series Forecasting
       | Shiyang Li, Xiaoyong Jin, Yao Xuan, Xiyou Zhou, Wenhu Chen, Yu-Xiang Wang, Xifeng Yan
       | Advances in Neural Information Processing Systems 32 (NeurIPS 2019)
-      | http://proceedings.neurips.cc/paper/2019/hash/6775a0635c302542da2c32aa19d86be0-Abstract.html
+      | https://proceedings.neurips.cc/paper/2019/hash/6775a0635c302542da2c32aa19d86be0-Abstract.html
 
     Evaluation Protocol
     -------------------

@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, signature
 from time import perf_counter_ns
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, overload
 
 from torch import jit, nn
 
@@ -181,7 +181,7 @@ def decorator(deco: Callable) -> Callable:
     In either case the decorator sees as input (callable, None, None) and so it cannot distinguish
     whether the first input is a wrapping, or the wrapped.
 
-    Thus we either need to abandon positional arguments with default values.
+    Thus, we either need to abandon positional arguments with default values.
 
     Note however, that it is possible so save the situation by adding at least one
     mandatory positional argument:
@@ -291,8 +291,8 @@ def attribute(func):
         __slots__ = ("func", "payload")
         sentinel = object()
 
-        def __init__(self, func):
-            self.func = func
+        def __init__(self, function):
+            self.func = function
             self.payload = self.sentinel
 
         def __get__(self, obj, obj_type=None):
@@ -315,7 +315,7 @@ def timefun(
 ) -> Callable[..., ReturnType]:
     r"""Log the execution time of the function. Use as decorator.
 
-    By default appends the execution time (in seconds) to the function call.
+    By default, appends the execution time (in seconds) to the function call.
 
     `outputs, time_elapse = timefun(f, append=True)(inputs)`
 
@@ -480,7 +480,7 @@ def vectorize(
     /,
     *,
     kind: type[CollectionType],
-) -> Callable[[Union[ObjectType, CollectionType]], Union[ReturnType, CollectionType]]:
+) -> Callable[[ObjectType | CollectionType], ReturnType | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly
@@ -525,41 +525,6 @@ def vectorize(
         return kind(func(x) for x in (arg, *args))  # type: ignore[call-arg]
 
     return _wrapper
-
-
-# @decorator
-# def apply_on_iter(
-#     cls: Iterable[ObjectType], func: Callable[[ObjectType], ReturnType]
-# ) -> Iterable[ReturnType]:
-#
-#     iter_method = getattr(cls, "__iter__")
-#
-#     @wraps(iter_method)
-#     def wrapper() -> Iterable[ReturnType]:
-#         for x in iter_method():
-#             yield func(x)
-#
-#     setattr(cls, "__iter__", wrapper)
-#
-#     return cls
-
-
-# TODO: implement mutually_exclusive_args wrapper
-# idea: sometimes we have a tuple of args (a ,b ,c, ...) where
-# 1. at least x of these args are required
-# 2. at most y of these args are allowed.
-# this decorator raises and error if not the right number of args is supplied.
-# alternative:
-# - supply a single int: exact allowed number of args, e.g. [0, 1, 3] if
-# exactly 0, 1 or 3 arguments allowed.
-# - supply a tuple[int, int]: min/max number of allowed args
-# - supply a list[int] of allowed number of args, e.g.
-# - supply a list[tuple[str]] of allowed combinations, e.g. [("a", "b"), ("c",), ("a', "c"), ...]
-# Union[int, tuple[int, int], list[int], list[tuple[str, ...]]]
-
-# def exclusive_args(args: tuple[str, ...],
-# allowed: Union[int, tuple[int, int], list[int], list[tuple[str, ...]]]):
-#     pass
 
 
 @overload
@@ -636,7 +601,7 @@ def wrap_func(
     before: Optional[Callable[..., Any]] = None,
     after: Optional[Callable[..., Any]] = None,
 ) -> Callable[..., ReturnType]:
-    r"""Wrap a function with pre and post hooks."""
+    r"""Wrap a function with pre- and post-hooks."""
     if before is None and after is None:
         __logger__.debug("No hooks added to %s", func)
         return func
@@ -677,98 +642,3 @@ def wrap_func(
         return _wrapper
 
     raise RuntimeError(f"Unreachable code reached for {func}")
-
-
-# @decorator
-# def pre_hook(func: Callable, hook: Callable, /) -> Callable:
-#     r"""Wrap a function with a pre wrap_hook."""
-#
-#     @wraps(func)
-#     def wrapper(*args, **kwargs):
-#         r"""Wrap a function with a pre wrap_hook."""
-#         hook(*args, **kwargs)
-#         return func(*args, **kwargs)
-#
-#     return wrapper
-#
-#
-# @decorator
-# def post_hook(func: Callable, hook: Callable, /) -> Callable:
-#     r"""Wrap a function with a post wrap_hook."""
-#
-#     @wraps(func)
-#     def wrapper(*args, **kwargs):
-#         r"""Wrap a function with a post wrap_hook."""
-#         result = func(*args, **kwargs)
-#         hook(*args, **kwargs)
-#         return result
-#
-#     return wrapper
-#
-#
-# @decorator
-# def wrap_chain(
-#     func: Callable,
-#     /,
-#     *,
-#     before: Optional[Callable] = None,
-#     after: Optional[Callable] = None,
-# ) -> Callable:
-#     r"""Chain a function with pre and post func.
-#
-#     Parameters
-#     ----------
-#     func
-#     before
-#     after
-#
-#     Returns
-#     -------
-#     Callable
-#     """
-#
-#     @wraps(func)
-#     def wrapper(*args, **kwargs):
-#         r"""Wrap a function with pre and post hooks."""
-#         pre_result = before(*args, **kwargs)
-#         result = func(pre_result)
-#         post_result = after(result)
-#         return post_result
-#
-#     return wrapper
-
-
-# @overload
-# def wrapmethod(obj: ClassType, method: str, func: Callable) -> ClassType:
-#     ...
-#
-#
-# @overload
-# def wrapmethod(obj: ObjectType, method: str, func: Callable) -> ObjectType:
-#     ...
-#
-#
-# @decorator
-# def wrapmethod(obj, method, func, /):
-#     r"""Wrap a method of a class/instance or instance."""
-#     if isinstance(obj, type):
-#         base_class = obj
-#     else:
-#         base_class = type(obj)
-#
-#     @wraps(base_class, updated=())
-#     class WrappedClass(base_class):
-#         r"""A simple Wrapper."""
-#
-#         def __repr__(self) -> str:
-#             r"""Representation of the dataset."""
-#             return f"wrapmethod[{method}, {func.__name__}]@" + super().__repr__()
-#
-#     setattr(WrappedClass, method, MethodType(func, obj))
-#
-#     if isinstance(obj, type):
-#         return WrappedClass
-#
-#     obj = deepcopy(obj)  # <--- do we need this?
-#     obj.__class__ = WrappedClass
-#     return obj

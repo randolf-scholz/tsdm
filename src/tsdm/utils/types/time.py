@@ -21,7 +21,7 @@ __all__ = [
 
 from datetime import datetime as py_dt
 from datetime import timedelta as py_td
-from typing import TypeVar, Union
+from typing import TypeAlias, TypeVar, Union
 
 from numpy import datetime64 as np_dt
 from numpy import floating as np_float
@@ -46,11 +46,11 @@ TimeVar = TypeVar(
 r"""TypeVar for `Time` values."""
 
 # Time-Type-Hints
-TD = Union[int, float, np_int, np_float, py_dt, np_dt, pd_dt]
+TD: TypeAlias = Union[int, float, np_int, np_float, py_dt, np_dt, pd_dt]
 r"""Type Hint for `Timestamp`."""
-DT = Union[int, float, np_int, np_float, py_td, np_td, pd_td]
+DT: TypeAlias = Union[int, float, np_int, np_float, py_td, np_td, pd_td]
 r"""Type Hint for `Timedelta`."""
-Time = Union[DT, TD]
+Time: TypeAlias = Union[DT, TD]
 r"""Type Hint for `Time`."""
 
 # Real-Time-Type-Variables
@@ -63,11 +63,11 @@ r"""TypeVar for `Time` values."""
 
 
 # Real-Time-Type-Hints
-RealDT = Union[py_dt, np_dt, pd_dt]
+RealDT: TypeAlias = Union[py_dt, np_dt, pd_dt]
 r"""Type Hint for real-time `Timestamp`."""
-RealTD = Union[py_td, np_td, pd_td]
+RealTD: TypeAlias = Union[py_td, np_td, pd_td]
 r"""Type Hint for real-time `Timedelta`."""
-RealTime = Union[RealDT, RealTD]
+RealTime: TypeAlias = Union[RealDT, RealTD]
 r"""Type Hint for real-time `Time`."""
 
 

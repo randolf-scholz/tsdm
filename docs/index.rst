@@ -1,12 +1,11 @@
-tsdm - **T**\ ime **S**\ eries **D**\ atasets and **M**\ odels
-==============================================================
+tsdm - 𝗧ime 𝗦eries 𝗗atasets and 𝗠odels
+=======================================
 
 .. toctree::
    :titlesonly:
    :maxdepth: 2
    :name: mastertoc
 
-   HOME <self>
    API <autoapi/tsdm/index.rst>
    RECIPES <RECIPES>
    CHANGELOG <CHANGELOG>

@@ -13,21 +13,17 @@ __all__ = [
     "NTuple",
 ]
 
-import logging
 from typing import Protocol, runtime_checkable
-
-__logger__ = logging.getLogger(__name__)
 
 
 @runtime_checkable
 class Array(Protocol):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
-    # shape: tuple[int, ...]
-
     @property
-    def shape(self) -> tuple[int, ...]:
+    def shape(self) -> tuple[int, ...] | list[int]:
         r"""Shape of the array."""
+        return ()
 
     # @property
     # def dtype(self) -> Any:
@@ -40,7 +36,7 @@ class NTuple(Protocol):
 
     @property
     def _fields(self) -> tuple[str, ...]:
-        ...
+        return ()
 
     def _asdict(self) -> dict[str, object]:
         ...

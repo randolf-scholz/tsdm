@@ -7,9 +7,11 @@ Contains encoders in functional form.
 """
 
 __all__ = [
-    # Constants
+    # Types
     "FunctionalEncoder",
-    "FunctionalEncoders",
+    # Constants
+    "SKLEARN_FUNCTIONAL_ENCODERS",
+    "FUNCTIONAL_ENCODERS",
     # Functions
     "make_dense_triplets",
     "make_masked_format",
@@ -31,7 +33,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from typing import Final
+from typing import Any, Final, TypeAlias
 
 from sklearn.preprocessing import (
     binarize,
@@ -55,10 +57,10 @@ from tsdm.encoders.functional._functional import (
     triplet2dense,
 )
 
-FunctionalEncoder = Callable
+FunctionalEncoder: TypeAlias = Callable[..., Any]
 r"""Type hint for functional encoders."""
 
-SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoder]] = {
+SKLEARN_FUNCTIONAL_ENCODERS: Final[dict[str, FunctionalEncoder]] = {
     "binarize": binarize,
     "label_binarize": label_binarize,
     "maxabs_scale": maxabs_scale,
@@ -70,12 +72,12 @@ SklearnFunctionalEncoders: Final[dict[str, FunctionalEncoder]] = {
     "scale": scale,
 }
 
-FunctionalEncoders: Final[dict[str, FunctionalEncoder]] = {
+FUNCTIONAL_ENCODERS: Final[dict[str, FunctionalEncoder]] = {
     "make_dense_triplets": make_dense_triplets,
     "make_masked_format": make_masked_format,
     "make_sparse_triplets": make_sparse_triplets,
     "time2float": time2float,
     "time2int": time2int,
     # "triplet2dense": triplet2dense,
-} | SklearnFunctionalEncoders
+}
 r"""Dictionary of all available functional encoders."""

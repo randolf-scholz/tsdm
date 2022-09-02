@@ -9,7 +9,7 @@ __all__ = [
 
 
 import logging
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
@@ -22,11 +22,11 @@ __logger__ = logging.getLogger(__name__)
 
 
 def sample_timestamps(
-    start: Union[str, DTVar] = "today",
+    start: str | DTVar = "today",
     final: Optional[DTVar] = None,
     *,
     size: int,
-    freq: Union[str, TDVar] = "1s",
+    freq: str | TDVar = "1s",
     replace: bool = False,
     include_start: bool = True,
     include_final: bool = False,
@@ -73,7 +73,7 @@ def sample_timestamps(
         timestamps = np.insert(timestamps, -1, final_dt)
 
     # Convert to base unit based on freq
-    units = {
+    units: dict[str, np.timedelta64] = {
         u: np.timedelta64(1, u)
         for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
     }
@@ -82,10 +82,10 @@ def sample_timestamps(
 
 
 def sample_timedeltas(
-    low: Union[str, TDVar] = "0s",
-    high: Union[str, TDVar] = "1h",
+    low: str | TDVar = "0s",
+    high: str | TDVar = "1h",
     size: Optional[int] = None,
-    freq: Union[str, TDVar] = "1s",
+    freq: str | TDVar = "1s",
 ) -> NDArray:
     r"""Create randomly sampled timedeltas.
 

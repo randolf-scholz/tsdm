@@ -3,7 +3,6 @@ Vanilla Training Loop
 
 Typical experimental flow, given a fixed hyperparameter combination
 
-
 .. code-block:: python
 
     from tsdm.datasets import DATASETS

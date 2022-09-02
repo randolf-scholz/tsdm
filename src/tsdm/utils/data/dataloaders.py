@@ -17,7 +17,6 @@ __all__ = [
     "unpack_sequence",
 ]
 
-import logging
 from typing import Optional
 
 import torch
@@ -30,8 +29,6 @@ from torch.nn.utils.rnn import (
 )
 
 from tsdm.linalg import aggregate_and, cumulative_and
-
-__logger__ = logging.getLogger(__name__)
 
 
 def collate_list(batch: list[Tensor]) -> list[Tensor]:

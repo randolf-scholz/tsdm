@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 from collections import namedtuple
-from typing import Final, Union
+from typing import Final
 
 import numpy as np
 import pandas
@@ -139,7 +139,7 @@ r"""Dictionary of all `pandas` data types."""
 
 
 NULLABLE_DTYPES: Final[
-    dict[Union[type[np.generic], type[ExtensionDtype]], str]
+    dict[type[np.generic] | type[ExtensionDtype], str]
 ] = PANDAS_DTYPES | {
     np.timedelta64: "M",
     np.datetime64: "m",

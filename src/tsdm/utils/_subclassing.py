@@ -1,6 +1,10 @@
 r"""Code for abstract attributes."""
 
-__all__ = ["abstractattribute", "DummyAttribute", "PatchedABCMeta"]
+__all__ = [
+    "abstractattribute",
+    "DummyAttribute",
+    "PatchedABCMeta",
+]
 
 from abc import ABCMeta
 from typing import Any, Callable, Generic, TypeVar, cast
