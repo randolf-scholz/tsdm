@@ -153,8 +153,8 @@ pylint:
       --embed-logo
       > badges/pylint.svg
   artifacts:
-    reports:
-      codequality: reports/codeclimate.json
+    # reports:
+    # codequality: reports/codeclimate.json
     paths:
       - badges/
 

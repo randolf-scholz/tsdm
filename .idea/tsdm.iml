@@ -46,10 +46,9 @@
       <excludeFolder url="file://$MODULE_DIR$/examples/.virtual_documents" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Poetry (tsdm)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="neurips-2022" />
-    <orderEntry type="module" module-name="python-venv" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="requirements.txt, requirements-dev.txt, requirements-extra.txt" />
