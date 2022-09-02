@@ -20,6 +20,9 @@ from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
+NAN: float = torch.nan
+r"""Not a number constant."""
+
 
 class Inputs(NamedTuple):
     r"""A single sample of the data."""
@@ -29,6 +32,7 @@ class Inputs(NamedTuple):
     t_target: Tensor
 
     def __repr__(self) -> str:
+        r"""Return string representation."""
         return repr_namedtuple(self, recursive=False)
 
 
@@ -47,13 +51,13 @@ class Sample(NamedTuple):
 class Batch(NamedTuple):
     r"""A single sample of the data."""
 
-    TX: Tensor  # B×N:   the input timestamps.
-    VX: Tensor  # B×N×D: the input values.
-    MX: Tensor  # B×N×D: the input mask.
+    x_time: Tensor  # B×N:   the input timestamps.
+    x_vals: Tensor  # B×N×D: the input values.
+    x_mask: Tensor  # B×N×D: the input mask.
 
-    TY: Tensor  # B×K:   the target timestamps.
-    VY: Tensor  # B×K×D: the target values.
-    MY: Tensor  # B×K×D: teh target mask.
+    y_time: Tensor  # B×K:   the target timestamps.
+    y_vals: Tensor  # B×K×D: the target values.
+    y_mask: Tensor  # B×K×D: teh target mask.
 
     def __repr__(self) -> str:
         return repr_namedtuple(self, recursive=False)
@@ -95,12 +99,12 @@ class TaskDataset(torch.utils.data.Dataset):
 # @torch.jit.script  <--seems to be slower!?
 def ushcn_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch."""
-    vx_list: list[Tensor] = []
-    vy_list: list[Tensor] = []
-    tx_list: list[Tensor] = []
-    ty_list: list[Tensor] = []
-    mx_list: list[Tensor] = []
-    my_list: list[Tensor] = []
+    x_vals: list[Tensor] = []
+    y_vals: list[Tensor] = []
+    x_time: list[Tensor] = []
+    y_time: list[Tensor] = []
+    x_mask: list[Tensor] = []
+    y_mask: list[Tensor] = []
 
     for sample in batch:
         t, x, t_target = sample.inputs
@@ -118,28 +122,28 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
             )
         )
 
-        x_padder = torch.full((t_target.shape[0], x.shape[-1]), fill_value=torch.nan)
+        x_padder = torch.full((t_target.shape[0], x.shape[-1]), fill_value=NAN)
         values = torch.cat((x, x_padder))
 
-        vx_list.append(values[sorted_idx])
-        vy_list.append(y)
-        tx_list.append(time[sorted_idx])
-        ty_list.append(t_target)
-        mx_list.append(mask_x[sorted_idx])
-        my_list.append(mask_y)
+        x_vals.append(values[sorted_idx])
+        y_vals.append(y)
+        x_time.append(time[sorted_idx])
+        y_time.append(t_target)
+        x_mask.append(mask_x[sorted_idx])
+        y_mask.append(mask_y)
 
-    VX = pad_sequence(vx_list, batch_first=True, padding_value=torch.nan).squeeze()
-    VY = pad_sequence(vy_list, batch_first=True, padding_value=torch.nan).squeeze()
-    TX = pad_sequence(tx_list, batch_first=True).squeeze()
-    TY = pad_sequence(ty_list, batch_first=True).squeeze()
-    MX = pad_sequence(mx_list, batch_first=True).squeeze()
-    MY = pad_sequence(my_list, batch_first=True).squeeze()
-
-    return Batch(TX, VX, MX, TY, VY, MY)
+    return Batch(
+        x_time=pad_sequence(x_time, batch_first=True).squeeze(),
+        x_vals=pad_sequence(x_vals, batch_first=True, padding_value=NAN).squeeze(),
+        x_mask=pad_sequence(x_mask, batch_first=True).squeeze(),
+        y_time=pad_sequence(y_time, batch_first=True).squeeze(),
+        y_vals=pad_sequence(y_vals, batch_first=True, padding_value=NAN).squeeze(),
+        y_mask=pad_sequence(y_mask, batch_first=True).squeeze(),
+    )
 
 
 class USHCN_DeBrouwer(BaseTask):
-    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
+    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     Evaluation Protocol
     -------------------
@@ -155,7 +159,7 @@ class USHCN_DeBrouwer(BaseTask):
         data acquisition. The actual data is then sporadic and researchers usually resort to
         imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
 
-        We use the publicly available United State Historical Climatology Network (USHCN) daily
+        We use the publicly available United States Historical Climatology Network (USHCN) daily
         data set (Menne et al.), which contains measurements of 5 climate variables
         (daily temperatures, precipitation, and snow) over 150 years for 1,218 meteorological
         stations scattered over the United States. We selected a subset of 1,114 stations and an

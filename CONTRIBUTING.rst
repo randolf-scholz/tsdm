@@ -29,8 +29,8 @@ Getting started
 
    3.3 Via pip.::
 
-        sudo apt install python3.9
-        python3.9 -m virtualenv venv
+        sudo apt install python3.10
+        python3.10 -m virtualenv .venv
         . venv/bin/activate
         pip install -e .
 

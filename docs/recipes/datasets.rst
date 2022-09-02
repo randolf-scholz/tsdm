@@ -54,14 +54,17 @@ TimeSeries specifics
 Consequences for representing TimeSeries Data
 ---------------------------------------------
 
-- Collect all aligned TS data in a tuple[tensor].
-   - another advantage of this is that one could potentially split a sparse multivariate series into
-     multiple univariate series which can be stored in a dense manner.
-- Collect all static data in a tuple[tensor].
+- Collect all aligned TS data in a `tuple[tensor]`.
+
+  - another advantage of this is that one could potentially split a sparse multivariate series into
+    multiple univariate series which can be stored in a dense manner.
+
+- Collect all static data in a `tuple[tensor]`.
 - Collect all collections in a dictionary.
 - Q: Where should single tensor meta-data be stored? in the tensor itself?
-   - For example: Value Range for columns, measurement uncertainty per column, etc.
-   - → use DataFrame.attr / DataArray.attr
+
+  - For example: Value Range for columns, measurement uncertainty per column, etc.
+  - → use DataFrame.attr / DataArray.attr
 
 Consequences for loading TimeSeries data
 ----------------------------------------
@@ -98,7 +101,7 @@ We should consider the following data-structures
 Example
 -------
 
-We want to show a complete example for a case where we both need a ``tuple[TimeTensor]`` and a ``tuple[Tensor]``
+We want to show a complete example for a case where we both need a `tuple[TimeTensor]` and a `tuple[Tensor]`
 to represent the dataset. Consider a Video then we have
 
 TimeTensors:
@@ -139,50 +142,50 @@ For Datasets: Only nullable types.
 
 Dtypes:
 
-- BooleanDtype
-- CategoricalDtype
-- DatetimeTZDtype
-- Float32Dtype
-- Float64Dtype
-- Int16Dtype
-- Int32Dtype
-- Int64Dtype
-- Int8Dtype
-- IntervalDtype
-- PeriodDtype
-- SparseDtype
-- StringDtype
-- UInt16Dtype
-- UInt32Dtype
-- UInt64Dtype
-- UInt8Dtype
+- `pandas.BooleanDtype`
+- `pandas.CategoricalDtype`
+- `pandas.DatetimeTZDtype`
+- `pandas.Float32Dtype`
+- `pandas.Float64Dtype`
+- `pandas.Int16Dtype`
+- `pandas.Int32Dtype`
+- `pandas.Int64Dtype`
+- `pandas.Int8Dtype`
+- `pandas.IntervalDtype`
+- `pandas.PeriodDtype`
+- `pandas.SparseDtype`
+- `pandas.StringDtype`
+- `pandas.UInt16Dtype`
+- `pandas.UInt32Dtype`
+- `pandas.UInt64Dtype`
+- `pandas.UInt8Dtype`
 
 Index Types:
 
-- CategoricalIndex
-- DatetimeIndex
-- Float64Index
-- Index
-- IndexSlice
-- Int64Index
-- IntervalIndex
-- MultiIndex
-- PeriodIndex
-- RangeIndex
-- TimedeltaIndex
-- UInt64Index
+- `pandas.CategoricalIndex`
+- `pandas.DatetimeIndex`
+- `pandas.Float64Index`
+- `pandas.Index`
+- `pandas.IndexSlice`
+- `pandas.Int64Index`
+- `pandas.IntervalIndex`
+- `pandas.MultiIndex`
+- `pandas.PeriodIndex`
+- `pandas.RangeIndex`
+- `pandas.TimedeltaIndex`
+- `pandas.UInt64Index`
 
 Arrays:
 
-- ArrowStringArray
-- BooleanArray
-- Categorical
-- DatetimeArray
-- FloatingArray
-- IntegerArray
-- IntervalArray
-- PandasArray
-- PeriodArray
-- SparseArray
-- StringArray
-- TimedeltaArray
+- `pandas.ArrowStringArray`
+- `pandas.BooleanArray`
+- `pandas.Categorical`
+- `pandas.DatetimeArray`
+- `pandas.FloatingArray`
+- `pandas.IntegerArray`
+- `pandas.IntervalArray`
+- `pandas.PandasArray`
+- `pandas.PeriodArray`
+- `pandas.SparseArray`
+- `pandas.StringArray`
+- `pandas.TimedeltaArray`

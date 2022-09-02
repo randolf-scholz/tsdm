@@ -12,7 +12,7 @@ __all__ = [
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, TypeAlias
 
 import numpy as np
 import torch
@@ -27,7 +27,7 @@ from torch.linalg import eigvals
 
 __logger__ = logging.getLogger(__name__)
 
-Location = Literal[
+Location: TypeAlias = Literal[
     "upper right",
     "upper left",
     "lower left",
@@ -59,7 +59,7 @@ def visualize_distribution(
     ax: Axes
     num_bins: int or Sequence[int]
     log: bool or float, default False
-        if True, use log base 10, if float, use  log w.r.t. this base
+        if True, use log base 10, if `float`, use  log w.r.t. this base
     loc: Location
     print_stats: bool
     extra_stats: Optional[dict[str, str]]
@@ -132,7 +132,7 @@ def shared_grid_plot(
     xlabels: Optional[list[str]] = None,
     ylabels: Optional[list[str]] = None,
     **subplots_kwargs: Any,
-) -> tuple[Figure, Axes]:
+) -> tuple[Figure, NDArray[Axes]]:
     r"""Create a compute_grid plot with shared axes and row/col headers.
 
     Based on https://stackoverflow.com/a/25814386/9318372
@@ -251,7 +251,7 @@ def rasterize(
 
 @torch.no_grad()
 def plot_spectrum(
-    kernel: Union[Tensor, NDArray],
+    kernel: Tensor | NDArray,
     /,
     *,
     style: str = "ggplot",

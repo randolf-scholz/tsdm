@@ -20,6 +20,9 @@ from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
+NAN: float = torch.nan
+r"""Not a number constant."""
+
 
 class Inputs(NamedTuple):
     r"""A single sample of the data."""
@@ -47,13 +50,13 @@ class Sample(NamedTuple):
 class Batch(NamedTuple):
     r"""A single sample of the data."""
 
-    TX: Tensor  # B×N:   the input timestamps.
-    VX: Tensor  # B×N×D: the input values.
-    MX: Tensor  # B×N×D: the input mask.
+    x_time: Tensor  # B×N:   the input timestamps.
+    x_vals: Tensor  # B×N×D: the input values.
+    x_mask: Tensor  # B×N×D: the input mask.
 
-    TY: Tensor  # B×K:   the target timestamps.
-    VY: Tensor  # B×K×D: the target values.
-    MY: Tensor  # B×K×D: teh target mask.
+    y_time: Tensor  # B×K:   the target timestamps.
+    y_vals: Tensor  # B×K×D: the target values.
+    y_mask: Tensor  # B×K×D: teh target mask.
 
     def __repr__(self) -> str:
         return repr_namedtuple(self, recursive=False)
@@ -95,12 +98,12 @@ class TaskDataset(torch.utils.data.Dataset):
 # @torch.jit.script  <--seems to be slower!?
 def mimic_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch."""
-    vx_list: list[Tensor] = []
-    vy_list: list[Tensor] = []
-    tx_list: list[Tensor] = []
-    ty_list: list[Tensor] = []
-    mx_list: list[Tensor] = []
-    my_list: list[Tensor] = []
+    x_vals: list[Tensor] = []
+    y_vals: list[Tensor] = []
+    x_time: list[Tensor] = []
+    y_time: list[Tensor] = []
+    x_mask: list[Tensor] = []
+    y_mask: list[Tensor] = []
 
     for sample in batch:
         t, x, t_target = sample.inputs
@@ -118,24 +121,24 @@ def mimic_collate(batch: list[Sample]) -> Batch:
             )
         )
 
-        x_padder = torch.full((t_target.shape[0], x.shape[-1]), fill_value=torch.nan)
+        x_padder = torch.full((t_target.shape[0], x.shape[-1]), fill_value=NAN)
         values = torch.cat((x, x_padder))
 
-        vx_list.append(values[sorted_idx])
-        vy_list.append(y)
-        tx_list.append(time[sorted_idx])
-        ty_list.append(t_target)
-        mx_list.append(mask_x[sorted_idx])
-        my_list.append(mask_y)
+        x_vals.append(values[sorted_idx])
+        y_vals.append(y)
+        x_time.append(time[sorted_idx])
+        y_time.append(t_target)
+        x_mask.append(mask_x[sorted_idx])
+        y_mask.append(mask_y)
 
-    VX = pad_sequence(vx_list, batch_first=True, padding_value=torch.nan).squeeze()
-    VY = pad_sequence(vy_list, batch_first=True, padding_value=torch.nan).squeeze()
-    TX = pad_sequence(tx_list, batch_first=True).squeeze()
-    TY = pad_sequence(ty_list, batch_first=True).squeeze()
-    MX = pad_sequence(mx_list, batch_first=True).squeeze()
-    MY = pad_sequence(my_list, batch_first=True).squeeze()
-
-    return Batch(TX, VX, MX, TY, VY, MY)
+    return Batch(
+        x_time=pad_sequence(x_time, batch_first=True).squeeze(),
+        x_vals=pad_sequence(x_vals, batch_first=True, padding_value=NAN).squeeze(),
+        x_mask=pad_sequence(x_mask, batch_first=True).squeeze(),
+        y_time=pad_sequence(y_time, batch_first=True).squeeze(),
+        y_vals=pad_sequence(y_vals, batch_first=True, padding_value=NAN).squeeze(),
+        y_mask=pad_sequence(y_mask, batch_first=True).squeeze(),
+    )
 
 
 class MIMIC_DeBrouwer(BaseTask):
@@ -152,7 +155,7 @@ class MIMIC_DeBrouwer(BaseTask):
 
     The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
     harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
-    measurements outside the 5 standard deviations interval. For models requiring binning of the time
+    measurements outside the 5 standard deviation interval. For models requiring binning of the time
     series, we map the measurements in 30-minute time bins, which gives 97 bins for 48 hours. When
     two observations fall in the same bin, they are either averaged or summed depending on the nature
     of the observation. Using the same taxonomy as in Table 5, lab measurements are averaged, while

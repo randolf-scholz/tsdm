@@ -13,7 +13,6 @@ from typing import Optional
 
 import torch
 from torch import Tensor, nn
-from torch.nn import functional as F
 
 from tsdm.utils.decorators import autojit
 
@@ -86,7 +85,7 @@ class ScaledDotProductAttention(nn.Module):
         V = torch.einsum("...e, ehv -> ...hv", V, self.Wv)
         QK = torch.einsum("hd, ...hd -> ...h", Q, K)
         QK[mask] = float("-inf")
-        w = F.softmax(self.scale * QK, dim=-2)
+        w = nn.functional.softmax(self.scale * QK, dim=-2)
         # w = self.softmax(self.scale * QK)
         self.attention_weights = w
         QKV = torch.nanmean(w[..., None] * V, dim=-3)  # ...h, ...Lhv -> ...hv

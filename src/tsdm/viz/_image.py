@@ -5,7 +5,7 @@ __all__ = [
     "kernel_heatmap",
 ]
 
-from typing import Literal, Union
+from typing import Literal
 
 import numpy as np
 import torch
@@ -16,7 +16,7 @@ from torch import Tensor
 
 @torch.no_grad()
 def kernel_heatmap(
-    kernel: Union[NDArray, Tensor],
+    kernel: NDArray | Tensor,
     fmt: Literal["HWC", "CHW"] = "HWC",
     cmap: str = "seismic",
 ) -> NDArray:

@@ -1,5 +1,3 @@
-.. toctree::
-
 Signatures for Functions between Hilbert Spaces
 ===============================================
 

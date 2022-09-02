@@ -4,6 +4,7 @@ __all__ = [
     # Submodules
     "abc",
     "protocols",
+    "time",
     # Type Variables
     "Self",
     "ClassType",
@@ -23,9 +24,8 @@ __all__ = [
     "TensorVar",
 ]
 
-import logging
 
-from tsdm.utils.types import abc, protocols
+from tsdm.utils.types import abc, protocols, time
 from tsdm.utils.types._types import (
     ClassType,
     KeyType,
@@ -42,5 +42,3 @@ from tsdm.utils.types._types import (
     ValueType,
     nnModuleType,
 )
-
-__logger__ = logging.getLogger(__name__)

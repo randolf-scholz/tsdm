@@ -29,7 +29,7 @@
 {% endif %}
 
 
-{# SUB-PACAKGES ##############################################################}
+{# SUB-PACKAGES ##############################################################}
 {% block subpackages %}
 {% set visible_subpackages = obj.subpackages|selectattr("display")|list %}
 {% if visible_subpackages %}

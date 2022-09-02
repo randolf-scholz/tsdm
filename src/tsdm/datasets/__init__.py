@@ -23,7 +23,7 @@ __all__ = [
     # Sub-Modules
     "base",
     # Types
-    "dataset",
+    "Dataset",
     "DATASET_OBJECT",
     # Constants
     "DATASETS",
@@ -46,7 +46,7 @@ __all__ = [
     "USHCN_SmallChunkedSporadic",
 ]
 
-from typing import Final
+from typing import Final, TypeAlias
 
 from tsdm.datasets import base
 from tsdm.datasets.base import (
@@ -66,10 +66,10 @@ from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
 
-dataset = BaseDataset
+Dataset: TypeAlias = BaseDataset
 r"""Type hint for dataset."""
 
-DATASETS: Final[dict[str, type[dataset]]] = {
+DATASETS: Final[dict[str, type[Dataset]]] = {
     "BeijingAirQuality": BeijingAirQuality,
     "ETT": ETT,
     "Electricity": Electricity,
