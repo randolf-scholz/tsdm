@@ -3,6 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../neurips-2022" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../python-venv" vcs="Git" />
   </component>
 </project>
