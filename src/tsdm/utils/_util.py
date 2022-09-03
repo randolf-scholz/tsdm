@@ -24,13 +24,13 @@ __all__ = [
 ]
 
 import os
-from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
+from collections.abc import Callable, Collection, Hashable, Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Optional, Union, overload
+from typing import Any, Literal, NamedTuple, Optional, Union, cast, overload
 
 import numpy as np
 from numpy.typing import NDArray
@@ -55,18 +55,51 @@ def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
     return all(sum(masks) == 1)  # type: ignore[arg-type]
 
 
-def flatten_dict(d: Mapping) -> dict:
-    r"""Flatten nested dictionary.
+def flatten_dict(
+    d: dict[Hashable, Any],
+    /,
+    *,
+    join_string: Optional[str] = None,
+    key_func: Optional[Callable[[Hashable, Hashable], Hashable]] = None,
+    recursive: bool | int = True,
+) -> dict[Hashable, Any]:
+    r"""Flatten a dictionary containing iterables to a list of tuples.
 
     Parameters
     ----------
-    d: Mapping
-
-    Returns
-    -------
-    dict
+    d: Input Dictionary
+    join_string:
+        use this option in case of nested dicts with string keys,
+    key_func:
+        function that creates new key from old key and subkey
+    recursive:
+        If true applies flattening strategy recursively on nested dicts.
+        If int, specifies the maximum depth of recursion.
     """
-    return {k: v for k, v in d.items() if not isinstance(v, Mapping)}
+    if join_string is not None and key_func is not None:
+        raise ValueError("Only one of join_string or key_func can be specified.")
+
+    update_func: Callable[[Hashable, Hashable], Hashable]
+
+    if join_string is not None:
+        update_func = lambda k, sk: f"{k}{join_string}{sk}"  # noqa: E731
+    elif key_func is None:
+        update_func = lambda k, sk: (k, sk)  # noqa: E731
+    else:
+        update_func = key_func
+
+    result = {}
+    for key, item in d.items():
+        if isinstance(key, tuple):
+            raise ValueError("Keys are not allowed to be tuples!")
+        if isinstance(item, dict) and recursive:
+            subdict = cast(dict[Hashable, Any], item)
+            subdict = flatten_dict(subdict, recursive=True)
+            for subkey, subitem in subdict.items():
+                result[update_func(key, subkey)] = subitem
+        else:
+            result[key] = item
+    return result
 
 
 class Split(NamedTuple):
