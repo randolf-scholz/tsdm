@@ -21,5 +21,7 @@ help:
 	rm -rf _build
 	rm -rf _autosummary
 	rm -rf autoapi
+	rm -rf apidoc
+	sphinx-apidoc -o apidoc/ ../src/
 
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

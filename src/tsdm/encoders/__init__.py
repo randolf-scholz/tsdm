@@ -93,7 +93,6 @@ from sklearn.base import BaseEstimator
 
 from tsdm.encoders import base, functional, numerical, time, torch
 from tsdm.encoders._modular import (
-    ConcatEncoder,
     DataFrameEncoder,
     FrameEncoder,
     FrameIndexer,
@@ -123,6 +122,8 @@ from tsdm.encoders.numerical import (
     LogEncoder,
     MinMaxScaler,
     Standardizer,
+    TensorConcatenator,
+    TensorSplitter,
 )
 from tsdm.encoders.time import (
     DateTimeEncoder,
@@ -162,18 +163,27 @@ SKLEARN_MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
 r"""Dictionary of all available sklearn encoders."""
 
 MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
+    "BaseEncoder": BaseEncoder,
     "ChainedEncoder": ChainedEncoder,
+    "CloneEncoder": CloneEncoder,
     "DataFrameEncoder": DataFrameEncoder,
     "DateTimeEncoder": DateTimeEncoder,
+    "DuplicateEncoder": DuplicateEncoder,
     "FloatEncoder": FloatEncoder,
     "IdentityEncoder": IdentityEncoder,
-    "MinMaxScaler": MinMaxScaler,
-    "Standardizer": Standardizer,
-    "TensorEncoder": TensorEncoder,
-    "Time2Float": Time2Float,
     "IntEncoder": IntEncoder,
+    "MinMaxScaler": MinMaxScaler,
+    "PeriodicEncoder": PeriodicEncoder,
+    "PeriodicSocialTimeEncoder": PeriodicSocialTimeEncoder,
+    "ProductEncoder": ProductEncoder,
+    "SocialTimeEncoder": SocialTimeEncoder,
+    "Standardizer": Standardizer,
+    "TensorConcatenator": TensorConcatenator,
+    "TensorEncoder": TensorEncoder,
+    "TensorSplitter": TensorSplitter,
+    "Time2Float": Time2Float,
+    "TimeDeltaEncoder": TimeDeltaEncoder,
     "TripletEncoder": TripletEncoder,
-    "ConcatEncoder": ConcatEncoder,
 }
 r"""Dictionary of all available modular encoders."""
 
