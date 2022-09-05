@@ -3,6 +3,9 @@ r"""Utility functions.
 TODO:  Module description
 """
 
+# from __future__ import annotations
+
+
 __all__ = [
     # Constants
     # Classes
@@ -30,12 +33,12 @@ from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Optional, Union, cast, overload
+from typing import Any, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 from numpy.typing import NDArray
 
-from tsdm.utils.types import Nested, ObjectType, PathType, ReturnType
+from tsdm.utils.types import AnyTypeVar, Nested, ObjectVar, PathType, ReturnVar
 from tsdm.utils.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
@@ -56,13 +59,13 @@ def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
 
 
 def flatten_dict(
-    d: dict[Hashable, Any],
+    d: dict[Any, Any],
     /,
     *,
     join_string: Optional[str] = None,
     key_func: Optional[Callable[[Hashable, Hashable], Hashable]] = None,
     recursive: bool | int = True,
-) -> dict[Hashable, Any]:
+) -> dict[Any, Any]:
     r"""Flatten a dictionary containing iterables to a list of tuples.
 
     Parameters
@@ -79,24 +82,23 @@ def flatten_dict(
     if join_string is not None and key_func is not None:
         raise ValueError("Only one of join_string or key_func can be specified.")
 
-    update_func: Callable[[Hashable, Hashable], Hashable]
-
     if join_string is not None:
-        update_func = lambda k, sk: f"{k}{join_string}{sk}"  # noqa: E731
+        key_func = lambda k, sk: f"{k}{join_string}{sk}"  # noqa: E731
     elif key_func is None:
-        update_func = lambda k, sk: (k, sk)  # noqa: E731
+        key_func = lambda k, sk: (k, sk)  # noqa: E731
     else:
-        update_func = key_func
+        key_func = key_func
 
     result = {}
     for key, item in d.items():
         if isinstance(key, tuple):
             raise ValueError("Keys are not allowed to be tuples!")
         if isinstance(item, dict) and recursive:
-            subdict = cast(dict[Hashable, Any], item)
-            subdict = flatten_dict(subdict, recursive=True)
+            subdict = flatten_dict(
+                item, recursive=True, key_func=key_func, join_string=join_string
+            )
             for subkey, subitem in subdict.items():
-                result[update_func(key, subkey)] = subitem
+                result[key_func(key, subkey)] = subitem
         else:
             result[key] = item
     return result
@@ -105,9 +107,12 @@ def flatten_dict(
 class Split(NamedTuple):
     r"""Holds indices for train/valid/test set."""
 
-    train: Any
+    train: int
+    """The training set."""
     valid: Any
+    """The validation set."""
     test: Any
+    """The testing set."""
 
 
 def round_relative(x: np.ndarray, decimals: int = 2) -> np.ndarray:
@@ -168,10 +173,10 @@ def deep_kval_update(d: dict, **new_kvals: dict) -> dict:
 
 
 def apply_nested(
-    nested: Nested[Optional[ObjectType]],
-    kind: type[ObjectType],
-    func: Callable[[ObjectType], ReturnType],
-) -> Nested[Optional[ReturnType]]:
+    nested: Nested[AnyTypeVar | None],
+    kind: type[AnyTypeVar],
+    func: Callable[[AnyTypeVar], ReturnVar],
+) -> Nested[ReturnVar | None]:
     r"""Apply function to nested iterables of a given kind.
 
     Parameters
@@ -234,8 +239,8 @@ def prepend_path(
     ----------
     files
         Nested datastructures with Path-objects at leave nodes.
-    parent: Path
-    keep_none: bool
+    parent:
+    keep_none:
         If True, None-values are kept.
 
     Returns
@@ -284,22 +289,22 @@ def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
 # partial from type
 @overload
 def initialize_from(
-    lookup_table: dict[str, type[ObjectType]],
+    lookup_table: dict[str, type[ObjectVar]],
     /,
     __name__: str,
     **kwargs: Any,
-) -> ObjectType:
+) -> ObjectVar:
     ...
 
 
 # partial from func
 @overload
 def initialize_from(
-    lookup_table: dict[str, Callable[..., ReturnType]],
+    lookup_table: dict[str, Callable[..., ReturnVar]],
     /,
     __name__: str,
     **kwargs: Any,
-) -> Callable[..., ReturnType]:
+) -> Callable[..., ReturnVar]:
     ...
 
 
@@ -316,14 +321,14 @@ def initialize_from(
 
 def initialize_from(  # type: ignore[misc]
     lookup_table: Union[
-        dict[str, type[ObjectType]],
-        dict[str, Callable[..., ReturnType]],
-        dict[str, type[ObjectType] | Callable[..., ReturnType]],
+        dict[str, type[ObjectVar]],
+        dict[str, Callable[..., ReturnVar]],
+        dict[str, type[ObjectVar] | Callable[..., ReturnVar]],
     ],
     /,
     __name__: str,
     **kwargs: Any,
-) -> ObjectType | Callable[..., ReturnType]:
+) -> ObjectVar | Callable[..., ReturnVar]:
     r"""Lookup class/function from dictionary and initialize it.
 
     Roughly equivalent to:
@@ -353,10 +358,10 @@ def initialize_from(  # type: ignore[misc]
 
     # check that obj is a class, but not metaclass or instance.
     if isinstance(obj, type) and not issubclass(obj, type):
-        initialized_object: ObjectType = obj(**kwargs)
+        initialized_object: ObjectVar = obj(**kwargs)
         return initialized_object
     # if it is function, fix kwargs
-    initialized_callable: Callable[..., ReturnType] = partial(obj, **kwargs)  # type: ignore[assignment]
+    initialized_callable: Callable[..., ReturnVar] = partial(obj, **kwargs)  # type: ignore[assignment]
     return initialized_callable
 
 

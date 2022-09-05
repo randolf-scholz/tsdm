@@ -51,7 +51,7 @@ def data_overview(df: DataFrame) -> DataFrame:
     overview["max"] = df.max().round(2)
     freq = {}
     for col in df:
-        mask = pandas.notna(df[col])
+        mask = pandas.notna(df[col].squeeze())
         time = df.index[mask]
         freq[col] = Series(time).diff().mean()
     overview["freq"] = Series(freq)
