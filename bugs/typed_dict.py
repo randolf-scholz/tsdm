@@ -1,3 +1,5 @@
+#!/usr/bin/env python3.10
+
 from typing import TypedDict
 
 
