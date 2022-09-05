@@ -14,6 +14,7 @@ from typing import Any, Literal, NamedTuple, Optional
 import pandas as pd
 import torch
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
+from pandas._libs.missing import NAType
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.nn import MSELoss
@@ -41,7 +42,7 @@ class Sample(NamedTuple):
         return repr_namedtuple(self, recursive=1)
 
 
-def get_induction_time(s: Series) -> Timestamp | type[pd.NA]:
+def get_induction_time(s: Series) -> Timestamp | NAType:
     r"""Compute the induction time."""
     # s = ts.loc[run_id, exp_id]
     inducer = s["InducerConcentration"]

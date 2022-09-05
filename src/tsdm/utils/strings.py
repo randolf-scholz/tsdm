@@ -1,6 +1,8 @@
 r"""Utility functions for string manipulation."""
 
-from __future__ import annotations
+# from __future__ import annotations
+#
+# from __future__ import annotations
 
 __all__ = [
     # Functions
@@ -13,6 +15,9 @@ __all__ = [
     "tensor_info",
     "dict2string",
 ]
+__ALL__ = dir() + __all__
+
+
 import builtins
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from typing import Any, NamedTuple, Optional, cast, overload
@@ -21,6 +26,10 @@ from pandas import DataFrame, Series
 from torch import Tensor
 
 from tsdm.utils.types.protocols import Array, NTuple
+
+
+def __dir__() -> list[str]:
+    return __ALL__
 
 
 @overload

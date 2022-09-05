@@ -1,19 +1,17 @@
 tsdm - 𝗧ime 𝗦eries 𝗗atasets and 𝗠odels
 =======================================
 
+.. toctree::
+   :titlesonly:
+   :maxdepth: 2
+   :name: mastertoc
 
-Welcome to My Toolbox
-=====================
-
-Some words.
-
-.. autosummary::
-   :toctree: _autosummary
-   :template: autosummary-custom/custom-module.rst
-   :recursive:
-
-   tsdm
-
+   API <autoapi/tsdm/index.rst>
+   RECIPES <RECIPES>
+   CHANGELOG <CHANGELOG>
+   CONTRIBUTING <CONTRIBUTING>
+   LICENSE <LICENSE>
+   README <README>
 
 Installation
 ============

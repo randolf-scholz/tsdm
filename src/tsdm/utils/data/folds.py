@@ -11,7 +11,6 @@ from collections.abc import Mapping, Sequence
 from typing import Optional, TypeAlias
 
 import numpy as np
-from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
 FOLDS: TypeAlias = Sequence[Mapping[str, Series]]
@@ -58,7 +57,7 @@ def folds_from_groups(
 
 
 def folds_as_frame(
-    folds: FOLDS, *, index: Optional[Mapping | NDArray] = None, sparse: bool = False
+    folds: FOLDS, /, *, index: Optional[Sequence] = None, sparse: bool = False
 ) -> DataFrame:
     r"""Create a table holding the fold information.
 
@@ -78,14 +77,17 @@ def folds_as_frame(
         # create a default index
         first_fold = next(iter(folds))
         first_split = next(iter(first_fold.values()))
-        index = (
+
+        name_index: Sequence = (
             first_split.index
             if isinstance(first_split, Series)
             else np.arange(len(first_split))
         )
+    else:
+        name_index = index
 
-    fold_idx = Index(list(range(len(folds))), name="fold")
-    splits = DataFrame(index=index, columns=fold_idx, dtype="string")
+    fold_idx = Index(range(len(folds)), name="fold")
+    splits = DataFrame(index=name_index, columns=fold_idx, dtype="string")
 
     for k in fold_idx:
         for key, split in folds[k].items():

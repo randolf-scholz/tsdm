@@ -92,13 +92,14 @@ from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import Any, Generic, Optional
 
+from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import Dataset
 from tsdm.encoders import ModularEncoder
 from tsdm.utils import LazyDict
-from tsdm.utils.types import KeyType
+from tsdm.utils.types import KeyVar
 
 
 class BaseTaskMetaClass(ABCMeta):
@@ -109,7 +110,7 @@ class BaseTaskMetaClass(ABCMeta):
         super().__init__(*args, **kwargs)
 
 
-class BaseTask(ABC, Generic[KeyType], metaclass=BaseTaskMetaClass):
+class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
@@ -168,23 +169,23 @@ class BaseTask(ABC, Generic[KeyType], metaclass=BaseTaskMetaClass):
 
     @property
     @abstractmethod
-    def dataset(self) -> Dataset:
+    def dataset(self) -> Dataset | DataFrame:
         r"""Return the cached dataset associated with the task."""
 
     @property
     @abstractmethod
-    def index(self) -> Sequence[KeyType]:
+    def index(self) -> Sequence[KeyVar]:
         r"""List of index."""
 
     @property
     @abstractmethod
-    def splits(self) -> Mapping[KeyType, Any]:
+    def splits(self) -> Mapping[KeyVar, Any]:
         r"""Cache dictionary of dataset slices."""
 
     @abstractmethod
     def get_dataloader(
         self,
-        key: KeyType,
+        key: KeyVar,
         /,
         **dataloader_kwargs: Any,
     ) -> DataLoader:
