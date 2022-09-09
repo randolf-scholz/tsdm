@@ -56,6 +56,7 @@ class MIMIC_III(MultiFrameDataset):
 
     BASE_URL: str = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
     INFO_URL: str = r"https://physionet.org/content/mimiciii/1.4/"
+    other_url = "https://mimic.mit.edu/"
     dataset_files = {"observations": "observations.feather", "stats": "stats.feather"}
     rawdata_files = "mimic-iii-clinical-database-1.4.zip"
     index = ["observations", "stats"]
