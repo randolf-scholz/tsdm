@@ -27,6 +27,7 @@ class MIMIC_IV(MultiFrameDataset):
 
     BASE_URL: str = r"https://www.physionet.org/content/mimiciv/get-zip/1.0/"
     INFO_URL: str = r"https://www.physionet.org/content/mimiciv/1.0/"
+    HOME_URL: str = r"https://mimic.mit.edu/"
     VERSION: str = "1.0"
 
     @property
