@@ -492,7 +492,7 @@ def vectorize(
 
     Returns
     -------
-    Callable[[Union[ObjectType, CollectionType]], Union[ReturnType, CollectionType]]
+    Callable[[ObjectType | CollectionType], ReturnType | CollectionType]
 
     Examples
     --------

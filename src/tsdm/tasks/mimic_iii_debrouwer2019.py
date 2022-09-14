@@ -1,6 +1,6 @@
 r"""MIMIC-II clinical dataset."""
 
-__all__ = ["MIMIC_IV_Bilos", "mimic_collate"]
+__all__ = ["MIMIC_III_DeBrouwer2019", "mimic_collate"]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -15,7 +15,7 @@ from torch import Tensor, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import MIMIC_IV
+from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
 from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
@@ -141,57 +141,62 @@ def mimic_collate(batch: list[Sample]) -> Batch:
     )
 
 
-class MIMIC_IV_Bilos(BaseTask):
+class MIMIC_III_DeBrouwer2019(BaseTask):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al.
 
     Evaluation Protocol
     -------------------
 
-    Filtering approach. Following De Brouwer et al. [16], we use clinical database MIMIC-III [35],
-    pre-processed to contain 21250 patients’ time series, with 96 features. We also process newly released
-    MIMIC-IV [25, 36] to obtain 17874 patients. The details are in Appendix D.2. The goal is to predict
-    the next three measurements in the 12 hour interval after the observation window of 36 hours.
+    We use the publicly available MIMIC-III clinical database (Johnson et al., 2016), which contains
+    EHR for more than 60,000 critical care patients. We select a subset of 21,250 patients with sufficient
+    observations and extract 96 different longitudinal real-valued measurements over a period of 48 hours
+    after patient admission. We refer the reader to Appendix K for further details on the cohort selection.
+    We focus on the predictions of the next 3 measurements after a 36-hour observation window.
 
-    Table 2 shows that our GRU flow model (Equation 5) mostly outperforms GRU-ODE [16]. Addition-
-    ally, we show that the ordinary ResNet flow with 4 stacked transformations (Equation 2) performs
-    worse. The reason might be because it is missing GRU flow properties, such as boundedness. Simi-
-    larly, an ODE with a regular neural network does not outperform GRU-ODE [16]. Finally, we report
-    that the model with GRU flow requires 60% less time to run one training epoch.
+    The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
+    harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
+    measurements outside the 5 standard deviation interval. For models requiring binning of the time
+    series, we map the measurements in 30-minute time bins, which gives 97 bins for 48 hours. When
+    two observations fall in the same bin, they are either averaged or summed depending on the nature
+    of the observation. Using the same taxonomy as in Table 5, lab measurements are averaged, while
+    inputs, outputs, and prescriptions are summed.
+    This gives a total of 3,082,224 unique measurements across all patients, or an average of 145
+    measurements per patient over 48 hours.
 
     References
     ----------
-    - | `Neural Flows: Efficient Alternative to Neural ODEs
-        <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
-      | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann
-      | `Advances in Neural Information Processing Systems 2021
-        <https://proceedings.neurips.cc/paper/2021>`_
+    - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
+        <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+      | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
+      | `Advances in Neural Information Processing Systems 2019
+        <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)
+    observation_time = 75  # corresponds to 36 hours after admission (freq=30min)
     prediction_steps = 3
     num_folds = 5
     seed = 432
-    test_size = 0.1
-    valid_size = 0.2
+    test_size = 0.1  # of total
+    valid_size = 0.2  # of train, i.e. 0.9*0.2 = 0.18
     device: torch.device
 
     def __init__(self, normalize_time: bool = False, device: str = "cpu"):
         super().__init__()
         self.device = torch.device(device)
         self.normalize_time = normalize_time
-        self.IDs = self.dataset.reset_index()["hadm_id"].unique()
+        self.IDs = self.dataset.reset_index()["UNIQUE_ID"].unique()
 
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ds = MIMIC_IV()["observations"]
-
+        ds = MIMIC_III_Dataset()["timeseries"]
+        # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         if self.normalize_time:
             ds = ds.reset_index()
-            t_max = ds["time_stamp"].max()
+            t_max = ds["TIME_STAMP"].max()
             self.observation_time /= t_max
-            ds["time_stamp"] /= t_max
-            ds = ds.set_index(["hadm_id", "time_stamp"])
+            ds["TIME_STAMP"] /= t_max
+            ds = ds.set_index(["UNIQUE_ID", "TIME_STAMP"])
         return ds
 
     @cached_property

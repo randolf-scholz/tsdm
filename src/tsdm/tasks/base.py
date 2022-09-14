@@ -216,22 +216,3 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         return LazyDict(
             {key: (self.get_dataloader, kwargs | {"key": key}) for key in self.splits}
         )
-
-    # @cached_property
-    # def batchloaders(self) -> Mapping[KeyType, DataLoader]:
-    #     r"""Cache main training-dataloader."""
-    #     return LazyDict(
-    #         (
-    #             key,
-    #             (
-    #                 self.get_dataloader, key,
-    #                 {
-    #                     "key": key,
-    #                     "batch_size": self.train_batch_size,
-    #                     "shuffle": True,
-    #                     "drop_last": True,
-    #                 },
-    #             ),
-    #         )
-    #         for key in self.splits
-    #     )

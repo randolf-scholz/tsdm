@@ -16,19 +16,21 @@ very large population of ICU patients; and it contains highly granular data, inc
 vital signs, laboratory results, and medications.
 """
 
-__all__ = ["MIMIC_III"]
+__all__ = ["MIMIC_III_DeBrouwer2019"]
 
 import os
 import subprocess
+import warnings
 from getpass import getpass
 from hashlib import sha256
 
 import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
+from tsdm.encoders import TripletDecoder
 
 
-class MIMIC_III(MultiFrameDataset):
+class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -57,46 +59,65 @@ class MIMIC_III(MultiFrameDataset):
     INFO_URL: str = r"https://physionet.org/content/mimiciii/1.4/"
     HOME_URL: str = r"https://mimic.mit.edu/"
     GITHUB_URL: str = r"https://github.com/edebrouwer/gru_ode_bayes/"
-    VERSION: str = r"1.0"
-    SHA256: str = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
-
-    rawdata_files = "mimic-iv-1.0.zip"
-
-    # fmt: off
-    dataset_files = {
-        "ADMISSIONS"         : "mimic-iii-clinical-database-1.4/ADMISSIONS.csv.gz",
-        "CALLOUT"            : "mimic-iii-clinical-database-1.4/CALLOUT.csv.gz",
-        "CAREGIVERS"         : "mimic-iii-clinical-database-1.4/CAREGIVERS.csv.gz",
-        "CHARTEVENTS"        : "mimic-iii-clinical-database-1.4/CHARTEVENTS.csv.gz",
-        "CPTEVENTS"          : "mimic-iii-clinical-database-1.4/CPTEVENTS.csv.gz",
-        "DATETIMEEVENTS"     : "mimic-iii-clinical-database-1.4/DATETIMEEVENTS.csv.gz",
-        "D_CPT"              : "mimic-iii-clinical-database-1.4/D_CPT.csv.gz",
-        "DIAGNOSES_ICD"      : "mimic-iii-clinical-database-1.4/DIAGNOSES_ICD.csv.gz",
-        "D_ICD_DIAGNOSES"    : "mimic-iii-clinical-database-1.4/D_ICD_DIAGNOSES.csv.gz",
-        "D_ICD_PROCEDURES"   : "mimic-iii-clinical-database-1.4/D_ICD_PROCEDURES.csv.gz",
-        "D_ITEMS"            : "mimic-iii-clinical-database-1.4/D_ITEMS.csv.gz",
-        "D_LABITEMS"         : "mimic-iii-clinical-database-1.4/D_LABITEMS.csv.gz",
-        "DRGCODES"           : "mimic-iii-clinical-database-1.4/DRGCODES.csv.gz",
-        "ICUSTAYS"           : "mimic-iii-clinical-database-1.4/ICUSTAYS.csv.gz",
-        "INPUTEVENTS_CV"     : "mimic-iii-clinical-database-1.4/INPUTEVENTS_CV.csv.gz",
-        "INPUTEVENTS_MV"     : "mimic-iii-clinical-database-1.4/INPUTEVENTS_MV.csv.gz",
-        "LABEVENTS"          : "mimic-iii-clinical-database-1.4/LABEVENTS.csv.gz",
-        "MICROBIOLOGYEVENTS" : "mimic-iii-clinical-database-1.4/MICROBIOLOGYEVENTS.csv.gz",
-        "NOTEEVENTS"         : "mimic-iii-clinical-database-1.4/NOTEEVENTS.csv.gz",
-        "OUTPUTEVENTS"       : "mimic-iii-clinical-database-1.4/OUTPUTEVENTS.csv.gz",
-        "PATIENTS"           : "mimic-iii-clinical-database-1.4/PATIENTS.csv.gz",
-        "PRESCRIPTIONS"      : "mimic-iii-clinical-database-1.4/PRESCRIPTIONS.csv.gz",
-        "PROCEDUREEVENTS_MV" : "mimic-iii-clinical-database-1.4/PROCEDUREEVENTS_MV.csv.gz",
-        "PROCEDURES_ICD"     : "mimic-iii-clinical-database-1.4/PROCEDURES_ICD.csv.gz",
-        "SERVICES"           : "mimic-iii-clinical-database-1.4/SERVICES.csv.gz",
-        "TRANSFERS"          : "mimic-iii-clinical-database-1.4/TRANSFERS.csv.gz",
-    }
-    # fmt: on
-
-    index = list(dataset_files.keys())
+    dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
+    rawdata_files = "mimic-iii-clinical-database-1.4.zip"
+    index = ["timeseries", "metadata"]
+    SHA256 = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
+    SHAPE = (3082224, 7)
+    TS_FILE = "complete_tensor.csv"
 
     def _clean(self, key):
-        ...
+        ts_path = self.RAWDATA_DIR / self.TS_FILE
+        if not ts_path.exists():
+            raise RuntimeError(
+                f"Please apply the preprocessing code found at {self.GITHUB_URL}."
+                f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
+            )
+        if sha256(ts_path.read_bytes()).hexdigest() != self.SHA256:
+            warnings.warn("The sha256 seems incorrect.")
+
+        ts = pd.read_csv(ts_path, index_col=0)
+
+        if ts.shape != self.SHAPE:
+            raise ValueError(
+                f"The {ts.shape=} is not correct."
+                "Please apply the modified preprocessing using bin_k=2, as outlined in"
+                "the appendix. The resulting tensor should have 3082224 rows and 7 columns."
+            )
+
+        ts = ts.sort_values(by=["UNIQUE_ID", "TIME_STAMP"])
+        ts = ts.astype(
+            {
+                "UNIQUE_ID": "int16",
+                "TIME_STAMP": "int16",
+                "LABEL_CODE": "int16",
+                "VALUENORM": "float32",
+                "MEAN": "float32",
+                "STD": "float32",
+            }
+        )
+
+        means = ts.groupby("LABEL_CODE").mean()["VALUENUM"].rename("MEANS")
+        stdvs = ts.groupby("LABEL_CODE").std()["VALUENUM"].rename("STDVS")
+        stats = pd.DataFrame([means, stdvs]).T.reset_index()
+        stats = stats.astype(
+            {
+                "LABEL_CODE": "int16",
+                "MEANS": "float32",
+                "STDVS": "float32",
+            }
+        )
+
+        ts = ts[["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENORM"]]
+        ts = ts.reset_index(drop=True)
+        ts = ts.set_index(["UNIQUE_ID", "TIME_STAMP"])
+        ts = ts.sort_index()
+        encoder = TripletDecoder(value_name="VALUENORM", var_name="LABEL_CODE")
+        encoder.fit(ts)
+        ts = encoder.encode(ts)
+        ts.columns = ts.columns.astype("string")
+        stats.to_parquet(self.dataset_paths["metadata"])
+        ts.to_parquet(self.dataset_paths["timeseries"])
 
     def _load(self, key):
         # return NotImplemented
@@ -118,8 +139,3 @@ class MIMIC_III(MultiFrameDataset):
 
         file = self.RAWDATA_DIR / "index.html"
         os.rename(file, self.rawdata_files)
-
-        assert self.rawdata_paths.exists(), f"File {self.rawdata_files} does not exist."
-
-        if sha256(self.rawdata_paths.read_bytes()).hexdigest() != self.SHA256:
-            raise RuntimeError("The sha256 seems incorrect.")

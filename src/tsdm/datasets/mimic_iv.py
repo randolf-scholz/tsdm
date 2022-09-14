@@ -19,11 +19,9 @@ __all__ = ["MIMIC_IV"]
 
 import os
 import subprocess
-import warnings
 from getpass import getpass
 from hashlib import sha256
 
-import numpy as np
 import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
@@ -49,45 +47,47 @@ class MIMIC_IV(MultiFrameDataset):
     INFO_URL: str = r"https://www.physionet.org/content/mimiciv/1.0/"
     HOME_URL: str = r"https://mimic.mit.edu/"
     GITHUB_URL: str = r"https://github.com/mbilos/neural-flows-experiments"
-    dataset_files = {"timeseries": "timeseries.parquet"}
+    VERSION: str = r"1.0"
+    SHA256: str = r"dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+
     rawdata_files = "mimic-iv-1.0.zip"
-    index = ["timeseries"]
-    SHAPE = (2485769, 206)
-    SHA256 = "cb90e0cef16d50011aaff7059e73d3f815657e10653a882f64f99003e64c70f5"
-    TS_FILE = "full_dataset.csv"
+
+    # fmt: off
+    dataset_files = {
+        "admissions"         : "mimic-iv-1.0/core/admissions.csv.gz",
+        "patients"           : "mimic-iv-1.0/core/patients.csv.gz",
+        "transfers"          : "mimic-iv-1.0/core/transfers.csv.gz",
+        "chartevents"        : "mimic-iv-1.0/icu/chartevents.csv.gz",
+        "datetimeevents"     : "mimic-iv-1.0/icu/datetimeevents.csv.gz",
+        "d_items"            : "mimic-iv-1.0/icu/d_items.csv.gz",
+        "icustays"           : "mimic-iv-1.0/icu/icustays.csv.gz",
+        "inputevents"        : "mimic-iv-1.0/icu/inputevents.csv.gz",
+        "outputevents"       : "mimic-iv-1.0/icu/outputevents.csv.gz",
+        "procedureevents"    : "mimic-iv-1.0/icu/procedureevents.csv.gz",
+        "d_hcpcs"            : "mimic-iv-1.0/hosp/d_hcpcs.csv.gz",
+        "diagnoses_icd"      : "mimic-iv-1.0/hosp/diagnoses_icd.csv.gz",
+        "d_icd_diagnoses"    : "mimic-iv-1.0/hosp/d_icd_diagnoses.csv.gz",
+        "d_icd_procedures"   : "mimic-iv-1.0/hosp/d_icd_procedures.csv.gz",
+        "d_labitems"         : "mimic-iv-1.0/hosp/d_labitems.csv.gz",
+        "drgcodes"           : "mimic-iv-1.0/hosp/drgcodes.csv.gz",
+        "emar"               : "mimic-iv-1.0/hosp/emar.csv.gz",
+        "emar_detail"        : "mimic-iv-1.0/hosp/emar_detail.csv.gz",
+        "hcpcsevents"        : "mimic-iv-1.0/hosp/hcpcsevents.csv.gz",
+        "labevents"          : "mimic-iv-1.0/hosp/labevents.csv.gz",
+        "microbiologyevents" : "mimic-iv-1.0/hosp/microbiologyevents.csv.gz",
+        "pharmacy"           : "mimic-iv-1.0/hosp/pharmacy.csv.gz",
+        "poe"                : "mimic-iv-1.0/hosp/poe.csv.gz",
+        "poe_detail"         : "mimic-iv-1.0/hosp/poe_detail.csv.gz",
+        "prescriptions"      : "mimic-iv-1.0/hosp/prescriptions.csv.gz",
+        "procedures_icd"     : "mimic-iv-1.0/hosp/procedures_icd.csv.gz",
+        "services"           : "mimic-iv-1.0/hosp/services.csv.gz",
+    }
+    # fmt: on
+
+    index = list(dataset_files.keys())
 
     def _clean(self, key):
-        ts_path = self.RAWDATA_DIR / self.TS_FILE
-        if not ts_path.exists():
-            raise RuntimeError(
-                f"Please apply the preprocessing code found at {self.GITHUB_URL}."
-                f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
-            )
-
-        if sha256(ts_path.read_bytes()).hexdigest() != self.SHA256:
-            warnings.warn("The sha256 seems incorrect.")
-
-        ts = pd.read_csv(ts_path)
-
-        if ts.shape != self.SHAPE:
-            raise ValueError(f"The {ts.shape=} is not correct.")
-
-        ts = ts.sort_values(by=["hadm_id", "time_stamp"])
-        ts = ts.astype(
-            {
-                "hadm_id": "int32",
-                "time_stamp": "int16",
-            }
-        )
-        ts = ts.set_index(list(ts.columns[:2]))
-        for i, col in enumerate(ts):
-            if i % 2 == 1:
-                continue
-            ts[col] = np.where(ts.iloc[:, i + 1], ts[col], np.nan)
-        ts = ts.drop(columns=ts.columns[1::2])
-        ts = ts.sort_index()
-        ts = ts.astype("float32")
-        ts.to_parquet(self.dataset_paths["timeseries"])
+        ...
 
     def _load(self, key):
         return pd.read_parquet(self.dataset_paths[key])
@@ -95,7 +95,7 @@ class MIMIC_IV(MultiFrameDataset):
     def _download(self, **_):
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-IV username: ")
-        password = getpass(prompt="MIMIC-III password: ", stream=None)
+        password = getpass(prompt="MIMIC-IV password: ", stream=None)
 
         os.environ["PASSWORD"] = password
 
@@ -108,3 +108,8 @@ class MIMIC_IV(MultiFrameDataset):
 
         file = self.RAWDATA_DIR / "index.html"
         os.rename(file, self.rawdata_files)
+
+        assert self.rawdata_paths.exists(), f"File {self.rawdata_files} does not exist."
+
+        if sha256(self.rawdata_paths.read_bytes()).hexdigest() != self.SHA256:
+            raise RuntimeError("The sha256 seems incorrect.")
