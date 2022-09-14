@@ -15,6 +15,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
+from tsdm.encoders import FrameEncoder, MinMaxScaler, Standardizer
 from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
@@ -174,11 +175,12 @@ class MIMIC_IV_Bilos2021(BaseTask):
     valid_size = 0.2  # of train split size, i.e. 0.85*0.2=0.17
     device: torch.device
 
-    # Standardization is performed over full data slice, including test!
-    # https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L53
-
     def __init__(self, normalize_time: bool = False, device: str = "cpu"):
         super().__init__()
+        self.encoder = FrameEncoder(
+            column_encoders=Standardizer(),
+            index_encoders={"time_stamp": MinMaxScaler()},
+        )
         self.device = torch.device(device)
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["hadm_id"].unique()
@@ -188,16 +190,28 @@ class MIMIC_IV_Bilos2021(BaseTask):
         r"""Load the dataset."""
         ds = MIMIC_IV_Dataset()["timeseries"]
 
-        if self.normalize_time:
-            ds = ds.reset_index()
-            t_max = ds["time_stamp"].max()
-            self.observation_time /= t_max
-            ds["time_stamp"] /= t_max
-            ds = ds.set_index(["hadm_id", "time_stamp"])
+        # Standardization is performed over full data slice, including test!
+        # https://github.com/mbilos/neural-flows-experiments/blob/
+        # bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
 
-        # Standardize the data
+        # Standardize the x-values, min-max scale the t values.
+        self.encoder.fit(ds)
+        ts = self.encoder.encode(ds)
 
-        return ds
+        index_encoder = self.encoder.index_encoders["time_stamp"]
+        self.observation_time /= index_encoder.param.xmax
+
+        # drop values outside 5 sigma range
+        ts = ts[(-5 < ts) & (ts < 5)].copy()
+
+        # if self.normalize_time:
+        #     ds = ds.reset_index()
+        #     t_max = ds["time_stamp"].max()
+        #     self.observation_time /= t_max
+        #     ds["time_stamp"] /= t_max
+        #     ds = ds.set_index(["hadm_id", "time_stamp"])
+
+        return ts
 
     @cached_property
     def folds(self) -> list[dict[str, Sequence[int]]]:
