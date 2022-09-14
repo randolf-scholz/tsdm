@@ -996,6 +996,7 @@ class TripletDecoder(BaseEncoder):
             columns=self.var_name,
             values=self.value_name,
             dropna=False,
+            observed=True,
         )
 
         if isinstance(data.index, MultiIndex):
