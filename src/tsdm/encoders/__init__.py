@@ -62,7 +62,6 @@ __all__ = [
     # Classes
     "ChainedEncoder",
     "CloneEncoder",
-    "ConcatEncoder",
     "DataFrameEncoder",
     "DateTimeEncoder",
     "DuplicateEncoder",

@@ -2,7 +2,6 @@ r"""MIMIC-III Clinical Database.
 
 Abstract
 --------
-
 MIMIC-III is a large, freely-available database comprising de-identified health-related
 data associated with over forty thousand patients who stayed in critical care units of
 the Beth Israel Deaconess Medical Center between 2001 and 2012.
@@ -21,7 +20,9 @@ __all__ = ["MIMIC_III"]
 
 import os
 import subprocess
+import warnings
 from getpass import getpass
+from hashlib import sha256
 
 import pandas as pd
 
@@ -56,23 +57,28 @@ class MIMIC_III(MultiFrameDataset):
 
     BASE_URL: str = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
     INFO_URL: str = r"https://physionet.org/content/mimiciii/1.4/"
-    other_url = "https://mimic.mit.edu/"
-    dataset_files = {"observations": "observations.feather", "stats": "stats.feather"}
+    HOME_URL: str = r"https://mimic.mit.edu/"
+    GITHUB_URL: str = r"https://github.com/edebrouwer/gru_ode_bayes/"
+    dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
     rawdata_files = "mimic-iii-clinical-database-1.4.zip"
-    index = ["observations", "stats"]
+    index = ["timeseries", "metadata"]
+    SHA256 = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
+    SHAPE = (3082224, 7)
+    TS_FILE = "complete_tensor.csv"
 
     def _clean(self, key):
-        ts_file = self.RAWDATA_DIR / "complete_tensor.csv"
-        if not ts_file.exists():
+        ts_path = self.RAWDATA_DIR / self.TS_FILE
+        if not ts_path.exists():
             raise RuntimeError(
-                "Please apply the preprocessing code found at "
-                "https://github.com/edebrouwer/gru_ode_bayes/."
+                f"Please apply the preprocessing code found at {self.GITHUB_URL}."
                 f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
             )
+        if sha256(ts_path.read_bytes()).hexdigest() != self.SHA256:
+            warnings.warn("The sha256 seems incorrect.")
 
-        ts = pd.read_csv(ts_file, index_col=0)
+        ts = pd.read_csv(ts_path, index_col=0)
 
-        if ts.shape != (3082224, 7):
+        if ts.shape != self.SHAPE:
             raise ValueError(
                 f"The {ts.shape=} is not correct."
                 "Please apply the modified preprocessing using bin_k=2, as outlined in"
@@ -108,22 +114,14 @@ class MIMIC_III(MultiFrameDataset):
         ts = ts.sort_index()
         encoder = TripletDecoder(value_name="VALUENORM", var_name="LABEL_CODE")
         encoder.fit(ts)
-        encoded = encoder.encode(ts)
-        ts = encoded.reset_index()
+        ts = encoder.encode(ts)
         ts.columns = ts.columns.astype("string")
-        stats.to_feather(self.dataset_paths["stats"])
-        ts.to_feather(self.dataset_paths["observations"])
+        stats.to_parquet(self.dataset_paths["metadata"])
+        ts.to_parquet(self.dataset_paths["timeseries"])
 
     def _load(self, key):
         # return NotImplemented
-        df = pd.read_feather(self.dataset_paths[key])
-
-        if key == "observations":
-            df = df.set_index(["UNIQUE_ID", "TIME_STAMP"])
-            df = df.sort_index()
-        elif key == "stats":
-            df = df.set_index("LABEL_CODE")
-        return df
+        return pd.read_parquet(self.dataset_paths[key])
 
     def _download(self, **_):
         cut_dirs = self.BASE_URL.count("/") - 3

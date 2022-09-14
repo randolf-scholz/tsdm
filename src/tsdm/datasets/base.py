@@ -322,12 +322,12 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
         self.LOGGER.info("Adding keys as attributes.")
-
-        for key in self.index:
-            if isinstance(key, str) and not hasattr(self, key):
-                _get_dataset = partial(self.__class__.load, key=key)
-                _get_dataset.__doc__ = f"Load dataset for {key=}."
-                setattr(self.__class__, key, property(_get_dataset))
+        if initialize:
+            for key in self.index:
+                if isinstance(key, str) and not hasattr(self, key):
+                    _get_dataset = partial(self.__class__.load, key=key)
+                    _get_dataset.__doc__ = f"Load dataset for {key=}."
+                    setattr(self.__class__, key, property(_get_dataset))
 
         super().__init__(initialize=initialize, reset=reset)
 

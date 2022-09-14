@@ -183,3 +183,6 @@ dask-worker-space/
 
 # LibreOffice lock files
 .~lock.*
+/dev/datasets/MIMIC-IV/processed/
+/dev/datasets/MIMIC-IV/raw/
+/dev/datasets/MIMIC-IV/mimic-iv-1.0.zip

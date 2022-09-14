@@ -39,6 +39,8 @@
       <w>bfgs</w>
       <w>bfloat</w>
       <w>bijective</w>
+      <w>bilos</w>
+      <w>biloš</w>
       <w>binarize</w>
       <w>binarizer</w>
       <w>bools</w>
@@ -126,6 +128,7 @@
       <w>goel</w>
       <w>groupby</w>
       <w>guanghua</w>
+      <w>günnemann</w>
       <w>haoyi</w>
       <w>hardshrink</w>
       <w>hardsigmoid</w>
@@ -339,6 +342,7 @@
       <w>softplus</w>
       <w>softshrink</w>
       <w>softsign</w>
+      <w>sommer</w>
       <w>sourcedir</w>
       <w>sphinxbuild</w>
       <w>sphinxcontrib</w>

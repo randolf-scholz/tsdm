@@ -39,6 +39,7 @@ __all__ = [
     "InSilicoData",
     "KIWI_RUNS",
     "MIMIC_III",
+    "MIMIC_IV",
     "Physionet2019",
     "Physionet2012",
     "Traffic",
@@ -61,6 +62,7 @@ from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_runs import KIWI_RUNS
 from tsdm.datasets.mimic_iii import MIMIC_III
+from tsdm.datasets.mimic_iv import MIMIC_IV
 from tsdm.datasets.physionet2012 import Physionet2012
 from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.traffic import Traffic
@@ -76,6 +78,7 @@ DATASETS: Final[dict[str, type[Dataset]]] = {
     "InSilicoData": InSilicoData,
     "KIWI_RUNS_TASK": KIWI_RUNS,
     "MIMIC_III": MIMIC_III,
+    "MIMIC_IV": MIMIC_IV,
     "Physionet2019": Physionet2019,
     "Physionet2012": Physionet2012,
     "Traffic": Traffic,
