@@ -216,8 +216,8 @@
 #
 #     @staticmethod
 #     def _names(
-#         obj: Union[Index, Series, DataFrame]
-#     ) -> Union[Hashable, FrozenList[Hashable]]:
+#         obj: Index | Series | DataFrame
+#     ) -> Hashable | FrozenList[Hashable]:
 #         if isinstance(obj, MultiIndex):
 #             return FrozenList(obj.names)
 #         if isinstance(obj, (Series, Index)):

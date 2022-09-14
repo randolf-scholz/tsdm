@@ -40,16 +40,40 @@ class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
     def __init__(cls, *args, **kwargs):
-        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
-
-        if os.environ.get("GENERATING_DOCS", False):
-            cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
-            cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
-        else:
-            cls.RAWDATA_DIR = RAWDATADIR / cls.__name__
-            cls.DATASET_DIR = DATASETDIR / cls.__name__
-
         super().__init__(*args, **kwargs)
+
+        # signature: type.__init__(name, bases, attributes)
+        if len(args) == 1:
+            attributes = {}
+        elif len(args) == 3:
+            _, _, attributes = args
+        else:
+            raise ValueError("BaseDatasetMetaClass must be used with 1 or 3 arguments.")
+
+        if "LOGGER" not in attributes:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+
+        if "RAWDATA_DIR" not in attributes:
+            if os.environ.get("GENERATING_DOCS", False):
+                cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+            else:
+                cls.RAWDATA_DIR = RAWDATADIR / cls.__name__
+
+        if "DATASET_DIR" not in attributes:
+            if os.environ.get("GENERATING_DOCS", False):
+                cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
+            else:
+                cls.DATASET_DIR = DATASETDIR / cls.__name__
+
+        # print(f"Setting Attribute {cls}.RAWDATA_DIR = {cls.RAWDATA_DIR}")
+        # print(f"{cls=}\n\n{args=}\n\n{kwargs.keys()=}\n\n")
+
+    # def __getitem__(cls, parent: type[BaseDataset]) -> type[BaseDataset]:
+    #     # if inspect.isabstract(cls):
+    #     cls.RAWDATA_DIR = parent.RAWDATA_DIR
+    #     print(f"Setting {cls}.RAWDATA_DIR = {parent.RAWDATA_DIR=}")
+    #     return cls
+    # return super().__getitem__(parent)
 
 
 class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):

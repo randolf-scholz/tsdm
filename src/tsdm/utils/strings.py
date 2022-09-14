@@ -126,7 +126,7 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
     try:
         return repr(obj)
     # Fallback Option
-    except BaseException:
+    except Exception:
         return repr(type(obj))
 
 
