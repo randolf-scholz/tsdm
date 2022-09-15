@@ -33,7 +33,7 @@ from typing import Any, Optional, overload
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.utils.types import ClassType, ObjectType, ReturnType, Type, nnModuleType
+from tsdm.utils.types import AnyTypeVar, ClassVar, ObjectVar, ReturnVar, TorchModuleVar
 from tsdm.utils.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -307,12 +307,12 @@ def attribute(func):
 
 @decorator
 def timefun(
-    fun: Callable[..., ReturnType],
+    fun: Callable[..., ReturnVar],
     /,
     *,
     append: bool = False,
     loglevel: int = logging.WARNING,
-) -> Callable[..., ReturnType]:
+) -> Callable[..., ReturnVar]:
     r"""Log the execution time of the function. Use as decorator.
 
     By default, appends the execution time (in seconds) to the function call.
@@ -379,7 +379,7 @@ def timefun(
 #     return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
 
 
-def trace(func: Callable[..., ReturnType]) -> Callable[..., ReturnType]:
+def trace(func: Callable[..., ReturnVar]) -> Callable[..., ReturnVar]:
     r"""Log entering and exiting of function.
 
     Parameters
@@ -422,7 +422,7 @@ def trace(func: Callable[..., ReturnType]) -> Callable[..., ReturnType]:
     return _wrapper
 
 
-def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
+def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
     r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
 
     Makes it so that
@@ -460,13 +460,13 @@ def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
     class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
         r"""A simple Wrapper."""
 
-        def __new__(cls, *args: Any, **kwargs: Any) -> nnModuleType:  # type: ignore[misc]
+        def __new__(cls, *args: Any, **kwargs: Any) -> TorchModuleVar:  # type: ignore[misc]
             # Note: If __new__() does not return an instance of cls,
             # then the new instance's __init__() method will not be invoked.
-            instance: nnModuleType = base_class(*args, **kwargs)
+            instance: TorchModuleVar = base_class(*args, **kwargs)
 
             if conf.autojit:
-                scripted: nnModuleType = jit.script(instance)
+                scripted: TorchModuleVar = jit.script(instance)
                 return scripted
             return instance
 
@@ -476,11 +476,11 @@ def autojit(base_class: type[nnModuleType]) -> type[nnModuleType]:
 
 @decorator
 def vectorize(
-    func: Callable[[ObjectType], ReturnType],
+    func: Callable[[ObjectVar], ReturnVar],
     /,
     *,
     kind: type[CollectionType],
-) -> Callable[[ObjectType | CollectionType], ReturnType | CollectionType]:
+) -> Callable[[ObjectVar | CollectionType], ReturnVar | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly
@@ -492,7 +492,7 @@ def vectorize(
 
     Returns
     -------
-    Callable[[Union[ObjectType, CollectionType]], Union[ReturnType, CollectionType]]
+    Callable[[ObjectType | CollectionType], ReturnType | CollectionType]
 
     Examples
     --------
@@ -528,16 +528,16 @@ def vectorize(
 
 
 @overload
-def IterItems(obj: ClassType) -> ClassType:
+def IterItems(obj: ClassVar) -> ClassVar:
     ...
 
 
 @overload
-def IterItems(obj: ObjectType) -> ObjectType:
+def IterItems(obj: ObjectVar) -> ObjectVar:
     ...
 
 
-def IterItems(obj: Type) -> Type:
+def IterItems(obj: AnyTypeVar) -> AnyTypeVar:
     r"""Wrap a class such that `__getitem__` returns (key, value) pairs."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
@@ -561,16 +561,16 @@ def IterItems(obj: Type) -> Type:
 
 
 @overload
-def IterKeys(obj: ClassType) -> ClassType:
+def IterKeys(obj: ClassVar) -> ClassVar:
     ...
 
 
 @overload
-def IterKeys(obj: ObjectType) -> ObjectType:
+def IterKeys(obj: ObjectVar) -> ObjectVar:
     ...
 
 
-def IterKeys(obj: Type) -> Type:
+def IterKeys(obj: AnyTypeVar) -> AnyTypeVar:
     r"""Wrap a class such that `__getitem__` returns key instead."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
@@ -595,12 +595,12 @@ def IterKeys(obj: Type) -> Type:
 
 @decorator
 def wrap_func(
-    func: Callable[..., ReturnType],
+    func: Callable[..., ReturnVar],
     /,
     *,
     before: Optional[Callable[..., Any]] = None,
     after: Optional[Callable[..., Any]] = None,
-) -> Callable[..., ReturnType]:
+) -> Callable[..., ReturnVar]:
     r"""Wrap a function with pre- and post-hooks."""
     if before is None and after is None:
         __logger__.debug("No hooks added to %s", func)
