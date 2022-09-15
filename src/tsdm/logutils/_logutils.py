@@ -50,7 +50,7 @@ from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 @torch.no_grad()
 def compute_metrics(
-    metrics: list | dict[str, Any], *, targets: Tensor, predics: Tensor
+    metrics: list | dict[str, Any], /, *, targets: Tensor, predics: Tensor
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics.
 
@@ -240,6 +240,7 @@ def log_metrics(
     *,
     targets: Tensor,
     predics: Tensor,
+    key: str = "",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -247,7 +248,7 @@ def log_metrics(
     assert len(targets) == len(predics)
     assert isinstance(metrics, dict)
     values = compute_metrics(metrics, targets=targets, predics=predics)
-    log_values(i, writer, values, prefix=prefix, postfix=postfix)
+    log_values(i, writer, values, key=key, prefix=prefix, postfix=postfix)
 
 
 def log_values(
@@ -256,13 +257,14 @@ def log_values(
     writer: SummaryWriter,
     values: dict[str, Tensor],
     *,
+    key: str = "",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
     r"""Log multiple metrics at once."""
     identifier = f"{prefix+':'*bool(prefix)}metrics{':'*bool(postfix)+postfix}"
-    for key in values:
-        writer.add_scalar(f"{identifier}/{key}", values[key], i)
+    for metric in values:
+        writer.add_scalar(f"{identifier}:{metric}/{key}", values[key], i)
 
 
 class ResultTuple(NamedTuple):
@@ -415,6 +417,7 @@ class StandardLogger:
             )
             self.history = pd.concat([self.history, empty_row], sort=True)
 
+        # Schema: identifier:category/key, e.g. `metrics:MSE/train`
         for key, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
             values = compute_metrics(
@@ -428,7 +431,7 @@ class StandardLogger:
                 i,
                 writer=self.writer,
                 values=values,
-                postfix=key,
+                key=key,
             )
 
     def log_hparams(self, i: int, /) -> None:
@@ -448,7 +451,7 @@ class StandardLogger:
             with open(self.results_dir / f"{i}.yaml", "w", encoding="utf8") as file:
                 file.write(yaml.dump(scores))
 
-        # add prefix
+        # add postfix
         test_scores = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
 
         self.writer.add_hparams(
