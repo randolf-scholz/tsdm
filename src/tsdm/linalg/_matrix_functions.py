@@ -58,7 +58,7 @@ def relerank(x: Tensor) -> Tensor:
 
     This is the effective rank scaled by $\min(m,n)$.
     """
-    return erank(x) / torch.min(x.shape[-2:])
+    return erank(x) / min(x.shape[-2:])
 
 
 @jit.script

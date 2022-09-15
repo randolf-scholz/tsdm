@@ -39,6 +39,7 @@ from tsdm.linalg import (
     reldist_orth,
     reldist_skew,
     reldist_symm,
+    relerank,
     row_corr,
 )
 from tsdm.metrics import Loss
@@ -118,12 +119,13 @@ def log_kernel_information(
     writer.add_scalar(f"{identifier}:reldist/orthogonal", reldist_orth(K), i)
 
     # general properties
-    writer.add_scalar(f"{identifier}:linalg/logdet", slogdet(K)[-1], i)
-    writer.add_scalar(f"{identifier}:linalg/erank", erank(K), i)
-    writer.add_scalar(f"{identifier}:linalg/trace", torch.trace(K), i)
     writer.add_scalar(f"{identifier}:linalg/cond", cond(K), i)
-    writer.add_scalar(f"{identifier}:linalg/col-corr", col_corr(K), i)
-    writer.add_scalar(f"{identifier}:linalg/row-corr", row_corr(K), i)
+    writer.add_scalar(f"{identifier}:linalg/corr-colwise", col_corr(K), i)
+    writer.add_scalar(f"{identifier}:linalg/corr-rowwise", row_corr(K), i)
+    writer.add_scalar(f"{identifier}:linalg/erank", erank(K), i)
+    writer.add_scalar(f"{identifier}:linalg/erank-relative", relerank(K), i)
+    writer.add_scalar(f"{identifier}:linalg/logdet", slogdet(K)[-1], i)
+    writer.add_scalar(f"{identifier}:linalg/trace", torch.trace(K), i)
 
     # norms
     writer.add_scalar(f"{identifier}:norms/fro", matrix_norm(K, ord="fro"), i)
