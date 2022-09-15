@@ -25,7 +25,6 @@ import numpy as np
 import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
-from tsdm.datasets.mimic_iv import MIMIC_IV
 
 
 class MIMIC_IV_Bilos2021(MultiFrameDataset):
@@ -48,28 +47,24 @@ class MIMIC_IV_Bilos2021(MultiFrameDataset):
     INFO_URL: str = r"https://www.physionet.org/content/mimiciv/1.0/"
     HOME_URL: str = r"https://mimic.mit.edu/"
     GITHUB_URL: str = r"https://github.com/mbilos/neural-flows-experiments"
-    dataset_files = {"timeseries": "timeseries.parquet"}
-    rawdata_files = r"mimic-iv-1.0.zip"
-    index = ["timeseries"]
-    SHAPE = (2485769, 206)
     SHA256 = "cb90e0cef16d50011aaff7059e73d3f815657e10653a882f64f99003e64c70f5"
-    TS_FILE = "full_dataset.csv"
+    SHAPE = (2485769, 206)
 
-    RAWDATA_DIR = MIMIC_IV.RAWDATA_DIR
-    _download = MIMIC_IV._download
+    dataset_files = {"timeseries": "timeseries.parquet"}
+    rawdata_files = r"full_dataset.csv"
+    index = ["timeseries"]
 
     def _clean(self, key):
-        ts_path = self.RAWDATA_DIR / self.TS_FILE
-        if not ts_path.exists():
+        if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."
                 f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
             )
 
-        if sha256(ts_path.read_bytes()).hexdigest() != self.SHA256:
+        if sha256(self.rawdata_paths.read_bytes()).hexdigest() != self.SHA256:
             warnings.warn("The sha256 seems incorrect.")
 
-        ts = pd.read_csv(ts_path)
+        ts = pd.read_csv(self.rawdata_paths)
 
         if ts.shape != self.SHAPE:
             raise ValueError(f"The {ts.shape=} is not correct.")
@@ -93,3 +88,10 @@ class MIMIC_IV_Bilos2021(MultiFrameDataset):
 
     def _load(self, key):
         return pd.read_parquet(self.dataset_paths[key])
+
+    def _download(self, **kwargs):
+        if not self.rawdata_paths.exists():
+            raise RuntimeError(
+                f"Please apply the preprocessing code found at {self.GITHUB_URL}."
+                f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
+            )

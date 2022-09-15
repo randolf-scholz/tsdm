@@ -25,7 +25,6 @@ from hashlib import sha256
 import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
-from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.encoders import TripletDecoder
 
 
@@ -58,27 +57,24 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     INFO_URL: str = r"https://physionet.org/content/mimiciii/1.4/"
     HOME_URL: str = r"https://mimic.mit.edu/"
     GITHUB_URL: str = r"https://github.com/edebrouwer/gru_ode_bayes/"
-    dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
-    rawdata_files = "mimic-iii-clinical-database-1.4.zip"
-    index = ["timeseries", "metadata"]
     SHA256 = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
     SHAPE = (3082224, 7)
-    TS_FILE = "complete_tensor.csv"
 
-    RAWDATA_DIR = MIMIC_III.RAWDATA_DIR
-    _download = MIMIC_III._download
+    dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
+    rawdata_files = "complete_tensor.csv"
+    index = ["timeseries", "metadata"]
 
     def _clean(self, key):
-        ts_path = self.RAWDATA_DIR / self.TS_FILE
-        if not ts_path.exists():
+        if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."
                 f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
             )
-        if sha256(ts_path.read_bytes()).hexdigest() != self.SHA256:
+
+        if sha256(self.rawdata_paths.read_bytes()).hexdigest() != self.SHA256:
             warnings.warn("The sha256 seems incorrect.")
 
-        ts = pd.read_csv(ts_path, index_col=0)
+        ts = pd.read_csv(self.rawdata_paths)
 
         if ts.shape != self.SHAPE:
             raise ValueError(
@@ -124,3 +120,10 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     def _load(self, key):
         # return NotImplemented
         return pd.read_parquet(self.dataset_paths[key])
+
+    def _download(self, **kwargs):
+        if not self.rawdata_paths.exists():
+            raise RuntimeError(
+                f"Please apply the preprocessing code found at {self.GITHUB_URL}."
+                f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
+            )
