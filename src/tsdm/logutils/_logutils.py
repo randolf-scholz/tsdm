@@ -365,6 +365,7 @@ class StandardLogger:
         *,
         targets: Tensor,
         predics: Tensor,
+        key: str = "",
         prefix: str = "",
         postfix: str = "",
     ) -> None:
@@ -375,13 +376,14 @@ class StandardLogger:
             metrics=self.metrics,
             targets=targets,
             predics=predics,
+            key=key,
             prefix=prefix,
             postfix=postfix,
         )
 
     def log_batch_end(self, i: int, *, targets: Tensor, predics: Tensor) -> None:
         r"""Log batch end."""
-        self.log_metrics(i, targets=targets, predics=predics, postfix="batch")
+        self.log_metrics(i, targets=targets, predics=predics, key="batch")
         self.log_optimizer_state(i)
 
     def log_epoch_end(
