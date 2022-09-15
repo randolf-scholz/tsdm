@@ -11,17 +11,33 @@ from collections.abc import Mapping, Sequence
 from typing import Optional, TypeAlias
 
 import numpy as np
-from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
 FOLDS: TypeAlias = Sequence[Mapping[str, Series]]
-r"""Type Hint for Folds"""
+r"""Type Hint for Folds. the series must be boolean."""
 
 
 def folds_from_groups(
     groups: Series, /, *, num_folds: int = 5, seed: Optional[int] = None, **splits: int
 ) -> FOLDS:
     r"""Create folds from a Series of groups.
+
+    Parameters
+    ----------
+    groups: Series[int]
+        Series of group labels.
+    num_folds: int
+        Number of folds to create.
+    seed: int
+        Seed for the random number generator.
+    splits: int
+        Relative number of samples in each split.
+        E.g. ``folds_from_groups(groups, train=7, valid=2, test=1)`` uses 7/10 of the
+        samples for training, 2/10 for validation and 1/10 for testing.
+
+    Returns
+    -------
+    folds: FOLDS
 
     This is useful, when the data needs to be grouped, e.g. due to replicate experiments.
     Simply use `pandas.groupby` and pass the result to this function.
@@ -42,8 +58,6 @@ def folds_from_groups(
         a, b = b, b + size
         slices[key] = np.arange(a, b)
 
-    print(slices)
-
     folds = []
     for k in range(num_folds):
         fold = {}
@@ -58,7 +72,7 @@ def folds_from_groups(
 
 
 def folds_as_frame(
-    folds: FOLDS, *, index: Optional[Mapping | NDArray] = None, sparse: bool = False
+    folds: FOLDS, /, *, index: Optional[Sequence] = None, sparse: bool = False
 ) -> DataFrame:
     r"""Create a table holding the fold information.
 
@@ -78,14 +92,17 @@ def folds_as_frame(
         # create a default index
         first_fold = next(iter(folds))
         first_split = next(iter(first_fold.values()))
-        index = (
+
+        name_index: Sequence = (
             first_split.index
             if isinstance(first_split, Series)
             else np.arange(len(first_split))
         )
+    else:
+        name_index = index
 
-    fold_idx = Index(list(range(len(folds))), name="fold")
-    splits = DataFrame(index=index, columns=fold_idx, dtype="string")
+    fold_idx = Index(range(len(folds)), name="fold")
+    splits = DataFrame(index=name_index, columns=fold_idx, dtype="string")
 
     for k in fold_idx:
         for key, split in folds[k].items():

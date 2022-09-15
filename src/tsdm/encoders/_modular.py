@@ -5,7 +5,6 @@ from __future__ import annotations
 __all__ = [
     # ABC
     # Classes
-    "ConcatEncoder",
     "DataFrameEncoder",
     "FrameEncoder",
     "FrameIndexer",
@@ -121,49 +120,15 @@ class CSVEncoder(BaseEncoder):
         return DataFrame(frame).astype(self.dtypes)
 
 
-class ConcatEncoder(BaseEncoder):
-    r"""Concatenate multiple encoders."""
-
-    lengths: list[int]
-    numdims: list[int]
-    axis: int
-    maxdim: int
-
-    def __init__(self, axis: int = 0) -> None:
-        r"""Concatenate tensors along the specified axis."""
-        super().__init__()
-        self.axis = axis
-
-    def fit(self, data: tuple[Tensor, ...], /) -> None:
-        r"""Fit to the data."""
-        self.numdims = [d.ndim for d in data]
-        self.maxdim = max(self.numdims)
-        # pad dimensions if necessary
-        arrays = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
-        # store the lengths of the slices
-        self.lengths = [x.shape[self.axis] for x in arrays]
-
-    def encode(self, data: tuple[Tensor, ...], /) -> Tensor:
-        r"""Encode the input."""
-        return torch.cat(
-            [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], dim=self.axis
-        )
-
-    def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
-        r"""Decode the input."""
-        result = torch.split(data, self.lengths, dim=self.axis)
-        return tuple(x.squeeze() for x in result)
-
-
 class DataFrameEncoder(BaseEncoder):
     r"""Combine multiple encoders into a single one.
 
     It is assumed that the DataFrame Modality doesn't change.
     """
 
-    column_encoders: BaseEncoder | Mapping[Hashable, BaseEncoder]
+    column_encoders: BaseEncoder | Mapping[Any, BaseEncoder]
     r"""Encoders for the columns."""
-    index_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]] = None
+    index_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]] = None
     r"""Optional Encoder for the index."""
     colspec: Series
     r"""The columns-specification of the DataFrame."""
@@ -176,9 +141,9 @@ class DataFrameEncoder(BaseEncoder):
 
     def __init__(
         self,
-        column_encoders: BaseEncoder | Mapping[Hashable, BaseEncoder],
+        column_encoders: BaseEncoder | Mapping[Any, BaseEncoder],
         *,
-        index_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]] = None,
+        index_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]] = None,
     ):
         r"""Set up the individual encoders.
 
@@ -355,7 +320,16 @@ class DataFrameEncoder(BaseEncoder):
 
 
 class FrameEncoder(BaseEncoder):
-    r"""Encode a DataFrame by group-wise transformations."""
+    r"""Encode a DataFrame by group-wise transformations.
+
+    Per-column encoding is possible through the dictionary input.
+    In this case, the positions of the columns in the encoded DataFrame should coincide with the
+    positions of the columns in the input DataFrame.
+
+    Todo: We want encoding groups, so for example applying an encoder to a group of columns.
+
+    - [ ] Add support for groups of column-encoders
+    """
 
     columns: Index
     dtypes: Series
@@ -363,13 +337,13 @@ class FrameEncoder(BaseEncoder):
     index_dtypes: Series
     duplicate: bool = False
 
-    column_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]]
+    column_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]]
     r"""Encoders for the columns."""
-    index_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]]
+    index_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]]
     r"""Optional Encoder for the index."""
-    column_decoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]]
+    column_decoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]]
     r"""Reverse Dictionary from encoded column name -> encoder"""
-    index_decoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]]
+    index_decoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]]
     r"""Reverse Dictionary from encoded index name -> encoder"""
 
     @staticmethod
@@ -384,9 +358,9 @@ class FrameEncoder(BaseEncoder):
 
     def __init__(
         self,
-        column_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]] = None,
+        column_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]] = None,
         *,
-        index_encoders: Optional[BaseEncoder | Mapping[Hashable, BaseEncoder]] = None,
+        index_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]] = None,
         duplicate: bool = False,
     ):
         super().__init__()
@@ -446,28 +420,33 @@ class FrameEncoder(BaseEncoder):
         elif isinstance(self.column_encoders, BaseEncoder):
             encoded = self.column_encoders.encode(data)
             encoded_cols = encoded_cols.drop(columns=data.columns)
-            encoded_cols[self._names(encoded)] = encoded
+            # encoded_cols.loc[:, self._names(encoded)] = encoded  # TODO: try better encoder!
+            encoded_cols = encoded_cols.join(encoded)
         else:
             for group, encoder in self.column_encoders.items():
                 encoded = encoder.encode(data[group])
                 encoded_cols = encoded_cols.drop(columns=group)
-                encoded_cols[self._names(encoded)] = encoded
+                # encoded_cols.loc[:,self._names(encoded)] = encoded
+                encoded_cols = encoded_cols.join(encoded)
 
         if self.index_encoders is None:
             pass
         elif isinstance(self.index_encoders, BaseEncoder):
             encoded = self.index_encoders.encode(index)
             encoded_inds = encoded_inds.drop(columns=index.columns)
-            encoded_inds[self._names(encoded)] = encoded
+            # encoded_inds.loc[:, self._names(encoded)] = encoded
+            encoded_inds = encoded_inds.join(encoded)
+
         else:
             for group, encoder in self.index_encoders.items():
                 encoded = encoder.encode(index[group])
                 encoded_inds = encoded_inds.drop(columns=group)
-                encoded_inds[self._names(encoded)] = encoded
+                # encoded_inds.loc[:, self._names(encoded)] = encoded
+                encoded_inds = encoded_inds.join(encoded)
 
         # Assemble DataFrame
-        encoded = DataFrame(encoded_cols)
-        encoded[self._names(encoded_inds)] = encoded_inds
+        encoded = encoded_cols.join(encoded_inds)  # DataFrame(encoded_cols)
+        # encoded.loc[:, self._names(encoded_inds)] = encoded_inds
         encoded = encoded.set_index(self._names(encoded_inds))
         return encoded
 
@@ -601,8 +580,8 @@ class FrameSplitter(BaseEncoder, Mapping):
     original_dtypes: Series
 
     # FIXME: Union[types.EllipsisType, set[Hashable]] in 3.10
-    groups: dict[Hashable, Hashable | list[Hashable]]
-    group_indices: dict[Hashable, list[int]]
+    groups: dict[Any, Hashable | list[Hashable]]
+    group_indices: dict[Any, list[int]]
 
     has_ellipsis: bool = False
     ellipsis_columns: Optional[list[Hashable]] = None
@@ -614,7 +593,7 @@ class FrameSplitter(BaseEncoder, Mapping):
 
     def __init__(
         self,
-        groups: Iterable[Hashable] | Mapping[Hashable, Hashable],
+        groups: Iterable[Hashable] | Mapping[Any, Hashable],
         /,
         dropna: bool = False,
         fillna: bool = True,
@@ -702,7 +681,7 @@ class FrameSplitter(BaseEncoder, Mapping):
 
         # Compute the permutation
         self.permutation = []
-        self.group_indices: dict[Hashable, list[int]] = {}
+        self.group_indices: dict[Any, list[int]] = {}
         for group, columns in self.groups.items():
             if columns is Ellipsis:
                 self.group_indices[group] = reverse_index[
