@@ -341,5 +341,5 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
             level: PeriodicEncoder(period=self.frequencies[level])
             for level in self.levels
         }
-        obj = FrameEncoder(column_encoders) @ self  # type: ignore[arg-type]
+        obj = FrameEncoder(column_encoders) @ self
         return cast(PeriodicSocialTimeEncoder, obj)

@@ -30,7 +30,7 @@ from pandas import DataFrame, Series
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.remote import download
-from tsdm.utils.types import KeyType, Nested, PathType
+from tsdm.utils.types import KeyVar, Nested, PathType
 
 DATASET_OBJECT: TypeAlias = Series | DataFrame
 r"""Type hint for pandas objects."""
@@ -40,16 +40,40 @@ class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
     def __init__(cls, *args, **kwargs):
-        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
-
-        if os.environ.get("GENERATING_DOCS", False):
-            cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
-            cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
-        else:
-            cls.RAWDATA_DIR = RAWDATADIR / cls.__name__
-            cls.DATASET_DIR = DATASETDIR / cls.__name__
-
         super().__init__(*args, **kwargs)
+
+        # signature: type.__init__(name, bases, attributes)
+        if len(args) == 1:
+            attributes = {}
+        elif len(args) == 3:
+            _, _, attributes = args
+        else:
+            raise ValueError("BaseDatasetMetaClass must be used with 1 or 3 arguments.")
+
+        if "LOGGER" not in attributes:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+
+        if "RAWDATA_DIR" not in attributes:
+            if os.environ.get("GENERATING_DOCS", False):
+                cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+            else:
+                cls.RAWDATA_DIR = RAWDATADIR / cls.__name__
+
+        if "DATASET_DIR" not in attributes:
+            if os.environ.get("GENERATING_DOCS", False):
+                cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
+            else:
+                cls.DATASET_DIR = DATASETDIR / cls.__name__
+
+        # print(f"Setting Attribute {cls}.RAWDATA_DIR = {cls.RAWDATA_DIR}")
+        # print(f"{cls=}\n\n{args=}\n\n{kwargs.keys()=}\n\n")
+
+    # def __getitem__(cls, parent: type[BaseDataset]) -> type[BaseDataset]:
+    #     # if inspect.isabstract(cls):
+    #     cls.RAWDATA_DIR = parent.RAWDATA_DIR
+    #     print(f"Setting {cls}.RAWDATA_DIR = {parent.RAWDATA_DIR=}")
+    #     return cls
+    # return super().__getitem__(parent)
 
 
 class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
@@ -312,7 +336,7 @@ class SingleFrameDataset(FrameDataset):
         self.LOGGER.debug("Starting downloading dataset.")
 
 
-class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
+class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
     r"""Dataset class that consists of a multiple DataFrames.
 
     The Datasets are accessed by their index.
@@ -322,12 +346,12 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
         self.LOGGER.info("Adding keys as attributes.")
-
-        for key in self.index:
-            if isinstance(key, str) and not hasattr(self, key):
-                _get_dataset = partial(self.__class__.load, key=key)
-                _get_dataset.__doc__ = f"Load dataset for {key=}."
-                setattr(self.__class__, key, property(_get_dataset))
+        if initialize:
+            for key in self.index:
+                if isinstance(key, str) and not hasattr(self, key):
+                    _get_dataset = partial(self.__class__.load, key=key)
+                    _get_dataset.__doc__ = f"Load dataset for {key=}."
+                    setattr(self.__class__, key, property(_get_dataset))
 
         super().__init__(initialize=initialize, reset=reset)
 
@@ -344,35 +368,35 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
 
     @property
     @abstractmethod
-    def index(self) -> Sequence[KeyType]:
+    def index(self) -> Sequence[KeyVar]:
         r"""Return the index of the dataset."""
 
     @cached_property
-    def dataset(self) -> MutableMapping[KeyType, DATASET_OBJECT]:
+    def dataset(self) -> MutableMapping[KeyVar, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
         return {key: None for key in self.index}
 
     @cached_property
-    def dataset_files(self) -> Mapping[KeyType, str]:
+    def dataset_files(self) -> Mapping[KeyVar, str]:
         r"""Relative paths to the dataset files for each key."""
         return {key: f"{key}.{self.default_format}" for key in self.index}
 
     @cached_property
-    def dataset_paths(self) -> Mapping[KeyType, Path]:
+    def dataset_paths(self) -> Mapping[KeyVar, Path]:
         r"""Absolute paths to the dataset files for each key."""
         return {
             key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
         }
 
-    def _load(self, key: KeyType) -> DATASET_OBJECT:
+    def _load(self, key: KeyVar) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
         return self.deserialize(self.dataset_paths[key])
 
     @abstractmethod
-    def _clean(self, key: KeyType) -> DATASET_OBJECT | None:
+    def _clean(self, key: KeyVar) -> DATASET_OBJECT | None:
         r"""Clean the selected DATASET_OBJECT."""
 
-    def rawdata_files_exist(self, key: Optional[KeyType] = None) -> bool:
+    def rawdata_files_exist(self, key: Optional[KeyVar] = None) -> bool:
         r"""Check if raw data files exist."""
         if key is None:
             return paths_exists(self.rawdata_paths)
@@ -380,13 +404,13 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
             return paths_exists(self.rawdata_paths[key])
         return paths_exists(self.rawdata_paths)
 
-    def dataset_files_exist(self, key: Optional[KeyType] = None) -> bool:
+    def dataset_files_exist(self, key: Optional[KeyVar] = None) -> bool:
         r"""Check if dataset files exist."""
         if key is None:
             return paths_exists(self.dataset_paths)
         return paths_exists(self.dataset_paths[key])
 
-    def clean(self, key: Optional[KeyType] = None, force: bool = False) -> None:
+    def clean(self, key: Optional[KeyVar] = None, force: bool = False) -> None:
         r"""Clean the selected DATASET_OBJECT.
 
         Parameters
@@ -426,16 +450,16 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
     @overload
     def load(
         self, *, key: None = None, force: bool = False, **kwargs: Any
-    ) -> Mapping[KeyType, Any]:
+    ) -> Mapping[KeyVar, Any]:
         ...
 
     @overload
-    def load(self, *, key: KeyType = None, force: bool = False, **kwargs: Any) -> Any:
+    def load(self, *, key: KeyVar = None, force: bool = False, **kwargs: Any) -> Any:
         ...
 
     def load(
-        self, *, key: Optional[KeyType] = None, force: bool = False, **kwargs: Any
-    ) -> Mapping[KeyType, DATASET_OBJECT] | DATASET_OBJECT:
+        self, *, key: Optional[KeyVar] = None, force: bool = False, **kwargs: Any
+    ) -> Mapping[KeyVar, DATASET_OBJECT] | DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT.
 
         Parameters
@@ -468,7 +492,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
         return self.dataset[key]
 
-    def _download(self, *, key: KeyType = None) -> None:
+    def _download(self, *, key: KeyVar = None) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
@@ -489,7 +513,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyType]):
     def download(
         self,
         *,
-        key: Optional[KeyType] = None,
+        key: Optional[KeyVar] = None,
         force: bool = False,
         **kwargs: Any,
     ) -> None:
