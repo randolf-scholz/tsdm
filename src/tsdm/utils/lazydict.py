@@ -15,7 +15,7 @@ import logging
 from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
 from typing import Any, Generic, NamedTuple, Union, overload
 
-from tsdm.utils.types import KeyType, ObjectType
+from tsdm.utils.types import KeyVar, ObjectVar
 
 __logger__ = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class LazyFunction(NamedTuple):
         return f"<LazyFunction: {self.func.__name__}>"
 
 
-class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]):
+class LazyDict(MutableMapping[KeyVar, ObjectVar], Generic[KeyVar, ObjectVar]):
     r"""A Lazy Dictionary implementation."""
 
     @staticmethod
@@ -66,22 +66,22 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
         raise ValueError("Invalid value")
 
     @overload
-    def __init__(self, /, **kwargs: ObjectType) -> None:
+    def __init__(self, /, **kwargs: ObjectVar) -> None:
         ...
 
     @overload
     def __init__(
         self,
         mapping: Mapping[
-            KeyType,
+            KeyVar,
             Union[
-                tuple[Callable[..., ObjectType], tuple],  # args
-                tuple[Callable[..., ObjectType], dict],  # kwargs
-                tuple[Callable[..., ObjectType], tuple, dict],  # args, kwargs
+                tuple[Callable[..., ObjectVar], tuple],  # args
+                tuple[Callable[..., ObjectVar], dict],  # kwargs
+                tuple[Callable[..., ObjectVar], tuple, dict],  # args, kwargs
             ],
         ],
         /,
-        **kwargs: ObjectType,
+        **kwargs: ObjectVar,
     ) -> None:
         ...
 
@@ -90,20 +90,20 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
         self,
         iterable: Iterable[
             tuple[
-                KeyType,
+                KeyVar,
                 Union[
-                    tuple[Callable[..., ObjectType], tuple],  # args
-                    tuple[Callable[..., ObjectType], dict],  # kwargs
-                    tuple[Callable[..., ObjectType], tuple, dict],  # args, kwargs
+                    tuple[Callable[..., ObjectVar], tuple],  # args
+                    tuple[Callable[..., ObjectVar], dict],  # kwargs
+                    tuple[Callable[..., ObjectVar], tuple, dict],  # args, kwargs
                 ],
             ]
         ],
         /,
-        **kwargs: ObjectType,
+        **kwargs: ObjectVar,
     ) -> None:
         ...
 
-    def __init__(self, /, *args: Any, **kwargs: ObjectType) -> None:
+    def __init__(self, /, *args: Any, **kwargs: ObjectVar) -> None:
         r"""Initialize the dictionary.
 
         Tuples of the form (key, (Callable[..., Any], args, kwargs))
@@ -130,7 +130,7 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
                 key, value = item
                 self[key] = value
 
-    def _initialize(self, key: KeyType) -> None:
+    def _initialize(self, key: KeyVar) -> None:
         r"""Initialize the key."""
         __logger__.info("%s: Initializing %s", self, key)
         if key not in self._dict:
@@ -139,7 +139,7 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
             self._dict[key] = self._dict[key]()
             self._initialized[key] = True
 
-    def __getitem__(self, key: KeyType) -> ObjectType:
+    def __getitem__(self, key: KeyVar) -> ObjectVar:
         r"""Get the value of the key."""
         if key not in self._dict:
             raise KeyError(key)
@@ -150,17 +150,17 @@ class LazyDict(MutableMapping[KeyType, ObjectType], Generic[KeyType, ObjectType]
             self._initialized[key] = True
         return self._dict[key]
 
-    def __setitem__(self, key: KeyType, value: ObjectType) -> None:
+    def __setitem__(self, key: KeyVar, value: ObjectVar) -> None:
         r"""Set the value of the key."""
         self._dict[key] = self._validate_value(value)
         self._initialized[key] = False
 
-    def __delitem__(self, key: KeyType) -> None:
+    def __delitem__(self, key: KeyVar) -> None:
         r"""Delete the value of the key."""
         del self._dict[key]
         del self._initialized[key]
 
-    def __iter__(self) -> Iterator[KeyType]:
+    def __iter__(self) -> Iterator[KeyVar]:
         r"""Iterate over the keys."""
         return iter(self._dict)
 

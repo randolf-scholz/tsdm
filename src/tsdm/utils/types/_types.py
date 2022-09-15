@@ -1,25 +1,29 @@
 r"""Generic types for type hints etc."""
 
-from __future__ import annotations
+# from __future__ import annotations
 
 __all__ = [
     # Type Variables
-    "ArgsType",
-    "ClassType",
-    "KeyType",
-    "nnModuleType",
-    "ObjectType",
+    "AnyTypeVar",
+    "AliasVar",
+    "ClassVar",
+    "DtypeVar",
+    "KeyVar",
+    "ModuleVar",
+    "ObjectVar",
     "PandasVar",
     "PathVar",
-    "ReturnType",
+    "ReturnVar",
     "Self",
     "TensorVar",
-    "Type",
-    "ValueType",
+    "TorchModuleVar",
+    "ValueVar",
     # Type Aliases
-    "PathType",
+    "Args",
+    "KWArgs",
     "Nested",
     "PandasObject",
+    "PathType",
     # ParamSpec
     "Parameters",
 ]
@@ -27,6 +31,7 @@ __all__ = [
 import os
 from collections.abc import Collection, Hashable, Mapping
 from pathlib import Path
+from types import GenericAlias, ModuleType
 from typing import Any, ParamSpec, TypeAlias, TypeVar
 
 from numpy import ndarray
@@ -38,52 +43,85 @@ r"""TypeVar for decorated function inputs values."""
 
 # region TypeVars
 
-ArgsType = TypeVar("ArgsType")
-r"""TypeVar for `Mapping` values."""
+AnyTypeVar = TypeVar("AnyTypeVar")
+r"""Type Variable arbitrary types.."""
 
-ClassType = TypeVar("ClassType", bound=type)
-r"""Generic type hint."""
+AliasVar = TypeVar("AliasVar", bound=GenericAlias)
+r"""Type Variable `TypeAlias`."""
 
-KeyType = TypeVar("KeyType", bound=Hashable)
-r"""TypeVar for `Mapping` keys."""
+ClassVar = TypeVar("ClassVar", bound=type)
+r"""Type Variable for `type`."""
 
-nnModuleType = TypeVar("nnModuleType", bound=nn.Module)
-r"""Type Variable for `torch.nn.Modules`."""
+DtypeVar = TypeVar("DtypeVar")
+r"""Type Variable for `Dtype`."""
 
-ObjectType = TypeVar("ObjectType", bound=object)
-r"""Generic type hint for instances."""
+KeyVar = TypeVar("KeyVar", bound=Hashable)
+r"""Type Variable for `Mapping` keys."""
+
+ModuleVar = TypeVar("ModuleVar", bound=ModuleType)
+r"""Type Variable for Modules."""
+
+ObjectVar = TypeVar("ObjectVar", bound=object)
+r"""Type Variable for `object`."""
 
 PandasVar = TypeVar("PandasVar", Index, Series, DataFrame)
 r"""Type Variable for `pandas` objects."""
 
 PathVar = TypeVar("PathVar", str, Path, os.PathLike[str])
-r"""TypeVar for path-like objects."""
+r"""Type Variable for path-like objects."""
 
-ReturnType = TypeVar("ReturnType")
-r"""Generic type hint for return values."""
+ReturnVar = TypeVar("ReturnVar")
+r"""Type Variable for return values."""
 
 Self = TypeVar("Self")
-r"""TypeVar for for self reference."""  # FIXME: PEP673 @ python3.11
+r"""Type Variable for for self reference."""  # FIXME: PEP673 @ python3.11
 
 TensorVar = TypeVar("TensorVar", Tensor, ndarray)
 r"""Type Variable for `torch.Tensor` or `numpy.ndarray` objects."""
 
-Type = TypeVar("Type")
-r"""TypeVar for `Mapping` values."""
-ValueType = TypeVar("ValueType")
-r"""TypeVar for `Mapping` values."""
+TorchModuleVar = TypeVar("TorchModuleVar", bound=nn.Module)
+r"""Type Variable for `torch.nn.Modules`."""
+
+ValueVar = TypeVar("ValueVar")
+r"""Type Variable for `Mapping` values."""
 
 # endregion
 
 # region TypeAliases
 
+# FIXME: https://github.com/python/mypy/pull/13297 Recursive Alias
+# NestedMapping: TypeAlias = Mapping[KeyVar, ValueVar | Mapping[KeyVar, 'NestedMapping']]
+# r"""Generic Type Alias for nested `Mapping`."""
+#
+# NestedDict: TypeAlias = dict[KeyVar, ValueVar | dict[KeyVar, 'NestedDict']]
+# r"""Generic Type Alias for nested `dict`."""
+#
+# NestedTuple: TypeAlias = tuple[ValueVar | tuple['NestedTuple', ...], ...]
+# r"""Generic Type Alias for nested `tuple`."""
+#
+# NestedList: TypeAlias = list[ValueVar | list['NestedList']]
+# r"""GenericType Alias for nested `list`."""
+#
+# NestedSet: TypeAlias = set[ValueVar | set['NestedSet']]
+# r"""Generic Type Alias for nested `set`."""
+#
+# nested: TypeAlias = AliasVar[ValueVar | AliasVar[ValueVar]]
+# r"""Generic Type Alias for generic nested structure."""
+
+
+Args: TypeAlias = tuple[AnyTypeVar, ...]
+r"""Type Alias for `*args`."""
+
+KWArgs: TypeAlias = dict[str, AnyTypeVar]
+r"""Type Alias for `**kwargs`."""
+
+Nested: TypeAlias = AnyTypeVar | Collection[AnyTypeVar] | Mapping[Any, AnyTypeVar]
+r"""Type Alias for nested types (JSON-Like)."""
+
+PandasObject: TypeAlias = DataFrame | Series | Index
+r"""Type Alias for `pandas` objects."""
+
 PathType: TypeAlias = str | Path | os.PathLike[str]
-r"""Type for path-like objects."""
-
-Nested: TypeAlias = Type | Collection[Type] | Mapping[Any, Type]
-r"""Type for nested types (JSON-Like)."""
-
-PandasObject: TypeAlias = Index | Series | DataFrame
-r"""Type Hint for `pandas` objects."""
+r"""Type Alias for path-like objects."""
 
 # endregion
