@@ -55,12 +55,6 @@ class MIMIC_IV_Bilos2021(MultiFrameDataset):
     SHA256 = "cb90e0cef16d50011aaff7059e73d3f815657e10653a882f64f99003e64c70f5"
     TS_FILE = "full_dataset.csv"
 
-    # def __new__(cls, *args, **kwargs):
-    #     cls.RAWDATA_DIR = MIMIC_IV.RAWDATA_DIR
-    #     print(f"Setting Attribute MIMIC_IV_Bilos2021.RAWDATA_DIR = {cls.RAWDATA_DIR}")
-    #     obj = super().__new__(cls)
-    #     return obj
-
     RAWDATA_DIR = MIMIC_IV.RAWDATA_DIR
     _download = MIMIC_IV._download
 
