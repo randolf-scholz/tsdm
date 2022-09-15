@@ -7,10 +7,12 @@ __all__ = [
     "Standardizer",
     "MinMaxScaler",
     "LogEncoder",
+    "TensorSplitter",
+    "TensorConcatenator",
 ]
 
 from functools import singledispatchmethod
-from typing import Any, Generic, NamedTuple, Optional, TypeAlias, TypeVar
+from typing import Any, Generic, NamedTuple, Optional, TypeAlias, TypeVar, overload
 
 import numpy as np
 import torch
@@ -443,3 +445,86 @@ class IntEncoder(BaseEncoder):
     def __repr__(self):
         r"""Pretty print."""
         return f"{self.__class__.__name__}()"
+
+
+class TensorSplitter(BaseEncoder):
+    r"""Split tensor along specified axis."""
+
+    lengths: list[int]
+    numdims: list[int]
+    axis: int
+    maxdim: int
+    indices_or_sections: int | list[int]
+
+    def __init__(
+        self, *, indices_or_sections: int | list[int] = 1, axis: int = 0
+    ) -> None:
+        r"""Concatenate tensors along the specified axis."""
+        super().__init__()
+        self.axis = axis
+        self.indices_or_sections = indices_or_sections
+
+    @overload
+    def encode(self, data: Tensor, /) -> list[Tensor]:
+        ...
+
+    @overload
+    def encode(self, data: NDArray, /) -> list[NDArray]:
+        ...
+
+    def encode(self, data, /):
+        r"""Encode the input."""
+        if isinstance(data, Tensor):
+            return torch.tensor_split(data, self.indices_or_sections, dim=self.axis)
+        return np.array_split(data, self.indices_or_sections, dim=self.axis)  # type: ignore[call-overload]
+
+    @overload
+    def decode(self, data: list[Tensor], /) -> Tensor:
+        ...
+
+    @overload
+    def decode(self, data: list[NDArray], /) -> NDArray:
+        ...
+
+    def decode(self, data, /):
+        r"""Decode the input."""
+        if isinstance(data[0], Tensor):
+            return torch.cat(data, dim=self.axis)
+        return np.concatenate(data, axis=self.axis)
+
+
+class TensorConcatenator(BaseEncoder):
+    r"""Concatenate multiple tensors.
+
+    Useful for concatenating encoders for multiple inputs.
+    """
+
+    lengths: list[int]
+    numdims: list[int]
+    axis: int
+    maxdim: int
+
+    def __init__(self, axis: int = 0) -> None:
+        r"""Concatenate tensors along the specified axis."""
+        super().__init__()
+        self.axis = axis
+
+    def fit(self, data: tuple[Tensor, ...], /) -> None:
+        r"""Fit to the data."""
+        self.numdims = [d.ndim for d in data]
+        self.maxdim = max(self.numdims)
+        # pad dimensions if necessary
+        arrays = [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data]
+        # store the lengths of the slices
+        self.lengths = [x.shape[self.axis] for x in arrays]
+
+    def encode(self, data: tuple[Tensor, ...], /) -> Tensor:
+        r"""Encode the input."""
+        return torch.cat(
+            [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], dim=self.axis
+        )
+
+    def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
+        r"""Decode the input."""
+        result = torch.split(data, self.lengths, dim=self.axis)
+        return tuple(x.squeeze() for x in result)
