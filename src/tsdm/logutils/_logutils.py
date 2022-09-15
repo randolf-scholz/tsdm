@@ -264,7 +264,7 @@ def log_values(
     r"""Log multiple metrics at once."""
     identifier = f"{prefix+':'*bool(prefix)}metrics{':'*bool(postfix)+postfix}"
     for metric in values:
-        writer.add_scalar(f"{identifier}:{metric}/{key}", values[key], i)
+        writer.add_scalar(f"{identifier}:{metric}/{key}", values[metric], i)
 
 
 class ResultTuple(NamedTuple):

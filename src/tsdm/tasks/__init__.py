@@ -39,7 +39,7 @@ __all__ = [
     "ElectricityTFT",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV_Bilos2021",
-    "USHCN_DeBrouwer",
+    "USHCN_DeBrouwer2019",
     "Kiwi_BioProcessTask",
 ]
 
@@ -55,7 +55,7 @@ from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
 from tsdm.tasks.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.tasks.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
-from tsdm.tasks.ushcn import USHCN_DeBrouwer
+from tsdm.tasks.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
 Task: TypeAlias = BaseTask
 r"""Type hint for tasks."""
@@ -68,6 +68,6 @@ TASKS: Final[dict[str, type[Task]]] = {
     "ElectricityTFT": ElectricityTFT,
     "MIMIC_DeBrouwer": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV_Bilos": MIMIC_IV_Bilos2021,
-    "USHCN_DeBrouwer": USHCN_DeBrouwer,
+    "USHCN_DeBrouwer": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available tasks."""

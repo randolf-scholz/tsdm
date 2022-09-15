@@ -1,6 +1,6 @@
 r"""USHCN climate dataset."""
 
-__all__ = ["USHCN_DeBrouwer", "ushcn_collate"]
+__all__ = ["USHCN_DeBrouwer2019", "ushcn_collate"]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -142,7 +142,7 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
     )
 
 
-class USHCN_DeBrouwer(BaseTask):
+class USHCN_DeBrouwer2019(BaseTask):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     Evaluation Protocol
