@@ -39,6 +39,8 @@
       <w>bfgs</w>
       <w>bfloat</w>
       <w>bijective</w>
+      <w>bilos</w>
+      <w>biloš</w>
       <w>binarize</w>
       <w>binarizer</w>
       <w>bools</w>
@@ -64,6 +66,7 @@
       <w>colspec</w>
       <w>colspecs</w>
       <w>conc</w>
+      <w>concatenator</w>
       <w>configurables</w>
       <w>connectionist</w>
       <w>conus</w>
@@ -79,6 +82,7 @@
       <w>datetimes</w>
       <w>datzilla</w>
       <w>deepset</w>
+      <w>deidentified</w>
       <w>deltax</w>
       <w>dewp</w>
       <w>dextrine</w>
@@ -125,6 +129,7 @@
       <w>goel</w>
       <w>groupby</w>
       <w>guanghua</w>
+      <w>günnemann</w>
       <w>haoyi</w>
       <w>hardshrink</w>
       <w>hardsigmoid</w>
@@ -155,6 +160,7 @@
       <w>iscores</w>
       <w>isna</w>
       <w>isort</w>
+      <w>issubclass</w>
       <w>issubdtype</w>
       <w>janahan</w>
       <w>januschowski</w>
@@ -338,6 +344,7 @@
       <w>softplus</w>
       <w>softshrink</w>
       <w>softsign</w>
+      <w>sommer</w>
       <w>sourcedir</w>
       <w>sphinxbuild</w>
       <w>sphinxcontrib</w>

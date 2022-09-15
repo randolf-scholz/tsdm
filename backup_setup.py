@@ -28,7 +28,13 @@ if "CI_PIPELINE_IID" in os.environ:
 
 
 def _read_rst(filename: str) -> str:
-    """Read the contents of a .rst file."""
+    """Read the contents of a .rst file.
+
+    Parameters
+    ----------
+    filename: str
+        The name of the file
+    """
     filename = os.path.join(os.path.dirname(__file__), filename)
     text_type = type("")
     with io.open(filename, mode="r", encoding="utf-8") as fd:
