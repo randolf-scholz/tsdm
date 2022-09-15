@@ -57,6 +57,9 @@ release = version
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    # "sphinx_toolbox.more_autodoc.typehints",
+    # "sphinx_toolbox.more_autodoc.typevars",
+    "sphinx_toolbox.more_autodoc.genericalias",
     # Sphinx builtin extensions
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
@@ -72,9 +75,10 @@ extensions = [
     # 1st party extensions
     "signatures",
     # 3rd party extensions
-    "autoapi.extension",
+    # "autoapi.extension",
     "sphinx_copybutton",
-    "sphinx_math_dollar",
+    # "sphinx_math_dollar",
+    # "sphinx_autodoc_typehints",
 ]
 # Add any Sphinx extension module names here, as strings. They can be extensions coming with Sphinx
 # (named 'sphinx.ext.*') or your custom ones.
@@ -157,6 +161,8 @@ show_authors = True
 # A boolean that decides whether codeauthor and sectionauthor directives produce any output in the built files.
 
 # endregion General Configuration -------------------------------------------------------------------------------------
+
+python_use_unqualified_type_names = True
 
 
 # region HTML Configuration ------------------------------------------------------------------------------------
@@ -440,7 +446,7 @@ autodoc_mock_imports = []
 # This is useful when some external dependencies are not met at build time and break the building process.
 # You may only specify the root package of the dependencies themselves and omit the sub-modules:
 
-autodoc_typehints = "signature"
+autodoc_typehints = "both"
 # This value controls how to represent typehints. The setting takes the following values:
 # 'signature' – Show typehints in the signature (default)
 # 'description' – Show typehints as content of the function or method The typehints of overloaded
@@ -458,6 +464,9 @@ autodoc_typehints_description_target = "documented"
 # already documented by the docstring.
 
 autodoc_type_aliases = {
+    # tsdm.utils.strings.AliasType : '~tsdm.utils.strings.AliasType',
+    "AliasType": "~tsdm.utils.strings.AliasType",
+    "Path": "pathlib.Path",
     # torch
     "Tensor": "~torch.Tensor",
     "nn.Module": "~torch.nn.Module",
@@ -489,13 +498,14 @@ autodoc_type_aliases = {
 # It is used to keep type aliases not evaluated in the document. Defaults to empty ({}).
 # The type aliases are only available if your program enables Postponed Evaluation of Annotations (PEP 563)
 # feature via from __future__ import annotations.
-# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(typing)
+# autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(typing)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
-# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(abc)
+# autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(abc)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
-# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(torch)
-# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(torch.utils)
-# autodoc_type_aliases |= tsdm.util.system.get_napoleon_type_aliases(tsdm)
+# autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(torch)
+# autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(torch.utils)
+autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(tsdm)
+print(autodoc_type_aliases)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
 
 autodoc_typehints_format = "short"
@@ -580,6 +590,7 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "sklearn": ("https://scikit-learn.org/stable/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
+    # "tsdm": ("_build_old/html", None),
     # "xarray": ("https://xarray.pydata.org/en/stable/", None),
 }
 # This config value contains the locations and names of other projects that should be linked to
@@ -712,6 +723,7 @@ napoleon_preprocess_types = True
 # Defaults to True.
 
 napoleon_type_aliases = {
+    "Path": "~pathlib.Path",
     # torch
     "torch": "`torch`",
     "Tensor": "~torch.Tensor",
@@ -742,9 +754,9 @@ napoleon_type_aliases = {
 # A mapping to translate type names to other names or references. Works only when napoleon_use_param = True.
 # Defaults to None.
 
-napoleon_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(typing)
+# napoleon_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(typing)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
-napoleon_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(abc)
+# napoleon_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(abc)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
 napoleon_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(tsdm)
 # recursively napoleon_type_aliases for tsdm classes / functions.
