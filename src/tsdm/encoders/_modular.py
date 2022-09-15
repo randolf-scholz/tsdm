@@ -320,7 +320,16 @@ class DataFrameEncoder(BaseEncoder):
 
 
 class FrameEncoder(BaseEncoder):
-    r"""Encode a DataFrame by group-wise transformations."""
+    r"""Encode a DataFrame by group-wise transformations.
+
+    Per-column encoding is possible through the dictionary input.
+    In this case, the positions of the columns in the encoded DataFrame should coincide with the
+    positions of the columns in the input DataFrame.
+
+    Todo: We want encoding groups, so for example applying an encoder to a group of columns.
+
+    - [ ] Add support for groups of column-encoders
+    """
 
     columns: Index
     dtypes: Series
@@ -411,28 +420,33 @@ class FrameEncoder(BaseEncoder):
         elif isinstance(self.column_encoders, BaseEncoder):
             encoded = self.column_encoders.encode(data)
             encoded_cols = encoded_cols.drop(columns=data.columns)
-            encoded_cols[self._names(encoded)] = encoded
+            # encoded_cols.loc[:, self._names(encoded)] = encoded  # TODO: try better encoder!
+            encoded_cols = encoded_cols.join(encoded)
         else:
             for group, encoder in self.column_encoders.items():
                 encoded = encoder.encode(data[group])
                 encoded_cols = encoded_cols.drop(columns=group)
-                encoded_cols[self._names(encoded)] = encoded
+                # encoded_cols.loc[:,self._names(encoded)] = encoded
+                encoded_cols = encoded_cols.join(encoded)
 
         if self.index_encoders is None:
             pass
         elif isinstance(self.index_encoders, BaseEncoder):
             encoded = self.index_encoders.encode(index)
             encoded_inds = encoded_inds.drop(columns=index.columns)
-            encoded_inds[self._names(encoded)] = encoded
+            # encoded_inds.loc[:, self._names(encoded)] = encoded
+            encoded_inds = encoded_inds.join(encoded)
+
         else:
             for group, encoder in self.index_encoders.items():
                 encoded = encoder.encode(index[group])
                 encoded_inds = encoded_inds.drop(columns=group)
-                encoded_inds[self._names(encoded)] = encoded
+                # encoded_inds.loc[:, self._names(encoded)] = encoded
+                encoded_inds = encoded_inds.join(encoded)
 
         # Assemble DataFrame
-        encoded = DataFrame(encoded_cols)
-        encoded[self._names(encoded_inds)] = encoded_inds
+        encoded = encoded_cols.join(encoded_inds)  # DataFrame(encoded_cols)
+        # encoded.loc[:, self._names(encoded_inds)] = encoded_inds
         encoded = encoded.set_index(self._names(encoded_inds))
         return encoded
 
@@ -996,7 +1010,6 @@ class TripletDecoder(BaseEncoder):
             columns=self.var_name,
             values=self.value_name,
             dropna=False,
-            observed=True,
         )
 
         if isinstance(data.index, MultiIndex):

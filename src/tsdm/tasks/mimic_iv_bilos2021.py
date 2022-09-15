@@ -188,29 +188,23 @@ class MIMIC_IV_Bilos2021(BaseTask):
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ds = MIMIC_IV_Dataset()["timeseries"]
+        ds = MIMIC_IV_Dataset()
 
         # Standardization is performed over full data slice, including test!
         # https://github.com/mbilos/neural-flows-experiments/blob/
         # bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
 
         # Standardize the x-values, min-max scale the t values.
-        self.encoder.fit(ds)
-        ts = self.encoder.encode(ds)
+        ts = ds["timeseries"]
+        self.encoder.fit(ts)
+        ts = self.encoder.encode(ts)
 
         index_encoder = self.encoder.index_encoders["time_stamp"]
         self.observation_time /= index_encoder.param.xmax
 
         # drop values outside 5 sigma range
-        ts = ts[(-5 < ts) & (ts < 5)].copy()
-
-        # if self.normalize_time:
-        #     ds = ds.reset_index()
-        #     t_max = ds["time_stamp"].max()
-        #     self.observation_time /= t_max
-        #     ds["time_stamp"] /= t_max
-        #     ds = ds.set_index(["hadm_id", "time_stamp"])
-
+        ts = ts[(-5 < ts) & (ts < 5)]
+        ts = ts.dropna(axis=0, how="all").copy()
         return ts
 
     @cached_property
