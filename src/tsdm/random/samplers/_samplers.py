@@ -33,20 +33,20 @@ from torch.utils.data import Sampler
 
 from tsdm.utils.data.datasets import DatasetCollection
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import ObjectType, ValueType
+from tsdm.utils.types import ObjectVar, ValueVar
 from tsdm.utils.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 
 Boxed: TypeAlias = Union[
-    Sequence[ValueType],
-    Mapping[int, ValueType],
-    Callable[[int], ValueType],
+    Sequence[ValueVar],
+    Mapping[int, ValueVar],
+    Callable[[int], ValueVar],
 ]
 
 Nested: TypeAlias = Union[
-    ObjectType,
-    Sequence[ObjectType],
-    Mapping[int, ObjectType],
-    Callable[[int], ObjectType],
+    ObjectVar,
+    Sequence[ObjectVar],
+    Mapping[int, ObjectVar],
+    Callable[[int], ObjectVar],
 ]
 
 

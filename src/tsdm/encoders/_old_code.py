@@ -11,7 +11,7 @@
 #         n = sum(len(u) for u in groups)
 #         return n == len(union)
 #
-#     def __init__(self, groups: dict[HashableType, Sequence[HashableType]]) -> None:
+#     def __init__(self, groups: dict[AnyType, Sequence[HashableType]]) -> None:
 #         super().__init__()
 #         self.groups = groups
 #         assert self._pairwise_disjoint(self.groups.values())
@@ -54,10 +54,10 @@
 #     index_indices: list[int]
 #
 #     # FIXME: Union[types.EllipsisType, set[Hashable]] in 3.10
-#     groups: dict[Hashable, Union[Hashable, list[Hashable]]]
-#     group_indices: dict[Hashable, list[int]]
+#     groups: dict[Any, Union[Hashable, list[Hashable]]]
+#     group_indices: dict[Any, list[int]]
 #
-#     indices: dict[Hashable, list[int]]
+#     indices: dict[Any, list[int]]
 #     has_ellipsis: bool = False
 #     ellipsis: Optional[Hashable] = None
 #
@@ -125,8 +125,8 @@
 #         def get_idx(cols: Any) -> list[int]:
 #             return [data.columns.get_loc(i) for i in cols]
 #
-#         self.indices: dict[Hashable, int] = dict(enumerate(data.columns))
-#         self.group_indices: dict[Hashable, list[int]] = {}
+#         self.indices: dict[Any, int] = dict(enumerate(data.columns))
+#         self.group_indices: dict[Any, list[int]] = {}
 #         self.column_indices = get_idx(self.column_columns)
 #         self.index_indices = get_idx(self.index_columns)
 #
@@ -205,19 +205,19 @@
 #     index_dtypes: Series
 #     duplicate: bool = False
 #
-#     column_encoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+#     column_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]]
 #     r"""Encoders for the columns."""
-#     index_encoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+#     index_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]]
 #     r"""Optional Encoder for the index."""
-#     column_decoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+#     column_decoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]]
 #     r"""Reverse Dictionary from encoded column name -> encoder"""
-#     index_decoders: Optional[Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]]
+#     index_decoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]]
 #     r"""Reverse Dictionary from encoded index name -> encoder"""
 #
 #     @staticmethod
 #     def _names(
-#         obj: Union[Index, Series, DataFrame]
-#     ) -> Union[Hashable, FrozenList[Hashable]]:
+#         obj: Index | Series | DataFrame
+#     ) -> Hashable | FrozenList[Hashable]:
 #         if isinstance(obj, MultiIndex):
 #             return FrozenList(obj.names)
 #         if isinstance(obj, (Series, Index)):
@@ -229,11 +229,11 @@
 #     def __init__(
 #         self,
 #         column_encoders: Optional[
-#             Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]
+#             Union[BaseEncoder, Mapping[Any, BaseEncoder]]
 #         ] = None,
 #         *,
 #         index_encoders: Optional[
-#             Union[BaseEncoder, Mapping[Hashable, BaseEncoder]]
+#             Union[BaseEncoder, Mapping[Any, BaseEncoder]]
 #         ] = None,
 #         duplicate: bool = False,
 #     ):
@@ -370,3 +370,142 @@
 #             "index_encoders": self.index_encoders,
 #         }
 #         return repr_mapping(items, title=self.__class__.__name__)
+
+
+# class TensorEncoder(BaseEncoder):
+#     r"""Converts objects to Tensors.
+#
+#     Allows specification of dtype and device on a per-tensor basis.
+#
+#     - Works with single objects (ndarray, Series, DataFrame, etc.) -> returns a Tensor
+#     - Works with lists | tuple of objects -> returns tuple
+#     - Works with dicts of objects -> returns namedtuple
+#
+#     A namedtuple can be forced by passing a list of names.
+#     """
+#
+#     names: Optional[list[str]]
+#     r"""If given, will return `NamedTuple` with the given names."""
+#     device: torch.device | dict[str, torch.dtype]
+#     r"""The device the tensors are stored in."""
+#     dtype: torch.dtype | dict[str, torch.dtype]
+#     r"""The dtype of the tensors."""
+#
+#     def __init__(
+#         self,
+#         names: Optional[list[str]] = None,
+#         dtype: Optional[torch.dtype | dict[str, torch.dtype]] = None,
+#         device: Optional[torch.device] = None,
+#     ):
+#         super().__init__()
+#         self.names = names
+#         self.dtype = torch.float32 if dtype is None else dtype
+#         # default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#         self.device = torch.device("cpu") if device is None else device
+#         self.tuple = tuple if names is None else namedtuple("Tensors", names)
+#
+#     def __repr__(self):
+#         r"""Pretty print."""
+#         return f"{self.__class__.__name__}()"
+#
+#     def fit(
+#         self,
+#         data: PandasObject
+#         | list[PandasObject]
+#         | tuple[PandasObject]
+#         | dict[Any, PandasObject],
+#         /,
+#     ) -> None:
+#         r"""Fit to the data."""
+#         if self.names is None:
+#             if isinstance(data, (Series, Index)):
+#                 self.names = data.name
+#             elif isinstance(data, DataFrame):
+#                 self.names = data.columns
+#             elif isinstance(data, dict):
+#                 self.names = list(data.keys())
+#
+#     @overload
+#     def encode(
+#         self,
+#         data: PandasObject,
+#         /,
+#         *,
+#         names: Optional[str | list[str]] = None,
+#         devices: Optional[torch.device | dict[str, torch.device]] = None,
+#         dtypes: Optional[torch.dtype | dict[str, torch.dtype]] = None,
+#     ) -> Tensor:  # type: ignore[misc]
+#         ...
+#
+#     @overload
+#     def encode(
+#         self,
+#         data: dict[str, PandasObject],
+#         /,
+#         *,
+#         names: Optional[str | list[str]] = None,
+#         devices: Optional[torch.device | dict[str, torch.device]] = None,
+#         dtypes: Optional[torch.dtype | dict[str, torch.dtype]] = None,
+#     ) -> tuple[Tensor, ...]:
+#         ...
+#
+#     @overload
+#     def encode(
+#         self,
+#         data: tuple[PandasObject, ...],
+#         /,
+#         *,
+#         names: Optional[str | list[str]] = None,
+#         devices: Optional[torch.device | dict[str, torch.device]] = None,
+#         dtypes: Optional[torch.dtype | dict[str, torch.dtype]] = None,
+#     ) -> tuple[Tensor, ...]:
+#         ...
+#
+#     def encode(
+#         self,
+#         data: PandasObject | tuple[PandasObject, ...] | dict[str, PandasObject],
+#         /,
+#         *,
+#         names: Optional[str | list[str]] = None,
+#         devices: Optional[torch.device | dict[str, torch.device]] = None,
+#         dtypes: Optional[torch.dtype | dict[str, torch.dtype]] = None,
+#     ) -> Tensor | tuple[Tensor, ...]:
+#         r"""Encode the data."""
+#         devices = devices if devices is not None else self.device
+#         dtypes = dtypes if dtypes is not None else self.dtype
+#         names = names if names is not None else self.names
+#
+#         if isinstance(data, dict):
+#             frames = {}
+#             for key in data:
+#                 device = devices[key] if isinstance(devices, dict) else devices
+#                 dtype = dtypes[key] if isinstance(dtypes, dict) else dtypes
+#                 frame = self.encode(data[key], names=key, devices=device, dtypes=dtype)
+#                 frames[key] = frame
+#
+#             if self.tuple is tuple:
+#                 return self.tuple(**frames)
+#             else:
+#                 return self.tuple(frames.values())
+#
+#         if isinstance(data, tuple | list | set):
+#             return self.tuple(self.encode(x) for x in data)
+#         if isinstance(data, np.ndarray):
+#             return torch.from_numpy(data).to(device=self.device, dtype=self.dtype)
+#         if isinstance(data, (Index, Series, DataFrame)):
+#             return torch.tensor(data.values, device=self.device, dtype=self.dtype)
+#         return torch.tensor(data, device=self.device, dtype=self.dtype)
+#
+#     @overload
+#     def decode(self, data: Tensor, /) -> PandasObject:
+#         ...
+#
+#     @overload
+#     def decode(self, data: tuple[Tensor, ...], /) -> tuple[PandasObject, ...]:
+#         ...
+#
+#     def decode(self, data, /):
+#         r"""Convert each input from tensor to numpy."""
+#         if isinstance(data, tuple):
+#             return tuple(self.decode(x) for x in data)
+#         return data.cpu().numpy()
