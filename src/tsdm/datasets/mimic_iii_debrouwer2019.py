@@ -18,15 +18,14 @@ vital signs, laboratory results, and medications.
 
 __all__ = ["MIMIC_III_DeBrouwer2019"]
 
-import os
-import subprocess
+
 import warnings
-from getpass import getpass
 from hashlib import sha256
 
 import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.encoders import TripletDecoder
 
 
@@ -65,6 +64,9 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     SHA256 = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
     SHAPE = (3082224, 7)
     TS_FILE = "complete_tensor.csv"
+
+    RAWDATA_DIR = MIMIC_III.RAWDATA_DIR
+    _download = MIMIC_III._download
 
     def _clean(self, key):
         ts_path = self.RAWDATA_DIR / self.TS_FILE
@@ -122,20 +124,3 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     def _load(self, key):
         # return NotImplemented
         return pd.read_parquet(self.dataset_paths[key])
-
-    def _download(self, **_):
-        cut_dirs = self.BASE_URL.count("/") - 3
-        user = input("MIMIC-III username: ")
-        password = getpass(prompt="MIMIC-III password: ", stream=None)
-
-        os.environ["PASSWORD"] = password
-
-        subprocess.run(
-            f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P '{self.RAWDATA_DIR}' {self.BASE_URL} ",
-            shell=True,
-            check=True,
-        )
-
-        file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, self.rawdata_files)
