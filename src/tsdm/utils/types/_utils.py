@@ -20,11 +20,24 @@ Numerical Type Hierarchy:
 - empty (contains only NA)
 """
 
+
+__all__ = [
+    # Constants
+    "BOOLEAN_PAIRS",
+    "NA_STRINGS",
+    "NA_VALUES",
+    # Functions
+    "get_uniques",
+    "string_is_bool",
+    "string_to_bool",
+    "numeric_is_bool",
+    "float_is_int",
+]
+
 from typing import Final, Optional, cast
 
 import numpy as np
 import pandas
-from numpy.typing import NDArray
 from pandas import Series
 
 NA_STRINGS: Final[set[str]] = {
@@ -42,6 +55,7 @@ NA_STRINGS: Final[set[str]] = {
     r"None",
     r"NONE",
 }
+r"""String that correspond to NA values."""
 
 NA_VALUES: Final[set] = {
     None,
@@ -51,6 +65,7 @@ NA_VALUES: Final[set] = {
     pandas.NaT,
     np.datetime64("NaT"),
 }
+r"""Values that correspond to NaN."""
 
 BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
     {"f": False, "t": True},
@@ -63,7 +78,7 @@ BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
     {0.0: False, 1.0: True},
     {-1.0: False, +1.0: True},
 ]
-
+r"""Matched pairs of values that correspond to booleans."""
 
 # def infer_dtype(series: Series) -> Union[None, ExtensionDtype, np.generic]:
 #     original_series = series.copy()
@@ -87,21 +102,7 @@ BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
 #             string_to_bool(series, uniques=uniques)
 
 
-def is_empty(series: Series) -> bool:
-    r"""Check if series has any not-na values.
-
-    Parameters
-    ----------
-    series
-
-    Returns
-    -------
-    bool
-    """
-    return cast(bool, pandas.isna(series).all())
-
-
-def get_uniques(series: Series, ignore_nan: bool = True) -> NDArray:
+def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:
     r"""Return unique values, excluding nan.
 
     Parameters
@@ -116,10 +117,10 @@ def get_uniques(series: Series, ignore_nan: bool = True) -> NDArray:
     if ignore_nan:
         mask = pandas.notna(series)
         series = series[mask]
-    return series.unique()
+    return Series(series.unique())
 
 
-def string_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
+def string_is_bool(series: Series, /, *, uniques: Optional[Series] = None) -> bool:
     r"""Test if 'string' series could possibly be boolean.
 
     Parameters
@@ -132,12 +133,12 @@ def string_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
     bool
     """
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
-    unique_vals: Series = get_uniques(series) if uniques is None else uniques
+    uniques = get_uniques(series) if uniques is None else uniques
 
-    if len(unique_vals) == 0 or len(unique_vals) > 2:
+    if len(uniques) == 0 or len(uniques) > 2:
         return False
     return any(
-        set(unique_vals.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
+        set(uniques.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
     )
 
 
@@ -154,11 +155,8 @@ def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
     bool
     """
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
-
     mask = pandas.notna(series)
-
     uniques = get_uniques(series[mask]) if uniques is None else uniques
-
     mapping = next(
         set(uniques.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
     )

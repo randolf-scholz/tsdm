@@ -21,7 +21,7 @@ from typing import Any, Sequence, overload
 
 from tsdm.utils.decorators import wrap_func
 from tsdm.utils.strings import repr_sequence
-from tsdm.utils.types import ObjectType
+from tsdm.utils.types import ObjectVar
 
 
 class BaseEncoderMetaClass(ABCMeta):
@@ -129,11 +129,11 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
 class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
-    def encode(self, data: ObjectType, /) -> ObjectType:
+    def encode(self, data: ObjectVar, /) -> ObjectVar:
         r"""Encode the input."""
         return data
 
-    def decode(self, data: ObjectType, /) -> ObjectType:
+    def decode(self, data: ObjectVar, /) -> ObjectVar:
         r"""Decode the input."""
         return data
 

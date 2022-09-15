@@ -12,6 +12,7 @@ __all__ = [
     "cumulative_and",
     "cumulative_or",
     "erank",
+    "relerank",
     "grad_norm",
     "multi_norm",
     "multi_scaled_norm",
@@ -43,6 +44,7 @@ from tsdm.linalg._matrix_functions import (
     reldist_orth,
     reldist_skew,
     reldist_symm,
+    relerank,
     row_corr,
 )
 from tsdm.linalg._norms import (

@@ -45,22 +45,60 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
     if not hasattr(module, "__all__"):
         return d
 
+    # for item in module.__all__:
+    #     obj = getattr(module, item)
+    #     if inspect.ismodule(obj):
+    #         # d[item] = f":mod:`~{obj.__name__}`"
+    #         if not item.startswith("_"):
+    #             d |= get_napoleon_type_aliases(obj)
+    #     if hasattr(obj, "__module__") and hasattr(obj, "__qualname__"):
+    #         d[item] = f"{obj.__module__}.{obj.__qualname__}"
+    # elif inspect.ismethod(obj):
+    #     d[item] = f":meth:`~{obj.__module__}.{obj.__qualname__}`"
+    # elif inspect.isfunction(obj):
+    #     d[item] = f":func:`~{obj.__module__}.{obj.__qualname__}`"
+    # elif inspect.isclass(obj):
+    #     if issubclass(obj, Exception):
+    #         d[item] = f":exc:`~{obj.__module__}.{obj.__qualname__}`"
+    #     d[item] = f":class:`~{obj.__module__}.{obj.__qualname__}`"
+    # else:
+    #     pass
+
+    # d[item] = f":obj:`~{module.__name__}.{item}`"
+
     for item in module.__all__:
         obj = getattr(module, item)
         if inspect.ismodule(obj):
-            d[item] = f":mod:`~{obj.__name__}`"
+            d[item] = f"{obj.__name__}"
             if not item.startswith("_"):
                 d |= get_napoleon_type_aliases(obj)
         elif inspect.ismethod(obj):
-            d[item] = f":meth:`~{obj.__module__}.{obj.__qualname__}`"
+            d[item] = f"{obj.__module__}.{obj.__qualname__}"
         elif inspect.isfunction(obj):
-            d[item] = f":func:`~{obj.__module__}.{obj.__qualname__}`"
+            d[item] = f"{obj.__module__}.{obj.__qualname__}"
         elif inspect.isclass(obj):
             if issubclass(obj, Exception):
-                d[item] = f":exc:`~{obj.__module__}.{obj.__qualname__}`"
-            d[item] = f":class:`~{obj.__module__}.{obj.__qualname__}`"
+                d[item] = f"{obj.__module__}.{obj.__qualname__}"
+            d[item] = f"{obj.__module__}.{obj.__qualname__}"
         else:
-            d[item] = f":obj:`~{module.__name__}.{item}`"
+            d[item] = item
+
+    # for item in module.__all__:
+    #     obj = getattr(module, item)
+    #     if inspect.ismodule(obj):
+    #         d[item] = f":mod:`~{obj.__name__}`"
+    #         if not item.startswith("_"):
+    #             d |= get_napoleon_type_aliases(obj)
+    #     elif inspect.ismethod(obj):
+    #         d[item] = f":meth:`~{obj.__module__}.{obj.__qualname__}`"
+    #     elif inspect.isfunction(obj):
+    #         d[item] = f":func:`~{obj.__module__}.{obj.__qualname__}`"
+    #     elif inspect.isclass(obj):
+    #         if issubclass(obj, Exception):
+    #             d[item] = f":exc:`~{obj.__module__}.{obj.__qualname__}`"
+    #         d[item] = f":class:`~{obj.__module__}.{obj.__qualname__}`"
+    #     else:
+    #         d[item] = f":obj:`~{module.__name__}.{item}`"
 
     __logger__.info("Found napoleon type aliases: %s", repr_mapping(d, maxitems=-1))
     return d

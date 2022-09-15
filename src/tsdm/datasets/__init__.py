@@ -5,10 +5,8 @@ Implement your own by subclassing `BaseDataset`
 Basic Usage
 -----------
 
-.. code-block:: python
-
-    from tsdm.dataset import Electricity
-    dataset = Electricity()
+>>>    from tsdm.datasets import Electricity
+>>>    dataset = Electricity()
 
 Some design decisions:
 
@@ -39,6 +37,9 @@ __all__ = [
     "InSilicoData",
     "KIWI_RUNS",
     "MIMIC_III",
+    "MIMIC_III_DeBrouwer2019",
+    "MIMIC_IV",
+    "MIMIC_IV_Bilos2021",
     "Physionet2019",
     "Physionet2012",
     "Traffic",
@@ -61,6 +62,9 @@ from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_runs import KIWI_RUNS
 from tsdm.datasets.mimic_iii import MIMIC_III
+from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
+from tsdm.datasets.mimic_iv import MIMIC_IV
+from tsdm.datasets.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.datasets.physionet2012 import Physionet2012
 from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.traffic import Traffic
@@ -76,8 +80,11 @@ DATASETS: Final[dict[str, type[Dataset]]] = {
     "InSilicoData": InSilicoData,
     "KIWI_RUNS_TASK": KIWI_RUNS,
     "MIMIC_III": MIMIC_III,
-    "Physionet2019": Physionet2019,
+    "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
+    "MIMIC_IV": MIMIC_IV,
+    "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
     "Physionet2012": Physionet2012,
+    "Physionet2019": Physionet2019,
     "Traffic": Traffic,
     "USHCN": USHCN,
     "USHCN_SmallChunkedSporadic": USHCN_SmallChunkedSporadic,

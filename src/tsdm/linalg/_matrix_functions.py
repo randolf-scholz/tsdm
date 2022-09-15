@@ -3,6 +3,23 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+__all__ = [
+    # FUnctions
+    "closest_diag",
+    "closest_orth",
+    "closest_skew",
+    "closest_symm",
+    "col_corr",
+    "erank",
+    "relerank",
+    "reldist",
+    "reldist_diag",
+    "reldist_orth",
+    "reldist_skew",
+    "reldist_symm",
+    "row_corr",
+]
+
 
 import torch
 from torch import Tensor, jit
@@ -31,6 +48,17 @@ def erank(x: Tensor) -> Tensor:
     σ = σ / torch.linalg.norm(σ, ord=1, dim=-1)
     entropy = torch.special.entr(σ).sum(dim=-1)
     return torch.exp(entropy)
+
+
+@jit.script
+def relerank(x: Tensor) -> Tensor:
+    r"""Compute the relative effective rank of a matrix.
+
+    .. Signature:: ``(..., m, n) -> ...``
+
+    This is the effective rank scaled by $\min(m,n)$.
+    """
+    return erank(x) / min(x.shape[-2:])
 
 
 @jit.script
