@@ -31,9 +31,11 @@ __all__ = [
 from collections import abc
 from typing import TypeVar
 
+#: blah blah blah
 ContainerType = TypeVar("ContainerType", bound=abc.Container)
 r"""Type variable for Containers."""
 
+#: blah blah blah
 HashableType = TypeVar("HashableType", bound=abc.Hashable)
 r"""Type variable for Hashable objects."""
 
