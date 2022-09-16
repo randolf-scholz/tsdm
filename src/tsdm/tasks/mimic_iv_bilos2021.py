@@ -2,7 +2,7 @@ r"""MIMIC-II clinical dataset."""
 
 __all__ = ["MIMIC_IV_Bilos2021", "mimic_collate"]
 
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, NamedTuple
@@ -63,23 +63,23 @@ class Batch(NamedTuple):
 
 
 @dataclass
-class TaskDataset(torch.utils.data.Dataset):
+class TaskDataset(torch.utils.data.TensorDataset):
     r"""Wrapper for creating samples of the dataset."""
 
-    tensors: list[tuple[Tensor, Tensor]]
+    tensors: tuple[Tensor, Tensor]
     observation_time: float
     prediction_steps: int
 
-    def __len__(self) -> int:
-        r"""Return the number of samples in the dataset."""
-        return len(self.tensors)
-
-    def __iter__(self) -> Iterator[tuple[Tensor, Tensor]]:
-        r"""Return an iterator over the dataset."""
-        return iter(self.tensors)
+    def __init__(
+        self, *tensors: torch.Tensor, observation_time: float, prediction_steps: int
+    ) -> None:
+        assert len(tensors) == 2
+        super().__init__(*tensors)
+        self.observation_time = observation_time
+        self.prediction_steps = prediction_steps
 
     def __getitem__(self, key: int) -> Sample:
-        t, x = self.tensors[key]
+        t, x = super().__getitem__(key)
         observations = t <= self.observation_time
         first_target = observations.sum()
         sample_mask = slice(0, first_target)
