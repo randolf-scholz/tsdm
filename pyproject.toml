@@ -45,7 +45,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 h5py = ">=3.7"
-matplotlib = ">=3.5"
+matplotlib = ">=3.6"
 numpy = ">=1.23"
 pandas = ">=1.4"
 pillow = ">=9.2"
