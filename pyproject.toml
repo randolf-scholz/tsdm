@@ -12,18 +12,19 @@ build-backend = "poetry.core.masonry.api"
 ########################
 
 [tool.poetry]
+authors = ["Randolf Scholz <rscholz@ismll.de>"]
+description = "Time-Series Datasets and Models"
+documentation = "https://www.user.tu-berlin.de/randolf.scholz/tsdm"
+homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
+include = ["CHANGELOG.rst", "LICENSE.rst", "CONTRIBUTING.rst"]
+keywords = ["time series", "machine learning"]
+license = "MIT"
 name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
-version = "0.3.1"
-description = "Time-Series Datasets and Models"
-license = "MIT"
-authors = ["Randolf Scholz <rscholz@ismll.de>"]
-homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-repository = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
 readme = "README.rst"
-include = ["CHANGELOG.rst", "LICENSE.rst", "CONTRIBUTING.rst"]
-keywords = ["time-series", "machine-learning"]
-documentation = "https://www.user.tu-berlin.de/randolf.scholz/tsdm"
+repository = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
+version = "0.3.1"
+
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: GPU :: NVIDIA CUDA :: 11.6",
@@ -62,7 +63,7 @@ typing-extensions = ">=4.3"
 [tool.poetry.group.dev.dependencies]
 black = {version = ">=22.8", extras = ["jupyter"]}
 blacken-docs = ">=1.12"
-docutils = ">=0.18"
+docutils = ">=0.19"
 flake8 = ">=5.0"
 flake8-annotations = ">=2.9"
 flake8-black = ">=0.3"
@@ -114,9 +115,6 @@ wheel = ">=0.37"
 ########################
 # PyLint Configuration #
 ########################
-
-
-
 [tool.pylint]
 [tool.pylint."MESSAGES CONTROL"]
 enable= [
@@ -217,39 +215,27 @@ convention = "numpy"
 # pyright Configuration #
 #########################
 [tool.pyright]
-include = ["src/"]
+root = ""
+venv = ".venv"
+venvPath = "."
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+stubPath = ""
+include = ["src/", "tests/"]
 exclude = [
     "**/node_modules",
     "**/__pycache__",
     "**/.ipynb_checkpoints",
 ]
-#defineConstant
-#ignore
-#strict
-stubPath = ""
-#typeshedPath=
-#useLibraryCodeForTypes=
-#verboseOutput=
-pythonPlatform = "Linux"
-pythonVersion = "3.10"
-#typeCheckingMode = "off"
-venv = ".venv/"
-venvPath = "."
-
 executionEnvironments = [
     {root = "src/", pythonVersion = "3.10", pythonPlatform = "Linux", extraPaths = [""]}
 ]
-
 # region Type Check Diagnostics Settings
-
 reportMissingImports = false
 reportMissingTypeStubs = false
 reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false
-
 # endregion
-
-
 
 
 ########################
