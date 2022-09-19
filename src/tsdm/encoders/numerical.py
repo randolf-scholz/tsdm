@@ -17,7 +17,7 @@ from typing import Any, Generic, NamedTuple, Optional, TypeAlias, TypeVar, overl
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, Series
 from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
@@ -409,7 +409,16 @@ class FloatEncoder(BaseEncoder):
 
     def fit(self, data: PandasObject, /) -> None:
         r"""Remember the original dtypes."""
-        self.dtypes = data.dtypes if hasattr(data, "dtypes") else data.dtype
+        if isinstance(data, DataFrame):
+            self.dtypes = data.dtypes
+        elif isinstance(data, (Series, Index)):
+            self.dtypes = data.dtype
+        # elif hasattr(data, "dtype"):
+        #     self.dtypes = data.dtype
+        # elif hasattr(data, "dtypes"):
+        #     self.dtypes = data.dtype
+        else:
+            raise TypeError(f"Cannot get dtype of {type(data)}")
 
     def encode(self, data: PandasObject, /) -> PandasObject:
         r"""Make everything float32."""
