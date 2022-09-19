@@ -112,7 +112,7 @@ class KIWI_RUNS(MultiFrameDataset):
         ]
     """
 
-    BASE_URL: str = (
+    BASE_URL = (
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/fGFEJicrcjsxDBd/download/"
     )
 

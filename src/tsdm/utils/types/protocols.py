@@ -13,7 +13,8 @@ __all__ = [
     "NTuple",
 ]
 
-from typing import Protocol, runtime_checkable
+from collections.abc import Iterable
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable
@@ -21,13 +22,14 @@ class Array(Protocol):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
     @property
-    def shape(self) -> tuple[int, ...] | list[int]:
-        r"""Shape of the array."""
-        return ()
+    def shape(self) -> Iterable[int]:
+        r"""Yield the shape of the array."""
+        ...
 
-    # @property
-    # def dtype(self) -> Any:
-    #     ...
+    @property
+    def dtype(self) -> Any:
+        r"""Yield the data type of the array."""
+        ...
 
 
 @runtime_checkable

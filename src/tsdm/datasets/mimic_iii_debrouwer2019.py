@@ -21,6 +21,7 @@ __all__ = ["MIMIC_III_DeBrouwer2019"]
 
 import warnings
 from hashlib import sha256
+from pathlib import Path
 
 import pandas as pd
 
@@ -53,15 +54,16 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     so e.g. the last patient was roughly 250 hours, 10½ days.
     """
 
-    BASE_URL: str = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
-    INFO_URL: str = r"https://physionet.org/content/mimiciii/1.4/"
-    HOME_URL: str = r"https://mimic.mit.edu/"
-    GITHUB_URL: str = r"https://github.com/edebrouwer/gru_ode_bayes/"
+    BASE_URL = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
+    INFO_URL = r"https://physionet.org/content/mimiciii/1.4/"
+    HOME_URL = r"https://mimic.mit.edu/"
+    GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
     SHA256 = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
     SHAPE = (3082224, 7)
 
     dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
     rawdata_files = "complete_tensor.csv"
+    rawdata_paths: Path
     index = ["timeseries", "metadata"]
 
     def _clean(self, key):

@@ -63,15 +63,15 @@ class Electricity(SingleFrameDataset):
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa: E501
 
-    BASE_URL: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
+    BASE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL: str = (
+    INFO_URL = (
         r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"
     )
     r"""HTTP address containing additional information about the dataset."""
     dataset: DataFrame
     r"""Store cached version of dataset."""
-    rawdata_files: str = "LD2011_2014.txt.zip"
+    rawdata_files = "LD2011_2014.txt.zip"
     rawdata_paths: Path
 
     def _clean(self) -> DataFrame:

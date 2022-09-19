@@ -133,12 +133,12 @@ def string_is_bool(series: Series, /, *, uniques: Optional[Series] = None) -> bo
     bool
     """
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
-    uniques = get_uniques(series) if uniques is None else uniques
+    values = get_uniques(series) if uniques is None else uniques
 
-    if len(uniques) == 0 or len(uniques) > 2:
+    if len(values) == 0 or len(values) > 2:
         return False
     return any(
-        set(uniques.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
+        set(values.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
     )
 
 
@@ -156,9 +156,9 @@ def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
     """
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
     mask = pandas.notna(series)
-    uniques = get_uniques(series[mask]) if uniques is None else uniques
+    values = get_uniques(series[mask]) if uniques is None else uniques
     mapping = next(
-        set(uniques.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
+        set(values.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
     )
     series = series.copy()
     series[mask] = series[mask].map(mapping)
@@ -178,10 +178,10 @@ def numeric_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
     bool
     """
     assert pandas.api.types.is_numeric_dtype(series), "Series must be 'numeric' dtype!"
-    uniques = get_uniques(series) if uniques is None else uniques
-    if len(uniques) == 0 or len(uniques) > 2:
+    values = get_uniques(series) if uniques is None else uniques
+    if len(values) == 0 or len(values) > 2:
         return False
-    return any(set(uniques) <= set(bool_pair) for bool_pair in BOOLEAN_PAIRS)
+    return any(set(values) <= set(bool_pair) for bool_pair in BOOLEAN_PAIRS)
 
 
 def float_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
@@ -197,8 +197,8 @@ def float_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
     bool
     """
     assert pandas.api.types.is_float_dtype(series), "Series must be 'float' dtype!"
-    uniques = get_uniques(series) if uniques is None else uniques
-    return cast(bool, uniques.apply(float.is_integer).all())
+    values = get_uniques(series) if uniques is None else uniques
+    return cast(bool, values.apply(float.is_integer).all())
 
 
 #
