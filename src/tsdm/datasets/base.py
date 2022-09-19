@@ -21,7 +21,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Any, Generic, Optional, TypeAlias, overload
+from typing import Any, ClassVar, Generic, Optional, TypeAlias, overload
 from urllib.parse import urlparse
 
 import pandas
@@ -82,15 +82,15 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     Implements methods that are available for all dataset classes.
     """
 
-    BASE_URL: Optional[str] = None
+    BASE_URL: ClassVar[Optional[str]] = None
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL: Optional[str] = None
+    INFO_URL: ClassVar[Optional[str]] = None
     r"""HTTP address containing additional information about the dataset."""
-    RAWDATA_DIR: Path
+    RAWDATA_DIR: ClassVar[Path]
     r"""Location where the raw data is stored."""
-    DATASET_DIR: Path
+    DATASET_DIR: ClassVar[Path]
     r"""Location where the pre-processed data is stored."""
-    LOGGER: logging.Logger
+    LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):

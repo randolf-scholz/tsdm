@@ -176,11 +176,11 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
 
-    xmin: NDArray | Tensor
-    xmax: NDArray | Tensor
-    ymin: NDArray | Tensor
-    ymax: NDArray | Tensor
-    scale: NDArray | Tensor
+    xmin: NDArray[np.number] | Tensor
+    xmax: NDArray[np.number] | Tensor
+    ymin: NDArray[np.number] | Tensor
+    ymax: NDArray[np.number] | Tensor
+    scale: NDArray[np.number] | Tensor
     r"""The scaling factor."""
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""

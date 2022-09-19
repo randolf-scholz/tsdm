@@ -22,6 +22,7 @@ import os
 import subprocess
 from getpass import getpass
 from hashlib import sha256
+from pathlib import Path
 
 import pandas as pd
 
@@ -53,15 +54,15 @@ class MIMIC_III(MultiFrameDataset):
     so e.g. the last patient was roughly 250 hours, 10½ days.
     """
 
-    BASE_URL: str = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
-    INFO_URL: str = r"https://physionet.org/content/mimiciii/1.4/"
-    HOME_URL: str = r"https://mimic.mit.edu/"
-    GITHUB_URL: str = r"https://github.com/edebrouwer/gru_ode_bayes/"
-    VERSION: str = r"1.0"
-    SHA256: str = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
+    BASE_URL = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
+    INFO_URL = r"https://physionet.org/content/mimiciii/1.4/"
+    HOME_URL = r"https://mimic.mit.edu/"
+    GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
+    VERSION = r"1.0"
+    SHA256 = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
 
     rawdata_files = "mimic-iv-1.0.zip"
-
+    rawdata_paths: Path
     # fmt: off
     dataset_files = {
         "ADMISSIONS"         : "mimic-iii-clinical-database-1.4/ADMISSIONS.csv.gz",

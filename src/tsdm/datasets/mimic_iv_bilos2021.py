@@ -20,6 +20,7 @@ __all__ = ["MIMIC_IV_Bilos2021"]
 
 import warnings
 from hashlib import sha256
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -43,15 +44,16 @@ class MIMIC_IV_Bilos2021(MultiFrameDataset):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    BASE_URL: str = r"https://www.physionet.org/content/mimiciv/get-zip/1.0/"
-    INFO_URL: str = r"https://www.physionet.org/content/mimiciv/1.0/"
-    HOME_URL: str = r"https://mimic.mit.edu/"
-    GITHUB_URL: str = r"https://github.com/mbilos/neural-flows-experiments"
+    BASE_URL = r"https://www.physionet.org/content/mimiciv/get-zip/1.0/"
+    INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
+    HOME_URL = r"https://mimic.mit.edu/"
+    GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
     SHA256 = "cb90e0cef16d50011aaff7059e73d3f815657e10653a882f64f99003e64c70f5"
     SHAPE = (2485769, 206)
 
     dataset_files = {"timeseries": "timeseries.parquet"}
     rawdata_files = r"full_dataset.csv"
+    rawdata_paths: Path
     index = ["timeseries"]
 
     def _clean(self, key):
