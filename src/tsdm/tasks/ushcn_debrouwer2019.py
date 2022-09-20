@@ -15,7 +15,7 @@ from torch import Tensor, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import USHCN_SmallChunkedSporadic
+from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
 from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
@@ -205,7 +205,7 @@ class USHCN_DeBrouwer2019(BaseTask):
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ds = USHCN_SmallChunkedSporadic().dataset
+        ds = USHCN_DeBrouwer2019_Dataset().dataset
 
         if self.normalize_time:
             ds = ds.reset_index()

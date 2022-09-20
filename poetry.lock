@@ -560,7 +560,7 @@ restructuredtext-lint = "*"
 
 [[package]]
 name = "fonttools"
-version = "4.37.2"
+version = "4.37.3"
 description = "Tools to manipulate font files"
 category = "main"
 optional = false
@@ -582,7 +582,7 @@ woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
 name = "google-auth"
-version = "2.11.0"
+version = "2.11.1"
 description = "Google Authentication Library"
 category = "main"
 optional = false
@@ -1752,7 +1752,7 @@ test = ["pydata-sphinx-theme[doc]", "pytest"]
 
 [[package]]
 name = "pydeps"
-version = "1.10.22"
+version = "1.10.24"
 description = "Display module dependencies"
 category = "dev"
 optional = false
@@ -2705,7 +2705,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-Pillow"
-version = "9.2.1"
+version = "9.2.2"
 description = "Typing stubs for Pillow"
 category = "dev"
 optional = false
@@ -3365,12 +3365,12 @@ flake8-rst-docstrings = [
     {file = "flake8_rst_docstrings-0.2.7-py3-none-any.whl", hash = "sha256:5d56075dce360bcc9c6775bfe7cb431aa395de600ca7e8d40580a28d50b2a803"},
 ]
 fonttools = [
-    {file = "fonttools-4.37.2-py3-none-any.whl", hash = "sha256:88d48ef24486137c864dc56707b4b54ef8a97ab9162c2721ec61434baf1c4d13"},
-    {file = "fonttools-4.37.2.zip", hash = "sha256:b6d86ffd0a5f83d3da6a34d5f99a90398638e423cd6a8d93c5808af703432c7f"},
+    {file = "fonttools-4.37.3-py3-none-any.whl", hash = "sha256:a5bc5f5d48faa4085310b8ebd4c5d33bf27c6636c5f10a7de792510af2745a81"},
+    {file = "fonttools-4.37.3.zip", hash = "sha256:f32ef6ec966cf0e7d2aa88601fed2e3a8f2851c26b5db2c80ccc8f82bee4eedc"},
 ]
 google-auth = [
-    {file = "google-auth-2.11.0.tar.gz", hash = "sha256:ed65ecf9f681832298e29328e1ef0a3676e3732b2e56f41532d45f70a22de0fb"},
-    {file = "google_auth-2.11.0-py2.py3-none-any.whl", hash = "sha256:be62acaae38d0049c21ca90f27a23847245c9f161ff54ede13af2cb6afecbac9"},
+    {file = "google-auth-2.11.1.tar.gz", hash = "sha256:516e6623038b81430dd062a1a25ecd24f173d7c15cdf4e48a9e78bc87e97aeec"},
+    {file = "google_auth-2.11.1-py2.py3-none-any.whl", hash = "sha256:53bdc0c2b4e25895575779caef4cfb3a6bdff1b7b32dc38a654d71aba35bb5f8"},
 ]
 google-auth-oauthlib = [
     {file = "google-auth-oauthlib-0.4.6.tar.gz", hash = "sha256:a90a072f6993f2c327067bf65270046384cda5a8ecb20b94ea9a687f1f233a7a"},
@@ -4276,8 +4276,8 @@ pydata-sphinx-theme = [
     {file = "pydata_sphinx_theme-0.10.1.tar.gz", hash = "sha256:0c203ff3761407da96c3a5b7a51ae079fb3268a9c95557a4a8bbe0593c88ada2"},
 ]
 pydeps = [
-    {file = "pydeps-1.10.22-py3-none-any.whl", hash = "sha256:5f4ee42289182b61322054ff58af83f174b9a7e59fca78e115166ed942b84f31"},
-    {file = "pydeps-1.10.22.tar.gz", hash = "sha256:d9e96f13a6fb1858a960410bf7993336ebba2f7d62318d00ca77d4eecb415b8a"},
+    {file = "pydeps-1.10.24-py3-none-any.whl", hash = "sha256:cd6287b5e8150f9196c3d9e2c18e7c00b293a00b92450f7795b2ee9ff80ecaa7"},
+    {file = "pydeps-1.10.24.tar.gz", hash = "sha256:efbcd33057f4ec4058f569b5ea5415924085bfc8026ce37d02dad3cc01c31a1d"},
 ]
 pydocstyle = [
     {file = "pydocstyle-6.1.1-py3-none-any.whl", hash = "sha256:6987826d6775056839940041beef5c08cc7e3d71d63149b48e36727f70144dc4"},
@@ -4796,8 +4796,8 @@ types-docutils = [
     {file = "types_docutils-0.19.1-py3-none-any.whl", hash = "sha256:6b110b17ba4bfbde765b69acca6a6da373094d99a5a3bce1d5a8c9d29b293d89"},
 ]
 types-Pillow = [
-    {file = "types-Pillow-9.2.1.tar.gz", hash = "sha256:9781104ee2176f680576523fa2a2b83b134957aec6f4d62582cc9e74c93a60b4"},
-    {file = "types_Pillow-9.2.1-py3-none-any.whl", hash = "sha256:d63743ef631e47f8d8669590ea976162321a9a7604588b424b6306533453fb63"},
+    {file = "types-Pillow-9.2.2.tar.gz", hash = "sha256:6b525b0951ada076f3aefe2347e0bff6231283ce959ad8577a4416604acc673c"},
+    {file = "types_Pillow-9.2.2-py3-none-any.whl", hash = "sha256:bfe14afa1e9047a52b3dc326c93b4f57db72641794e194f11b511f68b0061814"},
 ]
 types-protobuf = [
     {file = "types-protobuf-3.20.4.tar.gz", hash = "sha256:0dad3a5009895c985a56e2837f61902bad9594151265ac0ee907bb16d0b01eb7"},

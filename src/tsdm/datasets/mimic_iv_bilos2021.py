@@ -18,17 +18,15 @@ MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad se
 __all__ = ["MIMIC_IV_Bilos2021"]
 
 
-import warnings
-from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import SingleFrameDataset
 
 
-class MIMIC_IV_Bilos2021(MultiFrameDataset):
+class MIMIC_IV_Bilos2021(SingleFrameDataset):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -48,27 +46,26 @@ class MIMIC_IV_Bilos2021(MultiFrameDataset):
     INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
-    SHA256 = "cb90e0cef16d50011aaff7059e73d3f815657e10653a882f64f99003e64c70f5"
-    SHAPE = (2485769, 206)
-
-    dataset_files = {"timeseries": "timeseries.parquet"}
+    RAWDATA_SHA256 = "cb90e0cef16d50011aaff7059e73d3f815657e10653a882f64f99003e64c70f5"
+    RAWDATA_SHAPE = (2485769, 206)
+    DATASET_SHAPE = (2485769, 102)
+    dataset_files = "timeseries.parquet"
     rawdata_files = r"full_dataset.csv"
     rawdata_paths: Path
     index = ["timeseries"]
 
-    def _clean(self, key):
+    def _clean(self):
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."
                 f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
             )
 
-        if sha256(self.rawdata_paths.read_bytes()).hexdigest() != self.SHA256:
-            warnings.warn("The sha256 seems incorrect.")
+        # self.validate_filehash(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
         ts = pd.read_csv(self.rawdata_paths)
 
-        if ts.shape != self.SHAPE:
+        if ts.shape != self.RAWDATA_SHAPE:
             raise ValueError(f"The {ts.shape=} is not correct.")
 
         ts = ts.sort_values(by=["hadm_id", "time_stamp"])
@@ -86,10 +83,7 @@ class MIMIC_IV_Bilos2021(MultiFrameDataset):
         ts = ts.drop(columns=ts.columns[1::2])
         ts = ts.sort_index()
         ts = ts.astype("float32")
-        ts.to_parquet(self.dataset_paths["timeseries"])
-
-    def _load(self, key):
-        return pd.read_parquet(self.dataset_paths[key])
+        ts.to_parquet(self.dataset_paths)
 
     def _download(self, **kwargs):
         if not self.rawdata_paths.exists():
