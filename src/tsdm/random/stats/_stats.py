@@ -42,7 +42,7 @@ def data_overview(df: DataFrame) -> DataFrame:
     DataFrame
     """
     overview = DataFrame(index=df.columns)
-    mask = pandas.isna(df)
+    mask = df.isna()
     overview["# datapoints"] = (~mask).sum()
     overview["% missing"] = (mask.mean() * 100).round(2)
     overview["min"] = df.min().round(2)

@@ -199,6 +199,8 @@ class ETDatasetTask_Informer(BaseTask):
         tensors = self.preprocessor.transform(ds)
         # tensors = self.encoder.encode(ds)
         dataset = TensorDataset(*tensors)
-        sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)  # type: ignore[arg-type]
+        sampler = SequenceSampler(
+            dataset, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
+        )
 
         return DataLoader(dataset, sampler=sampler, **kwargs)
