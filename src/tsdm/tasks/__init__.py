@@ -33,7 +33,7 @@ __all__ = [
     "TASKS",
     # Classes
     # Tasks
-    "ETDatasetTask_Informer",
+    "ETT_Zhou2021",
     "KIWI_RUNS_TASK",
     "KIWI_FINAL_PRODUCT",
     "ElectricityTFT",
@@ -49,7 +49,7 @@ from typing import Final, TypeAlias
 from tsdm.tasks import base
 from tsdm.tasks.base import BaseTask
 from tsdm.tasks.electricity import ElectricityTFT
-from tsdm.tasks.etdataset import ETDatasetTask_Informer
+from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
@@ -61,12 +61,12 @@ Task: TypeAlias = BaseTask
 r"""Type hint for tasks."""
 
 TASKS: Final[dict[str, type[Task]]] = {
-    "ETDatasetTask_Informer": ETDatasetTask_Informer,
+    "ETT_Zhou2021": ETT_Zhou2021,
     "KIWI_RUNS_TASK": KIWI_RUNS_TASK,
     "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
     "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
     "ElectricityTFT": ElectricityTFT,
-    "MIMIC_DeBrouwer": MIMIC_III_DeBrouwer2019,
+    "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV_Bilos": MIMIC_IV_Bilos2021,
     "USHCN_DeBrouwer": USHCN_DeBrouwer2019,
 }
