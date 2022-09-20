@@ -43,7 +43,7 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.10,<3.11"
 h5py = ">=3.7"
 matplotlib = ">=3.6"
 numpy = ">=1.23"
@@ -151,7 +151,7 @@ generated-members=["numpy.*","torch.*"]
 # MyPy Configuration #
 ######################
 [tool.mypy]
-allow_redefinition = true
+allow_redefinition = false
 color_output = true
 error_summary = true
 files = ["src/", "tests/"]
@@ -210,6 +210,9 @@ color = true
 [tool.pydocstyle]
 convention = "numpy"
 #count = true
+add-ignore = [
+    "D105",    # Missing docstring in magic method
+]
 
 #########################
 # pyright Configuration #

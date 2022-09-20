@@ -45,15 +45,13 @@ from pandas import Timestamp as pd_dt
 # )
 # r"""TypeVar for `Time` values."""
 
-DTVar = TypeVar("DTVar", int, float, np_int, np_float, py_dt, np_dt, pd_dt)
+DTVar = TypeVar("DTVar", int, float, np_int, np_float, np_dt, pd_dt)
 r"""TypeVar for `Timestamp` values."""
 
-TDVar = TypeVar("TDVar", int, float, np_int, np_float, py_td, np_td, pd_td)
+TDVar = TypeVar("TDVar", int, float, np_int, np_float, np_td, pd_td)
 r"""TypeVar for `Timedelta` values."""
 
-TimeVar = TypeVar(
-    "TimeVar", int, float, np_int, np_float, py_dt, np_dt, pd_dt, py_td, np_td, pd_td
-)
+TimeVar = TypeVar("TimeVar", int, float, np_int, np_float, np_dt, pd_dt, np_td, pd_td)
 r"""TypeVar for `Time` values."""
 
 # Time-Type-Hints
