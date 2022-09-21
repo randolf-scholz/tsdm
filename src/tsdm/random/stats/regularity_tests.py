@@ -42,7 +42,6 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
     warnings.warn(
         "The implementation of approx_float_gcd does not work 100% correctly yet!"
     )
-    x = np.asanyarray(x)
     x = np.abs(x).flatten()
 
     def _float_gcd(z: np.ndarray) -> float:

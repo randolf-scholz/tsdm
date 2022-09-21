@@ -44,7 +44,7 @@ __all__ = [
     "Physionet2012",
     "Traffic",
     "USHCN",
-    "USHCN_SmallChunkedSporadic",
+    "USHCN_DeBrouwer2019",
 ]
 
 from typing import Final, TypeAlias
@@ -68,7 +68,8 @@ from tsdm.datasets.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.datasets.physionet2012 import Physionet2012
 from tsdm.datasets.physionet2019 import Physionet2019
 from tsdm.datasets.traffic import Traffic
-from tsdm.datasets.ushcn import USHCN, USHCN_SmallChunkedSporadic
+from tsdm.datasets.ushcn import USHCN
+from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
 Dataset: TypeAlias = BaseDataset
 r"""Type hint for dataset."""
@@ -87,6 +88,6 @@ DATASETS: Final[dict[str, type[Dataset]]] = {
     "Physionet2019": Physionet2019,
     "Traffic": Traffic,
     "USHCN": USHCN,
-    "USHCN_SmallChunkedSporadic": USHCN_SmallChunkedSporadic,
+    "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available dataset."""

@@ -2,7 +2,7 @@ r"""Predicting transformer oil temperatures."""
 
 __all__ = [
     # Classes
-    "ETDatasetTask_Informer",
+    "ETT_Zhou2021",
 ]
 
 
@@ -31,7 +31,7 @@ from tsdm.tasks.base import BaseTask
 from tsdm.utils import initialize_from
 
 
-class ETDatasetTask_Informer(BaseTask):
+class ETT_Zhou2021(BaseTask):
     r"""Forecasting Oil Temperature on the Electrical-Transformer dataset.
 
     Paper
@@ -199,6 +199,8 @@ class ETDatasetTask_Informer(BaseTask):
         tensors = self.preprocessor.transform(ds)
         # tensors = self.encoder.encode(ds)
         dataset = TensorDataset(*tensors)
-        sampler = SequenceSampler(dataset, seq_len=self.horizon, shuffle=shuffle)  # type: ignore[arg-type]
+        sampler = SequenceSampler(
+            dataset, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
+        )
 
         return DataLoader(dataset, sampler=sampler, **kwargs)

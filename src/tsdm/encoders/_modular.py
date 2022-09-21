@@ -19,8 +19,7 @@ __all__ = [
 import warnings
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
-from copy import deepcopy
-from typing import Any, Final, Optional, overload
+from typing import Any, Final, Generic, Optional, TypeVar, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -319,7 +318,19 @@ class DataFrameEncoder(BaseEncoder):
         return f"<h3>{self.__class__.__name__}</h3> {html_repr}"
 
 
-class FrameEncoder(BaseEncoder):
+BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
+
+ColumnEncoderVar = TypeVar(
+    "ColumnEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
+)
+IndexEncoderVar = TypeVar(
+    "IndexEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
+)
+# ColumnEncoderVar = TypeVar("ColumnEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
+# IndexEncoderVar = TypeVar("IndexEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
+
+
+class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Per-column encoding is possible through the dictionary input.
@@ -337,13 +348,13 @@ class FrameEncoder(BaseEncoder):
     index_dtypes: Series
     duplicate: bool = False
 
-    column_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]]
+    column_encoders: ColumnEncoderVar
     r"""Encoders for the columns."""
-    index_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]]
-    r"""Optional Encoder for the index."""
-    column_decoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]]
+    column_decoders: ColumnEncoderVar
     r"""Reverse Dictionary from encoded column name -> encoder"""
-    index_decoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]]
+    index_encoders: IndexEncoderVar
+    r"""Optional Encoder for the index."""
+    index_decoders: IndexEncoderVar
     r"""Reverse Dictionary from encoded index name -> encoder"""
 
     @staticmethod
@@ -358,14 +369,25 @@ class FrameEncoder(BaseEncoder):
 
     def __init__(
         self,
-        column_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]] = None,
+        column_encoders: ColumnEncoderVar = None,
         *,
-        index_encoders: Optional[BaseEncoder | Mapping[Any, BaseEncoder]] = None,
+        index_encoders: IndexEncoderVar = None,
         duplicate: bool = False,
     ):
         super().__init__()
-        self.column_encoders = column_encoders
-        self.index_encoders = index_encoders
+
+        if column_encoders is None:
+            self.column_encoders = cast(ColumnEncoderVar, None)
+        else:
+            self.column_encoders = column_encoders
+        if index_encoders is None:
+            self.index_encoders = cast(IndexEncoderVar, None)
+        else:
+            self.index_encoders = index_encoders
+
+        # self.column_encoders = column_encoders
+        # self.index_encoders = index_encoders
+
         self.duplicate = duplicate
 
     def fit(self, data: DataFrame, /) -> None:
@@ -377,36 +399,40 @@ class FrameEncoder(BaseEncoder):
         self.index_columns = index.columns
         self.index_dtypes = index.dtypes
 
-        if self.duplicate:
-            if not isinstance(self.column_encoders, BaseEncoder):
-                raise ValueError("Duplication only allowed when single encoder")
-            self.column_encoders = {
-                col: deepcopy(self.column_encoders) for col in data.columns
-            }
+        # if self.duplicate:
+        #     if not isinstance(self.column_encoders, BaseEncoder):
+        #         raise ValueError("Duplication only allowed when single encoder")
+        #     self.column_encoders = {
+        #         col: deepcopy(self.column_encoders) for col in data.columns
+        #     }
 
         if self.column_encoders is None:
-            self.column_decoders = None
+            pass
         elif isinstance(self.column_encoders, BaseEncoder):
             self.column_encoders.fit(data)
-            self.column_decoders = self.column_encoders
-        else:
-            self.column_decoders = {}
+            self.column_decoders = cast(ColumnEncoderVar, self.column_encoders)
+        elif isinstance(self.column_encoders, Mapping):
+            self.column_decoders = cast(ColumnEncoderVar, {})
             for group, encoder in self.column_encoders.items():
                 encoder.fit(data[group])
                 encoded = encoder.encode(data[group])
-                self.column_decoders[self._names(encoded)] = encoder
+                self.column_decoders[self._names(encoded)] = encoder  # type: ignore[index]
+        else:
+            raise TypeError(f"Invalid {type(self.column_encoders)=}")
 
         if self.index_encoders is None:
-            self.index_decoders = None
+            pass
         elif isinstance(self.index_encoders, BaseEncoder):
             self.index_encoders.fit(index)
-            self.index_decoders = self.index_encoders
-        else:
-            self.index_decoders = {}
+            self.index_decoders = cast(IndexEncoderVar, self.index_encoders)
+        elif isinstance(self.index_encoders, Mapping):
+            self.index_decoders = cast(IndexEncoderVar, {})
             for group, encoder in self.index_encoders.items():
                 encoder.fit(index[group])
                 encoded = encoder.encode(index[group])
-                self.index_decoders[self._names(encoded)] = encoder
+                self.index_decoders[self._names(encoded)] = encoder  # type: ignore[index]
+        else:
+            raise TypeError(f"Invalid {type(self.index_encoders)=}")
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         r"""Encode the data."""
@@ -422,12 +448,14 @@ class FrameEncoder(BaseEncoder):
             encoded_cols = encoded_cols.drop(columns=data.columns)
             # encoded_cols.loc[:, self._names(encoded)] = encoded  # TODO: try better encoder!
             encoded_cols = encoded_cols.join(encoded)
-        else:
+        elif isinstance(self.column_encoders, Mapping):
             for group, encoder in self.column_encoders.items():
                 encoded = encoder.encode(data[group])
                 encoded_cols = encoded_cols.drop(columns=group)
                 # encoded_cols.loc[:,self._names(encoded)] = encoded
                 encoded_cols = encoded_cols.join(encoded)
+        else:
+            raise TypeError(f"Invalid {type(self.column_encoders)=}")
 
         if self.index_encoders is None:
             pass
@@ -436,13 +464,14 @@ class FrameEncoder(BaseEncoder):
             encoded_inds = encoded_inds.drop(columns=index.columns)
             # encoded_inds.loc[:, self._names(encoded)] = encoded
             encoded_inds = encoded_inds.join(encoded)
-
-        else:
+        elif isinstance(self.index_encoders, Mapping):
             for group, encoder in self.index_encoders.items():
                 encoded = encoder.encode(index[group])
                 encoded_inds = encoded_inds.drop(columns=group)
                 # encoded_inds.loc[:, self._names(encoded)] = encoded
                 encoded_inds = encoded_inds.join(encoded)
+        else:
+            raise TypeError(f"Invalid {type(self.index_encoders)=}")
 
         # Assemble DataFrame
         encoded = encoded_cols.join(encoded_inds)  # DataFrame(encoded_cols)
@@ -463,12 +492,14 @@ class FrameEncoder(BaseEncoder):
             decoded = self.column_decoders.decode(data)
             decoded_cols = decoded_cols.drop(columns=data.columns)
             decoded_cols[self._names(decoded)] = decoded
-        else:
+        elif isinstance(self.column_decoders, Mapping):
             for group, encoder in self.column_decoders.items():
                 decoded = encoder.decode(data[group])
                 decoded_cols = decoded_cols.drop(columns=group)
                 names = self._names(decoded)
                 decoded_cols[names] = decoded
+        else:
+            raise TypeError(f"Invalid {type(self.column_decoders)=}")
 
         if self.index_decoders is None:
             pass
@@ -476,11 +507,13 @@ class FrameEncoder(BaseEncoder):
             decoded = self.index_decoders.decode(index)
             decoded_inds = decoded_inds.drop(columns=index.columns)
             decoded_inds[self._names(decoded)] = decoded
-        else:
+        elif isinstance(self.index_decoders, Mapping):
             for group, encoder in self.index_decoders.items():
                 decoded = encoder.decode(index[group])
                 decoded_inds = decoded_inds.drop(columns=group)
                 decoded_inds[self._names(decoded)] = decoded
+        else:
+            raise TypeError(f"Invalid {type(self.index_decoders)=}")
 
         # Restore index order + dtypes
         decoded_inds = decoded_inds[self.index_columns]
