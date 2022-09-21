@@ -201,9 +201,9 @@ class Physionet2019(SingleFrameDataset):
     indicate that there was no recorded measurement of a variable at the time interval.
     """
 
-    BASE_URL: str = r"https://archive.physionet.org/users/shared/challenge-2019/"
+    BASE_URL = r"https://archive.physionet.org/users/shared/challenge-2019/"
     r"""HTTP address from where the dataset can be downloaded"""
-    INFO_URL: str = r"https://physionet.org/content/challenge-2019/"
+    INFO_URL = r"https://physionet.org/content/challenge-2019/"
     r"""HTTP address containing additional information about the dataset"""
 
     rawdata_files: dict[str, str] = {"A": "training_setA.zip", "B": "training_setB.zip"}

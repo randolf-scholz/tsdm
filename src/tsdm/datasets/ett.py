@@ -26,9 +26,9 @@ class ETT(MultiFrameDataset):
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
     """  # pylint: disable=line-too-long # noqa: E501
 
-    BASE_URL: str = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
+    BASE_URL = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL: str = r"https://github.com/zhouhaoyi/ETDataset"
+    INFO_URL = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     r"""The type of the index."""

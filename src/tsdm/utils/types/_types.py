@@ -121,7 +121,7 @@ r"""Type Alias for nested types (JSON-Like)."""
 PandasObject: TypeAlias = DataFrame | Series | Index
 r"""Type Alias for `pandas` objects."""
 
-PathType: TypeAlias = str | Path | os.PathLike[str]
+PathType: TypeAlias = str | Path  # | os.PathLike[str]
 r"""Type Alias for path-like objects."""
 
 # endregion

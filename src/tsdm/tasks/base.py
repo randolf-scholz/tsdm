@@ -90,7 +90,7 @@ import logging
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Generic, Optional
+from typing import Any, ClassVar, Generic, Optional
 
 from pandas import DataFrame
 from torch import Tensor
@@ -144,6 +144,8 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
 
+    LOGGER: ClassVar[logging.Logger]
+    r"""Class specific logger instance."""
     train_batch_size: int = 32
     r"""Default batch size."""
     eval_batch_size: int = 128

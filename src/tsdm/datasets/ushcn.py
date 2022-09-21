@@ -8,7 +8,6 @@ from __future__ import annotations
 __all__ = [
     # Classes
     "USHCN",
-    "USHCN_SmallChunkedSporadic",
 ]
 
 import importlib
@@ -22,7 +21,7 @@ from typing import Literal
 import pandas
 from pandas import DataFrame
 
-from tsdm.datasets.base import MultiFrameDataset, SingleFrameDataset
+from tsdm.datasets.base import MultiFrameDataset
 
 __logger__ = logging.getLogger(__name__)
 
@@ -50,71 +49,7 @@ def with_cluster(func: Callable) -> Callable:
     return _wrapper
 
 
-class USHCN_SmallChunkedSporadic(SingleFrameDataset):
-    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
-
-    References
-    ----------
-    - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
-        <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
-      | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
-      | `Advances in Neural Information Processing Systems 2019
-        <https://proceedings.neurips.cc/paper/2019>`_
-    """
-
-    BASE_URL = (
-        r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
-        r"master/gru_ode_bayes/datasets/Climate/"
-    )
-    r"""HTTP address from where the dataset can be downloaded."""
-
-    INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
-    r"""HTTP address containing additional information about the dataset."""
-
-    rawdata_files = "small_chunked_sporadic.csv"
-    # dataset_files = "SmallChunkedSporadic.feather"
-
-    def _clean(self) -> None:
-        r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
-        dtypes = {
-            "ID": "int16",
-            "Time": "float32",
-            "Value_0": "float32",
-            "Value_1": "float32",
-            "Value_2": "float32",
-            "Value_3": "float32",
-            "Value_4": "float32",
-            "Mask_0": "bool",
-            "Mask_1": "bool",
-            "Mask_2": "bool",
-            "Mask_3": "bool",
-            "Mask_4": "bool",
-        }
-        df = pandas.read_csv(self.rawdata_paths, dtype=dtypes)
-        df = DataFrame(df)
-
-        channels = {}
-        for k in range(5):
-            key = f"CH_{k}"
-            value = f"Value_{k}"
-            channels[key] = value
-            df[key] = df[value].where(df[f"Mask_{k}"])
-
-        df = df[["ID", "Time", *channels]]
-        df = df.sort_values(["ID", "Time"])
-        df = df.set_index(["ID", "Time"])
-        # df = df.reset_index(drop=True)
-        df = df.rename(columns=channels)
-        return df
-        # df.to_feather(self.dataset_paths)
-
-    # def _load(self) -> DataFrame:
-    #     r"""Load the dataset from hdf-5 file."""
-    #     df = pandas.read_feather(self.dataset_paths)
-    #     return df.set_index(["ID", "Time"])
-
-
-class USHCN(MultiFrameDataset):
+class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -277,9 +212,9 @@ class USHCN(MultiFrameDataset):
     }
     rawdata_paths: dict[str, Path]
 
-    def _load(self, key: KEYS = "us_daily") -> DataFrame:
-        r"""Load the dataset from disk."""
-        return super()._load(key=key)
+    # def _load(self, key: KEYS = "us_daily", **kwargs: Any) -> DataFrame:
+    #     r"""Load the dataset from disk."""
+    #     return super()._load(key=key, **kwargs)
 
     def _clean(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Create the DataFrames.
