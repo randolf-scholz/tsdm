@@ -306,9 +306,9 @@ class Physionet2012(MultiFrameDataset):
     Entries of NaN (not a number) indicate that there was no recorded measurement of a variable at the time.
     """
 
-    BASE_URL: str = r"https://archive.physionet.org/challenge/2012/"
+    BASE_URL = r"https://archive.physionet.org/challenge/2012/"
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL: str = r"https://archive.physionet.org/challenge/2012/"
+    INFO_URL = r"https://archive.physionet.org/challenge/2012/"
     r"""HTTP address containing additional information about the dataset."""
     rawdata_files = {"A": "set-a.tar.gz", "B": "set-b.tar.gz", "C": "set-c.tar.gz"}
     rawdata_paths: dict[str, Path]

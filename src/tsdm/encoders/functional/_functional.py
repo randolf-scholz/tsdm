@@ -24,6 +24,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
+from pandas.api.extensions import ExtensionDtype
 
 
 def infer_categories(s: Series) -> set:
@@ -209,15 +210,20 @@ def time2int(ds: Series) -> Series:
     -------
     Series
     """
-    if np.issubdtype(ds.dtype, np.integer):
+    if isinstance(ds.dtype, ExtensionDtype):
+        dtype = type(ds.dtype)
+    else:
+        dtype = ds.dtype
+
+    if np.issubdtype(dtype, np.integer):
         return ds
-    if np.issubdtype(ds.dtype, np.datetime64):
+    if np.issubdtype(dtype, np.datetime64):
         ds = ds.view("datetime64[ns]")
         timedeltas = ds - ds[0]
-    elif np.issubdtype(ds.dtype, np.timedelta64):
+    elif np.issubdtype(dtype, np.timedelta64):
         timedeltas = ds.view("timedelta64[ns]")
     else:
-        raise ValueError(f"{ds.dtype=} not supported")
+        raise TypeError(f"{dtype=} not supported")
 
     common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 
@@ -235,18 +241,23 @@ def time2float(ds: Series) -> Series:
     -------
     Series
     """
-    if np.issubdtype(ds.dtype, np.integer):
+    if isinstance(ds.dtype, ExtensionDtype):
+        dtype = type(ds.dtype)
+    else:
+        dtype = ds.dtype
+
+    if np.issubdtype(dtype, np.integer):
         return ds
-    if np.issubdtype(ds.dtype, np.datetime64):
+    if np.issubdtype(dtype, np.datetime64):
         ds = ds.view("datetime64[ns]")
         timedeltas = ds - ds[0]
-    elif np.issubdtype(ds.dtype, np.timedelta64):
+    elif np.issubdtype(dtype, np.timedelta64):
         timedeltas = ds.view("timedelta64[ns]")
-    elif np.issubdtype(ds.dtype, np.floating):
+    elif np.issubdtype(dtype, np.floating):
         warnings.warn("Array is already floating dtype.")
         return ds
     else:
-        raise ValueError(f"{ds.dtype=} not supported")
+        raise TypeError(f"{dtype=} not supported")
 
     common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 

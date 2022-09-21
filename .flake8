@@ -42,6 +42,8 @@ ignore =
     ANN401,  # Dynamically typed expressions (typing.Any) are disallowed
     E741,    # ambiguous variable nam
     B024,    # BaseDatasetMetaClass is an abstract base class, but it has no abstract methods
+    D105,    # Missing docstring in magic method
+    E704,    # multiple statements on one line (def)
 
 extend-ignore =
     # Google Python style is not RST until after processed by Napoleon

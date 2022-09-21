@@ -301,7 +301,7 @@ class KIWI_RUNS_TASK(BaseTask):
 
         # construct the sampler
         subsamplers = {
-            key: SequenceSampler(ds, seq_len=self.horizon, shuffle=shuffle)
+            key: SequenceSampler(ds, seq_len=self.horizon, stride=1, shuffle=shuffle)
             for key, ds in DS.items()
         }
         sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)

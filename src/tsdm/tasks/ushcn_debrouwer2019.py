@@ -15,7 +15,7 @@ from torch import Tensor, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import USHCN_SmallChunkedSporadic
+from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
 from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
@@ -36,16 +36,27 @@ class Inputs(NamedTuple):
         return repr_namedtuple(self, recursive=False)
 
 
+class TimeSeries(NamedTuple):
+    r"""A single sample of the data."""
+
+    t: Tensor
+    s: Tensor
+
+    def __repr__(self) -> str:
+        r"""Return string representation."""
+        return repr_namedtuple(self, recursive=False)
+
+
 class Sample(NamedTuple):
     r"""A single sample of the data."""
 
     key: int
     inputs: Inputs
     targets: Tensor
-    originals: tuple[Tensor, Tensor]
+    originals: TimeSeries
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=False)
+        return repr_namedtuple(self, recursive=True)
 
 
 class Batch(NamedTuple):
@@ -89,7 +100,7 @@ class TaskDataset(torch.utils.data.Dataset):
             key=key,
             inputs=Inputs(t[sample_mask], x[sample_mask], t[target_mask]),
             targets=x[target_mask],
-            originals=(t, x),
+            originals=TimeSeries(t, x),
         )
 
     def __repr__(self) -> str:
@@ -194,7 +205,7 @@ class USHCN_DeBrouwer2019(BaseTask):
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ds = USHCN_SmallChunkedSporadic().dataset
+        ds = USHCN_DeBrouwer2019_Dataset().dataset
 
         if self.normalize_time:
             ds = ds.reset_index()

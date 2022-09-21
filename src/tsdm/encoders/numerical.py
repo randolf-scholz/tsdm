@@ -17,7 +17,7 @@ from typing import Any, Generic, NamedTuple, Optional, TypeAlias, TypeVar, overl
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, Series
 from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
@@ -176,11 +176,11 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
 
-    xmin: NDArray | Tensor
-    xmax: NDArray | Tensor
-    ymin: NDArray | Tensor
-    ymax: NDArray | Tensor
-    scale: NDArray | Tensor
+    xmin: NDArray[np.number] | Tensor
+    xmax: NDArray[np.number] | Tensor
+    ymin: NDArray[np.number] | Tensor
+    ymax: NDArray[np.number] | Tensor
+    scale: NDArray[np.number] | Tensor
     r"""The scaling factor."""
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""
@@ -409,7 +409,16 @@ class FloatEncoder(BaseEncoder):
 
     def fit(self, data: PandasObject, /) -> None:
         r"""Remember the original dtypes."""
-        self.dtypes = data.dtypes if hasattr(data, "dtypes") else data.dtype
+        if isinstance(data, DataFrame):
+            self.dtypes = data.dtypes
+        elif isinstance(data, (Series, Index)):
+            self.dtypes = data.dtype
+        # elif hasattr(data, "dtype"):
+        #     self.dtypes = data.dtype
+        # elif hasattr(data, "dtypes"):
+        #     self.dtypes = data.dtype
+        else:
+            raise TypeError(f"Cannot get dtype of {type(data)}")
 
     def encode(self, data: PandasObject, /) -> PandasObject:
         r"""Make everything float32."""

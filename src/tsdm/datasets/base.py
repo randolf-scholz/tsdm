@@ -11,17 +11,18 @@ __all__ = [
     # Types
     "DATASET_OBJECT",
 ]
-
 import inspect
 import logging
 import os
 import subprocess
+import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
 from functools import cached_property, partial
+from hashlib import sha256
 from pathlib import Path
-from typing import Any, Generic, Optional, TypeAlias, overload
+from typing import Any, ClassVar, Generic, Optional, TypeAlias, overload
 from urllib.parse import urlparse
 
 import pandas
@@ -82,15 +83,15 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     Implements methods that are available for all dataset classes.
     """
 
-    BASE_URL: Optional[str] = None
+    BASE_URL: ClassVar[Optional[str]] = None
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL: Optional[str] = None
+    INFO_URL: ClassVar[Optional[str]] = None
     r"""HTTP address containing additional information about the dataset."""
-    RAWDATA_DIR: Path
+    RAWDATA_DIR: ClassVar[Path]
     r"""Location where the raw data is stored."""
-    DATASET_DIR: Path
+    DATASET_DIR: ClassVar[Path]
     r"""Location where the pre-processed data is stored."""
-    LOGGER: logging.Logger
+    LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
@@ -250,6 +251,11 @@ class FrameDataset(BaseDataset, ABC):
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
+    RAWDATA_SHAPE: Optional[tuple[int, ...]] = None
+    RAWDATA_SHA256: Optional[str] = None
+    DATASET_SHA256: Optional[str] = None
+    DATASET_SHAPE: Optional[tuple[int, ...]] = None
+
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
             header = f"<h3>{self.__class__.__name__}</h3>"
@@ -293,26 +299,32 @@ class SingleFrameDataset(FrameDataset):
         for file in files:
             self.download_from_url(self.BASE_URL + file.name)
 
-    def load(self) -> DATASET_OBJECT:
+    def load(self, *, force: bool = True, validate: bool = True) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
         if not self.dataset_files_exist():
-            self.clean()
+            self.clean(force=force, validate=validate)
         else:
             self.LOGGER.debug("Dataset files already exist!")
+
+        if validate:
+            self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
 
         self.LOGGER.debug("Starting to load dataset.")
         ds = self._load()
         self.LOGGER.debug("Finished loading dataset.")
         return ds
 
-    def clean(self, *, force: bool = True) -> None:
+    def clean(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
         if self.dataset_files_exist() and not force:
             self.LOGGER.debug("Dataset files already exist, skipping.")
             return
 
         if not self.rawdata_files_exist():
-            self.download()
+            self.download(force=force, validate=validate)
+
+        if validate:
+            self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
         self.LOGGER.debug("Starting to clean dataset.")
         df = self._clean()
@@ -321,7 +333,10 @@ class SingleFrameDataset(FrameDataset):
             self.serialize(df, self.dataset_paths)
         self.LOGGER.debug("Finished cleaning dataset.")
 
-    def download(self, *, force: bool = True) -> None:
+        if validate:
+            self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
+
+    def download(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Download the dataset."""
         if self.rawdata_files_exist() and not force:
             self.LOGGER.info("Dataset already exists. Skipping download.")
@@ -335,6 +350,35 @@ class SingleFrameDataset(FrameDataset):
         self._download()
         self.LOGGER.debug("Starting downloading dataset.")
 
+        if validate:
+            self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
+
+    def validate(
+        self, filespec: Nested[str | Path], *, reference: Optional[str] = None
+    ) -> None:
+        r"""Validate the file hash."""
+        self.LOGGER.debug("Starting to validate dataset")
+
+        if isinstance(filespec, str | Path):
+            file = Path(filespec)
+        else:
+            raise NotImplementedError("Multiple files not supported yet.")
+
+        filehash = sha256(file.read_bytes()).hexdigest()
+
+        if reference is None:
+            warnings.warn(
+                f"Cannot validate as no hash is stored in {reference}."
+                f"The filehash is '{filehash}'."
+            )
+        elif reference != filehash:
+            raise ValueError(
+                f"Reference hash '{reference}' does not match the file hash '{filehash}'."
+            )
+        else:
+            self.LOGGER.info(f"{file=} validated successfully '{filehash=}'.")
+        self.LOGGER.debug("Finished validating dataset")
+
 
 class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
     r"""Dataset class that consists of a multiple DataFrames.
@@ -342,6 +386,11 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
     The Datasets are accessed by their index.
     We subclass `Mapping` to provide the mapping interface.
     """
+
+    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[KeyVar, tuple[int, ...]]] = None
+    RAWDATA_SHA256: Optional[str | Mapping[KeyVar, str]] = None
+    DATASET_SHA256: Optional[Mapping[KeyVar, str]] = None
+    DATASET_SHAPE: Optional[Mapping[KeyVar, tuple[int, ...]]] = None
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
@@ -388,13 +437,13 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
         }
 
-    def _load(self, key: KeyVar) -> DATASET_OBJECT:
-        r"""Load the selected DATASET_OBJECT."""
-        return self.deserialize(self.dataset_paths[key])
-
     @abstractmethod
     def _clean(self, key: KeyVar) -> DATASET_OBJECT | None:
         r"""Clean the selected DATASET_OBJECT."""
+
+    def _load(self, key: KeyVar) -> DATASET_OBJECT:
+        r"""Load the selected DATASET_OBJECT."""
+        return self.deserialize(self.dataset_paths[key])
 
     def rawdata_files_exist(self, key: Optional[KeyVar] = None) -> bool:
         r"""Check if raw data files exist."""
@@ -410,7 +459,13 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             return paths_exists(self.dataset_paths)
         return paths_exists(self.dataset_paths[key])
 
-    def clean(self, key: Optional[KeyVar] = None, force: bool = False) -> None:
+    def clean(
+        self,
+        key: Optional[KeyVar] = None,
+        *,
+        force: bool = False,
+        validate: bool = True,
+    ) -> None:
         r"""Clean the selected DATASET_OBJECT.
 
         Parameters
@@ -419,11 +474,13 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             The key of the dataset to clean. If None, clean all dataset.
         force: bool = False
             Force cleaning of dataset.
+        validate: bool = True
+            Validate the dataset after cleaning.
         """
         # TODO: Do we need this code block?
         if not self.rawdata_files_exist(key=key):
             self.LOGGER.debug("Raw files missing, fetching it now! <%s>", key)
-            self.download(key=key, force=force)
+            self.download(key=key, force=force, validate=validate)
 
         if (
             key in self.dataset_files
@@ -436,9 +493,12 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         if key is None:
             self.LOGGER.debug("Starting to clean dataset.")
             for key_ in self.index:
-                self.clean(key=key_, force=force)
+                self.clean(key=key_, force=force, validate=validate)
             self.LOGGER.debug("Finished cleaning dataset.")
             return
+
+        if validate:
+            self.validate(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
         df = self._clean(key=key)
@@ -447,18 +507,38 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             self.serialize(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
+        if validate:
+            self.validate(key, self.dataset_paths, reference=self.DATASET_SHA256)
+
     @overload
     def load(
-        self, *, key: None = None, force: bool = False, **kwargs: Any
+        self,
+        *,
+        key: None = None,
+        force: bool = False,
+        validate: bool = True,
+        **kwargs: Any,
     ) -> Mapping[KeyVar, Any]:
         ...
 
     @overload
-    def load(self, *, key: KeyVar = None, force: bool = False, **kwargs: Any) -> Any:
+    def load(
+        self,
+        *,
+        key: KeyVar = None,
+        force: bool = False,
+        validate: bool = True,
+        **kwargs: Any,
+    ) -> Any:
         ...
 
     def load(
-        self, *, key: Optional[KeyVar] = None, force: bool = False, **kwargs: Any
+        self,
+        *,
+        key: Optional[KeyVar] = None,
+        force: bool = False,
+        validate: bool = True,
+        **kwargs: Any,
     ) -> Mapping[KeyVar, DATASET_OBJECT] | DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT.
 
@@ -467,6 +547,8 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         key: Optional[KeyType] = None
         force: bool = False
             Reload the dataset if it already exists.
+        validate: bool = True
+            Validate the dataset file hash.
 
         Returns
         -------
@@ -478,7 +560,10 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         if key is None:
             # Download full dataset
             self.LOGGER.debug("Starting to load  dataset.")
-            ds = {k: self.load(key=k, force=force, **kwargs) for k in self.index}
+            ds = {
+                k: self.load(key=k, force=force, validate=validate, **kwargs)
+                for k in self.index
+            }
             self.LOGGER.debug("Finished loading  dataset.")
             return ds
 
@@ -487,12 +572,15 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
             return self.dataset[key]
 
+        if validate:
+            self.validate(key, self.dataset_paths, reference=self.DATASET_SHA256)
+
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
         self.dataset[key] = self._load(key=key)
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
         return self.dataset[key]
 
-    def _download(self, *, key: KeyVar = None) -> None:
+    def _download(self, key: KeyVar = None) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
@@ -512,9 +600,10 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
 
     def download(
         self,
-        *,
         key: Optional[KeyVar] = None,
+        *,
         force: bool = False,
+        validate: bool = True,
         **kwargs: Any,
     ) -> None:
         r"""Download the dataset.
@@ -522,6 +611,8 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         Parameters
         ----------
         key: Optional[KeyType] = None
+        validate: bool = True
+            Validate the downloaded files.
         force: bool = False
             Force re-downloading of dataset.
         """
@@ -542,7 +633,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             self.LOGGER.debug("Starting to download dataset.")
             if isinstance(self.rawdata_files, Mapping):
                 for key_ in self.rawdata_files:
-                    self.download(key=key_, force=force, **kwargs)
+                    self.download(key=key_, force=force, validate=validate, **kwargs)
             else:
                 self._download()
             self.LOGGER.debug("Finished downloading dataset.")
@@ -552,3 +643,40 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         self.LOGGER.debug("Starting to download dataset <%s>", key)
         self._download(key=key)
         self.LOGGER.debug("Finished downloading dataset <%s>", key)
+
+        if validate:
+            self.validate(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
+
+    def validate(
+        self,
+        key: KeyVar,
+        filespec: Nested[str | Path],
+        *,
+        reference: Optional[str | Mapping[KeyVar, str]] = None,
+    ) -> None:
+        r"""Validate the file hash."""
+        self.LOGGER.debug("Starting to validate dataset <%s>", key)
+
+        if isinstance(filespec, str | Path):
+            file = Path(filespec)
+        elif isinstance(filespec, Mapping):
+            file = Path(filespec[key])
+        else:
+            raise NotImplementedError("Multiple files not supported yet.")
+
+        filehash = sha256(file.read_bytes()).hexdigest()
+        if isinstance(reference, str):
+            reference = {key: reference}
+        if reference is None or key not in reference:
+            warnings.warn(
+                f"Cannot Validate {key=}, as no hash is stored in {reference=}."
+                f"The filehash is '{filehash}'."
+            )
+        elif reference[key] != filehash:
+            raise ValueError(
+                f"For {key=} the stored hash '{reference[key]}'"
+                f"does not match the actual hash '{filehash}'."
+            )
+        else:
+            self.LOGGER.info("%s:%s validated successfully.", key, file)
+        self.LOGGER.debug("Finished validating dataset <%s>", key)

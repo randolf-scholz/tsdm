@@ -17,7 +17,7 @@ __all__ = [
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from copy import deepcopy
-from typing import Any, Sequence, overload
+from typing import Any, ClassVar, Sequence, overload
 
 from tsdm.utils.decorators import wrap_func
 from tsdm.utils.strings import repr_sequence
@@ -35,7 +35,7 @@ class BaseEncoderMetaClass(ABCMeta):
 class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
     r"""Base class that all encoders must subclass."""
 
-    LOGGER: logging.Logger
+    LOGGER: ClassVar[logging.Logger]
     r"""Logger for the Encoder."""
 
     _is_fitted: bool = False

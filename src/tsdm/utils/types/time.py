@@ -34,21 +34,30 @@ from pandas import Timestamp as pd_dt
 
 
 # Time-Type-Variables
-DTVar = TypeVar("DTVar", int, float, np_int, np_float, py_dt, np_dt, pd_dt)
+# DTVar = TypeVar("DTVar", bound=Union[int, float, np_int, np_float, py_dt, np_dt, pd_dt])
+# r"""TypeVar for `Timestamp` values."""
+#
+# TDVar = TypeVar("TDVar", bound=Union[int, float, np_int, np_float, py_td, np_td, pd_td])
+# r"""TypeVar for `Timedelta` values."""
+#
+# TimeVar = TypeVar(
+#     "TimeVar", bound=Union[int, float, np_int, np_float, py_dt, np_dt, pd_dt, py_td, np_td, pd_td]
+# )
+# r"""TypeVar for `Time` values."""
+
+DTVar = TypeVar("DTVar", int, float, np_int, np_float, np_dt, pd_dt)
 r"""TypeVar for `Timestamp` values."""
 
-TDVar = TypeVar("TDVar", int, float, np_int, np_float, py_td, np_td, pd_td)
+TDVar = TypeVar("TDVar", int, float, np_int, np_float, np_td, pd_td)
 r"""TypeVar for `Timedelta` values."""
 
-TimeVar = TypeVar(
-    "TimeVar", int, float, np_int, np_float, py_dt, np_dt, pd_dt, py_td, np_td, pd_td
-)
+TimeVar = TypeVar("TimeVar", int, float, np_int, np_float, np_dt, pd_dt, np_td, pd_td)
 r"""TypeVar for `Time` values."""
 
 # Time-Type-Hints
-TD: TypeAlias = Union[int, float, np_int, np_float, py_dt, np_dt, pd_dt]
+DT: TypeAlias = Union[int, float, np_int, np_float, py_dt, np_dt, pd_dt]
 r"""Type Hint for `Timestamp`."""
-DT: TypeAlias = Union[int, float, np_int, np_float, py_td, np_td, pd_td]
+TD: TypeAlias = Union[int, float, np_int, np_float, py_td, np_td, pd_td]
 r"""Type Hint for `Timedelta`."""
 Time: TypeAlias = Union[DT, TD]
 r"""Type Hint for `Time`."""
