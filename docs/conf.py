@@ -13,8 +13,6 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 import datetime
 import os
 import sys
-import typing
-from collections import abc
 from importlib import metadata
 
 import tsdm
@@ -59,7 +57,7 @@ release = version
 extensions = [
     # "sphinx_toolbox.more_autodoc.typehints",
     # "sphinx_toolbox.more_autodoc.typevars",
-    "sphinx_toolbox.more_autodoc.genericalias",
+    # "sphinx_toolbox.more_autodoc.genericalias",
     # Sphinx builtin extensions
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
@@ -306,7 +304,7 @@ autoapi_type = "python"
 
 autoapi_template_dir = "_templates/autoapi"
 # A directory that has user-defined templates to override our default templates. The path can either be absolute,
-# or relative to the source directory of your documentation files. An path relative to where sphinx-build is run is
+# or relative to the source directory of your documentation files. A path relative to where sphinx-build is run is
 # allowed for backwards compatibility only and will be removed in a future version.
 # Default: ""
 
@@ -344,7 +342,7 @@ autoapi_root = "autoapi"
 
 autoapi_add_toctree_entry = False
 # Whether to insert the generated documentation into the TOC tree. If this is False, the default AutoAPI index page
-# is not generated and you will need to include the generated documentation in a TOC tree entry yourself.
+# is not generated, and you will need to include the generated documentation in a TOC tree entry yourself.
 # Default: True
 
 autoapi_member_order = "groupwise"
@@ -444,7 +442,7 @@ autodoc_docstring_signature = True
 autodoc_mock_imports = []
 # This value contains a list of modules to be mocked up.
 # This is useful when some external dependencies are not met at build time and break the building process.
-# You may only specify the root package of the dependencies themselves and omit the sub-modules:
+# You may only specify the root package of the dependencies themselves and omit the submodules:
 
 autodoc_typehints = "both"
 # This value controls how to represent typehints. The setting takes the following values:
@@ -619,7 +617,7 @@ intersphinx_disabled_reftypes = ["std:doc"]
 # region sphinx.ext.mathjax configuration -----------------------------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/math.html#module-sphinx.ext.mathjax
 
-# mathjax_path = r"https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+# mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 # The path to the JavaScript file to include in the HTML files in order to load MathJax.
 # The default is the https:// URL that loads the JS files from the jsdelivr Content Delivery Network.
 # See the MathJax Getting Started page for details. If you want MathJax to be available offline or without including
@@ -636,8 +634,12 @@ mathjax3_config = {
         "displayMath": [[r"\[", r"\]"]],
         "packages": {"[+]": ["physics"]},
         "macros": {
+            "argmax": r"\operatorname*{arg\,max}",
+            "argmin": r"\operatorname*{arg\,min}",
             "diag": r"\operatorname{diag}",
+            "rank": r"\operatorname{rank}",
             "relu": r"\operatorname{ReLU}",
+            "tr": r"\operatorname{tr}",
         },
     },
 }
