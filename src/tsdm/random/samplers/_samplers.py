@@ -34,6 +34,7 @@ from torch.utils.data import Sampler
 from tsdm.utils.data.datasets import DatasetCollection
 from tsdm.utils.strings import repr_mapping
 from tsdm.utils.types import ObjectVar, ValueVar
+from tsdm.utils.types.protocols import Array
 from tsdm.utils.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 
 Boxed: TypeAlias = Union[
@@ -74,19 +75,30 @@ def compute_grid(
     list[int]
     """
     # cast strings to timestamp/timedelta
-    tmin = Timestamp(tmin) if isinstance(tmin, str) else tmin
-    tmax = Timestamp(tmax) if isinstance(tmax, str) else tmax
-    timedelta = Timedelta(timedelta) if isinstance(timedelta, str) else timedelta
-    offset = Timestamp(offset) if isinstance(offset, str) else offset
+    tmin = cast(DTVar, Timestamp(tmin) if isinstance(tmin, str) else tmin)
+    tmax = cast(DTVar, Timestamp(tmax) if isinstance(tmax, str) else tmax)
 
-    offset = tmin if offset is None else offset
+    td = Timedelta(timedelta) if isinstance(timedelta, str) else timedelta
+
+    offset = cast(
+        DTVar,
+        tmin
+        if offset is None
+        else Timestamp(offset)
+        if isinstance(offset, str)
+        else offset,
+    )
+
+    # offset = cast(DTVar, Timestamp(offset) if isinstance(offset, str) else offset)
+
+    # offset = tmin if offset is None else offset
     zero_dt = tmin - tmin  # generates zero variable of correct type
 
-    assert timedelta > zero_dt, "Assumption ∆t>0 violated!"
+    assert td > zero_dt, "Assumption ∆t>0 violated!"
     assert tmin <= offset <= tmax, "Assumption: tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!"
 
-    kmax = math.floor((tmax - offset) / timedelta)
-    kmin = math.ceil((tmin - offset) / timedelta)
+    kmax = math.floor((tmax - offset) / td)
+    kmin = math.ceil((tmin - offset) / td)
 
     return cast(Sequence[int], np.arange(kmin, kmax + 1))
 
@@ -503,59 +515,80 @@ class IntervalSampler(Sampler, Generic[TDVar]):
         return self.intervals[key]
 
 
-class SequenceSampler(BaseSampler):
+class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
     r"""Samples sequences of length seq_len."""
+
+    data_source: Array[DTVar]
+    k_max: int
+    return_mask: bool
+    seq_len: TDVar
+    shuffle: bool
+    stride: TDVar
+    xmax: DTVar
+    xmin: DTVar
+    # total_delta: TDVar
 
     def __init__(
         self,
-        data_source: Sequence,
+        data_source: Array[DTVar],
         *,
-        tmin: Optional[int] = None,
-        tmax: Optional[int] = None,
-        stride: str | int = 1,
-        seq_len: int | str,
+        seq_len: str | TDVar,
+        stride: str | TDVar,
         return_mask: bool = False,
         shuffle: bool = False,
+        tmax: Optional[DTVar] = None,
+        tmin: Optional[DTVar] = None,
     ) -> None:
         super().__init__(data_source)
         self.data_source = data_source
 
-        tmin = tmin if tmin is not None else data_source[0]
-        tmax = tmax if tmax is not None else data_source[-1]
+        self.xmin = (
+            data_source[0]
+            if tmin is None
+            else (Timestamp(tmin) if isinstance(tmin, str) else tmin)
+        )
+        self.xmax = (
+            data_source[-1]
+            if tmax is None
+            else (Timestamp(tmax) if isinstance(tmax, str) else tmax)
+        )
 
-        self.xmin = Timestamp(tmin) if isinstance(tmin, str) else tmin
-        self.xmax = Timestamp(tmax) if isinstance(tmax, str) else tmax
-        self.stride = Timedelta(stride) if isinstance(stride, str) else stride
-        self.seq_len = Timedelta(seq_len) if isinstance(seq_len, str) else seq_len
+        total_delta = cast(TDVar, self.xmax - self.xmin)  # type: ignore[redundant-cast]
+        self.stride = cast(
+            TDVar, Timedelta(stride) if isinstance(stride, str) else stride
+        )
+        self.seq_len = cast(
+            TDVar, Timedelta(seq_len) if isinstance(seq_len, str) else seq_len
+        )
 
         # k_max = max {k∈ℕ ∣ x_min + seq_len + k⋅stride ≤ x_max}
-        self.k_max = int((tmax - tmin - seq_len) // stride)
+        self.k_max = int((total_delta - self.seq_len) // self.stride)
         self.return_mask = return_mask
         self.shuffle = shuffle
 
         self.samples = np.array(
             [
-                (x <= self.data_source) & (self.data_source < y)
+                (x <= self.data_source) & (self.data_source < y)  # type: ignore[operator]
                 if self.return_mask
                 else [x, y]
                 for x, y in self._iter_tuples()
             ]
         )
 
-    def _iter_tuples(self) -> Iterator[tuple[Any, Any]]:
+    def _iter_tuples(self) -> Iterator[tuple[DTVar, DTVar]]:
         x = self.xmin
-        y = x + self.seq_len
+        y = cast(DTVar, x + self.seq_len)  # type: ignore[operator, call-overload, redundant-cast]
         x, y = min(x, y), max(x, y)  # allows nice handling of negative seq_len
         yield x, y
 
         for _ in range(len(self)):
-            x += self.stride
-            y += self.stride
+            x = x + self.stride  # type: ignore[assignment, operator, call-overload]
+            y = y + self.stride  # type: ignore[assignment, operator, call-overload]
             yield x, y
 
     def __len__(self) -> int:
         r"""Return the number of samples."""
-        return int((self.xmax - self.xmin - self.seq_len) // self.stride)
+        return self.k_max
 
     def __iter__(self) -> Iterator:
         r"""Return an iterator over the samples."""
@@ -656,14 +689,14 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
                 concat_horizons = self.horizons.insert(0, self.zero_td)  # type: ignore[union-attr]
             else:
                 self.horizons = np.array(horizons)
-                concat_horizons = np.concatenate(([self.zero_td], self.horizons))
+                concat_horizons = np.concatenate(([self.zero_td], self.horizons))  # type: ignore[arg-type]
 
             self.cumulative_horizons = np.cumsum(concat_horizons)
             self.total_horizon = self.cumulative_horizons[-1]
         else:
             self.multi_horizon = False
             self.horizons = horizons
-            self.total_horizon = self.horizons  # type: ignore[assignment]
+            self.total_horizon = self.horizons
             self.cumulative_horizons = np.cumsum([self.zero_td, self.horizons])
 
         self.start_values = self.tmin + self.cumulative_horizons  # type: ignore[assignment, call-overload, operator]

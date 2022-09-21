@@ -12,12 +12,12 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any, Optional
 
 from pandas import DataFrame, MultiIndex
-from torch.utils.data import Dataset as TorchDataset
+from torch.utils.data import Dataset
 
 from tsdm.utils.strings import repr_mapping
 
 
-class MappingDataset(TorchDataset, Mapping):
+class MappingDataset(Dataset, Mapping):
     r"""Represents a Mapping[Key, Dataset].
 
     ``ds[key]`` returns the dataset for the given key.
@@ -26,7 +26,7 @@ class MappingDataset(TorchDataset, Mapping):
     ``ds[(key, subkey)]=ds[key][subkey]``
     """
 
-    def __init__(self, data: Mapping[Any, TorchDataset]):
+    def __init__(self, data: Mapping[Any, Dataset]):
         r"""Initialize the dataset.
 
         Parameters
@@ -87,17 +87,17 @@ class MappingDataset(TorchDataset, Mapping):
         return repr_mapping(self)
 
 
-class DatasetCollection(TorchDataset, Mapping):
+class DatasetCollection(Dataset, Mapping):
     r"""Represents a ``mapping[index → torch.Datasets]``.
 
     All tensors must have a shared index,
     in the sense that index.unique() is identical for all inputs.
     """
 
-    dataset: dict[Any, TorchDataset]
+    dataset: dict[Any, Dataset]
     r"""The dataset."""
 
-    def __init__(self, indexed_datasets: Mapping[Any, TorchDataset]):
+    def __init__(self, indexed_datasets: Mapping[Any, Dataset]):
         super().__init__()
         self.dataset = dict(indexed_datasets)
         self.index = list(self.dataset.keys())
@@ -153,12 +153,12 @@ class DatasetCollection(TorchDataset, Mapping):
 #
 #     def __iter__(self):
 #         r"""Forward to wrapped object."""
-
-
-# class TupleDataset(Torch_Dataset):
+#
+# from collections import namedtuple
+# class TupleDataset(Dataset[tuple[Tensor, ...]]):
 #     r"""Sequential Dataset."""
 #
-#     def __init__(self, *tensors: Tensor, **named_tensors: Tensor):
+#     def __init__(self, tensors: tuple[Tensor, ...] | dict[str, Tensor], /, *, index: Optional[Series] = None):
 #         assert all(len(x) == len(tensors[0]) for x in tensors)
 #         self.tensors = tensors
 #
@@ -166,6 +166,6 @@ class DatasetCollection(TorchDataset, Mapping):
 #         r"""Length of the dataset."""
 #         return len(self.tensors[0])
 #
-#     def __getitem__(self, idx):
+#     def __getitem__(self, idx) -> tuple[Tensor, ...]:
 #         r"""Get the same slice from each tensor."""
 #         return tuple(x[idx] for x in self.tensors)

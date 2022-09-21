@@ -21,6 +21,7 @@ import os
 import subprocess
 from getpass import getpass
 from hashlib import sha256
+from pathlib import Path
 
 import pandas as pd
 
@@ -43,14 +44,15 @@ class MIMIC_IV(MultiFrameDataset):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    BASE_URL: str = r"https://www.physionet.org/content/mimiciv/get-zip/1.0/"
-    INFO_URL: str = r"https://www.physionet.org/content/mimiciv/1.0/"
-    HOME_URL: str = r"https://mimic.mit.edu/"
-    GITHUB_URL: str = r"https://github.com/mbilos/neural-flows-experiments"
-    VERSION: str = r"1.0"
-    SHA256: str = r"dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+    BASE_URL = r"https://www.physionet.org/content/mimiciv/get-zip/1.0/"
+    INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
+    HOME_URL = r"https://mimic.mit.edu/"
+    GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
+    VERSION = r"1.0"
+    SHA256 = r"dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
 
     rawdata_files = "mimic-iv-1.0.zip"
+    rawdata_paths: Path
 
     # fmt: off
     dataset_files = {

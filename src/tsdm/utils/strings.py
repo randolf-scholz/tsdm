@@ -22,9 +22,10 @@ import builtins
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from typing import Any, NamedTuple, Optional, cast, overload
 
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from torch import Tensor
 
+from tsdm.utils.types.dtypes import TYPESTRINGS, ScalarDType
 from tsdm.utils.types.protocols import Array, NTuple
 
 
@@ -297,7 +298,7 @@ def repr_namedtuple(
     )
 
 
-def repr_array(obj: Array, *, title: Optional[str] = None) -> str:
+def repr_array(obj: Array | DataFrame, *, title: Optional[str] = None) -> str:
     r"""Return a string representation of an array object.
 
     Parameters
@@ -314,16 +315,15 @@ def repr_array(obj: Array, *, title: Optional[str] = None) -> str:
     title = type(obj).__name__ if title is None else title
 
     string = title + "["
-    string += str(obj.shape)
+    string += str(tuple(obj.shape))
 
-    if hasattr(obj, "dtype"):
-        string += f", dtype={str(obj.dtype)}"  # type: ignore[attr-defined]
-    elif isinstance(obj, DataFrame):
-        dtypes: Series = obj.dtypes
-        if len(dtypes.unique()) == 1:
-            string += f", dtype={str(dtypes[0])}"
-        else:
-            string += ", dtype=mixed"
+    if isinstance(obj, DataFrame):
+        dtypes = [repr_dtype(dtype) for dtype in obj.dtypes]
+        string += ", " + repr_sequence(dtypes, linebreaks=False)
+    elif isinstance(obj, Array):
+        string += ", " + repr_dtype(obj.dtype)
+    else:
+        raise TypeError(f"Cannot get dtype of {type(obj)}")
 
     string += "]"
     return string
@@ -346,6 +346,24 @@ def repr_sized(obj: Sized, *, title: Optional[str] = None) -> str:
     string += str(len(obj))
     string += "]"
     return string
+
+
+def repr_dtype(dtype: str | ScalarDType) -> str:
+    r"""Return a string representation of a dtype object.
+
+    Parameters
+    ----------
+    dtype: str | ScalarDtype | ExtensionDtype
+
+    Returns
+    -------
+    str
+    """
+    if isinstance(dtype, str):
+        return dtype
+    if dtype in TYPESTRINGS:
+        return TYPESTRINGS[dtype]
+    return str(dtype)
 
 
 def repr_type(obj: Any) -> str:

@@ -91,10 +91,10 @@ class BeijingAirQuality(SingleFrameDataset):
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa: E501
 
-    BASE_URL: str = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
+    BASE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
     r"""HTTP address from where the dataset can be downloaded."""
 
-    INFO_URL: str = (
+    INFO_URL = (
         r"https://archive.ics.uci.edu/ml/datasets/Beijing+Multi-Site+Air-Quality+Data"
     )
     r"""HTTP address containing additional information about the dataset."""
