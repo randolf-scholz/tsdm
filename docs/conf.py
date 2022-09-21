@@ -634,8 +634,12 @@ mathjax3_config = {
         "displayMath": [[r"\[", r"\]"]],
         "packages": {"[+]": ["physics"]},
         "macros": {
+            "argmax": r"\operatorname*{arg\,max}",
+            "argmin": r"\operatorname*{arg\,min}",
             "diag": r"\operatorname{diag}",
+            "rank": r"\operatorname{rank}",
             "relu": r"\operatorname{ReLU}",
+            "tr": r"\operatorname{tr}",
         },
     },
 }
