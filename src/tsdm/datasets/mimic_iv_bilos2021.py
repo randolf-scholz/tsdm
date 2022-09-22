@@ -48,8 +48,8 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
     DATASET_SHA256 = "f42c355be6869c6e1129e0adc3d1c410d9eac6c8d7fcd1d33af24dc3780dac37"
     RAWDATA_SHA256 = "cb90e0cef16d50011aaff7059e73d3f815657e10653a882f64f99003e64c70f5"
-    RAWDATA_SHAPE = (2485769, 206)
     DATASET_SHAPE = (2485769, 102)
+    RAWDATA_SHAPE = (2485769, 206)
     dataset_files = "timeseries.parquet"
     rawdata_files = r"full_dataset.csv"
     rawdata_paths: Path
