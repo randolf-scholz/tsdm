@@ -4,7 +4,7 @@ r"""#TODO add module summary line.
 """
 
 __all__ = [
-    # FUnctions
+    # Functions
     "closest_diag",
     "closest_orth",
     "closest_skew",
@@ -18,6 +18,10 @@ __all__ = [
     "reldist_skew",
     "reldist_symm",
     "row_corr",
+    "stiffness_ratio",
+    "spectral_radius",
+    "spectral_abscissa",
+    "logarithmic_norm",
 ]
 
 
@@ -190,3 +194,77 @@ def reldist_orth(x: Tensor) -> Tensor:
     .. math:: \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
     """
     return reldist(closest_orth(x), x)
+
+
+@jit.script
+def stiffness_ratio(x: Tensor) -> Tensor:
+    r"""Compute the stiffness ratio of a matrix.
+
+    .. Signature:: ``(..., n, n) -> ...``
+
+    .. math:: \frac{|\Re(λ_\max)|}{|\Re{λ_\min}|}
+
+    Only applicable if $\Re(λ_i)<0$ for all $i$.
+
+    References
+    ----------
+    - | Numerical Methods for Ordinary Differential Systems: The Initial Value Problem
+      | J. D. Lambert
+      | ISBN: 978-0-471-92990-1
+    """
+    x = x.to(dtype=torch.complex128)
+    λ = torch.linalg.eigvals(x)
+    λ = λ.real
+    # Get smallest non-zero eigenvalue.
+    maxvals = λ.amax(dim=-1)
+    minvals = λ.amin(dim=-1)
+    return torch.where(maxvals < 0, minvals / maxvals, float("nan"))
+
+
+@jit.script
+def spectral_radius(x: Tensor) -> Tensor:
+    r"""Return $\max_i | λ_i |$.
+
+    .. Signature:: ``(..., n, n) -> ...``
+    """  # noqa: RST219
+    λ = torch.linalg.eigvals(x)
+    return λ.abs().amax(dim=-1)
+
+
+@jit.script
+def spectral_abscissa(x: Tensor) -> Tensor:
+    r"""Return $\max_i \Re(λ_i)$.
+
+    .. Signature:: ``(..., n, n) -> ...``
+    """
+    λ = torch.linalg.eigvals(x)
+    return λ.real.amax(dim=-1)
+
+
+@jit.script
+def logarithmic_norm(x: Tensor, p: float = 2.0) -> Tensor:
+    r"""Compute the logarithmic norm of a matrix.
+
+    .. Signature:: ``(..., n, n) -> ...``
+
+    .. math:: \lim_{ε→0⁺} \frac{‖𝕀+εA‖_p-1}{ε}
+
+    References
+    ----------
+    - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
+    - | The logarithmic norm. History and modern theory
+      | Gustaf Söderlind, BIT Numerical Mathematics, 2006
+      | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
+    """
+    if p == 2:
+        return spectral_abscissa(closest_symm(x))
+
+    m = torch.eye(x.shape[-1], dtype=torch.bool)
+    x = torch.where(m, x.real, x.abs())
+
+    if p == 1:
+        return x.sum(dim=-1).amax(dim=-1)
+    if p == float("inf"):
+        return x.sum(dim=-2).amax(dim=-1)
+
+    raise NotImplementedError("Currently only p=1,2,inf are supported.")
