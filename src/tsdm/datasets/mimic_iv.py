@@ -20,7 +20,6 @@ __all__ = ["MIMIC_IV"]
 import os
 import subprocess
 from getpass import getpass
-from hashlib import sha256
 from pathlib import Path
 
 import pandas as pd
@@ -49,7 +48,7 @@ class MIMIC_IV(MultiFrameDataset):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
     VERSION = r"1.0"
-    SHA256 = r"dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+    RAWDATA_SHA256 = "dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
 
     rawdata_files = "mimic-iv-1.0.zip"
     rawdata_paths: Path
@@ -110,8 +109,3 @@ class MIMIC_IV(MultiFrameDataset):
 
         file = self.RAWDATA_DIR / "index.html"
         os.rename(file, self.rawdata_files)
-
-        assert self.rawdata_paths.exists(), f"File {self.rawdata_files} does not exist."
-
-        if sha256(self.rawdata_paths.read_bytes()).hexdigest() != self.SHA256:
-            raise RuntimeError("The sha256 seems incorrect.")

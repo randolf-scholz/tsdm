@@ -88,30 +88,22 @@ class Traffic(MultiFrameDataset):
     r"""HTTP address containing additional information about the dataset."""
     KEYS = Literal["timeseries", "labels", "randperm", "invperm"]
     r"""The names of the DataFrames associated with this dataset."""
+    RAWDATA_SHA256 = "371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
+    DATASET_SHA256 = {
+        "timeseries": "acb7f2a37e14691d67a325e18eecf88c22bc4c175f1a11b5566a07fdf2cd8f62",
+        "labels": "c26dc7683548344c5b71ef30d551b6e3f0e726e0d505f45162fde167de7b51cf",
+        "randperm": "4d8fa113fd20e397b2802bcc851a8dca861d3e8b806be490a6dff3e0c112f613",
+        "invperm": "2838f7df33a292830acf09a3870b495ca0e5524f085aea0b66452248012c9817",
+    }
     index: list[KEYS] = ["timeseries", "labels", "randperm", "invperm"]
     r"""The identifiers for the dataset."""
     rawdata_files = "PEMS-SF.zip"
     r"""The name of the zip file containing the raw data."""
-    default_format = "parquet"
-
     rawdata_paths: Path
     timeseries: DataFrame
     labels: DataFrame
     randperm: DataFrame
     invperm: DataFrame
-
-    # def _load(self, key: KEYS) -> DataFrame:
-    #     r"""Load the pre-preprocessed dataset from disk."""
-    #     df = pandas.read_feather(self.dataset_paths[key])
-    #     if key == "timeseries":
-    #         return df.set_index(["day", "time"])
-    #     if key == "labels":
-    #         return df.set_index("day").squeeze()
-    #     if key == "invperm":
-    #         return df.squeeze()
-    #     if key == "randperm":
-    #         return df.squeeze()
-    #     raise KeyError(f"{key} is not a valid key")
 
     def _clean(self, key: KEYS) -> None:
         r"""Create the DataFrames.
