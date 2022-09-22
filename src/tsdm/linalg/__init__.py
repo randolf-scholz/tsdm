@@ -24,6 +24,10 @@ __all__ = [
     "reldist_symm",
     "row_corr",
     "scaled_norm",
+    "stiffness_ratio",
+    "spectral_radius",
+    "spectral_abscissa",
+    "logarithmic_norm",
 ]
 
 from tsdm.linalg._logical_operators import (
@@ -39,6 +43,7 @@ from tsdm.linalg._matrix_functions import (
     closest_symm,
     col_corr,
     erank,
+    logarithmic_norm,
     reldist,
     reldist_diag,
     reldist_orth,
@@ -46,6 +51,9 @@ from tsdm.linalg._matrix_functions import (
     reldist_symm,
     relerank,
     row_corr,
+    spectral_abscissa,
+    spectral_radius,
+    stiffness_ratio,
 )
 from tsdm.linalg._norms import (
     grad_norm,
