@@ -203,7 +203,7 @@ def get_all_preds(model, dataloader):
 
 def log_all(i, model, writer, optimizer):
     kernel = model.system.kernel.clone().detach().cpu()
-    log_kernel_information(i, writer, kernel, histograms=True)
+    log_kernel_information(i, writer, kernel, log_histograms=True)
     log_optimizer_state(i, writer, optimizer, histograms=True)
 
 
@@ -245,7 +245,7 @@ for epoch in (epochs := trange(100)):
     with torch.no_grad():
         # log optimizer state first !!!
         # log_optimizer_state(epoch, writer, optimizer, histograms=True)
-        log_kernel_information(epoch, writer, model.system.kernel, histograms=True)
+        log_kernel_information(epoch, writer, model.system.kernel, log_histograms=True)
 
         for key in ((0, "train"), (0, "test")):
             dataloader = EVALLOADERS[key]
@@ -315,7 +315,7 @@ for epoch in (epochs := trange(100)):
     with torch.no_grad():
         # log optimizer state first !!!
         log_optimizer_state(epoch, writer, optimizer, histograms=True)
-        log_kernel_information(epoch, writer, model.system.kernel, histograms=True)
+        log_kernel_information(epoch, writer, model.system.kernel, log_histograms=True)
 
         for key in ((0, "train"), (0, "test")):
             dataloader = EVALLOADERS[key]

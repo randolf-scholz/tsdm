@@ -31,6 +31,8 @@ __all__ = [
     "spectral_radius",
     "stiffness_ratio",
     "vector_norm",
+    "tensor_norm",
+    "operator_norm",
 ]
 
 from tsdm.linalg._logical_operators import (
@@ -48,6 +50,7 @@ from tsdm.linalg._matrix_functions import (
     erank,
     geometric_mean,
     logarithmic_norm,
+    operator_norm,
     reldist,
     reldist_diag,
     reldist_orth,
@@ -59,6 +62,7 @@ from tsdm.linalg._matrix_functions import (
     spectral_abscissa,
     spectral_radius,
     stiffness_ratio,
+    tensor_norm,
     vector_norm,
 )
 from tsdm.linalg._norms import (
