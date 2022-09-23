@@ -468,7 +468,7 @@ class StandardLogger:
         self.log_all_metrics(i)
 
         if kernel_information and i % kernel_information == 0:
-            self.log_kernel_information(i, histograms=histograms)
+            self.log_kernel_information(i, log_figures=histograms)
 
         if model_state and i % model_state == 0:
             self.log_model_state(i, histograms=histograms)
@@ -583,7 +583,7 @@ class StandardLogger:
         i: int,
         /,
         *,
-        histograms: bool | int = False,
+        log_figures: bool | int = False,
         prefix: str = "",
         postfix: str = "",
     ) -> None:
@@ -593,7 +593,9 @@ class StandardLogger:
             i,
             writer=self.writer,
             kernel=self.model.kernel,
-            log_histograms=histograms,
+            log_histograms=log_figures,
+            log_spectrum=log_figures,
+            log_heatmap=log_figures,
             prefix=prefix,
             postfix=postfix,
         )
