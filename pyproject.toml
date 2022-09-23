@@ -108,6 +108,8 @@ types-setuptools = ">=65.3"
 types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 wheel = ">=0.37"
+sphinx-automodapi = "^0.14.1"
+nbsphinx = "^0.8.9"
 
 
 [tool.poetry.scripts]

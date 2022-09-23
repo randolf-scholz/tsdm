@@ -7,6 +7,7 @@
       <w>adadelta</w>
       <w>adagrad</w>
       <w>adamax</w>
+      <w>addnodes</w>
       <w>alkalinephos</w>
       <w>allclose</w>
       <w>amsfonts</w>
@@ -125,6 +126,7 @@
       <w>gasthaus</w>
       <w>gcos</w>
       <w>gelu</w>
+      <w>genericalias</w>
       <w>genindex</w>
       <w>goel</w>
       <w>groupby</w>
@@ -395,6 +397,7 @@
       <w>tsuspicion</w>
       <w>typecodes</w>
       <w>typestrings</w>
+      <w>typevars</w>
       <w>tₘᵢₙ</w>
       <w>tₘₐₓ</w>
       <w>undoc</w>
