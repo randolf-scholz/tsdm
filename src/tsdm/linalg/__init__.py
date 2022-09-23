@@ -12,8 +12,9 @@ __all__ = [
     "cumulative_and",
     "cumulative_or",
     "erank",
-    "relerank",
+    "geometric_mean",
     "grad_norm",
+    "logarithmic_norm",
     "multi_norm",
     "multi_scaled_norm",
     "relative_error",
@@ -22,12 +23,14 @@ __all__ = [
     "reldist_orth",
     "reldist_skew",
     "reldist_symm",
+    "relerank",
     "row_corr",
     "scaled_norm",
-    "stiffness_ratio",
-    "spectral_radius",
+    "schatten_norm",
     "spectral_abscissa",
-    "logarithmic_norm",
+    "spectral_radius",
+    "stiffness_ratio",
+    "vector_norm",
 ]
 
 from tsdm.linalg._logical_operators import (
@@ -43,6 +46,7 @@ from tsdm.linalg._matrix_functions import (
     closest_symm,
     col_corr,
     erank,
+    geometric_mean,
     logarithmic_norm,
     reldist,
     reldist_diag,
@@ -51,9 +55,11 @@ from tsdm.linalg._matrix_functions import (
     reldist_symm,
     relerank,
     row_corr,
+    schatten_norm,
     spectral_abscissa,
     spectral_radius,
     stiffness_ratio,
+    vector_norm,
 )
 from tsdm.linalg._norms import (
     grad_norm,

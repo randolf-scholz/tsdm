@@ -11,17 +11,20 @@ __all__ = [
     "closest_symm",
     "col_corr",
     "erank",
-    "relerank",
+    "geometric_mean",
+    "logarithmic_norm",
     "reldist",
     "reldist_diag",
     "reldist_orth",
     "reldist_skew",
     "reldist_symm",
+    "relerank",
     "row_corr",
-    "stiffness_ratio",
-    "spectral_radius",
+    "schatten_norm",
     "spectral_abscissa",
-    "logarithmic_norm",
+    "spectral_radius",
+    "stiffness_ratio",
+    "vector_norm",
 ]
 
 
@@ -96,25 +99,27 @@ def row_corr(x: Tensor) -> Tensor:
 
 
 @jit.script
-def closest_symm(x: Tensor) -> Tensor:
+def closest_symm(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Symmetric part of square matrix.
 
     .. math:: \argmin_{X: X^⊤ = -X} ‖A-X‖
 
     .. Signature:: ``(..., n, n) -> (..., n, n)``
     """
-    return (x + x.swapaxes(-1, -2)) / 2
+    rowdim, coldim = dim
+    return (x + x.swapaxes(rowdim, coldim)) / 2
 
 
 @jit.script
-def closest_skew(x: Tensor) -> Tensor:
+def closest_skew(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Skew-Symmetric part of a matrix.
 
     .. math:: \argmin_{X: X^⊤ = X} ‖A-X‖
 
     .. Signature:: ``(..., n, n) -> (..., n, n)``
     """
-    return (x - x.swapaxes(-1, -2)) / 2
+    rowdim, coldim = dim
+    return (x - x.swapaxes(rowdim, coldim)) / 2
 
 
 @jit.script
@@ -242,7 +247,37 @@ def spectral_abscissa(x: Tensor) -> Tensor:
 
 
 @jit.script
-def logarithmic_norm(x: Tensor, p: float = 2.0) -> Tensor:
+def geometric_mean(x: Tensor, dim: int = -1, keepdim: bool = False) -> Tensor:
+    r"""Geometric mean of a tensor.
+
+    .. Signature:: ``(..., n) -> (...)``
+    """
+    x = torch.log(x)
+    x = torch.nanmean(x, dim=dim, keepdim=keepdim)
+    return torch.exp(x)
+
+
+@jit.script
+def apply_keepdim(x: Tensor, dim: tuple[int, int], keepdim: bool) -> Tensor:
+    r"""Insert dimensions in the right places.
+
+    We assume x was some tensor to which a reduction was applied, such that
+
+    1. The affected dims were mapped, in order, to the last dimensions of x.
+    2. The reduction was performed over the last dimensions of x.
+    3. We now want to insert the dimensions back into x at the right places.
+    """
+    if not keepdim:
+        return x
+    for d in torch.sort(dim):
+        x = x.unsqueeze(d)
+    return x
+
+
+@jit.script
+def logarithmic_norm(
+    x: Tensor, p: float = 2.0, dim: tuple[int, int] = (-2, -1), keepdim: bool = False
+) -> Tensor:
     r"""Compute the logarithmic norm of a matrix.
 
     .. math:: \lim_{ε→0⁺} \frac{‖𝕀+εA‖_p-1}{ε}
@@ -256,15 +291,130 @@ def logarithmic_norm(x: Tensor, p: float = 2.0) -> Tensor:
       | Gustaf Söderlind, BIT Numerical Mathematics, 2006
       | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
     """
-    if p == 2:
-        return spectral_abscissa(closest_symm(x))
+    rowdim, coldim = dim
+    assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."
 
-    m = torch.eye(x.shape[-1], dtype=torch.bool)
+    if p == 2:
+        x = closest_symm(x, dim=dim)
+        x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
+        λ = torch.linalg.eigvals(x)
+        r = λ.real.amax(dim=-1)
+        return apply_keepdim(r, dim, keepdim)
+    if p == -2:
+        x = closest_symm(x, dim=dim)
+        x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
+        λ = torch.linalg.eigvals(x)
+        r = λ.real.amin(dim=-1)
+        return apply_keepdim(r, dim, keepdim)
+
+    m = torch.eye(rowdim, dtype=torch.bool)
     x = torch.where(m, x.real, x.abs())
+    shift = int(coldim < rowdim) * int(keepdim)
 
     if p == 1:
-        return x.sum(dim=-1).amax(dim=-1)
+        x = x.sum(dim=coldim, keepdim=keepdim)
+        return x.amax(dim=rowdim - shift, keepdim=keepdim)
+    if p == -1:
+        x = x.sum(dim=coldim, keepdim=keepdim)
+        return x.amin(dim=rowdim - shift, keepdim=keepdim)
     if p == float("inf"):
-        return x.sum(dim=-2).amax(dim=-1)
+        x = x.sum(dim=rowdim, keepdim=keepdim)
+        return x.amax(dim=coldim + shift, keepdim=keepdim)
+    if p == -float("inf"):
+        x = x.sum(dim=rowdim, keepdim=keepdim)
+        return x.amin(dim=coldim + shift, keepdim=keepdim)
 
     raise NotImplementedError("Currently only p=1,2,inf are supported.")
+
+
+@jit.script
+def schatten_norm(
+    x: Tensor,
+    p: float = 2.0,
+    dim: tuple[int, int] = (-2, -1),
+    keepdim: bool = False,
+    size_normalize: bool = False,
+) -> Tensor:
+    r"""Schatten norm $p$-th order.
+
+    .. math::  ‖A‖_p^p ≔  \tr(|A|^p) = ∑_i σ_i^p
+
+    .. Signature:: ``(..., n, n) -> ...``
+
+    References
+    ----------
+    - | Schatten Norms
+      | <https://en.wikipedia.org/wiki/Schatten_norms>_
+    """
+    if not torch.is_floating_point(x):
+        x = x.to(dtype=torch.float)
+
+    rowdim, coldim = dim
+
+    x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
+    σ = torch.linalg.svdvals(x)
+    m = σ != 0
+
+    if p == float("+inf"):
+        σ = torch.where(m, σ, float("-inf"))
+        maxvals = σ.amax(dim=-1)
+        maxvals = torch.where(maxvals == float("-inf"), float("nan"), maxvals)
+        return apply_keepdim(maxvals, dim, keepdim)
+    if p == float("-inf"):
+        σ = torch.where(m, σ, float("+inf"))
+        minvals = σ.amin(dim=-1)
+        minvals = torch.where(minvals == float("+inf"), float("nan"), minvals)
+        return apply_keepdim(minvals, dim, keepdim)
+    if p == 0:
+        if size_normalize:
+            σ = torch.where(m, σ, float("nan"))
+            result = geometric_mean(σ, dim=-1)
+        else:
+            result = m.sum(dim=-1)
+        return apply_keepdim(result, dim, keepdim)
+
+    σ = torch.where(m, σ, float("-inf"))
+    σ_max = σ.amax(dim=-1)
+    σ = torch.where(m, σ, float("+nan"))
+    σ = σ / σ_max
+
+    if size_normalize:
+        result = torch.nanmean(σ**p, dim=-1) ** (1 / p)
+    else:
+        result = torch.nansum(σ**p, dim=-1) ** (1 / p)
+    return apply_keepdim(result, dim, keepdim)
+
+
+@jit.script
+def vector_norm(
+    x: Tensor,
+    p: float = 2.0,
+    dim: int = -1,
+    keepdim: bool = True,
+    size_normalize: bool = False,
+) -> Tensor:
+    r"""Vector norm of $p$-th order.
+
+    .. Signature:: ``(..., n) -> ...``
+    """
+    if not torch.is_floating_point(x):
+        x = x.to(dtype=torch.float)
+    x = x.abs()
+
+    if p == float("inf"):
+        return x.amax(dim=dim, keepdim=keepdim)
+    if p == -float("inf"):
+        return x.amin(dim=dim, keepdim=keepdim)
+    if p == 0:
+        if size_normalize:
+            return geometric_mean(x, dim=dim, keepdim=keepdim)
+        return (x != 0).sum(dim=dim, keepdim=keepdim)
+
+    x_max = x.amax(dim=dim, keepdim=True)
+    x = x / x_max
+
+    if size_normalize:
+        r = torch.mean(x**p, dim=dim, keepdim=keepdim) ** (1 / p)
+    else:
+        r = torch.sum(x**p, dim=dim, keepdim=keepdim) ** (1 / p)
+    return x_max * r
