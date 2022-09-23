@@ -25,8 +25,12 @@ __all__ = [
     "spectral_radius",
     "stiffness_ratio",
     "vector_norm",
+    "tensor_norm",
+    "operator_norm",
 ]
 
+
+from typing import List
 
 import torch
 from torch import Tensor, jit
@@ -252,9 +256,7 @@ def geometric_mean(x: Tensor, dim: int = -1, keepdim: bool = False) -> Tensor:
 
     .. Signature:: ``(..., n) -> (...)``
     """
-    x = torch.log(x)
-    x = torch.nanmean(x, dim=dim, keepdim=keepdim)
-    return torch.exp(x)
+    return x.log().nanmean(dim=dim, keepdim=keepdim).exp()
 
 
 @jit.script
@@ -269,14 +271,18 @@ def apply_keepdim(x: Tensor, dim: tuple[int, int], keepdim: bool) -> Tensor:
     """
     if not keepdim:
         return x
-    for d in torch.sort(dim):
+    for d in sorted(dim):
         x = x.unsqueeze(d)
     return x
 
 
 @jit.script
 def logarithmic_norm(
-    x: Tensor, p: float = 2.0, dim: tuple[int, int] = (-2, -1), keepdim: bool = False
+    x: Tensor,
+    p: float = 2.0,
+    dim: tuple[int, int] = (-2, -1),
+    keepdim: bool = False,
+    scaled: bool = False,
 ) -> Tensor:
     r"""Compute the logarithmic norm of a matrix.
 
@@ -311,6 +317,20 @@ def logarithmic_norm(
     x = torch.where(m, x.real, x.abs())
     shift = int(coldim < rowdim) * int(keepdim)
 
+    if scaled:
+        if p == 1:
+            x = x.mean(dim=coldim, keepdim=keepdim)
+            return x.amax(dim=rowdim - shift, keepdim=keepdim)
+        if p == -1:
+            x = x.mean(dim=coldim, keepdim=keepdim)
+            return x.amin(dim=rowdim - shift, keepdim=keepdim)
+        if p == float("inf"):
+            x = x.mean(dim=rowdim, keepdim=keepdim)
+            return x.amax(dim=coldim + shift, keepdim=keepdim)
+        if p == -float("inf"):
+            x = x.mean(dim=rowdim, keepdim=keepdim)
+            return x.amin(dim=coldim + shift, keepdim=keepdim)
+
     if p == 1:
         x = x.sum(dim=coldim, keepdim=keepdim)
         return x.amax(dim=rowdim - shift, keepdim=keepdim)
@@ -324,7 +344,7 @@ def logarithmic_norm(
         x = x.sum(dim=rowdim, keepdim=keepdim)
         return x.amin(dim=coldim + shift, keepdim=keepdim)
 
-    raise NotImplementedError("Currently only p=1,2,inf are supported.")
+    raise NotImplementedError("Currently only p=±1,±2,±inf are supported.")
 
 
 @jit.script
@@ -333,11 +353,21 @@ def schatten_norm(
     p: float = 2.0,
     dim: tuple[int, int] = (-2, -1),
     keepdim: bool = False,
-    size_normalize: bool = False,
+    scaled: bool = False,
 ) -> Tensor:
     r"""Schatten norm $p$-th order.
 
-    .. math::  ‖A‖_p^p ≔  \tr(|A|^p) = ∑_i σ_i^p
+    .. math::  ‖A‖_p^p ≔ \tr(|A|^p) = ∑_i σ_i^p
+
+    The Schatten norm is equivalent to the vector norm of the singular values.
+
+    - $p=+∞$: Maximum Singular Value, equivalent to spectral norm $‖A‖_2$.
+    - $p=2$: Frobius Norm
+    - $p=1$: Nuclear Norm
+    - $p=0$: Number of non-zero singular values. Equivalent to rank.
+    - $p=-1$: Reciprocal sum of singular values.
+    - $p=-2$: Reciprocal sum of squared singular values.
+    - $p=+∞$: Minimal Singular Value
 
     .. Signature:: ``(..., n, n) -> ...``
 
@@ -366,7 +396,7 @@ def schatten_norm(
         minvals = torch.where(minvals == float("+inf"), float("nan"), minvals)
         return apply_keepdim(minvals, dim, keepdim)
     if p == 0:
-        if size_normalize:
+        if scaled:
             σ = torch.where(m, σ, float("nan"))
             result = geometric_mean(σ, dim=-1)
         else:
@@ -378,10 +408,10 @@ def schatten_norm(
     σ = torch.where(m, σ, float("+nan"))
     σ = σ / σ_max
 
-    if size_normalize:
-        result = torch.nanmean(σ**p, dim=-1) ** (1 / p)
+    if scaled:
+        result = σ.pow(p).nanmean(dim=-1).pow(1 / p)
     else:
-        result = torch.nansum(σ**p, dim=-1) ** (1 / p)
+        result = σ.pow(p).nansum(dim=-1).pow(1 / p)
     return apply_keepdim(result, dim, keepdim)
 
 
@@ -391,9 +421,27 @@ def vector_norm(
     p: float = 2.0,
     dim: int = -1,
     keepdim: bool = True,
-    size_normalize: bool = False,
+    scaled: bool = False,
 ) -> Tensor:
     r"""Vector norm of $p$-th order.
+
+    +--------+-----------------------------------+------------------------------------+
+    |        | standard                          | size normalized                    |
+    +========+===================================+====================================+
+    | $p=+∞$ | maximum value                     | maximum value                      |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=+2$ | sum of squared values             | mean of squared values             |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=+1$ | sum of squared values             | mean of squared values             |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=±0$ | ∞ or sum of non-zero values       | geometric mean of values           |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-1$ | reciprocal sum of absolute values | reciprocal mean of absolute values |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-2$ | reciprocal sum of squared values  | reciprocal mean of squared values  |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-∞$ | minimum value                     | minimum value                      |
+    +--------+-----------------------------------+------------------------------------+
 
     .. Signature:: ``(..., n) -> ...``
     """
@@ -401,20 +449,154 @@ def vector_norm(
         x = x.to(dtype=torch.float)
     x = x.abs()
 
+    # TODO: deal with nan values
+
     if p == float("inf"):
         return x.amax(dim=dim, keepdim=keepdim)
     if p == -float("inf"):
         return x.amin(dim=dim, keepdim=keepdim)
     if p == 0:
-        if size_normalize:
+        if scaled:
             return geometric_mean(x, dim=dim, keepdim=keepdim)
         return (x != 0).sum(dim=dim, keepdim=keepdim)
 
     x_max = x.amax(dim=dim, keepdim=True)
     x = x / x_max
 
-    if size_normalize:
-        r = torch.mean(x**p, dim=dim, keepdim=keepdim) ** (1 / p)
+    if scaled:
+        r = x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
     else:
-        r = torch.sum(x**p, dim=dim, keepdim=keepdim) ** (1 / p)
+        r = x.pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
     return x_max * r
+
+
+@jit.script
+def tensor_norm(
+    x: Tensor,
+    p: float = 2.0,
+    dim: List[int] = (),  # type: ignore[assignment]
+    keepdim: bool = True,
+    scaled: bool = False,
+) -> Tensor:
+    r"""Vector norm of $p$-th order.
+
+    +--------+-----------------------------------+------------------------------------+
+    |        | standard                          | size normalized                    |
+    +========+===================================+====================================+
+    | $p=+∞$ | maximum value                     | maximum value                      |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=+2$ | sum of squared values             | mean of squared values             |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=+1$ | sum of squared values             | mean of squared values             |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=±0$ | ∞ or sum of non-zero values       | geometric mean of values           |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-1$ | reciprocal sum of absolute values | reciprocal mean of absolute values |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-2$ | reciprocal sum of squared values  | reciprocal mean of squared values  |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-∞$ | minimum value                     | minimum value                      |
+    +--------+-----------------------------------+------------------------------------+
+
+    .. Signature:: ``(..., n) -> ...``
+    """
+    if not torch.is_floating_point(x):
+        x = x.to(dtype=torch.float)
+    x = x.abs()
+
+    # TODO: deal with nan values
+
+    if p == float("inf"):
+        return x.amax(dim=dim, keepdim=keepdim)
+    if p == -float("inf"):
+        return x.amin(dim=dim, keepdim=keepdim)
+    if p == 0:
+        if scaled:
+            return x.log().nanmean(dim=dim, keepdim=keepdim).exp()
+        return (x != 0).sum(dim=dim, keepdim=keepdim)
+
+    x_max = x.amax(dim=dim, keepdim=True)
+    x = x / x_max
+
+    if scaled:
+        r = x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+    else:
+        r = x.pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
+    return x_max * r
+
+
+@jit.script
+def operator_norm(
+    x: Tensor,
+    p: float = 2.0,
+    dim: tuple[int, int] = (-2, -1),
+    keepdim: bool = True,
+    scaled: bool = False,
+) -> Tensor:
+    r"""Operator norm of $p$-th order.
+
+    +--------+-----------------------------------+------------------------------------+
+    |        | standard                          | size normalized                    |
+    +========+===================================+====================================+
+    | $p=+∞$ | maximum value                     | maximum value                      |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=+2$ | sum of squared values             | mean of squared values             |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=+1$ | sum of squared values             | mean of squared values             |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=±0$ | ∞ or sum of non-zero values       | geometric mean of values           |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-1$ | reciprocal sum of absolute values | reciprocal mean of absolute values |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-2$ | reciprocal sum of squared values  | reciprocal mean of squared values  |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-∞$ | minimum value                     | minimum value                      |
+    +--------+-----------------------------------+------------------------------------+
+
+    .. Signature:: ``(..., n) -> ...``
+    """
+    rowdim, coldim = dim
+    assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."
+
+    if p == 2:
+        x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
+        σ = torch.linalg.svdvals(x)
+        r = σ.amax(dim=-1)
+        return apply_keepdim(r, dim, keepdim)
+    if p == -2:
+        x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
+        σ = torch.linalg.svdvals(x)
+        r = σ.amin(dim=-1)
+        return apply_keepdim(r, dim, keepdim)
+
+    x = x.abs()
+    shift = int(coldim < rowdim) * int(keepdim)
+
+    if scaled:
+        if p == 1:
+            x = x.mean(dim=coldim, keepdim=keepdim)
+            return x.amax(dim=rowdim - shift, keepdim=keepdim)
+        if p == -1:
+            x = x.mean(dim=coldim, keepdim=keepdim)
+            return x.amin(dim=rowdim - shift, keepdim=keepdim)
+        if p == float("inf"):
+            x = x.mean(dim=rowdim, keepdim=keepdim)
+            return x.amax(dim=coldim + shift, keepdim=keepdim)
+        if p == -float("inf"):
+            x = x.mean(dim=rowdim, keepdim=keepdim)
+            return x.amin(dim=coldim + shift, keepdim=keepdim)
+
+    if p == 1:
+        x = x.sum(dim=coldim, keepdim=keepdim)
+        return x.amax(dim=rowdim - shift, keepdim=keepdim)
+    if p == -1:
+        x = x.sum(dim=coldim, keepdim=keepdim)
+        return x.amin(dim=rowdim - shift, keepdim=keepdim)
+    if p == float("inf"):
+        x = x.sum(dim=rowdim, keepdim=keepdim)
+        return x.amax(dim=coldim + shift, keepdim=keepdim)
+    if p == -float("inf"):
+        x = x.sum(dim=rowdim, keepdim=keepdim)
+        return x.amin(dim=coldim + shift, keepdim=keepdim)
+
+    raise NotImplementedError("Currently only p=±1,±2,±inf are supported.")

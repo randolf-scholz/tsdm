@@ -27,20 +27,23 @@ from matplotlib.pyplot import Figure
 from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor, nn
-from torch.linalg import cond, matrix_norm, slogdet
+from torch.linalg import cond, slogdet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from tsdm.linalg import (
     col_corr,
     erank,
+    logarithmic_norm,
     multi_norm,
+    operator_norm,
     reldist_diag,
     reldist_orth,
     reldist_skew,
     reldist_symm,
-    relerank,
     row_corr,
+    schatten_norm,
+    tensor_norm,
 )
 from tsdm.metrics import Loss
 from tsdm.models import Model
@@ -93,55 +96,120 @@ def log_kernel_information(
     writer: SummaryWriter,
     kernel: Tensor,
     *,
-    histograms: bool | int = False,
+    log_distances: bool | int = True,
+    log_heatmap: bool | int = False,
+    log_histograms: bool | int = False,
+    log_linalg: bool | int = True,
+    log_norms: bool | int = True,
+    log_scaled_norms: bool | int = True,
+    log_spectrum: bool | int = False,
     prefix: str = "",
     postfix: str = "",
 ) -> None:
     r"""Log kernel information.
 
-    Parameters
-    ----------
-    i: int
-    writer: SummaryWriter
-    kernel: Tensor
-    histograms: bool, default False
-    prefix: str, default ""
-    postfix: str, default ""
+    Set option to true to log every epoch.
+    Set option to an integer to log whenever ``i % log_interval == 0``.
     """
     identifier = f"{prefix+':'*bool(prefix)}kernel{':'*bool(postfix)+postfix}"
     K = kernel
     assert len(K.shape) == 2 and K.shape[0] == K.shape[1]
 
-    # relative distance to some matrix groups
-    writer.add_scalar(f"{identifier}:reldist/diagonal", reldist_diag(K), i)
-    writer.add_scalar(f"{identifier}:reldist/skew-symmetric", reldist_skew(K), i)
-    writer.add_scalar(f"{identifier}:reldist/symmetric", reldist_symm(K), i)
-    writer.add_scalar(f"{identifier}:reldist/orthogonal", reldist_orth(K), i)
+    log = writer.add_scalar
+    ω = float("inf")
 
-    # general properties
-    writer.add_scalar(f"{identifier}:linalg/cond", cond(K), i)
-    writer.add_scalar(f"{identifier}:linalg/corr-colwise", col_corr(K), i)
-    writer.add_scalar(f"{identifier}:linalg/corr-rowwise", row_corr(K), i)
-    writer.add_scalar(f"{identifier}:linalg/erank", erank(K), i)
-    writer.add_scalar(f"{identifier}:linalg/erank-relative", relerank(K), i)
-    writer.add_scalar(f"{identifier}:linalg/logdet", slogdet(K)[-1], i)
-    writer.add_scalar(f"{identifier}:linalg/trace", torch.trace(K), i)
+    if log_distances and i % log_distances == 0:
+        # fmt: off
+        # relative distance to some matrix groups
+        log(f"{identifier}:reldist/diagonal",       reldist_diag(K), i)
+        log(f"{identifier}:reldist/skew-symmetric", reldist_skew(K), i)
+        log(f"{identifier}:reldist/symmetric",      reldist_symm(K), i)
+        log(f"{identifier}:reldist/orthogonal",     reldist_orth(K), i)
+        # fmt: on
 
-    # norms
-    writer.add_scalar(f"{identifier}:norms/fro", matrix_norm(K, ord="fro"), i)
-    writer.add_scalar(f"{identifier}:norms/nuc", matrix_norm(K, ord="nuc"), i)
-    writer.add_scalar(f"{identifier}:norms/l-∞", matrix_norm(K, ord=-float("inf")), i)
-    writer.add_scalar(f"{identifier}:norms/l-2", matrix_norm(K, ord=-2), i)
-    writer.add_scalar(f"{identifier}:norms/l-1", matrix_norm(K, ord=-1), i)
-    writer.add_scalar(f"{identifier}:norms/l+1", matrix_norm(K, ord=+1), i)
-    writer.add_scalar(f"{identifier}:norms/l+2", matrix_norm(K, ord=+2), i)
-    writer.add_scalar(f"{identifier}:norms/l+∞", matrix_norm(K, ord=+float("inf")), i)
+    if log_linalg and i % log_linalg == 0:
+        # fmt: off
+        # general properties
+        log(f"{identifier}:linalg/condition-number", cond(K), i)
+        log(f"{identifier}:linalg/correlation-cols", col_corr(K), i)
+        log(f"{identifier}:linalg/correlation-rows", row_corr(K), i)
+        log(f"{identifier}:linalg/effective-rank",   erank(K), i)
+        log(f"{identifier}:linalg/logdet",           slogdet(K)[-1], i)
+        log(f"{identifier}:linalg/trace",            torch.trace(K), i)
+        # fmt: on
+
+    if log_norms and i % log_norms == 0:
+        # fmt: off
+        # Operator norms
+        log(f"{identifier}:norms/operator_p=+∞_maximum_rowsum", operator_norm(K, p=+ω), i)
+        log(f"{identifier}:norms/operator_p=+2_maximum_σvalue", operator_norm(K, p=+2), i)
+        log(f"{identifier}:norms/operator_p=+1_maximum_colsum", operator_norm(K, p=+1), i)
+        log(f"{identifier}:norms/operator_p=-1_minimum_colsum", operator_norm(K, p=-1), i)
+        log(f"{identifier}:norms/operator_p=-2_minimum_σvalue", operator_norm(K, p=-2), i)
+        log(f"{identifier}:norms/operator_p=-∞_minimum_rowsum", operator_norm(K, p=-ω), i)
+        # Logarithmic norms
+        log(f"{identifier}:norms/logarithmic_p=+∞_maximum_rowsum", logarithmic_norm(K, p=+ω), i)
+        log(f"{identifier}:norms/logarithmic_p=+2_maximum_eigval", logarithmic_norm(K, p=+2), i)
+        log(f"{identifier}:norms/logarithmic_p=+1_maximum_colsum", logarithmic_norm(K, p=+1), i)
+        log(f"{identifier}:norms/logarithmic_p=-1_minimum_colsum", logarithmic_norm(K, p=-1), i)
+        log(f"{identifier}:norms/logarithmic_p=-2_minimum_eigval", logarithmic_norm(K, p=-2), i)
+        log(f"{identifier}:norms/logarithmic_p=-∞_minimum_rowsum", logarithmic_norm(K, p=-ω), i)
+        # Schatten norms
+        log(f"{identifier}:norms/schatten_p=+∞_maximum_σvalue", schatten_norm(K, p=+ω), i)
+        log(f"{identifier}:norms/schatten_p=+2_squared_σvalue", schatten_norm(K, p=+2), i)
+        log(f"{identifier}:norms/schatten_p=+1_absolut_σvalue", schatten_norm(K, p=+1), i)
+        log(f"{identifier}:norms/schatten_p=-1_inverse_σvalue", schatten_norm(K, p=-1), i)
+        log(f"{identifier}:norms/schatten_p=-2_invquad_σvalue", schatten_norm(K, p=-2), i)
+        log(f"{identifier}:norms/schatten_p=-∞_minimum_σvalue", schatten_norm(K, p=-ω), i)
+        # Tensor norms
+        log(f"{identifier}:norms/tensor_p=+∞_maximum_value", tensor_norm(K, p=+ω, dim=(-2, -1)), i)
+        log(f"{identifier}:norms/tensor_p=+2_squared_value", tensor_norm(K, p=+2, dim=(-2, -1)), i)
+        log(f"{identifier}:norms/tensor_p=+1_absolut_value", tensor_norm(K, p=+1, dim=(-2, -1)), i)
+        log(f"{identifier}:norms/tensor_p=-1_inverse_value", tensor_norm(K, p=-1, dim=(-2, -1)), i)
+        log(f"{identifier}:norms/tensor_p=-2_invquad_value", tensor_norm(K, p=-2, dim=(-2, -1)), i)
+        log(f"{identifier}:norms/tensor_p=-∞_minimum_value", tensor_norm(K, p=-ω, dim=(-2, -1)), i)
+        # fmt: on
+
+    if log_scaled_norms and i % log_scaled_norms == 0:
+        # fmt: off
+        # Operator norms
+        log(f"{identifier}:norms-scaled/operator_p=+∞_maximum_rowsum", operator_norm(K, p=+ω, scaled=True), i)
+        log(f"{identifier}:norms-scaled/operator_p=+2_maximum_σvalue", operator_norm(K, p=+2, scaled=True), i)
+        log(f"{identifier}:norms-scaled/operator_p=+1_maximum_colsum", operator_norm(K, p=+1, scaled=True), i)
+        log(f"{identifier}:norms-scaled/operator_p=-1_minimum_colsum", operator_norm(K, p=-1, scaled=True), i)
+        log(f"{identifier}:norms-scaled/operator_p=-2_minimum_σvalue", operator_norm(K, p=-2, scaled=True), i)
+        log(f"{identifier}:norms-scaled/operator_p=-∞_minimum_rowsum", operator_norm(K, p=-ω, scaled=True), i)
+        # Logarithmic norms
+        log(f"{identifier}:norms-scaled/logarithmic_p=+∞_maximum_rowsum", logarithmic_norm(K, p=+ω, scaled=True), i)
+        log(f"{identifier}:norms-scaled/logarithmic_p=+2_maximum_eigval", logarithmic_norm(K, p=+2, scaled=True), i)
+        log(f"{identifier}:norms-scaled/logarithmic_p=+1_maximum_colsum", logarithmic_norm(K, p=+1, scaled=True), i)
+        log(f"{identifier}:norms-scaled/logarithmic_p=-1_minimum_colsum", logarithmic_norm(K, p=-1, scaled=True), i)
+        log(f"{identifier}:norms-scaled/logarithmic_p=-2_minimum_eigval", logarithmic_norm(K, p=-2, scaled=True), i)
+        log(f"{identifier}:norms-scaled/logarithmic_p=-∞_minimum_rowsum", logarithmic_norm(K, p=-ω, scaled=True), i)
+        # Schatten norms
+        log(f"{identifier}:norms-scaled/schatten_p=+∞_maximum_σvalue", schatten_norm(K, p=+ω, scaled=True), i)
+        log(f"{identifier}:norms-scaled/schatten_p=+2_squared_σvalue", schatten_norm(K, p=+2, scaled=True), i)
+        log(f"{identifier}:norms-scaled/schatten_p=+1_absolut_σvalue", schatten_norm(K, p=+1, scaled=True), i)
+        log(f"{identifier}:norms-scaled/schatten_p=-1_inverse_σvalue", schatten_norm(K, p=-1, scaled=True), i)
+        log(f"{identifier}:norms-scaled/schatten_p=-2_invquad_σvalue", schatten_norm(K, p=-2, scaled=True), i)
+        log(f"{identifier}:norms-scaled/schatten_p=-∞_minimum_σvalue", schatten_norm(K, p=-ω, scaled=True), i)
+        # Tensor norms
+        log(f"{identifier}:norms-scaled/tensor_p=+∞_maximum_value", tensor_norm(K, p=+ω, dim=(-2, -1), scaled=True), i)
+        log(f"{identifier}:norms-scaled/tensor_p=+2_squared_value", tensor_norm(K, p=+2, dim=(-2, -1), scaled=True), i)
+        log(f"{identifier}:norms-scaled/tensor_p=+1_absolut_value", tensor_norm(K, p=+1, dim=(-2, -1), scaled=True), i)
+        log(f"{identifier}:norms-scaled/tensor_p=-1_inverse_value", tensor_norm(K, p=-1, dim=(-2, -1), scaled=True), i)
+        log(f"{identifier}:norms-scaled/tensor_p=-2_invquad_value", tensor_norm(K, p=-2, dim=(-2, -1), scaled=True), i)
+        log(f"{identifier}:norms-scaled/tensor_p=-∞_minimum_value", tensor_norm(K, p=-ω, dim=(-2, -1), scaled=True), i)
+        # fmt: on
 
     # 2d-data is order of magnitude more expensive.
-    if histograms and i % histograms == 0:
+    if log_histograms and i % log_histograms == 0:
         writer.add_histogram(f"{identifier}:histogram", K, i)
+
+    if log_heatmap and i % log_heatmap == 0:
         writer.add_image(f"{identifier}:heatmap", kernel_heatmap(K, "CHW"), i)
 
+    if log_spectrum and i % log_spectrum == 0:
         spectrum: Figure = plot_spectrum(K)
         spectrum = center_axes(spectrum)
         image = rasterize(spectrum, w=2, h=2, px=512, py=512)
@@ -525,7 +593,7 @@ class StandardLogger:
             i,
             writer=self.writer,
             kernel=self.model.kernel,
-            histograms=histograms,
+            log_histograms=histograms,
             prefix=prefix,
             postfix=postfix,
         )
