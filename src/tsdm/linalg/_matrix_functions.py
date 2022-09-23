@@ -33,12 +33,12 @@ from torch import Tensor, jit
 def erank(x: Tensor) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
-    .. Signature:: ``(..., m, n) -> ...``
+    .. math:: \operatorname{erank}(A) = e^{H(\tfrac{𝛔}{‖𝛔‖_1})} = ∏ σ_{i}^{-σ_i}
 
     By definition, the effective rank is equal to the exponential of the entropy of the
     distribution of the singular values.
 
-    .. math:: \operatorname{erank}(A) = e^{H(\tfrac{𝛔}{‖𝛔‖_1})} = ∏ σ_{i}^{-σ_i}
+    .. Signature:: ``(..., m, n) -> ...``
 
     References
     ----------
@@ -58,9 +58,9 @@ def erank(x: Tensor) -> Tensor:
 def relerank(x: Tensor) -> Tensor:
     r"""Compute the relative effective rank of a matrix.
 
-    .. Signature:: ``(..., m, n) -> ...``
-
     This is the effective rank scaled by $\min(m,n)$.
+
+    .. Signature:: ``(..., m, n) -> ...``
     """
     return erank(x) / min(x.shape[-2:])
 
@@ -99,9 +99,9 @@ def row_corr(x: Tensor) -> Tensor:
 def closest_symm(x: Tensor) -> Tensor:
     r"""Symmetric part of square matrix.
 
-    .. Signature:: ``(..., n, n) -> (..., n, n)``
-
     .. math:: \argmin_{X: X^⊤ = -X} ‖A-X‖
+
+    .. Signature:: ``(..., n, n) -> (..., n, n)``
     """
     return (x + x.swapaxes(-1, -2)) / 2
 
@@ -110,9 +110,9 @@ def closest_symm(x: Tensor) -> Tensor:
 def closest_skew(x: Tensor) -> Tensor:
     r"""Skew-Symmetric part of a matrix.
 
-    .. Signature:: ``(..., n, n) -> (..., n, n)``
-
     .. math:: \argmin_{X: X^⊤ = X} ‖A-X‖
+
+    .. Signature:: ``(..., n, n) -> (..., n, n)``
     """
     return (x - x.swapaxes(-1, -2)) / 2
 
@@ -121,9 +121,9 @@ def closest_skew(x: Tensor) -> Tensor:
 def closest_orth(x: Tensor) -> Tensor:
     r"""Orthogonal part of a square matrix.
 
-    .. Signature:: ``(..., n, n) -> (..., n, n)``
-
     .. math:: \argmin_{X: XᵀX = 𝕀} ‖A-X‖
+
+    .. Signature:: ``(..., n, n) -> (..., n, n)``
     """
     U, _, Vt = torch.linalg.svd(x, full_matrices=True)
     Q = torch.einsum("...ij, ...jk->...ik", U, Vt)
@@ -134,9 +134,9 @@ def closest_orth(x: Tensor) -> Tensor:
 def closest_diag(x: Tensor) -> Tensor:
     r"""Diagonal part of a square matrix.
 
-    .. Signature:: ``(..., n, n) -> (..., n, n)``
-
     .. math:: \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+
+    .. Signature:: ``(..., n, n) -> (..., n, n)``
     """
     d = torch.diagonal(x, dim1=-2, dim2=-1)
     return torch.diag_embed(d)
@@ -146,9 +146,9 @@ def closest_diag(x: Tensor) -> Tensor:
 def reldist(x: Tensor, y: Tensor) -> Tensor:
     r"""Relative distance between two matrices.
 
-    .. Signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
-
     .. math::  ‖x-y‖/‖y‖
+
+    .. Signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
     """
     r = torch.linalg.matrix_norm(x - y, ord="fro", dim=(-2, -1))
     yy = torch.linalg.matrix_norm(y, ord="fro", dim=(-2, -1))
@@ -160,9 +160,9 @@ def reldist(x: Tensor, y: Tensor) -> Tensor:
 def reldist_diag(x: Tensor) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
-    .. Signature:: ``(..., n, n) -> ...``
-
     .. math:: ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+
+    .. Signature:: ``(..., n, n) -> ...``
     """
     return reldist(closest_diag(x), x)
 
@@ -189,9 +189,9 @@ def reldist_skew(x: Tensor) -> Tensor:
 def reldist_orth(x: Tensor) -> Tensor:
     r"""Relative magnitude of orthogonal part.
 
-    .. Signature:: ``(..., n, n) -> ...``
-
     .. math:: \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
+
+    .. Signature:: ``(..., n, n) -> ...``
     """
     return reldist(closest_orth(x), x)
 
@@ -200,11 +200,11 @@ def reldist_orth(x: Tensor) -> Tensor:
 def stiffness_ratio(x: Tensor) -> Tensor:
     r"""Compute the stiffness ratio of a matrix.
 
-    .. Signature:: ``(..., n, n) -> ...``
-
-    .. math:: \frac{|\Re(λ_\max)|}{|\Re{λ_\min}|}
+    .. math:: \frac{ | \Re(λ_\max) | }{ | \Re{λ_\min} | }
 
     Only applicable if $\Re(λ_i)<0$ for all $i$.
+
+    .. Signature:: ``(..., n, n) -> ...``
 
     References
     ----------
@@ -223,7 +223,7 @@ def stiffness_ratio(x: Tensor) -> Tensor:
 
 @jit.script
 def spectral_radius(x: Tensor) -> Tensor:
-    r"""Return $\max_i | λ_i |$.
+    r"""Return $\max_i | λ_i | $.
 
     .. Signature:: ``(..., n, n) -> ...``
     """  # noqa: RST219
@@ -245,9 +245,9 @@ def spectral_abscissa(x: Tensor) -> Tensor:
 def logarithmic_norm(x: Tensor, p: float = 2.0) -> Tensor:
     r"""Compute the logarithmic norm of a matrix.
 
-    .. Signature:: ``(..., n, n) -> ...``
-
     .. math:: \lim_{ε→0⁺} \frac{‖𝕀+εA‖_p-1}{ε}
+
+    .. Signature:: ``(..., n, n) -> ...``
 
     References
     ----------

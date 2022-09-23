@@ -45,10 +45,10 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
 
     Notes
     -----
-    NOTE: TIME_STAMP = round(merged_df_short_binned["TIME_STAMP"].dt.total_seconds()*bin_k/(100*36))
-    and bin_k = 10
-    i.e. TIME_STAMP = round(dt.total_seconds()*10/3600) = round(dt.total_hours()*10)
-    i.e. TIME_STAMP ≈ 10*total_hours
+    NOTE: ``TIME_STAMP = round(merged_df_short_binned["TIME_STAMP"].dt.total_seconds()*bin_k/(100*36))``
+    and ``bin_k = 10``
+    i.e. ``TIME_STAMP = round(dt.total_seconds()*10/3600) = round(dt.total_hours()*10)``
+    i.e. ``TIME_STAMP ≈ 10*total_hours``
     so e.g. the last patient was roughly 250 hours, 10½ days.
     """
 
