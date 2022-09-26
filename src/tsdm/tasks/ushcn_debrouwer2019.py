@@ -1,6 +1,12 @@
 r"""USHCN climate dataset."""
 
-__all__ = ["USHCN_DeBrouwer2019", "ushcn_collate"]
+__all__ = [
+    "USHCN_DeBrouwer2019",
+    "ushcn_collate",
+    "Sample",
+    "Batch",
+    "TaskDataset",
+]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -11,17 +17,16 @@ import numpy as np
 import torch
 from pandas import DataFrame, Index, MultiIndex
 from sklearn.model_selection import train_test_split
-from torch import Tensor, nn
+from torch import Tensor
+from torch import nan as NAN
+from torch import nn
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
 from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
-
-NAN: float = torch.nan
-r"""Not a number constant."""
 
 
 class Inputs(NamedTuple):
@@ -36,27 +41,17 @@ class Inputs(NamedTuple):
         return repr_namedtuple(self, recursive=False)
 
 
-class TimeSeries(NamedTuple):
-    r"""A single sample of the data."""
-
-    t: Tensor
-    s: Tensor
-
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self, recursive=False)
-
-
 class Sample(NamedTuple):
     r"""A single sample of the data."""
 
     key: int
     inputs: Inputs
     targets: Tensor
-    originals: TimeSeries
+    originals: tuple[Tensor, Tensor]
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=True)
+        r"""Return string representation."""
+        return repr_namedtuple(self, recursive=False)
 
 
 class Batch(NamedTuple):
@@ -75,7 +70,7 @@ class Batch(NamedTuple):
 
 
 @dataclass
-class TaskDataset(torch.utils.data.Dataset):
+class TaskDataset(Dataset):
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
@@ -100,14 +95,14 @@ class TaskDataset(torch.utils.data.Dataset):
             key=key,
             inputs=Inputs(t[sample_mask], x[sample_mask], t[target_mask]),
             targets=x[target_mask],
-            originals=TimeSeries(t, x),
+            originals=(t, x),
         )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
 
 
-# @torch.jit.script  <--seems to be slower!?
+# @torch.jit.script  # seems to break things
 def ushcn_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch."""
     x_vals: list[Tensor] = []
@@ -125,15 +120,12 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
         sorted_idx = torch.argsort(time)
 
         mask_y = y.isfinite()
+        zero_pad = torch.zeros_like(x, dtype=torch.bool)
+        mask_x = torch.cat((zero_pad, mask_y))
 
-        mask_x = torch.cat(
-            (
-                torch.zeros_like(x, dtype=torch.bool),
-                mask_y,
-            )
+        x_padder = torch.full(
+            (t_target.shape[0], x.shape[-1]), fill_value=NAN, device=x.device
         )
-
-        x_padder = torch.full((t_target.shape[0], x.shape[-1]), fill_value=NAN)
         values = torch.cat((x, x_padder))
 
         x_vals.append(values[sorted_idx])
@@ -194,26 +186,25 @@ class USHCN_DeBrouwer2019(BaseTask):
     seed = 432
     test_size = 0.1
     valid_size = 0.2
-    device: torch.device
 
-    def __init__(self, normalize_time: bool = False, device: str = "cpu"):
+    def __init__(self, normalize_time: bool = False):
         super().__init__()
-        self.device = torch.device(device)
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["ID"].unique()
 
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ds = USHCN_DeBrouwer2019_Dataset().dataset
+        ts = USHCN_DeBrouwer2019_Dataset().dataset
 
         if self.normalize_time:
-            ds = ds.reset_index()
-            t_max = ds["Time"].max()
+            ts = ts.reset_index()
+            t_max = ts["Time"].max()
             self.observation_time /= t_max
-            ds["Time"] /= t_max
-            ds = ds.set_index(["ID", "Time"])
-        return ds
+            ts["Time"] /= t_max
+            ts = ts.set_index(["ID", "Time"])
+        ts = ts.dropna(axis=1, how="all").copy()
+        return ts
 
     @cached_property
     def folds(self) -> list[dict[str, Sequence[int]]]:
@@ -320,8 +311,8 @@ class USHCN_DeBrouwer2019(BaseTask):
         tensors = {}
         for _id in self.IDs:
             s = self.dataset.loc[_id]
-            t = torch.tensor(s.index.values, dtype=torch.float32, device=self.device)
-            x = torch.tensor(s.values, dtype=torch.float32, device=self.device)
+            t = torch.tensor(s.index.values, dtype=torch.float32)
+            x = torch.tensor(s.values, dtype=torch.float32)
             tensors[_id] = (t, x)
         return tensors
 
@@ -336,6 +327,5 @@ class USHCN_DeBrouwer2019(BaseTask):
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )
-
         kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)

@@ -46,7 +46,7 @@ class ConfigMetaclass(ABCMeta):  # noqa: B024
     # fmt: on
 
     def __new__(
-        mcs,
+        cls,
         name: str,
         bases: tuple[type, ...],
         attrs: dict[str, Any],
@@ -56,14 +56,14 @@ class ConfigMetaclass(ABCMeta):  # noqa: B024
         if "__annotations__" not in attrs:
             attrs["__annotations__"] = {}
 
-        config_type = super().__new__(mcs, name, bases, attrs, **kwds)
+        config_type = super().__new__(cls, name, bases, attrs, **kwds)
         FIELDS = set(attrs["__annotations__"])
 
         # check forbidden fields
-        FORBIDDEN_FIELDS = mcs._FORBIDDEN_FIELDS & FIELDS
+        FORBIDDEN_FIELDS = cls._FORBIDDEN_FIELDS & FIELDS
         if FORBIDDEN_FIELDS:
             raise ValueError(
-                f"Fields '{mcs._FORBIDDEN_FIELDS}' are not allowed! "
+                f"Fields '{cls._FORBIDDEN_FIELDS}' are not allowed! "
                 f"Found '{FORBIDDEN_FIELDS}'"
             )
 

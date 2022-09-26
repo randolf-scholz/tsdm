@@ -238,13 +238,13 @@ def log_optimizer_state(
     prefix: str = ""
     postfix: str = ""
     """
-    identifier = f"{prefix+':'*bool(prefix)}optim{':'*bool(postfix)+postfix}"
+    identifier = f"{prefix+':'*bool(prefix)}optimizer{':'*bool(postfix)+postfix}"
 
     variables = list(optimizer.state.keys())
     gradients = [w.grad for w in variables]
 
-    writer.add_scalar(f"{identifier}:norms/variables", multi_norm(variables), i)
-    writer.add_scalar(f"{identifier}:norms/gradients", multi_norm(gradients), i)
+    writer.add_scalar(f"{identifier}/norm-variables", multi_norm(variables), i)
+    writer.add_scalar(f"{identifier}/norm-gradients", multi_norm(gradients), i)
 
     try:
         moments_1 = [d["exp_avg"] for d in optimizer.state.values()]
@@ -253,15 +253,19 @@ def log_optimizer_state(
         moments_1 = []
         moments_2 = []
     else:
-        writer.add_scalar(f"{identifier}:norms/moments_1", multi_norm(moments_1), i)
-        writer.add_scalar(f"{identifier}:norms/moments_2", multi_norm(moments_2), i)
+        writer.add_scalar(f"{identifier}/norm-moments_1", multi_norm(moments_1), i)
+        writer.add_scalar(f"{identifier}/norm-moments_2", multi_norm(moments_2), i)
 
     if histograms and i % histograms == 0:
         for j, (w, g) in enumerate(zip(variables, gradients)):
+            if not w.numel():
+                continue
             writer.add_histogram(f"{identifier}:variables/{j}", w, i)
             writer.add_histogram(f"{identifier}:gradients/{j}", g, i)
 
         for j, (a, b) in enumerate(zip(moments_1, moments_2)):
+            if not a.numel():
+                continue
             writer.add_histogram(f"{identifier}:moments_1/{j}", a, i)
             writer.add_histogram(f"{identifier}:moments_2/{j}", b, i)
 
@@ -294,9 +298,13 @@ def log_model_state(
 
     if histograms and i % histograms == 0:
         for key, weight in weights.items():
+            if not weight.numel():
+                continue
             writer.add_histogram(f"{identifier}:variables/{key}", weight, i)
 
         for key, gradient in grads.items():
+            if not gradient.numel():
+                continue
             writer.add_histogram(f"{identifier}:gradients/{key}", gradient, i)
 
 
