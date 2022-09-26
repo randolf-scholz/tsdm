@@ -291,12 +291,17 @@ class FrameDataset(BaseDataset, ABC):
             )
 
         elif isinstance(reference, Mapping):
-            if file.name not in reference:
+            if not ((file.name in reference) ^ (file.stem in reference)):
                 warnings.warn(
                     f"File '{file.name}' cannot be validated as it is not contained in {reference}."
                     f"The filehash is '{filehash}'."
                 )
-            elif filehash != reference[file.name]:
+            elif file.name in reference and filehash != reference[file.name]:
+                raise ValueError(
+                    f"File '{file.name}' failed to validate!"
+                    f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
+                )
+            elif file.stem in reference and filehash != reference[file.stem]:
                 raise ValueError(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference[file.name]}'."

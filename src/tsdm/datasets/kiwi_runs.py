@@ -135,17 +135,17 @@ class KIWI_RUNS(MultiFrameDataset):
     r"""Available index."""
 
     auxiliaries: Final[list[str]] = [
-        "setpoints",
-        "measurements_reactor",
-        "measurements_array",
+        # "setpoints",
+        # "measurements_reactor",
+        # "measurements_array",
         "measurements_aggregated",
     ]
 
     KEYS = Literal[
         "metadata",
-        "setpoints",
-        "measurements_reactor",
-        "measurements_array",
+        # "setpoints",
+        # "measurements_reactor",
+        # "measurements_array",
         "measurements_aggregated",
         "timeseries",
         "units",

@@ -37,6 +37,7 @@ from typing import Any, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 from numpy.typing import NDArray
+from torch import nn
 
 from tsdm.utils.types import AnyTypeVar, Nested, ObjectVar, PathType, ReturnVar
 from tsdm.utils.types.abc import HashableType
@@ -86,8 +87,6 @@ def flatten_dict(
         key_func = lambda k, sk: f"{k}{join_string}{sk}"  # noqa: E731
     elif key_func is None:
         key_func = lambda k, sk: (k, sk)  # noqa: E731
-    else:
-        key_func = key_func
 
     result = {}
     for key, item in d.items():
@@ -286,6 +285,18 @@ def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
     raise ValueError(f"{type(nested)} is not understood")
 
 
+def initialize_from_config(config: dict[str, Any]) -> nn.Module:
+    r"""Initialize `nn.Module` from config object."""
+    assert "__name__" in config, "__name__ not found in dict"
+    assert "__module__" in config, "__module__ not found in dict"
+    __logger__.debug("Initializing %s", config)
+    config = config.copy()
+    module = import_module(config.pop("__module__"))
+    cls = getattr(module, config.pop("__name__"))
+    opts = {key: val for key, val in config.items() if not is_dunder("key")}
+    return cls(**opts)
+
+
 # partial from type
 @overload
 def initialize_from(
@@ -376,7 +387,7 @@ def is_dunder(name: str) -> bool:
     -------
     bool
     """
-    return name.startswith("__") and name.endswith("__")
+    return name.isidentifier() and name.startswith("__") and name.endswith("__")
 
 
 def is_partition(*partition: Collection, union: Optional[Sequence] = None) -> bool:
@@ -392,17 +403,8 @@ def is_partition(*partition: Collection, union: Optional[Sequence] = None) -> bo
     return len(part_union) == sum(len(p) for p in partition)
 
 
-def initialize_from_config(config: dict[str, Any]) -> Any:
-    r"""Initialize a class from a dictionary.
-
-    Parameters
-    ----------
-    config: dict[str, Any]
-
-    Returns
-    -------
-    object
-    """
+def initialize_module_from_config(config: dict[str, Any]) -> nn.Module:
+    r"""Initialize a class from a dictionary."""
     assert "__name__" in config, "__name__ not found in dict"
     assert "__module__" in config, "__module__ not found in dict"
     __logger__.debug("Initializing %s", config)
