@@ -150,7 +150,7 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     r"""Default batch size."""
     eval_batch_size: int = 128
     r"""Default batch size when evaluating."""
-    preprocessor: Optional[ModularEncoder] = None
+    encoder: Optional[ModularEncoder] = None
     r"""Optional task specific preprocessor (applied before batching)."""
     postprocessor: Optional[ModularEncoder] = None
     r"""Optional task specific postprocessor (applied after batching)."""
