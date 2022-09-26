@@ -291,10 +291,10 @@ def log_model_state(
 
     if weights:
         weight_list = list(weights.values())
-        writer.add_scalar(f"{identifier}:weights", multi_norm(weight_list), i)
+        writer.add_scalar(f"{identifier}/weights", multi_norm(weight_list), i)
     if grads:
         grad_list = list(grads.values())
-        writer.add_scalar(f"{identifier}:gradients", multi_norm(grad_list), i)
+        writer.add_scalar(f"{identifier}/gradients", multi_norm(grad_list), i)
 
     if histograms and i % histograms == 0:
         for key, weight in weights.items():
