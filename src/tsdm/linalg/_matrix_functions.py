@@ -271,7 +271,11 @@ def apply_keepdim(x: Tensor, dim: tuple[int, int], keepdim: bool) -> Tensor:
     """
     if not keepdim:
         return x
-    for d in sorted(dim):
+
+    # TODO: sort by absolute value.
+    rowdim, coldim = dim
+    dims = (rowdim, coldim) if abs(rowdim) < abs(coldim) else (coldim, rowdim)
+    for d in dims:
         x = x.unsqueeze(d)
     return x
 
@@ -298,7 +302,11 @@ def logarithmic_norm(
       | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
     """
     rowdim, coldim = dim
-    assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."
+    rowdim = rowdim % x.ndim
+    coldim = coldim % x.ndim
+    dim = (rowdim, coldim)
+    M, N = x.shape[rowdim], x.shape[coldim]
+    assert M == N, "Matrix must be square."
 
     if p == 2:
         x = closest_symm(x, dim=dim)
@@ -313,36 +321,39 @@ def logarithmic_norm(
         r = λ.real.amin(dim=-1)
         return apply_keepdim(r, dim, keepdim)
 
-    m = torch.eye(rowdim, dtype=torch.bool)
+    m = torch.eye(N, dtype=torch.bool, device=x.device)
     x = torch.where(m, x.real, x.abs())
-    shift = int(coldim < rowdim) * int(keepdim)
 
     if scaled:
+        shift = int(coldim < rowdim) * (1 - int(keepdim))
         if p == 1:
             x = x.mean(dim=coldim, keepdim=keepdim)
             return x.amax(dim=rowdim - shift, keepdim=keepdim)
         if p == -1:
             x = x.mean(dim=coldim, keepdim=keepdim)
             return x.amin(dim=rowdim - shift, keepdim=keepdim)
+        shift = int(rowdim < coldim) * (1 - int(keepdim))
         if p == float("inf"):
             x = x.mean(dim=rowdim, keepdim=keepdim)
-            return x.amax(dim=coldim + shift, keepdim=keepdim)
+            return x.amax(dim=coldim - shift, keepdim=keepdim)
         if p == -float("inf"):
             x = x.mean(dim=rowdim, keepdim=keepdim)
-            return x.amin(dim=coldim + shift, keepdim=keepdim)
+            return x.amin(dim=coldim - shift, keepdim=keepdim)
 
+    shift = int(coldim < rowdim) * (1 - int(keepdim))
     if p == 1:
         x = x.sum(dim=coldim, keepdim=keepdim)
         return x.amax(dim=rowdim - shift, keepdim=keepdim)
     if p == -1:
         x = x.sum(dim=coldim, keepdim=keepdim)
         return x.amin(dim=rowdim - shift, keepdim=keepdim)
+    shift = int(rowdim < coldim) * (1 - int(keepdim))
     if p == float("inf"):
         x = x.sum(dim=rowdim, keepdim=keepdim)
-        return x.amax(dim=coldim + shift, keepdim=keepdim)
+        return x.amax(dim=coldim - shift, keepdim=keepdim)
     if p == -float("inf"):
         x = x.sum(dim=rowdim, keepdim=keepdim)
-        return x.amin(dim=coldim + shift, keepdim=keepdim)
+        return x.amin(dim=coldim - shift, keepdim=keepdim)
 
     raise NotImplementedError("Currently only p=±1,±2,±inf are supported.")
 
