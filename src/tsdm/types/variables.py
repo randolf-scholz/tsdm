@@ -111,7 +111,7 @@ Object_contra = TypeVar("Object_contra", bound=object, contravariant=True)
 r"""Contravariant type variable for `object`."""
 
 PathVar = TypeVar("PathVar", bound=Path)
-r"""Type Variable for `Path`s."""
+r"""Type Variable for `Path`."""
 Path_co = TypeVar("Path_co", bound=Path, covariant=True)
 r"""Covariant type variable for `Path`."""
 Path_contra = TypeVar("Path_contra", bound=Path, contravariant=True)
