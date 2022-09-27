@@ -25,10 +25,8 @@ from tsdm.encoders import (
     Standardizer,
     TensorEncoder,
 )
-from tsdm.metrics import ModularLoss, ModularLosses
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import BaseTask
-from tsdm.utils import initialize_from
 
 
 class ETT_Zhou2021(BaseTask):
@@ -90,10 +88,6 @@ class ETT_Zhou2021(BaseTask):
     r"""Type Hint for index."""
     index: Sequence[KeyType] = ["train", "test", "valid", "joint", "trial"]
     r"""Available index."""
-    dataset: DataFrame
-    r"""The dataset."""
-    test_metric: ModularLoss  # Callable[..., Tensor] | nn.Module
-    r"""The target metric."""
     accumulation_function: Callable[..., Tensor]
     r"""Accumulates residuals into loss - usually mean or sum."""
 
@@ -135,10 +129,9 @@ class ETT_Zhou2021(BaseTask):
 
         self.dataset_id = dataset_id
         self.dataset.name = dataset_id
-        self.test_metric = initialize_from(ModularLosses, __name__=test_metric)
 
         self.horizon = self.observation_horizon + self.forecasting_horizon
-        self.accumulation_function = nn.Identity()  # type: ignore[assignment]
+        self.accumulation_function = nn.Identity()
 
         self.preprocessor = ChainedEncoder(
             TensorEncoder(),

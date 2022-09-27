@@ -76,7 +76,7 @@ flake8-rst-docstrings = ">=0.2"
 isort = ">=5.10"
 jupyter = ">=1.0.0"
 jupyterlab = ">=3.4"
-mypy = ">=0.971"
+mypy = ">=0.981"
 nbsphinx = ">=0.8"
 piccolo-theme = ">=0.12.0"
 pre-commit = ">=2.20"
@@ -179,8 +179,9 @@ module = [
     "modin.*",
     "numba.*",
     "pandas.*",
-    "sklearn.*",
+    "pyarrow.*",
     "scipy.*",
+    "sklearn.*",
     "tqdm.*",
 ]
 ignore_missing_imports = true
