@@ -315,7 +315,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
             module_config = self.hyperparameters[component]
         except KeyError as exc:
             raise ValueError(
-                f"No '{component}' configuration in {self.hyperparameters}."
+                f"No {component!r} configuration in {self.hyperparameters}."
             ) from exc
 
         module = initialize_from_config(module_config | kwargs)
@@ -443,49 +443,49 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         file = Path(filespec)
 
         if not file.exists():
-            raise FileNotFoundError(f"File '{file.name}' does not exist!")
+            raise FileNotFoundError(f"File {file.name!r} does not exist!")
 
         filehash = sha256(file.read_bytes()).hexdigest()
 
         if reference is None:
             warnings.warn(
-                f"File '{file.name}' cannot be validated as no hash is stored in {self.__class__}."
-                f"The filehash is '{filehash}'."
+                f"File {file.name!r} cannot be validated as no hash is stored in {self.__class__}."
+                f"The filehash is {filehash!r}."
             )
 
         elif isinstance(reference, str):
             if filehash != reference:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference!r}."
                     f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
                 )
             self.LOGGER.info(
-                f"File '{file.name}' validated successfully '{filehash=}'."
+                f"File {file.name!r} validated successfully {filehash=!r}."
             )
 
         elif isinstance(reference, Mapping):
             if not (file.name in reference) ^ (file.stem in reference):
                 warnings.warn(
-                    f"File '{file.name}' cannot be validated as it is not contained in {reference}."
-                    f"The filehash is '{filehash}'."
+                    f"File {file.name!r} cannot be validated as it is not contained in {reference}."
+                    f"The filehash is {filehash!r}."
                     f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
                 )
             elif file.name in reference and filehash != reference[file.name]:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
                     f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
                 )
             elif file.stem in reference and filehash != reference[file.stem]:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.stem]}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
                     f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
                 )
             else:
                 self.LOGGER.info(
-                    f"File '{file.name}' validated successfully '{filehash=}'."
+                    f"File {file.name!r} validated successfully {filehash=!r}."
                 )
         else:
             raise TypeError(f"Unsupported type for {reference=}.")

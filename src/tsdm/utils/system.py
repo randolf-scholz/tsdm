@@ -181,7 +181,7 @@ def install_package(
     install_call = (installer, "install", package_name)
     if not package_available:
         if non_interactive or query_bool(
-            f"Package '{package_name}' not found. Do you want to install it?"
+            f"Package {package_name!r} not found. Do you want to install it?"
         ):
             try:
                 subprocess.run(install_call + options, check=True)

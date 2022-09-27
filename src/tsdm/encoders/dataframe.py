@@ -735,7 +735,7 @@ class TripletDecoder(BaseEncoder):
 
         if pd.api.types.is_float_dtype(categories):
             raise ValueError(
-                f"channel_ids found in '{self.var_name}' does no look like a categoricals!"
+                f"channel_ids found in {self.var_name!r} does no look like a categoricals!"
                 "\n Please specify `value_name` and/or `var_name`!"
             )
 

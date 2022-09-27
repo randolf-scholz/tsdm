@@ -52,7 +52,7 @@ def download(
     except Exception as e:
         path.unlink()
         raise RuntimeError(
-            f"Error '{e}' occurred while downloading {fname}, deleting partial files."
+            f"Error {e!r} occurred while downloading {fname}, deleting partial files."
         ) from e
 
 

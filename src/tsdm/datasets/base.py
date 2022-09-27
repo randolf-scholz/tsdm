@@ -249,35 +249,35 @@ class FrameDataset(BaseDataset, ABC):
 
         if reference is None:
             warnings.warn(
-                f"Table '{table.name}' cannot be validated as no hash is stored in {self.__class__}."
-                f"The hash is '{filehash}'."
+                f"Table {table.name!r} cannot be validated as no hash is stored in {self.__class__}."
+                f"The hash is {filehash!r}."
             )
         elif isinstance(reference, int | str):
             if filehash != reference:
                 warnings.warn(
-                    f"Table '{table.name}' failed to validate!"
-                    f"Table hash '{filehash}' does not match reference '{reference}'."
+                    f"Table {table.name!r} failed to validate!"
+                    f"Table hash {filehash!r} does not match reference {reference!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             self.LOGGER.info(
-                f"Table '{table.name}' validated successfully '{filehash=}'."
+                f"Table {table.name!r} validated successfully {filehash=!r}."
             )
         elif isinstance(reference, Mapping):
             if table.name not in reference:
                 warnings.warn(
-                    f"Table '{table.name}' cannot be validated as it is not contained in {reference}."
-                    f"The hash is '{filehash}'."
+                    f"Table {table.name!r} cannot be validated as it is not contained in {reference}."
+                    f"The hash is {filehash!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             elif table.name in reference and filehash != reference[table.name]:
                 warnings.warn(
-                    f"Table '{table.name}' failed to validate!"
-                    f"Table hash '{filehash}' does not match reference '{reference[table.name]}'."
+                    f"Table {table.name!r} failed to validate!"
+                    f"Table hash {filehash!r} does not match reference {reference[table.name]!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             else:
                 self.LOGGER.info(
-                    f"Table '{table.name}' validated successfully '{filehash=}'."
+                    f"Table {table.name!r} validated successfully {filehash=!r}."
                 )
         else:
             raise TypeError(f"Unsupported type for {reference=}.")
@@ -314,47 +314,47 @@ class FrameDataset(BaseDataset, ABC):
         file = Path(filespec)
 
         if not file.exists():
-            raise FileNotFoundError(f"File '{file.name}' does not exist!")
+            raise FileNotFoundError(f"File {file.name!r} does not exist!")
 
         filehash = sha256(file.read_bytes()).hexdigest()
 
         if reference is None:
             warnings.warn(
-                f"File '{file.name}' cannot be validated as no hash is stored in {self.__class__}."
-                f"The filehash is '{filehash}'."
+                f"File {file.name!r} cannot be validated as no hash is stored in {self.__class__}."
+                f"The filehash is {filehash!r}."
             )
         elif isinstance(reference, str | Path):
             if filehash != reference:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             self.LOGGER.info(
-                f"File '{file.name}' validated successfully '{filehash=}'."
+                f"File {file.name!r} validated successfully {filehash=!r}."
             )
         elif isinstance(reference, Mapping):
             if not (file.name in reference) ^ (file.stem in reference):
                 warnings.warn(
-                    f"File '{file.name}' cannot be validated as it is not contained in {reference}."
-                    f"The filehash is '{filehash}'."
+                    f"File {file.name!r} cannot be validated as it is not contained in {reference}."
+                    f"The filehash is {filehash!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             elif file.name in reference and filehash != reference[file.name]:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             elif file.stem in reference and filehash != reference[file.stem]:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.stem]}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             else:
                 self.LOGGER.info(
-                    f"File '{file.name}' validated successfully '{filehash=}'."
+                    f"File {file.name!r} validated successfully {filehash=!r}."
                 )
         else:
             raise TypeError(f"Unsupported type for {reference=}.")
@@ -490,7 +490,7 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
             if non_string_keys:
                 warnings.warn(
                     f"Not adding keys as attributes! "
-                    f"Keys '{non_string_keys}' are not strings!"
+                    f"Keys {non_string_keys!r} are not strings!"
                 )
                 break
 
@@ -500,7 +500,7 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
             if key_attributes:
                 warnings.warn(
                     f"Not adding keys as attributes! "
-                    f"Keys '{key_attributes}' already exist as attributes!"
+                    f"Keys {key_attributes!r} already exist as attributes!"
                 )
                 break
 
