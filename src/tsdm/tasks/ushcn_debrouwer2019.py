@@ -104,7 +104,10 @@ class TaskDataset(Dataset):
 
 # @torch.jit.script  # seems to break things
 def ushcn_collate(batch: list[Sample]) -> Batch:
-    r"""Collate tensors into batch."""
+    r"""Collate tensors into batch.
+
+    Transform the data slightly: t, x, t_target → T, X where X[t_target:] = NAN
+    """
     x_vals: list[Tensor] = []
     y_vals: list[Tensor] = []
     x_time: list[Tensor] = []
@@ -116,23 +119,27 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
         t, x, t_target = sample.inputs
         y = sample.targets
 
+        # get whole time interval
         time = torch.cat((t, t_target))
         sorted_idx = torch.argsort(time)
 
-        mask_y = y.isfinite()
-        zero_pad = torch.zeros_like(x, dtype=torch.bool)
-        mask_x = torch.cat((zero_pad, mask_y))
-
-        x_padder = torch.full(
+        # pad the x-values
+        x_padding = torch.full(
             (t_target.shape[0], x.shape[-1]), fill_value=NAN, device=x.device
         )
-        values = torch.cat((x, x_padder))
+        values = torch.cat((x, x_padding))
+
+        # create a mask for looking up the target values
+        mask_y = y.isfinite()
+        mask_pad = torch.zeros_like(x, dtype=torch.bool)
+        mask_x = torch.cat((mask_pad, mask_y))
 
         x_vals.append(values[sorted_idx])
-        y_vals.append(y)
         x_time.append(time[sorted_idx])
-        y_time.append(t_target)
         x_mask.append(mask_x[sorted_idx])
+
+        y_time.append(t_target)
+        y_vals.append(y)
         y_mask.append(mask_y)
 
     return Batch(
