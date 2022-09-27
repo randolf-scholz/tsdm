@@ -1,6 +1,12 @@
 r"""MIMIC-II clinical dataset."""
 
-__all__ = ["MIMIC_III_DeBrouwer2019", "mimic_collate"]
+__all__ = [
+    "MIMIC_III_DeBrouwer2019",
+    "mimic_collate",
+    "Sample",
+    "Batch",
+    "TaskDataset",
+]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -11,17 +17,16 @@ import numpy as np
 import torch
 from pandas import DataFrame, Index, MultiIndex
 from sklearn.model_selection import train_test_split
-from torch import Tensor, nn
+from torch import Tensor
+from torch import nan as NAN
+from torch import nn
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
 from tsdm.tasks.base import BaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
-
-NAN: float = torch.nan
-r"""Not a number constant."""
 
 
 class Inputs(NamedTuple):
@@ -32,6 +37,7 @@ class Inputs(NamedTuple):
     t_target: Tensor
 
     def __repr__(self) -> str:
+        r"""Return string representation."""
         return repr_namedtuple(self, recursive=False)
 
 
@@ -44,6 +50,7 @@ class Sample(NamedTuple):
     originals: tuple[Tensor, Tensor]
 
     def __repr__(self) -> str:
+        r"""Return string representation."""
         return repr_namedtuple(self, recursive=False)
 
 
@@ -63,7 +70,7 @@ class Batch(NamedTuple):
 
 
 @dataclass
-class TaskDataset(torch.utils.data.Dataset):
+class TaskDataset(Dataset):
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
@@ -95,9 +102,12 @@ class TaskDataset(torch.utils.data.Dataset):
         return f"{self.__class__.__name__}"
 
 
-# @torch.jit.script  <--seems to be slower!?
+# @torch.jit.script  # seems to break things
 def mimic_collate(batch: list[Sample]) -> Batch:
-    r"""Collate tensors into batch."""
+    r"""Collate tensors into batch.
+
+    Transform the data slightly: t, x, t_target → T, X where X[t_target:] = NAN
+    """
     x_vals: list[Tensor] = []
     y_vals: list[Tensor] = []
     x_time: list[Tensor] = []
@@ -109,26 +119,27 @@ def mimic_collate(batch: list[Sample]) -> Batch:
         t, x, t_target = sample.inputs
         y = sample.targets
 
+        # get whole time interval
         time = torch.cat((t, t_target))
         sorted_idx = torch.argsort(time)
 
-        mask_y = y.isfinite()
-
-        mask_x = torch.cat(
-            (
-                torch.zeros_like(x, dtype=torch.bool),
-                mask_y,
-            )
+        # pad the x-values
+        x_padding = torch.full(
+            (t_target.shape[0], x.shape[-1]), fill_value=NAN, device=x.device
         )
+        values = torch.cat((x, x_padding))
 
-        x_padder = torch.full((t_target.shape[0], x.shape[-1]), fill_value=NAN)
-        values = torch.cat((x, x_padder))
+        # create a mask for looking up the target values
+        mask_y = y.isfinite()
+        mask_pad = torch.zeros_like(x, dtype=torch.bool)
+        mask_x = torch.cat((mask_pad, mask_y))
 
         x_vals.append(values[sorted_idx])
-        y_vals.append(y)
         x_time.append(time[sorted_idx])
-        y_time.append(t_target)
         x_mask.append(mask_x[sorted_idx])
+
+        y_time.append(t_target)
+        y_vals.append(y)
         y_mask.append(mask_y)
 
     return Batch(
@@ -178,32 +189,32 @@ class MIMIC_III_DeBrouwer2019(BaseTask):
     seed = 432
     test_size = 0.1  # of total
     valid_size = 0.2  # of train, i.e. 0.9*0.2 = 0.18
-    device: torch.device
 
-    def __init__(self, normalize_time: bool = False, device: str = "cpu"):
+    def __init__(self, normalize_time: bool = True):
         super().__init__()
-        self.device = torch.device(device)
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["UNIQUE_ID"].unique()
 
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ds = MIMIC_III_Dataset()["timeseries"]
+        ts = MIMIC_III_Dataset()["timeseries"]
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         if self.normalize_time:
-            ds = ds.reset_index()
-            t_max = ds["TIME_STAMP"].max()
+            ts = ts.reset_index()
+            t_max = ts["TIME_STAMP"].max()
             self.observation_time /= t_max
-            ds["TIME_STAMP"] /= t_max
-            ds = ds.set_index(["UNIQUE_ID", "TIME_STAMP"])
-        return ds
+            ts["TIME_STAMP"] /= t_max
+            ts = ts.set_index(["UNIQUE_ID", "TIME_STAMP"])
+        ts = ts.dropna(axis=1, how="all").copy()
+        return ts
 
     @cached_property
     def folds(self) -> list[dict[str, Sequence[int]]]:
         r"""Create the folds."""
         num_folds = 5
         folds = []
+        # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         np.random.seed(self.seed)
         for _ in range(num_folds):
             train_idx, test_idx = train_test_split(self.IDs, test_size=self.test_size)
@@ -303,8 +314,8 @@ class MIMIC_III_DeBrouwer2019(BaseTask):
         tensors = {}
         for _id in self.IDs:
             s = self.dataset.loc[_id]
-            t = torch.tensor(s.index.values, dtype=torch.float32, device=self.device)
-            x = torch.tensor(s.values, dtype=torch.float32, device=self.device)
+            t = torch.tensor(s.index.values, dtype=torch.float32)
+            x = torch.tensor(s.values, dtype=torch.float32)
             tensors[_id] = (t, x)
         return tensors
 
@@ -319,6 +330,5 @@ class MIMIC_III_DeBrouwer2019(BaseTask):
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )
-
         kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)
