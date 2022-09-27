@@ -179,8 +179,9 @@ module = [
     "modin.*",
     "numba.*",
     "pandas.*",
-    "sklearn.*",
+    "pyarrow.*",
     "scipy.*",
+    "sklearn.*",
     "tqdm.*",
 ]
 ignore_missing_imports = true

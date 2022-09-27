@@ -299,7 +299,7 @@ def initialize_from_config(config: dict[str, Any]) -> nn.Module:
 
 # partial from type
 @overload
-def initialize_from(
+def initialize_from(  # type: ignore[misc]
     lookup_table: dict[str, type[ObjectVar]],
     /,
     __name__: str,
