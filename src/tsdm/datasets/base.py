@@ -282,7 +282,7 @@ class FrameDataset(BaseDataset, ABC):
 
         elif isinstance(reference, str):
             if filehash != reference:
-                raise ValueError(
+                warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference}'."
                 )
@@ -297,12 +297,12 @@ class FrameDataset(BaseDataset, ABC):
                     f"The filehash is '{filehash}'."
                 )
             elif file.name in reference and filehash != reference[file.name]:
-                raise ValueError(
+                warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
                 )
             elif file.stem in reference and filehash != reference[file.stem]:
-                raise ValueError(
+                warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
                 )

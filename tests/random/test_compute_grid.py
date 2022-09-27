@@ -60,7 +60,7 @@ class GridTuple(NamedTuple, Generic[DTVar, TDVar]):
 def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
     if mode == "numpy":
         # noinspection PyArgumentList
-        return GridTuple(  # type: ignore[call-overload]
+        return GridTuple(
             np_dt("2000-01-01"),
             np_dt("2001-01-01"),
             np_td(1, "h"),
@@ -68,7 +68,7 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
         )
     if mode == "pandas":
         # noinspection PyArgumentList
-        return GridTuple(  # type: ignore[call-overload]
+        return GridTuple(
             pd_dt("2000-01-01"),
             pd_dt("2001-01-01"),
             pd_td("1h"),
@@ -76,7 +76,7 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
         )
     if mode == "python":
         # noinspection PyArgumentList
-        return GridTuple(  # type: ignore[call-overload]
+        return GridTuple(
             py_dt(2000, 1, 1),
             py_dt(2001, 1, 1),
             py_td(hours=1),
@@ -84,7 +84,7 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
         )
     if mode == "np_int":
         # noinspection PyArgumentList
-        return GridTuple(  # type: ignore[call-overload]
+        return GridTuple(
             np_int(0),
             np_int(100),
             np_int(1),
@@ -92,7 +92,7 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
         )
     if mode == "np_float":
         # noinspection PyArgumentList
-        return GridTuple(  # type: ignore[call-overload]
+        return GridTuple(
             np_float(0.0),
             np_float(99.9),
             np_float(0.6),
@@ -100,7 +100,7 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
         )
     if mode == "int":
         # noinspection PyArgumentList
-        return GridTuple(  # type: ignore[call-overload]
+        return GridTuple(
             int(0),
             int(100),
             int(1),
@@ -108,7 +108,7 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
         )
     if mode == "float":
         # noinspection PyArgumentList
-        return GridTuple(  # type: ignore[call-overload]
+        return GridTuple(
             float(0.0),
             float(99.9),
             float(0.6),
