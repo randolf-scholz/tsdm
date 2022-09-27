@@ -45,10 +45,10 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
 
     Notes
     -----
-    NOTE: TIME_STAMP = round(merged_df_short_binned["TIME_STAMP"].dt.total_seconds()*bin_k/(100*36))
-    and bin_k = 10
-    i.e. TIME_STAMP = round(dt.total_seconds()*10/3600) = round(dt.total_hours()*10)
-    i.e. TIME_STAMP ≈ 10*total_hours
+    NOTE: ``TIME_STAMP = round(merged_df_short_binned["TIME_STAMP"].dt.total_seconds()*bin_k/(100*36))``
+    and ``bin_k = 10``
+    i.e. ``TIME_STAMP = round(dt.total_seconds()*10/3600) = round(dt.total_hours()*10)``
+    i.e. ``TIME_STAMP ≈ 10*total_hours``
     so e.g. the last patient was roughly 250 hours, 10½ days.
     """
 
@@ -58,6 +58,11 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
     RAWDATA_SHA256 = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
     RAWDATA_SHAPE = (552327, 96)
+    DATASET_SHA256 = {
+        "timeseries": "2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
+        "metadata": "4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
+    }
+    DATASET_SHAPE = {"timeseries": (552327, 96), "metadata": (96, 3)}
 
     dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
     rawdata_files = "complete_tensor.csv"

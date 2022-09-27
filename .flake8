@@ -44,6 +44,7 @@ ignore =
     B024,    # BaseDatasetMetaClass is an abstract base class, but it has no abstract methods
     D105,    # Missing docstring in magic method
     E704,    # multiple statements on one line (def)
+    E241,    # multiple spaces after ','
 
 extend-ignore =
     # Google Python style is not RST until after processed by Napoleon

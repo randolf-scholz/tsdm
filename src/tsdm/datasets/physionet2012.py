@@ -310,6 +310,13 @@ class Physionet2012(MultiFrameDataset):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = r"https://archive.physionet.org/challenge/2012/"
     r"""HTTP address containing additional information about the dataset."""
+
+    RAWDATA_SHA256 = {
+        "set-a.tar.gz": "8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920",
+        "set-b.tar.gz": "b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
+        "set-c.tar.gz": "a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
+    }
+
     rawdata_files = {"A": "set-a.tar.gz", "B": "set-b.tar.gz", "C": "set-c.tar.gz"}
     rawdata_paths: dict[str, Path]
     unravel_triplets: bool
@@ -423,4 +430,4 @@ class Physionet2012(MultiFrameDataset):
                 metadata = metadata.squeeze()
                 series = series.squeeze()
 
-            return metadata, series
+            return series, metadata

@@ -36,7 +36,7 @@ __all__ = [
     "ETT_Zhou2021",
     "KIWI_RUNS_TASK",
     "KIWI_FINAL_PRODUCT",
-    "ElectricityTFT",
+    "ElectricityLim2021",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV_Bilos2021",
     "USHCN_DeBrouwer2019",
@@ -48,7 +48,7 @@ from typing import Final, TypeAlias
 
 from tsdm.tasks import base
 from tsdm.tasks.base import BaseTask
-from tsdm.tasks.electricity import ElectricityTFT
+from tsdm.tasks.electricity_lim2021 import ElectricityLim2021
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
@@ -65,7 +65,7 @@ TASKS: Final[dict[str, type[Task]]] = {
     "KIWI_RUNS_TASK": KIWI_RUNS_TASK,
     "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
     "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
-    "ElectricityTFT": ElectricityTFT,
+    "ElectricityLim2021": ElectricityLim2021,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV_Bilos": MIMIC_IV_Bilos2021,
     "USHCN_DeBrouwer": USHCN_DeBrouwer2019,
