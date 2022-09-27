@@ -86,7 +86,7 @@ root_doc = "index"
 # The document name of the “root” document, that is, the document that contains the root toctree directive.
 # Default is 'index'.
 
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "_**"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # A list of glob-style patterns that should be excluded when looking for source files. They are matched against the
 # source file names relative to the source directory, using slashes as directory separators on all platforms.
 
@@ -158,9 +158,10 @@ add_module_names = False
 show_authors = True
 # A boolean that decides whether codeauthor and sectionauthor directives produce any output in the built files.
 
-# endregion General Configuration -------------------------------------------------------------------------------------
-
 python_use_unqualified_type_names = True
+# If true, suppress the module name of the python reference if it can be resolved. The default is False
+
+# endregion General Configuration -------------------------------------------------------------------------------------
 
 
 # region HTML Configuration ------------------------------------------------------------------------------------
@@ -604,7 +605,7 @@ intersphinx_cache_limit = 5
 # meaning five days. Set this to a negative value to cache inventories for unlimited time.
 
 intersphinx_timeout = 2
-# The number of seconds for timeout. The default is None, meaning do not timeout.
+# The number of seconds for timeout. The default is None, meaning do not time out.
 
 intersphinx_disabled_reftypes = ["std:doc"]
 # When a cross-reference without an explicit inventory specification is being resolved by
@@ -649,8 +650,12 @@ mathjax2_config = {}
 # The configuration options for MathJax v2
 # The default is empty {}.
 
-mathjax_config = {}
-# Former name of mathjax2_config.
+mathjax_config = {
+    "tex2jax": {
+        "inlineMath": [[r"\(", r"\)"]],
+        "displayMath": [[r"\[", r"\]"]],
+    },
+}  # Former name of mathjax2_config.
 
 # endregion sphinx.ext.mathjax configuration --------------------------------------------------------------------------
 
@@ -802,4 +807,22 @@ viewcode_enable_epub = False
 
 # endregion sphinx.ext.viewcode configuration -------------------------------------------------------------------------
 
+
+# region sphinx_math_dollar configuration ------------------------------------------------------------------------------
+
+# https://www.sympy.org/sphinx-math-dollar/#configuration
+# from sphinx_math_dollar import NODE_BLACKLIST
+# from docutils.nodes import header
+# from sphinx.addnodes import pending_xref_condition
+# math_dollar_node_blacklist = NODE_BLACKLIST + (header, pending_xref_condition)
+
+
+# endregion sphinx_math_dollar configuration ---------------------------------------------------------------------------
+
+
 # -- end of configuration ---------------------------------------------------------------------------------------------
+
+
+# extensions.append('sphinx_automodapi.automodapi')
+# extensions.append('sphinx_automodapi.smart_resolver')
+# numpydoc_show_class_members = False

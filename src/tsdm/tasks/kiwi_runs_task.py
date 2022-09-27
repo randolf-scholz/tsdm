@@ -41,6 +41,21 @@ class Sample(NamedTuple):
         return repr_namedtuple(self, recursive=1)
 
 
+class Batch(NamedTuple):
+    r"""A single sample of the data."""
+
+    x_time: Tensor  # B×N:   the input timestamps.
+    x_vals: Tensor  # B×N×D: the input values.
+    x_mask: Tensor  # B×N×D: the input mask.
+
+    y_time: Tensor  # B×K:   the target timestamps.
+    y_vals: Tensor  # B×K×D: the target values.
+    y_mask: Tensor  # B×K×D: teh target mask.
+
+    def __repr__(self) -> str:
+        return repr_namedtuple(self, recursive=False)
+
+
 class KIWI_RUNS_TASK(BaseTask):
     r"""A collection of bioreactor runs.
 

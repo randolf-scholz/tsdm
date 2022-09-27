@@ -21,10 +21,7 @@ __all__ = ["MIMIC_III"]
 import os
 import subprocess
 from getpass import getpass
-from hashlib import sha256
 from pathlib import Path
-
-import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
 
@@ -59,7 +56,7 @@ class MIMIC_III(MultiFrameDataset):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
     VERSION = r"1.0"
-    SHA256 = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
+    RAWDATA_SHA256 = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
 
     rawdata_files = "mimic-iv-1.0.zip"
     rawdata_paths: Path
@@ -97,11 +94,7 @@ class MIMIC_III(MultiFrameDataset):
     index = list(dataset_files.keys())
 
     def _clean(self, key):
-        ...
-
-    def _load(self, key):
-        # return NotImplemented
-        return pd.read_parquet(self.dataset_paths[key])
+        raise NotImplementedError
 
     def _download(self, **_):
         cut_dirs = self.BASE_URL.count("/") - 3
@@ -119,8 +112,3 @@ class MIMIC_III(MultiFrameDataset):
 
         file = self.RAWDATA_DIR / "index.html"
         os.rename(file, self.rawdata_files)
-
-        assert self.rawdata_paths.exists(), f"File {self.rawdata_files} does not exist."
-
-        if sha256(self.rawdata_paths.read_bytes()).hexdigest() != self.SHA256:
-            raise RuntimeError("The sha256 seems incorrect.")

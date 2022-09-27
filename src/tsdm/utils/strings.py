@@ -324,6 +324,8 @@ def repr_array(obj: Array | DataFrame, *, title: Optional[str] = None) -> str:
         string += ", " + repr_dtype(obj.dtype)
     else:
         raise TypeError(f"Cannot get dtype of {type(obj)}")
+    if isinstance(obj, Tensor):
+        string += f"@{obj.device}"
 
     string += "]"
     return string

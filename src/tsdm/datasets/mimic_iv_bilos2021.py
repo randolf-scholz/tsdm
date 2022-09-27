@@ -21,7 +21,7 @@ __all__ = ["MIMIC_IV_Bilos2021"]
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
+import pyarrow.csv
 
 from tsdm.datasets.base import SingleFrameDataset
 
@@ -46,9 +46,10 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
     INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
-    RAWDATA_SHA256 = "cb90e0cef16d50011aaff7059e73d3f815657e10653a882f64f99003e64c70f5"
-    RAWDATA_SHAPE = (2485769, 206)
-    DATASET_SHAPE = (2485769, 102)
+    DATASET_SHA256 = "e577e7aacc7b18fd5f3e02dd833533aa620dc5dbf05dbf2ddd1d235b755c8355"
+    RAWDATA_SHA256 = "f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
+    DATASET_SHAPE = (2485649, 102)
+    RAWDATA_SHAPE = (2485649, 206)
     dataset_files = "timeseries.parquet"
     rawdata_files = r"full_dataset.csv"
     rawdata_paths: Path
@@ -63,7 +64,8 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
 
         # self.validate_filehash(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
-        ts = pd.read_csv(self.rawdata_paths)
+        table = pyarrow.csv.read_csv(self.rawdata_paths)
+        ts = table.to_pandas(self_destruct=True)
 
         if ts.shape != self.RAWDATA_SHAPE:
             raise ValueError(f"The {ts.shape=} is not correct.")
