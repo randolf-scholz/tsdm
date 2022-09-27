@@ -116,8 +116,9 @@ class ETT_Zhou2021(BaseTask):
 
     def __init__(
         self,
+        dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"],
         *,
-        dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
+        # dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"] = "ETTh1",
         forecasting_horizon: Literal[24, 48, 168, 336, 960] = 24,
         observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96,
         target: TARGET = "OT",
@@ -132,7 +133,7 @@ class ETT_Zhou2021(BaseTask):
         self.eval_batch_size = eval_batch_size
         self.train_batch_size = train_batch_size
 
-        self.dataset = ETT()[dataset_id]
+        self.dataset_id = dataset_id
         self.dataset.name = dataset_id
         self.test_metric = initialize_from(ModularLosses, __name__=test_metric)
 
@@ -151,6 +152,16 @@ class ETT_Zhou2021(BaseTask):
         self.preprocessor.fit(self.splits["train"])
         # Set the Encoder
         # self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
+
+    @cached_property
+    def dataset(self) -> DataFrame:
+        r"""Return the dataset."""
+        return ETT()[self.dataset_id]
+
+    @cached_property
+    def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
+        r"""The test metric."""
+        return nn.MSELoss()
 
     @cached_property
     def splits(self) -> Mapping[KeyType, DataFrame]:

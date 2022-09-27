@@ -213,7 +213,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 class FrameDataset(BaseDataset, ABC):
     r"""Base class for datasets that are stored as pandas.DataFrame."""
 
-    default_format: str = "parquet"
+    DEFAULT_FILE_FORMAT: str = "parquet"
     r"""Default format for the dataset."""
 
     @staticmethod
@@ -247,14 +247,86 @@ class FrameDataset(BaseDataset, ABC):
 
         raise NotImplementedError(f"No loader for {file_type=}")
 
+    def validate(
+        self,
+        filespec: Nested[str | Path],
+        /,
+        *,
+        reference: Optional[str | Mapping[str, str]] = None,
+    ) -> None:
+        r"""Validate the file hash."""
+        self.LOGGER.debug("Starting to validate dataset")
+
+        if isinstance(filespec, Mapping):
+            for value in filespec.values():
+                self.validate(value, reference=reference)
+            return
+        if isinstance(filespec, Sequence) and not isinstance(filespec, (str, Path)):
+            for value in filespec:
+                self.validate(value, reference=reference)
+            return
+
+        assert isinstance(filespec, (str, Path)), f"{filespec=} wrong type!"
+        file = Path(filespec)
+
+        if not file.exists():
+            raise FileNotFoundError(f"File '{file.name}' does not exist!")
+
+        filehash = sha256(file.read_bytes()).hexdigest()
+
+        if reference is None:
+            warnings.warn(
+                f"File '{file.name}' cannot be validated as no hash is stored in {self.__class__}."
+                f"The filehash is '{filehash}'."
+            )
+
+        elif isinstance(reference, str):
+            if filehash != reference:
+                raise ValueError(
+                    f"File '{file.name}' failed to validate!"
+                    f"File hash '{filehash}' does not match reference '{reference}'."
+                )
+            self.LOGGER.info(
+                f"File '{file.name}' validated successfully '{filehash=}'."
+            )
+
+        elif isinstance(reference, Mapping):
+            if not (file.name in reference) ^ (file.stem in reference):
+                warnings.warn(
+                    f"File '{file.name}' cannot be validated as it is not contained in {reference}."
+                    f"The filehash is '{filehash}'."
+                )
+            elif file.name in reference and filehash != reference[file.name]:
+                raise ValueError(
+                    f"File '{file.name}' failed to validate!"
+                    f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
+                )
+            elif file.stem in reference and filehash != reference[file.stem]:
+                raise ValueError(
+                    f"File '{file.name}' failed to validate!"
+                    f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
+                )
+            else:
+                self.LOGGER.info(
+                    f"File '{file.name}' validated successfully '{filehash=}'."
+                )
+        else:
+            raise TypeError(f"Unsupported type for {reference=}.")
+
+        self.LOGGER.debug("Finished validating file.")
+
 
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    RAWDATA_SHAPE: Optional[tuple[int, ...]] = None
-    RAWDATA_SHA256: Optional[str] = None
+    RAWDATA_SHA256: Optional[str | Mapping[str, str]] = None
+    r"""SHA256 hash value of the raw data file(s)."""
+    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[str, tuple[int, ...]]] = None
+    r"""Reference shape of the raw data file(s)."""
     DATASET_SHA256: Optional[str] = None
+    r"""SHA256 hash value of the dataset file(s)."""
     DATASET_SHAPE: Optional[tuple[int, ...]] = None
+    r"""Reference shape of the dataset file(s)."""
 
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
@@ -272,7 +344,7 @@ class SingleFrameDataset(FrameDataset):
     @cached_property
     def dataset_files(self) -> PathType:
         r"""Return the dataset files."""
-        return self.__class__.__name__ + f".{self.default_format}"
+        return self.__class__.__name__ + f".{self.DEFAULT_FILE_FORMAT}"
 
     @cached_property
     def dataset_paths(self) -> Path:
@@ -353,32 +425,6 @@ class SingleFrameDataset(FrameDataset):
         if validate:
             self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
-    def validate(
-        self, filespec: Nested[str | Path], *, reference: Optional[str] = None
-    ) -> None:
-        r"""Validate the file hash."""
-        self.LOGGER.debug("Starting to validate dataset")
-
-        if isinstance(filespec, str | Path):
-            file = Path(filespec)
-        else:
-            raise NotImplementedError("Multiple files not supported yet.")
-
-        filehash = sha256(file.read_bytes()).hexdigest()
-
-        if reference is None:
-            warnings.warn(
-                f"Cannot validate as no hash is stored in {reference}."
-                f"The filehash is '{filehash}'."
-            )
-        elif reference != filehash:
-            raise ValueError(
-                f"Reference hash '{reference}' does not match the file hash '{filehash}'."
-            )
-        else:
-            self.LOGGER.info(f"{file=} validated successfully '{filehash=}'.")
-        self.LOGGER.debug("Finished validating dataset")
-
 
 class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
     r"""Dataset class that consists of a multiple DataFrames.
@@ -387,10 +433,14 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
     We subclass `Mapping` to provide the mapping interface.
     """
 
-    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[KeyVar, tuple[int, ...]]] = None
-    RAWDATA_SHA256: Optional[str | Mapping[KeyVar, str]] = None
-    DATASET_SHA256: Optional[Mapping[KeyVar, str]] = None
-    DATASET_SHAPE: Optional[Mapping[KeyVar, tuple[int, ...]]] = None
+    RAWDATA_SHA256: Optional[str | Mapping[str, str]] = None
+    r"""SHA256 hash value of the raw data file(s)."""
+    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[str, tuple[int, ...]]] = None
+    r"""Reference shape of the raw data file(s)."""
+    DATASET_SHA256: Optional[Mapping[str, str]] = None
+    r"""SHA256 hash value of the dataset file(s)."""
+    DATASET_SHAPE: Optional[Mapping[str, tuple[int, ...]]] = None
+    r"""Reference shape of the dataset file(s)."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
@@ -428,7 +478,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
     @cached_property
     def dataset_files(self) -> Mapping[KeyVar, str]:
         r"""Relative paths to the dataset files for each key."""
-        return {key: f"{key}.{self.default_format}" for key in self.index}
+        return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.index}
 
     @cached_property
     def dataset_paths(self) -> Mapping[KeyVar, Path]:
@@ -491,14 +541,17 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             return
 
         if key is None:
+            if validate:
+                self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
+
             self.LOGGER.debug("Starting to clean dataset.")
             for key_ in self.index:
                 self.clean(key=key_, force=force, validate=validate)
             self.LOGGER.debug("Finished cleaning dataset.")
-            return
 
-        if validate:
-            self.validate(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
+            if validate:
+                self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
+            return
 
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
         df = self._clean(key=key)
@@ -506,9 +559,6 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             self.LOGGER.info("Serializing dataset <%s>", key)
             self.serialize(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
-
-        if validate:
-            self.validate(key, self.dataset_paths, reference=self.DATASET_SHA256)
 
     @overload
     def load(
@@ -573,7 +623,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             return self.dataset[key]
 
         if validate:
-            self.validate(key, self.dataset_paths, reference=self.DATASET_SHA256)
+            self.validate(self.dataset_paths[key], reference=self.DATASET_SHA256)
 
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
         self.dataset[key] = self._load(key=key)
@@ -637,46 +687,13 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             else:
                 self._download()
             self.LOGGER.debug("Finished downloading dataset.")
+
+            if validate:
+                self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
+
             return
 
         # Download specific key
         self.LOGGER.debug("Starting to download dataset <%s>", key)
         self._download(key=key)
         self.LOGGER.debug("Finished downloading dataset <%s>", key)
-
-        if validate:
-            self.validate(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
-
-    def validate(
-        self,
-        key: KeyVar,
-        filespec: Nested[str | Path],
-        *,
-        reference: Optional[str | Mapping[KeyVar, str]] = None,
-    ) -> None:
-        r"""Validate the file hash."""
-        self.LOGGER.debug("Starting to validate dataset <%s>", key)
-
-        if isinstance(filespec, str | Path):
-            file = Path(filespec)
-        elif isinstance(filespec, Mapping):
-            file = Path(filespec[key])
-        else:
-            raise NotImplementedError("Multiple files not supported yet.")
-
-        filehash = sha256(file.read_bytes()).hexdigest()
-        if isinstance(reference, str):
-            reference = {key: reference}
-        if reference is None or key not in reference:
-            warnings.warn(
-                f"Cannot Validate {key=}, as no hash is stored in {reference=}."
-                f"The filehash is '{filehash}'."
-            )
-        elif reference[key] != filehash:
-            raise ValueError(
-                f"For {key=} the stored hash '{reference[key]}'"
-                f"does not match the actual hash '{filehash}'."
-            )
-        else:
-            self.LOGGER.info("%s:%s validated successfully.", key, file)
-        self.LOGGER.debug("Finished validating dataset <%s>", key)
