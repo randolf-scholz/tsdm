@@ -57,7 +57,7 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
     RAWDATA_SHA256 = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
-    RAWDATA_SHAPE = (552327, 96)
+    RAWDATA_SHAPE = (3082224, 7)
     DATASET_SHA256 = {
         "timeseries": "2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
         "metadata": "4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
@@ -76,7 +76,7 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
                 f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
             )
 
-        ts = pd.read_csv(self.rawdata_paths)
+        ts = pd.read_csv(self.rawdata_paths, index_col=0)
 
         if ts.shape != self.RAWDATA_SHAPE:
             raise ValueError(

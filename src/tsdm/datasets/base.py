@@ -285,6 +285,7 @@ class FrameDataset(BaseDataset, ABC):
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference}'."
+                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
                 )
             self.LOGGER.info(
                 f"File '{file.name}' validated successfully '{filehash=}'."
@@ -295,16 +296,19 @@ class FrameDataset(BaseDataset, ABC):
                 warnings.warn(
                     f"File '{file.name}' cannot be validated as it is not contained in {reference}."
                     f"The filehash is '{filehash}'."
+                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
                 )
             elif file.name in reference and filehash != reference[file.name]:
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
+                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
                 )
             elif file.stem in reference and filehash != reference[file.stem]:
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
+                    f"File hash '{filehash}' does not match reference '{reference[file.stem]}'."
+                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
                 )
             else:
                 self.LOGGER.info(
