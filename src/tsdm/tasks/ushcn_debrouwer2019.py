@@ -191,8 +191,8 @@ class USHCN_DeBrouwer2019(BaseTask):
     prediction_steps = 3
     num_folds = 5
     seed = 432
-    test_size = 0.1
-    valid_size = 0.2
+    test_size = 0.1  # of total
+    valid_size = 0.2  # of train, i.e. 0.9*0.2 = 0.18
 
     def __init__(self, normalize_time: bool = False):
         super().__init__()
