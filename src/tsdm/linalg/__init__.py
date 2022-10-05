@@ -4,6 +4,7 @@ __all__ = [
     # Functions
     "aggregate_and",
     "aggregate_or",
+    "apply_along_axes",
     "closest_diag",
     "closest_orth",
     "closest_skew",
@@ -17,6 +18,7 @@ __all__ = [
     "logarithmic_norm",
     "multi_norm",
     "multi_scaled_norm",
+    "operator_norm",
     "relative_error",
     "reldist",
     "reldist_diag",
@@ -30,9 +32,8 @@ __all__ = [
     "spectral_abscissa",
     "spectral_radius",
     "stiffness_ratio",
-    "vector_norm",
     "tensor_norm",
-    "operator_norm",
+    "vector_norm",
 ]
 
 from tsdm.linalg._logical_operators import (
@@ -72,3 +73,4 @@ from tsdm.linalg._norms import (
     relative_error,
     scaled_norm,
 )
+from tsdm.linalg._utils import apply_along_axes

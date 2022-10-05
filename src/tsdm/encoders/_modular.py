@@ -17,7 +17,7 @@ __all__ = [
 
 import warnings
 from collections import defaultdict, namedtuple
-from collections.abc import Callable, Hashable, Iterable, Mapping
+from collections.abc import Hashable, Iterable, Mapping
 from typing import Any, Generic, Optional, TypeVar, cast, overload
 
 import numpy as np
@@ -31,42 +31,19 @@ from torch import Tensor
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import PandasObject, PathType, TensorVar
+from tsdm.utils.types import PandasObject, PathType
 from tsdm.utils.types.protocols import NTuple
 
+BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
 
-def apply_along_axes(
-    a: TensorVar, b: TensorVar, op: Callable, axes: tuple[int, ...]
-) -> TensorVar:
-    r"""Apply a function to multiple axes of a tensor.
-
-    Parameters
-    ----------
-    a: Tensor
-    b: Tensor
-    op: Callable
-    axes: tuple[int, ...]
-
-    Returns
-    -------
-    Tensor
-    """
-    axes = tuple(axes)
-    rank = len(a.shape)
-    source = tuple(range(rank))
-    inverse_permutation: tuple[int, ...] = axes + tuple(
-        ax for ax in range(rank) if ax not in axes
-    )
-    perm = tuple(np.argsort(inverse_permutation))
-    if isinstance(a, Tensor):
-        a = torch.moveaxis(a, source, perm)
-        a = op(a, b)
-        a = torch.moveaxis(a, source, inverse_permutation)
-    else:
-        a = np.moveaxis(a, source, perm)
-        a = op(a, b)
-        a = np.moveaxis(a, source, inverse_permutation)
-    return a
+ColumnEncoderVar = TypeVar(
+    "ColumnEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
+)
+IndexEncoderVar = TypeVar(
+    "IndexEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
+)
+# ColumnEncoderVar = TypeVar("ColumnEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
+# IndexEncoderVar = TypeVar("IndexEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
 
 
 class CSVEncoder(BaseEncoder):
@@ -314,18 +291,6 @@ class DataFrameEncoder(BaseEncoder):
         r"""HTML representation."""
         html_repr = self.spec.to_html()
         return f"<h3>{self.__class__.__name__}</h3> {html_repr}"
-
-
-BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
-
-ColumnEncoderVar = TypeVar(
-    "ColumnEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
-)
-IndexEncoderVar = TypeVar(
-    "IndexEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
-)
-# ColumnEncoderVar = TypeVar("ColumnEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
-# IndexEncoderVar = TypeVar("IndexEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
 
 
 class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
