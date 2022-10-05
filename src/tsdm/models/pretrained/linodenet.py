@@ -3,13 +3,16 @@ r"""LinODEnet pretrained Models."""
 __all__ = [
     # Classes
     "LinODEnet",
-    # "LinODEnetEncoder",
+    "LinODEnetEncoder",
 ]
 
+import pickle
 from zipfile import ZipFile
 
 import torch
 
+from tsdm.config import MODELDIR
+from tsdm.encoders import BaseEncoder
 from tsdm.models.pretrained.base import PreTrainedModel
 
 
@@ -28,5 +31,9 @@ class LinODEnet(PreTrainedModel):
                 return self.load_torch_jit(file, map_location=self.device)
 
 
-# class LinODEnetEncoder:
-#     def __init__(self):
+def LinODEnetEncoder() -> BaseEncoder:
+    r"""Import pre-trained LinODEnet encoder."""
+    path = MODELDIR / LinODEnet.__name__ / "linodenet.zip"
+    with ZipFile(path) as archive:
+        with archive.open("encoder.pickle") as file:
+            return pickle.load(file)

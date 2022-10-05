@@ -12,6 +12,8 @@ __all__ = [
     "PreTrainedModel",
     # Classes
     "LinODEnet",
+    # Encoders
+    "LinODEnetEncoder",
 ]
 
 from typing import Final, TypeAlias
@@ -19,7 +21,7 @@ from typing import Final, TypeAlias
 import torch
 
 from tsdm.models.pretrained.base import PreTrainedMetaClass, PreTrainedModel
-from tsdm.models.pretrained.linodenet import LinODEnet
+from tsdm.models.pretrained.linodenet import LinODEnet, LinODEnetEncoder
 
 Model: TypeAlias = torch.nn.Module
 r"""Type hint for models."""
