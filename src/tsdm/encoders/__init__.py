@@ -80,6 +80,7 @@ __all__ = [
     "TensorEncoder",
     "Time2Float",
     "TimeDeltaEncoder",
+    "TimeSlicer",
     "TripletDecoder",
     "TripletEncoder",
     "ValueEncoder",
@@ -96,7 +97,6 @@ from tsdm.encoders._modular import (
     FrameEncoder,
     FrameIndexer,
     FrameSplitter,
-    PositionalEncoder,
     TensorEncoder,
     TripletDecoder,
     TripletEncoder,
@@ -128,9 +128,11 @@ from tsdm.encoders.time import (
     DateTimeEncoder,
     PeriodicEncoder,
     PeriodicSocialTimeEncoder,
+    PositionalEncoder,
     SocialTimeEncoder,
     Time2Float,
     TimeDeltaEncoder,
+    TimeSlicer,
 )
 
 ModularEncoder: TypeAlias = BaseEncoder
