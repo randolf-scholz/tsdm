@@ -16,8 +16,9 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import cached_property
 from hashlib import sha256
+from io import IOBase
 from pathlib import Path
-from typing import Any, Optional
+from typing import IO, Any, ClassVar, Optional
 from urllib.parse import urlparse
 
 import torch
@@ -49,35 +50,85 @@ class PreTrainedMetaClass(ABCMeta):
             else:
                 cls.MODELDIR = MODELDIR / cls.__name__
 
+    # def __call__(cls, *args, **kw):
+    #     r"""Prevent __init__."""
+    #     return cls.__new__(cls, *args, **kw)
+
 
 class PreTrainedModel(ABC, torch.nn.Module, metaclass=PreTrainedMetaClass):
     r"""Base class for all pretrained models."""
 
-    LOGGER: logging.Logger
+    # Class Variables
+    LOGGER: ClassVar[logging.Logger]
     MODELDIR: Path
     INFO_URL: Optional[str] = None
-    MODEL_HASH: Optional[str] = None
+    MODEL_SHA256: Optional[str] = None
+    DOWNLOAD_URL: Optional[str] = None
+
+    # Instance Variables
+    device: Optional[str | torch.device] = None
 
     def __new__(  # type: ignore[misc]
-        cls, *, initialize: bool = True, reset: bool = False
+        cls, *, initialize: bool = True, reset: bool = False, **kwds: dict[str, Any]
     ) -> torch.nn.Module:
-        r"""Initialize the dataset."""
+        r"""Cronstruct the model object and initialize it."""
         self: PreTrainedModel = super().__new__(cls)
+
         if not inspect.isabstract(self):
             self.MODELDIR.mkdir(parents=True, exist_ok=True)
+
+        self.__init__(**kwds)  # type: ignore[misc]
+
         if reset:
             self.download()
         if initialize:
             return self.load()
         return self
 
-    def load(self, *, validate: bool = True) -> torch.nn.Module:
-        r"""Load the module."""
-        if validate:
-            self.validate(self.model_path, reference=self.MODEL_HASH)
+    def __init__(self, *, device: Optional[str | torch.device] = None) -> None:
+        super().__init__()
+        self.device = device
 
-        model = torch.jit.load(self.model_path)
+    def load(self, *, force: bool = False, validate: bool = True) -> torch.nn.Module:
+        r"""Load the selected DATASET_OBJECT."""
+        if not self.model_files_exist():
+            self.download(force=force, validate=validate)
+        else:
+            self.LOGGER.debug("Dataset files already exist!")
+
+        if validate:
+            self.validate(self.model_path, reference=self.MODEL_SHA256)
+
+        self.LOGGER.debug("Starting to load dataset.")
+        ds = self._load()
+        self.LOGGER.debug("Finished loading dataset.")
+        return ds
+
+    @staticmethod
+    def load_torch_jit(
+        file: str | Path | IO[bytes],
+        /,
+        *,
+        map_location: Optional[str | torch.device] = None,
+        _extra_files: Optional[str | Path | dict] = None,
+    ) -> torch.nn.Module:
+        r"""Load a TorchScript model from a file."""
+        try:
+            model = torch.jit.load(
+                file, map_location=map_location, _extra_files=_extra_files
+            )
+        except RuntimeError:
+            warnings.warn("Could not load model to default device. Trying CPU.")
+            if isinstance(file, IOBase):  # type: ignore[unreachable]
+                file.seek(0, 0)
+            model = torch.jit.load(
+                file, map_location=torch.device("cpu"), _extra_files=_extra_files
+            )
         return model
+
+    def _load(self) -> torch.nn.Module:
+        r"""Load the module."""
+        return self.load_torch_jit(self.model_path, map_location=self.device)
 
     @classmethod
     def info(cls):
@@ -87,8 +138,8 @@ class PreTrainedModel(ABC, torch.nn.Module, metaclass=PreTrainedMetaClass):
         else:
             webbrowser.open_new_tab(cls.INFO_URL)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def model_file(self) -> str:
         r"""Add url where to download the dataset from."""
 
@@ -97,16 +148,22 @@ class PreTrainedModel(ABC, torch.nn.Module, metaclass=PreTrainedMetaClass):
         r"""Return the model path."""
         return self.MODELDIR / self.model_file
 
-    @abstractmethod
-    @property
-    def download_url(self) -> str:
-        r"""Add url where to download the dataset from."""
-
-    def download(self, *, validate: bool = True) -> None:
+    def download(self, *, force: bool = False, validate: bool = True) -> None:
         r"""Download model from url."""
-        self.download_from_url(self.download_url)
+        if self.model_files_exist() and not force:
+            self.LOGGER.info("Dataset already exists. Skipping download.")
+            return
+
+        if self.DOWNLOAD_URL is None:
+            self.LOGGER.info("Dataset provides no url. Assumed offline")
+            assert self.model_files_exist(), "Dataset files do not exist!"
+
+        self.LOGGER.debug("Starting to download dataset.")
+        self.download_from_url(self.DOWNLOAD_URL)  # type: ignore[arg-type]
+        self.LOGGER.debug("Starting downloading dataset.")
+
         if validate:
-            self.validate(self.model_path, reference=self.MODEL_HASH)
+            self.validate(self.model_path, reference=self.MODEL_SHA256)
 
     @classmethod
     def download_from_url(cls, url: str) -> None:
