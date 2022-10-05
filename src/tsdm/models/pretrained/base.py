@@ -56,6 +56,7 @@ class PreTrainedModel(ABC, torch.nn.Module, metaclass=PreTrainedMetaClass):
     LOGGER: logging.Logger
     MODELDIR: Path
     INFO_URL: Optional[str] = None
+    MODEL_HASH: Optional[str] = None
 
     def __new__(  # type: ignore[misc]
         cls, *, initialize: bool = True, reset: bool = False
@@ -70,8 +71,11 @@ class PreTrainedModel(ABC, torch.nn.Module, metaclass=PreTrainedMetaClass):
             return self.load()
         return self
 
-    def load(self) -> torch.nn.Module:
+    def load(self, *, validate: bool = True) -> torch.nn.Module:
         r"""Load the module."""
+        if validate:
+            self.validate(self.model_path, reference=self.MODEL_HASH)
+
         model = torch.jit.load(self.model_path)
         return model
 
@@ -98,9 +102,11 @@ class PreTrainedModel(ABC, torch.nn.Module, metaclass=PreTrainedMetaClass):
     def download_url(self) -> str:
         r"""Add url where to download the dataset from."""
 
-    def download(self) -> None:
+    def download(self, *, validate: bool = True) -> None:
         r"""Download model from url."""
         self.download_from_url(self.download_url)
+        if validate:
+            self.validate(self.model_path, reference=self.MODEL_HASH)
 
     @classmethod
     def download_from_url(cls, url: str) -> None:
