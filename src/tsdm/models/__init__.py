@@ -10,6 +10,7 @@ __all__ = [
     # Sub-Packages
     "activations",
     "generic",
+    "pretrained",
     # Type Hints
     "Model",
     "ModelType",
@@ -30,7 +31,7 @@ from typing import Final, TypeAlias
 
 from torch import nn
 
-from tsdm.models import activations, generic
+from tsdm.models import activations, generic, pretrained
 from tsdm.models._models import BaseModel
 from tsdm.models.generic import MLP, DeepSet, ScaledDotProductAttention
 from tsdm.models.ode_rnn import ODE_RNN
