@@ -437,10 +437,15 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         else:
             raise TypeError(f"Invalid {type(self.index_encoders)=}")
 
-        # Assemble DataFrame
-        encoded = encoded_cols.join(encoded_inds)  # DataFrame(encoded_cols)
-        # encoded.loc[:, self._names(encoded_inds)] = encoded_inds
-        encoded = encoded.set_index(self._names(encoded_inds))
+        # # Assemble DataFrame
+        # encoded = encoded_cols.join(encoded_inds)  # DataFrame(encoded_cols)
+        # # encoded.loc[:, self._names(encoded_inds)] = encoded_inds
+        # encoded = encoded.set_index(self._names(encoded_inds))
+
+        if isinstance(encoded_inds, Series):
+            encoded = encoded_cols.set_index(encoded_inds)
+        else:
+            encoded = encoded_cols.set_index(MultiIndex.from_frame(encoded_inds))
         return encoded
 
     def decode(self, data: DataFrame, /) -> DataFrame:
