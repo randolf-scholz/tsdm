@@ -210,6 +210,8 @@ def time2int(ds: Series) -> Series:
     -------
     Series
     """
+    dtype: np.dtype | type[ExtensionDtype]
+
     if isinstance(ds.dtype, ExtensionDtype):
         dtype = type(ds.dtype)
     else:
