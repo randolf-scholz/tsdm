@@ -27,7 +27,7 @@ from typing import Any, ClassVar, Generic, Optional, TypeAlias, overload
 from urllib.parse import urlparse
 
 import pandas
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, Series
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
@@ -702,3 +702,75 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         self.LOGGER.debug("Starting to download dataset <%s>", key)
         self._download(key=key)
         self.LOGGER.debug("Finished downloading dataset <%s>", key)
+
+
+class TimeSeriesDataset:
+    r"""Abstract Base Class for TimeSeriesDatasets.
+
+    A TimeSeriesDataset is a dataset that contains time series data and MetaData.
+    More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
+    """
+
+    tables: Mapping[str, DataFrame]
+    r"""The named tables of the dataset."""
+    timeseries: DataFrame
+    r"""The time series data."""
+    metadata: Optional[Series] = None
+    r"""The metadata of the dataset."""
+    channel_features: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_features: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+
+
+class TimeSeriesCollection:
+    """Abstract Base Class for equimodal TimeSeriesCollections.
+
+    A TimeSeriesCollection is a tuple (I, D, G) consiting of
+
+    - index $I$
+    - indexed TimeSeriesDatasets $D = { (TS_i, M_i) | i ∈ I }$
+    - global variables $G∈𝓖$
+    """
+
+    index: Index
+    r"""The index of the collection."""
+    tables: Mapping[str, DataFrame]
+    r"""The named tables of the dataset."""
+    timeseries: DataFrame
+    r"""The time series data."""
+    metadata: Optional[DataFrame] = None
+    r"""The metadata of the dataset."""
+    globals: Optional[DataFrame] = None
+    r"""The global data of the dataset."""
+    channel_features: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_features: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+
+
+class GenericTimeSeriesCollection(Generic[KeyVar]):
+    """Abstract Base Class for generic TimeSeriesCollections.
+
+    A TimeSeriesCollection is a collection of TimeSeriesDatasets.
+    More specifically, we have a mapping from keys to TimeSeriesDatasets.
+
+    A special case are equimodal TimeSeriesCollections.
+    Here, all timeseries follow the same schema, in the sense that the TS and metadata
+    live in the same space.
+    """
+
+    index: Index
+    r"""The index of the collection."""
+    tables: Mapping[str, DataFrame]
+    r"""The named tables of the dataset."""
+    timeseries: Mapping[KeyVar, DataFrame]
+    r"""The time series data."""
+    metadata: Optional[Mapping[KeyVar, DataFrame]] = None
+    r"""The metadata of the dataset."""
+    globals: Optional[DataFrame] = None
+    r"""The global data of the dataset."""
+    channel_features: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_features: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""

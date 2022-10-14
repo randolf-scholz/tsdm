@@ -12,7 +12,16 @@ __all__ = [
 ]
 
 from functools import singledispatchmethod
-from typing import Any, Generic, NamedTuple, Optional, TypeAlias, TypeVar, overload
+from typing import (
+    Any,
+    Generic,
+    NamedTuple,
+    Optional,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+)
 
 import numpy as np
 import torch
@@ -176,11 +185,11 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
 
-    xmin: NDArray[np.number] | Tensor
-    xmax: NDArray[np.number] | Tensor
-    ymin: NDArray[np.number] | Tensor
-    ymax: NDArray[np.number] | Tensor
-    scale: NDArray[np.number] | Tensor
+    xmin: TensorType  # NDArray[np.number] | Tensor
+    xmax: TensorType  # NDArray[np.number] | Tensor
+    ymin: TensorType  # NDArray[np.number] | Tensor
+    ymax: TensorType  # NDArray[np.number] | Tensor
+    scale: TensorType  # NDArray[np.number] | Tensor
     r"""The scaling factor."""
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""
@@ -218,10 +227,10 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         axis
         """
         super().__init__()
-        self.xmin = np.array(0.0 if xmin is None else xmin)
-        self.xmax = np.array(1.0 if xmax is None else xmax)
-        self.ymin = np.array(0.0 if ymin is None else ymin)
-        self.ymax = np.array(1.0 if ymax is None else ymax)
+        self.xmin = cast(TensorType, np.array(0.0 if xmin is None else xmin))
+        self.xmax = cast(TensorType, np.array(1.0 if xmax is None else xmax))
+        self.ymin = cast(TensorType, np.array(0.0 if ymin is None else ymin))
+        self.ymax = cast(TensorType, np.array(1.0 if ymax is None else ymax))
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
         self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore[assignment]
 
@@ -257,32 +266,37 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
 
     @singledispatchmethod
     def fit(self, data: TensorType, /) -> None:  # type: ignore[override]
+        r"""Fit the MinMaxScaler to the data."""
+        self.fit(np.asarray(data))
+
+    @fit.register
+    def _(self, data: np.ndarray, /) -> None:
         r"""Compute the min and max."""
-        array = np.asarray(data)
-        rank = len(array.shape)
+        # array = np.asarray(data)
+        rank = len(data.shape)
         if self.axis is None:
             self.axis = () if rank == 1 else (-1,)
 
         selection = [(a % rank) for a in self.axis]
         axes = tuple(k for k in range(rank) if k not in selection)
         # axes = self.axis
-        self.ymin = np.array(self.ymin, dtype=array.dtype)
-        self.ymax = np.array(self.ymax, dtype=array.dtype)
-        self.xmin = np.nanmin(array, axis=axes)
-        self.xmax = np.nanmax(array, axis=axes)
+        self.ymin = cast(TensorType, np.array(self.ymin, dtype=data.dtype))
+        self.ymax = cast(TensorType, np.array(self.ymax, dtype=data.dtype))
+        self.xmin = cast(TensorType, np.nanmin(data, axis=axes))
+        self.xmax = cast(TensorType, np.nanmax(data, axis=axes))
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
-    @fit.register(torch.Tensor)
+    @fit.register
     def _(self, data: Tensor, /) -> None:
         r"""Compute the min and max."""
         mask = torch.isnan(data)
-        self.ymin = torch.tensor(self.ymin, device=data.device, dtype=data.dtype)
-        self.ymax = torch.tensor(self.ymax, device=data.device, dtype=data.dtype)
         neginf = torch.tensor(float("-inf"), device=data.device, dtype=data.dtype)
         posinf = torch.tensor(float("+inf"), device=data.device, dtype=data.dtype)
 
-        self.xmin = torch.amin(torch.where(mask, posinf, data), dim=self.axis)
-        self.xmax = torch.amax(torch.where(mask, neginf, data), dim=self.axis)
+        self.ymin = torch.tensor(self.ymin, device=data.device, dtype=data.dtype)  # type: ignore[assignment]
+        self.ymax = torch.tensor(self.ymax, device=data.device, dtype=data.dtype)  # type: ignore[assignment]
+        self.xmin = torch.amin(torch.where(mask, posinf, data), dim=self.axis)  # type: ignore[assignment]
+        self.xmax = torch.amax(torch.where(mask, neginf, data), dim=self.axis)  # type: ignore[assignment]
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def encode(self, data: TensorType, /) -> TensorType:
@@ -291,9 +305,9 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         broadcast = get_broadcast(data, axis=self.axis)
         self.LOGGER.debug("Broadcasting to %s", broadcast)
 
-        xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
-        scale = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
-        ymin = self.ymin[broadcast] if self.ymin.ndim > 1 else self.ymin
+        xmin: TensorType = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
+        scale: TensorType = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
+        ymin: TensorType = self.ymin[broadcast] if self.ymin.ndim > 1 else self.ymin
 
         return (data - xmin) * scale + ymin
 

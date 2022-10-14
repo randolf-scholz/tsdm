@@ -43,12 +43,22 @@ def data_overview(df: DataFrame) -> DataFrame:
     """
     overview = DataFrame(index=df.columns)
     mask = df.isna()
+    numerical_cols = df.select_dtypes(include="number").columns
+    # other_cols = df.select_dtypes(exclude="number").columns
+    float_cols = df.select_dtypes(include="float").columns
+
     overview["# datapoints"] = (~mask).sum()
     overview["% missing"] = (mask.mean() * 100).round(2)
-    overview["min"] = df.min().round(2)
-    overview["mean"] = df.mean().round(2)
-    overview["std"] = df.std().round(2)
-    overview["max"] = df.max().round(2)
+    overview["min", numerical_cols] = df[numerical_cols].min().round(2)
+    overview["mean", numerical_cols] = df[numerical_cols].mean().round(2)
+    overview["std", numerical_cols] = df[numerical_cols].std().round(2)
+    overview["max", numerical_cols] = df[numerical_cols].max().round(2)
+
+    overview["min", float_cols] = overview["min", float_cols].round(2)
+    overview["mean", float_cols] = overview["mean", float_cols].round(2)
+    overview["std", float_cols] = overview["std", float_cols].round(2)
+    overview["max", float_cols] = overview["max", float_cols].round(2)
+
     freq = {}
     for col in df:
         mask = pandas.notna(df[col].squeeze())
