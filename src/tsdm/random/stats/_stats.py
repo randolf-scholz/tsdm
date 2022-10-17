@@ -38,11 +38,12 @@ def data_overview(df: DataFrame, index_col: Optional[Hashable] = None) -> DataFr
     overview = DataFrame(index=df.columns)
     mask = df.isna()
     numerical_cols = df.select_dtypes(include="number").columns
-    # other_cols = df.select_dtypes(exclude="number").columns
     float_cols = df.select_dtypes(include="float").columns
+    # other_cols = df.select_dtypes(exclude="number").columns
 
     overview["# datapoints"] = (~mask).sum()
     overview["% missing"] = (mask.mean() * 100).round(2)
+
     overview.loc[numerical_cols, "min"] = df[numerical_cols].min().round(2)
     overview.loc[numerical_cols, "mean"] = df[numerical_cols].mean().round(2)
     overview.loc[numerical_cols, "std"] = df[numerical_cols].std().round(2)
