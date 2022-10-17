@@ -6,6 +6,9 @@ __all__ = [
     "sparsity",
 ]
 
+from collections.abc import Hashable
+from typing import Optional
+
 import pandas
 from pandas import DataFrame, Series
 
@@ -30,17 +33,8 @@ def sparsity(df: DataFrame) -> tuple[float, float]:
 #     r"""Summary statistics: column-wise mean/median/std/histogram. Cross-channel correlation."""
 
 
-def data_overview(df: DataFrame) -> DataFrame:
-    r"""Get a summary of the data.
-
-    Parameters
-    ----------
-    df: DataFrame
-
-    Returns
-    -------
-    DataFrame
-    """
+def data_overview(df: DataFrame, index_col: Optional[Hashable] = None) -> DataFrame:
+    r"""Get a summary of the data."""
     overview = DataFrame(index=df.columns)
     mask = df.isna()
     numerical_cols = df.select_dtypes(include="number").columns
@@ -49,20 +43,21 @@ def data_overview(df: DataFrame) -> DataFrame:
 
     overview["# datapoints"] = (~mask).sum()
     overview["% missing"] = (mask.mean() * 100).round(2)
-    overview["min", numerical_cols] = df[numerical_cols].min().round(2)
-    overview["mean", numerical_cols] = df[numerical_cols].mean().round(2)
-    overview["std", numerical_cols] = df[numerical_cols].std().round(2)
-    overview["max", numerical_cols] = df[numerical_cols].max().round(2)
+    overview.loc[numerical_cols, "min"] = df[numerical_cols].min().round(2)
+    overview.loc[numerical_cols, "mean"] = df[numerical_cols].mean().round(2)
+    overview.loc[numerical_cols, "std"] = df[numerical_cols].std().round(2)
+    overview.loc[numerical_cols, "max"] = df[numerical_cols].max().round(2)
 
-    overview["min", float_cols] = overview["min", float_cols].round(2)
-    overview["mean", float_cols] = overview["mean", float_cols].round(2)
-    overview["std", float_cols] = overview["std", float_cols].round(2)
-    overview["max", float_cols] = overview["max", float_cols].round(2)
+    overview.loc[float_cols, "min"] = overview.loc[float_cols, "min"].round(2)
+    overview.loc[float_cols, "mean"] = overview.loc[float_cols, "mean"].round(2)
+    overview.loc[float_cols, "std"] = overview.loc[float_cols, "std"].round(2)
+    overview.loc[float_cols, "max"] = overview.loc[float_cols, "max"].round(2)
 
-    freq = {}
-    for col in df:
-        mask = pandas.notna(df[col].squeeze())
-        time = df.index[mask]
-        freq[col] = Series(time).diff().mean()
-    overview["freq"] = Series(freq)
+    if index_col is not None:
+        freq = {}
+        for col in df:
+            mask = pandas.notna(df[col].squeeze())
+            time = df.get_level_values(index_col)[mask]
+            freq[col] = Series(time).diff().mean()
+        overview["freq"] = Series(freq)
     return overview
