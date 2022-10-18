@@ -188,5 +188,5 @@ dask-worker-space/
 /dev/datasets/MIMIC-IV/processed/
 /dev/datasets/MIMIC-IV/raw/
 /dev/datasets/MIMIC-IV/mimic-iv-1.0.zip
-/dev/*.parquet
+/dev/**.parquet
 /docs/apidoc/
