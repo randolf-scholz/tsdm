@@ -44,6 +44,7 @@ def data_overview(
     # other_cols = df.select_dtypes(exclude="number").columns
 
     overview["datapoints"] = (~mask).sum()
+    overview["uniques"] = df.nunique()
     overview["missing"] = (mask.mean() * 100).round(2)
 
     overview.loc[numerical_cols, "min"] = df[numerical_cols].min()
@@ -71,7 +72,7 @@ def data_overview(
         freq = {}
         for col in df:
             mask = pandas.notna(df[col].squeeze())
-            time = df.get_level_values(index_col)[mask]
+            time = df.index.get_level_values(index_col)[mask]
             freq[col] = Series(time).diff().mean()
         overview["freq"] = Series(freq)
     return overview
