@@ -45,6 +45,7 @@ ignore =
     D105,    # Missing docstring in magic method
     E704,    # multiple statements on one line (def)
     E241,    # multiple spaces after ','
+    E202,    # whitespace before ']'
 
 extend-ignore =
     # Google Python style is not RST until after processed by Napoleon

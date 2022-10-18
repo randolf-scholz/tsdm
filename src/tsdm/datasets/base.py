@@ -492,14 +492,6 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
         }
 
-    @abstractmethod
-    def _clean(self, key: KeyVar) -> DATASET_OBJECT | None:
-        r"""Clean the selected DATASET_OBJECT."""
-
-    def _load(self, key: KeyVar) -> DATASET_OBJECT:
-        r"""Load the selected DATASET_OBJECT."""
-        return self.deserialize(self.dataset_paths[key])
-
     def rawdata_files_exist(self, key: Optional[KeyVar] = None) -> bool:
         r"""Check if raw data files exist."""
         if key is None:
@@ -513,6 +505,32 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         if key is None:
             return paths_exists(self.dataset_paths)
         return paths_exists(self.dataset_paths[key])
+
+    @abstractmethod
+    def _clean(self, key: KeyVar) -> DATASET_OBJECT | None:
+        r"""Clean the selected DATASET_OBJECT."""
+
+    def _load(self, key: KeyVar) -> DATASET_OBJECT:
+        r"""Load the selected DATASET_OBJECT."""
+        return self.deserialize(self.dataset_paths[key])
+
+    def _download(self, key: KeyVar = None) -> None:
+        r"""Download the selected DATASET_OBJECT."""
+        assert self.BASE_URL is not None, "base_url is not set!"
+
+        rawdata_files: Nested[Optional[PathType]]
+        if isinstance(self.rawdata_files, Mapping):
+            rawdata_files = self.rawdata_files[key]
+        else:
+            rawdata_files = self.rawdata_files
+
+        nested_files: Nested[Path] = prepend_path(
+            rawdata_files, Path(), keep_none=False
+        )
+        files: set[Path] = flatten_nested(nested_files, kind=Path)
+
+        for file in files:
+            self.download_from_url(self.BASE_URL + file.name)
 
     def clean(
         self,
@@ -635,24 +653,6 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
         return self.dataset[key]
 
-    def _download(self, key: KeyVar = None) -> None:
-        r"""Download the selected DATASET_OBJECT."""
-        assert self.BASE_URL is not None, "base_url is not set!"
-
-        rawdata_files: Nested[Optional[PathType]]
-        if isinstance(self.rawdata_files, Mapping):
-            rawdata_files = self.rawdata_files[key]
-        else:
-            rawdata_files = self.rawdata_files
-
-        nested_files: Nested[Path] = prepend_path(
-            rawdata_files, Path(), keep_none=False
-        )
-        files: set[Path] = flatten_nested(nested_files, kind=Path)
-
-        for file in files:
-            self.download_from_url(self.BASE_URL + file.name)
-
     def download(
         self,
         key: Optional[KeyVar] = None,
@@ -715,16 +715,16 @@ class TimeSeriesDataset:
     r"""The named tables of the dataset."""
     timeseries: DataFrame
     r"""The time series data."""
-    metadata: Optional[Series] = None
+    metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
-    channel_features: Optional[DataFrame] = None
+    timeseries_features: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
     metadata_features: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
 
 class TimeSeriesCollection:
-    """Abstract Base Class for equimodal TimeSeriesCollections.
+    r"""Abstract Base Class for equimodal TimeSeriesCollections.
 
     A TimeSeriesCollection is a tuple (I, D, G) consiting of
 
@@ -743,14 +743,14 @@ class TimeSeriesCollection:
     r"""The metadata of the dataset."""
     globals: Optional[DataFrame] = None
     r"""The global data of the dataset."""
-    channel_features: Optional[DataFrame] = None
+    timeseries_features: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
     metadata_features: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
 
 class GenericTimeSeriesCollection(Generic[KeyVar]):
-    """Abstract Base Class for generic TimeSeriesCollections.
+    r"""Abstract Base Class for generic TimeSeriesCollections.
 
     A TimeSeriesCollection is a collection of TimeSeriesDatasets.
     More specifically, we have a mapping from keys to TimeSeriesDatasets.
@@ -770,7 +770,7 @@ class GenericTimeSeriesCollection(Generic[KeyVar]):
     r"""The metadata of the dataset."""
     globals: Optional[DataFrame] = None
     r"""The global data of the dataset."""
-    channel_features: Optional[DataFrame] = None
+    timeseries_features: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
     metadata_features: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
