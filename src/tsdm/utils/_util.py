@@ -8,6 +8,7 @@ TODO:  Module description
 
 __all__ = [
     # Constants
+    "NULL_VALUES",
     # Classes
     "Split",
     # Functions
@@ -33,7 +34,7 @@ from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Optional, Union, overload
+from typing import Any, Final, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 from numpy.typing import NDArray
@@ -46,6 +47,43 @@ __logger__ = getLogger(__name__)
 
 EMPTY_PATH: Path = Path()
 r"""Constant: Blank path."""
+
+
+def variants(s: str | list[str]) -> list[str]:
+    r"""Return all variants of a string."""
+    if isinstance(s, str):
+        cases = (
+            lambda x: x.lower(),
+            lambda x: x.capitalize(),
+            lambda x: x.upper(),
+        )
+        decorations = (
+            lambda x: x,
+            lambda x: f"#{x}",
+            lambda x: f"<{x}>",
+            lambda x: f"+{x}",
+            lambda x: f"-{x}",
+        )
+        return [deco(case(s)) for deco in decorations for case in cases]
+    # return concatenation of all variants
+    return [j for i in (variants(s_) for s_ in s) for j in i]
+
+
+# fmt: off
+NULL_VALUES: Final[list[str]] = [
+    "", "-", "?",
+    "1.#IND", "+1.#IND", "-1.#IND", "1.#QNAN", "+1.#QNAN", "-1.#QNAN",
+    "#N/A N/A",
+    "#NA", "#Na", "#na", "<NA>", "<Na>", "<na>", "+NA", "-NA", "-na", "+na",
+    "N/A", "n/a", "#N/A", "#n/a", "<N/A>", "<n/a>",  "+N/A", "-N/A", "-n/a", "+n/a",
+    "NAN", "NaN", "nan", "-NAN", "-NaN", "-nan", "+NAN", "+NaN", "+nan",
+    "#NAN", "#NaN", "#nan", "<NAN>", "<NaN>", "<nan>"
+    "NONE", "None", "none", "#NONE", "#None", "#none", "<NONE>", "<None>", "<none>",
+    "NULL", "Null", "null", "#NULL", "#Null", "#null", "<NULL>", "<Null>", "<null>",
+    "UNKNOWN", "Unknown", "unknown", "UNKNOWN", "#Unknown", "#unknown", "<UNKNOWN>", "<Unknown>", "<unknown>",
+]
+r"""A list of common null value string represenations."""
+# fmt: on
 
 
 def pairwise_disjoint(sets: Iterable[set]) -> bool:
