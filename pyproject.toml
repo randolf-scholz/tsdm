@@ -114,6 +114,7 @@ types-typing-extensions = ">=3.7"
 types-urllib3 = ">=1.26"
 wheel = ">=0.37"
 openml = "^0.12.2"
+bandit = "^1.7.4"
 
 
 [tool.poetry.scripts]
@@ -138,7 +139,10 @@ disable= [
     "W0511",  # (fixme) (todos)
     "W1113",  # keyword-arg-before-vararg
 ]
-
+fail-on= [
+    "C0116",  # missing-function-docstring
+]
+fail-under= 9.0
 [tool.pylint.REPORTS]
 # Set the output format. Available formats are text, parseable, colorized, json and
 # msvs (visual studio). You can also give a reporter class, e.g. mypackage.mymodule.MyReporterClass
