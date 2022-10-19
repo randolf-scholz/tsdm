@@ -57,7 +57,7 @@ class ETT(MultiFrameDataset):
     rawdata_paths: dict[KEYS, Path]
     r"""Paths to the raw data."""
 
-    def _clean(self, key: KEYS) -> None:
+    def clean_table(self, key: KEYS) -> None:
         r"""Create DataFrame from the .csv file."""
         df = read_csv(
             self.rawdata_paths[key], parse_dates=[0], index_col=0, dtype="float32"

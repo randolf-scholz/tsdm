@@ -340,7 +340,7 @@ class Physionet2012(MultiFrameDataset):
         r"""Return the index of the dataset."""
         return list(self.dataset_files.keys())
 
-    def _clean(self, key):
+    def clean_table(self, key):
         record_ids_list = []
         metadata: dict[str, list[float]] = {key: [] for key in GENERAL_DESCRIPTORS}
         time_series = []

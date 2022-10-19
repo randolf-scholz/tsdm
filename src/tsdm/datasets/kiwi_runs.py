@@ -179,7 +179,7 @@ class KIWI_RUNS(MultiFrameDataset):
     #
     #     return table
 
-    def _clean(self, key: KEYS) -> None:
+    def clean_table(self, key: KEYS) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         with open(self.rawdata_paths, "rb") as file:
             self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
@@ -607,7 +607,7 @@ class KIWI_RUNS(MultiFrameDataset):
 
         # add dataset statistics
         units = units.to_frame()
-        ts = self._load(key="timeseries")
+        ts = self.load_table(key="timeseries")
 
         units["min"] = ts.min()
         units["max"] = ts.max()

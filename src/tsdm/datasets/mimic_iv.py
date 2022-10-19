@@ -87,13 +87,13 @@ class MIMIC_IV(MultiFrameDataset):
 
     index = list(dataset_files.keys())
 
-    def _clean(self, key):
+    def clean_table(self, key):
         ...
 
-    def _load(self, key):
+    def load_table(self, key):
         return pd.read_parquet(self.dataset_paths[key])
 
-    def _download(self, **_):
+    def download_table(self, **_):
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-IV username: ")
         password = getpass(prompt="MIMIC-IV password: ", stream=None)

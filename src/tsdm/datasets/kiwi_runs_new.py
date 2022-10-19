@@ -12,7 +12,7 @@ import logging
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, Series
 
 from tsdm.datasets.base import MultiFrameDataset
 from tsdm.utils import NULL_VALUES
@@ -228,6 +228,9 @@ class KIWI_RUNS(MultiFrameDataset):
     BASE_URL = (
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/fGFEJicrcjsxDBd/download/"
     )
+    RAWDATA_SHA256 = r"dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181"
+    rawdata_files = "kiwi_experiments.pk"
+
     # RAWDATA_SHA256 = "79d8d15069b4adc6d77498472008bd87e3699a75bb612029232bd051ecdbb078"
     # DATASET_SHA256 = {
     #     "timeseries": "819d5917c5ed65cec7855f02156db1abb81ca3286e57533ee15eb91c072323f9",
@@ -238,13 +241,16 @@ class KIWI_RUNS(MultiFrameDataset):
     #     "timeseries": (386812, 15),
     #     "metadata": (264, 11),
     # }
-
+    index: Index
     tmin: Series
     tmax: Series
     timeseries: DataFrame
     metadata: DataFrame
     timeseries_features: DataFrame
     metadata_features: DataFrame
+
+    def clean_table(self, key):
+        ...
 
     def clean_metadata(self, data):
         r"""Clean metadata."""
@@ -429,8 +435,7 @@ class KIWI_RUNS(MultiFrameDataset):
         ts = ts[mask]
         ts["measurement_time"] = ts["measurement_time"] - ts["start_time"]
         ts = ts.set_index("measurement_time", append=True)
-        ts = ts[timeseries.columns]
-        ts = ts.sort_values(["run_id", "exp_id", "measurement_time"])
+        timeseries = ts[timeseries.columns]
 
         # Aggregate Measurements (non-destructive)
         # https://stackoverflow.com/questions/74115705
@@ -448,5 +453,6 @@ class KIWI_RUNS(MultiFrameDataset):
 
         # Finalize Table
         timeseries = timeseries.dropna(how="all")
+        timeseries = timeseries.sort_values(["run_id", "exp_id", "measurement_time"])
         timeseries.to_parquet(self.dataset_paths["timeseries"])
         timeseries_features.to_parquet(self.dataset_paths["timeseries_features"])

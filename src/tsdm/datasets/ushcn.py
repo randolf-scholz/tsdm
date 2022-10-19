@@ -232,7 +232,7 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
     #     r"""Load the dataset from disk."""
     #     return super()._load(key=key, **kwargs)
 
-    def _clean(self, key: KEYS = "us_daily") -> DataFrame:
+    def clean_table(self, key: KEYS = "us_daily") -> DataFrame:
         r"""Create the DataFrames.
 
         Parameters
