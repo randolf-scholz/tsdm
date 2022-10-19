@@ -11,7 +11,6 @@ __all__ = [
     "TensorConcatenator",
 ]
 
-from functools import singledispatchmethod
 from typing import (
     Any,
     Generic,
@@ -130,7 +129,8 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         if isinstance(data, Tensor):
             if self.ignore_nan:
                 self.mean = torch.nanmean(data, dim=axes)
-                self.stdv = torch.sqrt(torch.nanmean((data - self.mean) ** 2, dim=axes))
+                mean = torch.nanmean(data, dim=axes, keepdim=True)
+                self.stdv = torch.sqrt(torch.nanmean((data - mean) ** 2, dim=axes))
             else:
                 self.mean = torch.mean(data, dim=axes)
                 self.stdv = torch.std(data, dim=axes)
@@ -264,15 +264,36 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
             self.xmin, self.xmax, self.ymin, self.ymax, self.scale, self.axis
         )
 
-    @singledispatchmethod
-    def fit(self, data: TensorType, /) -> None:  # type: ignore[override]
+    def fit(self, data: TensorType, /) -> None:
         r"""Fit the MinMaxScaler to the data."""
-        self.fit(np.asarray(data))
+        # TODO: Why does singledispatch not work here? (wrap_func in BaseEncoder)
+        # print(type(data), isinstance(data, np.ndarray), isinstance(data, type))
+        if isinstance(data, Tensor):
+            self._fit_torch(data)
+        else:
+            self._fit_numpy(np.asarray(data))
 
-    @fit.register
-    def _(self, data: np.ndarray, /) -> None:
+    def _fit_torch(self, data: Tensor, /) -> None:
         r"""Compute the min and max."""
-        # array = np.asarray(data)
+        rank = len(data.shape)
+        if self.axis is None:
+            self.axis = () if rank == 1 else (-1,)
+
+        selection = [(a % rank) for a in self.axis]
+        axes = tuple(k for k in range(rank) if k not in selection)
+
+        mask = torch.isnan(data)
+        neginf = torch.tensor(float("-inf"), device=data.device, dtype=data.dtype)
+        posinf = torch.tensor(float("+inf"), device=data.device, dtype=data.dtype)
+
+        self.ymin = torch.tensor(self.ymin, device=data.device, dtype=data.dtype)  # type: ignore[assignment]
+        self.ymax = torch.tensor(self.ymax, device=data.device, dtype=data.dtype)  # type: ignore[assignment]
+        self.xmin = torch.amin(torch.where(mask, posinf, data), dim=axes)  # type: ignore[assignment]
+        self.xmax = torch.amax(torch.where(mask, neginf, data), dim=axes)  # type: ignore[assignment]
+        self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+
+    def _fit_numpy(self, data: np.ndarray, /) -> None:
+        r"""Compute the min and max."""
         rank = len(data.shape)
         if self.axis is None:
             self.axis = () if rank == 1 else (-1,)
@@ -284,19 +305,6 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         self.ymax = cast(TensorType, np.array(self.ymax, dtype=data.dtype))
         self.xmin = cast(TensorType, np.nanmin(data, axis=axes))
         self.xmax = cast(TensorType, np.nanmax(data, axis=axes))
-        self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-
-    @fit.register
-    def _(self, data: Tensor, /) -> None:
-        r"""Compute the min and max."""
-        mask = torch.isnan(data)
-        neginf = torch.tensor(float("-inf"), device=data.device, dtype=data.dtype)
-        posinf = torch.tensor(float("+inf"), device=data.device, dtype=data.dtype)
-
-        self.ymin = torch.tensor(self.ymin, device=data.device, dtype=data.dtype)  # type: ignore[assignment]
-        self.ymax = torch.tensor(self.ymax, device=data.device, dtype=data.dtype)  # type: ignore[assignment]
-        self.xmin = torch.amin(torch.where(mask, posinf, data), dim=self.axis)  # type: ignore[assignment]
-        self.xmax = torch.amax(torch.where(mask, neginf, data), dim=self.axis)  # type: ignore[assignment]
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def encode(self, data: TensorType, /) -> TensorType:
