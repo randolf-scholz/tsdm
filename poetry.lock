@@ -1069,7 +1069,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "jupyterlab-server"
-version = "2.16.0"
+version = "2.16.1"
 description = "A set of server components for JupyterLab and JupyterLab like applications."
 category = "dev"
 optional = false
@@ -1085,6 +1085,7 @@ packaging = "*"
 requests = "*"
 
 [package.extras]
+docs = ["autodoc-traits", "docutils (<0.19)", "jinja2 (<3.1.0)", "mistune (<1)", "myst-parser", "pydata-sphinx-theme", "sphinx", "sphinx-copybutton", "sphinxcontrib-openapi"]
 openapi = ["openapi-core (>=0.14.2)", "ruamel-yaml"]
 test = ["codecov", "ipykernel", "jupyter-server[test]", "openapi-core (>=0.14.2,<0.15.0)", "openapi-spec-validator (<0.5)", "pytest (>=7.0)", "pytest-console-scripts", "pytest-cov", "ruamel-yaml", "strict-rfc3339"]
 
@@ -1346,7 +1347,7 @@ test = ["black", "check-manifest", "flake8", "ipykernel", "ipython", "ipywidgets
 
 [[package]]
 name = "nbconvert"
-version = "7.2.1"
+version = "7.2.2"
 description = "Converting Jupyter Notebooks"
 category = "dev"
 optional = false
@@ -3074,7 +3075,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<3.11"
-content-hash = "d15d267c5a892cfba24937c83ee0718157a8063b9125814312bc49dc265dd6d3"
+content-hash = "58f4984c7e6c41d9d32b3f98f152c40c8cd917a5574d75f109cafd3ac17e0756"
 
 [metadata.files]
 absl-py = [
@@ -3717,8 +3718,8 @@ jupyterlab-pygments = [
     {file = "jupyterlab_pygments-0.2.2.tar.gz", hash = "sha256:7405d7fde60819d905a9fa8ce89e4cd830e318cdad22a0030f7a901da705585d"},
 ]
 jupyterlab-server = [
-    {file = "jupyterlab_server-2.16.0-py3-none-any.whl", hash = "sha256:c8ce5897f4386b682a03aee840278bb6d132c9ef3b728005be4ea0afb7f73d4f"},
-    {file = "jupyterlab_server-2.16.0.tar.gz", hash = "sha256:d1ba342cf7e843ecb2c3a3dfe33de14b835df978aa7b411caaddff95a72bd2ca"},
+    {file = "jupyterlab_server-2.16.1-py3-none-any.whl", hash = "sha256:b572cd3e59b0722120f41d47f2363a0072765227184aea418b7cc276db4d75fd"},
+    {file = "jupyterlab_server-2.16.1.tar.gz", hash = "sha256:fe0de558ff3bb447a32e24099aa7e17444fdbc8c08f6dbc0171cb1a0ae382d3f"},
 ]
 jupyterlab-widgets = [
     {file = "jupyterlab_widgets-3.0.3-py3-none-any.whl", hash = "sha256:6aa1bc0045470d54d76b9c0b7609a8f8f0087573bae25700a370c11f82cb38c8"},
@@ -4022,8 +4023,8 @@ nbclient = [
     {file = "nbclient-0.7.0.tar.gz", hash = "sha256:a1d844efd6da9bc39d2209bf996dbd8e07bf0f36b796edfabaa8f8a9ab77c3aa"},
 ]
 nbconvert = [
-    {file = "nbconvert-7.2.1-py3-none-any.whl", hash = "sha256:50a54366ab53da20e82668818b7b2f3f7b85c0bcd46ec8e18836f12b39180dfa"},
-    {file = "nbconvert-7.2.1.tar.gz", hash = "sha256:1e180801205ad831b6e2480c5a03307dfb6327fa5b2f9b156d6fed45f9700686"},
+    {file = "nbconvert-7.2.2-py3-none-any.whl", hash = "sha256:fc7a3787c927cbd45a52e088e934fbbaab39afe61767522168a724b7483992be"},
+    {file = "nbconvert-7.2.2.tar.gz", hash = "sha256:24acfaa466d2c9b7eb524800e4a45afbed862c5d058cfb30fc7aa24d448c95eb"},
 ]
 nbformat = [
     {file = "nbformat-5.7.0-py3-none-any.whl", hash = "sha256:1b05ec2c552c2f1adc745f4eddce1eac8ca9ffd59bb9fd859e827eaa031319f9"},
