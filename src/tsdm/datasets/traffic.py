@@ -105,7 +105,7 @@ class Traffic(MultiFrameDataset):
     randperm: DataFrame
     invperm: DataFrame
 
-    def _clean(self, key: KEYS) -> None:
+    def clean_table(self, key: KEYS) -> None:
         r"""Create the DataFrames.
 
         Parameters

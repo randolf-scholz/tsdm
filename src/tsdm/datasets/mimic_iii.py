@@ -93,10 +93,10 @@ class MIMIC_III(MultiFrameDataset):
 
     index = list(dataset_files.keys())
 
-    def _clean(self, key):
+    def clean_table(self, key):
         raise NotImplementedError
 
-    def _download(self, **_):
+    def download_table(self, **_):
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)

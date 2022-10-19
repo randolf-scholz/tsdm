@@ -223,6 +223,7 @@ convention = "numpy"
 #count = true
 add-ignore = [
     "D105",    # Missing docstring in magic method
+    "D102",    # Missing docstring in public method
 ]
 
 #########################

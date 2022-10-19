@@ -216,6 +216,10 @@ class FrameDataset(BaseDataset, ABC):
 
     DEFAULT_FILE_FORMAT: str = "parquet"
     r"""Default format for the dataset."""
+    RAWDATA_SHA256: Optional[str | Mapping[str, str]] = None
+    r"""SHA256 hash value of the raw data file(s)."""
+    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[str, tuple[int, ...]]] = None
+    r"""Reference shape of the raw data file(s)."""
 
     @staticmethod
     def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
@@ -324,10 +328,6 @@ class FrameDataset(BaseDataset, ABC):
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    RAWDATA_SHA256: Optional[str | Mapping[str, str]] = None
-    r"""SHA256 hash value of the raw data file(s)."""
-    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[str, tuple[int, ...]]] = None
-    r"""Reference shape of the raw data file(s)."""
     DATASET_SHA256: Optional[str] = None
     r"""SHA256 hash value of the dataset file(s)."""
     DATASET_SHAPE: Optional[tuple[int, ...]] = None
@@ -431,17 +431,13 @@ class SingleFrameDataset(FrameDataset):
             self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
 
-class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
+class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame]):
     r"""Dataset class that consists of a multiple DataFrames.
 
     The Datasets are accessed by their index.
     We subclass `Mapping` to provide the mapping interface.
     """
 
-    RAWDATA_SHA256: Optional[str | Mapping[str, str]] = None
-    r"""SHA256 hash value of the raw data file(s)."""
-    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[str, tuple[int, ...]]] = None
-    r"""Reference shape of the raw data file(s)."""
     DATASET_SHA256: Optional[Mapping[str, str]] = None
     r"""SHA256 hash value of the dataset file(s)."""
     DATASET_SHAPE: Optional[Mapping[str, tuple[int, ...]]] = None
@@ -507,14 +503,14 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         return paths_exists(self.dataset_paths[key])
 
     @abstractmethod
-    def _clean(self, key: KeyVar) -> DATASET_OBJECT | None:
+    def clean_table(self, key: KeyVar) -> DATASET_OBJECT | None:
         r"""Clean the selected DATASET_OBJECT."""
 
-    def _load(self, key: KeyVar) -> DATASET_OBJECT:
+    def load_table(self, key: KeyVar) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
         return self.deserialize(self.dataset_paths[key])
 
-    def _download(self, key: KeyVar = None) -> None:
+    def download_table(self, key: KeyVar = None) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
@@ -577,7 +573,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             return
 
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
-        df = self._clean(key=key)
+        df = self.clean_table(key=key)
         if df is not None:
             self.LOGGER.info("Serializing dataset <%s>", key)
             self.serialize(df, self.dataset_paths[key])
@@ -649,7 +645,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             self.validate(self.dataset_paths[key], reference=self.DATASET_SHA256)
 
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
-        self.dataset[key] = self._load(key=key)
+        self.dataset[key] = self.load_table(key=key)
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
         return self.dataset[key]
 
@@ -690,7 +686,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
                 for key_ in self.rawdata_files:
                     self.download(key=key_, force=force, validate=validate, **kwargs)
             else:
-                self._download()
+                self.download_table()
             self.LOGGER.debug("Finished downloading dataset.")
 
             if validate:
@@ -700,7 +696,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
 
         # Download specific key
         self.LOGGER.debug("Starting to download dataset <%s>", key)
-        self._download(key=key)
+        self.download_table(key=key)
         self.LOGGER.debug("Finished downloading dataset <%s>", key)
 
 
