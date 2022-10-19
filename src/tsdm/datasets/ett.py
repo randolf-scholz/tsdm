@@ -9,14 +9,16 @@ __all__ = [
 ]
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from pandas import read_csv
 
 from tsdm.datasets.base import MultiFrameDataset
 
+KEY: TypeAlias = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
-class ETT(MultiFrameDataset[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]]):
+
+class ETT(MultiFrameDataset[KEY]):
     r"""ETT-small-h1.
 
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
@@ -48,8 +50,6 @@ class ETT(MultiFrameDataset[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]]):
         "ETTm1.csv": (69680, 7),
         "ETTm2.csv": (69680, 7),
     }
-    KEY = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
-    r"""The type of the index."""
     KEYS = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
     rawdata_files = {key: f"{key}.csv" for key in KEYS}
