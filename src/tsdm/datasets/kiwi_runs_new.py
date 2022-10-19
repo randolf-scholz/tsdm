@@ -9,6 +9,8 @@ __all__ = [
 ]
 
 import logging
+import pickle
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -230,6 +232,7 @@ class KIWI_RUNS(MultiFrameDataset):
     )
     RAWDATA_SHA256 = r"dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181"
     rawdata_files = "kiwi_experiments.pk"
+    rawdata_paths: Path
 
     # RAWDATA_SHA256 = "79d8d15069b4adc6d77498472008bd87e3699a75bb612029232bd051ecdbb078"
     # DATASET_SHA256 = {
@@ -241,26 +244,44 @@ class KIWI_RUNS(MultiFrameDataset):
     #     "timeseries": (386812, 15),
     #     "metadata": (264, 11),
     # }
-    index: Index
     tmin: Series
     tmax: Series
     timeseries: DataFrame
     metadata: DataFrame
     timeseries_features: DataFrame
     metadata_features: DataFrame
+    KEYS = [
+        "tmin, tmax",
+        "timeseries",
+        "metadata",
+        "timeseries_features",
+        "metadata_features",
+    ]
+
+    @property
+    def index(self) -> Index:
+        return self.metadata.index
 
     def clean_table(self, key):
-        ...
+        if key in ["timeseries", "timeseries_features"]:
+            self.clean_timeseries()
+        if key in ["index", "tmin", "tmax", "metadata", "metadata_features"]:
+            self.clean_metadata()
 
-    def clean_metadata(self, data):
+    def clean_metadata(self):
         r"""Clean metadata."""
+        # load rawdata
+        with open(self.rawdata_paths, "rb") as file:
+            self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
+            data = pickle.load(file)
+
         # generate dataframe
-        metadata = {
+        metadata_dict = {
             (outer_key, inner_key): tables["metadata"]
             for outer_key, experiment in data.items()
             for inner_key, tables in experiment.items()
         }
-        metadata = pd.concat(metadata, names=["run_id", "exp_id"])
+        metadata = pd.concat(metadata_dict, names=["run_id", "exp_id"])
         metadata = metadata.reset_index(-1, drop=True)
         metadata = metadata.drop(columns=["run_id", "experiment_id"])
 
@@ -290,7 +311,7 @@ class KIWI_RUNS(MultiFrameDataset):
         units["μ_set"] = "%"
 
         # fmt: off
-        metadata_features = {
+        metadata_features_dict = {
             # column                   [unit, scale, lower bound, upper bound]
             "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA ],
             "container_number"       : [pd.NA, "category", pd.NA, pd.NA ],
@@ -307,7 +328,7 @@ class KIWI_RUNS(MultiFrameDataset):
         # fmt: on
 
         metadata_features = DataFrame.from_dict(
-            metadata_features,
+            metadata_features_dict,
             orient="index",
             columns=column_dtypes["metadata_features"],
         )
@@ -332,17 +353,22 @@ class KIWI_RUNS(MultiFrameDataset):
         metadata.to_parquet(self.dataset_paths["metadata"])
         metadata_features.to_parquet(self.dataset_paths["metadata_features"])
 
-    def clean_timeseries(self, data):
+    def clean_timeseries(self):
         r"""Clean timeseries data and save to disk."""
+        # load rawdata
+        with open(self.rawdata_paths, "rb") as file:
+            self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
+            data = pickle.load(file)
+
         # Generate DataFrame
-        timeseries = {
+        timeseries_dict = {
             (outer_key, inner_key): tables["measurements_aggregated"]
             for outer_key, experiment in data.items()
             for inner_key, tables in experiment.items()
         }
 
         timeseries = pd.concat(
-            timeseries, names=["run_id", "exp_id"], verify_integrity=True
+            timeseries_dict, names=["run_id", "exp_id"], verify_integrity=True
         )
         timeseries = timeseries.reset_index(-1, drop=True)
         timeseries = timeseries.set_index("measurement_time", append=True)
@@ -359,7 +385,7 @@ class KIWI_RUNS(MultiFrameDataset):
 
         # remove non-informative columns:
         # columns with single value carry no information
-        mask = timeseries.nunique() > 1
+        mask: Series = timeseries.nunique() > 1
         # only keep columns that appear in at least half of the runs
         mask &= (timeseries.groupby("run_id").nunique() > 0).mean() > 0.5
         timeseries = timeseries[timeseries.columns[mask]]
@@ -386,7 +412,7 @@ class KIWI_RUNS(MultiFrameDataset):
 
         # Timeseries Features
         # fmt: off
-        timeseries_features = {
+        timeseries_features_dict = {
             "Acetate"                       : ["%",      "percent",   0,   100      ],
             "Base"                          : ["uL",     "absolute",  0,   np.inf   ],
             "Cumulated_feed_volume_glucose" : ["uL",     "absolute",  0,   np.inf   ],
@@ -406,7 +432,7 @@ class KIWI_RUNS(MultiFrameDataset):
         # fmt: on
 
         timeseries_features = DataFrame.from_dict(
-            timeseries_features,
+            timeseries_features_dict,
             orient="index",
             columns=column_dtypes["timeseries_features"],
         )
@@ -430,7 +456,7 @@ class KIWI_RUNS(MultiFrameDataset):
         ts = timeseries.reset_index("measurement_time")
         ts = ts.join([self.tmin, self.tmax])
         time = ts["measurement_time"]
-        mask: Series = (ts["start_time"] <= time) & (time <= ts["end_time"])
+        mask = (ts["start_time"] <= time) & (time <= ts["end_time"])
         print(f"Removing {(~mask).mean():.2%} of data that does not match tmin/tmax")
         ts = ts[mask]
         ts["measurement_time"] = ts["measurement_time"] - ts["start_time"]

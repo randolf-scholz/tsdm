@@ -67,7 +67,7 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
     rawdata_files = "complete_tensor.csv"
     rawdata_paths: Path
-    index = ["timeseries", "metadata"]
+    KEYS = ["timeseries", "metadata"]
 
     def clean_table(self, key):
         if not self.rawdata_paths.exists():

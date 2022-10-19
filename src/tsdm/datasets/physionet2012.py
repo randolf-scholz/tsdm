@@ -320,6 +320,7 @@ class Physionet2012(MultiFrameDataset):
     rawdata_files = {"A": "set-a.tar.gz", "B": "set-b.tar.gz", "C": "set-c.tar.gz"}
     rawdata_paths: dict[str, Path]
     unravel_triplets: bool
+    KEYS = ["A", "B", "C"]
 
     @property
     def dataset_files(self):
@@ -335,10 +336,10 @@ class Physionet2012(MultiFrameDataset):
         self.unravel_triplets = unravel_triplets
         super().__init__()
 
-    @property
-    def index(self) -> list:
-        r"""Return the index of the dataset."""
-        return list(self.dataset_files.keys())
+    # @property
+    # def KEYS(self) -> list:
+    #     r"""Return the index of the dataset."""
+    #     return list(self.dataset_files.keys())
 
     def clean_table(self, key):
         record_ids_list = []
