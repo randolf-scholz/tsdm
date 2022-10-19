@@ -446,40 +446,63 @@ class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
         self.LOGGER.info("Adding keys as attributes.")
-        if initialize:
-            for key in self.index:
-                if isinstance(key, str) and not hasattr(self, key):
-                    _get_dataset = partial(self.__class__.load, key=key)
-                    _get_dataset.__doc__ = f"Load dataset for {key=}."
-                    setattr(self.__class__, key, property(_get_dataset))
+        while initialize:
+            non_string_keys = {key for key in self.keys() if not isinstance(key, str)}
+            if non_string_keys:
+                warnings.warn(
+                    f"Not adding keys as attributes! "
+                    f"Keys '{non_string_keys}' are not strings!"
+                )
+                break
+
+            key_attributes = {
+                key
+                for key in self.keys()
+                if isinstance(key, str) and hasattr(self, key)
+            }
+            if key_attributes:
+                warnings.warn(
+                    f"Not adding keys as attributes! "
+                    f"Keys '{key_attributes}' already exist as attributes!"
+                )
+                break
+
+            for key in self.KEYS:
+                assert isinstance(key, str) and not hasattr(self, key)
+                _get_table = partial(self.__class__.load, key=key)
+                _get_table.__doc__ = f"Load dataset for {key=}."
+                setattr(self.__class__, key, property(_get_table))
+            break
 
         super().__init__(initialize=initialize, reset=reset)
 
     def __repr__(self):
         r"""Pretty Print."""
-        if len(self.index) > 6:
-            indices = list(self.index)
+        if len(self.KEYS) > 6:
+            indices = list(self.KEYS)
             selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
             selection[2] = "..."
             index_str = ", ".join(selection)
         else:
-            index_str = repr(self.index)
+            index_str = repr(self.KEYS)
         return f"{self.__class__.__name__}{index_str}"
 
     @property
     @abstractmethod
-    def index(self) -> Sequence[KeyVar]:
+    def KEYS(self) -> Sequence[KeyVar]:
         r"""Return the index of the dataset."""
+        # TODO: use abstract-attribute!
+        # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
     @cached_property
     def dataset(self) -> MutableMapping[KeyVar, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
-        return {key: None for key in self.index}
+        return {key: None for key in self.KEYS}
 
     @cached_property
     def dataset_files(self) -> Mapping[KeyVar, str]:
         r"""Relative paths to the dataset files for each key."""
-        return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.index}
+        return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.KEYS}
 
     @cached_property
     def dataset_paths(self) -> Mapping[KeyVar, Path]:
@@ -564,7 +587,7 @@ class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame
                 self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
             self.LOGGER.debug("Starting to clean dataset.")
-            for key_ in self.index:
+            for key_ in self.KEYS:
                 self.clean(key=key_, force=force, validate=validate)
             self.LOGGER.debug("Finished cleaning dataset.")
 
@@ -631,7 +654,7 @@ class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame
             self.LOGGER.debug("Starting to load  dataset.")
             ds = {
                 k: self.load(key=k, force=force, validate=validate, **kwargs)
-                for k in self.index
+                for k in self.KEYS
             }
             self.LOGGER.debug("Finished loading  dataset.")
             return ds
