@@ -254,13 +254,13 @@ class FrameDataset(BaseDataset, ABC):
 
     def validate(
         self,
-        filespec: Nested[str | Path],
+        filespec: Nested[None | str | Path],
         /,
         *,
         reference: Optional[str | Mapping[str, str]] = None,
     ) -> None:
         r"""Validate the file hash."""
-        self.LOGGER.debug("Starting to validate dataset")
+        self.LOGGER.debug("Validating %s", filespec)
 
         if isinstance(filespec, Mapping):
             for value in filespec.values():
@@ -269,6 +269,8 @@ class FrameDataset(BaseDataset, ABC):
         if isinstance(filespec, Sequence) and not isinstance(filespec, (str, Path)):
             for value in filespec:
                 self.validate(value, reference=reference)
+            return
+        if filespec is None:
             return
 
         assert isinstance(filespec, (str, Path)), f"{filespec=} wrong type!"
@@ -285,7 +287,7 @@ class FrameDataset(BaseDataset, ABC):
                 f"The filehash is '{filehash}'."
             )
 
-        elif isinstance(reference, str):
+        elif isinstance(reference, str | Path):
             if filehash != reference:
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
@@ -313,7 +315,7 @@ class FrameDataset(BaseDataset, ABC):
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference[file.stem]}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+                    f"Ignore this warning if the format is parquet."
                 )
             else:
                 self.LOGGER.info(
@@ -322,7 +324,7 @@ class FrameDataset(BaseDataset, ABC):
         else:
             raise TypeError(f"Unsupported type for {reference=}.")
 
-        self.LOGGER.debug("Finished validating file.")
+        self.LOGGER.debug("Validated %s", filespec)
 
 
 class SingleFrameDataset(FrameDataset):

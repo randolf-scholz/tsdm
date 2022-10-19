@@ -16,7 +16,7 @@ from pandas import read_csv
 from tsdm.datasets.base import MultiFrameDataset
 
 
-class ETT(MultiFrameDataset):
+class ETT(MultiFrameDataset[Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]]):
     r"""ETT-small-h1.
 
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
@@ -48,16 +48,16 @@ class ETT(MultiFrameDataset):
         "ETTm1.csv": (69680, 7),
         "ETTm2.csv": (69680, 7),
     }
-    KEYS = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
+    KEY = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
     r"""The type of the index."""
-    index: list[KEYS] = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
-    r"""IDs of the stored data-objects."""
-    rawdata_files = {key: f"{key}.csv" for key in index}
+    KEYS = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
+
+    rawdata_files = {key: f"{key}.csv" for key in KEYS}
     r"""Files containing the raw data."""
-    rawdata_paths: dict[KEYS, Path]
+    rawdata_paths: dict[KEY, Path]
     r"""Paths to the raw data."""
 
-    def clean_table(self, key: KEYS) -> None:
+    def clean_table(self, key: KEY) -> None:
         df = read_csv(
             self.rawdata_paths[key], parse_dates=[0], index_col=0, dtype="float32"
         )

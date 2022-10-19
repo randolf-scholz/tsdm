@@ -268,7 +268,7 @@ def prepend_path(
     files: Nested[Optional[PathType]],
     parent: Path,
     *,
-    keep_none: bool = False,
+    keep_none: bool = True,
 ) -> Nested[Optional[Path]]:
     r"""Prepends path to all files in nested iterable.
 

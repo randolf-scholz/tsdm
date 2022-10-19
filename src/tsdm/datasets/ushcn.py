@@ -16,7 +16,7 @@ import os
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeAlias
 
 import pandas
 from pandas import DataFrame
@@ -26,7 +26,7 @@ from tsdm.datasets.base import MultiFrameDataset
 __logger__ = logging.getLogger(__name__)
 
 
-def with_cluster(func: Callable) -> Callable:
+def with_ray_cluster(func: Callable) -> Callable:
     r"""Run function with ray cluster."""
 
     @wraps(func)
@@ -200,7 +200,8 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
-    KEYS = Literal["us_daily", "states", "stations"]
+    KEY: TypeAlias = Literal["us_daily", "states", "stations"]
+    KEYS = ["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
     RAWDATA_SHA256 = {
         "data_format.txt": "0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
@@ -221,18 +222,18 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
     index = ["us_daily", "states", "stations"]
     rawdata_files = {
         "metadata": "data_format.txt",
-        "states": None,
         "stations": "ushcn-stations.txt",
         "stations_metadata": "station_file_format.txt",
         "us_daily": "us.txt.gz",
+        "states": None,
     }
     rawdata_paths: dict[str, Path]
 
-    # def _load(self, key: KEYS = "us_daily", **kwargs: Any) -> DataFrame:
+    # def _load(self, key: KEY = "us_daily", **kwargs: Any) -> DataFrame:
     #     r"""Load the dataset from disk."""
     #     return super()._load(key=key, **kwargs)
 
-    def clean_table(self, key: KEYS = "us_daily") -> DataFrame:
+    def clean_table(self, key: KEY = "us_daily") -> DataFrame:
         r"""Create the DataFrames.
 
         Parameters
@@ -328,7 +329,7 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
         return stations
         # stations.to_parquet(self.dataset_paths["stations"])
 
-    @with_cluster
+    @with_ray_cluster
     def _clean_us_daily(self) -> DataFrame:
         if importlib.util.find_spec("modin") is not None:
             mpd = importlib.import_module("modin.pandas")
@@ -403,7 +404,8 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
-        data = data.stack(level="DAY", dropna=False).reset_index(level="DAY")
+        data = data.stack(level="DAY", dropna=False)
+        data = data.reset_index(level="DAY")
 
         self.LOGGER.info("Merging on ID columns...")
         # correct dtypes after stacking operation
