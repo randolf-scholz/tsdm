@@ -49,7 +49,10 @@ def with_ray_cluster(func: Callable) -> Callable:
     return _wrapper
 
 
-class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
+KEY: TypeAlias = Literal["us_daily", "states", "stations"]
+
+
+class USHCN(MultiFrameDataset[KEY]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -200,7 +203,6 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
-    KEY: TypeAlias = Literal["us_daily", "states", "stations"]
     KEYS = ["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
     RAWDATA_SHA256 = {

@@ -20,14 +20,17 @@ __all__ = ["MIMIC_III_DeBrouwer2019"]
 
 
 from pathlib import Path
+from typing import Literal, TypeAlias
 
 import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
 from tsdm.encoders import TripletDecoder
 
+KEY: TypeAlias = Literal["timeseries", "metadata"]
 
-class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
+
+class MIMIC_III_DeBrouwer2019(MultiFrameDataset[KEY]):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data

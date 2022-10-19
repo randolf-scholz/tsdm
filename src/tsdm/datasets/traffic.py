@@ -51,7 +51,7 @@ __all__ = ["Traffic"]
 
 from io import StringIO
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import numpy as np
@@ -70,9 +70,10 @@ def _reformat(s: str, replacements: dict) -> str:
     return result
 
 
-class Traffic(
-    MultiFrameDataset[Literal["timeseries", "labels", "randperm", "invperm"]]
-):
+KEY: TypeAlias = Literal["timeseries", "labels", "randperm", "invperm"]
+
+
+class Traffic(MultiFrameDataset[KEY]):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -88,7 +89,6 @@ class Traffic(
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
     r"""HTTP address containing additional information about the dataset."""
-    KEY = Literal["timeseries", "labels", "randperm", "invperm"]
     KEYS = ["timeseries", "labels", "randperm", "invperm"]
     r"""The names of the DataFrames associated with this dataset."""
     RAWDATA_SHA256 = "371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
