@@ -251,12 +251,12 @@ class KIWI_RUNS(MultiFrameDataset):
     timeseries_features: DataFrame
     metadata_features: DataFrame
     KEYS = [
-        "tmin",
-        "tmax",
         "timeseries",
         "metadata",
         "timeseries_features",
         "metadata_features",
+        "tmin",
+        "tmax",
     ]
 
     @property
@@ -348,8 +348,8 @@ class KIWI_RUNS(MultiFrameDataset):
                 metadata.loc[mask, col] = pd.NA
 
         # Finalize tables
-        tmin.to_parquet(self.dataset_paths["tmin"])
-        tmax.to_parquet(self.dataset_paths["tmax"])
+        tmin.to_frame().to_parquet(self.dataset_paths["tmin"])
+        tmax.to_frame().to_parquet(self.dataset_paths["tmax"])
         metadata = metadata.dropna(how="all")
         metadata.to_parquet(self.dataset_paths["metadata"])
         metadata_features.to_parquet(self.dataset_paths["metadata_features"])
