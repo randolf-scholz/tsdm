@@ -153,7 +153,7 @@ import tarfile
 import tempfile
 from collections.abc import Mapping
 from pathlib import Path
-from typing import IO, Any
+from typing import IO, Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -238,7 +238,7 @@ def read_physionet_record(
     return record_id, general_descriptors, ts
 
 
-class Physionet2012(MultiFrameDataset):
+class Physionet2012(MultiFrameDataset[Literal["A", "B", "C"]]):
     r"""Physionet Challenge 2012.
 
     Each training data file provides two tables.

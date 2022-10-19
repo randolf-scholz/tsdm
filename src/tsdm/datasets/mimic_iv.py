@@ -54,7 +54,7 @@ class MIMIC_IV(MultiFrameDataset):
     rawdata_paths: Path
 
     # fmt: off
-    dataset_files = {
+    internal_files = {
         "admissions"         : "mimic-iv-1.0/core/admissions.csv.gz",
         "patients"           : "mimic-iv-1.0/core/patients.csv.gz",
         "transfers"          : "mimic-iv-1.0/core/transfers.csv.gz",
@@ -85,7 +85,7 @@ class MIMIC_IV(MultiFrameDataset):
     }
     # fmt: on
 
-    index = list(dataset_files.keys())
+    KEYS = list(internal_files.keys())
 
     def clean_table(self, key):
         ...

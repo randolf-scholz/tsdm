@@ -127,7 +127,7 @@ class KIWI_RUNS(MultiFrameDataset):
         "units": (15, 11),
     }
 
-    index: Final[list[str]] = [
+    KEYS: Final[list[str]] = [
         "timeseries",
         "metadata",
         "units",
@@ -141,7 +141,7 @@ class KIWI_RUNS(MultiFrameDataset):
         "measurements_aggregated",
     ]
 
-    KEYS = Literal[
+    KEY = Literal[
         "metadata",
         # "setpoints",
         # "measurements_reactor",
@@ -160,9 +160,9 @@ class KIWI_RUNS(MultiFrameDataset):
     r"""The units of the measured variables."""
     rawdata_files = "kiwi_experiments.pk"
     rawdata_paths: Path
-    dataset_files = {key: f"{key}.parquet" for key in index + auxiliaries}
+    dataset_files = {key: f"{key}.parquet" for key in KEYS + auxiliaries}
 
-    # def _load(self, key: KEYS = "timeseries") -> DataFrame:
+    # def _load(self, key: KEY = "timeseries") -> DataFrame:
     #     r"""Load the dataset from disk."""
     #     table = pd.read_feather(self.dataset_paths[key])
     #
@@ -179,7 +179,7 @@ class KIWI_RUNS(MultiFrameDataset):
     #
     #     return table
 
-    def clean_table(self, key: KEYS) -> None:
+    def clean_table(self, key: KEY) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         with open(self.rawdata_paths, "rb") as file:
             self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)

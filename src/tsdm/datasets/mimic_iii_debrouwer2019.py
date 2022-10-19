@@ -64,7 +64,7 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     }
     DATASET_SHAPE = {"timeseries": (552327, 96), "metadata": (96, 3)}
 
-    dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
+    # dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
     rawdata_files = "complete_tensor.csv"
     rawdata_paths: Path
     KEYS = ["timeseries", "metadata"]

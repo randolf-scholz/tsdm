@@ -91,7 +91,7 @@ class MIMIC_III(MultiFrameDataset):
     }
     # fmt: on
 
-    index = list(dataset_files.keys())
+    KEYS = list(dataset_files.keys())
 
     def clean_table(self, key):
         raise NotImplementedError

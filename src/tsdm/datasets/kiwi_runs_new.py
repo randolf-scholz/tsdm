@@ -251,7 +251,8 @@ class KIWI_RUNS(MultiFrameDataset):
     timeseries_features: DataFrame
     metadata_features: DataFrame
     KEYS = [
-        "tmin, tmax",
+        "tmin",
+        "tmax",
         "timeseries",
         "metadata",
         "timeseries_features",

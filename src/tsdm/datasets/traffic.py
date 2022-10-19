@@ -70,7 +70,9 @@ def _reformat(s: str, replacements: dict) -> str:
     return result
 
 
-class Traffic(MultiFrameDataset):
+class Traffic(
+    MultiFrameDataset[Literal["timeseries", "labels", "randperm", "invperm"]]
+):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -86,7 +88,8 @@ class Traffic(MultiFrameDataset):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
     r"""HTTP address containing additional information about the dataset."""
-    KEYS = Literal["timeseries", "labels", "randperm", "invperm"]
+    KEY = Literal["timeseries", "labels", "randperm", "invperm"]
+    KEYS = ["timeseries", "labels", "randperm", "invperm"]
     r"""The names of the DataFrames associated with this dataset."""
     RAWDATA_SHA256 = "371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
     DATASET_SHA256 = {
@@ -95,8 +98,6 @@ class Traffic(MultiFrameDataset):
         "randperm": "4d8fa113fd20e397b2802bcc851a8dca861d3e8b806be490a6dff3e0c112f613",
         "invperm": "2838f7df33a292830acf09a3870b495ca0e5524f085aea0b66452248012c9817",
     }
-    index: list[KEYS] = ["timeseries", "labels", "randperm", "invperm"]
-    r"""The identifiers for the dataset."""
     rawdata_files = "PEMS-SF.zip"
     r"""The name of the zip file containing the raw data."""
     rawdata_paths: Path
@@ -105,7 +106,7 @@ class Traffic(MultiFrameDataset):
     randperm: DataFrame
     invperm: DataFrame
 
-    def clean_table(self, key: KEYS) -> None:
+    def clean_table(self, key: KEY) -> None:
         r"""Create the DataFrames.
 
         Parameters
