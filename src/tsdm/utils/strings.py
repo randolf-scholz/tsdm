@@ -232,8 +232,18 @@ def repr_sequence(
     br = "\n" if linebreaks else ""
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
-    title = type(obj).__name__ if title is None else title
-    string = title + "(" + br
+
+    if isinstance(obj, list):
+        title, left, right = "", "[", "]"
+    elif isinstance(obj, set):
+        title, left, right = "", "{", "}"
+    elif isinstance(obj, tuple):
+        title, left, right = "", "(", ")"
+    else:
+        title = type(obj).__name__ if title is None else title
+        left, right = "(", ")"
+
+    string = title + left + br
 
     def to_string(x: Any) -> str:
         if recursive:
@@ -252,7 +262,7 @@ def repr_sequence(
         string += "".join(
             f"{pad}{to_string(value)}{sep}{br}" for value in obj[-maxitems // 2 :]
         )
-    string += ")"
+    string += right
 
     return string
 
@@ -310,7 +320,7 @@ def repr_array(obj: Array | DataFrame, *, title: Optional[str] = None) -> str:
     -------
     str
     """
-    assert isinstance(obj, Array)
+    assert isinstance(obj, Array | DataFrame)
 
     title = type(obj).__name__ if title is None else title
 
