@@ -8,6 +8,8 @@ __all__ = [
     "BaseDatasetMetaClass",
     "SingleFrameDataset",
     "MultiFrameDataset",
+    "TimeSeriesDataset",
+    "TimeSeriesCollection",
     # Types
     "DATASET_OBJECT",
 ]
@@ -35,6 +37,7 @@ from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.hash import hash_pandas
 from tsdm.utils.remote import download
+from tsdm.utils.strings import repr_dataclass
 from tsdm.utils.types import KeyVar, Nested, PathType
 
 DATASET_OBJECT: TypeAlias = Series | DataFrame
@@ -805,6 +808,10 @@ class TimeSeriesDataset(TorchDataset):
         r"""Iterate over the timestamps."""
         return iter(self.timeseries)
 
+    def __repr__(self):
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, recursive=1)
+
 
 @dataclass
 class TimeSeriesCollection(Generic[KeyVar]):
@@ -878,7 +885,12 @@ class TimeSeriesCollection(Generic[KeyVar]):
         for key in self.index:
             yield self[key]
 
+    def __repr__(self):
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, recursive=1)
 
+
+@dataclass
 class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
     r"""Abstract Base Class for generic TimeSeriesCollections.
 
@@ -916,3 +928,7 @@ class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
         r"""Iterate over the collection."""
         for key in self.index:
             yield self[key]
+
+    def __repr__(self):
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, recursive=1)
