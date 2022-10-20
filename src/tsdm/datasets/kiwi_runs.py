@@ -324,6 +324,7 @@ class KIWI_RUNS(MultiFrameDataset):
         time_features = time_features[
             ["unit", "scale", "dtype", "lower", "upper", "start_time", "end_time"]
         ]
+        time_features = time_features.astype(column_dtypes["time_features"])
 
         # select columns
         columns = [key for key, val in selected_columns["metadata"].items() if val]
