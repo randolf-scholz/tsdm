@@ -30,7 +30,7 @@ from typing import Any, ClassVar, Generic, Optional, TypeAlias, overload
 from urllib.parse import urlparse
 
 import pandas
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.config import DATASETDIR, RAWDATADIR
@@ -871,6 +871,20 @@ class TimeSeriesCollection(Generic[KeyVar]):
             mf = self.metadata_features.loc[key]
         else:
             mf = self.metadata_features
+
+        if isinstance(ts.index, MultiIndex):
+            index = ts.index.droplevel(-1).unique()
+            return TimeSeriesCollection(  # type: ignore[return-value]
+                index=index,
+                timeseries=ts,
+                metadata=md,
+                time_features=tf,
+                value_features=vf,
+                metadata_features=mf,
+                global_metadata=self.global_metadata,
+                global_features=self.global_features,
+                index_features=self.index_features,
+            )
 
         return TimeSeriesDataset(
             ts, md, time_features=tf, value_features=vf, metadata_features=mf
