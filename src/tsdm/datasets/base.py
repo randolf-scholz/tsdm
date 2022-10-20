@@ -19,7 +19,7 @@ import subprocess
 import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property, partial
 from hashlib import sha256
@@ -107,26 +107,6 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             self.clean()
         if initialize:
             self.load()
-
-    def __len__(self) -> int:
-        r"""Return the number of samples in the dataset."""
-        return self.dataset.__len__()
-
-    def __getitem__(self, idx):
-        r"""Return the sample at index `idx`."""
-        return self.dataset.__getitem__(idx)
-
-    def __setitem__(self, key: Hashable, value: Any) -> None:
-        r"""Return the sample at index `idx`."""
-        self.dataset[key] = value
-
-    def __delitem__(self, key: Hashable, /) -> None:
-        r"""Return the sample at index `idx`."""
-        self.dataset.__delitem__(key)
-
-    def __iter__(self) -> Iterator:
-        r"""Return an iterator over the dataset."""
-        return self.dataset.__iter__()
 
     def __repr__(self):
         r"""Return a string representation of the dataset."""
@@ -435,7 +415,7 @@ class SingleFrameDataset(FrameDataset):
             self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
 
-class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame]):
+class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     r"""Dataset class that consists of a multiple DataFrames.
 
     The Datasets are accessed by their index.
@@ -451,7 +431,7 @@ class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame
         r"""Initialize the Dataset."""
         self.LOGGER.info("Adding keys as attributes.")
         while initialize:
-            non_string_keys = {key for key in self.keys() if not isinstance(key, str)}
+            non_string_keys = {key for key in self.KEYS if not isinstance(key, str)}
             if non_string_keys:
                 warnings.warn(
                     f"Not adding keys as attributes! "
@@ -460,9 +440,7 @@ class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame
                 break
 
             key_attributes = {
-                key
-                for key in self.keys()
-                if isinstance(key, str) and hasattr(self, key)
+                key for key in self.KEYS if isinstance(key, str) and hasattr(self, key)
             }
             if key_attributes:
                 warnings.warn(
@@ -479,6 +457,18 @@ class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame
             break
 
         super().__init__(initialize=initialize, reset=reset)
+
+    # def __len__(self) -> int:
+    #     r"""Return the number of samples in the dataset."""
+    #     return self.dataset.__len__()
+    #
+    # def __getitem__(self, idx):
+    #     r"""Return the sample at index `idx`."""
+    #     return self.dataset.__getitem__(idx)
+    #
+    # def __iter__(self) -> Iterator:
+    #     r"""Return an iterator over the dataset."""
+    #     return self.dataset.__iter__()
 
     def __repr__(self):
         r"""Pretty Print."""
