@@ -1,4 +1,4 @@
-# Time Series Datasets
+# Time Series Datasets v 1.1
 
 After working with several Time Series Datasets, we identified 3 main types of Time Series Datasets (2 fundamental ones and 1 subtype).
 
@@ -27,52 +27,104 @@ If all time series in a TSC have the same data modality, i.e. they share the sam
 
 For the purpose of the KIWI project, it seems appropriate to only work with equimodal TSCs. Applying meta-learning / multi-task-learning Machine Learning over non-equimodal TSCs is in principle possible, but much more complicated.
 
+### Variant: _multi-table_ Time Series
+
+In some cases, it might not be sensible to encode the time series data in a single tensor.
+For example, for video data, one might have time-indexed image and audio data, the former being naturally 2-dimensional (or even 3 dimensional when considering color channels) and the latter being 1-dimensional.
+
+Of course, in principle the data could be flattened into a single tensor (in particular, under the hood the computer does this as memory is a 1-dimensional array), but this is not very convenient for the user.
+
+So, we say that a time series dataset is **single-table** if the data is expressed as an element of a tensor product space of "elementary spaces", e.g. $𝓥 = 𝓥^{n_1} ⊗ 𝓥^{n_2} ⊗ … ⊗ 𝓥^{n_k}$. Otherwise, if it is a direct sum of some spaces, i.e. $𝓥 = 𝓥_1 ⊕ 𝓥_2 ⊕ … ⊕ 𝓥_k$, then we say that the time series dataset is **multi-table**.
+
+The same applies for the metadata.
+
 # Implementation Details
 
-With regard to the implementation, we make the following simplifying assumptions:
+For simplicity, we will only consider **single-table** time series datasets (i.e. all observations at timestamp $t$ can be naturally stored in a single n-dimensional tensor. This would not include cases like video data, where one might have a 2-dimensional image and a 1-dimensional audio signal at each timestamp that need to be stored in separate tables if one wishes to avoid having to flatten the image data).
 
-1. We assume all **values** can be represented in simple vectorial form. If the data contains non-vectorial information, such as images, or spectral data, we need to think about adding additional tables. In this case, [`xarray`](https://docs.xarray.dev/en/stable/) datasets may offer a useful abstraction.
-2. We assume the metadata can be represented as 3 tables of interest:
+## Implementation: Time Series Dataset (TSD)
 
-   1. `metadata`: Time-independent information
-
-   2. `timeseries_features`: Time Series Channel description (better name suggestion appreciated)
-   3. `metadata_features`: Metadata Column description (better name suggestion appreciated)
-
-3. Additionally, we require each TSD to contain a `tmin` and a `tmax` field, which indicate the beginning and end of the time series. All time stamps in the dataset must be between `tmin` and `tmax` (both included).
-   - By default, these can be initialized with the smallest/largest timestamp in the dataset.
-   - Design Question: Make these part of the metadata or not?
-
-**Remark:** 2.2 and 2.3 can be superfluous if the database allows annotation/metadata per columns, or datatypes with units.
-
-**Remark:** For most ML applications, global metadata is superfluous, it would only become relevant for meta-learning across collections of TSC (i.e. sort of nested collections of time series).
-
-## Definition (Programming) - simplified
-
-## Implementation (TimeSeriesDataset)
+Following the mathematical definition, we require the following data to specifiy a time-series dataset:
 
 ```yaml
-TimeSeriesDataset:
-  timeseries: DataFrame # index: Time
-  metadata: Optional[DataFrame] = None # single row!
-  timeseries_features: Optional[DataFrame] = None # rows = timeseries.columns
-  metadata_features: Optional[DataFrame] = None # rows = metadata.columns
-  # tmin/tmax possible mandatory columns in metadata?
-  tmin: TimeLike # smallest timestamp
-  tmax: TimeLike # largest  timestamp
+TimeSeriesDataset: tuple[timeseries, metadata, time_features, value_features, metadata_features]
+  timeseries:  DataFrame                      # index: Time, alternative: tuple[TimeArray, ValueArray]
+    time:      Array[Time, dtype=TimeLike]    # sorted ascending, indexes the other tables
+    values:    Array[shape=(len(time), ...)]
+  metadata:  Optional[DataFrame] = None       # single row DataFrame / dict
+    ...                                       # arbitrary metadata
+  # space desctriptors
+  time_features: Optional[DataFrame]         # single row DataFrame / dict
+    unit:  category[str]  # The unit of the time index (e.g. "s" or "h" if TimeArray is int/float)
+    scale: category[str]  # The scale "percent", "absolute", "linear", "logarithmic", etc.
+    dtype: category[str]  # The data type of the time index (e.g. "int" or "float")
+    lower: TimeLike       # The time when the time series starts (must be ≤ t[0])
+    upper: TimeLike       # The time when the time series ends (must be ≥ t[-1])
+    ...                   # Other time features (e.g. error bounds if clocks imprecise, etc.)
+  value_features: Optional[DataFrame] = None  # rows = timeseries.columns
+    unit:  category[str]  # The unit of the values (e.g. "m" or "°C")
+    scale: category[str]  # The scale "percent", "absolute", "linear", "logarithmic", etc.
+    dtype: category[str]  # The data type of the values (e.g. "float32" or "int32")
+    lower: numerical      # Lower Bound of the values, if applicable
+    upper: numerical      # Upper Bound of the values, if applicable
+    ...                   # Other timeseries features (e.g. error bounds, etc.)
+  metadata_features: Optional[DataFrame] = None  # rows = metadata.columns
+    unit:  category[str]  # The unit of the values (e.g. "m" or "°C")
+    scale: category[str]  # The scale "percent", "absolute", "linear", "logarithmic", etc.
+    dtype: category[str]  # The data type of the values (e.g. "float32" or "int32")
+    lower: numerical      # Lower Bound of the values, if applicable
+    upper: numerical      # Upper Bound of the values, if applicable
+    ...                   # Other metadata features (e.g. error bounds, etc.)
 ```
 
+The optional tables `time_features`, `timeseries_features` and `metadata_features` encode information describing the spaces $𝓣$, $𝓥$ and $𝓜$, respectively. This information
+
+For a **multi-table** timeseries dataset such as video data, we might have 3 tables `image`, `audio` and `subtitles` instead of just a single `values` table.
+
 ```yaml
-TimeSeriesCollection: # equimodal !
-  index: Index # contains IDs
-  timeseries: DataFrame # multi-index: [ID, Time]
-  metadata: Optional[DataFrame] = None # index: ID
-  timeseries_features: Optional[DataFrame] = None # rows = timeseries.columns
-  metadata_features: Optional[DataFrame] = None # rows = metadata.columns
-  global_metadata: Optional[DataFrame] = None
-  # tmin/tmax possible mandatory columns in metadata?
-  tmin: Series[TimeLike] # index: ID
-  tmax: Series[TimeLike] # index: ID
+timeseries:
+  time: Array[Time] # sorted: ascending.
+  # indexes the other tables, i.e. they have 1 row per timestamp
+  image: Array[Sample, Height, Width, Channels, dtype=int8]
+  audio: Array[Sample, Channel, dtype=int8]
+  subtitles: Array[Sample, Language, dtype=string]
+```
+
+## Implementation: Time Series Collection (TSC)
+
+There are 2 main differences:
+
+- Additional table `index`
+- The `timeseries` table is now a dictionary of `timeseries` tables, one for each time series in the collection.
+- The `metadata` table is now a dictionary of `metadata` tables, one for each time series in the collection.
+- The space descriptors are now also tables, with `time_features[i]`, `value_features[i]` and `metadata_features[i]` describing the spaces $𝓣ᵢ$, $𝓥ᵢ$ and $𝓜ᵢ$, respectively.
+- Additional table `index_features` describing the space $𝓘$.
+- Additional tables `global_metadata` that is independent of the index
+
+```yaml
+TimeSeriesCollection: # generic
+  index: Required[Array]
+  data: Required[dict[index, TSD]]
+  global_metadata: Optional[Array]
+  # space descriptors
+  index_features: Optional[Array]
+  global_features: Optional[Array]
+```
+
+However, we are mostly interested in the **equimodal** case, i.e. when all the TSDs share the same value and metadata space $𝓥ᵢ = 𝓥$ and $𝓜ᵢ = 𝓜$ for all $i∈𝓘$. We do however allow differences in the time space, in paricular the upper and lower bounds might vary, as each time series is defined over a different interval. So only a single table `value_features` and `metadata_features` is required. Since `time_features` was a single-row table, we can use the index $𝓘$ as the rows. In practice a convenient solution is to use `timedelta64` format for the time-index which in most cases alleviates the need for any time-features besides lower and upper bounds.
+
+```yaml
+TimeSeriesCollection: # equimodal
+  index: Required[Array]
+  timeseries: Required[Array[index, time, values]]
+  metadata: Optional[Array[index, metadata]]
+  global_metadata: Optional[Array]
+  # space descriptors
+  index_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
+  time_features: Optional[Array[index, unit, scale, dtype, lower, upper, ...]]
+  values_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
+  metadata_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
+  global_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
 ```
 
 # Examples
