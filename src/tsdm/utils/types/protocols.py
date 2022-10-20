@@ -31,12 +31,10 @@ class Array(Protocol[ScalarType]):
     @property
     def shape(self) -> Iterable[int]:
         r"""Yield the shape of the array."""
-        ...
 
     @property
     def dtype(self) -> type[ScalarType]:
         r"""Yield the data type of the array."""
-        ...
 
     # fmt: off
     def __len__(self) -> int: ...

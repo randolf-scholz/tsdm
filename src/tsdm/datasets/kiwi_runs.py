@@ -241,7 +241,16 @@ class KIWI_RUNS(MultiFrameDataset):
     BASE_URL = (
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/fGFEJicrcjsxDBd/download/"
     )
-    RAWDATA_SHA256 = r"dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181"
+    RAWDATA_HASH = r"dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181"
+
+    TABLE_HASH = {
+        "timeseries": 7423431600366696406,
+        "metadata": 2037390744336738142,
+        "time_features": 4775909302393294764,
+        "value_features": -6386491732663357532,
+        "metadata_features": 4215379263850919231,
+    }
+
     rawdata_files = "kiwi_experiments.pk"
     rawdata_paths: Path
 
@@ -266,6 +275,7 @@ class KIWI_RUNS(MultiFrameDataset):
 
     @property
     def index(self) -> Index:
+        r"""Return the index of the dataset."""
         return self.metadata.index
 
     def clean_table(self, key):
@@ -501,3 +511,12 @@ class KIWI_RUNS(MultiFrameDataset):
         timeseries = timeseries.dropna(how="all")
         timeseries = timeseries.sort_values(["run_id", "exp_id", "measurement_time"])
         timeseries.to_parquet(self.dataset_paths["timeseries"])
+
+
+# INFO:tsdm.datasets.kiwi_runs.KIWI_RUNS:Adding keys as attributes.
+# timeseries '7423431600366696406'
+# 'metadata.parquet' '2037390744336738142'
+#  'time_features.parquet''4775909302393294764'
+# 'value_features.parquet''-6386491732663357532'
+# 'metadata_features.parquet'  '4215379263850919231'
+# 'filehash='4215379263850919231''.

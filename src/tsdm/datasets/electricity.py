@@ -70,8 +70,8 @@ class Electricity(SingleFrameDataset):
     )
     r"""HTTP address containing additional information about the dataset."""
 
-    DATASET_SHA256 = "5fc87215f2b5097ee96d15e382fd360b92757c241a0315a59c82951945860cc9"
-    RAWDATA_SHA256 = "f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
+    DATASET_HASH = "5fc87215f2b5097ee96d15e382fd360b92757c241a0315a59c82951945860cc9"
+    RAWDATA_HASH = "f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
     DATASET_SHAPE = (140256, 370)
     RAWDATA_SHAPE = (140256, 370)
 

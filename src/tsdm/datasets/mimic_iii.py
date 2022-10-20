@@ -56,7 +56,7 @@ class MIMIC_III(MultiFrameDataset):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
     VERSION = r"1.0"
-    RAWDATA_SHA256 = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
+    RAWDATA_HASH = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
 
     rawdata_files = "mimic-iv-1.0.zip"
     rawdata_paths: Path

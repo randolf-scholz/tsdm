@@ -115,13 +115,13 @@ class KIWI_RUNS_OLD(MultiFrameDataset):
     BASE_URL = (
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/fGFEJicrcjsxDBd/download/"
     )
-    RAWDATA_SHA256 = "79d8d15069b4adc6d77498472008bd87e3699a75bb612029232bd051ecdbb078"
-    DATASET_SHA256 = {
+    RAWDATA_HASH = "79d8d15069b4adc6d77498472008bd87e3699a75bb612029232bd051ecdbb078"
+    DATASET_HASH = {
         "timeseries": "819d5917c5ed65cec7855f02156db1abb81ca3286e57533ee15eb91c072323f9",
         "metadata": "8b4d3f922c2fb3988ae606021492aa10dd3d420b3c6270027f91660a909429ae",
         "units": "aa4d0dd22e0e44c78e7034eb49ed39cde371fa1e4bf9b9276e9e2941c54e5eca",
     }
-    DATASET_SHAPE = {
+    TABLE_SHAPE = {
         "timeseries": (386812, 15),
         "metadata": (264, 11),
         "units": (15, 11),

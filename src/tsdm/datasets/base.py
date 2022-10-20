@@ -19,7 +19,7 @@ import subprocess
 import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property, partial
 from hashlib import sha256
@@ -33,6 +33,7 @@ from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
+from tsdm.utils.hash import hash_pandas
 from tsdm.utils.remote import download
 from tsdm.utils.types import KeyVar, Nested, PathType
 
@@ -198,10 +199,12 @@ class FrameDataset(BaseDataset, ABC):
 
     DEFAULT_FILE_FORMAT: str = "parquet"
     r"""Default format for the dataset."""
-    RAWDATA_SHA256: Optional[str | Mapping[str, str]] = None
-    r"""SHA256 hash value of the raw data file(s)."""
-    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[str, tuple[int, ...]]] = None
-    r"""Reference shape of the raw data file(s)."""
+    RAWDATA_HASH: Optional[str | Mapping[str, str]] = None
+    r"""Hash value of the raw data file(s), checked after download."""
+    # DATASET_HASH: Optional[str | Mapping[str, str]] = None
+    # r"""Hash value of the dataset file(s), checked after clean."""
+    # TABLE_HASH: Optional[str | Mapping[str, str]] = None
+    # r"""Hash value of the dataset table(s), checked after load."""
 
     @staticmethod
     def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
@@ -234,15 +237,64 @@ class FrameDataset(BaseDataset, ABC):
 
         raise NotImplementedError(f"No loader for {file_type=}")
 
+    def validate_table(
+        self,
+        table: DataFrame,
+        reference: Optional[Hashable | Mapping[str, Hashable]] = None,
+    ) -> None:
+        r"""Validate the table."""
+        filehash = hash_pandas(table)
+
+        if reference is None:
+            warnings.warn(
+                f"Table '{table.name}' cannot be validated as no hash is stored in {self.__class__}."
+                f"The hash is '{filehash}'."
+            )
+        elif isinstance(reference, int | str):
+            if filehash != reference:
+                warnings.warn(
+                    f"Table '{table.name}' failed to validate!"
+                    f"Table hash '{filehash}' does not match reference '{reference}'."
+                    f"Ignore this warning if the format is parquet."
+                )
+            self.LOGGER.info(
+                f"Table '{table.name}' validated successfully '{filehash=}'."
+            )
+        elif isinstance(reference, Mapping):
+            if table.name not in reference:
+                warnings.warn(
+                    f"Table '{table.name}' cannot be validated as it is not contained in {reference}."
+                    f"The hash is '{filehash}'."
+                    f"Ignore this warning if the format is parquet."
+                )
+            elif table.name in reference and filehash != reference[table.name]:
+                warnings.warn(
+                    f"Table '{table.name}' failed to validate!"
+                    f"Table hash '{filehash}' does not match reference '{reference[table.name]}'."
+                    f"Ignore this warning if the format is parquet."
+                )
+            else:
+                self.LOGGER.info(
+                    f"Table '{table.name}' validated successfully '{filehash=}'."
+                )
+        else:
+            raise TypeError(f"Unsupported type for {reference=}.")
+
+        self.LOGGER.debug("Validated %s", table.name)
+
     def validate(
         self,
         filespec: Nested[None | str | Path],
         /,
         *,
-        reference: Optional[str | Mapping[str, str]] = None,
+        reference: Optional[Hashable | Mapping[str, Hashable]] = None,
     ) -> None:
         r"""Validate the file hash."""
         self.LOGGER.debug("Validating %s", filespec)
+
+        if isinstance(filespec, DataFrame):
+            self.validate_table(filespec, reference=reference)
+            return
 
         if isinstance(filespec, Mapping):
             for value in filespec.values():
@@ -256,6 +308,7 @@ class FrameDataset(BaseDataset, ABC):
             return
 
         assert isinstance(filespec, (str, Path)), f"{filespec=} wrong type!"
+        filespec = Path(filespec)
         file = Path(filespec)
 
         if not file.exists():
@@ -268,30 +321,28 @@ class FrameDataset(BaseDataset, ABC):
                 f"File '{file.name}' cannot be validated as no hash is stored in {self.__class__}."
                 f"The filehash is '{filehash}'."
             )
-
         elif isinstance(reference, str | Path):
             if filehash != reference:
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+                    f"Ignore this warning if the format is parquet."
                 )
             self.LOGGER.info(
                 f"File '{file.name}' validated successfully '{filehash=}'."
             )
-
         elif isinstance(reference, Mapping):
             if not (file.name in reference) ^ (file.stem in reference):
                 warnings.warn(
                     f"File '{file.name}' cannot be validated as it is not contained in {reference}."
                     f"The filehash is '{filehash}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+                    f"Ignore this warning if the format is parquet."
                 )
             elif file.name in reference and filehash != reference[file.name]:
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+                    f"Ignore this warning if the format is parquet."
                 )
             elif file.stem in reference and filehash != reference[file.stem]:
                 warnings.warn(
@@ -312,10 +363,10 @@ class FrameDataset(BaseDataset, ABC):
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    DATASET_SHA256: Optional[str] = None
-    r"""SHA256 hash value of the dataset file(s)."""
-    DATASET_SHAPE: Optional[tuple[int, ...]] = None
-    r"""Reference shape of the dataset file(s)."""
+    DATASET_HASH: Optional[str] = None
+    r"""Hash value of the dataset file(s), checked after clean."""
+    TABLE_HASH: Optional[int] = None
+    r"""Hash value of the table file(s), checked after load."""
 
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
@@ -368,7 +419,7 @@ class SingleFrameDataset(FrameDataset):
             self.LOGGER.debug("Dataset files already exist!")
 
         if validate:
-            self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
+            self.validate(self.dataset_paths, reference=self.DATASET_HASH)
 
         self.LOGGER.debug("Starting to load dataset.")
         ds = self._load()
@@ -385,7 +436,7 @@ class SingleFrameDataset(FrameDataset):
             self.download(force=force, validate=validate)
 
         if validate:
-            self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
+            self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
 
         self.LOGGER.debug("Starting to clean dataset.")
         df = self._clean()
@@ -395,7 +446,7 @@ class SingleFrameDataset(FrameDataset):
         self.LOGGER.debug("Finished cleaning dataset.")
 
         if validate:
-            self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
+            self.validate(self.dataset_paths, reference=self.DATASET_HASH)
 
     def download(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Download the dataset."""
@@ -412,7 +463,7 @@ class SingleFrameDataset(FrameDataset):
         self.LOGGER.debug("Starting downloading dataset.")
 
         if validate:
-            self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
+            self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
 
 
 class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
@@ -422,10 +473,10 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     We subclass `Mapping` to provide the mapping interface.
     """
 
-    DATASET_SHA256: Optional[Mapping[str, str]] = None
-    r"""SHA256 hash value of the dataset file(s)."""
-    DATASET_SHAPE: Optional[Mapping[str, tuple[int, ...]]] = None
-    r"""Reference shape of the dataset file(s)."""
+    DATASET_HASH: Optional[Mapping[KeyVar, str]] = None
+    r"""Hash value of the dataset file(s), checked after clean."""
+    TABLE_HASH: Optional[Mapping[KeyVar, int]] = None
+    r"""Hash value of the dataset file(s), checked after load."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
@@ -523,28 +574,6 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     def clean_table(self, key: KeyVar) -> DATASET_OBJECT | None:
         r"""Clean the selected DATASET_OBJECT."""
 
-    def load_table(self, key: KeyVar) -> DATASET_OBJECT:
-        r"""Load the selected DATASET_OBJECT."""
-        return self.deserialize(self.dataset_paths[key])
-
-    def download_table(self, key: KeyVar = None) -> None:
-        r"""Download the selected DATASET_OBJECT."""
-        assert self.BASE_URL is not None, "base_url is not set!"
-
-        rawdata_files: Nested[Optional[PathType]]
-        if isinstance(self.rawdata_files, Mapping):
-            rawdata_files = self.rawdata_files[key]
-        else:
-            rawdata_files = self.rawdata_files
-
-        nested_files: Nested[Path] = prepend_path(
-            rawdata_files, Path(), keep_none=False
-        )
-        files: set[Path] = flatten_nested(nested_files, kind=Path)
-
-        for file in files:
-            self.download_from_url(self.BASE_URL + file.name)
-
     def clean(
         self,
         key: Optional[KeyVar] = None,
@@ -574,27 +603,32 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
             and not force
         ):
             self.LOGGER.debug("Clean files already exists, skipping <%s>", key)
+            assert key is not None
+            if validate:
+                self.validate(self.dataset_paths[key], reference=self.DATASET_HASH)
             return
 
         if key is None:
-            if validate:
-                self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
-
             self.LOGGER.debug("Starting to clean dataset.")
             for key_ in self.KEYS:
                 self.clean(key=key_, force=force, validate=validate)
             self.LOGGER.debug("Finished cleaning dataset.")
-
-            if validate:
-                self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
             return
 
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
+
         df = self.clean_table(key=key)
         if df is not None:
             self.LOGGER.info("Serializing dataset <%s>", key)
             self.serialize(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
+
+        if validate:
+            self.validate(self.dataset_paths[key], reference=self.DATASET_HASH)
+
+    def load_table(self, key: KeyVar) -> DATASET_OBJECT:
+        r"""Load the selected DATASET_OBJECT."""
+        return self.deserialize(self.dataset_paths[key])
 
     @overload
     def load(
@@ -658,13 +692,34 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
             self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
             return self.dataset[key]
 
-        if validate:
-            self.validate(self.dataset_paths[key], reference=self.DATASET_SHA256)
-
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
-        self.dataset[key] = self.load_table(key=key)
+        table = self.load_table(key=key)
+        table.name = key
+        self.dataset[key] = table
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
+
+        if validate:
+            self.validate(table, reference=self.TABLE_HASH)
+
         return self.dataset[key]
+
+    def download_table(self, key: KeyVar = None) -> None:
+        r"""Download the selected DATASET_OBJECT."""
+        assert self.BASE_URL is not None, "base_url is not set!"
+
+        rawdata_files: Nested[Optional[PathType]]
+        if isinstance(self.rawdata_files, Mapping):
+            rawdata_files = self.rawdata_files[key]
+        else:
+            rawdata_files = self.rawdata_files
+
+        nested_files: Nested[Path] = prepend_path(
+            rawdata_files, Path(), keep_none=False
+        )
+        files: set[Path] = flatten_nested(nested_files, kind=Path)
+
+        for file in files:
+            self.download_from_url(self.BASE_URL + file.name)
 
     def download(
         self,
@@ -707,8 +762,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
             self.LOGGER.debug("Finished downloading dataset.")
 
             if validate:
-                self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
-
+                self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
             return
 
         # Download specific key
