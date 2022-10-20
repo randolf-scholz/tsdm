@@ -72,6 +72,9 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset[KEY]):
     rawdata_paths: Path
     KEYS = ["timeseries", "metadata"]
 
+    timeseries: pd.DataFrame
+    metadata: pd.DataFrame
+
     def clean_table(self, key):
         if not self.rawdata_paths.exists():
             raise RuntimeError(

@@ -25,7 +25,7 @@ __logger__ = logging.getLogger(__name__)
 # fmt: off
 column_dtypes = {
     "metadata": {
-        # "experiment_id"          : "Int32",
+        # "experiment_id"        : "Int32",
         "bioreactor_id"          : "Int32",
         "container_number"       : "Int32",
         "profile_id"             : "Int32",
@@ -89,41 +89,53 @@ column_dtypes = {
         "Volume"                          : "Float32",
         "Acid"                            : "Int32",
     },
-    "setpoints" : {
-        "cultivation_age"             : "Int32",
-        "setpoint_id"                 : "Int32",
-        "unit"                        : "string[pyarrow]",
-        "Feed_glc_cum_setpoints"      : "Int32",
-        "Flow_Air"                    : "Int32",
-        "InducerConcentration"        : "Float32",
-        "Puls_AceticAcid"             : "Int32",
-        "Puls_Glucose"                : "Int32",
-        "Puls_Medium"                 : "Int32",
-        "StirringSpeed"               : "Int32",
-        "pH"                          : "Float32",
-        "Flow_Nitrogen"               : "Int32",
-        "Flow_O2"                     : "Int32",
-        "Feed_dextrine_cum_setpoints" : "Int32",
-        "Temperature"                 : "Int32",
-    },
+    # "setpoints" : {
+    #     "cultivation_age"             : "Int32",
+    #     "setpoint_id"                 : "Int32",
+    #     "unit"                        : "string[pyarrow]",
+    #     "Feed_glc_cum_setpoints"      : "Int32",
+    #     "Flow_Air"                    : "Int32",
+    #     "InducerConcentration"        : "Float32",
+    #     "Puls_AceticAcid"             : "Int32",
+    #     "Puls_Glucose"                : "Int32",
+    #     "Puls_Medium"                 : "Int32",
+    #     "StirringSpeed"               : "Int32",
+    #     "pH"                          : "Float32",
+    #     "Flow_Nitrogen"               : "Int32",
+    #     "Flow_O2"                     : "Int32",
+    #     "Feed_dextrine_cum_setpoints" : "Int32",
+    #     "Temperature"                 : "Int32",
+    # },
     "metadata_features" : {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
+        "dtype" : "string[pyarrow]",
         "lower" : "Float32",
         "upper" : "Float32",
     },
-    "timeseries_features" : {
+    "value_features" : {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
+        "dtype" : "string[pyarrow]",
         "lower" : "Float32",
         "upper" : "Float32",
     },
-    "setpoints_features" : {
+    "time_features": {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
-        "lower" : "Float32",
-        "upper" : "Float32",
+        "dtype" : "string[pyarrow]",
+        "lower" : "timedelta64[ns]",
+        "upper" : "timedelta64[ns]",
+        "start_time" : "datetime64[ns]",
+        "end_time"   : "datetime64[ns]",
     },
+    # "setpoints_features" : {
+    #     "unit"  : "string[pyarrow]",
+    #     "scale" : "string[pyarrow]",
+    #     "dtype": "string[pyarrow]",
+    #     "lower" : "Float32",
+    #     "upper" : "Float32",
+    # },
 }
 # fmt: on
 
@@ -205,9 +217,8 @@ class KIWI_RUNS(MultiFrameDataset):
 
     - timeseries
     - metadata
-    - tmin, tmax
-    - globals
-    - timeseries_features
+    - time_features
+    - value_features
     - metadata_features
 
     Rawdata Format:
@@ -234,29 +245,23 @@ class KIWI_RUNS(MultiFrameDataset):
     rawdata_files = "kiwi_experiments.pk"
     rawdata_paths: Path
 
-    # RAWDATA_SHA256 = "79d8d15069b4adc6d77498472008bd87e3699a75bb612029232bd051ecdbb078"
-    # DATASET_SHA256 = {
-    #     "timeseries": "819d5917c5ed65cec7855f02156db1abb81ca3286e57533ee15eb91c072323f9",
-    #     "metadata": "8b4d3f922c2fb3988ae606021492aa10dd3d420b3c6270027f91660a909429ae",
-    #     "units": "aa4d0dd22e0e44c78e7034eb49ed39cde371fa1e4bf9b9276e9e2941c54e5eca",
-    # }
-    # DATASET_SHAPE = {
-    #     "timeseries": (386812, 15),
-    #     "metadata": (264, 11),
-    # }
-    tmin: Series
-    tmax: Series
     timeseries: DataFrame
     metadata: DataFrame
-    timeseries_features: DataFrame
+
+    time_features: DataFrame
+    value_features: DataFrame
     metadata_features: DataFrame
+
+    index_features = None
+    global_metadata = None
+    global_features = None
+
     KEYS = [
         "timeseries",
         "metadata",
-        "timeseries_features",
+        "time_features",
+        "value_features",
         "metadata_features",
-        "tmin",
-        "tmax",
     ]
 
     @property
@@ -264,9 +269,9 @@ class KIWI_RUNS(MultiFrameDataset):
         return self.metadata.index
 
     def clean_table(self, key):
-        if key in ["timeseries", "timeseries_features"]:
+        if key in ["timeseries", "value_features"]:
             self.clean_timeseries()
-        if key in ["index", "tmin", "tmax", "metadata", "metadata_features"]:
+        if key in ["index", "metadata", "time_features", "metadata_features"]:
             self.clean_metadata()
 
     def clean_metadata(self):
@@ -297,9 +302,20 @@ class KIWI_RUNS(MultiFrameDataset):
         # fix datatypes
         metadata = metadata.astype(column_dtypes["metadata"])
 
+        # time_features
+        time_features = metadata[["start_time", "end_time"]].copy()
+        time_features["lower"] = (
+            time_features["start_time"] - time_features["start_time"]
+        )
+        time_features["upper"] = time_features["end_time"] - time_features["start_time"]
+        time_features["unit"] = "s"  # time is rounded to seconds
+        time_features["dtype"] = "datetime64[ns]"
+        time_features["scale"] = "linear"
+        time_features = time_features[
+            ["unit", "scale", "dtype", "lower", "upper", "start_time", "end_time"]
+        ]
+
         # select columns
-        tmin = metadata["start_time"]
-        tmax = metadata["end_time"]
         columns = [key for key, val in selected_columns["metadata"].items() if val]
         metadata = metadata[columns]
 
@@ -313,18 +329,18 @@ class KIWI_RUNS(MultiFrameDataset):
 
         # fmt: off
         metadata_features_dict = {
-            # column                   [unit, scale, lower bound, upper bound]
-            "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA ],
-            "container_number"       : [pd.NA, "category", pd.NA, pd.NA ],
-            "color"                  : [pd.NA, "category", pd.NA, pd.NA ],
-            "profile_name"           : [pd.NA, "category", pd.NA, pd.NA ],
-            "plasmid_id"             : [pd.NA, "category", pd.NA, pd.NA ],
-            "Feed_concentration_glc" : ["g/L", "absolute", pd.NA, pd.NA ],
-            "OD_Dilution"            : ["%",   "percent",  0,     100   ],
-            "pH_correction_factor"   : [pd.NA, "factor",   0,     np.inf],
-            "ph_Tolerance"           : [pd.NA, "linear",   0,     np.inf],
-            "μ_set"                  : ["%",   "percent",  0,     100   ],
-            "IPTG"                   : ["mM",  "absolute", 0,     np.inf],
+            # column                   [unit,  scale,      dtype, lower , upper]
+            "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+            "container_number"       : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+            "color"                  : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+            "profile_name"           : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+            "plasmid_id"             : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+            "Feed_concentration_glc" : ["g/L", "absolute", pd.NA, pd.NA, pd.NA ],
+            "OD_Dilution"            : ["%",   "percent",  pd.NA, 0,     100   ],
+            "pH_correction_factor"   : [pd.NA, "factor",   pd.NA, 0,     np.inf],
+            "ph_Tolerance"           : [pd.NA, "linear",   pd.NA, 0,     np.inf],
+            "μ_set"                  : ["%",   "percent",  pd.NA, 0,     100   ],
+            "IPTG"                   : ["mM",  "absolute", pd.NA, 0,     np.inf],
         }
         # fmt: on
 
@@ -333,6 +349,10 @@ class KIWI_RUNS(MultiFrameDataset):
             orient="index",
             columns=column_dtypes["metadata_features"],
         )
+        metadata_features["dtype"] = metadata.dtypes.astype("string[pyarrow]")
+        metadata_features = metadata_features[
+            ["unit", "scale", "dtype", "lower", "upper"]
+        ]
         metadata_features = metadata_features.astype(column_dtypes["metadata_features"])
 
         # Remove values out of bounds
@@ -348,8 +368,7 @@ class KIWI_RUNS(MultiFrameDataset):
                 metadata.loc[mask, col] = pd.NA
 
         # Finalize tables
-        tmin.to_frame().to_parquet(self.dataset_paths["tmin"])
-        tmax.to_frame().to_parquet(self.dataset_paths["tmax"])
+        time_features.to_parquet(self.dataset_paths["time_features"])
         metadata = metadata.dropna(how="all")
         metadata.to_parquet(self.dataset_paths["metadata"])
         metadata_features.to_parquet(self.dataset_paths["metadata_features"])
@@ -413,38 +432,37 @@ class KIWI_RUNS(MultiFrameDataset):
 
         # Timeseries Features
         # fmt: off
-        timeseries_features_dict = {
-            "Acetate"                       : ["%",      "percent",   0,   100      ],
-            "Base"                          : ["uL",     "absolute",  0,   np.inf   ],
-            "Cumulated_feed_volume_glucose" : ["uL",     "absolute",  0,   np.inf   ],
-            "Cumulated_feed_volume_medium"  : ["uL",     "absolute",  0,   np.inf   ],
-            "DOT"                           : ["%",      "percent",   0,   100      ],
-            "Flow_Air"                      : ["Ln/min", "absolute",  0,   np.inf   ],
-            "Fluo_GFP"                      : ["RFU",    "absolute",  0,   1_000_000],
-            "Glucose"                       : ["g/L",    "absolute",  0,   20       ],
-            "InducerConcentration"          : ["mM",     "absolute",  0,   np.inf   ],
-            "OD600"                         : ["%",      "percent",   0,   100      ],
-            "Probe_Volume"                  : ["uL",     "absolute",  0,   np.inf   ],
-            "StirringSpeed"                 : ["U/min",  "absolute",  0,   np.inf   ],
-            "Temperature"                   : ["°C",     "linear",    20,  45       ],
-            "Volume"                        : ["mL",     "absolute",  0,   np.inf   ],
-            "pH"                            : ["pH",     "linear",    4,   10       ],
+        value_features_dict = {
+            "Acetate"                       : ["%",      "percent",  pd.NA, 0,   100      ],
+            "Base"                          : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
+            "Cumulated_feed_volume_glucose" : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
+            "Cumulated_feed_volume_medium"  : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
+            "DOT"                           : ["%",      "percent",  pd.NA, 0,   100      ],
+            "Flow_Air"                      : ["Ln/min", "absolute", pd.NA, 0,   np.inf   ],
+            "Fluo_GFP"                      : ["RFU",    "absolute", pd.NA, 0,   1_000_000],
+            "Glucose"                       : ["g/L",    "absolute", pd.NA, 0,   20       ],
+            "InducerConcentration"          : ["mM",     "absolute", pd.NA, 0,   np.inf   ],
+            "OD600"                         : ["%",      "percent",  pd.NA, 0,   100      ],
+            "Probe_Volume"                  : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
+            "StirringSpeed"                 : ["U/min",  "absolute", pd.NA, 0,   np.inf   ],
+            "Temperature"                   : ["°C",     "linear",   pd.NA, 20,  45       ],
+            "Volume"                        : ["mL",     "absolute", pd.NA, 0,   np.inf   ],
+            "pH"                            : ["pH",     "linear",   pd.NA, 4,   10       ],
         }
         # fmt: on
 
-        timeseries_features = DataFrame.from_dict(
-            timeseries_features_dict,
+        value_features = DataFrame.from_dict(
+            value_features_dict,
             orient="index",
-            columns=column_dtypes["timeseries_features"],
+            columns=column_dtypes["value_features"],
         )
-        timeseries_features = timeseries_features.astype(
-            column_dtypes["timeseries_features"]
-        )
+        value_features["dtype"] = timeseries.dtypes.astype("string[pyarrow]")
+        value_features = value_features.astype(column_dtypes["value_features"])
 
         # Remove values out of bounds
         for col in timeseries:
-            lower: Series = timeseries_features.loc[col, "lower"]
-            upper: Series = timeseries_features.loc[col, "upper"]
+            lower: Series = value_features.loc[col, "lower"]
+            upper: Series = value_features.loc[col, "upper"]
             value = timeseries[col]
             mask = (lower > value) | (value > upper)
             if mask.any():
@@ -455,7 +473,7 @@ class KIWI_RUNS(MultiFrameDataset):
 
         # Remove data outside of time bounds
         ts = timeseries.reset_index("measurement_time")
-        ts = ts.join([self.tmin, self.tmax])
+        ts = ts.join(self.time_features[["start_time", "end_time"]])
         time = ts["measurement_time"]
         mask = (ts["start_time"] <= time) & (time <= ts["end_time"])
         print(f"Removing {(~mask).mean():.2%} of data that does not match tmin/tmax")
@@ -478,8 +496,8 @@ class KIWI_RUNS(MultiFrameDataset):
             .astype(timeseries.dtypes)
         )
 
-        # Finalize Table
+        # Finalize Tables
+        value_features.to_parquet(self.dataset_paths["value_features"])
         timeseries = timeseries.dropna(how="all")
         timeseries = timeseries.sort_values(["run_id", "exp_id", "measurement_time"])
         timeseries.to_parquet(self.dataset_paths["timeseries"])
-        timeseries_features.to_parquet(self.dataset_paths["timeseries_features"])
