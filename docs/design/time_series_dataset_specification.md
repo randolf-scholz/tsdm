@@ -33,9 +33,12 @@ With regard to the implementation, we make the following simplifying assumptions
 
 1. We assume all **values** can be represented in simple vectorial form. If the data contains non-vectorial information, such as images, or spectral data, we need to think about adding additional tables. In this case, [`xarray`](https://docs.xarray.dev/en/stable/) datasets may offer a useful abstraction.
 2. We assume the metadata can be represented as 3 tables of interest:
+
    1. `metadata`: Time-independent information
+
    2. `timeseries_features`: Time Series Channel description (better name suggestion appreciated)
    3. `metadata_features`: Metadata Column description (better name suggestion appreciated)
+
 3. Additionally, we require each TSD to contain a `tmin` and a `tmax` field, which indicate the beginning and end of the time series. All time stamps in the dataset must be between `tmin` and `tmax` (both included).
    - By default, these can be initialized with the smallest/largest timestamp in the dataset.
    - Design Question: Make these part of the metadata or not?
@@ -48,30 +51,28 @@ With regard to the implementation, we make the following simplifying assumptions
 
 ## Implementation (TimeSeriesDataset)
 
-```python
-@dataclass
-class TimeSeriesDataset:
-    timeseries:          DataFrame                   # index: Time
-    metadata:            Optional[DataFrame] = None  # single row!
-    timeseries_features: Optional[DataFrame] = None  # rows = timeseries.columns
-    metadata_features:   Optional[DataFrame] = None  # rows = metadata.columns
-    # tmin/tmax possible mandatory columns in metadata?
-    tmin:                TimeLike                    # smallest timestamp
-    tmax:                TimeLike                    # largest  timestamp
+```yaml
+TimeSeriesDataset:
+  timeseries: DataFrame # index: Time
+  metadata: Optional[DataFrame] = None # single row!
+  timeseries_features: Optional[DataFrame] = None # rows = timeseries.columns
+  metadata_features: Optional[DataFrame] = None # rows = metadata.columns
+  # tmin/tmax possible mandatory columns in metadata?
+  tmin: TimeLike # smallest timestamp
+  tmax: TimeLike # largest  timestamp
 ```
 
-```python
-@dataclass
-class TimeSeriesCollection:  # equimodal !
-    index:               Index                       # contains IDs
-    timeseries:          DataFrame                   # multi-index: [ID, Time]
-    metadata:            Optional[DataFrame] = None  # index: ID
-    timeseries_features: Optional[DataFrame] = None  # rows = timeseries.columns
-    metadata_features:   Optional[DataFrame] = None  # rows = metadata.columns
-    global_metadata:     Optional[DataFrame] = None
-    # tmin/tmax possible mandatory columns in metadata?
-    tmin:                Series[TimeLike]            # index: ID
-    tmax:                Series[TimeLike]            # index: ID
+```yaml
+TimeSeriesCollection: # equimodal !
+  index: Index # contains IDs
+  timeseries: DataFrame # multi-index: [ID, Time]
+  metadata: Optional[DataFrame] = None # index: ID
+  timeseries_features: Optional[DataFrame] = None # rows = timeseries.columns
+  metadata_features: Optional[DataFrame] = None # rows = metadata.columns
+  global_metadata: Optional[DataFrame] = None
+  # tmin/tmax possible mandatory columns in metadata?
+  tmin: Series[TimeLike] # index: ID
+  tmax: Series[TimeLike] # index: ID
 ```
 
 # Examples
