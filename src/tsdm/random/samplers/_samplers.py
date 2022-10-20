@@ -531,11 +531,12 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
     def __init__(
         self,
         data_source: Array[DTVar],
+        /,
         *,
-        seq_len: str | TDVar,
-        stride: str | TDVar,
         return_mask: bool = False,
+        seq_len: str | TDVar,
         shuffle: bool = False,
+        stride: str | TDVar,
         tmax: Optional[DTVar] = None,
         tmin: Optional[DTVar] = None,
     ) -> None:
@@ -643,12 +644,12 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         data_source: Sequence[NumpyDTVar],
         /,
         *,
-        stride: str | NumpyTDVar,
         horizons: str | Sequence[str] | NumpyTDVar | Sequence[NumpyTDVar],
-        tmin: Optional[str | NumpyDTVar] = None,
-        tmax: Optional[str | NumpyDTVar] = None,
         mode: Literal["masks", "slices", "points"] = "masks",
         shuffle: bool = False,
+        stride: str | NumpyTDVar,
+        tmax: Optional[str | NumpyDTVar] = None,
+        tmin: Optional[str | NumpyDTVar] = None,
     ):
         super().__init__(data_source)
 
