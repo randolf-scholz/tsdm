@@ -262,6 +262,7 @@ def repr_sequence(
         string += "".join(
             f"{pad}{to_string(value)}{sep}{br}" for value in obj[-maxitems // 2 :]
         )
+    string = string[: -len(sep)]
     string += right
 
     return string

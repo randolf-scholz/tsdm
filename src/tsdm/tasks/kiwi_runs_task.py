@@ -304,13 +304,12 @@ class KIWI_RUNS_TASK(BaseTask):
             targets=self.targets.index,
         )
 
-        TSDs = {}
-        for idx in md.index:
-            TSDs[idx] = TimeSeriesDataset(
-                ts.loc[idx],
-                metadata=md.loc[idx],
-            )
-        DS = MappingDataset(TSDs)
+        # fmt: off
+        DS = MappingDataset({
+            idx: TimeSeriesDataset(ts.loc[idx], metadata=md.loc[idx])
+            for idx in md.index
+        })
+        # fmt: on
 
         # construct the sampler
         subsamplers = {
