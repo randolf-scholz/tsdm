@@ -35,7 +35,7 @@ from torch import Tensor
 from tsdm.utils.types.dtypes import TYPESTRINGS, ScalarDType
 from tsdm.utils.types.protocols import Array, Dataclass, NTuple
 
-MAXITEMS: Final[int] = 8
+MAXITEMS: Final[int] = 7
 r"""Default maxitems for repr_funcs."""
 LINEBREAKS: Final[bool] = True
 r"""Default linebreaks for repr_funcs."""
