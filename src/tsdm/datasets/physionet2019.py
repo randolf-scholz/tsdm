@@ -206,9 +206,9 @@ class Physionet2019(SingleFrameDataset):
     INFO_URL = r"https://physionet.org/content/challenge-2019/"
     r"""HTTP address containing additional information about the dataset"""
 
-    DATASET_SHA256 = "1b9c868bd4c91084545ca7f159a500aa9128d07a30b6e4d47a15354029e66efe"
+    DATASET_HASH = "1b9c868bd4c91084545ca7f159a500aa9128d07a30b6e4d47a15354029e66efe"
     DATASET_SHAPE = (1552210, 41)
-    RAWDATA_SHA256 = {
+    RAWDATA_HASH = {
         "training_setA.zip": "c0def317798312e4facc0f33ac0202b3a34f412052d9096e8b122b4d3ecb7935",
         "training_setB.zip": "8a88d69a5f64bc9a87d869f527fcc2741c0712cb9a7cb1f5cdcb725336b4c8cc",
     }
