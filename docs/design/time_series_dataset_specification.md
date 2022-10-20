@@ -111,7 +111,9 @@ TimeSeriesCollection: # generic
   global_features: Optional[Array]
 ```
 
-However, we are mostly interested in the **equimodal** case, i.e. when all the TSDs share the same value and metadata space $𝓥ᵢ = 𝓥$ and $𝓜ᵢ = 𝓜$ for all $i∈𝓘$. We do however allow differences in the time space, in paricular the upper and lower bounds might vary, as each time series is defined over a different interval. So only a single table `value_features` and `metadata_features` is required. Since `time_features` was a single-row table, we can use the index $𝓘$ as the rows. In practice a convenient solution is to use `timedelta64` format for the time-index which in most cases alleviates the need for any time-features besides lower and upper bounds.
+However, we are mostly interested in the **equimodal** case, i.e. when all the TSDs share the same value and metadata space $𝓣ᵢ=𝓣$, $𝓥ᵢ = 𝓥$ and $𝓜ᵢ = 𝓜$ for all $i∈𝓘$. We do however allow differences in the upper/lower boundary values. So `time_features`, `value_features` and `metadata_features` each each be either of `None`, a simple table or a multi-index table using $𝓘$ as the first level.
+
+In practice a convenient solution is to use `timedelta64` format for the time-index which in most cases alleviates the need for any time-features besides lower and upper bounds.
 
 ```yaml
 TimeSeriesCollection: # equimodal
@@ -122,8 +124,8 @@ TimeSeriesCollection: # equimodal
   # space descriptors
   index_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
   time_features: Optional[Array[index, unit, scale, dtype, lower, upper, ...]]
-  values_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
-  metadata_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
+  values_features: Optional[Array[index, unit, scale, dtype, lower, upper, ...]]
+  metadata_features: Optional[Array[index, unit, scale, dtype, lower, upper, ...]]
   global_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
 ```
 

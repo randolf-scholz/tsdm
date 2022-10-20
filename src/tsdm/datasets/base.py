@@ -20,6 +20,7 @@ import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
+from dataclasses import dataclass
 from functools import cached_property, partial
 from hashlib import sha256
 from pathlib import Path
@@ -28,6 +29,7 @@ from urllib.parse import urlparse
 
 import pandas
 from pandas import DataFrame, Index, Series
+from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
@@ -725,27 +727,44 @@ class MultiFrameDataset(FrameDataset, Mapping[KeyVar, Index | Series | DataFrame
         self.LOGGER.debug("Finished downloading dataset <%s>", key)
 
 
-class TimeSeriesDataset:
+@dataclass
+class TimeSeriesDataset(TorchDataset):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and MetaData.
     More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
     """
 
-    tables: Mapping[str, DataFrame]
-    r"""The named tables of the dataset."""
+    # Main Attributes
     timeseries: DataFrame
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
-    timeseries_features: Optional[DataFrame] = None
+
+    # Space Descriptors
+    time_features: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    value_features: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
     metadata_features: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
+    def __len__(self) -> int:
+        r"""Return the number of timestamps."""
+        return len(self.timeseries)
 
-class TimeSeriesCollection:
-    r"""Abstract Base Class for equimodal TimeSeriesCollections.
+    def __getitem__(self, key):
+        r"""Get item from timeseries."""
+        return self.timeseries.loc[key]
+
+    def __iter__(self) -> Iterator[Series]:
+        r"""Iterate over the timestamps."""
+        return iter(self.timeseries)
+
+
+@dataclass
+class TimeSeriesCollection(Generic[KeyVar]):
+    r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
 
     A TimeSeriesCollection is a tuple (I, D, G) consiting of
 
@@ -754,23 +773,69 @@ class TimeSeriesCollection:
     - global variables $G∈𝓖$
     """
 
+    # Main attributes
     index: Index
     r"""The index of the collection."""
-    tables: Mapping[str, DataFrame]
-    r"""The named tables of the dataset."""
     timeseries: DataFrame
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
-    globals: Optional[DataFrame] = None
+    global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
-    timeseries_features: Optional[DataFrame] = None
+
+    # Space descriptors
+    index_features: Optional[DataFrame] = None
+    r"""Data associated with each index such as measurement device, unit, etc."""
+    time_features: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    value_features: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
     metadata_features: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    global_features: Optional[DataFrame] = None
+    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
+        r"""Get the timeseries and metadata of the dataset at index `key`."""
+        ts = self.timeseries.loc[key]
+        md = self.metadata.loc[key] if self.metadata is not None else None
+
+        if self.time_features is None:
+            tf = None
+        elif self.time_features.index.equals(self.index):
+            tf = self.time_features.loc[key]
+        else:
+            tf = self.time_features
+
+        if self.value_features is None:
+            vf = None
+        elif self.value_features.index.equals(self.index):
+            vf = self.value_features.loc[key]
+        else:
+            vf = self.value_features
+
+        if self.metadata_features is None:
+            mf = None
+        elif self.metadata_features.index.equals(self.index):
+            mf = self.metadata_features.loc[key]
+        else:
+            mf = self.metadata_features
+
+        return TimeSeriesDataset(
+            ts, md, time_features=tf, value_features=vf, metadata_features=mf
+        )
+
+    def __len__(self) -> int:
+        r"""Get the length of the collection."""
+        return len(self.index)
+
+    def __iter__(self) -> Iterator[TimeSeriesDataset]:
+        r"""Iterate over the collection."""
+        for key in self.index:
+            yield self[key]
 
 
-class GenericTimeSeriesCollection(Generic[KeyVar]):
+class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
     r"""Abstract Base Class for generic TimeSeriesCollections.
 
     A TimeSeriesCollection is a collection of TimeSeriesDatasets.
@@ -781,17 +846,29 @@ class GenericTimeSeriesCollection(Generic[KeyVar]):
     live in the same space.
     """
 
+    # Main attributes
     index: Index
     r"""The index of the collection."""
-    tables: Mapping[str, DataFrame]
-    r"""The named tables of the dataset."""
-    timeseries: Mapping[KeyVar, DataFrame]
-    r"""The time series data."""
-    metadata: Optional[Mapping[KeyVar, DataFrame]] = None
-    r"""The metadata of the dataset."""
-    globals: Optional[DataFrame] = None
+    data: dict[KeyVar, TimeSeriesDataset]
+    r"""The data of the collection."""
+    global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
-    timeseries_features: Optional[DataFrame] = None
-    r"""Data associated with each channel such as measurement device, unit, etc."""
-    metadata_features: Optional[DataFrame] = None
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+
+    # Space descriptors
+    index_features: Optional[DataFrame] = None
+    r"""Data associated with each index such as measurement device, unit, etc."""
+    global_features: Optional[DataFrame] = None
+    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
+        r"""Get the timeseries and metadata of the dataset at index `key`."""
+        return self.data[key]
+
+    def __len__(self) -> int:
+        r"""Get the length of the collection."""
+        return len(self.index)
+
+    def __iter__(self) -> Iterator[TimeSeriesDataset]:
+        r"""Iterate over the collection."""
+        for key in self.index:
+            yield self[key]
