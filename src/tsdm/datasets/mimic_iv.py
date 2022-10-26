@@ -48,13 +48,13 @@ class MIMIC_IV(MultiFrameDataset):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
     VERSION = r"1.0"
-    RAWDATA_SHA256 = "dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+    RAWDATA_HASH = "dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
 
     rawdata_files = "mimic-iv-1.0.zip"
     rawdata_paths: Path
 
     # fmt: off
-    dataset_files = {
+    internal_files = {
         "admissions"         : "mimic-iv-1.0/core/admissions.csv.gz",
         "patients"           : "mimic-iv-1.0/core/patients.csv.gz",
         "transfers"          : "mimic-iv-1.0/core/transfers.csv.gz",
@@ -85,15 +85,15 @@ class MIMIC_IV(MultiFrameDataset):
     }
     # fmt: on
 
-    index = list(dataset_files.keys())
+    KEYS = list(internal_files.keys())
 
-    def _clean(self, key):
+    def clean_table(self, key):
         ...
 
-    def _load(self, key):
+    def load_table(self, key):
         return pd.read_parquet(self.dataset_paths[key])
 
-    def _download(self, **_):
+    def download_table(self, **_):
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-IV username: ")
         password = getpass(prompt="MIMIC-IV password: ", stream=None)

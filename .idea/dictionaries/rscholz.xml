@@ -158,6 +158,7 @@
       <w>inputenc</w>
       <w>intersphinx</w>
       <w>invperm</w>
+      <w>iptg</w>
       <w>iscore</w>
       <w>iscores</w>
       <w>isna</w>
@@ -233,6 +234,7 @@
       <w>multiday</w>
       <w>multihead</w>
       <w>multilabel</w>
+      <w>multisets</w>
       <w>nanmax</w>
       <w>nanmin</w>
       <w>nbeats</w>

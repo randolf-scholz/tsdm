@@ -20,6 +20,59 @@ Notes
 Contains encoders in both modular and functional form.
   - See `tsdm.encoders.functional` for functional implementations.
   - See `tsdm.encoders` for modular implementations.
+
+
+Some important units
+
+- numerical
+    - finite
+        - support: {a₁, ..., aₙ}
+        - dimensionless: False
+        - ordered: True
+    - discrete:
+        - support: ℤ
+        - dimensionless: True
+        - ordered: True
+    - absolute:
+        - support: [0, +∞)
+        - dimensionless: False
+        - ordered: True
+        - Encoders: `BoxCox`
+    - factor:
+        - support: (0, +∞)
+        - dimensionless: True
+        - ordered: True
+        - Encoders: `Logarithm`
+    - percent
+        - support: [0, 100]
+        - dimensionless: True
+        - ordered: True
+        - Encoders: `Logit @ MinMaxScalar[0, 100]`, `HardLogit @ MinMaxScalar[0, 100]`
+    - bounded
+        - support: [a, b]
+        - dimensionless: False
+        - ordered: True
+        - Encoders: `Logit @ MinMaxScalar[a, b]`, `HardLogit @ MinMaxScalar[a, b]`
+    - linear
+        - support: (-∞, +∞)
+        - dimensionless: False
+        - ordered: True
+        - Encoders: `StandardScalar` (diagonal or full covariance)
+- category
+    - support {1, ..., K}
+    - dimensionless: True
+    - ordered: False
+    - Encoders: `OneHotEncoder`
+- ordinal
+    - support {1, ..., K}
+    - dimensionless: True
+    - ordered: True
+    - Encoders: `OrdinalEncoder`, `PositionalEncoder`
+- cyclic
+    - support: [0, 2π)
+    - dimensionless: True
+    - ordered: False
+    - Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
 """
 #  TODO:
 # - Target Encoding: enc(x) = mean(enc(y|x))
@@ -65,10 +118,13 @@ __all__ = [
     "DataFrameEncoder",
     "DateTimeEncoder",
     "DuplicateEncoder",
+    "FloatEncoder",
+    "Frame2Tensor",
     "FrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
     "IdentityEncoder",
+    "IntEncoder",
     "LogEncoder",
     "MinMaxScaler",
     "PeriodicEncoder",
@@ -77,9 +133,12 @@ __all__ = [
     "ProductEncoder",
     "SocialTimeEncoder",
     "Standardizer",
+    "TensorConcatenator",
     "TensorEncoder",
+    "TensorSplitter",
     "Time2Float",
     "TimeDeltaEncoder",
+    "TimeSlicer",
     "TripletDecoder",
     "TripletEncoder",
     "ValueEncoder",
@@ -93,10 +152,10 @@ from sklearn.base import BaseEstimator
 from tsdm.encoders import base, functional, numerical, time, torch
 from tsdm.encoders._modular import (
     DataFrameEncoder,
+    Frame2Tensor,
     FrameEncoder,
     FrameIndexer,
     FrameSplitter,
-    PositionalEncoder,
     TensorEncoder,
     TripletDecoder,
     TripletEncoder,
@@ -128,9 +187,11 @@ from tsdm.encoders.time import (
     DateTimeEncoder,
     PeriodicEncoder,
     PeriodicSocialTimeEncoder,
+    PositionalEncoder,
     SocialTimeEncoder,
     Time2Float,
     TimeDeltaEncoder,
+    TimeSlicer,
 )
 
 ModularEncoder: TypeAlias = BaseEncoder

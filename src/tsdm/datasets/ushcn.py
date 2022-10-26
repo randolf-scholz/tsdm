@@ -16,7 +16,7 @@ import os
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeAlias
 
 import pandas
 from pandas import DataFrame
@@ -26,7 +26,7 @@ from tsdm.datasets.base import MultiFrameDataset
 __logger__ = logging.getLogger(__name__)
 
 
-def with_cluster(func: Callable) -> Callable:
+def with_ray_cluster(func: Callable) -> Callable:
     r"""Run function with ray cluster."""
 
     @wraps(func)
@@ -49,7 +49,10 @@ def with_cluster(func: Callable) -> Callable:
     return _wrapper
 
 
-class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
+KEY: TypeAlias = Literal["us_daily", "states", "stations"]
+
+
+class USHCN(MultiFrameDataset[KEY]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -200,20 +203,20 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
-    KEYS = Literal["us_daily", "states", "stations"]
+    KEYS = ["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
-    RAWDATA_SHA256 = {
+    RAWDATA_HASH = {
         "data_format.txt": "0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
         "ushcn-stations.txt": "002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
         "station_file_format.txt": "4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
         "us.txt.gz": "4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
     }
-    DATASET_SHA256 = {
+    DATASET_HASH = {
         "us_daily": "03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
         "states": "388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
         "stations": "1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
     }
-    DATASET_SHAPE = {
+    TABLE_SHAPE = {
         "us_daily": (204771562, 5),
         "states": (48, 3),
         "stations": (1218, 9),
@@ -221,18 +224,18 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
     index = ["us_daily", "states", "stations"]
     rawdata_files = {
         "metadata": "data_format.txt",
-        "states": None,
         "stations": "ushcn-stations.txt",
         "stations_metadata": "station_file_format.txt",
         "us_daily": "us.txt.gz",
+        "states": None,
     }
     rawdata_paths: dict[str, Path]
 
-    # def _load(self, key: KEYS = "us_daily", **kwargs: Any) -> DataFrame:
+    # def _load(self, key: KEY = "us_daily", **kwargs: Any) -> DataFrame:
     #     r"""Load the dataset from disk."""
     #     return super()._load(key=key, **kwargs)
 
-    def _clean(self, key: KEYS = "us_daily") -> DataFrame:
+    def clean_table(self, key: KEY = "us_daily") -> DataFrame:
         r"""Create the DataFrames.
 
         Parameters
@@ -328,7 +331,7 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
         return stations
         # stations.to_parquet(self.dataset_paths["stations"])
 
-    @with_cluster
+    @with_ray_cluster
     def _clean_us_daily(self) -> DataFrame:
         if importlib.util.find_spec("modin") is not None:
             mpd = importlib.import_module("modin.pandas")
@@ -403,7 +406,8 @@ class USHCN(MultiFrameDataset[Literal["us_daily", "states", "stations"]]):
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
-        data = data.stack(level="DAY", dropna=False).reset_index(level="DAY")
+        data = data.stack(level="DAY", dropna=False)
+        data = data.reset_index(level="DAY")
 
         self.LOGGER.info("Merging on ID columns...")
         # correct dtypes after stacking operation

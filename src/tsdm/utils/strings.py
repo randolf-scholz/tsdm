@@ -8,25 +8,43 @@ __all__ = [
     # Functions
     "snake2camel",
     # "camel2snake",
-    "repr_array",
-    "repr_mapping",
-    "repr_sequence",
-    "repr_namedtuple",
-    "tensor_info",
     "dict2string",
+    "tensor_info",
+    # repr functions
+    "repr_array",
+    "repr_dataclass",
+    "repr_dtype",
+    "repr_mapping",
+    "repr_namedtuple",
+    "repr_object",
+    "repr_sequence",
+    "repr_sized",
+    "repr_type",
 ]
 __ALL__ = dir() + __all__
 
 
 import builtins
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
-from typing import Any, NamedTuple, Optional, cast, overload
+from dataclasses import is_dataclass
+from typing import Any, Final, Optional, overload
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from torch import Tensor
 
 from tsdm.utils.types.dtypes import TYPESTRINGS, ScalarDType
-from tsdm.utils.types.protocols import Array, NTuple
+from tsdm.utils.types.protocols import Array, Dataclass, NTuple
+
+MAXITEMS: Final[int] = 7
+r"""Default maxitems for repr_funcs."""
+LINEBREAKS: Final[bool] = True
+r"""Default linebreaks for repr_funcs."""
+PADDING: Final[int] = 4
+r"""Default padding for repr_funcs."""
+RECURSIVE: Final[bool | int] = True
+r"""Default recursive for repr_funcs."""
+ALIGN: Final[bool] = True
+r"""Default align for repr_mapping."""
 
 
 def __dir__() -> list[str]:
@@ -49,16 +67,7 @@ def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]:
 
 
 def snake2camel(s):
-    r"""Convert ``snake_case`` to ``CamelCase``.
-
-    Parameters
-    ----------
-    s: str | Iterable[str]
-
-    Returns
-    -------
-    str | Iterable[str]
-    """
+    r"""Convert ``snake_case`` to ``CamelCase``."""
     if isinstance(s, tuple):
         return tuple(snake2camel(x) for x in s)
 
@@ -78,18 +87,7 @@ def tensor_info(x: Tensor) -> str:
 
 
 def dict2string(d: dict[str, Any]) -> str:
-    r"""Return pretty string representation of dictionary.
-
-    Vertically aligns keys.
-
-    Parameters
-    ----------
-    d: dict[str, Any]
-
-    Returns
-    -------
-    str
-    """
+    r"""Return pretty string representation of dictionary."""
     max_key_length = max((len(key) for key in d), default=0)
     pad = " " * 2
 
@@ -102,17 +100,8 @@ def dict2string(d: dict[str, Any]) -> str:
     return string
 
 
-def repr_object(obj: Any, **kwargs: Any) -> str:
-    r"""Return a string representation of an object.
-
-    Parameters
-    ----------
-    obj: Any
-
-    Returns
-    -------
-    str
-    """
+def repr_object(obj: Any, /, **kwargs: Any) -> str:
+    r"""Return a string representation of an object."""
     if type(obj).__name__ in dir(builtins):
         return str(obj)
     if isinstance(obj, Tensor):
@@ -120,10 +109,11 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
     if isinstance(obj, Mapping):
         return repr_mapping(obj, **kwargs)
     if isinstance(obj, NTuple):
-        obj = cast(NamedTuple, obj)
         return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, **kwargs)
+    if is_dataclass(obj):
+        return repr_dataclass(obj, **kwargs)
     try:
         return repr(obj)
     # Fallback Option
@@ -131,35 +121,36 @@ def repr_object(obj: Any, **kwargs: Any) -> str:
         return repr(type(obj))
 
 
+def repr_type(obj: Any, /) -> str:
+    r"""Return a string representation of an object."""
+    if obj is None:
+        return str(None)
+    if obj is True:
+        return str(True)
+    if obj is False:
+        return str(False)
+    if isinstance(obj, Array | DataFrame | Series):
+        return repr_array(obj)
+    if isinstance(obj, Sized):  # type: ignore[unreachable]
+        return repr_sized(obj)
+    if isinstance(obj, type):
+        return obj.__name__
+    return obj.__class__.__name__ + "()"
+
+
 def repr_mapping(
     obj: Mapping,
+    /,
     *,
-    linebreaks: bool = True,
-    maxitems: int = 6,
-    padding: int = 4,
-    recursive: bool | int = True,
+    align: bool = ALIGN,
+    linebreaks: bool = LINEBREAKS,
+    maxitems: int = MAXITEMS,
+    padding: int = PADDING,
+    recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
-    align: bool = False,
 ) -> str:
-    r"""Return a string representation of a mapping object.
-
-    Parameters
-    ----------
-    obj: Mapping
-    linebreaks: bool, default True
-    maxitems: int, default 6
-    padding: int
-    recursive: bool, default True
-    repr_fun: Callable[..., str], default repr_object
-    title: Optional[str], default None,
-    align:
-        Whether to vertically align keys.
-
-    Returns
-    -------
-    str
-    """
+    r"""Return a string representation of a mapping object."""
     br = "\n" if linebreaks else ""
     # key_sep = ": "
     sep = "," if linebreaks else ", "
@@ -205,35 +196,31 @@ def repr_mapping(
 
 def repr_sequence(
     obj: Sequence,
+    /,
     *,
-    linebreaks: bool = True,
-    maxitems: int = 6,
-    padding: int = 4,
-    recursive: bool | int = True,
+    linebreaks: bool = LINEBREAKS,
+    maxitems: int = MAXITEMS,
+    padding: int = PADDING,
+    recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
-    r"""Return a string representation of a sequence object.
-
-    Parameters
-    ----------
-    obj: Sequence
-    linebreaks: bool, default True
-    maxitems: int, default 6
-    padding: int
-    recursive: bool, default True
-    repr_fun: Callable[..., str], default repr_object
-    title: Optional[str], default None,
-
-    Returns
-    -------
-    str
-    """
+    r"""Return a string representation of a sequence object."""
     br = "\n" if linebreaks else ""
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
-    title = type(obj).__name__ if title is None else title
-    string = title + "(" + br
+
+    if isinstance(obj, list):
+        title, left, right = "", "[", "]"
+    elif isinstance(obj, set):
+        title, left, right = "", "{", "}"
+    elif isinstance(obj, tuple):
+        title, left, right = "", "(", ")"
+    else:
+        title = type(obj).__name__ if title is None else title
+        left, right = "(", ")"
+
+    string = title + left + br
 
     def to_string(x: Any) -> str:
         if recursive:
@@ -252,65 +239,71 @@ def repr_sequence(
         string += "".join(
             f"{pad}{to_string(value)}{sep}{br}" for value in obj[-maxitems // 2 :]
         )
-    string += ")"
+    string = string[: -len(sep)]
+    string += right
 
     return string
 
 
-def repr_namedtuple(
-    obj: NamedTuple,
+def repr_dataclass(
+    obj: object,
+    /,
     *,
-    linebreaks: bool = True,
-    maxitems: int = 6,
-    padding: int = 4,
-    recursive: bool | int = True,
+    align: bool = ALIGN,
+    linebreaks: bool = LINEBREAKS,
+    maxitems: int = MAXITEMS,
+    padding: int = PADDING,
+    recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
-    r"""Return a string representation of a namedtuple object.
-
-    Parameters
-    ----------
-    obj: tuple
-    linebreaks: bool, default True
-    maxitems: int, default 6
-    padding: int
-    recursive: bool | int, default True
-    repr_fun: Callable[..., str], default repr_object
-    title: Optional[str], default None,
-
-    Returns
-    -------
-    str
-    """
-    title = type(obj).__name__ if title is None else title
-
-    # if not hasattr(obj, "_asdict"):
-
+    """Return a string representation of a dataclass object."""
+    assert is_dataclass(obj), f"Object {obj} is not a dataclass."
+    assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."
     return repr_mapping(
-        obj._asdict(),
-        padding=padding,
-        maxitems=maxitems,
-        title=title,
-        repr_fun=repr_fun,
+        {key: getattr(obj, key) for key in obj.__dataclass_fields__},
+        align=align,
         linebreaks=linebreaks,
-        recursive=recursive,
+        maxitems=maxitems,
+        padding=padding,
+        recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+        repr_fun=repr_fun,
+        title=type(obj).__name__ if title is None else title,
     )
 
 
-def repr_array(obj: Array | DataFrame, *, title: Optional[str] = None) -> str:
-    r"""Return a string representation of an array object.
+def repr_namedtuple(
+    obj: NTuple,
+    /,
+    *,
+    align: bool = ALIGN,
+    linebreaks: bool = LINEBREAKS,
+    maxitems: int = MAXITEMS,
+    padding: int = PADDING,
+    recursive: bool | int = RECURSIVE,
+    repr_fun: Callable[..., str] = repr_object,
+    title: Optional[str] = None,
+) -> str:
+    r"""Return a string representation of a namedtuple object."""
+    assert isinstance(obj, tuple), f"Object {obj} is not a namedtuple."
+    assert isinstance(obj, NTuple), f"Object {obj} is not a namedtuple."
+    return repr_mapping(
+        obj._asdict(),
+        align=align,
+        linebreaks=linebreaks,
+        maxitems=maxitems,
+        padding=padding,
+        recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+        repr_fun=repr_fun,
+        title=type(obj).__name__ if title is None else title,
+    )
 
-    Parameters
-    ----------
-    obj: ArrayLike
-    title: Optional[str] = None
 
-    Returns
-    -------
-    str
-    """
-    assert isinstance(obj, Array)
+def repr_array(
+    obj: Array | DataFrame | Series, /, *, title: Optional[str] = None
+) -> str:
+    r"""Return a string representation of an array object."""
+    assert isinstance(obj, Array | DataFrame)
 
     title = type(obj).__name__ if title is None else title
 
@@ -331,18 +324,8 @@ def repr_array(obj: Array | DataFrame, *, title: Optional[str] = None) -> str:
     return string
 
 
-def repr_sized(obj: Sized, *, title: Optional[str] = None) -> str:
-    r"""Return a string representation of a sized object.
-
-    Parameters
-    ----------
-    obj: Sized
-    title: Optional[str], default None
-
-    Returns
-    -------
-    str
-    """
+def repr_sized(obj: Sized, /, *, title: Optional[str] = None) -> str:
+    r"""Return a string representation of a sized object."""
     title = type(obj).__name__ if title is None else title
     string = title + "["
     string += str(len(obj))
@@ -350,39 +333,13 @@ def repr_sized(obj: Sized, *, title: Optional[str] = None) -> str:
     return string
 
 
-def repr_dtype(dtype: str | ScalarDType) -> str:
-    r"""Return a string representation of a dtype object.
-
-    Parameters
-    ----------
-    dtype: str | ScalarDtype | ExtensionDtype
-
-    Returns
-    -------
-    str
-    """
-    if isinstance(dtype, str):
-        return dtype
-    if dtype in TYPESTRINGS:
-        return TYPESTRINGS[dtype]
-    return str(dtype)
-
-
-def repr_type(obj: Any) -> str:
-    r"""Return a string representation of an object.
-
-    Parameters
-    ----------
-    obj: Any
-
-    Returns
-    -------
-    str
-    """
-    if isinstance(obj, Array):
-        return repr_array(obj)
-    if isinstance(obj, Sized):
-        return repr_sized(obj)
-    if isinstance(obj, type):
-        return obj.__name__
-    return obj.__class__.__name__ + "()"
+def repr_dtype(
+    obj: str | ScalarDType,
+    /,
+) -> str:
+    r"""Return a string representation of a dtype object."""
+    if isinstance(obj, str):
+        return obj
+    if obj in TYPESTRINGS:
+        return TYPESTRINGS[obj]
+    return str(obj)

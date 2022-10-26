@@ -531,11 +531,12 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
     def __init__(
         self,
         data_source: Array[DTVar],
+        /,
         *,
-        seq_len: str | TDVar,
-        stride: str | TDVar,
         return_mask: bool = False,
+        seq_len: str | TDVar,
         shuffle: bool = False,
+        stride: str | TDVar,
         tmax: Optional[DTVar] = None,
         tmin: Optional[DTVar] = None,
     ) -> None:
@@ -643,12 +644,12 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         data_source: Sequence[NumpyDTVar],
         /,
         *,
-        stride: str | NumpyTDVar,
         horizons: str | Sequence[str] | NumpyTDVar | Sequence[NumpyTDVar],
-        tmin: Optional[str | NumpyDTVar] = None,
-        tmax: Optional[str | NumpyDTVar] = None,
         mode: Literal["masks", "slices", "points"] = "masks",
         shuffle: bool = False,
+        stride: str | NumpyTDVar,
+        tmax: Optional[str | NumpyDTVar] = None,
+        tmin: Optional[str | NumpyDTVar] = None,
     ):
         super().__init__(data_source)
 
@@ -722,24 +723,20 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         return slice(window[0], window[-1])
 
     @staticmethod
-    def __make__slices__(bounds: NDArray[NumpyDTVar]) -> tuple[slice, ...]:
+    def __make__slices__(bounds: NDArray[NumpyDTVar]) -> list[slice]:
         r"""Return a tuple of slices."""
-        return tuple(
-            slice(start, stop) for start, stop in sliding_window_view(bounds, 2)
-        )
+        return [slice(start, stop) for start, stop in sliding_window_view(bounds, 2)]
 
     def __make__mask__(self, window: NDArray[NumpyDTVar]) -> NDArray[np.bool_]:
         r"""Return a tuple of masks."""
         return (window[0] <= self.data) & (self.data < window[-1])
 
-    def __make__masks__(
-        self, bounds: NDArray[NumpyDTVar]
-    ) -> tuple[NDArray[np.bool_], ...]:
+    def __make__masks__(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[np.bool_]]:
         r"""Return a tuple of masks."""
-        return tuple(
+        return [
             (start <= self.data) & (self.data < stop)
             for start, stop in sliding_window_view(bounds, 2)
-        )
+        ]
 
     def __iter__(self) -> Iterator:
         r"""Iterate through.
