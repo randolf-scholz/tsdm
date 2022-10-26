@@ -8,9 +8,12 @@ __all__ = [
     "BaseDatasetMetaClass",
     "SingleFrameDataset",
     "MultiFrameDataset",
+    "TimeSeriesDataset",
+    "TimeSeriesCollection",
     # Types
     "DATASET_OBJECT",
 ]
+
 import inspect
 import logging
 import os
@@ -19,6 +22,7 @@ import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
+from dataclasses import dataclass
 from functools import cached_property, partial
 from hashlib import sha256
 from pathlib import Path
@@ -26,11 +30,14 @@ from typing import Any, ClassVar, Generic, Optional, TypeAlias, overload
 from urllib.parse import urlparse
 
 import pandas
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, MultiIndex, Series
+from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
+from tsdm.utils.hash import hash_pandas
 from tsdm.utils.remote import download
+from tsdm.utils.strings import repr_dataclass
 from tsdm.utils.types import KeyVar, Nested, PathType
 
 DATASET_OBJECT: TypeAlias = Series | DataFrame
@@ -104,26 +111,6 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             self.clean()
         if initialize:
             self.load()
-
-    def __len__(self) -> int:
-        r"""Return the number of samples in the dataset."""
-        return self.dataset.__len__()
-
-    def __getitem__(self, idx):
-        r"""Return the sample at index `idx`."""
-        return self.dataset.__getitem__(idx)
-
-    def __setitem__(self, key: Hashable, value: Any) -> None:
-        r"""Return the sample at index `idx`."""
-        self.dataset[key] = value
-
-    def __delitem__(self, key: Hashable, /) -> None:
-        r"""Return the sample at index `idx`."""
-        self.dataset.__delitem__(key)
-
-    def __iter__(self) -> Iterator:
-        r"""Return an iterator over the dataset."""
-        return self.dataset.__iter__()
 
     def __repr__(self):
         r"""Return a string representation of the dataset."""
@@ -215,6 +202,12 @@ class FrameDataset(BaseDataset, ABC):
 
     DEFAULT_FILE_FORMAT: str = "parquet"
     r"""Default format for the dataset."""
+    RAWDATA_HASH: Optional[str | Mapping[str, str]] = None
+    r"""Hash value of the raw data file(s), checked after download."""
+    # DATASET_HASH: Optional[str | Mapping[str, str]] = None
+    # r"""Hash value of the dataset file(s), checked after clean."""
+    # TABLE_HASH: Optional[str | Mapping[str, str]] = None
+    # r"""Hash value of the dataset table(s), checked after load."""
 
     @staticmethod
     def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
@@ -247,15 +240,64 @@ class FrameDataset(BaseDataset, ABC):
 
         raise NotImplementedError(f"No loader for {file_type=}")
 
+    def validate_table(
+        self,
+        table: DataFrame,
+        reference: Optional[Hashable | Mapping[str, Hashable]] = None,
+    ) -> None:
+        r"""Validate the table."""
+        filehash = hash_pandas(table)
+
+        if reference is None:
+            warnings.warn(
+                f"Table '{table.name}' cannot be validated as no hash is stored in {self.__class__}."
+                f"The hash is '{filehash}'."
+            )
+        elif isinstance(reference, int | str):
+            if filehash != reference:
+                warnings.warn(
+                    f"Table '{table.name}' failed to validate!"
+                    f"Table hash '{filehash}' does not match reference '{reference}'."
+                    f"Ignore this warning if the format is parquet."
+                )
+            self.LOGGER.info(
+                f"Table '{table.name}' validated successfully '{filehash=}'."
+            )
+        elif isinstance(reference, Mapping):
+            if table.name not in reference:
+                warnings.warn(
+                    f"Table '{table.name}' cannot be validated as it is not contained in {reference}."
+                    f"The hash is '{filehash}'."
+                    f"Ignore this warning if the format is parquet."
+                )
+            elif table.name in reference and filehash != reference[table.name]:
+                warnings.warn(
+                    f"Table '{table.name}' failed to validate!"
+                    f"Table hash '{filehash}' does not match reference '{reference[table.name]}'."
+                    f"Ignore this warning if the format is parquet."
+                )
+            else:
+                self.LOGGER.info(
+                    f"Table '{table.name}' validated successfully '{filehash=}'."
+                )
+        else:
+            raise TypeError(f"Unsupported type for {reference=}.")
+
+        self.LOGGER.debug("Validated %s", table.name)
+
     def validate(
         self,
-        filespec: Nested[str | Path],
+        filespec: Nested[None | str | Path],
         /,
         *,
-        reference: Optional[str | Mapping[str, str]] = None,
+        reference: Optional[Hashable | Mapping[str, Hashable]] = None,
     ) -> None:
         r"""Validate the file hash."""
-        self.LOGGER.debug("Starting to validate dataset")
+        self.LOGGER.debug("Validating %s", filespec)
+
+        if isinstance(filespec, DataFrame):
+            self.validate_table(filespec, reference=reference)
+            return
 
         if isinstance(filespec, Mapping):
             for value in filespec.values():
@@ -265,8 +307,11 @@ class FrameDataset(BaseDataset, ABC):
             for value in filespec:
                 self.validate(value, reference=reference)
             return
+        if filespec is None:
+            return
 
         assert isinstance(filespec, (str, Path)), f"{filespec=} wrong type!"
+        filespec = Path(filespec)
         file = Path(filespec)
 
         if not file.exists():
@@ -279,36 +324,34 @@ class FrameDataset(BaseDataset, ABC):
                 f"File '{file.name}' cannot be validated as no hash is stored in {self.__class__}."
                 f"The filehash is '{filehash}'."
             )
-
-        elif isinstance(reference, str):
+        elif isinstance(reference, str | Path):
             if filehash != reference:
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+                    f"Ignore this warning if the format is parquet."
                 )
             self.LOGGER.info(
                 f"File '{file.name}' validated successfully '{filehash=}'."
             )
-
         elif isinstance(reference, Mapping):
             if not (file.name in reference) ^ (file.stem in reference):
                 warnings.warn(
                     f"File '{file.name}' cannot be validated as it is not contained in {reference}."
                     f"The filehash is '{filehash}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+                    f"Ignore this warning if the format is parquet."
                 )
             elif file.name in reference and filehash != reference[file.name]:
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+                    f"Ignore this warning if the format is parquet."
                 )
             elif file.stem in reference and filehash != reference[file.stem]:
                 warnings.warn(
                     f"File '{file.name}' failed to validate!"
                     f"File hash '{filehash}' does not match reference '{reference[file.stem]}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+                    f"Ignore this warning if the format is parquet."
                 )
             else:
                 self.LOGGER.info(
@@ -317,20 +360,16 @@ class FrameDataset(BaseDataset, ABC):
         else:
             raise TypeError(f"Unsupported type for {reference=}.")
 
-        self.LOGGER.debug("Finished validating file.")
+        self.LOGGER.debug("Validated %s", filespec)
 
 
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    RAWDATA_SHA256: Optional[str | Mapping[str, str]] = None
-    r"""SHA256 hash value of the raw data file(s)."""
-    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[str, tuple[int, ...]]] = None
-    r"""Reference shape of the raw data file(s)."""
-    DATASET_SHA256: Optional[str] = None
-    r"""SHA256 hash value of the dataset file(s)."""
-    DATASET_SHAPE: Optional[tuple[int, ...]] = None
-    r"""Reference shape of the dataset file(s)."""
+    DATASET_HASH: Optional[str] = None
+    r"""Hash value of the dataset file(s), checked after clean."""
+    TABLE_HASH: Optional[int] = None
+    r"""Hash value of the table file(s), checked after load."""
 
     def _repr_html_(self):
         if hasattr(self.dataset, "_repr_html_"):
@@ -383,7 +422,7 @@ class SingleFrameDataset(FrameDataset):
             self.LOGGER.debug("Dataset files already exist!")
 
         if validate:
-            self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
+            self.validate(self.dataset_paths, reference=self.DATASET_HASH)
 
         self.LOGGER.debug("Starting to load dataset.")
         ds = self._load()
@@ -400,7 +439,7 @@ class SingleFrameDataset(FrameDataset):
             self.download(force=force, validate=validate)
 
         if validate:
-            self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
+            self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
 
         self.LOGGER.debug("Starting to clean dataset.")
         df = self._clean()
@@ -410,7 +449,7 @@ class SingleFrameDataset(FrameDataset):
         self.LOGGER.debug("Finished cleaning dataset.")
 
         if validate:
-            self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
+            self.validate(self.dataset_paths, reference=self.DATASET_HASH)
 
     def download(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Download the dataset."""
@@ -427,62 +466,91 @@ class SingleFrameDataset(FrameDataset):
         self.LOGGER.debug("Starting downloading dataset.")
 
         if validate:
-            self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
+            self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
 
 
-class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
+class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     r"""Dataset class that consists of a multiple DataFrames.
 
     The Datasets are accessed by their index.
     We subclass `Mapping` to provide the mapping interface.
     """
 
-    RAWDATA_SHA256: Optional[str | Mapping[str, str]] = None
-    r"""SHA256 hash value of the raw data file(s)."""
-    RAWDATA_SHAPE: Optional[tuple[int, ...] | Mapping[str, tuple[int, ...]]] = None
-    r"""Reference shape of the raw data file(s)."""
-    DATASET_SHA256: Optional[Mapping[str, str]] = None
-    r"""SHA256 hash value of the dataset file(s)."""
-    DATASET_SHAPE: Optional[Mapping[str, tuple[int, ...]]] = None
-    r"""Reference shape of the dataset file(s)."""
+    DATASET_HASH: Optional[Mapping[KeyVar, str]] = None
+    r"""Hash value of the dataset file(s), checked after clean."""
+    TABLE_HASH: Optional[Mapping[KeyVar, int]] = None
+    r"""Hash value of the dataset file(s), checked after load."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False):
         r"""Initialize the Dataset."""
         self.LOGGER.info("Adding keys as attributes.")
-        if initialize:
-            for key in self.index:
-                if isinstance(key, str) and not hasattr(self, key):
-                    _get_dataset = partial(self.__class__.load, key=key)
-                    _get_dataset.__doc__ = f"Load dataset for {key=}."
-                    setattr(self.__class__, key, property(_get_dataset))
+        while initialize:
+            non_string_keys = {key for key in self.KEYS if not isinstance(key, str)}
+            if non_string_keys:
+                warnings.warn(
+                    f"Not adding keys as attributes! "
+                    f"Keys '{non_string_keys}' are not strings!"
+                )
+                break
+
+            key_attributes = {
+                key for key in self.KEYS if isinstance(key, str) and hasattr(self, key)
+            }
+            if key_attributes:
+                warnings.warn(
+                    f"Not adding keys as attributes! "
+                    f"Keys '{key_attributes}' already exist as attributes!"
+                )
+                break
+
+            for key in self.KEYS:
+                assert isinstance(key, str) and not hasattr(self, key)
+                _get_table = partial(self.__class__.load, key=key)
+                _get_table.__doc__ = f"Load dataset for {key=}."
+                setattr(self.__class__, key, property(_get_table))
+            break
 
         super().__init__(initialize=initialize, reset=reset)
 
+    # def __len__(self) -> int:
+    #     r"""Return the number of samples in the dataset."""
+    #     return self.dataset.__len__()
+    #
+    # def __getitem__(self, idx):
+    #     r"""Return the sample at index `idx`."""
+    #     return self.dataset.__getitem__(idx)
+    #
+    # def __iter__(self) -> Iterator:
+    #     r"""Return an iterator over the dataset."""
+    #     return self.dataset.__iter__()
+
     def __repr__(self):
         r"""Pretty Print."""
-        if len(self.index) > 6:
-            indices = list(self.index)
+        if len(self.KEYS) > 6:
+            indices = list(self.KEYS)
             selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
             selection[2] = "..."
             index_str = ", ".join(selection)
         else:
-            index_str = repr(self.index)
+            index_str = repr(self.KEYS)
         return f"{self.__class__.__name__}{index_str}"
 
     @property
     @abstractmethod
-    def index(self) -> Sequence[KeyVar]:
+    def KEYS(self) -> Sequence[KeyVar]:
         r"""Return the index of the dataset."""
+        # TODO: use abstract-attribute!
+        # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
     @cached_property
     def dataset(self) -> MutableMapping[KeyVar, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
-        return {key: None for key in self.index}
+        return {key: None for key in self.KEYS}
 
     @cached_property
     def dataset_files(self) -> Mapping[KeyVar, str]:
         r"""Relative paths to the dataset files for each key."""
-        return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.index}
+        return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.KEYS}
 
     @cached_property
     def dataset_paths(self) -> Mapping[KeyVar, Path]:
@@ -490,14 +558,6 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         return {
             key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
         }
-
-    @abstractmethod
-    def _clean(self, key: KeyVar) -> DATASET_OBJECT | None:
-        r"""Clean the selected DATASET_OBJECT."""
-
-    def _load(self, key: KeyVar) -> DATASET_OBJECT:
-        r"""Load the selected DATASET_OBJECT."""
-        return self.deserialize(self.dataset_paths[key])
 
     def rawdata_files_exist(self, key: Optional[KeyVar] = None) -> bool:
         r"""Check if raw data files exist."""
@@ -512,6 +572,10 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
         if key is None:
             return paths_exists(self.dataset_paths)
         return paths_exists(self.dataset_paths[key])
+
+    @abstractmethod
+    def clean_table(self, key: KeyVar) -> DATASET_OBJECT | None:
+        r"""Clean the selected DATASET_OBJECT."""
 
     def clean(
         self,
@@ -542,27 +606,32 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             and not force
         ):
             self.LOGGER.debug("Clean files already exists, skipping <%s>", key)
+            assert key is not None
+            if validate:
+                self.validate(self.dataset_paths[key], reference=self.DATASET_HASH)
             return
 
         if key is None:
-            if validate:
-                self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
-
             self.LOGGER.debug("Starting to clean dataset.")
-            for key_ in self.index:
+            for key_ in self.KEYS:
                 self.clean(key=key_, force=force, validate=validate)
             self.LOGGER.debug("Finished cleaning dataset.")
-
-            if validate:
-                self.validate(self.dataset_paths, reference=self.DATASET_SHA256)
             return
 
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
-        df = self._clean(key=key)
+
+        df = self.clean_table(key=key)
         if df is not None:
             self.LOGGER.info("Serializing dataset <%s>", key)
             self.serialize(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
+
+        if validate:
+            self.validate(self.dataset_paths[key], reference=self.DATASET_HASH)
+
+    def load_table(self, key: KeyVar) -> DATASET_OBJECT:
+        r"""Load the selected DATASET_OBJECT."""
+        return self.deserialize(self.dataset_paths[key])
 
     @overload
     def load(
@@ -616,7 +685,7 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             self.LOGGER.debug("Starting to load  dataset.")
             ds = {
                 k: self.load(key=k, force=force, validate=validate, **kwargs)
-                for k in self.index
+                for k in self.KEYS
             }
             self.LOGGER.debug("Finished loading  dataset.")
             return ds
@@ -626,15 +695,18 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
             self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
             return self.dataset[key]
 
-        if validate:
-            self.validate(self.dataset_paths[key], reference=self.DATASET_SHA256)
-
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
-        self.dataset[key] = self._load(key=key)
+        table = self.load_table(key=key)
+        table.name = key
+        self.dataset[key] = table
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
+
+        if validate:
+            self.validate(table, reference=self.TABLE_HASH)
+
         return self.dataset[key]
 
-    def _download(self, key: KeyVar = None) -> None:
+    def download_table(self, key: KeyVar = None) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
@@ -689,15 +761,188 @@ class MultiFrameDataset(FrameDataset, Mapping, Generic[KeyVar]):
                 for key_ in self.rawdata_files:
                     self.download(key=key_, force=force, validate=validate, **kwargs)
             else:
-                self._download()
+                self.download_table()
             self.LOGGER.debug("Finished downloading dataset.")
 
             if validate:
-                self.validate(self.rawdata_paths, reference=self.RAWDATA_SHA256)
-
+                self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
             return
 
         # Download specific key
         self.LOGGER.debug("Starting to download dataset <%s>", key)
-        self._download(key=key)
+        self.download_table(key=key)
         self.LOGGER.debug("Finished downloading dataset <%s>", key)
+
+
+@dataclass
+class TimeSeriesDataset(TorchDataset):
+    r"""Abstract Base Class for TimeSeriesDatasets.
+
+    A TimeSeriesDataset is a dataset that contains time series data and MetaData.
+    More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
+    """
+
+    # Main Attributes
+    timeseries: DataFrame
+    r"""The time series data."""
+    metadata: Optional[DataFrame] = None
+    r"""The metadata of the dataset."""
+
+    # Space Descriptors
+    time_features: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    value_features: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_features: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+
+    def __len__(self) -> int:
+        r"""Return the number of timestamps."""
+        return len(self.timeseries)
+
+    def __getitem__(self, key):
+        r"""Get item from timeseries."""
+        return self.timeseries.loc[key]
+
+    def __iter__(self) -> Iterator[Series]:
+        r"""Iterate over the timestamps."""
+        return iter(self.timeseries)
+
+    def __repr__(self):
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, recursive=1)
+
+
+@dataclass
+class TimeSeriesCollection(Generic[KeyVar]):
+    r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
+
+    A TimeSeriesCollection is a tuple (I, D, G) consiting of
+
+    - index $I$
+    - indexed TimeSeriesDatasets $D = { (TS_i, M_i) | i ∈ I }$
+    - global variables $G∈𝓖$
+    """
+
+    # Main attributes
+    index: Index
+    r"""The index of the collection."""
+    timeseries: DataFrame
+    r"""The time series data."""
+    metadata: Optional[DataFrame] = None
+    r"""The metadata of the dataset."""
+    global_metadata: Optional[DataFrame] = None
+    r"""The global data of the dataset."""
+
+    # Space descriptors
+    index_features: Optional[DataFrame] = None
+    r"""Data associated with each index such as measurement device, unit, etc."""
+    time_features: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    value_features: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_features: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    global_features: Optional[DataFrame] = None
+    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
+        r"""Get the timeseries and metadata of the dataset at index `key`."""
+        ts = self.timeseries.loc[key]
+        md = self.metadata.loc[key] if self.metadata is not None else None
+
+        if self.time_features is None:
+            tf = None
+        elif self.time_features.index.equals(self.index):
+            tf = self.time_features.loc[key]
+        else:
+            tf = self.time_features
+
+        if self.value_features is None:
+            vf = None
+        elif self.value_features.index.equals(self.index):
+            vf = self.value_features.loc[key]
+        else:
+            vf = self.value_features
+
+        if self.metadata_features is None:
+            mf = None
+        elif self.metadata_features.index.equals(self.index):
+            mf = self.metadata_features.loc[key]
+        else:
+            mf = self.metadata_features
+
+        if isinstance(ts.index, MultiIndex):
+            index = ts.index.droplevel(-1).unique()
+            return TimeSeriesCollection(  # type: ignore[return-value]
+                index=index,
+                timeseries=ts,
+                metadata=md,
+                time_features=tf,
+                value_features=vf,
+                metadata_features=mf,
+                global_metadata=self.global_metadata,
+                global_features=self.global_features,
+                index_features=self.index_features,
+            )
+
+        return TimeSeriesDataset(
+            ts, md, time_features=tf, value_features=vf, metadata_features=mf
+        )
+
+    def __len__(self) -> int:
+        r"""Get the length of the collection."""
+        return len(self.index)
+
+    def __iter__(self) -> Iterator[TimeSeriesDataset]:
+        r"""Iterate over the collection."""
+        for key in self.index:
+            yield self[key]
+
+    def __repr__(self):
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, recursive=1)
+
+
+@dataclass
+class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
+    r"""Abstract Base Class for generic TimeSeriesCollections.
+
+    A TimeSeriesCollection is a collection of TimeSeriesDatasets.
+    More specifically, we have a mapping from keys to TimeSeriesDatasets.
+
+    A special case are equimodal TimeSeriesCollections.
+    Here, all timeseries follow the same schema, in the sense that the TS and metadata
+    live in the same space.
+    """
+
+    # Main attributes
+    index: Index
+    r"""The index of the collection."""
+    data: dict[KeyVar, TimeSeriesDataset]
+    r"""The data of the collection."""
+    global_metadata: Optional[DataFrame] = None
+    r"""The global data of the dataset."""
+
+    # Space descriptors
+    index_features: Optional[DataFrame] = None
+    r"""Data associated with each index such as measurement device, unit, etc."""
+    global_features: Optional[DataFrame] = None
+    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
+        r"""Get the timeseries and metadata of the dataset at index `key`."""
+        return self.data[key]
+
+    def __len__(self) -> int:
+        r"""Get the length of the collection."""
+        return len(self.index)
+
+    def __iter__(self) -> Iterator[TimeSeriesDataset]:
+        r"""Iterate over the collection."""
+        for key in self.index:
+            yield self[key]
+
+    def __repr__(self):
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, recursive=1)

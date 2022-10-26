@@ -98,8 +98,8 @@ class BeijingAirQuality(SingleFrameDataset):
         r"https://archive.ics.uci.edu/ml/datasets/Beijing+Multi-Site+Air-Quality+Data"
     )
     r"""HTTP address containing additional information about the dataset."""
-    RAWDATA_SHA256 = "d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
-    DATASET_SHA256 = "32a7c2bcf2fa28e8c321777f321c0ed23fc8bdfd66090b3ad9c1191fa402bc78"
+    RAWDATA_HASH = "d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
+    DATASET_HASH = "32a7c2bcf2fa28e8c321777f321c0ed23fc8bdfd66090b3ad9c1191fa402bc78"
     DATASET_SHAPE = (420768, 12)
     rawdata_files = "PRSA2017_Data_20130301-20170228.zip"
     rawdata_paths: Path

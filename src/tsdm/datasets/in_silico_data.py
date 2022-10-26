@@ -32,9 +32,9 @@ class InSilicoData(SingleFrameDataset):
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """
 
-    DATASET_SHA256 = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
+    DATASET_HASH = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
     DATASET_SHAPE = (5206, 7)
-    RAWDATA_SHA256 = "ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba"
+    RAWDATA_HASH = "ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba"
     rawdata_files = "in_silico.zip"
 
     @cached_property
