@@ -39,9 +39,9 @@ class USHCN_DeBrouwer2019(SingleFrameDataset):
 
     INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
     r"""HTTP address containing additional information about the dataset."""
-    DATASET_SHA256 = "bbd12ab38b4b7f9c69a07409c26967fe16af3b608daae9816312859199b5ce86"
+    DATASET_HASH = "bbd12ab38b4b7f9c69a07409c26967fe16af3b608daae9816312859199b5ce86"
     DATASET_SHAPE = (350665, 5)
-    RAWDATA_SHA256 = "671eb8d121522e98891c84197742a6c9e9bb5015e42b328a93ebdf2cfd393ecf"
+    RAWDATA_HASH = "671eb8d121522e98891c84197742a6c9e9bb5015e42b328a93ebdf2cfd393ecf"
     RAWDATA_SHAPE = (350665, 12)
 
     rawdata_files = "small_chunked_sporadic.csv"

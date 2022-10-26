@@ -30,12 +30,15 @@ __all__ = [
     "SingleFrameDataset",
     "MultiFrameDataset",
     # Classes
+    "TimeSeriesDataset",
+    "TimeSeriesCollection",
     # Datasets
     "BeijingAirQuality",
     "ETT",
     "Electricity",
     "InSilicoData",
     "KIWI_RUNS",
+    "KIWI_RUNS_OLD",
     "MIMIC_III",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV",
@@ -55,12 +58,15 @@ from tsdm.datasets.base import (
     BaseDataset,
     MultiFrameDataset,
     SingleFrameDataset,
+    TimeSeriesCollection,
+    TimeSeriesDataset,
 )
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_runs import KIWI_RUNS
+from tsdm.datasets.kiwi_runs_old import KIWI_RUNS_OLD
 from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.datasets.mimic_iv import MIMIC_IV
@@ -79,7 +85,8 @@ DATASETS: Final[dict[str, type[Dataset]]] = {
     "ETT": ETT,
     "Electricity": Electricity,
     "InSilicoData": InSilicoData,
-    "KIWI_RUNS_TASK": KIWI_RUNS,
+    "KIWI_RUNS": KIWI_RUNS,
+    "KIWI_RUNS_OLD": KIWI_RUNS_OLD,
     "MIMIC_III": MIMIC_III,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV": MIMIC_IV,

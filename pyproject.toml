@@ -23,7 +23,7 @@ name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
 readme = "README.rst"
 repository = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-version = "0.3.3"
+version = "0.3.5"
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -61,13 +61,15 @@ typing-extensions = ">=4.3"
 
 
 [tool.poetry.group.dev.dependencies]
+bandit = ">=1.7.4"
 black = {version = ">=22.8", extras = ["jupyter"]}
 blacken-docs = ">=1.12"
+coverage = ">=6.5"
 docutils = ">=0.19"
 flake8 = ">=5.0"
 flake8-annotations = ">=2.9"
 flake8-black = ">=0.3"
-flake8-bugbear = ">=22.9"
+flake8-bugbear = ">=22.10"
 flake8-comprehensions = ">=3.10"
 flake8-docstrings = ">=1.6"
 flake8-pyi = ">=22.8"
@@ -75,9 +77,11 @@ flake8-rst = ">=0.8"
 flake8-rst-docstrings = ">=0.2"
 isort = ">=5.10"
 jupyter = ">=1.0.0"
-jupyterlab = ">=3.4"
+jupyterlab = ">=3.5"
 mypy = ">=0.981"
 nbsphinx = ">=0.8"
+openml = ">=0.12.2"
+perflint = ">=0.7"
 piccolo-theme = ">=0.12.0"
 pre-commit = ">=2.20"
 pyall = ">=0.2.0"
@@ -90,12 +94,12 @@ pylint = ">=2.15"
 pylint-gitlab = ">=1.1"
 pyre-check = ">=0.9"
 pyright = ">=1.1"
-pytest = ">=7.1"
-pytest-cov = ">=3.0"
+pytest = ">=7.2"
+pytest-cov = ">=4.0"
 pytest-rerunfailures = ">=10.2"
-setuptools = ">=65.3"
-sphinx = ">=5.1"
-sphinx-autoapi = ">=1.9"
+setuptools = ">=65.5"
+sphinx = ">=5.2"
+sphinx-autoapi = ">=2.0"
 sphinx-automodapi = ">=0.14"
 sphinx-copybutton = ">=0.5"
 sphinx-math-dollar = ">=1.2"
@@ -106,9 +110,10 @@ types-pillow = ">=9.2"
 types-protobuf = ">=3.20"
 types-pyyaml = ">=6.0"
 types-requests = ">=2.28"
-types-setuptools = ">=65.3"
+types-setuptools = ">=65.5"
 types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
+types-urllib3 = ">=1.26"
 wheel = ">=0.37"
 
 
@@ -134,7 +139,10 @@ disable= [
     "W0511",  # (fixme) (todos)
     "W1113",  # keyword-arg-before-vararg
 ]
-
+fail-on= [
+    "C0116",  # missing-function-docstring
+]
+fail-under= 9.0
 [tool.pylint.REPORTS]
 # Set the output format. Available formats are text, parseable, colorized, json and
 # msvs (visual studio). You can also give a reporter class, e.g. mypackage.mymodule.MyReporterClass
@@ -215,6 +223,7 @@ convention = "numpy"
 #count = true
 add-ignore = [
     "D105",    # Missing docstring in magic method
+    "D102",    # Missing docstring in public method
 ]
 
 #########################

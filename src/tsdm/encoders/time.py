@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Encoders for timedelta and datetime types."""
 
 from __future__ import annotations
 
@@ -10,16 +7,24 @@ __all__ = [
     "Time2Float",
     "DateTimeEncoder",
     "TimeDeltaEncoder",
+    "PeriodicEncoder",
+    "SocialTimeEncoder",
+    "PeriodicEncoder",
+    "PositionalEncoder",
+    "TimeSlicer",
 ]
 
-from typing import Any, Hashable, Literal, Optional, cast
+from typing import Any, Final, Hashable, Literal, Optional, Sequence, cast, overload
 
 import numpy as np
 import pandas as pd
+import torch
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
+from torch import Tensor
 
 from tsdm.encoders._modular import FrameEncoder
 from tsdm.encoders.base import BaseEncoder
+from tsdm.utils.data import TimeTensor
 
 
 class Time2Float(BaseEncoder):
@@ -343,3 +348,111 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
         }
         obj = FrameEncoder(column_encoders) @ self
         return cast(PeriodicSocialTimeEncoder, obj)
+
+
+class PositionalEncoder(BaseEncoder):
+    r"""Positional encoding.
+
+    .. math::
+        x_{2 k}(t)   &:=\sin \left(\frac{t}{t^{2 k / τ}}\right) \\
+        x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
+    """
+
+    # Constants
+    num_dim: Final[int]
+    r"""Number of dimensions."""
+
+    # Buffers
+    scale: Final[float]
+    r"""Scale factor for positional encoding."""
+    scales: Final[np.ndarray]
+    r"""Scale factors for positional encoding."""
+
+    def __init__(self, num_dim: int, scale: float) -> None:
+        super().__init__()
+
+        self.num_dim = num_dim
+        self.scale = float(scale)
+        self.scales = self.scale ** (-np.arange(0, num_dim + 2, 2) / num_dim)
+        assert self.scales[0] == 1.0, "Something went wrong."
+
+    def encode(self, data: np.ndarray, /) -> np.ndarray:
+        r""".. Signature: ``... -> (..., 2d)``.
+
+        Note: we simple concatenate the sin and cosine terms without interleaving them.
+        """
+        z = np.einsum("..., d -> ...d", data, self.scales)
+        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
+
+    def decode(self, data: np.ndarray, /) -> np.ndarray:
+        r""".. Signature:: ``(..., 2d) -> ...``."""
+        return np.arcsin(data[..., 0])
+
+
+class TimeSlicer(BaseEncoder):
+    r"""Reorganizes the data by slicing."""
+
+    # TODO: multiple horizons
+
+    def __init__(self, horizon):
+        super().__init__()
+        self.horizon = horizon
+
+    @staticmethod
+    def is_tensor_pair(data: Any) -> bool:
+        r"""Check if the data is a pair of tensors."""
+        if isinstance(data, Sequence) and len(data) == 2:
+            if isinstance(data[0], torch.Tensor) and isinstance(data[1], torch.Tensor):
+                return True
+        return False
+
+    @overload
+    def encode(self, data: TimeTensor, /) -> Sequence[TimeTensor]:
+        ...
+
+    @overload
+    def encode(self, data: Sequence[TimeTensor], /) -> Sequence[Sequence[TimeTensor]]:
+        ...
+
+    @overload
+    def encode(
+        self,
+        data: Sequence[tuple[Tensor, Tensor]],
+        /,
+    ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]:
+        ...
+
+    def encode(self, data, /):
+        r"""Slice the data.
+
+        Provide pairs of tensors (T, X) and return a list of pairs (T_sliced, X_sliced).
+        """
+        if isinstance(data, TimeTensor):
+            return data[: self.horizon], data[self.horizon]
+        if self.is_tensor_pair(data):
+            T, X = data
+            idx = T <= self.horizon
+            return (T[idx], X[idx]), (T[~idx], X[~idx])
+        return tuple(self.encode(item) for item in data)
+
+    @overload
+    def decode(self, data: Sequence[TimeTensor], /) -> TimeTensor:
+        ...
+
+    @overload
+    def decode(self, data: Sequence[Sequence[TimeTensor]], /) -> Sequence[TimeTensor]:
+        ...
+
+    @overload
+    def decode(
+        self,
+        data: Sequence[Sequence[tuple[Tensor, Tensor]]],
+        /,
+    ) -> Sequence[tuple[Tensor, Tensor]]:
+        ...
+
+    def decode(self, data, /):
+        r"""Restores the original data."""
+        if isinstance(data[0], TimeTensor) or self.is_tensor_pair(data[0]):
+            return torch.cat(data, dim=0)
+        return tuple(self.decode(item) for item in data)

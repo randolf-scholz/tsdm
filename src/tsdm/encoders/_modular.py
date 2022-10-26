@@ -6,10 +6,10 @@ __all__ = [
     # ABC
     # Classes
     "DataFrameEncoder",
+    "Frame2Tensor",
     "FrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
-    "PositionalEncoder",
     "TensorEncoder",
     "TripletDecoder",
     "TripletEncoder",
@@ -18,8 +18,8 @@ __all__ = [
 
 import warnings
 from collections import defaultdict, namedtuple
-from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
-from typing import Any, Final, Generic, Optional, TypeVar, cast, overload
+from collections.abc import Hashable, Iterable, Mapping
+from typing import Any, Generic, Optional, TypeVar, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -31,44 +31,20 @@ from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils import pairwise_disjoint
-from tsdm.utils.data import TimeTensor
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import PandasObject, PathType, TensorVar
+from tsdm.utils.types import PandasObject, PathType
 from tsdm.utils.types.protocols import NTuple
 
+BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
 
-def apply_along_axes(
-    a: TensorVar, b: TensorVar, op: Callable, axes: tuple[int, ...]
-) -> TensorVar:
-    r"""Apply a function to multiple axes of a tensor.
-
-    Parameters
-    ----------
-    a: Tensor
-    b: Tensor
-    op: Callable
-    axes: tuple[int, ...]
-
-    Returns
-    -------
-    Tensor
-    """
-    axes = tuple(axes)
-    rank = len(a.shape)
-    source = tuple(range(rank))
-    inverse_permutation: tuple[int, ...] = axes + tuple(
-        ax for ax in range(rank) if ax not in axes
-    )
-    perm = tuple(np.argsort(inverse_permutation))
-    if isinstance(a, Tensor):
-        a = torch.moveaxis(a, source, perm)
-        a = op(a, b)
-        a = torch.moveaxis(a, source, inverse_permutation)
-    else:
-        a = np.moveaxis(a, source, perm)
-        a = op(a, b)
-        a = np.moveaxis(a, source, inverse_permutation)
-    return a
+ColumnEncoderVar = TypeVar(
+    "ColumnEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
+)
+IndexEncoderVar = TypeVar(
+    "IndexEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
+)
+# ColumnEncoderVar = TypeVar("ColumnEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
+# IndexEncoderVar = TypeVar("IndexEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
 
 
 class CSVEncoder(BaseEncoder):
@@ -318,18 +294,6 @@ class DataFrameEncoder(BaseEncoder):
         return f"<h3>{self.__class__.__name__}</h3> {html_repr}"
 
 
-BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
-
-ColumnEncoderVar = TypeVar(
-    "ColumnEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
-)
-IndexEncoderVar = TypeVar(
-    "IndexEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
-)
-# ColumnEncoderVar = TypeVar("ColumnEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
-# IndexEncoderVar = TypeVar("IndexEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
-
-
 class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
     r"""Encode a DataFrame by group-wise transformations.
 
@@ -473,10 +437,15 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         else:
             raise TypeError(f"Invalid {type(self.index_encoders)=}")
 
-        # Assemble DataFrame
-        encoded = encoded_cols.join(encoded_inds)  # DataFrame(encoded_cols)
-        # encoded.loc[:, self._names(encoded_inds)] = encoded_inds
-        encoded = encoded.set_index(self._names(encoded_inds))
+        # # Assemble DataFrame
+        # encoded = encoded_cols.join(encoded_inds)  # DataFrame(encoded_cols)
+        # # encoded.loc[:, self._names(encoded_inds)] = encoded_inds
+        # encoded = encoded.set_index(self._names(encoded_inds))
+
+        if isinstance(encoded_inds, Series):
+            encoded = encoded_cols.set_index(encoded_inds)
+        else:
+            encoded = encoded_cols.set_index(MultiIndex.from_frame(encoded_inds))
         return encoded
 
     def decode(self, data: DataFrame, /) -> DataFrame:
@@ -764,114 +733,6 @@ class FrameSplitter(BaseEncoder, Mapping):
         if self.dropna:
             reconstructed = reconstructed.sort_index()
         return reconstructed
-
-
-class PositionalEncoder(BaseEncoder):
-    r"""Positional encoding.
-
-    .. math::
-        x_{2 k}(t)   &:=\sin \left(\frac{t}{t^{2 k / τ}}\right) \\
-        x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
-    """
-
-    # Constants
-    num_dim: Final[int]
-    r"""Number of dimensions."""
-
-    # Buffers
-    scale: Final[float]
-    r"""Scale factor for positional encoding."""
-    scales: Final[np.ndarray]
-    r"""Scale factors for positional encoding."""
-
-    def __init__(self, num_dim: int, scale: float) -> None:
-        super().__init__()
-
-        self.num_dim = num_dim
-        self.scale = float(scale)
-        self.scales = self.scale ** (-np.arange(0, num_dim + 2, 2) / num_dim)
-        assert self.scales[0] == 1.0, "Something went wrong."
-
-    def encode(self, data: np.ndarray, /) -> np.ndarray:
-        r""".. Signature: ``... -> (..., 2d)``.
-
-        Note: we simple concatenate the sin and cosine terms without interleaving them.
-        """
-        z = np.einsum("..., d -> ...d", data, self.scales)
-        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
-
-    def decode(self, data: np.ndarray, /) -> np.ndarray:
-        r""".. Signature:: ``(..., 2d) -> ...``."""
-        return np.arcsin(data[..., 0])
-
-
-class TimeSlicer(BaseEncoder):
-    r"""Reorganizes the data by slicing."""
-
-    # TODO: multiple horizons
-
-    def __init__(self, horizon):
-        super().__init__()
-        self.horizon = horizon
-
-    @staticmethod
-    def is_tensor_pair(data: Any) -> bool:
-        r"""Check if the data is a pair of tensors."""
-        if isinstance(data, Sequence) and len(data) == 2:
-            if isinstance(data[0], torch.Tensor) and isinstance(data[1], torch.Tensor):
-                return True
-        return False
-
-    @overload
-    def encode(self, data: TimeTensor, /) -> Sequence[TimeTensor]:
-        ...
-
-    @overload
-    def encode(self, data: Sequence[TimeTensor], /) -> Sequence[Sequence[TimeTensor]]:
-        ...
-
-    @overload
-    def encode(
-        self,
-        data: Sequence[tuple[Tensor, Tensor]],
-        /,
-    ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]:
-        ...
-
-    def encode(self, data, /):
-        r"""Slice the data.
-
-        Provide pairs of tensors (T, X) and return a list of pairs (T_sliced, X_sliced).
-        """
-        if isinstance(data, TimeTensor):
-            return data[: self.horizon], data[self.horizon]
-        if self.is_tensor_pair(data):
-            T, X = data
-            idx = T <= self.horizon
-            return (T[idx], X[idx]), (T[~idx], X[~idx])
-        return tuple(self.encode(item) for item in data)
-
-    @overload
-    def decode(self, data: Sequence[TimeTensor], /) -> TimeTensor:
-        ...
-
-    @overload
-    def decode(self, data: Sequence[Sequence[TimeTensor]], /) -> Sequence[TimeTensor]:
-        ...
-
-    @overload
-    def decode(
-        self,
-        data: Sequence[Sequence[tuple[Tensor, Tensor]]],
-        /,
-    ) -> Sequence[tuple[Tensor, Tensor]]:
-        ...
-
-    def decode(self, data, /):
-        r"""Restores the original data."""
-        if isinstance(data[0], TimeTensor) or self.is_tensor_pair(data[0]):
-            return torch.cat(data, dim=0)
-        return tuple(self.decode(item) for item in data)
 
 
 class TripletEncoder(BaseEncoder):
@@ -1198,6 +1059,84 @@ class ValueEncoder(BaseEncoder):
         index = data[self.index_columns]
         index.columns = self.index_columns
         index = index.astype(self.index_dtypes)
+        index = index.squeeze(axis="columns")
+
+        if isinstance(index, Series):
+            decoded = columns.set_index(index)
+        else:
+            decoded = columns.set_index(MultiIndex.from_frame(index))
+        return decoded
+
+
+class Frame2Tensor(BaseEncoder):
+    r"""Encodes a DataFrame as a tuple of column and index tensor."""
+
+    # Attributes
+    original_index_columns: Index
+    original_index_dtypes: Series
+    original_values_columns: Index
+    original_values_dtypes: Series
+
+    # Parameters
+    column_dtype: Optional[torch.dtype] = None
+    index_dtype: Optional[torch.dtype] = None
+    device: Optional[str | torch.device] = None
+
+    def __init__(
+        self,
+        *,
+        column_dtype: Optional[torch.dtype] = torch.float32,
+        index_dtype: Optional[torch.dtype] = torch.float32,
+        device: Optional[str | torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.column_dtype = column_dtype
+        self.index_dtype = index_dtype
+        self.device = device
+
+    def fit(self, data: DataFrame, /) -> None:
+        r"""Fit to the data."""
+        index = data.index.to_frame()
+        self.original_index_columns = index.columns
+        self.original_index_dtypes = index.dtypes
+        self.original_values_columns = data.columns
+        self.original_values_dtypes = data.dtypes
+
+        if self.original_values_dtypes.nunique() != 1:
+            raise ValueError("All columns must have the same dtype!")
+        if self.original_index_dtypes.nunique() != 1:
+            raise ValueError("All index columns must have the same dtype!")
+
+    def encode(self, data: DataFrame, /) -> tuple[Tensor, Tensor]:
+        r"""Encode a DataFrame."""
+        index = data.index.to_frame().to_numpy()
+        index_tensor = torch.tensor(index, dtype=self.index_dtype, device=self.device)
+        values = data.to_numpy()
+        values_tensor = torch.tensor(
+            values, dtype=self.column_dtype, device=self.device
+        )
+        return index_tensor.squeeze(), values_tensor.squeeze()
+
+    def decode(self, data: tuple[Tensor, Tensor], /) -> DataFrame:
+        r"""Combine index and column tensor to DataFrame."""
+        index_tensor, values_tensor = data
+        index_tensor = index_tensor.clone().detach().cpu()
+        values_tensor = values_tensor.clone().detach().cpu()
+
+        # Assemble the columns
+        columns = DataFrame(
+            values_tensor,
+            columns=self.original_values_columns,
+        )
+        columns = columns.astype(self.original_values_dtypes)
+        columns = columns.squeeze(axis="columns")
+
+        # assemble the index
+        index = DataFrame(
+            index_tensor,
+            columns=self.original_index_columns,
+        )
+        index = index.astype(self.original_index_dtypes)
         index = index.squeeze(axis="columns")
 
         if isinstance(index, Series):
