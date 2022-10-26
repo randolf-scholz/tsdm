@@ -44,6 +44,8 @@
       <excludeFolder url="file://$MODULE_DIR$/bugs" />
       <excludeFolder url="file://$MODULE_DIR$/examples/.virtual_documents" />
       <excludeFolder url="file://$MODULE_DIR$/docs/apidoc" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/datasets/MIMIC-IV/processed" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/datasets/MIMIC-IV/raw" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Poetry (tsdm)" jdkType="Python SDK" />
