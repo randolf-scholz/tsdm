@@ -101,7 +101,6 @@ class Kiwi_BioProcessTask(BaseTask):
 
         self.timeseries = ts = self.dataset.timeseries
         self.metadata = self.dataset.metadata
-        self.units = self.dataset.units
 
         self.targets = targets = Series(["Base", "DOT", "Glucose", "OD600"])
         self.targets.index = self.targets.apply(ts.columns.get_loc)

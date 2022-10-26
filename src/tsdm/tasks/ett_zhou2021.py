@@ -149,7 +149,8 @@ class ETT_Zhou2021(BaseTask):
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Return the dataset."""
-        return ETT()[self.dataset_id]
+        ds = ETT()
+        return ds.dataset[self.dataset_id]
 
     @cached_property
     def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:

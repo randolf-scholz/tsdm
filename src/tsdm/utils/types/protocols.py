@@ -13,9 +13,11 @@ __all__ = [
     # Classes
     "Array",
     "NTuple",
+    "Dataclass",
 ]
 
 from collections.abc import Iterable, Sequence
+from dataclasses import Field
 from typing import Protocol, TypeAlias, TypeVar, Union, overload, runtime_checkable
 
 ScalarType = TypeVar("ScalarType")
@@ -25,18 +27,35 @@ Self = TypeVar("Self", bound="Array")
 
 
 @runtime_checkable
+class Dataclass(Protocol):
+    r"""Protocol for anonymous dataclasses."""
+
+    __dataclass_fields__: dict[str, Field]
+
+
+@runtime_checkable
+class NTuple(Protocol):
+    r"""Protocol for anonymous namedtuple."""
+
+    @property
+    def _fields(self) -> tuple[str, ...]:
+        return ()
+
+    def _asdict(self) -> dict[str, object]:
+        ...
+
+
+@runtime_checkable
 class Array(Protocol[ScalarType]):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
     @property
     def shape(self) -> Iterable[int]:
         r"""Yield the shape of the array."""
-        ...
 
     @property
     def dtype(self) -> type[ScalarType]:
         r"""Yield the data type of the array."""
-        ...
 
     # fmt: off
     def __len__(self) -> int: ...
@@ -68,15 +87,3 @@ class Array(Protocol[ScalarType]):
     def __rtruediv__(self, other: Either[ScalarType]) -> Array[ScalarType]: ...
     def __itruediv__(self, other: Either[ScalarType]) -> Array[ScalarType]: ...
     # fmt: on
-
-
-@runtime_checkable
-class NTuple(Protocol):
-    r"""To check for namedtuple."""
-
-    @property
-    def _fields(self) -> tuple[str, ...]:
-        return ()
-
-    def _asdict(self) -> dict[str, object]:
-        ...

@@ -53,6 +53,8 @@ class MappingDataset(Dataset, Mapping):
             return self.data[key]
         try:
             outer = self.data[key[0]]
+            if len(key) == 2:
+                return outer[key[1]]
             return outer[key[1:]]
         except KeyError:
             return self.data[key]

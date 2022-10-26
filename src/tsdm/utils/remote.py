@@ -68,11 +68,6 @@ def to_base(n: int, b: int) -> list[int]:
     ----------
     - https://stackoverflow.com/a/28666223/9318372
 
-    Parameters
-    ----------
-    n: int
-    b: int
-
     Returns
     -------
     digits: list[int]

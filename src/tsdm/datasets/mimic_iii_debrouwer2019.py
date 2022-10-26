@@ -20,14 +20,17 @@ __all__ = ["MIMIC_III_DeBrouwer2019"]
 
 
 from pathlib import Path
+from typing import Literal, TypeAlias
 
 import pandas as pd
 
 from tsdm.datasets.base import MultiFrameDataset
 from tsdm.encoders import TripletDecoder
 
+KEY: TypeAlias = Literal["timeseries", "metadata"]
 
-class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
+
+class MIMIC_III_DeBrouwer2019(MultiFrameDataset[KEY]):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -56,20 +59,23 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
     INFO_URL = r"https://physionet.org/content/mimiciii/1.4/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
-    RAWDATA_SHA256 = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
+    RAWDATA_HASH = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
     RAWDATA_SHAPE = (3082224, 7)
-    DATASET_SHA256 = {
+    DATASET_HASH = {
         "timeseries": "2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
         "metadata": "4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
     }
-    DATASET_SHAPE = {"timeseries": (552327, 96), "metadata": (96, 3)}
+    TABLE_SHAPE = {"timeseries": (552327, 96), "metadata": (96, 3)}
 
-    dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
+    # dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
     rawdata_files = "complete_tensor.csv"
     rawdata_paths: Path
-    index = ["timeseries", "metadata"]
+    KEYS = ["timeseries", "metadata"]
 
-    def _clean(self, key):
+    timeseries: pd.DataFrame
+    metadata: pd.DataFrame
+
+    def clean_table(self, key):
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."
@@ -119,11 +125,11 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset):
         stats.to_parquet(self.dataset_paths["metadata"])
         ts.to_parquet(self.dataset_paths["timeseries"])
 
-    def _load(self, key):
+    def load_table(self, key):
         # return NotImplemented
         return pd.read_parquet(self.dataset_paths[key])
 
-    def _download(self, **kwargs):
+    def download_table(self, **kwargs):
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."

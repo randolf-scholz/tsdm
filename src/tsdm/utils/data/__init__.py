@@ -20,9 +20,19 @@ __all__ = [
     "collate_padded",
     "unpad_sequence",
     "unpack_sequence",
+    # Functions
+    "float_is_int",
+    "get_integer_cols",
+    "vlookup_uniques",
+    "aggregate_nondestructive",
 ]
 
-
+from tsdm.utils.data._data import (
+    aggregate_nondestructive,
+    float_is_int,
+    get_integer_cols,
+    vlookup_uniques,
+)
 from tsdm.utils.data.dataloaders import (
     collate_list,
     collate_packed,

@@ -118,5 +118,6 @@ class PreTrainedModel(ABC):
     def forward(self):
         r"""Give the model output given encoded data."""
 
+    @abstractmethod
     def predict(self):
         r"""Wrap the forward with encode and decode."""

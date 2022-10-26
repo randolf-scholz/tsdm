@@ -257,6 +257,8 @@ class TimeSeriesDataset(TorchDataset):
                 timeseries = self.ts_type(*(ts[item] for ts in self.timeseries))
             else:
                 timeseries = tuple(ts[item] for ts in self.timeseries)
+        # if isinstance(item, list):
+        #     return [self[x] for x in item]
         else:
             timeseries = self.timeseries.loc[item]
 
