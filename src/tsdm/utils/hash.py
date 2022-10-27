@@ -3,23 +3,51 @@ r"""Hash function utils."""
 __all__ = [
     # Functions
     "hash_set",
+    "hash_mapping",
+    "hash_iterable",
     "hash_pandas",
 ]
 
 from collections import Counter
-from collections.abc import Hashable, Iterable
+from collections.abc import Hashable, Iterable, Mapping
+from typing import Any
 
 import pandas
 from pandas import DataFrame, Index, Series
 
 
+def hash_object(x: Any, /) -> int:
+    r"""Hash an object in a permutation invariant manner."""
+    if isinstance(x, Hashable):
+        return hash(x)
+    if isinstance(x, (DataFrame, Series)):
+        return hash_pandas(x)
+    if isinstance(x, (Index, pandas.MultiIndex)):
+        return hash_pandas(x.to_frame())
+    if isinstance(x, Mapping):
+        return hash_mapping(x)
+    if isinstance(x, Iterable):
+        return hash_iterable(x)
+    raise TypeError(f"Cannot hash object of type {type(x)}.")
+
+
 def hash_set(x: Iterable[Hashable], /, *, ignore_duplicates: bool = False) -> int:
-    r"""Compute a permutation invariant hash of an iterable."""
+    r"""Hash an iterable of hashable objects in a permutation invariant manner."""
     if ignore_duplicates:
-        return hash(frozenset(x))
+        return hash(frozenset(hash_object(y) for y in x))
     # We use counter as a proxy for multisets, do deal with duplicates in x.
-    mdict = Counter((hash(y) for y in x))
+    mdict = Counter((hash_object(y) for y in x))
     return hash(frozenset(mdict.items()))
+
+
+def hash_mapping(x: Mapping[Hashable, Hashable], /) -> int:
+    r"""Hash a Mapping of hashable objects in a permutation invariant manner."""
+    return hash_set(x.items())
+
+
+def hash_iterable(x: Iterable[Hashable], /) -> int:
+    r"""Hash an iterable of hashable objects in an order dependent manner."""
+    return hash_set(enumerate(x))
 
 
 def hash_pandas(
