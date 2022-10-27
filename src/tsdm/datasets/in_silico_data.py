@@ -15,10 +15,10 @@ from zipfile import ZipFile
 import pandas as pd
 
 from tsdm.datasets import examples
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import SingleFrameDataset, TimeSeriesCollection
 
 
-class InSilicoData(SingleFrameDataset):
+class InSilicoData(SingleFrameDataset, TimeSeriesCollection):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -36,6 +36,11 @@ class InSilicoData(SingleFrameDataset):
     DATASET_SHAPE = (5206, 7)
     RAWDATA_HASH = "ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba"
     rawdata_files = "in_silico.zip"
+
+    def __init__(self):
+        super().__init__()
+        self.timeseries = self.dataset
+        self.index = self.timeseries.index.get_level_values(0).unique()
 
     @cached_property
     def rawdata_paths(self) -> Path:
@@ -56,7 +61,7 @@ class InSilicoData(SingleFrameDataset):
                 dfs[key] = df
         ds = pd.concat(dfs, names=["run_id"])
         ds = ds.reset_index()
-        ds = ds.astype({"run_id": "string"}).astype({"run_id": "category"})
+        # ds = ds.astype({"run_id": "string"}).astype({"run_id": "category"})
         ds = ds.set_index(["run_id", "time"])
         ds = ds.sort_values(by=["run_id", "time"])
         ds = ds.astype("Float32")

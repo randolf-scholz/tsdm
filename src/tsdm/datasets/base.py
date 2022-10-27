@@ -37,7 +37,7 @@ from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.hash import hash_pandas
 from tsdm.utils.remote import download
-from tsdm.utils.strings import repr_dataclass
+from tsdm.utils.strings import repr_dataclass, repr_mapping
 from tsdm.utils.types import KeyVar, Nested, PathType
 
 DATASET_OBJECT: TypeAlias = Series | DataFrame
@@ -526,14 +526,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
     def __repr__(self):
         r"""Pretty Print."""
-        if len(self.KEYS) > 6:
-            indices = list(self.KEYS)
-            selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
-            selection[2] = "..."
-            index_str = ", ".join(selection)
-        else:
-            index_str = repr(self.KEYS)
-        return f"{self.__class__.__name__}{index_str}"
+        return repr_mapping(self.dataset, title=self.__class__.__name__)
 
     @property
     @abstractmethod
