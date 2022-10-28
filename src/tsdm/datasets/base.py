@@ -526,7 +526,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
     def __repr__(self):
         r"""Pretty Print."""
-        return repr_mapping(self.dataset, title=self.__class__.__name__)
+        return repr_mapping(self.dataset, title=self.__class__.__name__, recursive=0)
 
     @property
     @abstractmethod
@@ -780,7 +780,8 @@ class TimeSeriesDataset(TorchDataset):
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
-
+    index: Index = NotImplemented
+    r"""The time-index of the dataset."""
     # Space Descriptors
     time_features: Optional[DataFrame] = None
     r"""Data associated with the time such as measurement device, unit, etc."""
@@ -789,9 +790,14 @@ class TimeSeriesDataset(TorchDataset):
     metadata_features: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
+    def __post_init__(self):
+        r"""Post init."""
+        if self.index is NotImplemented:
+            self.index = self.timeseries.index.copy().unqiue()
+
     def __len__(self) -> int:
         r"""Return the number of timestamps."""
-        return len(self.timeseries)
+        return len(self.index)
 
     def __getitem__(self, key):
         r"""Get item from timeseries."""
@@ -799,7 +805,7 @@ class TimeSeriesDataset(TorchDataset):
 
     def __iter__(self) -> Iterator[Series]:
         r"""Iterate over the timestamps."""
-        return iter(self.timeseries)
+        return iter(self.index)
 
     def __repr__(self):
         r"""Get the representation of the collection."""
@@ -807,7 +813,7 @@ class TimeSeriesDataset(TorchDataset):
 
 
 @dataclass
-class TimeSeriesCollection(Generic[KeyVar]):
+class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
     r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
 
     A TimeSeriesCollection is a tuple (I, D, G) consiting of
@@ -818,14 +824,14 @@ class TimeSeriesCollection(Generic[KeyVar]):
     """
 
     # Main attributes
-    index: Index
-    r"""The index of the collection."""
     timeseries: DataFrame
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
     global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
+    index: Index = NotImplemented
+    r"""The index of the collection."""
 
     # Space descriptors
     index_features: Optional[DataFrame] = None
@@ -838,6 +844,16 @@ class TimeSeriesCollection(Generic[KeyVar]):
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
     global_features: Optional[DataFrame] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    def __post_init__(self):
+        r"""Post init."""
+        if self.index is NotImplemented:
+            if self.metadata is not None:
+                self.index = self.metadata.index.copy().unique()
+            elif isinstance(self.timeseries.index, MultiIndex):
+                self.index = self.timeseries.index.copy().droplevel(-1).unique()
+            else:
+                self.index = self.timeseries.index.copy().unique()
 
     def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
@@ -880,17 +896,23 @@ class TimeSeriesCollection(Generic[KeyVar]):
             )
 
         return TimeSeriesDataset(
-            ts, md, time_features=tf, value_features=vf, metadata_features=mf
+            index=ts.index,
+            timeseries=ts,
+            metadata=md,
+            time_features=tf,
+            value_features=vf,
+            metadata_features=mf,
         )
 
     def __len__(self) -> int:
         r"""Get the length of the collection."""
         return len(self.index)
 
-    def __iter__(self) -> Iterator[TimeSeriesDataset]:
+    def __iter__(self) -> Iterator[KeyVar]:
         r"""Iterate over the collection."""
-        for key in self.index:
-            yield self[key]
+        return iter(self.index)
+        # for key in self.index:
+        #     yield self[key]
 
     def __repr__(self):
         r"""Get the representation of the collection."""
@@ -910,18 +932,23 @@ class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
     """
 
     # Main attributes
-    index: Index
-    r"""The index of the collection."""
     data: dict[KeyVar, TimeSeriesDataset]
     r"""The data of the collection."""
     global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
+    index: Index = NotImplemented
+    r"""The index of the collection."""
 
     # Space descriptors
     index_features: Optional[DataFrame] = None
     r"""Data associated with each index such as measurement device, unit, etc."""
     global_features: Optional[DataFrame] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    def __post_init__(self):
+        r"""Post init."""
+        if self.index is NotImplemented:
+            self.index = Index(self.data.keys())
 
     def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
