@@ -1,4 +1,4 @@
-exclude: (\.idea/|\docs/_build/|\.git/|\.venv/)
+exclude: (\.git/|\.venv/|\.idea/|\docs/_build/)
 default_language_version:
   python: python3.10
 repos:
@@ -111,7 +111,7 @@ repos:
   #    rev: v0.941
   #    hooks:
   #    - id: mypy
-  #      files: (^src/|^test/)
+  #      files: (^src/|^tests/)
   #      args:
   #      -   --warn-unused-configs
   #      -   --ignore-missing-imports
