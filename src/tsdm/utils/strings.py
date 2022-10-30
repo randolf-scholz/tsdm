@@ -118,7 +118,7 @@ def repr_object(obj: Any, /, **kwargs: Any) -> str:
         return repr(obj)
     # Fallback Option
     except Exception:
-        return repr(type(obj))
+        return repr_type(obj)
 
 
 def repr_type(obj: Any, /) -> str:
@@ -167,9 +167,15 @@ def repr_mapping(
 
     def to_string(x: Any) -> str:
         if recursive:
-            if isinstance(recursive, bool):
-                return repr_fun(x).replace("\n", br + pad)
-            return repr_fun(x, recursive=recursive - 1).replace("\n", br + pad)
+            return repr_fun(
+                x,
+                align=align,
+                linebreaks=linebreaks,
+                maxitems=maxitems,
+                padding=padding,
+                recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+                repr_fun=repr_fun,
+            ).replace("\n", br + pad)
         return repr_type(x)
 
     # keys = [str(key) for key in obj.keys()]
@@ -198,6 +204,7 @@ def repr_sequence(
     obj: Sequence,
     /,
     *,
+    align: bool = ALIGN,
     linebreaks: bool = LINEBREAKS,
     maxitems: int = MAXITEMS,
     padding: int = PADDING,
@@ -224,9 +231,15 @@ def repr_sequence(
 
     def to_string(x: Any) -> str:
         if recursive:
-            if isinstance(recursive, bool):
-                return repr_fun(x).replace("\n", br + pad)
-            return repr_fun(x, recursive=recursive - 1).replace("\n", br + pad)
+            return repr_fun(
+                x,
+                align=align,
+                linebreaks=linebreaks,
+                maxitems=maxitems,
+                padding=padding,
+                recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+                repr_fun=repr_fun,
+            ).replace("\n", br + pad)
         return repr_type(x)
 
     if len(obj) <= maxitems:
@@ -266,7 +279,7 @@ def repr_dataclass(
         linebreaks=linebreaks,
         maxitems=maxitems,
         padding=padding,
-        recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+        recursive=recursive,
         repr_fun=repr_fun,
         title=type(obj).__name__ if title is None else title,
     )
@@ -293,7 +306,7 @@ def repr_namedtuple(
         linebreaks=linebreaks,
         maxitems=maxitems,
         padding=padding,
-        recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+        recursive=recursive,
         repr_fun=repr_fun,
         title=type(obj).__name__ if title is None else title,
     )
