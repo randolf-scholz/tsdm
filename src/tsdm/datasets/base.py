@@ -22,7 +22,7 @@ import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 from functools import cached_property, partial
 from hashlib import sha256
 from pathlib import Path
@@ -780,8 +780,12 @@ class TimeSeriesDataset(TorchDataset):
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
+
+    _: KW_ONLY
+
     index: Index = NotImplemented
     r"""The time-index of the dataset."""
+
     # Space Descriptors
     time_features: Optional[DataFrame] = None
     r"""Data associated with the time such as measurement device, unit, etc."""
@@ -828,6 +832,9 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
+
+    _: KW_ONLY
+
     global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
     index: Index = NotImplemented
@@ -934,6 +941,7 @@ class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
     # Main attributes
     data: dict[KeyVar, TimeSeriesDataset]
     r"""The data of the collection."""
+    _: KW_ONLY
     global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
     index: Index = NotImplemented
