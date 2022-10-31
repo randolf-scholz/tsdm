@@ -26,7 +26,7 @@ __ALL__ = dir() + __all__
 
 import builtins
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
-from dataclasses import is_dataclass
+from dataclasses import Field, is_dataclass
 from typing import Any, Final, Optional, overload
 
 from pandas import DataFrame, Series
@@ -273,8 +273,9 @@ def repr_dataclass(
     """Return a string representation of a dataclass object."""
     assert is_dataclass(obj), f"Object {obj} is not a dataclass."
     assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."
+    fields: dict[str, Field] = obj.__dataclass_fields__
     return repr_mapping(
-        {key: getattr(obj, key) for key in obj.__dataclass_fields__},
+        {key: getattr(obj, key) for key, field in fields.items() if field.repr},
         align=align,
         linebreaks=linebreaks,
         maxitems=maxitems,

@@ -600,6 +600,7 @@ def wrap_func(
     *,
     before: Optional[Callable[..., Any]] = None,
     after: Optional[Callable[..., Any]] = None,
+    pass_args: bool = True,
 ) -> Callable[..., ReturnVar]:
     r"""Wrap a function with pre- and post-hooks."""
     if before is None and after is None:
@@ -611,7 +612,7 @@ def wrap_func(
 
         @wraps(func)
         def _wrapper(*args, **kwargs):
-            before(*args, **kwargs)  # type: ignore[misc]
+            before() if not pass_args else before(*args, **kwargs)  # type: ignore[misc]
             result = func(*args, **kwargs)
             return result
 
@@ -623,7 +624,7 @@ def wrap_func(
         @wraps(func)
         def _wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
-            after(*args, **kwargs)  # type: ignore[misc]
+            after() if not pass_args else after(*args, **kwargs)  # type: ignore[misc]
             return result
 
         return _wrapper
@@ -634,9 +635,9 @@ def wrap_func(
 
         @wraps(func)
         def _wrapper(*args, **kwargs):
-            before(*args, **kwargs)  # type: ignore[misc]
+            before() if not pass_args else before(*args, **kwargs)  # type: ignore[misc]
             result = func(*args, **kwargs)
-            after(*args, **kwargs)  # type: ignore[misc]
+            after() if not pass_args else after(*args, **kwargs)  # type: ignore[misc]
             return result
 
         return _wrapper
