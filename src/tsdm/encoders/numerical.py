@@ -104,7 +104,6 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         self.stdv = stdv
 
     def __repr__(self) -> str:
-        r"""Pretty print."""
         return f"{self.__class__.__name__}(axis={self.axis})"
 
     def __getitem__(self, item: Any) -> Standardizer:
@@ -120,7 +119,6 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         return self.Parameters(self.mean, self.stdv, self.axis)
 
     def fit(self, data: TensorType, /) -> None:
-        r"""Compute the mean and stdv."""
         rank = len(data.shape)
 
         if self.axis is None:
@@ -163,7 +161,6 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         #     self.stdv = np.sqrt((residual**2).sum(axis=axes)/count)
 
     def encode(self, data: TensorType, /) -> TensorType:
-        r"""Encode the input."""
         if self.mean is None:
             raise RuntimeError("Needs to be fitted first!")
 
@@ -174,7 +171,6 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         return (data - self.mean[broadcast]) / self.stdv[broadcast]
 
     def decode(self, data: TensorType, /) -> TensorType:
-        r"""Decode the input."""
         if self.mean is None:
             raise RuntimeError("Needs to be fitted first!")
 
@@ -257,7 +253,6 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         return encoder
 
     def __repr__(self) -> str:
-        r"""Pretty print."""
         return f"{self.__class__.__name__}(axis={self.axis})"
 
     @property
@@ -268,7 +263,6 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         )
 
     def fit(self, data: TensorType, /) -> None:
-        r"""Fit the MinMaxScaler to the data."""
         # TODO: Why does singledispatch not work here? (wrap_func in BaseEncoder)
         # print(type(data), isinstance(data, np.ndarray), isinstance(data, type))
         if isinstance(data, Tensor):
@@ -311,7 +305,6 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def encode(self, data: TensorType, /) -> TensorType:
-        r"""Encode the input."""
         self.LOGGER.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, axis=self.axis)
         self.LOGGER.debug("Broadcasting to %s", broadcast)
@@ -323,7 +316,6 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         return (data - xmin) * scale + ymin
 
     def decode(self, data: TensorType, /) -> TensorType:
-        r"""Decode the input."""
         self.LOGGER.debug("Decoding data %s", data)
         broadcast = get_broadcast(data, axis=self.axis)
         self.LOGGER.debug("Broadcasting to %s", broadcast)
@@ -400,7 +392,6 @@ class LogEncoder(BaseEncoder):
     replacement: NDArray
 
     def fit(self, data: NDArray, /) -> None:
-        r"""Fit the encoder to the data."""
         assert np.all(data >= 0)
 
         mask = data == 0
@@ -408,14 +399,12 @@ class LogEncoder(BaseEncoder):
         self.replacement = np.log2(self.threshold / 2)
 
     def encode(self, data: NDArray, /) -> NDArray:
-        r"""Encode data on logarithmic scale."""
         result = data.copy()
         mask = data <= 0
         result[:] = np.where(mask, self.replacement, np.log2(data))
         return result
 
     def decode(self, data: NDArray, /) -> NDArray:
-        r"""Decode data on logarithmic scale."""
         result = 2**data
         mask = result < self.threshold
         result[:] = np.where(mask, 0, result)
@@ -433,7 +422,6 @@ class FloatEncoder(BaseEncoder):
         super().__init__()
 
     def fit(self, data: PandasObject, /) -> None:
-        r"""Remember the original dtypes."""
         if isinstance(data, DataFrame):
             self.dtypes = data.dtypes
         elif isinstance(data, (Series, Index)):
@@ -446,16 +434,10 @@ class FloatEncoder(BaseEncoder):
             raise TypeError(f"Cannot get dtype of {type(data)}")
 
     def encode(self, data: PandasObject, /) -> PandasObject:
-        r"""Make everything float32."""
         return data.astype(self.target_dtype)
 
     def decode(self, data: PandasObject, /) -> PandasObject:
-        r"""Restore original dtypes."""
         return data.astype(self.dtypes)
-
-    def __repr__(self):
-        r"""Pretty print."""
-        return f"{self.__class__.__name__}()"
 
 
 class IntEncoder(BaseEncoder):
@@ -465,20 +447,13 @@ class IntEncoder(BaseEncoder):
     r"""The original dtypes."""
 
     def fit(self, data: PandasObject, /) -> None:
-        r"""Remember the original dtypes."""
         self.dtypes = data.dtypes
 
     def encode(self, data: PandasObject, /) -> PandasObject:
-        r"""Make everything int32."""
         return data.astype("int32")
 
     def decode(self, data, /):
-        r"""Restore original dtypes."""
         return data.astype(self.dtypes)
-
-    def __repr__(self):
-        r"""Pretty print."""
-        return f"{self.__class__.__name__}()"
 
 
 class TensorSplitter(BaseEncoder):
@@ -507,7 +482,6 @@ class TensorSplitter(BaseEncoder):
         ...
 
     def encode(self, data, /):
-        r"""Encode the input."""
         if isinstance(data, Tensor):
             return torch.tensor_split(data, self.indices_or_sections, dim=self.axis)
         return np.array_split(data, self.indices_or_sections, dim=self.axis)  # type: ignore[call-overload]
@@ -521,7 +495,6 @@ class TensorSplitter(BaseEncoder):
         ...
 
     def decode(self, data, /):
-        r"""Decode the input."""
         if isinstance(data[0], Tensor):
             return torch.cat(data, dim=self.axis)
         return np.concatenate(data, axis=self.axis)
@@ -544,7 +517,6 @@ class TensorConcatenator(BaseEncoder):
         self.axis = axis
 
     def fit(self, data: tuple[Tensor, ...], /) -> None:
-        r"""Fit to the data."""
         self.numdims = [d.ndim for d in data]
         self.maxdim = max(self.numdims)
         # pad dimensions if necessary
@@ -553,20 +525,18 @@ class TensorConcatenator(BaseEncoder):
         self.lengths = [x.shape[self.axis] for x in arrays]
 
     def encode(self, data: tuple[Tensor, ...], /) -> Tensor:
-        r"""Encode the input."""
         return torch.cat(
             [d[(...,) + (None,) * (self.maxdim - d.ndim)] for d in data], dim=self.axis
         )
 
     def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
-        r"""Decode the input."""
         result = torch.split(data, self.lengths, dim=self.axis)
         return tuple(x.squeeze() for x in result)
 
 
 @dataclass
 class BoundaryEncoder(BaseEncoder):
-    r"""Encodes data by clipping to boundary Value.
+    r"""Clip or mask values outside a given range.
 
     Parameters
     ----------
