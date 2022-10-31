@@ -342,13 +342,19 @@ def grad_norm(
     # TODO: implement special cases p,q = ±∞
     if normalize:
         # Initializing s this way automatically gets the dtype and device correct
-        s = torch.mean(tensors.pop().grad ** p) ** (q / p)
+        x = tensors.pop()
+        assert x.grad is not None
+        s = torch.mean(x.grad**p) ** (q / p)
         for x in tensors:
+            assert x.grad is not None
             s += torch.mean(x.grad**p) ** (q / p)
         return (s / (1 + len(tensors))) ** (1 / q)
     # else
-    s = torch.sum(tensors.pop().grad ** p) ** (q / p)
+    x = tensors.pop()
+    assert x.grad is not None
+    s = torch.sum(x.grad**p) ** (q / p)
     for x in tensors:
+        assert x.grad is not None
         s += torch.sum(x.grad**p) ** (q / p)
     return s ** (1 / q)
 

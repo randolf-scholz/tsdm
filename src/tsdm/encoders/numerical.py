@@ -4,16 +4,19 @@ from __future__ import annotations
 
 __all__ = [
     # Classes
-    "Standardizer",
-    "MinMaxScaler",
+    "BoundaryEncoder",
     "LogEncoder",
-    "TensorSplitter",
+    "MinMaxScaler",
+    "Standardizer",
     "TensorConcatenator",
+    "TensorSplitter",
 ]
 
+from dataclasses import KW_ONLY, dataclass
 from typing import (
     Any,
     Generic,
+    Literal,
     NamedTuple,
     Optional,
     TypeAlias,
@@ -25,7 +28,7 @@ from typing import (
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
+from pandas import NA, DataFrame, Index, Series
 from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
@@ -559,3 +562,47 @@ class TensorConcatenator(BaseEncoder):
         r"""Decode the input."""
         result = torch.split(data, self.lengths, dim=self.axis)
         return tuple(x.squeeze() for x in result)
+
+
+@dataclass
+class BoundaryEncoder(BaseEncoder):
+    r"""Encodes data by clipping to boundary Value.
+
+    Parameters
+    ----------
+    lower : lower bound - scalar or array-like
+    upper : upper bound - scalar or array-like
+    mode: str
+        'clip': clip to boundary
+        'mask': mask values outside of boundary with nan
+    axis: int | tuple[..., int]
+    """
+
+    lower: float | np.ndarray
+    upper: float | np.ndarray
+    _: KW_ONLY = NotImplemented
+    axis: int | tuple[int, ...] = -1
+    mode: Literal["mask", "clip"] = "mask"
+    _nan: float
+
+    def fit(self, data):
+        # TODO: make _nan adapt to real data type!
+        if isinstance(data, Series | DataFrame):
+            self._nan = NA
+        else:
+            self._nan = float("nan")
+
+    def encode(self, data: DataFrame) -> DataFrame:
+        if self.mode == "mask":
+            data = data.where(data < self.lower, self._nan)
+            data = data.where(data > self.upper, self._nan)
+            return data
+        elif self.mode == "clip":
+            data = data.where(data < self.lower, self.lower)
+            data = data.where(data > self.upper, self.upper)
+            return data
+
+        raise ValueError(f"Unknown mode {self.mode}")
+
+    def decode(self, data: DataFrame) -> DataFrame:
+        return data
