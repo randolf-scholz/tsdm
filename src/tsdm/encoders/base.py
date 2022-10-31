@@ -19,7 +19,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from copy import deepcopy
 from typing import Any, ClassVar, Sequence, overload
 
-from tsdm.utils.decorators import wrap_func
+from tsdm.utils.decorators import wrap_method
 from tsdm.utils.strings import repr_object
 from tsdm.utils.types import ObjectVar
 
@@ -56,9 +56,9 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
         `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_func(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
-        cls.encode = wrap_func(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
-        cls.decode = wrap_func(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
+        cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
+        cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
+        cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
 
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
@@ -111,9 +111,7 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
     def decode(self, data, /):
         r"""Decode the data by inverse transformation."""
 
-    def _post_fit_hook(
-        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
-    ) -> None:
+    def _post_fit_hook(self) -> None:
         self.is_fitted = True
 
     def _pre_encode_hook(self) -> None:

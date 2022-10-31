@@ -113,6 +113,8 @@ __all__ = [
     # ABC
     "BaseEncoder",
     # Classes
+    "BoundaryEncoder",
+    "BoxCoxEncoder",
     "ChainedEncoder",
     "CloneEncoder",
     "DataFrameEncoder",
@@ -175,6 +177,8 @@ from tsdm.encoders.functional import (
     FunctionalEncoder,
 )
 from tsdm.encoders.numerical import (
+    BoundaryEncoder,
+    BoxCoxEncoder,
     FloatEncoder,
     IntEncoder,
     LogEncoder,
@@ -224,6 +228,8 @@ r"""Dictionary of all available sklearn encoders."""
 
 MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "BaseEncoder": BaseEncoder,
+    "BoundaryEncoder": BoundaryEncoder,
+    "BoxCoxEncoder": BoxCoxEncoder,
     "ChainedEncoder": ChainedEncoder,
     "CloneEncoder": CloneEncoder,
     "DataFrameEncoder": DataFrameEncoder,
