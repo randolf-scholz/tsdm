@@ -41,7 +41,7 @@ LINEBREAKS: Final[bool] = True
 r"""Default linebreaks for repr_funcs."""
 PADDING: Final[int] = 4
 r"""Default padding for repr_funcs."""
-RECURSIVE: Final[bool | int] = True
+RECURSIVE: Final[bool | int] = False
 r"""Default recursive for repr_funcs."""
 ALIGN: Final[bool] = True
 r"""Default align for repr_mapping."""
