@@ -53,16 +53,7 @@ class Time2Vec(nn.Module):
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
-        r""".. Signature:: ``... -> (..., d)``.
-
-        Parameters
-        ----------
-        t: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``... -> (..., d)``."""
         z = torch.einsum("..., k -> ...k", t, self.freq) + self.phase
         z = self.act(z)
         return torch.cat([t.unsqueeze(dim=-1), z], dim=-1)
@@ -123,28 +114,11 @@ class PositionalEncoder(nn.Module):
         r""".. Signature:: ``... -> (..., 2d)``.
 
         Note: we simple concatenate the sin and cosine terms without interleaving them.
-
-        Parameters
-        ----------
-        t: Tensor
-
-        Returns
-        -------
-        Tensor
         """
         z = torch.einsum("..., d -> ...d", t, self.scales)
         return torch.cat([torch.sin(z), torch.cos(z)], dim=-1)
 
     @jit.export
     def inverse(self, t: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., 2d) -> ...``.
-
-        Parameters
-        ----------
-        t: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``(..., 2d) -> ...``."""
         return torch.asin(t[..., 0])
