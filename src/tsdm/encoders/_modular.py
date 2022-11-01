@@ -337,6 +337,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             self.column_encoders = cast(ColumnEncoderVar, None)
         else:
             self.column_encoders = column_encoders
+
         if index_encoders is None:
             self.index_encoders = cast(IndexEncoderVar, None)
         else:
@@ -363,7 +364,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         #     }
 
         if self.column_encoders is None:
-            self.column_decoders = self.column_encoders
+            self.column_decoders = self.column_encoders  # type: ignore[unreachable]
         elif isinstance(self.column_encoders, BaseEncoder):
             self.column_encoders.fit(data)
             self.column_decoders = cast(ColumnEncoderVar, self.column_encoders)
@@ -377,7 +378,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             raise TypeError(f"Invalid {type(self.column_encoders)=}")
 
         if self.index_encoders is None:
-            self.index_decoders = self.index_encoders
+            self.index_decoders = self.index_encoders  # type: ignore[unreachable]
         elif isinstance(self.index_encoders, BaseEncoder):
             self.index_encoders.fit(index)
             self.index_decoders = cast(IndexEncoderVar, self.index_encoders)
@@ -1042,7 +1043,7 @@ class ValueEncoder(BaseEncoder):
         return decoded
 
 
-class Frame2Tensor(BaseEncoder):
+class _DeprecatedFrame2Tensor(BaseEncoder):
     r"""Encodes a DataFrame as a tuple of column and index tensor."""
 
     # Attributes
@@ -1115,3 +1116,90 @@ class Frame2Tensor(BaseEncoder):
         else:
             decoded = columns.set_index(MultiIndex.from_frame(index))
         return decoded
+
+
+class Frame2Tensor(BaseEncoder):
+    r"""Encodes a DataFrame as a tuple of column and index tensor."""
+
+    # Attributes
+    original_index_columns: Index
+    original_index_dtypes: Series
+    original_values_columns: Index
+    original_values_dtypes: Series
+    original_columns: Index
+    original_dtypes: Series
+
+    # Parameters
+    column_dtype: Optional[torch.dtype] = None
+    index_dtype: Optional[torch.dtype] = None
+    device: Optional[str | torch.device] = None
+
+    def __init__(
+        self,
+        *,
+        groups: dict[str, list[str]],
+        dtypes: Optional[dict[str, str]] = None,
+        device: Optional[str | torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.groups = groups
+        self.dtypes = dtypes
+        self.device = device
+
+    def __repr__(self) -> str:
+        return repr_mapping(self.groups, title=self.__class__.__name__, recursive=1)
+
+    def fit(self, data: DataFrame, /) -> None:
+        index = data.index.to_frame()
+        self.original_index_columns = index.columns
+        self.original_index_dtypes = index.dtypes
+        self.original_values_columns = data.columns
+        self.original_values_dtypes = data.dtypes
+
+        data = data.reset_index()
+        self.original_dtypes = data.dtypes
+        self.original_columns = data.columns
+
+        # Impute Ellipsis
+        cols: set[str] = set(data.columns)
+        ellipsis_key: Optional[str] = None
+        for key in self.groups:
+            if self.groups[key] is Ellipsis:
+                ellipsis_key = key
+            else:
+                s = set(self.groups[key])
+                assert s.issubset(cols), f"{s} is not a subset of {cols}"
+                cols -= s
+        if ellipsis_key is not None:
+            self.groups[ellipsis_key] = list(cols)
+            cols = set()
+
+        assert cols == {}, f"Columns {cols} are not assigned to a group!"
+
+        # data type validation
+        for key in self.groups:
+            if data[self.groups[key]].dtypes.nunique() != 1:
+                raise ValueError("All members of a group must have the same dtype!")
+
+    def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
+        data = data.reset_index()
+        return {
+            key: torch.tensor(data[cols].to_numpy(), device=self.device).squeeze()
+            for key, cols in self.groups.items()
+        }
+
+    def decode(self, data: dict[str, Tensor], /) -> DataFrame:
+        dfs = []
+        for key, tensor in data.items():
+            tensor = tensor.clone().detach().cpu()
+            cols = self.groups[key]
+            df = DataFrame(tensor, columns=cols).astype(self.original_dtypes[cols])
+            dfs.append(df)
+
+        # Assemble the DataFrame
+        df = pd.concat(dfs, axis="columns")
+        df = df.astype(self.original_dtypes)
+        df = df[self.original_columns]
+        df = df.set_index(self.original_index_columns.to_list())
+
+        return df
