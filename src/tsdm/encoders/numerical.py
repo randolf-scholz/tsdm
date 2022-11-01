@@ -223,14 +223,7 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         *,
         axis: Optional[int | tuple[int, ...]] = None,
     ):
-        r"""Initialize the MinMaxScaler.
-
-        Parameters
-        ----------
-        ymin
-        ymax
-        axis
-        """
+        r"""Initialize the MinMaxScaler."""
         super().__init__()
         self.xmin = cast(TensorType, np.array(0.0 if xmin is None else xmin))
         self.xmax = cast(TensorType, np.array(1.0 if xmax is None else xmax))
@@ -654,7 +647,8 @@ class BoxCoxEncoder(BaseEncoder):
             def integrate_quantile(q):
                 return a * q + (b - a) * q**2 / 2
 
-        unique, counts = np.unique(x, return_counts=True)
+        mask = np.isnan(x)
+        unique, counts = np.unique(x[~mask], return_counts=True)
         α = counts / np.sum(counts)
         p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
         β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
@@ -695,7 +689,8 @@ class BoxCoxEncoder(BaseEncoder):
             def integrate_quantile(q):
                 return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * π)
 
-        unique, counts = np.unique(x, return_counts=True)
+        mask = np.isnan(x)
+        unique, counts = np.unique(x[~mask], return_counts=True)
         α = counts / np.sum(counts)
         p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
         β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
@@ -711,7 +706,7 @@ class BoxCoxEncoder(BaseEncoder):
         return fun
 
     def fit(self, data: DataFrame, /) -> None:
-        assert np.all(data >= 0)
+        assert all(np.isnan(data) | (data >= 0)), f"{data=}"
 
         match self.method:
             case None:
@@ -751,7 +746,7 @@ class BoxCoxEncoder(BaseEncoder):
                 raise ValueError(f"Unknown method {self.method}")
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        assert np.all(data >= 0)
+        assert all(np.isnan(data) | (data >= 0)), f"{data=}"
         return np.log(data + self.offset)
 
     def decode(self, data: DataFrame, /) -> DataFrame:
@@ -788,13 +783,13 @@ class LogitBoxCoxEncoder(BaseEncoder):
     METHOD: TypeAlias = Literal["minimum", "quartile", "match-normal", "match-uniform"]
     AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
 
-    method: Optional[METHOD] = "match-uniform"
+    method: Optional[METHOD] = "match-normal"
     offset: np.ndarray
 
     def __init__(
         self,
         *,
-        method: Optional[METHOD] = "match-uniform",
+        method: Optional[METHOD] = "match-normal",
         initial_param: Optional[np.ndarray] = None,
     ) -> None:
 
@@ -836,7 +831,8 @@ class LogitBoxCoxEncoder(BaseEncoder):
             def integrate_quantile(q):
                 return a * q + (b - a) * q**2 / 2
 
-        unique, counts = np.unique(x, return_counts=True)
+        mask = np.isnan(x)
+        unique, counts = np.unique(x[~mask], return_counts=True)
         α = counts / np.sum(counts)
         p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
         β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
@@ -877,7 +873,8 @@ class LogitBoxCoxEncoder(BaseEncoder):
             def integrate_quantile(q):
                 return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * π)
 
-        unique, counts = np.unique(x, return_counts=True)
+        mask = np.isnan(x)
+        unique, counts = np.unique(x[~mask], return_counts=True)
         α = counts / np.sum(counts)
         p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
         β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
@@ -893,7 +890,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
         return fun
 
     def fit(self, data: DataFrame, /) -> None:
-        assert all((data >= 0) & (data <= 1))
+        assert all(np.isnan(data) | ((data >= 0) & (data <= 1))), f"{data=}"
 
         match self.method:
             case None:
@@ -933,7 +930,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
                 raise ValueError(f"Unknown method {self.method}")
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        assert all((data >= 0) & (data <= 1))
+        assert all(np.isnan(data) | ((data >= 0) & (data <= 1))), f"{data=}"
         return np.log((data + self.offset) / (1 - data + self.offset))
 
     def decode(self, data: DataFrame, /) -> DataFrame:
