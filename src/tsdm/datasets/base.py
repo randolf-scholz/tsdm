@@ -813,7 +813,7 @@ class TimeSeriesDataset(TorchDataset):
 
     def __repr__(self):
         r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=1)
+        return repr_dataclass(self, recursive=False)
 
 
 @dataclass
@@ -923,7 +923,7 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
 
     def __repr__(self):
         r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=1)
+        return repr_dataclass(self, recursive=False)
 
 
 @dataclass
@@ -975,4 +975,4 @@ class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
 
     def __repr__(self):
         r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=1)
+        return repr_dataclass(self, recursive=False)
