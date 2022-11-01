@@ -89,16 +89,19 @@ __all__ = [
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, ClassVar, Generic, Optional
+from typing import Any, ClassVar, Generic, NamedTuple, Optional
 
-from pandas import DataFrame
+from pandas import DataFrame, Index
 from torch import Tensor
 from torch.utils.data import DataLoader
+from torch.utils.data.dataset import Dataset as TorchDataset
 
-from tsdm.datasets import Dataset
+from tsdm.datasets import Dataset, TimeSeriesCollection
 from tsdm.encoders import ModularEncoder
 from tsdm.utils import LazyDict
+from tsdm.utils.strings import repr_namedtuple
 from tsdm.utils.types import KeyVar
 
 
@@ -218,3 +221,119 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         return LazyDict(
             {key: (self.get_dataloader, kwargs | {"key": key}) for key in self.splits}
         )
+
+
+class Inputs(NamedTuple):
+    r"""Tuple of inputs."""
+
+    t: int
+    x: int
+    t_target: int
+    metadata: int
+
+    def __repr__(self):
+        return repr_namedtuple(self, recursive=False)
+
+
+class Sample(NamedTuple):
+    r"""A sample for forecasting task."""
+
+    key: int
+    inputs: Inputs
+    targets: int
+    # originals: int
+
+    def __repr__(self):
+        return repr_namedtuple(self, recursive=False)
+
+
+@dataclass
+class TimeSeriesCollectionTask(TorchDataset):
+    r"""Creates sample from a TimeSeriesCollection.
+
+    There are different modus operandi for creating samples from a TimeSeriesCollection.
+
+    - masked-format: In this format, two equimodal copies of the data are stored with appropriate masking.
+        - inputs = ((t_x, x), m)
+        - targets = ((t_x, x'), m')
+
+    -mixed? format:
+        - inputs = ( (t, x), (t, u), m)
+        - targets = ( (t, y), m_y)
+
+    - split+dense: Here, the data is split into groups of equal length.
+        - inputs = (t_y, (t, x), (t, u), m)
+        - targets = (y, m_y)
+
+    - split+sparse: Here, the data is split into groups sparse tensors. No NAN-rows.
+        - inputs = (t_y, (t_x, x), (t_u, u), m_x)
+        - targets = (y, m_y)
+
+
+
+    This class is used inside DataLoader.
+
+    +---------------+---------------------+---------------------+
+    | variable      | observation-horizon | forecasting-horizon |
+    +===============+=====================+=====================+
+    | observables X | ✓                   |                     |
+    +---------------+---------------------+---------------------+
+    | controls U    | ✓                   | ✓                   |
+    +---------------+---------------------+---------------------+
+    | targets Y     |                     | ✓                   |
+    +---------------+---------------------+---------------------+
+
+
+    Technical Remark
+    ----------------
+    The option `pin_memory` of `torch.utils.data.DataLoader` recurses through
+    Mappings and Sequence. However, it will cast the types. The only preserved Types are
+
+    - dicts
+    - tuples
+    - namedtuples
+
+    Dataclasses are currently not supported. Therefore, we preferably use namedtuples
+    or dicts as containers.
+    """
+
+    dataset: TimeSeriesCollection
+    observables: Index
+    r"""Columns of the data that are used as inputs."""
+    controls: Index
+    r"""Columns of the data that are used as controls."""
+    targets: Index
+    r"""Columns of the data that are used as targets."""
+    autoregressive: Index
+    r"""Observables that are also targets."""
+
+    split_observables_targets: bool = False
+    r"""If True, the observables and targets are split into two different tensors."""
+    sparse_tensors: bool = False
+    r"""Whether to use sparse tensors or not."""
+
+    def __getitem__(self, key: Any) -> Sample:
+        assert isinstance(key, tuple) and len(key) == 2
+        outer_key, inner_key = key
+        assert isinstance(inner_key, list) and len(inner_key) == 2
+        observation_horizon, forecasting_horizon = inner_key
+
+        tsd = self.dataset[outer_key]
+        # md = tsd.metadata
+
+        obs = tsd[observation_horizon]
+        pre = tsd[forecasting_horizon]
+        horizon = observation_horizon | forecasting_horizon
+        ts = tsd[horizon]
+
+        return Sample(
+            key=outer_key,
+            inputs=Inputs(ts, obs, ts, pre),
+            targets=pre,
+        )
+
+    def __iter__(self):
+        return iter(self.dataset)
+
+    def __len__(self):
+        return len(self.dataset)

@@ -102,6 +102,8 @@ def dict2string(d: dict[str, Any]) -> str:
 
 def repr_object(obj: Any, /, **kwargs: Any) -> str:
     r"""Return a string representation of an object."""
+    if isinstance(obj, str):
+        return obj
     if type(obj).__name__ in dir(builtins):
         return str(obj)
     if isinstance(obj, Tensor):
@@ -123,6 +125,8 @@ def repr_object(obj: Any, /, **kwargs: Any) -> str:
 
 def repr_type(obj: Any, /) -> str:
     r"""Return a string representation of an object."""
+    if isinstance(obj, str):
+        return obj
     if obj is None:
         return str(None)
     if obj is True:
