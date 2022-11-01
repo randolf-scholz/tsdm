@@ -1172,9 +1172,9 @@ class Frame2Tensor(BaseEncoder):
                 cols -= s
         if ellipsis_key is not None:
             self.groups[ellipsis_key] = list(cols)
-            cols = set()
+            cols -= cols
 
-        assert cols == {}, f"Columns {cols} are not assigned to a group!"
+        assert not cols, f"Columns {cols} are not assigned to a group!"
 
         # data type validation
         for key in self.groups:
