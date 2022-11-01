@@ -363,7 +363,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         #     }
 
         if self.column_encoders is None:
-            pass
+            self.column_decoders = self.column_encoders
         elif isinstance(self.column_encoders, BaseEncoder):
             self.column_encoders.fit(data)
             self.column_decoders = cast(ColumnEncoderVar, self.column_encoders)
@@ -377,7 +377,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             raise TypeError(f"Invalid {type(self.column_encoders)=}")
 
         if self.index_encoders is None:
-            pass
+            self.index_decoders = self.index_encoders
         elif isinstance(self.index_encoders, BaseEncoder):
             self.index_encoders.fit(index)
             self.index_decoders = cast(IndexEncoderVar, self.index_encoders)
@@ -402,13 +402,13 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             encoded = self.column_encoders.encode(data)
             encoded_cols = encoded_cols.drop(columns=data.columns)
             # encoded_cols.loc[:, self._names(encoded)] = encoded  # TODO: try better encoder!
-            encoded_cols = encoded_cols.join(encoded)
+            encoded_cols = pd.concat([encoded_cols, encoded], axis="columns")
         elif isinstance(self.column_encoders, Mapping):
             for group, encoder in self.column_encoders.items():
                 encoded = encoder.encode(data[group])
                 encoded_cols = encoded_cols.drop(columns=group)
                 # encoded_cols.loc[:,self._names(encoded)] = encoded
-                encoded_cols = encoded_cols.join(encoded)
+                encoded_cols = pd.concat([encoded_cols, encoded], axis="columns")
         else:
             raise TypeError(f"Invalid {type(self.column_encoders)=}")
 
@@ -418,13 +418,13 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             encoded = self.index_encoders.encode(index)
             encoded_inds = encoded_inds.drop(columns=index.columns)
             # encoded_inds.loc[:, self._names(encoded)] = encoded
-            encoded_inds = encoded_inds.join(encoded)
+            encoded_inds = pd.concat([encoded_inds, encoded], axis="columns")
         elif isinstance(self.index_encoders, Mapping):
             for group, encoder in self.index_encoders.items():
                 encoded = encoder.encode(index[group])
                 encoded_inds = encoded_inds.drop(columns=group)
                 # encoded_inds.loc[:, self._names(encoded)] = encoded
-                encoded_inds = encoded_inds.join(encoded)
+                encoded_inds = pd.concat([encoded_inds, encoded], axis="columns")
         else:
             raise TypeError(f"Invalid {type(self.index_encoders)=}")
 
@@ -436,7 +436,8 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         if isinstance(encoded_inds, Series):
             encoded = encoded_cols.set_index(encoded_inds)
         else:
-            encoded = encoded_cols.set_index(MultiIndex.from_frame(encoded_inds))
+            new_index = MultiIndex.from_frame(encoded_inds)
+            encoded = encoded_cols.set_index(new_index)
         return encoded
 
     def decode(self, data: DataFrame, /) -> DataFrame:
