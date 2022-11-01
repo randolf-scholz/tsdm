@@ -49,14 +49,14 @@ r"""Type hint for lr_schedulers."""
 
 LR_SCHEDULERS: Final[dict[str, type[lr_scheduler._LRScheduler]]] = {
     "LambdaLR": lr_scheduler.LambdaLR,
-    "MultiplicativeLR": lr_scheduler.MultiplicativeLR,  # type: ignore[attr-defined]
+    "MultiplicativeLR": lr_scheduler.MultiplicativeLR,
     "StepLR": lr_scheduler.StepLR,
     "MultiStepLR": lr_scheduler.MultiStepLR,
     "ExponentialLR": lr_scheduler.ExponentialLR,
     "CosineAnnealingLR": lr_scheduler.CosineAnnealingLR,
     # "ReduceLROnPlateau": lr_scheduler.ReduceLROnPlateau,   # not subclass of _LRScheduler...
     "CyclicLR": lr_scheduler.CyclicLR,
-    "OneCycleLR": lr_scheduler.OneCycleLR,  # type: ignore[attr-defined]
+    "OneCycleLR": lr_scheduler.OneCycleLR,
     "CosineAnnealingWarmRestarts": lr_scheduler.CosineAnnealingWarmRestarts,
 }
 r"""Dictionary of all available lr_schedulers."""

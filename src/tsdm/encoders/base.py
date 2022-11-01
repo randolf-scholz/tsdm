@@ -19,8 +19,8 @@ from abc import ABC, ABCMeta, abstractmethod
 from copy import deepcopy
 from typing import Any, ClassVar, Sequence, overload
 
-from tsdm.utils.decorators import wrap_func
-from tsdm.utils.strings import repr_sequence
+from tsdm.utils.decorators import wrap_method
+from tsdm.utils.strings import repr_object
 from tsdm.utils.types import ObjectVar
 
 
@@ -38,6 +38,9 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the Encoder."""
 
+    requires_fit: ClassVar[bool] = True
+    r"""Whether the encoder requires fitting."""
+
     _is_fitted: bool = False
     r"""Whether the encoder has been fitted."""
 
@@ -53,9 +56,9 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
         `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_func(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
-        cls.encode = wrap_func(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
-        cls.decode = wrap_func(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
+        cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
+        cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
+        cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
 
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
@@ -71,7 +74,7 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
-        return f"{self.__class__.__name__}()"
+        return repr_object(self, title=self.__class__.__name__, recursive=1)
 
     @property
     def is_fitted(self) -> bool:
@@ -85,7 +88,7 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
     @property
     def is_surjective(self) -> bool:
         r"""Whether the encoder is surjective."""
-        return True
+        return False
 
     @property
     def is_injective(self) -> bool:
@@ -102,27 +105,21 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
 
     @abstractmethod
     def encode(self, data, /):
-        r"""Transform the data."""
+        r"""Encode the data by transformation."""
 
     @abstractmethod
     def decode(self, data, /):
-        r"""Reverse the applied transformation."""
+        r"""Decode the data by inverse transformation."""
 
-    def _post_fit_hook(
-        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
-    ) -> None:
+    def _post_fit_hook(self) -> None:
         self.is_fitted = True
 
-    def _pre_encode_hook(
-        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
-    ) -> None:
-        if not self.is_fitted:
+    def _pre_encode_hook(self) -> None:
+        if self.requires_fit and not self.is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
 
-    def _pre_decode_hook(
-        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
-    ) -> None:
-        if not self.is_fitted:
+    def _pre_decode_hook(self) -> None:
+        if self.requires_fit and not self.is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
 
 
@@ -130,11 +127,9 @@ class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
     def encode(self, data: ObjectVar, /) -> ObjectVar:
-        r"""Encode the input."""
         return data
 
     def decode(self, data: ObjectVar, /) -> ObjectVar:
-        r"""Decode the input."""
         return data
 
 
@@ -146,7 +141,6 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
 
     @property
     def is_fitted(self) -> bool:
-        r"""Whether the encoder has been fitted."""
         return all(e.is_fitted for e in self.encoders)
 
     @is_fitted.setter
@@ -156,12 +150,10 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
 
     @property
     def is_surjective(self) -> bool:
-        r"""Whether the encoder is surjective."""
         return all(e.is_surjective for e in self.encoders)
 
     @property
     def is_injective(self) -> bool:
-        r"""Whether the encoder is injective."""
         return all(e.is_injective for e in self.encoders)
 
     def __init__(self, *encoders: BaseEncoder, simplify: bool = True) -> None:
@@ -195,22 +187,15 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
             return ProductEncoder(*self.encoders[index])
         raise ValueError(f"Index {index} not supported.")
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_sequence(self)
-
     def fit(self, data: tuple[Any, ...], /) -> None:
-        r"""Fit the encoder."""
         for encoder, x in zip(self.encoders, data):
             encoder.fit(x)
 
     def encode(self, data: tuple[Any, ...], /) -> Sequence[Any]:
-        r"""Encode the data."""
         rtype = type(data)
         return rtype(encoder.encode(x) for encoder, x in zip(self.encoders, data))
 
     def decode(self, data: tuple[Any, ...], /) -> Sequence[Any]:
-        r"""Decode the data."""
         rtype = type(data)
         return rtype(encoder.decode(x) for encoder, x in zip(self.encoders, data))
 
@@ -223,7 +208,6 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
 
     @property
     def is_fitted(self) -> bool:
-        r"""Whether the encoder has been fitted."""
         return all(e.is_fitted for e in self.encoders)
 
     @is_fitted.setter
@@ -233,12 +217,10 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
 
     @property
     def is_surjective(self) -> bool:
-        r"""Return True if the encoder is surjective."""
         return all(e.is_surjective for e in self.encoders)
 
     @property
     def is_injective(self) -> bool:
-        r"""Return True if the encoder is injective."""
         return all(e.is_injective for e in self.encoders)
 
     def __init__(self, *encoders: BaseEncoder, simplify: bool = True) -> None:
@@ -273,24 +255,17 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
             return ChainedEncoder(*self.encoders[index])
         raise ValueError(f"Index {index} not supported.")
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_sequence(self)
-
     def fit(self, data: Any, /) -> None:
-        r"""Fit to the data."""
         for encoder in reversed(self.encoders):
             encoder.fit(data)
             data = encoder.encode(data)
 
     def encode(self, data, /):
-        r"""Encode the input."""
         for encoder in reversed(self.encoders):
             data = encoder.encode(data)
         return data
 
     def decode(self, data, /):
-        r"""Decode the input."""
         for encoder in self.encoders:
             data = encoder.decode(data)
         return data
@@ -304,23 +279,15 @@ class DuplicateEncoder(BaseEncoder):
         self.base_encoder = encoder
         self.n = n
         self.encoder = ProductEncoder(*(self.base_encoder for _ in range(n)))
-
         self.is_fitted = self.encoder.is_fitted
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"Duplicates[{self.n}]@{repr(self.base_encoder)}"
-
     def fit(self, data: Any, /) -> None:
-        r"""Fit the encoder."""
         return self.encoder.fit(data)
 
     def encode(self, data, /):
-        r"""Encode the data."""
         return self.encoder.encode(data)
 
     def decode(self, data, /):
-        r"""Decode the data."""
         return self.encoder.decode(data)
 
 
@@ -334,18 +301,11 @@ class CloneEncoder(BaseEncoder):
         self.encoder = ProductEncoder(*(deepcopy(self.base_encoder) for _ in range(n)))
         self.is_fitted = self.encoder.is_fitted
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"Copies[{self.n}]@{repr(self.base_encoder)}"
-
     def fit(self, data: Any, /) -> None:
-        r"""Fit the encoder."""
         return self.encoder.fit(data)
 
     def encode(self, data, /):
-        r"""Encode the data."""
         return self.encoder.encode(data)
 
     def decode(self, data, /):
-        r"""Decode the data."""
         return self.encoder.decode(data)

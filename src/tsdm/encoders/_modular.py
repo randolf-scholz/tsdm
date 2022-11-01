@@ -79,16 +79,13 @@ class CSVEncoder(BaseEncoder):
         self.to_csv_kwargs = to_csv_kwargs or {}
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit the encoder."""
         self.dtypes = data.dtypes
 
     def encode(self, data: DataFrame, /) -> PathType:
-        r"""Encode the data."""
         data.to_csv(self.filename, **self.to_csv_kwargs)
         return self.filename
 
     def decode(self, data: Optional[PathType] = None, /) -> DataFrame:
-        r"""Decode the data."""
         if data is None:
             data = self.filename
         frame = pd.read_csv(data, **self.read_csv_kwargs)
@@ -213,7 +210,6 @@ class DataFrameEncoder(BaseEncoder):
         #     setattr(self, x, getattr(self.spec, x))
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit to the data."""
         self.colspec = data.dtypes
 
         if self.index_encoders is not None:
@@ -241,7 +237,6 @@ class DataFrameEncoder(BaseEncoder):
             encoder.fit(data)
 
     def encode(self, data: DataFrame, /) -> tuple:
-        r"""Encode the input."""
         tensors = []
         for _, series in self.spec.loc["columns"].iterrows():
             encoder = series["encoder"]
@@ -257,7 +252,6 @@ class DataFrameEncoder(BaseEncoder):
         return encoded_columns
 
     def decode(self, data: tuple, /) -> DataFrame:
-        r"""Decode the input."""
         if self.encode_index:
             if isinstance(self.index_encoders, Mapping):
                 raise NotImplementedError("Multiple index encoders not yet supported")
@@ -285,7 +279,6 @@ class DataFrameEncoder(BaseEncoder):
         return df[self.colspec.index].astype(self.colspec)  # bring cols in right order
 
     def __repr__(self) -> str:
-        r"""Pretty print."""
         return f"{self.__class__.__name__}(" + self.spec.__repr__() + "\n)"
 
     def _repr_html_(self) -> str:
@@ -344,6 +337,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             self.column_encoders = cast(ColumnEncoderVar, None)
         else:
             self.column_encoders = column_encoders
+
         if index_encoders is None:
             self.index_encoders = cast(IndexEncoderVar, None)
         else:
@@ -355,7 +349,6 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         self.duplicate = duplicate
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit the encoder."""
         data = data.copy()
         index = data.index.to_frame()
         self.columns = data.columns
@@ -371,7 +364,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         #     }
 
         if self.column_encoders is None:
-            pass
+            self.column_decoders = self.column_encoders  # type: ignore[unreachable]
         elif isinstance(self.column_encoders, BaseEncoder):
             self.column_encoders.fit(data)
             self.column_decoders = cast(ColumnEncoderVar, self.column_encoders)
@@ -385,7 +378,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             raise TypeError(f"Invalid {type(self.column_encoders)=}")
 
         if self.index_encoders is None:
-            pass
+            self.index_decoders = self.index_encoders  # type: ignore[unreachable]
         elif isinstance(self.index_encoders, BaseEncoder):
             self.index_encoders.fit(index)
             self.index_decoders = cast(IndexEncoderVar, self.index_encoders)
@@ -399,7 +392,6 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             raise TypeError(f"Invalid {type(self.index_encoders)=}")
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        r"""Encode the data."""
         data = data.copy(deep=True)
         index = data.index.to_frame()
         encoded_cols = data
@@ -411,13 +403,13 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             encoded = self.column_encoders.encode(data)
             encoded_cols = encoded_cols.drop(columns=data.columns)
             # encoded_cols.loc[:, self._names(encoded)] = encoded  # TODO: try better encoder!
-            encoded_cols = encoded_cols.join(encoded)
+            encoded_cols = pd.concat([encoded_cols, encoded], axis="columns")
         elif isinstance(self.column_encoders, Mapping):
             for group, encoder in self.column_encoders.items():
                 encoded = encoder.encode(data[group])
                 encoded_cols = encoded_cols.drop(columns=group)
                 # encoded_cols.loc[:,self._names(encoded)] = encoded
-                encoded_cols = encoded_cols.join(encoded)
+                encoded_cols = pd.concat([encoded_cols, encoded], axis="columns")
         else:
             raise TypeError(f"Invalid {type(self.column_encoders)=}")
 
@@ -427,13 +419,13 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             encoded = self.index_encoders.encode(index)
             encoded_inds = encoded_inds.drop(columns=index.columns)
             # encoded_inds.loc[:, self._names(encoded)] = encoded
-            encoded_inds = encoded_inds.join(encoded)
+            encoded_inds = pd.concat([encoded_inds, encoded], axis="columns")
         elif isinstance(self.index_encoders, Mapping):
             for group, encoder in self.index_encoders.items():
                 encoded = encoder.encode(index[group])
                 encoded_inds = encoded_inds.drop(columns=group)
                 # encoded_inds.loc[:, self._names(encoded)] = encoded
-                encoded_inds = encoded_inds.join(encoded)
+                encoded_inds = pd.concat([encoded_inds, encoded], axis="columns")
         else:
             raise TypeError(f"Invalid {type(self.index_encoders)=}")
 
@@ -445,11 +437,11 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         if isinstance(encoded_inds, Series):
             encoded = encoded_cols.set_index(encoded_inds)
         else:
-            encoded = encoded_cols.set_index(MultiIndex.from_frame(encoded_inds))
+            new_index = MultiIndex.from_frame(encoded_inds)
+            encoded = encoded_cols.set_index(new_index)
         return encoded
 
     def decode(self, data: DataFrame, /) -> DataFrame:
-        r"""Decode the data."""
         data = data.copy(deep=True)
         index = data.index.to_frame()
         decoded_cols = data
@@ -535,7 +527,6 @@ class FrameIndexer(BaseEncoder):
         return f"{self.__class__.__name__}(levels={self.reset})"
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit to the data."""
         index = data.index.to_frame()
         self.index_columns = index.columns
         self.index_dtypes = index.dtypes
@@ -547,11 +538,9 @@ class FrameIndexer(BaseEncoder):
             self.index_indices = list(range(len(self.reset)))
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        r"""Reset the index."""
         return data.reset_index(level=self.reset)
 
     def decode(self, data: DataFrame, /) -> DataFrame:
-        r"""Set the index."""
         data = DataFrame(data)
         columns = data.columns[self.index_indices].to_list()
         return data.set_index(columns)
@@ -646,7 +635,6 @@ class FrameSplitter(BaseEncoder, Mapping):
         return self.groups[item]
 
     def fit(self, original: DataFrame, /) -> None:
-        r"""Fit the encoder."""
         data = DataFrame(original).copy()
 
         # if self.dropna and not data.index.is_monotonic_increasing:
@@ -698,7 +686,6 @@ class FrameSplitter(BaseEncoder, Mapping):
         # self.inverse_permutation sorted(p.copy(), key=p.__getitem__)
 
     def encode(self, original: DataFrame, /) -> tuple[DataFrame, ...]:
-        r"""Encode the data."""
         data = DataFrame(original).copy()
 
         if not self.has_ellipsis and set(data.columns) > self.fixed_columns:
@@ -720,7 +707,6 @@ class FrameSplitter(BaseEncoder, Mapping):
         return tuple(encoded_frames)
 
     def decode(self, data: tuple[DataFrame, ...], /) -> DataFrame:
-        r"""Decode the data."""
         data = tuple(DataFrame(x) for x in data)
         joined = pd.concat(data, axis="columns")
 
@@ -764,13 +750,11 @@ class TripletEncoder(BaseEncoder):
         self.value_name = value_name
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit the encoder."""
         self.categories = pd.CategoricalDtype(data.columns)
         self.original_dtypes = data.dtypes
         self.original_columns = data.columns
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        r"""Encode the data."""
         result = data.melt(
             ignore_index=False,
             var_name=self.var_name,
@@ -788,7 +772,6 @@ class TripletEncoder(BaseEncoder):
         return result
 
     def decode(self, data: DataFrame, /) -> DataFrame:
-        r"""Decode the data."""
         if self.sparse:
             df = data.iloc[:, 1:].stack()
             df = df[df == 1]
@@ -854,7 +837,6 @@ class TripletDecoder(BaseEncoder):
         self.value_name = value_name
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit the encoder."""
         self.original_dtypes = data.dtypes
         self.original_columns = data.columns
 
@@ -887,7 +869,6 @@ class TripletDecoder(BaseEncoder):
         self.categories = pd.CategoricalDtype(np.sort(categories))
 
     def encode(self, data: DataFrame, /) -> DataFrame:
-        r"""Decode the data."""
         if self.sparse:
             df = data.loc[:, self.channel_columns].stack()
             df = df[df == 1]
@@ -918,7 +899,6 @@ class TripletDecoder(BaseEncoder):
         return result.sort_index()
 
     def decode(self, data: DataFrame, /) -> DataFrame:
-        r"""Encode the data."""
         result = data.melt(
             ignore_index=False,
             var_name=self.var_name,
@@ -969,7 +949,7 @@ class TensorEncoder(BaseEncoder):
         return f"{self.__class__.__name__}()"
 
     def fit(self, data: PandasObject, /) -> None:
-        r"""Fit to the data."""
+        ...
 
     @overload
     def encode(self, data: PandasObject, /) -> Tensor:  # type: ignore[misc]
@@ -980,7 +960,6 @@ class TensorEncoder(BaseEncoder):
         ...
 
     def encode(self, data, /):
-        r"""Convert each inputs to tensor."""
         if isinstance(data, tuple):
             return tuple(self.encode(x) for x in data)
         if isinstance(data, np.ndarray):
@@ -998,7 +977,6 @@ class TensorEncoder(BaseEncoder):
         ...
 
     def decode(self, data, /):
-        r"""Convert each input from tensor to numpy."""
         if isinstance(data, tuple):
             return tuple(self.decode(x) for x in data)
         return data.cpu().numpy()
@@ -1023,7 +1001,6 @@ class ValueEncoder(BaseEncoder):
         self.dtype = dtype
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit to the data."""
         index = data.index.to_frame()
         self.index_columns = index.columns
         self.index_dtypes = index.dtypes
@@ -1041,12 +1018,10 @@ class ValueEncoder(BaseEncoder):
             )
 
     def encode(self, data: DataFrame, /) -> NDArray:
-        r"""Encode the value of a DataFrame."""
         array = data.reset_index().values
         return array.astype(self.dtype)
 
     def decode(self, data: NDArray, /) -> DataFrame:
-        r"""Decode the value of a DataFrame."""
         data = DataFrame(data, columns=self.original_columns)
 
         # Assemble the columns
@@ -1068,7 +1043,7 @@ class ValueEncoder(BaseEncoder):
         return decoded
 
 
-class Frame2Tensor(BaseEncoder):
+class _DeprecatedFrame2Tensor(BaseEncoder):
     r"""Encodes a DataFrame as a tuple of column and index tensor."""
 
     # Attributes
@@ -1095,7 +1070,6 @@ class Frame2Tensor(BaseEncoder):
         self.device = device
 
     def fit(self, data: DataFrame, /) -> None:
-        r"""Fit to the data."""
         index = data.index.to_frame()
         self.original_index_columns = index.columns
         self.original_index_dtypes = index.dtypes
@@ -1108,7 +1082,6 @@ class Frame2Tensor(BaseEncoder):
             raise ValueError("All index columns must have the same dtype!")
 
     def encode(self, data: DataFrame, /) -> tuple[Tensor, Tensor]:
-        r"""Encode a DataFrame."""
         index = data.index.to_frame().to_numpy()
         index_tensor = torch.tensor(index, dtype=self.index_dtype, device=self.device)
         values = data.to_numpy()
@@ -1118,7 +1091,6 @@ class Frame2Tensor(BaseEncoder):
         return index_tensor.squeeze(), values_tensor.squeeze()
 
     def decode(self, data: tuple[Tensor, Tensor], /) -> DataFrame:
-        r"""Combine index and column tensor to DataFrame."""
         index_tensor, values_tensor = data
         index_tensor = index_tensor.clone().detach().cpu()
         values_tensor = values_tensor.clone().detach().cpu()
@@ -1144,3 +1116,90 @@ class Frame2Tensor(BaseEncoder):
         else:
             decoded = columns.set_index(MultiIndex.from_frame(index))
         return decoded
+
+
+class Frame2Tensor(BaseEncoder):
+    r"""Encodes a DataFrame as a tuple of column and index tensor."""
+
+    # Attributes
+    original_index_columns: Index
+    original_index_dtypes: Series
+    original_values_columns: Index
+    original_values_dtypes: Series
+    original_columns: Index
+    original_dtypes: Series
+
+    # Parameters
+    column_dtype: Optional[torch.dtype] = None
+    index_dtype: Optional[torch.dtype] = None
+    device: Optional[str | torch.device] = None
+
+    def __init__(
+        self,
+        *,
+        groups: dict[str, list[str]],
+        dtypes: Optional[dict[str, str]] = None,
+        device: Optional[str | torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.groups = groups
+        self.dtypes = dtypes
+        self.device = device
+
+    def __repr__(self) -> str:
+        return repr_mapping(self.groups, title=self.__class__.__name__, recursive=1)
+
+    def fit(self, data: DataFrame, /) -> None:
+        index = data.index.to_frame()
+        self.original_index_columns = index.columns
+        self.original_index_dtypes = index.dtypes
+        self.original_values_columns = data.columns
+        self.original_values_dtypes = data.dtypes
+
+        data = data.reset_index()
+        self.original_dtypes = data.dtypes
+        self.original_columns = data.columns
+
+        # Impute Ellipsis
+        cols: set[str] = set(data.columns)
+        ellipsis_key: Optional[str] = None
+        for key in self.groups:
+            if self.groups[key] is Ellipsis:
+                ellipsis_key = key
+            else:
+                s = set(self.groups[key])
+                assert s.issubset(cols), f"{s} is not a subset of {cols}"
+                cols -= s
+        if ellipsis_key is not None:
+            self.groups[ellipsis_key] = list(cols)
+            cols = set()
+
+        assert cols == {}, f"Columns {cols} are not assigned to a group!"
+
+        # data type validation
+        for key in self.groups:
+            if data[self.groups[key]].dtypes.nunique() != 1:
+                raise ValueError("All members of a group must have the same dtype!")
+
+    def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
+        data = data.reset_index()
+        return {
+            key: torch.tensor(data[cols].to_numpy(), device=self.device).squeeze()
+            for key, cols in self.groups.items()
+        }
+
+    def decode(self, data: dict[str, Tensor], /) -> DataFrame:
+        dfs = []
+        for key, tensor in data.items():
+            tensor = tensor.clone().detach().cpu()
+            cols = self.groups[key]
+            df = DataFrame(tensor, columns=cols).astype(self.original_dtypes[cols])
+            dfs.append(df)
+
+        # Assemble the DataFrame
+        df = pd.concat(dfs, axis="columns")
+        df = df.astype(self.original_dtypes)
+        df = df[self.original_columns]
+        df = df.set_index(self.original_index_columns.to_list())
+
+        return df

@@ -781,7 +781,7 @@ class TimeSeriesDataset(TorchDataset):
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
 
-    _: KW_ONLY
+    _: KW_ONLY = NotImplemented
 
     index: Index = NotImplemented
     r"""The time-index of the dataset."""
@@ -833,7 +833,7 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
 
-    _: KW_ONLY
+    _: KW_ONLY = NotImplemented
 
     global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
@@ -941,7 +941,9 @@ class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
     # Main attributes
     data: dict[KeyVar, TimeSeriesDataset]
     r"""The data of the collection."""
-    _: KW_ONLY
+
+    _: KW_ONLY = NotImplemented
+
     global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
     index: Index = NotImplemented

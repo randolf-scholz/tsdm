@@ -12,6 +12,7 @@ __all__ = [
     "trace",
     "vectorize",
     "wrap_func",
+    "wrap_method",
     # Class Decorators
     "autojit",
     "IterItems",
@@ -600,6 +601,7 @@ def wrap_func(
     *,
     before: Optional[Callable[..., Any]] = None,
     after: Optional[Callable[..., Any]] = None,
+    pass_args: bool = False,
 ) -> Callable[..., ReturnVar]:
     r"""Wrap a function with pre- and post-hooks."""
     if before is None and after is None:
@@ -611,7 +613,7 @@ def wrap_func(
 
         @wraps(func)
         def _wrapper(*args, **kwargs):
-            before(*args, **kwargs)  # type: ignore[misc]
+            before() if not pass_args else before(*args, **kwargs)  # type: ignore[misc]
             result = func(*args, **kwargs)
             return result
 
@@ -623,7 +625,7 @@ def wrap_func(
         @wraps(func)
         def _wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
-            after(*args, **kwargs)  # type: ignore[misc]
+            after() if not pass_args else after(*args, **kwargs)  # type: ignore[misc]
             return result
 
         return _wrapper
@@ -634,9 +636,61 @@ def wrap_func(
 
         @wraps(func)
         def _wrapper(*args, **kwargs):
-            before(*args, **kwargs)  # type: ignore[misc]
+            before() if not pass_args else before(*args, **kwargs)  # type: ignore[misc]
             result = func(*args, **kwargs)
-            after(*args, **kwargs)  # type: ignore[misc]
+            after() if not pass_args else after(*args, **kwargs)  # type: ignore[misc]
+            return result
+
+        return _wrapper
+
+    raise RuntimeError(f"Unreachable code reached for {func}")
+
+
+@decorator
+def wrap_method(
+    func: Callable[..., ReturnVar],
+    /,
+    *,
+    before: Optional[Callable[..., Any]] = None,
+    after: Optional[Callable[..., Any]] = None,
+    pass_args: bool = False,
+) -> Callable[..., ReturnVar]:
+    r"""Wrap a function with pre- and post-hooks."""
+    if before is None and after is None:
+        __logger__.debug("No hooks added to %s", func)
+        return func
+
+    if before is not None and after is None:
+        __logger__.debug("Adding pre hook %s to %s", before, func)
+
+        @wraps(func)
+        def _wrapper(self, *args, **kwargs):
+            before(self) if not pass_args else before(self, *args, **kwargs)  # type: ignore[misc]
+            result = func(self, *args, **kwargs)
+            return result
+
+        return _wrapper
+
+    if before is None and after is not None:
+        __logger__.debug("Adding post hook %s to %s", after, func)
+
+        @wraps(func)
+        def _wrapper(self, *args, **kwargs):
+            result = func(self, *args, **kwargs)
+            after(self) if not pass_args else after(self, *args, **kwargs)  # type: ignore[misc]
+            return result
+
+        return _wrapper
+
+    if before is not None and after is not None:
+        __logger__.debug("Adding pre hook %s to %s", before, func)
+        __logger__.debug("Adding post hook %s to %s", after, func)
+
+        @wraps(func)
+        def _wrapper(self, *args, **kwargs):
+            before(self) if not pass_args else before(self, *args, **kwargs)  # type: ignore[misc]
+            result = func(self, *args, **kwargs)
+            after(self) if not pass_args else after(self, *args, **kwargs)  # type: ignore[misc]
             return result
 
         return _wrapper

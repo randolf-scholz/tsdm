@@ -113,6 +113,8 @@ __all__ = [
     # ABC
     "BaseEncoder",
     # Classes
+    "BoundaryEncoder",
+    "BoxCoxEncoder",
     "ChainedEncoder",
     "CloneEncoder",
     "DataFrameEncoder",
@@ -126,6 +128,8 @@ __all__ = [
     "IdentityEncoder",
     "IntEncoder",
     "LogEncoder",
+    "LogitEncoder",
+    "LogitBoxCoxEncoder",
     "MinMaxScaler",
     "PeriodicEncoder",
     "PeriodicSocialTimeEncoder",
@@ -175,9 +179,13 @@ from tsdm.encoders.functional import (
     FunctionalEncoder,
 )
 from tsdm.encoders.numerical import (
+    BoundaryEncoder,
+    BoxCoxEncoder,
     FloatEncoder,
     IntEncoder,
     LogEncoder,
+    LogitBoxCoxEncoder,
+    LogitEncoder,
     MinMaxScaler,
     Standardizer,
     TensorConcatenator,
@@ -224,6 +232,8 @@ r"""Dictionary of all available sklearn encoders."""
 
 MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "BaseEncoder": BaseEncoder,
+    "BoundaryEncoder": BoundaryEncoder,
+    "BoxCoxEncoder": BoxCoxEncoder,
     "ChainedEncoder": ChainedEncoder,
     "CloneEncoder": CloneEncoder,
     "DataFrameEncoder": DataFrameEncoder,
@@ -232,6 +242,9 @@ MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "FloatEncoder": FloatEncoder,
     "IdentityEncoder": IdentityEncoder,
     "IntEncoder": IntEncoder,
+    "LogEncoder": LogEncoder,
+    "LogitEncoder": LogitEncoder,
+    "LogitBoxCoxEncoder": LogitBoxCoxEncoder,
     "MinMaxScaler": MinMaxScaler,
     "PeriodicEncoder": PeriodicEncoder,
     "PeriodicSocialTimeEncoder": PeriodicSocialTimeEncoder,
