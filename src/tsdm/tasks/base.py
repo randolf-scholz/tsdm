@@ -88,7 +88,7 @@ __all__ = [
 
 import logging
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from typing import Any, ClassVar, Generic, Literal, NamedTuple, Optional
@@ -125,24 +125,12 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 
     Attributes
     ----------
-    index: list[str]
-        A list of string specifying the data splits of interest.
     train_batch_size: int, default 32
         Default batch-size used by batchloader.
     eval_batch_size: int, default 128
         Default batch-size used by dataloaders (for evaluation).
-    preprocessor: Optional[Encoder], default None
-        Task specific preprocessing. For example, the EVP might specifically ask for
-        evaluation of Mean Squared Error on standardized data.
     dataset: Dataset
         The attached dataset
-    splits: Mapping[KeyType, Any]
-        Contains slices of the dataset. Contains a slice for each key, but may
-        also hold additional entries. (For example: "joint" = "train"+"valid")
-    batchloaders: Mapping[KeyType, DataLoader]
-        The main DataLoader to be used for training models.
-    dataloaders: Mapping[KeyType, DataLoader]
-        Holds `DataLoaders` for all the index.
     """
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
@@ -227,9 +215,9 @@ class Inputs(NamedTuple):
     r"""Tuple of inputs."""
 
     t_target: Any
-    x: Any
-    u: Optional[Any] = None
-    metadata: Optional[Any] = None
+    x: DataFrame
+    u: Optional[DataFrame] = None
+    metadata: Optional[DataFrame] = None
 
     def __repr__(self):
         return repr_namedtuple(self, recursive=False)
@@ -238,8 +226,8 @@ class Inputs(NamedTuple):
 class Targets(NamedTuple):
     r"""Tuple of inputs."""
 
-    y: Any
-    metadata: Any
+    y: DataFrame
+    metadata: Optional[DataFrame] = None
 
     def __repr__(self):
         return repr_namedtuple(self, recursive=False)
@@ -248,13 +236,12 @@ class Targets(NamedTuple):
 class Sample(NamedTuple):
     r"""A sample for forecasting task."""
 
-    key: int
+    key: Hashable
     inputs: Inputs
-    targets: int
-    # originals: int
+    targets: Targets
 
     def __repr__(self):
-        return repr_namedtuple(self, recursive=False)
+        return repr_namedtuple(self, recursive=1)
 
 
 @dataclass
@@ -263,7 +250,6 @@ class TimeSeriesCollectionTask(TorchDataset):
 
     There are different modus operandi for creating samples from a TimeSeriesCollection.
 
-
     Format Specification
     ~~~~~~~~~~~~~~~~~~~~
 
@@ -271,7 +257,7 @@ class TimeSeriesCollectionTask(TorchDataset):
         - inputs = (t, s, m)
         - targets = (s', m')
 
-    - split: Here, the data is split into groups of equal length. (x, u, y) share the same time index.
+    - dense: Here, the data is split into groups of equal length. (x, u, y) share the same time index.
         - inputs = (t, x, u, m_x)
         - targets = (y, m_y)
 
@@ -293,11 +279,11 @@ class TimeSeriesCollectionTask(TorchDataset):
 
     Examples
     --------
-
     - time series classification task: empty forecasting horizon, only metadata_targets set.
     - time series imputation task: observation horizon and forecasting horizon overlap
     - time series forecasting task: observation horizon and forecasting horizon
     - time series forecasting task (autoregressive): observables = targets
+    - time series event forecasting: predict both event and time of event (t, y)
 
     Technical Remark
     ----------------
@@ -324,7 +310,7 @@ class TimeSeriesCollectionTask(TorchDataset):
     r"""Columns of the metadata that are targets."""
     metadata_observables: Optional[Index] = None
     r"""Columns of the metadata that are targets."""
-    sample_format: Literal["masked", "split", "sparse"] = "masked"
+    sample_format: Literal["masked", "dense", "sparse"] = "masked"
     r"""Format of the samples."""
 
     def __post_init__(self):
@@ -338,51 +324,83 @@ class TimeSeriesCollectionTask(TorchDataset):
         assert isinstance(inner_key, list) and len(inner_key) == 2
         observation_horizon, forecasting_horizon = inner_key
 
-        # horizon = observation_horizon | forecasting_horizon
+        if self.sample_format == "masked":
+            return self._make_masked_sample(
+                outer_key, observation_horizon, forecasting_horizon
+            )
+        if self.sample_format == "dense":
+            return self._make_dense_sample(
+                outer_key, observation_horizon, forecasting_horizon
+            )
+        if self.sample_format == "sparse":
+            return self._make_sparse_sample(
+                outer_key, observation_horizon, forecasting_horizon
+            )
+        raise ValueError(f"Unknown sample format {self.sample_format}")
 
-        tsd = self.dataset[outer_key]
-
-        ts_observed = tsd[observation_horizon]
-        ts_forecast = tsd[forecasting_horizon]
-
-        x = ts_observed[self.observables]
-        u = ts_observed[self.covariates]
-        y = ts_forecast[self.targets]
-
-        # metadata
-        md = tsd.metadata
-        if self.metadata_targets is not None:
-            md_targets = md[self.metadata_targets]
-            md = md.drop(columns=self.metadata_targets)
-        else:
-            md_targets = None
-
-        return Sample(
-            key=outer_key,
-            inputs=Inputs(metadata=md),
-            # targets=pre,
-        )
-
-    def _make_sparse_sample(
-        self, key, observation_horizon, forecasting_horizon
+    def _make_masked_sample(
+        self,
+        key: KeyVar,
+        observation_horizon: Index | slice,
+        forecasting_horizon: Index | slice,
     ) -> Sample:
         tsd = self.dataset[key]
 
         # timeseries
         ts_observed = tsd[observation_horizon]
         ts_forecast = tsd[forecasting_horizon]
-        x = ts_observed[self.observables].dropna(how="all")
-        y = ts_forecast[self.targets].dropna(how="all")
-        t_target = y.index
+        horizon = ts_observed.index.union(ts_forecast.index)
+        ts = tsd[horizon]
 
-        u: Optional[DataFrame] = None
-        if self.covariates is not None:
-            u = ts_observed[self.covariates].dropna(how="all")
+        x = ts.copy()
+        # mask everything except covariates and observables
+        columns = ts.columns.difference(self.covariates or [])
+        x.loc[observation_horizon, columns.difference(self.observables)] = NA
+        x.loc[forecasting_horizon, columns] = NA
+
+        y = ts.copy()
+        # mask everything except targets in forecasting horizon
+        y.loc[observation_horizon] = NA
+        y.loc[forecasting_horizon, ts.columns.difference(self.targets)] = NA
+
+        t_target = y.index
 
         # metadata
         md = tsd.metadata
         md_targets: Optional[DataFrame] = None
         if self.metadata_targets is not None:
+            assert md is not None
+            md_targets = md[self.metadata_targets]
+            md = md.drop(columns=self.metadata_targets)
+
+        inputs = Inputs(t_target=t_target, x=x, u=None, metadata=md)
+        targets = Targets(y=y, metadata=md_targets)
+        return Sample(key=key, inputs=inputs, targets=targets)
+
+    def _make_dense_sample(
+        self,
+        key: KeyVar,
+        observation_horizon: Index | slice,
+        forecasting_horizon: Index | slice,
+    ) -> Sample:
+        tsd = self.dataset[key]
+
+        # timeseries
+        ts_observed = tsd[observation_horizon]
+        ts_forecast = tsd[forecasting_horizon]
+        x = ts_observed[self.observables]
+        y = ts_forecast[self.targets]
+        t_target = y.index
+
+        u: Optional[DataFrame] = None
+        if self.covariates is not None:
+            u = ts_observed[self.covariates]
+
+        # metadata
+        md = tsd.metadata
+        md_targets: Optional[DataFrame] = None
+        if self.metadata_targets is not None:
+            assert md is not None
             md_targets = md[self.metadata_targets]
             md[
                 md.columns.difference(self.metadata_targets)
@@ -393,47 +411,33 @@ class TimeSeriesCollectionTask(TorchDataset):
             # md = md.drop(columns=self.metadata_targets)
 
         inputs = Inputs(t_target=t_target, x=x, u=u, metadata=md)
-        targets = Targets(y=y, metadata=md_targets) if md_targets is not None else y
+        targets = Targets(y=y, metadata=md_targets)
         return Sample(key=key, inputs=inputs, targets=targets)
 
-    def _make_masked_sample(
-        self, key, observation_horizon, forecasting_horizon
+    def _make_sparse_sample(
+        self,
+        key: KeyVar,
+        observation_horizon: Index | slice,
+        forecasting_horizon: Index | slice,
     ) -> Sample:
-        tsd = self.dataset[key]
+        sample = self._make_dense_sample(key, observation_horizon, forecasting_horizon)
 
-        # timeseries
-        ts_observed = tsd[observation_horizon]
-        ts_forecast = tsd[forecasting_horizon]
-        horizon = ts_observed.index.union(ts_forecast.index)
-        ts = tsd[horizon]
-        columns = ts.columns
+        if sample.inputs.t_target is not None:
+            sample.inputs.t_target.dropna(how="all", inplace=True)
 
-        x = ts.copy()
-        # mask everything except covariates and observables
-        x.loc[
-            observation_horizon,
-            columns.difference(self.covariates.union(self.observables)),
-        ] = NA
-        x.loc[forecasting_horizon, columns.difference(self.covariates)] = NA
+        if sample.inputs.x is not None:
+            sample.inputs.x.dropna(how="all", inplace=True)
 
-        y = ts.copy()
-        # mask everything except targets in forecasting horizon
-        y.loc[observation_horizon] = NA
-        y.loc[forecasting_horizon, columns.difference(self.targets)] = NA
+        if sample.inputs.u is not None:
+            sample.inputs.u.dropna(how="all", inplace=True)
 
-        # metadata
-        md = tsd.metadata
-        md_targets: Optional[DataFrame] = None
-        if self.metadata_targets is not None:
-            md_targets = md[self.metadata_targets]
-            md = md.drop(columns=self.metadata_targets)
+        if sample.targets.y is not None:
+            sample.targets.y.dropna(how="all", inplace=True)
 
-        # inputs = Inputs(t_target=t_target, x=x, u=u, metadata=md)
-        # targets = Targets(y=y, metadata=md_targets) if md_targets is not None else y
-        # return Sample(key=key, inputs=inputs, targets=targets)
+        return sample
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[TimeSeriesCollection]:
         return iter(self.dataset)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.dataset)

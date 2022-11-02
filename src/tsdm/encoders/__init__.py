@@ -130,6 +130,7 @@ __all__ = [
     "LogEncoder",
     "LogitEncoder",
     "LogitBoxCoxEncoder",
+    "MappingEncoder",
     "MinMaxScaler",
     "PeriodicEncoder",
     "PeriodicSocialTimeEncoder",
@@ -171,6 +172,7 @@ from tsdm.encoders.base import (
     CloneEncoder,
     DuplicateEncoder,
     IdentityEncoder,
+    MappingEncoder,
     ProductEncoder,
 )
 from tsdm.encoders.functional import (
@@ -245,6 +247,7 @@ MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "LogEncoder": LogEncoder,
     "LogitEncoder": LogitEncoder,
     "LogitBoxCoxEncoder": LogitBoxCoxEncoder,
+    "MappingEncoder": MappingEncoder,
     "MinMaxScaler": MinMaxScaler,
     "PeriodicEncoder": PeriodicEncoder,
     "PeriodicSocialTimeEncoder": PeriodicSocialTimeEncoder,
@@ -259,6 +262,7 @@ MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "TripletEncoder": TripletEncoder,
 }
 r"""Dictionary of all available modular encoders."""
+
 
 ENCODERS: Final[dict[str, FunctionalEncoder | type[ModularEncoder]]] = {
     **FUNCTIONAL_ENCODERS,

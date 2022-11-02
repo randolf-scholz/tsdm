@@ -4,6 +4,8 @@ r"""Base Classes for Encoders."""
 from __future__ import annotations
 
 __all__ = [
+    # TypeVars
+    "EncoderVar",
     # Classes
     "BaseEncoder",
     "IdentityEncoder",
@@ -11,17 +13,19 @@ __all__ = [
     "ProductEncoder",
     "DuplicateEncoder",
     "CloneEncoder",
+    "MappingEncoder",
 ]
 
 
 import logging
 from abc import ABC, ABCMeta, abstractmethod
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
-from typing import Any, ClassVar, Sequence, overload
+from typing import Any, ClassVar, Iterator, TypeVar, overload
 
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.strings import repr_object
-from tsdm.utils.types import ObjectVar
+from tsdm.utils.types import KeyVar, ObjectVar
 
 
 class BaseEncoderMetaClass(ABCMeta):
@@ -123,6 +127,10 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
             raise RuntimeError("Encoder has not been fitted.")
 
 
+EncoderVar = TypeVar("EncoderVar", bound=BaseEncoder)
+"""Type variable for encoders."""
+
+
 class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
@@ -133,10 +141,10 @@ class IdentityEncoder(BaseEncoder):
         return data
 
 
-class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
+class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Product-Type for Encoders."""
 
-    encoders: list[BaseEncoder]
+    encoders: list[EncoderVar]
     r"""The encoders."""
 
     @property
@@ -156,7 +164,7 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
     def is_injective(self) -> bool:
         return all(e.is_injective for e in self.encoders)
 
-    def __init__(self, *encoders: BaseEncoder, simplify: bool = True) -> None:
+    def __init__(self, *encoders: EncoderVar, simplify: bool = True) -> None:
         super().__init__()
         self.encoders = []
 
@@ -172,14 +180,16 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> BaseEncoder:  # noqa: D105
+    def __getitem__(self, index: int) -> EncoderVar:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> ProductEncoder:  # noqa: D105
+    def __getitem__(self, index: slice) -> ProductEncoder[EncoderVar]:
         ...
 
-    def __getitem__(self, index: int | slice) -> BaseEncoder | ProductEncoder:
+    def __getitem__(
+        self, index: int | slice
+    ) -> EncoderVar | ProductEncoder[EncoderVar]:
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]
@@ -200,10 +210,10 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
         return rtype(encoder.decode(x) for encoder, x in zip(self.encoders, data))
 
 
-class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
+class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Represents function composition of encoders."""
 
-    encoders: list[BaseEncoder]
+    encoders: list[EncoderVar]
     r"""List of encoders."""
 
     @property
@@ -223,7 +233,7 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
     def is_injective(self) -> bool:
         return all(e.is_injective for e in self.encoders)
 
-    def __init__(self, *encoders: BaseEncoder, simplify: bool = True) -> None:
+    def __init__(self, *encoders: EncoderVar, simplify: bool = True) -> None:
         super().__init__()
 
         self.encoders = []
@@ -240,14 +250,14 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> BaseEncoder:  # noqa: D105
+    def __getitem__(self, index: int) -> EncoderVar:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> ChainedEncoder:  # noqa: D105
+    def __getitem__(self, index: slice) -> ChainedEncoder[EncoderVar]:
         ...
 
-    def __getitem__(self, index: int | slice) -> BaseEncoder | ChainedEncoder:
+    def __getitem__(self, index):
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]
@@ -269,6 +279,54 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
         for encoder in self.encoders:
             data = encoder.decode(data)
         return data
+
+
+class MappingEncoder(BaseEncoder, Mapping[KeyVar, EncoderVar]):
+    r"""Encoder that maps keys to encoders."""
+
+    encoders: Mapping[KeyVar, EncoderVar]
+    r"""Mapping of keys to encoders."""
+
+    def __init__(self, encoders: Mapping[KeyVar, EncoderVar]) -> None:
+        super().__init__()
+        self.encoders = encoders
+
+    @overload
+    def __getitem__(self, key: KeyVar) -> EncoderVar:
+        ...
+
+    @overload
+    def __getitem__(self, key: list[KeyVar]) -> MappingEncoder[KeyVar, EncoderVar]:
+        ...
+
+    def __getitem__(
+        self, key: KeyVar | list[KeyVar]
+    ) -> EncoderVar | MappingEncoder[KeyVar, EncoderVar]:
+        r"""Get the encoder for the given key."""
+        if isinstance(key, list):
+            return MappingEncoder({k: self.encoders[k] for k in key})
+        return self.encoders[key]
+
+    def __len__(self) -> int:
+        return len(self.encoders)
+
+    def __iter__(self) -> Iterator[KeyVar]:
+        return iter(self.encoders)
+
+    def fit(self, data: Mapping[KeyVar, Any], /) -> None:
+        assert set(data.keys()) == set(self.encoders.keys())
+        for key in data:
+            self.encoders[key].fit(data[key])
+
+    def encode(self, data: Mapping[KeyVar, Any], /) -> Mapping[KeyVar, Any]:
+        return {
+            key: encoder.encode(data[key]) for key, encoder in self.encoders.items()
+        }
+
+    def decode(self, data: Mapping[KeyVar, Any], /) -> Mapping[KeyVar, Any]:
+        return {
+            key: encoder.decode(data[key]) for key, encoder in self.encoders.items()
+        }
 
 
 class DuplicateEncoder(BaseEncoder):
