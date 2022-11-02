@@ -89,11 +89,11 @@ __all__ = [
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
-from typing import Any, ClassVar, Generic, NamedTuple, Optional
+from typing import Any, ClassVar, Generic, Literal, NamedTuple, Optional
 
-from pandas import DataFrame, Index
+from pandas import NA, DataFrame, Index
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset as TorchDataset
@@ -226,10 +226,20 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 class Inputs(NamedTuple):
     r"""Tuple of inputs."""
 
-    t: int
-    x: int
-    t_target: int
-    metadata: int
+    t_target: Any
+    x: Any
+    u: Optional[Any] = None
+    metadata: Optional[Any] = None
+
+    def __repr__(self):
+        return repr_namedtuple(self, recursive=False)
+
+
+class Targets(NamedTuple):
+    r"""Tuple of inputs."""
+
+    y: Any
+    metadata: Any
 
     def __repr__(self):
         return repr_namedtuple(self, recursive=False)
@@ -253,36 +263,41 @@ class TimeSeriesCollectionTask(TorchDataset):
 
     There are different modus operandi for creating samples from a TimeSeriesCollection.
 
-    - masked-format: In this format, two equimodal copies of the data are stored with appropriate masking.
-        - inputs = ((t_x, x), m)
-        - targets = ((t_x, x'), m')
 
-    -mixed? format:
-        - inputs = ( (t, x), (t, u), m)
-        - targets = ( (t, y), m_y)
+    Format Specification
+    ~~~~~~~~~~~~~~~~~~~~
 
-    - split+dense: Here, the data is split into groups of equal length.
-        - inputs = (t_y, (t, x), (t, u), m)
+    - masked: In this format, two equimodal copies of the data are stored with appropriate masking.
+        - inputs = (t, s, m)
+        - targets = (s', m')
+
+    - split: Here, the data is split into groups of equal length. (x, u, y) share the same time index.
+        - inputs = (t, x, u, m_x)
         - targets = (y, m_y)
 
-    - split+sparse: Here, the data is split into groups sparse tensors. No NAN-rows.
+    - sparse: Here, the data is split into groups sparse tensors. ALl NAN-only rows are dropped.
         - inputs = (t_y, (t_x, x), (t_u, u), m_x)
         - targets = (y, m_y)
 
-
-
     This class is used inside DataLoader.
 
-    +---------------+---------------------+---------------------+
-    | variable      | observation-horizon | forecasting-horizon |
-    +===============+=====================+=====================+
-    | observables X | ✓                   |                     |
-    +---------------+---------------------+---------------------+
-    | controls U    | ✓                   | ✓                   |
-    +---------------+---------------------+---------------------+
-    | targets Y     |                     | ✓                   |
-    +---------------+---------------------+---------------------+
+    +---------------+------------------+------------------+
+    | variable      | observation-mask | forecasting-mask |
+    +===============+==================+==================+
+    | observables X | ✔                | ✘                |
+    +---------------+------------------+------------------+
+    | controls U    | ✔                | ✔                |
+    +---------------+------------------+------------------+
+    | targets Y     | ✘                | ✔                |
+    +---------------+------------------+------------------+
 
+    Examples
+    --------
+
+    - time series classification task: empty forecasting horizon, only metadata_targets set.
+    - time series imputation task: observation horizon and forecasting horizon overlap
+    - time series forecasting task: observation horizon and forecasting horizon
+    - time series forecasting task (autoregressive): observables = targets
 
     Technical Remark
     ----------------
@@ -298,19 +313,24 @@ class TimeSeriesCollectionTask(TorchDataset):
     """
 
     dataset: TimeSeriesCollection
-    observables: Index
-    r"""Columns of the data that are used as inputs."""
-    controls: Index
-    r"""Columns of the data that are used as controls."""
+    _: KW_ONLY = NotImplemented
     targets: Index
     r"""Columns of the data that are used as targets."""
-    autoregressive: Index
-    r"""Observables that are also targets."""
+    observables: Index = NotImplemented
+    r"""Columns of the data that are used as inputs."""
+    covariates: Optional[Index] = None
+    r"""Columns of the data that are used as controls."""
+    metadata_targets: Optional[Index] = None
+    r"""Columns of the metadata that are targets."""
+    metadata_observables: Optional[Index] = None
+    r"""Columns of the metadata that are targets."""
+    sample_format: Literal["masked", "split", "sparse"] = "masked"
+    r"""Format of the samples."""
 
-    split_observables_targets: bool = False
-    r"""If True, the observables and targets are split into two different tensors."""
-    sparse_tensors: bool = False
-    r"""Whether to use sparse tensors or not."""
+    def __post_init__(self):
+        r"""Post init."""
+        if self.observables is NotImplemented:
+            self.observables = self.dataset.timeseries.columns
 
     def __getitem__(self, key: Any) -> Sample:
         assert isinstance(key, tuple) and len(key) == 2
@@ -318,19 +338,99 @@ class TimeSeriesCollectionTask(TorchDataset):
         assert isinstance(inner_key, list) and len(inner_key) == 2
         observation_horizon, forecasting_horizon = inner_key
 
-        tsd = self.dataset[outer_key]
-        # md = tsd.metadata
+        # horizon = observation_horizon | forecasting_horizon
 
-        obs = tsd[observation_horizon]
-        pre = tsd[forecasting_horizon]
-        horizon = observation_horizon | forecasting_horizon
-        ts = tsd[horizon]
+        tsd = self.dataset[outer_key]
+
+        ts_observed = tsd[observation_horizon]
+        ts_forecast = tsd[forecasting_horizon]
+
+        x = ts_observed[self.observables]
+        u = ts_observed[self.covariates]
+        y = ts_forecast[self.targets]
+
+        # metadata
+        md = tsd.metadata
+        if self.metadata_targets is not None:
+            md_targets = md[self.metadata_targets]
+            md = md.drop(columns=self.metadata_targets)
+        else:
+            md_targets = None
 
         return Sample(
             key=outer_key,
-            inputs=Inputs(ts, obs, ts, pre),
-            targets=pre,
+            inputs=Inputs(metadata=md),
+            # targets=pre,
         )
+
+    def _make_sparse_sample(
+        self, key, observation_horizon, forecasting_horizon
+    ) -> Sample:
+        tsd = self.dataset[key]
+
+        # timeseries
+        ts_observed = tsd[observation_horizon]
+        ts_forecast = tsd[forecasting_horizon]
+        x = ts_observed[self.observables].dropna(how="all")
+        y = ts_forecast[self.targets].dropna(how="all")
+        t_target = y.index
+
+        u: Optional[DataFrame] = None
+        if self.covariates is not None:
+            u = ts_observed[self.covariates].dropna(how="all")
+
+        # metadata
+        md = tsd.metadata
+        md_targets: Optional[DataFrame] = None
+        if self.metadata_targets is not None:
+            md_targets = md[self.metadata_targets]
+            md[
+                md.columns.difference(self.metadata_targets)
+                if self.metadata_observables is None
+                else self.metadata_observables
+            ] = NA
+
+            # md = md.drop(columns=self.metadata_targets)
+
+        inputs = Inputs(t_target=t_target, x=x, u=u, metadata=md)
+        targets = Targets(y=y, metadata=md_targets) if md_targets is not None else y
+        return Sample(key=key, inputs=inputs, targets=targets)
+
+    def _make_masked_sample(
+        self, key, observation_horizon, forecasting_horizon
+    ) -> Sample:
+        tsd = self.dataset[key]
+
+        # timeseries
+        ts_observed = tsd[observation_horizon]
+        ts_forecast = tsd[forecasting_horizon]
+        horizon = ts_observed.index.union(ts_forecast.index)
+        ts = tsd[horizon]
+        columns = ts.columns
+
+        x = ts.copy()
+        # mask everything except covariates and observables
+        x.loc[
+            observation_horizon,
+            columns.difference(self.covariates.union(self.observables)),
+        ] = NA
+        x.loc[forecasting_horizon, columns.difference(self.covariates)] = NA
+
+        y = ts.copy()
+        # mask everything except targets in forecasting horizon
+        y.loc[observation_horizon] = NA
+        y.loc[forecasting_horizon, columns.difference(self.targets)] = NA
+
+        # metadata
+        md = tsd.metadata
+        md_targets: Optional[DataFrame] = None
+        if self.metadata_targets is not None:
+            md_targets = md[self.metadata_targets]
+            md = md.drop(columns=self.metadata_targets)
+
+        # inputs = Inputs(t_target=t_target, x=x, u=u, metadata=md)
+        # targets = Targets(y=y, metadata=md_targets) if md_targets is not None else y
+        # return Sample(key=key, inputs=inputs, targets=targets)
 
     def __iter__(self):
         return iter(self.dataset)

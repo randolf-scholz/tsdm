@@ -164,7 +164,7 @@ def repr_mapping(
     max_key_length = max(len(key) for key in keys) if align else 0
 
     items = list(obj.items())
-    title = type(obj).__name__ if title is None else title
+    title = f"{type(obj).__name__}<Mapping>" if title is None else title
     string = title + "(" + br
 
     # TODO: automatic linebreak detection if string length exceeds max_length
@@ -278,6 +278,7 @@ def repr_dataclass(
     assert is_dataclass(obj), f"Object {obj} is not a dataclass."
     assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."
     fields: dict[str, Field] = obj.__dataclass_fields__
+    title = f"{type(obj).__name__}<dataclass>" if title is None else title
     return repr_mapping(
         {key: getattr(obj, key) for key, field in fields.items() if field.repr},
         align=align,
@@ -286,7 +287,7 @@ def repr_dataclass(
         padding=padding,
         recursive=recursive,
         repr_fun=repr_fun,
-        title=type(obj).__name__ if title is None else title,
+        title=title,
     )
 
 
@@ -305,6 +306,7 @@ def repr_namedtuple(
     r"""Return a string representation of a namedtuple object."""
     assert isinstance(obj, tuple), f"Object {obj} is not a namedtuple."
     assert isinstance(obj, NTuple), f"Object {obj} is not a namedtuple."
+    title = f"{type(obj).__name__}<tuple>" if title is None else title
     return repr_mapping(
         obj._asdict(),
         align=align,
@@ -313,7 +315,7 @@ def repr_namedtuple(
         padding=padding,
         recursive=recursive,
         repr_fun=repr_fun,
-        title=type(obj).__name__ if title is None else title,
+        title=title,
     )
 
 
