@@ -60,3 +60,5 @@ LR_SCHEDULERS: Final[dict[str, type[lr_scheduler._LRScheduler]]] = {
     "CosineAnnealingWarmRestarts": lr_scheduler.CosineAnnealingWarmRestarts,
 }
 r"""Dictionary of all available lr_schedulers."""
+
+del Final, TypeAlias, lr_scheduler, torch.optim

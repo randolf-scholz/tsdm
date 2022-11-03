@@ -30,7 +30,7 @@ from typing import (
 
 import numpy as np
 import torch
-from numpy import pi as π
+from numpy import pi as PI
 from numpy.typing import NDArray
 from pandas import NA, DataFrame, Index, Series
 from scipy.optimize import minimize
@@ -571,7 +571,7 @@ class BoundaryEncoder(BaseEncoder):
             data = data.where(data < self.lower, self._nan)
             data = data.where(data > self.upper, self._nan)
             return data
-        elif self.mode == "clip":
+        if self.mode == "clip":
             data = data.where(data < self.lower, self.lower)
             data = data.where(data > self.upper, self.upper)
             return data
@@ -674,20 +674,20 @@ class BoxCoxEncoder(BaseEncoder):
         .. math::
             W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
             F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)
-            β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2π) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
+            β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
             C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
         """
         if (μ, σ) == (0, 1):
             C = 1.0
 
             def integrate_quantile(q):
-                return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * π)
+                return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
 
         else:
             C = μ**2 + σ**2
 
             def integrate_quantile(q):
-                return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * π)
+                return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
 
         mask = np.isnan(x)
         unique, counts = np.unique(x[~mask], return_counts=True)
@@ -858,20 +858,20 @@ class LogitBoxCoxEncoder(BaseEncoder):
         .. math::
             W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
             F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)
-            β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2π) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
+            β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
             C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
         """
         if (μ, σ) == (0, 1):
             C = 1.0
 
             def integrate_quantile(q):
-                return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * π)
+                return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
 
         else:
             C = μ**2 + σ**2
 
             def integrate_quantile(q):
-                return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * π)
+                return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
 
         mask = np.isnan(x)
         unique, counts = np.unique(x[~mask], return_counts=True)

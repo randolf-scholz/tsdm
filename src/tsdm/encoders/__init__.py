@@ -269,3 +269,5 @@ ENCODERS: Final[dict[str, FunctionalEncoder | type[ModularEncoder]]] = {
     **MODULAR_ENCODERS,
 }
 r"""Dictionary of all available encoders."""
+
+del Final, TypeAlias, sk_preprocessing, BaseEstimator
