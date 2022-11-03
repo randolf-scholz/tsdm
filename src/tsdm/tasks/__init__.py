@@ -32,6 +32,9 @@ __all__ = [
     "Task",
     "TASKS",
     # Classes
+    "BaseTask",
+    "TimeSeriesDatasetTask",
+    "TimeSeriesCollectionTask",
     # Tasks
     "ETT_Zhou2021",
     "KIWI_RUNS_TASK",
@@ -47,7 +50,7 @@ __all__ = [
 from typing import Final, TypeAlias
 
 from tsdm.tasks import base
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import BaseTask, TimeSeriesCollectionTask, TimeSeriesDatasetTask
 from tsdm.tasks.electricity_lim2021 import ElectricityLim2021
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
@@ -71,3 +74,5 @@ TASKS: Final[dict[str, type[Task]]] = {
     "USHCN_DeBrouwer": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available tasks."""
+
+del Final, TypeAlias

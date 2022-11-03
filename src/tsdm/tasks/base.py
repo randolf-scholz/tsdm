@@ -84,6 +84,8 @@ Default DataLoader Creation
 __all__ = [
     # Classes
     "BaseTask",
+    "TimeSeriesDatasetTask",
+    "TimeSeriesCollectionTask",
 ]
 
 import logging
@@ -98,7 +100,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Dataset as TorchDataset
 
-from tsdm.datasets import Dataset, TimeSeriesCollection
+from tsdm.datasets import Dataset, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import ModularEncoder
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_namedtuple
@@ -245,6 +247,118 @@ class Sample(NamedTuple):
 
 
 @dataclass
+class TimeSeriesDatasetTask(TorchDataset):
+    r"""Creates samples from a TimeSeriesDataset."""
+
+    dataset: TimeSeriesDataset
+    _: KW_ONLY = NotImplemented
+    targets: Index
+    r"""Columns of the data that are used as targets."""
+    observables: Index = NotImplemented
+    r"""Columns of the data that are used as inputs."""
+    covariates: Optional[Index] = None
+    r"""Columns of the data that are used as controls."""
+    sample_format: Literal["masked", "dense", "sparse"] = "masked"
+    r"""Format of the samples."""
+
+    def __post_init__(self):
+        r"""Post init."""
+        if self.observables is NotImplemented:
+            self.observables = self.dataset.timeseries.columns
+
+    def __iter__(self) -> Iterator[TimeSeriesDataset]:
+        return iter(self.dataset)
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, key: Any) -> Sample:
+        assert isinstance(key, tuple) and len(key) == 2
+        observation_horizon, forecasting_horizon = key
+
+        if self.sample_format == "masked":
+            return self._make_masked_sample(observation_horizon, forecasting_horizon)
+        if self.sample_format == "dense":
+            return self._make_dense_sample(observation_horizon, forecasting_horizon)
+        if self.sample_format == "sparse":
+            return self._make_sparse_sample(observation_horizon, forecasting_horizon)
+        raise ValueError(f"Unknown sample format {self.sample_format}")
+
+    def _make_masked_sample(
+        self,
+        observation_horizon: Index | slice,
+        forecasting_horizon: Index | slice,
+    ) -> Sample:
+
+        # timeseries
+        ts_observed = self.dataset[observation_horizon]
+        ts_forecast = self.dataset[forecasting_horizon]
+        horizon = ts_observed.index.union(ts_forecast.index)
+        ts = self.dataset[horizon]
+
+        x = ts.copy()
+        # mask everything except covariates and observables
+        columns = ts.columns.difference(self.covariates or [])
+        x.loc[observation_horizon, columns.difference(self.observables)] = NA
+        x.loc[forecasting_horizon, columns] = NA
+
+        y = ts.copy()
+        # mask everything except targets in forecasting horizon
+        y.loc[observation_horizon] = NA
+        y.loc[forecasting_horizon, ts.columns.difference(self.targets)] = NA
+
+        t_target = y.index
+
+        key = (observation_horizon, forecasting_horizon)
+        inputs = Inputs(t_target=t_target, x=x, u=None)
+        targets = Targets(y=y)
+        return Sample(key=key, inputs=inputs, targets=targets)
+
+    def _make_dense_sample(
+        self,
+        observation_horizon: Index | slice,
+        forecasting_horizon: Index | slice,
+    ) -> Sample:
+
+        # timeseries
+        ts_observed = self.dataset[observation_horizon]
+        ts_forecast = self.dataset[forecasting_horizon]
+        x = ts_observed[self.observables]
+        y = ts_forecast[self.targets]
+        t_target = y.index
+
+        u: Optional[DataFrame] = None
+        if self.covariates is not None:
+            u = ts_observed[self.covariates]
+
+        key = (observation_horizon, forecasting_horizon)
+        inputs = Inputs(t_target=t_target, x=x, u=u, metadata=None)
+        targets = Targets(y=y)
+        return Sample(key=key, inputs=inputs, targets=targets)
+
+    def _make_sparse_sample(
+        self,
+        observation_horizon: Index | slice,
+        forecasting_horizon: Index | slice,
+    ) -> Sample:
+        sample = self._make_dense_sample(observation_horizon, forecasting_horizon)
+
+        if sample.inputs.t_target is not None:
+            sample.inputs.t_target.dropna(how="all", inplace=True)
+
+        if sample.inputs.x is not None:
+            sample.inputs.x.dropna(how="all", inplace=True)
+
+        if sample.inputs.u is not None:
+            sample.inputs.u.dropna(how="all", inplace=True)
+
+        if sample.targets.y is not None:
+            sample.targets.y.dropna(how="all", inplace=True)
+
+        return sample
+
+
+@dataclass
 class TimeSeriesCollectionTask(TorchDataset):
     r"""Creates sample from a TimeSeriesCollection.
 
@@ -252,6 +366,9 @@ class TimeSeriesCollectionTask(TorchDataset):
 
     Format Specification
     ~~~~~~~~~~~~~~~~~~~~
+
+    - column-sparse
+    - separate x and u and y
 
     - masked: In this format, two equimodal copies of the data are stored with appropriate masking.
         - inputs = (t, s, m)
@@ -283,7 +400,8 @@ class TimeSeriesCollectionTask(TorchDataset):
     - time series imputation task: observation horizon and forecasting horizon overlap
     - time series forecasting task: observation horizon and forecasting horizon
     - time series forecasting task (autoregressive): observables = targets
-    - time series event forecasting: predict both event and time of event (t, y)
+    - time series event forecasting: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} given n
+    - time series event forecasting++: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} and n
 
     Technical Remark
     ----------------
@@ -317,6 +435,12 @@ class TimeSeriesCollectionTask(TorchDataset):
         r"""Post init."""
         if self.observables is NotImplemented:
             self.observables = self.dataset.timeseries.columns
+
+    def __iter__(self) -> Iterator[TimeSeriesCollection]:
+        return iter(self.dataset)
+
+    def __len__(self) -> int:
+        return len(self.dataset)
 
     def __getitem__(self, key: Any) -> Sample:
         assert isinstance(key, tuple) and len(key) == 2
@@ -435,9 +559,3 @@ class TimeSeriesCollectionTask(TorchDataset):
             sample.targets.y.dropna(how="all", inplace=True)
 
         return sample
-
-    def __iter__(self) -> Iterator[TimeSeriesCollection]:
-        return iter(self.dataset)
-
-    def __len__(self) -> int:
-        return len(self.dataset)

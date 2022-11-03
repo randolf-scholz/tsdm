@@ -610,35 +610,62 @@ def wrap_func(
 
     if before is not None and after is None:
         __logger__.debug("Adding pre hook %s to %s", before, func)
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(*args, **kwargs):
+                before(*args, **kwargs)  # type: ignore[misc]
+                return func(*args, **kwargs)
+
+            return _wrapper
 
         @wraps(func)
         def _wrapper(*args, **kwargs):
-            before() if not pass_args else before(*args, **kwargs)  # type: ignore[misc]
-            result = func(*args, **kwargs)
-            return result
+            before()  # type: ignore[misc]
+            return func(*args, **kwargs)
 
         return _wrapper
 
     if before is None and after is not None:
         __logger__.debug("Adding post hook %s to %s", after, func)
 
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(*args, **kwargs):
+                result = func(*args, **kwargs)
+                after(*args, **kwargs)  # type: ignore[misc]
+                return result
+
+            return _wrapper
+
         @wraps(func)
         def _wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
-            after() if not pass_args else after(*args, **kwargs)  # type: ignore[misc]
+            after()  # type: ignore[misc]
             return result
 
         return _wrapper
 
     if before is not None and after is not None:
-        __logger__.debug("Adding pre hook %s to %s", before, func)
-        __logger__.debug("Adding post hook %s to %s", after, func)
+        __logger__.debug("Adding pre and post hook %s, %s to %s", before, after, func)
+
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(*args, **kwargs):
+                before(*args, **kwargs)  # type: ignore[misc]
+                result = func(*args, **kwargs)
+                after(*args, **kwargs)  # type: ignore[misc]
+                return result
+
+            return _wrapper
 
         @wraps(func)
         def _wrapper(*args, **kwargs):
-            before() if not pass_args else before(*args, **kwargs)  # type: ignore[misc]
+            before()  # type: ignore[misc]
             result = func(*args, **kwargs)
-            after() if not pass_args else after(*args, **kwargs)  # type: ignore[misc]
+            after()  # type: ignore[misc]
             return result
 
         return _wrapper
@@ -663,34 +690,62 @@ def wrap_method(
     if before is not None and after is None:
         __logger__.debug("Adding pre hook %s to %s", before, func)
 
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(self, *args, **kwargs):
+                before(self, *args, **kwargs)  # type: ignore[misc]
+                return func(self, *args, **kwargs)
+
+            return _wrapper
+
         @wraps(func)
         def _wrapper(self, *args, **kwargs):
-            before(self) if not pass_args else before(self, *args, **kwargs)  # type: ignore[misc]
-            result = func(self, *args, **kwargs)
-            return result
+            before(self)  # type: ignore[misc]
+            return func(self, *args, **kwargs)
 
         return _wrapper
 
     if before is None and after is not None:
         __logger__.debug("Adding post hook %s to %s", after, func)
 
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(self, *args, **kwargs):
+                result = func(self, *args, **kwargs)
+                after(self, *args, **kwargs)  # type: ignore[misc]
+                return result
+
+            return _wrapper
+
         @wraps(func)
         def _wrapper(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
-            after(self) if not pass_args else after(self, *args, **kwargs)  # type: ignore[misc]
+            after(self)  # type: ignore[misc]
             return result
 
         return _wrapper
 
     if before is not None and after is not None:
-        __logger__.debug("Adding pre hook %s to %s", before, func)
-        __logger__.debug("Adding post hook %s to %s", after, func)
+        __logger__.debug("Adding pre and post hook %s, %s to %s", before, after, func)
+
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(self, *args, **kwargs):
+                before(self, *args, **kwargs)  # type: ignore[misc]
+                result = func(self, *args, **kwargs)
+                after(self, *args, **kwargs)  # type: ignore[misc]
+                return result
+
+            return _wrapper
 
         @wraps(func)
         def _wrapper(self, *args, **kwargs):
-            before(self) if not pass_args else before(self, *args, **kwargs)  # type: ignore[misc]
+            before(self)  # type: ignore[misc]
             result = func(self, *args, **kwargs)
-            after(self) if not pass_args else after(self, *args, **kwargs)  # type: ignore[misc]
+            after(self)  # type: ignore[misc]
             return result
 
         return _wrapper

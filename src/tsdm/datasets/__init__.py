@@ -98,3 +98,5 @@ DATASETS: Final[dict[str, type[Dataset]]] = {
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available dataset."""
+
+del Final, TypeAlias

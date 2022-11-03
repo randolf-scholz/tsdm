@@ -162,7 +162,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     def clean(self):
         r"""Clean an already downloaded raw dataset and stores it in self.data_dir.
 
-        Preferably, use the '.feather' data format.
+        Preferably, use the '.parquet' data format.
         """
 
     @abstractmethod
@@ -803,6 +803,14 @@ class TimeSeriesDataset(TorchDataset):
         r"""Return the number of timestamps."""
         return len(self.index)
 
+    @overload
+    def __getitem__(self, key: KeyVar) -> Series:
+        ...
+
+    @overload
+    def __getitem__(self, key: Index | slice | list[KeyVar]) -> DataFrame:
+        ...
+
     def __getitem__(self, key):
         r"""Get item from timeseries."""
         return self.timeseries.loc[key]
@@ -862,7 +870,15 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
             else:
                 self.index = self.timeseries.index.copy().unique()
 
+    @overload
+    def __getitem__(self, key: slice) -> TimeSeriesCollection:
+        ...
+
+    @overload
     def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
+        ...
+
+    def __getitem__(self, key):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         ts = self.timeseries.loc[key]
         md = self.metadata.loc[key] if self.metadata is not None else None
@@ -890,7 +906,7 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
 
         if isinstance(ts.index, MultiIndex):
             index = ts.index.droplevel(-1).unique()
-            return TimeSeriesCollection(  # type: ignore[return-value]
+            return TimeSeriesCollection(
                 index=index,
                 timeseries=ts,
                 metadata=md,

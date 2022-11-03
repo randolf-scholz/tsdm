@@ -15,10 +15,10 @@ from zipfile import ZipFile
 import pandas as pd
 
 from tsdm.datasets import examples
-from tsdm.datasets.base import SingleFrameDataset, TimeSeriesCollection
+from tsdm.datasets.base import SingleFrameDataset
 
 
-class InSilicoData(SingleFrameDataset, TimeSeriesCollection):
+class InSilicoData(SingleFrameDataset):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -37,10 +37,15 @@ class InSilicoData(SingleFrameDataset, TimeSeriesCollection):
     RAWDATA_HASH = "ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba"
     rawdata_files = "in_silico.zip"
 
-    def __init__(self):
-        super().__init__()
-        self.timeseries = self.dataset
-        self.index = self.timeseries.index.get_level_values(0).unique()
+    @cached_property
+    def index(self) -> pd.Index:
+        r"""Return the index of the dataset."""
+        return self.timeseries.index.get_level_values(0).unique()
+
+    @cached_property
+    def timeseries(self) -> pd.DataFrame:
+        r"""Return the timeseries of the dataset."""
+        return self.dataset
 
     @cached_property
     def rawdata_paths(self) -> Path:
