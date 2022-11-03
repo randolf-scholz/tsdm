@@ -24,7 +24,6 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
-from pandas.api.extensions import ExtensionDtype
 
 
 def infer_categories(s: Series) -> set:
@@ -47,10 +46,6 @@ def triplet2dense(
         In this case the categories will be inferred from data.
         Or a dictionary of sets such that a key:value pair corresponds to a column and
         all possible categories in that column. Use empty set to infer categories from data.
-
-    Returns
-    -------
-    DataFrame
     """
     raise NotImplementedError
 
@@ -70,15 +65,6 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
     ----------
     - `pandas.melt`
     - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
-
-    Parameters
-    ----------
-    df: DataFrame
-
-    Returns
-    -------
-    DataFrame
-
 
         ========  ================================================
         column    data type
@@ -113,15 +99,6 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
     - $t_i$ timestamp (index)
     - $v_i$ one-hot encoded indicator variable
     - $x_i$ observed value
-
-    Parameters
-    ----------
-    df: DataFrame
-
-    Returns
-    -------
-    DataFrame
-
 
         ======  ================================================
         column  data type
@@ -177,9 +154,9 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     """
     m = df.notna().astype(np.uint8)
     # note: s here is not the same s as in the GRU-D paper, but s(t) - s(t-1)
-    s = pd.Series(df.index).diff()
-    s[0] = 0 * s[1]
-    s = pd.Index(s)
+    _s = pd.Series(df.index).diff()
+    _s[0] = 0 * _s[1]
+    s = pd.Index(_s)
 
     # @numba.njit
     def get_deltas(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -200,32 +177,16 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
 
 
 def time2int(ds: Series) -> Series:
-    r"""Convert `Series` encoded as `datetime64` or `timedelta64` to `integer`.
-
-    Parameters
-    ----------
-    ds: Series
-
-    Returns
-    -------
-    Series
-    """
-    dtype: np.dtype | type[ExtensionDtype]
-
-    if isinstance(ds.dtype, ExtensionDtype):
-        dtype = type(ds.dtype)
-    else:
-        dtype = ds.dtype
-
-    if np.issubdtype(dtype, np.integer):
+    r"""Convert `Series` encoded as `datetime64` or `timedelta64` to `integer`."""
+    if pd.api.types.is_integer_dtype(ds):
         return ds
-    if np.issubdtype(dtype, np.datetime64):
+    if pd.api.types.is_datetime64_dtype(ds):
         ds = ds.view("datetime64[ns]")
         timedeltas = ds - ds[0]
-    elif np.issubdtype(dtype, np.timedelta64):
+    elif pd.api.types.is_timedelta64_dtype(ds):
         timedeltas = ds.view("timedelta64[ns]")
     else:
-        raise TypeError(f"{dtype=} not supported")
+        raise TypeError(f"{ds.dtype=} not supported")
 
     common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 
@@ -233,33 +194,19 @@ def time2int(ds: Series) -> Series:
 
 
 def time2float(ds: Series) -> Series:
-    r"""Convert `Series` encoded as `datetime64` or `timedelta64` to `floating`.
-
-    Parameters
-    ----------
-    ds: Series
-
-    Returns
-    -------
-    Series
-    """
-    if isinstance(ds.dtype, ExtensionDtype):
-        dtype = type(ds.dtype)
-    else:
-        dtype = ds.dtype
-
-    if np.issubdtype(dtype, np.integer):
+    r"""Convert `Series` encoded as `datetime64` or `timedelta64` to `floating`."""
+    if pd.api.types.is_integer_dtype(ds):
         return ds
-    if np.issubdtype(dtype, np.datetime64):
+    if pd.api.types.is_datetime64_dtype(ds):
         ds = ds.view("datetime64[ns]")
         timedeltas = ds - ds[0]
-    elif np.issubdtype(dtype, np.timedelta64):
+    elif pd.api.types.is_timedelta64_dtype(ds):
         timedeltas = ds.view("timedelta64[ns]")
-    elif np.issubdtype(dtype, np.floating):
+    elif pd.api.types.is_float_dtype(ds):
         warnings.warn("Array is already floating dtype.")
         return ds
     else:
-        raise TypeError(f"{dtype=} not supported")
+        raise TypeError(f"{ds.dtype=} not supported")
 
     common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 

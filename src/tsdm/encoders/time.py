@@ -67,19 +67,19 @@ class Time2Float(BaseEncoder):
         ), "Time-Values must be monotonically increasing!"
 
         assert not (
-            np.issubdtype(self.original_dtype, np.floating)
+            pd.api.types.is_float_dtype(self.original_dtype)
             and self.normalization == "gcd"
         ), f"{self.normalization=} illegal when original dtype is floating."
 
-        if np.issubdtype(ds.dtype, np.datetime64):
+        if pd.api.types.is_datetime64_dtype(ds):
             ds = ds.view("datetime64[ns]")
             self.offset = ds[0].copy()
             timedeltas = ds - self.offset
-        elif np.issubdtype(ds.dtype, np.timedelta64):
+        elif pd.api.types.is_timedelta64_dtype(ds):
             timedeltas = ds.view("timedelta64[ns]")
-        elif np.issubdtype(ds.dtype, np.integer):
+        elif pd.api.types.is_integer_dtype(ds):
             timedeltas = ds.view("timedelta64[ns]")
-        elif np.issubdtype(ds.dtype, np.floating):
+        elif pd.api.types.is_float_dtype(ds):
             self.LOGGER.warning("Array is already floating dtype.")
             timedeltas = ds
         else:
@@ -96,15 +96,15 @@ class Time2Float(BaseEncoder):
 
     def encode(self, data: Series, /) -> Series:
         r"""Roughly equal to `ds ⟶ ((ds - offset)/scale).astype(float)``."""
-        if np.issubdtype(data.dtype, np.integer):
+        if pd.api.types.is_integer_dtype(data):
             return data
-        if np.issubdtype(data.dtype, np.datetime64):
+        if pd.api.types.is_datetime64_dtype(data):
             data = data.view("datetime64[ns]")
             self.offset = data[0].copy()
             timedeltas = data - self.offset
-        elif np.issubdtype(data.dtype, np.timedelta64):
+        elif pd.api.types.is_timedelta64_dtype(data):
             timedeltas = data.view("timedelta64[ns]")
-        elif np.issubdtype(data.dtype, np.floating):
+        elif pd.api.types.is_float_dtype(data):
             self.LOGGER.warning("Array is already floating dtype.")
             return data
         else:
