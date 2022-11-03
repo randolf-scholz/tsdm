@@ -14,6 +14,7 @@ import warnings
 from typing import cast
 
 import numpy as np
+import pandas as pd
 from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 
@@ -199,13 +200,13 @@ def time_gcd(s: Series) -> float:
     zero = np.array(0, dtype=Δt.dtype)
     Δt = Δt[Δt > zero]
 
-    if np.issubdtype(Δt.dtype, np.timedelta64):
+    if pd.api.types.is_timedelta64_dtype(Δt):
         Δt = Δt.astype("timedelta64[ns]").astype(int)
         gcd = np.gcd.reduce(Δt)
         return gcd.astype("timedelta64[ns]")
-    if np.issubdtype(Δt.dtype, np.integer):
+    if pd.api.types.is_integer_dtype(Δt):
         return np.gcd.reduce(Δt)
-    if np.issubdtype(Δt.dtype, np.floating):
+    if pd.api.types.is_float_dtype(Δt):
         return float_gcd(Δt)
 
     raise NotImplementedError(f"Data type {Δt.dtype=} not understood")

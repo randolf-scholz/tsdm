@@ -61,4 +61,4 @@ LR_SCHEDULERS: Final[dict[str, type[lr_scheduler._LRScheduler]]] = {
 }
 r"""Dictionary of all available lr_schedulers."""
 
-del Final, TypeAlias, lr_scheduler, torch.optim
+del Final, TypeAlias, lr_scheduler

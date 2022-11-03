@@ -320,7 +320,7 @@ def repr_namedtuple(
 
 
 def repr_array(
-    obj: Array | DataFrame | Series, /, *, title: Optional[str] = None
+    obj: Array | DataFrame | Series | Tensor, /, *, title: Optional[str] = None
 ) -> str:
     r"""Return a string representation of an array object."""
     assert isinstance(obj, Array | DataFrame)

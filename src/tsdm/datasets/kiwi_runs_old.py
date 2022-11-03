@@ -14,7 +14,6 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, Final, Literal, Optional
 
-import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
@@ -57,11 +56,11 @@ def float_is_int(series: Series) -> bool:
 def get_integer_cols(table: DataFrame) -> set[str]:
     r"""Get all columns that contain only integers."""
     cols = set()
-    for col in table:
-        if np.issubdtype(table[col].dtype, np.integer):
+    for col in table.columns:
+        if pd.api.types.is_integer_dtype(table[col]):
             __logger__.debug("Integer column                       : %s", col)
             cols.add(col)
-        elif np.issubdtype(table[col].dtype, np.floating) and float_is_int(table[col]):
+        elif pd.api.types.is_float_dtype(table[col]) and float_is_int(table[col]):
             __logger__.debug("Integer column pretending to be float: %s", col)
             cols.add(col)
     return cols
@@ -72,7 +71,7 @@ def get_useless_cols(
 ) -> set[str]:
     r"""Get all columns that are considered useless."""
     useless_cols = set()
-    for col in table:
+    for col in table.columns:
         s = table[col]
         if col in ("run_id", "experiment_id"):
             continue
@@ -590,7 +589,7 @@ class KIWI_RUNS_OLD(MultiFrameDataset):
 
         units = Series(dtype=pd.StringDtype(), name="unit")
 
-        for col in data:
+        for col in data.columns:
             if col == "runtime":
                 continue
             mask = pd.notna(data[col])
