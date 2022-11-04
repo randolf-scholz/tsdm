@@ -108,6 +108,8 @@ from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 from tsdm.utils.types import KeyVar
 
+TimeSlice: TypeAlias = Index | slice | list
+
 
 class BaseTaskMetaClass(ABCMeta):
     r"""Metaclass for BaseTask."""
@@ -276,13 +278,21 @@ class TimeSeriesDatasetTask(TorchDataset):
     r"""Columns of the data that are used as inputs."""
     covariates: Optional[Index] = None
     r"""Columns of the data that are used as controls."""
-    sample_format: Literal["masked", "dense", "sparse"] = "masked"
-    r"""Format of the samples."""
+    metadata_targets: Optional[Index] = None
+    r"""Columns of the metadata that are targets."""
+    metadata_observables: Optional[Index] = NotImplemented
+    r"""Columns of the metadata that are targets."""
+    sample_format: str = "masked"
 
     def __post_init__(self):
         r"""Post init."""
         if self.observables is NotImplemented:
             self.observables = self.dataset.timeseries.columns
+        if self.metadata_observables is NotImplemented:
+            if self.dataset.metadata is None:
+                self.metadata_observables = None
+            else:
+                self.metadata_observables = self.dataset.metadata.columns
 
     def __iter__(self) -> Iterator[TimeSeriesDataset]:
         return iter(self.dataset)
@@ -290,96 +300,102 @@ class TimeSeriesDatasetTask(TorchDataset):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, key: Any) -> Sample:
-        assert isinstance(key, tuple) and len(key) == 2
-        observation_horizon, forecasting_horizon = key
-
-        if self.sample_format == "masked":
-            return self._make_masked_sample(observation_horizon, forecasting_horizon)
-        if self.sample_format == "dense":
-            return self._make_dense_sample(observation_horizon, forecasting_horizon)
-        if self.sample_format == "sparse":
-            return self._make_sparse_sample(observation_horizon, forecasting_horizon)
-        raise ValueError(f"Unknown sample format {self.sample_format}")
+    def __getitem__(self, key: tuple[TimeSlice, TimeSlice]) -> Sample:
+        match self.sample_format:
+            case "masked" | ("masked", "masked"):
+                return self._make_masked_sample(key)
+            case ("sparse", "masked"):
+                return self._make_sparse_index_sample(key)  # type: ignore[unreachable]
+            case ("masked", "sparse"):
+                return self._make_sparse_column_sample(key)  # type: ignore[unreachable]
+            case "sparse" | ("sparse", "sparse"):
+                return self._make_sparse_sample(key)
+            case _:
+                raise ValueError(f"Unknown sample format {self.sample_format=}")
 
     def __repr__(self):
-        return repr_dataclass(self, recursive=2)
+        return repr_dataclass(self, recursive=1)
 
-    def _make_masked_sample(
-        self,
-        observation_horizon: Index | slice,
-        forecasting_horizon: Index | slice,
-    ) -> Sample:
+    def _make_masked_sample(self, key: tuple[TimeSlice, TimeSlice]) -> Sample:
+        assert isinstance(key, tuple) and len(key) == 2
+        observation_horizon, forecasting_horizon = key
+        tsd = self.dataset
 
         # timeseries
-        ts_observed = self.dataset[observation_horizon]
-        ts_forecast = self.dataset[forecasting_horizon]
-        observation_index = ts_observed.index
-        forecasting_index = ts_forecast.index
-        horizon = ts_observed.index.union(ts_forecast.index)
-        ts = self.dataset[horizon]
+        ts_observed = tsd[observation_horizon]
+        ts_forecast = tsd[forecasting_horizon]
+        horizon_index = ts_observed.index.union(ts_forecast.index)
+        ts = tsd[horizon_index]
 
         x = ts.copy()
         # mask everything except covariates and observables
         columns = ts.columns.difference(self.covariates or [])
-        x.loc[observation_index, columns.difference(self.observables)] = NA
-        x.loc[forecasting_index, columns] = NA
+        x.loc[ts_observed.index, columns.difference(self.observables)] = NA
+        x.loc[ts_forecast.index, columns] = NA
 
         y = ts.copy()
         # mask everything except targets in forecasting horizon
-        y.loc[observation_index] = NA
-        y.loc[forecasting_index, ts.columns.difference(self.targets)] = NA
+        y.loc[ts_observed.index] = NA
+        y.loc[ts_forecast.index, ts.columns.difference(self.targets)] = NA
+        t_target = y.index.to_series()
 
-        t_target = y.index
+        # metadata
+        md = tsd.metadata
+        md_targets: Optional[DataFrame] = None
+        if self.metadata_targets is not None:
+            assert md is not None
+            md_targets = md[self.metadata_targets]
+            md = md.drop(columns=self.metadata_targets)
 
-        key = (observation_index, forecasting_index)
-        inputs = Inputs(t_target=t_target, x=x, u=None)
-        targets = Targets(y=y)
+        inputs = Inputs(t_target=t_target, x=x, u=None, metadata=md)
+        targets = Targets(y=y, metadata=md_targets)
         return Sample(key=key, inputs=inputs, targets=targets)
 
-    def _make_dense_sample(
-        self,
-        observation_horizon: Index | slice,
-        forecasting_horizon: Index | slice,
-    ) -> Sample:
+    def _make_sparse_column_sample(self, key: tuple[TimeSlice, TimeSlice]) -> Sample:
+        assert isinstance(key, tuple) and len(key) == 2
+        observation_horizon, forecasting_horizon = key
+        tsd = self.dataset
 
         # timeseries
-        ts_observed = self.dataset[observation_horizon]
-        ts_forecast = self.dataset[forecasting_horizon]
-        x = ts_observed[self.observables]
-        y = ts_forecast[self.targets]
-        t_target = y.index
+        ts_observed = tsd[observation_horizon]
+        ts_forecast = tsd[forecasting_horizon]
+        horizon_index = ts_observed.index.union(ts_forecast.index)
+        ts = tsd[horizon_index]
+
+        x = ts[self.observables].copy()
+        x.loc[ts_forecast.index] = NA
+
+        y = ts[self.targets].copy()
+        y.loc[ts_observed.index] = NA
+        t_target = y.index.to_series()
 
         u: Optional[DataFrame] = None
         if self.covariates is not None:
-            u = ts_observed[self.covariates]
+            u = ts[self.covariates]
 
-        key = (observation_horizon, forecasting_horizon)
-        inputs = Inputs(t_target=t_target, x=x, u=u, metadata=None)
-        targets = Targets(y=y)
+        # metadata
+        md = tsd.metadata
+        md_targets: Optional[DataFrame] = None
+        if self.metadata_targets is not None:
+            assert md is not None
+            md_targets = md[self.metadata_targets]
+            md[
+                md.columns.difference(self.metadata_targets)
+                if self.metadata_observables is None
+                else self.metadata_observables
+            ] = NA
+
+        inputs = Inputs(t_target=t_target, x=x, u=u, metadata=md)
+        targets = Targets(y=y, metadata=md_targets)
         return Sample(key=key, inputs=inputs, targets=targets)
 
-    def _make_sparse_sample(
-        self,
-        observation_horizon: Index | slice,
-        forecasting_horizon: Index | slice,
-    ) -> Sample:
-        sample = self._make_dense_sample(observation_horizon, forecasting_horizon)
+    def _make_sparse_index_sample(self, key: tuple[TimeSlice, TimeSlice]) -> Sample:
+        sample = self._make_masked_sample(key)
+        return sample.sparsify_index()
 
-        if sample.inputs.x is not None:
-            sample.inputs.x.dropna(how="all", inplace=True)
-
-        if sample.inputs.u is not None:
-            sample.inputs.u.dropna(how="all", inplace=True)
-
-        if sample.targets.y is not None:
-            sample.targets.y.dropna(how="all", inplace=True)
-
-        if sample.inputs.t_target is not None:
-            diff = sample.inputs.t_target.index.difference(sample.targets.y.index)
-            sample.inputs.t_target.drop(diff, inplace=True)
-
-        return sample
+    def _make_sparse_sample(self, key: tuple[TimeSlice, TimeSlice]) -> Sample:
+        sample = self._make_sparse_column_sample(key)
+        return sample.sparsify_index()
 
 
 TSC_Key: TypeAlias = tuple[KeyVar, tuple[Index | slice, Index | slice]]
@@ -497,9 +513,8 @@ class TimeSeriesCollectionTask(TorchDataset, Generic[KeyVar]):
         assert isinstance(key[1], Collection) and len(key[1]) == 2
         outer_key, (observation_horizon, forecasting_horizon) = key
 
-        tsd = self.dataset[outer_key]
-
         # timeseries
+        tsd = self.dataset[outer_key]
         ts_observed = tsd[observation_horizon]
         ts_forecast = tsd[forecasting_horizon]
         horizon_index = ts_observed.index.union(ts_forecast.index)
@@ -534,9 +549,8 @@ class TimeSeriesCollectionTask(TorchDataset, Generic[KeyVar]):
         assert isinstance(key[1], Collection) and len(key[1]) == 2
         outer_key, (observation_horizon, forecasting_horizon) = key
 
-        tsd = self.dataset[outer_key]
-
         # timeseries
+        tsd = self.dataset[outer_key]
         ts_observed = tsd[observation_horizon]
         ts_forecast = tsd[forecasting_horizon]
         horizon_index = ts_observed.index.union(ts_forecast.index)
@@ -564,8 +578,6 @@ class TimeSeriesCollectionTask(TorchDataset, Generic[KeyVar]):
                 if self.metadata_observables is None
                 else self.metadata_observables
             ] = NA
-
-            # md = md.drop(columns=self.metadata_targets)
 
         inputs = Inputs(t_target=t_target, x=x, u=u, metadata=md)
         targets = Targets(y=y, metadata=md_targets)
