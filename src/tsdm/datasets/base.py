@@ -881,7 +881,14 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
     def __getitem__(self, key):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         ts = self.timeseries.loc[key]
-        md = self.metadata.loc[key] if self.metadata is not None else None
+
+        # make sure metadata is always DataFrame.
+        if self.metadata is None:
+            md = None
+        elif isinstance(_md := self.metadata.loc[key], Series):
+            md = self.metadata.loc[[key]]
+        else:
+            md = _md
 
         if self.time_features is None:
             tf = None
