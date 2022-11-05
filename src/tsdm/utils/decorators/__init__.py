@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from typing import Final
+from typing import Final, TypeAlias
 
 from tsdm.utils.decorators._decorators import (
     IterItems,
@@ -36,7 +36,7 @@ from tsdm.utils.decorators._decorators import (
     wrap_method,
 )
 
-Decorator = Callable[..., Callable]
+Decorator: TypeAlias = Callable[..., Callable]
 r"""Type hint for dataset."""
 
 DECORATORS: Final[dict[str, Decorator]] = {
@@ -52,3 +52,5 @@ DECORATORS: Final[dict[str, Decorator]] = {
     "wrap_method": wrap_method,
 }
 r"""Dictionary of all available decorators."""
+
+del Final, TypeAlias, Callable

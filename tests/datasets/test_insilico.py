@@ -16,7 +16,7 @@ def test_caching():
     r"""Check if dataset caching works (should be way faster)."""
     # NOTE: this test must be executed first!!!
 
-    ds = InSilicoData()
+    ds = InSilicoData(initialize=False)
     __logger__.info("Testing caching of dataset %s", ds.__class__.__name__)
     _, pre_cache_time = timefun(lambda: ds.dataset, append=True)()
     _, post_cache_time = timefun(lambda: ds.dataset, append=True)()

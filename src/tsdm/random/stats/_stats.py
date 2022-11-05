@@ -38,14 +38,14 @@ def data_overview(
 ) -> DataFrame:
     r"""Get a summary of the data."""
     overview = DataFrame(index=df.columns)
-    mask = df.isna()
+    null_values = df.isna()
     numerical_cols = df.select_dtypes(include="number").columns
     # float_cols = df.select_dtypes(include="float").columns
     # other_cols = df.select_dtypes(exclude="number").columns
 
-    overview["datapoints"] = (~mask).sum()
+    overview["datapoints"] = (~null_values).sum()
     overview["uniques"] = df.nunique()
-    overview["missing"] = (mask.mean() * 100).round(2)
+    overview["missing"] = (null_values.mean() * 100).round(2)
 
     overview.loc[numerical_cols, "min"] = df[numerical_cols].min()
     overview.loc[numerical_cols, "mean"] = df[numerical_cols].mean()
@@ -70,7 +70,7 @@ def data_overview(
 
     if index_col is not None:
         freq = {}
-        for col in df:
+        for col in df.columns:
             mask = pandas.notna(df[col].squeeze())
             time = df.index.get_level_values(index_col)[mask]
             freq[col] = Series(time).diff().mean()
