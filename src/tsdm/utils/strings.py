@@ -27,9 +27,10 @@ __ALL__ = dir() + __all__
 import builtins
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from dataclasses import Field, is_dataclass
+from functools import partial
 from typing import Any, Final, Optional, overload
 
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, Series
 from torch import Tensor
 
 from tsdm.utils.types.dtypes import TYPESTRINGS, ScalarDType
@@ -106,9 +107,9 @@ def repr_object(obj: Any, /, **kwargs: Any) -> str:
         return obj
     if type(obj).__name__ in dir(builtins):
         return str(obj)
-    if isinstance(obj, Tensor):
+    if isinstance(obj, Array | Tensor | Series | DataFrame | Index):
         return repr_array(obj, **kwargs)
-    if isinstance(obj, Mapping):
+    if isinstance(obj, Mapping):  # type: ignore[unreachable]
         return repr_mapping(obj, **kwargs)
     if isinstance(obj, NTuple):
         return repr_namedtuple(obj, **kwargs)
@@ -155,36 +156,38 @@ def repr_mapping(
     title: Optional[str] = None,
 ) -> str:
     r"""Return a string representation of a mapping object."""
+    linebreaks = linebreaks and len(obj) > 1
     br = "\n" if linebreaks else ""
     # key_sep = ": "
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
 
     keys = [str(key) for key in obj.keys()]
-    max_key_length = max(len(key) for key in keys) if align else 0
+    max_key_length = max((len(key) for key in keys), default=0) if align else 0
 
     items = list(obj.items())
     title = f"{type(obj).__name__}<Mapping>" if title is None else title
-    string = title + "(" + br
 
     # TODO: automatic linebreak detection if string length exceeds max_length
-
-    def to_string(x: Any) -> str:
-        if recursive:
-            return repr_fun(
-                x,
+    if not recursive:
+        to_string = repr_fun
+    else:
+        if repr_fun in RECURSIVE_REPR_FUNS:
+            repr_fun = partial(
+                repr_fun,
                 align=align,
                 linebreaks=linebreaks,
                 maxitems=maxitems,
                 padding=padding,
                 recursive=recursive if isinstance(recursive, bool) else recursive - 1,
                 repr_fun=repr_fun,
-            ).replace("\n", br + pad)
-        return repr_type(x)
+            )
 
-    # keys = [str(key) for key in obj.keys()]
-    # values: list[str] = [to_string(x) for x in obj.values()]
+        def to_string(x: Any) -> str:
+            return repr_fun(x).replace("\n", br + pad)
 
+    # Assemble the string
+    string = title + "(" + br
     if len(obj) <= maxitems:
         string += "".join(
             f"{pad}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
@@ -217,6 +220,7 @@ def repr_sequence(
     title: Optional[str] = None,
 ) -> str:
     r"""Return a string representation of a sequence object."""
+    linebreaks = linebreaks and len(obj) > 1
     br = "\n" if linebreaks else ""
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
@@ -231,21 +235,25 @@ def repr_sequence(
         title = type(obj).__name__ if title is None else title
         left, right = "(", ")"
 
-    string = title + left + br
-
-    def to_string(x: Any) -> str:
-        if recursive:
-            return repr_fun(
-                x,
+    if not recursive:
+        to_string = repr_fun
+    else:
+        if repr_fun in RECURSIVE_REPR_FUNS:
+            repr_fun = partial(
+                repr_fun,
                 align=align,
                 linebreaks=linebreaks,
                 maxitems=maxitems,
                 padding=padding,
                 recursive=recursive if isinstance(recursive, bool) else recursive - 1,
                 repr_fun=repr_fun,
-            ).replace("\n", br + pad)
-        return repr_type(x)
+            )
 
+        def to_string(x: Any) -> str:
+            return repr_fun(x).replace("\n", br + pad)
+
+    # Assemble the string
+    string = title + left + br
     if len(obj) <= maxitems:
         string += "".join(f"{pad}{to_string(value)}{sep}{br}" for value in obj)
     else:
@@ -378,3 +386,12 @@ def repr_dtype(
     if obj in TYPESTRINGS:
         return TYPESTRINGS[obj]
     return str(obj)
+
+
+RECURSIVE_REPR_FUNS = [
+    repr_object,
+    repr_mapping,
+    repr_sequence,
+    repr_dataclass,
+    repr_namedtuple,
+]

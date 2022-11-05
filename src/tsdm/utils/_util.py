@@ -16,19 +16,28 @@ __all__ = [
     "deep_kval_update",
     "flatten_dict",
     "flatten_nested",
+    "get_function_args",
+    "get_mandatory_argcount",
     "initialize_from",
     "initialize_from_config",
+    "is_dunder",
+    "is_keyword_only",
+    "is_mandatory",
     "is_partition",
+    "is_positional",
+    "is_positional_only",
     "now",
+    "pairwise_disjoint",
+    "pairwise_disjoint_masks",
     "paths_exists",
     "prepend_path",
     "round_relative",
-    "pairwise_disjoint",
-    "pairwise_disjoint_masks",
+    "unflatten_dict",
 ]
 
+import inspect
 import os
-from collections.abc import Callable, Collection, Hashable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import partial
 from importlib import import_module
@@ -44,9 +53,32 @@ from tsdm.utils.types import AnyTypeVar, Nested, ObjectVar, PathType, ReturnVar
 from tsdm.utils.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
+KEYWORD_ONLY = inspect.Parameter.KEYWORD_ONLY
+POSITIONAL_ONLY = inspect.Parameter.POSITIONAL_ONLY
+POSITIONAL_OR_KEYWORD = inspect.Parameter.POSITIONAL_OR_KEYWORD
+VAR_KEYWORD = inspect.Parameter.VAR_KEYWORD
+VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
+EMPTY = inspect.Parameter.empty
+Kind = inspect._ParameterKind
 
 EMPTY_PATH: Path = Path()
 r"""Constant: Blank path."""
+
+# fmt: off
+NULL_VALUES: Final[list[str]] = [
+    "", "-", "?",
+    "1.#IND", "+1.#IND", "-1.#IND", "1.#QNAN", "+1.#QNAN", "-1.#QNAN",
+    "#N/A N/A",
+    "#NA", "#Na", "#na", "<NA>", "<Na>", "<na>", "+NA", "-NA", "-na", "+na",
+    "N/A", "n/a", "#N/A", "#n/a", "<N/A>", "<n/a>",  "+N/A", "-N/A", "-n/a", "+n/a",
+    "NAN", "NaN", "nan", "-NAN", "-NaN", "-nan", "+NAN", "+NaN", "+nan",
+    "#NAN", "#NaN", "#nan", "<NAN>", "<NaN>", "<nan>"
+    "NONE", "None", "none", "#NONE", "#None", "#none", "<NONE>", "<None>", "<none>",
+    "NULL", "Null", "null", "#NULL", "#Null", "#null", "<NULL>", "<Null>", "<null>",
+    "UNKNOWN", "Unknown", "unknown", "UNKNOWN", "#Unknown", "#unknown", "<UNKNOWN>", "<Unknown>", "<unknown>",
+]
+r"""A list of common null value string represenations."""
+# fmt: on
 
 
 def variants(s: str | list[str]) -> list[str]:
@@ -69,23 +101,6 @@ def variants(s: str | list[str]) -> list[str]:
     return [j for i in (variants(s_) for s_ in s) for j in i]
 
 
-# fmt: off
-NULL_VALUES: Final[list[str]] = [
-    "", "-", "?",
-    "1.#IND", "+1.#IND", "-1.#IND", "1.#QNAN", "+1.#QNAN", "-1.#QNAN",
-    "#N/A N/A",
-    "#NA", "#Na", "#na", "<NA>", "<Na>", "<na>", "+NA", "-NA", "-na", "+na",
-    "N/A", "n/a", "#N/A", "#n/a", "<N/A>", "<n/a>",  "+N/A", "-N/A", "-n/a", "+n/a",
-    "NAN", "NaN", "nan", "-NAN", "-NaN", "-nan", "+NAN", "+NaN", "+nan",
-    "#NAN", "#NaN", "#nan", "<NAN>", "<NaN>", "<nan>"
-    "NONE", "None", "none", "#NONE", "#None", "#none", "<NONE>", "<None>", "<none>",
-    "NULL", "Null", "null", "#NULL", "#Null", "#null", "<NULL>", "<Null>", "<null>",
-    "UNKNOWN", "Unknown", "unknown", "UNKNOWN", "#Unknown", "#unknown", "<UNKNOWN>", "<Unknown>", "<unknown>",
-]
-r"""A list of common null value string represenations."""
-# fmt: on
-
-
 def pairwise_disjoint(sets: Iterable[set]) -> bool:
     r"""Check if sets are pairwise disjoint."""
     union = set().union(*sets)
@@ -98,46 +113,44 @@ def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
 
 
 def flatten_dict(
-    d: dict[Any, Any],
+    d: dict[str, Any],
     /,
     *,
-    join_string: Optional[str] = None,
-    key_func: Optional[Callable[[Hashable, Hashable], Hashable]] = None,
-    recursive: bool | int = True,
-) -> dict[Any, Any]:
-    r"""Flatten a dictionary containing iterables to a list of tuples.
-
-    Parameters
-    ----------
-    d: Input Dictionary
-    join_string:
-        use this option in case of nested dicts with string keys,
-    key_func:
-        function that creates new key from old key and subkey
-    recursive:
-        If true applies flattening strategy recursively on nested dicts.
-        If int, specifies the maximum depth of recursion.
-    """
-    if join_string is not None and key_func is not None:
-        raise ValueError("Only one of join_string or key_func can be specified.")
-
-    if join_string is not None:
-        key_func = lambda k, sk: f"{k}{join_string}{sk}"  # noqa: E731
-    elif key_func is None:
-        key_func = lambda k, sk: (k, sk)  # noqa: E731
-
+    recursive: bool = True,
+    join_fn: Callable[[Sequence[str]], str] = ".".join,
+) -> dict[str, Any]:
+    r"""Flatten dictionaries recursively."""
     result = {}
     for key, item in d.items():
-        if isinstance(key, tuple):
-            raise ValueError("Keys are not allowed to be tuples!")
         if isinstance(item, dict) and recursive:
-            subdict = flatten_dict(
-                item, recursive=True, key_func=key_func, join_string=join_string
-            )
+            subdict = flatten_dict(item, recursive=True, join_fn=join_fn)
             for subkey, subitem in subdict.items():
-                result[key_func(key, subkey)] = subitem
+                result[join_fn((key, subkey))] = subitem
         else:
             result[key] = item
+    return result
+
+
+def unflatten_dict(
+    d: dict[str, Any],
+    /,
+    *,
+    recursive: bool = True,
+    split_fn: Callable[[str], Sequence[str]] = lambda s: s.split(".", maxsplit=1),
+) -> dict[str, Any]:
+    r"""Unflatten dictionaries recursively."""
+    result: dict[str, Any] = {}
+    for key, item in d.items():
+        split = split_fn(key)
+        result.setdefault(split[0], {})
+        if len(split) > 1 and recursive:
+            assert len(split) == 2
+            subdict = unflatten_dict(
+                {split[1]: item}, recursive=recursive, split_fn=split_fn
+            )
+            result[split[0]] |= subdict
+        else:
+            result[split[0]] = item
     return result
 
 
@@ -415,16 +428,7 @@ def initialize_from(  # type: ignore[misc]
 
 
 def is_dunder(name: str) -> bool:
-    r"""Check if name is a dunder method.
-
-    Parameters
-    ----------
-    name: str
-
-    Returns
-    -------
-    bool
-    """
+    r"""Check if name is a dunder method."""
     return name.isidentifier() and name.startswith("__") and name.endswith("__")
 
 
@@ -461,15 +465,6 @@ def paths_exists(
     r"""Check whether the files exist.
 
     The input can be arbitrarily nested data-structure with `Path` in leaves.
-
-    Parameters
-    ----------
-    paths: None | Path | Collection[Path] | Mapping[Any, None | Path | Collection[Path]]
-    parent: Path = Path(),
-
-    Returns
-    -------
-    bool
     """
     if isinstance(paths, str):
         return Path(paths).exists()
@@ -483,3 +478,83 @@ def paths_exists(
         return (parent / paths).exists()
 
     raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
+
+
+def is_mandatory(p: inspect.Parameter, /) -> bool:
+    r"""Check if parameter is mandatory."""
+    return p.default is inspect.Parameter.empty and p.kind not in (
+        VAR_POSITIONAL,
+        VAR_KEYWORD,
+    )
+
+
+def is_positional(p: inspect.Parameter, /) -> bool:
+    r"""Check if parameter is positional."""
+    return p.kind in (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL)
+
+
+def is_positional_only(p: inspect.Parameter, /) -> bool:
+    """Check if parameter is positional only."""
+    return p.kind in (POSITIONAL_ONLY, VAR_POSITIONAL)
+
+
+def is_keyword_only(p: inspect.Parameter, /) -> bool:
+    """Check if parameter is keyword only."""
+    return p.kind in (KEYWORD_ONLY, VAR_KEYWORD)
+
+
+def get_mandatory_argcount(f: Callable[..., Any]) -> int:
+    r"""Get the number of mandatory arguments of a function."""
+    sig = inspect.signature(f)
+    return sum(is_mandatory(p) for p in sig.parameters.values())
+
+
+def get_function_args(
+    f: Callable[..., Any],
+    mandatory: Optional[bool] = None,
+    kinds: Optional[str | Kind | list[Kind]] = None,
+) -> list[inspect.Parameter]:
+    r"""Filter function parameters by kind and optionality."""
+
+    def get_kinds(s: str | Kind) -> set[Kind]:
+        if isinstance(s, Kind):
+            return {s}
+
+        match s.lower():
+            case "p" | "positional":
+                return {POSITIONAL_ONLY, VAR_POSITIONAL}
+            case "k" | "keyword":
+                return {KEYWORD_ONLY, VAR_KEYWORD}
+            case "v" | "var":
+                return {VAR_POSITIONAL, VAR_KEYWORD}
+            case "po" | "positional_only":
+                return {POSITIONAL_ONLY}
+            case "ko" | "keyword_only":
+                return {KEYWORD_ONLY}
+            case "pk" | "positional_or_keyword":
+                return {POSITIONAL_OR_KEYWORD}
+            case "vp" | "var_positional":
+                return {VAR_POSITIONAL}
+            case "vk" | "var_keyword":
+                return {VAR_KEYWORD}
+        raise ValueError(f"Unknown kind {s}")
+
+    match kinds:
+        case None:
+            allowed_kinds = set(Kind)
+        case str() | Kind():
+            allowed_kinds = get_kinds(kinds)
+        case Sequence():
+            allowed_kinds = set().union(*map(get_kinds, kinds))
+        case _:
+            raise ValueError(f"Unknown type for kinds: {type(kinds)}")
+
+    sig = inspect.signature(f)
+    params = list(sig.parameters.values())
+
+    if mandatory is None:
+        return [p for p in params if p.kind in allowed_kinds]
+
+    return [
+        p for p in params if is_mandatory(p) is mandatory and p.kind in allowed_kinds
+    ]
