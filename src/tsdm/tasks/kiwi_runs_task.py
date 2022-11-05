@@ -6,6 +6,7 @@ r"""#TODO add module summary line.
 __all__ = [
     # Classes
     "KIWI_RUNS_TASK",
+    "KiwiForecastingTask",
 ]
 
 from collections.abc import Callable
@@ -19,13 +20,42 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import KIWI_RUNS
+from tsdm.datasets import KIWI, KIWI_RUNS
 from tsdm.encoders import BaseEncoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import BaseTask, TimeSeriesCollectionTask
 from tsdm.utils.data import MappingDataset, TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
+
+
+class KiwiForecastingTask(TimeSeriesCollectionTask):
+    r"""Bioprocess forecasting task using the KIWI-biolab data."""
+
+    targets = ["Base", "DOT", "Glucose", "OD600"]
+    observables = [
+        "Base",
+        "DOT",
+        "Glucose",
+        "OD600",
+        "Acetate",
+        "Fluo_GFP",
+        "pH",
+    ]
+    covariates = [
+        "Cumulated_feed_volume_glucose",
+        "Cumulated_feed_volume_medium",
+        "InducerConcentration",
+        "StirringSpeed",
+        "Flow_Air",
+        "Temperature",
+        "Probe_Volume",
+    ]
+    sample_format = ("masked", "masked")
+
+    def __init__(**kwargs):
+        ds = KIWI()
+        super().__init__(ds, **kwargs)
 
 
 class Sample(NamedTuple):
