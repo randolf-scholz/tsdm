@@ -24,7 +24,7 @@ from tsdm.datasets import KIWI, KIWI_RUNS
 from tsdm.encoders import BaseEncoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
-from tsdm.tasks.base import BaseTask, TimeSeriesCollectionTask
+from tsdm.tasks.base import OldBaseTask, TimeSeriesCollectionTask
 from tsdm.utils.data import MappingDataset, TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
@@ -53,7 +53,7 @@ class KiwiForecastingTask(TimeSeriesCollectionTask):
     ]
     sample_format = ("masked", "masked")
 
-    def __init__(**kwargs):
+    def __init__(self, **kwargs):
         ds = KIWI()
         super().__init__(ds, **kwargs)
 
@@ -86,7 +86,7 @@ class Batch(NamedTuple):
         return repr_namedtuple(self, recursive=False)
 
 
-class KIWI_RUNS_TASK(BaseTask):
+class KIWI_RUNS_TASK(OldBaseTask):
     r"""A collection of bioreactor runs.
 
     For this task we do several simplifications
@@ -309,7 +309,7 @@ class KIWI_RUNS_TASK(BaseTask):
             "persistent_workers": False,
         }
 
-    def get_dataloader(
+    def make_dataloader(
         self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return a dataloader for the given split.

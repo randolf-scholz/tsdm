@@ -32,7 +32,7 @@ __all__ = [
     "Task",
     "TASKS",
     # Classes
-    "BaseTask",
+    "OldBaseTask",
     "TimeSeriesDatasetTask",
     "TimeSeriesCollectionTask",
     # Tasks
@@ -50,7 +50,7 @@ __all__ = [
 from typing import Final, TypeAlias
 
 from tsdm.tasks import base
-from tsdm.tasks.base import BaseTask, TimeSeriesCollectionTask, TimeSeriesDatasetTask
+from tsdm.tasks.base import OldBaseTask, TimeSeriesCollectionTask, TimeSeriesDatasetTask
 from tsdm.tasks.electricity_lim2021 import ElectricityLim2021
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
@@ -60,7 +60,7 @@ from tsdm.tasks.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.tasks.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.tasks.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
-Task: TypeAlias = BaseTask
+Task: TypeAlias = OldBaseTask
 r"""Type hint for tasks."""
 
 TASKS: Final[dict[str, type[Task]]] = {

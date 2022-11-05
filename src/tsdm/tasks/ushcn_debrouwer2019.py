@@ -24,7 +24,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
@@ -152,7 +152,7 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
     )
 
 
-class USHCN_DeBrouwer2019(BaseTask):
+class USHCN_DeBrouwer2019(OldBaseTask):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     Evaluation Protocol
@@ -323,7 +323,7 @@ class USHCN_DeBrouwer2019(BaseTask):
             tensors[_id] = (t, x)
         return tensors
 
-    def get_dataloader(
+    def make_dataloader(
         self, key: tuple[int, str], /, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return the dataloader for the given key."""

@@ -26,10 +26,10 @@ from tsdm.encoders import (
     TensorEncoder,
 )
 from tsdm.random.samplers import SequenceSampler
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 
 
-class ETT_Zhou2021(BaseTask):
+class ETT_Zhou2021(OldBaseTask):
     r"""Forecasting Oil Temperature on the Electrical-Transformer dataset.
 
     Paper
@@ -170,7 +170,7 @@ class ETT_Zhou2021(BaseTask):
         _splits["test"] = _splits["trial"]  # alias
         return _splits
 
-    def get_dataloader(
+    def make_dataloader(
         self,
         key: KeyType,
         /,
