@@ -368,7 +368,7 @@ class KIWI_RUNS(MultiFrameDataset):
         metadata_features = metadata_features.astype(column_dtypes["metadata_features"])
 
         # Remove values out of bounds
-        for col in metadata:
+        for col in metadata.columns:
             lower: Series = metadata_features.loc[col, "lower"]
             upper: Series = metadata_features.loc[col, "upper"]
             value = metadata[col]
@@ -399,7 +399,7 @@ class KIWI_RUNS(MultiFrameDataset):
             for inner_key, tables in experiment.items()
         }
 
-        timeseries = pd.concat(
+        timeseries: DataFrame = pd.concat(
             timeseries_dict, names=["run_id", "exp_id"], verify_integrity=True
         )
         timeseries = timeseries.reset_index(-1, drop=True)
@@ -426,7 +426,7 @@ class KIWI_RUNS(MultiFrameDataset):
         assert all(timeseries.notna().sum(axis=1) <= 1), "multiple measurements!"
 
         units = {}
-        for col in timeseries:
+        for col in timeseries.columns:
             mask = timeseries[col].notna()
             units[col] = list(timeseries_units.loc[mask].unique())
             assert len(units[col]) == 1, f"Multiple different units in {col}!"
@@ -472,7 +472,7 @@ class KIWI_RUNS(MultiFrameDataset):
         value_features = value_features.astype(column_dtypes["value_features"])
 
         # Remove values out of bounds
-        for col in timeseries:
+        for col in timeseries.columns:
             lower: Series = value_features.loc[col, "lower"]
             upper: Series = value_features.loc[col, "upper"]
             value = timeseries[col]

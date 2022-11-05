@@ -36,3 +36,5 @@ LOGGERS: Final[dict[str, Logger]] = {
     "log_model_state": log_model_state,
     "log_metrics": log_metrics,
 }
+
+del Final, TypeAlias, Callable
