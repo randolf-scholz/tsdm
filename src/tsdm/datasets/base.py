@@ -775,16 +775,17 @@ class TimeSeriesDataset(TorchDataset):
     More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
     """
 
+    _: KW_ONLY = NotImplemented
+
     # Main Attributes
+    name: str = NotImplemented
+    r"""The name of the dataset."""
+    index: Index = NotImplemented
+    r"""The time-index of the dataset."""
     timeseries: DataFrame
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
-
-    _: KW_ONLY = NotImplemented
-
-    index: Index = NotImplemented
-    r"""The time-index of the dataset."""
 
     # Space Descriptors
     time_features: Optional[DataFrame] = None
@@ -796,6 +797,8 @@ class TimeSeriesDataset(TorchDataset):
 
     def __post_init__(self):
         r"""Post init."""
+        if self.name is NotImplemented:
+            self.name = self.__class__.__name__
         if self.index is NotImplemented:
             self.index = self.timeseries.index.copy().unqiue()
 
@@ -813,7 +816,7 @@ class TimeSeriesDataset(TorchDataset):
 
     def __repr__(self):
         r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=False)
+        return repr_dataclass(self, recursive=False, title=self.name)
 
 
 @dataclass
@@ -827,18 +830,19 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
     - global variables $G∈𝓖$
     """
 
+    _: KW_ONLY = NotImplemented
+
     # Main attributes
+    name: str = NotImplemented
+    r"""The name of the collection."""
+    index: Index = NotImplemented
+    r"""The index of the collection."""
     timeseries: DataFrame
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
-
-    _: KW_ONLY = NotImplemented
-
     global_metadata: Optional[DataFrame] = None
     r"""The global data of the dataset."""
-    index: Index = NotImplemented
-    r"""The index of the collection."""
 
     # Space descriptors
     index_features: Optional[DataFrame] = None
@@ -854,6 +858,8 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
 
     def __post_init__(self):
         r"""Post init."""
+        if self.name is NotImplemented:
+            self.name = self.__class__.__name__
         if self.index is NotImplemented:
             if self.metadata is not None:
                 self.index = self.metadata.index.copy().unique()
@@ -891,6 +897,7 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
         if isinstance(ts.index, MultiIndex):
             index = ts.index.droplevel(-1).unique()
             return TimeSeriesCollection(  # type: ignore[return-value]
+                name=self.name,
                 index=index,
                 timeseries=ts,
                 metadata=md,
@@ -903,6 +910,7 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
             )
 
         return TimeSeriesDataset(
+            name=self.name,
             index=ts.index,
             timeseries=ts,
             metadata=md,
@@ -923,7 +931,7 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
 
     def __repr__(self):
         r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=False)
+        return repr_dataclass(self, recursive=False, title=self.name)
 
 
 @dataclass
