@@ -35,7 +35,7 @@ from torch import Tensor
 from tsdm.utils.types.dtypes import TYPESTRINGS, ScalarDType
 from tsdm.utils.types.protocols import Array, Dataclass, NTuple
 
-MAXITEMS: Final[int] = 7
+MAXITEMS: Final[int] = 10
 r"""Default maxitems for repr_funcs."""
 LINEBREAKS: Final[bool] = True
 r"""Default linebreaks for repr_funcs."""
@@ -252,7 +252,7 @@ def repr_sequence(
         string += "".join(
             f"{pad}{to_string(value)}{sep}{br}" for value in obj[: maxitems // 2]
         )
-        string += f"{pad}..." + br
+        string += f"{pad}...{sep}" + br
         string += "".join(
             f"{pad}{to_string(value)}{sep}{br}" for value in obj[-maxitems // 2 :]
         )
@@ -271,6 +271,7 @@ def repr_dataclass(
     maxitems: int = MAXITEMS,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
+    identifier: Optional[str] = None,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
@@ -278,7 +279,21 @@ def repr_dataclass(
     assert is_dataclass(obj), f"Object {obj} is not a dataclass."
     assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."
     fields: dict[str, Field] = obj.__dataclass_fields__
-    title = f"{type(obj).__name__}<dataclass>" if title is None else title
+
+    cls = type(obj)
+    if title is None:
+        title = cls.__name__
+        if identifier is None:
+            identifier = "dataclass"
+    elif identifier is None:
+        if title != cls.__name__:
+            identifier = cls.__name__
+        elif is_dataclass(cls.__bases__[0]):
+            identifier = cls.__bases__[0].__name__
+        else:
+            identifier = "dataclass"
+
+    title = f"{title}<{identifier}>"
     return repr_mapping(
         {key: getattr(obj, key) for key, field in fields.items() if field.repr},
         align=align,
@@ -332,7 +347,7 @@ def repr_array(
 
     if isinstance(obj, DataFrame):
         dtypes = [repr_dtype(dtype) for dtype in obj.dtypes]
-        string += ", " + repr_sequence(dtypes, linebreaks=False)
+        string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
     elif isinstance(obj, Array):
         string += ", " + repr_dtype(obj.dtype)
     else:

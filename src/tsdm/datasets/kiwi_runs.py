@@ -6,6 +6,7 @@ Extracted from iLab DataBase.
 __all__ = [
     # Classes
     "KIWI_RUNS",
+    "KIWI",
 ]
 
 import logging
@@ -16,7 +17,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index, Series
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiFrameDataset, TimeSeriesCollection
 from tsdm.utils import NULL_VALUES
 
 __logger__ = logging.getLogger(__name__)
@@ -512,6 +513,25 @@ class KIWI_RUNS(MultiFrameDataset):
         timeseries = timeseries.dropna(how="all")
         timeseries = timeseries.sort_values(["run_id", "exp_id", "measurement_time"])
         timeseries.to_parquet(self.dataset_paths["timeseries"])
+
+
+class KIWI(TimeSeriesCollection):
+    """The KIWI dataset."""
+
+    def __init__(self):
+        ds = KIWI_RUNS()
+
+        super().__init__(
+            index=ds.index,
+            timeseries=ds.timeseries,
+            metadata=ds.metadata,
+            global_metadata=ds.global_metadata,
+            index_features=ds.index_features,
+            time_features=ds.time_features,
+            value_features=ds.value_features,
+            metadata_features=ds.metadata_features,
+            global_features=None,
+        )
 
 
 # INFO:tsdm.datasets.kiwi_runs.KIWI_RUNS:Adding keys as attributes.
