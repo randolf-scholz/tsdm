@@ -13,7 +13,7 @@ __all__ = [
 
 import logging
 from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
-from typing import Any, Generic, NamedTuple, Union, overload
+from typing import Any, NamedTuple, Union, overload
 
 from tsdm.utils.types import KeyVar, ObjectVar
 
@@ -36,7 +36,7 @@ class LazyFunction(NamedTuple):
         return f"<LazyFunction: {self.func.__name__}>"
 
 
-class LazyDict(MutableMapping[KeyVar, ObjectVar], Generic[KeyVar, ObjectVar]):
+class LazyDict(MutableMapping[KeyVar, ObjectVar]):
     r"""A Lazy Dictionary implementation."""
 
     @staticmethod

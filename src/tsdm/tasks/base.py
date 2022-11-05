@@ -85,12 +85,13 @@ from __future__ import annotations
 
 __all__ = [
     # Classes
-    "BaseTask",
+    "OldBaseTask",
     "TimeSeriesDatasetTask",
     "TimeSeriesCollectionTask",
 ]
 
 import logging
+import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
@@ -100,7 +101,8 @@ from typing import Any, ClassVar, Generic, Literal, NamedTuple, Optional, TypeAl
 from pandas import NA, DataFrame, Index, Series
 from torch import Tensor
 from torch.utils.data import DataLoader
-from torch.utils.data.dataset import Dataset as TorchDataset
+from torch.utils.data import Dataset as TorchDataset
+from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.datasets import Dataset, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import ModularEncoder
@@ -119,7 +121,7 @@ class BaseTaskMetaClass(ABCMeta):
         super().__init__(*args, **kwargs)
 
 
-class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
+class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
@@ -147,10 +149,14 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     r"""Default batch size."""
     eval_batch_size: int = 128
     r"""Default batch size when evaluating."""
-    encoder: Optional[ModularEncoder] = None
+    preprocessor: Optional[ModularEncoder] = None
     r"""Optional task specific preprocessor (applied before batching)."""
     postprocessor: Optional[ModularEncoder] = None
     r"""Optional task specific postprocessor (applied after batching)."""
+
+    def __init__(self):
+        r"""Initialize."""
+        warnings.warn("deprecated, use new class", DeprecationWarning)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""
@@ -215,6 +221,162 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         return LazyDict(
             {key: (self.get_dataloader, kwargs | {"key": key}) for key in self.splits}
         )
+
+
+class BaseTask2(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
+    r"""Abstract Base Class for Tasks.
+
+    A task is a combination of a dataset and an evaluation protocol (EVP).
+
+    The DataLoader will return batches of data consisting of tuples of the form:
+    `(inputs, targets)`. The model will be trained on the inputs, and the targets
+    will be used to evaluate the model.
+    That is, the model must product an output of the same shape and data type of the targets.
+
+    Attributes
+    ----------
+    train_batch_size: int, default 32
+        Default batch-size used by batchloader.
+    eval_batch_size: int, default 128
+        Default batch-size used by dataloaders (for evaluation).
+    dataset: Dataset
+        The attached dataset
+    """
+
+    # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
+
+    LOGGER: ClassVar[logging.Logger]
+    r"""Class specific logger instance."""
+    preprocessor: Optional[ModularEncoder] = None
+    r"""Optional task specific preprocessor (applied before sampling/batching)."""
+    postprocessor: Optional[ModularEncoder] = None
+    r"""Optional task specific postprocessor (applied after sampling/batching)."""
+
+    dataloader_config_train = {
+        "batch_size": 32,
+        "shuffle": True,
+        "drop_last": True,
+        "pin_memory": True,
+        "collate_fn": lambda x: x,
+    }
+
+    dataloader_config_infer = {
+        "batch_size": 64,
+        "shuffle": False,
+        "drop_last": False,
+        "pin_memory": True,
+        "collate_fn": lambda x: x,
+    }
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the object."""
+        string = (
+            f"{self.__class__.__name__}("
+            # f"dataset={self.dataset.name}, "
+            f"test_metric={type(self.test_metric).__name__})"
+        )
+        return string
+
+    @property
+    @abstractmethod
+    def test_metric(self) -> Callable[..., Tensor]:
+        r"""The metric to be used for evaluation."""
+
+    @property
+    @abstractmethod
+    def dataset(self) -> Dataset | DataFrame:
+        r"""Return the cached dataset associated with the task."""
+
+    def split_type(self, key: KeyVar) -> Literal["train", "infer", "unknown"]:
+        r"""Return the type of split."""
+        train_patterns = ["train", "training"]
+        infer_patterns = [
+            "test",
+            "testing",
+            "val",
+            "valid",
+            "validation",
+            "eval",
+            "evaluation",
+            "infer",
+            "inference",
+        ]
+
+        if isinstance(key, str):
+            if key.lower() in train_patterns:
+                return "train"
+            if key.lower() in infer_patterns:
+                return "infer"
+        if isinstance(key, Sequence):
+            patterns = {self.split_type(k) for k in key}
+            if patterns <= {"train", "unknown"}:
+                return "train"
+            if patterns <= {"infer", "unknown"}:
+                return "infer"
+            if patterns == {"unknown"}:
+                return "unknown"
+            raise ValueError(f"{key=} contains both train and infer splits.")
+        return "unknown"
+
+    @property
+    @abstractmethod
+    def index(self) -> Sequence[KeyVar]:
+        r"""List of index."""
+
+    @abstractmethod
+    def make_split(self, key: KeyVar) -> TorchDataset:
+        r"""Return the split associated with the given key."""
+
+    @abstractmethod
+    def make_sampler(self, key: KeyVar) -> TorchSampler:
+        r"""Create sampler for the given split."""
+
+    def make_dataloader(
+        self,
+        key: KeyVar,
+        /,
+        **dataloader_kwargs: dict[str, Any],
+    ) -> DataLoader:
+        r"""Return a DataLoader object for the specified split."""
+        dataset = self.splits[key]
+        sampler = self.samplers[key]
+
+        match self.split_type(key):
+            case "train":
+                kwargs = self.dataloader_configs["train"]
+            case "infer":
+                kwargs = self.dataloader_configs["train"]
+            case _:
+                raise ValueError(f"Unknown split type: {self.split_type(key)=}")
+
+        kwargs = kwargs | dataloader_kwargs
+        dataloader = DataLoader(dataset, sampler=sampler, **kwargs)
+        return dataloader
+
+    @cached_property
+    def dataloader_configs(self) -> dict[str, dict[str, Any]]:
+        r"""Return dataloader configuration."""
+        return LazyDict(
+            {
+                "train": self.dataloader_config_train,
+                "eval": self.dataloader_config_infer,
+            }
+        )
+
+    @cached_property
+    def splits(self) -> Mapping[KeyVar, TorchDataset]:
+        r"""Cache dictionary of dataset splits."""
+        return LazyDict({k: self.make_split(k) for k in self.splits})
+
+    @cached_property
+    def samplers(self) -> Mapping[KeyVar, TorchSampler]:
+        r"""Return a dictionary of samplers for each split."""
+        return LazyDict({k: self.make_sampler(k) for k, v in self.splits.items()})
+
+    @cached_property
+    def dataloaders(self) -> Mapping[KeyVar, DataLoader]:
+        r"""Cache dictionary of evaluation-dataloaders."""
+        return LazyDict({k: self.make_dataloader(k) for k in self.splits})
 
 
 class Inputs(NamedTuple):
@@ -474,7 +636,7 @@ class TimeSeriesCollectionTask(TorchDataset, Generic[KeyVar]):
     r"""Columns of the metadata that are targets."""
     metadata_observables: Optional[Index] = NotImplemented
     r"""Columns of the metadata that are targets."""
-    sample_format: str = "masked"
+    sample_format: Any = "masked"  # TODO: https://github.com/python/mypy/issues/13871
 
     def __post_init__(self):
         r"""Post init."""

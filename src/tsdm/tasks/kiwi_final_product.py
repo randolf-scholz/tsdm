@@ -22,7 +22,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 from tsdm.utils.data import MappingDataset, TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
@@ -104,7 +104,7 @@ def get_time_table(
     return df
 
 
-class KIWI_FINAL_PRODUCT(BaseTask):
+class KIWI_FINAL_PRODUCT(OldBaseTask):
     r"""Forecast the final biomass or product."""
 
     KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
@@ -306,7 +306,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
             # splits[key] = Split(key[0], key[1], timeseries, metadata)
         return splits
 
-    def get_dataloader(
+    def make_dataloader(
         self,
         key: KeyType,
         /,
