@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 from abc import ABCMeta
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, MutableMapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Any
 
@@ -96,8 +96,12 @@ class ConfigMetaclass(ABCMeta):  # noqa: B024
         return dataclass(config_type, eq=False, frozen=True)  # type: ignore[call-overload]
 
 
-class Config(Mapping, metaclass=ConfigMetaclass):
+class Config(MutableMapping, metaclass=ConfigMetaclass):
     r"""Base Config."""
+
+    def __init__(self, *args, **kwargs):
+        r"""Initialize the config."""
+        self.update(*args, **kwargs)
 
     def __iter__(self) -> Iterator[str]:
         r"""Return an iterator over the keys of the dictionary."""
@@ -124,6 +128,12 @@ class Config(Mapping, metaclass=ConfigMetaclass):
         res.update(self)
         res.update(other)
         return self.__class__(**res)
+
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
+
+    def __delitem__(self, key):
+        self.__dict__.__delitem__(key)
 
 
 def flatten_dict(
