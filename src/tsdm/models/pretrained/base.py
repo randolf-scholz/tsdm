@@ -37,7 +37,7 @@ class PreTrainedMetaClass(ABCMeta):
         name: str,
         bases: tuple[type, ...],
         attributes: dict[str, Any],
-        **kwds: dict[str, Any],
+        **kwds: Any,
     ):
         super().__init__(name, bases, attributes, **kwds)
 
@@ -69,7 +69,7 @@ class PreTrainedModel(ABC, torch.nn.Module, metaclass=PreTrainedMetaClass):
     device: Optional[str | torch.device] = None
 
     def __new__(  # type: ignore[misc]
-        cls, *, initialize: bool = True, reset: bool = False, **kwds: dict[str, Any]
+        cls, *, initialize: bool = True, reset: bool = False, **kwds: Any
     ) -> torch.nn.Module:
         r"""Cronstruct the model object and initialize it."""
         self: PreTrainedModel = super().__new__(cls)
