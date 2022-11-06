@@ -36,13 +36,9 @@ def infer_categories(s: Series) -> set:
 def triplet2dense(
     df: DataFrame, cat_features: Optional[set | dict[str, set]] = None
 ) -> DataFrame:
-    r"""Convert a DataFrame in triplet format to dense format. Inverse operation of dense2triplet.
+    r"""Convert a DataFrame in triplet format to dense format. Inverse operation of `dense2triplet`.
 
-    Parameters
-    ----------
-    df: DataFrame
-    cat_features:
-        Either a set of index denoting the columns containing categorical features.
+    ``cat_features``: Either a set of index denoting the columns containing categorical features.
         In this case the categories will be inferred from data.
         Or a dictionary of sets such that a key:value pair corresponds to a column and
         all possible categories in that column. Use empty set to infer categories from data.
@@ -128,10 +124,6 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
 
 def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     r"""Convert DataFrame into masked format, returning 3 DataFrames with the same shape.
-
-    Parameters
-    ----------
-    df: DataFrame
 
     Returns
     -------

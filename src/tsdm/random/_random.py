@@ -46,10 +46,6 @@ def sample_timestamps(
         If `True`, then `start` will always be the first sampled timestamp.
     include_final: bool, default True
         If `True`, then `final` will always be the final sampled timestamp.
-
-    Returns
-    -------
-    NDArray
     """
     start_dt = Timestamp(start)
     final_dt = start_dt + Timedelta("24h") if final is None else Timestamp(final)
@@ -87,19 +83,7 @@ def sample_timedeltas(
     size: Optional[int] = None,
     freq: str | TDVar = "1s",
 ) -> NDArray:
-    r"""Create randomly sampled timedeltas.
-
-    Parameters
-    ----------
-    low:  TimeDeltaLike, optional
-    high: TimeDeltaLike, optional
-    size: int,           optional
-    freq: TimeDeltaLike, optional
-
-    Returns
-    -------
-    NDArray
-    """
+    r"""Create randomly sampled timedeltas."""
     low_dt = Timedelta(low)
     high_dt = Timedelta(high)
     freq_dt = Timedelta(freq)
@@ -122,18 +106,7 @@ def sample_timedeltas(
 def random_data(
     size: tuple[int], dtype: DTypeLike = float, missing: float = 0.5
 ) -> NDArray:
-    r"""Create random data of given size and dtype.
-
-    Parameters
-    ----------
-    size
-    dtype
-    missing
-
-    Returns
-    -------
-    NDArray
-    """
+    r"""Create random data of given size and dtype."""
     dtype = np.dtype(dtype)
     rng = np.random.default_rng()
     if np.issubdtype(dtype, np.integer):

@@ -51,16 +51,6 @@ def collate_padded(
     Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
 
     .. Signature:: ``[ (lᵢ, ...)_{i=1:B} ] -> (B, lₘₐₓ, ...)``.
-
-    Parameters
-    ----------
-    batch: list[Tensor]
-    batch_first: bool, default True
-    padding_value: float, default True
-
-    Returns
-    -------
-    Tensor
     """
     return pad_sequence(batch, batch_first=batch_first, padding_value=padding_value)
 

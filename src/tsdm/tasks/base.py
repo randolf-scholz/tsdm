@@ -609,8 +609,8 @@ class TimeSeriesCollectionTask(TorchDataset, Generic[KeyVar]):
     - time series event forecasting: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} given n
     - time series event forecasting++: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} and n
 
-    Technical Remark
-    ----------------
+    Notes
+    -----
     The option `pin_memory` of `torch.utils.data.DataLoader` recurses through
     Mappings and Sequence. However, it will cast the types. The only preserved Types are
 

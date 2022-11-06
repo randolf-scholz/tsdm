@@ -26,16 +26,6 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
 
     .. warning:: This implementation does not work 100% correctly yet!
 
-    Parameters
-    ----------
-    x: ArrayLike
-    rtol: float, default: 1e-05
-    atol: float, default: 1e-08
-
-    Returns
-    -------
-    float
-
     References
     ----------
     - https://stackoverflow.com/q/45323619/9318372
@@ -66,16 +56,10 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
 def float_gcd(x: ArrayLike) -> float:
     r"""Compute the greatest common divisor (GCD) of a list of floats.
 
-    Note that since floats are rational numbers, this is well-defined.
-
-    Parameters
-    ----------
-    x: ArrayLike
-
-    Returns
-    -------
-    float:
-        The GCD of the list
+    Note
+    ----
+    Since floats are rational numbers, this is a well-defined operation.
+    We simply convert them to rational numbers and use the standard method.
     """
     x = np.asanyarray(x)
 
@@ -109,14 +93,6 @@ def is_quasiregular(s: Series | DataFrame) -> bool:
 
     By definition, this is the case if all timedeltas are
     integer multiples of the minimal, non-zero timedelta of the series.
-
-    Parameters
-    ----------
-    s: DataFrame
-
-    Returns
-    -------
-    bool
     """
     if isinstance(s, DataFrame):
         return is_quasiregular(Series(s.index))
@@ -129,17 +105,7 @@ def is_quasiregular(s: Series | DataFrame) -> bool:
 
 
 def is_regular(s: Series | DataFrame) -> bool:
-    r"""Test if time series is regular, i.e. iff $Δt_i$ is constant.
-
-    Parameters
-    ----------
-    s: Series
-        The timestamps
-
-    Returns
-    -------
-    bool
-    """
+    r"""Test if time series is regular, i.e. iff $Δt_i$ is constant."""
     if isinstance(s, DataFrame):
         return is_regular(Series(s.index))
 
@@ -159,17 +125,6 @@ def regularity_coefficient(
 
     In particular, if the time-series is regular, $κ=1$, and if it is irregular, $κ=∞$.
     To make the time-series regular, one would have to insert an additional $(κ(𝐭)-1)|𝐭|$ data-points.
-
-    Parameters
-    ----------
-    s: Series
-    ignore_duplicates: bool
-        If `True`, data points with the same time-stamp will be treated as a single data point.
-
-    Returns
-    -------
-    k:
-        The regularity coefficient
     """
     if isinstance(s, DataFrame):
         return regularity_coefficient(Series(s.index))
@@ -186,16 +141,7 @@ def regularity_coefficient(
 
 
 def time_gcd(s: Series) -> float:
-    r"""Compute the greatest common divisor of datetime64/int/float data.
-
-    Parameters
-    ----------
-    s: Series
-
-    Returns
-    -------
-    gcd
-    """
+    r"""Compute the greatest common divisor of datetime64/int/float data."""
     Δt = np.diff(s)
     zero = np.array(0, dtype=Δt.dtype)
     Δt = Δt[Δt > zero]

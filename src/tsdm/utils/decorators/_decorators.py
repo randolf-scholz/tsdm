@@ -112,20 +112,25 @@ def decorator(deco: Callable) -> Callable:
 
     There are 3 different ways of using decorators:
 
-    1. BARE MODE
-        >>> @deco
-        ... def func(*args, **kwargs):
-        ...     # Input: func
-        ...     # Output: Wrapped Function
-    2. FUNCTIONAL MODE
-        >>> deco(func, *args, **kwargs)
-        ...     # Input: func, args, kwargs
-        ...     # Output: Wrapped Function
-    3. BRACKET MODE
-        >>> @deco(*args, **kwargs)
-        ... def func(*args, **kwargs):
-        ...     # Input: args, kwargs
-        ...     # Output: decorator with single positional argument
+    1. BARE MODE::
+
+        @deco
+        def func(*args, **kwargs):
+            # Input: func
+            # Output: Wrapped Function
+
+    2. FUNCTIONAL MODE::
+
+        deco(func, *args, **kwargs)
+            # Input: func, args, kwargs
+            # Output: Wrapped Function
+
+    3. BRACKET MODE::
+
+        @deco(*args, **kwargs)
+        def func(*args, **kwargs):
+            # Input: args, kwargs
+            # Output: decorator with single positional argument
 
     Crucially, one needs to be able to distinguish between the three modes.
     In particular, when the decorator has optional arguments, one needs to be able to distinguish
@@ -163,20 +168,25 @@ def decorator(deco: Callable) -> Callable:
     ...     func: Callable,
     ...     before: Optional[Callable]=None,
     ...     after: Optional[Callable]=None,
-    ...     /
+    ...     /,
     ... ) -> Callable:
     ...     '''Wraps function.'''
 
     Here, there is a problem:
 
     >>> @wrap_func
-    ... def func(...)
+    ... def func(x): pass
+    ...
 
     here, and also in the case of wrap_func(func), the result should be an identity operation.
     However, the other case
 
     >>> @wrap_func(before)
-    ...def func(...)
+    ... def func(x): pass
+    ...
+    Traceback (most recent call last):
+        ...
+    NameError: name 'before' is not defined
 
     the result is a wrapped function. The fundamental problem is a disambiguation between the cases.
     In either case the decorator sees as input (callable, None, None) and so it cannot distinguish
@@ -308,7 +318,7 @@ def attribute(func):
 
 @decorator
 def timefun(
-    fun: Callable[..., ReturnVar],
+    func: Callable[..., ReturnVar],
     /,
     *,
     append: bool = False,
@@ -322,26 +332,21 @@ def timefun(
 
     If the function call failed, `outputs=None` and `time_elapsed=float('nan')` are returned.
 
-    Parameters
-    ----------
-    fun: Callable
-    append: bool, default True
-        Whether to append the time result to the function call
-    loglevel: int, default logging.Warning (20)
+    If `append=True`, then the decorated function will return a tuple of the form `(func(x), time_elapsed)`.
     """
     timefun_logger = logging.getLogger("timefun")
 
-    @wraps(fun)
+    @wraps(func)
     def _timed_fun(*args, **kwargs):
         gc.collect()
         gc.disable()
         try:
             start_time = perf_counter_ns()
-            result = fun(*args, **kwargs)
+            result = func(*args, **kwargs)
             end_time = perf_counter_ns()
             elapsed = (end_time - start_time) / 10**9
             timefun_logger.log(
-                loglevel, "%s executed in %.4f s", fun.__qualname__, elapsed
+                loglevel, "%s executed in %.4f s", func.__qualname__, elapsed
             )
         except (KeyboardInterrupt, SystemExit) as E:
             raise E
@@ -350,7 +355,7 @@ def timefun(
             elapsed = float("nan")
             RuntimeWarning(f"Function execution failed with Exception {E}")
             timefun_logger.log(
-                loglevel, "%s failed with Exception %s", fun.__qualname__, E
+                loglevel, "%s failed with Exception %s", func.__qualname__, E
             )
         gc.enable()
 
@@ -381,16 +386,7 @@ def timefun(
 
 
 def trace(func: Callable[..., ReturnVar]) -> Callable[..., ReturnVar]:
-    r"""Log entering and exiting of function.
-
-    Parameters
-    ----------
-    func: Callable
-
-    Returns
-    -------
-    Callable
-    """
+    r"""Log entering and exiting of function."""
     logger = logging.getLogger("trace")
 
     @wraps(func)
@@ -446,14 +442,6 @@ def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
         model = MyModule()
 
     are (roughly?) equivalent
-
-    Parameters
-    ----------
-    base_class: type[nn.Module]
-
-    Returns
-    -------
-    type
     """
     assert issubclass(base_class, nn.Module)
 
@@ -486,25 +474,14 @@ def vectorize(
 
     The signature will change accordingly
 
-    Parameters
-    ----------
-    func: Callable[[ObjectType], ReturnType]
-    kind: type[CollectionType]
-
-    Returns
-    -------
-    Callable[[ObjectType | CollectionType], ReturnType | CollectionType]
-
     Examples
     --------
-    .. code-block:: python
-
-        @vectorize(list)
-        def f(x):
-            return x + 1
-
-        assert f(1) == 2
-        assert f(1,2) == [2,3]
+    >>> @vectorize(kind=list)
+    ... def f(x):
+    ...     return x + 1
+    ...
+    >>> assert f(1) == 2
+    >>> assert f(1,2) == [2,3]
     """
     params = list(signature(func).parameters.values())
 

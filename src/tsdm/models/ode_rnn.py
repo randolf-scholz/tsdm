@@ -24,10 +24,6 @@ from tsdm.utils import deep_dict_update
 def add_to_path(p: Path) -> Iterator:
     r"""Append path to environment variable PATH.
 
-    Parameters
-    ----------
-    p: Path
-
     References
     ----------
     - https://stackoverflow.com/a/41904558/9318372
@@ -48,16 +44,6 @@ def path_import(module_path: Path, module_name: str = None) -> ModuleType:
     ----------
     - https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
     - https://stackoverflow.com/a/41904558/9318372
-
-    Parameters
-    ----------
-    module_path: Path
-        Path to the folder where the module is located
-    module_name: str, optional
-
-    Returns
-    -------
-    ModuleType
     """
     module_name = module_name or module_path.parts[-1]
     module_init = module_path.joinpath("__init__.py")

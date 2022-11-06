@@ -104,7 +104,7 @@ class BeijingAirQuality(SingleFrameDataset):
     rawdata_files = "PRSA2017_Data_20130301-20170228.zip"
     rawdata_paths: Path
 
-    def _clean(self) -> DataFrame:
+    def clean_table(self) -> DataFrame:
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
 
         def _to_time(x):

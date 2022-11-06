@@ -316,7 +316,7 @@ class Physionet2019(SingleFrameDataset):
         frame.columns.name = "variable"
         return frame
 
-    def _clean(self) -> DataFrame:
+    def clean_table(self) -> DataFrame:
         frames = {
             key: self._get_frame(path) for key, path in self.rawdata_paths.items()
         }

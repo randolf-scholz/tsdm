@@ -9,7 +9,6 @@ import shutil
 from functools import cached_property
 from importlib import resources
 from pathlib import Path
-from typing import Any
 from zipfile import ZipFile
 
 import pandas as pd
@@ -53,7 +52,7 @@ class InSilicoData(SingleFrameDataset):
         with resources.path(examples, "in_silico.zip") as path:
             return path
 
-    def _clean(self) -> None:
+    def clean_table(self) -> None:
         with ZipFile(self.rawdata_paths) as files:
             dfs = {}
             for fname in files.namelist():
@@ -72,7 +71,7 @@ class InSilicoData(SingleFrameDataset):
         ds = ds.astype("Float32")
         return ds
 
-    def _download(self, **kwargs: Any) -> None:
+    def download_table(self) -> None:
         r"""Download the dataset."""
         with resources.path(examples, "examples/in_silico.zip") as path:
             shutil.copy(path, self.RAWDATA_DIR)

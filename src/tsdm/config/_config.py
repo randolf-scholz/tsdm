@@ -122,15 +122,6 @@ __logger__.info("Available Datasets: %s", set(DATASETS))
 def generate_folders(d: dict, current_path: Path) -> None:
     r"""Create nested folder structure based on nested dictionary index.
 
-    Parameters
-    ----------
-    current_path: Path
-    d: dict
-
-    Returns
-    -------
-    None
-
     References
     ----------
     `StackOverflow <https://stackoverflow.com/a/22058144/9318372>`_

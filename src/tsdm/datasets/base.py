@@ -395,14 +395,14 @@ class SingleFrameDataset(FrameDataset):
         return self.DATASET_DIR / (self.dataset_files or "")
 
     @abstractmethod
-    def _clean(self) -> DATASET_OBJECT | None:
+    def clean_table(self) -> DATASET_OBJECT | None:
         r"""Clean the dataset."""
 
-    def _load(self) -> DATASET_OBJECT:
+    def load_table(self) -> DATASET_OBJECT:
         r"""Load the dataset."""
         return self.deserialize(self.dataset_paths)
 
-    def _download(self) -> None:
+    def download_table(self) -> None:
         r"""Download the dataset."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
@@ -422,7 +422,7 @@ class SingleFrameDataset(FrameDataset):
             self.LOGGER.debug("Dataset files already exist!")
 
         self.LOGGER.debug("Starting to load dataset.")
-        table = self._load()
+        table = self.load_table()
         table.name = self.__class__.__name__
         self.LOGGER.debug("Finished loading dataset.")
 
@@ -444,7 +444,7 @@ class SingleFrameDataset(FrameDataset):
             self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
 
         self.LOGGER.debug("Starting to clean dataset.")
-        df = self._clean()
+        df = self.clean_table()
         if df is not None:
             self.LOGGER.info("Serializing dataset.")
             self.serialize(df, self.dataset_paths)
@@ -464,7 +464,7 @@ class SingleFrameDataset(FrameDataset):
             return
 
         self.LOGGER.debug("Starting to download dataset.")
-        self._download()
+        self.download_table()
         self.LOGGER.debug("Starting downloading dataset.")
 
         if validate:

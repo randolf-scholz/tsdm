@@ -161,23 +161,6 @@ class KIWI_RUNS_OLD(MultiFrameDataset):
     rawdata_paths: Path
     dataset_files = {key: f"{key}.parquet" for key in KEYS + auxiliaries}
 
-    # def _load(self, key: KEY = "timeseries") -> DataFrame:
-    #     r"""Load the dataset from disk."""
-    #     table = pd.read_feather(self.dataset_paths[key])
-    #
-    #     if key == "units":
-    #         return table.set_index("variable")
-    #
-    #     # fix index dtype (groupby messes it up....)
-    #     table = table.astype({"run_id": "int32", "experiment_id": "int32"})
-    #     if "measurements" in key or key == "timeseries":
-    #         table = table.set_index(["run_id", "experiment_id", "measurement_time"])
-    #         table.columns.name = "variable"
-    #     else:
-    #         table = table.set_index(["run_id", "experiment_id"])
-    #
-    #     return table
-
     def clean_table(self, key: KEY) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         with open(self.rawdata_paths, "rb") as file:

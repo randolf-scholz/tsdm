@@ -70,10 +70,6 @@ class MappingDataset(Dataset, Mapping):
         df: DataFrame
         levels: Optional[list[str]]
             If given, the selected levels from the DataFrame's MultiIndex are used as keys.
-
-        Returns
-        -------
-        MappingDataset
         """
         if levels is not None:
             min_index = df.index.to_frame()

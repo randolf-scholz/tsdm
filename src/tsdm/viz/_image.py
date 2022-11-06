@@ -9,7 +9,7 @@ from typing import Literal
 
 import numpy as np
 import torch
-from matplotlib import cm
+from matplotlib import cm, colors
 from numpy.typing import NDArray
 from torch import Tensor
 
@@ -18,7 +18,7 @@ from torch import Tensor
 def kernel_heatmap(
     kernel: NDArray | Tensor,
     fmt: Literal["HWC", "CHW"] = "HWC",
-    cmap: str = "seismic",
+    cmap: colors.Colormap = "seismic",
 ) -> NDArray:
     r"""Create heatmap of given matrix.
 
@@ -27,17 +27,7 @@ def kernel_heatmap(
     By default, the data is linearly transformed to a normal distribution $𝓝(½,⅙)$,
     which ensures that 99.7% of the data lies in the interval $[0,1]$, and then clipped.
 
-    Parameters
-    ----------
-    kernel: NDArray or Tensor
-    fmt: Literal["HWC", "CHW"] = "HWC"
-        Whether to put channels first or last.
-    cmap: str = "seismic"
-        The colormap.
-
-    Returns
-    -------
-    NDArray
+    Use `fmt` to specify whether the input is height×width×channels or channels×height×width.
     """
     # This transformation is chosen because by the 68–95–99.7 rule,
     # for k=6=2⋅3 roughly 99.7% of the probability mass will lie in the interval [0, 1]

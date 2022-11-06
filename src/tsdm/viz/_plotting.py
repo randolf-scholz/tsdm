@@ -135,26 +135,9 @@ def shared_grid_plot(
 ) -> tuple[Figure, NDArray[Axes]]:
     r"""Create a compute_grid plot with shared axes and row/col headers.
 
-    Based on https://stackoverflow.com/a/25814386/9318372
-
-    Parameters
+    References
     ----------
-    data: ArrayLike
-    plot_func
-        With signature ``plot_func(data, ax=)``.
-    plot_kwargs
-    titles
-    row_headers
-    col_headers
-    xlabels
-    ylabels
-    subplots_kwargs
-        Default arguments: `tight_layout=True`, `sharex='col'`, `sharey='row'`
-
-    Returns
-    -------
-    Figure
-    Axes
+    https://stackoverflow.com/a/25814386/9318372
     """
     array = np.array(data)
 
@@ -272,10 +255,6 @@ def plot_spectrum(
         Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
     scatter_kwargs: Optional[dict] = None
         Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
-
-    Returns
-    -------
-    Figure
     """
     axis_kwargs = {
         "xlim": (-2.5, +2.5),
