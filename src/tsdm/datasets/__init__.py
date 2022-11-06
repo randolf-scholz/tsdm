@@ -5,8 +5,8 @@ Implement your own by subclassing `BaseDataset`
 Basic Usage
 -----------
 
->>>    from tsdm.datasets import Electricity
->>>    dataset = Electricity()
+>>> from tsdm.datasets import InSilicoData
+>>> dataset = InSilicoData()
 
 Some design decisions:
 

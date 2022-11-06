@@ -98,16 +98,7 @@ class ReZero(nn.Sequential):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r"""Forward pass.
-
-        Parameters
-        ----------
-        x: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r"""Forward pass."""
         for k, block in enumerate(self):
             x = x + self.weights[k] * block(x)
         return x

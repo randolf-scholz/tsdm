@@ -64,14 +64,11 @@ def validate_hash(fname: str, hash_value: str, hash_type: str = "sha256") -> boo
 def to_base(n: int, b: int) -> list[int]:
     r"""Convert non-negative integer to any basis.
 
+    The result satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
+
     References
     ----------
     - https://stackoverflow.com/a/28666223/9318372
-
-    Returns
-    -------
-    digits: list[int]
-        Satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
     """
     digits = []
     while n:

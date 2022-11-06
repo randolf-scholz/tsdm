@@ -144,7 +144,7 @@ class ETT_Zhou2021(OldBaseTask):
         # Fit the Preprocessors
         self.preprocessor.fit(self.splits["train"])
         # Set the Encoder
-        # self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
+        # self.pre_encoder = initialize_from_table(ENCODERS, __name__=pre_encoder)
 
     @cached_property
     def dataset(self) -> DataFrame:

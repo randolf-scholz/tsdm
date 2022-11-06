@@ -129,7 +129,7 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset[KEY]):
         # return NotImplemented
         return pd.read_parquet(self.dataset_paths[key])
 
-    def download_table(self, **kwargs):
+    def download_table(self, **_):
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."

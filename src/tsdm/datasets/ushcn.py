@@ -231,10 +231,6 @@ class USHCN(MultiFrameDataset[KEY]):
     }
     rawdata_paths: dict[str, Path]
 
-    # def _load(self, key: KEY = "us_daily", **kwargs: Any) -> DataFrame:
-    #     r"""Load the dataset from disk."""
-    #     return super()._load(key=key, **kwargs)
-
     def clean_table(self, key: KEY = "us_daily") -> DataFrame:
         r"""Create the DataFrames.
 

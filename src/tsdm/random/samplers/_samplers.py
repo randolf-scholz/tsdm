@@ -62,17 +62,6 @@ def compute_grid(
 
     That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
     Special case: if $Δt=0$, returns $[0]$.
-
-    Parameters
-    ----------
-    tmin
-    tmax
-    timedelta
-    offset
-
-    Returns
-    -------
-    list[int]
     """
     # cast strings to timestamp/timedelta
     tmin = cast(DTVar, Timestamp(tmin) if isinstance(tmin, str) else tmin)

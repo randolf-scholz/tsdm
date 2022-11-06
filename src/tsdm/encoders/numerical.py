@@ -536,14 +536,8 @@ class TensorConcatenator(BaseEncoder):
 class BoundaryEncoder(BaseEncoder):
     r"""Clip or mask values outside a given range.
 
-    Parameters
-    ----------
-    lower : lower bound - scalar or array-like
-    upper : upper bound - scalar or array-like
-    mode: str
-        'clip': clip to boundary
-        'mask': mask values outside of boundary with nan
-    axis: int | tuple[..., int]
+    If `mode='mask'`, then values outside the boundary will be replaced by `NA`.
+    If `mode='clip'`, then values outside the boundary will be clipped to it.
     """
 
     lower: float | np.ndarray

@@ -95,6 +95,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
         forecasting_horizon: int = 24,
         observation_horizon: int = 96,
     ):
+        super().__init__()
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon

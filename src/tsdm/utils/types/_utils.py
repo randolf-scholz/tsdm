@@ -103,17 +103,7 @@ r"""Matched pairs of values that correspond to booleans."""
 
 
 def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:
-    r"""Return unique values, excluding nan.
-
-    Parameters
-    ----------
-    series: Series
-    ignore_nan: bool = True
-
-    Returns
-    -------
-    Series
-    """
+    r"""Return unique values, excluding nan."""
     if ignore_nan:
         mask = pandas.notna(series)
         series = series[mask]
@@ -121,17 +111,7 @@ def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:
 
 
 def string_is_bool(series: Series, /, *, uniques: Optional[Series] = None) -> bool:
-    r"""Test if 'string' series could possibly be boolean.
-
-    Parameters
-    ----------
-    series: Series
-    uniques: Optional[Series]
-
-    Returns
-    -------
-    bool
-    """
+    r"""Test if 'string' series could possibly be boolean."""
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
     values = get_uniques(series) if uniques is None else uniques
 
@@ -143,17 +123,7 @@ def string_is_bool(series: Series, /, *, uniques: Optional[Series] = None) -> bo
 
 
 def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
-    r"""Convert Series to nullable boolean.
-
-    Parameters
-    ----------
-    series: Series
-    uniques: Optional[Series]
-
-    Returns
-    -------
-    bool
-    """
+    r"""Convert Series to nullable boolean."""
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
     mask = pandas.notna(series)
     values = get_uniques(series[mask]) if uniques is None else uniques
@@ -166,17 +136,7 @@ def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
 
 
 def numeric_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
-    r"""Test if 'numeric' series could possibly be boolean.
-
-    Parameters
-    ----------
-    series: Series
-    uniques: Optional[Series]
-
-    Returns
-    -------
-    bool
-    """
+    r"""Test if 'numeric' series could possibly be boolean."""
     assert pandas.api.types.is_numeric_dtype(series), "Series must be 'numeric' dtype!"
     values = get_uniques(series) if uniques is None else uniques
     if len(values) == 0 or len(values) > 2:
@@ -185,17 +145,7 @@ def numeric_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
 
 
 def float_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
-    r"""Check whether float encoded column holds only integers.
-
-    Parameters
-    ----------
-    series: Series
-    uniques: Optional[Series] = None
-
-    Returns
-    -------
-    bool
-    """
+    r"""Check whether float encoded column holds only integers."""
     assert pandas.api.types.is_float_dtype(series), "Series must be 'float' dtype!"
     values = get_uniques(series) if uniques is None else uniques
     return cast(bool, values.apply(float.is_integer).all())

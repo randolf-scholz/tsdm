@@ -115,6 +115,7 @@ types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 types-urllib3 = ">=1.26"
 wheel = ">=0.38"
+pygments = ">=2.11"
 
 
 [tool.poetry.scripts]

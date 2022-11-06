@@ -35,10 +35,6 @@ def folds_from_groups(
         E.g. ``folds_from_groups(groups, train=7, valid=2, test=1)`` uses 7/10 of the
         samples for training, 2/10 for validation and 1/10 for testing.
 
-    Returns
-    -------
-    folds: FOLDS
-
     This is useful, when the data needs to be grouped, e.g. due to replicate experiments.
     Simply use `pandas.groupby` and pass the result to this function.
     """

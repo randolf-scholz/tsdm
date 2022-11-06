@@ -17,19 +17,7 @@ from tsdm.utils.types import TensorVar
 def apply_along_axes(
     a: TensorVar, b: TensorVar, op: Callable, axes: tuple[int, ...]
 ) -> TensorVar:
-    r"""Apply a function to multiple axes of a tensor.
-
-    Parameters
-    ----------
-    a: Tensor
-    b: Tensor
-    op: Callable
-    axes: tuple[int, ...]
-
-    Returns
-    -------
-    Tensor
-    """
+    r"""Apply a function to multiple axes of a tensor."""
     axes = tuple(axes)
     rank = len(a.shape)
     source = tuple(range(rank))
