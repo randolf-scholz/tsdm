@@ -200,7 +200,7 @@ def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
     return d
 
 
-def deep_kval_update(d: dict, **new_kvals: dict) -> dict:
+def deep_kval_update(d: dict, **new_kvals: Any) -> dict:
     r"""Update nested dictionary recursively in-place with key-value pairs.
 
     Reference: https://stackoverflow.com/a/30655448/9318372

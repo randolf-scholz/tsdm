@@ -50,7 +50,7 @@ class ConfigMetaclass(ABCMeta):  # noqa: B024
         name: str,
         bases: tuple[type, ...],
         attrs: dict[str, Any],
-        **kwds: dict[str, Any],
+        **kwds: Any,
     ) -> type:
         r"""Create a new class, patch in dataclass fields, and return it."""
         if "__annotations__" not in attrs:

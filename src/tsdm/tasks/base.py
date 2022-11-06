@@ -335,7 +335,7 @@ class BaseTask2(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         self,
         key: KeyVar,
         /,
-        **dataloader_kwargs: dict[str, Any],
+        **dataloader_kwargs: Any,
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split."""
         dataset = self.splits[key]
