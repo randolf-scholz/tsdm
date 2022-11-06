@@ -59,7 +59,7 @@ POSITIONAL_OR_KEYWORD = inspect.Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD = inspect.Parameter.VAR_KEYWORD
 VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
 EMPTY = inspect.Parameter.empty
-Kind = inspect._ParameterKind
+Kind = inspect._ParameterKind  # pylint: disable=protected-access
 
 EMPTY_PATH: Path = Path()
 r"""Constant: Blank path."""

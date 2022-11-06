@@ -421,13 +421,15 @@ class SingleFrameDataset(FrameDataset):
         else:
             self.LOGGER.debug("Dataset files already exist!")
 
-        if validate:
-            self.validate(self.dataset_paths, reference=self.DATASET_HASH)
-
         self.LOGGER.debug("Starting to load dataset.")
-        ds = self._load()
+        table = self._load()
+        table.name = self.__class__.__name__
         self.LOGGER.debug("Finished loading dataset.")
-        return ds
+
+        if validate:
+            self.validate(table, reference=self.TABLE_HASH)
+
+        return table
 
     def clean(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
