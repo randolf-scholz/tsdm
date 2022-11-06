@@ -65,7 +65,7 @@ class ODE_RNN(BaseModel, nn.Module):
         Batch size
     classif_per_tp: bool, default False
     concat_mask: bool, default True
-    device: torch.device, default 'cpu'
+    device: `torch.device`, default 'cpu'
     input_dim: int
         dimensionality of input
     lr: float, default 1e-2

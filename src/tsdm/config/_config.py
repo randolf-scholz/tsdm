@@ -46,7 +46,7 @@ r"""Path to the current file."""
 class Config:
     r"""Configuration Interface."""
 
-    # TODO: Should be initialized by a init/toml file.
+    # TODO: Should be initialized by an init/toml file.
     _autojit: bool = True
     __name__ = NAME
     __file__ = FILE

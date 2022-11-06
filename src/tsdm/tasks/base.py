@@ -188,7 +188,7 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         r"""Cache dictionary of dataset slices."""
 
     @abstractmethod
-    def get_dataloader(
+    def make_dataloader(
         self,
         key: KeyVar,
         /,
@@ -219,11 +219,11 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         }
 
         return LazyDict(
-            {key: (self.get_dataloader, kwargs | {"key": key}) for key in self.splits}
+            {key: (self.make_dataloader, kwargs | {"key": key}) for key in self.splits}
         )
 
 
-class BaseTask2(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
+class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).

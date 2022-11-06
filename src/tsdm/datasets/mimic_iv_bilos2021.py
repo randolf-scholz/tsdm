@@ -64,7 +64,7 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
 
         # self.validate_filehash(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
-        table = pyarrow.csv.read_csv(self.rawdata_paths)
+        table: pyarrow.Table = pyarrow.csv.read_csv(self.rawdata_paths)
         ts = table.to_pandas(self_destruct=True)
 
         if ts.shape != self.RAWDATA_SHAPE:
