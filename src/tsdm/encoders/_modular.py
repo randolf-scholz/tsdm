@@ -38,10 +38,10 @@ from tsdm.utils.types.protocols import NTuple
 BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
 
 ColumnEncoderVar = TypeVar(
-    "ColumnEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
+    "ColumnEncoderVar", bound=BaseEncoder | Mapping[Any, BaseEncoder]
 )
 IndexEncoderVar = TypeVar(
-    "IndexEncoderVar", bound=None | BaseEncoder | Mapping[Any, BaseEncoder]
+    "IndexEncoderVar", bound=BaseEncoder | Mapping[Any, BaseEncoder]
 )
 # ColumnEncoderVar = TypeVar("ColumnEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
 # IndexEncoderVar = TypeVar("IndexEncoderVar", BaseEncoder, Mapping[Any, BaseEncoder])
@@ -313,9 +313,9 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
 
     def __init__(
         self,
-        column_encoders: ColumnEncoderVar = None,
+        column_encoders: Optional[ColumnEncoderVar] = None,
         *,
-        index_encoders: IndexEncoderVar = None,
+        index_encoders: Optional[IndexEncoderVar] = None,
         duplicate: bool = False,
     ):
         super().__init__()

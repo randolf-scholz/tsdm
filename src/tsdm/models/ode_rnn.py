@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
+from typing import Optional
 
 import torch
 from torch import nn
@@ -37,7 +38,7 @@ def add_to_path(p: Path) -> Iterator:
         sys.path = old_path
 
 
-def path_import(module_path: Path, module_name: str = None) -> ModuleType:
+def path_import(module_path: Path, module_name: Optional[str] = None) -> ModuleType:
     r"""Return python module imported from path.
 
     References

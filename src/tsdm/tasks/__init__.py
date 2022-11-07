@@ -33,7 +33,7 @@ __all__ = [
     "TASKS",
     # Classes
     "OldBaseTask",
-    "TimeSeriesDatasetTask",
+    "TimeSeriesTaskDataset",
     "TimeSeriesCollectionTask",
     # Tasks
     "ETT_Zhou2021",
@@ -50,7 +50,7 @@ __all__ = [
 from typing import Final, TypeAlias
 
 from tsdm.tasks import base
-from tsdm.tasks.base import OldBaseTask, TimeSeriesCollectionTask, TimeSeriesDatasetTask
+from tsdm.tasks.base import OldBaseTask, TimeSeriesCollectionTask, TimeSeriesTaskDataset
 from tsdm.tasks.electricity_lim2021 import ElectricityLim2021
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask

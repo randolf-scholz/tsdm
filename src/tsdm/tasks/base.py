@@ -86,7 +86,7 @@ from __future__ import annotations
 __all__ = [
     # Classes
     "OldBaseTask",
-    "TimeSeriesDatasetTask",
+    "TimeSeriesTaskDataset",
     "TimeSeriesCollectionTask",
 ]
 
@@ -96,7 +96,16 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
-from typing import Any, ClassVar, Generic, Literal, NamedTuple, Optional, TypeAlias
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    Literal,
+    NamedTuple,
+    Optional,
+    TypeAlias,
+    TypeVar,
+)
 
 from pandas import NA, DataFrame, Index, Series
 from torch import Tensor
@@ -111,6 +120,8 @@ from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 from tsdm.utils.types import KeyVar
 
 TimeSlice: TypeAlias = Index | slice | list
+
+SampleType = TypeVar("SampleType", covariant=True)
 
 
 class BaseTaskMetaClass(ABCMeta):
@@ -385,24 +396,34 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         return LazyDict({k: self.make_dataloader for k in self.splits})
 
 
-class EasyTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
+class EasyTask(ABC, Generic[KeyVar, SampleType], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
-    A task is a combination of a dataset and an evaluation protocol (EVP).
+    A task has the following responsibilities:
 
-    The DataLoader will return batches of data consisting of tuples of the form:
-    `(inputs, targets)`. The model will be trained on the inputs, and the targets
-    will be used to evaluate the model.
-    That is, the model must product an output of the same shape and data type of the targets.
+    - Provide a dataset
+        - All splits should be derived from the same dataset
+    - Provide splits of the dataset, usually one of the following:
+        - train, test
+        - train, validation, test
+        - cross-validation + train/(valid)/test: (0, train), (0, test), ..., (n, train), (n, test)
+        - nested cross-validation: (0, 0), (0, 1), ..., (0, n), (1, 0), ..., (n, n)
+    - Provide a metric for evaluation
+        - must be of the form `Callable[[target, prediction], Sclar]`
+    - Provide a `torch.utils.data.DataLoader` for each split
+        - Provide a `torch.utils.data.Dataset` for each split
+            - Dataset should return `Sample` objects providing `Sample.Inputs` and `Sample.Targets`.
+        - Provide a `torch.utils.data.Sampler` for each split
+            - Sampler should return indices into the dataset
 
-    Attributes
-    ----------
-    train_batch_size: int, default 32
-        Default batch-size used by batchloader.
-    eval_batch_size: int, default 128
-        Default batch-size used by dataloaders (for evaluation).
-    dataset: Dataset
-        The attached dataset
+    To make this simpler, we here first consider the `Mapping` interface, i.e.
+    Samplers are all of fixed sized. and the dataset is a `Mapping` type.
+    We do not support `torch.utils.data.IterableDataset`, as this point.
+
+    Note:
+        - `torch.utils.data.Dataset[T_co]` implements `__getitem__` and `__add__`.
+        - `torch.utils.data.Sampler[T_co]` implements `__iter__`.
+        - `torch.utils.data.DataLoader[T_co]` implements `__iter__` and `__len__`.
     """
 
     # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
@@ -431,20 +452,28 @@ class EasyTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         "collate_fn": lambda x: x,
     }
 
-    splits: Mapping[KeyVar, TorchDataset]
+    splits: Mapping[KeyVar, TorchDataset[SampleType]]
     samplers: Mapping[KeyVar, TorchSampler]
 
     def __init__(
         self,
-        dataset: Mapping[KeyVar, TorchDataset],
-        sampler: Mapping[KeyVar, TorchSampler],
-        splits: Sequence[KeyVar],
-        dataloader_config_train: dict[str, Any],
-        **dataloader_kwargs: Any,
-    ):
+        *,
+        dataset: TorchDataset[SampleType],
+        samplers: Mapping[KeyVar, TorchSampler],
+        splits: Mapping[KeyVar, TorchDataset],
+        test_metric: Callable[[Any, Any], Any],
+        dataloader_config_train: Optional[dict[str, Any]] = None,
+        dataloader_config_infer: Optional[dict[str, Any]] = None,
+        dataloader_kwargs: dict[str, Any],
+    ) -> None:
         r"""Initialize the task object."""
-        self.dataloader_config_train |= dataloader_kwargs
-        self.dataloader_config_infer |= dataloader_kwargs
+        if dataloader_config_train is not None:
+            self.dataloader_config_train |= dataloader_config_train
+        if dataloader_config_infer is not None:
+            self.dataloader_config_infer |= dataloader_config_infer
+        self.dataset = dataset
+        self.splits = splits
+        self.samplers = samplers
 
     @cached_property
     def dataloader_configs(self) -> dict[str, dict[str, Any]]:
@@ -559,7 +588,7 @@ class Sample(NamedTuple):
 
 
 @dataclass
-class TimeSeriesDatasetTask(TorchDataset):
+class TimeSeriesTaskDataset(TorchDataset):
     r"""Creates samples from a TimeSeriesDataset."""
 
     dataset: TimeSeriesDataset
