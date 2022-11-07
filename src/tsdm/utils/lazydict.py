@@ -129,13 +129,13 @@ class LazyDict(dict[KeyVar, ObjectVar]):
                     case _:
                         raise TypeError(f"Function {value} requires {nargs} arguments.")
             case [Callable()]:  # type: ignore[misc]
-                return LazyDict._make_lazy_function(key, value[0])  # type: ignore[unreachable]
+                return LazyDict._make_lazy_function(key, value[0])  # type: ignore[index]
             case Callable(), tuple():  # type: ignore[misc]
-                return LazyFunction(func=value[0], args=value[1])  # type: ignore[unreachable]
+                return LazyFunction(func=value[0], args=value[1])  # type: ignore[index, arg-type, misc]
             case Callable(), dict():  # type: ignore[misc]
-                return LazyFunction(func=value[0], kwargs=value[1])  # type: ignore[unreachable]
+                return LazyFunction(func=value[0], kwargs=value[1])  # type: ignore[index, arg-type, misc]
             case Callable(), tuple(), dict():  # type: ignore[misc]
-                return LazyFunction(value[0], args=value[1], kwargs=value[2])  # type: ignore[unreachable]
+                return LazyFunction(value[0], args=value[1], kwargs=value[2])  # type: ignore[index,  arg-type, misc]
             case _:
                 return LazyFunction(lambda: value)
 

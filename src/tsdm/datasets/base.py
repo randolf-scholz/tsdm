@@ -639,7 +639,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     def load(
         self,
         *,
-        key: KeyVar = None,
+        key: Optional[KeyVar] = None,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
@@ -693,7 +693,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
         return self.dataset[key]
 
-    def download_table(self, key: KeyVar = None) -> None:
+    def download_table(self, key: Optional[KeyVar] = None) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
