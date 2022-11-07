@@ -90,6 +90,7 @@ pycodestyle = ">=2.9"
 pydata-sphinx-theme = ">=0.10"
 pydeps = ">=1.10"
 pydocstyle = ">=6.1"
+pygments = ">=2.11"
 pylint = ">=2.15"
 pylint-gitlab = ">=1.1"
 pyre-check = ">=0.9"
@@ -115,7 +116,6 @@ types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 types-urllib3 = ">=1.26"
 wheel = ">=0.38"
-pygments = ">=2.11"
 
 
 [tool.poetry.scripts]
