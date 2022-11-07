@@ -116,6 +116,7 @@ types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 types-urllib3 = ">=1.26"
 wheel = ">=0.38"
+slotscheck = "^0.16.0"
 
 
 [tool.poetry.scripts]

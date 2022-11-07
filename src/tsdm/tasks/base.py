@@ -239,7 +239,8 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         The attached dataset
     """
 
-    # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
+    # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
+    __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger]
     r"""Class specific logger instance."""
@@ -263,6 +264,9 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         "pin_memory": True,
         "collate_fn": lambda x: x,
     }
+
+    def __init__(self, **dataloader_kwargs: Any):
+        r"""Initialize the task object."""
 
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""
