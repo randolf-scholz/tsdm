@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 from torch import nn
@@ -155,7 +155,7 @@ class ODE_RNN(BaseModel, nn.Module):
         r"""TODO: add docstring."""
         return super(ODE_RNN, cls).__new__(*args, **kwargs)
 
-    def __init__(self, **HP):
+    def __init__(self, **HP: Any) -> None:
         r"""Initialize the internal ODE-RNN model."""
         super().__init__()
         # TODO: Use tsdm.home_path or something

@@ -121,7 +121,7 @@ class ElectricityLim2021(OldBaseTask):
     r"""Type Hint for index."""
     preprocessor: BaseEncoder
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.observation_period = pd.Timedelta("7d")
         self.forecasting_period = pd.Timedelta("1d")

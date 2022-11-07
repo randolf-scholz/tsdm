@@ -3,6 +3,8 @@ r"""Submodule containing general purpose decorators.
 #TODO add module description.
 """
 
+from __future__ import annotations
+
 __all__ = [
     # Classes
     # Functions
@@ -29,7 +31,7 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, signature
 from time import perf_counter_ns
-from typing import Any, Optional, overload
+from typing import Any, Optional, cast, overload
 
 from torch import jit, nn
 
@@ -78,11 +80,11 @@ class DecoratorError(Exception):
     message: str = ""
     r"""Default message to print."""
 
-    def __call__(self, *message_lines):
+    def __call__(self, *message_lines: str) -> DecoratorError:
         r"""Raise a new error."""
         return DecoratorError(self.decorated, message="\n".join(message_lines))
 
-    def __str__(self):
+    def __str__(self) -> str:
         r"""Create Error Message."""
         sign = signature(self.decorated)
         max_key_len = max(9, max(len(key) for key in sign.parameters))
@@ -294,7 +296,7 @@ def decorator(deco: Callable) -> Callable:
     return _parametrized_decorator
 
 
-def attribute(func):
+def attribute(func: Callable[[ObjectVar], ReturnVar]) -> ReturnVar:
     r"""Create decorator that converts method to attribute."""
 
     @wraps(func, updated=())
@@ -302,7 +304,7 @@ def attribute(func):
         __slots__ = ("func", "payload")
         sentinel = object()
 
-        def __init__(self, function):
+        def __init__(self, function: Callable) -> None:
             self.func = function
             self.payload = self.sentinel
 
@@ -313,7 +315,7 @@ def attribute(func):
                 self.payload = self.func(obj)
             return self.payload
 
-    return _attribute(func)
+    return cast(ReturnVar, _attribute(func))
 
 
 @decorator

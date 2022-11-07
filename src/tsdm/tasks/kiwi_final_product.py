@@ -6,7 +6,8 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
@@ -326,12 +327,11 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         return DataLoader(dataset, sampler=sampler, **kwargs)
 
 
+@dataclass
 class _Dataset(torch.utils.data.Dataset):
-    def __init__(self, ts, md, observables):
-        super().__init__()
-        self.timeseries = ts
-        self.metadata = md
-        self.observables = observables
+    timeseries: DataFrame
+    metadata: DataFrame
+    observables: Sequence[str]
 
     def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""
@@ -420,7 +420,7 @@ class _Dataset(torch.utils.data.Dataset):
 #     metadata: Any
 #     targets: Any
 #
-#     def __repr__(self):
+#     def __repr__(self) -> str:
 #         return repr_namedtuple(self)
 
 
@@ -432,5 +432,5 @@ class _Dataset(torch.utils.data.Dataset):
 #     timeseries: Tensor
 #     metadata: Tensor
 #
-#     def __repr__(self):
+#     def __repr__(self) -> str:
 #         return repr_namedtuple(self)

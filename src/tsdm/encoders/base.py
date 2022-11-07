@@ -31,7 +31,7 @@ from tsdm.utils.types import KeyVar, ObjectVar
 class BaseEncoderMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args, **kwargs):
+    def __init__(cls, *args: Any, **kwargs: Any) -> None:
         cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
         super().__init__(*args, **kwargs)
 
@@ -108,11 +108,11 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
         r"""Implement as necessary."""
 
     @abstractmethod
-    def encode(self, data, /):
+    def encode(self, data: Any, /) -> Any:
         r"""Encode the data by transformation."""
 
     @abstractmethod
-    def decode(self, data, /):
+    def decode(self, data: Any, /) -> Any:
         r"""Decode the data by inverse transformation."""
 
     def _post_fit_hook(self) -> None:
@@ -270,12 +270,12 @@ class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
             encoder.fit(data)
             data = encoder.encode(data)
 
-    def encode(self, data, /):
+    def encode(self, data: Any, /) -> Any:
         for encoder in reversed(self.encoders):
             data = encoder.encode(data)
         return data
 
-    def decode(self, data, /):
+    def decode(self, data: Any, /) -> Any:
         for encoder in self.encoders:
             data = encoder.decode(data)
         return data

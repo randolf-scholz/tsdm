@@ -55,7 +55,7 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
     rawdata_paths: Path
     index = ["timeseries"]
 
-    def clean_table(self):
+    def clean_table(self) -> None:
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."
@@ -87,7 +87,7 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
         ts = ts.astype("float32")
         ts.to_parquet(self.dataset_paths)
 
-    def download_table(self):
+    def download_table(self) -> None:
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."

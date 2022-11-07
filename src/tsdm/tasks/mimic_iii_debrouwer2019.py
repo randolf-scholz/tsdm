@@ -190,7 +190,7 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
     test_size = 0.1  # of total
     valid_size = 0.2  # of train, i.e. 0.9*0.2 = 0.18
 
-    def __init__(self, normalize_time: bool = True):
+    def __init__(self, *, normalize_time: bool = True) -> None:
         super().__init__()
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["UNIQUE_ID"].unique()
@@ -232,7 +232,7 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
         return folds
 
     @cached_property
-    def split_idx(self):
+    def split_idx(self) -> DataFrame:
         r"""Create the split index."""
         fold_idx = Index(list(range(len(self.folds))), name="fold")
         splits = DataFrame(index=self.IDs, columns=fold_idx, dtype="string")

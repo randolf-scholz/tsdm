@@ -22,6 +22,7 @@ import os
 import subprocess
 from getpass import getpass
 from pathlib import Path
+from typing import Any
 
 from tsdm.datasets.base import MultiFrameDataset
 
@@ -93,10 +94,10 @@ class MIMIC_III(MultiFrameDataset):
 
     KEYS = list(dataset_files.keys())
 
-    def clean_table(self, key):
+    def clean_table(self, key: str) -> None:
         raise NotImplementedError
 
-    def download_table(self, **_):
+    def download_table(self, **_: Any) -> None:
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)

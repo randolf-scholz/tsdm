@@ -324,61 +324,6 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
 
         return (data - ymin) / scale + xmin
 
-    # @singledispatchmethod
-    # def fit(self, data: Union[Tensor, np.ndarray], /) -> None:
-    #     r"""Compute the min and max."""
-    #     return self.fit(np.asarray(data))
-    #
-    # @fit.register(Tensor)
-    # def _(self, data: Tensor) -> Tensor:
-    #     r"""Compute the min and max."""
-    #     mask = torch.isnan(data)
-    #     self.xmin = torch.min(
-    #         torch.where(mask, torch.tensor(float("+inf")), data), dim=self.axis
-    #     )
-    #     self.xmax = torch.max(
-    #         torch.where(mask, torch.tensor(float("-inf")), data), dim=self.axis
-    #     )
-    #     self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-
-    # @encode.register(Tensor)  # type: ignore[no-redef]
-    # def _(self, data: Tensor) -> Tensor:
-    #     r"""Encode the input."""
-    #     return self.scale * (data - self.xmin) + self.ymin
-    #
-    # @encode.register(Tensor)  # type: ignore[no-redef]
-    # def _(self, data: NDArray) -> NDArray:
-    #     r"""Encode the input."""
-    #     return self.scale * (data - self.xmin) + self.ymin
-
-    # @singledispatchmethod
-
-    # @decode.register(Tensor)  # type: ignore[no-redef]
-    # def _(self, data, /):
-    #     r"""Decode the input."""
-    #     return (1 / self.scale) * (data - self.ymin) + self.xmin
-    #
-    # @decode.register(Tensor)  # type: ignore[no-redef]
-    # def _(self, data, /):
-    #     r"""Decode the input."""
-    #     return (1 / self.scale) * (data - self.ymin) + self.xmin
-
-    # def fit(self, data, /) -> None:
-    #     r"""Compute the min and max."""
-    #     data = np.asarray(data)
-    #     self.xmax = np.nanmax(data, axis=self.axis)
-    #     self.xmin = np.nanmin(data, axis=self.axis)
-    #     print(self.xmax, self.xmin)
-    #     self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-    #
-    # def encode(self, data, /):
-    #     r"""Encode the input."""
-    #     return self.scale * (data - self.xmin) + self.ymin
-    #
-    # def decode(self, data, /):
-    #     r"""Decode the input."""
-    #     return (1 / self.scale) * (data - self.ymin) + self.xmin
-
 
 class LogEncoder(BaseEncoder):
     r"""Encode data on logarithmic scale.
@@ -415,7 +360,7 @@ class FloatEncoder(BaseEncoder):
     dtypes: Series = None
     r"""The original dtypes."""
 
-    def __init__(self, dtype: str = "float32"):
+    def __init__(self, dtype: str = "float32") -> None:
         self.target_dtype = dtype
         super().__init__()
 
@@ -545,14 +490,21 @@ class BoundaryEncoder(BaseEncoder):
     mode: Literal["mask", "clip"] = "mask"
     _nan: float = np.nan
 
-    def __init__(self, lower, upper, mode="mask", axis=-1):
+    def __init__(
+        self,
+        lower: float | np.ndarray,
+        upper: float | np.ndarray,
+        *,
+        mode: Literal["mask", "clip"] = "mask",
+        axis: int | tuple[int, ...] = -1,
+    ) -> None:
         super().__init__()
         self.lower = lower
         self.upper = upper
         self.axis = axis
         self.mode = mode
 
-    def fit(self, data):
+    def fit(self, data: DataFrame) -> None:
         # TODO: make _nan adapt to real data type!
         if isinstance(data, Series | DataFrame):
             self._nan = NA
@@ -631,13 +583,13 @@ class BoxCoxEncoder(BaseEncoder):
         if (a, b) == (-np.sqrt(3), +np.sqrt(3)):
             C = 1.0
 
-            def integrate_quantile(q):
+            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
                 return np.sqrt(3) * q * (q - 1)
 
         else:
             C = (a**2 + a * b + b**2) / 3
 
-            def integrate_quantile(q):
+            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
                 return a * q + (b - a) * q**2 / 2
 
         mask = np.isnan(x)
@@ -673,13 +625,13 @@ class BoxCoxEncoder(BaseEncoder):
         if (μ, σ) == (0, 1):
             C = 1.0
 
-            def integrate_quantile(q):
+            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
                 return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
 
         else:
             C = μ**2 + σ**2
 
-            def integrate_quantile(q):
+            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
                 return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
 
         mask = np.isnan(x)
@@ -815,13 +767,13 @@ class LogitBoxCoxEncoder(BaseEncoder):
         if (a, b) == (-np.sqrt(3), +np.sqrt(3)):
             C = 1.0
 
-            def integrate_quantile(q):
+            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
                 return np.sqrt(3) * q * (q - 1)
 
         else:
             C = (a**2 + a * b + b**2) / 3
 
-            def integrate_quantile(q):
+            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
                 return a * q + (b - a) * q**2 / 2
 
         mask = np.isnan(x)
@@ -857,13 +809,13 @@ class LogitBoxCoxEncoder(BaseEncoder):
         if (μ, σ) == (0, 1):
             C = 1.0
 
-            def integrate_quantile(q):
+            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
                 return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
 
         else:
             C = μ**2 + σ**2
 
-            def integrate_quantile(q):
+            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
                 return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
 
         mask = np.isnan(x)

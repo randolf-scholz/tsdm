@@ -10,6 +10,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
@@ -53,7 +54,7 @@ class KiwiForecastingTask(TimeSeriesTaskDataset):
     ]
     sample_format = ("masked", "masked")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         ds = KIWI()
         super().__init__(ds, **kwargs)
 
@@ -329,14 +330,14 @@ class KIWI_RUNS_TASK(OldBaseTask):
         return DataLoader(dataset, sampler=sampler, **kwargs)
 
 
+@dataclass
 class _Dataset(torch.utils.data.Dataset):
-    def __init__(self, ts, md, *, observables, targets, observation_horizon):
-        super().__init__()
-        self.timeseries = ts
-        self.metadata = md
-        self.observables = observables
-        self.targets = targets
-        self.observation_horizon = observation_horizon
+    timeseries: DataFrame
+    metadata: DataFrame
+    _: KW_ONLY = NotImplemented
+    observables: list[str]
+    targets: list[str]
+    observation_horizon: int
 
     def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""

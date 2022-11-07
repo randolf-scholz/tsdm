@@ -47,7 +47,7 @@ r"""Type hint for pandas objects."""
 class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args, **kwargs):
+    def __init__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         # signature: type.__init__(name, bases, attributes)
@@ -101,7 +101,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
 
-    def __init__(self, *, initialize: bool = True, reset: bool = False):
+    def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the dataset."""
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -112,12 +112,12 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
         if initialize:
             self.load()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Return a string representation of the dataset."""
         return f"{self.__class__.__name__}\n{self.dataset}"
 
     @classmethod
-    def info(cls):
+    def info(cls) -> None:
         r"""Open dataset information in browser."""
         if cls.INFO_URL is None:
             print(cls.__doc__)
@@ -371,7 +371,7 @@ class SingleFrameDataset(FrameDataset):
     TABLE_HASH: Optional[int] = None
     r"""Hash value of the table file(s), checked after load."""
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         if hasattr(self.dataset, "_repr_html_"):
             header = f"<h3>{self.__class__.__name__}</h3>"
             # noinspection PyProtectedMember
@@ -483,7 +483,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     TABLE_HASH: Optional[Mapping[KeyVar, int]] = None
     r"""Hash value of the dataset file(s), checked after load."""
 
-    def __init__(self, *, initialize: bool = True, reset: bool = False):
+    def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""
         self.LOGGER.info("Adding keys as attributes.")
         while initialize:
@@ -526,7 +526,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     #     r"""Return an iterator over the dataset."""
     #     return self.dataset.__iter__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Pretty Print."""
         return repr_mapping(self.dataset, title=self.__class__.__name__, recursive=0)
 
@@ -693,9 +693,10 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
         return self.dataset[key]
 
-    def download_table(self, key: Optional[KeyVar] = None) -> None:
+    def download_table(self, *, key: KeyVar = NotImplemented) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
+        assert key is not NotImplemented, "key must be provided!"
 
         rawdata_files: Nested[Optional[PathType]]
         if isinstance(self.rawdata_files, Mapping):
@@ -786,7 +787,7 @@ class TimeSeriesDataset(TorchDataset[Series]):
     metadata_features: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         r"""Post init."""
         if self.name is NotImplemented:
             self.name = self.__class__.__name__
@@ -813,7 +814,7 @@ class TimeSeriesDataset(TorchDataset[Series]):
         r"""Iterate over the timestamps."""
         return iter(self.index)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Get the representation of the collection."""
         return repr_dataclass(self, recursive=False, title=self.name)
 
@@ -855,7 +856,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     global_features: Optional[DataFrame] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         r"""Post init."""
         if self.name is NotImplemented:
             self.name = self.__class__.__name__
@@ -944,6 +945,6 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         # for key in self.index:
         #     yield self[key]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Get the representation of the collection."""
         return repr_dataclass(self, recursive=False, title=self.name)

@@ -1,5 +1,7 @@
 """Implements the BaseConfig class."""
 
+from __future__ import annotations
+
 __all__ = [
     # Classes
     "Config",
@@ -99,7 +101,7 @@ class ConfigMetaclass(ABCMeta):  # noqa: B024
 class Config(MutableMapping, metaclass=ConfigMetaclass):
     r"""Base Config."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         r"""Initialize the config."""
         self.update(*args, **kwargs)
 
@@ -122,7 +124,7 @@ class Config(MutableMapping, metaclass=ConfigMetaclass):
         # return hash((frozenset(self), frozenset(self.itervalues())))
         return hash(frozenset(self.items()))
 
-    def __or__(self, other):
+    def __or__(self, other: dict) -> Config:
         r"""Return a new dictionary with the keys from both dictionaries."""
         res: dict = {}
         res.update(self)

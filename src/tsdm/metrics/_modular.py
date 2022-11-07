@@ -164,7 +164,7 @@ class RMSE(nn.Module):
     mask_nan_targets: Final[bool]
     r"""CONST: Whether to mask NaN targets, not counting them as observations."""
 
-    def __init__(self, mask_nan_targets: bool = True):
+    def __init__(self, mask_nan_targets: bool = True) -> None:
         r"""Compute the RMSE."""
         super().__init__()
         self.mask_nan_targets = mask_nan_targets
@@ -194,7 +194,7 @@ class MSE(nn.Module):
     mask_nan_targets: Final[bool]
     r"""CONST: Whether to mask NaN targets, not counting them as observations."""
 
-    def __init__(self, mask_nan_targets: bool = True):
+    def __init__(self, mask_nan_targets: bool = True) -> None:
         r"""Compute the RMSE."""
         super().__init__()
         self.mask_nan_targets = mask_nan_targets

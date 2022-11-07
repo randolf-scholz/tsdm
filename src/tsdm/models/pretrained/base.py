@@ -38,7 +38,7 @@ class PreTrainedMetaClass(ABCMeta):
         bases: tuple[type, ...],
         attributes: dict[str, Any],
         **kwds: Any,
-    ):
+    ) -> None:
         super().__init__(name, bases, attributes, **kwds)
 
         if "LOGGER" not in attributes:
@@ -50,7 +50,7 @@ class PreTrainedMetaClass(ABCMeta):
             else:
                 cls.MODELDIR = MODELDIR / cls.__name__
 
-    # def __call__(cls, *args, **kw):
+    # def __call__(cls, *args: Any, **kw: Any) -> Any:
     #     r"""Prevent __init__."""
     #     return cls.__new__(cls, *args, **kw)
 
@@ -131,7 +131,7 @@ class PreTrainedModel(ABC, torch.nn.Module, metaclass=PreTrainedMetaClass):
         return self.load_torch_jit(self.model_path, map_location=self.device)
 
     @classmethod
-    def info(cls):
+    def info(cls) -> None:
         r"""Open dataset information in browser."""
         if cls.INFO_URL is None:
             print(cls.__doc__)
