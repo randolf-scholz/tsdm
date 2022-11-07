@@ -107,12 +107,6 @@ class Traffic(MultiFrameDataset[KEY]):
     invperm: DataFrame
 
     def clean_table(self, key: KEY) -> None:
-        r"""Create the DataFrames.
-
-        Parameters
-        ----------
-        key: Literal["us_daily", "states", "stations"], default "us_daily"
-        """
         if key == "timeseries":
             return self._clean_data()
         if key == "labels":
@@ -127,10 +121,8 @@ class Traffic(MultiFrameDataset[KEY]):
     def _clean_data(self, *, use_corrected_dates: bool = True) -> None:
         r"""Create DataFrame from raw data.
 
-        Parameters
-        ----------
-        use_corrected_dates: bool (default True)
-            Use correct dates and anomalies found through reverse engineering the dataset.
+        Args:
+            use_corrected_dates: Use correct dates and anomalies found through reverse engineering the dataset.
 
         Notes
         -----

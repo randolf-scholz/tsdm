@@ -53,17 +53,14 @@ def visualize_distribution(
 ) -> None:
     r"""Plot the distribution of x in the given axis.
 
-    Parameters
-    ----------
-    data: ArrayLike
-    ax: Axes
-    num_bins: int or Sequence[int]
-    log: bool or float, default False
-        if True, use log base 10, if `float`, use  log w.r.t. this base
-    loc: Location
-    print_stats: bool
-    extra_stats: Optional[dict[str, str]]
-        Additional things to add to the stats table
+    Args:
+        data: Data to plot.
+        ax: Axes to plot into.
+        num_bins: Number of bins to use for histogram.
+        log: If True, use log base 10, if `float`, use  log w.r.t. this base
+        loc: Location of stats text.
+        print_stats: Add table of mean, std, min, max, median, mode to plot
+        extra_stats: Additional things to add to the stats table
     """
     if isinstance(data, Tensor):
         data = data.detach().cpu().numpy()

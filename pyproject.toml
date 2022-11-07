@@ -155,7 +155,7 @@ max-line-length=120
 [tool.pylint.TYPECHECK]
 # List of members which are set dynamically and missed by pylint inference system, and so shouldn't
 # trigger E1101 when accessed. Python regular expressions are accepted.
-generated-members=["numpy.*","torch.*"]
+generated-members=["numpy.*", "torch.*"]
 
 
 ######################
@@ -221,11 +221,16 @@ color = true
 # pydocstyle Configuration #
 ############################
 [tool.pydocstyle]
-convention = "numpy"
+convention = "google"
 #count = true
+# https://github.com/PyCQA/pydocstyle/issues/363
+#match = '.*\.py$'
+#match = '(?!test_).*\.py$'
+match_dir = '^(?!(.venv|bugs|dev|.*ipynb_checkpoints)).*'
 add-ignore = [
     "D105",    # Missing docstring in magic method
     "D102",    # Missing docstring in public method
+    "D107",    # Missing docstring in __init__
 ]
 
 #########################

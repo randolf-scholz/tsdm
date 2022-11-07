@@ -122,24 +122,18 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
 def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     r"""Convert DataFrame into masked format, returning 3 DataFrames with the same shape.
 
-    Returns
-    -------
-    x: DataFrame
-        The original dataframe
-    m: DataFrame
-        mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
-    d: DataFrame
-        time delta  $δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt$, with $δ_0=0$
+    Returns:
+        x: The original dataframe
+        m: mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
+        d: time delta  $δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt$, with $δ_0=0$
 
-    References
-    ----------
-    - `Recurrent Neural Networks for Multivariate Time Series with Missing Values
-      <https://www.nature.com/articles/s41598-018-24271-9>`_
+    References:
+        - `Recurrent Neural Networks for Multivariate Time Series with Missing Values
+          <https://www.nature.com/articles/s41598-018-24271-9>`_
 
-    See Also
-    --------
-    make_dense_triplets
-    make_sparse_triplets
+    See Also:
+        make_dense_triplets
+        make_sparse_triplets
     """
     m = df.notna().astype(np.uint8)
     # note: s here is not the same s as in the GRU-D paper, but s(t) - s(t-1)

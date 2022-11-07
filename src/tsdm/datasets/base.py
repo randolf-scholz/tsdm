@@ -581,14 +581,10 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     ) -> None:
         r"""Clean the selected DATASET_OBJECT.
 
-        Parameters
-        ----------
-        key: Optional[KeyType] = None
-            The key of the dataset to clean. If None, clean all dataset.
-        force: bool = False
-            Force cleaning of dataset.
-        validate: bool = True
-            Validate the dataset after cleaning.
+        Args:
+            key: The key of the dataset to clean. If None, clean all dataset.
+            force: Force cleaning of dataset.
+            validate: Validate the dataset after cleaning.
         """
         # TODO: Do we need this code block?
         if not self.rawdata_files_exist(key=key):
@@ -660,17 +656,13 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     ) -> Mapping[KeyVar, DATASET_OBJECT] | DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT.
 
-        Parameters
-        ----------
-        key: Optional[KeyType] = None
-        force: bool = False
-            Reload the dataset if it already exists.
-        validate: bool = True
-            Validate the dataset file hash.
+        Args:
+            key: The key associated with the datset
+            force: Reload the dataset even if it already exists.
+            validate: Validate the dataset against hash.
 
-        Returns
-        -------
-        DATASET_OBJECT | Mapping[KeyType, DATASET_OBJECT]
+        Returns:
+            The loaded dataset
         """
         if not self.dataset_files_exist(key=key):
             self.clean(key=key, force=force)
@@ -729,13 +721,10 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     ) -> None:
         r"""Download the dataset.
 
-        Parameters
-        ----------
-        key: Optional[KeyType] = None
-        validate: bool = True
-            Validate the downloaded files.
-        force: bool = False
-            Force re-downloading of dataset.
+        Args:
+            key: The key of the rawdata file
+            validate: Validate the downloaded files.
+            force: Force re-downloading of dataset.
         """
         if self.BASE_URL is None:
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")

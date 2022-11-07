@@ -72,14 +72,7 @@ class TimeTensor(Tensor):
     ) -> TimeTensor:  # need delayed annotation here!
         r"""Create new TimeTensor.
 
-        Parameters
-        ----------
-        x: Sized
-            The input data.
-        args: Any
-        index: Optional[Index], default None
-            If `None`, then `range(len(x))` will be used as the index.
-        kwargs: Any
+        If `index` is not provided, then `range(len(x))` will be used as the index.
         """
         if isinstance(x, (DataFrame, Series)):
             assert index is None, "Index given, but x is DataFrame/Series"

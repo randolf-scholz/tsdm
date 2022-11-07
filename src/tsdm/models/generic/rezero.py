@@ -98,7 +98,7 @@ class ReZero(nn.Sequential):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r"""Forward pass."""
+        r""".. Signature:: ``(..., n) -> (..., n)``."""
         for k, block in enumerate(self):
             x = x + self.weights[k] * block(x)
         return x
@@ -121,15 +121,7 @@ class ReZero(nn.Sequential):
 
 @autojit
 class ConcatEmbedding(nn.Module):
-    r"""Maps $x ⟼ [x,w]$.
-
-    Attributes
-    ----------
-    input_size:  int
-    hidden_size: int
-    pad_size:    int
-    padding: Tensor
-    """
+    r"""Maps $x ⟼ [x,w]$."""
 
     HP = {
         "__name__": __qualname__,  # type: ignore[name-defined]
@@ -168,16 +160,7 @@ class ConcatEmbedding(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., d) -> (..., d+e)``.
-
-        Parameters
-        ----------
-        x: Tensor, shape=(...,DIM)
-
-        Returns
-        -------
-        Tensor, shape=(...,LAT)
-        """
+        r""".. Signature:: ``(..., d) -> (..., d+e)``."""
         shape = list(x.shape[:-1]) + [self.pad_size]
         z = torch.cat([x, self.padding.expand(shape)], dim=-1)
         torch.cuda.synchronize()  # needed when cat holds 0-size tensor
@@ -188,14 +171,6 @@ class ConcatEmbedding(nn.Module):
         r""".. Signature:: ``(..., d+e) -> (..., d)``.
 
         The reverse of the forward. Satisfies inverse(forward(x)) = x for any input.
-
-        Parameters
-        ----------
-        z: Tensor, shape=(...,LEN,LAT)
-
-        Returns
-        -------
-        Tensor, shape=(...,LEN,DIM)
         """
         return z[..., : self.input_size]
 

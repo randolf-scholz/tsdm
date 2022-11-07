@@ -49,12 +49,7 @@ class Time2Float(BaseEncoder):
     scale: Any
 
     def __init__(self, normalization: Literal["gcd", "max", "none"] = "max"):
-        r"""Choose the normalizations scheme.
-
-        Parameters
-        ----------
-        normalization: Literal["gcd", "max", "none"], default "max"
-        """
+        r"""Choose the normalizations scheme."""
         super().__init__()
         self.normalization = normalization
 

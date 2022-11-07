@@ -38,6 +38,7 @@ ignore =
     B024,    # BaseDatasetMetaClass is an abstract base class, but it has no abstract methods
     D102,    # Missing docstring in public method
     D105,    # Missing docstring in magic method
+    D107,    # Missing docstring in __init__
     E202,    # whitespace before ']'
     E203,    # whitespace before ':'
     E241,    # multiple spaces after ','
@@ -76,7 +77,7 @@ suppress-none-returning = True
 allow-untyped-defs = True
 
 # docstring plugin
-docstring-convention = numpy
+docstring-convention = google
 
 rst-roles =
     mod,

@@ -366,17 +366,7 @@ def timefun(
 
 # @decorator
 # def sphinx_value(func: Callable, value: Any, /) -> Callable:
-#     r"""Use alternative attribute value during sphinx compilation - useful for attributes.
-#
-#     Parameters
-#     ----------
-#     func: Callable
-#     value: Any
-#
-#     Returns
-#     -------
-#     Callable
-#     """
+#     r"""Use alternative attribute value during sphinx compilation - useful for attributes."""
 #
 #     @wraps(func)
 #     def _wrapper(*func_args, **func_kwargs):
