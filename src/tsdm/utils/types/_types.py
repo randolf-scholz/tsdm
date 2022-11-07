@@ -4,17 +4,23 @@ r"""Generic types for type hints etc."""
 
 __all__ = [
     # Type Variables
-    "AnyTypeVar",
     "AliasVar",
+    "AnyTypeVar",
     "ClassVar",
     "DtypeVar",
     "KeyVar",
+    "Key_co",
     "ModuleVar",
+    "NestedKeyVar",
+    "NestedKey_co",
     "ObjectVar",
     "PandasVar",
     "PathVar",
     "ReturnVar",
     "Self",
+    "T",
+    "T_co",
+    "T_contra",
     "TensorVar",
     "TorchModuleVar",
     "ValueVar",
@@ -43,6 +49,13 @@ r"""TypeVar for decorated function inputs values."""
 
 # region TypeVars
 
+T = TypeVar("T")
+r"""Generic type variable."""
+T_co = TypeVar("T_co", covariant=True)
+r"""Generic type variable for covariant types."""
+T_contra = TypeVar("T_contra", contravariant=True)
+r"""Generic type variable for contravariant types."""
+
 AnyTypeVar = TypeVar("AnyTypeVar")
 r"""Type Variable arbitrary types.."""
 
@@ -56,6 +69,15 @@ DtypeVar = TypeVar("DtypeVar")
 r"""Type Variable for `Dtype`."""
 
 KeyVar = TypeVar("KeyVar", bound=Hashable)
+r"""Type Variable for `Mapping` keys."""
+
+Key_co = TypeVar("Key_co", bound=Hashable, covariant=True)
+r"""Type Variable for `Mapping` keys."""
+
+NestedKeyVar = TypeVar("NestedKeyVar", bound=Hashable)
+r"""Type Variable for `Mapping` keys."""
+
+NestedKey_co = TypeVar("NestedKey_co", bound=Hashable, covariant=True)
 r"""Type Variable for `Mapping` keys."""
 
 ModuleVar = TypeVar("ModuleVar", bound=ModuleType)

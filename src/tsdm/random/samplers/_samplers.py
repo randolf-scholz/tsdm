@@ -22,19 +22,28 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from datetime import timedelta as py_td
 from itertools import chain, count
-from typing import Any, Generic, Literal, Optional, TypeAlias, Union, cast
+from typing import (
+    Any,
+    Generic,
+    Literal,
+    Optional,
+    Protocol,
+    TypeAlias,
+    Union,
+    cast,
+    runtime_checkable,
+)
 
 import numpy as np
 import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
-from torch.utils.data import Sampler
+from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.utils.data.datasets import DatasetCollection
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import ObjectVar, ValueVar
-from tsdm.utils.types.protocols import Array
+from tsdm.utils.types import KeyVar, ObjectVar, T_co, ValueVar
 from tsdm.utils.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 
 Boxed: TypeAlias = Union[
@@ -92,6 +101,17 @@ def compute_grid(
     return cast(Sequence[int], np.arange(kmin, kmax + 1))
 
 
+@runtime_checkable
+class Sampler(Protocol[T_co]):
+    r"""Protocol for `Sampler`."""
+
+    def __iter__(self) -> Iterator[T_co]:
+        ...
+
+    def __len__(self) -> int:
+        ...
+
+
 class BaseSamplerMetaClass(ABCMeta):
     r"""Metaclass for BaseSampler."""
 
@@ -100,7 +120,7 @@ class BaseSamplerMetaClass(ABCMeta):
         super().__init__(*args, **kwargs)
 
 
-class BaseSampler(Sampler, Sized, ABC, metaclass=BaseSamplerMetaClass):
+class BaseSampler(TorchSampler[T_co], Sized, ABC, metaclass=BaseSamplerMetaClass):
     r"""Abstract Base Class for all Samplers."""
 
     LOGGER: logging.Logger
@@ -119,11 +139,11 @@ class BaseSampler(Sampler, Sized, ABC, metaclass=BaseSamplerMetaClass):
         r"""Return the length of the sampler."""
 
     @abstractmethod
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[T_co]:
         r"""Iterate over random indices."""
 
 
-class SliceSampler(Sampler):
+class SliceSampler(TorchSampler[Sequence[T_co]]):
     r"""Sample by index.
 
     Default modus operandi:
@@ -154,13 +174,13 @@ class SliceSampler(Sampler):
     rng: a numpy random Generator
     """
 
-    data: Sequence
+    data: Sequence[T_co]
     idx: NDArray
     rng: np.random.Generator
 
     def __init__(
         self,
-        data_source: Sequence,
+        data_source: Sequence[T_co],
         /,
         *,
         slice_sampler: Optional[int | Callable[[], int]] = None,
@@ -202,7 +222,7 @@ class SliceSampler(Sampler):
         r"""Return random start_index and window_size."""
         return self._sampler()
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Sequence[T_co]]:
         r"""Yield random slice from dataset."""
         while True:
             # sample len and index
@@ -211,7 +231,7 @@ class SliceSampler(Sampler):
             yield self.data[start_index : start_index + window_size]
 
 
-class CollectionSampler(Sampler):
+class CollectionSampler(BaseSampler[tuple[KeyVar, T_co]]):
     r"""Samples a single random dataset from a collection of dataset.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
@@ -219,7 +239,7 @@ class CollectionSampler(Sampler):
 
     idx: Index
     r"""The shared index."""
-    subsamplers: Mapping[Any, Sampler]
+    subsamplers: Mapping[KeyVar, BaseSampler[T_co]]
     r"""The subsamplers to sample from the collection."""
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
@@ -234,7 +254,7 @@ class CollectionSampler(Sampler):
         self,
         data_source: DatasetCollection,
         /,
-        subsamplers: Mapping[Any, Sampler],
+        subsamplers: Mapping[KeyVar, BaseSampler[T_co]],
         *,
         shuffle: bool = True,
         early_stop: bool = False,
@@ -253,13 +273,13 @@ class CollectionSampler(Sampler):
             partition = list(chain(*([key] * self.sizes[key] for key in self.idx)))
         self.partition = Series(partition)
 
-    def __len__(self):
+    def __len__(self) -> int:
         r"""Return the maximum allowed index."""
         if self.early_stop:
             return min(self.sizes) * len(self.subsamplers)
         return sum(self.sizes)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[KeyVar, T_co]]:
         r"""Return indices of the samples.
 
         When `early_stop=True`, it will sample precisely `min() * len(subsamplers)` samples.
@@ -280,12 +300,12 @@ class CollectionSampler(Sampler):
             else:
                 yield key, value
 
-    def __getitem__(self, key: Any) -> Sampler:
+    def __getitem__(self, key: KeyVar) -> BaseSampler[T_co]:
         r"""Return the subsampler for the given key."""
         return self.subsamplers[key]
 
 
-class HierarchicalSampler(Sampler):
+class HierarchicalSampler(Sampler[tuple[KeyVar, T_co]]):
     r"""Samples a single random dataset from a collection of dataset.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
@@ -293,7 +313,7 @@ class HierarchicalSampler(Sampler):
 
     idx: Index
     r"""The shared index."""
-    subsamplers: Mapping[Any, Sampler]
+    subsamplers: Mapping[KeyVar, Sampler[T_co]]
     r"""The subsamplers to sample from the collection."""
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
@@ -306,14 +326,14 @@ class HierarchicalSampler(Sampler):
 
     def __init__(
         self,
-        data_source: Mapping[Any, Any],
+        data_source: Mapping[KeyVar, ObjectVar],
         /,
-        subsamplers: Mapping[Any, Sampler],
+        subsamplers: Mapping[KeyVar, Sampler[T_co]],
         *,
+        subsampler_kwargs: Optional[Mapping[KeyVar, Mapping[str, Any]]] = None,
         shuffle: bool = True,
         early_stop: bool = False,
     ):
-        super().__init__(data_source)
         self.data = data_source
         self.idx = Index(data_source.keys())
         self.subsamplers = dict(subsamplers)
@@ -327,13 +347,13 @@ class HierarchicalSampler(Sampler):
             partition = list(chain(*([key] * self.sizes[key] for key in self.idx)))
         self.partition = Series(partition)
 
-    def __len__(self):
+    def __len__(self) -> int:
         r"""Return the maximum allowed index."""
         if self.early_stop:
             return min(self.sizes) * len(self.subsamplers)
         return sum(self.sizes)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[KeyVar, T_co]]:
         r"""Return indices of the samples.
 
         When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
@@ -357,7 +377,7 @@ class HierarchicalSampler(Sampler):
             else:
                 yield key, value
 
-    def __getitem__(self, key: Any) -> Sampler:
+    def __getitem__(self, key: KeyVar) -> Sampler[T_co]:
         r"""Return the subsampler for the given key."""
         return self.subsamplers[key]
 
@@ -368,7 +388,7 @@ class HierarchicalSampler(Sampler):
         )
 
 
-class IntervalSampler(Sampler, Generic[TDVar]):
+class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     r"""Return all intervals `[a, b]`.
 
     The intervals must satisfy:
@@ -409,8 +429,7 @@ class IntervalSampler(Sampler, Generic[TDVar]):
         offset: Optional[TDVar] = None,
         shuffle: bool = True,
     ) -> None:
-        super().__init__(None)
-
+        super().__init__([])
         # set stride and offset
         zero = 0 * (xmax - xmin)
         stride = zero if stride is None else stride
@@ -496,7 +515,7 @@ class IntervalSampler(Sampler, Generic[TDVar]):
         r"""Forward all other attributes to the interval frame."""
         return self.intervals.__getattr__(key)
 
-    def __getitem__(self, key: Any) -> slice:
+    def __getitem__(self, key: int) -> slice:
         r"""Return a slice from the sampler."""
         return self.intervals[key]
 
@@ -504,7 +523,7 @@ class IntervalSampler(Sampler, Generic[TDVar]):
 class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
     r"""Samples sequences of length seq_len."""
 
-    data_source: Array[DTVar]
+    data_source: NDArray[DTVar]  # type: ignore[type-var]
     k_max: int
     return_mask: bool
     seq_len: TDVar
@@ -516,7 +535,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
     def __init__(
         self,
-        data_source: Array[DTVar],
+        data_source: NDArray[DTVar],
         /,
         *,
         return_mask: bool = False,
@@ -527,15 +546,14 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         tmin: Optional[DTVar] = None,
     ) -> None:
         super().__init__(data_source)
-        self.data_source = data_source
 
         self.xmin = (
-            data_source[0]
+            self.data_source[0]
             if tmin is None
             else (Timestamp(tmin) if isinstance(tmin, str) else tmin)
         )
         self.xmax = (
-            data_source[-1]
+            self.data_source[-1]
             if tmax is None
             else (Timestamp(tmax) if isinstance(tmax, str) else tmax)
         )
@@ -694,7 +712,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         grid = compute_grid(self.tmin, self.tmax, self.stride, offset=self.offset)
         self.grid = grid[grid >= 0]  # type: ignore[assignment, operator]
 
-    def __len__(self):
+    def __len__(self) -> int:
         r"""Return the number of samples."""
         return len(self.data)
 
@@ -724,7 +742,15 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
             for start, stop in sliding_window_view(bounds, 2)
         ]
 
-    def __iter__(self) -> Iterator:
+    def __iter__(
+        self,
+    ) -> Union[
+        Iterator[slice],
+        Iterator[list[slice]],
+        Iterator[NDArray[np.bool_]],
+        Iterator[list[NDArray[np.bool_]]],
+        Iterator[NDArray[NumpyDTVar]],
+    ]:
         r"""Iterate through.
 
         For each k, we return either:
@@ -733,16 +759,15 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
         - mode=masks: $(mask_1, …, mask_m)$
         """
-        yield_fn: Callable[[NDArray[NumpyDTVar]], Any]
-        if self.mode == "points":
-            yield_fn = self.__make__points__
-        else:
-            yield_fn = {
-                ("masks", False): self.__make__mask__,
-                ("masks", True): self.__make__masks__,
-                ("slices", False): self.__make__slice__,
-                ("slices", True): self.__make__slices__,
-            }[(self.mode, self.multi_horizon)]
+        funcs = {
+            ("points", True): self.__make__points__,
+            ("points", False): self.__make__points__,
+            ("masks", False): self.__make__mask__,
+            ("masks", True): self.__make__masks__,
+            ("slices", False): self.__make__slice__,
+            ("slices", True): self.__make__slices__,
+        }
+        yield_fn = funcs[self.mode, self.multi_horizon]
 
         if self.shuffle:
             perm = np.random.permutation(len(self.grid))

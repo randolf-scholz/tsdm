@@ -32,10 +32,11 @@ def test_SlidingWindowSampler():
     # samples = X.loc[indices]
 
 
-def __main__():
+def _main():
     logging.basicConfig(level=logging.INFO)
+
     test_SlidingWindowSampler()
 
 
 if __name__ == "__main__":
-    __main__()
+    _main()

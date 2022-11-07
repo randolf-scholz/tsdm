@@ -64,11 +64,11 @@ def test_standardizer(Encoder, tensor_type):
     __logger__.info("Testing %s finished!", Encoder.__name__)
 
 
-def __main__():
+def _main():
     logging.basicConfig(level=logging.INFO)
     test_standardizer(Standardizer, np.array)
     test_standardizer(MinMaxScaler, np.array)
 
 
 if __name__ == "__main__":
-    __main__()
+    _main()

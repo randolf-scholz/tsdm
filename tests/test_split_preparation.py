@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 r"""Test the fold generation code."""
 
-# def __main__():
+# def _main():
 #     assert all(sum([fold["test"] for fold in folds]) == 1)
 #     assert all(sum([fold["valid"] for fold in folds]) <= 1)
 #     pass
