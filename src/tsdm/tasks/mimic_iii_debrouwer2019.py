@@ -247,12 +247,7 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split.
-
-        Returns
-        -------
-        DataFrame[bool]
-        """
+        r"""Return sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 

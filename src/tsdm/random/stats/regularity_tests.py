@@ -56,10 +56,9 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
 def float_gcd(x: ArrayLike) -> float:
     r"""Compute the greatest common divisor (GCD) of a list of floats.
 
-    Note
-    ----
-    Since floats are rational numbers, this is a well-defined operation.
-    We simply convert them to rational numbers and use the standard method.
+    Note:
+        Since floats are rational numbers, this is a well-defined operation.
+        We simply convert them to rational numbers and use the standard method.
     """
     x = np.asanyarray(x)
 

@@ -60,16 +60,7 @@ class Time2Vec(nn.Module):
 
     @jit.export
     def inverse(self, z: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., d) -> ...``.
-
-        Parameters
-        ----------
-        z: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``(..., d) -> ...``."""
         return z[..., 0]
 
 

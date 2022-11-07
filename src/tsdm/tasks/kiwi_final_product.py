@@ -210,7 +210,6 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def dataset(self) -> KIWI_RUNS:
-        r"""Return the cached dataset."""
         # Drop runs that don't work for this task.
         dataset = KIWI_RUNS()
         dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype("float32")
@@ -219,17 +218,11 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
-        r"""The target metric."""
         return jit.script(MSELoss())
 
     @cached_property
     def split_idx(self) -> DataFrame:
-        r"""Return table with indices for each split.
-
-        Returns
-        -------
-        DataFrame
-        """
+        r"""Return table with indices for each split."""
         splitter = ShuffleSplit(n_splits=5, random_state=0, test_size=0.25)
         groups = self.metadata.groupby(["color", "run_id"])
         group_idx = groups.ngroup()
@@ -243,12 +236,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split.
-
-        Returns
-        -------
-        DataFrame[bool]
-        """
+        r"""Return sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 
@@ -286,12 +274,6 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def splits(self) -> dict[KeyType, tuple[DataFrame, DataFrame]]:
-        r"""Return a subset of the data corresponding to the split.
-
-        Returns
-        -------
-        tuple[DataFrame, DataFrame]
-        """
         splits = {}
         for key in self.index:
             assert key in self.index, f"Wrong {key=}. Only {self.index} work."
@@ -314,18 +296,6 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         shuffle: bool = False,
         **dataloader_kwargs: Any,
     ) -> DataLoader:
-        r"""Return a dataloader for the given split.
-
-        Parameters
-        ----------
-        key: KeyType,
-        shuffle: bool = False,
-        dataloader_kwargs: Any,
-
-        Returns
-        -------
-        DataLoader
-        """
         # Construct the dataset object
         ts, md = self.splits[key]
         dataset = _Dataset(ts, md, self.observables)

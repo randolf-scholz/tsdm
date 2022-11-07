@@ -192,12 +192,7 @@ class KIWI_RUNS_OLD(MultiFrameDataset):
             self._clean_table(key, tables[key])
 
     def _clean_table(self, key: str, table: Optional[DataFrame] = None) -> None:
-        r"""Create the DataFrames.
-
-        Parameters
-        ----------
-        table: Optional[DataFrame] = None
-        """
+        r"""Create the DataFrames."""
         cleaners: dict[str, Callable] = {
             "measurements_aggregated": self._clean_measurements_aggregated,
             "measurements_array": self._clean_measurements_array,

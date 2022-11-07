@@ -211,12 +211,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
     @cached_property
     def split_idx(self) -> DataFrame:
-        r"""Return table with indices for each split.
-
-        Returns
-        -------
-        DataFrame
-        """
+        r"""Return table with indices for each split."""
         splitter = ShuffleSplit(n_splits=5, random_state=0, test_size=0.25)
         groups = self.metadata.groupby(["color", "run_id"])
         group_idx = groups.ngroup()
@@ -230,12 +225,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split.
-
-        Returns
-        -------
-        DataFrame[bool]
-        """
+        r"""Return sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 
@@ -273,12 +263,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
 
     @cached_property
     def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
-        r"""Return a subset of the data corresponding to the split.
-
-        Returns
-        -------
-        tuple[DataFrame, DataFrame]
-        """
+        r"""Return a subset of the data corresponding to the split."""
         splits = {}
         for key in self.index:
             assert key in self.index, f"Wrong {key=}. Only {self.index} work."
@@ -313,18 +298,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
     def make_dataloader(
         self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
-        r"""Return a dataloader for the given split.
-
-        Parameters
-        ----------
-        key: KeyType,
-        shuffle: bool, default False
-        dataloader_kwargs: Any,
-
-        Returns
-        -------
-        DataLoader
-        """
+        r"""Return a dataloader for the given split."""
         # Construct the dataset object
         ts, md = self.splits[key]
         dataset = _Dataset(

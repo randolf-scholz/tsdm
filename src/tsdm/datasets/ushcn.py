@@ -232,12 +232,6 @@ class USHCN(MultiFrameDataset[KEY]):
     rawdata_paths: dict[str, Path]
 
     def clean_table(self, key: KEY = "us_daily") -> DataFrame:
-        r"""Create the DataFrames.
-
-        Parameters
-        ----------
-        key: Literal["us_daily", "states", "stations"], default "us_daily"
-        """
         if key == "us_daily":
             return self._clean_us_daily()
         if key == "states":

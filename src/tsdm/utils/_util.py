@@ -118,11 +118,10 @@ def apply_nested(
 ) -> Nested[ReturnVar | None]:
     r"""Apply function to nested iterables of a given kind.
 
-    Parameters
-    ----------
-    nested: Nested Data-Structure (Iterable, Mapping, ...)
-    kind: The type of the leave nodes
-    func: A function to apply to all leave Nodes
+    Args:
+        nested: Nested Data-Structure (Iterable, Mapping, ...)
+        kind: The type of the leave nodes
+        func: A function to apply to all leave Nodes
     """
     if nested is None:
         return None

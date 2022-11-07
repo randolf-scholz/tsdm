@@ -52,11 +52,10 @@ def get_broadcast(
 ) -> tuple[slice | None, ...]:
     r"""Create an indexer for axis specific broadcasting.
 
-    Example
-    -------
-    data is of shape  ``(2,3,4,5,6,7)``
-    axis is the tuple ``(0,2,-1)``
-    broadcast is ``(:, None, :, None, None, :)``
+    Example:
+        data is of shape  ``(2,3,4,5,6,7)``
+        axis is the tuple ``(0,2,-1)``
+        broadcast is ``(:, None, :, None, None, :)``
 
     Then, given a tensor ``x`` of shape ``(2, 4, 7)``, we can perform element-wise
     operations via ``data + x[broadcast]``.

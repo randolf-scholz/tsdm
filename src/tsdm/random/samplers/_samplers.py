@@ -203,12 +203,7 @@ class SliceSampler(Sampler):
         return self._sampler()
 
     def __iter__(self) -> Iterator:
-        r"""Yield random slice from dataset.
-
-        Returns
-        -------
-        Iterator
-        """
+        r"""Yield random slice from dataset."""
         while True:
             # sample len and index
             window_size, start_index = self.sampler()
@@ -374,7 +369,7 @@ class HierarchicalSampler(Sampler):
 
 
 class IntervalSampler(Sampler, Generic[TDVar]):
-    r"""Returns all intervals `[a, b]`.
+    r"""Return all intervals `[a, b]`.
 
     The intervals must satisfy:
 

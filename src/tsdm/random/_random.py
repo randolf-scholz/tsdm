@@ -33,19 +33,14 @@ def sample_timestamps(
 ) -> NDArray:
     r"""Create randomly sampled timestamps.
 
-    Parameters
-    ----------
-    start: TimeStampLike, default <today>
-    final: TimeStampLike, default <today>+<24h>
-    size: int
-    freq: TimeDeltaLike, default "1s"
-        The smallest possible timedelta between distinct timestamps.
-    replace: bool, default True
-        Whether the sample is with or without replacement.
-    include_start: bool, default True
-        If `True`, then `start` will always be the first sampled timestamp.
-    include_final: bool, default True
-        If `True`, then `final` will always be the final sampled timestamp.
+    Args:
+        start: TimeStampLike, default <today>
+        final: TimeStampLike, default <today>+<24h>
+        size: Number of timestamps to sample.
+        freq: The smallest possible timedelta between distinct timestamps.
+        replace: Whether the sample is with or without replacement.
+        include_start: If `True`, then `start` will always be the first sampled timestamp.
+        include_final: If `True`, then `final` will always be the final sampled timestamp.
     """
     start_dt = Timestamp(start)
     final_dt = start_dt + Timedelta("24h") if final is None else Timestamp(final)

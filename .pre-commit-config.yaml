@@ -71,7 +71,7 @@ repos:
     rev: 6.1.1
     hooks:
       - id: pydocstyle
-        files: (^src/|^tests/)
+        files: "(^src/|^tests/)"
         additional_dependencies:
           - toml
   # isort

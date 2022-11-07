@@ -65,14 +65,6 @@ class CSVEncoder(BaseEncoder):
         to_csv_kwargs: Optional[dict[str, Any]] = None,
         read_csv_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
-        r"""Initialize the encoder.
-
-        Parameters
-        ----------
-        filename: str
-        to_csv_kwargs: Optional[dict[str, Any]]
-        read_csv_kwargs: Optional[dict[str, Any]]
-        """
         super().__init__()
         self.filename = filename
         self.read_csv_kwargs = read_csv_kwargs or {}
@@ -120,11 +112,6 @@ class DataFrameEncoder(BaseEncoder):
         r"""Set up the individual encoders.
 
         Note: the same encoder instance can be used for multiple columns.
-
-        Parameters
-        ----------
-        column_encoders
-        index_encoders
         """
         super().__init__()
         self.column_encoders = column_encoders
@@ -738,12 +725,6 @@ class TripletEncoder(BaseEncoder):
         var_name: str = "variable",
         value_name: str = "value",
     ) -> None:
-        r"""Initialize the encoder.
-
-        Parameters
-        ----------
-        sparse: bool = True
-        """
         super().__init__()
         self.sparse = sparse
         self.var_name = var_name
@@ -825,12 +806,6 @@ class TripletDecoder(BaseEncoder):
         var_name: Optional[str] = None,
         value_name: Optional[str] = None,
     ) -> None:
-        r"""Initialize the encoder.
-
-        Parameters
-        ----------
-        sparse: bool = True
-        """
         super().__init__()
         self.sparse = sparse
         self.var_name = var_name

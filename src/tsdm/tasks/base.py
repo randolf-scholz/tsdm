@@ -196,16 +196,12 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     ) -> DataLoader:
         r"""Return a DataLoader object for the specified split.
 
-        Parameters
-        ----------
-        key: str
-            From which part of the dataset to construct the loader
-        dataloader_kwargs:
-            Options to be passed directly to the dataloader such as the generator.
+        Args:
+            key: From which part of the dataset to construct the loader.
+            dataloader_kwargs: Options to be passed directly to the dataloader such as the generator.
 
-        Returns
-        -------
-        DataLoader
+        Returns:
+            DataLoader: A DataLoader for the selected key.
         """
 
     @cached_property
@@ -410,6 +406,7 @@ class Sample(NamedTuple):
         return repr_namedtuple(self, recursive=1)
 
     def sparsify_index(self) -> Sample:
+        r"""Drop rows that contain only NAN values."""
         if self.inputs.x is not None:
             self.inputs.x.dropna(how="all", inplace=True)
 

@@ -159,6 +159,8 @@ def query_choice(
 
 def install_package(
     package_name: str,
+    /,
+    *,
     non_interactive: bool = False,
     installer: str = "pip",
     options: tuple[str, ...] = (),

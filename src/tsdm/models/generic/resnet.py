@@ -126,16 +126,7 @@ class ResNet(nn.ModuleList):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r"""Forward pass.
-
-        Parameters
-        ----------
-        x: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``(..., k) -> (..., k)``."""
         for block in self:
             x = x + block(x)
         return x

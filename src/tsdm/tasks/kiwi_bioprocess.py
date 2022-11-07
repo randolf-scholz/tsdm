@@ -139,7 +139,6 @@ class Kiwi_BioProcessTask(OldBaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
-        r"""The metric to be used for evaluation."""
         ts = self.timeseries
         weights = DataFrame.from_dict(
             {
@@ -160,7 +159,6 @@ class Kiwi_BioProcessTask(OldBaseTask):
 
     @cached_property
     def dataset(self) -> KIWI_RUNS:
-        r"""Return the cached dataset."""
         dataset = KIWI_RUNS()
         dataset.metadata.drop([482], inplace=True)
         dataset.timeseries.drop([482], inplace=True)
@@ -178,12 +176,6 @@ class Kiwi_BioProcessTask(OldBaseTask):
 
     @cached_property
     def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
-        r"""Return a subset of the data corresponding to the split.
-
-        Returns
-        -------
-        tuple[DataFrame, DataFrame]
-        """
         splits = {}
         for key in self.index:
             assert key in self.index, f"Wrong {key=}. Only {self.index} work."
@@ -218,18 +210,6 @@ class Kiwi_BioProcessTask(OldBaseTask):
     def make_dataloader(
         self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
-        r"""Return a dataloader for the given split.
-
-        Parameters
-        ----------
-        key: KeyType,
-        shuffle: bool, default False
-        dataloader_kwargs: Any,
-
-        Returns
-        -------
-        DataLoader
-        """
         # Construct the dataset object
         ts, md = self.splits[key]
         dataset = _Dataset(

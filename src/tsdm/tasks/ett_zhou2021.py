@@ -118,7 +118,6 @@ class ETT_Zhou2021(OldBaseTask):
         target: TARGET = "OT",
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
-        test_metric: Literal["MSE", "MAE"] = "MSE",
     ):
         super().__init__()
         self.target = target
@@ -148,18 +147,15 @@ class ETT_Zhou2021(OldBaseTask):
 
     @cached_property
     def dataset(self) -> DataFrame:
-        r"""Return the dataset."""
         ds = ETT()
         return ds.dataset[self.dataset_id]
 
     @cached_property
     def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
-        r"""The test metric."""
         return nn.MSELoss()
 
     @cached_property
     def splits(self) -> Mapping[KeyType, DataFrame]:
-        r"""Split the dataset into train, test and validation."""
         _splits: dict[Any, DataFrame] = {
             "train": self.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore[misc]
             "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore[misc]
@@ -177,24 +173,6 @@ class ETT_Zhou2021(OldBaseTask):
         shuffle: bool = True,
         **kwargs: Any,
     ) -> DataLoader:
-        r"""Return a DataLoader for the training-dataset with the given batch_size.
-
-        If encode=True, then it will create a dataloader with two outputs
-
-        (inputs, targets)
-
-        where inputs = pre_encoder.encode(masked_batch).
-
-        Parameters
-        ----------
-        key: Literal["train", "valid", "test"]
-            Dataset part from which to construct the DataLoader
-        shuffle: bool = True
-
-        Returns
-        -------
-        DataLoader
-        """
         if key == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
         if key == "test" and "drop_last" in kwargs:

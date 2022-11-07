@@ -60,8 +60,7 @@ def aggregate_nondestructive(df: PandasVar) -> PandasVar:
     Given a DataFrame of size m×k, this will construct a new DataFrame of size m'×k,
     where m' = max(df.notna().sum()) is the maximal number of measured not-null values.
 
-    Example
-    -------
+    Example:
                               Acetate  Base   DOT  Fluo_GFP   Glucose  OD600  Probe_Volume    pH
         measurement_time
         2020-12-09 09:48:38      <NA>  <NA>  <NA>      <NA>  4.578233   <NA>          <NA>  <NA>

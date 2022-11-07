@@ -15,9 +15,10 @@ from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset
 
 from tsdm.utils.strings import repr_mapping
+from tsdm.utils.types import KeyVar, ObjectVar
 
 
-class MappingDataset(Dataset, Mapping):
+class MappingDataset(Dataset, Mapping[KeyVar, ObjectVar]):
     r"""Represents a Mapping[Key, Dataset].
 
     ``ds[key]`` returns the dataset for the given key.
@@ -26,20 +27,14 @@ class MappingDataset(Dataset, Mapping):
     ``ds[(key, subkey)]=ds[key][subkey]``
     """
 
-    def __init__(self, data: Mapping[Any, Dataset]):
-        r"""Initialize the dataset.
-
-        Parameters
-        ----------
-        data: Mapping
-        """
+    def __init__(self, data: Mapping[Any, Dataset]) -> None:
         super().__init__()
         assert isinstance(data, Mapping)
         if isinstance(data, Mapping):
             self.index = list(data.keys())
             self.data = data
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[KeyVar]:
         r"""Iterate over the keys."""
         return iter(self.index)
 
@@ -47,7 +42,7 @@ class MappingDataset(Dataset, Mapping):
         r"""Length of the dataset."""
         return len(self.index)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: KeyVar) -> ObjectVar:
         r"""Get the dataset for the given key."""
         if not isinstance(key, tuple):
             return self.data[key]
@@ -65,11 +60,7 @@ class MappingDataset(Dataset, Mapping):
     ) -> MappingDataset:
         r"""Create a MappingDataset from a DataFrame.
 
-        Parameters
-        ----------
-        df: DataFrame
-        levels: Optional[list[str]]
-            If given, the selected levels from the DataFrame's MultiIndex are used as keys.
+        If `levels` is given, the selected levels from the DataFrame's MultiIndex are used as keys.
         """
         if levels is not None:
             min_index = df.index.to_frame()
