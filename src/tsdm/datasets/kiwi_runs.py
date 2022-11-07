@@ -279,13 +279,13 @@ class KIWI_RUNS(MultiFrameDataset):
         r"""Return the index of the dataset."""
         return self.metadata.index
 
-    def clean_table(self, key):
+    def clean_table(self, key: str) -> None:
         if key in ["timeseries", "value_features"]:
             self.clean_timeseries()
         if key in ["index", "metadata", "time_features", "metadata_features"]:
             self.clean_metadata()
 
-    def clean_metadata(self):
+    def clean_metadata(self) -> None:
         r"""Clean metadata."""
         # load rawdata
         with open(self.rawdata_paths, "rb") as file:
@@ -385,7 +385,7 @@ class KIWI_RUNS(MultiFrameDataset):
         metadata.to_parquet(self.dataset_paths["metadata"])
         metadata_features.to_parquet(self.dataset_paths["metadata_features"])
 
-    def clean_timeseries(self):
+    def clean_timeseries(self) -> None:
         r"""Clean timeseries data and save to disk."""
         # load rawdata
         with open(self.rawdata_paths, "rb") as file:
@@ -518,7 +518,7 @@ class KIWI_RUNS(MultiFrameDataset):
 class KIWI(TimeSeriesCollection):
     """The KIWI dataset."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         ds = KIWI_RUNS()
 
         super().__init__(

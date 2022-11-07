@@ -20,7 +20,7 @@ __all__ = ["MIMIC_III_DeBrouwer2019"]
 
 
 from pathlib import Path
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 import pandas as pd
 
@@ -75,7 +75,7 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset[KEY]):
     timeseries: pd.DataFrame
     metadata: pd.DataFrame
 
-    def clean_table(self, key):
+    def clean_table(self, key: KEY) -> None:
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."
@@ -125,11 +125,11 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset[KEY]):
         stats.to_parquet(self.dataset_paths["metadata"])
         ts.to_parquet(self.dataset_paths["timeseries"])
 
-    def load_table(self, key):
+    def load_table(self, key: KEY) -> pd.DataFrame:
         # return NotImplemented
         return pd.read_parquet(self.dataset_paths[key])
 
-    def download_table(self, **_):
+    def download_table(self, **_: Any) -> None:
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."

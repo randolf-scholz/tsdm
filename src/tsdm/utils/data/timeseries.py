@@ -27,7 +27,7 @@ from tsdm.utils.strings import repr_array, repr_sequence
 class _IndexMethodClone:
     r"""Clone .loc and similar methods to tensor-like object."""
 
-    def __init__(self, data: Tensor, index: Index, method: str = "loc"):
+    def __init__(self, data: Tensor, index: Index, method: str = "loc") -> None:
         self.data = data
         self.index = index
         self.index_method = getattr(self.index, method)

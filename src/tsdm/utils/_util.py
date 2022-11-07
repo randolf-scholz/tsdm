@@ -198,7 +198,7 @@ def round_relative(x: np.ndarray, decimals: int = 2) -> np.ndarray:
     return np.true_divide(rounded, 10**digits)
 
 
-def now():
+def now() -> str:
     r"""Return current time in iso format."""
     return datetime.now().isoformat(timespec="seconds")
 

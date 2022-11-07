@@ -165,7 +165,7 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     postprocessor: Optional[ModularEncoder] = None
     r"""Optional task specific postprocessor (applied after batching)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         r"""Initialize."""
         warnings.warn("deprecated, use new class", DeprecationWarning)
 
@@ -545,7 +545,7 @@ class Inputs(NamedTuple):
     u: Optional[DataFrame] = None
     metadata: Optional[DataFrame] = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr_namedtuple(self, recursive=False)
 
 
@@ -555,7 +555,7 @@ class Targets(NamedTuple):
     y: DataFrame
     metadata: Optional[DataFrame] = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr_namedtuple(self, recursive=False)
 
 
@@ -566,7 +566,7 @@ class Sample(NamedTuple):
     inputs: Inputs
     targets: Targets
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr_namedtuple(self, recursive=1)
 
     def sparsify_index(self) -> Sample:
@@ -696,7 +696,7 @@ class TimeSeriesTaskDataset(TorchDataset[Sample]):
             case _:
                 raise ValueError(f"Unknown sample format {self.sample_format=}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr_dataclass(self, recursive=1)
 
     def make_sample(

@@ -187,7 +187,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
 
     preprocessor: FrameEncoder[Standardizer, dict[Any, MinMaxScaler]]
 
-    def __init__(self, normalize_time: bool = True):
+    def __init__(self, *, normalize_time: bool = True) -> None:
         super().__init__()
         self.preprocessor = FrameEncoder(
             column_encoders=Standardizer(),
@@ -241,7 +241,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         return folds
 
     @cached_property
-    def split_idx(self):
+    def split_idx(self) -> DataFrame:
         r"""Create the split index."""
         fold_idx = Index(list(range(len(self.folds))), name="fold")
         splits = DataFrame(index=self.IDs, columns=fold_idx, dtype="string")

@@ -298,12 +298,3 @@ def center_axes(fig: Figure, /, *, remove_labels: bool = True) -> Figure:
         ax.plot(0.99, 0, ">k", transform=ax.get_yaxis_transform(), clip_on=True)
         ax.plot(0, 0.99, "^k", transform=ax.get_xaxis_transform(), clip_on=True)
     return fig
-
-
-# @torch.no_grad()
-# def plot_kernel_heatmap(kernel: Tensor, cmap: str = "seismic"):
-#     kernel = kernel.clone().detach().cpu()
-#     assert len(kernel.shape)==2 and kernel.shape[0] == kernel.shape[1]
-#     cmap = cm.get_cmap("seismic")
-#     RGBA = cmap(kernel)
-#     return RGBA[..., :-1]

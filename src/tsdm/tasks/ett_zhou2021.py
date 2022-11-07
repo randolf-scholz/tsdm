@@ -17,9 +17,9 @@ from torch.utils.data import DataLoader, TensorDataset
 from tsdm.datasets import ETT
 from tsdm.encoders import (
     ChainedEncoder,
-    DataFrameEncoder,
     DateTimeEncoder,
     FloatEncoder,
+    FrameEncoder,
     MinMaxScaler,
     ModularEncoder,
     Standardizer,
@@ -134,8 +134,8 @@ class ETT_Zhou2021(OldBaseTask):
 
         self.preprocessor = ChainedEncoder(
             TensorEncoder(),
-            DataFrameEncoder(
-                Standardizer() @ FloatEncoder(),
+            FrameEncoder(
+                column_encoders=Standardizer() @ FloatEncoder(),
                 index_encoders=MinMaxScaler() @ DateTimeEncoder(),
             ),
         )

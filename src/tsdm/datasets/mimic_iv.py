@@ -21,6 +21,7 @@ import os
 import subprocess
 from getpass import getpass
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -87,13 +88,13 @@ class MIMIC_IV(MultiFrameDataset):
 
     KEYS = list(internal_files.keys())
 
-    def clean_table(self, key):
+    def clean_table(self, key: str) -> None:
         ...
 
-    def load_table(self, key):
+    def load_table(self, key: str) -> pd.DataFrame:
         return pd.read_parquet(self.dataset_paths[key])
 
-    def download_table(self, **_):
+    def download_table(self, **_: Any) -> None:
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-IV username: ")
         password = getpass(prompt="MIMIC-IV password: ", stream=None)

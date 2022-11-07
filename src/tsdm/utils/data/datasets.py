@@ -86,7 +86,7 @@ class MappingDataset(Mapping[KeyVar, TorchDatasetVar]):
 
         return MappingDataset({idx: df.loc[idx] for idx in index})
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Representation of the dataset."""
         return repr_mapping(self)
 
@@ -103,7 +103,9 @@ class DatasetCollection(
     dataset: Mapping[KeyVar, TorchDataset[ObjectVar]]
     r"""The dataset."""
 
-    def __init__(self, indexed_datasets: Mapping[KeyVar, TorchDataset[ObjectVar]]):
+    def __init__(
+        self, indexed_datasets: Mapping[KeyVar, TorchDataset[ObjectVar]]
+    ) -> None:
         super().__init__()
         self.dataset = dict(indexed_datasets)
         self.index = list(self.dataset.keys())
@@ -143,42 +145,3 @@ class DatasetCollection(
     def __repr__(self) -> str:
         r"""Representation of the dataset."""
         return repr_mapping(self)
-
-
-# class IterItems(TorchDataset):
-#     r"""A thin wrapper around a dataset that yields items from the dataset."""
-#
-#     def __init__(self, dataset: TorchDataset) -> None:
-#         super().__init__()
-#         self.dataset = dataset
-#
-#     def __getitem__(self, key: Any) -> tuple[Any, Any]:
-#         r"""Get the item from the dataset."""
-#         return Items(key, self.dataset[key])
-#
-#     def __repr__(self) -> str:
-#         r"""Representation of the dataset."""
-#         return r"IterItems@" + self.dataset.__repr__()
-#
-#     def __getattr__(self, item):
-#         r"""Forward all other attributes to the dataset."""
-#         return getattr(self.dataset, item)
-#
-#     def __iter__(self):
-#         r"""Forward to wrapped object."""
-#
-# from collections import namedtuple
-# class TupleDataset(Dataset[tuple[Tensor, ...]]):
-#     r"""Sequential Dataset."""
-#
-#     def __init__(self, tensors: tuple[Tensor, ...] | dict[str, Tensor], /, *, index: Optional[Series] = None):
-#         assert all(len(x) == len(tensors[0]) for x in tensors)
-#         self.tensors = tensors
-#
-#     def __len__(self):
-#         r"""Length of the dataset."""
-#         return len(self.tensors[0])
-#
-#     def __getitem__(self, idx) -> tuple[Tensor, ...]:
-#         r"""Get the same slice from each tensor."""
-#         return tuple(x[idx] for x in self.tensors)

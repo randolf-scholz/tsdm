@@ -104,7 +104,7 @@ class LazyDict(dict[KeyVar, ObjectVar]):
     ) -> None:
         ...
 
-    def __init__(self, /, *args, **kwargs):
+    def __init__(self, /, *args: Any, **kwargs: Any) -> None:
         r"""Initialize the dictionary."""
         super().__init__()
         MutableMapping.update(self, *args, **kwargs)

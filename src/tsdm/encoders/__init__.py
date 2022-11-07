@@ -117,7 +117,6 @@ __all__ = [
     "BoxCoxEncoder",
     "ChainedEncoder",
     "CloneEncoder",
-    "DataFrameEncoder",
     "DateTimeEncoder",
     "DuplicateEncoder",
     "FloatEncoder",
@@ -155,8 +154,8 @@ from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
 
 from tsdm.encoders import base, functional, numerical, time, torch
+from tsdm.encoders._deprecated import DataFrameEncoder
 from tsdm.encoders._modular import (
-    DataFrameEncoder,
     Frame2Tensor,
     FrameEncoder,
     FrameIndexer,

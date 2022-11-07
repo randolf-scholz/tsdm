@@ -197,5 +197,5 @@ def time2float(ds: Series) -> Series:
 
 
 # TODO: add timefeatures
-def timefeatures():
+def timefeatures() -> None:
     r"""Return time features from datetime."""

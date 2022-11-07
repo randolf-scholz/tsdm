@@ -48,7 +48,7 @@ class Time2Float(BaseEncoder):
     common_interval: Any
     scale: Any
 
-    def __init__(self, normalization: Literal["gcd", "max", "none"] = "max"):
+    def __init__(self, normalization: Literal["gcd", "max", "none"] = "max") -> None:
         r"""Choose the normalizations scheme."""
         super().__init__()
         self.normalization = normalization
@@ -131,7 +131,7 @@ class DateTimeEncoder(BaseEncoder):
     freq: Optional[Any] = None
     r"""The frequency attribute in case of DatetimeIndex."""
 
-    def __init__(self, unit: str = "s", base_freq: str = "s"):
+    def __init__(self, unit: str = "s", base_freq: str = "s") -> None:
         super().__init__()
         self.unit = unit
         self.base_freq = base_freq
@@ -178,7 +178,7 @@ class TimeDeltaEncoder(BaseEncoder):
     base_freq: str = "s"
     r"""The frequency the decoding should be rounded to."""
 
-    def __init__(self, *, unit: str = "s", base_freq: str = "s"):
+    def __init__(self, *, unit: str = "s", base_freq: str = "s") -> None:
         super().__init__()
         self.unit = unit
         self.base_freq = base_freq
@@ -230,7 +230,7 @@ class PeriodicEncoder(BaseEncoder):
         x = (x / self.freq) % self.period
         return Series(x, dtype=self.dtype, name=self.colname)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Pretty-print."""
         return f"{self.__class__.__name__}({self._period})"
 
@@ -366,7 +366,7 @@ class TimeSlicer(BaseEncoder):
 
     # TODO: multiple horizons
 
-    def __init__(self, horizon):
+    def __init__(self, horizon: Any) -> None:
         super().__init__()
         self.horizon = horizon
 

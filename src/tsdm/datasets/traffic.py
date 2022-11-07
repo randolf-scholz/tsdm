@@ -341,7 +341,7 @@ class Traffic(MultiFrameDataset[KEY]):
         PEMS.to_parquet(self.dataset_paths["timeseries"], compression="gzip")
         DataFrame(labels).to_parquet(self.dataset_paths["labels"], compression="gzip")
 
-    def _clean_randperm(self):
+    def _clean_randperm(self) -> None:
         with ZipFile(self.rawdata_paths) as files:
             with files.open("randperm") as file:
                 content = file.read().decode("utf8")

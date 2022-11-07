@@ -107,7 +107,7 @@ class BeijingAirQuality(SingleFrameDataset):
     def clean_table(self) -> DataFrame:
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
 
-        def _to_time(x):
+        def _to_time(x: list[int]) -> Timestamp:
             return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
 
         dtypes = {
