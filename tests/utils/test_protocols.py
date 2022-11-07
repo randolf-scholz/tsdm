@@ -40,7 +40,7 @@ def test_array():
     # ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array))}"
 
 
-def _main():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     test_array()
 

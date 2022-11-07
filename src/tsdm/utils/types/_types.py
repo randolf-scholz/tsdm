@@ -41,7 +41,7 @@ from types import GenericAlias, ModuleType
 from typing import Any, ParamSpec, TypeAlias, TypeVar
 
 from numpy import ndarray
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor, nn
 
 Parameters = ParamSpec("Parameters")
@@ -140,7 +140,7 @@ r"""Type Alias for `**kwargs`."""
 Nested: TypeAlias = AnyTypeVar | Collection[AnyTypeVar] | Mapping[Any, AnyTypeVar]
 r"""Type Alias for nested types (JSON-Like)."""
 
-PandasObject: TypeAlias = DataFrame | Series | Index
+PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
 
 PathType: TypeAlias = str | Path  # | os.PathLike[str]

@@ -20,7 +20,7 @@ from collections.abc import Sequence
 from dataclasses import Field
 from typing import Any, Protocol, TypeAlias, TypeVar, Union, runtime_checkable
 
-ScalarType = TypeVar("ScalarType", covariant=True)
+ScalarType_co = TypeVar("ScalarType_co", covariant=True)
 T = TypeVar("T")
 Either: TypeAlias = Union[T, "Array[T]"]
 Self = TypeVar("Self", bound="Array")
@@ -49,7 +49,7 @@ A = TypeVar("A", bound="Array")
 
 
 @runtime_checkable
-class Array(Protocol[ScalarType]):
+class Array(Protocol[ScalarType_co]):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
     @property
@@ -61,7 +61,7 @@ class Array(Protocol[ScalarType]):
         r"""Number of dimensions."""
 
     @property
-    def dtype(self) -> ScalarType:
+    def dtype(self) -> ScalarType_co:
         r"""Yield the data type of the array."""
 
     # fmt: off

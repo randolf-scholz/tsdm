@@ -18,7 +18,7 @@ def test_physionet_2012():
     print(series)
 
 
-def _main():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     test_physionet_2012()
 
