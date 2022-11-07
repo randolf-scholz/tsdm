@@ -127,13 +127,16 @@ repos:
         stages: [commit]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
-
   - repo: https://github.com/ariebovenberg/slotscheck
     rev: v0.16
     hooks:
       - id: slotscheck
         exclude: "^(?!src/)"
         language: system
+  - repo: https://github.com/asottile/blacken-docs
+    rev: v1.12.1
+    hooks:
+      - id: blacken-docs
 #  - repo: github.com/asottile/blacken-docs
 #    id: blacken-docs
 #    description: " Run `black` on python code blocks in documentation files "
