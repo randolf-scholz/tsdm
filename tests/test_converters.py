@@ -38,7 +38,7 @@ def test_make_masked_format():
     __logger__.info("Testing %s finished!", make_masked_format.__name__)
 
 
-def _main():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     test_make_masked_format()
 

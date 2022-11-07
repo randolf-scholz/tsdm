@@ -12,7 +12,6 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any, Optional, TypeVar, overload
 
 from pandas import DataFrame, MultiIndex
-from torch.utils.data import Dataset
 from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.utils.strings import repr_mapping
@@ -93,7 +92,7 @@ class MappingDataset(Mapping[KeyVar, TorchDatasetVar]):
 
 
 class DatasetCollection(
-    Dataset[Dataset[ObjectVar]], Mapping[KeyVar, Dataset[ObjectVar]]
+    TorchDataset[TorchDataset[ObjectVar]], Mapping[KeyVar, TorchDataset[ObjectVar]]
 ):
     r"""Represents a ``mapping[index → torch.Datasets]``.
 
@@ -101,10 +100,10 @@ class DatasetCollection(
     in the sense that index.unique() is identical for all inputs.
     """
 
-    dataset: Mapping[KeyVar, Dataset[ObjectVar]]
+    dataset: Mapping[KeyVar, TorchDataset[ObjectVar]]
     r"""The dataset."""
 
-    def __init__(self, indexed_datasets: Mapping[KeyVar, Dataset[ObjectVar]]):
+    def __init__(self, indexed_datasets: Mapping[KeyVar, TorchDataset[ObjectVar]]):
         super().__init__()
         self.dataset = dict(indexed_datasets)
         self.index = list(self.dataset.keys())
@@ -121,7 +120,7 @@ class DatasetCollection(
         ...
 
     @overload
-    def __getitem__(self, key: KeyVar) -> Dataset[ObjectVar]:
+    def __getitem__(self, key: KeyVar) -> TorchDataset[ObjectVar]:
         ...
 
     def __getitem__(self, key):
@@ -136,7 +135,7 @@ class DatasetCollection(
         # no hierarchical indexing
         return self.dataset[key]
 
-    def __iter__(self) -> Iterator[Dataset[ObjectVar]]:  # type: ignore[override]
+    def __iter__(self) -> Iterator[TorchDataset[ObjectVar]]:  # type: ignore[override]
         r"""Iterate over the dataset."""
         for key in self.index:
             yield self.dataset[key]

@@ -727,28 +727,32 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         return slice(window[0], window[-1])
 
     @staticmethod
-    def __make__slices__(bounds: NDArray[NumpyDTVar]) -> list[slice]:
+    def __make__slices__(bounds: NDArray[NumpyDTVar]) -> tuple[slice, ...]:
         r"""Return a tuple of slices."""
-        return [slice(start, stop) for start, stop in sliding_window_view(bounds, 2)]
+        return tuple(
+            slice(start, stop) for start, stop in sliding_window_view(bounds, 2)
+        )
 
     def __make__mask__(self, window: NDArray[NumpyDTVar]) -> NDArray[np.bool_]:
         r"""Return a tuple of masks."""
         return (window[0] <= self.data) & (self.data < window[-1])
 
-    def __make__masks__(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[np.bool_]]:
+    def __make__masks__(
+        self, bounds: NDArray[NumpyDTVar]
+    ) -> tuple[NDArray[np.bool_], ...]:
         r"""Return a tuple of masks."""
-        return [
+        return tuple(
             (start <= self.data) & (self.data < stop)
             for start, stop in sliding_window_view(bounds, 2)
-        ]
+        )
 
     def __iter__(
         self,
     ) -> Union[
         Iterator[slice],
-        Iterator[list[slice]],
+        Iterator[tuple[slice, ...]],
         Iterator[NDArray[np.bool_]],
-        Iterator[list[NDArray[np.bool_]]],
+        Iterator[tuple[NDArray[np.bool_], ...]],
         Iterator[NDArray[NumpyDTVar]],
     ]:
         r"""Iterate through.

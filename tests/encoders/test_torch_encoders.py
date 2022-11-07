@@ -119,7 +119,7 @@ def test_Time2Vec() -> None:
     logger.info("Finished Testing")
 
 
-def _main():
+def _main() -> None:
     logging.basicConfig(level=logging.NOTSET)
     test_PositionalEncoder()
     test_Time2Vec()

@@ -58,7 +58,7 @@ def test_attributes():
     assert hasattr(ds, "clean")
 
 
-def _main():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     test_caching()
     test_attributes()

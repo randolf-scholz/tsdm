@@ -33,7 +33,7 @@ class InSilicoData(SingleFrameDataset):
 
     DATASET_HASH = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
     DATASET_SHAPE = (5206, 7)
-    TABLE_HASH = 4533756604446352386
+    TABLE_HASH = 652930435272677160
     rawdata_files = "in_silico.zip"
 
     @cached_property
@@ -61,11 +61,9 @@ class InSilicoData(SingleFrameDataset):
                     df = pd.read_csv(file, index_col=0, parse_dates=[0])
                 df = df.rename_axis(index="time")
                 df["DOTm"] /= 100
-                df.name = key
                 dfs[key] = df
         ds = pd.concat(dfs, names=["run_id"])
         ds = ds.reset_index()
-        # ds = ds.astype({"run_id": "string"}).astype({"run_id": "category"})
         ds = ds.set_index(["run_id", "time"])
         ds = ds.sort_values(by=["run_id", "time"])
         ds = ds.astype("Float32")

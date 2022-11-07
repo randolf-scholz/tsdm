@@ -144,7 +144,7 @@ def test_grid_extra():
     __logger__.info("Finished compute_grid on extra data")
 
 
-def _main():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     for mode in MODES:
         test_grid_pandas(mode)

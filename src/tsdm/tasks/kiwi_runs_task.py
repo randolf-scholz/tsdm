@@ -24,12 +24,12 @@ from tsdm.datasets import KIWI, KIWI_RUNS
 from tsdm.encoders import BaseEncoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
-from tsdm.tasks.base import OldBaseTask, TimeSeriesCollectionTask
+from tsdm.tasks.base import OldBaseTask, TimeSeriesTaskDataset
 from tsdm.utils.data import MappingDataset, TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 
-class KiwiForecastingTask(TimeSeriesCollectionTask):
+class KiwiForecastingTask(TimeSeriesTaskDataset):
     r"""Bioprocess forecasting task using the KIWI-biolab data."""
 
     targets = ["Base", "DOT", "Glucose", "OD600"]

@@ -32,7 +32,7 @@ def test_SlidingWindowSampler():
     # samples = X.loc[indices]
 
 
-def _main():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
 
     test_SlidingWindowSampler()

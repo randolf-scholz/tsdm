@@ -759,7 +759,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
 
 @dataclass
-class TimeSeriesDataset(TorchDataset):
+class TimeSeriesDataset(TorchDataset[Series]):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and MetaData.
@@ -819,7 +819,7 @@ class TimeSeriesDataset(TorchDataset):
 
 
 @dataclass
-class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
+class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
 
     A TimeSeriesCollection is a tuple (I, D, G) consiting of
@@ -864,15 +864,16 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
                 self.index = self.metadata.index.copy().unique()
             elif isinstance(self.timeseries.index, MultiIndex):
                 self.index = self.timeseries.index.copy().droplevel(-1).unique()
+                # self.timeseries = self.timeseries.droplevel(0)
             else:
                 self.index = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: slice) -> TimeSeriesCollection:
+    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
         ...
 
     @overload
-    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
+    def __getitem__(self, key: slice) -> TimeSeriesCollection:
         ...
 
     def __getitem__(self, key):
@@ -946,55 +947,3 @@ class TimeSeriesCollection(Mapping[KeyVar, TimeSeriesDataset], Generic[KeyVar]):
     def __repr__(self):
         r"""Get the representation of the collection."""
         return repr_dataclass(self, recursive=False, title=self.name)
-
-
-@dataclass
-class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
-    r"""Abstract Base Class for generic TimeSeriesCollections.
-
-    A TimeSeriesCollection is a collection of TimeSeriesDatasets.
-    More specifically, we have a mapping from keys to TimeSeriesDatasets.
-
-    A special case are equimodal TimeSeriesCollections.
-    Here, all timeseries follow the same schema, in the sense that the TS and metadata
-    live in the same space.
-    """
-
-    # Main attributes
-    data: dict[KeyVar, TimeSeriesDataset]
-    r"""The data of the collection."""
-
-    _: KW_ONLY = NotImplemented
-
-    global_metadata: Optional[DataFrame] = None
-    r"""The global data of the dataset."""
-    index: Index = NotImplemented
-    r"""The index of the collection."""
-
-    # Space descriptors
-    index_features: Optional[DataFrame] = None
-    r"""Data associated with each index such as measurement device, unit, etc."""
-    global_features: Optional[DataFrame] = None
-    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
-
-    def __post_init__(self):
-        r"""Post init."""
-        if self.index is NotImplemented:
-            self.index = Index(self.data.keys())
-
-    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
-        r"""Get the timeseries and metadata of the dataset at index `key`."""
-        return self.data[key]
-
-    def __len__(self) -> int:
-        r"""Get the length of the collection."""
-        return len(self.index)
-
-    def __iter__(self) -> Iterator[TimeSeriesDataset]:
-        r"""Iterate over the collection."""
-        for key in self.index:
-            yield self[key]
-
-    def __repr__(self):
-        r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=False)

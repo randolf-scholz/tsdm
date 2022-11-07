@@ -32,7 +32,7 @@ def test_methods_attributes():
     __logger__.info("Testing METHODS_ATTRIBUTES finished!")
 
 
-def _main():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     test_methods_attributes()
 
