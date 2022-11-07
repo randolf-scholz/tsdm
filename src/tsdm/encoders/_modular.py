@@ -5,7 +5,7 @@ from __future__ import annotations
 __all__ = [
     # ABC
     # Classes
-    "Frame2Tensor",
+    "Frame2TensorDict",
     "FrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
@@ -825,14 +825,29 @@ class ValueEncoder(BaseEncoder):
         return decoded
 
 
-class Frame2Tensor(BaseEncoder):
-    r"""Encodes a DataFrame as a tuple of column and index tensor."""
+class Frame2TensorDict(BaseEncoder):
+    r"""Encodes a DataFrame as a dict of Tensors.
+
+    This is useful for passing a DataFrame to a PyTorch model.
+    One can specify groups of columns to be encoded as a single Tensor. They must share the same dtype.
+
+    Example:
+        >>> import pandas as pd
+        >>> from tsdm.encoders import Frame2TensorDict
+        >>> df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+        >>> encoder = Frame2TensorDict(groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False)
+        >>> encoder.fit(df)
+        >>> encoded = encoder.encode(df)
+        >>> assert isinstance(encoded, dict)
+        >>> decoded = encoder.decode(encoded)
+        >>> pd.testing.assert_frame_equal(df, decoded)
+    """
 
     # Attributes
-    original_index_columns: Index
-    original_index_dtypes: Series
-    original_values_columns: Index
-    original_values_dtypes: Series
+    original_index_columns: Optional[list[str]] = None
+    # original_index_dtypes: Series
+    # original_values_columns: Index
+    # original_values_dtypes: Series
     original_columns: Index
     original_dtypes: Series
 
@@ -840,6 +855,7 @@ class Frame2Tensor(BaseEncoder):
     column_dtype: Optional[torch.dtype] = None
     index_dtype: Optional[torch.dtype] = None
     device: Optional[str | torch.device] = None
+    encode_index: bool = True
 
     def __init__(
         self,
@@ -847,23 +863,23 @@ class Frame2Tensor(BaseEncoder):
         groups: dict[str, list[str]],
         dtypes: Optional[dict[str, str]] = None,
         device: Optional[str | torch.device] = None,
+        encode_index: bool = True,
     ) -> None:
         super().__init__()
         self.groups = groups
         self.dtypes = dtypes
         self.device = device
+        self.encode_index = encode_index
 
     def __repr__(self) -> str:
         return repr_mapping(self.groups, title=self.__class__.__name__, recursive=1)
 
     def fit(self, data: DataFrame, /) -> None:
-        index = data.index.to_frame()
-        self.original_index_columns = index.columns
-        self.original_index_dtypes = index.dtypes
-        self.original_values_columns = data.columns
-        self.original_values_dtypes = data.dtypes
+        if self.encode_index:
+            index = data.index.to_frame()
+            self.original_index_columns = index.columns.to_list()
+            data = data.reset_index()
 
-        data = data.reset_index()
         self.original_dtypes = data.dtypes
         self.original_columns = data.columns
 
@@ -881,7 +897,11 @@ class Frame2Tensor(BaseEncoder):
             self.groups[ellipsis_key] = list(cols)
             cols -= cols
 
-        assert not cols, f"Columns {cols} are not assigned to a group!"
+        if cols:
+            raise ValueError(
+                f"Columns {cols} are not assigned to a group! "
+                f"Try setting encode_index=False to skip encoding the index."
+            )
 
         # data type validation
         for key in self.groups:
@@ -889,7 +909,8 @@ class Frame2Tensor(BaseEncoder):
                 raise ValueError("All members of a group must have the same dtype!")
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
-        data = data.reset_index()
+        if self.encode_index:
+            data = data.reset_index()
         return {
             key: torch.tensor(data[cols].to_numpy(), device=self.device).squeeze()
             for key, cols in self.groups.items()
@@ -907,6 +928,6 @@ class Frame2Tensor(BaseEncoder):
         df = pd.concat(dfs, axis="columns")
         df = df.astype(self.original_dtypes)
         df = df[self.original_columns]
-        df = df.set_index(self.original_index_columns.to_list())
-
+        if self.encode_index:
+            df = df.set_index(self.original_index_columns)
         return df

@@ -120,7 +120,7 @@ __all__ = [
     "DateTimeEncoder",
     "DuplicateEncoder",
     "FloatEncoder",
-    "Frame2Tensor",
+    "Frame2TensorDict",
     "FrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
@@ -156,7 +156,7 @@ from sklearn.base import BaseEstimator
 from tsdm.encoders import base, functional, numerical, time, torch
 from tsdm.encoders._deprecated import DataFrameEncoder
 from tsdm.encoders._modular import (
-    Frame2Tensor,
+    Frame2TensorDict,
     FrameEncoder,
     FrameIndexer,
     FrameSplitter,
