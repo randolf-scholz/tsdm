@@ -32,10 +32,10 @@ def test_datetime_encoder() -> None:
     __logger__.info("Testing %s finished!", DateTimeEncoder.__name__)
 
 
-def __main__() -> None:
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     test_datetime_encoder()
 
 
 if __name__ == "__main__":
-    __main__()
+    _main()

@@ -111,7 +111,7 @@ def test_unpad_sequence_float(tensors: list[Tensor]) -> None:
     __logger__.info("Testing %s finished!", unpad_sequence.__name__)
 
 
-def __main__() -> None:
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     for tensors in TESTCASES:
         test_unpack_sequence(tensors)
@@ -121,4 +121,4 @@ def __main__() -> None:
 
 
 if __name__ == "__main__":
-    __main__()
+    _main()

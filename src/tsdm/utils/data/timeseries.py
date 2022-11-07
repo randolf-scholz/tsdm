@@ -13,9 +13,8 @@ __all__ = [
     # Functions
 ]
 
-from collections import namedtuple
-from collections.abc import Mapping, Sized
-from typing import Any, NamedTuple, Optional, TypeAlias, Union
+from collections.abc import Iterator, Sized
+from typing import Any, NamedTuple, Optional, TypeAlias
 
 import numpy as np
 from pandas import DataFrame, Index, Series, Timedelta
@@ -151,8 +150,8 @@ class TimeSeriesDataset(TorchDataset):
     - ds[t₀:t₁] = tuple[X[t₀:t₁] for X in self.timeseries], metadata
     """
 
-    timeseries: IndexedArray | tuple[IndexedArray, ...]
-    metadata: Optional[IndexedArray | tuple[IndexedArray, ...]] = None
+    timeseries: IndexedArray
+    metadata: Optional[IndexedArray] = None
     ts_type: type[tuple] = tuple
     r"""The type of the timeseries."""
     md_type: type[tuple] = tuple
@@ -160,43 +159,42 @@ class TimeSeriesDataset(TorchDataset):
 
     def __init__(
         self,
-        timeseries: Union[
-            IndexedArray,
-            tuple[IndexedArray, ...],
-            Mapping[str, IndexedArray],
-        ],
-        metadata: Optional[Any | tuple[Any, ...] | dict[str, Any]] = None,
+        timeseries: IndexedArray,
+        metadata: Optional[IndexedArray] = None,
     ):
         super().__init__()
 
-        # Set up the timeseries
-        if isinstance(timeseries, Mapping):
-            self.ts_type = namedtuple("timeseries", timeseries.keys())  # type: ignore[misc]
-            self.timeseries = self.ts_type(**timeseries)
-        # test for namedtuple
-        elif isinstance(timeseries, tuple):
-            if hasattr(timeseries, "_fields"):  # check namedtuple
-                self.ts_type = type(timeseries)
-                self.timeseries = timeseries
-            else:
-                self.ts_type = tuple
-                self.timeseries = tuple(timeseries)
-        else:
-            self.timeseries = timeseries
+        self.timeseries = timeseries
+        self.metadata = metadata
 
-        # Set up the metadata
-        if isinstance(metadata, Mapping):
-            self.md_type = namedtuple("metadata", metadata.keys())  # type: ignore[misc]
-            self.timeseries = self.md_type(**timeseries)
-        elif isinstance(metadata, tuple):
-            if hasattr(metadata, "_fields"):  # check namedtuple
-                self.md_type = type(metadata)
-                self.metadata = metadata
-            else:
-                self.md_type = tuple
-                self.metadata = tuple(metadata)
-        else:
-            self.metadata = metadata
+        # # Set up the timeseries
+        # if isinstance(timeseries, Mapping):
+        #     self.ts_type = namedtuple("timeseries", timeseries.keys())  # type: ignore[misc]
+        #     self.timeseries = self.ts_type(**timeseries)
+        # # test for namedtuple
+        # elif isinstance(timeseries, tuple):
+        #     if hasattr(timeseries, "_fields"):  # check namedtuple
+        #         self.ts_type = type(timeseries)
+        #         self.timeseries = timeseries
+        #     else:
+        #         self.ts_type = tuple
+        #         self.timeseries = tuple(timeseries)
+        # else:
+        #     self.timeseries = timeseries
+        #
+        # # Set up the metadata
+        # if isinstance(metadata, Mapping):
+        #     self.md_type = namedtuple("metadata", metadata.keys())  # type: ignore[misc]
+        #     self.timeseries = self.md_type(**timeseries)
+        # elif isinstance(metadata, tuple):
+        #     if hasattr(metadata, "_fields"):  # check namedtuple
+        #         self.md_type = type(metadata)
+        #         self.metadata = metadata
+        #     else:
+        #         self.md_type = tuple
+        #         self.metadata = tuple(metadata)
+        # else:
+        #     self.metadata = metadata
 
     def __repr__(self) -> str:
         r"""Pretty print."""
@@ -243,7 +241,7 @@ class TimeSeriesDataset(TorchDataset):
             return tmax - tmin
         return max(self.timeseries.index) - min(self.timeseries.index)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: Any) -> TimeSeriesDataset:
         r"""Return corresponding slice from each tensor."""
         if isinstance(self.timeseries, tuple):
             if hasattr(self.timeseries, "_fields"):  # namedtuple
@@ -257,10 +255,11 @@ class TimeSeriesDataset(TorchDataset):
 
         return TimeSeriesDataset(timeseries, metadata=self.metadata)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         r"""Iterate over each timeseries."""
-        yield self.timeseries
-        yield self.metadata
+        if self.metadata is None:
+            return iter(self.timeseries)
+        return iter(zip(self.timeseries, self.metadata))
 
 
 # TODO: create variant of TimeSeriesDataset that only contains a single TimeTensor,

@@ -265,8 +265,16 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         "collate_fn": lambda x: x,
     }
 
-    def __init__(self, **dataloader_kwargs: Any):
+    def __init__(
+        self,
+        dataset: TorchDataset,
+        sampler: TorchSampler,
+        dataloader_config_train: dict[str, Any],
+        **dataloader_kwargs: Any,
+    ):
         r"""Initialize the task object."""
+        self.dataloader_config_train |= dataloader_kwargs
+        self.dataloader_config_infer |= dataloader_kwargs
 
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""
@@ -375,6 +383,129 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     def dataloaders(self) -> Mapping[KeyVar, DataLoader]:
         r"""Cache dictionary of evaluation-dataloaders."""
         return LazyDict({k: self.make_dataloader for k in self.splits})
+
+
+class EasyTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
+    r"""Abstract Base Class for Tasks.
+
+    A task is a combination of a dataset and an evaluation protocol (EVP).
+
+    The DataLoader will return batches of data consisting of tuples of the form:
+    `(inputs, targets)`. The model will be trained on the inputs, and the targets
+    will be used to evaluate the model.
+    That is, the model must product an output of the same shape and data type of the targets.
+
+    Attributes
+    ----------
+    train_batch_size: int, default 32
+        Default batch-size used by batchloader.
+    eval_batch_size: int, default 128
+        Default batch-size used by dataloaders (for evaluation).
+    dataset: Dataset
+        The attached dataset
+    """
+
+    # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
+    __slots__ = ()
+
+    LOGGER: ClassVar[logging.Logger]
+    r"""Class specific logger instance."""
+    preprocessor: Optional[ModularEncoder] = None
+    r"""Optional task specific preprocessor (applied before sampling/batching)."""
+    postprocessor: Optional[ModularEncoder] = None
+    r"""Optional task specific postprocessor (applied after sampling/batching)."""
+
+    dataloader_config_train = {
+        "batch_size": 32,
+        "shuffle": True,
+        "drop_last": True,
+        "pin_memory": True,
+        "collate_fn": lambda x: x,
+    }
+
+    dataloader_config_infer = {
+        "batch_size": 64,
+        "shuffle": False,
+        "drop_last": False,
+        "pin_memory": True,
+        "collate_fn": lambda x: x,
+    }
+
+    splits: Mapping[KeyVar, TorchDataset]
+    samplers: Mapping[KeyVar, TorchSampler]
+
+    def __init__(
+        self,
+        dataset: Mapping[KeyVar, TorchDataset],
+        sampler: Mapping[KeyVar, TorchSampler],
+        splits: Sequence[KeyVar],
+        dataloader_config_train: dict[str, Any],
+        **dataloader_kwargs: Any,
+    ):
+        r"""Initialize the task object."""
+        self.dataloader_config_train |= dataloader_kwargs
+        self.dataloader_config_infer |= dataloader_kwargs
+
+    @cached_property
+    def dataloader_configs(self) -> dict[str, dict[str, Any]]:
+        r"""Return dataloader configuration."""
+        return {
+            "train": self.dataloader_config_train,
+            "eval": self.dataloader_config_infer,
+        }
+
+    def split_type(self, key: KeyVar) -> Literal["train", "infer", "unknown"]:
+        r"""Return the type of split."""
+        train_patterns = ["train", "training"]
+        infer_patterns = [
+            "test",
+            "testing",
+            "val",
+            "valid",
+            "validation",
+            "eval",
+            "evaluation",
+            "infer",
+            "inference",
+        ]
+
+        if isinstance(key, str):
+            if key.lower() in train_patterns:
+                return "train"
+            if key.lower() in infer_patterns:
+                return "infer"
+        if isinstance(key, Sequence):
+            patterns = {self.split_type(k) for k in key}
+            if patterns <= {"train", "unknown"}:
+                return "train"
+            if patterns <= {"infer", "unknown"}:
+                return "infer"
+            if patterns == {"unknown"}:
+                return "unknown"
+            raise ValueError(f"{key=} contains both train and infer splits.")
+        return "unknown"
+
+    def make_dataloader(
+        self,
+        key: KeyVar,
+        /,
+        **dataloader_kwargs: Any,
+    ) -> DataLoader:
+        r"""Return a DataLoader object for the specified split."""
+        dataset = self.splits[key]
+        sampler = self.samplers[key]
+
+        match self.split_type(key):
+            case "train":
+                kwargs = self.dataloader_configs["train"]
+            case "infer":
+                kwargs = self.dataloader_configs["train"]
+            case _:
+                raise ValueError(f"Unknown split type: {self.split_type(key)=}")
+
+        kwargs = kwargs | dataloader_kwargs
+        dataloader = DataLoader(dataset, sampler=sampler, **kwargs)
+        return dataloader
 
 
 class Inputs(NamedTuple):

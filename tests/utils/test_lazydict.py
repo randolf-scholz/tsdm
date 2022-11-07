@@ -80,7 +80,7 @@ def test_copy():
         assert isinstance(ld2[key], int)
 
 
-def __main__() -> None:
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     __logger__.info("Testing lazydict ...")
     test_lazydict()
@@ -88,4 +88,4 @@ def __main__() -> None:
 
 
 if __name__ == "__main__":
-    __main__()
+    _main()

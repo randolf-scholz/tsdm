@@ -230,7 +230,9 @@ class Kiwi_BioProcessTask(OldBaseTask):
 
         # construct the sampler
         subsamplers = {
-            key: SequenceSampler(ds, seq_len=self.horizon, stride=1, shuffle=shuffle)
+            key: SequenceSampler(
+                ds.timeseries, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
+            )
             for key, ds in DS.items()
         }
         sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
