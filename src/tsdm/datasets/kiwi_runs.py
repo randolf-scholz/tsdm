@@ -226,16 +226,21 @@ class KIWI_RUNS(MultiFrameDataset):
 
     .. code-block:: python
 
-        dict[int, # run_id
-            dict[int, # experiment_id
-                 dict[
-                     'metadata',: DataFrame,                # static
-                     'setpoints': DataFrame,                # static
-                     'measurements_reactor',: DataFrame,    # TimeTensor
-                     'measurements_array',: DataFrame,      # TimeTensor
-                     'measurements_aggregated': DataFrame,  # TimeTensor
-                 ]
-            ]
+        dict[
+            int,  # run_id
+            dict[
+                int,  # experiment_id
+                dict[
+                    "metadata",
+                    :DataFrame,  # static
+                    "setpoints":DataFrame,  # static
+                    "measurements_reactor",
+                    :DataFrame,  # TimeTensor
+                    "measurements_array",
+                    :DataFrame,  # TimeTensor
+                    "measurements_aggregated":DataFrame,  # TimeTensor
+                ],
+            ],
         ]
     """
 

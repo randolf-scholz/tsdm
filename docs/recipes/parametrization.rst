@@ -24,12 +24,11 @@ Usage
 .. code-block:: python
 
   class Module(bb.Module):
-
-    @dataclass
-    class Config:
-       input_size: int
-       output_size: int
-       latent_size: int
+      @dataclass
+      class Config:
+          input_size: int
+          output_size: int
+          latent_size: int
 
 Signatures
 ----------

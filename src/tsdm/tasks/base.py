@@ -17,7 +17,7 @@ Decomposable METRICS
 
     dims = (1, ...)  # sum over all axes except batch dimension
     # y, yhat are of shape (B, ...)
-    test_metric = lambda y, yhat: torch.sum( (y-yhat)**2, dim=dims )
+    test_metric = lambda y, yhat: torch.sum((y - yhat) ** 2, dim=dims)
     accumulation = torch.mean
 
 **Recipe**
@@ -26,7 +26,7 @@ Decomposable METRICS
 
     r = []
     for x, y in dataloader:
-        r.append( test_metric(y, model(x)) )
+        r.append(test_metric(y, model(x)))
 
     score = accumulation(torch.concat(r, dim=BATCHDIM))
 
@@ -40,7 +40,7 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 .. code-block:: python
 
    score = test_metric([(y, model(x)) for x, y in test_loader])
-   accumulation = None or identity function (tbd.)
+   # accumulation = None or identity function (tbd.)
 
 **Recipe**
 
@@ -48,8 +48,8 @@ test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, 
 
     ys, yhats = []
     for x, y in dataloader:
-        ys.append( y )
-        yhats.append( model(x) )
+        ys.append(y)
+        yhats.append(model(x))
 
     ys = torch.concat(ys, dim=BATCHDIM)
     yhats = torch.concat(yhats, dim=BATCHDIM)
@@ -75,10 +75,9 @@ Default DataLoader Creation
     data = pre_encoder.encode(data)  # DataFrame to DataSet
     dataset = TensorDataset(*inputs, targets)
     sampler = SequenceSampler(tuple[TimeTensor], tuple[StaticTensor])
-    dataloader = DataLoader(dataset, sampler=sampler, collate=....)
+    dataloader = DataLoader(dataset, sampler=sampler, collate=...)
     batch = next(dataloader)
 
-    inputs,
 """
 
 from __future__ import annotations
