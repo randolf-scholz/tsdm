@@ -831,7 +831,8 @@ class Frame2TensorDict(BaseEncoder):
     This is useful for passing a DataFrame to a PyTorch model.
     One can specify groups of columns to be encoded as a single Tensor. They must share the same dtype.
 
-    Example:
+    .. code-block:: pycon
+
         >>> import pandas as pd
         >>> from tsdm.encoders import Frame2TensorDict
         >>> df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})

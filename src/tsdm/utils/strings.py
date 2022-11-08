@@ -347,7 +347,7 @@ def repr_array(
 ) -> str:
     r"""Return a string representation of an array object."""
     assert isinstance(
-        obj, Index | Array | DataFrame | Series
+        obj, (Index, Array, DataFrame, Series)
     ), f"Object {obj=} is not an array, but {type(obj)=}."
 
     title = type(obj).__name__ if title is None else title
@@ -355,10 +355,10 @@ def repr_array(
     string = title + "["
     string += str(tuple(obj.shape))
 
-    if isinstance(obj, DataFrame | MultiIndex):
+    if isinstance(obj, (DataFrame, MultiIndex)):
         dtypes = [repr_dtype(dtype) for dtype in obj.dtypes]
         string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
-    elif isinstance(obj, Index | Series | Array):
+    elif isinstance(obj, (Index, Series, Array)):
         string += ", " + repr_dtype(obj.dtype)
     else:
         raise TypeError(f"Cannot get dtype of {type(obj)}")
