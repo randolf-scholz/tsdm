@@ -32,24 +32,27 @@ Create 3 subclass of BaseDataset:
 3. The subclass / instance of the `DerivedDataset` class.
 
 ```python
-
 class MIMIC_IV(BaseDataset):
     ...
+
 
 class DerivedDataset(ABCMeta):
     ...
 
-class MIMIC_IV_DeBrouwer(DerivedDataset[MIMIC_IV["1.0"]]):   # <-- too magic for type checkers / linters
-  RAWDATADIR = MIMIC_IV.RAWDATADIR
-  DATASETDIR = MIMIC_IV.DATASETDIR / MIMIC_IV_DeBrouwer
-  RAWDATAFILES = MIMIC_IV.RAWDATAFILES
-  RAWDATAPATHS = MIMIC_IV.RAWDATAPATHS
-  download = MIMIC_IV.download
+
+class MIMIC_IV_DeBrouwer(
+    DerivedDataset[MIMIC_IV["1.0"]]
+):  # <-- too magic for type checkers / linters
+    RAWDATADIR = MIMIC_IV.RAWDATADIR
+    DATASETDIR = MIMIC_IV.DATASETDIR / MIMIC_IV_DeBrouwer
+    RAWDATAFILES = MIMIC_IV.RAWDATAFILES
+    RAWDATAPATHS = MIMIC_IV.RAWDATAPATHS
+    download = MIMIC_IV.download
 
 
 @extends(MIMIC_IV)
 class MIMIC_IV_DeBrouwer(FrameDataset, ...):
-  ...
+    ...
 ```
 
 Question: How to combine with Versioning? We want to allow multiple versions of the same dataset. Options:
