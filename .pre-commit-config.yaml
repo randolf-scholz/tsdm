@@ -64,6 +64,12 @@ repos:
     rev: "v3.0.0-alpha.4" # Use the sha or tag you want to point at
     hooks:
       - id: prettier
+  # absolufy-imports
+  - repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: v0.3.1
+    hooks:
+      - id: absolufy-imports
+        description: Automatically convert relative imports to absolute
   # isort
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
@@ -93,31 +99,18 @@ repos:
           - flake8-black
           - flake8-bugbear
           - flake8-comprehensions
-          - flake8-docstrings
+          - flake8-docstrings # wraps pydocstyle
           - flake8-mutable
           - flake8-nb
           - flake8-pyi
           - flake8-rst
           - flake8-rst-docstrings
-  # pydocstyle
-  - repo: https://github.com/PyCQA/pydocstyle
-    rev: 6.1.1
-    hooks:
-      - id: pydocstyle
-        files: '^(src|tests)/.*\.py$'
-        additional_dependencies:
-          - toml
-
-  - repo: https://github.com/MarcoGorelli/absolufy-imports
-    rev: v0.3.1
-    hooks:
-      - id: absolufy-imports
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
     rev: v0.16
     hooks:
       - id: slotscheck
-        files: '^(src|tests)/.*\.py$'
+        files: '^src/.*\.py$'
         language: system
         description: "Slotscheck: Ensure your __slots__ are working properly."
   # clear jupyter notebooks in dev-folder
