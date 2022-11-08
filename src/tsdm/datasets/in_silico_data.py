@@ -8,7 +8,6 @@ __all__ = [
 import shutil
 from functools import cached_property
 from importlib import resources
-from pathlib import Path
 from zipfile import ZipFile
 
 import pandas as pd
@@ -31,6 +30,7 @@ class InSilicoData(SingleFrameDataset):
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """
 
+    RAWDATA_HASH = "ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba"
     DATASET_HASH = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
     DATASET_SHAPE = (5206, 7)
     TABLE_HASH = 652930435272677160
@@ -45,12 +45,6 @@ class InSilicoData(SingleFrameDataset):
     def timeseries(self) -> pd.DataFrame:
         r"""Return the timeseries of the dataset."""
         return self.dataset
-
-    @cached_property
-    def rawdata_paths(self) -> Path:
-        r"""Path to the raw data files."""
-        with resources.path(examples, "in_silico.zip") as path:
-            return path
 
     def clean_table(self) -> None:
         with ZipFile(self.rawdata_paths) as files:
@@ -71,5 +65,6 @@ class InSilicoData(SingleFrameDataset):
 
     def download_table(self) -> None:
         r"""Download the dataset."""
-        with resources.path(examples, "examples/in_silico.zip") as path:
-            shutil.copy(path, self.RAWDATA_DIR)
+        self.LOGGER.info("Copying data files into %s.", self.rawdata_paths)
+        with resources.path(examples, self.rawdata_files) as path:
+            shutil.copy(path, self.rawdata_paths)
