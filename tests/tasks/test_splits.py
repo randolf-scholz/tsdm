@@ -8,7 +8,6 @@ __logger__ = logging.getLogger(__name__)
 
 def test_split_construction():
     r"""Test the construction of the splits."""
-    pass
 
 
 def _main() -> None:

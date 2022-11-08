@@ -47,7 +47,7 @@ class InSilicoData(SingleFrameDataset):
         return self.dataset
 
     def clean_table(self) -> None:
-        with ZipFile(self.rawdata_paths) as files:
+        with ZipFile(str(self.rawdata_paths)) as files:
             dfs = {}
             for fname in files.namelist():
                 key = int(fname.split(".csv")[0])
@@ -67,4 +67,4 @@ class InSilicoData(SingleFrameDataset):
         r"""Download the dataset."""
         self.LOGGER.info("Copying data files into %s.", self.rawdata_paths)
         with resources.path(examples, self.rawdata_files) as path:
-            shutil.copy(path, self.rawdata_paths)
+            shutil.copy(path, str(self.rawdata_paths))

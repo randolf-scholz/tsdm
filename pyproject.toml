@@ -138,7 +138,7 @@ disable= [
     "R0914",  # too-many-locals
     "R0915",  # too-many-statements
     "W0221",  # arguments-differ
-    "W0511",  # (fixme) (todos)
+#    "W0511",  # (fixme) (todos)
     "W1113",  # keyword-arg-before-vararg
 ]
 fail-on= [
