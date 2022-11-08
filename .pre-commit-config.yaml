@@ -137,7 +137,7 @@ repos:
     rev: v1.12.1
     hooks:
       - id: blacken-docs
-        files: (^src/|^tests/)
+        files: '(^src/|^tests/).*\.py$'
 #  - repo: github.com/asottile/blacken-docs
 #    id: blacken-docs
 #    description: " Run `black` on python code blocks in documentation files "
