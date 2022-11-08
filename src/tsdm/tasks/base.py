@@ -85,6 +85,7 @@ from __future__ import annotations
 __all__ = [
     # Classes
     "OldBaseTask",
+    "TimeSeriesTask",
     "TimeSeriesTaskDataset",
 ]
 

@@ -15,17 +15,17 @@ __all__ = [
     "CloneEncoder",
     "MappingEncoder",
 ]
-
+# TODO: Improve Typing for Encoders.
 
 import logging
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
-from typing import Any, ClassVar, Iterator, TypeVar, overload
+from typing import Any, ClassVar, Generic, Iterator, TypeVar, overload
 
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.strings import repr_object
-from tsdm.utils.types import KeyVar, ObjectVar
+from tsdm.utils.types import KeyVar, ObjectVar, ReturnVar
 
 
 class BaseEncoderMetaClass(ABCMeta):
@@ -36,7 +36,7 @@ class BaseEncoderMetaClass(ABCMeta):
         super().__init__(*args, **kwargs)
 
 
-class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
+class BaseEncoder(ABC, Generic[ObjectVar, ReturnVar], metaclass=BaseEncoderMetaClass):
     r"""Base class that all encoders must subclass."""
 
     LOGGER: ClassVar[logging.Logger]
@@ -63,6 +63,8 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
         cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
         cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
         cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
+
+    # TODO: implement __invert__ (python 3.11)
 
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
@@ -104,15 +106,15 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
         r"""Whether the encoder is bijective."""
         return self.is_surjective and self.is_injective
 
-    def fit(self, data: Any, /) -> None:
+    def fit(self, data: ObjectVar, /) -> None:
         r"""Implement as necessary."""
 
     @abstractmethod
-    def encode(self, data: Any, /) -> Any:
+    def encode(self, data: ObjectVar, /) -> ReturnVar:
         r"""Encode the data by transformation."""
 
     @abstractmethod
-    def decode(self, data: Any, /) -> Any:
+    def decode(self, data: ObjectVar, /) -> ReturnVar:
         r"""Decode the data by inverse transformation."""
 
     def _post_fit_hook(self) -> None:
@@ -201,11 +203,11 @@ class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
         for encoder, x in zip(self.encoders, data):
             encoder.fit(x)
 
-    def encode(self, data: tuple[Any, ...], /) -> Sequence[Any]:
+    def encode(self, data: tuple[Any, ...], /) -> tuple[Any, ...]:
         rtype = type(data)
         return rtype(encoder.encode(x) for encoder, x in zip(self.encoders, data))
 
-    def decode(self, data: tuple[Any, ...], /) -> Sequence[Any]:
+    def decode(self, data: tuple[Any, ...], /) -> tuple[Any, ...]:
         rtype = type(data)
         return rtype(encoder.decode(x) for encoder, x in zip(self.encoders, data))
 
