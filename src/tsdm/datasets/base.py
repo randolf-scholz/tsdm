@@ -365,7 +365,7 @@ class FrameDataset(BaseDataset, ABC):
 
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
-
+    __dataset: DATASET_OBJECT = NotImplemented
     DATASET_HASH: Optional[str] = None
     r"""Hash value of the dataset file(s), checked after clean."""
     TABLE_HASH: Optional[int] = None
@@ -382,7 +382,9 @@ class SingleFrameDataset(FrameDataset):
     @cached_property
     def dataset(self) -> DATASET_OBJECT:
         r"""Store cached version of dataset."""
-        return self.load()
+        if self.__dataset is NotImplemented:
+            self.load()
+        return self.__dataset
 
     @cached_property
     def dataset_files(self) -> PathType:
@@ -404,7 +406,8 @@ class SingleFrameDataset(FrameDataset):
 
     def download_table(self) -> None:
         r"""Download the dataset."""
-        assert self.BASE_URL is not None, "base_url is not set!"
+        if self.BASE_URL is None:
+            raise ValueError("No base URL provided!")
 
         nested_files: Nested[Path] = prepend_path(
             self.rawdata_files, Path(), keep_none=False
@@ -424,6 +427,7 @@ class SingleFrameDataset(FrameDataset):
         self.LOGGER.debug("Starting to load dataset.")
         table = self.load_table()
         table.name = self.__class__.__name__
+        self.__dataset = table
         self.LOGGER.debug("Finished loading dataset.")
 
         if validate:
@@ -457,10 +461,6 @@ class SingleFrameDataset(FrameDataset):
         r"""Download the dataset."""
         if self.rawdata_files_exist() and not force:
             self.LOGGER.info("Dataset already exists. Skipping download.")
-            return
-
-        if self.BASE_URL is None:
-            self.LOGGER.info("Dataset provides no url. Assumed offline")
             return
 
         self.LOGGER.debug("Starting to download dataset.")
