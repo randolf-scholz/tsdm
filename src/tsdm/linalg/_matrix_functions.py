@@ -272,7 +272,6 @@ def apply_keepdim(x: Tensor, dim: tuple[int, int], keepdim: bool) -> Tensor:
     if not keepdim:
         return x
 
-    # TODO: sort by absolute value.
     rowdim, coldim = dim
     dims = (rowdim, coldim) if abs(rowdim) < abs(coldim) else (coldim, rowdim)
     for d in dims:

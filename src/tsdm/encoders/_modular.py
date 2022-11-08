@@ -18,6 +18,7 @@ __all__ = [
 import warnings
 from collections import namedtuple
 from collections.abc import Hashable, Iterable, Iterator, Mapping
+from types import EllipsisType
 from typing import Any, Generic, Optional, TypeVar, cast, overload
 
 import numpy as np
@@ -302,7 +303,7 @@ class FrameIndexer(BaseEncoder):
     index_columns: Index
     index_dtypes: Series
     index_indices: list[int]
-    reset: Hashable | list[Hashable]
+    reset: EllipsisType | Hashable | list[Hashable]
 
     def __init__(self, *, reset: Optional[Hashable | list[Hashable]] = None) -> None:
         super().__init__()
@@ -326,7 +327,6 @@ class FrameIndexer(BaseEncoder):
         self.index_columns = index.columns
         self.index_dtypes = index.dtypes
 
-        # FIXME: EllipsisType py3.10
         if self.reset is Ellipsis or not isinstance(self.reset, list):
             self.index_indices = list(range(len(index.columns)))
         else:
@@ -365,8 +365,7 @@ class FrameSplitter(BaseEncoder, Mapping):
     original_columns: Index
     original_dtypes: Series
 
-    # FIXME: Union[types.EllipsisType, set[Hashable]] in 3.10
-    groups: dict[Any, Hashable | list[Hashable]]
+    groups: dict[Any, EllipsisType | Hashable | list[Hashable]]
     group_indices: dict[Any, list[int]]
 
     has_ellipsis: bool = False

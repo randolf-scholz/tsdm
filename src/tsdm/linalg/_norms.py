@@ -271,7 +271,6 @@ def _torch_multi_scaled_norm(
     p: float = 2,
     q: float = 2,
 ) -> Tensor:
-    # TODO: avoid computing power twice exponentiation
     z = torch.stack([_torch_scaled_norm(z, p=p) ** q for z in x])
     w = torch.tensor([z.numel() for z in x], device=z.device, dtype=z.dtype)
     return (torch.dot(w, z) / torch.sum(w)) ** (1 / q)
@@ -284,7 +283,6 @@ def _numpy_multi_scaled_norm(
     p: float = 2,
     q: float = 2,
 ) -> NDArray:
-    # TODO: avoid computing power twice exponentiation
     z = np.stack([_numpy_scaled_norm(z, p=p) ** q for z in x])
     w = np.array([z.size for z in x])
     return (np.dot(w, z) / np.sum(w)) ** (1 / q)
@@ -303,7 +301,6 @@ def grad_norm(
     if len(tensors) == 0:
         return torch.tensor(0.0)
 
-    # TODO: implement special cases p,q = ±∞
     if normalize:
         # Initializing s this way automatically gets the dtype and device correct
         x = tensors.pop()
@@ -342,7 +339,6 @@ def multi_norm(
     if len(tensors) == 0:
         return torch.tensor(0.0)
 
-    # TODO: implement special cases p,q = ±∞
     if normalize:
         # Initializing s this way automatically gets the dtype and device correct
         s = torch.mean(tensors.pop() ** p) ** (q / p)

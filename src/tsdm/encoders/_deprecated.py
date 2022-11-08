@@ -11,6 +11,7 @@ __all__ = [
 from collections import defaultdict
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from copy import deepcopy
+from types import EllipsisType
 from typing import Any, Mapping, Optional, Union
 
 import numpy as np
@@ -128,16 +129,6 @@ class DataFrameEncoder(BaseEncoder):
 
         self.spec.name = self.__class__.__name__
 
-        # add extra repr options by cloning from spec.
-        # for x in [
-        #     "_repr_data_resource_",
-        #     "_repr_fits_horizontal_",
-        #     "_repr_fits_vertical_",
-        #     "_repr_html_",
-        #     "_repr_latex_",
-        # ]:
-        #     setattr(self, x, getattr(self.spec, x))
-
     def fit(self, data: DataFrame, /) -> None:
         self.colspec = data.dtypes
 
@@ -147,14 +138,6 @@ class DataFrameEncoder(BaseEncoder):
             self.index_encoders.fit(data.index)
 
         if isinstance(self.column_encoders, Mapping):
-            # check if cols are a proper partition.
-            # keys = set(df.columns)
-            # _keys = set(self.column_encoders.keys())
-            # assert keys <= _keys, f"Missing encoders for columns {keys - _keys}!"
-            # assert (
-            #     keys >= _keys
-            # ), f"Encoder given for non-existent columns {_keys- keys}!"
-
             for _, series in self.spec.loc["columns"].iterrows():
                 encoder = series["encoder"]
                 cols = series["col"]
@@ -346,8 +329,7 @@ class FrameSplitter2(BaseEncoder, Mapping):
     index_dtypes = Series
     index_indices: list[int]
 
-    # FIXME: Union[types.EllipsisType, set[Hashable]] in 3.10
-    groups: dict[Any, Hashable | list[Hashable]]
+    groups: dict[Any, EllipsisType | Hashable | list[Hashable]]
     group_indices: dict[Any, list[int]]
 
     indices: dict[Any, list[int]]
@@ -356,17 +338,6 @@ class FrameSplitter2(BaseEncoder, Mapping):
 
     permutation: list[int]
     inverse_permutation: list[int]
-
-    # @property
-    # def names(self) -> set[Hashable]:
-    #     r"""Return the union of all groups."""
-    #     sets: list[set] = [
-    #         set(obj) if isinstance(obj, Iterable) else {Ellipsis}
-    #         for obj in self.groups.values()
-    #     ]
-    #     union: set[Hashable] = set.union(*sets)
-    #     assert sum(len(u) for u in sets) == len(union), "Duplicate columns!"
-    #     return union
 
     def __init__(self, groups: Iterable[Hashable]) -> None:
         super().__init__()
@@ -425,7 +396,6 @@ class FrameSplitter2(BaseEncoder, Mapping):
 
         # replace ellipsis indices
         if self.has_ellipsis:
-            # FIXME EllipsisType in 3.10
             fixed_cols = set().union(
                 *(
                     set(cols)  # type: ignore[arg-type]

@@ -74,7 +74,7 @@ Some important units
     - ordered: False
     - Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
 """
-#  TODO:
+#  TODO: Add more encoders
 # - Target Encoding: enc(x) = mean(enc(y|x))
 # - Binary Encoding: enx(x) =
 # - Hash Encoder: enc(x) = binary(hash(x))

@@ -62,9 +62,6 @@ def aggregate_or(
 @jit.script
 def cumulative_and(x: Tensor, dim: Optional[int] = None) -> Tensor:
     r"""Cumulative aggregation with logical ``AND`` $yᵢ = ⋀_{j≤i} xⱼ$."""
-    # TODO: rewrite with enumerate and &= when BUGS are fixed
-    # BUG: https://github.com/pytorch/pytorch/issues/67142
-    # BUG: https://github.com/pytorch/pytorch/issues/68064
     dim = 0 if dim is None else dim
     y = x.clone().swapaxes(0, dim)
     for i in range(1, len(y)):
@@ -75,9 +72,6 @@ def cumulative_and(x: Tensor, dim: Optional[int] = None) -> Tensor:
 @jit.script
 def cumulative_or(x: Tensor, dim: Optional[int] = None) -> Tensor:
     r"""Cumulative aggregation with logical ``OR`` $yᵢ = ⋁_{j≤i} xⱼ$."""
-    # TODO: rewrite with enumerate and &= when BUGS are fixed
-    # BUG: https://github.com/pytorch/pytorch/issues/67142
-    # BUG: https://github.com/pytorch/pytorch/issues/68064
     dim = 0 if dim is None else dim
     y = x.clone().swapaxes(0, dim)
     for i in range(1, len(y)):
