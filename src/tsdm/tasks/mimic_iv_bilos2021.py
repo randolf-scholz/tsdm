@@ -24,7 +24,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FrameEncoder, MinMaxScaler, Standardizer
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
@@ -152,7 +152,7 @@ def mimic_collate(batch: list[Sample]) -> Batch:
     )
 
 
-class MIMIC_IV_Bilos2021(BaseTask):
+class MIMIC_IV_Bilos2021(OldBaseTask):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al.
 
     Evaluation Protocol
@@ -185,11 +185,11 @@ class MIMIC_IV_Bilos2021(BaseTask):
     test_size = 0.15  # of total
     valid_size = 0.2  # of train split size, i.e. 0.85*0.2=0.17
 
-    encoder: FrameEncoder[Standardizer, dict[Any, MinMaxScaler]]
+    preprocessor: FrameEncoder[Standardizer, dict[Any, MinMaxScaler]]
 
-    def __init__(self, normalize_time: bool = True):
+    def __init__(self, *, normalize_time: bool = True) -> None:
         super().__init__()
-        self.encoder = FrameEncoder(
+        self.preprocessor = FrameEncoder(
             column_encoders=Standardizer(),
             index_encoders={"time_stamp": MinMaxScaler()},
         )
@@ -207,9 +207,9 @@ class MIMIC_IV_Bilos2021(BaseTask):
 
         # Standardize the x-values, min-max scale the t values.
         ts = ds.dataset
-        self.encoder.fit(ts)
-        ts = self.encoder.encode(ts)
-        index_encoder = self.encoder.index_encoders["time_stamp"]
+        self.preprocessor.fit(ts)
+        ts = self.preprocessor.encode(ts)
+        index_encoder = self.preprocessor.index_encoders["time_stamp"]
         self.observation_time /= index_encoder.param.xmax  # type: ignore[assignment]
 
         # drop values outside 5 sigma range
@@ -241,7 +241,7 @@ class MIMIC_IV_Bilos2021(BaseTask):
         return folds
 
     @cached_property
-    def split_idx(self):
+    def split_idx(self) -> DataFrame:
         r"""Create the split index."""
         fold_idx = Index(list(range(len(self.folds))), name="fold")
         splits = DataFrame(index=self.IDs, columns=fold_idx, dtype="string")
@@ -256,12 +256,7 @@ class MIMIC_IV_Bilos2021(BaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split.
-
-        Returns
-        -------
-        DataFrame[bool]
-        """
+        r"""Return sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 
@@ -328,7 +323,7 @@ class MIMIC_IV_Bilos2021(BaseTask):
             tensors[_id] = (t, x)
         return tensors
 
-    def get_dataloader(
+    def make_dataloader(
         self, key: tuple[int, str], /, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return the dataloader for the given key."""

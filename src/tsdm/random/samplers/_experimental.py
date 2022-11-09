@@ -12,7 +12,7 @@ r"""Unused code."""
 #     shuffle: bool
 #     r"""Whether to sample in random order."""
 #
-#     def __init__(self, data_source: Sized, /, *, seq_len: int, shuffle: bool = True):
+#     def __init__(self, data_source: Sized, /, *, seq_len: int, shuffle: bool = True) -> None:
 #         r"""Initialize the Sampler.
 #
 #         Parameters
@@ -27,11 +27,11 @@ r"""Unused code."""
 #         self.idx = np.arange(len(self.data) - self.seq_len)
 #         self.shuffle = shuffle
 #
-#     def __len__(self):
+#     def __len__(self) -> int:
 #         r"""Return the maximum allowed index."""
 #         return len(self.idx)
 #
-#     def __iter__(self):
+#     def __iter__(self) -> Iterator:
 #         r"""Return Indices of the Samples."""
 #         indices = self.idx[permutation(len(self))] if self.shuffle else self.idx
 #
@@ -42,7 +42,7 @@ r"""Unused code."""
 # class CollectionSampler(Sampler):
 #     r"""Samples a single random  object from."""
 #
-#     def __init__(self, data_source: Sized, shuffle: bool = True):
+#     def __init__(self, data_source: Sized, shuffle: bool = True) -> None:
 #         super().__init__(data_source)
 #         self.data = data_source
 #         self.shuffle = shuffle
@@ -50,11 +50,11 @@ r"""Unused code."""
 #         assert isinstance(data_source.index, Index), "Index must be `pandas.Index`."
 #         self.idx = data_source.index
 #
-#     def __len__(self):
+#     def __len__(self) -> int:
 #         r"""Return the maximum allowed index."""
 #         return len(self.idx)
 #
-#     def __iter__(self):
+#     def __iter__(self) -> Iterator:
 #         r"""Return Indices of the Samples."""
 #         indices = self.idx[permutation(len(self))] if self.shuffle else self.idx
 #
@@ -68,7 +68,7 @@ r"""Unused code."""
 #     To be used in conjunction with `tsdm.datasets.torch.MappingDataset`.
 #     """
 #
-#     def __init__(self, data_source: Mapping[Any, TorchDataset], shuffle: bool = True):
+#     def __init__(self, data_source: Mapping[Any, TorchDataset], shuffle: bool = True) -> None:
 #         super().__init__(data_source)
 #         self.data = data_source
 #         self.shuffle = shuffle

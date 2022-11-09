@@ -18,10 +18,10 @@ def test_physionet_2012():
     print(series)
 
 
-def __main__():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     test_physionet_2012()
 
 
 if __name__ == "__main__":
-    __main__()
+    _main()

@@ -31,16 +31,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
-    r"""Automatically create type aliases for all exported functions and classes.
-
-    Parameters
-    ----------
-    module: ModuleType
-
-    Returns
-    -------
-    dict[str, str]
-    """
+    r"""Automatically create type aliases for all exported functions and classes."""
     d: dict[str, str] = {}
     if not hasattr(module, "__all__"):
         return d
@@ -105,17 +96,7 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
 
 
 def query_bool(question: str, default: Optional[bool] = True) -> bool:
-    r"""Ask a yes/no question and returns answer as bool.
-
-    Parameters
-    ----------
-    question: str
-    default: Optional[bool], default True
-
-    Returns
-    -------
-    bool
-    """
+    r"""Ask a yes/no question and returns answer as bool."""
     responses = {
         "y": True,
         "yes": True,
@@ -148,17 +129,7 @@ def query_choice(
 ) -> str:
     r"""Ask the user to pick an option.
 
-    Parameters
-    ----------
-    question: str
-    choices: tuple[str]
-    default: Optional[str]
-    pick_by_number: bool, default True
-        If True, will allow the user to pick the choice by entering its number.
-
-    Returns
-    -------
-    str
+    If `pick_by_number=True`, then will allow the user to pick the choice by number.
     """
     choices = set(choices)
     ids: dict[int, str] = dict(enumerate(choices))
@@ -188,6 +159,8 @@ def query_choice(
 
 def install_package(
     package_name: str,
+    /,
+    *,
     non_interactive: bool = False,
     installer: str = "pip",
     options: tuple[str, ...] = (),
@@ -221,15 +194,7 @@ def install_package(
 def get_requirements(package: str, version: Optional[str] = None) -> dict[str, str]:
     r"""Return dictionary containing requirements with version numbers.
 
-    Parameters
-    ----------
-    package: str
-    version: Optional[str]
-        In the case of None, the latest version is used.
-
-    Returns
-    -------
-    dict[str, str]
+    If `version=None`, then the latest version is used.
     """
     # get requirements as string of the form package==version\n.
     reqs = subprocess.check_output(
@@ -249,13 +214,7 @@ def write_requirements(
 ) -> None:
     r"""Write a requirements dictionary to a requirements.txt file.
 
-    Parameters
-    ----------
-    package: str
-    version: Optional[str]
-        In the case of `None`, the latest version is used.
-    path: Optional[Path]
-        In the case of `None`, "requirements" is used.
+    If `version=None`, then the latest version is used.
     """
     requirements: dict[str, str] = get_requirements(package, version)
     # Note: the first entry is the package itself!

@@ -78,18 +78,6 @@ class SetFuncTS(nn.Module):
         dim_time: Optional[int] = None,
         dim_deepset: Optional[int] = None,
     ) -> None:
-        r"""Initialize the model.
-
-        Parameters
-        ----------
-        input_size: int,
-        output_size: int,
-        latent_size: Optional[int] = None,
-        dim_keys: Optional[int] = None,
-        dim_vals: Optional[int] = None,
-        dim_time: Optional[int] = None,
-        dim_deepset: Optional[int] = None,
-        """
         super().__init__()
 
         dim_keys = input_size if dim_keys is None else dim_keys
@@ -125,16 +113,6 @@ class SetFuncTS(nn.Module):
         - $mᵢ$ is identifier
 
         C is the number of classes (one-hot encoded identifier)
-
-        Parameters
-        ----------
-        t: Tensor
-        v: Tensor
-        m: Tensor
-
-        Returns
-        -------
-        Tensor
         """
         t = t.to(device=self.dummy.device)
         v = v.to(device=self.dummy.device)
@@ -162,16 +140,7 @@ class SetFuncTS(nn.Module):
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor, Tensor]]) -> Tensor:
-        r""".. Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
-
-        Parameters
-        ----------
-        batch: list[tuple[Tensor, Tensor, Tensor]]
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``."""
         return torch.cat([self.forward(t, v, m) for t, v, m in batch])
 
 
@@ -230,18 +199,6 @@ class GroupedSetFuncTS(nn.Module):
         dim_time: Optional[int] = None,
         dim_deepset: Optional[int] = None,
     ) -> None:
-        r"""Initialize the model.
-
-        Parameters
-        ----------
-        input_size: int,
-        output_size: int,
-        latent_size: Optional[int] = None,
-        dim_keys: Optional[int] = None,
-        dim_vals: Optional[int] = None,
-        dim_time: Optional[int] = None,
-        dim_deepset: Optional[int] = None,
-        """
         super().__init__()
 
         dim_keys = input_size if dim_keys is None else dim_keys
@@ -274,7 +231,7 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward(self, slow: Tensor, fast: Tensor) -> Tensor:
-        r""".. Signature:: ``[(*N, dₜ), (*N, dᵥ), (*N, dₘ)] -> (..., F)``.
+        r""".. Signature:: ``(*N, dₖ), (*N, dᵥ) -> (..., F)``.
 
         s must be a tensor of the shape $L×(2+C)$, $sᵢ = [tᵢ, zᵢ, mᵢ]$, where
         - $tᵢ$ is timestamp
@@ -282,15 +239,6 @@ class GroupedSetFuncTS(nn.Module):
         - $mᵢ$ is identifier
 
         C is the number of classes (one-hot encoded identifier)
-
-        Parameters
-        ----------
-        fast: Tensor
-        slow: Tensor
-
-        Returns
-        -------
-        Tensor
         """
         fast = fast.to(device=self.ZERO.device)
         slow = slow.to(device=self.ZERO.device)
@@ -311,8 +259,8 @@ class GroupedSetFuncTS(nn.Module):
             [time_features_fast, fast], dim=-1
         )  # [..., d] -> [..., d+dₜ-1]
 
-        # FIXME: https://github.com/pytorch/pytorch/issues/73291
-        torch.cuda.synchronize()  # needed when cat holds 0-size tensor
+        # FIXED ✔: https://github.com/pytorch/pytorch/issues/73291
+        # torch.cuda.synchronize()  # needed when cat holds 0-size tensor
 
         slow = self.slow_encoder(slow)
 
@@ -337,30 +285,12 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
-        r""".. Signature:: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
-
-        Parameters
-        ----------
-        batch: list[tuple[Tensor, Tensor, Tensor]]
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``[...,  [(*N, dₖ), (*N, dᵥ)]] -> (..., F)``."""
         return torch.stack([self.forward(slow, fast) for slow, fast in batch])
 
     @jit.export
     def forward_padded(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
-        r""".. Signature:: ``[...,  [(*N, dₜ), (*N, dᵥ), (*N, dₘ)]] -> (..., F)``.
-
-        Parameters
-        ----------
-        batch: list[tuple[Tensor, Tensor, Tensor]]
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``[...,  [(*N, dₖ), (*N, dᵥ)]] -> (..., F)``."""
         # X, Y = list(zip(*batch))
         X = []
         Y = []

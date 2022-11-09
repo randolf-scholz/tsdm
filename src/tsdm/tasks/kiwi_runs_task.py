@@ -6,9 +6,11 @@ r"""#TODO add module summary line.
 __all__ = [
     # Classes
     "KIWI_RUNS_TASK",
+    "KiwiForecastingTask",
 ]
 
 from collections.abc import Callable
+from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
@@ -19,13 +21,42 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import KIWI_RUNS
+from tsdm.datasets import KIWI_RUNS, KiwiDataset
 from tsdm.encoders import BaseEncoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask, TimeSeriesSampleGenerator
 from tsdm.utils.data import MappingDataset, TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
+
+
+class KiwiForecastingTask(TimeSeriesSampleGenerator):
+    r"""Bioprocess forecasting task using the KIWI-biolab data."""
+
+    targets = ["Base", "DOT", "Glucose", "OD600"]
+    observables = [
+        "Base",
+        "DOT",
+        "Glucose",
+        "OD600",
+        "Acetate",
+        "Fluo_GFP",
+        "pH",
+    ]
+    covariates = [
+        "Cumulated_feed_volume_glucose",
+        "Cumulated_feed_volume_medium",
+        "InducerConcentration",
+        "StirringSpeed",
+        "Flow_Air",
+        "Temperature",
+        "Probe_Volume",
+    ]
+    sample_format = ("masked", "masked")
+
+    def __init__(self, **kwargs: Any) -> None:
+        ds = KiwiDataset()
+        super().__init__(ds, **kwargs)
 
 
 class Sample(NamedTuple):
@@ -56,7 +87,7 @@ class Batch(NamedTuple):
         return repr_namedtuple(self, recursive=False)
 
 
-class KIWI_RUNS_TASK(BaseTask):
+class KIWI_RUNS_TASK(OldBaseTask):
     r"""A collection of bioreactor runs.
 
     For this task we do several simplifications
@@ -109,6 +140,7 @@ class KIWI_RUNS_TASK(BaseTask):
         forecasting_horizon: int = 24,
         observation_horizon: int = 96,
     ):
+        super().__init__()
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
@@ -180,12 +212,7 @@ class KIWI_RUNS_TASK(BaseTask):
 
     @cached_property
     def split_idx(self) -> DataFrame:
-        r"""Return table with indices for each split.
-
-        Returns
-        -------
-        DataFrame
-        """
+        r"""Return table with indices for each split."""
         splitter = ShuffleSplit(n_splits=5, random_state=0, test_size=0.25)
         groups = self.metadata.groupby(["color", "run_id"])
         group_idx = groups.ngroup()
@@ -199,12 +226,7 @@ class KIWI_RUNS_TASK(BaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split.
-
-        Returns
-        -------
-        DataFrame[bool]
-        """
+        r"""Return sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 
@@ -242,12 +264,7 @@ class KIWI_RUNS_TASK(BaseTask):
 
     @cached_property
     def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
-        r"""Return a subset of the data corresponding to the split.
-
-        Returns
-        -------
-        tuple[DataFrame, DataFrame]
-        """
+        r"""Return a subset of the data corresponding to the split."""
         splits = {}
         for key in self.index:
             assert key in self.index, f"Wrong {key=}. Only {self.index} work."
@@ -279,21 +296,10 @@ class KIWI_RUNS_TASK(BaseTask):
             "persistent_workers": False,
         }
 
-    def get_dataloader(
+    def make_dataloader(
         self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
-        r"""Return a dataloader for the given split.
-
-        Parameters
-        ----------
-        key: KeyType,
-        shuffle: bool, default False
-        dataloader_kwargs: Any,
-
-        Returns
-        -------
-        DataLoader
-        """
+        r"""Return a dataloader for the given split."""
         # Construct the dataset object
         ts, md = self.splits[key]
         dataset = _Dataset(
@@ -310,10 +316,11 @@ class KIWI_RUNS_TASK(BaseTask):
             for idx in md.index
         })
         # fmt: on
-
         # construct the sampler
         subsamplers = {
-            key: SequenceSampler(ds, seq_len=self.horizon, stride=1, shuffle=shuffle)
+            key: SequenceSampler(
+                ds.timeseries, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
+            )
             for key, ds in DS.items()
         }
         sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
@@ -323,14 +330,14 @@ class KIWI_RUNS_TASK(BaseTask):
         return DataLoader(dataset, sampler=sampler, **kwargs)
 
 
+@dataclass
 class _Dataset(torch.utils.data.Dataset):
-    def __init__(self, ts, md, *, observables, targets, observation_horizon):
-        super().__init__()
-        self.timeseries = ts
-        self.metadata = md
-        self.observables = observables
-        self.targets = targets
-        self.observation_horizon = observation_horizon
+    timeseries: DataFrame
+    metadata: DataFrame
+    _: KW_ONLY = NotImplemented
+    observables: list[str]
+    targets: list[str]
+    observation_horizon: int
 
     def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""

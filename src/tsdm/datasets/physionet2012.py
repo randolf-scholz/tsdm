@@ -326,7 +326,7 @@ class Physionet2012(MultiFrameDataset[KEY]):
     KEYS = ["A", "B", "C"]
 
     @property
-    def dataset_files(self):
+    def dataset_files(self) -> dict[KEY, str]:
         r"""Map splits into filenames."""
         postfix = "triplet" if self.unravel_triplets else "sparse"
         return {
@@ -335,7 +335,7 @@ class Physionet2012(MultiFrameDataset[KEY]):
             "C": f"Physionet2019-set-C-{postfix}.tar",
         }
 
-    def __init__(self, *, unravel_triplets: bool = False):
+    def __init__(self, *, unravel_triplets: bool = False) -> None:
         self.unravel_triplets = unravel_triplets
         super().__init__()
 
@@ -344,7 +344,7 @@ class Physionet2012(MultiFrameDataset[KEY]):
     #     r"""Return the index of the dataset."""
     #     return list(self.dataset_files.keys())
 
-    def clean_table(self, key):
+    def clean_table(self, key: KEY) -> tuple[pd.DataFrame, pd.DataFrame]:
         record_ids_list = []
         metadata: dict[str, list[float]] = {key: [] for key in GENERAL_DESCRIPTORS}
         time_series = []

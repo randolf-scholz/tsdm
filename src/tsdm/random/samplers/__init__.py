@@ -20,7 +20,7 @@ __all__ = [
 
 from typing import Final, TypeAlias
 
-from torch.utils import data as torch_utils_data
+from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.random.samplers._samplers import (
     BaseSampler,
@@ -34,7 +34,7 @@ from tsdm.random.samplers._samplers import (
     compute_grid,
 )
 
-Sampler: TypeAlias = torch_utils_data.Sampler
+Sampler: TypeAlias = TorchSampler
 r"""Type hint for samplers."""
 
 SAMPLERS: Final[dict[str, type[Sampler]]] = {
@@ -44,3 +44,5 @@ SAMPLERS: Final[dict[str, type[Sampler]]] = {
     "CollectionSampler": CollectionSampler,
 }
 r"""Dictionary of all available samplers."""
+
+del Final, TypeAlias, TorchSampler

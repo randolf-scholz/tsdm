@@ -17,19 +17,19 @@ from torch.utils.data import DataLoader, TensorDataset
 from tsdm.datasets import ETT
 from tsdm.encoders import (
     ChainedEncoder,
-    DataFrameEncoder,
     DateTimeEncoder,
     FloatEncoder,
+    FrameEncoder,
     MinMaxScaler,
     ModularEncoder,
     Standardizer,
     TensorEncoder,
 )
 from tsdm.random.samplers import SequenceSampler
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 
 
-class ETT_Zhou2021(BaseTask):
+class ETT_Zhou2021(OldBaseTask):
     r"""Forecasting Oil Temperature on the Electrical-Transformer dataset.
 
     Paper
@@ -118,7 +118,6 @@ class ETT_Zhou2021(BaseTask):
         target: TARGET = "OT",
         eval_batch_size: int = 128,
         train_batch_size: int = 32,
-        test_metric: Literal["MSE", "MAE"] = "MSE",
     ):
         super().__init__()
         self.target = target
@@ -135,8 +134,8 @@ class ETT_Zhou2021(BaseTask):
 
         self.preprocessor = ChainedEncoder(
             TensorEncoder(),
-            DataFrameEncoder(
-                Standardizer() @ FloatEncoder(),
+            FrameEncoder(
+                column_encoders=Standardizer() @ FloatEncoder(),
                 index_encoders=MinMaxScaler() @ DateTimeEncoder(),
             ),
         )
@@ -144,22 +143,19 @@ class ETT_Zhou2021(BaseTask):
         # Fit the Preprocessors
         self.preprocessor.fit(self.splits["train"])
         # Set the Encoder
-        # self.pre_encoder = initialize_from(ENCODERS, __name__=pre_encoder)
+        # self.pre_encoder = initialize_from_table(ENCODERS, __name__=pre_encoder)
 
     @cached_property
     def dataset(self) -> DataFrame:
-        r"""Return the dataset."""
         ds = ETT()
         return ds.dataset[self.dataset_id]
 
     @cached_property
     def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:
-        r"""The test metric."""
         return nn.MSELoss()
 
     @cached_property
     def splits(self) -> Mapping[KeyType, DataFrame]:
-        r"""Split the dataset into train, test and validation."""
         _splits: dict[Any, DataFrame] = {
             "train": self.dataset.loc["2016-07-01":"2017-06-30"],  # type: ignore[misc]
             "valid": self.dataset.loc["2017-07-01":"2017-10-31"],  # type: ignore[misc]
@@ -170,31 +166,13 @@ class ETT_Zhou2021(BaseTask):
         _splits["test"] = _splits["trial"]  # alias
         return _splits
 
-    def get_dataloader(
+    def make_dataloader(
         self,
         key: KeyType,
         /,
         shuffle: bool = True,
         **kwargs: Any,
     ) -> DataLoader:
-        r"""Return a DataLoader for the training-dataset with the given batch_size.
-
-        If encode=True, then it will create a dataloader with two outputs
-
-        (inputs, targets)
-
-        where inputs = pre_encoder.encode(masked_batch).
-
-        Parameters
-        ----------
-        key: Literal["train", "valid", "test"]
-            Dataset part from which to construct the DataLoader
-        shuffle: bool = True
-
-        Returns
-        -------
-        DataLoader
-        """
         if key == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
         if key == "test" and "drop_last" in kwargs:

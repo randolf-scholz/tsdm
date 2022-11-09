@@ -48,17 +48,6 @@ def relative_error(
 
     The tolerance parameter $ε$ is determined automatically. By default,
     $ε=2^{-24}$ for single and $ε=2^{-53}$ for double precision.
-
-    Parameters
-    ----------
-    xhat: ArrayLike
-        The estimation
-    x_true: ArrayLike
-        The true value
-
-    Returns
-    -------
-    ArrayLike
     """
     xhat, x_true = np.asanyarray(xhat), np.asanyarray(x_true)
     return _numpy_relative_error(xhat, x_true)
@@ -166,17 +155,6 @@ def scaled_norm(
     In particular, given $𝓤=⨁_{i=1:n} U_i$, then
 
     .. math:: ∥u∥_p^p = ∑_{i=1:n} \frac{\dim U_i}{\dim 𝓤} ∥u_i∥_p^p
-
-    Parameters
-    ----------
-    x: ArrayLike
-    p: float, default: 2
-    axis: tuple[int], optional, default: None
-    keepdims: bool, default: False
-
-    Returns
-    -------
-    ArrayLike
     """
     if isinstance(x, Tensor):
         axis = () if axis is None else axis
@@ -278,12 +256,6 @@ def multi_scaled_norm(
                     \frac{1}{m_i}∑_{j=1:m_i} |(u_i)_j|^{p}
                 \right)^{q/p}
              \right)^{1/q}
-
-    Parameters
-    ----------
-    x
-    p: float, default: 2
-    q: float, default: 2
     """
     if isinstance(x[0], Tensor):
         x = cast(Sequence[Tensor], x)
@@ -299,7 +271,6 @@ def _torch_multi_scaled_norm(
     p: float = 2,
     q: float = 2,
 ) -> Tensor:
-    # TODO: avoid computing power twice exponentiation
     z = torch.stack([_torch_scaled_norm(z, p=p) ** q for z in x])
     w = torch.tensor([z.numel() for z in x], device=z.device, dtype=z.dtype)
     return (torch.dot(w, z) / torch.sum(w)) ** (1 / q)
@@ -312,7 +283,6 @@ def _numpy_multi_scaled_norm(
     p: float = 2,
     q: float = 2,
 ) -> NDArray:
-    # TODO: avoid computing power twice exponentiation
     z = np.stack([_numpy_scaled_norm(z, p=p) ** q for z in x])
     w = np.array([z.size for z in x])
     return (np.dot(w, z) / np.sum(w)) ** (1 / q)
@@ -324,31 +294,28 @@ def grad_norm(
 ) -> Tensor:
     r"""Return the (scaled) p-q norm of the gradients.
 
-    Parameters
-    ----------
-    tensors: list[Tensor]
-    p: float, default: 2
-    q: float, default: 2
-    normalize: bool, default True
-        If true, accumulate with mean instead of sum
+    .. math:: ‖A‖_{p,q} ≔ |∑_{j=1}^n (∑_{i=1)^m |A_{ij}|^p)^{p/q} |^{1/q}
 
-    Returns
-    -------
-    Tensor
+    If `normalize=True`, the sums are replaced with averages.
     """
     if len(tensors) == 0:
         return torch.tensor(0.0)
 
-    # TODO: implement special cases p,q = ±∞
     if normalize:
         # Initializing s this way automatically gets the dtype and device correct
-        s = torch.mean(tensors.pop().grad ** p) ** (q / p)
+        x = tensors.pop()
+        assert x.grad is not None
+        s = torch.mean(x.grad**p) ** (q / p)
         for x in tensors:
+            assert x.grad is not None
             s += torch.mean(x.grad**p) ** (q / p)
         return (s / (1 + len(tensors))) ** (1 / q)
     # else
-    s = torch.sum(tensors.pop().grad ** p) ** (q / p)
+    x = tensors.pop()
+    assert x.grad is not None
+    s = torch.sum(x.grad**p) ** (q / p)
     for x in tensors:
+        assert x.grad is not None
         s += torch.sum(x.grad**p) ** (q / p)
     return s ** (1 / q)
 
@@ -359,17 +326,9 @@ def multi_norm(
 ) -> Tensor:
     r"""Return the (scaled) p-q norm of the gradients.
 
-    Parameters
-    ----------
-    tensors: list[Tensor]
-    p: float, default: 2
-    q: float, default: 2
-    normalize: bool, default: True
-        If true, accumulate with mean instead of sum
+    .. math:: ‖A‖_{p,q} ≔ |∑_{j=1}^n (∑_{i=1)^m |A_{ij}|^p)^{p/q} |^{1/q}
 
-    Returns
-    -------
-    Tensor
+    If `normalize=True`, the sums are replaced with averages.
     """
     _tensors: list[Tensor] = []
     for tensor in tensors:
@@ -380,7 +339,6 @@ def multi_norm(
     if len(tensors) == 0:
         return torch.tensor(0.0)
 
-    # TODO: implement special cases p,q = ±∞
     if normalize:
         # Initializing s this way automatically gets the dtype and device correct
         s = torch.mean(tensors.pop() ** p) ** (q / p)

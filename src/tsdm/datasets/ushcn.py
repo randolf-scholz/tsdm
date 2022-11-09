@@ -22,15 +22,18 @@ import pandas
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiFrameDataset
+from tsdm.utils.types import Parameters, ReturnVar
 
 __logger__ = logging.getLogger(__name__)
 
 
-def with_ray_cluster(func: Callable) -> Callable:
+def with_ray_cluster(
+    func: Callable[Parameters, ReturnVar]
+) -> Callable[Parameters, ReturnVar]:
     r"""Run function with ray cluster."""
 
     @wraps(func)
-    def _wrapper(*args, **kwargs):
+    def _wrapper(*args: Parameters.args, **kwargs: Parameters.kwargs) -> ReturnVar:
         if importlib.util.find_spec("ray") is not None:
             ray = importlib.import_module("ray")
             # Only use 80% of the available CPUs.
@@ -231,17 +234,7 @@ class USHCN(MultiFrameDataset[KEY]):
     }
     rawdata_paths: dict[str, Path]
 
-    # def _load(self, key: KEY = "us_daily", **kwargs: Any) -> DataFrame:
-    #     r"""Load the dataset from disk."""
-    #     return super()._load(key=key, **kwargs)
-
     def clean_table(self, key: KEY = "us_daily") -> DataFrame:
-        r"""Create the DataFrames.
-
-        Parameters
-        ----------
-        key: Literal["us_daily", "states", "stations"], default "us_daily"
-        """
         if key == "us_daily":
             return self._clean_us_daily()
         if key == "states":
@@ -452,7 +445,7 @@ class USHCN(MultiFrameDataset[KEY]):
         return data
 
     @property
-    def _state_codes(self):
+    def _state_codes(self) -> list[tuple[str, str, str]]:
         return [
             ("ID", "Abbr.", "State"),
             ("01", "AL", "Alabama"),

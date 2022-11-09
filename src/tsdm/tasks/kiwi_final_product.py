@@ -6,7 +6,8 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
@@ -22,7 +23,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 from tsdm.utils.data import MappingDataset, TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
@@ -104,7 +105,7 @@ def get_time_table(
     return df
 
 
-class KIWI_FINAL_PRODUCT(BaseTask):
+class KIWI_FINAL_PRODUCT(OldBaseTask):
     r"""Forecast the final biomass or product."""
 
     KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
@@ -210,7 +211,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
     @cached_property
     def dataset(self) -> KIWI_RUNS:
-        r"""Return the cached dataset."""
         # Drop runs that don't work for this task.
         dataset = KIWI_RUNS()
         dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype("float32")
@@ -219,17 +219,11 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
-        r"""The target metric."""
         return jit.script(MSELoss())
 
     @cached_property
     def split_idx(self) -> DataFrame:
-        r"""Return table with indices for each split.
-
-        Returns
-        -------
-        DataFrame
-        """
+        r"""Return table with indices for each split."""
         splitter = ShuffleSplit(n_splits=5, random_state=0, test_size=0.25)
         groups = self.metadata.groupby(["color", "run_id"])
         group_idx = groups.ngroup()
@@ -243,12 +237,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split.
-
-        Returns
-        -------
-        DataFrame[bool]
-        """
+        r"""Return sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 
@@ -286,12 +275,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
 
     @cached_property
     def splits(self) -> dict[KeyType, tuple[DataFrame, DataFrame]]:
-        r"""Return a subset of the data corresponding to the split.
-
-        Returns
-        -------
-        tuple[DataFrame, DataFrame]
-        """
         splits = {}
         for key in self.index:
             assert key in self.index, f"Wrong {key=}. Only {self.index} work."
@@ -306,7 +289,7 @@ class KIWI_FINAL_PRODUCT(BaseTask):
             # splits[key] = Split(key[0], key[1], timeseries, metadata)
         return splits
 
-    def get_dataloader(
+    def make_dataloader(
         self,
         key: KeyType,
         /,
@@ -314,18 +297,6 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         shuffle: bool = False,
         **dataloader_kwargs: Any,
     ) -> DataLoader:
-        r"""Return a dataloader for the given split.
-
-        Parameters
-        ----------
-        key: KeyType,
-        shuffle: bool = False,
-        dataloader_kwargs: Any,
-
-        Returns
-        -------
-        DataLoader
-        """
         # Construct the dataset object
         ts, md = self.splits[key]
         dataset = _Dataset(ts, md, self.observables)
@@ -356,12 +327,11 @@ class KIWI_FINAL_PRODUCT(BaseTask):
         return DataLoader(dataset, sampler=sampler, **kwargs)
 
 
+@dataclass
 class _Dataset(torch.utils.data.Dataset):
-    def __init__(self, ts, md, observables):
-        super().__init__()
-        self.timeseries = ts
-        self.metadata = md
-        self.observables = observables
+    timeseries: DataFrame
+    metadata: DataFrame
+    observables: Sequence[str]
 
     def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""
@@ -450,7 +420,7 @@ class _Dataset(torch.utils.data.Dataset):
 #     metadata: Any
 #     targets: Any
 #
-#     def __repr__(self):
+#     def __repr__(self) -> str:
 #         return repr_namedtuple(self)
 
 
@@ -462,5 +432,5 @@ class _Dataset(torch.utils.data.Dataset):
 #     timeseries: Tensor
 #     metadata: Tensor
 #
-#     def __repr__(self):
+#     def __repr__(self) -> str:
 #         return repr_namedtuple(self)

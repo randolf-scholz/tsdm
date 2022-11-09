@@ -181,3 +181,5 @@ ACTIVATIONS: Final[dict[str, FunctionalActivation | type[ModularActivation]]] = 
     **FUNCTIONAL_ACTIVATIONS,
 }
 r"""Dictionary containing all available activations."""
+
+del Final, TypeAlias, nn, Callable, Tensor

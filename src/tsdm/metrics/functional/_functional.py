@@ -28,16 +28,6 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
 
-    Parameters
-    ----------
-    xhat: Tensor
-    x: Tensor
-    eps: float, default 2**-24
-
-    Returns
-    -------
-    Tensor
-
     References
     ----------
     - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
@@ -58,16 +48,6 @@ def nrmse(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
     r"""Compute the normalized deviation score.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
-
-    Parameters
-    ----------
-    xhat: Tensor
-    x: Tensor
-    eps: float, default 2**-24
-
-    Returns
-    -------
-    Tensor
 
     References
     ----------
@@ -95,16 +75,6 @@ def q_quantile(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
         Tim Januschowski
       | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
       | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-
-    Parameters
-    ----------
-    x: Tensor
-    xhat: Tensor
-    q: float
-
-    Returns
-    -------
-    Tensor
     """
     residual = x - xhat
     return torch.max((q - 1) * residual, q * residual)  # simplified formula
@@ -123,16 +93,6 @@ def q_quantile_loss(x: Tensor, xhat: Tensor, q: float = 0.5) -> Tensor:
         Tim Januschowski
       | Advances in Neural Information Processing Systems 31 (NeurIPS 2018)
       | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-
-    Parameters
-    ----------
-    x: Tensor
-    xhat: Tensor
-    q: float
-
-    Returns
-    -------
-    Tensor
     """
     return 2 * torch.sum(q_quantile(x, xhat, q)) / torch.sum(torch.abs(x))
 
@@ -145,14 +105,5 @@ def rmse(
     r"""Compute the RMSE.
 
     .. math:: 𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[|x - x̂|^2]}
-
-    Parameters
-    ----------
-    x: Tensor,
-    xhat: Tensor,
-
-    Returns
-    -------
-    Tensor
     """
     return torch.sqrt(torch.mean((x - xhat) ** 2))

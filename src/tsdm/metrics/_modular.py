@@ -46,17 +46,7 @@ class ND(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
-        r"""Compute the loss value.
-
-        Parameters
-        ----------
-        x: Tensor
-        xhat: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``(..., n), (..., n) -> ()``."""
         return nd(x, xhat)
 
 
@@ -74,17 +64,7 @@ class NRMSE(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
-        r"""Compute the loss value.
-
-        Parameters
-        ----------
-        x: Tensor
-        xhat: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r"""Compute the loss value."""
         return nrmse(x, xhat)
 
 
@@ -102,17 +82,7 @@ class Q_Quantile(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
-        r"""Compute the loss value.
-
-        Parameters
-        ----------
-        x: Tensor
-        xhat: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r"""Compute the loss value."""
         return q_quantile(x, xhat)
 
 
@@ -130,17 +100,7 @@ class Q_Quantile_Loss(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
-        r"""Compute the loss value.
-
-        Parameters
-        ----------
-        x: Tensor
-        xhat: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r"""Compute the loss value."""
         return q_quantile_loss(x, xhat)
 
 
@@ -171,11 +131,6 @@ class WRMSE(nn.Module):
 
         Channel-wise: RMSE(RMSE(channel))
         Non-channel-wise: RMSE(flatten(results))
-
-        Parameters
-        ----------
-        w: Tensor
-        normalize: bool = True
         """
         super().__init__()
         assert torch.all(w >= 0) and torch.any(w > 0)
@@ -187,17 +142,7 @@ class WRMSE(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., m), (..., m)] → ...``.
-
-        Parameters
-        ----------
-        x: Tensor
-        xhat: Tensor
-
-        Returns
-        -------
-        Tensor
-        """
+        r""".. Signature:: ``[(..., m), (..., m)] → ...``."""
         self.w = self.w.to(device=x.device)
         assert x.shape[-self.rank :] == self.shape
         # the residuals, shape: ...𝐦
@@ -219,13 +164,8 @@ class RMSE(nn.Module):
     mask_nan_targets: Final[bool]
     r"""CONST: Whether to mask NaN targets, not counting them as observations."""
 
-    def __init__(self, mask_nan_targets: bool = True):
-        r"""Compute the RMSE.
-
-        Parameters
-        ----------
-        mask_nan_targets: bool = True
-        """
+    def __init__(self, mask_nan_targets: bool = True) -> None:
+        r"""Compute the RMSE."""
         super().__init__()
         self.mask_nan_targets = mask_nan_targets
 
@@ -254,13 +194,8 @@ class MSE(nn.Module):
     mask_nan_targets: Final[bool]
     r"""CONST: Whether to mask NaN targets, not counting them as observations."""
 
-    def __init__(self, mask_nan_targets: bool = True):
-        r"""Compute the RMSE.
-
-        Parameters
-        ----------
-        mask_nan_targets: bool = True
-        """
+    def __init__(self, mask_nan_targets: bool = True) -> None:
+        r"""Compute the RMSE."""
         super().__init__()
         self.mask_nan_targets = mask_nan_targets
 

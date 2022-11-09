@@ -11,7 +11,7 @@ import subprocess
 from abc import ABC, ABCMeta, abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Optional, Protocol
+from typing import Any, Optional, Protocol
 from urllib.parse import urlparse
 
 from tsdm.config import MODELDIR
@@ -20,7 +20,7 @@ from tsdm.config import MODELDIR
 class BaseModelMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args, **kwargs):
+    def __init__(cls, *args: Any, **kwargs: Any) -> None:
         cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         if os.environ.get("GENERATING_DOCS", False):

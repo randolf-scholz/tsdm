@@ -9,12 +9,17 @@ We decided to use a dataloader instead of, say, a key to cater to the question o
 forecasting horizons.
 
 
+Remark:
+    One thing that is weird about torchs way to approch the issue, is that there
+    are two seperated functionailities: sampling rows and selecting columns.
+    In principle, the sampler could do both, supposedly.
+    However, the TaskDataset is really responsible for creating the sample.
+
 Idea:
+    The Pre-Encoder must work in the following way:
 
-The Pre-Encoder must work in the following way:
-
-- `tuple[TimeTensor] → tuple[TimeTensor]` row-wise!
-- `tuple[Tensor] → tuple[Tensor]`
+    - `tuple[TimeTensor] → tuple[TimeTensor]` row-wise!
+    - `tuple[Tensor] → tuple[Tensor]`
 
 More generally, eligible inputs are:
 
@@ -32,6 +37,9 @@ __all__ = [
     "Task",
     "TASKS",
     # Classes
+    "OldBaseTask",
+    "TimeSeriesTask",
+    "TimeSeriesSampleGenerator",
     # Tasks
     "ETT_Zhou2021",
     "KIWI_RUNS_TASK",
@@ -41,23 +49,30 @@ __all__ = [
     "MIMIC_IV_Bilos2021",
     "USHCN_DeBrouwer2019",
     "Kiwi_BioProcessTask",
+    # Task Datasets
+    "KiwiSampleGenerator",
+    "KiwiTask",
+    "InSilicoSampleGenerator",
+    "InSilicoTask",
 ]
 
 
 from typing import Final, TypeAlias
 
 from tsdm.tasks import base
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.tasks.electricity_lim2021 import ElectricityLim2021
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
+from tsdm.tasks.insilico import InSilicoSampleGenerator, InSilicoTask
 from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
+from tsdm.tasks.kiwi_task import KiwiSampleGenerator, KiwiTask
 from tsdm.tasks.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.tasks.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.tasks.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
-Task: TypeAlias = BaseTask
+Task: TypeAlias = OldBaseTask
 r"""Type hint for tasks."""
 
 TASKS: Final[dict[str, type[Task]]] = {
@@ -71,3 +86,5 @@ TASKS: Final[dict[str, type[Task]]] = {
     "USHCN_DeBrouwer": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available tasks."""
+
+del Final, TypeAlias

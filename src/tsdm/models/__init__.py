@@ -49,3 +49,5 @@ MODELS: Final[dict[str, ModelType]] = {
     "SetFuncTS": SetFuncTS,
 }
 r"""Dictionary of all available models."""
+
+del Final, TypeAlias, nn

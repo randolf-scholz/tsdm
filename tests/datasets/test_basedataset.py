@@ -32,10 +32,10 @@ def test_methods_attributes():
     __logger__.info("Testing METHODS_ATTRIBUTES finished!")
 
 
-def __main__():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
     test_methods_attributes()
 
 
 if __name__ == "__main__":
-    __main__()
+    _main()

@@ -67,14 +67,6 @@ class DeepSet(nn.ModuleDict):
           - Encoder: `(..., D) -> (..., E)`
           - Aggregation: `(..., *V, E) -> (..., E)`
           - Decoder: `(..., E) -> (..., F)`
-
-        Parameters
-        ----------
-        x: Tensor
-
-        Returns
-        -------
-        Tensor
         """
         x = self.encoder(x)
         x = torch.nanmean(x, dim=-2)
@@ -130,14 +122,6 @@ class DeepSetReZero(nn.ModuleDict):
           - Encoder: ``(..., D) -> (..., E)``.
           - Aggregation: ``(..., *V, E) -> (..., E)``.
           - Decoder: ``(..., E) -> (..., F)``.
-
-        Parameters
-        ----------
-        x: Tensor
-
-        Returns
-        -------
-        Tensor
         """
         x = self.encoder(x)
         x = torch.nanmean(x, dim=-2)

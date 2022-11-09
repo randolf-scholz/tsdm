@@ -70,7 +70,7 @@ class Electricity(SingleFrameDataset):
     )
     r"""HTTP address containing additional information about the dataset."""
 
-    DATASET_HASH = "5fc87215f2b5097ee96d15e382fd360b92757c241a0315a59c82951945860cc9"
+    TABLE_HASH = 7114453877232760046
     RAWDATA_HASH = "f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
     DATASET_SHAPE = (140256, 370)
     RAWDATA_SHAPE = (140256, 370)
@@ -80,7 +80,7 @@ class Electricity(SingleFrameDataset):
     rawdata_files = "LD2011_2014.txt.zip"
     rawdata_paths: Path
 
-    def _clean(self) -> DataFrame:
+    def clean_table(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
         with ZipFile(self.rawdata_paths) as files:
             fname = self.rawdata_paths.with_suffix("").name

@@ -5,8 +5,8 @@ Implement your own by subclassing `BaseDataset`
 Basic Usage
 -----------
 
->>>    from tsdm.datasets import Electricity
->>>    dataset = Electricity()
+>>> from tsdm.datasets import InSilicoData
+>>> dataset = InSilicoData()
 
 Some design decisions:
 
@@ -37,6 +37,7 @@ __all__ = [
     "ETT",
     "Electricity",
     "InSilicoData",
+    "KiwiDataset",
     "KIWI_RUNS",
     "KIWI_RUNS_OLD",
     "MIMIC_III",
@@ -65,7 +66,7 @@ from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
-from tsdm.datasets.kiwi_runs import KIWI_RUNS
+from tsdm.datasets.kiwi_runs import KIWI_RUNS, KiwiDataset
 from tsdm.datasets.kiwi_runs_old import KIWI_RUNS_OLD
 from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
@@ -79,6 +80,12 @@ from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
 Dataset: TypeAlias = BaseDataset
 r"""Type hint for dataset."""
+
+
+TSC: Final[dict[str, type[TimeSeriesCollection]]] = {
+    "KiwiDataset": KiwiDataset,
+}
+
 
 DATASETS: Final[dict[str, type[Dataset]]] = {
     "BeijingAirQuality": BeijingAirQuality,
@@ -98,3 +105,5 @@ DATASETS: Final[dict[str, type[Dataset]]] = {
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available dataset."""
+
+del Final, TypeAlias

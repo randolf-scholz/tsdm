@@ -53,17 +53,14 @@ def visualize_distribution(
 ) -> None:
     r"""Plot the distribution of x in the given axis.
 
-    Parameters
-    ----------
-    data: ArrayLike
-    ax: Axes
-    num_bins: int or Sequence[int]
-    log: bool or float, default False
-        if True, use log base 10, if `float`, use  log w.r.t. this base
-    loc: Location
-    print_stats: bool
-    extra_stats: Optional[dict[str, str]]
-        Additional things to add to the stats table
+    Args:
+        data: Data to plot.
+        ax: Axes to plot into.
+        num_bins: Number of bins to use for histogram.
+        log: If True, use log base 10, if `float`, use  log w.r.t. this base
+        loc: Location of stats text.
+        print_stats: Add table of mean, std, min, max, median, mode to plot
+        extra_stats: Additional things to add to the stats table
     """
     if isinstance(data, Tensor):
         data = data.detach().cpu().numpy()
@@ -135,26 +132,9 @@ def shared_grid_plot(
 ) -> tuple[Figure, NDArray[Axes]]:
     r"""Create a compute_grid plot with shared axes and row/col headers.
 
-    Based on https://stackoverflow.com/a/25814386/9318372
-
-    Parameters
+    References
     ----------
-    data: ArrayLike
-    plot_func
-        With signature ``plot_func(data, ax=)``.
-    plot_kwargs
-    titles
-    row_headers
-    col_headers
-    xlabels
-    ylabels
-    subplots_kwargs
-        Default arguments: `tight_layout=True`, `sharex='col'`, `sharey='row'`
-
-    Returns
-    -------
-    Figure
-    Axes
+    https://stackoverflow.com/a/25814386/9318372
     """
     array = np.array(data)
 
@@ -272,10 +252,6 @@ def plot_spectrum(
         Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
     scatter_kwargs: Optional[dict] = None
         Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
-
-    Returns
-    -------
-    Figure
     """
     axis_kwargs = {
         "xlim": (-2.5, +2.5),
@@ -322,12 +298,3 @@ def center_axes(fig: Figure, /, *, remove_labels: bool = True) -> Figure:
         ax.plot(0.99, 0, ">k", transform=ax.get_yaxis_transform(), clip_on=True)
         ax.plot(0, 0.99, "^k", transform=ax.get_xaxis_transform(), clip_on=True)
     return fig
-
-
-# @torch.no_grad()
-# def plot_kernel_heatmap(kernel: Tensor, cmap: str = "seismic"):
-#     kernel = kernel.clone().detach().cpu()
-#     assert len(kernel.shape)==2 and kernel.shape[0] == kernel.shape[1]
-#     cmap = cm.get_cmap("seismic")
-#     RGBA = cmap(kernel)
-#     return RGBA[..., :-1]

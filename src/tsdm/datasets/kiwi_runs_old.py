@@ -14,7 +14,6 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, Final, Literal, Optional
 
-import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
@@ -57,11 +56,11 @@ def float_is_int(series: Series) -> bool:
 def get_integer_cols(table: DataFrame) -> set[str]:
     r"""Get all columns that contain only integers."""
     cols = set()
-    for col in table:
-        if np.issubdtype(table[col].dtype, np.integer):
+    for col in table.columns:
+        if pd.api.types.is_integer_dtype(table[col]):
             __logger__.debug("Integer column                       : %s", col)
             cols.add(col)
-        elif np.issubdtype(table[col].dtype, np.floating) and float_is_int(table[col]):
+        elif pd.api.types.is_float_dtype(table[col]) and float_is_int(table[col]):
             __logger__.debug("Integer column pretending to be float: %s", col)
             cols.add(col)
     return cols
@@ -72,7 +71,7 @@ def get_useless_cols(
 ) -> set[str]:
     r"""Get all columns that are considered useless."""
     useless_cols = set()
-    for col in table:
+    for col in table.columns:
         s = table[col]
         if col in ("run_id", "experiment_id"):
             continue
@@ -99,16 +98,21 @@ class KIWI_RUNS_OLD(MultiFrameDataset):
 
     .. code-block:: python
 
-        dict[int, # run_id
-            dict[int, # experiment_id
-                 dict[
-                     'metadata',: DataFrame,                # static
-                     'setpoints': DataFrame,                # static
-                     'measurements_reactor',: DataFrame,    # TimeTensor
-                     'measurements_array',: DataFrame,      # TimeTensor
-                     'measurements_aggregated': DataFrame,  # TimeTensor
-                 ]
-            ]
+        dict[
+            int,  # run_id
+            dict[
+                int,  # experiment_id
+                dict[
+                    "metadata",
+                    :DataFrame,  # static
+                    "setpoints":DataFrame,  # static
+                    "measurements_reactor",
+                    :DataFrame,  # TimeTensor
+                    "measurements_array",
+                    :DataFrame,  # TimeTensor
+                    "measurements_aggregated":DataFrame,  # TimeTensor
+                ],
+            ],
         ]
     """
 
@@ -162,23 +166,6 @@ class KIWI_RUNS_OLD(MultiFrameDataset):
     rawdata_paths: Path
     dataset_files = {key: f"{key}.parquet" for key in KEYS + auxiliaries}
 
-    # def _load(self, key: KEY = "timeseries") -> DataFrame:
-    #     r"""Load the dataset from disk."""
-    #     table = pd.read_feather(self.dataset_paths[key])
-    #
-    #     if key == "units":
-    #         return table.set_index("variable")
-    #
-    #     # fix index dtype (groupby messes it up....)
-    #     table = table.astype({"run_id": "int32", "experiment_id": "int32"})
-    #     if "measurements" in key or key == "timeseries":
-    #         table = table.set_index(["run_id", "experiment_id", "measurement_time"])
-    #         table.columns.name = "variable"
-    #     else:
-    #         table = table.set_index(["run_id", "experiment_id"])
-    #
-    #     return table
-
     def clean_table(self, key: KEY) -> None:
         r"""Clean an already downloaded raw dataset and stores it in feather format."""
         with open(self.rawdata_paths, "rb") as file:
@@ -210,12 +197,7 @@ class KIWI_RUNS_OLD(MultiFrameDataset):
             self._clean_table(key, tables[key])
 
     def _clean_table(self, key: str, table: Optional[DataFrame] = None) -> None:
-        r"""Create the DataFrames.
-
-        Parameters
-        ----------
-        table: Optional[DataFrame] = None
-        """
+        r"""Create the DataFrames."""
         cleaners: dict[str, Callable] = {
             "measurements_aggregated": self._clean_measurements_aggregated,
             "measurements_array": self._clean_measurements_array,
@@ -590,7 +572,7 @@ class KIWI_RUNS_OLD(MultiFrameDataset):
 
         units = Series(dtype=pd.StringDtype(), name="unit")
 
-        for col in data:
+        for col in data.columns:
             if col == "runtime":
                 continue
             mask = pd.notna(data[col])

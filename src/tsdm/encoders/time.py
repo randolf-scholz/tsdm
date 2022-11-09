@@ -14,7 +14,17 @@ __all__ = [
     "TimeSlicer",
 ]
 
-from typing import Any, Final, Hashable, Literal, Optional, Sequence, cast, overload
+from typing import (
+    Any,
+    ClassVar,
+    Final,
+    Hashable,
+    Literal,
+    Optional,
+    Sequence,
+    cast,
+    overload,
+)
 
 import numpy as np
 import pandas as pd
@@ -38,23 +48,12 @@ class Time2Float(BaseEncoder):
     common_interval: Any
     scale: Any
 
-    def __init__(self, normalization: Literal["gcd", "max", "none"] = "max"):
-        r"""Choose the normalizations scheme.
-
-        Parameters
-        ----------
-        normalization: Literal["gcd", "max", "none"], default "max"
-        """
+    def __init__(self, normalization: Literal["gcd", "max", "none"] = "max") -> None:
+        r"""Choose the normalizations scheme."""
         super().__init__()
         self.normalization = normalization
 
     def fit(self, data: Series, /) -> None:
-        r"""Fit to the data.
-
-        Parameters
-        ----------
-        data: Series
-        """
         ds = data
         self.original_dtype = ds.dtype
         self.offset = ds[0].copy()
@@ -63,19 +62,19 @@ class Time2Float(BaseEncoder):
         ), "Time-Values must be monotonically increasing!"
 
         assert not (
-            np.issubdtype(self.original_dtype, np.floating)
+            pd.api.types.is_float_dtype(self.original_dtype)
             and self.normalization == "gcd"
         ), f"{self.normalization=} illegal when original dtype is floating."
 
-        if np.issubdtype(ds.dtype, np.datetime64):
+        if pd.api.types.is_datetime64_dtype(ds):
             ds = ds.view("datetime64[ns]")
             self.offset = ds[0].copy()
             timedeltas = ds - self.offset
-        elif np.issubdtype(ds.dtype, np.timedelta64):
+        elif pd.api.types.is_timedelta64_dtype(ds):
             timedeltas = ds.view("timedelta64[ns]")
-        elif np.issubdtype(ds.dtype, np.integer):
+        elif pd.api.types.is_integer_dtype(ds):
             timedeltas = ds.view("timedelta64[ns]")
-        elif np.issubdtype(ds.dtype, np.floating):
+        elif pd.api.types.is_float_dtype(ds):
             self.LOGGER.warning("Array is already floating dtype.")
             timedeltas = ds
         else:
@@ -91,28 +90,16 @@ class Time2Float(BaseEncoder):
             raise ValueError(f"{self.normalization=} not understood")
 
     def encode(self, data: Series, /) -> Series:
-        r"""Encode the data.
-
-        Roughly equal to::
-            ds ⟶ ((ds - offset)/scale).astype(float)
-
-        Parameters
-        ----------
-        data: Series
-
-        Returns
-        -------
-        Series
-        """
-        if np.issubdtype(data.dtype, np.integer):
+        r"""Roughly equal to `ds ⟶ ((ds - offset)/scale).astype(float)``."""
+        if pd.api.types.is_integer_dtype(data):
             return data
-        if np.issubdtype(data.dtype, np.datetime64):
+        if pd.api.types.is_datetime64_dtype(data):
             data = data.view("datetime64[ns]")
             self.offset = data[0].copy()
             timedeltas = data - self.offset
-        elif np.issubdtype(data.dtype, np.timedelta64):
+        elif pd.api.types.is_timedelta64_dtype(data):
             timedeltas = data.view("timedelta64[ns]")
-        elif np.issubdtype(data.dtype, np.floating):
+        elif pd.api.types.is_float_dtype(data):
             self.LOGGER.warning("Array is already floating dtype.")
             return data
         else:
@@ -123,11 +110,7 @@ class Time2Float(BaseEncoder):
         return (timedeltas / common_interval).astype(float)
 
     def decode(self, data: Series, /) -> Series:
-        r"""Apply the inverse transformation.
-
-        Roughly equal to:
-        ``ds ⟶ (scale*ds + offset).astype(original_dtype)``
-        """
+        r"""Roughly equal to: ``ds ⟶ (scale*ds + offset).astype(original_dtype)``."""
 
 
 class DateTimeEncoder(BaseEncoder):
@@ -148,19 +131,12 @@ class DateTimeEncoder(BaseEncoder):
     freq: Optional[Any] = None
     r"""The frequency attribute in case of DatetimeIndex."""
 
-    def __init__(self, unit: str = "s", base_freq: str = "s"):
-        r"""Initialize the parameters.
-
-        Parameters
-        ----------
-        unit: Optional[str]=None
-        """
+    def __init__(self, unit: str = "s", base_freq: str = "s") -> None:
         super().__init__()
         self.unit = unit
         self.base_freq = base_freq
 
     def fit(self, data: Series | DatetimeIndex, /) -> None:
-        r"""Store the offset."""
         if isinstance(data, Series):
             self.kind = Series
         elif isinstance(data, DatetimeIndex):
@@ -175,11 +151,9 @@ class DateTimeEncoder(BaseEncoder):
             self.freq = data.freq
 
     def encode(self, data: Series | DatetimeIndex, /) -> Series:
-        r"""Encode the input."""
         return (data - self.offset) / Timedelta(1, unit=self.unit)
 
     def decode(self, data: Series, /) -> Series | DatetimeIndex:
-        r"""Decode the input."""
         self.LOGGER.debug("Decoding %s", type(data))
         converted = pd.to_timedelta(data, unit=self.unit)
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
@@ -197,38 +171,29 @@ class DateTimeEncoder(BaseEncoder):
 class TimeDeltaEncoder(BaseEncoder):
     r"""Encode TimeDelta as Float."""
 
+    requires_fit: ClassVar[bool] = False
+
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
     base_freq: str = "s"
     r"""The frequency the decoding should be rounded to."""
 
-    def __init__(self, unit: str = "s", base_freq: str = "s"):
-        r"""Initialize the parameters.
-
-        Parameters
-        ----------
-        unit: Optional[str]=None
-        """
+    def __init__(self, *, unit: str = "s", base_freq: str = "s") -> None:
         super().__init__()
         self.unit = unit
         self.base_freq = base_freq
+        self.timedelta = Timedelta(1, unit=self.unit)
 
     def encode(self, data, /):
-        r"""Encode the input."""
-        return data / Timedelta(1, unit=self.unit)
+        return data / self.timedelta
 
     def decode(self, data, /):
-        r"""Decode the input."""
-        result = data * Timedelta(1, unit=self.unit)
+        result = data * self.timedelta
         if hasattr(result, "apply"):
             return result.apply(lambda x: x.round(self.base_freq))
         if hasattr(result, "map"):
             return result.map(lambda x: x.round(self.base_freq))
         return result
-
-    def __repr__(self) -> str:
-        r"""Return a string representation."""
-        return f"{self.__class__.__name__}(unit={self.unit!r})"
 
 
 class PeriodicEncoder(BaseEncoder):
@@ -265,7 +230,7 @@ class PeriodicEncoder(BaseEncoder):
         x = (x / self.freq) % self.period
         return Series(x, dtype=self.dtype, name=self.colname)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Pretty-print."""
         return f"{self.__class__.__name__}({self._period})"
 
@@ -358,6 +323,8 @@ class PositionalEncoder(BaseEncoder):
         x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
     """
 
+    requires_fit: ClassVar[bool] = False
+
     # Constants
     num_dim: Final[int]
     r"""Number of dimensions."""
@@ -392,9 +359,14 @@ class PositionalEncoder(BaseEncoder):
 class TimeSlicer(BaseEncoder):
     r"""Reorganizes the data by slicing."""
 
+    requires_fit: ClassVar[bool] = False
+
+    horizon: Any
+    r"""The horizon of the data."""
+
     # TODO: multiple horizons
 
-    def __init__(self, horizon):
+    def __init__(self, horizon: Any) -> None:
         super().__init__()
         self.horizon = horizon
 

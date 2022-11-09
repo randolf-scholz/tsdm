@@ -46,7 +46,8 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
     INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
-    DATASET_HASH = "e577e7aacc7b18fd5f3e02dd833533aa620dc5dbf05dbf2ddd1d235b755c8355"
+    # DATASET_HASH = "e577e7aacc7b18fd5f3e02dd833533aa620dc5dbf05dbf2ddd1d235b755c8355"
+    TABLE_HASH = -5464950709022187442
     RAWDATA_HASH = "f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
     DATASET_SHAPE = (2485649, 102)
     RAWDATA_SHAPE = (2485649, 206)
@@ -55,7 +56,7 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
     rawdata_paths: Path
     index = ["timeseries"]
 
-    def _clean(self):
+    def clean_table(self) -> None:
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."
@@ -64,7 +65,7 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
 
         # self.validate_filehash(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
 
-        table = pyarrow.csv.read_csv(self.rawdata_paths)
+        table: pyarrow.Table = pyarrow.csv.read_csv(self.rawdata_paths)
         ts = table.to_pandas(self_destruct=True)
 
         if ts.shape != self.RAWDATA_SHAPE:
@@ -87,7 +88,7 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
         ts = ts.astype("float32")
         ts.to_parquet(self.dataset_paths)
 
-    def _download(self, **kwargs):
+    def download_table(self) -> None:
         if not self.rawdata_paths.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."

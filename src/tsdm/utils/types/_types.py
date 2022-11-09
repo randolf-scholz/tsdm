@@ -4,17 +4,24 @@ r"""Generic types for type hints etc."""
 
 __all__ = [
     # Type Variables
-    "AnyTypeVar",
     "AliasVar",
+    "AnyTypeVar",
     "ClassVar",
     "DtypeVar",
+    "IDVar",
     "KeyVar",
+    "Key_co",
     "ModuleVar",
+    "NestedKeyVar",
+    "NestedKey_co",
     "ObjectVar",
     "PandasVar",
     "PathVar",
     "ReturnVar",
     "Self",
+    "T",
+    "T_co",
+    "T_contra",
     "TensorVar",
     "TorchModuleVar",
     "ValueVar",
@@ -35,13 +42,20 @@ from types import GenericAlias, ModuleType
 from typing import Any, ParamSpec, TypeAlias, TypeVar
 
 from numpy import ndarray
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor, nn
 
 Parameters = ParamSpec("Parameters")
 r"""TypeVar for decorated function inputs values."""
 
 # region TypeVars
+
+T = TypeVar("T")
+r"""Generic type variable."""
+T_co = TypeVar("T_co", covariant=True)
+r"""Generic type variable for covariant types."""
+T_contra = TypeVar("T_contra", contravariant=True)
+r"""Generic type variable for contravariant types."""
 
 AnyTypeVar = TypeVar("AnyTypeVar")
 r"""Type Variable arbitrary types.."""
@@ -56,6 +70,18 @@ DtypeVar = TypeVar("DtypeVar")
 r"""Type Variable for `Dtype`."""
 
 KeyVar = TypeVar("KeyVar", bound=Hashable)
+r"""Type Variable for `Mapping` keys."""
+
+IDVar = TypeVar("IDVar", bound=Hashable)
+r"""Alternative type Variable for `Mapping` keys."""
+
+Key_co = TypeVar("Key_co", bound=Hashable, covariant=True)
+r"""Type Variable for `Mapping` keys."""
+
+NestedKeyVar = TypeVar("NestedKeyVar", bound=Hashable)
+r"""Type Variable for `Mapping` keys."""
+
+NestedKey_co = TypeVar("NestedKey_co", bound=Hashable, covariant=True)
 r"""Type Variable for `Mapping` keys."""
 
 ModuleVar = TypeVar("ModuleVar", bound=ModuleType)
@@ -118,7 +144,7 @@ r"""Type Alias for `**kwargs`."""
 Nested: TypeAlias = AnyTypeVar | Collection[AnyTypeVar] | Mapping[Any, AnyTypeVar]
 r"""Type Alias for nested types (JSON-Like)."""
 
-PandasObject: TypeAlias = DataFrame | Series | Index
+PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
 
 PathType: TypeAlias = str | Path  # | os.PathLike[str]

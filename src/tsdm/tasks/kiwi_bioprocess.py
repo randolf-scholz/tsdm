@@ -6,6 +6,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from itertools import product
 from typing import Any, Literal, NamedTuple, Optional
@@ -19,7 +20,7 @@ from tsdm.datasets import KIWI_RUNS
 from tsdm.encoders import BaseEncoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 from tsdm.utils.data import (
     MappingDataset,
     TimeSeriesDataset,
@@ -42,7 +43,7 @@ class Sample(NamedTuple):
         return repr_namedtuple(self, recursive=1)
 
 
-class Kiwi_BioProcessTask(BaseTask):
+class Kiwi_BioProcessTask(OldBaseTask):
     r"""A collection of bioreactor runs.
 
     For this task we do several simplifications
@@ -95,6 +96,7 @@ class Kiwi_BioProcessTask(BaseTask):
         forecasting_horizon: int = 24,
         observation_horizon: int = 96,
     ):
+        super().__init__()
         self.forecasting_horizon = forecasting_horizon
         self.observation_horizon = observation_horizon
         self.horizon = self.observation_horizon + self.forecasting_horizon
@@ -138,7 +140,6 @@ class Kiwi_BioProcessTask(BaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
-        r"""The metric to be used for evaluation."""
         ts = self.timeseries
         weights = DataFrame.from_dict(
             {
@@ -159,7 +160,6 @@ class Kiwi_BioProcessTask(BaseTask):
 
     @cached_property
     def dataset(self) -> KIWI_RUNS:
-        r"""Return the cached dataset."""
         dataset = KIWI_RUNS()
         dataset.metadata.drop([482], inplace=True)
         dataset.timeseries.drop([482], inplace=True)
@@ -177,12 +177,6 @@ class Kiwi_BioProcessTask(BaseTask):
 
     @cached_property
     def splits(self) -> dict[Any, tuple[DataFrame, DataFrame]]:
-        r"""Return a subset of the data corresponding to the split.
-
-        Returns
-        -------
-        tuple[DataFrame, DataFrame]
-        """
         splits = {}
         for key in self.index:
             assert key in self.index, f"Wrong {key=}. Only {self.index} work."
@@ -214,21 +208,9 @@ class Kiwi_BioProcessTask(BaseTask):
             "persistent_workers": False,
         }
 
-    def get_dataloader(
+    def make_dataloader(
         self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
-        r"""Return a dataloader for the given split.
-
-        Parameters
-        ----------
-        key: KeyType,
-        shuffle: bool, default False
-        dataloader_kwargs: Any,
-
-        Returns
-        -------
-        DataLoader
-        """
         # Construct the dataset object
         ts, md = self.splits[key]
         dataset = _Dataset(
@@ -249,7 +231,9 @@ class Kiwi_BioProcessTask(BaseTask):
 
         # construct the sampler
         subsamplers = {
-            key: SequenceSampler(ds, seq_len=self.horizon, stride=1, shuffle=shuffle)
+            key: SequenceSampler(
+                ds.timeseries, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
+            )
             for key, ds in DS.items()
         }
         sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
@@ -259,14 +243,14 @@ class Kiwi_BioProcessTask(BaseTask):
         return DataLoader(dataset, sampler=sampler, **kwargs)
 
 
+@dataclass
 class _Dataset(torch.utils.data.Dataset):
-    def __init__(self, ts, md, *, observables, targets, observation_horizon):
-        super().__init__()
-        self.timeseries = ts
-        self.metadata = md
-        self.observables = observables
-        self.targets = targets
-        self.observation_horizon = observation_horizon
+    timeseries: DataFrame
+    metadata: DataFrame
+    _: KW_ONLY = NotImplemented
+    observables: list[str]
+    targets: list[str]
+    observation_horizon: int
 
     def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""
