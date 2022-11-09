@@ -81,7 +81,7 @@ repos:
     hooks:
       - id: black
       - id: black-jupyter
-  # black-docs
+  # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
     rev: v1.12.1
     hooks:

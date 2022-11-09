@@ -908,13 +908,13 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     _: KW_ONLY = NotImplemented
     targets: Index
     r"""Columns of the data that are used as targets."""
-    observables: Index = NotImplemented
+    observables: Index | list = NotImplemented
     r"""Columns of the data that are used as inputs."""
-    covariates: Optional[Index] = None
+    covariates: Optional[Index | list] = None
     r"""Columns of the data that are used as controls."""
-    metadata_targets: Optional[Index] = None
+    metadata_targets: Optional[Index | list] = None
     r"""Columns of the metadata that are targets."""
-    metadata_observables: Optional[Index] = NotImplemented
+    metadata_observables: Optional[Index | list] = NotImplemented
     r"""Columns of the metadata that are targets."""
     sample_format: Union[
         Literal["masked", "sparse"],
@@ -930,6 +930,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 self.metadata_observables = None
             else:
                 self.metadata_observables = self.dataset.metadata.columns
+        self.validate()
 
     def __iter__(self) -> Iterator[TS_Type_co]:
         return iter(self.dataset)
@@ -1018,3 +1019,38 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             sample.sparsify_index()
 
         return sample
+
+    def validate(self) -> None:
+        r"""Validate that chosen columns are present."""
+        ts = self.dataset.timeseries
+        md = self.dataset.metadata
+        observables = set(self.observables)
+        targets = set(self.targets)
+        covariates = set(self.covariates) if self.covariates is not None else set()
+        md_observables = (
+            set(self.metadata_observables)
+            if self.metadata_observables is not None
+            else set()
+        )
+        md_targets = (
+            set(self.metadata_targets) if self.metadata_targets is not None else set()
+        )
+        ts_columns = set(ts.columns)
+        md_columns = set(md.columns) if md is not None else set()
+
+        if cols := covariates - ts_columns:
+            raise ValueError(f"Covariates {cols} not in found timeseries columns!")
+        if cols := observables - ts_columns:
+            raise ValueError(f"Observables {cols} not in found timeseries columns!")
+        if cols := targets - ts_columns:
+            raise ValueError(f"Targets {cols} not found in timeseries columns!")
+        if cols := covariates & observables:
+            raise ValueError(f"Covariates and observables not disjoint! {cols}.")
+        if cols := ts_columns - (observables | targets | covariates):
+            warnings.warn(f"Unused columns in timeseries: {cols}")
+
+        if md is not None:
+            if cols := md_observables - md_columns:
+                raise ValueError(f"Observables {cols} not in found metadata columns!")
+            if cols := md_targets - md_columns:
+                raise ValueError(f"Targets {cols} not in found metadata columns!")
