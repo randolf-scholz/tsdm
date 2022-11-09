@@ -35,10 +35,6 @@ def folds_from_groups(
         E.g. ``folds_from_groups(groups, train=7, valid=2, test=1)`` uses 7/10 of the
         samples for training, 2/10 for validation and 1/10 for testing.
 
-    Returns
-    -------
-    folds: FOLDS
-
     This is useful, when the data needs to be grouped, e.g. due to replicate experiments.
     Simply use `pandas.groupby` and pass the result to this function.
     """
@@ -71,7 +67,7 @@ def folds_from_groups(
 
 
 def folds_as_frame(
-    folds: FOLDS, /, *, index: Optional[Sequence] = None, sparse: bool = False
+    folds: FOLDS, /, *, index: Optional[Index] = None, sparse: bool = False
 ) -> DataFrame:
     r"""Create a table holding the fold information.
 
@@ -92,7 +88,7 @@ def folds_as_frame(
         first_fold = next(iter(folds))
         first_split = next(iter(first_fold.values()))
 
-        name_index: Sequence = (
+        name_index: Index = (
             first_split.index
             if isinstance(first_split, Series)
             else np.arange(len(first_split))

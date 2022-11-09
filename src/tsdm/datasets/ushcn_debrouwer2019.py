@@ -48,7 +48,7 @@ class USHCN_DeBrouwer2019(SingleFrameDataset):
     rawdata_paths: Path
     # dataset_files = "SmallChunkedSporadic.feather"
 
-    def _clean(self) -> None:
+    def clean_table(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
         dtypes = {
             "ID": "int16",

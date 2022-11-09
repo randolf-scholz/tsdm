@@ -28,14 +28,15 @@ def test_SlidingWindowSampler():
     )
     indices = list(sampler)
     X = DataFrame(np.random.randn(len(T), 2), columns=["ch1", "ch2"], index=T)
-    assert len(indices) >= 0 and len(X) > 0  # TODO: WIP
+    assert len(indices) >= 0 and len(X) > 0  # TODO: implement test
     # samples = X.loc[indices]
 
 
-def __main__():
+def _main() -> None:
     logging.basicConfig(level=logging.INFO)
+
     test_SlidingWindowSampler()
 
 
 if __name__ == "__main__":
-    __main__()
+    _main()

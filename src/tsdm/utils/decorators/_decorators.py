@@ -3,6 +3,8 @@ r"""Submodule containing general purpose decorators.
 #TODO add module description.
 """
 
+from __future__ import annotations
+
 __all__ = [
     # Classes
     # Functions
@@ -12,6 +14,7 @@ __all__ = [
     "trace",
     "vectorize",
     "wrap_func",
+    "wrap_method",
     # Class Decorators
     "autojit",
     "IterItems",
@@ -28,12 +31,16 @@ from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, signature
 from time import perf_counter_ns
-from typing import Any, Optional, overload
+from typing import Any, Concatenate, Optional, cast, overload
 
 from torch import jit, nn
 
 from tsdm.config import conf
-from tsdm.utils.types import AnyTypeVar, ClassVar, ObjectVar, ReturnVar, TorchModuleVar
+from tsdm.utils.types import AnyTypeVar, ClassVar
+from tsdm.utils.types import ObjectVar as Obj
+from tsdm.utils.types import Parameters as P
+from tsdm.utils.types import ReturnVar as R
+from tsdm.utils.types import TorchModuleVar
 from tsdm.utils.types.abc import CollectionType
 
 __logger__ = logging.getLogger(__name__)
@@ -58,7 +65,9 @@ PARAM_TYPES = (
 )
 
 
-def rpartial(func: Callable, /, *fixed_args: Any, **fixed_kwargs: Any) -> Callable:
+def rpartial(
+    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Callable[..., R]:
     r"""Apply positional arguments from the right."""
 
     @wraps(func)
@@ -77,11 +86,11 @@ class DecoratorError(Exception):
     message: str = ""
     r"""Default message to print."""
 
-    def __call__(self, *message_lines):
+    def __call__(self, *message_lines: str) -> DecoratorError:
         r"""Raise a new error."""
         return DecoratorError(self.decorated, message="\n".join(message_lines))
 
-    def __str__(self):
+    def __str__(self) -> str:
         r"""Create Error Message."""
         sign = signature(self.decorated)
         max_key_len = max(9, max(len(key) for key in sign.parameters))
@@ -111,20 +120,25 @@ def decorator(deco: Callable) -> Callable:
 
     There are 3 different ways of using decorators:
 
-    1. BARE MODE
-        >>> @deco
-        ... def func(*args, **kwargs):
-        ...     # Input: func
-        ...     # Output: Wrapped Function
-    2. FUNCTIONAL MODE
-        >>> deco(func, *args, **kwargs)
-        ...     # Input: func, args, kwargs
-        ...     # Output: Wrapped Function
-    3. BRACKET MODE
-        >>> @deco(*args, **kwargs)
-        ... def func(*args, **kwargs):
-        ...     # Input: args, kwargs
-        ...     # Output: decorator with single positional argument
+    1. BARE MODE::
+
+        @deco
+        def func(*args, **kwargs):
+            # Input: func
+            # Output: Wrapped Function
+
+    2. FUNCTIONAL MODE::
+
+        deco(func, *args, **kwargs)
+            # Input: func, args, kwargs
+            # Output: Wrapped Function
+
+    3. BRACKET MODE::
+
+        @deco(*args, **kwargs)
+        def func(*args, **kwargs):
+            # Input: args, kwargs
+            # Output: decorator with single positional argument
 
     Crucially, one needs to be able to distinguish between the three modes.
     In particular, when the decorator has optional arguments, one needs to be able to distinguish
@@ -162,20 +176,25 @@ def decorator(deco: Callable) -> Callable:
     ...     func: Callable,
     ...     before: Optional[Callable]=None,
     ...     after: Optional[Callable]=None,
-    ...     /
+    ...     /,
     ... ) -> Callable:
     ...     '''Wraps function.'''
 
     Here, there is a problem:
 
     >>> @wrap_func
-    ... def func(...)
+    ... def func(x): pass
+    ...
 
     here, and also in the case of wrap_func(func), the result should be an identity operation.
     However, the other case
 
     >>> @wrap_func(before)
-    ...def func(...)
+    ... def func(x): pass
+    ...
+    Traceback (most recent call last):
+        ...
+    NameError: name 'before' is not defined
 
     the result is a wrapped function. The fundamental problem is a disambiguation between the cases.
     In either case the decorator sees as input (callable, None, None) and so it cannot distinguish
@@ -283,7 +302,7 @@ def decorator(deco: Callable) -> Callable:
     return _parametrized_decorator
 
 
-def attribute(func):
+def attribute(func: Callable[[Obj], R]) -> R:
     r"""Create decorator that converts method to attribute."""
 
     @wraps(func, updated=())
@@ -291,7 +310,7 @@ def attribute(func):
         __slots__ = ("func", "payload")
         sentinel = object()
 
-        def __init__(self, function):
+        def __init__(self, function: Callable) -> None:
             self.func = function
             self.payload = self.sentinel
 
@@ -302,17 +321,17 @@ def attribute(func):
                 self.payload = self.func(obj)
             return self.payload
 
-    return _attribute(func)
+    return cast(R, _attribute(func))
 
 
 @decorator
 def timefun(
-    fun: Callable[..., ReturnVar],
+    func: Callable[P, R],
     /,
     *,
     append: bool = False,
     loglevel: int = logging.WARNING,
-) -> Callable[..., ReturnVar]:
+) -> Callable[P, R | tuple[R, float]]:
     r"""Log the execution time of the function. Use as decorator.
 
     By default, appends the execution time (in seconds) to the function call.
@@ -321,37 +340,30 @@ def timefun(
 
     If the function call failed, `outputs=None` and `time_elapsed=float('nan')` are returned.
 
-    Parameters
-    ----------
-    fun: Callable
-    append: bool, default True
-        Whether to append the time result to the function call
-    loglevel: int, default logging.Warning (20)
+    If `append=True`, then the decorated function will return a tuple of the form `(func(x), time_elapsed)`.
     """
     timefun_logger = logging.getLogger("timefun")
 
-    @wraps(fun)
-    def _timed_fun(*args, **kwargs):
+    @wraps(func)
+    def _timed_fun(*args: P.args, **kwargs: P.kwargs) -> R | tuple[R, float]:
         gc.collect()
         gc.disable()
         try:
             start_time = perf_counter_ns()
-            result = fun(*args, **kwargs)
+            result = func(*args, **kwargs)
             end_time = perf_counter_ns()
             elapsed = (end_time - start_time) / 10**9
             timefun_logger.log(
-                loglevel, "%s executed in %.4f s", fun.__qualname__, elapsed
+                loglevel, "%s executed in %.4f s", func.__qualname__, elapsed
             )
-        except (KeyboardInterrupt, SystemExit) as E:
-            raise E
-        except Exception as E:  # pylint: disable=W0703
-            result = None
-            elapsed = float("nan")
+        except Exception as E:
+            timefun_logger.error(
+                loglevel, "%s failed with Exception %s", func.__qualname__, E
+            )
             RuntimeWarning(f"Function execution failed with Exception {E}")
-            timefun_logger.log(
-                loglevel, "%s failed with Exception %s", fun.__qualname__, E
-            )
-        gc.enable()
+            raise E
+        finally:
+            gc.enable()
 
         return (result, elapsed) if append else result
 
@@ -360,17 +372,7 @@ def timefun(
 
 # @decorator
 # def sphinx_value(func: Callable, value: Any, /) -> Callable:
-#     r"""Use alternative attribute value during sphinx compilation - useful for attributes.
-#
-#     Parameters
-#     ----------
-#     func: Callable
-#     value: Any
-#
-#     Returns
-#     -------
-#     Callable
-#     """
+#     r"""Use alternative attribute value during sphinx compilation - useful for attributes."""
 #
 #     @wraps(func)
 #     def _wrapper(*func_args, **func_kwargs):
@@ -379,21 +381,12 @@ def timefun(
 #     return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
 
 
-def trace(func: Callable[..., ReturnVar]) -> Callable[..., ReturnVar]:
-    r"""Log entering and exiting of function.
-
-    Parameters
-    ----------
-    func: Callable
-
-    Returns
-    -------
-    Callable
-    """
+def trace(func: Callable[P, R]) -> Callable[P, R]:
+    r"""Log entering and exiting of function."""
     logger = logging.getLogger("trace")
 
     @wraps(func)
-    def _wrapper(*args, **kwargs):
+    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         logger.info(
             "%s",
             "\n\t".join(
@@ -429,8 +422,9 @@ def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
 
     .. code-block:: python
 
-        class MyModule():
+        class MyModule:
             ...
+
 
         model = jit.script(MyModule())
 
@@ -439,20 +433,13 @@ def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
     .. code-block:: python
 
         @autojit
-        class MyModule():
+        class MyModule:
             ...
+
 
         model = MyModule()
 
     are (roughly?) equivalent
-
-    Parameters
-    ----------
-    base_class: type[nn.Module]
-
-    Returns
-    -------
-    type
     """
     assert issubclass(base_class, nn.Module)
 
@@ -476,34 +463,23 @@ def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
 
 @decorator
 def vectorize(
-    func: Callable[[ObjectVar], ReturnVar],
+    func: Callable[[Obj], R],
     /,
     *,
     kind: type[CollectionType],
-) -> Callable[[ObjectVar | CollectionType], ReturnVar | CollectionType]:
+) -> Callable[[Obj | CollectionType], R | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly
 
-    Parameters
-    ----------
-    func: Callable[[ObjectType], ReturnType]
-    kind: type[CollectionType]
-
-    Returns
-    -------
-    Callable[[ObjectType | CollectionType], ReturnType | CollectionType]
-
     Examples
     --------
-    .. code-block:: python
-
-        @vectorize(list)
-        def f(x):
-            return x + 1
-
-        assert f(1) == 2
-        assert f(1,2) == [2,3]
+    >>> @vectorize(kind=list)
+    ... def f(x):
+    ...     return x + 1
+    ...
+    >>> assert f(1) == 2
+    >>> assert f(1,2) == [2,3]
     """
     params = list(signature(func).parameters.values())
 
@@ -533,7 +509,7 @@ def IterItems(obj: ClassVar) -> ClassVar:
 
 
 @overload
-def IterItems(obj: ObjectVar) -> ObjectVar:
+def IterItems(obj: Obj) -> Obj:
     ...
 
 
@@ -566,7 +542,7 @@ def IterKeys(obj: ClassVar) -> ClassVar:
 
 
 @overload
-def IterKeys(obj: ObjectVar) -> ObjectVar:
+def IterKeys(obj: Obj) -> Obj:
     ...
 
 
@@ -595,12 +571,94 @@ def IterKeys(obj: AnyTypeVar) -> AnyTypeVar:
 
 @decorator
 def wrap_func(
-    func: Callable[..., ReturnVar],
+    func: Callable[P, R],
     /,
     *,
-    before: Optional[Callable[..., Any]] = None,
-    after: Optional[Callable[..., Any]] = None,
-) -> Callable[..., ReturnVar]:
+    before: Optional[Callable[[], None] | Callable[P, None]] = None,
+    after: Optional[Callable[[], None] | Callable[P, None]] = None,
+    pass_args: bool = False,
+) -> Callable[P, R]:
+    r"""Wrap a function with pre- and post-hooks."""
+    if before is None and after is None:
+        __logger__.debug("No hooks added to %s", func)
+        return func
+
+    if before is not None and after is None:
+        __logger__.debug("Adding pre hook %s to %s", before, func)
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                before(*args, **kwargs)  # type: ignore[misc]
+                return func(*args, **kwargs)
+
+            return _wrapper
+
+        @wraps(func)
+        def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            before()  # type: ignore[misc]
+            return func(*args, **kwargs)
+
+        return _wrapper
+
+    if before is None and after is not None:
+        __logger__.debug("Adding post hook %s to %s", after, func)
+
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                result = func(*args, **kwargs)
+                after(*args, **kwargs)  # type: ignore[misc]
+                return result
+
+            return _wrapper
+
+        @wraps(func)
+        def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            result = func(*args, **kwargs)
+            after()  # type: ignore[misc]
+            return result
+
+        return _wrapper
+
+    if before is not None and after is not None:
+        __logger__.debug("Adding pre and post hook %s, %s to %s", before, after, func)
+
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                before(*args, **kwargs)  # type: ignore[misc]
+                result = func(*args, **kwargs)
+                after(*args, **kwargs)  # type: ignore[misc]
+                return result
+
+            return _wrapper
+
+        @wraps(func)
+        def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            before()  # type: ignore[misc]
+            result = func(*args, **kwargs)
+            after()  # type: ignore[misc]
+            return result
+
+        return _wrapper
+
+    raise RuntimeError(f"Unreachable code reached for {func}")
+
+
+@decorator
+def wrap_method(
+    func: Callable[Concatenate[Obj, P], R],
+    /,
+    *,
+    before: Optional[
+        Callable[[Obj], None] | Callable[Concatenate[Obj, P], None]
+    ] = None,
+    after: Optional[Callable[[Obj], None] | Callable[Concatenate[Obj, P], None]] = None,
+    pass_args: bool = False,
+) -> Callable[Concatenate[Obj, P], R]:
     r"""Wrap a function with pre- and post-hooks."""
     if before is None and after is None:
         __logger__.debug("No hooks added to %s", func)
@@ -609,34 +667,62 @@ def wrap_func(
     if before is not None and after is None:
         __logger__.debug("Adding pre hook %s to %s", before, func)
 
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+                before(self, *args, **kwargs)  # type: ignore[misc]
+                return func(self, *args, **kwargs)
+
+            return _wrapper
+
         @wraps(func)
-        def _wrapper(*args, **kwargs):
-            before(*args, **kwargs)  # type: ignore[misc]
-            result = func(*args, **kwargs)
-            return result
+        def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+            before(self)  # type: ignore[misc]
+            return func(self, *args, **kwargs)
 
         return _wrapper
 
     if before is None and after is not None:
         __logger__.debug("Adding post hook %s to %s", after, func)
 
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+                result = func(self, *args, **kwargs)
+                after(self, *args, **kwargs)  # type: ignore[misc]
+                return result
+
+            return _wrapper
+
         @wraps(func)
-        def _wrapper(*args, **kwargs):
-            result = func(*args, **kwargs)
-            after(*args, **kwargs)  # type: ignore[misc]
+        def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+            result = func(self, *args, **kwargs)
+            after(self)  # type: ignore[misc]
             return result
 
         return _wrapper
 
     if before is not None and after is not None:
-        __logger__.debug("Adding pre hook %s to %s", before, func)
-        __logger__.debug("Adding post hook %s to %s", after, func)
+        __logger__.debug("Adding pre and post hook %s, %s to %s", before, after, func)
+
+        if pass_args:
+
+            @wraps(func)
+            def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+                before(self, *args, **kwargs)  # type: ignore[misc]
+                result = func(self, *args, **kwargs)
+                after(self, *args, **kwargs)  # type: ignore[misc]
+                return result
+
+            return _wrapper
 
         @wraps(func)
-        def _wrapper(*args, **kwargs):
-            before(*args, **kwargs)  # type: ignore[misc]
-            result = func(*args, **kwargs)
-            after(*args, **kwargs)  # type: ignore[misc]
+        def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+            before(self)  # type: ignore[misc]
+            result = func(self, *args, **kwargs)
+            after(self)  # type: ignore[misc]
             return result
 
         return _wrapper

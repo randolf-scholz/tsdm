@@ -74,7 +74,7 @@ Some important units
     - ordered: False
     - Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
 """
-#  TODO:
+#  TODO: Add more encoders
 # - Target Encoding: enc(x) = mean(enc(y|x))
 # - Binary Encoding: enx(x) =
 # - Hash Encoder: enc(x) = binary(hash(x))
@@ -113,19 +113,23 @@ __all__ = [
     # ABC
     "BaseEncoder",
     # Classes
+    "BoundaryEncoder",
+    "BoxCoxEncoder",
     "ChainedEncoder",
     "CloneEncoder",
-    "DataFrameEncoder",
     "DateTimeEncoder",
     "DuplicateEncoder",
     "FloatEncoder",
-    "Frame2Tensor",
+    "Frame2TensorDict",
     "FrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
     "IdentityEncoder",
     "IntEncoder",
     "LogEncoder",
+    "LogitEncoder",
+    "LogitBoxCoxEncoder",
+    "MappingEncoder",
     "MinMaxScaler",
     "PeriodicEncoder",
     "PeriodicSocialTimeEncoder",
@@ -150,9 +154,9 @@ from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
 
 from tsdm.encoders import base, functional, numerical, time, torch
+from tsdm.encoders._deprecated import DataFrameEncoder
 from tsdm.encoders._modular import (
-    DataFrameEncoder,
-    Frame2Tensor,
+    Frame2TensorDict,
     FrameEncoder,
     FrameIndexer,
     FrameSplitter,
@@ -167,6 +171,7 @@ from tsdm.encoders.base import (
     CloneEncoder,
     DuplicateEncoder,
     IdentityEncoder,
+    MappingEncoder,
     ProductEncoder,
 )
 from tsdm.encoders.functional import (
@@ -175,9 +180,13 @@ from tsdm.encoders.functional import (
     FunctionalEncoder,
 )
 from tsdm.encoders.numerical import (
+    BoundaryEncoder,
+    BoxCoxEncoder,
     FloatEncoder,
     IntEncoder,
     LogEncoder,
+    LogitBoxCoxEncoder,
+    LogitEncoder,
     MinMaxScaler,
     Standardizer,
     TensorConcatenator,
@@ -224,6 +233,8 @@ r"""Dictionary of all available sklearn encoders."""
 
 MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "BaseEncoder": BaseEncoder,
+    "BoundaryEncoder": BoundaryEncoder,
+    "BoxCoxEncoder": BoxCoxEncoder,
     "ChainedEncoder": ChainedEncoder,
     "CloneEncoder": CloneEncoder,
     "DataFrameEncoder": DataFrameEncoder,
@@ -232,6 +243,10 @@ MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "FloatEncoder": FloatEncoder,
     "IdentityEncoder": IdentityEncoder,
     "IntEncoder": IntEncoder,
+    "LogEncoder": LogEncoder,
+    "LogitEncoder": LogitEncoder,
+    "LogitBoxCoxEncoder": LogitBoxCoxEncoder,
+    "MappingEncoder": MappingEncoder,
     "MinMaxScaler": MinMaxScaler,
     "PeriodicEncoder": PeriodicEncoder,
     "PeriodicSocialTimeEncoder": PeriodicSocialTimeEncoder,
@@ -247,8 +262,11 @@ MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
 }
 r"""Dictionary of all available modular encoders."""
 
+
 ENCODERS: Final[dict[str, FunctionalEncoder | type[ModularEncoder]]] = {
     **FUNCTIONAL_ENCODERS,
     **MODULAR_ENCODERS,
 }
 r"""Dictionary of all available encoders."""
+
+del Final, TypeAlias, sk_preprocessing, BaseEstimator

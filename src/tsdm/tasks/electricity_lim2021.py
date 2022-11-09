@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from tsdm.datasets import Electricity
 from tsdm.encoders import BaseEncoder, Standardizer
 from tsdm.random.samplers import SequenceSampler
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 from tsdm.utils.strings import repr_namedtuple
 
 
@@ -52,7 +52,7 @@ class Batch(NamedTuple):
         return repr_namedtuple(self, recursive=False)
 
 
-class ElectricityLim2021(BaseTask):
+class ElectricityLim2021(OldBaseTask):
     r"""Experiments as performed by the "TFT" paper.
 
     Note that there is an issue: in the pipe-line, the hourly aggregation is done via mean,
@@ -119,9 +119,9 @@ class ElectricityLim2021(BaseTask):
 
     KeyType = Literal["train", "test", "valid", "joint", "whole"]
     r"""Type Hint for index."""
-    encoder: BaseEncoder
+    preprocessor: BaseEncoder
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.observation_period = pd.Timedelta("7d")
         self.forecasting_period = pd.Timedelta("1d")
@@ -213,7 +213,7 @@ class ElectricityLim2021(BaseTask):
     #         "persistent_workers": False,
     #     }
 
-    def get_dataloader(
+    def make_dataloader(
         self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return the dataloader for the given key."""

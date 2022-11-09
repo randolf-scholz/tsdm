@@ -31,7 +31,7 @@ from tsdm.metrics.functional._functional import (
     rmse,
 )
 
-# TODO: use better definition [Tensor, Tensor, ...] -> Tensor once supported
+# TODO: Variadic Generics better definition [Tensor, Tensor, ...] -> Tensor once supported
 FunctionalLoss: TypeAlias = Callable[..., Tensor]
 r"""Type hint for functional losses."""
 
@@ -98,3 +98,5 @@ FUNCTIONAL_LOSSES: Final[dict[str, FunctionalLoss]] = {
     "q_quantile_loss": q_quantile_loss,
 } | (TORCH_FUNCTIONAL_LOSSES | TORCH_ALIASES)
 r"""Dictionary of all available functional losses."""
+
+del Final, TypeAlias, nn, Callable, Tensor

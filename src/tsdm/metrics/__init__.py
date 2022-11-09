@@ -137,3 +137,5 @@ LOSSES: Final[dict[str, FunctionalLoss | type[ModularLoss]]] = {
     **ModularLosses,
 }
 r"""Dictionary of all available losses."""
+
+del Final, TypeAlias, nn

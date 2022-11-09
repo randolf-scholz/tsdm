@@ -55,19 +55,7 @@ from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 def compute_metrics(
     metrics: list | dict[str, Any], /, *, targets: Tensor, predics: Tensor
 ) -> dict[str, Tensor]:
-    r"""Compute multiple metrics.
-
-    Parameters
-    ----------
-    metrics: Union[dict[str, Any], list[Any]]
-    targets: Tensor (keyword-only)
-    predics: Tensor (keyword-only)
-
-    Returns
-    -------
-    dict[str, Tensor]
-        Name / Metric pairs
-    """
+    r"""Compute multiple metrics."""
     results: dict[str, Tensor] = {}
     if isinstance(metrics, list):
         for metric in metrics:
@@ -227,17 +215,7 @@ def log_optimizer_state(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
-    r"""Log optimizer data.
-
-    Parameters
-    ----------
-    i: int
-    writer: SummaryWriter
-    optimizer: Optimizer
-    histograms: bool=False
-    prefix: str = ""
-    postfix: str = ""
-    """
+    r"""Log optimizer data under ``prefix:optimizer:postfix/``."""
     identifier = f"{prefix+':'*bool(prefix)}optimizer{':'*bool(postfix)+postfix}"
 
     variables = list(optimizer.state.keys())

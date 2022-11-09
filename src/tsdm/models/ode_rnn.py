@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
+from typing import Any, Optional
 
 import torch
 from torch import nn
@@ -23,10 +24,6 @@ from tsdm.utils import deep_dict_update
 @contextmanager
 def add_to_path(p: Path) -> Iterator:
     r"""Append path to environment variable PATH.
-
-    Parameters
-    ----------
-    p: Path
 
     References
     ----------
@@ -41,23 +38,13 @@ def add_to_path(p: Path) -> Iterator:
         sys.path = old_path
 
 
-def path_import(module_path: Path, module_name: str = None) -> ModuleType:
+def path_import(module_path: Path, module_name: Optional[str] = None) -> ModuleType:
     r"""Return python module imported from path.
 
     References
     ----------
     - https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
     - https://stackoverflow.com/a/41904558/9318372
-
-    Parameters
-    ----------
-    module_path: Path
-        Path to the folder where the module is located
-    module_name: str, optional
-
-    Returns
-    -------
-    ModuleType
     """
     module_name = module_name or module_path.parts[-1]
     module_init = module_path.joinpath("__init__.py")
@@ -79,7 +66,7 @@ class ODE_RNN(BaseModel, nn.Module):
         Batch size
     classif_per_tp: bool, default False
     concat_mask: bool, default True
-    device: torch.device, default 'cpu'
+    device: `torch.device`, default 'cpu'
     input_dim: int
         dimensionality of input
     lr: float, default 1e-2
@@ -168,7 +155,7 @@ class ODE_RNN(BaseModel, nn.Module):
         r"""TODO: add docstring."""
         return super(ODE_RNN, cls).__new__(*args, **kwargs)
 
-    def __init__(self, **HP):
+    def __init__(self, **HP: Any) -> None:
         r"""Initialize the internal ODE-RNN model."""
         super().__init__()
         # TODO: Use tsdm.home_path or something

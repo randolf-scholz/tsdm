@@ -22,7 +22,7 @@ import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 from functools import cached_property, partial
 from hashlib import sha256
 from pathlib import Path
@@ -37,7 +37,7 @@ from tsdm.config import DATASETDIR, RAWDATADIR
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.hash import hash_pandas
 from tsdm.utils.remote import download
-from tsdm.utils.strings import repr_dataclass
+from tsdm.utils.strings import repr_dataclass, repr_mapping
 from tsdm.utils.types import KeyVar, Nested, PathType
 
 DATASET_OBJECT: TypeAlias = Series | DataFrame
@@ -47,7 +47,7 @@ r"""Type hint for pandas objects."""
 class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args, **kwargs):
+    def __init__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         # signature: type.__init__(name, bases, attributes)
@@ -101,7 +101,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
 
-    def __init__(self, *, initialize: bool = True, reset: bool = False):
+    def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the dataset."""
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -112,12 +112,12 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
         if initialize:
             self.load()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Return a string representation of the dataset."""
         return f"{self.__class__.__name__}\n{self.dataset}"
 
     @classmethod
-    def info(cls):
+    def info(cls) -> None:
         r"""Open dataset information in browser."""
         if cls.INFO_URL is None:
             print(cls.__doc__)
@@ -162,7 +162,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     def clean(self):
         r"""Clean an already downloaded raw dataset and stores it in self.data_dir.
 
-        Preferably, use the '.feather' data format.
+        Preferably, use the '.parquet' data format.
         """
 
     @abstractmethod
@@ -365,13 +365,13 @@ class FrameDataset(BaseDataset, ABC):
 
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
-
+    __dataset: DATASET_OBJECT = NotImplemented
     DATASET_HASH: Optional[str] = None
     r"""Hash value of the dataset file(s), checked after clean."""
     TABLE_HASH: Optional[int] = None
     r"""Hash value of the table file(s), checked after load."""
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         if hasattr(self.dataset, "_repr_html_"):
             header = f"<h3>{self.__class__.__name__}</h3>"
             # noinspection PyProtectedMember
@@ -382,7 +382,9 @@ class SingleFrameDataset(FrameDataset):
     @cached_property
     def dataset(self) -> DATASET_OBJECT:
         r"""Store cached version of dataset."""
-        return self.load()
+        if self.__dataset is NotImplemented:
+            self.load()
+        return self.__dataset
 
     @cached_property
     def dataset_files(self) -> PathType:
@@ -395,16 +397,17 @@ class SingleFrameDataset(FrameDataset):
         return self.DATASET_DIR / (self.dataset_files or "")
 
     @abstractmethod
-    def _clean(self) -> DATASET_OBJECT | None:
+    def clean_table(self) -> DATASET_OBJECT | None:
         r"""Clean the dataset."""
 
-    def _load(self) -> DATASET_OBJECT:
+    def load_table(self) -> DATASET_OBJECT:
         r"""Load the dataset."""
         return self.deserialize(self.dataset_paths)
 
-    def _download(self) -> None:
+    def download_table(self) -> None:
         r"""Download the dataset."""
-        assert self.BASE_URL is not None, "base_url is not set!"
+        if self.BASE_URL is None:
+            raise ValueError("No base URL provided!")
 
         nested_files: Nested[Path] = prepend_path(
             self.rawdata_files, Path(), keep_none=False
@@ -421,13 +424,16 @@ class SingleFrameDataset(FrameDataset):
         else:
             self.LOGGER.debug("Dataset files already exist!")
 
-        if validate:
-            self.validate(self.dataset_paths, reference=self.DATASET_HASH)
-
         self.LOGGER.debug("Starting to load dataset.")
-        ds = self._load()
+        table = self.load_table()
+        table.name = self.__class__.__name__
+        self.__dataset = table
         self.LOGGER.debug("Finished loading dataset.")
-        return ds
+
+        if validate:
+            self.validate(table, reference=self.TABLE_HASH)
+
+        return table
 
     def clean(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
@@ -442,7 +448,7 @@ class SingleFrameDataset(FrameDataset):
             self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
 
         self.LOGGER.debug("Starting to clean dataset.")
-        df = self._clean()
+        df = self.clean_table()
         if df is not None:
             self.LOGGER.info("Serializing dataset.")
             self.serialize(df, self.dataset_paths)
@@ -457,12 +463,8 @@ class SingleFrameDataset(FrameDataset):
             self.LOGGER.info("Dataset already exists. Skipping download.")
             return
 
-        if self.BASE_URL is None:
-            self.LOGGER.info("Dataset provides no url. Assumed offline")
-            return
-
         self.LOGGER.debug("Starting to download dataset.")
-        self._download()
+        self.download_table()
         self.LOGGER.debug("Starting downloading dataset.")
 
         if validate:
@@ -481,7 +483,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     TABLE_HASH: Optional[Mapping[KeyVar, int]] = None
     r"""Hash value of the dataset file(s), checked after load."""
 
-    def __init__(self, *, initialize: bool = True, reset: bool = False):
+    def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""
         self.LOGGER.info("Adding keys as attributes.")
         while initialize:
@@ -524,16 +526,9 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     #     r"""Return an iterator over the dataset."""
     #     return self.dataset.__iter__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Pretty Print."""
-        if len(self.KEYS) > 6:
-            indices = list(self.KEYS)
-            selection = [str(indices[k]) for k in [0, 1, 2, -2, -1]]
-            selection[2] = "..."
-            index_str = ", ".join(selection)
-        else:
-            index_str = repr(self.KEYS)
-        return f"{self.__class__.__name__}{index_str}"
+        return repr_mapping(self.dataset, title=self.__class__.__name__, recursive=0)
 
     @property
     @abstractmethod
@@ -586,14 +581,10 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     ) -> None:
         r"""Clean the selected DATASET_OBJECT.
 
-        Parameters
-        ----------
-        key: Optional[KeyType] = None
-            The key of the dataset to clean. If None, clean all dataset.
-        force: bool = False
-            Force cleaning of dataset.
-        validate: bool = True
-            Validate the dataset after cleaning.
+        Args:
+            key: The key of the dataset to clean. If None, clean all dataset.
+            force: Force cleaning of dataset.
+            validate: Validate the dataset after cleaning.
         """
         # TODO: Do we need this code block?
         if not self.rawdata_files_exist(key=key):
@@ -648,7 +639,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     def load(
         self,
         *,
-        key: KeyVar = None,
+        key: Optional[KeyVar] = None,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
@@ -665,17 +656,13 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     ) -> Mapping[KeyVar, DATASET_OBJECT] | DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT.
 
-        Parameters
-        ----------
-        key: Optional[KeyType] = None
-        force: bool = False
-            Reload the dataset if it already exists.
-        validate: bool = True
-            Validate the dataset file hash.
+        Args:
+            key: The key associated with the datset
+            force: Reload the dataset even if it already exists.
+            validate: Validate the dataset against hash.
 
-        Returns
-        -------
-        DATASET_OBJECT | Mapping[KeyType, DATASET_OBJECT]
+        Returns:
+            The loaded dataset
         """
         if not self.dataset_files_exist(key=key):
             self.clean(key=key, force=force)
@@ -706,9 +693,10 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
         return self.dataset[key]
 
-    def download_table(self, key: KeyVar = None) -> None:
+    def download_table(self, *, key: KeyVar = NotImplemented) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
+        assert key is not NotImplemented, "key must be provided!"
 
         rawdata_files: Nested[Optional[PathType]]
         if isinstance(self.rawdata_files, Mapping):
@@ -734,13 +722,10 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     ) -> None:
         r"""Download the dataset.
 
-        Parameters
-        ----------
-        key: Optional[KeyType] = None
-        validate: bool = True
-            Validate the downloaded files.
-        force: bool = False
-            Force re-downloading of dataset.
+        Args:
+            key: The key of the rawdata file
+            validate: Validate the downloaded files.
+            force: Force re-downloading of dataset.
         """
         if self.BASE_URL is None:
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
@@ -775,14 +760,20 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
 
 @dataclass
-class TimeSeriesDataset(TorchDataset):
+class TimeSeriesDataset(TorchDataset[Series]):
     r"""Abstract Base Class for TimeSeriesDatasets.
 
     A TimeSeriesDataset is a dataset that contains time series data and MetaData.
     More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
     """
 
+    _: KW_ONLY = NotImplemented
+
     # Main Attributes
+    name: str = NotImplemented
+    r"""The name of the dataset."""
+    index: Index = NotImplemented
+    r"""The time-index of the dataset."""
     timeseries: DataFrame
     r"""The time series data."""
     metadata: Optional[DataFrame] = None
@@ -796,9 +787,24 @@ class TimeSeriesDataset(TorchDataset):
     metadata_features: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
+    def __post_init__(self) -> None:
+        r"""Post init."""
+        if self.name is NotImplemented:
+            self.name = self.__class__.__name__
+        if self.index is NotImplemented:
+            self.index = self.timeseries.index.copy().unqiue()
+
     def __len__(self) -> int:
         r"""Return the number of timestamps."""
-        return len(self.timeseries)
+        return len(self.index)
+
+    @overload
+    def __getitem__(self, key: KeyVar) -> Series:
+        ...
+
+    @overload
+    def __getitem__(self, key: Index | slice | list[KeyVar]) -> DataFrame:
+        ...
 
     def __getitem__(self, key):
         r"""Get item from timeseries."""
@@ -806,15 +812,15 @@ class TimeSeriesDataset(TorchDataset):
 
     def __iter__(self) -> Iterator[Series]:
         r"""Iterate over the timestamps."""
-        return iter(self.timeseries)
+        return iter(self.index)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=1)
+        return repr_dataclass(self, title=self.name)
 
 
 @dataclass
-class TimeSeriesCollection(Generic[KeyVar]):
+class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
 
     A TimeSeriesCollection is a tuple (I, D, G) consiting of
@@ -824,11 +830,16 @@ class TimeSeriesCollection(Generic[KeyVar]):
     - global variables $G∈𝓖$
     """
 
-    # Main attributes
-    index: Index
-    r"""The index of the collection."""
     timeseries: DataFrame
     r"""The time series data."""
+    _: KW_ONLY = NotImplemented
+
+    # Main attributes
+    name: str = NotImplemented
+    r"""The name of the collection."""
+    index: Index = NotImplemented
+    r"""The index of the collection."""
+
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
     global_metadata: Optional[DataFrame] = None
@@ -846,10 +857,49 @@ class TimeSeriesCollection(Generic[KeyVar]):
     global_features: Optional[DataFrame] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
 
+    def __post_init__(self) -> None:
+        r"""Post init."""
+        if self.name is NotImplemented:
+            if hasattr(self.timeseries, "name") and self.timeseries.name is not None:
+                self.name = str(self.timeseries.name)
+            else:
+                self.name = self.__class__.__name__
+        if self.index is NotImplemented:
+            if self.metadata is not None:
+                self.index = self.metadata.index.copy().unique()
+            elif isinstance(self.timeseries.index, MultiIndex):
+                self.index = self.timeseries.index.copy().droplevel(-1).unique()
+                # self.timeseries = self.timeseries.droplevel(0)
+            else:
+                self.index = self.timeseries.index.copy().unique()
+
+    @overload
     def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
+        ...
+
+    @overload
+    def __getitem__(self, key: slice) -> TimeSeriesCollection:
+        ...
+
+    def __getitem__(self, key):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
-        ts = self.timeseries.loc[key]
-        md = self.metadata.loc[key] if self.metadata is not None else None
+        # TODO: There must be a better way to slice this
+        if (
+            isinstance(key, Series)
+            and isinstance(key.index, Index)
+            and not isinstance(key.index, MultiIndex)
+        ):
+            ts = self.timeseries.loc[key[key].index]
+        else:
+            ts = self.timeseries.loc[key]
+
+        # make sure metadata is always DataFrame.
+        if self.metadata is None:
+            md = None
+        elif isinstance(_md := self.metadata.loc[key], Series):
+            md = self.metadata.loc[[key]]
+        else:
+            md = _md
 
         if self.time_features is None:
             tf = None
@@ -874,7 +924,8 @@ class TimeSeriesCollection(Generic[KeyVar]):
 
         if isinstance(ts.index, MultiIndex):
             index = ts.index.droplevel(-1).unique()
-            return TimeSeriesCollection(  # type: ignore[return-value]
+            return TimeSeriesCollection(
+                name=self.name,
                 index=index,
                 timeseries=ts,
                 metadata=md,
@@ -887,62 +938,25 @@ class TimeSeriesCollection(Generic[KeyVar]):
             )
 
         return TimeSeriesDataset(
-            ts, md, time_features=tf, value_features=vf, metadata_features=mf
+            name=self.name,
+            index=ts.index,
+            timeseries=ts,
+            metadata=md,
+            time_features=tf,
+            value_features=vf,
+            metadata_features=mf,
         )
 
     def __len__(self) -> int:
         r"""Get the length of the collection."""
         return len(self.index)
 
-    def __iter__(self) -> Iterator[TimeSeriesDataset]:
+    def __iter__(self) -> Iterator[KeyVar]:
         r"""Iterate over the collection."""
-        for key in self.index:
-            yield self[key]
+        return iter(self.index)
+        # for key in self.index:
+        #     yield self[key]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=1)
-
-
-@dataclass
-class GenericTimeSeriesCollection(TorchDataset, Generic[KeyVar]):
-    r"""Abstract Base Class for generic TimeSeriesCollections.
-
-    A TimeSeriesCollection is a collection of TimeSeriesDatasets.
-    More specifically, we have a mapping from keys to TimeSeriesDatasets.
-
-    A special case are equimodal TimeSeriesCollections.
-    Here, all timeseries follow the same schema, in the sense that the TS and metadata
-    live in the same space.
-    """
-
-    # Main attributes
-    index: Index
-    r"""The index of the collection."""
-    data: dict[KeyVar, TimeSeriesDataset]
-    r"""The data of the collection."""
-    global_metadata: Optional[DataFrame] = None
-    r"""The global data of the dataset."""
-
-    # Space descriptors
-    index_features: Optional[DataFrame] = None
-    r"""Data associated with each index such as measurement device, unit, etc."""
-    global_features: Optional[DataFrame] = None
-    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
-
-    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
-        r"""Get the timeseries and metadata of the dataset at index `key`."""
-        return self.data[key]
-
-    def __len__(self) -> int:
-        r"""Get the length of the collection."""
-        return len(self.index)
-
-    def __iter__(self) -> Iterator[TimeSeriesDataset]:
-        r"""Iterate over the collection."""
-        for key in self.index:
-            yield self[key]
-
-    def __repr__(self):
-        r"""Get the representation of the collection."""
-        return repr_dataclass(self, recursive=1)
+        return repr_dataclass(self, title=self.name)

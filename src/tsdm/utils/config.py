@@ -1,5 +1,7 @@
 """Implements the BaseConfig class."""
 
+from __future__ import annotations
+
 __all__ = [
     # Classes
     "Config",
@@ -11,7 +13,7 @@ __all__ = [
 ]
 
 from abc import ABCMeta
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, MutableMapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Any
 
@@ -50,7 +52,7 @@ class ConfigMetaclass(ABCMeta):  # noqa: B024
         name: str,
         bases: tuple[type, ...],
         attrs: dict[str, Any],
-        **kwds: dict[str, Any],
+        **kwds: Any,
     ) -> type:
         r"""Create a new class, patch in dataclass fields, and return it."""
         if "__annotations__" not in attrs:
@@ -96,8 +98,12 @@ class ConfigMetaclass(ABCMeta):  # noqa: B024
         return dataclass(config_type, eq=False, frozen=True)  # type: ignore[call-overload]
 
 
-class Config(Mapping, metaclass=ConfigMetaclass):
+class Config(MutableMapping, metaclass=ConfigMetaclass):
     r"""Base Config."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        r"""Initialize the config."""
+        self.update(*args, **kwargs)
 
     def __iter__(self) -> Iterator[str]:
         r"""Return an iterator over the keys of the dictionary."""
@@ -118,12 +124,18 @@ class Config(Mapping, metaclass=ConfigMetaclass):
         # return hash((frozenset(self), frozenset(self.itervalues())))
         return hash(frozenset(self.items()))
 
-    def __or__(self, other):
+    def __or__(self, other: dict) -> Config:
         r"""Return a new dictionary with the keys from both dictionaries."""
         res: dict = {}
         res.update(self)
         res.update(other)
         return self.__class__(**res)
+
+    def __setitem__(self, key, value):
+        self.__dict__[key] = value
+
+    def __delitem__(self, key):
+        self.__dict__.__delitem__(key)
 
 
 def flatten_dict(

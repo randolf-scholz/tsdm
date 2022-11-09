@@ -3,7 +3,7 @@
 #build-backend = "setuptools.build_meta"
 
 [build-system]
-requires = ["poetry-core>=1.2.0"]
+requires = ["poetry-core>=1.2.2"]
 build-backend = "poetry.core.masonry.api"
 
 
@@ -23,7 +23,7 @@ name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
 readme = "README.rst"
 repository = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-version = "0.3.5"
+version = "0.3.6"
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -43,19 +43,19 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.10,<3.12"
 h5py = ">=3.7"
 matplotlib = ">=3.6"
 numpy = ">=1.23"
 pandas = ">=1.5"
-pillow = ">=9.2"
-pyarrow = ">=9.0"
+pillow = ">=9.3"
+pyarrow = ">=10.0"
 pyyaml = ">=6.0"
 scikit-learn = ">=1.1"
 scipy = ">=1.9"
 tables = ">=3.7"
 tensorboard = ">=2.10"
-torch = ">=1.12"
+torch = ">=1.13"
 tqdm = ">=4.64"
 typing-extensions = ">=4.3"
 
@@ -78,18 +78,19 @@ flake8-rst-docstrings = ">=0.2"
 isort = ">=5.10"
 jupyter = ">=1.0.0"
 jupyterlab = ">=3.5"
-mypy = ">=0.981"
+mypy = ">=0.990"
 nbsphinx = ">=0.8"
 openml = ">=0.12.2"
 perflint = ">=0.7"
 piccolo-theme = ">=0.12.0"
 pre-commit = ">=2.20"
-pyall = ">=0.2.0"
+pyall = ">=0.3"
 pybadges = ">=3.0"
 pycodestyle = ">=2.9"
 pydata-sphinx-theme = ">=0.10"
 pydeps = ">=1.10"
 pydocstyle = ">=6.1"
+pygments = ">=2.11"
 pylint = ">=2.15"
 pylint-gitlab = ">=1.1"
 pyre-check = ">=0.9"
@@ -98,6 +99,7 @@ pytest = ">=7.2"
 pytest-cov = ">=4.0"
 pytest-rerunfailures = ">=10.2"
 setuptools = ">=65.5"
+slotscheck = ">=0.16"
 sphinx = ">=5.2"
 sphinx-autoapi = ">=2.0"
 sphinx-automodapi = ">=0.14"
@@ -106,7 +108,7 @@ sphinx-math-dollar = ">=1.2"
 tqdm = ">=4.64"
 twine = ">=4.0"
 types-docutils = ">=0.19"
-types-pillow = ">=9.2"
+types-pillow = ">=9.3"
 types-protobuf = ">=3.20"
 types-pyyaml = ">=6.0"
 types-requests = ">=2.28"
@@ -114,7 +116,7 @@ types-setuptools = ">=65.5"
 types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 types-urllib3 = ">=1.26"
-wheel = ">=0.37"
+wheel = ">=0.38"
 
 
 [tool.poetry.scripts]
@@ -136,7 +138,7 @@ disable= [
     "R0914",  # too-many-locals
     "R0915",  # too-many-statements
     "W0221",  # arguments-differ
-    "W0511",  # (fixme) (todos)
+#    "W0511",  # (fixme) (todos)
     "W1113",  # keyword-arg-before-vararg
 ]
 fail-on= [
@@ -154,7 +156,7 @@ max-line-length=120
 [tool.pylint.TYPECHECK]
 # List of members which are set dynamically and missed by pylint inference system, and so shouldn't
 # trigger E1101 when accessed. Python regular expressions are accepted.
-generated-members=["numpy.*","torch.*"]
+generated-members=["numpy.*", "torch.*"]
 
 
 ######################
@@ -204,6 +206,7 @@ ignore_missing_imports = true
 py_version=310
 profile="black"
 src_paths=["src/", "tests/"]
+known_first_party = ["linodenet", "tsdm"]
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
 # black-compatible: black, appnexus
 
@@ -219,11 +222,16 @@ color = true
 # pydocstyle Configuration #
 ############################
 [tool.pydocstyle]
-convention = "numpy"
+convention = "google"
 #count = true
+# https://github.com/PyCQA/pydocstyle/issues/363
+#match = '.*\.py$'
+#match = '(?!test_).*\.py$'
+match_dir = '^(?!(.venv|bugs|dev|.*ipynb_checkpoints)).*'
 add-ignore = [
     "D105",    # Missing docstring in magic method
     "D102",    # Missing docstring in public method
+    "D107",    # Missing docstring in __init__
 ]
 
 #########################
@@ -257,11 +265,12 @@ reportPrivateImportUsage = false
 # PyTest Configuration #
 ########################
 [tool.pytest]
-[tool.pytest.ini_options]
-testpaths = [ "tests/" ]
-reruns = "3"
-only_rerun = "AssertionError"
 cov = "tsdm"
+only_rerun = "AssertionError"
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = ["--doctest-modules"]
+testpaths = [ "tests/", "src/" ]
 
 ##########################
 # Coverage Configuration #

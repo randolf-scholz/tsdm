@@ -24,7 +24,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
-from tsdm.tasks.base import BaseTask
+from tsdm.tasks.base import OldBaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
@@ -152,7 +152,7 @@ def mimic_collate(batch: list[Sample]) -> Batch:
     )
 
 
-class MIMIC_III_DeBrouwer2019(BaseTask):
+class MIMIC_III_DeBrouwer2019(OldBaseTask):
     r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al.
 
     Evaluation Protocol
@@ -190,7 +190,7 @@ class MIMIC_III_DeBrouwer2019(BaseTask):
     test_size = 0.1  # of total
     valid_size = 0.2  # of train, i.e. 0.9*0.2 = 0.18
 
-    def __init__(self, normalize_time: bool = True):
+    def __init__(self, *, normalize_time: bool = True) -> None:
         super().__init__()
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["UNIQUE_ID"].unique()
@@ -232,7 +232,7 @@ class MIMIC_III_DeBrouwer2019(BaseTask):
         return folds
 
     @cached_property
-    def split_idx(self):
+    def split_idx(self) -> DataFrame:
         r"""Create the split index."""
         fold_idx = Index(list(range(len(self.folds))), name="fold")
         splits = DataFrame(index=self.IDs, columns=fold_idx, dtype="string")
@@ -247,12 +247,7 @@ class MIMIC_III_DeBrouwer2019(BaseTask):
 
     @cached_property
     def split_idx_sparse(self) -> DataFrame:
-        r"""Return sparse table with indices for each split.
-
-        Returns
-        -------
-        DataFrame[bool]
-        """
+        r"""Return sparse table with indices for each split."""
         df = self.split_idx
         columns = df.columns
 
@@ -319,7 +314,7 @@ class MIMIC_III_DeBrouwer2019(BaseTask):
             tensors[_id] = (t, x)
         return tensors
 
-    def get_dataloader(
+    def make_dataloader(
         self, key: tuple[int, str], /, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return the dataloader for the given key."""

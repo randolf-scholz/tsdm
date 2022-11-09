@@ -46,7 +46,7 @@ r"""Path to the current file."""
 class Config:
     r"""Configuration Interface."""
 
-    # TODO: Should be initialized by a init/toml file.
+    # TODO: Should be initialized by an init/toml file.
     _autojit: bool = True
     __name__ = NAME
     __file__ = FILE
@@ -121,15 +121,6 @@ __logger__.info("Available Datasets: %s", set(DATASETS))
 
 def generate_folders(d: dict, current_path: Path) -> None:
     r"""Create nested folder structure based on nested dictionary index.
-
-    Parameters
-    ----------
-    current_path: Path
-    d: dict
-
-    Returns
-    -------
-    None
 
     References
     ----------

@@ -4,6 +4,8 @@ r"""Base Classes for Encoders."""
 from __future__ import annotations
 
 __all__ = [
+    # TypeVars
+    "EncoderVar",
     # Classes
     "BaseEncoder",
     "IdentityEncoder",
@@ -11,32 +13,37 @@ __all__ = [
     "ProductEncoder",
     "DuplicateEncoder",
     "CloneEncoder",
+    "MappingEncoder",
 ]
-
+# TODO: Improve Typing for Encoders.
 
 import logging
 from abc import ABC, ABCMeta, abstractmethod
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
-from typing import Any, ClassVar, Sequence, overload
+from typing import Any, ClassVar, Generic, Iterator, TypeVar, overload
 
-from tsdm.utils.decorators import wrap_func
-from tsdm.utils.strings import repr_sequence
-from tsdm.utils.types import ObjectVar
+from tsdm.utils.decorators import wrap_method
+from tsdm.utils.strings import repr_object
+from tsdm.utils.types import KeyVar, ObjectVar, ReturnVar
 
 
 class BaseEncoderMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args, **kwargs):
+    def __init__(cls, *args: Any, **kwargs: Any) -> None:
         cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
         super().__init__(*args, **kwargs)
 
 
-class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
+class BaseEncoder(ABC, Generic[ObjectVar, ReturnVar], metaclass=BaseEncoderMetaClass):
     r"""Base class that all encoders must subclass."""
 
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the Encoder."""
+
+    requires_fit: ClassVar[bool] = True
+    r"""Whether the encoder requires fitting."""
 
     _is_fitted: bool = False
     r"""Whether the encoder has been fitted."""
@@ -53,9 +60,11 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
         `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_func(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
-        cls.encode = wrap_func(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
-        cls.decode = wrap_func(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
+        cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
+        cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
+        cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
+
+    # TODO: implement __invert__ (python 3.11)
 
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
@@ -71,7 +80,7 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
-        return f"{self.__class__.__name__}()"
+        return repr_object(self, title=self.__class__.__name__, recursive=1)
 
     @property
     def is_fitted(self) -> bool:
@@ -85,7 +94,7 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
     @property
     def is_surjective(self) -> bool:
         r"""Whether the encoder is surjective."""
-        return True
+        return False
 
     @property
     def is_injective(self) -> bool:
@@ -97,56 +106,51 @@ class BaseEncoder(ABC, metaclass=BaseEncoderMetaClass):
         r"""Whether the encoder is bijective."""
         return self.is_surjective and self.is_injective
 
-    def fit(self, data: Any, /) -> None:
+    def fit(self, data: ObjectVar, /) -> None:
         r"""Implement as necessary."""
 
     @abstractmethod
-    def encode(self, data, /):
-        r"""Transform the data."""
+    def encode(self, data: ObjectVar, /) -> ReturnVar:
+        r"""Encode the data by transformation."""
 
     @abstractmethod
-    def decode(self, data, /):
-        r"""Reverse the applied transformation."""
+    def decode(self, data: ObjectVar, /) -> ReturnVar:
+        r"""Decode the data by inverse transformation."""
 
-    def _post_fit_hook(
-        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
-    ) -> None:
+    def _post_fit_hook(self) -> None:
         self.is_fitted = True
 
-    def _pre_encode_hook(
-        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
-    ) -> None:
-        if not self.is_fitted:
+    def _pre_encode_hook(self) -> None:
+        if self.requires_fit and not self.is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
 
-    def _pre_decode_hook(
-        self, *args: Any, **kwargs: Any  # pylint: disable=unused-argument
-    ) -> None:
-        if not self.is_fitted:
+    def _pre_decode_hook(self) -> None:
+        if self.requires_fit and not self.is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
+
+
+EncoderVar = TypeVar("EncoderVar", bound=BaseEncoder)
+"""Type variable for encoders."""
 
 
 class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
     def encode(self, data: ObjectVar, /) -> ObjectVar:
-        r"""Encode the input."""
         return data
 
     def decode(self, data: ObjectVar, /) -> ObjectVar:
-        r"""Decode the input."""
         return data
 
 
-class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
+class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Product-Type for Encoders."""
 
-    encoders: list[BaseEncoder]
+    encoders: list[EncoderVar]
     r"""The encoders."""
 
     @property
     def is_fitted(self) -> bool:
-        r"""Whether the encoder has been fitted."""
         return all(e.is_fitted for e in self.encoders)
 
     @is_fitted.setter
@@ -156,15 +160,13 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
 
     @property
     def is_surjective(self) -> bool:
-        r"""Whether the encoder is surjective."""
         return all(e.is_surjective for e in self.encoders)
 
     @property
     def is_injective(self) -> bool:
-        r"""Whether the encoder is injective."""
         return all(e.is_injective for e in self.encoders)
 
-    def __init__(self, *encoders: BaseEncoder, simplify: bool = True) -> None:
+    def __init__(self, *encoders: EncoderVar, simplify: bool = True) -> None:
         super().__init__()
         self.encoders = []
 
@@ -180,14 +182,16 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> BaseEncoder:  # noqa: D105
+    def __getitem__(self, index: int) -> EncoderVar:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> ProductEncoder:  # noqa: D105
+    def __getitem__(self, index: slice) -> ProductEncoder[EncoderVar]:
         ...
 
-    def __getitem__(self, index: int | slice) -> BaseEncoder | ProductEncoder:
+    def __getitem__(
+        self, index: int | slice
+    ) -> EncoderVar | ProductEncoder[EncoderVar]:
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]
@@ -195,35 +199,27 @@ class ProductEncoder(BaseEncoder, Sequence[BaseEncoder]):
             return ProductEncoder(*self.encoders[index])
         raise ValueError(f"Index {index} not supported.")
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_sequence(self)
-
     def fit(self, data: tuple[Any, ...], /) -> None:
-        r"""Fit the encoder."""
         for encoder, x in zip(self.encoders, data):
             encoder.fit(x)
 
-    def encode(self, data: tuple[Any, ...], /) -> Sequence[Any]:
-        r"""Encode the data."""
+    def encode(self, data: tuple[Any, ...], /) -> tuple[Any, ...]:
         rtype = type(data)
         return rtype(encoder.encode(x) for encoder, x in zip(self.encoders, data))
 
-    def decode(self, data: tuple[Any, ...], /) -> Sequence[Any]:
-        r"""Decode the data."""
+    def decode(self, data: tuple[Any, ...], /) -> tuple[Any, ...]:
         rtype = type(data)
         return rtype(encoder.decode(x) for encoder, x in zip(self.encoders, data))
 
 
-class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
+class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Represents function composition of encoders."""
 
-    encoders: list[BaseEncoder]
+    encoders: list[EncoderVar]
     r"""List of encoders."""
 
     @property
     def is_fitted(self) -> bool:
-        r"""Whether the encoder has been fitted."""
         return all(e.is_fitted for e in self.encoders)
 
     @is_fitted.setter
@@ -233,15 +229,13 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
 
     @property
     def is_surjective(self) -> bool:
-        r"""Return True if the encoder is surjective."""
         return all(e.is_surjective for e in self.encoders)
 
     @property
     def is_injective(self) -> bool:
-        r"""Return True if the encoder is injective."""
         return all(e.is_injective for e in self.encoders)
 
-    def __init__(self, *encoders: BaseEncoder, simplify: bool = True) -> None:
+    def __init__(self, *encoders: EncoderVar, simplify: bool = True) -> None:
         super().__init__()
 
         self.encoders = []
@@ -258,14 +252,14 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> BaseEncoder:  # noqa: D105
+    def __getitem__(self, index: int) -> EncoderVar:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> ChainedEncoder:  # noqa: D105
+    def __getitem__(self, index: slice) -> ChainedEncoder[EncoderVar]:
         ...
 
-    def __getitem__(self, index: int | slice) -> BaseEncoder | ChainedEncoder:
+    def __getitem__(self, index):
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]
@@ -273,27 +267,68 @@ class ChainedEncoder(BaseEncoder, Sequence[BaseEncoder]):
             return ChainedEncoder(*self.encoders[index])
         raise ValueError(f"Index {index} not supported.")
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_sequence(self)
-
     def fit(self, data: Any, /) -> None:
-        r"""Fit to the data."""
         for encoder in reversed(self.encoders):
             encoder.fit(data)
             data = encoder.encode(data)
 
-    def encode(self, data, /):
-        r"""Encode the input."""
+    def encode(self, data: Any, /) -> Any:
         for encoder in reversed(self.encoders):
             data = encoder.encode(data)
         return data
 
-    def decode(self, data, /):
-        r"""Decode the input."""
+    def decode(self, data: Any, /) -> Any:
         for encoder in self.encoders:
             data = encoder.decode(data)
         return data
+
+
+class MappingEncoder(BaseEncoder, Mapping[KeyVar, EncoderVar]):
+    r"""Encoder that maps keys to encoders."""
+
+    encoders: Mapping[KeyVar, EncoderVar]
+    r"""Mapping of keys to encoders."""
+
+    def __init__(self, encoders: Mapping[KeyVar, EncoderVar]) -> None:
+        super().__init__()
+        self.encoders = encoders
+
+    @overload
+    def __getitem__(self, key: KeyVar) -> EncoderVar:
+        ...
+
+    @overload
+    def __getitem__(self, key: list[KeyVar]) -> MappingEncoder[KeyVar, EncoderVar]:
+        ...
+
+    def __getitem__(
+        self, key: KeyVar | list[KeyVar]
+    ) -> EncoderVar | MappingEncoder[KeyVar, EncoderVar]:
+        r"""Get the encoder for the given key."""
+        if isinstance(key, list):
+            return MappingEncoder({k: self.encoders[k] for k in key})
+        return self.encoders[key]
+
+    def __len__(self) -> int:
+        return len(self.encoders)
+
+    def __iter__(self) -> Iterator[KeyVar]:
+        return iter(self.encoders)
+
+    def fit(self, data: Mapping[KeyVar, Any], /) -> None:
+        assert set(data.keys()) == set(self.encoders.keys())
+        for key in data:
+            self.encoders[key].fit(data[key])
+
+    def encode(self, data: Mapping[KeyVar, Any], /) -> Mapping[KeyVar, Any]:
+        return {
+            key: encoder.encode(data[key]) for key, encoder in self.encoders.items()
+        }
+
+    def decode(self, data: Mapping[KeyVar, Any], /) -> Mapping[KeyVar, Any]:
+        return {
+            key: encoder.decode(data[key]) for key, encoder in self.encoders.items()
+        }
 
 
 class DuplicateEncoder(BaseEncoder):
@@ -304,23 +339,15 @@ class DuplicateEncoder(BaseEncoder):
         self.base_encoder = encoder
         self.n = n
         self.encoder = ProductEncoder(*(self.base_encoder for _ in range(n)))
-
         self.is_fitted = self.encoder.is_fitted
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"Duplicates[{self.n}]@{repr(self.base_encoder)}"
-
     def fit(self, data: Any, /) -> None:
-        r"""Fit the encoder."""
         return self.encoder.fit(data)
 
     def encode(self, data, /):
-        r"""Encode the data."""
         return self.encoder.encode(data)
 
     def decode(self, data, /):
-        r"""Decode the data."""
         return self.encoder.decode(data)
 
 
@@ -334,18 +361,11 @@ class CloneEncoder(BaseEncoder):
         self.encoder = ProductEncoder(*(deepcopy(self.base_encoder) for _ in range(n)))
         self.is_fitted = self.encoder.is_fitted
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"Copies[{self.n}]@{repr(self.base_encoder)}"
-
     def fit(self, data: Any, /) -> None:
-        r"""Fit the encoder."""
         return self.encoder.fit(data)
 
     def encode(self, data, /):
-        r"""Encode the data."""
         return self.encoder.encode(data)
 
     def decode(self, data, /):
-        r"""Decode the data."""
         return self.encoder.decode(data)

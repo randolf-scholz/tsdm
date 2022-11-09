@@ -34,9 +34,9 @@ Examples
 
     import tsdm
 
-    dataset = tsdm.load_dataset('electricity')
-    x, m, d = tsdm.make_masked_format('dataset')
-    ODE_RNN = tsdm.load_model('ODE-RNN')
+    dataset = tsdm.load_dataset("electricity")
+    x, m, d = tsdm.make_masked_format("dataset")
+    ODE_RNN = tsdm.load_model("ODE-RNN")
     model = ODE_RNN(...)  # see model description for details
 
 Contribute

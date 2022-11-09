@@ -6,6 +6,7 @@ Extracted from iLab DataBase.
 __all__ = [
     # Classes
     "KIWI_RUNS",
+    "KiwiDataset",
 ]
 
 import logging
@@ -16,7 +17,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index, Series
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiFrameDataset, TimeSeriesCollection
 from tsdm.utils import NULL_VALUES
 
 __logger__ = logging.getLogger(__name__)
@@ -225,16 +226,21 @@ class KIWI_RUNS(MultiFrameDataset):
 
     .. code-block:: python
 
-        dict[int, # run_id
-            dict[int, # experiment_id
-                 dict[
-                     'metadata',: DataFrame,                # static
-                     'setpoints': DataFrame,                # static
-                     'measurements_reactor',: DataFrame,    # TimeTensor
-                     'measurements_array',: DataFrame,      # TimeTensor
-                     'measurements_aggregated': DataFrame,  # TimeTensor
-                 ]
-            ]
+        dict[
+            int,  # run_id
+            dict[
+                int,  # experiment_id
+                dict[
+                    "metadata",
+                    :DataFrame,  # static
+                    "setpoints":DataFrame,  # static
+                    "measurements_reactor",
+                    :DataFrame,  # TimeTensor
+                    "measurements_array",
+                    :DataFrame,  # TimeTensor
+                    "measurements_aggregated":DataFrame,  # TimeTensor
+                ],
+            ],
         ]
     """
 
@@ -278,13 +284,13 @@ class KIWI_RUNS(MultiFrameDataset):
         r"""Return the index of the dataset."""
         return self.metadata.index
 
-    def clean_table(self, key):
+    def clean_table(self, key: str) -> None:
         if key in ["timeseries", "value_features"]:
             self.clean_timeseries()
         if key in ["index", "metadata", "time_features", "metadata_features"]:
             self.clean_metadata()
 
-    def clean_metadata(self):
+    def clean_metadata(self) -> None:
         r"""Clean metadata."""
         # load rawdata
         with open(self.rawdata_paths, "rb") as file:
@@ -367,7 +373,7 @@ class KIWI_RUNS(MultiFrameDataset):
         metadata_features = metadata_features.astype(column_dtypes["metadata_features"])
 
         # Remove values out of bounds
-        for col in metadata:
+        for col in metadata.columns:
             lower: Series = metadata_features.loc[col, "lower"]
             upper: Series = metadata_features.loc[col, "upper"]
             value = metadata[col]
@@ -384,7 +390,7 @@ class KIWI_RUNS(MultiFrameDataset):
         metadata.to_parquet(self.dataset_paths["metadata"])
         metadata_features.to_parquet(self.dataset_paths["metadata_features"])
 
-    def clean_timeseries(self):
+    def clean_timeseries(self) -> None:
         r"""Clean timeseries data and save to disk."""
         # load rawdata
         with open(self.rawdata_paths, "rb") as file:
@@ -398,7 +404,7 @@ class KIWI_RUNS(MultiFrameDataset):
             for inner_key, tables in experiment.items()
         }
 
-        timeseries = pd.concat(
+        timeseries: DataFrame = pd.concat(
             timeseries_dict, names=["run_id", "exp_id"], verify_integrity=True
         )
         timeseries = timeseries.reset_index(-1, drop=True)
@@ -425,7 +431,7 @@ class KIWI_RUNS(MultiFrameDataset):
         assert all(timeseries.notna().sum(axis=1) <= 1), "multiple measurements!"
 
         units = {}
-        for col in timeseries:
+        for col in timeseries.columns:
             mask = timeseries[col].notna()
             units[col] = list(timeseries_units.loc[mask].unique())
             assert len(units[col]) == 1, f"Multiple different units in {col}!"
@@ -471,7 +477,7 @@ class KIWI_RUNS(MultiFrameDataset):
         value_features = value_features.astype(column_dtypes["value_features"])
 
         # Remove values out of bounds
-        for col in timeseries:
+        for col in timeseries.columns:
             lower: Series = value_features.loc[col, "lower"]
             upper: Series = value_features.loc[col, "upper"]
             value = timeseries[col]
@@ -494,7 +500,7 @@ class KIWI_RUNS(MultiFrameDataset):
         timeseries = ts[timeseries.columns]
 
         # Aggregate Measurements (non-destructive)
-        # https://stackoverflow.com/questions/74115705
+        # TODO: https://stackoverflow.com/questions/74115705
         # TODO: is there a way to do it without stacking?
         ts = timeseries.stack().to_frame(name="val")
         counts = ts.groupby(level=[0, 1, 2, 3]).cumcount()
@@ -512,6 +518,25 @@ class KIWI_RUNS(MultiFrameDataset):
         timeseries = timeseries.dropna(how="all")
         timeseries = timeseries.sort_values(["run_id", "exp_id", "measurement_time"])
         timeseries.to_parquet(self.dataset_paths["timeseries"])
+
+
+class KiwiDataset(TimeSeriesCollection):
+    """The KIWI dataset."""
+
+    def __init__(self) -> None:
+        ds = KIWI_RUNS()
+
+        super().__init__(
+            index=ds.index,
+            timeseries=ds.timeseries,
+            metadata=ds.metadata,
+            global_metadata=ds.global_metadata,
+            index_features=ds.index_features,
+            time_features=ds.time_features,
+            value_features=ds.value_features,
+            metadata_features=ds.metadata_features,
+            global_features=None,
+        )
 
 
 # INFO:tsdm.datasets.kiwi_runs.KIWI_RUNS:Adding keys as attributes.
