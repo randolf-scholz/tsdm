@@ -24,6 +24,15 @@ def test_time_series_dataset_task():
     assert isinstance(task.dataloaders[0, "train"], DataLoader)
     assert isinstance(task.train_partition, dict)
 
+    sampler = task.samplers[0, "train"]
+    key = next(iter(sampler))
+    sample = task.generators[0, "train"][key]
+    assert isinstance(sample, tuple)
+
+    dataloader = task.dataloaders[0, "train"]
+    batch = next(iter(dataloader))
+    assert batch is not None
+
 
 def _main() -> None:
     logging.basicConfig(level=logging.INFO)
