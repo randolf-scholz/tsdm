@@ -6,7 +6,7 @@ Extracted from iLab DataBase.
 __all__ = [
     # Classes
     "KIWI_RUNS",
-    "KIWI",
+    "KiwiDataset",
 ]
 
 import logging
@@ -520,7 +520,7 @@ class KIWI_RUNS(MultiFrameDataset):
         timeseries.to_parquet(self.dataset_paths["timeseries"])
 
 
-class KIWI(TimeSeriesCollection):
+class KiwiDataset(TimeSeriesCollection):
     """The KIWI dataset."""
 
     def __init__(self) -> None:

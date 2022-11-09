@@ -109,6 +109,23 @@ class LazyDict(dict[KeyVar, ObjectVar]):
         super().__init__()
         MutableMapping.update(self, *args, **kwargs)
 
+    def __getitem__(self, key: KeyVar) -> ObjectVar:
+        r"""Get the value of the key."""
+        value = super().__getitem__(key)
+        if isinstance(value, LazyFunction):
+            new_value = value()
+            super().__setitem__(key, new_value)
+            return new_value
+        return value
+
+    def __setitem__(self, key: KeyVar, value: FuncSpec | ObjectVar) -> None:
+        r"""Set the value of the key."""
+        super().__setitem__(key, self._make_lazy_function(key, value))  # type: ignore[assignment]
+
+    def __repr__(self) -> str:
+        r"""Return the representation of the dictionary."""
+        return repr_mapping(self, recursive=False)
+
     @staticmethod
     def _make_lazy_function(
         key: KeyVar,
@@ -138,23 +155,6 @@ class LazyDict(dict[KeyVar, ObjectVar]):
                 return LazyFunction(value[0], args=value[1], kwargs=value[2])  # type: ignore[index,  arg-type, misc]
             case _:
                 return LazyFunction(lambda: value)
-
-    def __getitem__(self, key: KeyVar) -> ObjectVar:
-        r"""Get the value of the key."""
-        value = super().__getitem__(key)
-        if isinstance(value, LazyFunction):
-            new_value = value()
-            super().__setitem__(key, new_value)
-            return new_value
-        return value
-
-    def __setitem__(self, key: KeyVar, value: FuncSpec | ObjectVar) -> None:
-        r"""Set the value of the key."""
-        super().__setitem__(key, self._make_lazy_function(key, value))  # type: ignore[assignment]
-
-    def __repr__(self) -> str:
-        r"""Return the representation of the dictionary."""
-        return repr_mapping(self, title=self.__class__.__name__, repr_fun=repr)
 
     def copy(self) -> LazyDict[KeyVar, ObjectVar]:
         r"""Return a shallow copy of the dictionary."""

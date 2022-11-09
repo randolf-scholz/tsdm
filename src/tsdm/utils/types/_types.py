@@ -8,6 +8,7 @@ __all__ = [
     "AnyTypeVar",
     "ClassVar",
     "DtypeVar",
+    "IDVar",
     "KeyVar",
     "Key_co",
     "ModuleVar",
@@ -70,6 +71,9 @@ r"""Type Variable for `Dtype`."""
 
 KeyVar = TypeVar("KeyVar", bound=Hashable)
 r"""Type Variable for `Mapping` keys."""
+
+IDVar = TypeVar("IDVar", bound=Hashable)
+r"""Alternative type Variable for `Mapping` keys."""
 
 Key_co = TypeVar("Key_co", bound=Hashable, covariant=True)
 r"""Type Variable for `Mapping` keys."""
