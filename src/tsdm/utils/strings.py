@@ -36,13 +36,13 @@ from torch import Tensor
 from tsdm.utils.types.dtypes import TYPESTRINGS, ScalarDType
 from tsdm.utils.types.protocols import Array, Dataclass, NTuple
 
-MAXITEMS: Final[int] = 10
+MAXITEMS: Final[int] = 20
 r"""Default maxitems for repr_funcs."""
 LINEBREAKS: Final[bool] = True
 r"""Default linebreaks for repr_funcs."""
 PADDING: Final[int] = 4
 r"""Default padding for repr_funcs."""
-RECURSIVE: Final[bool | int] = False
+RECURSIVE: Final[bool | int] = 1
 r"""Default recursive for repr_funcs."""
 ALIGN: Final[bool] = True
 r"""Default align for repr_mapping."""
@@ -104,7 +104,7 @@ def dict2string(d: dict[str, Any]) -> str:
 def repr_object(obj: Any, /, **kwargs: Any) -> str:
     r"""Return a string representation of an object."""
     if isinstance(obj, str):
-        return obj
+        return f"'{obj}'"
     if type(obj).__name__ in dir(builtins):
         return str(obj)
     if isinstance(obj, Array | Tensor | Series | DataFrame | Index):
@@ -127,13 +127,17 @@ def repr_object(obj: Any, /, **kwargs: Any) -> str:
 def repr_type(obj: Any, /) -> str:
     r"""Return a string representation of an object."""
     if isinstance(obj, str):
-        return obj
+        return f"'{obj}'"
     if obj is None:
         return str(None)
     if obj is True:
         return str(True)
     if obj is False:
         return str(False)
+    if is_dataclass(obj):
+        return repr_dataclass(obj, recursive=False)
+    if isinstance(obj, NTuple):
+        return repr_namedtuple(obj, recursive=False)
     if isinstance(obj, Array | DataFrame | Series):
         return repr_array(obj)
     if isinstance(obj, Sized):  # type: ignore[unreachable]
@@ -170,7 +174,7 @@ def repr_mapping(
 
     # TODO: automatic linebreak detection if string length exceeds max_length
     if not recursive:
-        to_string = repr_fun
+        to_string = repr_type
     else:
         if repr_fun in RECURSIVE_REPR_FUNS:
             repr_fun = partial(
@@ -289,26 +293,32 @@ def repr_dataclass(
     fields: dict[str, Field] = obj.__dataclass_fields__
 
     cls = type(obj)
+
     if title is None:
         title = cls.__name__
-        if identifier is None:
-            identifier = "dataclass"
-    elif identifier is None:
-        if title != cls.__name__:
-            identifier = cls.__name__
-        elif is_dataclass(cls.__bases__[0]):
-            identifier = cls.__bases__[0].__name__
+
+    if identifier is None and title != cls.__name__:
+        identifier = cls.__name__
+    if identifier is None and title == cls.__name__:
+        for base in cls.__bases__:
+            if is_dataclass(base):
+                identifier = base.__name__
+                break
         else:
             identifier = "dataclass"
 
     title = f"{title}<{identifier}>"
+
+    if not recursive:
+        return title
+
     return repr_mapping(
         {key: getattr(obj, key) for key, field in fields.items() if field.repr},
         align=align,
         linebreaks=linebreaks,
         maxitems=maxitems,
         padding=padding,
-        recursive=recursive,
+        recursive=recursive if isinstance(recursive, bool) else recursive - 1,
         repr_fun=repr_fun,
         title=title,
     )
@@ -330,13 +340,17 @@ def repr_namedtuple(
     assert isinstance(obj, tuple), f"Object {obj} is not a namedtuple."
     assert isinstance(obj, NTuple), f"Object {obj} is not a namedtuple."
     title = f"{type(obj).__name__}<tuple>" if title is None else title
+
+    if not recursive:
+        return title
+
     return repr_mapping(
         obj._asdict(),
         align=align,
         linebreaks=linebreaks,
         maxitems=maxitems,
         padding=padding,
-        recursive=recursive,
+        recursive=recursive if isinstance(recursive, bool) else recursive - 1,
         repr_fun=repr_fun,
         title=title,
     )

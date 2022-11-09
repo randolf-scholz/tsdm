@@ -78,6 +78,120 @@ Default DataLoader Creation
     dataloader = DataLoader(dataset, sampler=sampler, collate=...)
     batch = next(dataloader)
 
+
+
+The whole responsitbility of this class is to use a key from the "sampler" and
+create a `Sample` from the `TimeSeriesCollection`.
+
+
+
+
+
+                                       ┌─────────────┐      ┌─────┐
+                                  ┌───►│FoldGenerator├─────►│Folds│
+                                  │    └─────────────┘      └──┬──┘
+          ┌────────────────────┐  │                            │
+          │TimeSeriesCollection├──┤           ┌────────────────┘
+          └───────────────┬────┘  │           ▼
+                          │       │    ┌──────────────┐     ┌──────┐ fit  ┌───────┐
+                          │       └───►│SplitGenerator├────►│Splits├─────►│encoder│
+                          │            └──────────────┘     └───┬──┘      └──┬────┘
+                          └─────────┐                           │            │
+                                    │                           │            │
+              ┌─────────────────────┼──────────┬────────────────┘            │
+              │                     │          │                             │???
+              │        ┌────┐       │???       │???    ┌───────┐             │
+              ▼     ┌─►│key1├─┐     ▼          ▼    ┌─►│sample1├──┐          ▼      ┌──────┐
+          ┌───────┐ │  └────┘ │  ┌───────────────┐  │  └───────┘  │  ┌──────────┐   │batch │
+          │sampler├─┤         ├─►│SampleGenerator├──┤             ├─►│collate_fn├──►│Tensor│
+          └───────┘ │  ┌────┐ │  └───────────────┘  │  ┌───────┐  │  └──────────┘   │CPU   │
+                    └─►│keyN├─┘                     └─►│sampleN├──┘                 └───┬──┘
+                       └────┘                          └───────┘                        │
+                                                                                        │
+                                        (copy tensors to GPU)                           │
+              ┌─────────────────────────────────────────────────────────────────────────┘
+              │
+              │                           ┌───────┐                                ┌─────────┐
+          ┌───┴──┐  ┌────────────────────►│targets├─────────┬───┐              ┌──►│targets  ├─────┐
+          │batch │  │                     └───────┘         │   │   ┌───────┐  │   └─────────┘     │  ┌───────────┐
+          │Tensor├──┤                                       │   ├──►│decoder├──┤                   ├─►│test_metric│
+          │GPU   │  │  ┌──────┐  ┌─────┐  ┌───────────┐     │   │   └───────┘  │   ┌───────────┐   │  └───────────┘
+          └──────┘  └─►│inputs├─►│model├─►│predictions├─┬───┼───┘              └──►│predictions├───┘
+                       └──────┘  └─────┘  └───────────┘ │   │                      └───────────┘
+                                    ▲                   │   │
+                                    │                   │   │
+                                    │                   ▼   ▼
+                                    │   ┌─────────┐    ┌─────┐
+                                    └───┤optimizer│◄───┤loss │
+                                        └─────────┘    └─────┘
+
+https://asciiflow.com/#/share/eJzdWLtu2zAU%2FRWBUwtkcbu0XjwEqLcgQJJNQKDKTEtUL0gMEDcIYBgdO3AQXA0dM2bqWOhr9CWVKZEixYeoeKs
+gxBLJe3nv4bmHYh5BEsQQLJP7KDoDUbCFOViCRx88%2BGD58f3izAfb9undh%2BMThg%2B4ffGBZ7ua8mdT7txuYjYhvp84TXH425T7T2m0WcME5gFO86b8
+PXbHBxXtr9XzvvspnXOomCU3eeFd7Uxz4DBh1EdlCZpOtL9GMbyCOYLFeRpFMMQoTQQwnl%2B5SkOqdBp3aEZwcLzkfJpDrVmRYQxfk1kRE1uaxLtD2OZSx
+z4xIgEDSq2rLELYSMBhSGHiJkzCdANzPTtH6z9zCSojP3cKe19Ua208tTUGYmKqLhdbOU5R3%2Bjs5Krb0RxnEdt9LTTh6rOU2idU4Ni%2FWq1UjwoWRDJQ
+XixVMZ6PTXaoxZkoob%2FB7YKRva%2FFfpT4IloUQZxFcCFUCFHGmyvaKrWkw0MhbcXa57KFibK5DCrP2TfpwPwc4PCrx8W8g4NrySDefUsnKnSQTnhEsZd
+twnZvCDC8vRP2BtpxDZMizVkA5sT0eZkwdqmJCaSm0RadHceeX95IDGUolCI%2FL1j%2BUlVqR3eLcSHgq9rI0XH1UARUw0LjZeWXyUS3nZ52ufh8E6bZ1s
+OUQ4WHU299efPWyScF63%2B%2BhzyHJysybgI8y7R3oMhkLfg%2BddekpYKD%2FAvUfuhIt7h5ElMSokMuYpqEBu207aXTpdTZsr9TcjSpR9Xg1A3aPhsmx
+AYxty1%2FF5Yk6xvYf1pa3Yk7BIYFvo0hzlHIt6M1U1R7QgYWOZOLSHnYQa6ml2rsesYWZTnsVPLmgJLsnhOetsQt4JHYkOVwg%2Bh5jBeGWAC17FxPW5Oj
+IVwXvlf6HkOzzl5cnFl1NkbXwuPDHwu7X3NiOMmWfnvqj6nqDBMC7BkG2f7fMQb1Oc0witF3el5sfv0Qu6K0KCbzVF1qiWKgig%2BewNM%2FqIfMMw%3D%3
+D)
+
+
+▄▄▄▄▄▄▄ ▄   ▄▄    ▄▄▄▄  ▄  ▄ ▄▄ ▄ ▄ ▄▄▄▄  ▄▄▄▄ ▄▄ ▄▄▄  ▄ ▄ ▄▄▄  ▄▄ ▄▄▄▄ ▄ ▄▄▄     ▄  ▄▄▄   ▄▄▄      ▄ ▄▄▄▄▄▄▄
+█ ▄▄▄ █ █ █▀█  ▀  ▄█▀ ▄ ▀ █▀▄▀█▄▀█ ▀ ████ █▄▀▀▄ ▀ █ ▄ █▄ ▀ ▀▀ ▀ ▄▀▀▄ ▀▄▀  █ ▄▀▀█ ▀ ▀▀ ▀ ▄█▀█▀█▄  ▀█▄█ █ ▄▄▄ █
+█ ███ █ ▀▀██  ▀▀▀ ▄█▄ ▄█▀▀  ██▄██▄▀▀ ▄█▄█▀ █▄▀▄   ▄▄▄█▄█▄▀▄▄▄█ ███ █  ▀ ▄ ▄ █▄▄▄▄ ▀ █ ▄█▀▄  ▄██▀ ███▄ █ ███ █
+█▄▄▄▄▄█ █▀▄ █▀█▀█ █▀█▀▄▀▄ █ █ ▄ █ ▄ █ █ ▄▀█▀▄▀▄ █ █ █ ▄ █▀▄ █ █▀▄▀█ ▄▀▄▀▄ █▀█ ▄ █▀▄ ▄ █▀█▀█▀█▀▄ ▄ ▄▀▄ █▄▄▄▄▄█
+▄▄  ▄▄▄  ▄ █ ▄█▄▄█▄ ▄ ▄  ▄▄ █▄▄▄█   ▀ ▀▄█▄▄▀▄█     ██▄▄▄█ ▀▄ ▄▄▄▀▀▀ ▄█▀█▄ ▄ █▄▄▄██▀▄▄█▄▀███▀▄ █▄ ▀█▀   ▄ ▄▄▄▄
+▀▄▄▄█▄▄████▄██▀█▀▄▀█ ▄ ███ █ ▀ ▄▄█▄█ █   █▀█  ▄█▄█   ▀▀▄▀▀▄▄▀▄ ▄▄ ▀ █ ▄▀▀█ ▀ ▀ ▄█ ██▀▄ ▄▀▀ ▄█ ▄▀▄ ▀▄█ █   █▀
+█ ▄   ▄█▀▀█▀█ ▄█ █ █▀██▄▄  █▄▀ █▄     █ █▄▀▀  █   ▄▄▀▀█▀▄█▀▄▄ █▄████▄▀   ▀▄ █▀▀▄▄▀▄▄▄ █▄▀█▄▄▄▀█▄▄█▀█▀▄▄ █ █▄█
+▄▄▀ ▄▄▄▀▄▄▀▀▄▀▄█▀▀ ▀ ▄ ▀█▄    ▀  ▀█ ▄█ ▀   ▄▀▄▄ █▄ ▀   ▀  ▄█▀█▀▀▄ ▀█▄▀▄ ▀ ▀▀   █  █  ▄ █   ▀█ ▄▀█▄▀██▀█▄  ▄▀▀
+█▄ ▀▄▄▄█ ██▀▀▀▀▀▄▄ █  ▄█ ██▄ ▄▀▀▄▄▀ ▄▀▄██ ▀█ ▄▄   █▄ ███▄▀   ▄█▄██▀▀ █▄ ▄▀▀▄▀█▄█ ▀▀ ▄█▄ ██    ▄▄ ▀▄▄ ▄ ▄▄ ▀▀█
+█ ▀▀▄▄▄█▀▄ ▄▄█▀▀▀████▀▄▀ ▀█▄ ▀  █▄▄  ▀▀ ▀▀█▄ ▄▄ ▄▀▀▄ ▀▄█▄█▄▀▄▀▀█▀▀▀  ▄█▀▄▀▀▄█▀ █ ██▀▄▀     ▄▀▄█▄▄  █▄▄▄▀▄█▀▀
+▀█▄▀▄▄▄██▀ ▀█▀▄▀█▄▀█▀ ▄ ▀█ ▀ █▀█    ▄██▀█ ▄█▄▀  ▄▄ █▀▀▀█     ▀█▄▀▀▄█ █▀▄▄ █▀ ▄▀▀ █ ▄  ▄ █ ██ █▀  ███▀▀ ▄ ▄█▀▄
+▄▄▀▄▀▄▄ ███▄  ▀▀▀█▀▄▀█ █▄▄▀█▀ ▄▄▀▀█  ▄▀▄▀▀ ▀ ▀█ ██▀▀▄█▀▀▀ █ █ ▀ ▄▀▀ █ ▄▄ ▄▀▀ ▀ ▀▀▀█▀▀ ▀▀▀█ ▄████▄▄ ▀ █▄█▀▄  ▀
+▀█▀█▄ ▄▄█▄▄▀▀▄█▀▀█▄██ ▀▄ ▄▀  ▀  ▄▀▄  ▄ ▄▀▄██▄ ▄  ▀▄██▄██ █ ▀ █▀▄▀▀▄█ ▄▀   ▀▄█ ██▄▀▀▄ ▄█▀███▄▄▀  ▄▄▀█ ▄ ▄█ ▀▄▄
+█ ▀█▀█▄▄   ▀ █▄▄██  █▀  █▀▀▀ ▀ ▀█▀▄▀▄█▀█▄▀ ▄▀▄▄ ▀█ █▄█▀█▀ ▄ ▀▄ █▀  ▄ ▀█ ▄▄▀▄▄▀ ▀█▀██▄█   ▀  █▀█▄▀█▀██    ▄  ▀
+▀▄█▀▄▄▄█▄▀▄█▄▄█▄▀ ██ █▀█ ███▄▄▄█▄ ▀▄ ▀▄ ▀█▄▀ ▄▄ ▄▀█▀█▄██▄▀█  ▄▄ ▀▀██▄▀ ▄ ▀█ ██▄▄▄▄▀ ▄ ▄▀██▄█ ▄█▄▄█▄▄▄▄▄▄█▄█▀
+▄ ▀█ ▄ █ ██▀█▄▀██ ▀▀▀ ▄▄▄ ██ ▄ ██▄█▀▀▀▀   ▄▄█▄▀▄ ▀▀█ ▄ █ ▄▀▄▀ ▀▀  ██ █▀█▄▀ █ ▄ █ ▄█▄█▀▄   ██▀▄ ▄▄ ▄█ ▄ ██▄ ▀
+▀▀▀██▄▄▄██▀▄█▄██▀ ▀ █▄▀▄▄█▀██▄▄▄█ ▀  ▄█▄▀▀▄█▄▀  ▄▀▀▀█▄▄▄█▀▄  ▀▀█▀█▄▀▄█▀▄▄▄▀▀█▄▄▄█▀ ▄▄▄ ▄█▀█▀ ▀█▄▄▀▀▀█▄▄▄█▄▀▀
+▄▀▀▀▄▄▄▄  ▄▀█▀█    ▄▄  ▄ █▀▄▀▀▀█ ▄█ ██   ▀▀▄█ █▀▄▄▀ ▄▄▄▀ ▀▄▄█▄▀█▄▄▀▄█ █ ▄▄ █ ▀▀▀█▀█ ▀▀▀  ▀▀█▄▀▄▀▀▄▀█ ▀█▀██▄
+██▄▄ █▄▄ █▄▀█▄██▀▄ ▀ ▄  ▄ ▀▀ █ ▀█▄▄▀▄▄█▀▀  █ ▀▄ ▄ ▄ ▄ ▄▀█▄ ▄ ▀ ▄█▄██  █▄▄   ▀ ▄▀█▀▄▄▄█▀▀▀█▄ ▄▀█▄  ▄█▀█▄▀ ▄▀ ▄
+▄█ █▄▀▄▄▀▄▄ █▀   ▄▀▄▀▄█▀▀█ ▄▀█▀ ██▄██▀ ▄█▄▀ ▀▀▄  █▀█▄▀█ ▄ ▄▀▄█▀█     ▀▄█▀▀▀█▄  ▀  ▄▄▀▄▀▀    █▀██▀ ▀ ▄▄███▄▄█
+█ ▀▄▄ ▄▄▀   ▄▄▄▄   ▄   ▄▄█    ▄▀█  ▄ ▀█ ▀▄█▀ ▀▄▄▄▀▄   ▄▀█▄ ▄▄█▀▄▀▄▄█▄▄▀  ▀▀  █ ██▀█  ▄█ ▀█▄▀ ▄▀▄ █▀█▀██  ███
+█▄ ▄ ▄█▀▀▀▄▀██▀ ▄▀█ ███ █▀▄▀▀█ ▀▀▄█ █ ▀   ▀▀▀█▄ ▄▀ ▄█▀▄▄ █▀   ▀   ▀▄▄███▄ █▀█▀█  ▄▄ ▄ ▀  ▀▀█▄▄███   ▄▄██ █▀▀
+▄▄▄▄ ▄ ▄▄▄ ███▀▄ ▄█ ▄▀▄▀ ▄▄ ▄  █▄▄▀█▀▀█▀▄█ ▄ ▀▄  ▄▄▀▄▀█▄ ▀█ █ ▀▄  ▄█▄▄█▀    ██ ▄▄ ▀ ▀ ▀▀▄ ▄▄ █▄▀▄█▄█▄▄▀██
+█ █▀▀▀▄███▀ ▄▀▀▄██▄▀▀▀▄  █ ▀  █▀█▀▄▄▄ ▀█▄  ▀▀ ▄█▀▄▀▄▄▀█▀ ▀█ █▄ ▀   ▀▄▀█ ▄█ ▄▄  ▀███▄█▄  ██▀▄▀ ██ █ ▀ ▄▀█▄█ ▀▀
+██▀▄█▀▄▄ █▄█ █ ██  ██ ▀ ▄▄ ▀▄▄▄ █ ▀▄  █▄█▀█▀▄▀▄  ▄█ ▄▄  ▄█▀█ █ █▀ ▀▀▄█ ▄ █ ▀ ▄▄ ██▄  ▄▄ ▀▄▀█  ▄  ▄ █▄ █ ▄██▀▄
+▄▀▄███▄ ▄  ▀ ▄███▄▀▀█▀█ ██ ▀█▀▄▄ ▀▄█▄▄▀█    █ ▄ ▀   ▄█▀█▀ █ ▄█▀█▄▄▀   █ ▄█▀▄███▀ ▀███▄▀▀ █▀▀▄ █▄█▄▀█▀▄▄███▀▀▀
+▀▄▄▄█▄█▄▀▀ ▀▀▀▀▄█▄ ▄█▀▄ ▀▀▀▄▄▄▄▄▄▀ ▄██ ▀▄█▀  █ ▄██▀▄▄▄▄██ █▄ █ ██▀▀▄█  ▄▄█▀▄▄▄█▄▀█   █▄▀▄█ ▄█▄ ▄ ▄▀▄▄▄▄▄ ███
+█▄█▀█ ▄ █ ▄▄▄█▀▄ █ █▀█▄  █▄ █ ▄ █ █ ██  █▀▀█▀ █▀█▄▀▀█ ▄ █▀▄▀█▄  ▄▀▀   █  █ ▄█ ▄ █▀█ ▄█▀▄    ▄▀██  ▀ █ ▄ ██▄▀▀
+▀▀█▀█▄▄▄█   ▀██▀▄▀██▀▀██▄ ▄ █▄▄▄██▄▀▄██ █ ▄▀  ▀█ ▀▄██▄▄▄█ ██▄ █ ▀▄ █▄█ ▄ ████▄▄▄████    █▄▀▀ ██▄ █▀▄█▄▄▄█▄███
+▄█▀▀▀ ▄█▀▄ █▄█▀██ ▀██▄█▄█▄▀▀█▀▀ ▀▀▄▄▄ ▀█▀ ▀▄█▄█▀██▀ █▄▀▄▀ ██▀▄▀█▄ ▀▀█▀▄▀▄ ▀██▄▀▄▀ ▄▄▀▄ ▀▄▀ ▄█ █ █▄▀█ ███ ██ ▀
+▀▄█ █▄▄█ ▀▀▄ ▀██ ▀ ▄▄ ▄▄ █ ██▄▄█▄ ▄ ██ ▀ ▄  ▄ ▄ ▀█▄ ▀█      ▀▄ █▀█▀▄▀█▄▄█▀ ▀▄▄█▄  ▄ ▄█▄▀ ▀▀▄▀ █ ▄▀ █▄▄▀█ ▀▄█
+▀▀▀██▀▄  █ █ ▀▄█▀▄█▀█ ▄███ █▄▀ ▄█ █  █▀▀ ▀▀ ▀▀▄▄▀▄ ██▀ ▀▀▀█▄▀█ ▄▄▀ ▄█▀█ ▄▄▀ ▄█▀▄█ ██▀▄  ▄▀ ▀▄▀▄▀▄▄▀█ ▀▀█▀▄█ ▀
+▄▄    ▄██▀▀▄ █ █▄▀▀█▀  ▄▄▄▀ ▀▀█ ▄▄▄  ▀▄█▀█ █ █ ▄▄▄█▀████▄▄   ▄█▄▀ ▄ ▄▄ ▄▄▀▀ ███  ▄▄▄  ▄▄██▄▀▄ ▀  ▄███▄▀▀█▄▀▀█
+▄█▀▄█▀▄  █▄  █▀▀ ▄▄▀▄█▄ ▄█▀ ██ ▄█ ▀▀▀ ▀▀▄▀▀▀▀█▄▄ █ ▀▄█ ▄▀▀█▄▄▄     ▄█ ███▄  ▄ ▀▀▀ ▄▄▄█▀█▄▄▀▀▄▀█ ▄█▀▀▄▄█▄▄  ▀
+█▀███▄▄ █▄ ▀█ ███▀▄▀▀▄ █▄█▀▀█ ▄█▄▀█▄ ██▄▀▀ █▄▄ ▄  ▄▄ █▄▀   ▄ ▄█▄▀▄▄▄▄█▀▄  █▄ █▄  ██   ▄ █▄▀█  ██▄▄█▀▀  ▀█▄█▄█
+▄█▄   ▄ ▄▀▀▀▀▀ ▀█▀▀▄▄  ▄ ▄▀▄███ ▄▀▄  █ ▄█ ▀██▀█ █▄▀▀██▀▄▀ ▄▄▀▄ ▄ ▀  ▄▀▄██▀▀██▄█ █▀█ ▀█  █  ▀▄ █ ██ █▄ █▀ ▄██
+█ ▄ █ ▄█  ▄▀█▀██▀▀▄▀██ ▄ █▀ ▀██▀▀▀▀▄ ▀█ ▀█▄█▄▀▄ ▄ ▄▀ ▀█ ▀   ▄▄█▄▀▀██▄█ ▄ ▄█▄▀▄█ ▀█ ▄▄▀▀ ▀▄█ ▄▀ ▀ ▄█ ▀▀█▀█ ██▄
+▄▄▄▀▀█▄ ▄ █▄▀█▄ ▄▀▄▀ ▄▄▄▀█ ██ ▀ ▀ ▄█▀▄▀▄▀ ▀█▄ ██▀▀▀███▄▀▀▀█▄ ▄ ██ ▀ █▀█▄▀█  █▄ ▀▀ █▀██▀ ▄  ▀▀ █▄▀█ ▀ ▀██▀▄
+█▄█ ▄█▄██▄▀ ▄  █▄█▀██▄▀  ▀█ █▄▄▄█▄▀▄ █  ▀▄   ▄▀▄ █▀▀██▄▄▄▄▀▄ ▄█▄▀█▄▀▄ ▀  ██ █▄█▄█▀ ▄▄ ▀ ▀▀██   ▄  ▄ █▄▄██ ▀██
+█ █ █ ▄ █▄  █ ▄ █▄▄▄ ▀█▀█ ▀ █ ▄ █▀▄██  ▄ ▀▀▄▄ █ ██  █ ▄ █▄█▄▄█▀▀▄▄  █▀█▄▀   █ ▄ █▀█ ▄ ▀  ▀▀▀▄ ▄▄▀█  █ ▄ █  ▀
+█▄▀▀█▄▄▄█ ▀█▄ █ ▀▄▀█▀▀  ▄▀█▄█▄▄▄██ ▀▄▀███  █ ▀█▄▄▀█ █▄▄▄█▄  ▄▄▄ ▀▄█▀▄▀ ▄ ▀█ █▄▄▄██ ▀▄▀▀▄▀▀▀▀ ▀▄ ▄▄█▀█▄▄▄█ █▀
+█▀▀▀  ▄▀▀ █▀▀█▀▄  ██ ▀ ▀▀▀ ▄ ██▄▀▀▄█▀ ▀▀ ▀▀ █▄▄▀██▀▄█▀▀█▀ ▄█ ▄▀▀▀▀ ▀▀▀█▄▀▄ ▄██▀  █▄  ▄▀█▄ ▀▀▀▀▄▄ █ █▄▀▀█▀ ▄▀▀
+▀▄ █ ▄▄▀▄ ▀ ▄ ██▄▀█ ▀█  ▄█▀▀█ ▄█▄█ ▄▄███▀▀▀█ ▄ █▄▀██ █▀▀▄█▀   ▄█▀█▄█▄▀ ▄▄ ▄█▄▄▄▀▄▄▄▄  █▄█ ██▄▄▄▄▄ █▀ ▀ ▀ ▄███
+▀▀▀█▄█▄▄▀█     ▄▄▄██▀ ▄▄ █ ▄  █   ▄▀▀▄  ▄▀▀▀███▀▀█▀▄ ███▀ █▄█  ▄ █▀▀█▄█ █▀  ██▀█  ▄▀▄▄ █▀▀▀ ▄ ▄███ ▀▄▀  ▀ ▀▀
+▄ █ ▄▄  ▄ ▄  █▀▄██ ███▄▄▄█▀█▀ ▄▀▀ ▄▄ █▄▀ ▄█▄ ▄ ▄█▄▄█▄▄█▀▀▀█  ▀ ▀ █▀▄▄ ▀▄█▀ █▄▄▄█▄▀  █▄ ▀ ▄▀ ██  ▀█ ▄██ ▄ █▀
+██▀  ▀▄█ ▄▄ █ ▀█  ▀  ▀▄█▀ ▀ ▄█▀█  █▄█▄▀▄▀█ ▄▀ █▀██  ▀█▀█▀▀█▄██ ▀▄▀▀█▄▀▄▄▀▄▀▄████▀██▄ █  ▀▀▀▄ ▀▄▀█▄ ▀▀ ▀ ██▄█
+▀▄█  █▄██▄ █ ▀▀█  █▄█▀▄ ▀▀ ▀█▀▀ ▀ █  ▄█▄█ █▀▄▀▄▄▄█▄██▄▄▀█▀ ▀▄▄█▄█▀▀█ ▄▀▄ ▄▄ ██▄██▄ ▄▄ ▄▀█▀█▀▄▀ ▀▄█ ▀ ▄▄▄ ▄█▀▀
+▀▀ ▀▀▄█▄▄ █▀ ██  ███▀▄▀▄▄  ▀██▄  ▄█▀▄ ▄▄▄  █▀▄█▀█▀▄███▄▀██▀▄▀ ██ ▀██▀█▄█▀   ███▀ ▄▀ ▄▀ ▀▀   ▀█▄▄▄▀ ▀█▀ ▀▄▀
+▄█ ▄▄▄▄▀ ▄ ██▄█ ▄▀█▄▄▀▄▀▄▄███▄▄▄▀█▀   █▄█ ██▄ █ ▄ █▄ ▀ █▀  █▄█▀ █▀▀▀▄▄▀▄ ▀██ ▄█▄█ ▄▄▄ ▄█▀███▄▀   ▄▀   ▀▄▄ █
+▀██▄█▀▄ ▀█▄█▀▄▀▀█▄▄█▀█▄▀ ▀ ▄▀▀▀▄ ▀██    ▄█ █▄ █ █  ▄▄▀█▄  ██▀▄▀   ▀█▄██ ▀█ ▄▀▀▀█ ▄▄▄▄█ ▀  ▀█▄▀▄▀█▀▀▀▄█ ▄█▄█
+▄▄█▀█▀▄▀█▄ ▄▀ █▄▀ ▀▀ ██▄▄█▀▀████▄ ▀  ██ ▀▄▀█ ▀▀▀▄▄█▀██▄█▄ ▀   █▄▀███ ▄▄   ▀█▄▄▄█▄   ▄▄▄█▀██▀ █▀ ▄▀▀ ▄▄█▄▄▄█▀
+▄▄▄▄▄▄▄ ▀▄▄ █▀▄▀▀▄▀▄▀  ▀█▀ ▀█ ▄ ██▄▄█▄ ▀▄▀▀▄█ ████ ██ ▄ ██▄▄ ▄▀▀▄▀▀▀█▄▄ ██▀▄█ ▄ █▀█  █ ▄█▀ █▀█▄▄ █ ▄█ ▄ █ ▄
+█ ▄▄▄ █ █ ▄▀ ▄█ ▀▀▄  ▀█▀ █▀██▄▄▄█ ▀▄▄▄▄ █ ██ █▀▄  █▀█▄▄▄█  ▄    ▀▀▀▀▄▄  ▄ ▄▀█▄▄▄█ █ ▄▄▀▄▀  ▀▄ ▄▄ █  █▄▄▄███ █
+█ ███ █  ▀██▄▄█ ▄   █ ▄▄▀█▀███▀▀█▀█ █▄▀ ▄█▀▀▄ ▄▀██▀ ▀ ▀██▀▄▄▄▄ ▄ ▄▀▄▀ █ █ ▀███▀ ▀ █ ▀▀ ▀▀   █▀█▄ █▀ █▄▀▄  ▄▄▀
+█▄▄▄▄▄█ █▄█▄▀▄▄▄██▄▀▄▄▄  ▀▄ █▄█▀ ▄▀▀▄▀▄ ▀▄█▀▄▀█▄  █ ▀ ▄▀▄▀▀   ▀ ▀▄▀█  ▄  ██ █▀█▀  ▀▄ ▀▀ █▄▄█ ▄   ▀▄▄▄ ▄▄█ ██▄
 """
 
 from __future__ import annotations
@@ -86,7 +200,7 @@ __all__ = [
     # Classes
     "OldBaseTask",
     "TimeSeriesTask",
-    "TimeSeriesTaskDataset",
+    "TimeSeriesSampleGenerator",
 ]
 
 import logging
@@ -122,6 +236,14 @@ from tsdm.utils.types import KeyVar
 TimeSlice: TypeAlias = Index | slice | list
 
 SampleType_co = TypeVar("SampleType_co", covariant=True)
+
+Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
+
+TS_Type_co = TypeVar(
+    "TS_Type_co", bound=TimeSeriesDataset | TimeSeriesCollection, covariant=True
+)
+
+SplitID = TypeVar("SplitID", bound=Hashable)
 
 
 class BaseTaskMetaClass(ABCMeta):
@@ -398,7 +520,9 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 
 @dataclass
 class TimeSeriesTask(
-    Mapping[KeyVar, DataLoader[SampleType_co]], ABC, metaclass=BaseTaskMetaClass
+    Mapping[SplitID, DataLoader[SampleType_co]],
+    Generic[SplitID, TS_Type_co, SampleType_co],
+    metaclass=BaseTaskMetaClass,
 ):
     r"""Abstract Base Class for Tasks.
 
@@ -453,22 +577,28 @@ class TimeSeriesTask(
     LOGGER: ClassVar[logging.Logger]
     r"""Class specific logger instance."""
 
-    dataset: TimeSeriesTaskDataset
+    dataset: TS_Type_co
     r"""Dataset from which the splits are constructed."""
 
     _: KW_ONLY = NotImplemented
-    index: Sequence[KeyVar] = NotImplemented
+    index: Sequence[SplitID] = NotImplemented
     r"""List of index."""
-    dataloaders: Mapping[KeyVar, DataLoader[SampleType_co]] = NotImplemented
+    dataloaders: Mapping[SplitID, DataLoader[SampleType_co]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
-    encoders: Mapping[KeyVar, ModularEncoder] = NotImplemented
+    encoders: Mapping[SplitID, ModularEncoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    folds: Mapping[KeyVar, DataFrame] = NotImplemented
+    folds: Mapping[SplitID, DataFrame] = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
-    samplers: Mapping[KeyVar, TorchSampler] = NotImplemented
+    samplers: Mapping[SplitID, TorchSampler] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
-    splits: Mapping[KeyVar, TorchDataset[SampleType_co]] = NotImplemented
+    generators: Mapping[SplitID, TorchDataset] = NotImplemented
+    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
+    splits: Mapping[SplitID, TS_Type_co] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
+    test_metric: Callable[[Any, Any], Any] = NotImplemented
+    r"""Metric used for evaluation."""
+    collate_fn: Callable[[list[SampleType_co]], Batch] = NotImplemented
+    r"""Collate function used to create batches from samples."""
 
     train_patterns: Sequence[str] = ("train", "training")
     r"""List of patterns to match for training splits."""
@@ -480,13 +610,11 @@ class TimeSeriesTask(
         if self.folds is NotImplemented:
             self.LOGGER.info("No folds provided. Creating them.")
             self.folds = self.make_folds()
+        # self.validate_folds()
 
         if self.splits is NotImplemented:
             self.LOGGER.info("No splits provided. Creating them.")
-            self.splits = self.make_splits()
-
-        self.validate_split_keys()
-
+            self.splits = LazyDict({key: self.make_split for key in self})
         if self.dataloaders is NotImplemented:
             self.LOGGER.info("No DataLoaders provided. Caching them.")
             self.dataloaders = LazyDict({key: self.make_dataloader for key in self})
@@ -496,28 +624,40 @@ class TimeSeriesTask(
         if self.encoders is NotImplemented:
             self.LOGGER.info("No Encoders provided. Caching them.")
             self.encoders = LazyDict({key: self.make_encoder for key in self})
+        if self.generators is NotImplemented:
+            self.LOGGER.info("No Generators provided. Caching them.")
+            self.generators = LazyDict({key: self.make_generator for key in self})
+        if self.test_metric is NotImplemented:
+            self.LOGGER.info("No test metric provided. Using default.")
+            self.test_metric = self.default_metric  # type: ignore[assignment]
+        if self.collate_fn is NotImplemented:
+            self.LOGGER.info("No test metric provided. Using default.")
+            self.collate_fn = self.default_collate_fn
 
-    def __iter__(self) -> Iterator[KeyVar]:
+    def __iter__(self) -> Iterator[SplitID]:
         r"""Iterate over the keys."""
-        return iter(self.splits)
+        return iter(self.folds)
 
     def __len__(self) -> int:
         r"""Return the number of splits."""
-        return len(self.splits)
+        return len(self.folds)
 
-    def __getitem__(self, key: KeyVar) -> DataLoader[SampleType_co]:
+    def __getitem__(self, key: SplitID) -> DataLoader[SampleType_co]:
         r"""Return the dataloader associated with the key."""
         return self.dataloaders[key]
 
+    def __repr__(self) -> str:
+        return repr_dataclass(self)
+
     @cached_property
-    def train_partition(self) -> Mapping[KeyVar, KeyVar]:
+    def train_partition(self) -> Mapping[SplitID, SplitID]:
         r"""Return the train partition for the given key."""
-        if isinstance(self.splits, (Series, DataFrame)):
-            split_index = self.splits.index
-        elif isinstance(self.splits, Mapping):
-            split_index = Index(self.splits.keys())
+        if isinstance(self.folds, (Series, DataFrame)):
+            split_index = self.folds.index
+        elif isinstance(self.folds, Mapping):
+            split_index = Index(self.folds.keys())
         else:
-            raise TypeError(f"Cannot infer train-partition from {type(self.splits)=}")
+            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
         if isinstance(split_index, MultiIndex):
             *fold, partition = names = split_index.names
 
@@ -542,18 +682,18 @@ class TimeSeriesTask(
             return s.to_dict()
         raise RuntimeError("Supposed to be unreachable")
 
-    def validate_split_keys(self) -> None:
+    def validate_folds(self) -> None:
         r"""Makes sure all keys are correct format `str` or `tuple[..., str]`.
 
         - If keys are `partition`, they are assumed to be `partition` keys.
         - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
         """
-        if isinstance(self.splits, (Series, DataFrame)):
-            split_index = self.splits.index
-        elif isinstance(self.splits, Mapping):
-            split_index = Index(self.splits.keys())
+        if isinstance(self.folds, (Series, DataFrame)):
+            split_index = self.folds.index
+        elif isinstance(self.folds, Mapping):
+            split_index = Index(self.folds.keys())
         else:
-            raise TypeError(f"Cannot infer train-partition from {type(self.splits)=}")
+            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
 
         if isinstance(split_index, MultiIndex):
             *fold, partition = split_index.names
@@ -569,7 +709,7 @@ class TimeSeriesTask(
             raise RuntimeError("Supposed to be unreachable")
 
     @cached_property
-    def dataloader_config(self) -> dict[KeyVar, dict[str, Any]]:
+    def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
         r"""Return dataloader configuration."""
         return {
             key: {
@@ -577,12 +717,12 @@ class TimeSeriesTask(
                 "shuffle": self.split_type(key) == "train",
                 "drop_last": self.split_type(key) == "train",
                 "pin_memory": True,
-                "collate_fn": lambda x: x,
+                "collate_fn": self.collate_fn,
             }
             for key in self
         }
 
-    def split_type(self, key: KeyVar) -> Literal["train", "infer", "unknown"]:
+    def split_type(self, key: SplitID) -> Literal["train", "infer", "unknown"]:
         r"""Return the type of split."""
         if isinstance(key, str):
             if key.lower() in self.train_patterns:
@@ -600,7 +740,7 @@ class TimeSeriesTask(
             raise ValueError(f"{key=} contains both train and infer splits.")
         return "unknown"
 
-    def fit_encoder(self, key: KeyVar, /) -> None:
+    def fit_encoder(self, key: SplitID, /) -> None:
         r"""Fit the encoder."""
         self.LOGGER.info("Initializing Encoder for key='%s'", key)
         encoder = self.make_encoder(key)
@@ -609,26 +749,42 @@ class TimeSeriesTask(
         self.LOGGER.info("Fitting encoder to associated train split '%s'", train_key)
         encoder.fit(associated_train_split)
 
-    def make_encoder(self, key: KeyVar, /) -> ModularEncoder:
+    @staticmethod
+    def default_collate_fn(samples: list[SampleType_co]) -> Batch:
+        r"""Return the test metric."""
+        return samples  # type: ignore[return-value]
+
+    @staticmethod
+    def default_metric(*, targets, predictions):
+        r"""Return the test metric."""
+        raise NotImplementedError
+
+    def make_split(self, key: SplitID, /) -> TS_Type_co:
+        r"""Return the splits associated with the specified key."""
+        return self.dataset[self.folds[key]]
+
+    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
         r"""Create the encoder associated with the specified key."""
         raise NotImplementedError
 
-    def make_sampler(self, key: KeyVar, /) -> TorchSampler:
+    def make_sampler(self, key: SplitID, /) -> TorchSampler[KeyVar]:
         r"""Create the sampler associated with the specified key."""
         raise NotImplementedError
 
-    def make_folds(self, /) -> Mapping[KeyVar, Dataset]:
-        r"""Return the folds associated with the specified key."""
-        raise NotImplementedError
-
-    def make_splits(self, /) -> Mapping[KeyVar, TorchDataset[SampleType_co]]:
+    def make_generator(self, key: SplitID, /) -> TorchDataset[SampleType_co]:
         r"""Return the splits associated with the specified key."""
         raise NotImplementedError
 
-    def make_dataloader(self, key: KeyVar, /, **dataloader_kwargs: Any) -> DataLoader:
+    def make_folds(self, /) -> Mapping[SplitID, DataFrame]:
+        r"""Return the folds associated with the specified key."""
+        raise NotImplementedError
+
+    def make_dataloader(
+        self, key: SplitID, /, **dataloader_kwargs: Any
+    ) -> DataLoader[SampleType_co]:
         r"""Return the dataloader associated with the specified key."""
         self.LOGGER.info("Creating DataLoader for key=%s", key)
-        dataset = self.splits[key]
+        dataset = self.generators[key]
         sampler = self.samplers[key]
         kwargs = self.dataloader_config[key] | dataloader_kwargs
         dataloader = DataLoader(dataset, sampler=sampler, **kwargs)
@@ -685,13 +841,8 @@ class Sample(NamedTuple):
         return self
 
 
-TS_Type_co = TypeVar(
-    "TS_Type_co", bound=TimeSeriesDataset | TimeSeriesCollection, covariant=True
-)
-
-
 @dataclass
-class TimeSeriesTaskDataset(TorchDataset[Sample]):
+class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     r"""Creates sample from a TimeSeriesCollection.
 
     There are different modus operandi for creating samples from a TimeSeriesCollection.

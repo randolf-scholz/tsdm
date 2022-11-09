@@ -5,7 +5,7 @@ import logging
 
 from tsdm.datasets import InSilicoData, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
-from tsdm.tasks.base import Sample, TimeSeriesTaskDataset
+from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator
 
 __logger__ = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ def test_time_series_dataset_task():
     observables = ["Biomass", "Substrate", "Acetate", "DOTm"]
     covariates = ["Volume", "Feed"]
 
-    task = TimeSeriesTaskDataset(
+    task = TimeSeriesSampleGenerator(
         TSC,
         targets=targets,
         observables=observables,
@@ -48,7 +48,7 @@ def test_time_series_dataset_task():
     # test with TimeSeriesDataset
     TSD = TSC[16130]
     assert isinstance(TSD, TimeSeriesDataset)
-    task = TimeSeriesTaskDataset(
+    task = TimeSeriesSampleGenerator(
         TSD,
         targets=targets,
         observables=observables,

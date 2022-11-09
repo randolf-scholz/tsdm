@@ -37,7 +37,7 @@ __all__ = [
     "ETT",
     "Electricity",
     "InSilicoData",
-    "KIWI",
+    "KiwiDataset",
     "KIWI_RUNS",
     "KIWI_RUNS_OLD",
     "MIMIC_III",
@@ -66,7 +66,7 @@ from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
-from tsdm.datasets.kiwi_runs import KIWI, KIWI_RUNS
+from tsdm.datasets.kiwi_runs import KIWI_RUNS, KiwiDataset
 from tsdm.datasets.kiwi_runs_old import KIWI_RUNS_OLD
 from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
@@ -83,7 +83,7 @@ r"""Type hint for dataset."""
 
 
 TSC: Final[dict[str, type[TimeSeriesCollection]]] = {
-    "KIWI": KIWI,
+    "KiwiDataset": KiwiDataset,
 }
 
 

@@ -21,16 +21,16 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import KIWI, KIWI_RUNS
+from tsdm.datasets import KIWI_RUNS, KiwiDataset
 from tsdm.encoders import BaseEncoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
-from tsdm.tasks.base import OldBaseTask, TimeSeriesTaskDataset
+from tsdm.tasks.base import OldBaseTask, TimeSeriesSampleGenerator
 from tsdm.utils.data import MappingDataset, TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 
-class KiwiForecastingTask(TimeSeriesTaskDataset):
+class KiwiForecastingTask(TimeSeriesSampleGenerator):
     r"""Bioprocess forecasting task using the KIWI-biolab data."""
 
     targets = ["Base", "DOT", "Glucose", "OD600"]
@@ -55,7 +55,7 @@ class KiwiForecastingTask(TimeSeriesTaskDataset):
     sample_format = ("masked", "masked")
 
     def __init__(self, **kwargs: Any) -> None:
-        ds = KIWI()
+        ds = KiwiDataset()
         super().__init__(ds, **kwargs)
 
 
