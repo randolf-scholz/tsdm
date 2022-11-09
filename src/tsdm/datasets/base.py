@@ -830,6 +830,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     - global variables $G∈𝓖$
     """
 
+    timeseries: DataFrame
+    r"""The time series data."""
     _: KW_ONLY = NotImplemented
 
     # Main attributes
@@ -837,8 +839,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     r"""The name of the collection."""
     index: Index = NotImplemented
     r"""The index of the collection."""
-    timeseries: DataFrame
-    r"""The time series data."""
+
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
     global_metadata: Optional[DataFrame] = None
@@ -859,7 +860,10 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     def __post_init__(self) -> None:
         r"""Post init."""
         if self.name is NotImplemented:
-            self.name = self.__class__.__name__
+            if hasattr(self.timeseries, "name") and self.timeseries.name is not None:
+                self.name = str(self.timeseries.name)
+            else:
+                self.name = self.__class__.__name__
         if self.index is NotImplemented:
             if self.metadata is not None:
                 self.index = self.metadata.index.copy().unique()
@@ -879,7 +883,15 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
 
     def __getitem__(self, key):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
-        ts = self.timeseries.loc[key]
+        # TODO: There must be a better way to slice this
+        if (
+            isinstance(key, Series)
+            and isinstance(key.index, Index)
+            and not isinstance(key.index, MultiIndex)
+        ):
+            ts = self.timeseries.loc[key[key].index]
+        else:
+            ts = self.timeseries.loc[key]
 
         # make sure metadata is always DataFrame.
         if self.metadata is None:
