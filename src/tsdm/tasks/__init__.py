@@ -52,6 +52,8 @@ __all__ = [
     # Task Datasets
     "KiwiSampleGenerator",
     "KiwiTask",
+    "InSilicoSampleGenerator",
+    "InSilicoTask",
 ]
 
 
@@ -61,6 +63,7 @@ from tsdm.tasks import base
 from tsdm.tasks.base import OldBaseTask, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.tasks.electricity_lim2021 import ElectricityLim2021
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
+from tsdm.tasks.insilico import InSilicoSampleGenerator, InSilicoTask
 from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK

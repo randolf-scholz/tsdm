@@ -2,51 +2,34 @@ r"""Implementation of the kiwi task."""
 
 __all__ = [
     # Classes
-    "KiwiSampleGenerator",
-    "KiwiTask",
+    "InSilicoSampleGenerator",
+    "InSilicoTask",
 ]
 
 
 from pandas import DataFrame
 from torch.utils.data import Sampler as TorchSampler
 
-from tsdm.datasets import KiwiDataset, TimeSeriesCollection
+from tsdm.datasets import InSilicoData, TimeSeriesCollection
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
 from tsdm.utils.types import KeyVar
 
 
-class KiwiSampleGenerator(TimeSeriesSampleGenerator):
+class InSilicoSampleGenerator(TimeSeriesSampleGenerator):
     r"""Sample generator for the KIWI dataset."""
 
     def __init__(self, dataset):
         super().__init__(
             dataset,
-            observables=[
-                "Base",
-                "DOT",
-                "Glucose",
-                "OD600",
-                "Acetate",
-                "Fluo_GFP",
-                "Volume",
-                "pH",
-            ],
-            covariates=[
-                "Cumulated_feed_volume_glucose",
-                "Cumulated_feed_volume_medium",
-                "InducerConcentration",
-                "StirringSpeed",
-                "Flow_Air",
-                "Temperature",
-                "Probe_Volume",
-            ],
-            targets=["Fluo_GFP"],
+            targets=["Biomass", "Product"],
+            observables=["Biomass", "Substrate", "Acetate", "DOTm"],
+            covariates=["Volume", "Feed"],
         )
 
 
-class KiwiTask(TimeSeriesTask):
+class InSilicoTask(TimeSeriesTask):
     r"""Task for the KIWI dataset."""
     # dataset: TimeSeriesCollection = KiwiDataset()
     observation_horizon: str = "2h"
@@ -55,7 +38,9 @@ class KiwiTask(TimeSeriesTask):
     r"""The number of datapoints the model should forecast."""
 
     def __init__(self) -> None:
-        super().__init__(dataset=KiwiDataset())
+        ds = InSilicoData()
+        dataset = TimeSeriesCollection(ds.timeseries)
+        super().__init__(dataset)
 
     @staticmethod
     def default_metric(*, targets, predictions):
@@ -70,18 +55,21 @@ class KiwiTask(TimeSeriesTask):
             key: SlidingWindowSampler(tsd.index, horizons=["2h", "1h"], stride="1h")
             for key, tsd in split.items()
         }
-        return HierarchicalSampler(split, subsamplers, shuffle=False)  # type: ignore[return-value]
+        return HierarchicalSampler(  # type: ignore[return-value]
+            split, subsamplers, shuffle=self.split_type(key) == "training"
+        )
 
     def make_folds(self, /) -> DataFrame:
-        r"""Group by RunID and color which indicates replicates."""
-        md = self.dataset.metadata
-        groups = md.groupby(["run_id", "color"], sort=False).ngroup()
+        # TODO: refactor code, use **fold_kwargs, move code to base class?!?
+        idx = self.dataset.index
+        df = idx.to_frame(index=False).set_index(idx.names)  # i.e. add dummy column
+        groups = df.groupby(idx.names, sort=False).ngroup()
         folds = folds_from_groups(
-            groups, seed=2022, num_folds=5, train=7, valid=1, test=2
+            groups, seed=2022, num_folds=8, train=6, valid=1, test=1
         )
         df = folds_as_frame(folds)
         return folds_as_sparse_frame(df)
 
-    def make_generator(self, key: KeyVar, /) -> KiwiSampleGenerator:
+    def make_generator(self, key: KeyVar, /) -> InSilicoSampleGenerator:
         split = self.splits[key]
-        return KiwiSampleGenerator(split)
+        return InSilicoSampleGenerator(split)

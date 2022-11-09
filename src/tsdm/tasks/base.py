@@ -587,7 +587,7 @@ class TimeSeriesTask(
     r"""Dictionary holding `DataLoader` associated with each key."""
     encoders: Mapping[SplitID, ModularEncoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    folds: Mapping[SplitID, DataFrame] = NotImplemented
+    folds: DataFrame = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
     samplers: Mapping[SplitID, TorchSampler] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
@@ -610,8 +610,12 @@ class TimeSeriesTask(
         if self.folds is NotImplemented:
             self.LOGGER.info("No folds provided. Creating them.")
             self.folds = self.make_folds()
-        # self.validate_folds()
 
+        # check the folds for consistency
+        self.validate_folds()
+
+        if self.index is NotImplemented:
+            self.index = self.folds.columns
         if self.splits is NotImplemented:
             self.LOGGER.info("No splits provided. Creating them.")
             self.splits = LazyDict({key: self.make_split for key in self})
@@ -649,97 +653,6 @@ class TimeSeriesTask(
     def __repr__(self) -> str:
         return repr_dataclass(self)
 
-    @cached_property
-    def train_partition(self) -> Mapping[SplitID, SplitID]:
-        r"""Return the train partition for the given key."""
-        if isinstance(self.folds, (Series, DataFrame)):
-            split_index = self.folds.index
-        elif isinstance(self.folds, Mapping):
-            split_index = Index(self.folds.keys())
-        else:
-            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
-        if isinstance(split_index, MultiIndex):
-            *fold, partition = names = split_index.names
-
-            # Create Frame (fold, partition) -> (fold, partition.lower())
-            df = split_index.to_frame()
-            mask = df[partition].str.lower().isin(self.train_patterns)
-
-            # create Series (train_key) -> train_key
-            train_folds = df[mask].copy()
-            train_folds = train_folds.drop(columns=names)
-            train_folds["key"] = list(df[mask].index)
-            train_folds = train_folds.droplevel(-1)
-
-            # create Series (fold, partition) -> train_key
-            df = df.drop(columns=names)
-            df = df.join(train_folds, on=fold)
-            return df["key"].to_dict()
-        if isinstance(split_index, Index):
-            mask = split_index.str.lower().isin(self.train_patterns)
-            value = split_index[mask]
-            s = Series(value.item(), index=split_index)
-            return s.to_dict()
-        raise RuntimeError("Supposed to be unreachable")
-
-    def validate_folds(self) -> None:
-        r"""Makes sure all keys are correct format `str` or `tuple[..., str]`.
-
-        - If keys are `partition`, they are assumed to be `partition` keys.
-        - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
-        """
-        if isinstance(self.folds, (Series, DataFrame)):
-            split_index = self.folds.index
-        elif isinstance(self.folds, Mapping):
-            split_index = Index(self.folds.keys())
-        else:
-            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
-
-        if isinstance(split_index, MultiIndex):
-            *fold, partition = split_index.names
-            df = split_index.to_frame(index=False)
-            df["is_train"] = df[partition].str.lower().isin(self.train_patterns)
-            if not all(df.groupby(fold)["is_train"].sum() == 1):
-                raise ValueError("Each fold must have a unique train partition.")
-        elif isinstance(split_index, Index):
-            mask = split_index.str.lower().isin(self.train_patterns)
-            if not sum(mask) == 1:
-                raise ValueError("Each fold must have a unique train partition.")
-        else:
-            raise RuntimeError("Supposed to be unreachable")
-
-    @cached_property
-    def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
-        r"""Return dataloader configuration."""
-        return {
-            key: {
-                "batch_size": 32,
-                "shuffle": self.split_type(key) == "train",
-                "drop_last": self.split_type(key) == "train",
-                "pin_memory": True,
-                "collate_fn": self.collate_fn,
-            }
-            for key in self
-        }
-
-    def split_type(self, key: SplitID) -> Literal["train", "infer", "unknown"]:
-        r"""Return the type of split."""
-        if isinstance(key, str):
-            if key.lower() in self.train_patterns:
-                return "train"
-            if key.lower() in self.infer_patterns:
-                return "infer"
-        if isinstance(key, Sequence):
-            patterns = {self.split_type(k) for k in key}
-            if patterns <= {"train", "unknown"}:
-                return "train"
-            if patterns <= {"infer", "unknown"}:
-                return "infer"
-            if patterns == {"unknown"}:
-                return "unknown"
-            raise ValueError(f"{key=} contains both train and infer splits.")
-        return "unknown"
-
     def fit_encoder(self, key: SplitID, /) -> None:
         r"""Fit the encoder."""
         self.LOGGER.info("Initializing Encoder for key='%s'", key)
@@ -775,7 +688,7 @@ class TimeSeriesTask(
         r"""Return the splits associated with the specified key."""
         raise NotImplementedError
 
-    def make_folds(self, /) -> Mapping[SplitID, DataFrame]:
+    def make_folds(self, /) -> DataFrame:
         r"""Return the folds associated with the specified key."""
         raise NotImplementedError
 
@@ -789,6 +702,96 @@ class TimeSeriesTask(
         kwargs = self.dataloader_config[key] | dataloader_kwargs
         dataloader = DataLoader(dataset, sampler=sampler, **kwargs)
         return dataloader
+
+    def split_type(self, key: SplitID) -> Literal["train", "infer", "unknown"]:
+        r"""Return the type of split."""
+        if isinstance(key, str):
+            if key.lower() in self.train_patterns:
+                return "train"
+            if key.lower() in self.infer_patterns:
+                return "infer"
+        if isinstance(key, Sequence):
+            patterns = {self.split_type(k) for k in key}
+            if patterns <= {"train", "unknown"}:
+                return "train"
+            if patterns <= {"infer", "unknown"}:
+                return "infer"
+            if patterns == {"unknown"}:
+                return "unknown"
+            raise ValueError(f"{key=} contains both train and infer splits.")
+        return "unknown"
+
+    @cached_property
+    def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
+        r"""Return dataloader configuration."""
+        return {
+            key: {
+                "batch_size": 32,
+                "drop_last": self.split_type(key) == "train",
+                "pin_memory": True,
+                "collate_fn": self.collate_fn,
+            }
+            for key in self
+        }
+
+    @cached_property
+    def train_partition(self) -> Mapping[SplitID, SplitID]:
+        r"""Return the train partition for the given key."""
+        if isinstance(self.folds, (Series, DataFrame)):
+            split_index = self.folds.T.index
+        elif isinstance(self.folds, Mapping):
+            split_index = Index(self.folds.keys())
+        else:
+            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
+        if isinstance(split_index, MultiIndex):
+            *fold, partition = names = split_index.names
+
+            # Create Frame (fold, partition) -> (fold, partition.lower())
+            df = split_index.to_frame()
+            mask = df[partition].str.lower().isin(self.train_patterns)
+
+            # create Series (train_key) -> train_key
+            train_folds = df[mask].copy()
+            train_folds = train_folds.drop(columns=names)
+            train_folds["key"] = list(df[mask].index)
+            train_folds = train_folds.droplevel(-1)
+
+            # create Series (fold, partition) -> train_key
+            df = df.drop(columns=names)
+            df = df.join(train_folds, on=fold)
+            return df["key"].to_dict()
+        if isinstance(split_index, Index):
+            mask = split_index.str.lower().isin(self.train_patterns)
+            value = split_index[mask]
+            s = Series(value.item(), index=split_index)
+            return s.to_dict()
+        raise RuntimeError("Supposed to be unreachable")
+
+    def validate_folds(self) -> None:
+        r"""Makes sure all keys are correct format `str` or `tuple[..., str]`.
+
+        - If keys are `partition`, they are assumed to be `partition` keys.
+        - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
+        """
+        if isinstance(self.folds, (Series, DataFrame)):
+            split_index = self.folds.T.index
+        elif isinstance(self.folds, Mapping):
+            split_index = Index(self.folds.keys())
+        else:
+            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
+
+        if isinstance(split_index, MultiIndex):
+            *fold, partition = split_index.names
+            df = split_index.to_frame(index=False)
+            df["is_train"] = df[partition].str.lower().isin(self.train_patterns)
+            if not all(df.groupby(fold)["is_train"].sum() == 1):
+                raise ValueError("Each fold must have a unique train partition.")
+        elif isinstance(split_index, Index):
+            mask = split_index.str.lower().isin(self.train_patterns)
+            if not sum(mask) == 1:
+                raise ValueError("Each fold must have a unique train partition.")
+        else:
+            raise RuntimeError("Supposed to be unreachable")
 
 
 class Inputs(NamedTuple):
