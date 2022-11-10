@@ -6,11 +6,12 @@ from collections.abc import MutableMapping
 
 from tsdm.utils.lazydict import LazyDict, LazyFunction
 
+logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
 def test_lazydict():
-    r"""Test LazyDict."""
+    __logger__.info("Testing %s.", LazyDict)
 
     def no_input():
         return 0
@@ -27,7 +28,7 @@ def test_lazydict():
     def generic(a, /, b, c=1, *args, d, e=2, **kwargs):
         return a + b + c + sum(args) + d + e + sum(kwargs.values())
 
-    d = {
+    example_dict = {
         0: no_input,
         1: single_input,
         2: (no_input,),
@@ -36,7 +37,7 @@ def test_lazydict():
         5: (keyword_only, {"d": 1, "e": 1, "f": 1, "g": 1}),
         6: (generic, (1, 1, 1, 1), {"d": 1, "e": 1, "f": 1, "g": 1}),
     }
-    ld = LazyDict(d, answer=42)
+    ld = LazyDict(example_dict, answer=42)
 
     assert isinstance(ld, LazyDict)
     assert isinstance(ld, dict)
@@ -49,8 +50,9 @@ def test_lazydict():
         assert isinstance(ld[key], int)
 
 
-def test_fromkeys():
+def test_lazydict_fromkeys():
     r"""Test if fromkeys works."""
+    __logger__.info("Testing %s", LazyDict.fromkeys)
     ld = LazyDict.fromkeys([1, 2, 3], 0)
 
     assert isinstance(ld, LazyDict)
@@ -64,27 +66,35 @@ def test_fromkeys():
         assert isinstance(ld[key], int)
 
 
-def test_copy():
+def test_lazydict_copy():
     r"""Test if copying works."""
-    ld = LazyDict.fromkeys([1, 2, 3], 0)
-    ld2 = ld.copy()
+    __logger__.info("Testing %s", LazyDict.copy)
+    ldA = LazyDict.fromkeys([1, 2, 3], 0)
+    ldB = ldA.copy()
+    assert isinstance(ldB, LazyDict)
 
-    assert isinstance(ld2, LazyDict)
-    assert isinstance(ld, dict)
-    assert isinstance(ld, MutableMapping)
+    for (keyA, valueA), (keyB, valueB) in zip(ldA.items(), ldB.items()):
+        assert keyA is keyB
+        assert valueA is valueB
+        assert isinstance(valueA, LazyFunction)
+        assert isinstance(valueB, LazyFunction)  # type: ignore[unreachable]
 
-    for value in ld2.values():
-        assert isinstance(value, LazyFunction)
+    # compute the value in the second dictionary
+    for keyB in ldB:
+        assert isinstance(ldB[keyB], int)
 
-    for key in ld2:
-        assert isinstance(ld2[key], int)
+    # check that the first dictionary is still lazy
+    for (keyA, valueA), (keyB, valueB) in zip(ldA.items(), ldB.items()):
+        assert keyA is keyB
+        assert valueA is not valueB
+        assert isinstance(valueB, int)
+        assert isinstance(valueA, LazyFunction)
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
-    __logger__.info("Testing lazydict ...")
     test_lazydict()
-    __logger__.info("Done.")
+    test_lazydict_fromkeys()
+    test_lazydict_copy()
 
 
 if __name__ == "__main__":

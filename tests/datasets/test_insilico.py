@@ -9,13 +9,14 @@ from pandas import DataFrame
 from tsdm.datasets import BaseDataset, InSilicoData
 from tsdm.utils.decorators import timefun
 
+logging.basicConfig(level=logging.INFO)
+
 __logger__ = logging.getLogger(__name__)
 
 
 def test_caching():
-    r"""Check if dataset caching works (should be way faster)."""
     # NOTE: this test must be executed first!!!
-
+    __logger__.info("Testing caching of %s.", InSilicoData)
     ds = InSilicoData(initialize=False)
     __logger__.info("Testing caching of dataset %s", ds.__class__.__name__)
     _, pre_cache_time = timefun(lambda: ds.dataset, append=True)()
@@ -33,13 +34,14 @@ def test_caching():
 
 
 def test_attributes():
-    r"""Test if all attributes are present."""
+    __logger__.info("Testing attributes of %s.", InSilicoData)
     ds = InSilicoData()
     base_attrs = copy(set(dir(ds)))
     attrs = {
         "BASE_URL",
-        "RAWDATA_DIR",
         "DATASET_DIR",
+        "RAWDATA_DIR",
+        "__dir__",
         "clean",
         "dataset",
         "dataset_files",
@@ -50,16 +52,12 @@ def test_attributes():
     assert attrs <= base_attrs, f"{attrs - base_attrs} missing!"
     assert isinstance(ds.dataset, DataFrame)
     assert issubclass(InSilicoData, BaseDataset)
-    # assert isinstance(InSilicoData(), BaseDataset)
 
-    assert hasattr(ds, "dataset")
-    assert hasattr(ds, "load")
-    assert hasattr(ds, "download")
-    assert hasattr(ds, "clean")
+    for attr in attrs:
+        assert hasattr(ds, attr), f"{attr} missing!"
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
     test_caching()
     test_attributes()
 

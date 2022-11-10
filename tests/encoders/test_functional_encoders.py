@@ -7,6 +7,7 @@ from pandas import NA, DataFrame, testing
 
 from tsdm.encoders.functional import make_masked_format
 
+logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -18,7 +19,7 @@ def test_make_masked_format():
     1. Recurrent Neural Networks for Multivariate Time Series with Missing Values
        Che et al., Nature 2017
     """
-    __logger__.info("Testing %s started!", make_masked_format.__name__)
+    __logger__.info("Testing %s.", make_masked_format)
 
     x = [[47, 49, NA, 40, NA, 43, 55], [NA, 15, 14, NA, NA, NA, 15]]
     t = [0, 0.1, 0.6, 1.6, 2.2, 2.5, 3.1]
@@ -35,11 +36,9 @@ def test_make_masked_format():
     testing.assert_frame_equal(x, data, check_dtype=False)
     testing.assert_frame_equal(m, mask, check_dtype=False)
     testing.assert_frame_equal(d, diff, check_dtype=False)
-    __logger__.info("Testing %s finished!", make_masked_format.__name__)
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
     test_make_masked_format()
 
 

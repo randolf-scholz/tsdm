@@ -3,21 +3,23 @@ r"""Test task implementation with InSilicoData."""
 
 import logging
 
+import pytest
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import TimeSeriesCollection
 from tsdm.random.samplers import HierarchicalSampler
-from tsdm.tasks import InSilicoSampleGenerator, InSilicoTask
+from tsdm.tasks import InSilicoSampleGenerator, KiwiTask
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
+@pytest.mark.skip(reason="expensive")
 def test_time_series_dataset_task():
-    __logger__.info("Testing %s.", InSilicoTask)
+    __logger__.info("Testing %s.", KiwiTask)
 
-    task = InSilicoTask()
+    task = KiwiTask()
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
     assert isinstance(task.splits[0, "train"], TimeSeriesCollection)

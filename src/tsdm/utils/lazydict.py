@@ -158,4 +158,4 @@ class LazyDict(dict[KeyVar, ObjectVar]):
 
     def copy(self) -> LazyDict[KeyVar, ObjectVar]:
         r"""Return a shallow copy of the dictionary."""
-        return self.__class__(self)
+        return self.__class__(self.items())

@@ -19,6 +19,7 @@ from typing_extensions import NamedTuple  # FIXME: remove with python 3.11
 from tsdm.random.samplers import compute_grid
 from tsdm.utils.types.time import DTVar, TDVar
 
+logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 MODES = ["numpy", "pandas", "python", "np_int", "np_float", "int", "float"]
 
@@ -145,7 +146,6 @@ def test_grid_extra():
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
     for mode in MODES:
         test_grid_pandas(mode)
     test_grid_extra()
