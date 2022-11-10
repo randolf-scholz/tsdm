@@ -49,9 +49,33 @@ def test_lazydict():
     for key in ld:
         assert isinstance(ld[key], int)
 
+    # test __or__ operator with other LazyDict
+    ld = LazyDict() | LazyDict({0: lambda: 0})
+    assert isinstance(ld, LazyDict)
+    for value in ld.values():
+        assert isinstance(value, LazyFunction)
+
+    # test __or__ operator with other dict
+    ld = LazyDict() | {0: lambda: 0}
+    assert isinstance(ld, LazyDict)
+    for value in ld.values():
+        assert isinstance(value, LazyFunction)
+
+    # test __ror__ operator
+    other: dict = {} | LazyDict({0: lambda: 0})
+    assert isinstance(other, dict) and not isinstance(other, LazyDict)
+    for value in other.values():
+        assert isinstance(value, int)
+
+    # test __ior__ operator
+    ld = LazyDict()
+    ld |= {0: lambda: 0}
+    assert isinstance(ld, LazyDict)
+    for value in ld.values():
+        assert isinstance(value, LazyFunction)
+
 
 def test_lazydict_fromkeys():
-    r"""Test if fromkeys works."""
     __logger__.info("Testing %s", LazyDict.fromkeys)
     ld = LazyDict.fromkeys([1, 2, 3], 0)
 
@@ -67,7 +91,6 @@ def test_lazydict_fromkeys():
 
 
 def test_lazydict_copy():
-    r"""Test if copying works."""
     __logger__.info("Testing %s", LazyDict.copy)
     ldA = LazyDict.fromkeys([1, 2, 3], 0)
     ldB = ldA.copy()
