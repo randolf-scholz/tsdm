@@ -130,23 +130,24 @@ class LazyDict(dict[KeyVar, ObjectVar]):
     def __or__(self, other, /):
         # FIXME: https://github.com/python/cpython/issues/99327
         # TODO: Self python 3.11
-        self.update(other)
-        return self
+        new = self.copy()
+        new.update(other)
+        return new
 
     def __ror__(self, other, /):
         # FIXME: https://github.com/python/cpython/issues/99327
         # TODO: Self python 3.11
         if isinstance(other, self.__class__):
-            other.update(self)
-            return other
+            return other | self
         warnings.warn(
             "Using __ror__ with a non-LazyDict is not recommended, "
             "It causes all values to be evaluated.",
             category=RuntimeWarning,
             source=LazyDict,
         )
-        other.update(self.asdict())
-        return other
+        new = other.copy()
+        new.update(self.asdict())
+        return new
 
     def __ior__(self, other, /):
         # FIXME: https://github.com/python/cpython/issues/99327
