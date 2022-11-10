@@ -13,6 +13,7 @@ __all__ = [
 ]
 
 import logging
+import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from typing import Any, NamedTuple, TypeAlias, Union, overload
 
@@ -125,6 +126,37 @@ class LazyDict(dict[KeyVar, ObjectVar]):
     def __repr__(self) -> str:
         r"""Return the representation of the dictionary."""
         return repr_mapping(self, recursive=False)
+
+    def __or__(self, other, /):
+        # FIXME: https://github.com/python/cpython/issues/99327
+        # TODO: Self python 3.11
+        self.update(other)
+        return self
+
+    def __ror__(self, other, /):
+        # FIXME: https://github.com/python/cpython/issues/99327
+        # TODO: Self python 3.11
+        if isinstance(other, self.__class__):
+            other.update(self)
+            return other
+        warnings.warn(
+            "Using __ror__ with a non-LazyDict is not recommended, "
+            "It causes all values to be evaluated.",
+            category=RuntimeWarning,
+            source=LazyDict,
+        )
+        other.update(self.asdict())
+        return other
+
+    def __ior__(self, other, /):
+        # FIXME: https://github.com/python/cpython/issues/99327
+        # TODO: Self python 3.11
+        self.update(other)
+        return self
+
+    def asdict(self) -> dict[KeyVar, ObjectVar]:
+        r"""Return a dictionary with all values evaluated."""
+        return {k: self[k] for k in self}
 
     @staticmethod
     def _make_lazy_function(
