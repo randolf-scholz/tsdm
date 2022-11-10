@@ -9,9 +9,13 @@ from pandas import DataFrame, Series
 
 from tsdm.random.samplers import SlidingWindowSampler
 
+logging.basicConfig(level=logging.INFO)
+__logger__ = logging.getLogger(__name__)
+
 
 def test_SlidingWindowSampler():
-    r"""Test PhysioNet 2012."""
+    __logger__.info("Testing %s.", SlidingWindowSampler)
+
     tds = Series(pd.to_timedelta(np.random.rand(200), "m"))
     tmin = pd.Timestamp(0)
     tmax = tmin + pd.Timedelta(2, "h")
@@ -33,7 +37,6 @@ def test_SlidingWindowSampler():
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
 
     test_SlidingWindowSampler()
 

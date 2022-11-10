@@ -7,12 +7,13 @@ from tsdm.datasets import InSilicoData, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator
 
+logging.basicConfig(level=logging.INFO)
+
 __logger__ = logging.getLogger(__name__)
 
 
-def test_time_series_dataset_task():
-    r"""Test TimeSeriesDatasetTask."""
-    logging.basicConfig(level=logging.INFO)
+def test_time_series_sample_generator():
+    __logger__.info("Testing %s.", TimeSeriesSampleGenerator)
 
     # make dataset
     dataset = InSilicoData()
@@ -60,8 +61,7 @@ def test_time_series_dataset_task():
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
-    test_time_series_dataset_task()
+    test_time_series_sample_generator()
 
 
 if __name__ == "__main__":

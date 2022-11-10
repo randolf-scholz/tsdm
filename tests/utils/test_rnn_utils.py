@@ -3,13 +3,14 @@ r"""Test RNN utils."""
 
 import logging
 
+import pytest
 import torch
-from pytest import mark
 from torch import Tensor
 from torch.nn.utils.rnn import pack_sequence, pad_sequence
 
 from tsdm.utils.data import unpack_sequence, unpad_sequence
 
+logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -20,10 +21,10 @@ TESTCASES = [
 ]
 
 
-@mark.parametrize("tensors", TESTCASES)
+@pytest.mark.parametrize("tensors", TESTCASES)
 def test_unpack_sequence(tensors: list[Tensor]) -> None:
     r"""Test if `unpack_sequence` is inverse to `torch.nn.utils.rnn.pack_sequence`."""
-    __logger__.info("Testing %s started!", unpack_sequence.__name__)
+    __logger__.info("Testing %s.", unpack_sequence)
     tensors = [t for t in tensors if len(t) > 0]
 
     packed = pack_sequence(tensors, enforce_sorted=False)
@@ -33,13 +34,12 @@ def test_unpack_sequence(tensors: list[Tensor]) -> None:
 
     for x, y in zip(tensors, unpacked):
         assert torch.all(x == y)
-    __logger__.info("Testing %s finished!", unpack_sequence.__name__)
 
 
-@mark.parametrize("tensors", TESTCASES)
+@pytest.mark.parametrize("tensors", TESTCASES)
 def test_unpad_lengths(tensors: list[Tensor]) -> None:
     r"""Test if `test_unpad` is inverse to `torch.nn.utils.rnn.pad_sequence`."""
-    __logger__.info("Testing %s started!", unpad_sequence.__name__)
+    __logger__.info("Testing %s.", unpad_sequence)
 
     padding_value = float("nan")
     lengths = torch.tensor([len(t) for t in tensors], dtype=torch.int32)
@@ -58,13 +58,12 @@ def test_unpad_lengths(tensors: list[Tensor]) -> None:
         mask_y = torch.isnan(y)
         assert torch.all(mask_x == mask_y)
         assert torch.all(x[~mask_x] == y[~mask_y])
-    __logger__.info("Testing %s finished!", unpad_sequence.__name__)
 
 
-@mark.parametrize("tensors", TESTCASES)
+@pytest.mark.parametrize("tensors", TESTCASES)
 def test_unpad_sequence_nan(tensors: list[Tensor]) -> None:
     r"""Test if `test_unpad` is inverse to `torch.nn.utils.rnn.pad_sequence`."""
-    __logger__.info("Testing %s started!", unpad_sequence.__name__)
+    __logger__.info("Testing %s with NaN padding.", unpad_sequence)
 
     padding_value = float("nan")
 
@@ -83,13 +82,12 @@ def test_unpad_sequence_nan(tensors: list[Tensor]) -> None:
         mask_y = torch.isnan(y)
         assert torch.all(mask_x == mask_y)
         assert torch.all(x[~mask_x] == y[~mask_y])
-    __logger__.info("Testing %s finished!", unpad_sequence.__name__)
 
 
-@mark.parametrize("tensors", TESTCASES)
+@pytest.mark.parametrize("tensors", TESTCASES)
 def test_unpad_sequence_float(tensors: list[Tensor]) -> None:
     r"""Test if `test_unpad` is inverse to `torch.nn.utils.rnn.pad_sequence`."""
-    __logger__.info("Testing %s started!", unpad_sequence.__name__)
+    __logger__.info("Testing %s with float padding.", unpad_sequence)
 
     padding_value = 0.0
 
@@ -108,11 +106,8 @@ def test_unpad_sequence_float(tensors: list[Tensor]) -> None:
         assert torch.all(mask_x == mask_y)
         assert torch.all(x[~mask_x] == y[~mask_y])
 
-    __logger__.info("Testing %s finished!", unpad_sequence.__name__)
-
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
     for tensors in TESTCASES:
         test_unpack_sequence(tensors)
         test_unpad_lengths(tensors)
