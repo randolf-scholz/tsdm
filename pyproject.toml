@@ -44,6 +44,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
+pip = ">=22.3"
 h5py = ">=3.7"
 matplotlib = ">=3.6"
 numpy = ">=1.23"
@@ -265,12 +266,30 @@ reportPrivateImportUsage = false
 # PyTest Configuration #
 ########################
 [tool.pytest]
-cov = "tsdm"
+# rerunfailures options
+reruns = 5
 only_rerun = "AssertionError"
+
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = ["--doctest-modules"]
-testpaths = [ "tests/", "src/" ]
+addopts = [
+    "--doctest-modules",
+    "--junitxml=reports/pytest.xml",
+    "--cov=src/",
+    "--cov-report=term:skip-covered",
+    "--cov-report=xml:reports/coverage.xml",
+    "--cov-report=annotate:reports/coverage",
+]
+testpaths = [ "src/", "tests/"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "serial",
+]
+required_plugins = [
+    "pytest-rerunfailures",
+    "pytest-cov",
+]
+
 
 ##########################
 # Coverage Configuration #
