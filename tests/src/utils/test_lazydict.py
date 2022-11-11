@@ -4,12 +4,15 @@ r"""Test LazyDict."""
 import logging
 from collections.abc import MutableMapping
 
+import pytest
+
 from tsdm.utils.lazydict import LazyDict, LazyFunction
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
+@pytest.mark.filterwarnings("ignore:Using __ror__ with a non-LazyDict")
 def test_lazydict():
     __logger__.info("Testing %s.", LazyDict)
 
@@ -49,7 +52,7 @@ def test_lazydict():
     for key in ld:
         assert isinstance(ld[key], int)
 
-    EMPTY = LazyDict()
+    EMPTY: LazyDict = LazyDict()
 
     # test __or__ operator with other LazyDict
     ld = EMPTY | LazyDict({0: lambda: 0})
@@ -66,7 +69,7 @@ def test_lazydict():
         assert isinstance(value, LazyFunction)
 
     # test __ror__ operator
-    empty = {}
+    empty: dict = {}
     other: dict = empty | LazyDict({0: lambda: 0})
     assert other is not empty, "__ror__ should create a new dictionary"
     assert isinstance(other, dict) and not isinstance(other, LazyDict)
