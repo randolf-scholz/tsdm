@@ -1,4 +1,8 @@
-r"""Tests for tsdm."""
+r"""Tests for tsdm.
+
+FIXME: We use src/ layout because of
+"""
+
 
 # import logging
 # __logger__ = logging.getLogger(__name__)
