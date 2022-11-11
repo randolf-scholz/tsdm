@@ -173,7 +173,7 @@ def _torch_scaled_norm(
     /,
     *,
     p: float = 2,
-    axis: SizeLike = (),  # TODO: use tuple[int, ...] once supported
+    axis: SizeLike = (),  # FIXME: use tuple[int, ...] https://github.com/pytorch/pytorch/issues/64700
     keepdims: bool = False,
 ) -> Tensor:
     if not torch.is_floating_point(x):

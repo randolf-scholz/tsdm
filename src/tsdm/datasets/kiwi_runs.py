@@ -18,7 +18,7 @@ import pandas as pd
 from pandas import DataFrame, Index, Series
 
 from tsdm.datasets.base import MultiFrameDataset, TimeSeriesCollection
-from tsdm.utils import NULL_VALUES
+from tsdm.utils.constants import NULL_VALUES
 
 __logger__ = logging.getLogger(__name__)
 

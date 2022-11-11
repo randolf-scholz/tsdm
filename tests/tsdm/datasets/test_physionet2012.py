@@ -14,6 +14,7 @@ __logger__ = logging.getLogger(__name__)
 
 @pytest.mark.skip("fails - PhysioNet2012 needs to be fixed")
 def test_physionet_2012():
+    """Test the PhysioNet 2012 dataset."""
     __logger__.info("Testing %s.", Physionet2012)
     dataset = Physionet2012().dataset
     metadata, timeseries = dataset["A"]

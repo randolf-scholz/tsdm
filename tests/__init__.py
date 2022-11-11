@@ -1,6 +1,6 @@
 r"""Tests for tsdm.
 
-FIXME: We use src/ layout because of
+NOTE: We use /tests/tsdm/... to ensure that the tests are not imported
 """
 
 
