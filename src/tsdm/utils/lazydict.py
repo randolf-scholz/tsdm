@@ -17,7 +17,7 @@ import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from typing import Any, NamedTuple, TypeAlias, Union, overload
 
-from tsdm.utils._util import get_function_args, is_positional
+from tsdm.utils._utils import get_function_args, is_positional
 from tsdm.utils.strings import repr_mapping
 from tsdm.utils.types import KeyVar, ObjectVar
 

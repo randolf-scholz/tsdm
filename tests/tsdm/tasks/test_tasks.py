@@ -13,6 +13,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_time_series_sample_generator():
+    """Test the TimeSeriesSampleGenerator."""
     __logger__.info("Testing %s.", TimeSeriesSampleGenerator)
 
     # make dataset

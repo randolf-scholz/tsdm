@@ -11,6 +11,7 @@ __logger__ = logging.getLogger(__name__)
 
 @pytest.mark.skip(reason="not implemented")
 def test_split_construction():
+    """Test the construction of splits."""
     __logger__.info("Testing %s.", object)
 
 

@@ -14,6 +14,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_SlidingWindowSampler():
+    """Test the SlidingWindowSampler."""
     __logger__.info("Testing %s.", SlidingWindowSampler)
 
     tds = Series(pd.to_timedelta(np.random.rand(200), "m"))

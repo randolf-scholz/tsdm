@@ -3,26 +3,29 @@ r"""Test task implementation with InSilicoData."""
 
 import logging
 
+import pytest
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import TimeSeriesCollection
 from tsdm.random.samplers import HierarchicalSampler
-from tsdm.tasks import InSilicoSampleGenerator, InSilicoTask
+from tsdm.tasks import KiwiSampleGenerator, KiwiTask
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
-def test_time_series_dataset_task():
-    __logger__.info("Testing %s.", InSilicoTask)
+@pytest.mark.slow
+def test_kiwi_task():
+    """Test the KiwiTask."""
+    __logger__.info("Testing %s.", KiwiTask)
 
-    task = InSilicoTask()
+    task = KiwiTask()
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
     assert isinstance(task.splits[0, "train"], TimeSeriesCollection)
     assert isinstance(task.samplers[0, "train"], HierarchicalSampler)
-    assert isinstance(task.generators[0, "train"], InSilicoSampleGenerator)
+    assert isinstance(task.generators[0, "train"], KiwiSampleGenerator)
     assert isinstance(task.dataloaders[0, "train"], DataLoader)
     assert isinstance(task.train_partition, dict)
 
@@ -33,11 +36,12 @@ def test_time_series_dataset_task():
 
     dataloader = task.dataloaders[0, "train"]
     batch = next(iter(dataloader))
-    assert batch is not None
+    assert isinstance(batch, list)
+    assert isinstance(batch[0], tuple)
 
 
 def _main() -> None:
-    test_time_series_dataset_task()
+    test_kiwi_task()
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_caching():
+    """Test the caching of the dataset."""
     # NOTE: this test must be executed first!!!
     __logger__.info("Testing caching of %s.", InSilicoData)
     ds = InSilicoData(initialize=False)
@@ -34,6 +35,7 @@ def test_caching():
 
 
 def test_attributes():
+    """Test the attributes of the dataset."""
     __logger__.info("Testing attributes of %s.", InSilicoData)
     ds = InSilicoData()
     base_attrs = copy(set(dir(ds)))

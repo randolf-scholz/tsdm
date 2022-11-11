@@ -16,6 +16,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_array():
+    """Test the Array protocol."""
     __logger__.info("Testing %s Protocol.", Array)
     torch_tensor: Tensor = torch.tensor([1, 2, 3])
     torch_array: Array = torch_tensor

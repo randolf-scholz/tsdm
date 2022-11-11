@@ -59,63 +59,67 @@ class GridTuple(NamedTuple, Generic[DTVar, TDVar]):
 
 
 def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
-    if mode == "numpy":
-        # noinspection PyArgumentList
-        return GridTuple(
-            np_dt("2000-01-01"),
-            np_dt("2001-01-01"),
-            np_td(1, "h"),
-            np_dt("2000-01-15"),
-        )
-    if mode == "pandas":
-        # noinspection PyArgumentList
-        return GridTuple(
-            pd_dt("2000-01-01"),
-            pd_dt("2001-01-01"),
-            pd_td("1h"),
-            pd_dt("2000-01-15"),
-        )
-    if mode == "python":
-        # noinspection PyArgumentList
-        return GridTuple(
-            py_dt(2000, 1, 1),
-            py_dt(2001, 1, 1),
-            py_td(hours=1),
-            py_dt(2000, 1, 15),
-        )
-    if mode == "np_int":
-        # noinspection PyArgumentList
-        return GridTuple(
-            np_int(0),
-            np_int(100),
-            np_int(1),
-            np_int(1),
-        )
-    if mode == "np_float":
-        # noinspection PyArgumentList
-        return GridTuple(
-            np_float(0.0),
-            np_float(99.9),
-            np_float(0.6),
-            np_float(1.4),
-        )
-    if mode == "int":
-        # noinspection PyArgumentList
-        return GridTuple(
-            int(0),
-            int(100),
-            int(1),
-            int(1),
-        )
-    if mode == "float":
-        # noinspection PyArgumentList
-        return GridTuple(
-            float(0.0),
-            float(99.9),
-            float(0.6),
-            float(1.4),
-        )
-    raise ValueError(f"Unknown mode: {mode}")
+
+    match mode:
+        case "numpy":
+            # noinspection PyArgumentList
+            the_tuple = GridTuple(
+                np_dt("2000-01-01"),
+                np_dt("2001-01-01"),
+                np_td(1, "h"),
+                np_dt("2000-01-15"),
+            )
+        case "pandas":
+            # noinspection PyArgumentList
+            the_tuple = GridTuple(
+                pd_dt("2000-01-01"),
+                pd_dt("2001-01-01"),
+                pd_td("1h"),
+                pd_dt("2000-01-15"),
+            )
+        case "python":
+            # noinspection PyArgumentList
+            the_tuple = GridTuple(
+                py_dt(2000, 1, 1),
+                py_dt(2001, 1, 1),
+                py_td(hours=1),
+                py_dt(2000, 1, 15),
+            )
+        case "np_int":
+            # noinspection PyArgumentList
+            the_tuple = GridTuple(
+                np_int(0),
+                np_int(100),
+                np_int(1),
+                np_int(1),
+            )
+        case "np_float":
+            # noinspection PyArgumentList
+            the_tuple = GridTuple(
+                np_float(0.0),
+                np_float(99.9),
+                np_float(0.6),
+                np_float(1.4),
+            )
+        case "int":
+            # noinspection PyArgumentList
+            the_tuple = GridTuple(
+                int(0),
+                int(100),
+                int(1),
+                int(1),
+            )
+        case "float":
+            # noinspection PyArgumentList
+            the_tuple = GridTuple(
+                float(0.0),
+                float(99.9),
+                float(0.6),
+                float(1.4),
+            )
+        case _:
+            raise ValueError(f"Unknown mode {mode=}")
+    return the_tuple
     # return tmin, tmax, timedelta, offset  # type: ignore[return-value]
 
 

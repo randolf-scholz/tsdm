@@ -45,7 +45,7 @@ __all__ = [
 __ALL__ = dir() + __all__
 
 import sys
-from importlib import import_module, metadata
+from importlib import metadata
 
 if sys.version_info < (3, 10):
     raise RuntimeError("Python >= 3.10 required")
@@ -59,7 +59,6 @@ if sys.version_info < (3, 10):
 #         # return globals()[name]
 #         return import_module("." + name, __name__)
 #     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 
 from tsdm import (
     config,
@@ -79,7 +78,7 @@ from tsdm import (
 __version__ = metadata.version(__package__)
 r"""The version number of the `tsdm` package."""
 
-del sys, metadata, import_module
+del sys, metadata  # , import_module
 
 
 # __logger__ = logging.getLogger(__name__)

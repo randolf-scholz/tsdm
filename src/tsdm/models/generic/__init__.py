@@ -5,15 +5,20 @@ r"""#TODO add module summary line.
 
 __all__ = [
     # Classes
-    "MLP",
+    "ConvBlock",
     "DeepSet",
-    "ScaledDotProductAttention",
+    "DeepSetReZero",
+    "MLP",
     "ReZero",
     "ReZeroMLP",
-    "DeepSetReZero",
+    "ResNet",
+    "ResNetBlock",
+    "ScaledDotProductAttention",
 ]
 
+from tsdm.models.generic.conv1d import ConvBlock
 from tsdm.models.generic.deepset import DeepSet, DeepSetReZero
 from tsdm.models.generic.mlp import MLP
+from tsdm.models.generic.resnet import ResNet, ResNetBlock
 from tsdm.models.generic.rezero import ReZero, ReZeroMLP
 from tsdm.models.generic.scaled_dot_product_attention import ScaledDotProductAttention
