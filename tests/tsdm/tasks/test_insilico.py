@@ -15,8 +15,9 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_time_series_dataset_task():
-    """Test the TimeSeriesDatasetTask."""
-    __logger__.info("Testing %s.", InSilicoTask)
+    r"""Test the TimeSeriesDatasetTask."""
+    LOGGER = __logger__.getChild(InSilicoTask.__name__)
+    LOGGER.info("Testing.")
 
     task = InSilicoTask()
     assert isinstance(task.folds, DataFrame)

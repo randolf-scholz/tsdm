@@ -19,7 +19,8 @@ def test_make_masked_format():
     1. Recurrent Neural Networks for Multivariate Time Series with Missing Values
        Che et al., Nature 2017
     """
-    __logger__.info("Testing %s.", make_masked_format)
+    LOGGER = __logger__.getChild(make_masked_format.__name__)
+    LOGGER.info("Testing.")
 
     x = [[47, 49, NA, 40, NA, 43, 55], [NA, 15, 14, NA, NA, NA, 15]]
     t = [0, 0.1, 0.6, 1.6, 2.2, 2.5, 3.1]
