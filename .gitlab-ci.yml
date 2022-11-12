@@ -41,9 +41,10 @@ before_script:
 setup:
   stage: build
   cache:
-    - key: package_cache
+    - key: pip
       paths:
-        - "$MAIN_CACHE"
+        - "$PIP_CACHE_DIR"
+      policy: pull-push
     - key: venv
       paths:
         - "$VENV_DIR"
@@ -201,9 +202,11 @@ mypy:
     - key: venv
       paths:
         - "$VENV_DIR"
+      policy: pull
     - key: mypy
       paths:
         - "$MYPY_CACHE_DIR"
+      policy: pull-push
   needs:
     - setup
   allow_failure: true
@@ -243,6 +246,7 @@ pytest:
     - key: pytest
       paths:
         - "$PYTEST_CACHE_DIR"
+      policy: pull-push
   needs:
     - setup
   script:
