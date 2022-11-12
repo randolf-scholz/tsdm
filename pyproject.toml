@@ -23,7 +23,7 @@ name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
 readme = "README.rst"
 repository = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-version = "0.3.6"
+version = "0.3.7"
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -44,7 +44,6 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
-pip = ">=22.3"
 h5py = ">=3.7"
 matplotlib = ">=3.6"
 numpy = ">=1.23"
@@ -84,6 +83,7 @@ nbsphinx = ">=0.8"
 openml = ">=0.12.2"
 perflint = ">=0.7"
 piccolo-theme = ">=0.12.0"
+pip = ">=22.3"
 pre-commit = ">=2.20"
 pyall = ">=0.3"
 pybadges = ">=3.0"
@@ -271,6 +271,7 @@ reportPrivateImportUsage = false
 
 [tool.pytest.ini_options]
 minversion = "7.0"
+testpaths = [ "src/", "tests/"]
 addopts = [
     "--doctest-modules",
     "--junit-xml=reports/pytest.xml",
@@ -284,7 +285,6 @@ addopts = [
     "--cov-report=xml:reports/coverage.xml",
 #    "--cov-report=annotate:reports/coverage",
 ]
-testpaths = [ "src/", "tests/"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "serial",
@@ -301,9 +301,7 @@ required_plugins = [
 [tool.coverage]
 
 [tool.coverage.paths]
-source = [
-   "src/tsdm",
-]
+source = ["src/tsdm"]
 
 [tool.coverage.report]
 exclude_lines = [

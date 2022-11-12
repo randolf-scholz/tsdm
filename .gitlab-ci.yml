@@ -101,7 +101,7 @@ setup:
     # generate package version badge
     - python -m pybadges
       --left-text="version"
-      --right-text=version
+      --right-text=$VERSION
       > badges/version.svg
     # generate license badge
     - python -m pybadges
