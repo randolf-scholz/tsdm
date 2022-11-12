@@ -1,6 +1,6 @@
 r"""Tests for tsdm.
 
-NOTE: We use /tests/tsdm/... to ensure that the tests are not imported
+NOTE: We use `/tests/tsdm/...` layout to ensure that the tests are not imported.
 """
 
 

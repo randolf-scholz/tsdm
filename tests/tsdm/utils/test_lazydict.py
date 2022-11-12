@@ -6,7 +6,7 @@ from collections.abc import MutableMapping
 
 import pytest
 
-from tsdm.utils.lazydict import LazyDict, LazyFunction
+from tsdm.utils import LazyDict, LazyFunction
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
