@@ -126,18 +126,20 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
 @mark.parametrize("mode", MODES)
 def test_grid_pandas(mode):
     r"""Test compute_grid function with various input types."""
-    __logger__.info("Testing  compute_grid with mode: %s", mode)
+    LOGGER = __logger__.getChild(compute_grid.__name__)
+    LOGGER.info("Testing mode: %s", mode)
 
     tmin, tmax, timedelta, offset = _make_inputs(mode)
 
     _validate_grid_results(tmin, tmax, timedelta, offset)
 
-    __logger__.info("Finished compute_grid with mode: %s", mode)
+    LOGGER.info("Finished testing mode: %s", mode)
 
 
 def test_grid_extra():
     r"""Test on some intervals."""
-    __logger__.info("Testing  compute_grid on extra data")
+    LOGGER = __logger__.getChild(compute_grid.__name__)
+    LOGGER.info("Testing on extra data")
 
     tmin = pd.Timestamp(0)
     tmax = tmin + pd.Timedelta(2, "h")
@@ -146,7 +148,7 @@ def test_grid_extra():
 
     _validate_grid_results(tmin, tmax, timedelta, offset)
 
-    __logger__.info("Finished compute_grid on extra data")
+    LOGGER.info("Finished testing on extra data")
 
 
 def _main() -> None:

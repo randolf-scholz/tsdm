@@ -13,7 +13,8 @@ __logger__ = logging.getLogger(__name__)
 
 def test_datetime_encoder() -> None:
     r"""Test whether the encoder is reversible."""
-    __logger__.info("Testing %s.", DateTimeEncoder.__name__)
+    LOGGER = __logger__.getChild(DateTimeEncoder.__name__)
+    LOGGER.info("Testing.")
 
     # test Index
     time = date_range("2020-01-01", "2021-01-01", freq="1d")
