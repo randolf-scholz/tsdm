@@ -41,9 +41,10 @@ before_script:
 setup:
   stage: build
   cache:
-    - key: package_cache
+    - key: pip
       paths:
-        - "$MAIN_CACHE"
+        - "$PIP_CACHE_DIR"
+      policy: pull-push
     - key: venv
       paths:
         - "$VENV_DIR"
@@ -101,7 +102,7 @@ setup:
     # generate package version badge
     - python -m pybadges
       --left-text="version"
-      --right-text=version
+      --right-text=$VERSION
       > badges/version.svg
     # generate license badge
     - python -m pybadges
@@ -201,9 +202,11 @@ mypy:
     - key: venv
       paths:
         - "$VENV_DIR"
+      policy: pull
     - key: mypy
       paths:
         - "$MYPY_CACHE_DIR"
+      policy: pull-push
   needs:
     - setup
   allow_failure: true
@@ -234,7 +237,6 @@ mypy:
 ###############
 
 pytest:
-  # see pytest.ini for configuration
   stage: test
   cache:
     - key: venv
@@ -244,10 +246,11 @@ pytest:
     - key: pytest
       paths:
         - "$PYTEST_CACHE_DIR"
+      policy: pull-push
   needs:
     - setup
   script:
-    - pytest --junitxml=reports/pytest.xml --cov=$MODULENAME $TESTDIR --reruns 3 --only-rerun AssertionError
+    - pytest -k "not slow"
     - coverage xml -o reports/cobertura-coverage.xml
     - coverage report
   after_script:

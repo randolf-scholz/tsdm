@@ -2,6 +2,7 @@ exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
 minimum_pre_commit_version: 2.2.0
 default_language_version:
   python: python3.10
+  node: "18.12.1"
 repos:
   #  - repo: meta
   #    hooks:
@@ -81,7 +82,7 @@ repos:
     hooks:
       - id: black
       - id: black-jupyter
-  # black-docs
+  # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
     rev: v1.12.1
     hooks:

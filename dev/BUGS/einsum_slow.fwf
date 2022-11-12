@@ -1,0 +1,16 @@
+size            128
+dtype       float32
+framework     torch
+reduction
+kl,ijkl->ij   0.314
+lk,ijkl->ij   0.314
+ji,ijkl->kl   0.317
+ij,ijkl->kl   0.950
+jk,ijkl->il   0.963
+ki,ijkl->jl   0.964
+kj,ijkl->il   0.964
+ik,ijkl->jl   0.965
+il,ijkl->jk   1.768
+li,ijkl->jk   1.772
+jl,ijkl->ik   1.838
+lj,ijkl->ik   1.841

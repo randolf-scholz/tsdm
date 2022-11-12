@@ -3,15 +3,19 @@ r"""Test converters to masked format etc."""
 
 import logging
 
+import pytest
+
+logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
+@pytest.mark.skip(reason="not implemented")
 def test_split_construction():
-    r"""Test the construction of the splits."""
+    """Test the construction of splits."""
+    __logger__.info("Testing %s.", object)
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
     test_split_construction()
 
 

@@ -7,12 +7,13 @@ from pandas import Series, date_range, testing
 
 from tsdm.encoders import DateTimeEncoder
 
+logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
 def test_datetime_encoder() -> None:
     r"""Test whether the encoder is reversible."""
-    __logger__.info("Testing %s started!", DateTimeEncoder.__name__)
+    __logger__.info("Testing %s.", DateTimeEncoder.__name__)
 
     # test Index
     time = date_range("2020-01-01", "2021-01-01", freq="1d")
@@ -29,11 +30,9 @@ def test_datetime_encoder() -> None:
     encoded = encoder.encode(time)
     decoded = encoder.decode(encoded)
     testing.assert_series_equal(time, decoded)
-    __logger__.info("Testing %s finished!", DateTimeEncoder.__name__)
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
     test_datetime_encoder()
 
 

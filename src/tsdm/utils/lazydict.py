@@ -13,10 +13,11 @@ __all__ = [
 ]
 
 import logging
+import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from typing import Any, NamedTuple, TypeAlias, Union, overload
 
-from tsdm.utils._util import get_function_args, is_positional
+from tsdm.utils._utils import get_function_args, is_positional
 from tsdm.utils.strings import repr_mapping
 from tsdm.utils.types import KeyVar, ObjectVar
 
@@ -126,6 +127,38 @@ class LazyDict(dict[KeyVar, ObjectVar]):
         r"""Return the representation of the dictionary."""
         return repr_mapping(self, recursive=False)
 
+    def __or__(self, other, /):
+        # FIXME: https://github.com/python/cpython/issues/99327
+        # TODO: Self python 3.11
+        new = self.copy()
+        new.update(other)
+        return new
+
+    def __ror__(self, other, /):
+        # FIXME: https://github.com/python/cpython/issues/99327
+        # TODO: Self python 3.11
+        if isinstance(other, self.__class__):
+            return other | self
+        warnings.warn(
+            "Using __ror__ with a non-LazyDict is not recommended, "
+            "It causes all values to be evaluated.",
+            category=RuntimeWarning,
+            source=LazyDict,
+        )
+        new = other.copy()
+        new.update(self.asdict())
+        return new
+
+    def __ior__(self, other, /):
+        # FIXME: https://github.com/python/cpython/issues/99327
+        # TODO: Self python 3.11
+        self.update(other)
+        return self
+
+    def asdict(self) -> dict[KeyVar, ObjectVar]:
+        r"""Return a dictionary with all values evaluated."""
+        return {k: self[k] for k in self}
+
     @staticmethod
     def _make_lazy_function(
         key: KeyVar,
@@ -158,4 +191,4 @@ class LazyDict(dict[KeyVar, ObjectVar]):
 
     def copy(self) -> LazyDict[KeyVar, ObjectVar]:
         r"""Return a shallow copy of the dictionary."""
-        return self.__class__(self)
+        return self.__class__(self.items())

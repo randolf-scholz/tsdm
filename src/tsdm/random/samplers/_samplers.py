@@ -714,7 +714,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
     def __len__(self) -> int:
         r"""Return the number of samples."""
-        return len(self.data)
+        return len(self.grid)
 
     @staticmethod
     def __make__points__(bounds: NDArray[NumpyDTVar]) -> NDArray[NumpyDTVar]:

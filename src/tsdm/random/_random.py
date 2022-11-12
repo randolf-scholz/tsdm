@@ -15,7 +15,7 @@ import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
-from tsdm.utils.types.dtypes import BOOLS, EMOJIS, STRINGS
+from tsdm.utils.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS
 from tsdm.utils.types.time import DTVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
@@ -114,11 +114,11 @@ def random_data(
         mant = rng.uniform(low=-2, high=+2, size=size)
         result = (mant * 2**exp).astype(dtype)
     elif np.issubdtype(dtype, np.bool_):
-        result = rng.choice(BOOLS, size=size)
+        result = rng.choice(EXAMPLE_BOOLS, size=size)
     elif np.issubdtype(dtype, np.unicode_):
-        result = rng.choice(EMOJIS, size=size)
+        result = rng.choice(EXAMPLE_EMOJIS, size=size)
     elif np.issubdtype(dtype, np.string_):
-        result = rng.choice(STRINGS, size=size)
+        result = rng.choice(EXAMPLE_STRINGS, size=size)
     else:
         raise NotImplementedError
 
