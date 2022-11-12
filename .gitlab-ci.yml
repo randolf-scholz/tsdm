@@ -65,6 +65,9 @@ setup:
     - pip install --upgrade pip poetry virtualenv
     - virtualenv ${VENVNAME} --download
     - source ${VENVNAME}/bin/activate
+    # check versions
+    - python --version
+    - poetry --version
     - pip install --upgrade pip setuptools wheel
   script:
     # We first build the package and then install it. Finally, we install the dev dependencies.
