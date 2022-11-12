@@ -17,8 +17,9 @@ __logger__ = logging.getLogger(__name__)
 
 @pytest.mark.slow
 def test_kiwi_task():
-    """Test the KiwiTask."""
-    __logger__.info("Testing %s.", KiwiTask)
+    r"""Test the KiwiTask."""
+    LOGGER = __logger__.getChild(KiwiTask.__name__)
+    LOGGER.info("Testing.")
 
     task = KiwiTask()
     assert isinstance(task.folds, DataFrame)
