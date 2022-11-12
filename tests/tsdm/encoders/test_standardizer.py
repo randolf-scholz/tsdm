@@ -9,6 +9,7 @@ from pytest import mark
 
 from tsdm.encoders import MinMaxScaler, Standardizer
 
+logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -16,7 +17,7 @@ __logger__ = logging.getLogger(__name__)
 @mark.parametrize("tensor_type", (np.array, torch.tensor))
 def test_standardizer(Encoder, tensor_type):
     r"""Check whether the Standardizer encoder works as expected."""
-    __logger__.info("Testing %s started!", Encoder.__name__)
+    __logger__.info("Testing %s", Encoder.__name__)
 
     X = np.random.rand(3)
     X = tensor_type(X)
@@ -44,7 +45,6 @@ def test_standardizer(Encoder, tensor_type):
     assert encoder.param[0].shape == ()
 
     # weird input
-
     X = np.random.rand(1, 2, 3, 4, 5)
     X = tensor_type(X)
     encoder = Encoder(axis=(1, 2, -1))
@@ -65,7 +65,6 @@ def test_standardizer(Encoder, tensor_type):
 
 
 def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
     test_standardizer(Standardizer, np.array)
     test_standardizer(MinMaxScaler, np.array)
 

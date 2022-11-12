@@ -8,7 +8,6 @@ TODO:  Module description
 
 __all__ = [
     # Constants
-    "NULL_VALUES",
     # Classes
     # Functions
     "deep_dict_update",
@@ -42,12 +41,15 @@ from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Final, Literal, Optional, overload
+from typing import Any, Literal, Optional, cast, overload
 
 import numpy as np
+import pandas
 from numpy.typing import NDArray
+from pandas import Series
 from torch import nn
 
+from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 from tsdm.utils.types import AnyTypeVar, Nested, ObjectVar, PathType, ReturnVar
 from tsdm.utils.types.abc import HashableType
 
@@ -57,27 +59,7 @@ POSITIONAL_ONLY = inspect.Parameter.POSITIONAL_ONLY
 POSITIONAL_OR_KEYWORD = inspect.Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD = inspect.Parameter.VAR_KEYWORD
 VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
-EMPTY = inspect.Parameter.empty
 Kind = inspect._ParameterKind  # pylint: disable=protected-access
-
-EMPTY_PATH: Final[Path] = Path()
-r"""Constant: Blank path."""
-
-# fmt: off
-NULL_VALUES: Final[list[str]] = [
-    "", "-", "?",
-    "1.#IND", "+1.#IND", "-1.#IND", "1.#QNAN", "+1.#QNAN", "-1.#QNAN",
-    "#N/A N/A",
-    "#NA", "#Na", "#na", "<NA>", "<Na>", "<na>", "+NA", "-NA", "-na", "+na",
-    "N/A", "n/a", "#N/A", "#n/a", "<N/A>", "<n/a>",  "+N/A", "-N/A", "-n/a", "+n/a",
-    "NAN", "NaN", "nan", "-NAN", "-NaN", "-nan", "+NAN", "+NaN", "+nan",
-    "#NAN", "#NaN", "#nan", "<NAN>", "<NaN>", "<nan>"
-    "NONE", "None", "none", "#NONE", "#None", "#none", "<NONE>", "<None>", "<none>",
-    "NULL", "Null", "null", "#NULL", "#Null", "#null", "<NULL>", "<Null>", "<null>",
-    "UNKNOWN", "Unknown", "unknown", "UNKNOWN", "#Unknown", "#unknown", "<UNKNOWN>", "<Unknown>", "<unknown>",
-]
-r"""A list of common null value string represenations."""
-# fmt: on
 
 
 def variants(s: str | list[str]) -> list[str]:
@@ -468,3 +450,100 @@ def get_function_args(
     return [
         p for p in params if is_mandatory(p) is mandatory and p.kind in allowed_kinds
     ]
+
+
+def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:
+    r"""Return unique values, excluding nan."""
+    if ignore_nan:
+        mask = pandas.notna(series)
+        series = series[mask]
+    return Series(series.unique())
+
+
+def string_is_bool(series: Series, /, *, uniques: Optional[Series] = None) -> bool:
+    r"""Test if 'string' series could possibly be boolean."""
+    assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
+    values = get_uniques(series) if uniques is None else uniques
+
+    if len(values) == 0 or len(values) > 2:
+        return False
+    return any(
+        set(values.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
+    )
+
+
+def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
+    r"""Convert Series to nullable boolean."""
+    assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
+    mask = pandas.notna(series)
+    values = get_uniques(series[mask]) if uniques is None else uniques
+    mapping = next(
+        set(values.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
+    )
+    series = series.copy()
+    series[mask] = series[mask].map(mapping)
+    return series.astype(pandas.BooleanDtype())
+
+
+def numeric_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
+    r"""Test if 'numeric' series could possibly be boolean."""
+    assert pandas.api.types.is_numeric_dtype(series), "Series must be 'numeric' dtype!"
+    values = get_uniques(series) if uniques is None else uniques
+    if len(values) == 0 or len(values) > 2:
+        return False
+    return any(set(values) <= set(bool_pair) for bool_pair in BOOLEAN_PAIRS)
+
+
+def float_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
+    r"""Check whether float encoded column holds only integers."""
+    assert pandas.api.types.is_float_dtype(series), "Series must be 'float' dtype!"
+    values = get_uniques(series) if uniques is None else uniques
+    return cast(bool, values.apply(float.is_integer).all())
+
+
+# def infer_dtype(series: Series) -> Union[None, ExtensionDtype, np.generic]:
+#     original_series = series.copy()
+#     inferred_series = series.copy().convert_dtypes()
+#     original_dtype = original_series.dtype
+#     inferred_dtype = inferred_series.dtype
+#
+#     series = inferred_series
+#     mask = pandas.notna(series)
+#
+#     # Series contains only NaN values...
+#     if not mask.any():
+#         return None
+#
+#     values = series[mask]
+#     uniques = values.unique()
+#
+#     # if string do string downcast
+#     if pandas.api.types.is_string_dtype(series):
+#         if string_is_bool(series, uniques=uniques):
+#             string_to_bool(series, uniques=uniques)
+
+
+# def get_integer_cols(df) -> set[str]:
+#     cols = set()
+#     for col in table:
+#         if np.issubdtype(table[col].dtype, np.integer):
+#             print(f"Integer column                       : {col}")
+#             cols.add(col)
+#         elif np.issubdtype(table[col].dtype, np.floating) and float_is_int(table[col]):
+#             print(f"Integer column pretending to be float: {col}")
+#             cols.add(col)
+#     return cols
+#
+#
+# def contains_nan_slice(series, slices, two_enough: bool = False) -> bool:
+#     num_missing = 0
+#     for idx in slices:
+#         if pd.isna(series[idx]).all():
+#             num_missing += 1
+#
+#     if (num_missing > 0 and not two_enough) or (
+#         num_missing >= len(slices) - 1 and two_enough
+#     ):
+#         print(f"{series.name}: data missing in {num_missing}/{len(slices)} slices!")
+#         return True
+#     return False

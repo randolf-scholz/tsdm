@@ -32,29 +32,39 @@ __all__ = [
     "config",
     "datasets",
     "encoders",
+    "linalg",
     "logutils",
     "metrics",
     "models",
     "optimizers",
-    "viz",
     "random",
     "tasks",
     "utils",
+    "viz",
 ]
+__ALL__ = dir() + __all__
 
 import sys
 from importlib import metadata
 
-# version check
 if sys.version_info < (3, 10):
     raise RuntimeError("Python >= 3.10 required")
 
-# pylint: disable=wrong-import-position
+# def __dir__():
+#     return __ALL__
+#
+# def __getattr__(name):
+#     if name in __all__:
+#         # exec(f"import tsdm.{name}")
+#         # return globals()[name]
+#         return import_module("." + name, __name__)
+#     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from tsdm import (
     config,
     datasets,
     encoders,
+    linalg,
     logutils,
     metrics,
     models,
@@ -65,10 +75,10 @@ from tsdm import (
     viz,
 )
 
-# pylint: enable=wrong-import-position
-
 __version__ = metadata.version(__package__)
 r"""The version number of the `tsdm` package."""
+
+del sys, metadata  # , import_module
 
 
 # __logger__ = logging.getLogger(__name__)

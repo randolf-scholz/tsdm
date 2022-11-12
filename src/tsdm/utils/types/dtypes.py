@@ -1,4 +1,22 @@
-r"""Dtype data for numpy/pandas/torch."""
+r"""Dtype data for numpy/pandas/torch.
+
+Numerical Type Hierarchy:
+    - object
+    - datetime, timedelta, datetimeTZ
+    - interval
+    - period
+    - string
+        - unicode
+        - ascii
+        - bytes
+    - numerical
+        - complex
+        - float
+        - int
+        - uint
+        - bool
+    - empty (contains only NA)
+"""
 
 __all__ = [
     # TypeVars and TypeAliases
@@ -39,15 +57,9 @@ __all__ = [
     "TORCH_INT_TYPESTRINGS",
     "TORCH_UINT_TYPESTRINGS",
     # Constants
-    "BOOLS",
-    "CATEGORIES",
-    "PRECISION",
-    "EMOJIS",
-    "STRINGS",
     "TYPESTRINGS",
 ]
 
-from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Final, TypeAlias
 
@@ -443,76 +455,3 @@ TYPESTRINGS: Final[dict[type[np.generic] | torch.dtype | type[ExtensionDtype], s
     NUMPY_TYPESTRINGS | TORCH_TYPESTRINGS | PANDAS_TYPESTRINGS  # type: ignore[operator]
 )
 r"""Dictionary of all type strings."""
-
-
-PRECISION: Final[dict] = {
-    16: 2**-11,
-    32: 2**-24,
-    64: 2**-53,
-    torch.float16: 2**-11,
-    torch.float32: 2**-24,
-    torch.float64: 2**-53,
-    np.float16: 2**-11,
-    np.float32: 2**-24,
-    np.float64: 2**-53,
-}
-r"""Maps precision to the corresponding precision factor."""
-
-
-BOOLS: Final[list[bool]] = [True, False]
-r"""List of example bool objects."""
-
-EMOJIS: Final[list[str]] = list(
-    "😀😁😂😃😄😅😆😇😈😉😊😋😌😍😎😏"
-    "😐😑😒😓😔😕😖😗😘😙😚😛😜😝😞😟"
-    "😠😡😢😣😤😥😦😧😨😩😪😫😬😭😮😯"
-    "😰😱😲😳😴😵😶😷😸😹😺😻😼😽😾😿"
-    "🙀🙁🙂🙃🙄🙅🙆🙇🙈🙉🙊🙋🙌🙍🙎🙏"
-)
-r"""List of example unicode objects."""
-
-
-STRINGS: Final[list[str]] = [
-    "Alfa",
-    "Bravo",
-    "Charlie",
-    "Delta",
-    "Echo",
-    "Foxtrot",
-    "Golf",
-    "Hotel",
-    "India",
-    "Juliett",
-    "Kilo",
-    "Lima",
-    "Mike",
-    "November",
-    "Oscar",
-    "Papa",
-    "Quebec",
-    "Romeo",
-    "Sierra",
-    "Tango",
-    "Uniform",
-    "Victor",
-    "Whiskey",
-    "X-ray",
-    "Yankee",
-    "Zulu",
-]
-r"""List of example string objects."""
-
-
-label = namedtuple("label", ["object", "color"])
-
-CATEGORIES: Final[list[label]] = [
-    label(object="bear", color="brown"),
-    label(object="bear", color="black"),
-    label(object="bear", color="white"),
-    label(object="beet", color="red"),
-    label(object="beet", color="yellow"),
-    label(object="beet", color="orange"),
-    label(object="beet", color="white"),
-    label(object="beet", color="violet"),
-]
-r"""List of example categorical objects."""
