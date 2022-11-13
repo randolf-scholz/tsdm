@@ -383,9 +383,7 @@ class HierarchicalSampler(Sampler[tuple[KeyVar, T_co]]):
 
     def __repr__(self) -> str:
         r"""Pretty print."""
-        return repr_mapping(
-            self.subsamplers, title=self.__class__.__name__, recursive=0
-        )
+        return repr_mapping(self.subsamplers, title=self.__class__.__name__)
 
 
 class IntervalSampler(BaseSampler[slice], Generic[TDVar]):

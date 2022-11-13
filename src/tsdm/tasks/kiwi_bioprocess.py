@@ -40,7 +40,7 @@ class Sample(NamedTuple):
 
     def __repr__(self) -> str:
         r"""Return string representation."""
-        return repr_namedtuple(self, recursive=1)
+        return repr_namedtuple(self)
 
 
 class Kiwi_BioProcessTask(OldBaseTask):

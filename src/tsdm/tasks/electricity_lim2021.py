@@ -34,7 +34,7 @@ class Sample(NamedTuple):
 
     def __repr__(self) -> str:
         r"""Return string representation."""
-        return repr_namedtuple(self, recursive=1)
+        return repr_namedtuple(self)
 
 
 class Batch(NamedTuple):
@@ -49,7 +49,7 @@ class Batch(NamedTuple):
     y_mask: Tensor  # B×K×D: teh target mask.
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=False)
+        return repr_namedtuple(self)
 
 
 class ElectricityLim2021(OldBaseTask):

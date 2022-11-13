@@ -80,7 +80,7 @@ class BaseEncoder(ABC, Generic[ObjectVar, ReturnVar], metaclass=BaseEncoderMetaC
 
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
-        return repr_object(self, title=self.__class__.__name__, recursive=1)
+        return repr_object(self, title=self.__class__.__name__)
 
     @property
     def is_fitted(self) -> bool:

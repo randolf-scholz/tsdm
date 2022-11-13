@@ -60,8 +60,10 @@ class KiwiTask(TimeSeriesTask):
     def default_metric(*, targets, predictions):
         r"""TODO: implement this."""
 
-    def default_collate(self):
-        r"""TODO: implement this."""
+    # @staticmethod
+    # def default_collate_fn(samples: list[Sample]) -> Batch:
+    #     r"""TODO: implement this."""
+    #     return ()
 
     # def make_encoder(self, key: KeyVar, /) -> ModularEncoder:
     #     ...
