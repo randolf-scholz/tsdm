@@ -289,8 +289,8 @@ def repr_mapping(
             f"{pad}{key:<{max_key_length}}: {value}" for key, value in items
         )
     else:
-        string += f"{sep}{br}".join(
-            f"{pad}{key:<{max_key_length}}: {value}"
+        string += "".join(
+            f"{pad}{key:<{max_key_length}}: {value}{sep}{br}"
             for key, value in items[: maxitems // 2]
         )
         string += f"{pad}...\n"
@@ -444,8 +444,8 @@ def repr_sequence(
     if len(obj) <= maxitems:
         string += f"{sep}{br}".join(f"{pad}{to_string(value)}" for value in obj)
     else:
-        string += f"{sep}{br}".join(
-            f"{pad}{to_string(value)}" for value in obj[: maxitems // 2]
+        string += "".join(
+            f"{pad}{to_string(value)}{sep}{br}" for value in obj[: maxitems // 2]
         )
         string += f"{pad}...{sep}" + br
         string += f"{sep}{br}".join(
