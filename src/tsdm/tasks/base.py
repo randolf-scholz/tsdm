@@ -198,6 +198,10 @@ from __future__ import annotations
 
 __all__ = [
     # Classes
+    "Sample",
+    "Inputs",
+    "Targets",
+    "Batch",
     "OldBaseTask",
     "TimeSeriesTask",
     "TimeSeriesSampleGenerator",
@@ -238,6 +242,7 @@ TimeSlice: TypeAlias = Index | slice | list
 SampleType_co = TypeVar("SampleType_co", covariant=True)
 
 Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
+"""Type of a batch of data."""
 
 TS_Type_co = TypeVar(
     "TS_Type_co", bound=TimeSeriesDataset | TimeSeriesCollection, covariant=True
@@ -906,11 +911,11 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     """The dataset to sample from."""
 
     _: KW_ONLY = NotImplemented
-    targets: Index
+    targets: Index | list = NotImplemented
     r"""Columns of the data that are used as targets."""
     observables: Index | list = NotImplemented
     r"""Columns of the data that are used as inputs."""
-    covariates: Optional[Index | list] = None
+    covariates: Index | list = NotImplemented
     r"""Columns of the data that are used as controls."""
     metadata_targets: Optional[Index | list] = None
     r"""Columns of the metadata that are targets."""
@@ -923,8 +928,12 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
     def __post_init__(self) -> None:
         r"""Post init."""
+        if self.targets is NotImplemented:
+            self.targets = []
         if self.observables is NotImplemented:
             self.observables = self.dataset.timeseries.columns
+        if self.covariates is NotImplemented:
+            self.covariates = []
         if self.metadata_observables is NotImplemented:
             if self.dataset.metadata is None:
                 self.metadata_observables = None
@@ -985,7 +994,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             y = ts[self.targets].copy()
             y.loc[ts_observed.index] = NA
 
-            if self.covariates is not None:
+            if self.covariates is not None and len(self.covariates) > 0:
                 u = ts[self.covariates].copy()
         else:
             x = ts.copy()

@@ -31,6 +31,7 @@ class KiwiSampleGenerator(TimeSeriesSampleGenerator):
                 "Acetate",
                 "Fluo_GFP",
                 "pH",
+                "Temperature",
             ],
             covariates=[
                 "Cumulated_feed_volume_glucose",
@@ -38,7 +39,6 @@ class KiwiSampleGenerator(TimeSeriesSampleGenerator):
                 "InducerConcentration",
                 "StirringSpeed",
                 "Flow_Air",
-                "Temperature",
                 "Probe_Volume",
             ],
             targets=["Fluo_GFP"],
@@ -50,7 +50,7 @@ class KiwiTask(TimeSeriesTask):
     # dataset: TimeSeriesCollection = KiwiDataset()
     observation_horizon: str = "2h"
     r"""The number of datapoints observed during prediction."""
-    forecasting_horizon: str = "1h'"
+    forecasting_horizon: str = "1h"
     r"""The number of datapoints the model should forecast."""
 
     def __init__(self) -> None:
