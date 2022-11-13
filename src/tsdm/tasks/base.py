@@ -994,7 +994,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             y = ts[self.targets].copy()
             y.loc[ts_observed.index] = NA
 
-            if self.covariates is not None and len(self.covariates) > 0:
+            if self.covariates is not None:
                 u = ts[self.covariates].copy()
         else:
             x = ts.copy()
