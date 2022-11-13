@@ -994,12 +994,11 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             y = ts[self.targets].copy()
             y.loc[ts_observed.index] = NA
 
-            if self.covariates is not None:
-                u = ts[self.covariates].copy()
+            u = ts[self.covariates].copy()
         else:
             x = ts.copy()
             # mask everything except covariates and observables
-            columns = ts.columns.difference(self.covariates or [])
+            columns = ts.columns.difference(self.covariates)
             x.loc[ts_observed.index, columns.difference(self.observables)] = NA
             x.loc[ts_forecast.index, columns] = NA
 
