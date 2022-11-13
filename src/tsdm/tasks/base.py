@@ -803,7 +803,7 @@ class Inputs(NamedTuple):
     metadata: Optional[DataFrame] = None
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=False)
+        return repr_namedtuple(self)
 
 
 class Targets(NamedTuple):
@@ -813,7 +813,7 @@ class Targets(NamedTuple):
     metadata: Optional[DataFrame] = None
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=False)
+        return repr_namedtuple(self)
 
 
 class Sample(NamedTuple):
@@ -824,7 +824,7 @@ class Sample(NamedTuple):
     targets: Targets
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=1)
+        return repr_namedtuple(self)
 
     def sparsify_index(self) -> Sample:
         r"""Drop rows that contain only NAN values."""
@@ -952,7 +952,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 raise ValueError(f"Unknown sample format {self.sample_format=}")
 
     def __repr__(self) -> str:
-        return repr_dataclass(self, recursive=1)
+        return repr_dataclass(self)
 
     def make_sample(
         self, key: KeyVar, *, sparse_index: bool = False, sparse_columns: bool = False

@@ -872,7 +872,7 @@ class Frame2TensorDict(BaseEncoder):
         self.encode_index = encode_index
 
     def __repr__(self) -> str:
-        return repr_mapping(self.groups, title=self.__class__.__name__, recursive=1)
+        return repr_mapping(self.groups, title=self.__class__.__name__)
 
     def fit(self, data: DataFrame, /) -> None:
         if self.encode_index:
