@@ -3,6 +3,7 @@ r"""Test task implementation with InSilicoData."""
 
 import logging
 
+import pandas as pd
 import pytest
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import DataLoader
@@ -10,6 +11,7 @@ from torch.utils.data import DataLoader
 from tsdm.datasets import TimeSeriesCollection
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiSampleGenerator, KiwiTask
+from tsdm.tasks.base import Sample
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
@@ -32,8 +34,30 @@ def test_kiwi_task():
 
     sampler = task.samplers[0, "train"]
     key = next(iter(sampler))
-    sample = task.generators[0, "train"][key]
+    generator: KiwiSampleGenerator = task.generators[0, "train"]
+    sample: Sample = generator[key]
     assert isinstance(sample, tuple)
+
+    # validate the sample
+    x = sample.inputs.x
+    y = sample.targets.y
+    time = sample.inputs.x.index
+    observables: list[str] = generator.observables
+    covariates: list[str] = generator.covariates
+    targets: list[str] = generator.targets
+    td_observation = pd.Timedelta(task.observation_horizon)
+    td_forecasting = pd.Timedelta(task.forecasting_horizon)
+    mask_observation = time < time.min() + td_observation
+    mask_forecasting = time >= time.max() - td_forecasting
+
+    assert all(mask_observation ^ mask_forecasting)
+    assert set(observables) | set(covariates) | set(targets) == set(x.columns)
+    assert x.loc[mask_observation, observables].notna().any().any()
+    assert x.loc[mask_forecasting, observables].isna().all().all()
+    assert x.loc[mask_observation, covariates].notna().any().any()
+    assert x.loc[mask_forecasting, covariates].notna().any().any()
+    assert y.loc[mask_observation, targets].isna().all().all()
+    assert y.loc[mask_forecasting, targets].notna().any().any()
 
     dataloader = task.dataloaders[0, "train"]
     batch = next(iter(dataloader))
