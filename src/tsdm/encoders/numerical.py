@@ -6,6 +6,7 @@ __all__ = [
     # Classes
     "BoundaryEncoder",
     "BoxCoxEncoder",
+    "LinearScaler",
     "LogEncoder",
     "LogitEncoder",
     "LogitBoxCoxEncoder",
@@ -15,9 +16,12 @@ __all__ = [
     "TensorSplitter",
 ]
 
+import warnings
 from collections.abc import Callable
+from dataclasses import KW_ONLY, dataclass
 from typing import (
     Any,
+    ClassVar,
     Generic,
     Literal,
     NamedTuple,
@@ -29,6 +33,7 @@ from typing import (
 )
 
 import numpy as np
+import pandas as pd
 import torch
 from numpy import pi as PI
 from numpy.typing import NDArray
@@ -79,7 +84,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
     r"""The standard-deviation."""
     ignore_nan: bool = True
     r"""Whether to ignore nan-values while fitting."""
-    axis: tuple[int, ...] | None
+    axis: tuple[int, ...]
     r"""The axis to perform the scaling. If None, automatically select the axis."""
 
     class Parameters(NamedTuple):
@@ -87,7 +92,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 
         mean: TensorLike
         stdv: TensorLike
-        axis: tuple[int, ...] | None
+        axis: None | tuple[int, ...]
 
         def __repr__(self) -> str:
             r"""Pretty print."""
@@ -100,11 +105,11 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         stdv: Optional[Tensor] = None,
         *,
         ignore_nan: bool = True,
-        axis: Optional[int | tuple[int, ...]] = None,
+        axis: None | int | tuple[int, ...] = None,
     ):
         super().__init__()
         self.ignore_nan = ignore_nan
-        self.axis = (axis,) if isinstance(axis, int) else axis
+        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore[assignment]
         self.mean = mean
         self.stdv = stdv
 
@@ -186,8 +191,11 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         return data * self.stdv[broadcast] + self.mean[broadcast]
 
 
-class MinMaxScaler(BaseEncoder, Generic[TensorType]):
-    r"""A MinMaxScaler that works with batch dims and both numpy/torch."""
+class LinearScaler(BaseEncoder, Generic[TensorType]):
+    r"""Maps the interval [x_min, x_max] to [y_min, y_max] (default: [0,1])."""
+    # TODO: rewrite as dataclass
+
+    requires_fit: ClassVar[bool] = False
 
     xmin: TensorType  # NDArray[np.number] | Tensor
     xmax: TensorType  # NDArray[np.number] | Tensor
@@ -201,10 +209,10 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
     class Parameters(NamedTuple):
         r"""The parameters of the MinMaxScaler."""
 
-        xmin: TensorLike
-        xmax: TensorLike
         ymin: TensorLike
         ymax: TensorLike
+        xmin: TensorLike
+        xmax: TensorLike
         scale: TensorLike
         axis: tuple[int, ...]
 
@@ -214,20 +222,19 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
 
     def __init__(
         self,
-        /,
-        ymin: Optional[float | TensorType] = None,
-        ymax: Optional[float | TensorType] = None,
-        xmin: Optional[float | TensorType] = None,
-        xmax: Optional[float | TensorType] = None,
+        xmin: float | TensorType = 0,
+        xmax: float | TensorType = 1,
         *,
+        ymin: float | TensorType = 0,
+        ymax: float | TensorType = 1,
         axis: Optional[int | tuple[int, ...]] = None,
     ):
         r"""Initialize the MinMaxScaler."""
         super().__init__()
-        self.xmin = cast(TensorType, np.array(0.0 if xmin is None else xmin))
-        self.xmax = cast(TensorType, np.array(1.0 if xmax is None else xmax))
-        self.ymin = cast(TensorType, np.array(0.0 if ymin is None else ymin))
-        self.ymax = cast(TensorType, np.array(1.0 if ymax is None else ymax))
+        self.xmin = cast(TensorType, np.array(xmin))
+        self.xmax = cast(TensorType, np.array(xmax))
+        self.ymin = cast(TensorType, np.array(ymin))
+        self.ymax = cast(TensorType, np.array(ymax))
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
         self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore[assignment]
 
@@ -244,7 +251,107 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         lost_ranks = max(x.ndim for x in oldvals) - max(x.ndim for x in newvals)
 
         encoder = MinMaxScaler(
-            xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, axis=self.axis[lost_ranks:]
+            ymin, ymax, xmin=xmin, xmax=xmax, axis=self.axis[lost_ranks:]
+        )
+
+        encoder._is_fitted = self._is_fitted
+        return encoder
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.xmin}, {self.xmax}, {self.ymin}, {self.ymax}, axis={self.axis})"
+
+    @property
+    def param(self) -> LinearScaler.Parameters:
+        r"""Parameters of the MinMaxScaler."""
+        return self.Parameters(
+            self.xmin, self.xmax, self.ymin, self.ymax, self.scale, self.axis
+        )
+
+    def fit(self, data: TensorType, /) -> None:
+        # TODO: Why does singledispatch not work here? (wrap_func in BaseEncoder)
+        # print(type(data), isinstance(data, np.ndarray), isinstance(data, type))
+        if isinstance(data, Tensor):
+            self.xmin = torch.tensor(self.xmin)
+            self.xmax = torch.tensor(self.xmax)
+            self.ymin = torch.tensor(self.ymin)
+            self.ymax = torch.tensor(self.ymax)
+            self.scale = torch.tensor(self.scale)
+        else:
+            self.xmin = np.array(self.xmin)
+            self.xmax = np.array(self.xmax)
+            self.ymin = np.array(self.ymin)
+            self.ymax = np.array(self.ymax)
+            self.scale = np.array(self.scale)
+
+    def encode(self, data: TensorType, /) -> TensorType:
+        self.LOGGER.debug("Encoding data %s", data)
+        broadcast = get_broadcast(data, axis=self.axis)
+        self.LOGGER.debug("Broadcasting to %s", broadcast)
+
+        xmin: TensorType = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
+        scale: TensorType = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
+        ymin: TensorType = self.ymin[broadcast] if self.ymin.ndim > 1 else self.ymin
+
+        return (data - xmin) * scale + ymin
+
+    def decode(self, data: TensorType, /) -> TensorType:
+        self.LOGGER.debug("Decoding data %s", data)
+        broadcast = get_broadcast(data, axis=self.axis)
+        self.LOGGER.debug("Broadcasting to %s", broadcast)
+
+        xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
+        scale = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
+        ymin = self.ymin[broadcast] if self.ymin.ndim > 1 else self.ymin
+
+        return (data - ymin) / scale + xmin
+
+
+class MinMaxScaler(LinearScaler, Generic[TensorType]):
+    r"""Maps the interval [x_min, x_max] to [y_min, y_max] (default: [0,1])."""
+
+    requires_fit: ClassVar[bool] = True
+
+    ymin: TensorType  # NDArray[np.number] | Tensor
+    ymax: TensorType  # NDArray[np.number] | Tensor
+    xmin: TensorType  # NDArray[np.number] | Tensor
+    xmax: TensorType  # NDArray[np.number] | Tensor
+    scale: TensorType  # NDArray[np.number] | Tensor
+    r"""The scaling factor."""
+    axis: tuple[int, ...]
+    r"""Over which axis to perform the scaling."""
+
+    def __init__(
+        self,
+        ymin: float | TensorType = 0,
+        ymax: float | TensorType = 1,
+        *,
+        xmin: float | TensorType = 0,
+        xmax: float | TensorType = 1,
+        axis: Optional[int | tuple[int, ...]] = None,
+    ):
+        r"""Initialize the MinMaxScaler."""
+        super().__init__()
+        self.xmin = cast(TensorType, np.array(xmin))
+        self.xmax = cast(TensorType, np.array(xmax))
+        self.ymin = cast(TensorType, np.array(ymin))
+        self.ymax = cast(TensorType, np.array(ymax))
+        self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore[assignment]
+
+    def __getitem__(self, item: Any) -> MinMaxScaler:
+        r"""Return a slice of the MinMaxScaler."""
+        xmin = self.xmin if self.xmin.ndim == 0 else self.xmin[item]
+        xmax = self.xmax if self.xmax.ndim == 0 else self.xmax[item]
+        ymin = self.ymin if self.ymin.ndim == 0 else self.ymin[item]
+        ymax = self.ymax if self.ymax.ndim == 0 else self.ymax[item]
+
+        oldvals = (self.xmin, self.xmax, self.ymin, self.ymax)
+        newvals = (xmin, xmax, ymin, ymax)
+        assert not all(x.ndim == 0 for x in oldvals)
+        lost_ranks = max(x.ndim for x in oldvals) - max(x.ndim for x in newvals)
+
+        encoder = MinMaxScaler(
+            ymin, ymax, xmin=xmin, xmax=xmax, axis=self.axis[lost_ranks:]
         )
 
         encoder._is_fitted = self._is_fitted
@@ -254,7 +361,7 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         return f"{self.__class__.__name__}(axis={self.axis})"
 
     @property
-    def param(self) -> Parameters:
+    def param(self) -> MinMaxScaler.Parameters:
         r"""Parameters of the MinMaxScaler."""
         return self.Parameters(
             self.xmin, self.xmax, self.ymin, self.ymax, self.scale, self.axis
@@ -477,6 +584,7 @@ class TensorConcatenator(BaseEncoder):
         return tuple(x.squeeze() for x in result)
 
 
+@dataclass
 class BoundaryEncoder(BaseEncoder):
     r"""Clip or mask values outside a given range.
 
@@ -486,45 +594,38 @@ class BoundaryEncoder(BaseEncoder):
 
     lower: float | np.ndarray
     upper: float | np.ndarray
+    _: KW_ONLY = NotImplemented
     axis: int | tuple[int, ...] = -1
     mode: Literal["mask", "clip"] = "mask"
-    _nan: float = np.nan
+    mask_value: float = float("nan")
 
-    def __init__(
-        self,
-        lower: float | np.ndarray,
-        upper: float | np.ndarray,
-        *,
-        mode: Literal["mask", "clip"] = "mask",
-        axis: int | tuple[int, ...] = -1,
-    ) -> None:
-        super().__init__()
-        self.lower = lower
-        self.upper = upper
-        self.axis = axis
-        self.mode = mode
+    requires_fit: ClassVar[bool] = False
 
     def fit(self, data: DataFrame) -> None:
         # TODO: make _nan adapt to real data type!
-        if isinstance(data, Series | DataFrame):
-            self._nan = NA
-        else:
-            self._nan = float("nan")
+        if isinstance(data, Series | DataFrame) and pd.isna(self.mask_value):
+            self.mask_value = NA
 
     def encode(self, data: DataFrame) -> DataFrame:
         if self.mode == "mask":
-            data = data.where(data < self.lower, self._nan)
-            data = data.where(data > self.upper, self._nan)
+            # NOTE: frame.where(cond, other) replaces where condition is False!
+            data = data.where(data >= self.lower, self.mask_value)
+            data = data.where(data <= self.upper, self.mask_value)
             return data
         if self.mode == "clip":
-            data = data.where(data < self.lower, self.lower)
-            data = data.where(data > self.upper, self.upper)
+            data = data.where(data >= self.lower, self.lower)
+            data = data.where(data <= self.upper, self.upper)
             return data
 
         raise ValueError(f"Unknown mode {self.mode}")
 
     def decode(self, data: DataFrame) -> DataFrame:
         return data
+
+
+METHOD: TypeAlias = Literal[
+    None, "minimum", "quartile", "match-normal", "match-uniform"
+]
 
 
 class BoxCoxEncoder(BaseEncoder):
@@ -541,16 +642,17 @@ class BoxCoxEncoder(BaseEncoder):
         - a mean-0, variance-1 normal distribution
     """
 
-    METHOD: TypeAlias = Literal["minimum", "quartile", "match-normal", "match-uniform"]
     AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
 
-    method: Optional[METHOD] = "match-uniform"
+    method: METHOD = "match-uniform"
     offset: np.ndarray
+    initial_params: Optional[np.ndarray] = None
+    verbose: bool = False
 
     def __init__(
         self,
         *,
-        method: Optional[METHOD] = "match-uniform",
+        method: METHOD = "match-uniform",
         initial_param: Optional[np.ndarray] = None,
     ) -> None:
 
@@ -650,8 +752,15 @@ class BoxCoxEncoder(BaseEncoder):
 
         return fun
 
-    def fit(self, data: DataFrame, /) -> None:
-        assert all(np.isnan(data) | (data >= 0)), f"{data=}"
+    def fit(self, data: Series, /) -> None:
+        if not all(np.isnan(data) | (data >= 0)):
+            raise ValueError("Data must be in [0, 1] or NaN.")
+
+        if not data.dtype == np.float64:
+            warnings.warn(
+                "It is not recommended to use this encoder with non-float64 data. "
+                f"But {data.dtype}."
+            )
 
         match self.method:
             case None:
@@ -671,7 +780,7 @@ class BoxCoxEncoder(BaseEncoder):
                     # jac=jac,
                     # hess=hess,
                     bounds=[(0, np.inf)],
-                    options={"disp": True},
+                    options={"disp": self.verbose},
                 )
                 self.offset = sol.x.squeeze()
             case "match-normal":
@@ -684,17 +793,17 @@ class BoxCoxEncoder(BaseEncoder):
                     # jac=jac,
                     # hess=hess,
                     bounds=[(0, np.inf)],
-                    options={"disp": True},
+                    options={"disp": self.verbose},
                 )
                 self.offset = sol.x.squeeze()
             case _:
                 raise ValueError(f"Unknown method {self.method}")
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def encode(self, data: Series, /) -> Series:
         assert all(np.isnan(data) | (data >= 0)), f"{data=}"
         return np.log(data + self.offset)
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def decode(self, data: Series, /) -> Series:
         return np.maximum(np.exp(data) - self.offset, 0)
 
 
@@ -725,16 +834,16 @@ class LogitBoxCoxEncoder(BaseEncoder):
         - a mean-0, variance-1 normal distribution
     """
 
-    METHOD: TypeAlias = Literal["minimum", "quartile", "match-normal", "match-uniform"]
     AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
-
-    method: Optional[METHOD] = "match-normal"
+    method: METHOD = "match-normal"
     offset: np.ndarray
+    initial_param: Optional[np.ndarray] = None
+    verbose: bool = False
 
     def __init__(
         self,
         *,
-        method: Optional[METHOD] = "match-normal",
+        method: METHOD = "match-normal",
         initial_param: Optional[np.ndarray] = None,
     ) -> None:
 
@@ -834,17 +943,30 @@ class LogitBoxCoxEncoder(BaseEncoder):
 
         return fun
 
-    def fit(self, data: DataFrame, /) -> None:
-        assert all(np.isnan(data) | ((data >= 0) & (data <= 1))), f"{data=}"
+    def fit(self, data: Series, /) -> None:
+        if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
+            raise ValueError("Data must be in [0, 1] or NaN.")
+
+        if not data.dtype == np.float64:
+            warnings.warn(
+                "It is not recommended to use this encoder with non-float64 data. "
+                f"But {data.dtype}."
+            )
 
         match self.method:
             case None:
                 assert self.initial_param is not None
                 self.offset = self.initial_param
             case "minimum":
-                self.offset = data[data > 0].min() / 2
+                lower = data[data > 0].min() / 2
+                upper = (1 - data[data < 1].max()) / 2
+                self.offset = (lower + upper) / 2
             case "quartile":
-                self.offset = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
+                lower = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
+                upper = (
+                    (1 - np.quantile(data, 0.75)) / (1 - np.quantile(data, 0.25))
+                ) ** 2
+                self.offset = (lower + upper) / 2
             case "match-uniform":
                 fun = self.construct_loss_wasserstein_uniform(data)
                 x0 = np.array([1.0])
@@ -855,7 +977,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
                     # jac=jac,
                     # hess=hess,
                     bounds=[(0, np.inf)],
-                    options={"disp": True},
+                    options={"disp": False},
                 )
                 self.offset = sol.x.squeeze()
             case "match-normal":
@@ -868,17 +990,17 @@ class LogitBoxCoxEncoder(BaseEncoder):
                     # jac=jac,
                     # hess=hess,
                     bounds=[(0, np.inf)],
-                    options={"disp": True},
+                    options={"disp": False},
                 )
                 self.offset = sol.x.squeeze()
             case _:
                 raise ValueError(f"Unknown method {self.method}")
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    def encode(self, data: Series, /) -> Series:
         assert all(np.isnan(data) | ((data >= 0) & (data <= 1))), f"{data=}"
         return np.log((data + self.offset) / (1 - data + self.offset))
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    def decode(self, data: Series, /) -> Series:
         ey = np.exp(-data)
         r = (1 + (1 - ey) * self.offset) / (1 + ey)
         return np.clip(r, 0, 1)

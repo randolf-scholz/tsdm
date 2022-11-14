@@ -80,7 +80,7 @@ class BaseEncoder(ABC, Generic[ObjectVar, ReturnVar], metaclass=BaseEncoderMetaC
 
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
-        return repr_object(self, title=self.__class__.__name__)
+        return repr_object(self)
 
     @property
     def is_fitted(self) -> bool:
@@ -146,6 +146,8 @@ class IdentityEncoder(BaseEncoder):
 class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Product-Type for Encoders."""
 
+    requires_fit: bool = True  # type: ignore[misc]
+
     encoders: list[EncoderVar]
     r"""The encoders."""
 
@@ -176,6 +178,7 @@ class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
                     self.encoders.append(enc)
             else:
                 self.encoders.append(encoder)
+        self.requires_fit = any(e.requires_fit for e in self.encoders)
 
     def __len__(self) -> int:
         r"""Return the number of the encoders."""
@@ -215,6 +218,8 @@ class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
 class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Represents function composition of encoders."""
 
+    requires_fit: bool = True  # type: ignore[misc]
+
     encoders: list[EncoderVar]
     r"""List of encoders."""
 
@@ -246,6 +251,7 @@ class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
                     self.encoders.append(enc)
             else:
                 self.encoders.append(encoder)
+        self.requires_fit = any(e.requires_fit for e in self.encoders)
 
     def __len__(self) -> int:
         r"""Return number of chained encoders."""
@@ -286,12 +292,15 @@ class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
 class MappingEncoder(BaseEncoder, Mapping[KeyVar, EncoderVar]):
     r"""Encoder that maps keys to encoders."""
 
+    requires_fit: bool = True  # type: ignore[misc]
+
     encoders: Mapping[KeyVar, EncoderVar]
     r"""Mapping of keys to encoders."""
 
     def __init__(self, encoders: Mapping[KeyVar, EncoderVar]) -> None:
         super().__init__()
         self.encoders = encoders
+        self.requires_fit = any(e.requires_fit for e in self.encoders.values())
 
     @overload
     def __getitem__(self, key: KeyVar) -> EncoderVar:
