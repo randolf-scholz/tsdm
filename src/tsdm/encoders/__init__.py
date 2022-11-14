@@ -126,9 +126,10 @@ __all__ = [
     "FrameSplitter",
     "IdentityEncoder",
     "IntEncoder",
+    "LinearScaler",
     "LogEncoder",
-    "LogitEncoder",
     "LogitBoxCoxEncoder",
+    "LogitEncoder",
     "MappingEncoder",
     "MinMaxScaler",
     "PeriodicEncoder",
@@ -174,6 +175,7 @@ from tsdm.encoders.base import (
     MappingEncoder,
     ProductEncoder,
 )
+from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.functional import (
     FUNCTIONAL_ENCODERS,
     SKLEARN_FUNCTIONAL_ENCODERS,
@@ -181,11 +183,10 @@ from tsdm.encoders.functional import (
 )
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
-    BoxCoxEncoder,
     FloatEncoder,
     IntEncoder,
+    LinearScaler,
     LogEncoder,
-    LogitBoxCoxEncoder,
     LogitEncoder,
     MinMaxScaler,
     Standardizer,
@@ -243,6 +244,7 @@ MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
     "FloatEncoder": FloatEncoder,
     "IdentityEncoder": IdentityEncoder,
     "IntEncoder": IntEncoder,
+    "LinearScaler": LinearScaler,
     "LogEncoder": LogEncoder,
     "LogitEncoder": LogitEncoder,
     "LogitBoxCoxEncoder": LogitBoxCoxEncoder,

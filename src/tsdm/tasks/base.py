@@ -198,6 +198,10 @@ from __future__ import annotations
 
 __all__ = [
     # Classes
+    "Sample",
+    "Inputs",
+    "Targets",
+    "Batch",
     "OldBaseTask",
     "TimeSeriesTask",
     "TimeSeriesSampleGenerator",
@@ -235,9 +239,10 @@ from tsdm.utils.types import KeyVar
 
 TimeSlice: TypeAlias = Index | slice | list
 
-SampleType_co = TypeVar("SampleType_co", covariant=True)
+Sample_co = TypeVar("Sample_co", covariant=True)
 
 Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
+"""Type of a batch of data."""
 
 TS_Type_co = TypeVar(
     "TS_Type_co", bound=TimeSeriesDataset | TimeSeriesCollection, covariant=True
@@ -520,8 +525,8 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 
 @dataclass
 class TimeSeriesTask(
-    Mapping[SplitID, DataLoader[SampleType_co]],
-    Generic[SplitID, TS_Type_co, SampleType_co],
+    Mapping[SplitID, DataLoader[Sample_co]],
+    Generic[SplitID, TS_Type_co, Sample_co],
     metaclass=BaseTaskMetaClass,
 ):
     r"""Abstract Base Class for Tasks.
@@ -583,7 +588,7 @@ class TimeSeriesTask(
     _: KW_ONLY = NotImplemented
     index: Sequence[SplitID] = NotImplemented
     r"""List of index."""
-    dataloaders: Mapping[SplitID, DataLoader[SampleType_co]] = NotImplemented
+    dataloaders: Mapping[SplitID, DataLoader[Sample_co]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
     encoders: Mapping[SplitID, ModularEncoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
@@ -597,7 +602,7 @@ class TimeSeriesTask(
     r"""Dictionary holding sampler associated with each key."""
     test_metric: Callable[[Any, Any], Any] = NotImplemented
     r"""Metric used for evaluation."""
-    collate_fn: Callable[[list[SampleType_co]], Batch] = NotImplemented
+    collate_fns: Mapping[SplitID, Callable[[list[Sample_co]], Batch]] = NotImplemented
     r"""Collate function used to create batches from samples."""
 
     train_patterns: Sequence[str] = ("train", "training")
@@ -616,6 +621,11 @@ class TimeSeriesTask(
 
         if self.index is NotImplemented:
             self.index = self.folds.columns
+        if self.test_metric is NotImplemented:
+            self.LOGGER.info("No test metric provided. Using default.")
+            self.test_metric = self.default_metric  # type: ignore[assignment]
+
+        # create LazyDicts for the splits
         if self.splits is NotImplemented:
             self.LOGGER.info("No splits provided. Creating them.")
             self.splits = LazyDict({key: self.make_split for key in self})
@@ -631,12 +641,9 @@ class TimeSeriesTask(
         if self.generators is NotImplemented:
             self.LOGGER.info("No Generators provided. Caching them.")
             self.generators = LazyDict({key: self.make_generator for key in self})
-        if self.test_metric is NotImplemented:
-            self.LOGGER.info("No test metric provided. Using default.")
-            self.test_metric = self.default_metric  # type: ignore[assignment]
-        if self.collate_fn is NotImplemented:
-            self.LOGGER.info("No test metric provided. Using default.")
-            self.collate_fn = self.default_collate_fn
+        if self.collate_fns is NotImplemented:
+            self.LOGGER.info("No collate functions provided. Caching them.")
+            self.collate_fns = LazyDict({key: self.make_collate_fn for key in self})
 
     def __iter__(self) -> Iterator[SplitID]:
         r"""Iterate over the keys."""
@@ -646,31 +653,21 @@ class TimeSeriesTask(
         r"""Return the number of splits."""
         return len(self.folds)
 
-    def __getitem__(self, key: SplitID) -> DataLoader[SampleType_co]:
+    def __getitem__(self, key: SplitID) -> DataLoader[Sample_co]:
         r"""Return the dataloader associated with the key."""
         return self.dataloaders[key]
 
     def __repr__(self) -> str:
         return repr_dataclass(self)
 
-    def fit_encoder(self, key: SplitID, /) -> None:
-        r"""Fit the encoder."""
-        self.LOGGER.info("Initializing Encoder for key='%s'", key)
-        encoder = self.make_encoder(key)
-        train_key = self.train_partition[key]
-        associated_train_split = self.splits[train_key]
-        self.LOGGER.info("Fitting encoder to associated train split '%s'", train_key)
-        encoder.fit(associated_train_split)
-
-    @staticmethod
-    def default_collate_fn(samples: list[SampleType_co]) -> Batch:
-        r"""Return the test metric."""
-        return samples  # type: ignore[return-value]
+    def make_folds(self, /) -> DataFrame:
+        r"""Return the folds associated with the specified key."""
+        return NotImplemented
 
     @staticmethod
     def default_metric(*, targets, predictions):
         r"""Return the test metric."""
-        raise NotImplementedError
+        return NotImplemented
 
     def make_split(self, key: SplitID, /) -> TS_Type_co:
         r"""Return the splits associated with the specified key."""
@@ -678,30 +675,50 @@ class TimeSeriesTask(
 
     def make_encoder(self, key: SplitID, /) -> ModularEncoder:
         r"""Create the encoder associated with the specified key."""
-        raise NotImplementedError
+        return NotImplemented
 
     def make_sampler(self, key: SplitID, /) -> TorchSampler[KeyVar]:
         r"""Create the sampler associated with the specified key."""
-        raise NotImplementedError
+        return NotImplemented
 
-    def make_generator(self, key: SplitID, /) -> TorchDataset[SampleType_co]:
+    def make_generator(self, key: SplitID, /) -> TorchDataset[Sample_co]:
         r"""Return the splits associated with the specified key."""
-        raise NotImplementedError
+        return NotImplemented
 
-    def make_folds(self, /) -> DataFrame:
-        r"""Return the folds associated with the specified key."""
-        raise NotImplementedError
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample_co]], Batch]:
+        r"""Return the test metric."""
+        return NotImplemented
 
     def make_dataloader(
         self, key: SplitID, /, **dataloader_kwargs: Any
-    ) -> DataLoader[SampleType_co]:
+    ) -> DataLoader[Sample_co]:
         r"""Return the dataloader associated with the specified key."""
         self.LOGGER.info("Creating DataLoader for key=%s", key)
+
+        kwargs: dict = self.dataloader_config[key]
+
         dataset = self.generators[key]
+        if dataset is NotImplemented:
+            raise ValueError("Dataset is not implemented.")
+
+        # sampler
         sampler = self.samplers[key]
-        kwargs = self.dataloader_config[key] | dataloader_kwargs
-        dataloader = DataLoader(dataset, sampler=sampler, **kwargs)
-        return dataloader
+        if sampler is NotImplemented:
+            warnings.warn(f"No sampler provided for key={key}. ")
+            kwargs["sampler"] = None
+        else:
+            kwargs["sampler"] = sampler
+
+        # collate_fn
+        collate_fn = self.collate_fns[key]
+        if collate_fn is NotImplemented:
+            warnings.warn(f"No collate_fn provided for key={key}. ")
+            kwargs["collate_fn"] = lambda x: x
+        else:
+            kwargs["collate_fn"] = collate_fn
+
+        kwargs |= dataloader_kwargs
+        return DataLoader(dataset, **kwargs)
 
     def split_type(self, key: SplitID) -> Literal["train", "infer", "unknown"]:
         r"""Return the type of split."""
@@ -729,7 +746,6 @@ class TimeSeriesTask(
                 "batch_size": 32,
                 "drop_last": self.split_type(key) == "train",
                 "pin_memory": True,
-                "collate_fn": self.collate_fn,
             }
             for key in self
         }
@@ -803,7 +819,7 @@ class Inputs(NamedTuple):
     metadata: Optional[DataFrame] = None
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=False)
+        return repr_namedtuple(self)
 
 
 class Targets(NamedTuple):
@@ -813,7 +829,7 @@ class Targets(NamedTuple):
     metadata: Optional[DataFrame] = None
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=False)
+        return repr_namedtuple(self)
 
 
 class Sample(NamedTuple):
@@ -824,7 +840,7 @@ class Sample(NamedTuple):
     targets: Targets
 
     def __repr__(self) -> str:
-        return repr_namedtuple(self, recursive=1)
+        return repr_namedtuple(self)
 
     def sparsify_index(self) -> Sample:
         r"""Drop rows that contain only NAN values."""
@@ -906,11 +922,11 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     """The dataset to sample from."""
 
     _: KW_ONLY = NotImplemented
-    targets: Index
+    targets: Index | list = NotImplemented
     r"""Columns of the data that are used as targets."""
     observables: Index | list = NotImplemented
     r"""Columns of the data that are used as inputs."""
-    covariates: Optional[Index | list] = None
+    covariates: Index | list = NotImplemented
     r"""Columns of the data that are used as controls."""
     metadata_targets: Optional[Index | list] = None
     r"""Columns of the metadata that are targets."""
@@ -923,8 +939,12 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
     def __post_init__(self) -> None:
         r"""Post init."""
+        if self.targets is NotImplemented:
+            self.targets = []
         if self.observables is NotImplemented:
             self.observables = self.dataset.timeseries.columns
+        if self.covariates is NotImplemented:
+            self.covariates = []
         if self.metadata_observables is NotImplemented:
             if self.dataset.metadata is None:
                 self.metadata_observables = None
@@ -952,7 +972,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 raise ValueError(f"Unknown sample format {self.sample_format=}")
 
     def __repr__(self) -> str:
-        return repr_dataclass(self, recursive=1)
+        return repr_dataclass(self)
 
     def make_sample(
         self, key: KeyVar, *, sparse_index: bool = False, sparse_columns: bool = False
@@ -985,12 +1005,11 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             y = ts[self.targets].copy()
             y.loc[ts_observed.index] = NA
 
-            if self.covariates is not None:
-                u = ts[self.covariates].copy()
+            u = ts[self.covariates].copy()
         else:
             x = ts.copy()
             # mask everything except covariates and observables
-            columns = ts.columns.difference(self.covariates or [])
+            columns = ts.columns.difference(self.covariates)
             x.loc[ts_observed.index, columns.difference(self.observables)] = NA
             x.loc[ts_forecast.index, columns] = NA
 

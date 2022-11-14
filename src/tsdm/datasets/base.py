@@ -528,7 +528,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
     def __repr__(self) -> str:
         r"""Pretty Print."""
-        return repr_mapping(self.dataset, title=self.__class__.__name__, recursive=0)
+        return repr_mapping(self.dataset, title=self.__class__.__name__)
 
     @property
     @abstractmethod

@@ -4,6 +4,7 @@ TODO: Add module description.
 """
 
 __all__ = [
+    "BUILTIN_CONSTANTS",
     "EMPTY_PATH",
     "NULL_VALUES",
     "PRECISION",
@@ -22,6 +23,9 @@ from typing import Final
 import numpy as np
 import pandas
 import torch
+
+BUILTIN_CONSTANTS = [None, True, False, Ellipsis, NotImplemented]
+"""Builtin constants https://docs.python.org/3/library/constants.html."""
 
 EMPTY_PATH: Final[Path] = Path()
 r"""Constant: Blank path."""
