@@ -275,8 +275,10 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             raise TypeError(f"Invalid {type(self.index_decoders)=}")
 
         # Restore index order + dtypes
-        decoded_inds = decoded_inds[self.index_columns]
-        decoded_inds = decoded_inds.astype(self.index_dtypes)
+        decoded_inds = decoded_inds[
+            self.index_columns.intersection(decoded_inds.columns)
+        ]
+        decoded_inds = decoded_inds.astype(self.index_dtypes[decoded_inds.columns])
 
         # Assemble DataFrame
         decoded = DataFrame(decoded_cols)
@@ -930,6 +932,7 @@ class Frame2TensorDict(BaseEncoder):
                 dtype=self.dtypes[key],
             ).squeeze()
             for key, cols in self.groups.items()
+            if set(cols).issubset(data.columns)
         }
 
     def decode(self, data: dict[str, Tensor], /) -> DataFrame:
@@ -942,8 +945,9 @@ class Frame2TensorDict(BaseEncoder):
 
         # Assemble the DataFrame
         df = pd.concat(dfs, axis="columns")
-        df = df.astype(self.original_dtypes)
-        df = df[self.original_columns]
+        df = df.astype(self.original_dtypes[df.columns])
+        df = df[self.original_columns.intersection(df.columns)]
         if self.encode_index:
-            df = df.set_index(self.original_index_columns)
+            cols = [col for col in self.original_index_columns if col in df.columns]
+            df = df.set_index(cols)
         return df
