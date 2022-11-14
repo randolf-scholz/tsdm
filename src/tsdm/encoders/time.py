@@ -32,8 +32,8 @@ import torch
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
 from torch import Tensor
 
-from tsdm.encoders._modular import FrameEncoder
 from tsdm.encoders.base import BaseEncoder
+from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.utils.data import TimeTensor
 
 

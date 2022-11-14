@@ -5,11 +5,13 @@ import logging
 
 import pandas as pd
 import pytest
+import torch.utils.data
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import TimeSeriesCollection
+from tsdm.encoders import BaseEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiSampleGenerator, KiwiTask
 from tsdm.tasks.base import Sample
@@ -19,23 +21,37 @@ __logger__ = logging.getLogger(__name__)
 
 
 @pytest.mark.slow
-def test_kiwi_task():
+def test_kiwi_task(SplitID=(0, "train")):
     r"""Test the KiwiTask."""
     LOGGER = __logger__.getChild(KiwiTask.__name__)
     LOGGER.info("Testing.")
-
     task = KiwiTask()
+
+    # reveal_type(task)
+    # reveal_type(task.folds)
+    # reveal_type(task.index)
+    # reveal_type(task.splits)
+    # reveal_type(task.samplers)
+    # reveal_type(task.generators)
+    # reveal_type(task.dataloaders)
+    # reveal_type(task.encoders)
+    # reveal_type(task.train_partition)
+    # reveal_type(task.collate_fns)
+
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
-    assert isinstance(task.splits[0, "train"], TimeSeriesCollection)
-    assert isinstance(task.samplers[0, "train"], HierarchicalSampler)
-    assert isinstance(task.generators[0, "train"], KiwiSampleGenerator)
-    assert isinstance(task.dataloaders[0, "train"], DataLoader)
+    assert isinstance(task.splits[SplitID], TimeSeriesCollection)
+    assert isinstance(task.samplers[SplitID], HierarchicalSampler)
+    assert isinstance(task.generators[SplitID], KiwiSampleGenerator)
+    assert isinstance(task.dataloaders[SplitID], DataLoader)
+    assert isinstance(task.encoders[SplitID], BaseEncoder)
     assert isinstance(task.train_partition, dict)
+    assert callable(task.collate_fns[SplitID])
 
-    sampler = task.samplers[0, "train"]
+    sampler = task.samplers[SplitID]
     key = next(iter(sampler))
-    generator: KiwiSampleGenerator = task.generators[0, "train"]
+    generator = task.generators[SplitID]
+    assert isinstance(generator, torch.utils.data.Dataset)
     sample: Sample = generator[key]
     assert isinstance(sample, tuple)
 
@@ -60,10 +76,11 @@ def test_kiwi_task():
     assert y.loc[mask_observation, targets].isna().all().all()
     assert y.loc[mask_forecasting, targets].notna().any().any()
 
-    dataloader = task.dataloaders[0, "train"]
+    dataloader = task.dataloaders[SplitID]
     batch = next(iter(dataloader))
     assert isinstance(batch, list | tuple)
-    assert isinstance(batch[0], tuple | Tensor)
+    sample = batch[0]
+    assert isinstance(sample, tuple | Tensor)
 
 
 def _main() -> None:

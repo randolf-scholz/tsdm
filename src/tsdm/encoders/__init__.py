@@ -99,7 +99,7 @@ __all__ = [
     "base",
     "numerical",
     "time",
-    "torch",
+    "pytorch",
     # Types
     "Encoder",
     "ModularEncoder",
@@ -154,18 +154,8 @@ from typing import Final, TypeAlias
 from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
 
-from tsdm.encoders import base, functional, numerical, time, torch
+from tsdm.encoders import base, functional, numerical, pytorch, time
 from tsdm.encoders._deprecated import DataFrameEncoder
-from tsdm.encoders._modular import (
-    Frame2TensorDict,
-    FrameEncoder,
-    FrameIndexer,
-    FrameSplitter,
-    TensorEncoder,
-    TripletDecoder,
-    TripletEncoder,
-    ValueEncoder,
-)
 from tsdm.encoders.base import (
     BaseEncoder,
     ChainedEncoder,
@@ -176,6 +166,16 @@ from tsdm.encoders.base import (
     ProductEncoder,
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
+from tsdm.encoders.dataframe import (
+    Frame2TensorDict,
+    FrameEncoder,
+    FrameIndexer,
+    FrameSplitter,
+    TensorEncoder,
+    TripletDecoder,
+    TripletEncoder,
+    ValueEncoder,
+)
 from tsdm.encoders.functional import (
     FUNCTIONAL_ENCODERS,
     SKLEARN_FUNCTIONAL_ENCODERS,

@@ -226,7 +226,7 @@ def repr_mapping(
         max_key_length = 0
 
     # check builtin
-    if type(obj) == dict:
+    if type(obj) == dict:  # pylint: disable=unidiomatic-typecheck
         if title is None:
             title = ""
         if identifier is None:
@@ -386,7 +386,7 @@ def repr_sequence(
 
     # check builtin
     for builtin in (list, tuple, set):
-        if type(obj) == builtin:
+        if type(obj) == builtin:  # pylint: disable=unidiomatic-typecheck
             if title is None:
                 title = ""
             if identifier is None:
