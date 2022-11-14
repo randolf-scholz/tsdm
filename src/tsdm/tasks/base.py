@@ -135,63 +135,6 @@ OUQ4WHU299efPWyScF63%2B%2BhzyHJysybgI8y7R3oMhkLfg%2BddekpYKD%2FAvUfuhIt7h5ElMSok
 AYxty1%2FF5Yk6xvYf1pa3Yk7BIYFvo0hzlHIt6M1U1R7QgYWOZOLSHnYQa6ml2rsesYWZTnsVPLmgJLsnhOetsQt4JHYkOVwg%2Bh5jBeGWAC17FxPW5Oj
 IVwXvlf6HkOzzl5cnFl1NkbXwuPDHwu7X3NiOMmWfnvqj6nqDBMC7BkG2f7fMQb1Oc0witF3el5sfv0Qu6K0KCbzVF1qiWKgig%2BewNM%2FqIfMMw%3D%3
 D)
-
-
-▄▄▄▄▄▄▄ ▄   ▄▄    ▄▄▄▄  ▄  ▄ ▄▄ ▄ ▄ ▄▄▄▄  ▄▄▄▄ ▄▄ ▄▄▄  ▄ ▄ ▄▄▄  ▄▄ ▄▄▄▄ ▄ ▄▄▄     ▄  ▄▄▄   ▄▄▄      ▄ ▄▄▄▄▄▄▄
-█ ▄▄▄ █ █ █▀█  ▀  ▄█▀ ▄ ▀ █▀▄▀█▄▀█ ▀ ████ █▄▀▀▄ ▀ █ ▄ █▄ ▀ ▀▀ ▀ ▄▀▀▄ ▀▄▀  █ ▄▀▀█ ▀ ▀▀ ▀ ▄█▀█▀█▄  ▀█▄█ █ ▄▄▄ █
-█ ███ █ ▀▀██  ▀▀▀ ▄█▄ ▄█▀▀  ██▄██▄▀▀ ▄█▄█▀ █▄▀▄   ▄▄▄█▄█▄▀▄▄▄█ ███ █  ▀ ▄ ▄ █▄▄▄▄ ▀ █ ▄█▀▄  ▄██▀ ███▄ █ ███ █
-█▄▄▄▄▄█ █▀▄ █▀█▀█ █▀█▀▄▀▄ █ █ ▄ █ ▄ █ █ ▄▀█▀▄▀▄ █ █ █ ▄ █▀▄ █ █▀▄▀█ ▄▀▄▀▄ █▀█ ▄ █▀▄ ▄ █▀█▀█▀█▀▄ ▄ ▄▀▄ █▄▄▄▄▄█
-▄▄  ▄▄▄  ▄ █ ▄█▄▄█▄ ▄ ▄  ▄▄ █▄▄▄█   ▀ ▀▄█▄▄▀▄█     ██▄▄▄█ ▀▄ ▄▄▄▀▀▀ ▄█▀█▄ ▄ █▄▄▄██▀▄▄█▄▀███▀▄ █▄ ▀█▀   ▄ ▄▄▄▄
-▀▄▄▄█▄▄████▄██▀█▀▄▀█ ▄ ███ █ ▀ ▄▄█▄█ █   █▀█  ▄█▄█   ▀▀▄▀▀▄▄▀▄ ▄▄ ▀ █ ▄▀▀█ ▀ ▀ ▄█ ██▀▄ ▄▀▀ ▄█ ▄▀▄ ▀▄█ █   █▀
-█ ▄   ▄█▀▀█▀█ ▄█ █ █▀██▄▄  █▄▀ █▄     █ █▄▀▀  █   ▄▄▀▀█▀▄█▀▄▄ █▄████▄▀   ▀▄ █▀▀▄▄▀▄▄▄ █▄▀█▄▄▄▀█▄▄█▀█▀▄▄ █ █▄█
-▄▄▀ ▄▄▄▀▄▄▀▀▄▀▄█▀▀ ▀ ▄ ▀█▄    ▀  ▀█ ▄█ ▀   ▄▀▄▄ █▄ ▀   ▀  ▄█▀█▀▀▄ ▀█▄▀▄ ▀ ▀▀   █  █  ▄ █   ▀█ ▄▀█▄▀██▀█▄  ▄▀▀
-█▄ ▀▄▄▄█ ██▀▀▀▀▀▄▄ █  ▄█ ██▄ ▄▀▀▄▄▀ ▄▀▄██ ▀█ ▄▄   █▄ ███▄▀   ▄█▄██▀▀ █▄ ▄▀▀▄▀█▄█ ▀▀ ▄█▄ ██    ▄▄ ▀▄▄ ▄ ▄▄ ▀▀█
-█ ▀▀▄▄▄█▀▄ ▄▄█▀▀▀████▀▄▀ ▀█▄ ▀  █▄▄  ▀▀ ▀▀█▄ ▄▄ ▄▀▀▄ ▀▄█▄█▄▀▄▀▀█▀▀▀  ▄█▀▄▀▀▄█▀ █ ██▀▄▀     ▄▀▄█▄▄  █▄▄▄▀▄█▀▀
-▀█▄▀▄▄▄██▀ ▀█▀▄▀█▄▀█▀ ▄ ▀█ ▀ █▀█    ▄██▀█ ▄█▄▀  ▄▄ █▀▀▀█     ▀█▄▀▀▄█ █▀▄▄ █▀ ▄▀▀ █ ▄  ▄ █ ██ █▀  ███▀▀ ▄ ▄█▀▄
-▄▄▀▄▀▄▄ ███▄  ▀▀▀█▀▄▀█ █▄▄▀█▀ ▄▄▀▀█  ▄▀▄▀▀ ▀ ▀█ ██▀▀▄█▀▀▀ █ █ ▀ ▄▀▀ █ ▄▄ ▄▀▀ ▀ ▀▀▀█▀▀ ▀▀▀█ ▄████▄▄ ▀ █▄█▀▄  ▀
-▀█▀█▄ ▄▄█▄▄▀▀▄█▀▀█▄██ ▀▄ ▄▀  ▀  ▄▀▄  ▄ ▄▀▄██▄ ▄  ▀▄██▄██ █ ▀ █▀▄▀▀▄█ ▄▀   ▀▄█ ██▄▀▀▄ ▄█▀███▄▄▀  ▄▄▀█ ▄ ▄█ ▀▄▄
-█ ▀█▀█▄▄   ▀ █▄▄██  █▀  █▀▀▀ ▀ ▀█▀▄▀▄█▀█▄▀ ▄▀▄▄ ▀█ █▄█▀█▀ ▄ ▀▄ █▀  ▄ ▀█ ▄▄▀▄▄▀ ▀█▀██▄█   ▀  █▀█▄▀█▀██    ▄  ▀
-▀▄█▀▄▄▄█▄▀▄█▄▄█▄▀ ██ █▀█ ███▄▄▄█▄ ▀▄ ▀▄ ▀█▄▀ ▄▄ ▄▀█▀█▄██▄▀█  ▄▄ ▀▀██▄▀ ▄ ▀█ ██▄▄▄▄▀ ▄ ▄▀██▄█ ▄█▄▄█▄▄▄▄▄▄█▄█▀
-▄ ▀█ ▄ █ ██▀█▄▀██ ▀▀▀ ▄▄▄ ██ ▄ ██▄█▀▀▀▀   ▄▄█▄▀▄ ▀▀█ ▄ █ ▄▀▄▀ ▀▀  ██ █▀█▄▀ █ ▄ █ ▄█▄█▀▄   ██▀▄ ▄▄ ▄█ ▄ ██▄ ▀
-▀▀▀██▄▄▄██▀▄█▄██▀ ▀ █▄▀▄▄█▀██▄▄▄█ ▀  ▄█▄▀▀▄█▄▀  ▄▀▀▀█▄▄▄█▀▄  ▀▀█▀█▄▀▄█▀▄▄▄▀▀█▄▄▄█▀ ▄▄▄ ▄█▀█▀ ▀█▄▄▀▀▀█▄▄▄█▄▀▀
-▄▀▀▀▄▄▄▄  ▄▀█▀█    ▄▄  ▄ █▀▄▀▀▀█ ▄█ ██   ▀▀▄█ █▀▄▄▀ ▄▄▄▀ ▀▄▄█▄▀█▄▄▀▄█ █ ▄▄ █ ▀▀▀█▀█ ▀▀▀  ▀▀█▄▀▄▀▀▄▀█ ▀█▀██▄
-██▄▄ █▄▄ █▄▀█▄██▀▄ ▀ ▄  ▄ ▀▀ █ ▀█▄▄▀▄▄█▀▀  █ ▀▄ ▄ ▄ ▄ ▄▀█▄ ▄ ▀ ▄█▄██  █▄▄   ▀ ▄▀█▀▄▄▄█▀▀▀█▄ ▄▀█▄  ▄█▀█▄▀ ▄▀ ▄
-▄█ █▄▀▄▄▀▄▄ █▀   ▄▀▄▀▄█▀▀█ ▄▀█▀ ██▄██▀ ▄█▄▀ ▀▀▄  █▀█▄▀█ ▄ ▄▀▄█▀█     ▀▄█▀▀▀█▄  ▀  ▄▄▀▄▀▀    █▀██▀ ▀ ▄▄███▄▄█
-█ ▀▄▄ ▄▄▀   ▄▄▄▄   ▄   ▄▄█    ▄▀█  ▄ ▀█ ▀▄█▀ ▀▄▄▄▀▄   ▄▀█▄ ▄▄█▀▄▀▄▄█▄▄▀  ▀▀  █ ██▀█  ▄█ ▀█▄▀ ▄▀▄ █▀█▀██  ███
-█▄ ▄ ▄█▀▀▀▄▀██▀ ▄▀█ ███ █▀▄▀▀█ ▀▀▄█ █ ▀   ▀▀▀█▄ ▄▀ ▄█▀▄▄ █▀   ▀   ▀▄▄███▄ █▀█▀█  ▄▄ ▄ ▀  ▀▀█▄▄███   ▄▄██ █▀▀
-▄▄▄▄ ▄ ▄▄▄ ███▀▄ ▄█ ▄▀▄▀ ▄▄ ▄  █▄▄▀█▀▀█▀▄█ ▄ ▀▄  ▄▄▀▄▀█▄ ▀█ █ ▀▄  ▄█▄▄█▀    ██ ▄▄ ▀ ▀ ▀▀▄ ▄▄ █▄▀▄█▄█▄▄▀██
-█ █▀▀▀▄███▀ ▄▀▀▄██▄▀▀▀▄  █ ▀  █▀█▀▄▄▄ ▀█▄  ▀▀ ▄█▀▄▀▄▄▀█▀ ▀█ █▄ ▀   ▀▄▀█ ▄█ ▄▄  ▀███▄█▄  ██▀▄▀ ██ █ ▀ ▄▀█▄█ ▀▀
-██▀▄█▀▄▄ █▄█ █ ██  ██ ▀ ▄▄ ▀▄▄▄ █ ▀▄  █▄█▀█▀▄▀▄  ▄█ ▄▄  ▄█▀█ █ █▀ ▀▀▄█ ▄ █ ▀ ▄▄ ██▄  ▄▄ ▀▄▀█  ▄  ▄ █▄ █ ▄██▀▄
-▄▀▄███▄ ▄  ▀ ▄███▄▀▀█▀█ ██ ▀█▀▄▄ ▀▄█▄▄▀█    █ ▄ ▀   ▄█▀█▀ █ ▄█▀█▄▄▀   █ ▄█▀▄███▀ ▀███▄▀▀ █▀▀▄ █▄█▄▀█▀▄▄███▀▀▀
-▀▄▄▄█▄█▄▀▀ ▀▀▀▀▄█▄ ▄█▀▄ ▀▀▀▄▄▄▄▄▄▀ ▄██ ▀▄█▀  █ ▄██▀▄▄▄▄██ █▄ █ ██▀▀▄█  ▄▄█▀▄▄▄█▄▀█   █▄▀▄█ ▄█▄ ▄ ▄▀▄▄▄▄▄ ███
-█▄█▀█ ▄ █ ▄▄▄█▀▄ █ █▀█▄  █▄ █ ▄ █ █ ██  █▀▀█▀ █▀█▄▀▀█ ▄ █▀▄▀█▄  ▄▀▀   █  █ ▄█ ▄ █▀█ ▄█▀▄    ▄▀██  ▀ █ ▄ ██▄▀▀
-▀▀█▀█▄▄▄█   ▀██▀▄▀██▀▀██▄ ▄ █▄▄▄██▄▀▄██ █ ▄▀  ▀█ ▀▄██▄▄▄█ ██▄ █ ▀▄ █▄█ ▄ ████▄▄▄████    █▄▀▀ ██▄ █▀▄█▄▄▄█▄███
-▄█▀▀▀ ▄█▀▄ █▄█▀██ ▀██▄█▄█▄▀▀█▀▀ ▀▀▄▄▄ ▀█▀ ▀▄█▄█▀██▀ █▄▀▄▀ ██▀▄▀█▄ ▀▀█▀▄▀▄ ▀██▄▀▄▀ ▄▄▀▄ ▀▄▀ ▄█ █ █▄▀█ ███ ██ ▀
-▀▄█ █▄▄█ ▀▀▄ ▀██ ▀ ▄▄ ▄▄ █ ██▄▄█▄ ▄ ██ ▀ ▄  ▄ ▄ ▀█▄ ▀█      ▀▄ █▀█▀▄▀█▄▄█▀ ▀▄▄█▄  ▄ ▄█▄▀ ▀▀▄▀ █ ▄▀ █▄▄▀█ ▀▄█
-▀▀▀██▀▄  █ █ ▀▄█▀▄█▀█ ▄███ █▄▀ ▄█ █  █▀▀ ▀▀ ▀▀▄▄▀▄ ██▀ ▀▀▀█▄▀█ ▄▄▀ ▄█▀█ ▄▄▀ ▄█▀▄█ ██▀▄  ▄▀ ▀▄▀▄▀▄▄▀█ ▀▀█▀▄█ ▀
-▄▄    ▄██▀▀▄ █ █▄▀▀█▀  ▄▄▄▀ ▀▀█ ▄▄▄  ▀▄█▀█ █ █ ▄▄▄█▀████▄▄   ▄█▄▀ ▄ ▄▄ ▄▄▀▀ ███  ▄▄▄  ▄▄██▄▀▄ ▀  ▄███▄▀▀█▄▀▀█
-▄█▀▄█▀▄  █▄  █▀▀ ▄▄▀▄█▄ ▄█▀ ██ ▄█ ▀▀▀ ▀▀▄▀▀▀▀█▄▄ █ ▀▄█ ▄▀▀█▄▄▄     ▄█ ███▄  ▄ ▀▀▀ ▄▄▄█▀█▄▄▀▀▄▀█ ▄█▀▀▄▄█▄▄  ▀
-█▀███▄▄ █▄ ▀█ ███▀▄▀▀▄ █▄█▀▀█ ▄█▄▀█▄ ██▄▀▀ █▄▄ ▄  ▄▄ █▄▀   ▄ ▄█▄▀▄▄▄▄█▀▄  █▄ █▄  ██   ▄ █▄▀█  ██▄▄█▀▀  ▀█▄█▄█
-▄█▄   ▄ ▄▀▀▀▀▀ ▀█▀▀▄▄  ▄ ▄▀▄███ ▄▀▄  █ ▄█ ▀██▀█ █▄▀▀██▀▄▀ ▄▄▀▄ ▄ ▀  ▄▀▄██▀▀██▄█ █▀█ ▀█  █  ▀▄ █ ██ █▄ █▀ ▄██
-█ ▄ █ ▄█  ▄▀█▀██▀▀▄▀██ ▄ █▀ ▀██▀▀▀▀▄ ▀█ ▀█▄█▄▀▄ ▄ ▄▀ ▀█ ▀   ▄▄█▄▀▀██▄█ ▄ ▄█▄▀▄█ ▀█ ▄▄▀▀ ▀▄█ ▄▀ ▀ ▄█ ▀▀█▀█ ██▄
-▄▄▄▀▀█▄ ▄ █▄▀█▄ ▄▀▄▀ ▄▄▄▀█ ██ ▀ ▀ ▄█▀▄▀▄▀ ▀█▄ ██▀▀▀███▄▀▀▀█▄ ▄ ██ ▀ █▀█▄▀█  █▄ ▀▀ █▀██▀ ▄  ▀▀ █▄▀█ ▀ ▀██▀▄
-█▄█ ▄█▄██▄▀ ▄  █▄█▀██▄▀  ▀█ █▄▄▄█▄▀▄ █  ▀▄   ▄▀▄ █▀▀██▄▄▄▄▀▄ ▄█▄▀█▄▀▄ ▀  ██ █▄█▄█▀ ▄▄ ▀ ▀▀██   ▄  ▄ █▄▄██ ▀██
-█ █ █ ▄ █▄  █ ▄ █▄▄▄ ▀█▀█ ▀ █ ▄ █▀▄██  ▄ ▀▀▄▄ █ ██  █ ▄ █▄█▄▄█▀▀▄▄  █▀█▄▀   █ ▄ █▀█ ▄ ▀  ▀▀▀▄ ▄▄▀█  █ ▄ █  ▀
-█▄▀▀█▄▄▄█ ▀█▄ █ ▀▄▀█▀▀  ▄▀█▄█▄▄▄██ ▀▄▀███  █ ▀█▄▄▀█ █▄▄▄█▄  ▄▄▄ ▀▄█▀▄▀ ▄ ▀█ █▄▄▄██ ▀▄▀▀▄▀▀▀▀ ▀▄ ▄▄█▀█▄▄▄█ █▀
-█▀▀▀  ▄▀▀ █▀▀█▀▄  ██ ▀ ▀▀▀ ▄ ██▄▀▀▄█▀ ▀▀ ▀▀ █▄▄▀██▀▄█▀▀█▀ ▄█ ▄▀▀▀▀ ▀▀▀█▄▀▄ ▄██▀  █▄  ▄▀█▄ ▀▀▀▀▄▄ █ █▄▀▀█▀ ▄▀▀
-▀▄ █ ▄▄▀▄ ▀ ▄ ██▄▀█ ▀█  ▄█▀▀█ ▄█▄█ ▄▄███▀▀▀█ ▄ █▄▀██ █▀▀▄█▀   ▄█▀█▄█▄▀ ▄▄ ▄█▄▄▄▀▄▄▄▄  █▄█ ██▄▄▄▄▄ █▀ ▀ ▀ ▄███
-▀▀▀█▄█▄▄▀█     ▄▄▄██▀ ▄▄ █ ▄  █   ▄▀▀▄  ▄▀▀▀███▀▀█▀▄ ███▀ █▄█  ▄ █▀▀█▄█ █▀  ██▀█  ▄▀▄▄ █▀▀▀ ▄ ▄███ ▀▄▀  ▀ ▀▀
-▄ █ ▄▄  ▄ ▄  █▀▄██ ███▄▄▄█▀█▀ ▄▀▀ ▄▄ █▄▀ ▄█▄ ▄ ▄█▄▄█▄▄█▀▀▀█  ▀ ▀ █▀▄▄ ▀▄█▀ █▄▄▄█▄▀  █▄ ▀ ▄▀ ██  ▀█ ▄██ ▄ █▀
-██▀  ▀▄█ ▄▄ █ ▀█  ▀  ▀▄█▀ ▀ ▄█▀█  █▄█▄▀▄▀█ ▄▀ █▀██  ▀█▀█▀▀█▄██ ▀▄▀▀█▄▀▄▄▀▄▀▄████▀██▄ █  ▀▀▀▄ ▀▄▀█▄ ▀▀ ▀ ██▄█
-▀▄█  █▄██▄ █ ▀▀█  █▄█▀▄ ▀▀ ▀█▀▀ ▀ █  ▄█▄█ █▀▄▀▄▄▄█▄██▄▄▀█▀ ▀▄▄█▄█▀▀█ ▄▀▄ ▄▄ ██▄██▄ ▄▄ ▄▀█▀█▀▄▀ ▀▄█ ▀ ▄▄▄ ▄█▀▀
-▀▀ ▀▀▄█▄▄ █▀ ██  ███▀▄▀▄▄  ▀██▄  ▄█▀▄ ▄▄▄  █▀▄█▀█▀▄███▄▀██▀▄▀ ██ ▀██▀█▄█▀   ███▀ ▄▀ ▄▀ ▀▀   ▀█▄▄▄▀ ▀█▀ ▀▄▀
-▄█ ▄▄▄▄▀ ▄ ██▄█ ▄▀█▄▄▀▄▀▄▄███▄▄▄▀█▀   █▄█ ██▄ █ ▄ █▄ ▀ █▀  █▄█▀ █▀▀▀▄▄▀▄ ▀██ ▄█▄█ ▄▄▄ ▄█▀███▄▀   ▄▀   ▀▄▄ █
-▀██▄█▀▄ ▀█▄█▀▄▀▀█▄▄█▀█▄▀ ▀ ▄▀▀▀▄ ▀██    ▄█ █▄ █ █  ▄▄▀█▄  ██▀▄▀   ▀█▄██ ▀█ ▄▀▀▀█ ▄▄▄▄█ ▀  ▀█▄▀▄▀█▀▀▀▄█ ▄█▄█
-▄▄█▀█▀▄▀█▄ ▄▀ █▄▀ ▀▀ ██▄▄█▀▀████▄ ▀  ██ ▀▄▀█ ▀▀▀▄▄█▀██▄█▄ ▀   █▄▀███ ▄▄   ▀█▄▄▄█▄   ▄▄▄█▀██▀ █▀ ▄▀▀ ▄▄█▄▄▄█▀
-▄▄▄▄▄▄▄ ▀▄▄ █▀▄▀▀▄▀▄▀  ▀█▀ ▀█ ▄ ██▄▄█▄ ▀▄▀▀▄█ ████ ██ ▄ ██▄▄ ▄▀▀▄▀▀▀█▄▄ ██▀▄█ ▄ █▀█  █ ▄█▀ █▀█▄▄ █ ▄█ ▄ █ ▄
-█ ▄▄▄ █ █ ▄▀ ▄█ ▀▀▄  ▀█▀ █▀██▄▄▄█ ▀▄▄▄▄ █ ██ █▀▄  █▀█▄▄▄█  ▄    ▀▀▀▀▄▄  ▄ ▄▀█▄▄▄█ █ ▄▄▀▄▀  ▀▄ ▄▄ █  █▄▄▄███ █
-█ ███ █  ▀██▄▄█ ▄   █ ▄▄▀█▀███▀▀█▀█ █▄▀ ▄█▀▀▄ ▄▀██▀ ▀ ▀██▀▄▄▄▄ ▄ ▄▀▄▀ █ █ ▀███▀ ▀ █ ▀▀ ▀▀   █▀█▄ █▀ █▄▀▄  ▄▄▀
-█▄▄▄▄▄█ █▄█▄▀▄▄▄██▄▀▄▄▄  ▀▄ █▄█▀ ▄▀▀▄▀▄ ▀▄█▀▄▀█▄  █ ▀ ▄▀▄▀▀   ▀ ▀▄▀█  ▄  ██ █▀█▀  ▀▄ ▀▀ █▄▄█ ▄   ▀▄▄▄ ▄▄█ ██▄
 """
 
 from __future__ import annotations
@@ -237,18 +180,14 @@ from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 from tsdm.utils.types import KeyVar
 
-TimeSlice: TypeAlias = Index | slice | list
-
 Sample_co = TypeVar("Sample_co", covariant=True)
+"""Covariant type variable for `Sample`."""
+
+SplitID = TypeVar("SplitID", bound=Hashable)
+"""Type of a split ID."""
 
 Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
 """Type of a batch of data."""
-
-TS_Type_co = TypeVar(
-    "TS_Type_co", bound=TimeSeriesDataset | TimeSeriesCollection, covariant=True
-)
-
-SplitID = TypeVar("SplitID", bound=Hashable)
 
 
 class BaseTaskMetaClass(ABCMeta):
@@ -378,7 +317,6 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     """
 
     # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
-    __slots__ = ()
 
     LOGGER: ClassVar[logging.Logger]
     r"""Class specific logger instance."""
@@ -526,7 +464,6 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 @dataclass
 class TimeSeriesTask(
     Mapping[SplitID, DataLoader[Sample_co]],
-    Generic[SplitID, TS_Type_co, Sample_co],
     metaclass=BaseTaskMetaClass,
 ):
     r"""Abstract Base Class for Tasks.
@@ -582,7 +519,7 @@ class TimeSeriesTask(
     LOGGER: ClassVar[logging.Logger]
     r"""Class specific logger instance."""
 
-    dataset: TS_Type_co
+    dataset: TimeSeriesCollection
     r"""Dataset from which the splits are constructed."""
 
     _: KW_ONLY = NotImplemented
@@ -596,9 +533,9 @@ class TimeSeriesTask(
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
     samplers: Mapping[SplitID, TorchSampler] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
-    generators: Mapping[SplitID, TorchDataset] = NotImplemented
+    generators: Mapping[SplitID, TorchDataset[Sample_co]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    splits: Mapping[SplitID, TS_Type_co] = NotImplemented
+    splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
     test_metric: Callable[[Any, Any], Any] = NotImplemented
     r"""Metric used for evaluation."""
@@ -669,7 +606,7 @@ class TimeSeriesTask(
         r"""Return the test metric."""
         return NotImplemented
 
-    def make_split(self, key: SplitID, /) -> TS_Type_co:
+    def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
         r"""Return the splits associated with the specified key."""
         return self.dataset[self.folds[key]]
 
@@ -952,7 +889,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 self.metadata_observables = self.dataset.metadata.columns
         self.validate()
 
-    def __iter__(self) -> Iterator[TS_Type_co]:
+    def __iter__(self) -> Iterator:
         return iter(self.dataset)
 
     def __len__(self) -> int:

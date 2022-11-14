@@ -2259,6 +2259,17 @@ Pygments = ">=2.5.1"
 md = ["cmarkgfm (>=0.8.0)"]
 
 [[package]]
+name = "removestar"
+version = "1.3.1"
+description = "A tool to automatically replace 'import *' imports with explicit imports in files"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+pyflakes = "*"
+
+[[package]]
 name = "requests"
 version = "2.28.1"
 description = "Python HTTP for Humans."
@@ -3168,7 +3179,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<3.12"
-content-hash = "d4d7fb3c8d38075cc34dbf219c47f8594e183056c2949af9b30809c4938a0621"
+content-hash = "4776cb289ccd547c9f472b459e91023360eb4a2d745ed7ce7efe45eecee8575b"
 
 [metadata.files]
 absl-py = [
@@ -4723,6 +4734,10 @@ qtpy = [
 readme-renderer = [
     {file = "readme_renderer-37.3-py3-none-any.whl", hash = "sha256:f67a16caedfa71eef48a31b39708637a6f4664c4394801a7b0d6432d13907343"},
     {file = "readme_renderer-37.3.tar.gz", hash = "sha256:cd653186dfc73055656f090f227f5cb22a046d7f71a841dfa305f55c9a513273"},
+]
+removestar = [
+    {file = "removestar-1.3.1-py3-none-any.whl", hash = "sha256:2c482ac9a253e876bf6b7a6c38cf3913ffa5e863ce1747e2de3d5752bf5d3f4b"},
+    {file = "removestar-1.3.1.tar.gz", hash = "sha256:34ce54d691aa2dbef55e44d71e14ef3a8066a7b69b455e9d46f3106659b27c4a"},
 ]
 requests = [
     {file = "requests-2.28.1-py3-none-any.whl", hash = "sha256:8fefa2a1a1365bf5520aac41836fbee479da67864514bdb821f31ce07ce65349"},

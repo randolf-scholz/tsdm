@@ -8,7 +8,7 @@ __all__ = [
 
 
 from collections.abc import Callable, Hashable
-from typing import NamedTuple, TypeVar
+from typing import Mapping, NamedTuple, TypeVar
 
 from pandas import DataFrame
 from torch import Tensor
@@ -16,7 +16,7 @@ from torch import nan as NAN
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Sampler as TorchSampler
 
-from tsdm.datasets import KiwiDataset, TimeSeriesCollection
+from tsdm.datasets import KiwiDataset
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -83,7 +83,9 @@ class KiwiSampleGenerator(TimeSeriesSampleGenerator):
 
 class KiwiTask(TimeSeriesTask):
     r"""Task for the KIWI dataset."""
-    # dataset: TimeSeriesCollection = KiwiDataset()
+    dataset: KiwiDataset
+    generators: Mapping[tuple[int, str], KiwiSampleGenerator]
+
     observation_horizon: str = "2h"
     r"""The number of datapoints observed during prediction."""
     forecasting_horizon: str = "1h"
@@ -190,7 +192,7 @@ class KiwiTask(TimeSeriesTask):
         return encoder
 
     def make_sampler(self, key: KeyVar, /) -> TorchSampler:
-        split: TimeSeriesCollection = self.splits[key]
+        split = self.splits[key]
         subsamplers = {
             key: SlidingWindowSampler(tsd.index, horizons=["2h", "1h"], stride="1h")
             for key, tsd in split.items()

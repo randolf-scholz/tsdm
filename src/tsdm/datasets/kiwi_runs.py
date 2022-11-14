@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.datasets.base import MultiFrameDataset, TimeSeriesCollection
 from tsdm.utils.constants import NULL_VALUES
@@ -522,7 +522,16 @@ class KIWI_RUNS(MultiFrameDataset):
 
 
 class KiwiDataset(TimeSeriesCollection):
-    """The KIWI dataset."""
+    r"""The KIWI dataset."""
+    index: MultiIndex
+    timeseries: DataFrame
+    metadata: DataFrame
+    global_metadata: None
+    index_features: DataFrame
+    time_features: DataFrame
+    value_features: DataFrame
+    metadata_features: DataFrame
+    global_features: None
 
     def __init__(self) -> None:
         ds = KIWI_RUNS()
@@ -531,7 +540,7 @@ class KiwiDataset(TimeSeriesCollection):
             index=ds.index,
             timeseries=ds.timeseries,
             metadata=ds.metadata,
-            global_metadata=ds.global_metadata,
+            global_metadata=None,
             index_features=ds.index_features,
             time_features=ds.time_features,
             value_features=ds.value_features,
