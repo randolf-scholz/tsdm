@@ -5,19 +5,15 @@ from __future__ import annotations
 __all__ = [
     # Classes
     "BoundaryEncoder",
-    "BoxCoxEncoder",
     "LinearScaler",
     "LogEncoder",
     "LogitEncoder",
-    "LogitBoxCoxEncoder",
     "MinMaxScaler",
     "Standardizer",
     "TensorConcatenator",
     "TensorSplitter",
 ]
 
-import warnings
-from collections.abc import Callable
 from dataclasses import KW_ONLY, dataclass
 from typing import (
     Any,
@@ -35,11 +31,8 @@ from typing import (
 import numpy as np
 import pandas as pd
 import torch
-from numpy import pi as PI
 from numpy.typing import NDArray
 from pandas import NA, DataFrame, Index, Series
-from scipy.optimize import minimize
-from scipy.special import erfinv
 from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
@@ -73,6 +66,45 @@ def get_broadcast(
     axis = tuple(a % rank for a in axis)
     broadcast = tuple(slice(None) if a in axis else None for a in range(rank))
     return broadcast
+
+
+@dataclass
+class BoundaryEncoder(BaseEncoder):
+    r"""Clip or mask values outside a given range.
+
+    If `mode='mask'`, then values outside the boundary will be replaced by `NA`.
+    If `mode='clip'`, then values outside the boundary will be clipped to it.
+    """
+
+    lower: float | np.ndarray
+    upper: float | np.ndarray
+    _: KW_ONLY = NotImplemented
+    axis: int | tuple[int, ...] = -1
+    mode: Literal["mask", "clip"] = "mask"
+    mask_value: float = float("nan")
+
+    requires_fit: ClassVar[bool] = False
+
+    def fit(self, data: DataFrame) -> None:
+        # TODO: make _nan adapt to real data type!
+        if isinstance(data, Series | DataFrame) and pd.isna(self.mask_value):
+            self.mask_value = NA
+
+    def encode(self, data: DataFrame) -> DataFrame:
+        if self.mode == "mask":
+            # NOTE: frame.where(cond, other) replaces where condition is False!
+            data = data.where(data.isna() | (data >= self.lower), self.mask_value)
+            data = data.where(data.isna() | (data <= self.upper), self.mask_value)
+            return data
+        if self.mode == "clip":
+            data = data.where(data.isna() | (data >= self.lower), self.lower)
+            data = data.where(data.isna() | (data <= self.upper), self.upper)
+            return data
+
+        raise ValueError(f"Unknown mode {self.mode}")
+
+    def decode(self, data: DataFrame) -> DataFrame:
+        return data
 
 
 class Standardizer(BaseEncoder, Generic[TensorType]):
@@ -461,6 +493,19 @@ class LogEncoder(BaseEncoder):
         return result
 
 
+class LogitEncoder(BaseEncoder):
+    """Logit encoder."""
+
+    requires_fit = False
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        assert all((data > 0) & (data < 1))
+        return np.log(data / (1 - data))
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        return np.clip(1 / (1 + np.exp(-data)), 0, 1)
+
+
 class FloatEncoder(BaseEncoder):
     r"""Converts all columns of DataFrame to float32."""
 
@@ -582,425 +627,3 @@ class TensorConcatenator(BaseEncoder):
     def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
         result = torch.split(data, self.lengths, dim=self.axis)
         return tuple(x.squeeze() for x in result)
-
-
-@dataclass
-class BoundaryEncoder(BaseEncoder):
-    r"""Clip or mask values outside a given range.
-
-    If `mode='mask'`, then values outside the boundary will be replaced by `NA`.
-    If `mode='clip'`, then values outside the boundary will be clipped to it.
-    """
-
-    lower: float | np.ndarray
-    upper: float | np.ndarray
-    _: KW_ONLY = NotImplemented
-    axis: int | tuple[int, ...] = -1
-    mode: Literal["mask", "clip"] = "mask"
-    mask_value: float = float("nan")
-
-    requires_fit: ClassVar[bool] = False
-
-    def fit(self, data: DataFrame) -> None:
-        # TODO: make _nan adapt to real data type!
-        if isinstance(data, Series | DataFrame) and pd.isna(self.mask_value):
-            self.mask_value = NA
-
-    def encode(self, data: DataFrame) -> DataFrame:
-        if self.mode == "mask":
-            # NOTE: frame.where(cond, other) replaces where condition is False!
-            data = data.where(data >= self.lower, self.mask_value)
-            data = data.where(data <= self.upper, self.mask_value)
-            return data
-        if self.mode == "clip":
-            data = data.where(data >= self.lower, self.lower)
-            data = data.where(data <= self.upper, self.upper)
-            return data
-
-        raise ValueError(f"Unknown mode {self.mode}")
-
-    def decode(self, data: DataFrame) -> DataFrame:
-        return data
-
-
-METHOD: TypeAlias = Literal[
-    None, "minimum", "quartile", "match-normal", "match-uniform"
-]
-
-
-class BoxCoxEncoder(BaseEncoder):
-    r"""Encode data on logarithmic scale with offset.
-
-    .. math:: x ↦ \log(x+c)
-
-    We consider multiple ideas for how to fit the parameter $c$
-
-    1. Half the minimal non-zero value: `c = min(data[data>0])/2`
-    2. Square of the first quartile divided by the third quartile (Stahle 2002)
-    3. Value which minimizes the Wasserstein distance to
-        - a mean-0, variance-1 uniform distribution
-        - a mean-0, variance-1 normal distribution
-    """
-
-    AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
-
-    method: METHOD = "match-uniform"
-    offset: np.ndarray
-    initial_params: Optional[np.ndarray] = None
-    verbose: bool = False
-
-    def __init__(
-        self,
-        *,
-        method: METHOD = "match-uniform",
-        initial_param: Optional[np.ndarray] = None,
-    ) -> None:
-
-        if method not in self.AVAILABLE_METHODS:
-            raise ValueError(f"{method=} unknown. Available: {self.AVAILABLE_METHODS}")
-        if method is None and initial_param is None:
-            raise ValueError("Needs to provide initial param if no fitting.")
-
-        self.method = method
-        self.initial_param = initial_param
-        super().__init__()
-
-    @staticmethod
-    def construct_loss_wasserstein_uniform(
-        x: NDArray, a: float = -np.sqrt(3), b: float = +np.sqrt(3)  # noqa: B008
-    ) -> Callable[[NDArray], NDArray]:
-        r"""Construct the loss for the Uniform distribution.
-
-        .. math::
-            W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
-            F^{-1}(q) &= a + (b-a)q
-            β &= ∫ F^{-1}(q)dq = aq + ½(b-a)q²
-            C &= ∫_0^1 F^{-1}(q)^2 dq = ⅓(a^2 + ab + b^2)
-
-        Also note: (1, 1; -1, 1)(a,b) = (2, 0; 0, √12) (μ, σ)
-        Hence: a = μ-√3σ, b = μ+√3σ
-        And: μ = ½(a+b), σ² = (a-b)²/12
-
-        """
-        if (a, b) == (-np.sqrt(3), +np.sqrt(3)):
-            C = 1.0
-
-            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
-                return np.sqrt(3) * q * (q - 1)
-
-        else:
-            C = (a**2 + a * b + b**2) / 3
-
-            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
-                return a * q + (b - a) * q**2 / 2
-
-        mask = np.isnan(x)
-        unique, counts = np.unique(x[~mask], return_counts=True)
-        α = counts / np.sum(counts)
-        p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
-        β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
-        μ = (b + a) / 2
-        σ = abs(b - a) / np.sqrt(12)
-
-        def fun(c: NDArray) -> NDArray:
-            u = np.log(np.add.outer(c, unique))
-            # transform to target loc-scale
-            mean = np.mean(u, axis=-1, keepdims=True)
-            stdv = np.std(u, axis=-1, keepdims=True)
-            y = (u - mean + μ) * (σ / stdv)
-            return np.einsum("...i, i -> ...", y**2 - 2 * (β / α) * y + C, α)
-
-        return fun
-
-    @staticmethod
-    def construct_loss_wasserstein_normal(
-        x: NDArray, μ: float = 0.0, σ: float = 1.0
-    ) -> Callable[[NDArray], NDArray]:
-        r"""Construct the loss for the Normal distribution.
-
-        .. math::
-            W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
-            F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)
-            β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
-            C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
-        """
-        if (μ, σ) == (0, 1):
-            C = 1.0
-
-            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
-                return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
-
-        else:
-            C = μ**2 + σ**2
-
-            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
-                return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
-
-        mask = np.isnan(x)
-        unique, counts = np.unique(x[~mask], return_counts=True)
-        α = counts / np.sum(counts)
-        p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
-        β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
-
-        def fun(c: NDArray) -> NDArray:
-            u = np.log(np.add.outer(c, unique))
-            # transform to target loc-scale
-            mean = np.mean(u, axis=-1, keepdims=True)
-            stdv = np.std(u, axis=-1, keepdims=True)
-            y = (u - mean + μ) * (σ / stdv)
-            return np.einsum("...i, i -> ...", y**2 - 2 * (β / α) * y + C, α)
-
-        return fun
-
-    def fit(self, data: Series, /) -> None:
-        if not all(np.isnan(data) | (data >= 0)):
-            raise ValueError("Data must be in [0, 1] or NaN.")
-
-        if not data.dtype == np.float64:
-            warnings.warn(
-                "It is not recommended to use this encoder with non-float64 data. "
-                f"But {data.dtype}."
-            )
-
-        match self.method:
-            case None:
-                assert self.initial_param is not None
-                self.offset = self.initial_param
-            case "minimum":
-                self.offset = data[data > 0].min() / 2
-            case "quartile":
-                self.offset = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
-            case "match-uniform":
-                fun = self.construct_loss_wasserstein_uniform(data)
-                x0 = np.array([1.0])
-                sol = minimize(
-                    fun,
-                    x0,
-                    method="trust-constr",
-                    # jac=jac,
-                    # hess=hess,
-                    bounds=[(0, np.inf)],
-                    options={"disp": self.verbose},
-                )
-                self.offset = sol.x.squeeze()
-            case "match-normal":
-                fun = self.construct_loss_wasserstein_normal(data)
-                x0 = np.array([1.0])
-                sol = minimize(
-                    fun,
-                    x0,
-                    method="trust-constr",
-                    # jac=jac,
-                    # hess=hess,
-                    bounds=[(0, np.inf)],
-                    options={"disp": self.verbose},
-                )
-                self.offset = sol.x.squeeze()
-            case _:
-                raise ValueError(f"Unknown method {self.method}")
-
-    def encode(self, data: Series, /) -> Series:
-        assert all(np.isnan(data) | (data >= 0)), f"{data=}"
-        return np.log(data + self.offset)
-
-    def decode(self, data: Series, /) -> Series:
-        return np.maximum(np.exp(data) - self.offset, 0)
-
-
-class LogitEncoder(BaseEncoder):
-    """Logit encoder."""
-
-    requires_fit = False
-
-    def encode(self, data: DataFrame, /) -> DataFrame:
-        assert all((data > 0) & (data < 1))
-        return np.log(data / (1 - data))
-
-    def decode(self, data: DataFrame, /) -> DataFrame:
-        return np.clip(1 / (1 + np.exp(-data)), 0, 1)
-
-
-class LogitBoxCoxEncoder(BaseEncoder):
-    r"""Encode data on logarithmic scale with offset.
-
-    .. math:: x ↦ \log(x+c)
-
-    We consider multiple ideas for how to fit the parameter $c$
-
-    1. Half the minimal non-zero value: `c = min(data[data>0])/2`
-    2. Square of the first quartile divided by the third quartile (Stahle 2002)
-    3. Value which minimizes the Wasserstein distance to
-        - a mean-0, variance-1 uniform distribution
-        - a mean-0, variance-1 normal distribution
-    """
-
-    AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
-    method: METHOD = "match-normal"
-    offset: np.ndarray
-    initial_param: Optional[np.ndarray] = None
-    verbose: bool = False
-
-    def __init__(
-        self,
-        *,
-        method: METHOD = "match-normal",
-        initial_param: Optional[np.ndarray] = None,
-    ) -> None:
-
-        if method not in self.AVAILABLE_METHODS:
-            raise ValueError(f"{method=} unknown. Available: {self.AVAILABLE_METHODS}")
-        if method is None and initial_param is None:
-            raise ValueError("Needs to provide initial param if no fitting.")
-
-        self.method = method
-        self.initial_param = initial_param
-        super().__init__()
-
-    @staticmethod
-    def construct_loss_wasserstein_uniform(
-        x: NDArray, a: float = -np.sqrt(3), b: float = +np.sqrt(3)  # noqa: B008
-    ) -> Callable[[NDArray], NDArray]:
-        r"""Construct the loss for the Uniform distribution.
-
-        .. math::
-            W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
-            F^{-1}(q) &= a + (b-a)q
-            β &= ∫ F^{-1}(q)dq = aq + ½(b-a)q²
-            C &= ∫_0^1 F^{-1}(q)^2 dq = ⅓(a^2 + ab + b^2)
-
-        Also note: (1, 1; -1, 1)(a,b) = (2, 0; 0, √12) (μ, σ)
-        Hence: a = μ-√3σ, b = μ+√3σ
-        And: μ = ½(a+b), σ² = (a-b)²/12
-
-        """
-        if (a, b) == (-np.sqrt(3), +np.sqrt(3)):
-            C = 1.0
-
-            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
-                return np.sqrt(3) * q * (q - 1)
-
-        else:
-            C = (a**2 + a * b + b**2) / 3
-
-            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
-                return a * q + (b - a) * q**2 / 2
-
-        mask = np.isnan(x)
-        unique, counts = np.unique(x[~mask], return_counts=True)
-        α = counts / np.sum(counts)
-        p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
-        β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
-        μ = (b + a) / 2
-        σ = abs(b - a) / np.sqrt(12)
-
-        def fun(c: NDArray) -> NDArray:
-            u = np.log(np.add.outer(c, unique) / (1 + np.add.outer(c, -unique)))
-            # transform to target loc-scale
-            mean = np.mean(u, axis=-1, keepdims=True)
-            stdv = np.std(u, axis=-1, keepdims=True)
-            y = (u - mean + μ) * (σ / stdv)
-            return np.einsum("...i, i -> ...", y**2 - 2 * (β / α) * y + C, α)
-
-        return fun
-
-    @staticmethod
-    def construct_loss_wasserstein_normal(
-        x: NDArray, μ: float = 0.0, σ: float = 1.0
-    ) -> Callable[[NDArray], NDArray]:
-        r"""Construct the loss for the Normal distribution.
-
-        .. math::
-            W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
-            F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)
-            β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
-            C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
-        """
-        if (μ, σ) == (0, 1):
-            C = 1.0
-
-            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
-                return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
-
-        else:
-            C = μ**2 + σ**2
-
-            def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
-                return μ * q - σ * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
-
-        mask = np.isnan(x)
-        unique, counts = np.unique(x[~mask], return_counts=True)
-        α = counts / np.sum(counts)
-        p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
-        β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
-
-        def fun(c: NDArray) -> NDArray:
-            u = np.log(np.add.outer(c, unique) / (1 + np.add.outer(c, -unique)))
-            # transform to target loc-scale
-            mean = np.mean(u, axis=-1, keepdims=True)
-            stdv = np.std(u, axis=-1, keepdims=True)
-            y = (u - mean + μ) * (σ / stdv)
-            return np.einsum("...i, i -> ...", y**2 - 2 * (β / α) * y + C, α)
-
-        return fun
-
-    def fit(self, data: Series, /) -> None:
-        if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
-            raise ValueError("Data must be in [0, 1] or NaN.")
-
-        if not data.dtype == np.float64:
-            warnings.warn(
-                "It is not recommended to use this encoder with non-float64 data. "
-                f"But {data.dtype}."
-            )
-
-        match self.method:
-            case None:
-                assert self.initial_param is not None
-                self.offset = self.initial_param
-            case "minimum":
-                lower = data[data > 0].min() / 2
-                upper = (1 - data[data < 1].max()) / 2
-                self.offset = (lower + upper) / 2
-            case "quartile":
-                lower = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
-                upper = (
-                    (1 - np.quantile(data, 0.75)) / (1 - np.quantile(data, 0.25))
-                ) ** 2
-                self.offset = (lower + upper) / 2
-            case "match-uniform":
-                fun = self.construct_loss_wasserstein_uniform(data)
-                x0 = np.array([1.0])
-                sol = minimize(
-                    fun,
-                    x0,
-                    method="trust-constr",
-                    # jac=jac,
-                    # hess=hess,
-                    bounds=[(0, np.inf)],
-                    options={"disp": False},
-                )
-                self.offset = sol.x.squeeze()
-            case "match-normal":
-                fun = self.construct_loss_wasserstein_normal(data)
-                x0 = np.array([1.0])
-                sol = minimize(
-                    fun,
-                    x0,
-                    method="trust-constr",
-                    # jac=jac,
-                    # hess=hess,
-                    bounds=[(0, np.inf)],
-                    options={"disp": False},
-                )
-                self.offset = sol.x.squeeze()
-            case _:
-                raise ValueError(f"Unknown method {self.method}")
-
-    def encode(self, data: Series, /) -> Series:
-        assert all(np.isnan(data) | ((data >= 0) & (data <= 1))), f"{data=}"
-        return np.log((data + self.offset) / (1 - data + self.offset))
-
-    def decode(self, data: Series, /) -> Series:
-        ey = np.exp(-data)
-        r = (1 + (1 - ey) * self.offset) / (1 + ey)
-        return np.clip(r, 0, 1)

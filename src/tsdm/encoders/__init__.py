@@ -128,8 +128,8 @@ __all__ = [
     "IntEncoder",
     "LinearScaler",
     "LogEncoder",
-    "LogitEncoder",
     "LogitBoxCoxEncoder",
+    "LogitEncoder",
     "MappingEncoder",
     "MinMaxScaler",
     "PeriodicEncoder",
@@ -175,6 +175,7 @@ from tsdm.encoders.base import (
     MappingEncoder,
     ProductEncoder,
 )
+from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.functional import (
     FUNCTIONAL_ENCODERS,
     SKLEARN_FUNCTIONAL_ENCODERS,
@@ -182,12 +183,10 @@ from tsdm.encoders.functional import (
 )
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
-    BoxCoxEncoder,
     FloatEncoder,
     IntEncoder,
     LinearScaler,
     LogEncoder,
-    LogitBoxCoxEncoder,
     LogitEncoder,
     MinMaxScaler,
     Standardizer,
