@@ -33,6 +33,7 @@ from tsdm.encoders.base import BaseEncoder
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.strings import repr_mapping
 from tsdm.utils.types import PandasObject, PathType
+from tsdm.utils.types.dtypes import TORCH_DTYPES
 from tsdm.utils.types.protocols import NTuple
 
 BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
@@ -235,6 +236,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         else:
             new_index = MultiIndex.from_frame(encoded_inds)
             encoded = encoded_cols.set_index(new_index)
+        encoded = encoded[self.columns]
         return encoded
 
     def decode(self, data: DataFrame, /) -> DataFrame:
@@ -291,7 +293,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             "column_encoders": self.column_encoders,
             "index_encoders": self.index_encoders,
         }
-        return repr_mapping(items, title=self.__class__.__name__)
+        return repr_mapping(items, title=self.__class__.__name__, recursive=2)
 
 
 class FrameIndexer(BaseEncoder):
@@ -845,9 +847,6 @@ class Frame2TensorDict(BaseEncoder):
 
     # Attributes
     original_index_columns: Optional[list[str]] = None
-    # original_index_dtypes: Series
-    # original_values_columns: Index
-    # original_values_dtypes: Series
     original_columns: Index
     original_dtypes: Series
 
@@ -856,19 +855,21 @@ class Frame2TensorDict(BaseEncoder):
     index_dtype: Optional[torch.dtype] = None
     device: Optional[str | torch.device] = None
     encode_index: bool = True
+    groups: dict[str, list[str]]
+    dtypes: dict[str, None | torch.dtype]
 
     def __init__(
         self,
         *,
         groups: dict[str, list[str]],
         dtypes: Optional[dict[str, str]] = None,
-        device: Optional[str | torch.device] = None,
+        device: Optional[str | torch.device | Mapping[str, str | torch.dtype]] = None,
         encode_index: bool = True,
     ) -> None:
         super().__init__()
         self.groups = groups
-        self.dtypes = dtypes
-        self.device = device
+        self.dtypes = dtypes  # type: ignore[assignment]
+        self.device = device  # type: ignore[assignment]
         self.encode_index = encode_index
 
     def __repr__(self) -> str:
@@ -908,11 +909,26 @@ class Frame2TensorDict(BaseEncoder):
             if data[self.groups[key]].dtypes.nunique() != 1:
                 raise ValueError("All members of a group must have the same dtype!")
 
+        # dtype validation
+        if not isinstance(self.dtypes, Mapping):
+            self.dtypes = {key: self.dtypes for key in self.groups}  # type: ignore[unreachable]
+        for key in self.groups:
+            if key not in self.dtypes:
+                self.dtypes[key] = None
+            elif isinstance(self.dtypes[key], str):
+                self.dtypes[key] = TORCH_DTYPES[self.dtypes[key]]  # type: ignore[index]
+            else:
+                assert isinstance(self.dtypes[key], None | torch.dtype)
+
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
         if self.encode_index:
             data = data.reset_index()
         return {
-            key: torch.tensor(data[cols].to_numpy(), device=self.device).squeeze()
+            key: torch.tensor(
+                data[cols].to_numpy(),
+                device=self.device,
+                dtype=self.dtypes[key],
+            ).squeeze()
             for key, cols in self.groups.items()
         }
 

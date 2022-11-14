@@ -122,11 +122,9 @@ def repr_object(obj: Any, /, **kwargs: Any) -> str:
         return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, **kwargs)
-    try:
-        return repr(obj)
-    # Fallback Option
-    except Exception:
-        return repr_short(obj)
+    if type(obj).__module__.split(".", maxsplit=1)[0] == "tsdm":
+        return f"{obj.__class__.__name__}()"
+    return repr(obj)
 
 
 def repr_short(obj: Any, /, **_: Any) -> str:
@@ -148,7 +146,7 @@ def repr_short(obj: Any, /, **_: Any) -> str:
         return repr_mapping(obj, recursive=False)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, recursive=False)
-    return repr(obj)
+    return repr(type(obj))
 
 
 def repr_mapping(

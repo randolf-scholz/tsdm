@@ -24,7 +24,7 @@ __all__ = [
     # DTYPES
     "NUMPY_DTYPES",
     "TORCH_DTYPES",
-    "PANDAS_DTYPES",
+    "PANDAS_NULLABLE_DTYPES",
     "PYTHON_DTYPES",
     # TYPESTRINGS
     "NUMPY_TYPESTRINGS",
@@ -317,7 +317,7 @@ PANDAS_TYPESTRINGS: Final[dict[type[ExtensionDtype], str]] = {
 }
 r"""Dictionary of all `pandas` data type typestrings."""
 
-PANDAS_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
+PANDAS_NULLABLE_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
     "boolean": pandas.BooleanDtype,
     "category": pandas.CategoricalDtype,
     "datetime64[ns, tz]": pandas.DatetimeTZDtype,  # datetime64[ns, <tz>]
