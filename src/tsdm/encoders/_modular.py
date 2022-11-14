@@ -863,13 +863,13 @@ class Frame2TensorDict(BaseEncoder):
     def __init__(
         self,
         *,
-        groups: dict[str, list[str]],
+        groups: dict[str, list[str] | EllipsisType],
         dtypes: Optional[dict[str, str]] = None,
         device: Optional[str | torch.device | Mapping[str, str | torch.dtype]] = None,
         encode_index: bool = True,
     ) -> None:
         super().__init__()
-        self.groups = groups
+        self.groups = groups  # type: ignore[assignment]
         self.dtypes = dtypes  # type: ignore[assignment]
         self.device = device  # type: ignore[assignment]
         self.encode_index = encode_index
@@ -947,7 +947,7 @@ class Frame2TensorDict(BaseEncoder):
         df = pd.concat(dfs, axis="columns")
         df = df.astype(self.original_dtypes[df.columns])
         df = df[self.original_columns.intersection(df.columns)]
-        if self.encode_index:
+        if self.encode_index and self.original_index_columns is not None:
             cols = [col for col in self.original_index_columns if col in df.columns]
             df = df.set_index(cols)
         return df

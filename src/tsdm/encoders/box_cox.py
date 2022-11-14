@@ -12,6 +12,7 @@ import warnings
 from typing import Callable, Literal, Optional, TypeAlias
 
 import numpy as np
+import pandas as pd
 from numpy import pi as PI
 from numpy._typing import NDArray
 from pandas import Series
@@ -150,7 +151,7 @@ class BoxCoxEncoder(BaseEncoder):
         return fun
 
     def fit(self, data: Series, /) -> None:
-        if not all(np.isnan(data) | (data >= 0)):
+        if not all(pd.isna(data) | (data >= 0)):
             raise ValueError("Data must be in [0, 1] or NaN.")
 
         if not data.dtype == np.float64:

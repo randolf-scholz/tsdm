@@ -6,6 +6,7 @@ import logging
 import pandas as pd
 import pytest
 from pandas import DataFrame, MultiIndex
+from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import TimeSeriesCollection
@@ -61,8 +62,8 @@ def test_kiwi_task():
 
     dataloader = task.dataloaders[0, "train"]
     batch = next(iter(dataloader))
-    assert isinstance(batch, list)
-    assert isinstance(batch[0], tuple)
+    assert isinstance(batch, list | tuple)
+    assert isinstance(batch[0], tuple | Tensor)
 
 
 def _main() -> None:
