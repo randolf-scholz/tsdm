@@ -45,7 +45,7 @@ class Sample(NamedTuple):
 
 def get_induction_time(s: Series) -> Timestamp | NAType:
     r"""Compute the induction time."""
-    # s = ts.loc[run_id, exp_id]
+    # s = ts.loc[run_id, experiment_id]
     inducer = s["InducerConcentration"]
     total_induction = inducer[-1] - inducer[0]
 

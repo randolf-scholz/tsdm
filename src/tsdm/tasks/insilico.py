@@ -44,7 +44,7 @@ class InSilicoTask(TimeSeriesTask):
         super().__init__(dataset)
 
     @staticmethod
-    def default_metric(*, targets, predictions):
+    def default_test_metric(*, targets, predictions):
         pass
 
     # def make_encoder(self, key: KeyVar, /) -> ModularEncoder:
