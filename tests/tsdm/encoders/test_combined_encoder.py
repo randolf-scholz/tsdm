@@ -71,7 +71,11 @@ def test_combined_encoder(SplitID=(0, "train")):
 
     encoder = (
         Frame2TensorDict(
-            groups={"key": ["run_id", "exp_id"], "T": ["measurement_time"], "X": ...},
+            groups={
+                "key": ["run_id", "experiment_id"],
+                "T": ["measurement_time"],
+                "X": ...,
+            },
             dtypes={"T": "float32", "X": "float32"},
             encode_index=True,
         )
@@ -80,7 +84,7 @@ def test_combined_encoder(SplitID=(0, "train")):
             column_encoders=column_encoders,
             index_encoders={
                 # "run_id": IdentityEncoder(),
-                # "exp_id": IdentityEncoder(),
+                # "experiment_id": IdentityEncoder(),
                 "measurement_time": MinMaxScaler()
                 @ TimeDeltaEncoder(),
             },

@@ -303,7 +303,7 @@ class KIWI_RUNS(MultiFrameDataset):
             for outer_key, experiment in data.items()
             for inner_key, tables in experiment.items()
         }
-        metadata = pd.concat(metadata_dict, names=["run_id", "exp_id"])
+        metadata = pd.concat(metadata_dict, names=["run_id", "experiment_id"])
         metadata = metadata.reset_index(-1, drop=True)
         metadata = metadata.drop(columns=["run_id", "experiment_id"])
 
@@ -405,7 +405,7 @@ class KIWI_RUNS(MultiFrameDataset):
         }
 
         timeseries: DataFrame = pd.concat(
-            timeseries_dict, names=["run_id", "exp_id"], verify_integrity=True
+            timeseries_dict, names=["run_id", "experiment_id"], verify_integrity=True
         )
         timeseries = timeseries.reset_index(-1, drop=True)
         timeseries = timeseries.set_index("measurement_time", append=True)
@@ -517,7 +517,9 @@ class KIWI_RUNS(MultiFrameDataset):
         # Finalize Tables
         value_features.to_parquet(self.dataset_paths["value_features"])
         timeseries = timeseries.dropna(how="all")
-        timeseries = timeseries.sort_values(["run_id", "exp_id", "measurement_time"])
+        timeseries = timeseries.sort_values(
+            ["run_id", "experiment_id", "measurement_time"]
+        )
         timeseries.to_parquet(self.dataset_paths["timeseries"])
 
 

@@ -560,7 +560,7 @@ class TimeSeriesTask(
             self.index = self.folds.columns
         if self.test_metric is NotImplemented:
             self.LOGGER.info("No test metric provided. Using default.")
-            self.test_metric = self.default_metric  # type: ignore[assignment]
+            self.test_metric = self.default_test_metric  # type: ignore[assignment]
 
         # create LazyDicts for the splits
         if self.splits is NotImplemented:
@@ -602,9 +602,13 @@ class TimeSeriesTask(
         return NotImplemented
 
     @staticmethod
-    def default_metric(*, targets, predictions):
+    def default_test_metric(*, targets: Any, predictions: Any) -> Any:
         r"""Return the test metric."""
         return NotImplemented
+
+    @staticmethod
+    def default_collate_fn(samples: list[Sample_co]) -> Batch:
+        return samples  # type: ignore[return-value]
 
     def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
         r"""Return the splits associated with the specified key."""
@@ -633,10 +637,7 @@ class TimeSeriesTask(
         self.LOGGER.info("Creating DataLoader for key=%s", key)
 
         kwargs: dict = self.dataloader_config[key]
-
         dataset = self.generators[key]
-        if dataset is NotImplemented:
-            raise ValueError("Dataset is not implemented.")
 
         # sampler
         sampler = self.samplers[key]
@@ -650,7 +651,7 @@ class TimeSeriesTask(
         collate_fn = self.collate_fns[key]
         if collate_fn is NotImplemented:
             warnings.warn(f"No collate_fn provided for key={key}. ")
-            kwargs["collate_fn"] = lambda x: x
+            kwargs["collate_fn"] = self.default_collate_fn
         else:
             kwargs["collate_fn"] = collate_fn
 

@@ -97,7 +97,7 @@ class KiwiTask(TimeSeriesTask):
         super().__init__(dataset=dataset)
 
     @staticmethod
-    def default_metric(*, targets, predictions):
+    def default_test_metric(*, targets, predictions):
         r"""TODO: implement this."""
 
     def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:
@@ -165,7 +165,7 @@ class KiwiTask(TimeSeriesTask):
         encoder = (
             Frame2TensorDict(
                 groups={
-                    "key": ["run_id", "exp_id"],
+                    "key": ["run_id", "experiment_id"],
                     "T": ["measurement_time"],
                     "X": ...,
                 },
@@ -176,7 +176,7 @@ class KiwiTask(TimeSeriesTask):
                 column_encoders=column_encoders,
                 index_encoders={
                     # "run_id": IdentityEncoder(),
-                    # "exp_id": IdentityEncoder(),
+                    # "experiment_id": IdentityEncoder(),
                     "measurement_time": MinMaxScaler()
                     @ TimeDeltaEncoder(),
                 },
