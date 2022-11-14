@@ -18,7 +18,7 @@ from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from typing import Any, NamedTuple, TypeAlias, Union, overload
 
 from tsdm.utils._utils import get_function_args, is_positional
-from tsdm.utils.strings import repr_mapping
+from tsdm.utils.strings import repr_mapping, repr_short
 from tsdm.utils.types import KeyVar, ObjectVar
 
 __logger__ = logging.getLogger(__name__)
@@ -125,7 +125,7 @@ class LazyDict(dict[KeyVar, ObjectVar]):
 
     def __repr__(self) -> str:
         r"""Return the representation of the dictionary."""
-        return repr_mapping(self, recursive=False)
+        return repr_mapping(self, repr_fun=repr_short)
 
     def __or__(self, other, /):
         # FIXME: https://github.com/python/cpython/issues/99327

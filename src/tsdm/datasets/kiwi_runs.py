@@ -253,7 +253,7 @@ class KIWI_RUNS(MultiFrameDataset):
         "timeseries": 7423431600366696406,
         "metadata": 2037390744336738142,
         "time_features": 4775909302393294764,
-        "value_features": -6386491732663357532,
+        "value_features": 2922380847858661758,
         "metadata_features": 4215379263850919231,
     }
 
@@ -475,6 +475,7 @@ class KIWI_RUNS(MultiFrameDataset):
         )
         value_features["dtype"] = timeseries.dtypes.astype("string[pyarrow]")
         value_features = value_features.astype(column_dtypes["value_features"])
+        value_features = value_features.loc[timeseries.columns]
 
         # Remove values out of bounds
         for col in timeseries.columns:

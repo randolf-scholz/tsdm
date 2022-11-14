@@ -19,12 +19,12 @@ __all__ = [
     "repr_object",
     "repr_sequence",
     "repr_sized",
-    "repr_type",
+    "repr_short",
 ]
 __ALL__ = dir() + __all__
 
-
-import builtins
+import inspect
+import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from dataclasses import Field, is_dataclass
 from functools import partial
@@ -33,10 +33,15 @@ from typing import Any, Final, Optional, overload
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 
+from tsdm.utils.constants import BUILTIN_CONSTANTS
 from tsdm.utils.types.dtypes import TYPESTRINGS, ScalarDType
 from tsdm.utils.types.protocols import Array, Dataclass, NTuple
 
+__logger__ = logging.getLogger(__name__)
+
 MAXITEMS: Final[int] = 20
+r"""Default maxitems for repr_funcs."""
+MAXITEMS_INLINE: Final[int] = 5
 r"""Default maxitems for repr_funcs."""
 LINEBREAKS: Final[bool] = True
 r"""Default linebreaks for repr_funcs."""
@@ -104,9 +109,11 @@ def dict2string(d: dict[str, Any]) -> str:
 def repr_object(obj: Any, /, **kwargs: Any) -> str:
     r"""Return a string representation of an object."""
     if isinstance(obj, str):
-        return f"'{obj}'"
-    if type(obj).__name__ in dir(builtins):
-        return str(obj)
+        return obj
+    if inspect.isclass(obj) or inspect.isbuiltin(obj):
+        return repr(obj)
+    if is_dataclass(obj):
+        return repr_dataclass(obj, **kwargs)
     if isinstance(obj, Array | Tensor | Series | DataFrame | Index):
         return repr_array(obj, **kwargs)
     if isinstance(obj, Mapping):  # type: ignore[unreachable]
@@ -115,36 +122,31 @@ def repr_object(obj: Any, /, **kwargs: Any) -> str:
         return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, **kwargs)
-    if is_dataclass(obj):
-        return repr_dataclass(obj, **kwargs)
-    try:
-        return repr(obj)
-    # Fallback Option
-    except Exception:
-        return repr_type(obj)
+    if type(obj).__module__.split(".", maxsplit=1)[0] == "tsdm":
+        return f"{obj.__class__.__name__}()"
+    return repr(obj)
 
 
-def repr_type(obj: Any, /) -> str:
+def repr_short(obj: Any, /, **_: Any) -> str:
     r"""Return a string representation of an object."""
     if isinstance(obj, str):
-        return f"'{obj}'"
-    if obj is None:
-        return str(None)
-    if obj is True:
-        return str(True)
-    if obj is False:
-        return str(False)
+        return obj
+    if inspect.isclass(obj) or inspect.isbuiltin(obj):
+        return repr(obj)
+    for item in BUILTIN_CONSTANTS:
+        if obj is item:
+            return repr(obj)
     if is_dataclass(obj):
         return repr_dataclass(obj, recursive=False)
     if isinstance(obj, NTuple):
         return repr_namedtuple(obj, recursive=False)
     if isinstance(obj, Array | DataFrame | Series):
         return repr_array(obj)
-    if isinstance(obj, Sized):  # type: ignore[unreachable]
-        return repr_sized(obj)
-    if isinstance(obj, type):
-        return obj.__name__
-    return obj.__class__.__name__ + "()"
+    if isinstance(obj, Mapping):  # type: ignore[unreachable]
+        return repr_mapping(obj, recursive=False)
+    if isinstance(obj, Sequence):
+        return repr_sequence(obj, recursive=False)
+    return repr(type(obj))
 
 
 def repr_mapping(
@@ -152,62 +154,167 @@ def repr_mapping(
     /,
     *,
     align: bool = ALIGN,
-    linebreaks: bool = LINEBREAKS,
-    maxitems: int = MAXITEMS,
+    identifier: Optional[str] = None,
+    indent: int = 0,
+    linebreaks: Optional[bool] = None,
+    maxitems: Optional[int] = None,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
-    r"""Return a string representation of a mapping object."""
-    linebreaks = linebreaks and len(obj) > 1
+    r"""Return a string representation of a mapping object.
+
+    - if recursive=True:  Name<Mapping>{key: repr_short(value), ...}
+    - if recursive=False: Name<Mapping>{key: repr_object(value), ...}
+
+
+    type only
+
+         name<Mapping>[length=3]
+
+    less less recursive:
+
+        name<Mapping>(key1, key2)
+
+    less recursive:
+
+        name<Mapping>(
+            key1: object<Mapping>(key1, key2, ...),
+            key2: object<tuple>(item1, item2, ...),
+
+
+    partial recursive:
+
+        name<Mapping>(
+            key1: object<Mapping>(key1: value1, key2: value2, ...),
+            key2: object<tuple>(item1, item2, ...),
+
+
+    fully recursive:
+
+        name<Mapping>(
+            key1: object<Mapping>(
+                     key: value,
+                  ),
+            key2: object<tuple>(
+                     key: value,
+                  ),
+    """
+    # set linebreaks
+    if linebreaks is None:
+        linebreaks = bool(recursive)
+    elif linebreaks and len(obj) < 1:
+        linebreaks = False
+
+    # set maxitems
+    if maxitems is None:
+        if linebreaks:
+            maxitems = MAXITEMS
+        else:
+            maxitems = MAXITEMS_INLINE
+
     br = "\n" if linebreaks else ""
     # key_sep = ": "
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
 
-    keys = [str(key) for key in obj.keys()]
-    max_key_length = max((len(key) for key in keys), default=0) if align else 0
-
-    items = list(obj.items())
-    title = f"{type(obj).__name__}<Mapping>" if title is None else title
-
-    # TODO: automatic linebreak detection if string length exceeds max_length
-    if not recursive:
-        to_string = repr_type
+    # set max_key_length
+    if align and linebreaks:
+        max_key_length = max((len(str(key)) for key in obj), default=0)
     else:
-        if repr_fun in RECURSIVE_REPR_FUNS:
-            repr_fun = partial(
-                repr_fun,
-                align=align,
-                linebreaks=linebreaks,
-                maxitems=maxitems,
-                padding=padding,
-                recursive=recursive if isinstance(recursive, bool) else recursive - 1,
-                repr_fun=repr_fun,
-            )
+        max_key_length = 0
 
-        def to_string(x: Any) -> str:
-            return repr_fun(x).replace("\n", br + pad)
+    # check builtin
+    if type(obj) == dict:
+        if title is None:
+            title = ""
+        if identifier is None:
+            identifier = dict.__name__
+
+    # set title
+    cls = type(obj)
+    if title is None:
+        title = cls.__name__
+
+    # set identifier
+    if identifier is None and title != cls.__name__:
+        identifier = cls.__name__
+    if identifier is None and title == cls.__name__:
+        for base in cls.__bases__:
+            if issubclass(base, Mapping):
+                identifier = base.__name__
+                break
+        else:
+            identifier = "Mapping"
+
+    # # TODO: automatic linebreak detection if string length exceeds max_length
+    # if recursive:
+    #     if repr_fun not in RECURSIVE_REPR_FUNS:
+    #         raise ValueError("Must use repr_short for recursive=True.")
+    #
+    #     to_string = partial(
+    #         repr_fun,
+    #         align=align,
+    #         indent=indent + max_key_length,
+    #         padding=padding,
+    #         recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+    #         repr_fun=repr_fun,
+    #     )
+    #
+    #     # def to_string(x: Any) -> str:
+    #     #     return repr_fun(x).replace("\n", br + pad)
+    #
+    # else:
+    #     to_string = partial(repr_short, indent=indent + max_key_length)
+
+    r = recursive if isinstance(recursive, bool) else recursive - 1 or False
+    to_string = partial(
+        repr_fun,
+        align=align,
+        indent=indent + max_key_length,
+        padding=padding,
+        recursive=r,
+        repr_fun=repr_fun,
+    )
+
+    items = [(str(key), to_string(value)) for key, value in obj.items()]
 
     # Assemble the string
-    string = title + "(" + br
+    string = f"{title}<{identifier}>" + "(" + br
     if len(obj) <= maxitems:
-        string += "".join(
-            f"{pad}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
-            for key, value in items
+        string += f"{sep}{br}".join(
+            f"{pad}{key:<{max_key_length}}: {value}" for key, value in items
         )
     else:
         string += "".join(
-            f"{pad}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
+            f"{pad}{key:<{max_key_length}}: {value}{sep}{br}"
             for key, value in items[: maxitems // 2]
         )
         string += f"{pad}...\n"
-        string += "".join(
-            f"{pad}{str(key):<{max_key_length}}: {to_string(value)}{sep}{br}"
+        string += f"{sep}{br}".join(
+            f"{pad}{key:<{max_key_length}}: {value}"
             for key, value in items[-maxitems // 2 :]
         )
-    string += ")"
+    string += br + ")"
+
+    # add indent
+    string = string.replace("\n", "\n" + " " * indent)
+
+    config = {
+        "object": type(obj).__name__,
+        "size": len(obj),
+        "align": align,
+        "identifier": identifier,
+        "indent": indent,
+        "linebreaks": linebreaks,
+        "maxitems": maxitems,
+        "padding": padding,
+        "recursive": recursive,
+        "repr_fun": repr_fun,
+        "title": title,
+    }
+    __logger__.debug("config=%s", config)
     return string
 
 
@@ -216,61 +323,152 @@ def repr_sequence(
     /,
     *,
     align: bool = ALIGN,
-    linebreaks: bool = LINEBREAKS,
-    maxitems: int = MAXITEMS,
+    identifier: Optional[str] = None,
+    indent: int = 0,
+    linebreaks: Optional[bool] = None,
+    maxitems: Optional[int] = None,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
-    r"""Return a string representation of a sequence object."""
-    linebreaks = linebreaks and len(obj) > 1
+    r"""Return a string representation of a sequence object.
+
+    - if recursive=True:  Name<Sequence>(repr_short(item1), ...)
+    - if recursive=False: Name<Sequence>(repr_object(item1), ...)
+
+    semi recursive
+
+        name<Sequence>(
+            object<Sequence>(item1, item2, ...),
+            object<tuple>(item1, item2, ...),
+            object<Mapping>(key1: value1, ...),
+        )
+
+    fully recursive:
+
+        name<Sequence>(
+            object<Sequence>(
+                1,
+                2,
+            ),
+            object<Mapping>(
+                key: value,
+            ),
+        )
+    """
+    # set linebreaks
+    if linebreaks is None:
+        linebreaks = bool(recursive)
+    elif linebreaks and len(obj) < 1:
+        linebreaks = False
+
+    # set maxitems
+    if maxitems is None:
+        if linebreaks:
+            maxitems = MAXITEMS
+        else:
+            maxitems = MAXITEMS_INLINE
+
     br = "\n" if linebreaks else ""
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
 
+    # determine brackets
     if isinstance(obj, list):
-        title, left, right = "", "[", "]"
+        left, right = "[", "]"
     elif isinstance(obj, set):
-        title, left, right = "", "{", "}"
+        left, right = "{", "}"
     elif isinstance(obj, tuple):
-        title, left, right = "", "(", ")"
+        left, right = "(", ")"
     else:
-        title = type(obj).__name__ if title is None else title
         left, right = "(", ")"
 
-    if not recursive:
-        to_string = repr_fun
-    else:
-        if repr_fun in RECURSIVE_REPR_FUNS:
-            repr_fun = partial(
-                repr_fun,
-                align=align,
-                linebreaks=linebreaks,
-                maxitems=maxitems,
-                padding=padding,
-                recursive=recursive if isinstance(recursive, bool) else recursive - 1,
-                repr_fun=repr_fun,
-            )
+    # check builtin
+    for builtin in (list, tuple, set):
+        if type(obj) == builtin:
+            if title is None:
+                title = ""
+            if identifier is None:
+                identifier = builtin.__name__
 
-        def to_string(x: Any) -> str:
-            return repr_fun(x).replace("\n", br + pad)
+    # set title
+    cls = type(obj)
+    if title is None:
+        title = cls.__name__
+
+    # set identifier
+    if identifier is None and title != cls.__name__:
+        identifier = cls.__name__
+    if identifier is None and title == cls.__name__:
+        for base in cls.__bases__:
+            if issubclass(base, Mapping):
+                identifier = base.__name__
+                break
+        else:
+            identifier = "Sequence"
+    #
+    # if recursive:
+    #     if repr_fun not in RECURSIVE_REPR_FUNS:
+    #         raise ValueError("Must use repr_short for recursive=True.")
+    #
+    #     to_string = partial(
+    #         repr_fun,
+    #         align=align,
+    #         indent=indent + pad,
+    #         padding=padding,
+    #         recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+    #         repr_fun=repr_fun,
+    #     )
+    #
+    #     # def to_string(x: Any) -> str:
+    #     #     return repr_fun(x).replace("\n", br + pad)
+    #
+    # else:
+    #     to_string = partial(repr_short, indent=indent + pad)
+
+    r = recursive if isinstance(recursive, bool) else recursive - 1 or False
+    to_string = partial(
+        repr_fun,
+        align=align,
+        indent=indent + padding,
+        padding=padding,
+        recursive=r,
+        repr_fun=repr_fun,
+    )
 
     # Assemble the string
-    string = title + left + br
+    string = f"{title}<{identifier}>" + left + br
     if len(obj) <= maxitems:
-        string += "".join(f"{pad}{to_string(value)}{sep}{br}" for value in obj)
+        string += f"{sep}{br}".join(f"{pad}{to_string(value)}" for value in obj)
     else:
         string += "".join(
             f"{pad}{to_string(value)}{sep}{br}" for value in obj[: maxitems // 2]
         )
         string += f"{pad}...{sep}" + br
-        string += "".join(
-            f"{pad}{to_string(value)}{sep}{br}" for value in obj[-maxitems // 2 :]
+        string += f"{sep}{br}".join(
+            f"{pad}{to_string(value)}" for value in obj[-maxitems // 2 :]
         )
-    string = string[: -len(sep)]
-    string += right
+    # string = string[: -len(sep)]
+    string += br + right
 
+    # add indent
+    string = string.replace("\n", "\n" + " " * indent)
+
+    config = {
+        "object": type(obj).__name__,
+        "size": len(obj),
+        "align": align,
+        "identifier": identifier,
+        "indent": indent,
+        "linebreaks": linebreaks,
+        "maxitems": maxitems,
+        "padding": padding,
+        "recursive": recursive,
+        "repr_fun": repr_fun,
+        "title": title,
+    }
+    __logger__.debug("config=%s", config)
     return string
 
 
@@ -279,23 +477,26 @@ def repr_dataclass(
     /,
     *,
     align: bool = ALIGN,
-    linebreaks: bool = LINEBREAKS,
-    maxitems: int = MAXITEMS,
+    identifier: Optional[str] = None,
+    indent: int = 0,
+    linebreaks: Optional[bool] = None,
+    maxitems: Optional[int] = None,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
-    identifier: Optional[str] = None,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
-    """Return a string representation of a dataclass object."""
+    r"""Return a string representation of a dataclass object.
+
+    - recursive=True:  Name<dataclass>(item1, item2, ...)
+    - recursive=False: Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)
+    """
     assert is_dataclass(obj), f"Object {obj} is not a dataclass."
     assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."
     fields: dict[str, Field] = obj.__dataclass_fields__
 
     cls = type(obj)
-
-    if title is None:
-        title = cls.__name__
+    title = cls.__name__ if title is None else title
 
     if identifier is None and title != cls.__name__:
         identifier = cls.__name__
@@ -307,18 +508,28 @@ def repr_dataclass(
         else:
             identifier = "dataclass"
 
-    title = f"{title}<{identifier}>"
-
-    if not recursive:
-        return title
-
-    return repr_mapping(
-        {key: getattr(obj, key) for key, field in fields.items() if field.repr},
+    if recursive:
+        return repr_mapping(
+            {key: getattr(obj, key) for key, field in fields.items() if field.repr},
+            align=align,
+            identifier=identifier,
+            indent=indent,
+            linebreaks=linebreaks,
+            maxitems=maxitems,
+            padding=padding,
+            recursive=recursive,
+            repr_fun=repr_fun,
+            title=title,
+        )
+    return repr_sequence(
+        [key for key, field in fields.items() if field.repr],
         align=align,
+        identifier=identifier,
+        indent=indent,
         linebreaks=linebreaks,
         maxitems=maxitems,
         padding=padding,
-        recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+        recursive=recursive,
         repr_fun=repr_fun,
         title=title,
     )
@@ -329,35 +540,58 @@ def repr_namedtuple(
     /,
     *,
     align: bool = ALIGN,
-    linebreaks: bool = LINEBREAKS,
-    maxitems: int = MAXITEMS,
+    identifier: Optional[str] = None,
+    indent: int = 0,
+    linebreaks: Optional[bool] = None,
+    maxitems: Optional[int] = None,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
 ) -> str:
-    r"""Return a string representation of a namedtuple object."""
+    r"""Return a string representation of a namedtuple object.
+
+    - recursive=True:  Name<tuple>(item1, item2, ...)
+    - recursive=False: Name<tuple>(item1=repr(item1), item2=repr(item2), ...)
+    """
     assert isinstance(obj, tuple), f"Object {obj} is not a namedtuple."
     assert isinstance(obj, NTuple), f"Object {obj} is not a namedtuple."
-    title = f"{type(obj).__name__}<tuple>" if title is None else title
+    title = type(obj).__name__ if title is None else title
+    identifier = "tuple" if identifier is None else identifier
 
-    if not recursive:
-        return title
-
-    return repr_mapping(
-        obj._asdict(),
+    if recursive:
+        return repr_mapping(
+            obj._asdict(),
+            align=align,
+            identifier=identifier,
+            indent=indent,
+            linebreaks=linebreaks,
+            maxitems=maxitems,
+            padding=padding,
+            recursive=recursive,
+            repr_fun=repr_fun,
+            title=title,
+        )
+    return repr_sequence(
+        obj._fields,
         align=align,
+        identifier=identifier,
+        indent=indent,
         linebreaks=linebreaks,
         maxitems=maxitems,
         padding=padding,
-        recursive=recursive if isinstance(recursive, bool) else recursive - 1,
+        recursive=recursive,
         repr_fun=repr_fun,
         title=title,
     )
 
 
 def repr_array(
-    obj: Array | DataFrame | Series | Tensor, /, *, title: Optional[str] = None
+    obj: Array | DataFrame | Series | Tensor,
+    /,
+    *,
+    title: Optional[str] = None,
+    **_: Any,
 ) -> str:
     r"""Return a string representation of an array object."""
     assert isinstance(
