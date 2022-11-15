@@ -29,7 +29,6 @@ from torch import Tensor, nn
 from torch.linalg import cond, slogdet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm.autonotebook import tqdm
 
 from tsdm.linalg import (
     col_corr,
@@ -49,6 +48,8 @@ from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
+
+# from tqdm.autonotebook import tqdm
 
 
 @torch.no_grad()
@@ -377,7 +378,7 @@ class StandardLogger:
         r"""Get all predictions for a dataloader."""
         predics = []
         targets = []
-        for batch in tqdm(dataloader):
+        for batch in dataloader:
             result = self.predict_fn(self.model, batch)
 
             if isinstance(result, dict):
