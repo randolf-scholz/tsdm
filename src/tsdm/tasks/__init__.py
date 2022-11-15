@@ -50,7 +50,6 @@ __all__ = [
     "USHCN_DeBrouwer2019",
     "Kiwi_BioProcessTask",
     # Task Datasets
-    "KiwiSampleGenerator",
     "KiwiTask",
     "InSilicoSampleGenerator",
     "InSilicoTask",
@@ -67,7 +66,7 @@ from tsdm.tasks.insilico import InSilicoSampleGenerator, InSilicoTask
 from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
-from tsdm.tasks.kiwi_task import KiwiSampleGenerator, KiwiTask
+from tsdm.tasks.kiwi_task import KiwiTask
 from tsdm.tasks.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.tasks.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.tasks.ushcn_debrouwer2019 import USHCN_DeBrouwer2019

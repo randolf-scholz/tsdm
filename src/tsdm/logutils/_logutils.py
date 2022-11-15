@@ -12,7 +12,6 @@ __all__ = [
     "StandardLogger",
 ]
 
-
 import shutil
 import warnings
 from collections.abc import Callable, Mapping, Sequence
@@ -30,6 +29,7 @@ from torch import Tensor, nn
 from torch.linalg import cond, slogdet
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
+from tqdm.autonotebook import tqdm
 
 from tsdm.linalg import (
     col_corr,
@@ -377,7 +377,7 @@ class StandardLogger:
         r"""Get all predictions for a dataloader."""
         predics = []
         targets = []
-        for batch in dataloader:
+        for batch in tqdm(dataloader):
             result = self.predict_fn(self.model, batch)
 
             if isinstance(result, dict):
@@ -398,7 +398,11 @@ class StandardLogger:
                 targets.append(result[0])
                 predics.append(result[1])
 
-        return ResultTuple(targets=torch.cat(targets), predics=torch.cat(predics))
+        masks = [~torch.isnan(p) for p in predics]
+        return ResultTuple(
+            targets=torch.cat([t[m] for t, m in zip(targets, masks)]).squeeze(),
+            predics=torch.cat([p[m] for p, m in zip(predics, masks)]).squeeze(),
+        )
 
     def make_checkpoint(self, i: int, /) -> None:
         r"""Make checkpoint."""
