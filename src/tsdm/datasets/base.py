@@ -696,10 +696,10 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     def download_table(self, *, key: KeyVar = NotImplemented) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
-        assert key is not NotImplemented, "key must be provided!"
 
         rawdata_files: Nested[Optional[PathType]]
         if isinstance(self.rawdata_files, Mapping):
+            assert key is not NotImplemented, "key must be provided!"
             rawdata_files = self.rawdata_files[key]
         else:
             rawdata_files = self.rawdata_files

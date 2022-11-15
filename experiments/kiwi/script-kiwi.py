@@ -5,7 +5,7 @@
 
 # ## Input Parsing (for command line use)
 
-# In[ ]:
+# In[1]:
 
 
 import argparse
@@ -42,7 +42,7 @@ print(ARGS)
 
 # ### Load from config file if provided
 
-# In[ ]:
+# In[2]:
 
 
 import yaml
@@ -58,7 +58,7 @@ print(ARGS)
 
 # ## Global Variables
 
-# In[ ]:
+# In[3]:
 
 
 import logging
@@ -90,7 +90,7 @@ HTML("<style>.jp-OutputArea-prompt:empty {padding: 0; border: 0;}</style>")
 
 # ## Hyperparameter choices
 
-# In[ ]:
+# In[4]:
 
 
 if ARGS.seed is not None:
@@ -105,7 +105,7 @@ OPTIMIZER_CONFIG = {
 }
 
 hparam_dict = {
-    "dataset": (DATASET := f"KIWI"),
+    "dataset": (DATASET := "KIWI"),
     "model": (MODEL_NAME := "LinODEnet"),
     "fold": ARGS.fold,
     "seed": ARGS.seed,
@@ -117,7 +117,7 @@ hparam_dict = {
 } | OPTIMIZER_CONFIG
 
 
-# In[ ]:
+# In[5]:
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -125,7 +125,6 @@ CONFIG_STR = f"f={ARGS.fold}_bs={ARGS.batch_size}_lr={ARGS.learn_rate}_hs={ARGS.
 RUN_ID = ARGS.run_id or datetime.now().isoformat(timespec="seconds")
 CFG_ID = 0 if ARGS.config is None else ARGS.config[1]
 HOME = Path.cwd()
-print(f"Using {HOME} as base directory")
 
 LOGGING_DIR = HOME / "tensorboard" / DATASET / MODEL_NAME / RUN_ID / CONFIG_STR
 CKPOINT_DIR = HOME / "checkpoints" / DATASET / MODEL_NAME / RUN_ID / CONFIG_STR
@@ -137,7 +136,7 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ## Initialize Task
 
-# In[ ]:
+# In[6]:
 
 
 from tsdm.tasks import KiwiTask
@@ -147,7 +146,7 @@ TASK = KiwiTask()
 
 # ## Initialize DataLoaders
 
-# In[ ]:
+# In[7]:
 
 
 # from tsdm.tasks.mimic_iii_debrouwer2019 import mimic_collate as task_collate_fn
@@ -182,16 +181,18 @@ TEST_LOADER = TASK.make_dataloader((ARGS.fold, "test"), **dloader_config_infer)
 EVAL_LOADERS = {"train": INFER_LOADER, "valid": VALID_LOADER, "test": TEST_LOADER}
 
 
-# ## Serialize the encoder
+# # Serialize Encoder
 
-# In[ ]:
+# In[8]:
 
 
-with open(CKPOINT_DIR / "trained_encoder.pickle", "wb") as file:
-    pickle.dump(TASK.encoders[ARGS.fold, "train"], file)
+ENCODER = TASK.encoders[ARGS.fold, "train"]
 
-# validate loading
-with open(CKPOINT_DIR / "trained_encoder.pickle", "rb") as file:
+with open(CKPOINT_DIR / "encoder.pickle", "wb") as file:
+    pickle.dump(ENCODER, file)
+
+# check loading
+with open(CKPOINT_DIR / "encoder.pickle", "rb") as file:
     _ = pickle.load(file)
 
 
@@ -333,8 +334,6 @@ for epoch in trange(1, ARGS.epochs, desc="Epoch", position=0):
         # Logging
         LOGGER.log_batch_end(total_num_batches, targets=Y, predics=YHAT)
     LOGGER.log_epoch_end(epoch)
-    # LOGGER.log_hparams(epoch)
-    # LOGGER.log_history(epoch)
 
 LOGGER.log_history(CFG_ID)
 LOGGER.log_hparams(CFG_ID)

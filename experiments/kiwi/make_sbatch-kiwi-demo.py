@@ -49,7 +49,7 @@ DOMAIN = socket.getfqdn().split(".", 1)[1]
 CONFIG_FILE = CONFIG_DIR / CFG_ID
 
 CFG = {
-    "fold": [0, 1, 2, 3, 4],
+    "fold": [0],
     "epochs": [100],
     "batch_size": [64],
     "learn_rate": [0.001],
