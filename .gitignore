@@ -8,7 +8,6 @@
 /dev/**/*.pdf
 /docs/apidoc/
 
-
 # Ignore pickle files
 *.pickle
 
@@ -28,10 +27,9 @@ pics/
 # tensorboard run data
 runs/
 model_checkpoints/
-
-# model checkpoints
 checkpoints/
 *.pt
+tensorboard/
 
 # latex aux files
 __tex__/

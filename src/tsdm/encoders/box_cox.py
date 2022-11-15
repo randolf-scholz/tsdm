@@ -20,6 +20,7 @@ from scipy.optimize import minimize
 from scipy.special import erfinv
 
 from tsdm.encoders.base import BaseEncoder
+from tsdm.utils.strings import repr_mapping
 
 METHOD: TypeAlias = Literal[
     None, "minimum", "quartile", "match-normal", "match-uniform"
@@ -43,7 +44,7 @@ class BoxCoxEncoder(BaseEncoder):
     AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
 
     method: METHOD = "match-uniform"
-    offset: np.ndarray
+    offset: float
     initial_params: Optional[np.ndarray] = None
     verbose: bool = False
 
@@ -62,6 +63,13 @@ class BoxCoxEncoder(BaseEncoder):
         self.method = method
         self.initial_param = initial_param
         super().__init__()
+
+    def __repr__(self) -> str:
+        return repr_mapping(
+            {"method": self.method, "offset": self.offset},
+            title=self.__class__.__name__,
+            identifier="Encoder",
+        )
 
     @staticmethod
     def construct_loss_wasserstein_uniform(
@@ -163,11 +171,11 @@ class BoxCoxEncoder(BaseEncoder):
         match self.method:
             case None:
                 assert self.initial_param is not None
-                self.offset = self.initial_param
+                offset = self.initial_param
             case "minimum":
-                self.offset = data[data > 0].min() / 2
+                offset = data[data > 0].min() / 2
             case "quartile":
-                self.offset = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
+                offset = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
             case "match-uniform":
                 fun = self.construct_loss_wasserstein_uniform(data)
                 x0 = np.array([1.0])
@@ -180,7 +188,7 @@ class BoxCoxEncoder(BaseEncoder):
                     bounds=[(0, np.inf)],
                     options={"disp": self.verbose},
                 )
-                self.offset = sol.x.squeeze()
+                offset = sol.x.squeeze()
             case "match-normal":
                 fun = self.construct_loss_wasserstein_normal(data)
                 x0 = np.array([1.0])
@@ -193,9 +201,10 @@ class BoxCoxEncoder(BaseEncoder):
                     bounds=[(0, np.inf)],
                     options={"disp": self.verbose},
                 )
-                self.offset = sol.x.squeeze()
+                offset = sol.x.squeeze()
             case _:
                 raise ValueError(f"Unknown method {self.method}")
+        self.offset = float(np.array(offset).item())
 
     def encode(self, data: Series, /) -> Series:
         assert all(np.isnan(data) | (data >= 0)), f"{data=}"
@@ -220,8 +229,10 @@ class LogitBoxCoxEncoder(BaseEncoder):
     """
 
     AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
+
     method: METHOD = "match-normal"
-    offset: np.ndarray
+    offset: float
+
     initial_param: Optional[np.ndarray] = None
     verbose: bool = False
 
@@ -240,6 +251,13 @@ class LogitBoxCoxEncoder(BaseEncoder):
         self.method = method
         self.initial_param = initial_param
         super().__init__()
+
+    def __repr__(self) -> str:
+        return repr_mapping(
+            {"method": self.method, "offset": self.offset},
+            title=self.__class__.__name__,
+            identifier="Encoder",
+        )
 
     @staticmethod
     def construct_loss_wasserstein_uniform(
@@ -341,17 +359,17 @@ class LogitBoxCoxEncoder(BaseEncoder):
         match self.method:
             case None:
                 assert self.initial_param is not None
-                self.offset = self.initial_param
+                offset = self.initial_param
             case "minimum":
                 lower = data[data > 0].min() / 2
                 upper = (1 - data[data < 1].max()) / 2
-                self.offset = (lower + upper) / 2
+                offset = (lower + upper) / 2
             case "quartile":
                 lower = (np.quantile(data, 0.25) / np.quantile(data, 0.75)) ** 2
                 upper = (
                     (1 - np.quantile(data, 0.75)) / (1 - np.quantile(data, 0.25))
                 ) ** 2
-                self.offset = (lower + upper) / 2
+                offset = (lower + upper) / 2
             case "match-uniform":
                 fun = self.construct_loss_wasserstein_uniform(data)
                 x0 = np.array([1.0])
@@ -364,7 +382,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
                     bounds=[(0, np.inf)],
                     options={"disp": False},
                 )
-                self.offset = sol.x.squeeze()
+                offset = sol.x.squeeze()
             case "match-normal":
                 fun = self.construct_loss_wasserstein_normal(data)
                 x0 = np.array([1.0])
@@ -377,9 +395,10 @@ class LogitBoxCoxEncoder(BaseEncoder):
                     bounds=[(0, np.inf)],
                     options={"disp": False},
                 )
-                self.offset = sol.x.squeeze()
+                offset = sol.x.squeeze()
             case _:
                 raise ValueError(f"Unknown method {self.method}")
+        self.offset = float(np.array(offset).item())
 
     def encode(self, data: Series, /) -> Series:
         assert all(np.isnan(data) | ((data >= 0) & (data <= 1))), f"{data=}"
