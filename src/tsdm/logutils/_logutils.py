@@ -342,20 +342,21 @@ class StandardLogger:
 
     writer: SummaryWriter
     model: nn.Module
-    metrics: dict[str, Callable[[Tensor, Tensor], Tensor]]
     optimizer: torch.optim.Optimizer
+
+    checkpoint_dir: Path
     dataloaders: Mapping[str, DataLoader]
     hparam_dict: dict[str, Any]
+    metrics: dict[str, Callable[[Tensor, Tensor], Tensor]]
     predict_fn: Union[
         Callable[[nn.Module, tuple], tuple],
         Callable[[nn.Module, tuple], ResultTuple],
         Callable[[nn.Module, tuple], ResultDict],
     ]
-    checkpoint_dir: Path
+    results_dir: Optional[Path] = None
 
     history: DataFrame = field(init=False)
     logging_dir: Path = field(init=False)
-    results_dir: Optional[Path] = None
 
     _warned_tuple: bool = False
 
