@@ -19,7 +19,7 @@ from pandas import Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
 
-from tsdm.encoders import BaseEncoder
+from tsdm.encoders.base import BaseEncoder
 
 METHOD: TypeAlias = Literal[
     None, "minimum", "quartile", "match-normal", "match-uniform"

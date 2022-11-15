@@ -74,7 +74,7 @@ def test_unpad_sequence_nan(tensors: list[Tensor]) -> None:
     for i, t in enumerate(tensors):
         if len(t) > 0:
             tensors[i][0] = padding_value
-    print(tensors)
+
     # if len(tensors)
     padded_seq = pad_sequence(tensors, batch_first=True, padding_value=padding_value)
     unpadded = unpad_sequence(padded_seq, batch_first=True, padding_value=padding_value)

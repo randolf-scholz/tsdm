@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.datasets.base import MultiFrameDataset, TimeSeriesCollection
 from tsdm.utils.constants import NULL_VALUES
@@ -303,7 +303,7 @@ class KIWI_RUNS(MultiFrameDataset):
             for outer_key, experiment in data.items()
             for inner_key, tables in experiment.items()
         }
-        metadata = pd.concat(metadata_dict, names=["run_id", "exp_id"])
+        metadata = pd.concat(metadata_dict, names=["run_id", "experiment_id"])
         metadata = metadata.reset_index(-1, drop=True)
         metadata = metadata.drop(columns=["run_id", "experiment_id"])
 
@@ -405,7 +405,7 @@ class KIWI_RUNS(MultiFrameDataset):
         }
 
         timeseries: DataFrame = pd.concat(
-            timeseries_dict, names=["run_id", "exp_id"], verify_integrity=True
+            timeseries_dict, names=["run_id", "experiment_id"], verify_integrity=True
         )
         timeseries = timeseries.reset_index(-1, drop=True)
         timeseries = timeseries.set_index("measurement_time", append=True)
@@ -517,12 +517,23 @@ class KIWI_RUNS(MultiFrameDataset):
         # Finalize Tables
         value_features.to_parquet(self.dataset_paths["value_features"])
         timeseries = timeseries.dropna(how="all")
-        timeseries = timeseries.sort_values(["run_id", "exp_id", "measurement_time"])
+        timeseries = timeseries.sort_values(
+            ["run_id", "experiment_id", "measurement_time"]
+        )
         timeseries.to_parquet(self.dataset_paths["timeseries"])
 
 
 class KiwiDataset(TimeSeriesCollection):
-    """The KIWI dataset."""
+    r"""The KIWI dataset."""
+    index: MultiIndex
+    timeseries: DataFrame
+    metadata: DataFrame
+    global_metadata: None
+    index_features: DataFrame
+    time_features: DataFrame
+    value_features: DataFrame
+    metadata_features: DataFrame
+    global_features: None
 
     def __init__(self) -> None:
         ds = KIWI_RUNS()
@@ -531,7 +542,7 @@ class KiwiDataset(TimeSeriesCollection):
             index=ds.index,
             timeseries=ds.timeseries,
             metadata=ds.metadata,
-            global_metadata=ds.global_metadata,
+            global_metadata=None,
             index_features=ds.index_features,
             time_features=ds.time_features,
             value_features=ds.value_features,

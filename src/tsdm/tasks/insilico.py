@@ -31,7 +31,8 @@ class InSilicoSampleGenerator(TimeSeriesSampleGenerator):
 
 class InSilicoTask(TimeSeriesTask):
     r"""Task for the KIWI dataset."""
-    # dataset: TimeSeriesCollection = KiwiDataset()
+    dataset: TimeSeriesCollection
+
     observation_horizon: str = "2h"
     r"""The number of datapoints observed during prediction."""
     forecasting_horizon: str = "1h'"
@@ -43,7 +44,7 @@ class InSilicoTask(TimeSeriesTask):
         super().__init__(dataset)
 
     @staticmethod
-    def default_metric(*, targets, predictions):
+    def default_test_metric(*, targets, predictions):
         pass
 
     # def make_encoder(self, key: KeyVar, /) -> ModularEncoder:
