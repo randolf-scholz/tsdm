@@ -2,6 +2,7 @@
 r"""Test the standardizer encoder."""
 
 import logging
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -126,6 +127,15 @@ def test_combined_encoder(SplitID=(0, "train")):
                 assert upper == 100, "Upper bound violated"
             case "absolute":
                 assert lower == 0, "Lower bound violated"
+
+    # test_serialization
+    with open("trained_encoder.pickle", "wb") as file:
+        pickle.dump(encoder, file)
+
+    with open("trained_encoder.pickle", "rb") as file:
+        loaded_encoder = pickle.load(file)
+
+    assert isinstance(loaded_encoder, BaseEncoder)
 
 
 def _main() -> None:
