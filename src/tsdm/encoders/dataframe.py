@@ -848,7 +848,7 @@ class Frame2TensorDict(BaseEncoder):
     """
 
     # Attributes
-    original_index_columns: Optional[list[str]] = None
+    original_index_columns: Index | list[str]
     original_columns: Index
     original_dtypes: Series
 
@@ -856,7 +856,7 @@ class Frame2TensorDict(BaseEncoder):
     column_dtype: Optional[torch.dtype] = None
     index_dtype: Optional[torch.dtype] = None
     device: Optional[str | torch.device] = None
-    encode_index: bool = True
+    encode_index: Optional[bool] = None
     groups: dict[str, list[str]]
     dtypes: dict[str, None | torch.dtype]
 
@@ -866,7 +866,7 @@ class Frame2TensorDict(BaseEncoder):
         groups: dict[str, list[str] | EllipsisType],
         dtypes: Optional[dict[str, str]] = None,
         device: Optional[str | torch.device | Mapping[str, str | torch.dtype]] = None,
-        encode_index: bool = True,
+        encode_index: Optional[bool] = None,
     ) -> None:
         super().__init__()
         self.groups = groups  # type: ignore[assignment]
@@ -878,15 +878,27 @@ class Frame2TensorDict(BaseEncoder):
         return repr_mapping(self.groups, title=self.__class__.__name__)
 
     def fit(self, data: DataFrame, /) -> None:
+        index = data.index.to_frame()
+        self.original_index_columns = index.columns.to_list()
+
+        # if None try to autodetect if index-columns are being used
+        if self.encode_index is None:
+            self.encode_index = bool(
+                set()
+                .union(*(v for v in self.groups.values() if v is not Ellipsis))
+                .intersection(self.original_index_columns)
+            )
+
         if self.encode_index:
-            index = data.index.to_frame()
-            self.original_index_columns = index.columns.to_list()
             data = data.reset_index()
+
+        if len(data.columns) != len(data.columns.unique()):
+            raise ValueError("Duplicate columns currently not supported!")
 
         self.original_dtypes = data.dtypes
         self.original_columns = data.columns
 
-        # Impute Ellipsis
+        # Impute Ellipsis. Make sure that the order is preserved.
         cols: set[str] = set(data.columns)
         ellipsis_key: Optional[str] = None
         for key in self.groups:
@@ -894,10 +906,18 @@ class Frame2TensorDict(BaseEncoder):
                 ellipsis_key = key
             else:
                 s = set(self.groups[key])
-                assert s.issubset(cols), f"{s} is not a subset of {cols}"
+                if not s.issubset(cols):
+                    if s.issubset(cols | set(self.original_index_columns)):
+                        raise ValueError(
+                            "Index columns are not allowed in groups. "
+                            "Please use encode_index=True."
+                        )
+                    raise ValueError(
+                        f"{s} is not a subset of {cols}! Maybe you have a typo?"
+                    )
                 cols -= s
         if ellipsis_key is not None:
-            self.groups[ellipsis_key] = list(cols)
+            self.groups[ellipsis_key] = [col for col in data.columns if col in cols]
             cols -= cols
 
         if cols:

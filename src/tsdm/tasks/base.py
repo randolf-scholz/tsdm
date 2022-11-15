@@ -135,63 +135,6 @@ OUQ4WHU299efPWyScF63%2B%2BhzyHJysybgI8y7R3oMhkLfg%2BddekpYKD%2FAvUfuhIt7h5ElMSok
 AYxty1%2FF5Yk6xvYf1pa3Yk7BIYFvo0hzlHIt6M1U1R7QgYWOZOLSHnYQa6ml2rsesYWZTnsVPLmgJLsnhOetsQt4JHYkOVwg%2Bh5jBeGWAC17FxPW5Oj
 IVwXvlf6HkOzzl5cnFl1NkbXwuPDHwu7X3NiOMmWfnvqj6nqDBMC7BkG2f7fMQb1Oc0witF3el5sfv0Qu6K0KCbzVF1qiWKgig%2BewNM%2FqIfMMw%3D%3
 D)
-
-
-▄▄▄▄▄▄▄ ▄   ▄▄    ▄▄▄▄  ▄  ▄ ▄▄ ▄ ▄ ▄▄▄▄  ▄▄▄▄ ▄▄ ▄▄▄  ▄ ▄ ▄▄▄  ▄▄ ▄▄▄▄ ▄ ▄▄▄     ▄  ▄▄▄   ▄▄▄      ▄ ▄▄▄▄▄▄▄
-█ ▄▄▄ █ █ █▀█  ▀  ▄█▀ ▄ ▀ █▀▄▀█▄▀█ ▀ ████ █▄▀▀▄ ▀ █ ▄ █▄ ▀ ▀▀ ▀ ▄▀▀▄ ▀▄▀  █ ▄▀▀█ ▀ ▀▀ ▀ ▄█▀█▀█▄  ▀█▄█ █ ▄▄▄ █
-█ ███ █ ▀▀██  ▀▀▀ ▄█▄ ▄█▀▀  ██▄██▄▀▀ ▄█▄█▀ █▄▀▄   ▄▄▄█▄█▄▀▄▄▄█ ███ █  ▀ ▄ ▄ █▄▄▄▄ ▀ █ ▄█▀▄  ▄██▀ ███▄ █ ███ █
-█▄▄▄▄▄█ █▀▄ █▀█▀█ █▀█▀▄▀▄ █ █ ▄ █ ▄ █ █ ▄▀█▀▄▀▄ █ █ █ ▄ █▀▄ █ █▀▄▀█ ▄▀▄▀▄ █▀█ ▄ █▀▄ ▄ █▀█▀█▀█▀▄ ▄ ▄▀▄ █▄▄▄▄▄█
-▄▄  ▄▄▄  ▄ █ ▄█▄▄█▄ ▄ ▄  ▄▄ █▄▄▄█   ▀ ▀▄█▄▄▀▄█     ██▄▄▄█ ▀▄ ▄▄▄▀▀▀ ▄█▀█▄ ▄ █▄▄▄██▀▄▄█▄▀███▀▄ █▄ ▀█▀   ▄ ▄▄▄▄
-▀▄▄▄█▄▄████▄██▀█▀▄▀█ ▄ ███ █ ▀ ▄▄█▄█ █   █▀█  ▄█▄█   ▀▀▄▀▀▄▄▀▄ ▄▄ ▀ █ ▄▀▀█ ▀ ▀ ▄█ ██▀▄ ▄▀▀ ▄█ ▄▀▄ ▀▄█ █   █▀
-█ ▄   ▄█▀▀█▀█ ▄█ █ █▀██▄▄  █▄▀ █▄     █ █▄▀▀  █   ▄▄▀▀█▀▄█▀▄▄ █▄████▄▀   ▀▄ █▀▀▄▄▀▄▄▄ █▄▀█▄▄▄▀█▄▄█▀█▀▄▄ █ █▄█
-▄▄▀ ▄▄▄▀▄▄▀▀▄▀▄█▀▀ ▀ ▄ ▀█▄    ▀  ▀█ ▄█ ▀   ▄▀▄▄ █▄ ▀   ▀  ▄█▀█▀▀▄ ▀█▄▀▄ ▀ ▀▀   █  █  ▄ █   ▀█ ▄▀█▄▀██▀█▄  ▄▀▀
-█▄ ▀▄▄▄█ ██▀▀▀▀▀▄▄ █  ▄█ ██▄ ▄▀▀▄▄▀ ▄▀▄██ ▀█ ▄▄   █▄ ███▄▀   ▄█▄██▀▀ █▄ ▄▀▀▄▀█▄█ ▀▀ ▄█▄ ██    ▄▄ ▀▄▄ ▄ ▄▄ ▀▀█
-█ ▀▀▄▄▄█▀▄ ▄▄█▀▀▀████▀▄▀ ▀█▄ ▀  █▄▄  ▀▀ ▀▀█▄ ▄▄ ▄▀▀▄ ▀▄█▄█▄▀▄▀▀█▀▀▀  ▄█▀▄▀▀▄█▀ █ ██▀▄▀     ▄▀▄█▄▄  █▄▄▄▀▄█▀▀
-▀█▄▀▄▄▄██▀ ▀█▀▄▀█▄▀█▀ ▄ ▀█ ▀ █▀█    ▄██▀█ ▄█▄▀  ▄▄ █▀▀▀█     ▀█▄▀▀▄█ █▀▄▄ █▀ ▄▀▀ █ ▄  ▄ █ ██ █▀  ███▀▀ ▄ ▄█▀▄
-▄▄▀▄▀▄▄ ███▄  ▀▀▀█▀▄▀█ █▄▄▀█▀ ▄▄▀▀█  ▄▀▄▀▀ ▀ ▀█ ██▀▀▄█▀▀▀ █ █ ▀ ▄▀▀ █ ▄▄ ▄▀▀ ▀ ▀▀▀█▀▀ ▀▀▀█ ▄████▄▄ ▀ █▄█▀▄  ▀
-▀█▀█▄ ▄▄█▄▄▀▀▄█▀▀█▄██ ▀▄ ▄▀  ▀  ▄▀▄  ▄ ▄▀▄██▄ ▄  ▀▄██▄██ █ ▀ █▀▄▀▀▄█ ▄▀   ▀▄█ ██▄▀▀▄ ▄█▀███▄▄▀  ▄▄▀█ ▄ ▄█ ▀▄▄
-█ ▀█▀█▄▄   ▀ █▄▄██  █▀  █▀▀▀ ▀ ▀█▀▄▀▄█▀█▄▀ ▄▀▄▄ ▀█ █▄█▀█▀ ▄ ▀▄ █▀  ▄ ▀█ ▄▄▀▄▄▀ ▀█▀██▄█   ▀  █▀█▄▀█▀██    ▄  ▀
-▀▄█▀▄▄▄█▄▀▄█▄▄█▄▀ ██ █▀█ ███▄▄▄█▄ ▀▄ ▀▄ ▀█▄▀ ▄▄ ▄▀█▀█▄██▄▀█  ▄▄ ▀▀██▄▀ ▄ ▀█ ██▄▄▄▄▀ ▄ ▄▀██▄█ ▄█▄▄█▄▄▄▄▄▄█▄█▀
-▄ ▀█ ▄ █ ██▀█▄▀██ ▀▀▀ ▄▄▄ ██ ▄ ██▄█▀▀▀▀   ▄▄█▄▀▄ ▀▀█ ▄ █ ▄▀▄▀ ▀▀  ██ █▀█▄▀ █ ▄ █ ▄█▄█▀▄   ██▀▄ ▄▄ ▄█ ▄ ██▄ ▀
-▀▀▀██▄▄▄██▀▄█▄██▀ ▀ █▄▀▄▄█▀██▄▄▄█ ▀  ▄█▄▀▀▄█▄▀  ▄▀▀▀█▄▄▄█▀▄  ▀▀█▀█▄▀▄█▀▄▄▄▀▀█▄▄▄█▀ ▄▄▄ ▄█▀█▀ ▀█▄▄▀▀▀█▄▄▄█▄▀▀
-▄▀▀▀▄▄▄▄  ▄▀█▀█    ▄▄  ▄ █▀▄▀▀▀█ ▄█ ██   ▀▀▄█ █▀▄▄▀ ▄▄▄▀ ▀▄▄█▄▀█▄▄▀▄█ █ ▄▄ █ ▀▀▀█▀█ ▀▀▀  ▀▀█▄▀▄▀▀▄▀█ ▀█▀██▄
-██▄▄ █▄▄ █▄▀█▄██▀▄ ▀ ▄  ▄ ▀▀ █ ▀█▄▄▀▄▄█▀▀  █ ▀▄ ▄ ▄ ▄ ▄▀█▄ ▄ ▀ ▄█▄██  █▄▄   ▀ ▄▀█▀▄▄▄█▀▀▀█▄ ▄▀█▄  ▄█▀█▄▀ ▄▀ ▄
-▄█ █▄▀▄▄▀▄▄ █▀   ▄▀▄▀▄█▀▀█ ▄▀█▀ ██▄██▀ ▄█▄▀ ▀▀▄  █▀█▄▀█ ▄ ▄▀▄█▀█     ▀▄█▀▀▀█▄  ▀  ▄▄▀▄▀▀    █▀██▀ ▀ ▄▄███▄▄█
-█ ▀▄▄ ▄▄▀   ▄▄▄▄   ▄   ▄▄█    ▄▀█  ▄ ▀█ ▀▄█▀ ▀▄▄▄▀▄   ▄▀█▄ ▄▄█▀▄▀▄▄█▄▄▀  ▀▀  █ ██▀█  ▄█ ▀█▄▀ ▄▀▄ █▀█▀██  ███
-█▄ ▄ ▄█▀▀▀▄▀██▀ ▄▀█ ███ █▀▄▀▀█ ▀▀▄█ █ ▀   ▀▀▀█▄ ▄▀ ▄█▀▄▄ █▀   ▀   ▀▄▄███▄ █▀█▀█  ▄▄ ▄ ▀  ▀▀█▄▄███   ▄▄██ █▀▀
-▄▄▄▄ ▄ ▄▄▄ ███▀▄ ▄█ ▄▀▄▀ ▄▄ ▄  █▄▄▀█▀▀█▀▄█ ▄ ▀▄  ▄▄▀▄▀█▄ ▀█ █ ▀▄  ▄█▄▄█▀    ██ ▄▄ ▀ ▀ ▀▀▄ ▄▄ █▄▀▄█▄█▄▄▀██
-█ █▀▀▀▄███▀ ▄▀▀▄██▄▀▀▀▄  █ ▀  █▀█▀▄▄▄ ▀█▄  ▀▀ ▄█▀▄▀▄▄▀█▀ ▀█ █▄ ▀   ▀▄▀█ ▄█ ▄▄  ▀███▄█▄  ██▀▄▀ ██ █ ▀ ▄▀█▄█ ▀▀
-██▀▄█▀▄▄ █▄█ █ ██  ██ ▀ ▄▄ ▀▄▄▄ █ ▀▄  █▄█▀█▀▄▀▄  ▄█ ▄▄  ▄█▀█ █ █▀ ▀▀▄█ ▄ █ ▀ ▄▄ ██▄  ▄▄ ▀▄▀█  ▄  ▄ █▄ █ ▄██▀▄
-▄▀▄███▄ ▄  ▀ ▄███▄▀▀█▀█ ██ ▀█▀▄▄ ▀▄█▄▄▀█    █ ▄ ▀   ▄█▀█▀ █ ▄█▀█▄▄▀   █ ▄█▀▄███▀ ▀███▄▀▀ █▀▀▄ █▄█▄▀█▀▄▄███▀▀▀
-▀▄▄▄█▄█▄▀▀ ▀▀▀▀▄█▄ ▄█▀▄ ▀▀▀▄▄▄▄▄▄▀ ▄██ ▀▄█▀  █ ▄██▀▄▄▄▄██ █▄ █ ██▀▀▄█  ▄▄█▀▄▄▄█▄▀█   █▄▀▄█ ▄█▄ ▄ ▄▀▄▄▄▄▄ ███
-█▄█▀█ ▄ █ ▄▄▄█▀▄ █ █▀█▄  █▄ █ ▄ █ █ ██  █▀▀█▀ █▀█▄▀▀█ ▄ █▀▄▀█▄  ▄▀▀   █  █ ▄█ ▄ █▀█ ▄█▀▄    ▄▀██  ▀ █ ▄ ██▄▀▀
-▀▀█▀█▄▄▄█   ▀██▀▄▀██▀▀██▄ ▄ █▄▄▄██▄▀▄██ █ ▄▀  ▀█ ▀▄██▄▄▄█ ██▄ █ ▀▄ █▄█ ▄ ████▄▄▄████    █▄▀▀ ██▄ █▀▄█▄▄▄█▄███
-▄█▀▀▀ ▄█▀▄ █▄█▀██ ▀██▄█▄█▄▀▀█▀▀ ▀▀▄▄▄ ▀█▀ ▀▄█▄█▀██▀ █▄▀▄▀ ██▀▄▀█▄ ▀▀█▀▄▀▄ ▀██▄▀▄▀ ▄▄▀▄ ▀▄▀ ▄█ █ █▄▀█ ███ ██ ▀
-▀▄█ █▄▄█ ▀▀▄ ▀██ ▀ ▄▄ ▄▄ █ ██▄▄█▄ ▄ ██ ▀ ▄  ▄ ▄ ▀█▄ ▀█      ▀▄ █▀█▀▄▀█▄▄█▀ ▀▄▄█▄  ▄ ▄█▄▀ ▀▀▄▀ █ ▄▀ █▄▄▀█ ▀▄█
-▀▀▀██▀▄  █ █ ▀▄█▀▄█▀█ ▄███ █▄▀ ▄█ █  █▀▀ ▀▀ ▀▀▄▄▀▄ ██▀ ▀▀▀█▄▀█ ▄▄▀ ▄█▀█ ▄▄▀ ▄█▀▄█ ██▀▄  ▄▀ ▀▄▀▄▀▄▄▀█ ▀▀█▀▄█ ▀
-▄▄    ▄██▀▀▄ █ █▄▀▀█▀  ▄▄▄▀ ▀▀█ ▄▄▄  ▀▄█▀█ █ █ ▄▄▄█▀████▄▄   ▄█▄▀ ▄ ▄▄ ▄▄▀▀ ███  ▄▄▄  ▄▄██▄▀▄ ▀  ▄███▄▀▀█▄▀▀█
-▄█▀▄█▀▄  █▄  █▀▀ ▄▄▀▄█▄ ▄█▀ ██ ▄█ ▀▀▀ ▀▀▄▀▀▀▀█▄▄ █ ▀▄█ ▄▀▀█▄▄▄     ▄█ ███▄  ▄ ▀▀▀ ▄▄▄█▀█▄▄▀▀▄▀█ ▄█▀▀▄▄█▄▄  ▀
-█▀███▄▄ █▄ ▀█ ███▀▄▀▀▄ █▄█▀▀█ ▄█▄▀█▄ ██▄▀▀ █▄▄ ▄  ▄▄ █▄▀   ▄ ▄█▄▀▄▄▄▄█▀▄  █▄ █▄  ██   ▄ █▄▀█  ██▄▄█▀▀  ▀█▄█▄█
-▄█▄   ▄ ▄▀▀▀▀▀ ▀█▀▀▄▄  ▄ ▄▀▄███ ▄▀▄  █ ▄█ ▀██▀█ █▄▀▀██▀▄▀ ▄▄▀▄ ▄ ▀  ▄▀▄██▀▀██▄█ █▀█ ▀█  █  ▀▄ █ ██ █▄ █▀ ▄██
-█ ▄ █ ▄█  ▄▀█▀██▀▀▄▀██ ▄ █▀ ▀██▀▀▀▀▄ ▀█ ▀█▄█▄▀▄ ▄ ▄▀ ▀█ ▀   ▄▄█▄▀▀██▄█ ▄ ▄█▄▀▄█ ▀█ ▄▄▀▀ ▀▄█ ▄▀ ▀ ▄█ ▀▀█▀█ ██▄
-▄▄▄▀▀█▄ ▄ █▄▀█▄ ▄▀▄▀ ▄▄▄▀█ ██ ▀ ▀ ▄█▀▄▀▄▀ ▀█▄ ██▀▀▀███▄▀▀▀█▄ ▄ ██ ▀ █▀█▄▀█  █▄ ▀▀ █▀██▀ ▄  ▀▀ █▄▀█ ▀ ▀██▀▄
-█▄█ ▄█▄██▄▀ ▄  █▄█▀██▄▀  ▀█ █▄▄▄█▄▀▄ █  ▀▄   ▄▀▄ █▀▀██▄▄▄▄▀▄ ▄█▄▀█▄▀▄ ▀  ██ █▄█▄█▀ ▄▄ ▀ ▀▀██   ▄  ▄ █▄▄██ ▀██
-█ █ █ ▄ █▄  █ ▄ █▄▄▄ ▀█▀█ ▀ █ ▄ █▀▄██  ▄ ▀▀▄▄ █ ██  █ ▄ █▄█▄▄█▀▀▄▄  █▀█▄▀   █ ▄ █▀█ ▄ ▀  ▀▀▀▄ ▄▄▀█  █ ▄ █  ▀
-█▄▀▀█▄▄▄█ ▀█▄ █ ▀▄▀█▀▀  ▄▀█▄█▄▄▄██ ▀▄▀███  █ ▀█▄▄▀█ █▄▄▄█▄  ▄▄▄ ▀▄█▀▄▀ ▄ ▀█ █▄▄▄██ ▀▄▀▀▄▀▀▀▀ ▀▄ ▄▄█▀█▄▄▄█ █▀
-█▀▀▀  ▄▀▀ █▀▀█▀▄  ██ ▀ ▀▀▀ ▄ ██▄▀▀▄█▀ ▀▀ ▀▀ █▄▄▀██▀▄█▀▀█▀ ▄█ ▄▀▀▀▀ ▀▀▀█▄▀▄ ▄██▀  █▄  ▄▀█▄ ▀▀▀▀▄▄ █ █▄▀▀█▀ ▄▀▀
-▀▄ █ ▄▄▀▄ ▀ ▄ ██▄▀█ ▀█  ▄█▀▀█ ▄█▄█ ▄▄███▀▀▀█ ▄ █▄▀██ █▀▀▄█▀   ▄█▀█▄█▄▀ ▄▄ ▄█▄▄▄▀▄▄▄▄  █▄█ ██▄▄▄▄▄ █▀ ▀ ▀ ▄███
-▀▀▀█▄█▄▄▀█     ▄▄▄██▀ ▄▄ █ ▄  █   ▄▀▀▄  ▄▀▀▀███▀▀█▀▄ ███▀ █▄█  ▄ █▀▀█▄█ █▀  ██▀█  ▄▀▄▄ █▀▀▀ ▄ ▄███ ▀▄▀  ▀ ▀▀
-▄ █ ▄▄  ▄ ▄  █▀▄██ ███▄▄▄█▀█▀ ▄▀▀ ▄▄ █▄▀ ▄█▄ ▄ ▄█▄▄█▄▄█▀▀▀█  ▀ ▀ █▀▄▄ ▀▄█▀ █▄▄▄█▄▀  █▄ ▀ ▄▀ ██  ▀█ ▄██ ▄ █▀
-██▀  ▀▄█ ▄▄ █ ▀█  ▀  ▀▄█▀ ▀ ▄█▀█  █▄█▄▀▄▀█ ▄▀ █▀██  ▀█▀█▀▀█▄██ ▀▄▀▀█▄▀▄▄▀▄▀▄████▀██▄ █  ▀▀▀▄ ▀▄▀█▄ ▀▀ ▀ ██▄█
-▀▄█  █▄██▄ █ ▀▀█  █▄█▀▄ ▀▀ ▀█▀▀ ▀ █  ▄█▄█ █▀▄▀▄▄▄█▄██▄▄▀█▀ ▀▄▄█▄█▀▀█ ▄▀▄ ▄▄ ██▄██▄ ▄▄ ▄▀█▀█▀▄▀ ▀▄█ ▀ ▄▄▄ ▄█▀▀
-▀▀ ▀▀▄█▄▄ █▀ ██  ███▀▄▀▄▄  ▀██▄  ▄█▀▄ ▄▄▄  █▀▄█▀█▀▄███▄▀██▀▄▀ ██ ▀██▀█▄█▀   ███▀ ▄▀ ▄▀ ▀▀   ▀█▄▄▄▀ ▀█▀ ▀▄▀
-▄█ ▄▄▄▄▀ ▄ ██▄█ ▄▀█▄▄▀▄▀▄▄███▄▄▄▀█▀   █▄█ ██▄ █ ▄ █▄ ▀ █▀  █▄█▀ █▀▀▀▄▄▀▄ ▀██ ▄█▄█ ▄▄▄ ▄█▀███▄▀   ▄▀   ▀▄▄ █
-▀██▄█▀▄ ▀█▄█▀▄▀▀█▄▄█▀█▄▀ ▀ ▄▀▀▀▄ ▀██    ▄█ █▄ █ █  ▄▄▀█▄  ██▀▄▀   ▀█▄██ ▀█ ▄▀▀▀█ ▄▄▄▄█ ▀  ▀█▄▀▄▀█▀▀▀▄█ ▄█▄█
-▄▄█▀█▀▄▀█▄ ▄▀ █▄▀ ▀▀ ██▄▄█▀▀████▄ ▀  ██ ▀▄▀█ ▀▀▀▄▄█▀██▄█▄ ▀   █▄▀███ ▄▄   ▀█▄▄▄█▄   ▄▄▄█▀██▀ █▀ ▄▀▀ ▄▄█▄▄▄█▀
-▄▄▄▄▄▄▄ ▀▄▄ █▀▄▀▀▄▀▄▀  ▀█▀ ▀█ ▄ ██▄▄█▄ ▀▄▀▀▄█ ████ ██ ▄ ██▄▄ ▄▀▀▄▀▀▀█▄▄ ██▀▄█ ▄ █▀█  █ ▄█▀ █▀█▄▄ █ ▄█ ▄ █ ▄
-█ ▄▄▄ █ █ ▄▀ ▄█ ▀▀▄  ▀█▀ █▀██▄▄▄█ ▀▄▄▄▄ █ ██ █▀▄  █▀█▄▄▄█  ▄    ▀▀▀▀▄▄  ▄ ▄▀█▄▄▄█ █ ▄▄▀▄▀  ▀▄ ▄▄ █  █▄▄▄███ █
-█ ███ █  ▀██▄▄█ ▄   █ ▄▄▀█▀███▀▀█▀█ █▄▀ ▄█▀▀▄ ▄▀██▀ ▀ ▀██▀▄▄▄▄ ▄ ▄▀▄▀ █ █ ▀███▀ ▀ █ ▀▀ ▀▀   █▀█▄ █▀ █▄▀▄  ▄▄▀
-█▄▄▄▄▄█ █▄█▄▀▄▄▄██▄▀▄▄▄  ▀▄ █▄█▀ ▄▀▀▄▀▄ ▀▄█▀▄▀█▄  █ ▀ ▄▀▄▀▀   ▀ ▀▄▀█  ▄  ██ █▀█▀  ▀▄ ▀▀ █▄▄█ ▄   ▀▄▄▄ ▄▄█ ██▄
 """
 
 from __future__ import annotations
@@ -237,18 +180,14 @@ from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 from tsdm.utils.types import KeyVar
 
-TimeSlice: TypeAlias = Index | slice | list
-
 Sample_co = TypeVar("Sample_co", covariant=True)
+"""Covariant type variable for `Sample`."""
+
+SplitID = TypeVar("SplitID", bound=Hashable)
+"""Type of a split ID."""
 
 Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
 """Type of a batch of data."""
-
-TS_Type_co = TypeVar(
-    "TS_Type_co", bound=TimeSeriesDataset | TimeSeriesCollection, covariant=True
-)
-
-SplitID = TypeVar("SplitID", bound=Hashable)
 
 
 class BaseTaskMetaClass(ABCMeta):
@@ -355,459 +294,6 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         return LazyDict(
             {key: (self.make_dataloader, kwargs | {"key": key}) for key in self.splits}
         )
-
-
-class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
-    r"""Abstract Base Class for Tasks.
-
-    A task is a combination of a dataset and an evaluation protocol (EVP).
-
-    The DataLoader will return batches of data consisting of tuples of the form:
-    `(inputs, targets)`. The model will be trained on the inputs, and the targets
-    will be used to evaluate the model.
-    That is, the model must product an output of the same shape and data type of the targets.
-
-    Attributes
-    ----------
-    train_batch_size: int, default 32
-        Default batch-size used by batchloader.
-    eval_batch_size: int, default 128
-        Default batch-size used by dataloaders (for evaluation).
-    dataset: Dataset
-        The attached dataset
-    """
-
-    # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
-    __slots__ = ()
-
-    LOGGER: ClassVar[logging.Logger]
-    r"""Class specific logger instance."""
-    preprocessor: Optional[ModularEncoder] = None
-    r"""Optional task specific preprocessor (applied before sampling/batching)."""
-    postprocessor: Optional[ModularEncoder] = None
-    r"""Optional task specific postprocessor (applied after sampling/batching)."""
-
-    dataloader_config_train = {
-        "batch_size": 32,
-        "shuffle": True,
-        "drop_last": True,
-        "pin_memory": True,
-        "collate_fn": lambda x: x,
-    }
-
-    dataloader_config_infer = {
-        "batch_size": 64,
-        "shuffle": False,
-        "drop_last": False,
-        "pin_memory": True,
-        "collate_fn": lambda x: x,
-    }
-
-    def __init__(
-        self,
-        dataset: TorchDataset,
-        sampler: TorchSampler,
-        dataloader_config_train: dict[str, Any],
-        **dataloader_kwargs: Any,
-    ):
-        r"""Initialize the task object."""
-        self.dataloader_config_train |= dataloader_kwargs
-        self.dataloader_config_infer |= dataloader_kwargs
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the object."""
-        string = (
-            f"{self.__class__.__name__}("
-            # f"dataset={self.dataset.name}, "
-            f"test_metric={type(self.test_metric).__name__})"
-        )
-        return string
-
-    @property
-    @abstractmethod
-    def test_metric(self) -> Callable[..., Tensor]:
-        r"""The metric to be used for evaluation."""
-
-    @property
-    @abstractmethod
-    def dataset(self) -> Dataset | DataFrame:
-        r"""Return the cached dataset associated with the task."""
-
-    def split_type(self, key: KeyVar) -> Literal["train", "infer", "unknown"]:
-        r"""Return the type of split."""
-        train_patterns = ["train", "training"]
-        infer_patterns = [
-            "test",
-            "testing",
-            "val",
-            "valid",
-            "validation",
-            "eval",
-            "evaluation",
-            "infer",
-            "inference",
-        ]
-
-        if isinstance(key, str):
-            if key.lower() in train_patterns:
-                return "train"
-            if key.lower() in infer_patterns:
-                return "infer"
-        if isinstance(key, Sequence):
-            patterns = {self.split_type(k) for k in key}
-            if patterns <= {"train", "unknown"}:
-                return "train"
-            if patterns <= {"infer", "unknown"}:
-                return "infer"
-            if patterns == {"unknown"}:
-                return "unknown"
-            raise ValueError(f"{key=} contains both train and infer splits.")
-        return "unknown"
-
-    @property
-    @abstractmethod
-    def index(self) -> Sequence[KeyVar]:
-        r"""List of index."""
-
-    @abstractmethod
-    def make_split(self, key: KeyVar, /) -> TorchDataset:
-        r"""Return the split associated with the given key."""
-
-    @abstractmethod
-    def make_sampler(self, key: KeyVar, /) -> TorchSampler:
-        r"""Create sampler for the given split."""
-
-    def make_dataloader(
-        self,
-        key: KeyVar,
-        /,
-        **dataloader_kwargs: Any,
-    ) -> DataLoader:
-        r"""Return a DataLoader object for the specified split."""
-        dataset = self.splits[key]
-        sampler = self.samplers[key]
-
-        match self.split_type(key):
-            case "train":
-                kwargs = self.dataloader_configs["train"]
-            case "infer":
-                kwargs = self.dataloader_configs["train"]
-            case _:
-                raise ValueError(f"Unknown split type: {self.split_type(key)=}")
-
-        kwargs = kwargs | dataloader_kwargs
-        dataloader = DataLoader(dataset, sampler=sampler, **kwargs)
-        return dataloader
-
-    @cached_property
-    def dataloader_configs(self) -> dict[str, dict[str, Any]]:
-        r"""Return dataloader configuration."""
-        return {
-            "train": self.dataloader_config_train,
-            "eval": self.dataloader_config_infer,
-        }
-
-    @cached_property
-    def splits(self) -> Mapping[KeyVar, TorchDataset]:
-        r"""Cache dictionary of dataset splits."""
-        return LazyDict({k: self.make_split for k in self.splits})
-
-    @cached_property
-    def samplers(self) -> Mapping[KeyVar, TorchSampler]:
-        r"""Return a dictionary of samplers for each split."""
-        return LazyDict({k: self.make_sampler for k in self.splits})
-
-    @cached_property
-    def dataloaders(self) -> Mapping[KeyVar, DataLoader]:
-        r"""Cache dictionary of evaluation-dataloaders."""
-        return LazyDict({k: self.make_dataloader for k in self.splits})
-
-
-@dataclass
-class TimeSeriesTask(
-    Mapping[SplitID, DataLoader[Sample_co]],
-    Generic[SplitID, TS_Type_co, Sample_co],
-    metaclass=BaseTaskMetaClass,
-):
-    r"""Abstract Base Class for Tasks.
-
-    A task has the following responsibilities:
-
-    - Provide a dataset
-        - All splits should be derived from the same dataset
-    - Provide splits of the dataset, usually one of the following:
-        - train, test
-        - train, validation, test
-        - cross-validation + train/(valid)/test: (0, train), (0, test), ..., (n, train), (n, test)
-        - nested cross-validation: (0, 0), (0, 1), ..., (0, n), (1, 0), ..., (n, n)
-    - Provide a metric for evaluation
-        - must be of the form `Callable[[target, prediction], Sclar]`
-    - Provide a `torch.utils.data.DataLoader` for each split
-        - Provide a `torch.utils.data.Dataset` for each split
-            - Dataset should return `Sample` objects providing `Sample.Inputs` and `Sample.Targets`.
-        - Provide a `torch.utils.data.Sampler` for each split
-            - Sampler should return indices into the datase
-    - Optional: Task specific encoder/decoder
-        - Since we use raw format, such an encoder might be necessary to even meaningfully
-          compute the target metric
-        - For examples, tasks may ask for a MSE-loss on standardized data, or a cross-entropy for
-          categorical data. In such cases, the task should provide an encoder/decoder to convert the
-          data to the desired format.
-        - For the simple case when both the input and the target are DataFrames, the task should
-          provide DataFrameEncoders, one for each of the index / timeseries / metadata.
-        - Encoders must be fit on the training data, but also transform the test data.
-          - Need a way to associate a train split to each test/valid split.
-          - ASSUMPTION: the split key is of the form `*fold, partition`, where `partition` is one of
-            `train`, `valid`, `test`, and `fold` is an integer or tuple of integers.
-
-    To make this simpler, we here first consider the `Mapping` interface, i.e.
-    Samplers are all of fixed sized. and the dataset is a `Mapping` type.
-    We do not support `torch.utils.data.IterableDataset`, as this point.
-
-    Note:
-        - `torch.utils.data.Dataset[T_co]` implements
-            - `__getitem__(self, index) -> T_co`
-            - `__add__(self, other: Dataset[T_co]) -> ConcatDataset[T_co]`.
-        - `torch.utils.data.Sampler[T_co]`
-            - `__iter__(self) -> Iterator[T_co]`.
-        - `torch.utils.data.DataLoader[T_co]`
-            - attribute dataset: Dataset[T_co]
-            - `__iter__(self) -> Iterator[Any]`
-            - `__len__(self) -> int`.
-    """
-
-    # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
-    # __slots__ = ()
-
-    LOGGER: ClassVar[logging.Logger]
-    r"""Class specific logger instance."""
-
-    dataset: TS_Type_co
-    r"""Dataset from which the splits are constructed."""
-
-    _: KW_ONLY = NotImplemented
-    index: Sequence[SplitID] = NotImplemented
-    r"""List of index."""
-    dataloaders: Mapping[SplitID, DataLoader[Sample_co]] = NotImplemented
-    r"""Dictionary holding `DataLoader` associated with each key."""
-    encoders: Mapping[SplitID, ModularEncoder] = NotImplemented
-    r"""Dictionary holding `Encoder` associated with each key."""
-    folds: DataFrame = NotImplemented
-    r"""Dictionary holding `Fold` associated with each key (index for split)."""
-    samplers: Mapping[SplitID, TorchSampler] = NotImplemented
-    r"""Dictionary holding `Sampler` associated with each key."""
-    generators: Mapping[SplitID, TorchDataset] = NotImplemented
-    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    splits: Mapping[SplitID, TS_Type_co] = NotImplemented
-    r"""Dictionary holding sampler associated with each key."""
-    test_metric: Callable[[Any, Any], Any] = NotImplemented
-    r"""Metric used for evaluation."""
-    collate_fns: Mapping[SplitID, Callable[[list[Sample_co]], Batch]] = NotImplemented
-    r"""Collate function used to create batches from samples."""
-
-    train_patterns: Sequence[str] = ("train", "training")
-    r"""List of patterns to match for training splits."""
-    infer_patterns: Sequence[str] = ("test", "testing", "val", "valid", "validation")
-    r"""List of patterns to match for infererence splits."""
-
-    def __post_init__(self) -> None:
-        r"""Initialize the task object."""
-        if self.folds is NotImplemented:
-            self.LOGGER.info("No folds provided. Creating them.")
-            self.folds = self.make_folds()
-
-        # check the folds for consistency
-        self.validate_folds()
-
-        if self.index is NotImplemented:
-            self.index = self.folds.columns
-        if self.test_metric is NotImplemented:
-            self.LOGGER.info("No test metric provided. Using default.")
-            self.test_metric = self.default_metric  # type: ignore[assignment]
-
-        # create LazyDicts for the splits
-        if self.splits is NotImplemented:
-            self.LOGGER.info("No splits provided. Creating them.")
-            self.splits = LazyDict({key: self.make_split for key in self})
-        if self.dataloaders is NotImplemented:
-            self.LOGGER.info("No DataLoaders provided. Caching them.")
-            self.dataloaders = LazyDict({key: self.make_dataloader for key in self})
-        if self.samplers is NotImplemented:
-            self.LOGGER.info("No Samplers provided. Caching them.")
-            self.samplers = LazyDict({key: self.make_sampler for key in self})
-        if self.encoders is NotImplemented:
-            self.LOGGER.info("No Encoders provided. Caching them.")
-            self.encoders = LazyDict({key: self.make_encoder for key in self})
-        if self.generators is NotImplemented:
-            self.LOGGER.info("No Generators provided. Caching them.")
-            self.generators = LazyDict({key: self.make_generator for key in self})
-        if self.collate_fns is NotImplemented:
-            self.LOGGER.info("No collate functions provided. Caching them.")
-            self.collate_fns = LazyDict({key: self.make_collate_fn for key in self})
-
-    def __iter__(self) -> Iterator[SplitID]:
-        r"""Iterate over the keys."""
-        return iter(self.folds)
-
-    def __len__(self) -> int:
-        r"""Return the number of splits."""
-        return len(self.folds)
-
-    def __getitem__(self, key: SplitID) -> DataLoader[Sample_co]:
-        r"""Return the dataloader associated with the key."""
-        return self.dataloaders[key]
-
-    def __repr__(self) -> str:
-        return repr_dataclass(self)
-
-    def make_folds(self, /) -> DataFrame:
-        r"""Return the folds associated with the specified key."""
-        return NotImplemented
-
-    @staticmethod
-    def default_metric(*, targets, predictions):
-        r"""Return the test metric."""
-        return NotImplemented
-
-    def make_split(self, key: SplitID, /) -> TS_Type_co:
-        r"""Return the splits associated with the specified key."""
-        return self.dataset[self.folds[key]]
-
-    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
-        r"""Create the encoder associated with the specified key."""
-        return NotImplemented
-
-    def make_sampler(self, key: SplitID, /) -> TorchSampler[KeyVar]:
-        r"""Create the sampler associated with the specified key."""
-        return NotImplemented
-
-    def make_generator(self, key: SplitID, /) -> TorchDataset[Sample_co]:
-        r"""Return the splits associated with the specified key."""
-        return NotImplemented
-
-    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample_co]], Batch]:
-        r"""Return the test metric."""
-        return NotImplemented
-
-    def make_dataloader(
-        self, key: SplitID, /, **dataloader_kwargs: Any
-    ) -> DataLoader[Sample_co]:
-        r"""Return the dataloader associated with the specified key."""
-        self.LOGGER.info("Creating DataLoader for key=%s", key)
-
-        kwargs: dict = self.dataloader_config[key]
-
-        dataset = self.generators[key]
-        if dataset is NotImplemented:
-            raise ValueError("Dataset is not implemented.")
-
-        # sampler
-        sampler = self.samplers[key]
-        if sampler is NotImplemented:
-            warnings.warn(f"No sampler provided for key={key}. ")
-            kwargs["sampler"] = None
-        else:
-            kwargs["sampler"] = sampler
-
-        # collate_fn
-        collate_fn = self.collate_fns[key]
-        if collate_fn is NotImplemented:
-            warnings.warn(f"No collate_fn provided for key={key}. ")
-            kwargs["collate_fn"] = lambda x: x
-        else:
-            kwargs["collate_fn"] = collate_fn
-
-        kwargs |= dataloader_kwargs
-        return DataLoader(dataset, **kwargs)
-
-    def split_type(self, key: SplitID) -> Literal["train", "infer", "unknown"]:
-        r"""Return the type of split."""
-        if isinstance(key, str):
-            if key.lower() in self.train_patterns:
-                return "train"
-            if key.lower() in self.infer_patterns:
-                return "infer"
-        if isinstance(key, Sequence):
-            patterns = {self.split_type(k) for k in key}
-            if patterns <= {"train", "unknown"}:
-                return "train"
-            if patterns <= {"infer", "unknown"}:
-                return "infer"
-            if patterns == {"unknown"}:
-                return "unknown"
-            raise ValueError(f"{key=} contains both train and infer splits.")
-        return "unknown"
-
-    @cached_property
-    def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
-        r"""Return dataloader configuration."""
-        return {
-            key: {
-                "batch_size": 32,
-                "drop_last": self.split_type(key) == "train",
-                "pin_memory": True,
-            }
-            for key in self
-        }
-
-    @cached_property
-    def train_partition(self) -> Mapping[SplitID, SplitID]:
-        r"""Return the train partition for the given key."""
-        if isinstance(self.folds, (Series, DataFrame)):
-            split_index = self.folds.T.index
-        elif isinstance(self.folds, Mapping):
-            split_index = Index(self.folds.keys())
-        else:
-            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
-        if isinstance(split_index, MultiIndex):
-            *fold, partition = names = split_index.names
-
-            # Create Frame (fold, partition) -> (fold, partition.lower())
-            df = split_index.to_frame()
-            mask = df[partition].str.lower().isin(self.train_patterns)
-
-            # create Series (train_key) -> train_key
-            train_folds = df[mask].copy()
-            train_folds = train_folds.drop(columns=names)
-            train_folds["key"] = list(df[mask].index)
-            train_folds = train_folds.droplevel(-1)
-
-            # create Series (fold, partition) -> train_key
-            df = df.drop(columns=names)
-            df = df.join(train_folds, on=fold)
-            return df["key"].to_dict()
-        if isinstance(split_index, Index):
-            mask = split_index.str.lower().isin(self.train_patterns)
-            value = split_index[mask]
-            s = Series(value.item(), index=split_index)
-            return s.to_dict()
-        raise RuntimeError("Supposed to be unreachable")
-
-    def validate_folds(self) -> None:
-        r"""Makes sure all keys are correct format `str` or `tuple[..., str]`.
-
-        - If keys are `partition`, they are assumed to be `partition` keys.
-        - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
-        """
-        if isinstance(self.folds, (Series, DataFrame)):
-            split_index = self.folds.T.index
-        elif isinstance(self.folds, Mapping):
-            split_index = Index(self.folds.keys())
-        else:
-            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
-
-        if isinstance(split_index, MultiIndex):
-            *fold, partition = split_index.names
-            df = split_index.to_frame(index=False)
-            df["is_train"] = df[partition].str.lower().isin(self.train_patterns)
-            if not all(df.groupby(fold)["is_train"].sum() == 1):
-                raise ValueError("Each fold must have a unique train partition.")
-        elif isinstance(split_index, Index):
-            mask = split_index.str.lower().isin(self.train_patterns)
-            if not sum(mask) == 1:
-                raise ValueError("Each fold must have a unique train partition.")
-        else:
-            raise RuntimeError("Supposed to be unreachable")
 
 
 class Inputs(NamedTuple):
@@ -952,7 +438,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 self.metadata_observables = self.dataset.metadata.columns
         self.validate()
 
-    def __iter__(self) -> Iterator[TS_Type_co]:
+    def __iter__(self) -> Iterator:
         return iter(self.dataset)
 
     def __len__(self) -> int:
@@ -1073,3 +559,301 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 raise ValueError(f"Observables {cols} not in found metadata columns!")
             if cols := md_targets - md_columns:
                 raise ValueError(f"Targets {cols} not in found metadata columns!")
+
+
+@dataclass
+class TimeSeriesTask(
+    Generic[SplitID, Sample_co],
+    metaclass=BaseTaskMetaClass,
+):
+    r"""Abstract Base Class for Tasks.
+
+    A task has the following responsibilities:
+
+    - Provide a dataset
+        - All splits should be derived from the same dataset
+    - Provide splits of the dataset, usually one of the following:
+        - train, test
+        - train, validation, test
+        - cross-validation + train/(valid)/test: (0, train), (0, test), ..., (n, train), (n, test)
+        - nested cross-validation: (0, 0), (0, 1), ..., (0, n), (1, 0), ..., (n, n)
+    - Provide a metric for evaluation
+        - must be of the form `Callable[[target, prediction], Sclar]`
+    - Provide a `torch.utils.data.DataLoader` for each split
+        - Provide a `torch.utils.data.Dataset` for each split
+            - Dataset should return `Sample` objects providing `Sample.Inputs` and `Sample.Targets`.
+        - Provide a `torch.utils.data.Sampler` for each split
+            - Sampler should return indices into the datase
+    - Optional: Task specific encoder/decoder
+        - Since we use raw format, such an encoder might be necessary to even meaningfully
+          compute the target metric
+        - For examples, tasks may ask for a MSE-loss on standardized data, or a cross-entropy for
+          categorical data. In such cases, the task should provide an encoder/decoder to convert the
+          data to the desired format.
+        - For the simple case when both the input and the target are DataFrames, the task should
+          provide DataFrameEncoders, one for each of the index / timeseries / metadata.
+        - Encoders must be fit on the training data, but also transform the test data.
+          - Need a way to associate a train split to each test/valid split.
+          - ASSUMPTION: the split key is of the form `*fold, partition`, where `partition` is one of
+            `train`, `valid`, `test`, and `fold` is an integer or tuple of integers.
+
+    To make this simpler, we here first consider the `Mapping` interface, i.e.
+    Samplers are all of fixed sized. and the dataset is a `Mapping` type.
+    We do not support `torch.utils.data.IterableDataset`, as this point.
+
+    Note:
+        - `torch.utils.data.Dataset[T_co]` implements
+            - `__getitem__(self, index) -> T_co`
+            - `__add__(self, other: Dataset[T_co]) -> ConcatDataset[T_co]`.
+        - `torch.utils.data.Sampler[T_co]`
+            - `__iter__(self) -> Iterator[T_co]`.
+        - `torch.utils.data.DataLoader[T_co]`
+            - attribute dataset: Dataset[T_co]
+            - `__iter__(self) -> Iterator[Any]`
+            - `__len__(self) -> int`.
+    """
+
+    # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
+    # __slots__ = ()
+
+    LOGGER: ClassVar[logging.Logger]
+    r"""Class specific logger instance."""
+
+    dataset: TimeSeriesCollection
+    r"""Dataset from which the splits are constructed."""
+
+    _: KW_ONLY = NotImplemented
+
+    index: Sequence[SplitID] = NotImplemented
+    r"""List of index."""
+    folds: DataFrame = NotImplemented
+    r"""Dictionary holding `Fold` associated with each key (index for split)."""
+
+    collate_fns: Mapping[SplitID, Callable[[list[Sample_co]], Batch]] = NotImplemented
+    r"""Collate function used to create batches from samples."""
+    dataloaders: Mapping[SplitID, DataLoader[Sample_co]] = NotImplemented
+    r"""Dictionary holding `DataLoader` associated with each key."""
+    encoders: Mapping[SplitID, ModularEncoder] = NotImplemented
+    r"""Dictionary holding `Encoder` associated with each key."""
+    generators: Mapping[SplitID, TimeSeriesSampleGenerator] = NotImplemented
+    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
+    samplers: Mapping[SplitID, TorchSampler] = NotImplemented
+    r"""Dictionary holding `Sampler` associated with each key."""
+    splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
+    r"""Dictionary holding sampler associated with each key."""
+    test_metric: Callable[[Any, Any], Any] = NotImplemented
+    r"""Metric used for evaluation."""
+
+    train_patterns: Sequence[str] = ("train", "training")
+    r"""List of patterns to match for training splits."""
+    infer_patterns: Sequence[str] = ("test", "testing", "val", "valid", "validation")
+    r"""List of patterns to match for infererence splits."""
+
+    def __post_init__(self) -> None:
+        r"""Initialize the task object."""
+        if self.folds is NotImplemented:
+            self.LOGGER.info("No folds provided. Creating them.")
+            self.folds = self.make_folds()
+
+        # check the folds for consistency
+        self.validate_folds()
+
+        if self.index is NotImplemented:
+            self.index = self.folds.columns
+        if self.test_metric is NotImplemented:
+            self.LOGGER.info("No test metric provided. Using default.")
+            self.test_metric = self.default_test_metric  # type: ignore[assignment]
+
+        # create LazyDicts for the splits
+        if self.splits is NotImplemented:
+            self.LOGGER.info("No splits provided. Creating them.")
+            self.splits = LazyDict({key: self.make_split for key in self})
+        if self.dataloaders is NotImplemented:
+            self.LOGGER.info("No DataLoaders provided. Caching them.")
+            self.dataloaders = LazyDict({key: self.make_dataloader for key in self})
+        if self.samplers is NotImplemented:
+            self.LOGGER.info("No Samplers provided. Caching them.")
+            self.samplers = LazyDict({key: self.make_sampler for key in self})
+        if self.encoders is NotImplemented:
+            self.LOGGER.info("No Encoders provided. Caching them.")
+            self.encoders = LazyDict({key: self.make_encoder for key in self})
+        if self.generators is NotImplemented:
+            self.LOGGER.info("No Generators provided. Caching them.")
+            self.generators = LazyDict({key: self.make_generator for key in self})
+        if self.collate_fns is NotImplemented:
+            self.LOGGER.info("No collate functions provided. Caching them.")
+            self.collate_fns = LazyDict({key: self.make_collate_fn for key in self})
+
+    def __iter__(self) -> Iterator[SplitID]:
+        r"""Iterate over the keys."""
+        return iter(self.folds)
+
+    def __len__(self) -> int:
+        r"""Return the number of splits."""
+        return len(self.folds)
+
+    def __getitem__(self, key: SplitID) -> Any:
+        r"""Return the dataloader associated with the key."""
+        return self.folds[key]
+
+    def __repr__(self) -> str:
+        return repr_dataclass(self)
+
+    def make_folds(self, /) -> DataFrame:
+        r"""Return the folds associated with the specified key."""
+        return NotImplemented
+
+    @staticmethod
+    def default_test_metric(*, targets: Any, predictions: Any) -> Any:
+        r"""Return the test metric."""
+        return NotImplemented
+
+    @staticmethod
+    def default_collate_fn(samples: list[Sample_co]) -> Batch:
+        return samples  # type: ignore[return-value]
+
+    def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
+        r"""Return the splits associated with the specified key."""
+        return self.dataset[self.folds[key]]
+
+    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
+        r"""Create the encoder associated with the specified key."""
+        return NotImplemented
+
+    def make_sampler(self, key: SplitID, /) -> TorchSampler[KeyVar]:
+        r"""Create the sampler associated with the specified key."""
+        return NotImplemented
+
+    def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
+        r"""Return the splits associated with the specified key."""
+        return NotImplemented
+
+    def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample_co]], Batch]:
+        r"""Return the test metric."""
+        return NotImplemented
+
+    def make_dataloader(self, key: SplitID, /, **dataloader_kwargs: Any) -> DataLoader:
+        r"""Return the dataloader associated with the specified key."""
+        self.LOGGER.info("Creating DataLoader for key=%s", key)
+
+        kwargs: dict = self.dataloader_config[key]
+        dataset = self.generators[key]
+
+        # sampler
+        sampler = self.samplers[key]
+        if sampler is NotImplemented:
+            warnings.warn(f"No sampler provided for key={key}. ")
+            kwargs["sampler"] = None
+        else:
+            kwargs["sampler"] = sampler
+
+        # collate_fn
+        collate_fn = self.collate_fns[key]
+        if collate_fn is NotImplemented:
+            warnings.warn(f"No collate_fn provided for key={key}. ")
+            kwargs["collate_fn"] = self.default_collate_fn
+        else:
+            kwargs["collate_fn"] = collate_fn
+
+        kwargs |= dataloader_kwargs
+        return DataLoader(dataset, **kwargs)
+
+    def is_train_split(self, key: SplitID, /) -> bool:
+        r"""Return whether the key is a training split."""
+        match self.split_type(key):
+            case "train":
+                return True
+            case "infer":
+                return False
+            case _:
+                raise ValueError(f"Unknown split type for key={key}")
+
+    def split_type(self, key: SplitID) -> Literal["train", "infer", "unknown"]:
+        r"""Return the type of split."""
+        if isinstance(key, str):
+            if key.lower() in self.train_patterns:
+                return "train"
+            if key.lower() in self.infer_patterns:
+                return "infer"
+            return "unknown"
+        if isinstance(key, Sequence):
+            patterns = {self.split_type(k) for k in key}
+            if patterns <= {"train", "unknown"}:
+                return "train"
+            if patterns <= {"infer", "unknown"}:
+                return "infer"
+            if patterns == {"unknown"}:
+                return "unknown"
+            raise ValueError(f"{key=} contains both train and infer splits.")
+        return "unknown"
+
+    @cached_property
+    def dataloader_config(self) -> dict[SplitID, dict[str, Any]]:
+        r"""Return dataloader configuration."""
+        return {
+            key: {
+                "batch_size": 32,
+                "drop_last": self.is_train_split(key),
+                "pin_memory": True,
+            }
+            for key in self
+        }
+
+    @cached_property
+    def train_split(self) -> Mapping[SplitID, SplitID]:
+        r"""Return the matching train partition for the given key."""
+        if isinstance(self.folds, (Series, DataFrame)):
+            split_index = self.folds.T.index
+        elif isinstance(self.folds, Mapping):
+            split_index = Index(self.folds.keys())
+        else:
+            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
+        if isinstance(split_index, MultiIndex):
+            *fold, partition = names = split_index.names
+
+            # Create Frame (fold, partition) -> (fold, partition.lower())
+            df = split_index.to_frame()
+            mask = df[partition].str.lower().isin(self.train_patterns)
+
+            # create Series (train_key) -> train_key
+            train_folds = df[mask].copy()
+            train_folds = train_folds.drop(columns=names)
+            train_folds["key"] = list(df[mask].index)
+            train_folds = train_folds.droplevel(-1)
+
+            # create Series (fold, partition) -> train_key
+            df = df.drop(columns=names)
+            df = df.join(train_folds, on=fold)
+            return df["key"].to_dict()
+        if isinstance(split_index, Index):
+            mask = split_index.str.lower().isin(self.train_patterns)
+            value = split_index[mask]
+            s = Series(value.item(), index=split_index)
+            return s.to_dict()
+        raise RuntimeError("Supposed to be unreachable")
+
+    def validate_folds(self) -> None:
+        r"""Makes sure all keys are correct format `str` or `tuple[..., str]`.
+
+        - If keys are `partition`, they are assumed to be `partition` keys.
+        - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
+        """
+        if isinstance(self.folds, (Series, DataFrame)):
+            split_index = self.folds.T.index
+        elif isinstance(self.folds, Mapping):
+            split_index = Index(self.folds.keys())
+        else:
+            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
+
+        if isinstance(split_index, MultiIndex):
+            *fold, partition = split_index.names
+            df = split_index.to_frame(index=False)
+            df["is_train"] = df[partition].str.lower().isin(self.train_patterns)
+            if not all(df.groupby(fold)["is_train"].sum() == 1):
+                raise ValueError("Each fold must have a unique train partition.")
+        elif isinstance(split_index, Index):
+            mask = split_index.str.lower().isin(self.train_patterns)
+            if not sum(mask) == 1:
+                raise ValueError("Each fold must have a unique train partition.")
+        else:
+            raise RuntimeError("Supposed to be unreachable")
