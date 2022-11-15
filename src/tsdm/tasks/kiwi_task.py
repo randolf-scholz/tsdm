@@ -2,13 +2,12 @@ r"""Implementation of the kiwi task."""
 
 __all__ = [
     # Classes
-    "KiwiSampleGenerator",
     "KiwiTask",
 ]
 
 
 from collections.abc import Callable, Hashable
-from typing import Mapping, NamedTuple, TypeVar
+from typing import Any, NamedTuple, TypeVar
 
 from pandas import DataFrame
 from torch import Tensor
@@ -34,7 +33,6 @@ from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
 from tsdm.utils.strings import repr_namedtuple
-from tsdm.utils.types import KeyVar
 
 SplitID = TypeVar("SplitID", bound=Hashable)
 
@@ -53,45 +51,103 @@ class Batch(NamedTuple):
         return repr_namedtuple(self)
 
 
-class KiwiSampleGenerator(TimeSeriesSampleGenerator):
-    r"""Sample generator for the KIWI dataset."""
-
-    def __init__(self, dataset):
-        super().__init__(
-            dataset,
-            observables=[
-                "Base",
-                "DOT",
-                "Glucose",
-                "OD600",
-                "Acetate",
-                "Fluo_GFP",
-                "pH",
-                "Temperature",
-            ],
-            covariates=[
-                "Cumulated_feed_volume_glucose",
-                "Cumulated_feed_volume_medium",
-                "InducerConcentration",
-                "StirringSpeed",
-                "Flow_Air",
-                "Probe_Volume",
-            ],
-            targets=["Fluo_GFP"],
-        )
-
-
 class KiwiTask(TimeSeriesTask):
     r"""Task for the KIWI dataset."""
+
     dataset: KiwiDataset
-    generators: Mapping[tuple[int, str], KiwiSampleGenerator]
 
+    # sampler kwargs
     observation_horizon: str = "2h"
-    r"""The number of datapoints observed during prediction."""
+    r"""The interval of observational data."""
     forecasting_horizon: str = "1h"
-    r"""The number of datapoints the model should forecast."""
+    r"""The interval for which the model should forecast."""
+    stride: str = "1h"
+    r"""The stride of the sliding window sampler."""
 
-    def __init__(self) -> None:
+    observables: list[str] = [
+        "Base",
+        "DOT",
+        "Glucose",
+        "OD600",
+        "Acetate",
+        "Fluo_GFP",
+        "pH",
+        "Temperature",
+    ]
+    covariates: list[str] = [
+        "Cumulated_feed_volume_glucose",
+        "Cumulated_feed_volume_medium",
+        "InducerConcentration",
+        "StirringSpeed",
+        "Flow_Air",
+        "Probe_Volume",
+    ]
+    targets: list[str] = [
+        "Base",
+        "DOT",
+        "Glucose",
+        "OD600",
+        "Acetate",
+        "Fluo_GFP",
+        "pH",
+        "Temperature",
+    ]
+
+    fold_kwargs = {"seed": 2022, "num_folds": 5, "train": 7, "valid": 1, "test": 2}
+    """The configuration of the fold generator."""
+
+    sampler_kwargs = {
+        "observation_horizon": observation_horizon,
+        "forecasting_horizon": forecasting_horizon,
+        "stride": stride,
+        "early_stop": False,
+        "shuffle": False,
+    }
+    """The configuration of the sampler."""
+
+    generator_kwargs = {
+        "observables": observables,
+        "covariates": covariates,
+        "targets": targets,
+    }
+    """The configuration of the sample generator."""
+
+    def __init__(
+        self,
+        *,
+        # observation_horizon: str = "2h",
+        # forecasting_horizon: str = "1h",
+        # stride: str = "1h",
+        # observables: list[str] | None = None,
+        # covariates: list[str] | None = None,
+        # targets: list[str] | None = None,
+        fold_kwargs: dict[str, Any] | None = None,
+        sampler_kwargs: dict[str, Any] | None = None,
+        generator_kwargs: dict[str, Any] | None = None,
+    ) -> None:
+        # self.observables = observables if observables is not None else self.observables
+        # self.covariates = covariates if covariates is not None else self.covariates
+        # self.targets = targets if targets is not None else self.targets
+        # self.stride = stride
+        # self.observation_horizon = observation_horizon
+        # self.forecasting_horizon = forecasting_horizon
+
+        self.generator_kwargs = (
+            self.generator_kwargs | generator_kwargs
+            if generator_kwargs is not None
+            else self.generator_kwargs
+        )
+        self.sampler_kwargs = (
+            self.sampler_kwargs | sampler_kwargs
+            if sampler_kwargs is not None
+            else self.sampler_kwargs
+        )
+        self.fold_kwargs = (
+            self.fold_kwargs | fold_kwargs
+            if fold_kwargs is not None
+            else self.fold_kwargs
+        )
+
         dataset = KiwiDataset()
         dataset.timeseries = dataset.timeseries.astype("float64")
         super().__init__(dataset=dataset)
@@ -99,6 +155,15 @@ class KiwiTask(TimeSeriesTask):
     @staticmethod
     def default_test_metric(*, targets, predictions):
         r"""TODO: implement this."""
+
+    def make_folds(self, /, **kwargs: Any) -> DataFrame:
+        r"""Group by RunID and color which indicates replicates."""
+        fold_kwargs = self.fold_kwargs | kwargs
+        md = self.dataset.metadata
+        groups = md.groupby(["run_id", "color"], sort=False).ngroup()
+        folds = folds_from_groups(groups, **fold_kwargs)
+        df = folds_as_frame(folds)
+        return folds_as_sparse_frame(df)
 
     def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:
         r"""TODO: implement this."""
@@ -140,7 +205,7 @@ class KiwiTask(TimeSeriesTask):
 
         return collate_fn
 
-    def make_encoder(self, key: KeyVar, /) -> ModularEncoder:
+    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
         VF = self.dataset.value_features
         column_encoders = {}
         for col, scale, lower, upper in VF[["scale", "lower", "upper"]].itertuples():
@@ -184,31 +249,51 @@ class KiwiTask(TimeSeriesTask):
         )
 
         self.LOGGER.info("Initializing Encoder for key='%s'", key)
-        train_key = self.train_partition[key]
+        train_key = self.train_split[key]
         associated_train_split = self.splits[train_key]
         self.LOGGER.info("Fitting encoder to associated train split '%s'", train_key)
         encoder.fit(associated_train_split.timeseries)
 
         return encoder
 
-    def make_sampler(self, key: KeyVar, /) -> TorchSampler:
+    def make_sampler(self, key: SplitID, /, **kwds: Any) -> TorchSampler:
         split = self.splits[key]
+
+        # get configuration
+        sampler_kwargs = (
+            self.sampler_kwargs | {"shuffle": self.is_train_split(key)} | kwds
+        )
+        observation_horizon = sampler_kwargs.pop("observation_horizon")
+        forecasting_horizon = sampler_kwargs.pop("forecasting_horizon")
+        stride = sampler_kwargs.pop("stride")
+        early_stop = sampler_kwargs.pop("early_stop")
+        shuffle = sampler_kwargs.pop("shuffle")
+        assert not sampler_kwargs, f"Unknown sampler_kwargs: {sampler_kwargs}"
+
         subsamplers = {
-            key: SlidingWindowSampler(tsd.index, horizons=["2h", "1h"], stride="1h")
+            key: SlidingWindowSampler(  # type: ignore[type-var]
+                tsd.index,
+                horizons=[observation_horizon, forecasting_horizon],
+                stride=stride,
+            )
             for key, tsd in split.items()
         }
-        return HierarchicalSampler(split, subsamplers, shuffle=False)  # type: ignore[return-value]
-
-    def make_folds(self, /) -> DataFrame:
-        r"""Group by RunID and color which indicates replicates."""
-        md = self.dataset.metadata
-        groups = md.groupby(["run_id", "color"], sort=False).ngroup()
-        folds = folds_from_groups(
-            groups, seed=2022, num_folds=5, train=7, valid=1, test=2
+        return HierarchicalSampler(  # type: ignore[return-value]
+            split, subsamplers, early_stop=early_stop, shuffle=shuffle  # type: ignore[arg-type]
         )
-        df = folds_as_frame(folds)
-        return folds_as_sparse_frame(df)
 
-    def make_generator(self, key: KeyVar, /) -> KiwiSampleGenerator:
-        split = self.splits[key]
-        return KiwiSampleGenerator(split)
+    def make_generator(self, key: SplitID, /, **kwds: Any) -> TimeSeriesSampleGenerator:
+        r"""Sample generator for the KIWI dataset."""
+        # get configuration
+        generator_kwargs = self.generator_kwargs | kwds
+        observables = generator_kwargs.pop("observables")
+        targets = generator_kwargs.pop("targets")
+        covariates = generator_kwargs.pop("covariates")
+        assert not generator_kwargs, f"Unknown generator_kwargs: {generator_kwargs}"
+
+        return TimeSeriesSampleGenerator(
+            self.splits[key],
+            observables=observables,
+            targets=targets,
+            covariates=covariates,
+        )

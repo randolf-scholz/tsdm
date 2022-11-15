@@ -27,7 +27,7 @@ def test_insilico_task(SplitID=(0, "train")):
     assert isinstance(task.generators[SplitID], InSilicoSampleGenerator)
     assert isinstance(task.dataloaders[SplitID], DataLoader)
     assert task.collate_fns[SplitID] is NotImplemented
-    assert isinstance(task.train_partition, dict)
+    assert isinstance(task.train_split, dict)
 
     sampler = task.samplers[SplitID]
     key = next(iter(sampler))

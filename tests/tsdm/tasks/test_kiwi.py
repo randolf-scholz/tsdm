@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from tsdm.datasets import TimeSeriesCollection
 from tsdm.encoders import BaseEncoder
 from tsdm.random.samplers import HierarchicalSampler
-from tsdm.tasks import KiwiSampleGenerator, KiwiTask
+from tsdm.tasks import KiwiTask, TimeSeriesSampleGenerator
 from tsdm.tasks.base import Sample
 
 logging.basicConfig(level=logging.INFO)
@@ -35,22 +35,22 @@ def test_kiwi_task(SplitID=(0, "train")):
     # reveal_type(task.generators)
     # reveal_type(task.dataloaders)
     # reveal_type(task.encoders)
-    # reveal_type(task.train_partition)
+    # reveal_type(task.train_split)
     # reveal_type(task.collate_fns)
 
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
     assert isinstance(task.splits[SplitID], TimeSeriesCollection)
     assert isinstance(task.samplers[SplitID], HierarchicalSampler)
-    assert isinstance(task.generators[SplitID], KiwiSampleGenerator)
+    assert isinstance(task.generators[SplitID], TimeSeriesSampleGenerator)
     assert isinstance(task.dataloaders[SplitID], DataLoader)
     assert isinstance(task.encoders[SplitID], BaseEncoder)
-    assert isinstance(task.train_partition, dict)
+    assert isinstance(task.train_split, dict)
     assert callable(task.collate_fns[SplitID])
 
     sampler = task.samplers[SplitID]
     key = next(iter(sampler))
-    generator = task.generators[SplitID]
+    generator: TimeSeriesSampleGenerator = task.generators[SplitID]
     assert isinstance(generator, torch.utils.data.Dataset)
     sample: Sample = generator[key]
     assert isinstance(sample, tuple)

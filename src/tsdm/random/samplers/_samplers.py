@@ -330,7 +330,6 @@ class HierarchicalSampler(Sampler[tuple[KeyVar, T_co]]):
         /,
         subsamplers: Mapping[KeyVar, Sampler[T_co]],
         *,
-        subsampler_kwargs: Optional[Mapping[KeyVar, Mapping[str, Any]]] = None,
         shuffle: bool = True,
         early_stop: bool = False,
     ):
