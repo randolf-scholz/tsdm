@@ -61,7 +61,7 @@ class KiwiTask(TimeSeriesTask):
     r"""The interval of observational data."""
     forecasting_horizon: str = "1h"
     r"""The interval for which the model should forecast."""
-    stride: str = "1h"
+    stride: str = "15min"
     r"""The stride of the sliding window sampler."""
 
     observables: list[str] = [
@@ -112,6 +112,9 @@ class KiwiTask(TimeSeriesTask):
     }
     """The configuration of the sample generator."""
 
+    dataloader_kwargs = {"batch_size": 32, "num_workers": 0, "pin_memory": True}
+    """The configuration of the dataloader."""
+
     def __init__(
         self,
         *,
@@ -124,6 +127,7 @@ class KiwiTask(TimeSeriesTask):
         fold_kwargs: dict[str, Any] | None = None,
         sampler_kwargs: dict[str, Any] | None = None,
         generator_kwargs: dict[str, Any] | None = None,
+        dataloader_kwargs: dict[str, Any] | None = None,
     ) -> None:
         # self.observables = observables if observables is not None else self.observables
         # self.covariates = covariates if covariates is not None else self.covariates
@@ -147,7 +151,11 @@ class KiwiTask(TimeSeriesTask):
             if fold_kwargs is not None
             else self.fold_kwargs
         )
-
+        self.dataloader_kwargs = (
+            self.dataloader_kwargs | dataloader_kwargs
+            if dataloader_kwargs is not None
+            else self.dataloader_kwargs
+        )
         dataset = KiwiDataset()
         dataset.timeseries = dataset.timeseries.astype("float64")
         super().__init__(dataset=dataset)
