@@ -19,10 +19,14 @@ variables:
   MODULEDIR: "src/tsdm/"
   MODULENAME: "tsdm"
   TESTDIR: "tests/"
-  MAIN_CACHE: "$CI_PROJECT_DIR/.cache"
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  MAIN_CACHE: "${CI_PROJECT_DIR}/.cache"
+  PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pip"
+  PYRE_CACHE_DIR: "${CI_PROJECT_DIR}/.pyre"
   MYPY_CACHE_DIR: "${CI_PROJECT_DIR}/.mypy_cache"
   PYTEST_CACHE_DIR: "${CI_PROJECT_DIR}/.pytest_cache"
+  BADGE_DIR: "${CI_PROJECT_DIR}/badges"
+  REPORT_DIR: "${CI_PROJECT_DIR}/reports"
+  PUBLIC_DIR: "${CI_PROJECT_DIR}/public"
   VENVNAME: ".venv"
   VENV_DIR: "${CI_PROJECT_DIR}/${VENVNAME}"
   TWINE_PASSWORD: "${CI_JOB_TOKEN}"
@@ -31,7 +35,7 @@ variables:
 
 # global before_script is run before each and every job.
 before_script:
-  - mkdir -p $MAIN_CACHE public reports badges
+  - mkdir -p $MAIN_CACHE $PUBLIC_DIR $REPORT_DIR $BADGE_DIR
   - source ${VENVNAME}/bin/activate
 
 ################
@@ -50,24 +54,30 @@ setup:
         - "$VENV_DIR"
       policy: push
   before_script:
-    - mkdir -p $MAIN_CACHE public reports badges
+    # needs to be repeated as overrides global before_script
+    - mkdir -p $MAIN_CACHE $PUBLIC_DIR $REPORT_DIR $BADGE_DIR
+    - du -h --max-depth=1 "${MAIN_CACHE}"
     - echo "${CI_RUNNER_ID}"
     - echo "${CI_RUNNER_TAGS}"
-    - du -h --max-depth=1 "${MAIN_CACHE}"
     # Check kernel and python version
     - uname -a
-    - python -V
-    # overrides global before_script
-    # make directories
-    - mkdir -p badges
-    - mkdir -p reports
     # python setup
+    - which python
+    - python --version
+    - which pip
+    - pip --version
+    - pip cache info
     - pip install --upgrade pip poetry virtualenv
     - virtualenv ${VENVNAME} --download
+    # Activate virtualenv and check again.
     - source ${VENVNAME}/bin/activate
-    # check versions
+    - which python
     - python --version
+    - which poetry
     - poetry --version
+    - which pip
+    - pip --version
+    - pip cache info
     - pip install --upgrade pip setuptools wheel
   script:
     # We first build the package and then install it. Finally, we install the dev dependencies.
@@ -81,15 +91,15 @@ setup:
     - regex='r"^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$"'
     - VERSION='"'$(poetry version -s)'"'
     - python -c "import re; assert re.match($regex, $VERSION)"
-    # update the requirements.txt files.
-    - ./run/generate_requirements.sh
+    - echo ">>> Installing version $VERSION <<<"
     # build the package.
     - poetry build
     # install package
     #- poetry install
-    # TODO: fix pip install errors!!!
     - pip install --prefer-binary --upgrade $(ls dist/*.whl)
     # install dev dependencies.
+    # update the requirements.txt files.
+    - ./run/generate_requirements.sh
     - pip install --prefer-binary --upgrade -r requirements-dev.txt
     - pip list
   after_script:
@@ -103,22 +113,22 @@ setup:
       --whole-link="https://www.python.org/"
       --logo="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg"
       --embed-logo
-      > badges/python.svg
+      > $BADGE_DIR/python.svg
     # generate package version badge
     - python -m pybadges
       --left-text="version"
       --right-text="$VERSION"
-      > badges/version.svg
+      > $BADGE_DIR/version.svg
     # generate license badge
     - python -m pybadges
       --left-text="license"
       --right-text="MIT"
       --right-color="#7900CA"
-      > badges/license.svg
+      > $BADGE_DIR/license.svg
   artifacts:
     paths:
       - dist/
-      - badges/
+      - $BADGE_DIR/
 
 ###################
 # STAGE: ANALYSIS #
@@ -140,7 +150,7 @@ pylint:
       --exit-zero
       --load-plugins=pylint_gitlab
       --output-format=gitlab-codeclimate
-      > reports/codeclimate.json
+      > $REPORT_DIR/codeclimate.json
     # colorized for human readability
     - pylint $TESTDIR --exit-zero --output-format=colorized
     - pylint $MODULEDIR --exit-zero --output-format=colorized | tee pylint.log
@@ -157,12 +167,10 @@ pylint:
       --whole-link="https://github.com/PyCQA/pylint"
       --logo="https://raw.githubusercontent.com/PyCQA/pylint/69404bbf1a513381fd90e8f0c777d64b7923e429/doc/logo.svg"
       --embed-logo
-      > badges/pylint.svg
+      > $BADGE_DIR/pylint.svg
   artifacts:
-    # reports:
-    # codequality: reports/codeclimate.json
     paths:
-      - badges/
+      - $BADGE_DIR/
 
 flake8:
   # see .flake8 for configuration
@@ -188,17 +196,17 @@ flake8:
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://flake8.pycqa.org/en/latest/"
-      > badges/flake8.svg
+      > $BADGE_DIR/flake8.svg
     # generate black code style badge
     - python -m pybadges
       --left-text="code style"
       --right-text="black"
       --right-color="black"
       --whole-link="https://github.com/psf/black"
-      > badges/black.svg
+      > $BADGE_DIR/black.svg
   artifacts:
     paths:
-      - badges/
+      - $BADGE_DIR/
 
 mypy:
   # see pyproject.toml for configuration
@@ -216,8 +224,8 @@ mypy:
     - setup
   allow_failure: true
   script:
-    - mypy $MODULEDIR --show-error-codes --pretty --junit-xml reports/mypy.xml
-    - mypy $TESTDIR --show-error-codes --pretty --junit-xml reports/mypy_test.xml
+    - mypy $MODULEDIR --show-error-codes --pretty --junit-xml $REPORT_DIR/mypy.xml
+    - mypy $TESTDIR --show-error-codes --pretty --junit-xml $REPORT_DIR/mypy_test.xml
   after_script:
     - source ${VENVNAME}/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
@@ -228,14 +236,14 @@ mypy:
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://github.com/python/mypy"
-      > badges/mypy.svg
+      > $BADGE_DIR/mypy.svg
   # --logo="http://mypy-lang.org/static/mypy_light.svg"
   # --embed-logo
   artifacts:
     reports:
-      junit: reports/mypy*.xml
+      junit: $REPORT_DIR/mypy*.xml
     paths:
-      - badges/
+      - $BADGE_DIR/
 
 ###############
 # STAGE: TEST #
@@ -256,7 +264,7 @@ pytest:
     - setup
   script:
     - pytest -k "not slow"
-    - coverage xml -o reports/cobertura-coverage.xml
+    - coverage xml -o $REPORT_DIR/cobertura-coverage.xml
     - coverage report
   after_script:
     - source ${VENVNAME}/bin/activate
@@ -268,7 +276,7 @@ pytest:
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://pytest.org"
-      > badges/pytest.svg
+      > $BADGE_DIR/pytest.svg
   # --logo="https://raw.githubusercontent.com/pytest-dev/pytest/main/doc/en/img/pytest_logo_curves.svg"
   # --embed-logo
   coverage: '/TOTAL.*\s+(\d+\%)/'
@@ -277,10 +285,10 @@ pytest:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: reports/cobertura-coverage.xml
-      junit: reports/pytest.xml
+        path: $REPORT_DIR/cobertura-coverage.xml
+      junit: $REPORT_DIR/pytest.xml
     paths:
-      - badges/
+      - $BADGE_DIR/
 
 #################
 # STAGE: DEPLOY #
@@ -313,10 +321,10 @@ pypi:
       --whole-link="https://pypi.org/"
       --logo="https://pypi.org/static/images/logo-small.95de8436.svg"
       --embed-logo
-      > badges/pypi.svg
+      > $BADGE_DIR/pypi.svg
   artifacts:
     paths:
-      - badges/
+      - $BADGE_DIR/
 
 pages:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
@@ -334,7 +342,7 @@ pages:
   script:
     - cd docs
     - make html
-    - cp -r  _build/html/* ../public/
+    - cp -r  _build/html/* $PUBLIC_DIR/
   after_script:
     - source ${VENVNAME}/bin/activate
     - COLOR=$([ "$CI_JOB_STATUS" == "success" ] && echo "green" || echo "red")
@@ -347,8 +355,8 @@ pages:
       --whole-link="https://www.sphinx-doc.org"
       --logo="https://raw.githubusercontent.com/sphinx-doc/sphinx/9e1b4a8f1678e26670d34765e74edf3a3be3c62c/doc/_static/favicon.svg"
       --embed-logo
-      > badges/sphinx.svg
+      > $BADGE_DIR/sphinx.svg
   artifacts:
     paths:
-      - public/
-      - badges/
+      - $PUBLIC_DIR/
+      - $BADGE_DIR/
