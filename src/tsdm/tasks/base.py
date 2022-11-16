@@ -715,6 +715,7 @@ class TimeSeriesTask(
 
     @staticmethod
     def default_collate_fn(samples: list[Sample_co]) -> Batch:
+        r"""Return the default collate function."""
         return samples  # type: ignore[return-value]
 
     def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
