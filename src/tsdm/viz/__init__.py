@@ -42,11 +42,13 @@ MATPLOTLIB_CONFIG = {
 }
 
 try:
-    matplotlib.use("pgf")
+    if shutil.which("lualatex") is not None:
+        matplotlib.rcParams.update(MATPLOTLIB_CONFIG)
+        matplotlib.use("pgf")
+    else:
+        warnings.warn("lualatex not found. Using default matplotlib backend.")
 except ValueError:
     warnings.warn("matplotlib: pgf backend not available / no LaTeX rendering!")
-else:
-    matplotlib.rcParams.update(MATPLOTLIB_CONFIG)
 
 # pylint: disable=wrong-import-position
 from tsdm.viz._image import kernel_heatmap  # noqa: E402

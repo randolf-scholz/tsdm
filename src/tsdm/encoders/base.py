@@ -136,6 +136,8 @@ EncoderVar = TypeVar("EncoderVar", bound=BaseEncoder)
 class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
+    requires_fit: ClassVar[bool] = False
+
     def encode(self, data: ObjectVar, /) -> ObjectVar:
         return data
 

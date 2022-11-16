@@ -16,11 +16,11 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.datasets import KiwiDataset
-from tsdm.encoders import (
+from tsdm.encoders import (  # FrameEncoder,
     BoundaryEncoder,
     BoxCoxEncoder,
+    FastFrameEncoder,
     Frame2TensorDict,
-    FrameEncoder,
     IdentityEncoder,
     LinearScaler,
     LogitBoxCoxEncoder,
@@ -93,10 +93,16 @@ class KiwiTask(TimeSeriesTask):
         "Temperature",
     ]
 
-    fold_kwargs = {"seed": 2022, "num_folds": 5, "train": 7, "valid": 1, "test": 2}
+    fold_kwargs: dict[str, Any] = {
+        "seed": 2022,
+        "num_folds": 5,
+        "train": 7,
+        "valid": 1,
+        "test": 2,
+    }
     """The configuration of the fold generator."""
 
-    sampler_kwargs = {
+    sampler_kwargs: dict[str, Any] = {
         "observation_horizon": observation_horizon,
         "forecasting_horizon": forecasting_horizon,
         "stride": stride,
@@ -105,7 +111,7 @@ class KiwiTask(TimeSeriesTask):
     }
     """The configuration of the sampler."""
 
-    generator_kwargs = {
+    generator_kwargs: dict[str, Any] = {
         "observables": observables,
         "covariates": covariates,
         "targets": targets,
@@ -113,14 +119,14 @@ class KiwiTask(TimeSeriesTask):
     """The configuration of the sample generator."""
 
     dataloader_kwargs = {"batch_size": 32, "num_workers": 0, "pin_memory": True}
-    """The configuration of the dataloader."""
+    r"""The configuration of the dataloader."""
 
     def __init__(
         self,
         *,
         # observation_horizon: str = "2h",
         # forecasting_horizon: str = "1h",
-        # stride: str = "1h",
+        # stride: str = "15min",
         # observables: list[str] | None = None,
         # covariates: list[str] | None = None,
         # targets: list[str] | None = None,
@@ -129,12 +135,7 @@ class KiwiTask(TimeSeriesTask):
         generator_kwargs: dict[str, Any] | None = None,
         dataloader_kwargs: dict[str, Any] | None = None,
     ) -> None:
-        # self.observables = observables if observables is not None else self.observables
-        # self.covariates = covariates if covariates is not None else self.covariates
-        # self.targets = targets if targets is not None else self.targets
-        # self.stride = stride
-        # self.observation_horizon = observation_horizon
-        # self.forecasting_horizon = forecasting_horizon
+        # FIXME: make it DRY
 
         self.generator_kwargs = (
             self.generator_kwargs | generator_kwargs
@@ -156,6 +157,14 @@ class KiwiTask(TimeSeriesTask):
             if dataloader_kwargs is not None
             else self.dataloader_kwargs
         )
+
+        self.observables = self.generator_kwargs["observables"]
+        self.covariates = self.generator_kwargs["covariates"]
+        self.targets = self.generator_kwargs["targets"]
+        self.stride = self.sampler_kwargs["stride"]
+        self.observation_horizon = self.sampler_kwargs["observation_horizon"]
+        self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
+
         dataset = KiwiDataset()
         dataset.timeseries = dataset.timeseries.astype("float64")
         super().__init__(dataset=dataset)
@@ -245,7 +254,7 @@ class KiwiTask(TimeSeriesTask):
                 dtypes={"T": "float32", "X": "float32"},
             )
             @ Standardizer()
-            @ FrameEncoder(
+            @ FastFrameEncoder(
                 column_encoders=column_encoders,
                 index_encoders={
                     # "run_id": IdentityEncoder(),
@@ -283,11 +292,12 @@ class KiwiTask(TimeSeriesTask):
                 tsd.index,
                 horizons=[observation_horizon, forecasting_horizon],
                 stride=stride,
+                shuffle=shuffle,
             )
             for key, tsd in split.items()
         }
         return HierarchicalSampler(  # type: ignore[return-value]
-            split, subsamplers, early_stop=early_stop, shuffle=shuffle  # type: ignore[arg-type]
+            split, subsamplers, early_stop=early_stop, shuffle=shuffle
         )
 
     def make_generator(self, key: SplitID, /, **kwds: Any) -> TimeSeriesSampleGenerator:

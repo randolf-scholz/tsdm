@@ -460,6 +460,11 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     def __repr__(self) -> str:
         return repr_dataclass(self)
 
+    def get_subgenerator(self, key: KeyVar) -> TimeSeriesSampleGenerator:
+        r"""Get a subgenerator."""
+        other_kwargs = {k: v for k, v in self.__dict__.items() if k != "dataset"}
+        return self.__class__(self.dataset[key], **other_kwargs)
+
     def make_sample(
         self, key: KeyVar, *, sparse_index: bool = False, sparse_columns: bool = False
     ) -> Sample:
