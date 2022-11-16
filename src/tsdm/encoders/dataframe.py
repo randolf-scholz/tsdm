@@ -6,6 +6,7 @@ __all__ = [
     # ABC
     # Classes
     "Frame2TensorDict",
+    "Frame2TensorTuple",
     "FrameEncoder",
     "FastFrameEncoder",
     "FrameIndexer",
@@ -1057,3 +1058,81 @@ class Frame2TensorDict(BaseEncoder):
             cols = [col for col in self.original_index_columns if col in df.columns]
             df = df.set_index(cols)
         return df
+
+
+class Frame2TensorTuple(BaseEncoder):
+    r"""Encodes a DataFrame as a tuple of column and index tensor."""
+
+    # Attributes
+    original_index_columns: Index
+    original_index_dtypes: Series
+    original_values_columns: Index
+    original_values_dtypes: Series
+
+    # Parameters
+    column_dtype: Optional[torch.dtype] = None
+    index_dtype: Optional[torch.dtype] = None
+    device: Optional[str | torch.device] = None
+
+    def __init__(
+        self,
+        *,
+        column_dtype: Optional[torch.dtype] = torch.float32,
+        index_dtype: Optional[torch.dtype] = torch.float32,
+        device: Optional[str | torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.column_dtype = column_dtype
+        self.index_dtype = index_dtype
+        self.device = device
+
+    def fit(self, data: DataFrame, /) -> None:
+        r"""Fit to the data."""
+        index = data.index.to_frame()
+        self.original_index_columns = index.columns
+        self.original_index_dtypes = index.dtypes
+        self.original_values_columns = data.columns
+        self.original_values_dtypes = data.dtypes
+
+        if self.original_values_dtypes.nunique() != 1:
+            raise ValueError("All columns must have the same dtype!")
+        if self.original_index_dtypes.nunique() != 1:
+            raise ValueError("All index columns must have the same dtype!")
+
+    def encode(self, data: DataFrame, /) -> tuple[Tensor, Tensor]:
+        r"""Encode a DataFrame."""
+        index = data.index.to_frame().to_numpy()
+        index_tensor = torch.tensor(index, dtype=self.index_dtype, device=self.device)
+        values = data.to_numpy()
+        values_tensor = torch.tensor(
+            values, dtype=self.column_dtype, device=self.device
+        )
+        return index_tensor.squeeze(), values_tensor.squeeze()
+
+    def decode(self, data: tuple[Tensor, Tensor], /) -> DataFrame:
+        r"""Combine index and column tensor to DataFrame."""
+        index_tensor, values_tensor = data
+        index_tensor = index_tensor.clone().detach().cpu()
+        values_tensor = values_tensor.clone().detach().cpu()
+
+        # Assemble the columns
+        columns = DataFrame(
+            values_tensor,
+            columns=self.original_values_columns,
+        )
+        columns = columns.astype(self.original_values_dtypes)
+        columns = columns.squeeze(axis="columns")
+
+        # assemble the index
+        index = DataFrame(
+            index_tensor,
+            columns=self.original_index_columns,
+        )
+        index = index.astype(self.original_index_dtypes)
+        index = index.squeeze(axis="columns")
+
+        if isinstance(index, Series):
+            decoded = columns.set_index(index)
+        else:
+            decoded = columns.set_index(MultiIndex.from_frame(index))
+        return decoded
