@@ -50,7 +50,7 @@ CONFIG_FILE = CONFIG_DIR / CFG_ID
 
 CFG = {
     "fold": [0],
-    "epochs": [100],
+    "epochs": [50],
     "batch_size": [64],
     "learn_rate": [0.001],
     "hidden_size": [0, 64, 128],
