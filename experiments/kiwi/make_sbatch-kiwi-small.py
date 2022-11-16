@@ -24,7 +24,7 @@ parser.add_argument("-p",  "--partition", default=None,   type=str,   help="part
 ARGS = parser.parse_args()
 MODEL = ARGS.model or "LinODEnet"
 DATASET = ARGS.dataset or "KIWI"
-PARTITION = ARGS.partition or "NGPU"
+PARTITION = ARGS.partition or "GPU"
 SCRIPT = ARGS.script or f"script-{DATASET.lower()}.py"
 RUN_ID = ARGS.run_id or NOW
 CFG_ID = ARGS.config or f"{DATASET}-{MODEL}-{RUN_ID}.yaml"
@@ -49,10 +49,10 @@ DOMAIN = socket.getfqdn().split(".", 1)[1]
 CONFIG_FILE = CONFIG_DIR / CFG_ID
 
 CFG = {
-    "fold": [0, 1, 2, 3, 4],
+    "fold": [0],
     "epochs": [50],
-    "batch_size": [64],
-    "learn_rate": [0.001],
+    "batch_size": [32],
+    "learn_rate": [0.001, 0.0001],
     "hidden_size": [0, 64],
     "latent_size": [64, 128],
     "seed": [None],
@@ -71,7 +71,7 @@ else:
 SBATCH = "\n".join(
     [
         r"#!/usr/bin/env bash",
-        f"#SBATCH --job-name={DATASET}",
+        f"#SBATCH --job-name={DATASET}-small",
         f"#SBATCH --partition={PARTITION}",
         f"#SBATCH --output={LOG_DIR / r'%j.stdout.log'}",
         f"#SBATCH --error={LOG_DIR / r'%j.stderr.log'}",
