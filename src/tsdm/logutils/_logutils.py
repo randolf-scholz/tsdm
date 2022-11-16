@@ -351,7 +351,7 @@ class StandardLogger:
     predict_fn: Union[
         Callable[[nn.Module, tuple], tuple],
         Callable[[nn.Module, tuple], ResultTuple],
-        Callable[[nn.Module, tuple], ResultDict],
+        # Callable[[nn.Module, tuple], ResultDict],
     ]
     results_dir: Optional[Path] = None
 
@@ -374,31 +374,57 @@ class StandardLogger:
         r"""Return a string representation of the object."""
         return f"{self.__class__.__name__}"
 
+    # @torch.no_grad()
+    # def get_all_predictions(self, dataloader: DataLoader) -> ResultTuple:
+    #     r"""Get all predictions for a dataloader."""
+    #     predics = []
+    #     targets = []
+    #
+    #     # determine the type of the output of the predict_fn
+    #     iloader = iter(dataloader)
+    #     batch = next(iloader)
+    #     result = self.predict_fn(self.model, batch)
+    #
+    #     if isinstance(result, dict):
+    #         targets.append(result["targets"])
+    #         predics.append(result["predics"])
+    #         for batch in iloader:
+    #             result = self.predict_fn(self.model, batch)
+    #             targets.append(result["targets"])
+    #             predics.append(result["predics"])
+    #     elif isinstance(result, ResultTuple):
+    #         targets.append(result.targets)
+    #         predics.append(result.predics)
+    #         for batch in iloader:
+    #             result = self.predict_fn(self.model, batch)
+    #             targets.append(result.targets)
+    #             predics.append(result.predics)
+    #     elif isinstance(result, tuple):
+    #
+    #         targets.append(result[0])
+    #         predics.append(result[1])
+    #         for batch in iloader:
+    #             result = self.predict_fn(self.model, batch)
+    #             targets.append(result[0])
+    #             predics.append(result[1])
+    #
+    #     masks = [~torch.isnan(p) for p in predics]
+    #     return ResultTuple(
+    #         targets=torch.cat([t[m] for t, m in zip(targets, masks)]).squeeze(),
+    #         predics=torch.cat([p[m] for p, m in zip(predics, masks)]).squeeze(),
+    #     )
+
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> ResultTuple:
         r"""Get all predictions for a dataloader."""
-        predics = []
+        # TODO: generic version
         targets = []
+        predics = []
+
         for batch in dataloader:
             result = self.predict_fn(self.model, batch)
-
-            if isinstance(result, dict):
-                targets.append(result["targets"])
-                predics.append(result["predics"])
-            elif isinstance(result, ResultTuple):
-                targets.append(result.targets)
-                predics.append(result.predics)
-            else:
-                if not self._warned_tuple:
-                    self._warned_tuple = True
-                    warnings.warn(
-                        "We strongly recommend using NamedTuple or a dictionary"
-                        " as the return type of the predict_fn. "
-                        "Make sure that 'targets' is the first output and 'predics' is the second.",
-                        UserWarning,
-                    )
-                targets.append(result[0])
-                predics.append(result[1])
+            targets.append(result[0])
+            predics.append(result[1])
 
         masks = [~torch.isnan(p) for p in predics]
         return ResultTuple(
@@ -478,6 +504,14 @@ class StandardLogger:
                 index=[i], columns=self.history.columns, dtype="Float32"
             )
             self.history = pd.concat([self.history, empty_row], sort=True)
+
+        if not self._warned_tuple:
+            self._warned_tuple = True
+            warnings.warn(
+                "We recommend using a NamedTuple or a dictionary as the return type."
+                " Ensure that 'targets'/'predics' is the first/second output.",
+                UserWarning,
+            )
 
         # Schema: identifier:category/key, e.g. `metrics:MSE/train`
         for key, dataloader in self.dataloaders.items():
