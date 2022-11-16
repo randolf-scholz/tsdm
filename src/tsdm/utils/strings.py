@@ -162,6 +162,7 @@ def repr_mapping(
     recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
+    wrapped: Optional[object] = None,
 ) -> str:
     r"""Return a string representation of a mapping object.
 
@@ -226,14 +227,15 @@ def repr_mapping(
         max_key_length = 0
 
     # check builtin
-    if type(obj) == dict:  # pylint: disable=unidiomatic-typecheck
+    self = obj if wrapped is None else wrapped
+    if type(self) == dict:  # pylint: disable=unidiomatic-typecheck
         if title is None:
             title = ""
         if identifier is None:
             identifier = dict.__name__
 
     # set title
-    cls = type(obj)
+    cls = type(self)
     if title is None:
         title = cls.__name__
 
@@ -331,6 +333,7 @@ def repr_sequence(
     recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
+    wrapped: Optional[object] = None,
 ) -> str:
     r"""Return a string representation of a sequence object.
 
@@ -385,15 +388,16 @@ def repr_sequence(
         left, right = "(", ")"
 
     # check builtin
+    self = obj if wrapped is None else wrapped
     for builtin in (list, tuple, set):
-        if type(obj) == builtin:  # pylint: disable=unidiomatic-typecheck
+        if type(self) == builtin:  # pylint: disable=unidiomatic-typecheck
             if title is None:
                 title = ""
             if identifier is None:
                 identifier = builtin.__name__
 
     # set title
-    cls = type(obj)
+    cls = type(self)
     if title is None:
         title = cls.__name__
 
@@ -435,6 +439,7 @@ def repr_sequence(
         padding=padding,
         recursive=r,
         repr_fun=repr_fun,
+        wrapped=wrapped,
     )
 
     # Assemble the string
@@ -485,6 +490,7 @@ def repr_dataclass(
     recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
+    wrapped: Optional[object] = None,
 ) -> str:
     r"""Return a string representation of a dataclass object.
 
@@ -495,7 +501,8 @@ def repr_dataclass(
     assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."
     fields: dict[str, Field] = obj.__dataclass_fields__
 
-    cls = type(obj)
+    self = obj if wrapped is None else wrapped
+    cls = type(self)
     title = cls.__name__ if title is None else title
 
     if identifier is None and title != cls.__name__:
@@ -520,6 +527,7 @@ def repr_dataclass(
             recursive=recursive,
             repr_fun=repr_fun,
             title=title,
+            wrapped=wrapped,
         )
     return repr_sequence(
         [key for key, field in fields.items() if field.repr],
@@ -532,6 +540,7 @@ def repr_dataclass(
         recursive=recursive,
         repr_fun=repr_fun,
         title=title,
+        wrapped=wrapped,
     )
 
 
@@ -548,6 +557,7 @@ def repr_namedtuple(
     recursive: bool | int = RECURSIVE,
     repr_fun: Callable[..., str] = repr_object,
     title: Optional[str] = None,
+    wrapped: Optional[object] = None,
 ) -> str:
     r"""Return a string representation of a namedtuple object.
 
@@ -556,7 +566,9 @@ def repr_namedtuple(
     """
     assert isinstance(obj, tuple), f"Object {obj} is not a namedtuple."
     assert isinstance(obj, NTuple), f"Object {obj} is not a namedtuple."
-    title = type(obj).__name__ if title is None else title
+
+    self = obj if wrapped is None else wrapped
+    title = type(self).__name__ if title is None else title
     identifier = "tuple" if identifier is None else identifier
 
     if recursive:
@@ -571,6 +583,7 @@ def repr_namedtuple(
             recursive=recursive,
             repr_fun=repr_fun,
             title=title,
+            wrapped=wrapped,
         )
     return repr_sequence(
         obj._fields,
@@ -583,6 +596,7 @@ def repr_namedtuple(
         recursive=recursive,
         repr_fun=repr_fun,
         title=title,
+        wrapped=wrapped,
     )
 
 
