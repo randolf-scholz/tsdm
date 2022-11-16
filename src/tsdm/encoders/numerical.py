@@ -85,23 +85,28 @@ class BoundaryEncoder(BaseEncoder):
 
     requires_fit: ClassVar[bool] = False
 
+    def __post_init__(self):
+        self.lower_mask: float | np.ndarray
+        self.upper_mask: float | np.ndarray
+        if self.mode == "mask":
+            self.lower_mask = self.mask_value
+            self.upper_mask = self.mask_value
+        elif self.mode == "clip":
+            self.lower_mask = self.lower
+            self.upper_mask = self.upper
+        else:
+            raise ValueError(f"Unknown mode {self.mode}")
+
     def fit(self, data: DataFrame) -> None:
         # TODO: make _nan adapt to real data type!
         if isinstance(data, Series | DataFrame) and pd.isna(self.mask_value):
             self.mask_value = NA
 
     def encode(self, data: DataFrame) -> DataFrame:
-        if self.mode == "mask":
-            # NOTE: frame.where(cond, other) replaces where condition is False!
-            data = data.where(data.isna() | (data >= self.lower), self.mask_value)
-            data = data.where(data.isna() | (data <= self.upper), self.mask_value)
-            return data
-        if self.mode == "clip":
-            data = data.where(data.isna() | (data >= self.lower), self.lower)
-            data = data.where(data.isna() | (data <= self.upper), self.upper)
-            return data
-
-        raise ValueError(f"Unknown mode {self.mode}")
+        # NOTE: frame.where(cond, other) replaces where condition is False!
+        data = data.where(data.isna() | (data >= self.lower), self.lower_mask)
+        data = data.where(data.isna() | (data <= self.upper), self.upper_mask)
+        return data
 
     def decode(self, data: DataFrame) -> DataFrame:
         return data
@@ -203,23 +208,11 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
         #     self.stdv = np.sqrt((residual**2).sum(axis=axes)/count)
 
     def encode(self, data: TensorType, /) -> TensorType:
-        if self.mean is None:
-            raise RuntimeError("Needs to be fitted first!")
-
-        self.LOGGER.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, axis=self.axis)
-        self.LOGGER.debug("Broadcasting to %s", broadcast)
-
         return (data - self.mean[broadcast]) / self.stdv[broadcast]
 
     def decode(self, data: TensorType, /) -> TensorType:
-        if self.mean is None:
-            raise RuntimeError("Needs to be fitted first!")
-
-        self.LOGGER.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, axis=self.axis)
-        self.LOGGER.debug("Broadcasting to %s", broadcast)
-
         return data * self.stdv[broadcast] + self.mean[broadcast]
 
 
@@ -316,9 +309,7 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
             self.scale = np.array(self.scale)
 
     def encode(self, data: TensorType, /) -> TensorType:
-        self.LOGGER.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, axis=self.axis)
-        self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         xmin: TensorType = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
         scale: TensorType = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
@@ -327,9 +318,7 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
         return (data - xmin) * scale + ymin
 
     def decode(self, data: TensorType, /) -> TensorType:
-        self.LOGGER.debug("Decoding data %s", data)
         broadcast = get_broadcast(data, axis=self.axis)
-        self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
         scale = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
@@ -442,9 +431,7 @@ class MinMaxScaler(LinearScaler, Generic[TensorType]):
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def encode(self, data: TensorType, /) -> TensorType:
-        self.LOGGER.debug("Encoding data %s", data)
         broadcast = get_broadcast(data, axis=self.axis)
-        self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         xmin: TensorType = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
         scale: TensorType = self.scale[broadcast] if self.scale.ndim > 1 else self.scale
@@ -453,9 +440,7 @@ class MinMaxScaler(LinearScaler, Generic[TensorType]):
         return (data - xmin) * scale + ymin
 
     def decode(self, data: TensorType, /) -> TensorType:
-        self.LOGGER.debug("Decoding data %s", data)
         broadcast = get_broadcast(data, axis=self.axis)
-        self.LOGGER.debug("Broadcasting to %s", broadcast)
 
         xmin = self.xmin[broadcast] if self.xmin.ndim > 1 else self.xmin
         scale = self.scale[broadcast] if self.scale.ndim > 1 else self.scale

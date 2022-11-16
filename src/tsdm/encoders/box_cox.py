@@ -207,7 +207,7 @@ class BoxCoxEncoder(BaseEncoder):
         self.offset = float(np.array(offset).item())
 
     def encode(self, data: Series, /) -> Series:
-        assert all(np.isnan(data) | (data >= 0)), f"{data=}"
+        # assert all(np.isnan(data) | (data >= 0)), f"{data=}"
         return np.log(data + self.offset)
 
     def decode(self, data: Series, /) -> Series:
@@ -401,7 +401,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
         self.offset = float(np.array(offset).item())
 
     def encode(self, data: Series, /) -> Series:
-        assert all(np.isnan(data) | ((data >= 0) & (data <= 1))), f"{data=}"
+        # assert all(np.isnan(data) | ((data >= 0) & (data <= 1))), f"{data=}"
         return np.log((data + self.offset) / (1 - data + self.offset))
 
     def decode(self, data: Series, /) -> Series:

@@ -627,3 +627,164 @@ class FrameEncoder(BaseEncoder):
             "index_encoders": self.index_encoders,
         }
         return repr_mapping(items, title=self.__class__.__name__)
+
+
+class FastFrameEncoder(BaseEncoder):
+    r"""Encode a DataFrame by group-wise transformations.
+
+    This variant ensures that the output and input DataFrame have the same modality.
+    """
+
+    columns: Index
+    dtypes: Series
+    index_columns: Index
+    index_dtypes: Series
+    duplicate: bool = False
+
+    column_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]]
+    r"""Encoders for the columns."""
+    index_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]]
+    r"""Optional Encoder for the index."""
+    column_decoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]]
+    r"""Reverse Dictionary from encoded column name -> encoder"""
+    index_decoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]]
+    r"""Reverse Dictionary from encoded index name -> encoder"""
+
+    @staticmethod
+    def _names(obj: Index | Series | DataFrame) -> Hashable | FrozenList[Hashable]:
+        if isinstance(obj, MultiIndex):
+            return FrozenList(obj.names)
+        if isinstance(obj, (Series, Index)):
+            return obj.name
+        if isinstance(obj, DataFrame):
+            return FrozenList(obj.columns)
+        raise ValueError
+
+    def __init__(
+        self,
+        column_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]] = None,
+        *,
+        index_encoders: Optional[Union[BaseEncoder, Mapping[Any, BaseEncoder]]] = None,
+        duplicate: bool = False,
+    ):
+        super().__init__()
+        self.column_encoders = column_encoders
+        self.index_encoders = index_encoders
+        self.duplicate = duplicate
+
+    def fit(self, data: DataFrame, /) -> None:
+        r"""Fit the encoder."""
+        data = data.copy()
+        index = data.index.to_frame()
+        self.columns = data.columns
+        self.dtypes = data.dtypes
+        self.index_columns = index.columns
+        self.index_dtypes = index.dtypes
+
+        if self.duplicate:
+            if not isinstance(self.column_encoders, BaseEncoder):
+                raise ValueError("Duplication only allowed when single encoder")
+            self.column_encoders = {
+                col: deepcopy(self.column_encoders) for col in data.columns
+            }
+
+        if self.column_encoders is None:
+            self.column_decoders = None
+        elif isinstance(self.column_encoders, BaseEncoder):
+            self.column_encoders.fit(data)
+            self.column_decoders = self.column_encoders
+        else:
+            self.column_decoders = {}
+            for group, encoder in self.column_encoders.items():
+                encoder.fit(data[group])
+                encoded = encoder.encode(data[group])
+                self.column_decoders[self._names(encoded)] = encoder
+
+        if self.index_encoders is None:
+            self.index_decoders = None
+        elif isinstance(self.index_encoders, BaseEncoder):
+            self.index_encoders.fit(index)
+            self.index_decoders = self.index_encoders
+        else:
+            self.index_decoders = {}
+            for group, encoder in self.index_encoders.items():
+                encoder.fit(index[group])
+                encoded = encoder.encode(index[group])
+                self.index_decoders[self._names(encoded)] = encoder
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        r"""Encode the data."""
+        data = data.copy()
+        index = data.index.to_frame()
+
+        if self.column_encoders is None:
+            pass
+        elif isinstance(self.column_encoders, BaseEncoder):
+            data[:] = self.column_encoders.encode(data)
+        else:
+            for group, encoder in self.column_encoders.items():
+                data[group] = encoder.encode(data[group])
+
+        if self.index_encoders is None:
+            pass
+        elif isinstance(self.index_encoders, BaseEncoder):
+            index[:] = self.index_encoders.encode(index)
+        else:
+            for group, encoder in self.index_encoders.items():
+                index[group] = encoder.encode(index[group])
+
+        # Assemble DataFrame
+        data.index = index
+        return data
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        r"""Decode the data."""
+        data = data.copy(deep=True)
+        index = data.index.to_frame()
+        decoded_cols = data
+        decoded_inds = decoded_cols.index.to_frame()
+
+        if self.column_decoders is None:
+            pass
+        elif isinstance(self.column_decoders, BaseEncoder):
+            decoded = self.column_decoders.decode(data)
+            decoded_cols = decoded_cols.drop(columns=data.columns)
+            decoded_cols[self._names(decoded)] = decoded
+        else:
+            for group, encoder in self.column_decoders.items():
+                decoded = encoder.decode(data[group])
+                decoded_cols = decoded_cols.drop(columns=group)
+                decoded_cols[self._names(decoded)] = decoded
+
+        if self.index_decoders is None:
+            pass
+        elif isinstance(self.index_decoders, BaseEncoder):
+            decoded = self.index_decoders.decode(index)
+            decoded_inds = decoded_inds.drop(columns=index.columns)
+            decoded_inds[self._names(decoded)] = decoded
+        else:
+            for group, encoder in self.index_decoders.items():
+                decoded = encoder.decode(index[group])
+                decoded_inds = decoded_inds.drop(columns=group)
+                decoded_inds[self._names(decoded)] = decoded
+
+        # Restore index order + dtypes
+        decoded_inds = decoded_inds[self.index_columns]
+        decoded_inds = decoded_inds.astype(self.index_dtypes)
+
+        # Assemble DataFrame
+        decoded = DataFrame(decoded_cols)
+        decoded[self._names(decoded_inds)] = decoded_inds
+        decoded = decoded.set_index(self._names(decoded_inds))
+        decoded = decoded[self.columns]
+        decoded = decoded.astype(self.dtypes)
+
+        return decoded
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the encoder."""
+        items = {
+            "column_encoders": self.column_encoders,
+            "index_encoders": self.index_encoders,
+        }
+        return repr_mapping(items, title=self.__class__.__name__)
