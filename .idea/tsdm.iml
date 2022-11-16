@@ -48,6 +48,11 @@
       <excludeFolder url="file://$MODULE_DIR$/dev/datasets/MIMIC-IV/processed" />
       <excludeFolder url="file://$MODULE_DIR$/dev/datasets/MIMIC-IV/raw" />
       <excludeFolder url="file://$MODULE_DIR$/tests/reports" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/CLUSTER" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/tensorboard" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/results" />
+      <excludeFolder url="file://$MODULE_DIR$/experiments/evaluation/checkpoints" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Poetry (tsdm)" jdkType="Python SDK" />

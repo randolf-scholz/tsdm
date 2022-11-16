@@ -2,38 +2,44 @@ r"""LinODEnet pretrained Models."""
 
 __all__ = [
     # Classes
+    "OldLinODEnet",
     "LinODEnet",
-    "LinODEnetEncoder",
 ]
 
-import pickle
-from zipfile import ZipFile
-
-import torch
-
-from tsdm.config import MODELDIR
-from tsdm.encoders import BaseEncoder
 from tsdm.models.pretrained.base import PreTrainedModel
 
 
-class LinODEnet(PreTrainedModel):
-    r"""Import pre-trained LinODEnet model."""
+class OldLinODEnet(PreTrainedModel):  # Deprecated
+    """Import pre-trained LinODEnet model."""
 
-    model_file = "linodenet.zip"
+    rawdata_file = "linodenet.zip"
     DOWNLOAD_URL = (
         "https://tubcloud.tu-berlin.de/s/syEZCZrBqQXiA5i/download/linodenet.zip"
     )
-    MODEL_SHA256 = "15897965202b8e66db0189f4778655a3c55d350ca406447d8571133cbdfb1732"
+    RAWDATA_HASH = "15897965202b8e66db0189f4778655a3c55d350ca406447d8571133cbdfb1732"
+    HASHES = {
+        "model": ...,
+        "encoder": ...,
+        "optimizer": ...,
+    }
+    component_files = {
+        "model": "LinODEnet-70",
+        "encoder": "encoder.pickle",
+    }
 
-    def _load(self) -> torch.nn.Module:
-        with ZipFile(self.model_path) as archive:
-            with archive.open("LinODEnet-70") as file:
-                return self.load_torch_jit(file, map_location=self.device)
 
+class LinODEnet(PreTrainedModel):  # Deprecated
+    """Import pre-trained LinODEnet model."""
 
-def LinODEnetEncoder() -> BaseEncoder:
-    r"""Import pre-trained LinODEnet encoder."""
-    path = MODELDIR / LinODEnet.__name__ / "linodenet.zip"
-    with ZipFile(path) as archive:
-        with archive.open("encoder.pickle") as file:
-            return pickle.load(file)
+    rawdata_file = "2022-11-16-linodenet-e4f9e3bd1e93ff868a0c400dee58d5e9.zip"
+    DOWNLOAD_URL = (
+        "https://tubcloud.tu-berlin.de/s/njNwW3gkFtwAiXZ/download/"
+        "2022-11-16-linodenet-e4f9e3bd1e93ff868a0c400dee58d5e9.zip"
+    )
+    RAWDATA_HASH = "2939a2528eb791d601e7433894e7ca775dec00a53483333d995d0c914a434e6d"
+    component_files = {
+        "model": "RecursiveScriptModule-30",
+        "encoder": "encoder.pickle",
+        "optimizer": "AdamW-30",
+        "hyperparameters": "hparams.yaml",
+    }

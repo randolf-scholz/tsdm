@@ -28,6 +28,8 @@ pics/
 runs/
 model_checkpoints/
 checkpoints/
+slurm/
+configs/
 *.pt
 tensorboard/
 
