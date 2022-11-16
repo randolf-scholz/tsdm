@@ -7,6 +7,7 @@ __all__ = [
     # Classes
     "Frame2TensorDict",
     "FrameEncoder",
+    "FastFrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
     "TensorEncoder",
@@ -32,7 +33,7 @@ from torch import Tensor
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import PandasObject, PathType
+from tsdm.utils.types import KeyVar, PandasObject, PathType
 from tsdm.utils.types.dtypes import TORCH_DTYPES
 from tsdm.utils.types.protocols import NTuple
 
@@ -296,6 +297,91 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             "index_encoders": self.index_encoders,
         }
         return repr_mapping(items, title=self.__class__.__name__, recursive=2)
+
+
+class FastFrameEncoder(Mapping[KeyVar, BaseEncoder], BaseEncoder):
+    r"""Encode a DataFrame by group-wise transformations.
+
+    Per-column encoding is possible through the dictionary input.
+    In this case, the positions of the columns in the encoded DataFrame should coincide with the
+    positions of the columns in the input DataFrame.
+
+    Todo: We want encoding groups, so for example applying an encoder to a group of columns.
+
+    - [ ] Add support for groups of column-encoders
+    """
+
+    original_columns: list[KeyVar]
+    original_dtypes: Series
+    original_index_columns: list[KeyVar]
+    original_value_columns: list[KeyVar]
+
+    encoders: Mapping[KeyVar, BaseEncoder]
+    column_encoders: Mapping[KeyVar, BaseEncoder]
+    index_encoders: Mapping[KeyVar, BaseEncoder]
+
+    def __init__(
+        self,
+        column_encoders: Mapping[KeyVar, BaseEncoder] = NotImplemented,
+        *,
+        index_encoders: Mapping[KeyVar, BaseEncoder] = NotImplemented,
+    ):
+        super().__init__()
+        self.column_encoders = (
+            {} if column_encoders is NotImplemented else column_encoders
+        )
+        self.index_encoders = {} if index_encoders is NotImplemented else index_encoders
+        self.encoders = {**column_encoders, **index_encoders}
+
+    def __getitem__(self, key: KeyVar) -> BaseEncoder:
+        return self.encoders[key]
+
+    def __iter__(self) -> Iterator[KeyVar]:
+        return iter(self.encoders)
+
+    def __len__(self) -> int:
+        return len(self.encoders)
+
+    def fit(self, data: DataFrame, /) -> None:
+        data = data.copy(deep=True)
+        index = data.index.to_frame()
+        self.original_value_columns = FrozenList(data.columns)
+        self.original_index_columns = FrozenList(index.columns)
+
+        data = data.reset_index()
+        self.original_dtypes = data.dtypes
+        self.original_columns = FrozenList(data.columns)
+
+        # Fit
+        for group, encoder in self.encoders.items():
+            encoder.fit(data[group])
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        data = data.reset_index()
+
+        for group, encoder in self.encoders.items():
+            data[group] = encoder.encode(data[group])
+
+        index_columns = data.columns.intersection(self.original_index_columns)
+        data = data.set_index(index_columns.tolist())
+        return data
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        data = data.reset_index()
+        # index = data.index.to_frame()
+
+        for group, encoder in self.encoders.items():
+            data[group] = encoder.decode(data[group])
+
+        # Restore index order + dtypes
+        data = data.astype(self.original_dtypes[data.columns])
+        index_columns = data.columns.intersection(self.original_index_columns)
+        data = data.set_index(index_columns.tolist())
+        return data
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the encoder."""
+        return repr_mapping(self)
 
 
 class FrameIndexer(BaseEncoder):

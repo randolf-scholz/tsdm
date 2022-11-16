@@ -122,6 +122,7 @@ __all__ = [
     "FloatEncoder",
     "Frame2TensorDict",
     "FrameEncoder",
+    "FastFrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
     "IdentityEncoder",
@@ -167,6 +168,7 @@ from tsdm.encoders.base import (
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
+    FastFrameEncoder,
     Frame2TensorDict,
     FrameEncoder,
     FrameIndexer,
