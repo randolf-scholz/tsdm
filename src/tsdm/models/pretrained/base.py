@@ -123,6 +123,31 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         return repr_mapping(self.components, repr_fun=repr_short, wrapped=self)
 
     @cached_property
+    def model(self) -> torch.nn.Module:
+        r"""Return the model."""
+        return self.components["model"]
+
+    @cached_property
+    def optimizer(self) -> torch.optim.Optimizer:
+        r"""Return the optimizer."""
+        return self.components["optimizer"]
+
+    @cached_property
+    def hyperparameters(self) -> dict[str, Any]:
+        r"""Return the hyperparameters."""
+        return self.components["hyperparameters"]
+
+    @cached_property
+    def encoder(self, /) -> BaseEncoder:
+        r"""Return the encoder."""
+        return self.components["encoder"]
+
+    @cached_property
+    def lr_scheduler(self) -> TorchLRScheduler:
+        r"""Return the learning rate scheduler."""
+        return self.components["lr_scheduler"]
+
+    @cached_property
     def components(self) -> dict[str, Any]:
         r"""Extract all components."""
         return LazyDict({k: self.get_component for k in self.component_files})
@@ -145,31 +170,6 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     def rawdata_file_exist(self) -> bool:
         r"""Check if raw data files exist."""
         return paths_exists(self.rawdata_path)
-
-    @cached_property
-    def model(self) -> torch.nn.Module:
-        r"""Return the model."""
-        return self.get_component("model")
-
-    @cached_property
-    def optimizer(self) -> torch.optim.Optimizer:
-        r"""Return the optimizer."""
-        return self.get_component("optimizer")
-
-    @cached_property
-    def hyperparameters(self) -> dict[str, Any]:
-        r"""Return the hyperparameters."""
-        return self.get_component("hyperparameters")
-
-    @cached_property
-    def encoder(self, /) -> BaseEncoder:
-        r"""Return the encoder."""
-        return self.get_component("encoder")
-
-    @cached_property
-    def lr_scheduler(self) -> TorchLRScheduler:
-        r"""Return the learning rate scheduler."""
-        return self.get_component("lr_scheduler")
 
     def get_component(self, component: str, /) -> Any:
         """Extract a model component."""
@@ -194,61 +194,74 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
                         return json.load(f)
                     case "hyperparameters", (".yaml" | ".yml"):
                         return yaml.safe_load(f)
-                    case _, _:
-                        raise ValueError(f"Unknown format for: {component}")
+                raise
+                # case name, _:  # fallback
+                #     return self.__load_torch_component(name, f)
 
     def __load_torch_component(
-        self, component: str, /, file: str | Path | IO[bytes]
+        self, component: str, /, file: str | Path | IO[bytes], **kwargs: Any
     ) -> TorchModule:
-        r"""Load a torch model."""
-        try:
-            print("Trying to load as a JIT model.")
-            return self.__load_torch_jit_model(file)
-        except Exception as E:
-            warnings.warn(f"{E} was raised. Trying to load as a normal model.")
+        r"""Load a torch component."""
+        logger = self.LOGGER.getChild(component)
 
         try:
+            logger.info("Trying to load as TorchScript.")
+            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
+            return self.__load_torch_jit_model(file)
+        except RuntimeError:
+            logger.info("Could not load as TorchScript.")
+
+        try:
+            logger.info("Loading as regular torch component.")
+            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
+            loaded_object = torch.load(file, map_location=self.device)
+        except RuntimeError:
+            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
+            loaded_object = torch.load(file, map_location=torch.device("cpu"))
+            warnings.warn("Could not load to default device. Loaded to CPU.")
+
+        if not isinstance(loaded_object, dict):
+            return loaded_object
+        else:
+            logger.info("Found state_dict.")
+            state_dict = loaded_object
+
+        try:
+            logger.info("Trying to obtain module config from hyperparameters.")
             module_config = self.hyperparameters[component]
         except KeyError:
             raise ValueError(
                 f"No '{component}' configuration in {self.hyperparameters}."
             )
 
-        module = initialize_from_config(module_config)
-
-        try:
-            state_dict = torch.load(file, map_location=self.device)
-        except RuntimeError:
-            if isinstance(file, IOBase):  # type: ignore[unreachable]
-                file.seek(0, 0)
-            warnings.warn("Could not load model to default device. Trying CPU.")
-            state_dict = torch.load(file, map_location="cpu")
-
+        module = initialize_from_config(module_config | kwargs)
         module.load_state_dict(state_dict)
         return module
-
-    def __load_torch_model(self, file: str | Path | IO[bytes], /) -> TorchModule:
-        r"""Load a torch model."""
-        try:
-            return self.__load_torch_jit_model(file)
-        except Exception as E:
-            warnings.warn(f"{E} was raised. Trying to load as a normal model.")
-            return self.__load_torch_component("model", file)
 
     def __load_torch_jit_model(self, file: str | Path | IO[bytes], /) -> TorchModule:
         r"""Load a TorchScript model."""
         try:
+            # load on CPU
+            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
             model = torch.jit.load(file, map_location=self.device)
         except RuntimeError:
-            warnings.warn("Could not load model to default device. Trying CPU.")
-            if isinstance(file, IOBase):  # type: ignore[unreachable]
-                file.seek(0, 0)
+            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
             model = torch.jit.load(file, map_location=torch.device("cpu"))
+            warnings.warn("Could not load model to default device. Loaded to CPU.")
         return model
+
+    def __load_torch_model(self, file: str | Path | IO[bytes], /) -> TorchModule:
+        r"""Load a torch model."""
+        return self.__load_torch_component("model", file)
 
     def __load_torch_optimizer(self, file: str | Path | IO[bytes], /) -> TorchOptimizer:
         r"""Load a torch optimizer."""
-        return cast(TorchOptimizer, self.__load_torch_component("optimizer", file))
+        return cast(
+            TorchOptimizer,
+            self.__load_torch_component(
+                "optimizer", file, params=self.model.parameters()
+            ),
+        )
 
     def __load_torch_lr_scheduler(
         self,
