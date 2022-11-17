@@ -87,7 +87,7 @@ repos:
     rev: v1.12.1
     hooks:
       - id: blacken-docs
-        files: '^(src|tests)/.*\.py$'
+        files: '^(src/|tests/).*\.py$'
         description: " Run `black` on python code blocks in documentation files "
   # flake8
   - repo: https://github.com/pycqa/flake8
@@ -120,7 +120,7 @@ repos:
       - id: jupyter-nb-clear-output
         name: jupyter-nb-clear-output
         description: Clear output cells in Jupyter notebooks
-        files: '^(dev|experiments)/.*\.ipynb$'
+        files: '^(dev/|experiments/).*\.ipynb$'
         stages: [commit]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
