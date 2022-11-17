@@ -27,6 +27,9 @@ def test_pretrained():
     hyperparameters = pretrained["hyperparameters"]
     assert isinstance(hyperparameters, dict)
 
+    optimzier = pretrained["optimizer"]
+    assert isinstance(optimzier, torch.optim.Optimizer)
+
 
 def _main() -> None:
     test_pretrained()
