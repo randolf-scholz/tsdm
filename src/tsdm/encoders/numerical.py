@@ -385,7 +385,12 @@ class MinMaxScaler(LinearScaler, Generic[TensorType]):
     def param(self) -> MinMaxScaler.Parameters:
         r"""Parameters of the MinMaxScaler."""
         return self.Parameters(
-            self.xmin, self.xmax, self.ymin, self.ymax, self.scale, self.axis
+            xmin=self.xmin,
+            xmax=self.xmax,
+            ymin=self.ymin,
+            ymax=self.ymax,
+            scale=self.scale,
+            axis=self.axis,
         )
 
     def fit(self, data: TensorType, /) -> None:
