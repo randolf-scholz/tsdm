@@ -292,7 +292,7 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         }
 
         return LazyDict(
-            {key: (self.make_dataloader, kwargs | {"key": key}) for key in self.splits}
+            {key: (self.make_dataloader, (key,), kwargs) for key in self.splits}
         )
 
 
