@@ -16,6 +16,7 @@ import shutil
 import warnings
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
+from itertools import chain
 from pathlib import Path
 from typing import Any, NamedTuple, Optional, TypedDict, Union
 
@@ -426,11 +427,22 @@ class StandardLogger:
             targets.append(result[0])
             predics.append(result[1])
 
-        masks = [~torch.isnan(p) for p in predics]
         return ResultTuple(
-            targets=torch.cat([t[m] for t, m in zip(targets, masks)]).squeeze(),
-            predics=torch.cat([p[m] for p, m in zip(predics, masks)]).squeeze(),
+            # batch the list of batches by converting to list of single elements
+            targets=torch.nn.utils.rnn.pad_sequence(
+                chain.from_iterable(targets), batch_first=True, padding_value=torch.nan
+            ).squeeze(),
+            predics=torch.nn.utils.rnn.pad_sequence(
+                chain.from_iterable(predics), batch_first=True, padding_value=torch.nan
+            ).squeeze(),
         )
+
+        # masks = [~torch.isnan(p) for p in predics]
+
+        # return ResultTuple(
+        #     targets=torch.cat([t[m] for t, m in zip(targets, masks)]).squeeze(),
+        #     predics=torch.cat([p[m] for p, m in zip(predics, masks)]).squeeze(),
+        # )
 
     def make_checkpoint(self, i: int, /) -> None:
         r"""Make checkpoint."""
