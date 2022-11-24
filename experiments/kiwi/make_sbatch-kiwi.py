@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Autogenerate SBATCH files for Grid search."""
+
 import argparse
 import os
 import socket
@@ -13,17 +14,18 @@ NOW = datetime.now().isoformat(timespec="seconds")
 
 # fmt: off
 parser = argparse.ArgumentParser(description="Training Script for USHCN dataset.")
-parser.add_argument("-r",  "--run_id",    default=None,   type=str,   help="run_id")
-parser.add_argument("-d",  "--dataset",   default=None,   type=str,   help="dataset name")
-parser.add_argument("-c",  "--config",    default=None,   type=str,   help="config file")
-parser.add_argument("-m",  "--model",     default=None,   type=str,   help="model name")
-parser.add_argument("-s",  "--script",    default=None,   type=str,   help="script name")
-parser.add_argument("-p",  "--partition", default=None,   type=str,   help="partition name")
+parser.add_argument("-r", "--run_id",    default=None, type=str, help="run_id")
+parser.add_argument("-d", "--dataset",   default=None, type=str, help="dataset name")
+parser.add_argument("-c", "--config",    default=None, type=str, help="config file")
+parser.add_argument("-m", "--model",     default=None, type=str, help="model name")
+parser.add_argument("-s", "--script",    default=None, type=str, help="script name")
+parser.add_argument("-p", "--partition", default=None, type=str, help="partition name")
 # fmt: on
 
 ARGS = parser.parse_args()
 MODEL = ARGS.model or "LinODEnet"
 DATASET = ARGS.dataset or "KIWI"
+JOBNAME = f"{DATASET}"
 PARTITION = ARGS.partition or "NGPU"
 SCRIPT = ARGS.script or f"script-{DATASET.lower()}.py"
 RUN_ID = ARGS.run_id or NOW
@@ -50,11 +52,19 @@ CONFIG_FILE = CONFIG_DIR / CFG_ID
 
 CFG = {
     "fold": [0, 1, 2, 3, 4],
-    "epochs": [50],
+    "epochs": [200],
     "batch_size": [64],
     "learn_rate": [0.001],
-    "hidden_size": [0, 64],
-    "latent_size": [64, 128],
+    "hidden_size": [64],
+    "latent_size": [128],
+    "kernel-init": ["skew-symmetric"],
+    "kernel-param": ["identity"],
+    "filter": ["SequentialFilter"],
+    "encoder": ["ResNet"],
+    "decoder": ["ResNet"],
+    "system": ["LinODECell"],
+    "embedding": ["ConcatEmbedding"],
+    "projection": ["ConcatProjection"],
     "seed": [None],
 }
 
@@ -62,16 +72,16 @@ CFG = {
 GRID = dict(enumerate(dict(zip(CFG.keys(), hpc)) for hpc in product(*CFG.values())))
 
 if CONFIG_FILE.exists():
-    with open(CONFIG_FILE, "r") as file:
+    with open(CONFIG_FILE, "r", encoding="utf8") as file:
         GRID = yaml.safe_load(file)
 else:
-    with open(CONFIG_FILE, "w") as file:
+    with open(CONFIG_FILE, "w", encoding="utf8") as file:
         yaml.safe_dump(GRID, file)
 
 SBATCH = "\n".join(
     [
         r"#!/usr/bin/env bash",
-        f"#SBATCH --job-name={DATASET}",
+        f"#SBATCH --job-name={JOBNAME}",
         f"#SBATCH --partition={PARTITION}",
         f"#SBATCH --output={LOG_DIR / r'%j.stdout.log'}",
         f"#SBATCH --error={LOG_DIR / r'%j.stderr.log'}",
@@ -91,7 +101,8 @@ print("\n".join([f"{key}={val}" for key, val in vars().items() if key.isupper()]
 for ID in GRID:
     # Write and Execute SBATCH
     sbatch_file = SLURM_DIR / f"sbatch-{ID}.sh"
-    with open(sbatch_file, "w") as file:
+
+    with open(sbatch_file, "w", encoding="utf8") as file:
         file.write(SBATCH + f" {ID}\n")
 
     fname = RESULTS_DIR / f"{ID}.yaml"

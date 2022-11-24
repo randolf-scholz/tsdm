@@ -29,6 +29,7 @@ from tsdm.encoders import (  # FrameEncoder,
     Standardizer,
     TimeDeltaEncoder,
 )
+from tsdm.metrics import WMSE
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
@@ -315,3 +316,10 @@ class KiwiTask(TimeSeriesTask):
             targets=targets,
             covariates=covariates,
         )
+
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:
+        train_key = self.train_split[key]
+        associated_train_split = self.splits[train_key]
+        ts = associated_train_split.timeseries
+        rates = ts.notna().mean() ** -1
+        return WMSE(rates)

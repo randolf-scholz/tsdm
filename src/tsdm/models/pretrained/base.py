@@ -16,7 +16,7 @@ import pickle
 import subprocess
 import warnings
 import webbrowser
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, ABCMeta
 from collections.abc import Iterator, Mapping, Sequence
 from functools import cached_property
 from hashlib import sha256
@@ -88,27 +88,71 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
 
     # Instance Variables
     device: Optional[str | torch.device] = None
+    components: Mapping[str, Any]
+    rawdata_path: Path
+    rawdata_file: str = NotImplemented
 
-    def __new__(
-        cls, *, initialize: bool = True, reset: bool = False, **kwds: Any
-    ) -> PreTrainedModel:
-        r"""Cronstruct the model object and initialize it."""
-        self: PreTrainedModel = super().__new__(cls)
+    component_files: Mapping[str, str] = {
+        "model": "model",
+        "encoder": "encoder.pickle",
+        "optimizer": "optimizer",
+        "hyperparameters": "hparams.yaml",
+        "lr_scheduler": "lr_scheduler",
+    }
+
+    # def __new__(
+    #     cls, *, initialize: bool = True, reset: bool = False, **kwds: Any
+    # ) -> PreTrainedModel:
+    #     r"""Cronstruct the model object and initialize it."""
+    #     self: PreTrainedModel = super().__new__(cls)
+    #
+    #     return self
+
+    def __init__(
+        self,
+        *,
+        device: Optional[str | torch.device] = None,
+        reset: bool = False,
+        initialize: bool = True,
+    ) -> None:
+        super().__init__()
+        self.rawdata_path = self.RAWDATA_DIR / self.rawdata_file
+        self.device = device
 
         if not inspect.isabstract(self):
+            if reset:
+                self.RAWDATA_DIR.rmdir()
+
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
 
-        self.__init__(**kwds)  # type: ignore[misc]
+            if initialize:
+                self.download()
 
-        if reset:
-            self.download()
-        # if initialize:
-        #     return self.load()
-        return self
+        self.components = LazyDict(
+            {k: self.get_component for k in self.component_files}
+        )
 
-    def __init__(self, *, device: Optional[str | torch.device] = None) -> None:
-        super().__init__()
-        self.device = device
+    @classmethod
+    def from_zipfile(
+        cls, zipfile: str | Path, /, *args: Any, **kwargs: Any
+    ) -> PreTrainedModel:  # TODO: 3.11 use typing.Self
+        r"""Create model from zipfile."""
+        path = Path(zipfile)
+        if not path.suffix == ".zip":
+            raise ValueError(f"{path=} is not a zipfile!")
+
+        if not path.is_relative_to(Path.cwd()):
+            # print(f"No path provided assuming current working directory.")
+            path = Path.cwd() / path
+
+        if not path.exists():
+            raise ValueError(f"{path=} does not exist!")
+
+        cls.RAWDATA_DIR = path.parent
+        cls.rawdata_file = path.name
+        cls.RAWDATA_HASH = None
+        obj = cls(*args, **kwargs)
+        return obj
 
     def __len__(self) -> int:
         return len(self.components)
@@ -147,25 +191,20 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         r"""Return the learning rate scheduler."""
         return self.components["lr_scheduler"]
 
-    @cached_property
-    def components(self) -> dict[str, Any]:
-        r"""Extract all components."""
-        return LazyDict({k: self.get_component for k in self.component_files})
+    # @cached_property
+    # def components(self) -> dict[str, Any]:
+    #     r"""Extract all components."""
+    #     return LazyDict({k: self.get_component for k in self.component_files})
 
-    @property
-    @abstractmethod
-    def component_files(self) -> Mapping[str, str]:
-        r"""Return filename."""
+    # @property
+    # @abstractmethod
+    # def component_files(self) -> Mapping[str, str]:
+    #     r"""Return filename."""
 
-    @property
-    @abstractmethod
-    def rawdata_file(self) -> str:
-        r"""Return filename."""
-
-    @cached_property
-    def rawdata_path(self) -> Path:
-        r"""Return the rawdata path."""
-        return self.RAWDATA_DIR / self.rawdata_file
+    # @property
+    # @abstractmethod
+    # def rawdata_file(self) -> str:
+    #     r"""Return filename."""
 
     def rawdata_file_exist(self) -> bool:
         r"""Check if raw data files exist."""
@@ -204,14 +243,14 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         r"""Load a torch component."""
         logger = self.LOGGER.getChild(component)
 
-        try:
+        try:  # attempt loading via torch.jit.load
             logger.info("Trying to load as TorchScript.")
             file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
             return self.__load_torch_jit_model(file)
         except RuntimeError:
             logger.info("Could not load as TorchScript.")
 
-        try:
+        try:  # attempt loading via torch.load
             logger.info("Loading as regular torch component.")
             file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
             loaded_object = torch.load(file, map_location=self.device)
