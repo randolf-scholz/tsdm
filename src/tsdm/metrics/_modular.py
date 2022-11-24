@@ -14,12 +14,15 @@ __all__ = [
     "Q_Quantile_Loss",
     "WRMSE",
     "RMSE",
+    "MSE",
+    "WMSE",
+    "MAE",
+    "WMAE",
 ]
 
 
 from typing import Final
 
-import numpy as np
 import torch
 from torch import Tensor, jit, nn
 
@@ -52,7 +55,7 @@ class ND(nn.Module):
 
 @autojit
 class NRMSE(nn.Module):
-    r"""Compute the normalized deviation score.
+    r"""Compute the normalized root mean square error.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
 
@@ -105,10 +108,41 @@ class Q_Quantile_Loss(nn.Module):
 
 
 @autojit
-class WRMSE(nn.Module):
-    r"""Weighted Root Mean Square Error.
+class MAE(nn.Module):
+    r"""Mean Absolute Error.
 
-    .. math:: (1/m)∑_m (1/n)∑_n w(x_{n,m}- x_{n,m})^2
+    .. math:: 𝖬𝖠𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖]}
+    """
+
+    ignore_nan_targets: Final[bool]
+    r"""CONST: Whether to mask NaN targets, not counting them as observations."""
+
+    def __init__(self, ignore_nan_targets: bool = True) -> None:
+        super().__init__()
+        self.ignore_nan_targets = ignore_nan_targets
+
+    @jit.export
+    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+        r""".. Signature:: ``[(..., m), (..., m)] → ...``."""
+        r = predictions - targets
+
+        if self.ignore_nan_targets:
+            m = torch.isnan(targets)
+            r = torch.where(m, 0.0, r)
+            r = torch.abs(r)
+            r = torch.sum(r) / torch.sum(m)
+        else:
+            r = torch.abs(r)
+            r = torch.mean(r)
+
+        return r
+
+
+@autojit
+class WMAE(nn.Module):
+    r"""Weighted Mean Absolute Error.
+
+    .. math:: w𝖬𝖠𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖_w]}
     """
 
     # Constants
@@ -116,102 +150,225 @@ class WRMSE(nn.Module):
     r"""CONST: The number of dimensions of the weight tensor."""
     shape: Final[tuple[int, ...]]
     r"""CONST: The shape of the weight tensor."""
+    learnable: Final[bool]
+    r"""CONST: Whether the weights are learnable."""
+    ignore_nan_targets: Final[bool]
+    r"""CONST: Whether to ignore NaN values."""
 
     # Buffers
     w: Tensor
-    r"""BUFFER: The weight-vector."""
+    r"""PARAM: The weight-vector."""
 
     def __init__(
         self,
         w: Tensor,
         /,
         normalize: bool = True,
+        learnable: bool = False,
+        ignore_nan_targets: bool = True,
     ):
-        r"""Compute the weighted RMSE.
-
-        Channel-wise: RMSE(RMSE(channel))
-        Non-channel-wise: RMSE(flatten(results))
-        """
         super().__init__()
+        w = torch.tensor(w, dtype=torch.float32)
         assert torch.all(w >= 0) and torch.any(w > 0)
-        self.register_buffer("w", w / torch.sum(w) if normalize else w)
-        self.w = self.w.to(dtype=torch.float32)
+        w = w / torch.sum(w) if normalize else w
+
+        self.learnable = learnable
+        self.ignore_nan_targets = ignore_nan_targets
+        self.w = nn.Parameter(w, requires_grad=self.learnable)
         self.rank = len(w.shape)
         self.register_buffer("FAILED", torch.tensor(float("nan")))
         self.shape = tuple(w.shape)
 
     @jit.export
-    def forward(self, x: Tensor, xhat: Tensor) -> Tensor:
+    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
         r""".. Signature:: ``[(..., m), (..., m)] → ...``."""
-        self.w = self.w.to(device=x.device)
-        assert x.shape[-self.rank :] == self.shape
-        # the residuals, shape: ...𝐦
-        r = self.w * (x - xhat) ** 2
+        r = predictions - targets
 
-        return torch.sqrt(torch.mean(r))
+        if self.ignore_nan_targets:
+            m = torch.isnan(targets)
+            r = torch.where(m, 0.0, r)
+            self.w * torch.abs(r)
+            r = torch.sum(r) / torch.sum(m)
+        else:
+            self.w * torch.abs(r)
+            r = torch.mean(r)
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        with np.printoptions(precision=2):
-            weights = self.w.cpu().numpy()
-            return f"{self.__class__.__name__}(\n" + repr(weights) + "\n)"
-
-
-@autojit
-class RMSE(nn.Module):
-    r"""Root Mean Square Error."""
-
-    mask_nan_targets: Final[bool]
-    r"""CONST: Whether to mask NaN targets, not counting them as observations."""
-
-    def __init__(self, mask_nan_targets: bool = True) -> None:
-        r"""Compute the RMSE."""
-        super().__init__()
-        self.mask_nan_targets = mask_nan_targets
-
-    @jit.export
-    def forward(
-        self,
-        x: Tensor,
-        xhat: Tensor,
-    ) -> Tensor:
-        r"""Compute the RMSE.
-
-        .. math:: 𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
-        """
-        if self.mask_nan_targets:
-            mask = torch.isnan(x)
-            x = x[mask]
-            xhat = xhat[mask]
-
-        return torch.sqrt(torch.mean((x - xhat) ** 2))
+        return r
 
 
 @autojit
 class MSE(nn.Module):
-    r"""Root Mean Square Error."""
+    r"""Mean Square Error.
 
-    mask_nan_targets: Final[bool]
+    .. math:: 𝖬𝖲𝖤(x,x̂) = 𝔼[‖x - x̂‖^2]
+    """
+
+    ignore_nan_targets: Final[bool]
     r"""CONST: Whether to mask NaN targets, not counting them as observations."""
 
-    def __init__(self, mask_nan_targets: bool = True) -> None:
-        r"""Compute the RMSE."""
+    def __init__(self, ignore_nan_targets: bool = True) -> None:
         super().__init__()
-        self.mask_nan_targets = mask_nan_targets
+        self.ignore_nan_targets = ignore_nan_targets
 
     @jit.export
-    def forward(
+    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+        r""".. Signature:: ``[(..., m), (..., m)] → ...``."""
+        r = predictions - targets
+
+        if self.ignore_nan_targets:
+            m = torch.isnan(targets)
+            r = torch.where(m, 0.0, r)
+            r = r**2
+            r = torch.sum(r) / torch.sum(m)
+        else:
+            r = r**2
+            r = torch.mean(r)
+
+        return r
+
+
+@autojit
+class WMSE(nn.Module):
+    r"""Weighted Mean Square Error.
+
+    .. math:: 𝗐𝖬𝖲𝖤(x,x̂) = 𝔼[‖(x - x̂)‖_w^2]
+    """
+
+    # Constants
+    rank: Final[int]
+    r"""CONST: The number of dimensions of the weight tensor."""
+    shape: Final[tuple[int, ...]]
+    r"""CONST: The shape of the weight tensor."""
+    learnable: Final[bool]
+    r"""CONST: Whether the weights are learnable."""
+    ignore_nan_targets: Final[bool]
+    r"""CONST: Whether to ignore NaN values."""
+
+    # Buffers
+    w: Tensor
+    r"""PARAM: The weight-vector."""
+
+    def __init__(
         self,
-        x: Tensor,
-        xhat: Tensor,
-    ) -> Tensor:
-        r"""Compute the RMSE.
+        w: Tensor,
+        /,
+        normalize: bool = True,
+        learnable: bool = False,
+        ignore_nan_targets: bool = True,
+    ):
+        super().__init__()
+        w = torch.tensor(w, dtype=torch.float32)
+        assert torch.all(w >= 0) and torch.any(w > 0)
+        w = w / torch.sum(w) if normalize else w
 
-        .. math:: 𝗋𝗆𝗌𝖾(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
-        """
-        if self.mask_nan_targets:
-            mask = torch.isnan(x)
-            x = x[mask]
-            xhat = xhat[mask]
+        self.learnable = learnable
+        self.ignore_nan_targets = ignore_nan_targets
+        self.w = nn.Parameter(w, requires_grad=self.learnable)
+        self.rank = len(w.shape)
+        self.register_buffer("FAILED", torch.tensor(float("nan")))
+        self.shape = tuple(w.shape)
 
-        return torch.mean((x - xhat) ** 2)
+    @jit.export
+    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+        r""".. Signature:: ``[(..., m), (..., m)] → ...``."""
+        r = predictions - targets
+
+        if self.ignore_nan_targets:
+            m = torch.isnan(targets)
+            r = torch.where(m, 0.0, r)
+            r = self.w * r**2
+            r = torch.sum(r) / torch.sum(m)
+        else:
+            r = self.w * r**2
+            r = torch.mean(r)
+
+        return r
+
+
+@autojit
+class RMSE(nn.Module):
+    r"""Root Mean Square Error.
+
+    .. math:: 𝖱𝖬𝖲𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
+    """
+
+    ignore_nan_targets: Final[bool]
+    r"""CONST: Whether to mask NaN targets, not counting them as observations."""
+
+    def __init__(self, ignore_nan_targets: bool = True) -> None:
+        super().__init__()
+        self.ignore_nan_targets = ignore_nan_targets
+
+    @jit.export
+    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+        r""".. Signature:: ``[(..., m), (..., m)] → ...``."""
+        r = predictions - targets
+
+        if self.ignore_nan_targets:
+            m = torch.isnan(targets)
+            r = torch.where(m, 0.0, r)
+            r = r**2
+            r = torch.sum(r) / torch.sum(m)
+        else:
+            r = r**2
+            r = torch.mean(r)
+
+        return torch.sqrt(r)
+
+
+@autojit
+class WRMSE(nn.Module):
+    r"""Weighted Root Mean Square Error.
+
+    .. math:: 𝗐𝖱𝖬𝖲𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖_w^2]}
+    """
+
+    # Constants
+    rank: Final[int]
+    r"""CONST: The number of dimensions of the weight tensor."""
+    shape: Final[tuple[int, ...]]
+    r"""CONST: The shape of the weight tensor."""
+    learnable: Final[bool]
+    r"""CONST: Whether the weights are learnable."""
+    ignore_nan_targets: Final[bool]
+    r"""CONST: Whether to ignore NaN values."""
+
+    # Buffers
+    w: Tensor
+    r"""PARAM: The weight-vector."""
+
+    def __init__(
+        self,
+        w: Tensor,
+        /,
+        normalize: bool = True,
+        learnable: bool = False,
+        ignore_nan_targets: bool = True,
+    ):
+        super().__init__()
+        w = torch.tensor(w, dtype=torch.float32)
+        assert torch.all(w >= 0) and torch.any(w > 0)
+        w = w / torch.sum(w) if normalize else w
+
+        self.learnable = learnable
+        self.ignore_nan_targets = ignore_nan_targets
+        self.w = nn.Parameter(w, requires_grad=self.learnable)
+        self.rank = len(w.shape)
+        self.register_buffer("FAILED", torch.tensor(float("nan")))
+        self.shape = tuple(w.shape)
+
+    @jit.export
+    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
+        r""".. Signature:: ``[(..., m), (..., m)] → ...``."""
+        r = predictions - targets
+
+        if self.ignore_nan_targets:
+            m = torch.isnan(targets)
+            r = torch.where(m, 0.0, r)
+            r = self.w * r**2
+            r = torch.sum(r) / torch.sum(m)
+        else:
+            r = self.w * r**2
+            r = torch.mean(r)
+
+        return torch.sqrt(r)

@@ -172,35 +172,22 @@ def repr_mapping(
 
     type only
 
-         name<Mapping>[length=3]
+         name<Mapping>
 
-    less less recursive:
+    value-type
 
-        name<Mapping>(key1, key2)
-
-    less recursive:
-
-        name<Mapping>(
-            key1: object<Mapping>(key1, key2, ...),
-            key2: object<tuple>(item1, item2, ...),
-
-
-    partial recursive:
-
-        name<Mapping>(
-            key1: object<Mapping>(key1: value1, key2: value2, ...),
-            key2: object<tuple>(item1, item2, ...),
-
+        name<Mapping>:
+            key1: repr_type(value1)
+            key2: repr_type(value2)
+            key3: repr_type(value3)
 
     fully recursive:
 
         name<Mapping>(
-            key1: object<Mapping>(
-                     key: value,
-                  ),
-            key2: object<tuple>(
-                     key: value,
-                  ),
+            key1: repr_object(value1)
+            key2: repr_object(value2)
+            key3: repr_object(value3)
+
     """
     # set linebreaks
     if linebreaks is None:
@@ -494,8 +481,8 @@ def repr_dataclass(
 ) -> str:
     r"""Return a string representation of a dataclass object.
 
-    - recursive=True:  Name<dataclass>(item1, item2, ...)
-    - recursive=False: Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)
+    - recursive=False:  Name<dataclass>(item1, item2, ...)
+    - recursive=True: Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)
     """
     assert is_dataclass(obj), f"Object {obj} is not a dataclass."
     assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."

@@ -12,10 +12,12 @@ __all__ = [
     "StandardLogger",
 ]
 
+import pickle
 import shutil
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import KW_ONLY, dataclass, field
+from itertools import chain
 from pathlib import Path
 from typing import Any, NamedTuple, Optional, TypedDict, Union
 
@@ -27,9 +29,13 @@ from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame, Index, MultiIndex
 from torch import Tensor, nn
 from torch.linalg import cond, slogdet
+from torch.nn import Module as TorchModule
+from torch.optim import Optimizer as TorchOptimizer
+from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
+from tsdm.encoders import BaseEncoder
 from tsdm.linalg import (
     col_corr,
     erank,
@@ -222,8 +228,12 @@ def log_optimizer_state(
     variables = list(optimizer.state.keys())
     gradients = [w.grad for w in variables]
 
-    writer.add_scalar(f"{identifier}/norm-variables", multi_norm(variables), i)
-    writer.add_scalar(f"{identifier}/norm-gradients", multi_norm(gradients), i)
+    writer.add_scalar(
+        f"{identifier}/parameter-magnitude-norm", multi_norm(variables), i
+    )
+    writer.add_scalar(
+        f"{identifier}/parameter-gradients-norm", multi_norm(gradients), i
+    )
 
     try:
         moments_1 = [d["exp_avg"] for d in optimizer.state.values()]
@@ -232,15 +242,15 @@ def log_optimizer_state(
         moments_1 = []
         moments_2 = []
     else:
-        writer.add_scalar(f"{identifier}/norm-moments_1", multi_norm(moments_1), i)
-        writer.add_scalar(f"{identifier}/norm-moments_2", multi_norm(moments_2), i)
+        writer.add_scalar(f"{identifier}/moments_1-norm", multi_norm(moments_1), i)
+        writer.add_scalar(f"{identifier}/moments_2-norm", multi_norm(moments_2), i)
 
     if histograms and i % histograms == 0:
         for j, (w, g) in enumerate(zip(variables, gradients)):
             if not w.numel():
                 continue
-            writer.add_histogram(f"{identifier}:variables/{j}", w, i)
-            writer.add_histogram(f"{identifier}:gradients/{j}", g, i)
+            writer.add_histogram(f"{identifier}:parameter-magnitude/{j}", w, i)
+            writer.add_histogram(f"{identifier}:parameter-gradients/{j}", g, i)
 
         for j, (a, b) in enumerate(zip(moments_1, moments_2)):
             if not a.numel():
@@ -341,20 +351,26 @@ class StandardLogger:
     r"""Logger for training and validation."""
 
     writer: SummaryWriter
-    model: nn.Module
-    optimizer: torch.optim.Optimizer
+    model: TorchModule
+
+    _: KW_ONLY
 
     checkpoint_dir: Path
     dataloaders: Mapping[str, DataLoader]
-    hparam_dict: dict[str, Any]
     metrics: dict[str, Callable[[Tensor, Tensor], Tensor]]
     predict_fn: Union[
-        Callable[[nn.Module, tuple], tuple],
-        Callable[[nn.Module, tuple], ResultTuple],
-        # Callable[[nn.Module, tuple], ResultDict],
+        Callable[[TorchModule, tuple], tuple],
+        Callable[[TorchModule, tuple], ResultTuple],
+        # Callable[[TorchModule, tuple], ResultDict],
     ]
     results_dir: Optional[Path] = None
 
+    encoder: BaseEncoder = NotImplemented
+    hparam_dict: dict[str, Any] = NotImplemented
+    optimizer: TorchOptimizer = NotImplemented
+    lr_scheduler: TorchLRScheduler = NotImplemented
+
+    # extra fields
     history: DataFrame = field(init=False)
     logging_dir: Path = field(init=False)
 
@@ -426,23 +442,51 @@ class StandardLogger:
             targets.append(result[0])
             predics.append(result[1])
 
-        masks = [~torch.isnan(p) for p in predics]
         return ResultTuple(
-            targets=torch.cat([t[m] for t, m in zip(targets, masks)]).squeeze(),
-            predics=torch.cat([p[m] for p, m in zip(predics, masks)]).squeeze(),
+            # batch the list of batches by converting to list of single elements
+            targets=torch.nn.utils.rnn.pad_sequence(
+                chain.from_iterable(targets), batch_first=True, padding_value=torch.nan  # type: ignore[arg-type]
+            ).squeeze(),
+            predics=torch.nn.utils.rnn.pad_sequence(
+                chain.from_iterable(predics), batch_first=True, padding_value=torch.nan  # type: ignore[arg-type]
+            ).squeeze(),
         )
+
+        # masks = [~torch.isnan(p) for p in predics]
+
+        # return ResultTuple(
+        #     targets=torch.cat([t[m] for t, m in zip(targets, masks)]).squeeze(),
+        #     predics=torch.cat([p[m] for p, m in zip(predics, masks)]).squeeze(),
+        # )
 
     def make_checkpoint(self, i: int, /) -> None:
         r"""Make checkpoint."""
-        # create checkpoint
-        torch.jit.save(
-            self.model,
-            self.checkpoint_dir / f"{self.model.__class__.__name__}-{i}",
-        )
-        torch.save(
-            self.optimizer,
-            self.checkpoint_dir / f"{self.optimizer.__class__.__name__}-{i}",
-        )
+        path = self.checkpoint_dir / f"{i}"
+        path.mkdir(parents=True, exist_ok=True)
+
+        # serialize the model
+        if isinstance(self.model, torch.jit.ScriptModule):
+            torch.jit.save(self.model, path / self.model.original_name)
+        else:
+            torch.save(self.model, path / self.model.__class__.__name__)
+
+        # serialize the optimizer
+        if self.optimizer is not NotImplemented:
+            torch.save(self.optimizer, path / self.optimizer.__class__.__name__)
+
+        # serialize the lr scheduler
+        if self.lr_scheduler is not NotImplemented:
+            torch.save(self.lr_scheduler, path / self.lr_scheduler.__class__.__name__)
+
+        # serialize the hyperparameters
+        if self.hparam_dict is not NotImplemented:
+            with open(path / "hparams.yaml", "w", encoding="utf8") as file:
+                yaml.safe_dump(self.hparam_dict, file)
+
+        # serialize the hyperparameters
+        if self.encoder is not NotImplemented:
+            with open(path / "encoder.pickle", "wb") as file:
+                pickle.dump(self.encoder, file)
 
     def log_metrics(
         self,
@@ -563,6 +607,7 @@ class StandardLogger:
     def log_history(self, i: int, /) -> None:
         r"""Store history dataframe to file (default format: parquet)."""
         assert self.results_dir is not None
+
         path = self.results_dir / f"history-{i}.parquet"
         self.history.to_parquet(path)
 
@@ -576,6 +621,8 @@ class StandardLogger:
         postfix: str = "",
     ) -> None:
         r"""Log optimizer state."""
+        assert self.optimizer is not NotImplemented
+
         log_optimizer_state(
             i,
             writer=self.writer,
@@ -595,6 +642,8 @@ class StandardLogger:
         postfix: str = "",
     ) -> None:
         r"""Log model state."""
+        assert self.model is not NotImplemented
+
         log_model_state(
             i,
             writer=self.writer,
@@ -614,7 +663,9 @@ class StandardLogger:
         postfix: str = "",
     ) -> None:
         r"""Log kernel information."""
+        assert self.model is not NotImplemented
         assert hasattr(self.model, "kernel") and isinstance(self.model.kernel, Tensor)
+
         log_kernel_information(
             i,
             writer=self.writer,

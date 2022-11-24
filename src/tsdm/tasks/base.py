@@ -292,7 +292,7 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         }
 
         return LazyDict(
-            {key: (self.make_dataloader, kwargs | {"key": key}) for key in self.splits}
+            {key: (self.make_dataloader, (key,), kwargs) for key in self.splits}
         )
 
 
@@ -646,7 +646,7 @@ class TimeSeriesTask(
     r"""Dictionary holding `Sampler` associated with each key."""
     splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
-    test_metric: Callable[[Any, Any], Any] = NotImplemented
+    test_metrics: Mapping[SplitID, Callable[[Tensor, Tensor], Tensor]] = NotImplemented
     r"""Metric used for evaluation."""
 
     train_patterns: Sequence[str] = ("train", "training")
@@ -665,29 +665,29 @@ class TimeSeriesTask(
 
         if self.index is NotImplemented:
             self.index = self.folds.columns
-        if self.test_metric is NotImplemented:
-            self.LOGGER.info("No test metric provided. Using default.")
-            self.test_metric = self.default_test_metric  # type: ignore[assignment]
 
-        # create LazyDicts for the splits
-        if self.splits is NotImplemented:
-            self.LOGGER.info("No splits provided. Creating them.")
-            self.splits = LazyDict({key: self.make_split for key in self})
+        # create LazyDicts for the Mapping attributes
+        if self.collate_fns is NotImplemented:
+            self.LOGGER.info("No collate functions provided. Caching them.")
+            self.collate_fns = LazyDict({key: self.make_collate_fn for key in self})
         if self.dataloaders is NotImplemented:
             self.LOGGER.info("No DataLoaders provided. Caching them.")
             self.dataloaders = LazyDict({key: self.make_dataloader for key in self})
-        if self.samplers is NotImplemented:
-            self.LOGGER.info("No Samplers provided. Caching them.")
-            self.samplers = LazyDict({key: self.make_sampler for key in self})
         if self.encoders is NotImplemented:
             self.LOGGER.info("No Encoders provided. Caching them.")
             self.encoders = LazyDict({key: self.make_encoder for key in self})
         if self.generators is NotImplemented:
             self.LOGGER.info("No Generators provided. Caching them.")
             self.generators = LazyDict({key: self.make_generator for key in self})
-        if self.collate_fns is NotImplemented:
-            self.LOGGER.info("No collate functions provided. Caching them.")
-            self.collate_fns = LazyDict({key: self.make_collate_fn for key in self})
+        if self.samplers is NotImplemented:
+            self.LOGGER.info("No Samplers provided. Caching them.")
+            self.samplers = LazyDict({key: self.make_sampler for key in self})
+        if self.splits is NotImplemented:
+            self.LOGGER.info("No splits provided. Creating them.")
+            self.splits = LazyDict({key: self.make_split for key in self})
+        if self.test_metrics is NotImplemented:
+            self.LOGGER.info("No test metrics provided. Caching them.")
+            self.test_metrics = LazyDict({key: self.make_test_metric for key in self})
 
     def __iter__(self) -> Iterator[SplitID]:
         r"""Iterate over the keys."""
@@ -704,12 +704,8 @@ class TimeSeriesTask(
     def __repr__(self) -> str:
         return repr_dataclass(self)
 
-    def make_folds(self, /) -> DataFrame:
-        r"""Return the folds associated with the specified key."""
-        return NotImplemented
-
     @staticmethod
-    def default_test_metric(*, targets: Any, predictions: Any) -> Any:
+    def default_test_metric(*, targets: Tensor, predictions: Tensor) -> Tensor:
         r"""Return the test metric."""
         return NotImplemented
 
@@ -717,22 +713,6 @@ class TimeSeriesTask(
     def default_collate_fn(samples: list[Sample_co]) -> Batch:
         r"""Return the default collate function."""
         return samples  # type: ignore[return-value]
-
-    def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
-        r"""Return the splits associated with the specified key."""
-        return self.dataset[self.folds[key]]
-
-    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
-        r"""Create the encoder associated with the specified key."""
-        return NotImplemented
-
-    def make_sampler(self, key: SplitID, /) -> TorchSampler[KeyVar]:
-        r"""Create the sampler associated with the specified key."""
-        return NotImplemented
-
-    def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
-        r"""Return the splits associated with the specified key."""
-        return NotImplemented
 
     def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample_co]], Batch]:
         r"""Return the test metric."""
@@ -763,6 +743,30 @@ class TimeSeriesTask(
 
         kwargs |= dataloader_kwargs
         return DataLoader(dataset, **kwargs)
+
+    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
+        r"""Create the encoder associated with the specified key."""
+        return NotImplemented
+
+    def make_folds(self, /) -> DataFrame:
+        r"""Return the folds associated with the specified key."""
+        return NotImplemented
+
+    def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
+        r"""Return the splits associated with the specified key."""
+        return NotImplemented
+
+    def make_sampler(self, key: SplitID, /) -> TorchSampler[KeyVar]:
+        r"""Create the sampler associated with the specified key."""
+        return NotImplemented
+
+    def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
+        r"""Return the splits associated with the specified key."""
+        return self.dataset[self.folds[key]]
+
+    def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:
+        r"""Return the test metric."""
+        return NotImplemented
 
     def is_train_split(self, key: SplitID, /) -> bool:
         r"""Return whether the key is a training split."""

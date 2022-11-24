@@ -194,7 +194,7 @@ class USHCN_DeBrouwer2019(OldBaseTask):
     test_size = 0.1  # of total
     valid_size = 0.2  # of train, i.e. 0.9*0.2 = 0.18
 
-    def __init__(self, *, normalize_time: bool = False) -> None:
+    def __init__(self, *, normalize_time: bool = True) -> None:
         super().__init__()
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["ID"].unique()
