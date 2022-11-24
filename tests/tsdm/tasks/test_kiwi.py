@@ -48,10 +48,13 @@ def test_kiwi_task(SplitID=(0, "train")):
     assert isinstance(task.train_split, dict)
     assert callable(task.collate_fns[SplitID])
 
-    sampler = task.samplers[SplitID]
-    key = next(iter(sampler))
+    # validate generator
     generator: TimeSeriesSampleGenerator = task.generators[SplitID]
     assert isinstance(generator, torch.utils.data.Dataset)
+
+    # make sample
+    sampler = task.samplers[SplitID]
+    key = next(iter(sampler))
     sample: Sample = generator[key]
     assert isinstance(sample, tuple)
 
@@ -62,19 +65,20 @@ def test_kiwi_task(SplitID=(0, "train")):
     observables: list[str] = generator.observables
     covariates: list[str] = generator.covariates
     targets: list[str] = generator.targets
+    assert set(observables) | set(covariates) | set(targets) == set(x.columns)
+
     td_observation = pd.Timedelta(task.observation_horizon)
     td_forecasting = pd.Timedelta(task.forecasting_horizon)
-    mask_observation = time < time.min() + td_observation
-    mask_forecasting = time >= time.max() - td_forecasting
-
-    assert all(mask_observation ^ mask_forecasting)
-    assert set(observables) | set(covariates) | set(targets) == set(x.columns)
-    assert x.loc[mask_observation, observables].notna().any().any()
-    assert x.loc[mask_forecasting, observables].isna().all().all()
-    assert x.loc[mask_observation, covariates].notna().any().any()
-    assert x.loc[mask_forecasting, covariates].notna().any().any()
-    assert y.loc[mask_observation, targets].isna().all().all()
-    assert y.loc[mask_forecasting, targets].notna().any().any()
+    mask_observation = time < (time.min() + td_observation)
+    mask_forecasting = time >= (time.min() + td_observation)
+    assert all(mask_observation ^ mask_forecasting), f"{key=}"
+    assert all(~mask_forecasting | (time >= (time.max() - td_forecasting))), f"{key=}"
+    assert x.loc[mask_observation, observables].notna().any().any(), f"{key=}"
+    assert x.loc[mask_forecasting, observables].isna().all().all(), f"{key=}"
+    assert x.loc[mask_observation, covariates].notna().any().any(), f"{key=}"
+    assert x.loc[mask_forecasting, covariates].notna().any().any(), f"{key=}"
+    assert y.loc[mask_observation, targets].isna().all().all(), f"{key=}"
+    assert y.loc[mask_forecasting, targets].notna().any().any(), f"{key=}"
 
     dataloader = task.dataloaders[SplitID]
     batch = next(iter(dataloader))
