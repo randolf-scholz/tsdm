@@ -57,8 +57,12 @@ __all__ = [
     "NRMSE",
     "Q_Quantile",
     "Q_Quantile_Loss",
-    "WRMSE",
+    "MAE",
+    "MSE",
     "RMSE",
+    "WMAE",
+    "WMSE",
+    "WRMSE",
     # Functions
     "nd",
     "nrmse",
@@ -72,7 +76,18 @@ from typing import Final, TypeAlias
 
 from torch import nn
 
-from tsdm.metrics._modular import ND, NRMSE, RMSE, WRMSE, Q_Quantile, Q_Quantile_Loss
+from tsdm.metrics._modular import (
+    MAE,
+    MSE,
+    ND,
+    NRMSE,
+    RMSE,
+    WMAE,
+    WMSE,
+    WRMSE,
+    Q_Quantile,
+    Q_Quantile_Loss,
+)
 from tsdm.metrics.functional import (
     FUNCTIONAL_LOSSES,
     FunctionalLoss,
@@ -127,7 +142,12 @@ ModularLosses: Final[dict[str, type[nn.Module]]] = {
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,
     "Q_Quantile_Loss": Q_Quantile_Loss,
+    "MAE": MAE,
+    "MSE": MSE,
     "RMSE": RMSE,
+    "WMAE": WMAE,
+    "WMSE": WMSE,
+    "WRMSE": WRMSE,
 } | (TORCH_LOSSES | TORCH_ALIASES)
 r"""Dictionary of all available modular losses."""
 
