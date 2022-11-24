@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
-# %% [markdown]
+
 # # KIWI
 
-# %% [markdown]
 # ## Input Parsing (for command line use)
 
-# %%
+# In[1]:
+
+
 import argparse
 
 # fmt: off
@@ -20,16 +21,9 @@ parser.add_argument("-bs", "--batch-size",   default=64,     type=int,   help="b
 parser.add_argument("-lr", "--learn-rate",   default=0.001,  type=float, help="learn-rate")
 parser.add_argument("-b",  "--betas", default=(0.9, 0.999),  type=float, help="adam betas", nargs=2)
 parser.add_argument("-wd", "--weight-decay", default=0.001,  type=float, help="weight-decay")
-parser.add_argument("-hs", "--hidden-size",  default=64,     type=int,   help="hidden-size")
-parser.add_argument("-ls", "--latent-size",  default=128,    type=int,   help="latent-size")
+parser.add_argument("-hs", "--hidden-size",  default=128,    type=int,   help="hidden-size")
+parser.add_argument("-ls", "--latent-size",  default=160,    type=int,   help="latent-size")
 parser.add_argument("-ki", "--kernel-init",  default="skew-symmetric",   help="kernel-inititialization")
-parser.add_argument("-kp", "--kernel-param", default="identity",         help="kernel-parametrization")
-parser.add_argument("-fc", "--filter",       default="SequentialFilter", help="filter-component")
-parser.add_argument("-ec", "--encoder",      default="ResNet",           help="encoder-component")
-parser.add_argument("-dc", "--decoder",      default="ResNet",           help="decoder-component")
-parser.add_argument("-sc", "--system",       default="LinODECell",       help="system-component")
-parser.add_argument("-eb", "--embedding",    default="ConcatEmbedding",  help="embedding-component")
-parser.add_argument("-pc", "--projection",   default="ConcatProjection", help="projection-component")
 parser.add_argument("-n",  "--note",         default="",     type=str,   help="Note that can be added")
 parser.add_argument("-s",  "--seed",         default=None,   type=int,   help="Set the random seed.")
 # fmt: on
@@ -45,10 +39,12 @@ else:
 
 print(ARGS)
 
-# %% [markdown]
+
 # ### Load from config file if provided
 
-# %%
+# In[2]:
+
+
 import yaml
 
 if ARGS.config is not None:
@@ -59,10 +55,12 @@ if ARGS.config is not None:
 
 print(ARGS)
 
-# %% [markdown]
+
 # ## Global Variables
 
-# %%
+# In[3]:
+
+
 import logging
 import os
 import pickle
@@ -78,7 +76,7 @@ from IPython.core.display import HTML
 from torch import Tensor, jit
 from tqdm.autonotebook import tqdm, trange
 
-# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 # torch.jit.enable_onednn_fusion(True)
@@ -89,18 +87,12 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="torch")
 logging.basicConfig(level=logging.WARN)
 HTML("<style>.jp-OutputArea-prompt:empty {padding: 0; border: 0;}</style>")
 
-# %% [markdown]
-# ## Initialize Task
 
-# %%
-from tsdm.tasks import KiwiTask
-
-TASK = KiwiTask()
-
-# %% [markdown]
 # ## Hyperparameter choices
 
-# %%
+# In[4]:
+
+
 if ARGS.seed is not None:
     torch.manual_seed(ARGS.seed)
     random.seed(ARGS.seed)
@@ -125,7 +117,9 @@ hparam_dict = {
 } | OPTIMIZER_CONFIG
 
 
-# %%
+# In[5]:
+
+
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 CONFIG_STR = f"f={ARGS.fold}_bs={ARGS.batch_size}_lr={ARGS.learn_rate}_hs={ARGS.hidden_size}_ls={ARGS.latent_size}"
 RUN_ID = ARGS.run_id or datetime.now().isoformat(timespec="seconds")
@@ -139,10 +133,22 @@ LOGGING_DIR.mkdir(parents=True, exist_ok=True)
 CKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# %% [markdown]
+
+# ## Initialize Task
+
+# In[6]:
+
+
+from tsdm.tasks import KiwiTask
+
+TASK = KiwiTask()
+
+
 # ## Initialize DataLoaders
 
-# %%
+# In[7]:
+
+
 # from tsdm.tasks.mimic_iii_debrouwer2019 import mimic_collate as task_collate_fn
 
 dloader_config_train = {
@@ -150,7 +156,7 @@ dloader_config_train = {
     # "shuffle": True,
     "drop_last": True,
     "pin_memory": True,
-    "num_workers": os.cpu_count() * 3 // 4,
+    "num_workers": 4,
     # "collate_fn": task_collate_fn,
 }
 
@@ -159,7 +165,7 @@ dloader_config_infer = {
     # "shuffle": False,
     "drop_last": False,
     "pin_memory": True,
-    "num_workers": os.cpu_count() * 3 // 4,
+    "num_workers": 4,
     # "collate_fn": task_collate_fn,
 }
 
@@ -174,10 +180,12 @@ VALID_LOADER = TASK.make_dataloader((ARGS.fold, "valid"), **dloader_config_infer
 TEST_LOADER = TASK.make_dataloader((ARGS.fold, "test"), **dloader_config_infer)
 EVAL_LOADERS = {"train": INFER_LOADER, "valid": VALID_LOADER, "test": TEST_LOADER}
 
-# %% [markdown]
+
 # # Serialize Encoder
 
-# %%
+# In[8]:
+
+
 ENCODER = TASK.encoders[ARGS.fold, "train"]
 
 with open(CKPOINT_DIR / "encoder.pickle", "wb") as file:
@@ -187,67 +195,67 @@ with open(CKPOINT_DIR / "encoder.pickle", "wb") as file:
 with open(CKPOINT_DIR / "encoder.pickle", "rb") as file:
     _ = pickle.load(file)
 
-# %% [markdown]
+
 # ## Initialize Loss
 
-# %%
-from tsdm.metrics import MAE, MSE, RMSE
+# In[ ]:
 
-LOSS = TASK.test_metrics[ARGS.fold, "train"]
+
+def MSE(y: Tensor, yhat: Tensor) -> Tensor:
+    return torch.nanmean((y - yhat) ** 2)
+
+
+def MAE(y: Tensor, yhat: Tensor) -> Tensor:
+    return torch.nanmean(torch.abs(y - yhat))
+
+
+def RMSE(y: Tensor, yhat: Tensor) -> Tensor:
+    return torch.sqrt(torch.nanmean((y - yhat) ** 2))
+
+
 METRICS = {
-    "wMSE": LOSS,
-    "RMSE": RMSE(),
-    "MSE": MSE(),
-    "MAE": MAE(),
+    "RMSE": jit.script(RMSE),
+    "MSE": jit.script(MSE),
+    "MAE": jit.script(MAE),
 }
+LOSS = jit.script(MSE)
 
-LOSS = LOSS.to(device=DEVICE)
 
-# %% [markdown]
 # ## Initialize Model
 
-# %%
-from linodenet.models import LinODEnet
-from linodenet.models.embeddings import EMBEDDINGS
-from linodenet.models.encoders import ENCODERS
-from linodenet.models.filters import FILTERS
-from linodenet.models.system import SYSTEMS
+# In[ ]:
+
+
+from linodenet.models import LinODEnet, ResNet, embeddings, filters, system
 
 MODEL_CONFIG = {
     "__name__": "LinODEnet",
     "input_size": TASK.dataset.timeseries.shape[-1],
     "hidden_size": ARGS.hidden_size,
     "latent_size": ARGS.latent_size,
-    "Filter": FILTERS[ARGS.filter].HP | {"autoregressive": True},
-    "System": SYSTEMS[ARGS.system].HP
-    | {
-        "kernel_initialization": ARGS.kernel_init,
-        "kernel_parametrization": ARGS.kernel_param,
-    },
-    "Encoder": ENCODERS[ARGS.encoder].HP | {"num_blocks": 10},
-    "Decoder": ENCODERS[ARGS.decoder].HP | {"num_blocks": 10},
-    "Embedding": EMBEDDINGS[ARGS.embedding].HP,
-    "Projection": EMBEDDINGS[ARGS.projection].HP,
+    "Filter": filters.SequentialFilter.HP | {"autoregressive": True},
+    "System": system.LinODECell.HP | {"kernel_initialization": ARGS.kernel_init},
+    "Encoder": ResNet.HP | {"num_blocks": 10},
+    "Decoder": ResNet.HP | {"num_blocks": 10},
+    "Embedding": embeddings.ConcatEmbedding.HP,
+    "Projection": embeddings.ConcatProjection.HP,
 }
 
 MODEL = LinODEnet(**MODEL_CONFIG).to(DEVICE)
 MODEL = torch.jit.script(MODEL)
-torchinfo.summary(MODEL, depth=2)
+torchinfo.summary(MODEL)
 
 
-# %% [markdown]
-# ## Warm-Up - pre-allocate memory
-#
-# We perform forward and backward with a maximal size batch.
-#
-# **Reference:** [pre-allocate-memory](https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html#pre-allocate-memory-in-case-of-variable-input-lengthhttps://pytorch.org/tutorials/recipes/recipes/tuning_guide.html#pre-allocate-memory-in-case-of-variable-input-length)
+# ### Warm-Up
 
-# %%
+# In[ ]:
+
+
 def predict_fn(model, batch) -> tuple[Tensor, Tensor]:
     """Get targets and predictions."""
     T, X, M, _, Y, MY = (tensor.to(DEVICE) for tensor in batch)
     YHAT = model(T, X)
-    return Y, YHAT
+    return Y[MY], YHAT[MY]
 
 
 batch = next(iter(TRAIN_LOADER))
@@ -255,31 +263,33 @@ MODEL.zero_grad(set_to_none=True)
 
 # Forward
 Y, YHAT = predict_fn(MODEL, batch)
-assert not torch.isnan(YHAT).any(), f"prediction has NaN values!"
-
-# Loss
-R = LOSS(Y, YHAT)
-assert torch.isfinite(R), "Model Collapsed!"
 
 # Backward
+R = LOSS(Y, YHAT)
+assert torch.isfinite(R).item(), "Model Collapsed!"
 R.backward()
+
 assert not torch.isnan(MODEL.kernel.grad).any(), f"gradient has NaN values!"
 
 # Reset
 MODEL.zero_grad(set_to_none=True)
 
-# %% [markdown]
+
 # ## Initialize Optimizer
 
-# %%
+# In[ ]:
+
+
 from torch.optim import AdamW
 
 OPTIMIZER = AdamW(MODEL.parameters(), **OPTIMIZER_CONFIG)
 
-# %% [markdown]
+
 # ## Initialize Logging
 
-# %%
+# In[ ]:
+
+
 from torch.utils.tensorboard import SummaryWriter
 
 from tsdm.logutils import StandardLogger
@@ -298,10 +308,12 @@ LOGGER = StandardLogger(
 )
 LOGGER.log_epoch_end(0)
 
-# %% [markdown]
+
 # ## Training
 
-# %%
+# In[ ]:
+
+
 total_num_batches = 0
 for epoch in trange(1, ARGS.epochs, desc="Epoch", position=0):
     for batch in tqdm(
@@ -313,7 +325,7 @@ for epoch in trange(1, ARGS.epochs, desc="Epoch", position=0):
         # Forward
         Y, YHAT = predict_fn(MODEL, batch)
         R = LOSS(Y, YHAT)
-        assert torch.isfinite(R), "Model Collapsed!"
+        assert torch.isfinite(R).item(), "Model Collapsed!"
 
         # Backward
         R.backward()
@@ -325,3 +337,6 @@ for epoch in trange(1, ARGS.epochs, desc="Epoch", position=0):
 
 LOGGER.log_history(CFG_ID)
 LOGGER.log_hparams(CFG_ID)
+
+
+# In[ ]:
