@@ -9,7 +9,7 @@ repos:
   #      - id: identity
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
-    rev: v4.3.0
+    rev: v4.4.0
     hooks:
       - id: check-added-large-files
         description: "prevents giant files from being committed."
@@ -91,7 +91,7 @@ repos:
         description: " Run `black` on python code blocks in documentation files "
   # flake8
   - repo: https://github.com/pycqa/flake8
-    rev: 5.0.4
+    rev: 6.0.0
     hooks:
       - id: flake8
         files: (^src/|^tests/)
@@ -108,7 +108,7 @@ repos:
           - flake8-rst-docstrings
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
-    rev: v0.16
+    rev: v0.16.1
     hooks:
       - id: slotscheck
         files: '^src/.*\.py$'
