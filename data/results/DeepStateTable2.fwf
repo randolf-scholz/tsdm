@@ -1,5 +1,0 @@
-Model         MatFact      DeepAR  DeepAR     DeepState  DeepState
-Test-Metric   p50          p50     p90        p50        p90
-Dataset
-electricity   0.16         0.075   0.04       0.083      0.056
-traffic       0.20         0.161   0.099      0.167      0.113
