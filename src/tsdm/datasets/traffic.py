@@ -271,9 +271,9 @@ class Traffic(MultiFrameDataset[KEY]):
                 trainlabels.index = train_dates
                 trainlabels = Series(trainlabels)  # make sure it's not TextFileReader
             # Check that the labels match with the actual weekdays
-            assert (
+            assert all(
                 trainlabels.index.day_name() == trainlabels.values.map(weekdays)
-            ).all(), "Labels do not match with dates!"
+            ), "Labels do not match with dates!"
 
             with files.open("PEMS_testlabels") as file:
                 content = file.read().decode("utf8")
@@ -288,9 +288,9 @@ class Traffic(MultiFrameDataset[KEY]):
                 testlabels = Series(testlabels)  # make sure it's not TextFileReader
 
             # Check that the labels match with the actual weekdays
-            assert (
+            assert all(
                 testlabels.index.day_name() == testlabels.values.map(weekdays)
-            ).all(), "Labels do not match with dates!"
+            ), "Labels do not match with dates!"
             assert (
                 trainlabels.dtype == testlabels.dtype
             ), "Train and test have different labels!"

@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional
+from typing import Optional
 
 import torch
 from torch import nn
@@ -58,50 +58,33 @@ def path_import(module_path: Path, module_name: Optional[str] = None) -> ModuleT
 
 
 class ODE_RNN(BaseModel, nn.Module):
-    r"""TODO: add docstring.
+    r"""ODE-RNN Model.
 
-    Parameters
-    ----------
-    batch-size: int, default 50
-        Batch size
-    classif_per_tp: bool, default False
-    concat_mask: bool, default True
-    device: `torch.device`, default 'cpu'
-    input_dim: int
-        dimensionality of input
-    lr: float, default 1e-2
-        Learn-rate
-    nonlinear: Callable, default nn.Tanh,
-        Nonlinearity used
-    n_gru_units: int, default 100
-        Number of units per layer in each of GRU update networks
-    n_labels: int, default 1
-        Number of outputs
-    n_layers: int
-        Number of layers in ODE func in recognition ODE
-    n_ode_gru_dims: int
-        Size of the latent state
-    n_units: int, default 100
-        Number of units per layer in ODE func
-    obsrv_std: float, default 0.01
-        Measurement error
-    odeint_rtol: float, default 1e-3
-        Relative tolerance of ODE solver
-    odeint_atol: float, default 1e-4
-        Absolute tolerance of ODE solver
-    use_binary_classif: bool, default False
-        train_classif_w_reconstr: bool, default False
+    Args:
+        batch_size: Batch size
+        classif_per_tp:
+        concat_mask:
+        device:
+        input_dim: dimensionality of input
+        lr: Learn-rate
+        nonlinear: Nonlinearity used
+        n_gru_units: Number of units per layer in each of GRU update networks
+        n_labels: Number of outputs
+        n_layers: iNumber of layers in ODE func in recognition ODE
+        n_ode_gru_dims: Size of the latent state
+        n_units: Number of units per layer in ODE func
+        obsrv_std: Measurement error
+        odeint_rtol: Relative tolerance of ODE solver
+        odeint_atol: Absolute tolerance of ODE solver
+        use_binary_classif:
+        train_classif_w_reconstr:
+        Net_cfg: Configuration parameters for the Net
+        ODEFunc_cfg:Configuration parameters for the ODEFunc
+        DiffeqSolver_cfg: Configuration parameters for the DiffeqSolver
+        ODE_RNN_cfg: Configuration parameters for the ODE-RNN
 
-    Keyword Args
-    ------------
-    Net_cfg: dict, default {}
-        Configuration parameters for the Net
-    ODEFunc_cfg: dict, default {}
-        Configuration parameters for the ODEFunc
-    DiffeqSolver_cfg: dict, default {}
-        Configuration parameters for the DiffeqSolver
-    ODE_RNN_cfg: dict, default {}
-        Configuration parameters for the ODE-RNN
+    References:
+        - https://papers.nips.cc/paper/2019/hash/42a6845a557bef704ad8ac9cb4461d43-Abstract.html
     """
 
     model_path: Path
@@ -155,7 +138,34 @@ class ODE_RNN(BaseModel, nn.Module):
         r"""TODO: add docstring."""
         return super(ODE_RNN, cls).__new__(*args, **kwargs)
 
-    def __init__(self, **HP: Any) -> None:
+    def __init__(
+        self,
+        *,
+        input_dim: int,
+        n_layers: int,
+        n_ode_gru_dims: int,
+        # optional args
+        batch_size: int = 50,
+        classif_per_tp: bool = False,
+        concat_mask: bool = True,
+        device: str | torch.device = "cpu",
+        lr: float = 1e-2,
+        method: str = "euler",
+        n_gru_units: int = 100,
+        n_labels: int = 1,
+        n_units: int = 100,
+        nonlinear: type[nn.Module] = nn.Tanh,
+        obsrv_std: float = 0.01,
+        odeint_atol: float = 1e-4,
+        odeint_rtol: float = 1e-3,
+        train_classif_w_reconstr: bool = False,
+        use_binary_classif: bool = False,
+        # cfg args
+        DiffeqSolver_cfg: dict = NotImplemented,
+        Net_cfg: dict = NotImplemented,
+        ODEFunc_cfg: dict = NotImplemented,
+        ODE_RNN_cfg: dict = NotImplemented,
+    ) -> None:
         r"""Initialize the internal ODE-RNN model."""
         super().__init__()
         # TODO: Use tsdm.home_path or something
@@ -164,46 +174,78 @@ class ODE_RNN(BaseModel, nn.Module):
         ODEFunc = module.lib.ode_func.ODEFunc
         DiffeqSolver = module.lib.diffeq_solver.DiffeqSolver
         _ODE_RNN = module.lib.ode_rnn.ODE_RNN
+        Net_cfg = {} if Net_cfg is NotImplemented else Net_cfg
+        ODEFunc_cfg = {} if ODEFunc_cfg is NotImplemented else ODEFunc_cfg
+        DiffeqSolver_cfg = (
+            {} if DiffeqSolver_cfg is NotImplemented else DiffeqSolver_cfg
+        )
+        ODE_RNN_cfg = {} if ODE_RNN_cfg is NotImplemented else ODE_RNN_cfg
 
-        self.HP = HP = deep_dict_update(self.HP, HP)
+        HP = {
+            "input_dim": input_dim,
+            "n_layers": n_layers,
+            "n_ode_gru_dims": n_ode_gru_dims,
+            # optional args
+            "batch_size": batch_size,
+            "classif_per_tp": classif_per_tp,
+            "concat_mask": concat_mask,
+            "device": device,
+            "lr": lr,
+            "method": method,
+            "n_gru_units": n_gru_units,
+            "n_labels": n_labels,
+            "n_units": n_units,
+            "nonlinear": nonlinear,
+            "obsrv_std": obsrv_std,
+            "odeint_atol": odeint_atol,
+            "odeint_rtol": odeint_rtol,
+            "train_classif_w_reconstr": train_classif_w_reconstr,
+            "use_binary_classif": use_binary_classif,
+            # cfg args
+            "DiffeqSolver_cfg": DiffeqSolver_cfg,
+            "Net_cfg": Net_cfg,
+            "ODEFunc_cfg": ODEFunc_cfg,
+            "ODE_RNN_cfg": ODE_RNN_cfg,
+        }
+        self.HP = deep_dict_update(self.HP, HP)
 
         self.ode_func_net = create_net(
-            n_inputs=HP["n_ode_gru_dims"],
-            n_outputs=HP["n_ode_gru_dims"],
-            n_layers=HP["n_layers"],
-            n_units=HP["n_units"],
-            nonlinear=HP["nonlinear"],
+            n_inputs=n_ode_gru_dims,
+            n_outputs=n_ode_gru_dims,
+            n_layers=n_layers,
+            n_units=n_units,
+            nonlinear=nonlinear,
         )
 
         self.rec_ode_func = ODEFunc(
             ode_func_net=self.ode_func_net,
-            input_dim=HP["input_dim"],
-            latent_dim=HP["n_ode_gru_dims"],
-            device=HP["device"],
+            input_dim=input_dim,
+            latent_dim=n_ode_gru_dims,
+            device=device,
         )
 
         self.z0_diffeq_solver = DiffeqSolver(
-            input_dim=HP["input_dim"],
+            input_dim=input_dim,
             ode_func=self.rec_ode_func,
-            method="euler",
-            latents=HP["n_ode_gru_dims"],
-            odeint_rtol=HP["odeint_rtol"],
-            odeint_atol=HP["odeint_atol"],
-            device=HP["device"],
+            method=method,
+            latents=n_ode_gru_dims,
+            odeint_rtol=odeint_rtol,
+            odeint_atol=odeint_atol,
+            device=device,
         )
 
         self.model = _ODE_RNN(
-            input_dim=HP["input_dim"],
-            latent_dim=HP["n_ode_gru_dims"],
-            device=HP["device"],
+            input_dim=input_dim,
+            latent_dim=n_ode_gru_dims,
+            device=device,
             z0_diffeq_solver=self.z0_diffeq_solver,
-            n_gru_units=HP["n_gru_units"],
-            concat_mask=HP["concat_mask"],
-            obsrv_std=HP["obsrv_std"],
-            use_binary_classif=HP["use_binary_classif"],
-            classif_per_tp=HP["classif_per_tp"],
-            n_labels=HP["n_labels"],
-            train_classif_w_reconstr=HP["train_classif_w_reconstr"],
+            n_gru_units=n_gru_units,
+            concat_mask=concat_mask,
+            obsrv_std=obsrv_std,
+            use_binary_classif=use_binary_classif,
+            classif_per_tp=classif_per_tp,
+            n_labels=n_labels,
+            train_classif_w_reconstr=train_classif_w_reconstr,
         )
 
     def forward(self, T, X):
