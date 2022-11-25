@@ -60,7 +60,7 @@ if sys.version_info < (3, 10):
 #         return import_module("." + name, __name__)
 #     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-# pylint: disable=invalid-name
+# pylint: disable=wrong-import-position
 
 from tsdm import (
     config,
@@ -77,7 +77,7 @@ from tsdm import (
     viz,
 )
 
-# pylint: enable=invalid-name
+# pylint: enable=wrong-import-position
 
 __version__ = metadata.version(__package__)
 r"""The version number of the `tsdm` package."""

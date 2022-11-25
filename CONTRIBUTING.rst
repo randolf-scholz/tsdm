@@ -13,7 +13,7 @@ Getting started
     git clone https://software.ismll.uni-hildesheim.de/rscholz/tsdm-dev
     cd tsdm-dev
 
-3. Setup the virtual environment
+3. Set up the virtual environment
 
    3.1 Via poetry (recommended).::
 
@@ -71,7 +71,7 @@ Getting started
     pip install -r requirements-flake8.txt
     pip install -r requirements-extra.txt
 
-10. Push changes in the branch to your forked repository on GitHub. ::
+10. Push changes in the branch to your forked repository on GitHub.::
 
      git push origin feature-xyz
 

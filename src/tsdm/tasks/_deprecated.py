@@ -43,10 +43,6 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 
     Attributes
     ----------
-    train_batch_size: int, default 32
-        Default batch-size used by batchloader.
-    eval_batch_size: int, default 128
-        Default batch-size used by dataloaders (for evaluation).
     dataset: Dataset
         The attached dataset
     """
@@ -78,9 +74,6 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 
     def __init__(
         self,
-        dataset: TorchDataset,
-        sampler: TorchSampler,
-        dataloader_config_train: dict[str, Any],
         **dataloader_kwargs: Any,
     ):
         r"""Initialize the task object."""

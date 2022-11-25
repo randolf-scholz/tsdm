@@ -103,7 +103,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     # def __new__(
     #     cls, *, initialize: bool = True, reset: bool = False, **kwds: Any
     # ) -> PreTrainedModel:
-    #     r"""Cronstruct the model object and initialize it."""
+    #     r"""Construct the model object and initialize it."""
     #     self: PreTrainedModel = super().__new__(cls)
     #
     #     return self
@@ -138,7 +138,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     ) -> PreTrainedModel:  # TODO: 3.11 use typing.Self
         r"""Create model from zipfile."""
         path = Path(zipfile)
-        if not path.suffix == ".zip":
+        if path.suffix != ".zip":
             raise ValueError(f"{path=} is not a zipfile!")
 
         if not path.is_relative_to(Path.cwd()):
@@ -233,7 +233,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
                         return json.load(f)
                     case "hyperparameters", (".yaml" | ".yml"):
                         return yaml.safe_load(f)
-                raise
+                raise ValueError(f"{component=} is not supported!")
                 # case name, _:  # fallback
                 #     return self.__load_torch_component(name, f)
 
@@ -245,33 +245,35 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
 
         try:  # attempt loading via torch.jit.load
             logger.info("Trying to load as TorchScript.")
-            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
+            if isinstance(file, IOBase):  # type: ignore[unreachable]
+                file.seek(0, 0)
             return self.__load_torch_jit_model(file)
         except RuntimeError:
             logger.info("Could not load as TorchScript.")
 
         try:  # attempt loading via torch.load
             logger.info("Loading as regular torch component.")
-            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
+            if isinstance(file, IOBase):  # type: ignore[unreachable]
+                file.seek(0, 0)
             loaded_object = torch.load(file, map_location=self.device)
         except RuntimeError:
-            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
+            if isinstance(file, IOBase):  # type: ignore[unreachable]
+                file.seek(0, 0)
             loaded_object = torch.load(file, map_location=torch.device("cpu"))
             warnings.warn("Could not load to default device. Loaded to CPU.")
 
         if not isinstance(loaded_object, dict):
             return loaded_object
-        else:
-            logger.info("Found state_dict.")
-            state_dict = loaded_object
+        logger.info("Found state_dict.")
+        state_dict = loaded_object
 
         try:
             logger.info("Trying to obtain module config from hyperparameters.")
             module_config = self.hyperparameters[component]
-        except KeyError:
+        except KeyError as exc:
             raise ValueError(
                 f"No '{component}' configuration in {self.hyperparameters}."
-            )
+            ) from exc
 
         module = initialize_from_config(module_config | kwargs)
         module.load_state_dict(state_dict)
@@ -281,10 +283,12 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         r"""Load a TorchScript model."""
         try:
             # load on CPU
-            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
+            if isinstance(file, IOBase):  # type: ignore[unreachable]
+                file.seek(0, 0)
             model = torch.jit.load(file, map_location=self.device)
         except RuntimeError:
-            file.seek(0, 0) if isinstance(file, IOBase) else None  # type: ignore[unreachable]
+            if isinstance(file, IOBase):  # type: ignore[unreachable]
+                file.seek(0, 0)
             model = torch.jit.load(file, map_location=torch.device("cpu"))
             warnings.warn("Could not load model to default device. Loaded to CPU.")
         return model
