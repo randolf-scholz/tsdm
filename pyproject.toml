@@ -113,7 +113,7 @@ tqdm = ">=4.64"
 twine = ">=4.0"
 types-docutils = ">=0.19"
 types-pillow = ">=9.3"
-types-protobuf = ">=3.20"
+types-protobuf = ">=4.20"
 types-psutil = ">=5.9"
 types-pyyaml = ">=6.0"
 types-requests = ">=2.28"
@@ -137,9 +137,12 @@ enable= [
 disable= [
     "C0103",  # invalid-name
     "C0144",  # non-ascii-name
+    "E0611",  # no-name-in-module
+    "E1130",  # invalid-unary-operand-type
     "R0801",  # similar lines
     "R0902",  # too-many-instance-attributes
     "R0903",  # too-few-public-methods
+    "R0911",  # too-many-return-statements
     "R0914",  # too-many-locals
     "R0915",  # too-many-statements
     "W0221",  # arguments-differ

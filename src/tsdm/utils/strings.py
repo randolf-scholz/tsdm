@@ -398,7 +398,7 @@ def repr_sequence(
                 break
         else:
             identifier = "Sequence"
-    #
+
     # if recursive:
     #     if repr_fun not in RECURSIVE_REPR_FUNS:
     #         raise ValueError("Must use repr_short for recursive=True.")

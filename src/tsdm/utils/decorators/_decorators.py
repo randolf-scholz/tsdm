@@ -172,7 +172,7 @@ def decorator(deco: Callable) -> Callable:
 
     Examples
     --------
-    >>> def wrap_func(
+    >>> def wrap_fun(
     ...     func: Callable,
     ...     before: Optional[Callable]=None,
     ...     after: Optional[Callable]=None,
@@ -205,7 +205,7 @@ def decorator(deco: Callable) -> Callable:
     Note however, that it is possible so save the situation by adding at least one
     mandatory positional argument:
 
-    >>> def wrap_func(
+    >>> def wrap_fun(
     ...     func: Callable,
     ...     before: Optional[Callable],
     ...     after: Optional[Callable]=None,

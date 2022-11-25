@@ -13,11 +13,11 @@ experiments/**/*.parquet
 experiments/**/*.pdf
 experiments/**/*.png
 docs/apidoc/
-docs/_build/
+docs/autoapi/
 reports/
 
-# Ignore pickle files
-*.pickle
+# pytorch model files
+*.pt
 
 # Pytorch profiling
 *.pt.trace.json
@@ -25,20 +25,20 @@ reports/
 # tensorboard files
 *events.out.tfevents*
 
-# Pickles
+# Ignore pickle files
 *.pk
+*.pickle
 
 # videos & images
 video/
 pics/
 
 # tensorboard run data
-runs/
-model_checkpoints/
 checkpoints/
-slurm/
 configs/
-*.pt
+model_checkpoints/
+runs/
+slurm/
 tensorboard/
 
 # latex aux files
@@ -107,7 +107,6 @@ cover/
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
