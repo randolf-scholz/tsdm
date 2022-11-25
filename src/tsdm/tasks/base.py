@@ -463,6 +463,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     def get_subgenerator(self, key: KeyVar) -> TimeSeriesSampleGenerator:
         r"""Get a subgenerator."""
         other_kwargs = {k: v for k, v in self.__dict__.items() if k != "dataset"}
+        # noinspection PyArgumentList
         return self.__class__(self.dataset[key], **other_kwargs)
 
     def make_sample(
@@ -592,7 +593,7 @@ class TimeSeriesTask(
     - Optional: Task specific encoder/decoder
         - Since we use raw format, such an encoder might be necessary to even meaningfully
           compute the target metric
-        - For examples, tasks may ask for a MSE-loss on standardized data, or a cross-entropy for
+        - For examples, tasks may ask for an MSE-loss on standardized data, or a cross-entropy for
           categorical data. In such cases, the task should provide an encoder/decoder to convert the
           data to the desired format.
         - For the simple case when both the input and the target are DataFrames, the task should

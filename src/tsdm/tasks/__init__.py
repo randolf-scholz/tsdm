@@ -10,8 +10,8 @@ forecasting horizons.
 
 
 Remark:
-    One thing that is weird about torchs way to approch the issue, is that there
-    are two seperated functionailities: sampling rows and selecting columns.
+    One thing that is weird about torch's way to approach the issue, is that there
+    are two seperated functionalities: sampling rows and selecting columns.
     In principle, the sampler could do both, supposedly.
     However, the TaskDataset is really responsible for creating the sample.
 
