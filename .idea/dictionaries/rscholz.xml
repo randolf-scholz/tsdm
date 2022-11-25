@@ -30,6 +30,7 @@
       <w>autoclass</w>
       <w>autojit</w>
       <w>automethod</w>
+      <w>automodapi</w>
       <w>autonotebook</w>
       <w>autosectionlabel</w>
       <w>autosummary</w>
@@ -125,6 +126,7 @@
       <w>fontspec</w>
       <w>fonttype</w>
       <w>forcedly</w>
+      <w>funs</w>
       <w>gasthaus</w>
       <w>gcos</w>
       <w>gelu</w>
@@ -153,6 +155,7 @@
       <w>iculos</w>
       <w>idxenc</w>
       <w>iinfo</w>
+      <w>iloader</w>
       <w>iloc</w>
       <w>includehidden</w>
       <w>inds</w>
@@ -188,6 +191,7 @@
       <w>kullback</w>
       <w>kval</w>
       <w>kvals</w>
+      <w>kwds</w>
       <w>lazydict</w>
       <w>lbfgs</w>
       <w>leibler</w>

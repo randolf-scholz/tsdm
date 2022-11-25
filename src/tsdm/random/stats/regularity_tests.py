@@ -167,4 +167,6 @@ def distributiveness(s: Series) -> float:
     I.e. the minimum distance (for example Dynamic Time Warping) between the time series,
     and a regular time series with the same average frequency.
     """
+    # TODO: implement correct function
+    print(s.index.diff().std())
     raise NotImplementedError
