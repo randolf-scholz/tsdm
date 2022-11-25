@@ -187,10 +187,10 @@ class WMAE(nn.Module):
         if self.ignore_nan_targets:
             m = torch.isnan(targets)
             r = torch.where(m, 0.0, r)
-            self.w * torch.abs(r)
+            r = self.w * torch.abs(r)
             r = torch.sum(r) / torch.sum(m)
         else:
-            self.w * torch.abs(r)
+            r = self.w * torch.abs(r)
             r = torch.mean(r)
 
         return r

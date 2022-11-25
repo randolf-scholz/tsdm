@@ -47,34 +47,34 @@ For simplicity, we will only consider **single-table** time series datasets (i.e
 Following the mathematical definition, we require the following data to specifiy a time-series dataset:
 
 ```yaml
-TimeSeriesDataset: tuple[timeseries, metadata, time_features, value_features, metadata_features]
-  timeseries:  DataFrame                      # index: Time, alternative: tuple[TimeArray, ValueArray]
+TimeSeriesDataset: # tuple[timeseries, metadata, time_features, value_features, metadata_features]
+  timeseries:  # DataFrame                      # index: Time, alternative: tuple[TimeArray, ValueArray]
     time:      Array[Time, dtype=TimeLike]    # sorted ascending, indexes the other tables
     values:    Array[shape=(len(time), ...)]
   metadata:  Optional[DataFrame] = None       # single row DataFrame / dict
     ...                                       # arbitrary metadata
-  # space desctriptors
-  time_features: Optional[DataFrame]         # single row DataFrame / dict
+  # space descriptors
+  time_features: # Optional[DataFrame]         # single row DataFrame / dict
     unit:  category[str]  # The unit of the time index (e.g. "s" or "h" if TimeArray is int/float)
     scale: category[str]  # The scale "percent", "absolute", "linear", "logarithmic", etc.
     dtype: category[str]  # The data type of the time index (e.g. "int" or "float")
     lower: TimeLike       # The time when the time series starts (must be ≤ t[0])
     upper: TimeLike       # The time when the time series ends (must be ≥ t[-1])
-    ...                   # Other time features (e.g. error bounds if clocks imprecise, etc.)
-  value_features: Optional[DataFrame] = None  # rows = timeseries.columns
+    # ...                   # Other time features (e.g. error bounds if clocks imprecise, etc.)
+  value_features: # Optional[DataFrame] = None  # rows = timeseries.columns
     unit:  category[str]  # The unit of the values (e.g. "m" or "°C")
     scale: category[str]  # The scale "percent", "absolute", "linear", "logarithmic", etc.
     dtype: category[str]  # The data type of the values (e.g. "float32" or "int32")
     lower: numerical      # Lower Bound of the values, if applicable
     upper: numerical      # Upper Bound of the values, if applicable
-    ...                   # Other timeseries features (e.g. error bounds, etc.)
-  metadata_features: Optional[DataFrame] = None  # rows = metadata.columns
+    # ...                   # Other timeseries features (e.g. error bounds, etc.)
+  metadata_features: # Optional[DataFrame] = None  # rows = metadata.columns
     unit:  category[str]  # The unit of the values (e.g. "m" or "°C")
     scale: category[str]  # The scale "percent", "absolute", "linear", "logarithmic", etc.
     dtype: category[str]  # The data type of the values (e.g. "float32" or "int32")
     lower: numerical      # Lower Bound of the values, if applicable
     upper: numerical      # Upper Bound of the values, if applicable
-    ...                   # Other metadata features (e.g. error bounds, etc.)
+    # ...                   # Other metadata features (e.g. error bounds, etc.)
 ```
 
 The optional tables `time_features`, `timeseries_features` and `metadata_features` encode information describing the spaces $𝓣$, $𝓥$ and $𝓜$, respectively. This information
@@ -111,7 +111,7 @@ TimeSeriesCollection: # generic
   global_features: Optional[Array]
 ```
 
-However, we are mostly interested in the **equimodal** case, i.e. when all the TSDs share the same value and metadata space $𝓣ᵢ=𝓣$, $𝓥ᵢ = 𝓥$ and $𝓜ᵢ = 𝓜$ for all $i∈𝓘$. We do however allow differences in the upper/lower boundary values. So `time_features`, `value_features` and `metadata_features` each each be either of `None`, a simple table or a multi-index table using $𝓘$ as the first level.
+However, we are mostly interested in the **equimodal** case, i.e. when all the TSDs share the same value and metadata space $𝓣ᵢ=𝓣$, $𝓥ᵢ = 𝓥$ and $𝓜ᵢ = 𝓜$ for all $i∈𝓘$. We do however allow differences in the upper/lower boundary values. So `time_features`, `value_features` and `metadata_features` each be either of `None`, a simple table or a multi-index table using $𝓘$ as the first level.
 
 In practice a convenient solution is to use `timedelta64` format for the time-index which in most cases alleviates the need for any time-features besides lower and upper bounds.
 
@@ -197,8 +197,10 @@ We specify the following types as TimeStamp / TimeDelta-like. All TSCs should us
 If a TSD uses a `datetime` as the time index, it is appropriate to store `tmin` and `tmax` in the metadata.
 
 ```python
+from typing import TypeAlias
+from datetime import datetime, timedelta
 # NOTE: Might be more appropriate to implement as typing.Protocol.
-TimeStampLike: TypeAlias = int | uint | float | datetime
+TimeStampLike: TypeAlias = int | float | datetime
 TimeDeltaLike: TypeAlias = int | float | timedelta
 TimeLike: TypeAlias = TimeStampLike | TimeDeltaLike
 
@@ -208,7 +210,7 @@ ContinuousTimeDeltaLike: TypeAlias = float | timedelta
 ContinuousTimeLike: TypeAlias = ContinuousTimeStampLike | ContinuousTimeDeltaLike
 
 # Discrete Time Variants
-DiscreteTimeStampLike: TypeAlias = int | uint
+DiscreteTimeStampLike: TypeAlias = int
 DiscreteTimeDeltaLike: TypeAlias = int
 DiscreteTimeLike: TypeAlias = ContinuousTimeStampLike | ContinuousTimeDeltaLike
 ```
