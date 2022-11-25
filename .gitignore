@@ -6,15 +6,14 @@
 *.zip
 
 # Project related Files
-/dev/datasets/MIMIC-IV/processed/
-/dev/datasets/MIMIC-IV/raw/
-/dev/datasets/MIMIC-IV/mimic-iv-1.0.zip
-/dev/**/*.parquet
-/dev/**/*.pdf
-/dev/**/*.png
-/experiments/**/*.pdf
-/experiments/**/*.png
-/docs/apidoc/
+dev/**/*.parquet
+dev/**/*.pdf
+ev/**/*.png
+experiments/**/*.parquet
+experiments/**/*.pdf
+experiments/**/*.png
+docs/apidoc/
+docs/_build/
 reports/
 
 # Ignore pickle files
