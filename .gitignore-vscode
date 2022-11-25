@@ -1,4 +1,8 @@
-# https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
+#######################################################################################
+# VSCode GitIgnore                                                                    #
+# https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore     #
+#######################################################################################
+
 
 .vscode/*
 !.vscode/settings.json
