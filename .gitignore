@@ -45,6 +45,10 @@ tensorboard/
 # latex aux files
 __tex__/
 
+# dask worker space
+dask-worker-space/
+
+
 #######################################################################################
 # Python GitIgnore                                                                    #
 # https://github.com/github/gitignore/blob/main/Python.gitignore                      #
