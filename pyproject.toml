@@ -175,6 +175,7 @@ generated-members=["numpy.*", "torch.*"]
 allow_redefinition = false
 color_output = true
 error_summary = true
+#enable_incomplete_feature = ["Self"]
 files = ["src/", "tests/"]
 plugins = ["numpy.typing.mypy_plugin"]
 pretty = true
