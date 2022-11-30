@@ -101,7 +101,7 @@ class KiwiTask(TimeSeriesTask):
         "valid": 1,
         "test": 2,
     }
-    """The configuration of the fold generator."""
+    r"""The configuration of the fold generator."""
 
     sampler_kwargs: dict[str, Any] = {
         "observation_horizon": observation_horizon,
@@ -110,14 +110,14 @@ class KiwiTask(TimeSeriesTask):
         "early_stop": False,
         "shuffle": False,
     }
-    """The configuration of the sampler."""
+    r"""The configuration of the sampler."""
 
     generator_kwargs: dict[str, Any] = {
         "observables": observables,
         "covariates": covariates,
         "targets": targets,
     }
-    """The configuration of the sample generator."""
+    r"""The configuration of the sample generator."""
 
     dataloader_kwargs = {"batch_size": 32, "num_workers": 0, "pin_memory": True}
     r"""The configuration of the dataloader."""
@@ -318,6 +318,20 @@ class KiwiTask(TimeSeriesTask):
         )
 
     def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:
+        r"""By default, weight channels inversely proportial to missing rate.
+
+        This ensures the model fits on all channels instead of underfitting on sparse
+        and overfitting on channels with many observations.
+        Since some channels might be observed all the time, we add a small
+        constant to the denominator to avoid division by zero.
+
+        For a single forecasting window $T$, the loss is:
+
+        .. math::
+            ∑_{t∈T} ∑_i \frac{[m_{t, i} ? (ŷ_{t, i} - y_{t, i})^2 : 0]}{∑_{t∈T} m_{t, i}}
+
+        Note that if ∑_{t∈T} m_{t, i} = 0, then the loss is zero for that channel.
+        """
         train_key = self.train_split[key]
         associated_train_split = self.splits[train_key]
         ts = associated_train_split.timeseries
