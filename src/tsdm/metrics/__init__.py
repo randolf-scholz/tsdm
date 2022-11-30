@@ -72,6 +72,7 @@ __all__ = [
 ]
 
 
+from abc import ABCMeta
 from typing import Final, TypeAlias
 
 from torch import nn
@@ -101,8 +102,10 @@ from tsdm.metrics.functional import (
 ModularLoss: TypeAlias = nn.Module
 r"""Type hint for modular losses."""
 
+
 Loss: TypeAlias = FunctionalLoss | ModularLoss
 r"""Type hint for losses."""
+
 
 TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
     "L1": nn.L1Loss,
@@ -129,6 +132,7 @@ TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
 }
 r"""Dictionary of all available modular losses in torch."""
 
+
 TORCH_ALIASES: Final[dict[str, type[nn.Module]]] = {
     "MAE": nn.L1Loss,
     "L2": nn.MSELoss,
@@ -137,7 +141,8 @@ TORCH_ALIASES: Final[dict[str, type[nn.Module]]] = {
 }
 r"""Dictionary containing additional aliases for modular losses in torch."""
 
-ModularLosses: Final[dict[str, type[nn.Module]]] = {
+
+ModularLosses: Final[dict[str, type[nn.Module] | ABCMeta]] = {
     "ND": ND,
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,
@@ -158,4 +163,4 @@ LOSSES: Final[dict[str, FunctionalLoss | type[ModularLoss]]] = {
 }
 r"""Dictionary of all available losses."""
 
-del Final, TypeAlias, nn
+del Final, TypeAlias, nn, ABCMeta
