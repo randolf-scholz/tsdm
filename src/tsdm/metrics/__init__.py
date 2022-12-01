@@ -51,7 +51,10 @@ __all__ = [
     # Constants
     "LOSSES",
     "FUNCTIONAL_LOSSES",
-    "ModularLosses",
+    "MODULAR_LOSSES",
+    # Base Classes
+    "Loss",
+    "WeightedLoss",
     # Classes
     "ND",
     "NRMSE",
@@ -63,6 +66,8 @@ __all__ = [
     "WMAE",
     "WMSE",
     "WRMSE",
+    "TimeSeriesMSE",
+    "TimeSeriesWMSE",
     # Functions
     "nd",
     "nrmse",
@@ -86,8 +91,12 @@ from tsdm.metrics._modular import (
     WMAE,
     WMSE,
     WRMSE,
+    Loss,
     Q_Quantile,
     Q_Quantile_Loss,
+    TimeSeriesMSE,
+    TimeSeriesWMSE,
+    WeightedLoss,
 )
 from tsdm.metrics.functional import (
     FUNCTIONAL_LOSSES,
@@ -103,8 +112,13 @@ ModularLoss: TypeAlias = nn.Module
 r"""Type hint for modular losses."""
 
 
-Loss: TypeAlias = FunctionalLoss | ModularLoss
-r"""Type hint for losses."""
+TORCH_ALIASES: Final[dict[str, type[nn.Module]]] = {
+    "MAE": nn.L1Loss,
+    "L2": nn.MSELoss,
+    "XENT": nn.CrossEntropyLoss,
+    "KL": nn.KLDivLoss,
+}
+r"""Dictionary containing additional aliases for modular losses in torch."""
 
 
 TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
@@ -129,20 +143,11 @@ TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
     "MultiLabelSoftMargin": nn.MultiLabelSoftMarginLoss,
     "TripletMargin": nn.TripletMarginLoss,
     "TripletMarginWithDistance": nn.TripletMarginWithDistanceLoss,
-}
+} | TORCH_ALIASES
 r"""Dictionary of all available modular losses in torch."""
 
 
-TORCH_ALIASES: Final[dict[str, type[nn.Module]]] = {
-    "MAE": nn.L1Loss,
-    "L2": nn.MSELoss,
-    "XENT": nn.CrossEntropyLoss,
-    "KL": nn.KLDivLoss,
-}
-r"""Dictionary containing additional aliases for modular losses in torch."""
-
-
-ModularLosses: Final[dict[str, type[nn.Module] | ABCMeta]] = {
+MODULAR_LOSSES: Final[dict[str, type[nn.Module] | ABCMeta]] = {
     "ND": ND,
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,
@@ -153,13 +158,15 @@ ModularLosses: Final[dict[str, type[nn.Module] | ABCMeta]] = {
     "WMAE": WMAE,
     "WMSE": WMSE,
     "WRMSE": WRMSE,
-} | (TORCH_LOSSES | TORCH_ALIASES)
+    "TimeSeriesMSE": TimeSeriesMSE,
+    "TimeSeriesWMSE": TimeSeriesWMSE,
+}
 r"""Dictionary of all available modular losses."""
 
 
 LOSSES: Final[dict[str, FunctionalLoss | type[ModularLoss]]] = {
     **FUNCTIONAL_LOSSES,
-    **ModularLosses,
+    **MODULAR_LOSSES,
 }
 r"""Dictionary of all available losses."""
 

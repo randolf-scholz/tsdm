@@ -21,8 +21,8 @@ __all__ = [
     "WMSE",
     "MAE",
     "WMAE",
-    "TimeSeriesWMSE",
     "TimeSeriesMSE",
+    "TimeSeriesWMSE",
     # "TimeSeriesMAE",
     # "TimeSeriesWMAE",
     # "TimeSeriesRMSE",
@@ -209,15 +209,17 @@ class MAE(Loss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = torch.abs(r)
+        r = torch.sum(r, dim=self.axes)
 
         if self.normalize:
-            r = torch.mean(r, dim=self.axes)
-            c = torch.mean(m, dim=self.axes)
-            r = torch.where(c > 0, r / c, 0.0)
+            c = torch.sum(m, dim=self.axes)
         else:
-            r = torch.sum(r, dim=self.axes)
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.mean(r)  # aggregate over batch dimensions
+        r = torch.where(c > 0, r / c, 0.0)
+
+        # aggregate over batch dimensions
+        r = torch.mean(r)
         return r
 
 
@@ -236,15 +238,17 @@ class WMAE(WeightedLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = self.weight * torch.abs(r)
+        r = torch.sum(r, dim=self.axes)
 
         if self.normalize:
-            r = torch.mean(r, dim=self.axes)
-            c = torch.mean(m * self.weight, dim=self.axes)
-            r = torch.where(c > 0, r / c, 0.0)
+            c = torch.sum(m * self.weight, dim=self.axes)
         else:
-            r = torch.sum(r, dim=self.axes)
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.mean(r)  # aggregate over batch dimensions
+        r = torch.where(c > 0, r / c, 0.0)
+
+        # aggregate over batch dimensions
+        r = torch.mean(r)
         return r
 
 
@@ -287,16 +291,18 @@ class MSE(Loss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = r**2
+        r = torch.sum(r, dim=self.axes)
 
         if self.normalize:
-            r = torch.mean(r, dim=self.axes)
-            c = torch.mean(m, dim=self.axes)
-            r = torch.where(c > 0, r / c, 0.0)
+            c = torch.sum(m, dim=self.axes)
         else:
-            r = torch.sum(r, dim=self.axes)
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.mean(r)  # aggregate over batch dimensions
-        return r
+        r = torch.where(c > 0, r / c, 0.0)
+
+        # aggregate over batch dimensions
+        r = torch.mean(r)
+        return r / 2
 
 
 @autojit
@@ -335,18 +341,20 @@ class WMSE(WeightedLoss):
         r = predictions - targets
 
         m = ~torch.isnan(targets)
-        r = torch.where(m, 0.0, r)
+        r = torch.where(m, r, 0.0)
         r = self.weight * r**2
+        r = torch.sum(r, dim=self.axes)
 
         if self.normalize:
-            r = torch.mean(r, dim=self.axes)
-            c = torch.mean(m * self.weight, dim=self.axes)
-            r = torch.where(c > 0, r / c, 0.0)
+            c = torch.sum(m * self.weight, dim=self.axes)
         else:
-            r = torch.sum(r, dim=self.axes)
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.mean(r)  # aggregate over batch dimensions
-        return r
+        r = torch.where(c > 0, r / c, 0.0)
+
+        # aggregate over batch dimensions
+        r = torch.mean(r)
+        return r / 2
 
 
 @autojit
@@ -362,19 +370,20 @@ class RMSE(Loss):
         r = predictions - targets
 
         m = ~torch.isnan(targets)
-        r = torch.where(m, 0.0, r)
+        r = torch.where(m, r, 0.0)
         r = r**2
+        r = torch.sum(r, dim=self.axes)
 
         if self.normalize:
-            r = torch.mean(r, dim=self.axes)
-            c = torch.mean(m, dim=self.axes)
-            r = torch.where(c > 0, r / c, 0.0)
+            c = torch.sum(m, dim=self.axes)
         else:
-            r = torch.sum(r, dim=self.axes)
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.sqrt(r)
-        r = torch.mean(r)  # aggregate over batch dimensions
-        return r
+        r = torch.where(c > 0, r / c, 0.0)
+
+        # aggregate over batch dimensions
+        r = torch.mean(r)
+        return torch.sqrt(r / 2)
 
 
 @autojit
@@ -392,17 +401,18 @@ class WRMSE(WeightedLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = self.weight * r**2
+        r = torch.sum(r, dim=self.axes)
 
         if self.normalize:
-            r = torch.mean(r, dim=self.axes)
-            c = torch.mean(m * self.weight, dim=self.axes)
-            r = torch.where(c > 0, r / c, 0.0)
+            c = torch.sum(m * self.weight, dim=self.axes)
         else:
-            r = torch.sum(r, dim=self.axes)
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.sqrt(r)
-        r = torch.mean(r)  # aggregate over batch dimensions
-        return r
+        r = torch.where(c > 0, r / c, 0.0)
+
+        # aggregate over batch dimensions
+        r = torch.mean(r)
+        return torch.sqrt(r / 2)
 
 
 @autojit
@@ -417,19 +427,22 @@ class TimeSeriesMSE(nn.Module):
 
     With time-normalization:
 
-    .. math:: ∑_t ∑_i \frac{1}{∑_τ m_{τi}}  [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
+    .. math:: ∑_{ti} \frac{1}{∑_τ m_{τi}} [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
 
     with channel-normalization:
 
-    .. math:: ∑_t \frac{1}{∑_j m_{tj}} ∑_i [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
+    .. math:: ∑_{ti} \frac{1}{∑_j m_{tj}} [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
 
     with both:
 
-    .. math:: \frac{1}{∑_{τj} m_{τj}} ∑_{ti} [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
+    .. math:: ∑_{ti} \frac{1}{∑_{τj} m_{τj}} [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
 
-    where $w_i = ∑_t m_{t_i}$. Possible batch-dimensions are averaged over.
+    Moreover, we can consider adding a discount factor with respect to the time,
+    i.e. a simple geometric dsitribution, which amounts to adding a term of the form
+    $γ^{∑_k ∆t_k}$ to the denominator, where $γ$ is the discount factor and $∆t_k$
+    is the time difference between the $k$-th and $(k+1)$-th time point.
 
-    Remark: When there are many channels,
+    Possible batch-dimensions are averaged over.
     """
 
     # Constants
@@ -437,7 +450,7 @@ class TimeSeriesMSE(nn.Module):
     r"""CONST: The axes over which the loss is computed."""
     discount: Final[float]
     r"""CONST: The discount factor for the time-series."""
-    time_axis: Final[int]
+    time_axes: Final[tuple[int, ...]]
     r"""CONST: The time axis."""
     normalize_time: Final[bool]
     r"""CONST: Whether to normalize over time."""
@@ -449,7 +462,7 @@ class TimeSeriesMSE(nn.Module):
     def __init__(
         self,
         axes: int | tuple[int, ...] = -1,
-        time_axis: Optional[int] = None,
+        time_axes: Optional[int | tuple[int, ...]] = None,
         /,
         *,
         discount: float = 1.0,
@@ -458,8 +471,11 @@ class TimeSeriesMSE(nn.Module):
     ) -> None:
         super().__init__()
         self.axes = (axes,) if isinstance(axes, int) else tuple(axes)
-        self.time_axis = min(self.axes) - 1 if time_axis is None else time_axis
-        assert self.time_axis not in self.axes, "time and channel axes must be disjoint"
+        t_axes = min(self.axes) - 1 if time_axes is None else time_axes
+        self.time_axes = (t_axes,) if isinstance(t_axes, int) else tuple(t_axes)
+        assert set(self.time_axes).isdisjoint(
+            self.axes
+        ), "time and channel axes must be disjoint"
         self.discount = discount
         self.normalize_channels = normalize_channels
         self.normalize_time = normalize_time
@@ -472,17 +488,25 @@ class TimeSeriesMSE(nn.Module):
 
         m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
         r = torch.where(m, r, 0.0)
-        r = r**2  # must come after where, otherwise we get NaN gradients!
+        r = r**2  # must come after where, else we get NaN gradients!
 
-        w = torch.sum(m, dim=-2)
-        s = torch.einsum("...tm, ...m, m -> ...t", r, 1 / w)
-        s = s / w.shape[-1] if self.normalize else s
-        r = torch.where(w > 0, s, 0.0)  # avoids division by zero
+        # compute normalization constant
+        if self.normalize_channels and self.normalize_time:
+            c = torch.sum(m, dim=self.axes + self.time_axes, keepdim=True)
+        elif self.normalize_channels and not self.normalize_time:
+            c = torch.sum(m, dim=self.axes, keepdim=True)
+        elif not self.normalize_channels and self.normalize_time:
+            c = torch.sum(m, dim=self.time_axes, keepdim=True)
+        else:
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.sum(r, dim=-1)  # sum over time
+        # aggregate over time
+        s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
+        r = torch.where(c > 0, s, 0.0)
 
-        r = torch.mean(r)  # aggregate over batch-dimensions
-        return r
+        # aggregate over batch-dimensions
+        r = torch.mean(r)
+        return r / 2
 
 
 @autojit
@@ -500,6 +524,23 @@ class TimeSeriesWMSE(WeightedLoss):
     Remark: When there are many channels,
     """
 
+    time_axes: Final[tuple[int, ...]]
+    r"""CONST: The time axis."""
+
+    def __init__(
+        self,
+        weight: Tensor,
+        /,
+        *,
+        learnable: bool = False,
+        normalize: bool = False,
+        axes: Optional[tuple[int, ...]] = None,
+        time_axes: Optional[int | tuple[int, ...]] = None,
+    ):
+        super().__init__(weight, learnable=learnable, normalize=normalize, axes=axes)
+        t_axes = min(self.axes) - 1 if time_axes is None else time_axes
+        self.time_axes = (t_axes,) if isinstance(t_axes, int) else tuple(t_axes)
+
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
         r""".. Signature:: ``[(..., t, m), (..., t, m)] → ...``."""
@@ -507,14 +548,22 @@ class TimeSeriesWMSE(WeightedLoss):
 
         m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
         r = torch.where(m, r, 0.0)
-        r = (
-            self.weight * r**2
-        )  # must come after where, otherwise we get NaN gradients!
+        r = self.weight * r**2  # must come after where, else we get NaN gradients!
 
-        w = torch.sum(m, dim=-2)
-        s = torch.einsum("...tm, ...m,  -> ...t", r, 1 / w)
-        r = torch.where(w > 0, s, 0.0)  # avoid division by zero
-        r = torch.sum(r, dim=-1)  # sum over time
+        # compute normalization constant
+        if self.normalize_channels and self.normalize_time:
+            c = torch.sum(self.weight * m, dim=self.axes + self.time_axes, keepdim=True)
+        elif self.normalize_channels and not self.normalize_time:
+            c = torch.sum(self.weight * m, dim=self.axes, keepdim=True)
+        elif not self.normalize_channels and self.normalize_time:
+            c = torch.sum(m, dim=self.time_axes, keepdim=True)
+        else:
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        r = torch.mean(r)  # aggregate over batch-dimensions
-        return r
+        # aggregate over time
+        s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
+        r = torch.where(c > 0, s, 0.0)
+
+        # aggregate over batch-dimensions
+        r = torch.mean(r)
+        return r / 2
