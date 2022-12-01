@@ -19,7 +19,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, TypedDict, Union
+from typing import Any, NamedTuple, Optional, TypeAlias, TypedDict, Union
 
 import pandas as pd
 import torch
@@ -50,17 +50,18 @@ from tsdm.linalg import (
     schatten_norm,
     tensor_norm,
 )
-from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 # from tqdm.autonotebook import tqdm
 
+Loss: TypeAlias = nn.Module | Callable[[Tensor, Tensor], Tensor]
+
 
 @torch.no_grad()
 def compute_metrics(
-    metrics: list | dict[str, Any], /, *, targets: Tensor, predics: Tensor
+    metrics: list | Mapping[str, Any], /, *, targets: Tensor, predics: Tensor
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics."""
     results: dict[str, Tensor] = {}
@@ -301,7 +302,7 @@ def log_metrics(
     i: int,
     /,
     writer: SummaryWriter,
-    metrics: Sequence[str] | dict[str, Loss],
+    metrics: Sequence[str] | Mapping[str, Loss],
     *,
     targets: Tensor,
     predics: Tensor,
@@ -320,7 +321,7 @@ def log_values(
     i: int,
     /,
     writer: SummaryWriter,
-    values: dict[str, Tensor],
+    values: Mapping[str, Tensor],
     *,
     key: str = "",
     prefix: str = "",
@@ -357,7 +358,7 @@ class StandardLogger:
 
     checkpoint_dir: Path
     dataloaders: Mapping[str, DataLoader]
-    metrics: dict[str, Callable[[Tensor, Tensor], Tensor]]
+    metrics: Mapping[str, Loss]
     predict_fn: Union[
         Callable[[TorchModule, tuple], tuple],
         Callable[[TorchModule, tuple], ResultTuple],

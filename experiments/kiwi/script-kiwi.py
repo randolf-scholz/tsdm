@@ -195,10 +195,7 @@ from tsdm.metrics import MAE, MSE, RMSE
 
 LOSS = TASK.test_metrics[ARGS.fold, "train"]
 METRICS = {
-    "wMSE": LOSS,
-    "RMSE": RMSE(),
-    "MSE": MSE(),
-    "MAE": MAE(),
+    "time_MSE": LOSS,
 }
 
 LOSS = LOSS.to(device=DEVICE)
@@ -267,6 +264,27 @@ assert not torch.isnan(MODEL.kernel.grad).any(), f"gradient has NaN values!"
 
 # Reset
 MODEL.zero_grad(set_to_none=True)
+
+# %%
+raise
+
+# %%
+predictions = YHAT
+targets = Y
+r = predictions - targets
+m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
+r = torch.where(m, r, 0.0)
+r = r**2  # must come after where, else we get NaN gradients!
+c = torch.sum(m, dim=-2, keepdim=True)
+s = torch.sum(r / c, dim=-2, keepdim=True)
+r = torch.where(c > 0, s, 0.0)
+r = torch.sum(r, dim=-1, keepdim=True)
+r = torch.mean(r)
+
+# %%
+
+
+# %%
 
 # %% [markdown]
 # ## Initialize Optimizer
