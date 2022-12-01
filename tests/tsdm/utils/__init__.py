@@ -1,1 +1,1 @@
-r"""Tests regarding utils components."""
+r"""Tests regarding `tsdm.utils`."""
