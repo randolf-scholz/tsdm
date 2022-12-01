@@ -18,7 +18,6 @@ __all__ = [
     "PandasVar",
     "PathVar",
     "ReturnVar",
-    "Self",
     "T",
     "T_co",
     "T_contra",
@@ -36,7 +35,7 @@ __all__ = [
 ]
 
 import os
-from collections.abc import Collection, Hashable, Mapping
+from collections.abc import Collection, Hashable, Mapping, Sequence
 from pathlib import Path
 from types import GenericAlias, ModuleType
 from typing import Any, ParamSpec, TypeAlias, TypeVar
@@ -76,7 +75,7 @@ IDVar = TypeVar("IDVar", bound=Hashable)
 r"""Alternative type Variable for `Mapping` keys."""
 
 Key_co = TypeVar("Key_co", bound=Hashable, covariant=True)
-r"""Type Variable for `Mapping` keys."""
+r"""type Variable for `Mapping` keys  (covariant)."""
 
 NestedKeyVar = TypeVar("NestedKeyVar", bound=Hashable)
 r"""Type Variable for `Mapping` keys."""
@@ -99,9 +98,6 @@ r"""Type Variable for path-like objects."""
 ReturnVar = TypeVar("ReturnVar")
 r"""Type Variable for return values."""
 
-Self = TypeVar("Self")
-r"""Type Variable for for self reference."""  # FIXME: PEP673 @ python3.11
-
 TensorVar = TypeVar("TensorVar", Tensor, ndarray)
 r"""Type Variable for `torch.Tensor` or `numpy.ndarray` objects."""
 
@@ -111,30 +107,12 @@ r"""Type Variable for `torch.nn.Modules`."""
 ValueVar = TypeVar("ValueVar")
 r"""Type Variable for `Mapping` values."""
 
+ValueVar_co = TypeVar("ValueVar_co", covariant=True)
+r"""Type Variable for `Mapping` values (covariant)."""
+
 # endregion
 
 # region TypeAliases
-
-# FIXME: https://github.com/python/mypy/pull/13297 Recursive Alias
-# NestedMapping: TypeAlias = Mapping[KeyVar, ValueVar | Mapping[KeyVar, 'NestedMapping']]
-# r"""Generic Type Alias for nested `Mapping`."""
-#
-# NestedDict: TypeAlias = dict[KeyVar, ValueVar | dict[KeyVar, 'NestedDict']]
-# r"""Generic Type Alias for nested `dict`."""
-#
-# NestedTuple: TypeAlias = tuple[ValueVar | tuple['NestedTuple', ...], ...]
-# r"""Generic Type Alias for nested `tuple`."""
-#
-# NestedList: TypeAlias = list[ValueVar | list['NestedList']]
-# r"""GenericType Alias for nested `list`."""
-#
-# NestedSet: TypeAlias = set[ValueVar | set['NestedSet']]
-# r"""Generic Type Alias for nested `set`."""
-#
-# nested: TypeAlias = AliasVar[ValueVar | AliasVar[ValueVar]]
-# r"""Generic Type Alias for generic nested structure."""
-
-
 Args: TypeAlias = tuple[AnyTypeVar, ...]
 r"""Type Alias for `*args`."""
 
@@ -149,5 +127,30 @@ r"""Type Alias for `pandas` objects."""
 
 PathType: TypeAlias = str | Path  # | os.PathLike[str]
 r"""Type Alias for path-like objects."""
+# endregion
 
+
+# region Recursive Type Aliases
+JSON: TypeAlias = None | str | int | float | bool | list["JSON"] | dict[str, "JSON"]  # type: ignore[operator]
+r"""Type Alias for JSON-Like objects."""
+
+TOML: TypeAlias = None | str | int | float | bool | list["TOML"] | dict[str, "TOML"]  # type: ignore[operator]
+
+NestedDict: TypeAlias = dict[KeyVar, ValueVar | dict[KeyVar, "NestedDict"]]
+r"""Generic Type Alias for nested `dict`."""
+
+NestedMapping: TypeAlias = Mapping[KeyVar, ValueVar | Mapping[KeyVar, "NestedMapping"]]
+r"""Generic Type Alias for nested `Mapping`."""
+
+NestedList: TypeAlias = list[ValueVar | list["NestedList"]]
+r"""GenericType Alias for nested `list`."""
+
+NestedSequence: TypeAlias = Sequence[ValueVar | Sequence[ValueVar]]
+r"""Generic Type Alias for nested `Sequence`."""
+
+NestedSet: TypeAlias = set[ValueVar | set["NestedSet"]]
+r"""Generic Type Alias for nested `set`."""
+
+NestedTuple: TypeAlias = tuple[ValueVar | tuple["NestedTuple", ...], ...]
+r"""Generic Type Alias for nested `tuple`."""
 # endregion
