@@ -108,7 +108,7 @@ if ARGS.seed is not None:
 
 OPTIMIZER_CONFIG = {
     "lr": ARGS.learn_rate,
-    "betas": torch.tensor(ARGS.betas),
+    "betas": ARGS.betas,
     "weight_decay": ARGS.weight_decay,
 }
 
@@ -231,13 +231,32 @@ MODEL = LinODEnet(**MODEL_CONFIG).to(DEVICE)
 MODEL = torch.jit.script(MODEL)
 torchinfo.summary(MODEL, depth=2)
 
-
 # %% [markdown]
 # ## Warm-Up - pre-allocate memory
 #
 # We perform forward and backward with a maximal size batch.
 #
 # **Reference:** [pre-allocate-memory](https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html#pre-allocate-memory-in-case-of-variable-input-lengthhttps://pytorch.org/tutorials/recipes/recipes/tuning_guide.html#pre-allocate-memory-in-case-of-variable-input-length)
+
+# %%
+MODEL.zero_grad(set_to_none=True)
+T = torch.randn(2 * ARGS.batch_size, 700, device=DEVICE)
+X = torch.randn(2 * ARGS.batch_size, 700, 14, device=DEVICE)
+Y = torch.randn(2 * ARGS.batch_size, 700, 14, device=DEVICE)
+YHAT = MODEL(T, X)
+assert not torch.isnan(YHAT).any(), f"prediction has NaN values!"
+
+# Loss
+R = LOSS(Y, YHAT)
+assert torch.isfinite(R), "Model Collapsed!"
+
+# Backward
+R.backward()
+assert not torch.isnan(MODEL.kernel.grad).any(), f"gradient has NaN values!"
+
+# Reset
+MODEL.zero_grad(set_to_none=True)
+
 
 # %%
 def predict_fn(model, batch) -> tuple[Tensor, Tensor]:
@@ -264,27 +283,6 @@ assert not torch.isnan(MODEL.kernel.grad).any(), f"gradient has NaN values!"
 
 # Reset
 MODEL.zero_grad(set_to_none=True)
-
-# %%
-raise
-
-# %%
-predictions = YHAT
-targets = Y
-r = predictions - targets
-m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
-r = torch.where(m, r, 0.0)
-r = r**2  # must come after where, else we get NaN gradients!
-c = torch.sum(m, dim=-2, keepdim=True)
-s = torch.sum(r / c, dim=-2, keepdim=True)
-r = torch.where(c > 0, s, 0.0)
-r = torch.sum(r, dim=-1, keepdim=True)
-r = torch.mean(r)
-
-# %%
-
-
-# %%
 
 # %% [markdown]
 # ## Initialize Optimizer
@@ -343,3 +341,5 @@ for epoch in trange(1, ARGS.epochs, desc="Epoch", position=0):
 
 LOGGER.log_history(CFG_ID)
 LOGGER.log_hparams(CFG_ID)
+
+# %%

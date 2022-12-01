@@ -201,7 +201,6 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         elif isinstance(self.column_encoders, BaseEncoder):
             encoded = self.column_encoders.encode(data)
             encoded_cols = encoded_cols.drop(columns=data.columns)
-            # encoded_cols.loc[:, self._names(encoded)] = encoded  # TODO: try better encoder!
             encoded_cols = pd.concat([encoded_cols, encoded], axis="columns")
         elif isinstance(self.column_encoders, Mapping):
             for group, encoder in self.column_encoders.items():
