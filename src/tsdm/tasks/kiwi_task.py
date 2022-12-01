@@ -29,7 +29,7 @@ from tsdm.encoders import (  # FrameEncoder,
     Standardizer,
     TimeDeltaEncoder,
 )
-from tsdm.metrics import WMSE
+from tsdm.metrics import TimeSeriesMSE
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
@@ -181,9 +181,10 @@ class KiwiTask(TimeSeriesTask):
         dataset.timeseries = ts
         super().__init__(dataset=dataset)
 
-    @staticmethod
-    def default_test_metric(*, targets, predictions):
-        r"""TODO: implement this."""
+    # @staticmethod
+    # def default_test_metric(*, targets, predictions):
+    #     r"""TODO: implement this."""
+    #     return TimeSeriesMSE()
 
     def make_folds(self, /, **kwargs: Any) -> DataFrame:
         r"""Group by RunID and color which indicates replicates."""
@@ -343,8 +344,4 @@ class KiwiTask(TimeSeriesTask):
 
         Note that if ∑_{t∈T} m_{t, i} = 0, then the loss is zero for that channel.
         """
-        train_key = self.train_split[key]
-        associated_train_split = self.splits[train_key]
-        ts = associated_train_split.timeseries
-        rates = ts.notna().mean() ** -1
-        return WMSE(rates)
+        return TimeSeriesMSE()
