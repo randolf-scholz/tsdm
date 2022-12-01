@@ -493,16 +493,20 @@ class TimeSeriesMSE(nn.Module):
         # compute normalization constant
         if self.normalize_channels and self.normalize_time:
             c = torch.sum(m, dim=self.axes + self.time_axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
+            r = torch.where(c > 0, s, 0.0)
         elif self.normalize_channels and not self.normalize_time:
             c = torch.sum(m, dim=self.axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.axes, keepdim=True)
+            r = torch.where(c > 0, s, 0.0)
+            r = torch.sum(r, dim=self.time_axes, keepdim=True)
         elif not self.normalize_channels and self.normalize_time:
             c = torch.sum(m, dim=self.time_axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.time_axes, keepdim=True)
+            r = torch.where(c > 0, s, 0.0)
+            r = torch.sum(r, dim=self.axes, keepdim=True)
         else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-
-        # aggregate over time
-        s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
-        r = torch.where(c > 0, s, 0.0)
+            r = torch.sum(r, dim=self.axes + self.time_axes, keepdim=True)
 
         # aggregate over batch-dimensions
         r = torch.mean(r)
@@ -553,16 +557,25 @@ class TimeSeriesWMSE(WeightedLoss):
         # compute normalization constant
         if self.normalize_channels and self.normalize_time:
             c = torch.sum(self.weight * m, dim=self.axes + self.time_axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
+            r = torch.where(c > 0, s, 0.0)
         elif self.normalize_channels and not self.normalize_time:
             c = torch.sum(self.weight * m, dim=self.axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.axes, keepdim=True)
+            r = torch.where(c > 0, s, 0.0)
+            r = torch.sum(r, dim=self.time_axes, keepdim=True)
         elif not self.normalize_channels and self.normalize_time:
             c = torch.sum(m, dim=self.time_axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.time_axes, keepdim=True)
+            r = torch.where(c > 0, s, 0.0)
+            r = torch.sum(r, dim=self.axes, keepdim=True)
         else:
-            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
+            # c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
+            r = torch.sum(r, dim=self.axes + self.time_axes, keepdim=True)
 
-        # aggregate over time
-        s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
-        r = torch.where(c > 0, s, 0.0)
+        # # aggregate over time
+        # s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
+        # r = torch.where(c > 0, s, 0.0)
 
         # aggregate over batch-dimensions
         r = torch.mean(r)
