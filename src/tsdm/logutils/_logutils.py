@@ -91,13 +91,15 @@ def log_kernel_information(
     writer: SummaryWriter,
     kernel: Tensor,
     *,
-    log_distances: bool | int = True,
-    log_heatmap: bool | int = False,
-    log_histograms: bool | int = False,
-    log_linalg: bool | int = True,
-    log_norms: bool | int = True,
-    log_scaled_norms: bool | int = True,
-    log_spectrum: bool | int = False,
+    log_figures: bool = True,
+    log_scalars: bool = True,
+    # individual switches
+    log_distances: bool = True,
+    log_heatmap: bool = True,
+    log_linalg: bool = True,
+    log_norms: bool = True,
+    log_scaled_norms: bool = True,
+    log_spectrum: bool = True,
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -113,7 +115,7 @@ def log_kernel_information(
     log = writer.add_scalar
     ω = float("inf")
 
-    if log_distances and i % log_distances == 0:
+    if log_scalars and log_distances:
         # fmt: off
         # relative distance to some matrix groups
         log(f"{identifier}:distances/diagonal_(relative)",       reldist_diag(K), i)
@@ -122,7 +124,7 @@ def log_kernel_information(
         log(f"{identifier}:distances/orthogonal_(relative)",     reldist_orth(K), i)
         # fmt: on
 
-    if log_linalg and i % log_linalg == 0:
+    if log_scalars and log_linalg:
         # fmt: off
         # general properties
         log(f"{identifier}:linalg/condition-number", torch.linalg.cond(K), i)
@@ -135,7 +137,7 @@ def log_kernel_information(
         log(f"{identifier}:linalg/trace",            torch.trace(K), i)
         # fmt: on
 
-    if log_norms and i % log_norms == 0:
+    if log_scalars and log_norms:
         # fmt: off
         # Matrix norms
         log(f"{identifier}:norms/matrix_+∞_(max_absolut_value)", matrix_norm(K, p=+ω), i)
@@ -167,7 +169,7 @@ def log_kernel_information(
         log(f"{identifier}:norms/schatten_-∞_(min_absolut_σ)", schatten_norm(K, p=-ω), i)
         # fmt: on
 
-    if log_scaled_norms and i % log_scaled_norms == 0:
+    if log_scalars and log_scaled_norms:
         # fmt: off
         # Matrix norms
         log(f"{identifier}:norms-scaled/matrix_+∞_(max_absolut_value)", matrix_norm(K, p=+ω, scaled=True), i)
@@ -200,13 +202,10 @@ def log_kernel_information(
         # fmt: on
 
     # 2d-data is order of magnitude more expensive.
-    if log_histograms and i % log_histograms == 0:
-        writer.add_histogram(f"{identifier}:histogram", K, i)
-
-    if log_heatmap and i % log_heatmap == 0:
+    if log_figures and log_heatmap:
         writer.add_image(f"{identifier}:heatmap", kernel_heatmap(K, "CHW"), i)
 
-    if log_spectrum and i % log_spectrum == 0:
+    if log_figures and log_spectrum:
         spectrum: Figure = plot_spectrum(K)
         spectrum = center_axes(spectrum)
         image = rasterize(spectrum, w=2, h=2, px=512, py=512)
@@ -220,7 +219,9 @@ def log_optimizer_state(
     writer: SummaryWriter,
     optimizer: Optimizer,
     *,
-    histograms: bool | int = False,
+    log_histograms: bool = True,
+    log_scalars: bool = True,
+    loss: Optional[float | Tensor] = None,
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -229,19 +230,20 @@ def log_optimizer_state(
 
     variables = list(optimizer.state.keys())
     gradients = [w.grad for w in variables]
-
-    writer.add_scalar(f"{identifier}/model-gradients-norm", multi_norm(gradients), i)
-    writer.add_scalar(f"{identifier}/model-variables-norm", multi_norm(variables), i)
-
     moments_1 = [d["exp_avg"] for d in optimizer.state.values() if "exp_avg" in d]
     moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values() if "exp_avg_sq" in d]
 
-    if moments_1:
-        writer.add_scalar(f"{identifier}/moments_1-norm", multi_norm(moments_1), i)
-    if moments_2:
-        writer.add_scalar(f"{identifier}/moments_2-norm", multi_norm(moments_2), i)
+    if log_scalars:
+        writer.add_scalar(f"{identifier}/model-gradients", multi_norm(gradients), i)
+        writer.add_scalar(f"{identifier}/model-variables", multi_norm(variables), i)
+        if loss is not None:
+            writer.add_scalar(f"{identifier}/loss", loss, i)
+        if moments_1:
+            writer.add_scalar(f"{identifier}/param-moments_1", multi_norm(moments_1), i)
+        if moments_2:
+            writer.add_scalar(f"{identifier}/param-moments_2", multi_norm(moments_2), i)
 
-    if histograms and i % histograms == 0:
+    if log_histograms:
         for j, (w, g) in enumerate(zip(variables, gradients)):
             if not w.numel():
                 continue
@@ -251,8 +253,8 @@ def log_optimizer_state(
         for j, (a, b) in enumerate(zip(moments_1, moments_2)):
             if not a.numel():
                 continue
-            writer.add_histogram(f"{identifier}:moments_1/{j}", a, i)
-            writer.add_histogram(f"{identifier}:moments_2/{j}", b, i)
+            writer.add_histogram(f"{identifier}:param-moments_1/{j}", a, i)
+            writer.add_histogram(f"{identifier}:param-moments_2/{j}", b, i)
 
 
 @torch.no_grad()
@@ -262,25 +264,30 @@ def log_model_state(
     writer: SummaryWriter,
     model: Model,
     *,
-    histograms: bool | int = False,
+    log_scalars: bool = True,
+    log_histograms: bool = True,
     prefix: str = "",
     postfix: str = "",
 ) -> None:
     r"""Log model data."""
     identifier = f"{prefix+':'*bool(prefix)}model{':'*bool(postfix)+postfix}"
 
-    weights: dict[str, Tensor] = dict(model.named_parameters())
-    grads: dict[str, Tensor] = {
-        k: w.grad for k, w in weights.items() if w.grad is not None
+    variables: dict[str, Tensor] = dict(model.named_parameters())
+    gradients: dict[str, Tensor] = {
+        k: w.grad for k, w in variables.items() if w.grad is not None
     }
 
-    if histograms and i % histograms == 0:
-        for key, weight in weights.items():
+    if log_scalars:
+        writer.add_scalar(f"{identifier}/gradients", multi_norm(variables), i)
+        writer.add_scalar(f"{identifier}/variables", multi_norm(gradients), i)
+
+    if log_histograms:
+        for key, weight in variables.items():
             if not weight.numel():
                 continue
             writer.add_histogram(f"{identifier}:variables/{key}", weight, i)
 
-        for key, gradient in grads.items():
+        for key, gradient in gradients.items():
             if not gradient.numel():
                 continue
             writer.add_histogram(f"{identifier}:gradients/{key}", gradient, i)
@@ -500,32 +507,40 @@ class StandardLogger:
             postfix=postfix,
         )
 
-    def log_batch_end(self, i: int, *, targets: Tensor, predics: Tensor) -> None:
+    def log_batch_end(
+        self,
+        i: int,
+        *,
+        targets: Optional[Tensor] = None,
+        predics: Optional[Tensor] = None,
+        loss: Optional[Tensor] = None,
+    ) -> None:
         r"""Log batch end."""
-        self.log_metrics(i, targets=targets, predics=predics, key="batch")
-        self.log_optimizer_state(i)
+        if targets is not None and predics is not None:
+            self.log_metrics(i, targets=targets, predics=predics, key="batch")
+        self.log_optimizer_state(i, loss=loss, log_scalars=True, log_histograms=False)
 
     def log_epoch_end(
         self,
         i: int,
         *,
-        histograms: bool | int = True,
-        kernel_information: bool | int = 1,
-        model_state: bool | int = False,
-        optimizer_state: bool | int = 10,
+        # individual switches
+        log_kernel: bool | int = True,
+        log_model: bool | int = True,
+        log_optimizer: bool | int = False,
         make_checkpoint: bool | int = 10,
     ) -> None:
         r"""Log epoch end."""
         self.log_all_metrics(i)
 
-        if kernel_information and i % kernel_information == 0:
-            self.log_kernel_information(i, log_figures=histograms)
+        if log_kernel and i % log_kernel == 0:
+            self.log_kernel_information(i)
 
-        if model_state and i % model_state == 0:
-            self.log_model_state(i, histograms=histograms)
+        if log_model and i % log_model == 0:
+            self.log_model_state(i, log_scalars=False, log_histograms=True)
 
-        if optimizer_state and i % optimizer_state == 0:
-            self.log_optimizer_state(i, histograms=histograms)
+        if log_optimizer and i % log_optimizer == 0:
+            self.log_optimizer_state(i, log_scalars=False, log_histograms=True)
 
         if make_checkpoint and i % make_checkpoint == 0:
             self.make_checkpoint(i)
@@ -600,68 +615,18 @@ class StandardLogger:
         path = self.results_dir / f"history-{i}.parquet"
         self.history.to_parquet(path)
 
-    def log_optimizer_state(
-        self,
-        i: int,
-        /,
-        *,
-        histograms: bool | int = False,
-        prefix: str = "",
-        postfix: str = "",
-    ) -> None:
+    def log_optimizer_state(self, i: int, /, **kwds: Any) -> None:
         r"""Log optimizer state."""
         assert self.optimizer is not NotImplemented
+        log_optimizer_state(i, writer=self.writer, optimizer=self.optimizer, **kwds)
 
-        log_optimizer_state(
-            i,
-            writer=self.writer,
-            optimizer=self.optimizer,
-            histograms=histograms,
-            prefix=prefix,
-            postfix=postfix,
-        )
-
-    def log_model_state(
-        self,
-        i: int,
-        /,
-        *,
-        histograms: bool | int = False,
-        prefix: str = "",
-        postfix: str = "",
-    ) -> None:
+    def log_model_state(self, i: int, /, **kwds: Any) -> None:
         r"""Log model state."""
         assert self.model is not NotImplemented
+        log_model_state(i, writer=self.writer, model=self.model, **kwds)
 
-        log_model_state(
-            i,
-            writer=self.writer,
-            model=self.model,
-            histograms=histograms,
-            prefix=prefix,
-            postfix=postfix,
-        )
-
-    def log_kernel_information(
-        self,
-        i: int,
-        /,
-        *,
-        log_figures: bool | int = False,
-        prefix: str = "",
-        postfix: str = "",
-    ) -> None:
+    def log_kernel_information(self, i: int, /, **kwds: Any) -> None:
         r"""Log kernel information."""
         assert self.model is not NotImplemented
         assert hasattr(self.model, "kernel") and isinstance(self.model.kernel, Tensor)
-
-        log_kernel_information(
-            i,
-            writer=self.writer,
-            kernel=self.model.kernel,
-            log_histograms=log_figures,
-            log_spectrum=log_figures,
-            log_heatmap=log_figures,
-            prefix=prefix,
-            postfix=postfix,
-        )
+        log_kernel_information(i, writer=self.writer, kernel=self.model.kernel, **kwds)
