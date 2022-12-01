@@ -167,7 +167,18 @@ class KiwiTask(TimeSeriesTask):
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
         dataset = KiwiDataset()
-        dataset.timeseries = dataset.timeseries.astype("float64")
+        ts = dataset.timeseries
+        ts = ts.astype("float64")
+
+        # forward fill covariates
+        ts.loc[:, self.covariates] = (
+            ts.loc[:, self.covariates]
+            .groupby(["run_id", "experiment_id"])
+            .ffill()
+            .fillna(0)  # covariates before first entry
+        )
+
+        dataset.timeseries = ts
         super().__init__(dataset=dataset)
 
     @staticmethod
