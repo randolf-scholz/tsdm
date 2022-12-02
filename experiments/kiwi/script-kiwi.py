@@ -311,6 +311,7 @@ LOGGER = StandardLogger(
     checkpoint_dir=CKPOINT_DIR,
     predict_fn=predict_fn,
     results_dir=RESULTS_DIR,
+    encoder=ENCODER,
 )
 LOGGER.log_epoch_end(0)
 
