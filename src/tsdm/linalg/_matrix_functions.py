@@ -13,6 +13,8 @@ __all__ = [
     "erank",
     "geometric_mean",
     "logarithmic_norm",
+    "matrix_norm",
+    "operator_norm",
     "reldist",
     "reldist_diag",
     "reldist_orth",
@@ -24,9 +26,8 @@ __all__ = [
     "spectral_abscissa",
     "spectral_radius",
     "stiffness_ratio",
-    "vector_norm",
     "tensor_norm",
-    "operator_norm",
+    "vector_norm",
 ]
 
 
@@ -77,11 +78,13 @@ def col_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
     .. Signature:: ``(..., m, n) -> ...``
+
+    .. math:: 1/(n(n-1)) ‖𝕀ₙ - XᵀX/diag(XᵀX)⊗diag(XᵀX)‖_{1,1}
     """
     _, n = x.shape[-2:]
     u = torch.linalg.norm(x, dim=0)
-    xx = torch.einsum("...i, ...j -> ...ij", u, u)
-    xtx = torch.einsum("...ik, ...il  -> ...kl", x, x)
+    xx = torch.einsum("...n, ...k -> ...nk", u, u)
+    xtx = torch.einsum("...mn, ...mk  -> ...nk", x, x)
     I = torch.eye(n, dtype=x.dtype, device=x.device)
     c = I - xtx / xx
     return c.abs().sum(dim=(-2, -1)) / (n * (n - 1))
@@ -92,11 +95,13 @@ def row_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
     .. Signature:: ``(..., m, n) -> ...``
+
+    .. math:: 1/(m(m-1)) ‖𝕀ₘ - XXᵀ/diag(XXᵀ)⊗diag(XXᵀ)‖_{1,1}
     """
     m, _ = x.shape[-2:]
     v = torch.linalg.norm(x, dim=1)
-    xx = torch.einsum("...i, ...j -> ...ij", v, v)
-    xxt = torch.einsum("...kj, ...lj  -> ...kl", x, x)
+    xx = torch.einsum("...m, ...k -> ...mk", v, v)
+    xxt = torch.einsum("...mn, ...kn  -> ...mk", x, x)
     I = torch.eye(m, dtype=x.dtype, device=x.device)
     c = I - xxt / xx
     return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
@@ -293,12 +298,22 @@ def logarithmic_norm(
 
     .. Signature:: ``(..., n, n) -> ...``
 
+    Special cases:
+
+    - p=+∞: maxiumum rowsum, using real value for diagonal
+    - p=+2: maximum eigenvalue of symmetric part of A
+    - p=+1: maximum columnsum, using real value for diagonal
+    - p=-1: minimum columnsum, using real value for diagonal
+    - p=-2: minimum eigenvalue of symmetric part of A
+    - p=-∞: minimum rowsum, using real value for diagonal
+
     References
     ----------
     - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
     - | The logarithmic norm. History and modern theory
       | Gustaf Söderlind, BIT Numerical Mathematics, 2006
       | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
+    - https://en.wikipedia.org/wiki/Logarithmic_norm
     """
     rowdim, coldim = dim
     rowdim = rowdim % x.ndim
@@ -372,8 +387,8 @@ def schatten_norm(
     The Schatten norm is equivalent to the vector norm of the singular values.
 
     - $p=+∞$: Maximum Singular Value, equivalent to spectral norm $‖A‖_2$.
-    - $p=2$: Frobius Norm
-    - $p=1$: Nuclear Norm
+    - $p=2$: Frobius Norm (sum of squared values)
+    - $p=1$: Nuclear Norm (sum of singular values)
     - $p=0$: Number of non-zero singular values. Equivalent to rank.
     - $p=-1$: Reciprocal sum of singular values.
     - $p=-2$: Reciprocal sum of squared singular values.
@@ -533,6 +548,22 @@ def tensor_norm(
     else:
         r = x.pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
     return x_max * r
+
+
+@jit.script
+def matrix_norm(
+    x: Tensor,
+    p: float = 2.0,
+    dim: tuple[int, int] = (-2, -1),
+    keepdim: bool = True,
+    scaled: bool = False,
+) -> Tensor:
+    r"""Matrix norm of $p$-th order.
+
+    References:
+        - [1] https://en.wikipedia.org/wiki/Matrix_norm
+    """
+    return tensor_norm(x, p=p, dim=dim, keepdim=keepdim, scaled=scaled)
 
 
 @jit.script
