@@ -100,6 +100,7 @@ def log_kernel_information(
     log_norms: bool = True,
     log_scaled_norms: bool = True,
     log_spectrum: bool = True,
+    name: str = "kernel",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -108,7 +109,7 @@ def log_kernel_information(
     Set option to true to log every epoch.
     Set option to an integer to log whenever ``i % log_interval == 0``.
     """
-    identifier = f"{prefix+':'*bool(prefix)}kernel{':'*bool(postfix)+postfix}"
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
     K = kernel
     assert len(K.shape) == 2 and K.shape[0] == K.shape[1]
 
@@ -222,11 +223,12 @@ def log_optimizer_state(
     log_histograms: bool = True,
     log_scalars: bool = True,
     loss: Optional[float | Tensor] = None,
+    name: str = "optimizer",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
     r"""Log optimizer data under ``prefix:optimizer:postfix/``."""
-    identifier = f"{prefix+':'*bool(prefix)}optimizer{':'*bool(postfix)+postfix}"
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
 
     variables = list(optimizer.state.keys())
     gradients = [w.grad for w in variables]
@@ -266,11 +268,12 @@ def log_model_state(
     *,
     log_scalars: bool = True,
     log_histograms: bool = True,
+    name: str = "model",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
     r"""Log model data."""
-    identifier = f"{prefix+':'*bool(prefix)}model{':'*bool(postfix)+postfix}"
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
 
     variables: dict[str, Tensor] = dict(model.named_parameters())
     gradients: dict[str, Tensor] = {
@@ -319,11 +322,12 @@ def log_values(
     values: Mapping[str, Tensor],
     *,
     key: str = "",
+    name: str = "metrics",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
     r"""Log multiple metrics at once."""
-    identifier = f"{prefix+':'*bool(prefix)}metrics{':'*bool(postfix)+postfix}"
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
     for metric in values:
         writer.add_scalar(f"{identifier}:{metric}/{key}", values[metric], i)
 
@@ -371,6 +375,9 @@ class StandardLogger:
     logging_dir: Path = field(init=False)
 
     _warned_tuple: bool = False
+    # TODO: add callbacks for batch, epoch, and run.
+    # TODO: add multiple kernels logging.
+    # idea: pass dict {key: Tensor}
 
     def __post_init__(self) -> None:
         r"""Initialize logger."""
