@@ -78,11 +78,13 @@ def col_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
     .. Signature:: ``(..., m, n) -> ...``
+
+    .. math:: 1/(n(n-1)) ‖𝕀ₙ - XᵀX/diag(XᵀX)⊗diag(XᵀX)‖_{1,1}
     """
     _, n = x.shape[-2:]
     u = torch.linalg.norm(x, dim=0)
-    xx = torch.einsum("...i, ...j -> ...ij", u, u)
-    xtx = torch.einsum("...ik, ...il  -> ...kl", x, x)
+    xx = torch.einsum("...n, ...k -> ...nk", u, u)
+    xtx = torch.einsum("...mn, ...mk  -> ...nk", x, x)
     I = torch.eye(n, dtype=x.dtype, device=x.device)
     c = I - xtx / xx
     return c.abs().sum(dim=(-2, -1)) / (n * (n - 1))
@@ -93,11 +95,13 @@ def row_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
     .. Signature:: ``(..., m, n) -> ...``
+
+    .. math:: 1/(m(m-1)) ‖𝕀ₘ - XXᵀ/diag(XXᵀ)⊗diag(XXᵀ)‖_{1,1}
     """
     m, _ = x.shape[-2:]
     v = torch.linalg.norm(x, dim=1)
-    xx = torch.einsum("...i, ...j -> ...ij", v, v)
-    xxt = torch.einsum("...kj, ...lj  -> ...kl", x, x)
+    xx = torch.einsum("...m, ...k -> ...mk", v, v)
+    xxt = torch.einsum("...mn, ...kn  -> ...mk", x, x)
     I = torch.eye(m, dtype=x.dtype, device=x.device)
     c = I - xxt / xx
     return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))

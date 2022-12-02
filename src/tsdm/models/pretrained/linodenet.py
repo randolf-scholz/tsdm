@@ -18,6 +18,15 @@ from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.models.pretrained.base import PreTrainedModel
 
+CHECKPOINTS = {
+    "2022-11-16": "https://tubcloud.tu-berlin.de/s/ZQCatR7m28KBR3L/download/"
+    "2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip",
+    "2022-11-24": "https://tubcloud.tu-berlin.de/s/3ctPs6syJEHCJy4/download/"
+    "2022-11-24-linodenet-a44fc91eab7a98130266d1c37f072eb5.zip",
+    "2022-12-01": "https://tubcloud.tu-berlin.de/s/QgyJ58eW9JnZENz/download/"
+    "2022-12-01-linodenet-50-f79c5e885f2182835e7b88ba3205fb33.zip",
+}
+
 
 class OldLinODEnet(PreTrainedModel):  # Deprecated
     """Import pre-trained LinODEnet model."""
