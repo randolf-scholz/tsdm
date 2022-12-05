@@ -11,27 +11,35 @@ import argparse
 
 # fmt: off
 parser = argparse.ArgumentParser(description="Training Script for MIMIC dataset.")
-parser.add_argument("-q",  "--quiet",        default=False,  const=True, help="kernel-inititialization", nargs="?")
-parser.add_argument("-r",  "--run_id",       default=None,   type=str,   help="run_id")
-parser.add_argument("-c",  "--config",       default=None,   type=str,   help="load external config", nargs=2)
-parser.add_argument("-e",  "--epochs",       default=100,    type=int,   help="maximum epochs")
-parser.add_argument("-f",  "--fold",         default=0,      type=int,   help="fold number")
-parser.add_argument("-bs", "--batch-size",   default=64,     type=int,   help="batch-size")
-parser.add_argument("-lr", "--learn-rate",   default=0.001,  type=float, help="learn-rate")
-parser.add_argument("-b",  "--betas", default=(0.9, 0.999),  type=float, help="adam betas", nargs=2)
-parser.add_argument("-wd", "--weight-decay", default=0.001,  type=float, help="weight-decay")
-parser.add_argument("-hs", "--hidden-size",  default=64,     type=int,   help="hidden-size")
-parser.add_argument("-ls", "--latent-size",  default=128,    type=int,   help="latent-size")
-parser.add_argument("-ki", "--kernel-init",  default="skew-symmetric",   help="kernel-inititialization")
-parser.add_argument("-kp", "--kernel-param", default="identity",         help="kernel-parametrization")
-parser.add_argument("-fc", "--filter",       default="SequentialFilter", help="filter-component")
-parser.add_argument("-ec", "--encoder",      default="ResNet",           help="encoder-component")
-parser.add_argument("-dc", "--decoder",      default="ResNet",           help="decoder-component")
-parser.add_argument("-sc", "--system",       default="LinODECell",       help="system-component")
-parser.add_argument("-eb", "--embedding",    default="ConcatEmbedding",  help="embedding-component")
-parser.add_argument("-pc", "--projection",   default="ConcatProjection", help="projection-component")
-parser.add_argument("-n",  "--note",         default="",     type=str,   help="Note that can be added")
-parser.add_argument("-s",  "--seed",         default=None,   type=int,   help="Set the random seed.")
+parser.add_argument("--quiet",        default=False,  const=True, help="kernel-inititialization", nargs="?")
+parser.add_argument("--run_id",       default=None,   type=str,   help="run_id")
+parser.add_argument("--config",       default=None,   type=str,   help="load external config", nargs=2)
+parser.add_argument("--epochs",       default=100,    type=int,   help="maximum epochs")
+parser.add_argument("--seed",         default=None,   type=int,   help="Set the random seed.")
+parser.add_argument("--fold",         default=0,      type=int,   help="fold number")
+parser.add_argument("--name",         default="",     type=str,   help="run name")
+# dataloader args
+parser.add_argument("--batch-size",   default=64,     type=int,   help="batch-size")
+# model args
+parser.add_argument("--hidden-size",  default=64,     type=int,   help="hidden-size")
+parser.add_argument("--latent-size",  default=128,    type=int,   help="latent-size")
+parser.add_argument("--kernel-init",  default="skew-symmetric",   help="kernel-inititialization")
+parser.add_argument("--kernel-param", default="identity",         help="kernel-parametrization")
+parser.add_argument("--filter",       default="SequentialFilter", help="filter-component")
+parser.add_argument("--encoder",      default="ResNet",           help="encoder-component")
+parser.add_argument("--decoder",      default="ResNet",           help="decoder-component")
+parser.add_argument("--system",       default="LinODECell",       help="system-component")
+parser.add_argument("--embedding",    default="ConcatEmbedding",  help="embedding-component")
+parser.add_argument("--projection",   default="ConcatProjection", help="projection-component")
+# optimizer args
+parser.add_argument("--learn-rate",   default=0.001,  type=float, help="learn-rate")
+parser.add_argument("--betas", default=(0.9, 0.999),  type=float, help="adam betas", nargs=2)
+parser.add_argument("--eps", default=1e-08,  type=float, help="epsilon")
+parser.add_argument("--weight-decay", default=1e-2,  type=float, help="weight-decay")
+parser.add_argument("--amsgrad", default=False,  type=bool, help="use amsgrad variant")
+parser.add_argument("--maximize", default=False,  type=bool, help="use amsgrad variant")
+# other
+parser.add_argument("--note",         default="",     type=str,   help="Note that can be added")
 # fmt: on
 
 try:
@@ -126,6 +134,7 @@ hparam_dict = {
 
 
 # %%
+NAME = ARGS.name
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 CONFIG_STR = f"f={ARGS.fold}_bs={ARGS.batch_size}_lr={ARGS.learn_rate}_hs={ARGS.hidden_size}_ls={ARGS.latent_size}"
 RUN_ID = ARGS.run_id or datetime.now().isoformat(timespec="seconds")
@@ -228,7 +237,7 @@ MODEL_CONFIG = {
 }
 
 MODEL = LinODEnet(**MODEL_CONFIG).to(DEVICE)
-MODEL = torch.jit.script(MODEL)
+# MODEL = torch.jit.script(MODEL)
 torchinfo.summary(MODEL, depth=2)
 
 # %% [markdown]
@@ -288,9 +297,10 @@ MODEL.zero_grad(set_to_none=True)
 # ## Initialize Optimizer
 
 # %%
-from torch.optim import AdamW
+from torch.optim import SGD, AdamW
 
-OPTIMIZER = AdamW(MODEL.parameters(), **OPTIMIZER_CONFIG)
+# OPTIMIZER = AdamW(MODEL.parameters(), **OPTIMIZER_CONFIG)
+OPTIMIZER = AdamW(MODEL.parameters(), lr=0.001)
 
 # %% [markdown]
 # ## Initialize Logging
@@ -313,6 +323,13 @@ LOGGER = StandardLogger(
     results_dir=RESULTS_DIR,
     encoder=ENCODER,
 )
+# LOGGER.writer.add_graph(MODEL, (T,X))
+# LOGGER.writer.flush()
+
+# %%
+raise
+
+# %%
 LOGGER.log_epoch_end(0)
 
 # %% [markdown]
@@ -320,7 +337,12 @@ LOGGER.log_epoch_end(0)
 
 # %%
 total_num_batches = 0
-for epoch in trange(1, ARGS.epochs, desc="Epoch", position=0):
+total_epochs = 0
+
+# %%
+for epoch in trange(
+    1 + total_epochs, total_epochs + 1 + ARGS.epochs, desc="Epoch", position=0
+):
     for batch in tqdm(
         TRAIN_LOADER, desc="Batch", leave=False, position=1, disable=ARGS.quiet
     ):
@@ -344,3 +366,4 @@ LOGGER.log_history(CFG_ID)
 LOGGER.log_hparams(CFG_ID)
 
 # %%
+total_epochs = epochs

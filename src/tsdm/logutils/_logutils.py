@@ -424,7 +424,7 @@ class StandardLogger:
     #         predics.append(result[1])
     #         for batch in iloader:
     #             result = self.predict_fn(self.model, batch)
-    #             targets.append(result[0])
+    #             targets.append(result[0]) e⃗
     #             predics.append(result[1])
     #
     #     masks = [~torch.isnan(p) for p in predics]
