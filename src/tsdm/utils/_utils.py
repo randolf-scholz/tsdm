@@ -2,6 +2,7 @@ r"""Utility functions.
 
 TODO:  Module description
 """
+from __future__ import annotations
 
 # from __future__ import annotations
 
@@ -29,6 +30,7 @@ __all__ = [
     "is_partition",
     "is_positional",
     "is_positional_only",
+    "is_zipfile",
     "make_test_folders",
     "now",
     "pairwise_disjoint",
@@ -50,6 +52,7 @@ from logging import getLogger
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Final, Literal, Optional, cast, overload
+from zipfile import BadZipFile, ZipFile
 
 import numpy as np
 import pandas
@@ -632,3 +635,10 @@ def make_test_folders(dry_run: bool = True) -> None:
 #         print(f"{series.name}: data missing in {num_missing}/{len(slices)} slices!")
 #         return True
 #     return False
+def is_zipfile(path: Path) -> bool:
+    r"""Returns True if the file is a zipfile."""
+    try:
+        ZipFile(path)
+        return True
+    except (BadZipFile, IsADirectoryError):
+        return False
