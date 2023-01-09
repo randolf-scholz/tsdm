@@ -9,36 +9,8 @@ Content:
 
 __all__ = [
     # CONSTANTS
+    "PROJECT",
     "CONFIG",
-    "DATASETS",
-    "MODELS",
-    "HASHES",
-    "HOMEDIR",
-    "BASEDIR",
-    "LOGDIR",
-    "MODELDIR",
-    "DATASETDIR",
-    "RAWDATADIR",
-    "DEFAULT_DEVICE",
-    "DEFAULT_DTYPE",
-    "conf",
-    # Classes
-    "Config",
 ]
 
-from tsdm.config._config import (
-    BASEDIR,
-    CONFIG,
-    DATASETDIR,
-    DATASETS,
-    DEFAULT_DEVICE,
-    DEFAULT_DTYPE,
-    HASHES,
-    HOMEDIR,
-    LOGDIR,
-    MODELDIR,
-    MODELS,
-    RAWDATADIR,
-    Config,
-    conf,
-)
+from tsdm.config._config import CONFIG, PROJECT

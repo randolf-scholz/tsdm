@@ -33,7 +33,7 @@ import pandas
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch.utils.data import Dataset as TorchDataset
 
-from tsdm.config import DATASETDIR, RAWDATADIR
+from tsdm.config import CONFIG
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.hash import hash_pandas
 from tsdm.utils.remote import download
@@ -65,13 +65,13 @@ class BaseDatasetMetaClass(ABCMeta):
             if os.environ.get("GENERATING_DOCS", False):
                 cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
             else:
-                cls.RAWDATA_DIR = RAWDATADIR / cls.__name__
+                cls.RAWDATA_DIR = CONFIG.RAWDATADIR / cls.__name__
 
         if "DATASET_DIR" not in attributes:
             if os.environ.get("GENERATING_DOCS", False):
                 cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
             else:
-                cls.DATASET_DIR = DATASETDIR / cls.__name__
+                cls.DATASET_DIR = CONFIG.DATASETDIR / cls.__name__
 
         # print(f"Setting Attribute {cls}.RAWDATA_DIR = {cls.RAWDATA_DIR}")
         # print(f"{cls=}\n\n{args=}\n\n{kwargs.keys()=}\n\n")
