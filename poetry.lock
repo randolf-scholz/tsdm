@@ -800,7 +800,7 @@ sortedcontainers = ">=2.0,<3.0"
 
 [[package]]
 name = "ipykernel"
-version = "6.19.4"
+version = "6.20.1"
 description = "IPython Kernel for Jupyter"
 category = "dev"
 optional = false
@@ -822,7 +822,9 @@ traitlets = ">=5.4.0"
 
 [package.extras]
 cov = ["coverage[toml]", "curio", "matplotlib", "pytest-cov", "trio"]
-docs = ["myst-parser", "pydata-sphinx-theme", "sphinx", "sphinxcontrib-github-alt"]
+docs = ["myst-parser", "pydata-sphinx-theme", "sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-github-alt", "sphinxcontrib-spelling", "trio"]
+pyqt5 = ["pyqt5"]
+pyside6 = ["pyside6"]
 test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=7.0)", "pytest-asyncio", "pytest-cov", "pytest-timeout"]
 
 [[package]]
@@ -1042,7 +1044,7 @@ test = ["codecov", "coverage", "ipykernel (>=6.12)", "ipython", "mypy", "pre-com
 
 [[package]]
 name = "jupyter-core"
-version = "5.1.2"
+version = "5.1.3"
 description = "Jupyter core package. A base package on which Jupyter projects rely."
 category = "dev"
 optional = false
@@ -1059,7 +1061,7 @@ test = ["ipykernel", "pre-commit", "pytest", "pytest-cov", "pytest-timeout"]
 
 [[package]]
 name = "jupyter-events"
-version = "0.5.0"
+version = "0.6.0"
 description = "Jupyter Event System library"
 category = "dev"
 optional = false
@@ -1067,13 +1069,14 @@ python-versions = ">=3.7"
 
 [package.dependencies]
 jsonschema = {version = ">=4.3.0", extras = ["format-nongpl"]}
-python-json-logger = "*"
-pyyaml = "*"
-traitlets = "*"
+python-json-logger = ">=2.0.4"
+pyyaml = ">=6.0"
+traitlets = ">=5.3"
 
 [package.extras]
 cli = ["click", "rich"]
-test = ["click", "coverage", "pre-commit", "pytest (>=6.1.0)", "pytest-asyncio (>=0.19.0)", "pytest-console-scripts", "pytest-cov", "rich"]
+docs = ["jupyterlite-sphinx", "myst-parser", "pydata-sphinx-theme", "sphinxcontrib-spelling"]
+test = ["click", "coverage", "pre-commit", "pytest (>=7.0)", "pytest-asyncio (>=0.19.0)", "pytest-console-scripts", "pytest-cov", "rich"]
 
 [[package]]
 name = "jupyter-server"
@@ -1109,7 +1112,7 @@ test = ["ipykernel", "pre-commit", "pytest (>=7.0)", "pytest-console-scripts", "
 
 [[package]]
 name = "jupyter-server-terminals"
-version = "0.4.3"
+version = "0.4.4"
 description = "A Jupyter Server Extension Providing Terminals."
 category = "dev"
 optional = false
@@ -1120,7 +1123,7 @@ pywinpty = {version = ">=2.0.3", markers = "os_name == \"nt\""}
 terminado = ">=0.8.3"
 
 [package.extras]
-docs = ["jinja2", "jupyter-server", "mistune (<3.0)", "myst-parser", "nbformat", "packaging", "pydata-sphinx-theme", "sphinxcontrib-github-alt", "sphinxcontrib-openapi", "sphinxemoji", "tornado"]
+docs = ["jinja2", "jupyter-server", "mistune (<3.0)", "myst-parser", "nbformat", "packaging", "pydata-sphinx-theme", "sphinxcontrib-github-alt", "sphinxcontrib-openapi", "sphinxcontrib-spelling", "sphinxemoji", "tornado"]
 test = ["coverage", "jupyter-server (>=2.0.0)", "pytest (>=7.0)", "pytest-cov", "pytest-jupyter[server] (>=0.5.3)", "pytest-timeout"]
 
 [[package]]
@@ -2046,7 +2049,7 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pylint"
-version = "2.15.9"
+version = "2.15.10"
 description = "python code static checker"
 category = "dev"
 optional = false
@@ -2934,7 +2937,7 @@ telegram = ["requests"]
 
 [[package]]
 name = "traitlets"
-version = "5.8.0"
+version = "5.8.1"
 description = "Traitlets Python configuration system"
 category = "dev"
 optional = false
@@ -3802,8 +3805,8 @@ intervaltree = [
     {file = "intervaltree-3.1.0.tar.gz", hash = "sha256:902b1b88936918f9b2a19e0e5eb7ccb430ae45cde4f39ea4b36932920d33952d"},
 ]
 ipykernel = [
-    {file = "ipykernel-6.19.4-py3-none-any.whl", hash = "sha256:0ecdae0060da61c5222ad221681f3b99b5bef739e11a3b1eb5778aa47f056f1f"},
-    {file = "ipykernel-6.19.4.tar.gz", hash = "sha256:4140c282a6c71cdde59abe5eae2c71bf1eeb4a69316ab76e1c4c25150a49722b"},
+    {file = "ipykernel-6.20.1-py3-none-any.whl", hash = "sha256:a314e6782a4f9e277783382976b3a93608a3787cd70a235b558b47f875134be1"},
+    {file = "ipykernel-6.20.1.tar.gz", hash = "sha256:f6016ecbf581d0ea6e29ba16cee6cc1a9bbde3835900c46c6571a791692f4139"},
 ]
 ipython = [
     {file = "ipython-8.8.0-py3-none-any.whl", hash = "sha256:da01e6df1501e6e7c32b5084212ddadd4ee2471602e2cf3e0190f4de6b0ea481"},
@@ -3862,20 +3865,20 @@ jupyter-client = [
     {file = "jupyter_client-7.4.8.tar.gz", hash = "sha256:109a3c33b62a9cf65aa8325850a0999a795fac155d9de4f7555aef5f310ee35a"},
 ]
 jupyter-core = [
-    {file = "jupyter_core-5.1.2-py3-none-any.whl", hash = "sha256:0f99cc639c8d00d591acfcc028aeea81473ea6c72fabe86426398220e2d91b1d"},
-    {file = "jupyter_core-5.1.2.tar.gz", hash = "sha256:62b00d52f030643d29f86aafdfd9b36d42421823599a272eb4c2df1d1cc7f723"},
+    {file = "jupyter_core-5.1.3-py3-none-any.whl", hash = "sha256:d23ab7db81ca1759f13780cd6b65f37f59bf8e0186ac422d5ca4982cc7d56716"},
+    {file = "jupyter_core-5.1.3.tar.gz", hash = "sha256:82e1cff0ef804c38677eff7070d5ff1d45037fef01a2d9ba9e6b7b8201831e9f"},
 ]
 jupyter-events = [
-    {file = "jupyter_events-0.5.0-py3-none-any.whl", hash = "sha256:6f7b67bf42b8a370c992187194ed02847dfa02307a7aebe9913e2d3979b9b6b8"},
-    {file = "jupyter_events-0.5.0.tar.gz", hash = "sha256:e27ffdd6138699d47d42cb65ae6d79334ff7c0d923694381c991ce56a140f2cd"},
+    {file = "jupyter_events-0.6.0-py3-none-any.whl", hash = "sha256:587f3055fe965f023b23b9929b22d2070e8b5c79ef0a42e37bdb12199862f63c"},
+    {file = "jupyter_events-0.6.0.tar.gz", hash = "sha256:bee793d06e124c5a80da3346f96f17aec5e0f28b632a514682b2a18ff548c69a"},
 ]
 jupyter-server = [
     {file = "jupyter_server-2.0.6-py3-none-any.whl", hash = "sha256:6a4c9a3f9fa8679015954586944a568b911a98d7480ae1d56ff55a6a4f055254"},
     {file = "jupyter_server-2.0.6.tar.gz", hash = "sha256:8dd75992e90b7ca556794a1ed5cca51263c697abc6d0df561af574aa1c0a033f"},
 ]
 jupyter-server-terminals = [
-    {file = "jupyter_server_terminals-0.4.3-py3-none-any.whl", hash = "sha256:ec67d3f1895d25cfb586a87a50b8eee13b709898a4afd721058e551e0a0f480d"},
-    {file = "jupyter_server_terminals-0.4.3.tar.gz", hash = "sha256:8421438d95a1f1f6994c48dd5dc10ad167ea7c196972bb5d1d7a9da1e30fde02"},
+    {file = "jupyter_server_terminals-0.4.4-py3-none-any.whl", hash = "sha256:75779164661cec02a8758a5311e18bb8eb70c4e86c6b699403100f1585a12a36"},
+    {file = "jupyter_server_terminals-0.4.4.tar.gz", hash = "sha256:57ab779797c25a7ba68e97bcfb5d7740f2b5e8a83b5e8102b10438041a7eac5d"},
 ]
 jupyterlab = [
     {file = "jupyterlab-3.5.2-py3-none-any.whl", hash = "sha256:16e9b8320dcec469c70bb883e993e0bb84c4ea1a734063731f66922cf72add1b"},
@@ -4573,8 +4576,8 @@ pygments = [
     {file = "Pygments-2.14.0.tar.gz", hash = "sha256:b3ed06a9e8ac9a9aae5a6f5dbe78a8a58655d17b43b93c078f094ddc476ae297"},
 ]
 pylint = [
-    {file = "pylint-2.15.9-py3-none-any.whl", hash = "sha256:349c8cd36aede4d50a0754a8c0218b43323d13d5d88f4b2952ddfe3e169681eb"},
-    {file = "pylint-2.15.9.tar.gz", hash = "sha256:18783cca3cfee5b83c6c5d10b3cdb66c6594520ffae61890858fe8d932e1c6b4"},
+    {file = "pylint-2.15.10-py3-none-any.whl", hash = "sha256:9df0d07e8948a1c3ffa3b6e2d7e6e63d9fb457c5da5b961ed63106594780cc7e"},
+    {file = "pylint-2.15.10.tar.gz", hash = "sha256:b3dc5ef7d33858f297ac0d06cc73862f01e4f2e74025ec3eff347ce0bc60baf5"},
 ]
 pylint-gitlab = [
     {file = "pylint-gitlab-1.2.0.tar.gz", hash = "sha256:9802350b7fafe9e5fb0749252beff4e10c76b6c33dc7a3be1166158894d22fa7"},
@@ -5064,8 +5067,8 @@ tqdm = [
     {file = "tqdm-4.64.1.tar.gz", hash = "sha256:5f4f682a004951c1b450bc753c710e9280c5746ce6ffedee253ddbcbf54cf1e4"},
 ]
 traitlets = [
-    {file = "traitlets-5.8.0-py3-none-any.whl", hash = "sha256:c864831efa0ba6576d09b44884b34e41defc18c0d7e720b4a2d6698c842cab3e"},
-    {file = "traitlets-5.8.0.tar.gz", hash = "sha256:6cc57d6dc28c85d5365961726ffd19b538739347749e13ebe34e03323a0e8f84"},
+    {file = "traitlets-5.8.1-py3-none-any.whl", hash = "sha256:a1ca5df6414f8b5760f7c5f256e326ee21b581742114545b462b35ffe3f04861"},
+    {file = "traitlets-5.8.1.tar.gz", hash = "sha256:32500888f5ff7bbf3b9267ea31748fa657aaf34d56d85e60f91dda7dc7f5785b"},
 ]
 twine = [
     {file = "twine-4.0.2-py3-none-any.whl", hash = "sha256:929bc3c280033347a00f847236564d1c52a3e61b1ac2516c97c48f3ceab756d8"},
