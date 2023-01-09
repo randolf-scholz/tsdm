@@ -32,7 +32,7 @@ from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 
-from tsdm.config import MODELDIR
+from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
 from tsdm.utils import LazyDict, initialize_from_config, is_zipfile, paths_exists
 from tsdm.utils.remote import download
@@ -59,7 +59,7 @@ class PreTrainedMetaClass(ABCMeta):
             if os.environ.get("GENERATING_DOCS", False):
                 cls.RAWDATA_DIR = Path(f"~/.tsdm/models/{cls.__name__}/")
             else:
-                cls.RAWDATA_DIR = MODELDIR / cls.__name__
+                cls.RAWDATA_DIR = CONFIG.MODELDIR / cls.__name__
 
     # def __call__(cls, *args: Any, **kw: Any) -> Any:
     #     r"""Prevent __init__."""
@@ -148,6 +148,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         if not path.exists():
             raise ValueError(f"{path=} does not exist!")
 
+        # FIXME: This is an awful hack!
         obj = cls.__new__(cls)
         obj.RAWDATA_DIR = path.parent  # type: ignore[misc]
         obj.RAWDATA_HASH = None  # type: ignore[misc]
@@ -169,6 +170,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         else:
             download(url, path)
 
+        # FIXME: This is an awful hack!
         obj = cls.__new__(cls)
         obj.RAWDATA_DIR = path.parent  # type: ignore[misc]
         obj.RAWDATA_HASH = None  # type: ignore[misc]
@@ -243,7 +245,11 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
 
         # if directory
         if self.rawdata_path.is_dir():
-            with open(self.rawdata_path / file, "r") as f:
+            file_path = self.rawdata_path / file
+            if file_path.suffix in {".yaml", ".json"}:
+                with open(file_path, "r", encoding="utf8") as f:
+                    return self.__load_component(f, component, extension)
+            with open(file_path, "rb") as f:
                 return self.__load_component(f, component, extension)
 
         # if zipfile
@@ -251,6 +257,8 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
             with ZipFile(self.rawdata_path) as zf:
                 with zf.open(file) as f:
                     return self.__load_component(f, component, extension)
+
+        raise ValueError(f"{self.rawdata_path=} is not a zipfile or directory!")
 
     def __load_component(self, file: IO, component: str, extension: str) -> Any:
         match component, extension:

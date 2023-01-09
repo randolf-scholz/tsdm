@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Optional, Protocol
 from urllib.parse import urlparse
 
-from tsdm.config import MODELDIR
+from tsdm.config import CONFIG
 
 
 class BaseModelMetaClass(ABCMeta):
@@ -26,7 +26,7 @@ class BaseModelMetaClass(ABCMeta):
         if os.environ.get("GENERATING_DOCS", False):
             cls.MODEL_DIR = Path(f"~/.tsdm/models/{cls.__name__}/")
         else:
-            cls.MODEL_DIR = MODELDIR / cls.__name__
+            cls.MODEL_DIR = CONFIG.MODELDIR / cls.__name__
 
         super().__init__(*args, **kwargs)
 
@@ -46,7 +46,7 @@ class BaseModel(ABC):
     @cached_property
     def model_path(self) -> Path:
         r"""Return the path to the model."""
-        return MODELDIR / self.__class__.__name__
+        return CONFIG.MODELDIR / self.__class__.__name__
 
     def download(self, *, url: Optional[str | Path] = None) -> None:
         r"""Download model (e.g. via git clone)."""
