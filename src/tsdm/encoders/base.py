@@ -1,6 +1,5 @@
 r"""Base Classes for Encoders."""
 
-
 from __future__ import annotations
 
 __all__ = [
@@ -56,8 +55,7 @@ class BaseEncoder(ABC, Generic[ObjectVar, ReturnVar], metaclass=BaseEncoderMetaC
     def __init_subclass__(cls, /, *args: Any, **kwargs: Any) -> None:
         r"""Initialize the subclass.
 
-        The wrapping of fit/encode/decode must be done here to avoid
-        `~pickle.PickleError`!
+        The wrapping of fit/encode/decode must be done here to avoid `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
         cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]

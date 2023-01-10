@@ -3,6 +3,8 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+__all__ = ["ReverseDense"]
+
 from typing import Any, Final, Optional
 
 from torch import Tensor, jit, nn

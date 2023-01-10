@@ -158,21 +158,23 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
     Evaluation Protocol
     -------------------
 
-    We use the publicly available MIMIC-III clinical database (Johnson et al., 2016), which contains
-    EHR for more than 60,000 critical care patients. We select a subset of 21,250 patients with sufficient
-    observations and extract 96 different longitudinal real-valued measurements over a period of 48 hours
-    after patient admission. We refer the reader to Appendix K for further details on the cohort selection.
-    We focus on the predictions of the next 3 measurements after a 36-hour observation window.
+    .. epigraph::
 
-    The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
-    harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
-    measurements outside the 5 standard deviation interval. For models requiring binning of the time
-    series, we map the measurements in 30-minute time bins, which gives 97 bins for 48 hours. When
-    two observations fall in the same bin, they are either averaged or summed depending on the nature
-    of the observation. Using the same taxonomy as in Table 5, lab measurements are averaged, while
-    inputs, outputs, and prescriptions are summed.
-    This gives a total of 3,082,224 unique measurements across all patients, or an average of 145
-    measurements per patient over 48 hours.
+        We use the publicly available MIMIC-III clinical database (Johnson et al., 2016), which contains
+        EHR for more than 60,000 critical care patients. We select a subset of 21,250 patients with sufficient
+        observations and extract 96 different longitudinal real-valued measurements over a period of 48 hours
+        after patient admission. We refer the reader to Appendix K for further details on the cohort selection.
+        We focus on the predictions of the next 3 measurements after a 36-hour observation window.
+
+        The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
+        harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
+        measurements outside the 5 standard deviation interval. For models requiring binning of the time
+        series, we map the measurements in 30-minute time bins, which gives 97 bins for 48 hours. When
+        two observations fall in the same bin, they are either averaged or summed depending on the nature
+        of the observation. Using the same taxonomy as in Table 5, lab measurements are averaged, while
+        inputs, outputs, and prescriptions are summed.
+        This gives a total of 3,082,224 unique measurements across all patients, or an average of 145
+        measurements per patient over 48 hours.
 
     References
     ----------

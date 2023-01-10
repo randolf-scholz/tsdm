@@ -4368,6 +4368,17 @@ files = [
 sphinx = "*"
 
 [[package]]
+name = "sphinx-typo3-theme"
+version = "4.7.9"
+description = "Sphinx TYPO3 theme for https://docs.typo3.org/"
+category = "dev"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "sphinx_typo3_theme-4.7.9-py2.py3-none-any.whl", hash = "sha256:1243e8c8b5eec590d18c37be3c3a467a2d678c1fd03bb9d036fad3011b6d4d53"},
+]
+
+[[package]]
 name = "sphinxcontrib-applehelp"
 version = "1.0.3"
 description = "sphinxcontrib-applehelp is a Sphinx extension which outputs Apple help books"
@@ -5243,4 +5254,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "665104d227b119378701589af49de334769a9d7e44438e9c173057a8bdc047a2"
+content-hash = "0cef0fb15b70db93d6d28d7760d894d9c8d35f585602f9a96d13d94a781dc841"

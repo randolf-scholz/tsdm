@@ -7,8 +7,6 @@ References
 - https://numpy.org/doc/stable/reference/c-api/array.html
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "Array",

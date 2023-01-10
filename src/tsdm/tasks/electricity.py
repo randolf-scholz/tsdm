@@ -131,7 +131,6 @@ class ElectricityELBMBTTF:
 
     Evaluation Protocol
     -------------------
-
     .. epigraph::
 
         For short-term forecasting, we evaluate rolling-day forecasts for seven days ( i.e.,

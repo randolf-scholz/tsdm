@@ -45,8 +45,7 @@ So in the Pipeline we need
 - A specialized task-specific dataset class such that `dataset[key] = sample`
     - It used the returned data `(S[i][t], M[i])` and performs the necessary **slicing and masking** to produce a sample
       of the form `(t_input, x_input, t_target, y_target, md_input, md_target)`
-    - **Open Design Question:** Should covariates be given as separate inputs?
-      `(t_x, x, t_y, y, t_u, u, md_input, md_target)`
+    - **Open Design Question:** Should covariates be given as separate inputs `(t_x, x, t_y, y, t_u, u, md_input, md_target)`?
         - Advantage: clear separation
         - Distadvantage: model needs to merge that data itself
 - A collate function such that `collate(samples: list[sample]) -> batch`

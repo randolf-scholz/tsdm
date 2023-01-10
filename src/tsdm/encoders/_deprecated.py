@@ -1,7 +1,5 @@
 """Deprecated Encoders."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "DataFrameEncoder",

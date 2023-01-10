@@ -1,7 +1,5 @@
 """Implements the BaseConfig class."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "Config",
@@ -124,7 +122,7 @@ class Config(MutableMapping, metaclass=ConfigMetaclass):
         # return hash((frozenset(self), frozenset(self.itervalues())))
         return hash(frozenset(self.items()))
 
-    def __or__(self, other: dict) -> Config:
+    def __or__(self, other: dict) -> Any:  # FIXME: Return Self Config:
         r"""Return a new dictionary with the keys from both dictionaries."""
         res: dict = {}
         res.update(self)

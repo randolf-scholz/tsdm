@@ -3,7 +3,8 @@ r"""Implementation of encoders.
 Notes
 -----
 Contains encoders in functional form.
-  - See `tsdm.encoders` for modular implementations.
+
+- See `tsdm.encoders` for modular implementations.
 """
 
 __all__ = [
@@ -36,9 +37,9 @@ def triplet2dense() -> DataFrame:
     r"""Convert a DataFrame in triplet format to dense format. Inverse operation of `dense2triplet`.
 
     ``cat_features``: Either a set of index denoting the columns containing categorical features.
-        In this case the categories will be inferred from data.
-        Or a dictionary of sets such that a key:value pair corresponds to a column and
-        all possible categories in that column. Use empty set to infer categories from data.
+    In this case the categories will be inferred from data.
+    Or a dictionary of sets such that a key:value pair corresponds to a column and
+    all possible categories in that column. Use empty set to infer categories from data.
     """
     raise NotImplementedError
 
@@ -54,23 +55,22 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
     - $v_i$ indicator variable
     - $x_i$ observed value
 
+    ========  ================================================
+    column    data type
+    ========  ================================================
+    index     same as input
+    variable  `pandas.StringDtype`
+    value     same as input
+    ========  ================================================
+
     References
     ----------
     - `pandas.melt`
     - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
-        ========  ================================================
-        column    data type
-        ========  ================================================
-        index     same as input
-        variable  `pandas.StringDtype`
-        value     same as input
-        ========  ================================================
-
     See Also
     --------
-    make_sparse_triplets
-    make_masked_format
+    `make_sparse_triplets`, `make_masked_format`
     """
     result = df.melt(ignore_index=False)
     observed = result["value"].notna()
@@ -93,13 +93,13 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
     - $v_i$ one-hot encoded indicator variable
     - $x_i$ observed value
 
-        ======  ================================================
-        column  data type
-        ======  ================================================
-        index   same as input
-        value   same as input
-        \*      `pandas.SparseDtype` ``Sparse[uint8, 0]``
-        ======  ================================================
+    ======  ====================
+    column  data type
+    ======  ====================
+    index   same as input
+    value   same as input
+    other   `pandas.SparseDtype`
+    ======  ====================
 
     References
     ----------
@@ -109,8 +109,7 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
 
     See Also
     --------
-    make_dense_triplets
-    make_masked_format
+    `make_dense_triplets`, `make_masked_format`
     """
     triplets = make_dense_triplets(df)
     result = pd.get_dummies(
@@ -123,17 +122,16 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     r"""Convert DataFrame into masked format, returning 3 DataFrames with the same shape.
 
     Returns:
-        x: The original dataframe
-        m: mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
-        d: time delta  $δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt$, with $δ_0=0$
+        x: The original `DataFrame`
+        m: mask :math:`m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}`
+        d: time delta  :math:`δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt`, with $δ_0=0$
 
     References:
-        - `Recurrent Neural Networks for Multivariate Time Series with Missing Values
-          <https://www.nature.com/articles/s41598-018-24271-9>`_
+        - | Recurrent Neural Networks for Multivariate Time Series with Missing Values
+          | https://www.nature.com/articles/s41598-018-24271-9
 
     See Also:
-        make_dense_triplets
-        make_sparse_triplets
+        `make_dense_triplets`, `make_sparse_triplets`
     """
     m = df.notna().astype(np.uint8)
     # note: s here is not the same s as in the GRU-D paper, but s(t) - s(t-1)
