@@ -2,15 +2,12 @@ r"""Utility functions.
 
 TODO:  Module description
 """
+from __future__ import annotations
 
 # from __future__ import annotations
 
 
 __all__ = [
-    # Constants
-    "PROJECT_ROOT",
-    "PROJECT_TEST",
-    "PROJECT_SOURCE",
     # Classes
     # Functions
     "deep_dict_update",
@@ -19,8 +16,6 @@ __all__ = [
     "flatten_nested",
     "get_function_args",
     "get_mandatory_argcount",
-    "get_package_structure",
-    "get_project_root_package",
     "initialize_from_config",
     "initialize_from_table",
     "is_dunder",
@@ -29,7 +24,7 @@ __all__ = [
     "is_partition",
     "is_positional",
     "is_positional_only",
-    "make_test_folders",
+    "is_zipfile",
     "now",
     "pairwise_disjoint",
     "pairwise_disjoint_masks",
@@ -45,11 +40,10 @@ from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import partial
 from importlib import import_module
-from itertools import chain
 from logging import getLogger
 from pathlib import Path
-from types import ModuleType
-from typing import Any, Final, Literal, Optional, cast, overload
+from typing import Any, Literal, Optional, cast, overload
+from zipfile import BadZipFile, ZipFile
 
 import numpy as np
 import pandas
@@ -403,6 +397,15 @@ def is_keyword_only(p: inspect.Parameter, /) -> bool:
     return p.kind in (KEYWORD_ONLY, VAR_KEYWORD)
 
 
+def is_zipfile(path: Path) -> bool:
+    r"""Returns True if the file is a zipfile."""
+    try:
+        with ZipFile(path):
+            return True
+    except (BadZipFile, IsADirectoryError):
+        return False
+
+
 def get_mandatory_argcount(f: Callable[..., Any]) -> int:
     r"""Get the number of mandatory arguments of a function."""
     sig = inspect.signature(f)
@@ -468,7 +471,7 @@ def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:
     return Series(series.unique())
 
 
-def string_is_bool(series: Series, /, *, uniques: Optional[Series] = None) -> bool:
+def series_is_boolean(series: Series, /, *, uniques: Optional[Series] = None) -> bool:
     r"""Test if 'string' series could possibly be boolean."""
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
     values = get_uniques(series) if uniques is None else uniques
@@ -480,7 +483,7 @@ def string_is_bool(series: Series, /, *, uniques: Optional[Series] = None) -> bo
     )
 
 
-def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
+def series_to_boolean(series: Series, uniques: Optional[Series] = None) -> Series:
     r"""Convert Series to nullable boolean."""
     assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
     mask = pandas.notna(series)
@@ -493,7 +496,9 @@ def string_to_bool(series: Series, uniques: Optional[Series] = None) -> Series:
     return series.astype(pandas.BooleanDtype())
 
 
-def numeric_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
+def series_is_boolean_from_numeric(
+    series: Series, uniques: Optional[Series] = None
+) -> bool:
     r"""Test if 'numeric' series could possibly be boolean."""
     assert pandas.api.types.is_numeric_dtype(series), "Series must be 'numeric' dtype!"
     values = get_uniques(series) if uniques is None else uniques
@@ -502,88 +507,11 @@ def numeric_is_bool(series: Series, uniques: Optional[Series] = None) -> bool:
     return any(set(values) <= set(bool_pair) for bool_pair in BOOLEAN_PAIRS)
 
 
-def float_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
+def series_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
     r"""Check whether float encoded column holds only integers."""
     assert pandas.api.types.is_float_dtype(series), "Series must be 'float' dtype!"
     values = get_uniques(series) if uniques is None else uniques
     return cast(bool, values.apply(float.is_integer).all())
-
-
-def get_project_root_package() -> ModuleType:
-    r"""Get project root package."""
-    return import_module(__package__.split(".", maxsplit=1)[0])
-
-
-def _get_project_root_directory() -> Path:
-    r"""Get project root directory."""
-    root_package = get_project_root_package()
-    assert len(root_package.__path__) == 1
-    root_path = Path(root_package.__path__[0])
-    assert root_path.parent.stem == "src", f"{root_path=} must be in src/*"
-    return root_path.parent.parent
-
-
-PROJECT_ROOT: Final[Path] = _get_project_root_directory()
-"""Project root directory."""
-
-PROJECT_TEST: Final[Path] = PROJECT_ROOT / "tests"
-"""Project test directory."""
-
-PROJECT_SOURCE: Final[Path] = PROJECT_ROOT / "src"
-"""Project source directory."""
-
-
-def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
-    r"""Create nested dictionary of the package structure."""
-    d = {}
-    for name in dir(root_module):
-        attr = getattr(root_module, name)
-        if isinstance(attr, ModuleType):
-            # check if it is a subpackage
-            if (
-                attr.__name__.startswith(root_module.__name__)
-                and attr.__package__ != root_module.__package__
-                and attr.__package__ is not None
-            ):
-                d[attr.__package__] = get_package_structure(attr)
-    return d
-
-
-def make_test_folders(dry_run: bool = True) -> None:
-    r"""Make the tests folder if it does not exist."""
-    root_package = get_project_root_package()
-    package_structure = get_package_structure(root_package)
-
-    def _flatten(d: dict[str, Any], /) -> list[str]:
-        r"""Flatten nested dictionary."""
-        return list(d) + list(chain.from_iterable(map(_flatten, d.values())))
-
-    packages: list[str] = _flatten(package_structure)
-    for package in packages:
-        test_package_path = PROJECT_TEST / package.replace(".", "/")
-        test_package_init = test_package_path / "__init__.py"
-
-        if not test_package_path.exists():
-            if dry_run:
-                print(f"Dry-Run: Creating {test_package_path}")
-            else:
-                print("Creating {test_package_path}")
-                test_package_path.mkdir(parents=True, exist_ok=True)
-        if not test_package_path.exists():
-            if dry_run:
-                print(f"Dry-Run: Creating {test_package_init}")
-            else:
-                raise RuntimeError(f"Creation of {test_package_path} failed!")
-        elif not test_package_init.exists():
-            if dry_run:
-                print(f"Dry-Run: Creating {test_package_init}")
-            else:
-                print(f"Creating {test_package_init}")
-                with open(test_package_init, "w", encoding="utf8") as file:
-                    file.write(f'"""Tests for {package}."""\n')
-
-    if dry_run:
-        print("Pass option `dry_run=False` to actually create the folders.")
 
 
 # def infer_dtype(series: Series) -> Union[None, ExtensionDtype, np.generic]:

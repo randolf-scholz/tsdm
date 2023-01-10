@@ -32,9 +32,9 @@ from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 
-from tsdm.config import MODELDIR
+from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
-from tsdm.utils import LazyDict, initialize_from_config, paths_exists
+from tsdm.utils import LazyDict, initialize_from_config, is_zipfile, paths_exists
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_mapping, repr_short
 from tsdm.utils.types import Nested
@@ -59,7 +59,7 @@ class PreTrainedMetaClass(ABCMeta):
             if os.environ.get("GENERATING_DOCS", False):
                 cls.RAWDATA_DIR = Path(f"~/.tsdm/models/{cls.__name__}/")
             else:
-                cls.RAWDATA_DIR = MODELDIR / cls.__name__
+                cls.RAWDATA_DIR = CONFIG.MODELDIR / cls.__name__
 
     # def __call__(cls, *args: Any, **kw: Any) -> Any:
     #     r"""Prevent __init__."""
@@ -148,10 +148,34 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         if not path.exists():
             raise ValueError(f"{path=} does not exist!")
 
-        cls.RAWDATA_DIR = path.parent
-        cls.rawdata_file = path.name
-        cls.RAWDATA_HASH = None
-        obj = cls(*args, **kwargs)
+        # FIXME: This is an awful hack!
+        obj = cls.__new__(cls)
+        obj.RAWDATA_DIR = path.parent  # type: ignore[misc]
+        obj.RAWDATA_HASH = None  # type: ignore[misc]
+        obj.rawdata_file = path.name
+        obj.__init__(*args, **kwargs)  # type: ignore[misc]
+        return obj
+
+    @classmethod
+    def from_url(
+        cls, url: str, /, *args: Any, **kwargs: Any
+    ) -> PreTrainedModel:  # TODO: 3.11 use typing.Self
+        r"""Create model from url."""
+        # download the file into the model directory
+        fname = url.split("/")[-1]
+        path = cls.RAWDATA_DIR / fname
+
+        if path.exists():
+            warnings.warn(f"{Path=} already exists, skipping download.")
+        else:
+            download(url, path)
+
+        # FIXME: This is an awful hack!
+        obj = cls.__new__(cls)
+        obj.RAWDATA_DIR = path.parent  # type: ignore[misc]
+        obj.RAWDATA_HASH = None  # type: ignore[misc]
+        obj.rawdata_file = path.name
+        obj.__init__(*args, **kwargs)  # type: ignore[misc]
         return obj
 
     def __len__(self) -> int:
@@ -211,31 +235,46 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         return paths_exists(self.rawdata_path)
 
     def get_component(self, component: str, /) -> Any:
-        """Extract a model component."""
+        r"""Extract a model component."""
         if not self.rawdata_file_exist():
             self.LOGGER.debug("Obtaining rawdata file!")
             self.download(validate=True)
 
         file = self.component_files[component]
+        extension = Path(file).suffix
 
-        with ZipFile(self.rawdata_path, "r") as archive:
-            with archive.open(file, "r") as f:
-                match component, Path(file).suffix:
-                    case _, ".pickle":
-                        return pickle.load(f)
-                    case "model", _:
-                        return self.__load_torch_model(f)
-                    case "optimizer", _:
-                        return self.__load_torch_optimizer(f)
-                    case "lr_scheduler", _:
-                        return self.__load_torch_lr_scheduler(f)
-                    case "hyperparameters", ".json":
-                        return json.load(f)
-                    case "hyperparameters", (".yaml" | ".yml"):
-                        return yaml.safe_load(f)
-                raise ValueError(f"{component=} is not supported!")
-                # case name, _:  # fallback
-                #     return self.__load_torch_component(name, f)
+        # if directory
+        if self.rawdata_path.is_dir():
+            file_path = self.rawdata_path / file
+            if file_path.suffix in {".yaml", ".json"}:
+                with open(file_path, "r", encoding="utf8") as f:
+                    return self.__load_component(f, component, extension)
+            with open(file_path, "rb") as f:
+                return self.__load_component(f, component, extension)
+
+        # if zipfile
+        if is_zipfile(self.rawdata_path):
+            with ZipFile(self.rawdata_path) as zf:
+                with zf.open(file) as f:
+                    return self.__load_component(f, component, extension)
+
+        raise ValueError(f"{self.rawdata_path=} is not a zipfile or directory!")
+
+    def __load_component(self, file: IO, component: str, extension: str) -> Any:
+        match component, extension:
+            case "model", _:
+                return self.__load_torch_model(file)
+            case "optimizer", _:
+                return self.__load_torch_optimizer(file)
+            case "lr_scheduler", _:
+                return self.__load_torch_lr_scheduler(file)
+            case _, ".json":
+                return json.load(file)
+            case _, (".yaml" | ".yml"):
+                return yaml.safe_load(file)
+            case _, ".pickle":
+                return pickle.load(file)
+        raise ValueError(f"{component=} is not supported!")
 
     def __load_torch_component(
         self, component: str, /, file: str | Path | IO[bytes], **kwargs: Any

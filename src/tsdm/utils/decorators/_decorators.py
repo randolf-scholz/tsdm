@@ -35,7 +35,7 @@ from typing import Any, Concatenate, Optional, cast, overload
 
 from torch import jit, nn
 
-from tsdm.config import conf
+from tsdm.config import CONFIG
 from tsdm.utils.types import AnyTypeVar, ClassVar
 from tsdm.utils.types import ObjectVar as Obj
 from tsdm.utils.types import Parameters as P
@@ -452,7 +452,7 @@ def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
             # then the new instance's __init__() method will not be invoked.
             instance: TorchModuleVar = base_class(*args, **kwargs)
 
-            if conf.autojit:
+            if CONFIG.autojit:
                 scripted: TorchModuleVar = jit.script(instance)
                 return scripted
             return instance
