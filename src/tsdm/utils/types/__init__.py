@@ -34,7 +34,7 @@ __all__ = [
     "PandasObject",
     "PathType",
     # ParamSpec
-    "Parameters",
+    "ParameterVar",
 ]
 
 
@@ -56,7 +56,7 @@ from tsdm.utils.types._types import (
     ObjectVar,
     PandasObject,
     PandasVar,
-    Parameters,
+    ParameterVar,
     PathType,
     PathVar,
     ReturnVar,

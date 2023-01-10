@@ -13,7 +13,7 @@
             <path value="file://$PROJECT_DIR$/docs/_static" />
             <path value="file://$PROJECT_DIR$/docs/_templates" />
             <path value="file://$PROJECT_DIR$/templates" />
-            <path value="file://$PROJECT_DIR$/docs/_ext" />
+            <path value="file://$PROJECT_DIR$/dev/_ext" />
           </resourceRoots>
         </entryData>
       </entry>

@@ -37,8 +37,9 @@ Note that in the context of time-series, we allow the accumulator to depend on t
 Notes
 -----
 Contains losses in both modular and functional form.
-  - See `tsdm.losses.functional` for functional implementations.
-  - See `tsdm.losses` for modular implementations.
+
+- See `tsdm.losses.functional` for functional implementations.
+- See `tsdm.losses` for modular implementations.
 """
 
 __all__ = [

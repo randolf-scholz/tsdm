@@ -3,8 +3,6 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "USHCN",
@@ -22,18 +20,17 @@ import pandas
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiFrameDataset
-from tsdm.utils.types import Parameters, ReturnVar
+from tsdm.utils.types import ParameterVar as P
+from tsdm.utils.types import ReturnVar as R
 
 __logger__ = logging.getLogger(__name__)
 
 
-def with_ray_cluster(
-    func: Callable[Parameters, ReturnVar]
-) -> Callable[Parameters, ReturnVar]:
+def with_ray_cluster(func: Callable[P, R]) -> Callable[P, R]:
     r"""Run function with ray cluster."""
 
     @wraps(func)
-    def _wrapper(*args: Parameters.args, **kwargs: Parameters.kwargs) -> ReturnVar:
+    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         if importlib.util.find_spec("ray") is not None:
             ray = importlib.import_module("ray")
             # Only use 80% of the available CPUs.
@@ -105,16 +102,13 @@ class USHCN(MultiFrameDataset[KEY]):
     - YEAR		is the year of the record.
     - MONTH	is the month of the record.
     - ELEMENT	is the element type. There are five possible values
-
         - PRCP = precipitation (hundredths of inches)
         - SNOW = snowfall (tenths of inches)
         - SNWD = snow depth (inches)
         - TMAX = maximum temperature (degrees F)
         - TMIN = minimum temperature (degrees F)
-
     - VALUE1	is the value on the first day of the month (missing = -9999).
     - MFLAG1	is the measurement flag for the first day of the month. There are five possible values:
-
         - Blank = no measurement information applicable
         - B = precipitation total formed from two 12-hour totals
         - D = precipitation total formed from four six-hour totals
@@ -122,9 +116,7 @@ class USHCN(MultiFrameDataset[KEY]):
         - L = temperature appears to be lagged with respect to reported hour of observation
         - P = identified as "missing presumed zero" in DSI 3200 and 3206
         - T = trace of precipitation, snowfall, or snow depth
-
     - QFLAG1	is the quality flag for the first day of the month. There are fourteen possible values:
-
         - Blank = did not fail any quality assurance check
         - D = failed duplicate check
         - G = failed gap check
@@ -140,9 +132,7 @@ class USHCN(MultiFrameDataset[KEY]):
         - W = temperature too warm for snow
         - X = failed bounds check
         - Z = flagged as a result of an official Datzilla investigation
-
     - SFLAG1	is the source flag for the first day of the month. There are fifteen possible values:
-
         - Blank = No source (e.g., data value missing)
         - 0 = U.S. Cooperative Summary of the Day (NCDC DSI-3200)
         - 6 = CDMP Cooperative Summary of the Day (NCDC DSI-3206)

@@ -3,8 +3,6 @@ r"""Submodule containing general purpose decorators.
 #TODO add module description.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     # Functions
@@ -38,7 +36,7 @@ from torch import jit, nn
 from tsdm.config import CONFIG
 from tsdm.utils.types import AnyTypeVar, ClassVar
 from tsdm.utils.types import ObjectVar as Obj
-from tsdm.utils.types import Parameters as P
+from tsdm.utils.types import ParameterVar as P
 from tsdm.utils.types import ReturnVar as R
 from tsdm.utils.types import TorchModuleVar
 from tsdm.utils.types.abc import CollectionType
@@ -86,7 +84,9 @@ class DecoratorError(Exception):
     message: str = ""
     r"""Default message to print."""
 
-    def __call__(self, *message_lines: str) -> DecoratorError:
+    def __call__(
+        self, *message_lines: str
+    ) -> Any:  # FIXME: Return Self DecoratorError:
         r"""Raise a new error."""
         return DecoratorError(self.decorated, message="\n".join(message_lines))
 

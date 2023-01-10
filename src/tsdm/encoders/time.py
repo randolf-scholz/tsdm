@@ -1,7 +1,5 @@
 r"""Encoders for timedelta and datetime types."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "Time2Float",
@@ -34,7 +32,8 @@ from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.utils.data import TimeTensor
+from tsdm.utils.data.timeseries import TimeTensor
+from tsdm.utils.types.dtypes import ScalarDType
 
 
 class Time2Float(BaseEncoder):
@@ -201,7 +200,7 @@ class PeriodicEncoder(BaseEncoder):
 
     period: float
     freq: float
-    dtype: pd.dtype
+    dtype: ScalarDType
     colname: Hashable
 
     def __init__(self, period: Optional[float] = None) -> None:
@@ -250,7 +249,7 @@ class SocialTimeEncoder(BaseEncoder):
         "n": "nanosecond",
     }
     original_name: Hashable
-    original_dtype: pd.dtype
+    original_dtype: ScalarDType
     original_type: type
     rev_cols: list[str]
     level_code: str
@@ -303,7 +302,9 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
     }
     r"""The frequencies of the used `PeriodicEncoder`."""
 
-    def __new__(cls, levels: str = "YMWDhms") -> PeriodicSocialTimeEncoder:
+    def __new__(
+        cls, levels: str = "YMWDhms"
+    ) -> Any:  # FIXME: Return Self PeriodicSocialTimeEncoder:
         r"""Construct a new encoder object."""
         self = super().__new__(cls)
         self.__init__(levels)  # type: ignore[misc]

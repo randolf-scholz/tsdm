@@ -42,10 +42,12 @@ class ETT_Zhou2021(OldBaseTask):
     Evaluation Protocol
     -------------------
 
+    .. epigraph::
+
         ETT (Electricity Transformer Temperature)2: The ETT is a crucial indicator in
         the electric power long-term deployment. We collected 2-year data from two
         separated counties in China. To explore the granularity on the LSTF problem,
-        we create separate dataset as {ETTh1, ETTh2}for 1-hour-level and ETTm1 for
+        we create separate dataset as {ETTh1, ETTh2} for 1-hour-level and ETTm1 for
         15-minute-level. Each data point consists of the target value ”oil temperature”
         and 6 power load features. The train/val/test is 12/4/4 months
 
@@ -75,8 +77,8 @@ class ETT_Zhou2021(OldBaseTask):
     Test-Metric
     -----------
 
-    - MSE: :math:`⅟ₙ∑_{i=1}^{n} | y - ŷ |^2`
-    - MAE: :math:`⅟ₙ∑_{i=1}^{n} | y - ŷ |`
+    - MSE: :math:`⅟ₙ∑_{i=1}^{n} |y - ŷ|^2`
+    - MAE: :math:`⅟ₙ∑_{i=1}^{n} |y - ŷ|`
 
     Results
     -------

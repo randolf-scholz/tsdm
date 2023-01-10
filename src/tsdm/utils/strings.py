@@ -1,9 +1,5 @@
 r"""Utility functions for string manipulation."""
 
-# from __future__ import annotations
-#
-# from __future__ import annotations
-
 __all__ = [
     # Functions
     "snake2camel",
@@ -324,10 +320,10 @@ def repr_sequence(
 ) -> str:
     r"""Return a string representation of a sequence object.
 
-    - if recursive=True:  Name<Sequence>(repr_short(item1), ...)
-    - if recursive=False: Name<Sequence>(repr_object(item1), ...)
+    - if recursive=`True`:  ``Name<Sequence>(repr_short(item1), ...)``
+    - if recursive=`False`: ``Name<Sequence>(repr_object(item1), ...)``
 
-    semi recursive
+    semi recursive::
 
         name<Sequence>(
             object<Sequence>(item1, item2, ...),
@@ -335,7 +331,7 @@ def repr_sequence(
             object<Mapping>(key1: value1, ...),
         )
 
-    fully recursive:
+    fully recursive::
 
         name<Sequence>(
             object<Sequence>(
@@ -481,8 +477,8 @@ def repr_dataclass(
 ) -> str:
     r"""Return a string representation of a dataclass object.
 
-    - recursive=False:  Name<dataclass>(item1, item2, ...)
-    - recursive=True: Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)
+    - recursive=`False`:  ``Name<dataclass>(item1, item2, ...)``
+    - recursive=`True`: ``Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)``
     """
     assert is_dataclass(obj), f"Object {obj} is not a dataclass."
     assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."

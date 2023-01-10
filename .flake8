@@ -113,3 +113,4 @@ rst-roles =
 
 rst-directives=
     Signature,
+    literalinclude,

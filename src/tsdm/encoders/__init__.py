@@ -2,77 +2,85 @@ r"""Implementation of Encoders.
 
 Role & Specification
 --------------------
-
 Encoders are used in multiple contexts
-  - Perform preprocessing for task objects: For example, a task might ask to evaluate on
-    standardized features. In this case, a pre_encoder object is associated with the task that
-    will perform this preprocessing at task creation time.
-  - Perform data encoding tasks such as encoding of categorical variables.
-  - Transform data from one framework to another, like `numpy` → `torch`
+
+- Perform preprocessing for task objects: For example, a task might ask to evaluate on
+  standardized features. In this case, a pre_encoder object is associated with the task that
+  will perform this preprocessing at task creation time.
+- Perform data encoding tasks such as encoding of categorical variables.
+- Transform data from one framework to another, like `numpy` → `torch`
 
 Specification:
-  - Encoders **must** be reversible.
-  - Modules that are not reversible, we call transformations.
-      - Example: Convert logit output of a NN to a class prediction.
 
-Notes
------
-Contains encoders in both modular and functional form.
-  - See `tsdm.encoders.functional` for functional implementations.
-  - See `tsdm.encoders` for modular implementations.
+- Encoders **must** be reversible.
+- Modules that are not reversible, we call transformations.
+- Example: Convert logit output of a NN to a class prediction.
 
-
+Note
+----
 Some important units
 
-- numerical
-    - finite
-        - support: {a₁, ..., aₙ}
-        - dimensionless: False
-        - ordered: True
-    - discrete:
-        - support: ℤ
-        - dimensionless: True
-        - ordered: True
-    - absolute:
-        - support: [0, +∞)
-        - dimensionless: False
-        - ordered: True
-        - Encoders: `BoxCox`
-    - factor:
-        - support: (0, +∞)
-        - dimensionless: True
-        - ordered: True
-        - Encoders: `Logarithm`
-    - percent
-        - support: [0, 100]
-        - dimensionless: True
-        - ordered: True
-        - Encoders: `Logit @ MinMaxScalar[0, 100]`, `HardLogit @ MinMaxScalar[0, 100]`
-    - bounded
-        - support: [a, b]
-        - dimensionless: False
-        - ordered: True
-        - Encoders: `Logit @ MinMaxScalar[a, b]`, `HardLogit @ MinMaxScalar[a, b]`
-    - linear
-        - support: (-∞, +∞)
-        - dimensionless: False
-        - ordered: True
-        - Encoders: `StandardScalar` (diagonal or full covariance)
-- category
-    - support {1, ..., K}
-    - dimensionless: True
-    - ordered: False
-    - Encoders: `OneHotEncoder`
-- ordinal
-    - support {1, ..., K}
+numerical
+
+- finite
+    - support: {a₁, ..., aₙ}
+    - dimensionless: False
+    - ordered: True
+- discrete:
+    - support: ℤ
     - dimensionless: True
     - ordered: True
-    - Encoders: `OrdinalEncoder`, `PositionalEncoder`
-- cyclic
-    - support: [0, 2π)
+- absolute:
+    - support: [0, +∞)
+    - dimensionless: False
+    - ordered: True
+    - Encoders: `BoxCoxEncoder`
+- factor:
+    - support: (0, +∞)
     - dimensionless: True
-    - ordered: False
-    - Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
+    - ordered: True
+    - Encoders: `Logarithm`
+- percent
+    - support: [0, 100]
+    - dimensionless: True
+    - ordered: True
+    - Encoders: `Logit @ MinMaxScalar[0, 100]`, `HardLogit @ MinMaxScalar[0, 100]`
+- bounded
+    - support: [a, b]
+    - dimensionless: False
+    - ordered: True
+    - Encoders: `Logit @ MinMaxScalar[a, b]`, `HardLogit @ MinMaxScalar[a, b]`
+- linear
+    - support: (-∞, +∞)
+    - dimensionless: False
+    - ordered: True
+    - Encoders: `StandardScalar` (diagonal or full covariance)
+
+category
+
+- support {1, ..., K}
+- dimensionless: True
+- ordered: False
+- Encoders: `OneHotEncoder`
+
+ordinal
+
+- support {1, ..., K}
+- dimensionless: True
+- ordered: True
+- Encoders: `OrdinalEncoder`, `PositionalEncoder`
+
+cyclic
+
+- support: [0, 2π)
+- dimensionless: True
+- ordered: False
+- Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
+
+See Also
+--------
+- `tsdm.encoders.functional` for functional implementations.
+- `tsdm.encoders` for modular implementations.
 """
 #  TODO: Add more encoders
 # - Target Encoding: enc(x) = mean(enc(y|x))
@@ -109,7 +117,7 @@ __all__ = [
     "MODULAR_ENCODERS",
     "FUNCTIONAL_ENCODERS",
     "SKLEARN_MODULAR_ENCODERS",
-    "SKLEARN_FUNCTIONAL_ENCODERS",
+    # "SKLEARN_FUNCTIONAL_ENCODERS",
     # ABC
     "BaseEncoder",
     # Classes
@@ -180,9 +188,8 @@ from tsdm.encoders.dataframe import (
     TripletEncoder,
     ValueEncoder,
 )
-from tsdm.encoders.functional import (
+from tsdm.encoders.functional import (  # SKLEARN_FUNCTIONAL_ENCODERS,
     FUNCTIONAL_ENCODERS,
-    SKLEARN_FUNCTIONAL_ENCODERS,
     FunctionalEncoder,
 )
 from tsdm.encoders.numerical import (

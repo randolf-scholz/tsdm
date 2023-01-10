@@ -1,27 +1,6 @@
 r"""Time Series Datasets and Models (TSDM).
 
-Provides
-  1. Facility to import some commonly used time series dataset
-  2. Facility to import some commonly used time series models
-  3. Facility to preprocess time series dataset
-
-More complicated examples:
-
-Random Search / Grid Search Hyperparameter optimization with nested cross-validation
-split on a slurm cluster.
-
-General idea:
-
-1. Datasets should store data in "original" / "clean" / "pure form"
-    - all kinds of data types allowed
-    - all data types must support NaN values (-> pandas Int64 and StringDType !)
-2. DataLoaders perform 2 tasks
-    1. Encoding the data into pure float tensors
-        - Consider different kinds of encoding
-    2. Creating generator objects
-        - random sampling from dataset
-        - batching of random samples
-        - caching?
+TODO: rewrite introfuction
 """
 
 __all__ = [
@@ -263,7 +242,6 @@ del sys, metadata  # , import_module
 # logging.setLoggerClass(MyLogger)
 #
 # from typing import cast
-# # from __future__ import annotations
 #
 # LOGGER: MyLogger = cast(MyLogger, logging.getLogger(__name__))
 #
@@ -322,3 +300,96 @@ del sys, metadata  # , import_module
 #
 # x = demo()
 # print(x.omega)
+
+
+# region cleanup -----------------------------------------------------------------------
+
+# import logging
+# from types import ModuleType
+#
+# __logger__: logging.Logger = logging.getLogger(__name__)
+#
+#
+# def _clean_namespace(module: ModuleType) -> None:
+#     r"""Recursively cleans up the namespace.
+#
+#     Sets `obj.__module__` equal to `obj.__package__` for all objects listed in
+#     `package.__all__` that are originating from private submodules (`package/_module.py`).
+#     """
+#     __logger__.info("Cleaning module=%s", module)
+#     variables = vars(module)
+#
+#     def is_private(s: str) -> bool:
+#         return s.startswith("_") and not s.startswith("__")
+#
+#     def get_module(obj_ref: object) -> str:
+#         return obj_ref.__module__.rsplit(".", maxsplit=1)[-1]
+#
+#     assert hasattr(module, "__name__"), f"{module=} has no __name__ ?!?!"
+#     assert hasattr(module, "__package__"), f"{module=} has no __package__ ?!?!"
+#     assert hasattr(module, "__all__"), f"{module=} has no __all__!"
+#     assert module.__name__ == module.__package__, f"{module=} is not a package!"
+#
+#     maxlen = max((len(key) for key in variables))
+#
+#     def _format(key: str) -> str:
+#         return key.ljust(maxlen)
+#
+#     for key in list(variables):
+#         key_repr = _format(key)
+#         obj = variables[key]
+#         # ignore _clean_namespace and ModuleType
+#         if key in ("ModuleType", "_clean_namespace"):
+#             __logger__.debug("key=%s  skipped! - protected object!", key_repr)
+#             continue
+#         # ignore dunder keys
+#         if key.startswith("__") and key.endswith("__"):
+#             __logger__.debug("key=%s  skipped! - dunder object!", key_repr)
+#             continue
+#         # special treatment for ModuleTypes
+#         if isinstance(obj, ModuleType):
+#             if obj.__package__ is None:
+#                 __logger__.debug(
+#                     "key=%s  skipped! Module with no __package__!", key_repr
+#                 )
+#                 continue
+#             # subpackage!
+#             if obj.__package__.rsplit(".", maxsplit=1)[0] == module.__name__:
+#                 __logger__.debug("key=%s  recursion!", key_repr)
+#                 _clean_namespace(obj)
+#             # submodule!
+#             elif obj.__package__ == module.__name__:
+#                 __logger__.debug("key=%s  skipped! Sub-Module!", key_repr)
+#                 continue
+#             # 3rd party!
+#             else:
+#                 __logger__.debug("key=%s  skipped! 3rd party Module!", key_repr)
+#                 continue
+#         # key is found:
+#         if key in module.__all__:
+#             # set __module__ attribute to __package__ for functions/classes
+#             # originating from private modules.
+#             if isinstance(obj, type) or callable(obj):
+#                 mod = get_module(obj)
+#                 if is_private(mod):
+#                     __logger__.debug(
+#                         "key=%s  changed {obj.__module__=} to {module.__package__}!",
+#                         key_repr,
+#                     )
+#                     obj.__module__ = str(module.__package__)
+#         else:
+#             # kill the object
+#             delattr(module, key)
+#             __logger__.debug("key=%s  killed!", key_repr)
+#     # Post Loop - clean up the rest
+#     for key in ("ModuleType", "_clean_namespace"):
+#         if key in variables:
+#             key_repr = _format(key)
+#             delattr(module, key)
+#             __logger__.debug("key=%s  killed!", key_repr)
+#
+#
+# # recursively clean namespace from self.
+# _clean_namespace(__import__(__name__))
+
+# endregion cleanup --------------------------------------------------------------------

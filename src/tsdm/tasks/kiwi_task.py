@@ -339,9 +339,8 @@ class KiwiTask(TimeSeriesTask):
 
         For a single forecasting window $T$, the loss is:
 
-        .. math::
-            ∑_{t∈T} ∑_i \frac{[m_{t, i} ? (ŷ_{t, i} - y_{t, i})^2 : 0]}{∑_{t∈T} m_{t, i}}
+        .. math:: ∑_{t∈T} ∑_i \frac{[m_{t, i} ? (ŷ_{t, i} - y_{t, i})^2 : 0]}{∑_{t∈T} m_{t, i}}
 
-        Note that if ∑_{t∈T} m_{t, i} = 0, then the loss is zero for that channel.
+        Note that if :math:`∑_{t∈T} m_{t, i} = 0`, then the loss is zero for that channel.
         """
         return TimeSeriesMSE()

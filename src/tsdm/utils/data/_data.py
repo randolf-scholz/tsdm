@@ -1,4 +1,4 @@
-r"""TODO: Add module summary line.
+r"""Data Utilities.
 
 TODO: Add module description.
 """
@@ -57,10 +57,11 @@ def vlookup_uniques(df: DataFrame, /, values: Series) -> dict[str, list]:
 def aggregate_nondestructive(df: PandasVar) -> PandasVar:
     r"""Aggregate multiple simulataneous measurements in a non-destructive way.
 
-    Given a DataFrame of size m×k, this will construct a new DataFrame of size m'×k,
-    where m' = max(df.notna().sum()) is the maximal number of measured not-null values.
+    Given a `DataFrame` of size $m×k$, this will construct a new DataFrame of size $m'×k$,
+    where `m' = max(df.notna().sum())` is the maximal number of measured not-null values.
 
-    Example:
+    For example::
+
                               Acetate  Base   DOT  Fluo_GFP   Glucose  OD600  Probe_Volume    pH
         measurement_time
         2020-12-09 09:48:38      <NA>  <NA>  <NA>      <NA>  4.578233   <NA>          <NA>  <NA>
@@ -73,7 +74,7 @@ def aggregate_nondestructive(df: PandasVar) -> PandasVar:
         2020-12-09 09:48:38      <NA>  <NA>  <NA>     912.5      <NA>   <NA>          <NA>  <NA>
         2020-12-09 09:48:38      <NA>  <NA>  <NA>      <NA>  4.554859   <NA>          <NA>  <NA>
 
-    becomes
+    becomes::
 
                               Acetate  Base   DOT  Fluo_GFP   Glucose  OD600  Probe_Volume    pH
         measurement_time

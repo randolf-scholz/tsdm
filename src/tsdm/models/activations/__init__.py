@@ -3,8 +3,9 @@ r"""Implementations of activation functions.
 Notes
 -----
 Contains activations in both functional and modular form.
-  - See `tsdm.models.activations.functional` for functional implementations.
-  - See `tsdm.models.activations.modular` for modular implementations.
+
+- See `tsdm.models.activations.functional` for functional implementations.
+- See `tsdm.models.activations.modular` for modular implementations.
 """
 
 __all__ = [
