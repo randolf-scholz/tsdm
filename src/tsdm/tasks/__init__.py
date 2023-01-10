@@ -3,31 +3,30 @@ r"""Tasks make running experiments easy & reproducible.
 Task = Dataset + Evaluation Protocol
 
 For simplicity, the evaluation protocol is, in this iteration, restricted to a test metric,
-and a test_loader object.
-
-We decided to use a dataloader instead of, say, a key to cater to the question of
+and a test_loader object. We decided to use a dataloader instead of, say, a key to cater to the question of
 forecasting horizons.
 
+.. note::
 
-Remark:
     One thing that is weird about torch's way to approach the issue, is that there
     are two seperated functionalities: sampling rows and selecting columns.
     In principle, the sampler could do both, supposedly.
     However, the TaskDataset is really responsible for creating the sample.
 
-Idea:
+.. admonition:: Idea
+
     The Pre-Encoder must work in the following way:
 
     - `tuple[TimeTensor] → tuple[TimeTensor]` row-wise!
-    - `tuple[Tensor] → tuple[Tensor]`
+    - `tuple[Tensor] → tuple[Tensor]`.
+
 
 More generally, eligible inputs are:
 
-- `DataFrame`, `TimeTensor`, `tuple[DataFrame]`, `tuple[TimeTensor]`
+- `DataFrame`, ``TimeTensor``, `tuple[DataFrame]`, `tuple[TimeTensor]`
 - Product-types.
 
 Must return a `NamedTuple` that agrees with the original column names!
-This allows us to select
 """
 
 __all__ = [

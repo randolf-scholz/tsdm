@@ -3,6 +3,8 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+__all__ = ["ConvBlock"]
+
 from collections import OrderedDict
 from typing import Any, Literal
 

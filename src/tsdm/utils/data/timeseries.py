@@ -1,7 +1,5 @@
 r"""Representation of Time Series Datasets."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "TimeTensor",
@@ -25,7 +23,7 @@ from tsdm.utils.strings import repr_array, repr_sequence
 
 
 class _IndexMethodClone:
-    r"""Clone .loc and similar methods to tensor-like object."""
+    r"""Clone `DataFrame.loc` and similar methods to tensor-like object."""
 
     def __init__(self, data: Tensor, index: Index, method: str = "loc") -> None:
         self.data = data
@@ -42,7 +40,7 @@ class _IndexMethodClone:
 
 
 class _TupleIndexMethodClone:
-    r"""Clone .loc and similar methods to tensor-like object."""
+    r"""Clone `DataFrame.loc` and similar methods to tensor-like object."""
 
     def __init__(
         self, data: tuple[Tensor, ...], index: tuple[Index, ...], method: str = "loc"
@@ -57,32 +55,24 @@ class _TupleIndexMethodClone:
 
 
 class TimeTensor(Tensor):
-    r"""Subclass of torch that holds an index.
+    r"""Subclass of `Tensor` that holds an index.
 
-    Use `TimeTensor.loc` and `TimeTensor.iloc` just like with DataFrames.
+    Use `TimeTensor.loc` and `TimeTensor.iloc` just like with `DataFrame`.
     """
 
     def __new__(
-        cls,
-        x: Sized,
-        *args: Any,
-        index: Optional[Index] = None,
-        **kwargs: Any,
-    ) -> TimeTensor:  # need delayed annotation here!
-        r"""Create new TimeTensor.
+        cls, x: Sized, *args: Any, index: Optional[Index] = None, **kwargs: Any
+    ) -> Any:  # FIXME: return Self, need delayed annotation here!
+        r"""Create new object.
 
-        If `index` is not provided, then `range(len(x))` will be used as the index.
+        If index is not provided, then `range(len(x))` will be used as the index.
         """
         if isinstance(x, (DataFrame, Series)):
             assert index is None, "Index given, but x is DataFrame/Series"
             x = x.values
         return super().__new__(cls, *(x, *args), **kwargs)
 
-    def __init__(
-        self,
-        x: Sized,
-        index: Optional[Index] = None,
-    ):
+    def __init__(self, x: Sized, index: Optional[Index] = None):
         super().__init__()  # optional
         if isinstance(x, (DataFrame, Series)):
             index = x.index
@@ -102,7 +92,7 @@ r"""Type Hint for IndexedArrays."""
 
 
 def is_indexed_array(x: Any) -> bool:
-    r"""Test if Union[Series, DataFrame, TimeTensor]."""
+    r"""Test if `Union[Series, DataFrame, TimeTensor]`."""
     return isinstance(x, (DataFrame, Series, TimeTensor))
 
 
@@ -138,16 +128,16 @@ class TimeSeriesBatch(NamedTuple):
 class TimeSeriesDataset(TorchDataset):
     r"""A general Time Series Dataset.
 
-    Consists of 2 things
-    - timeseries: single TimeTensor or tuple[TimeTensor]
-    - metadata: single Tensor or tuple[Tensor]
+    A `TimeSeriesDataset` consists of 2 things:
 
-    in the case of a tuple, the elements are allowed to be NamedTuples.
+    - timeseries: single `TimeTensor` or `tuple[TimeTensor]`
+    - metadata: single `Tensor` or `tuple[Tensor]`
 
+    In the case of a tuple, the elements are allowed to be NamedTuples.
     When retrieving items, we generally use slices:
 
-    - ds[timestamp] = ds[timestamp:timestamp]
-    - ds[t₀:t₁] = tuple[X[t₀:t₁] for X in self.timeseries], metadata
+    - start and stop: `ds[timestamp] = ds[timestamp:timestamp]`
+    - return both time and metadata: `ds[t₀:t₁] = tuple[X[t₀:t₁] for X in self.timeseries], metadata`
     """
 
     timeseries: IndexedArray
@@ -241,7 +231,7 @@ class TimeSeriesDataset(TorchDataset):
             return tmax - tmin
         return max(self.timeseries.index) - min(self.timeseries.index)
 
-    def __getitem__(self, item: Any) -> TimeSeriesDataset:
+    def __getitem__(self, item: Any) -> Any:  # FIXME: return Self
         r"""Return corresponding slice from each tensor."""
         if isinstance(self.timeseries, tuple):
             if hasattr(self.timeseries, "_fields"):  # namedtuple

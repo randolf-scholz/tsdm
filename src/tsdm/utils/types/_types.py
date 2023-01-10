@@ -1,7 +1,5 @@
 r"""Generic types for type hints etc."""
 
-# from __future__ import annotations
-
 __all__ = [
     # Type Variables
     "AliasVar",
@@ -31,7 +29,7 @@ __all__ = [
     "PandasObject",
     "PathType",
     # ParamSpec
-    "Parameters",
+    "ParameterVar",
 ]
 
 import os
@@ -44,7 +42,7 @@ from numpy import ndarray
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor, nn
 
-Parameters = ParamSpec("Parameters")
+ParameterVar = ParamSpec("ParameterVar")
 r"""TypeVar for decorated function inputs values."""
 
 # region TypeVars

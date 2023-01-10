@@ -1,7 +1,5 @@
 r"""Base Class for pretrained models."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "PreTrainedMetaClass",
@@ -135,7 +133,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     @classmethod
     def from_zipfile(
         cls, zipfile: str | Path, /, *args: Any, **kwargs: Any
-    ) -> PreTrainedModel:  # TODO: 3.11 use typing.Self
+    ) -> Any:  # FIXME: Return Self PreTrainedModel:
         r"""Create model from zipfile."""
         path = Path(zipfile)
         if path.suffix != ".zip":
@@ -159,7 +157,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     @classmethod
     def from_url(
         cls, url: str, /, *args: Any, **kwargs: Any
-    ) -> PreTrainedModel:  # TODO: 3.11 use typing.Self
+    ) -> Any:  # FIXME: Return Self PreTrainedModel
         r"""Create model from url."""
         # download the file into the model directory
         fname = url.split("/")[-1]

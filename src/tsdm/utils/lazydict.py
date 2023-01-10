@@ -4,8 +4,6 @@ The LazyDict is a dictionary that is initialized with functions as the values.
 Once the value is accessed, the function is called and the result is stored.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "LazyDict",
@@ -189,6 +187,6 @@ class LazyDict(dict[KeyVar, ObjectVar]):
             case _:
                 return LazyFunction(lambda: value)
 
-    def copy(self) -> LazyDict[KeyVar, ObjectVar]:
+    def copy(self) -> Any:  # FIXME: Return Self LazyDict[KeyVar, ObjectVar]:
         r"""Return a shallow copy of the dictionary."""
         return self.__class__(self.items())

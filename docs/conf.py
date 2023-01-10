@@ -174,7 +174,7 @@ html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
 html_theme_options = {
-    # FIXME: https://github.com/pydata/pydata-sphinx-theme/issues/1094
+    # # FIXME: https://github.com/pydata/pydata-sphinx-theme/issues/1094
     "logo": {
         "image_light": "logo-light.png",
         "image_dark": "logo-dark.png",
@@ -323,20 +323,20 @@ autoapi_generate_api_docs = True
 # Whether to generate API documentation. If this is False, documentation should be generated though the Directives.
 # Default: True
 
-autoapi_options = [
-    # "members",
-    # "special-members",
-    "imported-members",
-    # "undoc-members",
-    # "private-members",
-    # "show-inheritance",
-    # "show-module-summary",
-]
+# autoapi_options = [
+#     # "members",
+#     # "special-members",
+#     "imported-members",
+#     # "undoc-members",
+#     # "private-members",
+#     # "show-inheritance",
+#     # "show-module-summary",
+# ]
 # Options for display of the generated documentation.
 # Default: [ 'members', 'undoc-members', 'private-members', 'show-inheritance', 'show-module-summary',
 # 'special-members', 'imported-members', ]
 
-autoapi_ignore = ["*migrations*"]
+autoapi_ignore = ["*migrations*", "*sklearn*"]
 # A list of patterns to ignore when finding files. The defaults by language are:
 # Default = ['*migrations*']
 
@@ -423,13 +423,14 @@ autodoc_default_flags = []
 # The default options for autodoc directives. They are applied to all autodoc directives automatically.
 # It must be a dictionary which maps option names to the values. For example:
 #
-autodoc_default_options = {
-    # 'members': 'var1, var2',
-    # 'member-order': 'groupwise',
-    # 'special-members': '__init__',
-    "undoc-members": False,
-    # 'exclude-members': '__weakref__'
-}
+# autodoc_default_options = {
+#     # 'members': 'var1, var2',
+#     # 'member-order': 'groupwise',
+#     # 'special-members': '__init__',
+#     "undoc-members": False,
+#     "imported-members": False,
+#     # 'exclude-members': '__weakref__'
+# }
 # Setting None or True to the value is equivalent to giving only the option name to the directives.
 # The supported options are 'members', 'member-order', 'undoc-members', 'private-members', 'special-members',
 # 'inherited-members', 'show-inheritance', 'ignore-module-all', 'imported-members', 'exclude-members' and
@@ -777,7 +778,13 @@ napoleon_attr_annotations = True
 # True to allow using PEP 526 attributes annotations in classes. If an attribute is documented in the docstring without
 # a type and has an annotation in the class body, that type is used.
 
-napoleon_custom_sections = ["Test-Metric", "Evaluation Protocol", "Paper", "Results"]
+napoleon_custom_sections = [
+    "Test-Metric",
+    "Evaluation Protocol",
+    "Paper",
+    "Results",
+    ("Returns", "params_style"),  # https://github.com/sphinx-doc/sphinx/issues/9119
+]
 # Add a list of custom sections to include, expanding the list of parsed sections. Defaults to None.
 
 # endregion sphinx.ext.napoleon configuration -------------------------------------------------------------------------
@@ -819,6 +826,7 @@ viewcode_enable_epub = False
 # from sphinx_math_dollar import NODE_BLACKLIST
 # from docutils.nodes import header
 # from sphinx.addnodes import pending_xref_condition
+# math_dollar_debug = True
 # math_dollar_node_blacklist = NODE_BLACKLIST + (header, pending_xref_condition)
 
 

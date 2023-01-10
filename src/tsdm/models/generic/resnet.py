@@ -3,6 +3,9 @@ r"""#TODO add module summary line.
 #TODO add module description.
 """
 
+__all__ = ["ResNet", "ResNetBlock"]
+
+
 from collections import OrderedDict
 from typing import Any, Final, TypeVar
 

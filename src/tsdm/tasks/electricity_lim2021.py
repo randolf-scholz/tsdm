@@ -58,7 +58,7 @@ class ElectricityLim2021(OldBaseTask):
     Note that there is an issue: in the pipe-line, the hourly aggregation is done via mean,
     whereas in the TRMF paper, the hourly aggregation is done via sum.
 
-    > We convert the data to reflect hourly consumption, by aggregating blocks of 4 columns,
+    .. epigraph:: We convert the data to reflect hourly consumption, by aggregating blocks of 4 columns
 
     Issues:
 

@@ -10,6 +10,8 @@ class TrafficTFT:
     Evaluation Protocol
     -------------------
 
+    .. epigraph::
+
         Traffic: Tests on the Traffic dataset are also kept consistent with previous work, using
         500k training samples taken before 2008-06-15 as per [9], and key in the same way as the
         Electricity dataset. For testing, we use the 7 days immediately following the training set,
@@ -19,11 +21,10 @@ class TrafficTFT:
 
     Test-Metric
     -----------
-
+    ?
 
     Results
     -------
-
     +-------+-------+-----------+-------+--------+-------+-------+---------+-------+-------+
     | Model | ARIMA | ConvTrans | DSSM  | DeepAR | ETS   | MQRNN | Seq2Seq | TFT   | TRMF  |
     +=======+=======+===========+=======+========+=======+=======+=========+=======+=======+
@@ -43,11 +44,12 @@ class TrafficTRMF:
     Evaluation Protocol
     -------------------
 
+    .. epigraph::
+
         5.1 Forecasting
         [...]
         For electricity and traffic, we consider the 24-hour ahead forecasting task and use last
         seven days as the test periods.
-
 
         A.1 Datasets and Evaluation Criteria
         [...]
@@ -75,7 +77,6 @@ class TrafficTRMF:
 
     Results
     -------
-
     +-------+-------+-------------+-------------+---------------+
     | Model | TRMF  | N-BEATS (G) | N-BEATS (I) | N-BEATS (I+G) |
     +=======+=======+=============+=============+===============+
