@@ -1,9 +1,4 @@
-r"""TSDM Configuration.
-
-# TODO: There must be a better way to handle global config
-"""
-
-from __future__ import annotations
+r"""TSDM Configuration."""
 
 __all__ = [
     # CONSTANTS
@@ -14,6 +9,7 @@ __all__ = [
     "Config",
     # Functions
     "get_package_structure",
+    "generate_folders",
 ]
 
 import logging
@@ -121,7 +117,7 @@ class Config:
     def CONFIG_FILE(self) -> dict:
         r"""Return dictionary containing basic configuration of TSDM."""
         with resources.open_text(config_files, "config.yaml") as file:
-            # with open(file, "r", encoding="utf8") as fname:
+            # with open(file, "r", encoding="utf8") as f:
             return yaml.safe_load(file)
 
     @property

@@ -164,72 +164,7 @@ python_use_unqualified_type_names = True
 # endregion General Configuration -------------------------------------------------------------------------------------
 
 
-# region HTML Configuration ------------------------------------------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-# html_style=???
-# The style sheet to use for HTML pages. A file of that name must exist either in Sphinx’s static/ path,
-# or in one of the custom paths given in html_static_path. Default is the stylesheet given by the selected theme.
-# If you only want to add or override a few things compared to the theme’s stylesheet,
-# use CSS @import to import the theme’s stylesheet.
-
-html_title = f"{MODULE} {VERSION}"
-# The “title” for HTML documentation generated with Sphinx’s own templates.
-# This is appended to the <title> tag of individual pages, and used in the navigation bar as the “topmost” element.
-# It defaults to '<project> v<revision> documentation'.
-
-html_short_title = MODULE
-# A shorter “title” for the HTML docs. This is used for links in the header and in the HTML Help docs.
-# If not given, it defaults to the value of html_title.
-
-html_baseurl = ""
-# The base URL which points to the root of the HTML documentation.
-# It is used to indicate the location of document using The Canonical Link Relation. Default: ''.
-
-html_context = {}
-# A dictionary of values to pass into the template engine’s context for all pages.
-# Single values can also be put in this dictionary using the -A command-line option of sphinx-build.
-
-html_logo = None
-# If given, this must be the name of an image file (path relative to the configuration directory)
-# that is the logo of the docs, or URL that points an image file for the logo. It is placed at the top of the sidebar;
-# its width should therefore not exceed 200 pixels. Default: None.
-
-
-html_favicon = None
-# If given, this must be the name of an image file (path relative to the configuration directory) that is the favicon
-# of the docs, or URL that points an image file for the favicon.
-# Modern browsers use this as the icon for tabs, windows and bookmarks.
-# It should be a Windows-style icon file (.ico), which is 16x16 or 32x32 pixels large. Default: None.
-
-html_static_path = ["_static"]
-# A list of paths that contain custom static files (such as style sheets or script files).
-# Relative paths are taken as relative to the configuration directory. They are copied to the output’s _static
-# directory after the theme’s static files, so a file named default.css will overwrite the theme’s default.css.
-
-html_extra_path = []
-# A list of paths that contain extra files not directly related to the documentation, such as robots.txt or .htaccess.
-# Relative paths are taken as relative to the configuration directory. They are copied to the output directory.
-# They will overwrite any existing file of the same name.
-
-html_use_smartypants = True
-# If true, quotes and dashes are converted to typographically correct entities. Default: True.
-
-html_permalinks = True
-# If true, Sphinx will add “permalinks” for each heading and description environment. Default: True.
-
-html_permalinks_icon = "§"
-# A text for permalinks for each heading and description environment. HTML tags are allowed. Default: a paragraph sign;
-
-html_sidebars = {}
-# Custom sidebar templates, must be a dictionary that maps document names to template names.
-
-# TODO: Add missing configuration options.
-
-# endregion HTML Configuration ---------------------------------------------------------------------------------
-
-
-# region Theme Configuration -----------------------------------------------------------------------------------
+# region HTML Theme Configuration -----------------------------------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/theming.html
 
 # extensions.append("sphinx_typo3_theme")
@@ -238,11 +173,13 @@ html_sidebars = {}
 html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
-html_theme_path = []
-# A list of paths that contain custom themes, either as subdirectories or as zip files.
-# Relative paths are taken as relative to the configuration directory.
-
-# html_theme_options = {
+html_theme_options = {
+    # FIXME: https://github.com/pydata/pydata-sphinx-theme/issues/1094
+    "logo": {
+        "image_light": "logo-light.png",
+        "image_dark": "logo-dark.png",
+    }
+}
 #     # TOCTREE OPTIONS
 #     "collapse_navigation": False,
 #     # With this enabled, navigation entries are not expandable – the [+] icons next to each entry are removed.
@@ -290,7 +227,75 @@ html_theme_path = []
 # }
 # A dictionary of options that influence the look and feel of the selected theme. These are theme-specific.
 
+html_theme_path = []
+# A list of paths that contain custom themes, either as subdirectories or as zip files.
+# Relative paths are taken as relative to the configuration directory.
+
 # endregion Theme Configuration --------------------------------------------------------------------------------
+
+
+# region HTML Configuration ------------------------------------------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+
+# html_style=???
+# The style sheet to use for HTML pages. A file of that name must exist either in Sphinx’s static/ path,
+# or in one of the custom paths given in html_static_path. Default is the stylesheet given by the selected theme.
+# If you only want to add or override a few things compared to the theme’s stylesheet,
+# use CSS @import to import the theme’s stylesheet.
+
+html_title = f"{MODULE} {VERSION}"
+# The “title” for HTML documentation generated with Sphinx’s own templates.
+# This is appended to the <title> tag of individual pages, and used in the navigation bar as the “topmost” element.
+# It defaults to '<project> v<revision> documentation'.
+
+html_short_title = MODULE
+# A shorter “title” for the HTML docs. This is used for links in the header and in the HTML Help docs.
+# If not given, it defaults to the value of html_title.
+
+html_baseurl = ""
+# The base URL which points to the root of the HTML documentation.
+# It is used to indicate the location of document using The Canonical Link Relation. Default: ''.
+
+html_context = {}
+# A dictionary of values to pass into the template engine’s context for all pages.
+# Single values can also be put in this dictionary using the -A command-line option of sphinx-build.
+
+html_logo = None
+# If given, this must be the name of an image file (path relative to the configuration directory)
+# that is the logo of the docs, or URL that points an image file for the logo. It is placed at the top of the sidebar;
+# its width should therefore not exceed 200 pixels. Default: None.
+
+html_favicon = None
+# If given, this must be the name of an image file (path relative to the configuration directory) that is the favicon
+# of the docs, or URL that points an image file for the favicon.
+# Modern browsers use this as the icon for tabs, windows and bookmarks.
+# It should be a Windows-style icon file (.ico), which is 16x16 or 32x32 pixels large. Default: None.
+
+html_static_path = ["_static"]
+# A list of paths that contain custom static files (such as style sheets or script files).
+# Relative paths are taken as relative to the configuration directory. They are copied to the output’s _static
+# directory after the theme’s static files, so a file named default.css will overwrite the theme’s default.css.
+
+html_extra_path = []
+# A list of paths that contain extra files not directly related to the documentation, such as robots.txt or .htaccess.
+# Relative paths are taken as relative to the configuration directory. They are copied to the output directory.
+# They will overwrite any existing file of the same name.
+
+html_use_smartypants = True
+# If true, quotes and dashes are converted to typographically correct entities. Default: True.
+
+html_permalinks = True
+# If true, Sphinx will add “permalinks” for each heading and description environment. Default: True.
+
+html_permalinks_icon = "§"
+# A text for permalinks for each heading and description environment. HTML tags are allowed. Default: a paragraph sign;
+
+html_sidebars = {}
+# Custom sidebar templates, must be a dictionary that maps document names to template names.
+
+# TODO: Add missing configuration options.
+
+# endregion HTML Configuration ---------------------------------------------------------------------------------
 
 
 # region sphinx-autoapi configuration ---------------------------------------------------------------------------------
@@ -463,35 +468,35 @@ autodoc_typehints_description_target = "documented"
 # already documented by the docstring.
 
 autodoc_type_aliases = {
-    # tsdm.utils.strings.AliasType : '~tsdm.utils.strings.AliasType',
-    "AliasType": "~tsdm.utils.strings.AliasType",
-    "Path": "pathlib.Path",
-    # torch
-    "Tensor": "~torch.Tensor",
-    "nn.Module": "~torch.nn.Module",
-    "SummaryWriter": "~torch.utils.tensorboard.writer.SummaryWriter",
-    # numpy
-    "ArrayLike": "~numpy.typing.ArrayLike",
-    "datetime64": "~numpy.datetime64",
-    "timedelta64": "~numpy.timedelta64",
-    "integer": "~numpy.integer",
-    "floating": "~numpy.floating",
-    # pandas
-    "NA": "~pandas.NA",
-    "NaT": "~pandas.NaT",
-    "DataFrame": "~pandas.DataFrame",
-    "Series": "`~pandas.Series`",
-    "Index": "~pandas.Index",
-    "MultiIndex": "~pandas.MultiIndex",
-    "CategoricalIndex": "~pandas.CategoricalIndex",
-    "TimedeltaIndex": "~pandas.TimedeltaIndex",
-    "DatetimeIndex": "~pandas.DatetimeIndex",
-    "Categorical": "~pandas.Categorical",
-    "get_dummies": "~pandas.get_dummies",
-    # xarray
-    "DataArray": "~xarray.DataArray",
-    "Dataset": "~xarray.Dataset",
-    "Variable": "~xarray.Variable",
+    # # tsdm.utils.strings.AliasType : '~tsdm.utils.strings.AliasType',
+    # "AliasType": "~tsdm.utils.strings.AliasType",
+    # "Path": "pathlib.Path",
+    # # torch
+    # "Tensor": "~torch.Tensor",
+    # "nn.Module": "~torch.nn.Module",
+    # "SummaryWriter": "~torch.utils.tensorboard.writer.SummaryWriter",
+    # # numpy
+    # "ArrayLike": "~numpy.typing.ArrayLike",
+    # "datetime64": "~numpy.datetime64",
+    # "timedelta64": "~numpy.timedelta64",
+    # "integer": "~numpy.integer",
+    # "floating": "~numpy.floating",
+    # # pandas
+    # "NA": "~pandas.NA",
+    # "NaT": "~pandas.NaT",
+    # "DataFrame": "~pandas.DataFrame",
+    # "Series": "`~pandas.Series`",
+    # "Index": "~pandas.Index",
+    # "MultiIndex": "~pandas.MultiIndex",
+    # "CategoricalIndex": "~pandas.CategoricalIndex",
+    # "TimedeltaIndex": "~pandas.TimedeltaIndex",
+    # "DatetimeIndex": "~pandas.DatetimeIndex",
+    # "Categorical": "~pandas.Categorical",
+    # "get_dummies": "~pandas.get_dummies",
+    # # xarray
+    # "DataArray": "~xarray.DataArray",
+    # "Dataset": "~xarray.Dataset",
+    # "Variable": "~xarray.Variable",
 }
 # A dictionary for users defined type aliases that maps a type name to the full-qualified object name.
 # It is used to keep type aliases not evaluated in the document. Defaults to empty ({}).
@@ -729,35 +734,35 @@ napoleon_preprocess_types = True
 # True to convert the type definitions in the docstrings as references.
 # Defaults to True.
 
-napoleon_type_aliases = {
-    "Path": "~pathlib.Path",
-    # torch
-    "torch": "`torch`",
-    "Tensor": "~torch.Tensor",
-    "nn.Module": "~torch.nn.Module",
-    "SummaryWriter": "~torch.utils.tensorboard.writer.SummaryWriter",
-    # numpy
-    "ArrayLike": "~numpy.typing.ArrayLike",
-    "datetime64": "~numpy.datetime64",
-    "timedelta64": "~numpy.timedelta64",
-    "integer": "~numpy.integer",
-    "floating": "~numpy.floating",
-    # pandas
-    "NA": "~pandas.NA",
-    "NaT": "~pandas.NaT",
-    "DataFrame": "~pandas.DataFrame",
-    "Series": "~pandas.Series",
-    "Index": "~pandas.Index",
-    "MultiIndex": "~pandas.MultiIndex",
-    "CategoricalIndex": "~pandas.CategoricalIndex",
-    "TimedeltaIndex": "~pandas.TimedeltaIndex",
-    "DatetimeIndex": "~pandas.DatetimeIndex",
-    "Categorical": "~pandas.Categorical",
-    # xarray
-    "DataArray": "~xarray.DataArray",
-    "Dataset": "~xarray.Dataset",
-    "Variable": "~xarray.Variable",
-}
+# napoleon_type_aliases = {
+#     "Path": "~pathlib.Path",
+#     # torch
+#     "torch": "`torch`",
+#     "Tensor": "~torch.Tensor",
+#     "nn.Module": "~torch.nn.Module",
+#     "SummaryWriter": "~torch.utils.tensorboard.writer.SummaryWriter",
+#     # numpy
+#     "ArrayLike": "~numpy.typing.ArrayLike",
+#     "datetime64": "~numpy.datetime64",
+#     "timedelta64": "~numpy.timedelta64",
+#     "integer": "~numpy.integer",
+#     "floating": "~numpy.floating",
+#     # pandas
+#     "NA": "~pandas.NA",
+#     "NaT": "~pandas.NaT",
+#     "DataFrame": "~pandas.DataFrame",
+#     "Series": "~pandas.Series",
+#     "Index": "~pandas.Index",
+#     "MultiIndex": "~pandas.MultiIndex",
+#     "CategoricalIndex": "~pandas.CategoricalIndex",
+#     "TimedeltaIndex": "~pandas.TimedeltaIndex",
+#     "DatetimeIndex": "~pandas.DatetimeIndex",
+#     "Categorical": "~pandas.Categorical",
+#     # xarray
+#     "DataArray": "~xarray.DataArray",
+#     "Dataset": "~xarray.Dataset",
+#     "Variable": "~xarray.Variable",
+# }
 # A mapping to translate type names to other names or references. Works only when napoleon_use_param = True.
 # Defaults to None.
 
@@ -765,7 +770,7 @@ napoleon_type_aliases = {
 # # recursively napoleon_type_aliases for tsdm classes / functions.
 # napoleon_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(abc)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
-napoleon_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(tsdm)
+# napoleon_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(tsdm)
 # recursively napoleon_type_aliases for tsdm classes / functions.
 
 napoleon_attr_annotations = True
