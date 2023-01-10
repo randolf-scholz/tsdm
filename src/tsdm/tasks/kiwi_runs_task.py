@@ -1,7 +1,4 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""Deprecated Kiwi Task Object."""
 
 __all__ = [
     # Classes
@@ -90,25 +87,26 @@ class Batch(NamedTuple):
 class KIWI_RUNS_TASK(OldBaseTask):
     r"""A collection of bioreactor runs.
 
-    For this task we do several simplifications
+    For this task we do several simplifications:
 
     - drop run_id 355
     - drop almost all metadata
     - restrict timepoints to start_time & end_time given in metadata.
-
     - timeseries for each run_id and experiment_id
     - metadata for each run_id and experiment_id
 
     When first do a train/test split.
     Then the goal is to learn a model in a multitask fashion on all the ts.
 
-    To train, we sample
+    To train, we sample:
+
     1. random TS from the dataset
     2. random snippets from the sampled TS
 
     Questions:
+
     - Should each batch contain only snippets form a single TS, or is there merit to sampling
-    snippets from multiple TS in each batch?
+      snippets from multiple TS in each batch?
 
     Divide 'Glucose' by 10, 'OD600' by 20, 'DOT' by 100, 'Base' by 200, then use RMSE.
     """

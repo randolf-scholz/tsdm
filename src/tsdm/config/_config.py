@@ -1,19 +1,12 @@
-r"""TSDM Configuration.
-
-# TODO: There must be a better way to handle global config
-"""
-
-from __future__ import annotations
+r"""TSDM Configuration."""
 
 __all__ = [
-    # CONSTANTS
-    "CONFIG",
-    "PROJECT",
     # Classes
     "Project",
     "Config",
     # Functions
     "get_package_structure",
+    "generate_folders",
 ]
 
 import logging
@@ -22,7 +15,7 @@ from importlib import import_module, resources
 from itertools import chain
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Final
+from typing import Any
 
 import torch
 import yaml
@@ -53,7 +46,7 @@ def generate_folders(d: dict, current_path: Path) -> None:
 
     References
     ----------
-    `StackOverflow <https://stackoverflow.com/a/22058144/9318372>`_
+    - https://stackoverflow.com/a/22058144/9318372
     """
     for directory in d:
         path = current_path.joinpath(directory)
@@ -121,7 +114,7 @@ class Config:
     def CONFIG_FILE(self) -> dict:
         r"""Return dictionary containing basic configuration of TSDM."""
         with resources.open_text(config_files, "config.yaml") as file:
-            # with open(file, "r", encoding="utf8") as fname:
+            # with open(file, "r", encoding="utf8") as f:
             return yaml.safe_load(file)
 
     @property
@@ -200,7 +193,7 @@ class Project:
             return list(d) + list(chain.from_iterable(map(flattened, d.values())))
 
         for package in flattened(package_structure):
-            test_package_path = PROJECT.TESTS_PATH / package.replace(".", "/")
+            test_package_path = self.TESTS_PATH / package.replace(".", "/")
             test_package_init = test_package_path / "__init__.py"
 
             if not test_package_path.exists():
@@ -225,12 +218,6 @@ class Project:
         if dry_run:
             print("Pass option `dry_run=False` to actually create the folders.")
 
-
-CONFIG: Final[Config] = Config()
-r"""The unique `~tsdm.config.Config` instance used to configure `tsdm`."""
-
-PROJECT: Final[Project] = Project()
-"""Project singleton."""
 
 # logging.basicConfig(
 #     filename=str(LOGDIR.joinpath("example.log")),

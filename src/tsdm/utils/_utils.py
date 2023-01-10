@@ -2,10 +2,6 @@ r"""Utility functions.
 
 TODO:  Module description
 """
-from __future__ import annotations
-
-# from __future__ import annotations
-
 
 __all__ = [
     # Classes

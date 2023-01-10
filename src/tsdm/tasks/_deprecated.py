@@ -1,7 +1,5 @@
 """Deprecated Task code."""
 
-from __future__ import annotations
-
 __all__ = ["BaseTask"]
 
 import logging

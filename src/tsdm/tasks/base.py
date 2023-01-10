@@ -3,57 +3,54 @@ r"""Tasks make running experiments easy & reproducible.
 Task = Dataset + Evaluation Protocol
 
 For simplicity, the evaluation protocol is, in this iteration, restricted to a test metric,
-and a test_loader object.
-
-We decided to use a dataloader instead of, say, a key to cater to the question of
+and a test_loader object. We decided to use a dataloader instead of, say, a key to cater to the question of
 forecasting horizons.
 
 Decomposable METRICS
 --------------------
 
-**Example:** Mean Square Error (MSE)
+.. admonition:: **Example** Mean Square Error (MSE)
 
-.. code-block:: python
+    .. code-block:: python
 
-    dims = (1, ...)  # sum over all axes except batch dimension
-    # y, yhat are of shape (B, ...)
-    test_metric = lambda y, yhat: torch.sum((y - yhat) ** 2, dim=dims)
-    accumulation = torch.mean
+        dims = (1, ...)  # sum over all axes except batch dimension
+        # y, yhat are of shape (B, ...)
+        test_metric = lambda y, yhat: torch.sum((y - yhat) ** 2, dim=dims)
+        accumulation = torch.mean
 
-**Recipe**
+.. admonition:: **Recipe**
 
-.. code-block:: python
+    .. code-block:: python
 
-    r = []
-    for x, y in dataloader:
-        r.append(test_metric(y, model(x)))
+        r = []
+        for x, y in dataloader:
+            r.append(test_metric(y, model(x)))
 
-    score = accumulation(torch.concat(r, dim=BATCHDIM))
+        score = accumulation(torch.concat(r, dim=BATCHDIM))
 
 Non-decomposable METRICS
 ------------------------
 
-**Example:** Area Under the Receiver Operating Characteristic Curve (AUROC)
+.. admonition:: **Example** Area Under the Receiver Operating Characteristic Curve (AUROC)
 
-test_metric = torch.AUROC()   # expects two tensors of shape (N, ...) or (N, C, ...)
+    .. code-block:: python
 
-.. code-block:: python
+        test_metric = torch.AUROC()  # expects two tensors of shape (N, ...) or (N, C, ...)
+        score = test_metric([(y, model(x)) for x, y in test_loader])
+        # accumulation = None or identity function (tbd.)
 
-   score = test_metric([(y, model(x)) for x, y in test_loader])
-   # accumulation = None or identity function (tbd.)
+.. admonition:: **Recipe**
 
-**Recipe**
+    .. code-block:: python
 
-.. code-block:: python
+        ys, yhats = []
+        for x, y in dataloader:
+            ys.append(y)
+            yhats.append(model(x))
 
-    ys, yhats = []
-    for x, y in dataloader:
-        ys.append(y)
-        yhats.append(model(x))
-
-    ys = torch.concat(ys, dim=BATCHDIM)
-    yhats = torch.concat(yhats, dim=BATCHDIM)
-    score = test_metric(ys, yhats)
+        ys = torch.concat(ys, dim=BATCHDIM)
+        yhats = torch.concat(yhats, dim=BATCHDIM)
+        score = test_metric(ys, yhats)
 
 Normal Encoder
 --------------
@@ -63,8 +60,6 @@ share the same index axis.
 
 I.e. it has a signature of the form ``list[tensor[n, ...]] -> list[tensor[n, ...]]``.
 Pre-Encoder: Map DataFrame to torch.util.data.Dataset
-
-
 
 Default DataLoader Creation
 ---------------------------
@@ -78,66 +73,24 @@ Default DataLoader Creation
     dataloader = DataLoader(dataset, sampler=sampler, collate=...)
     batch = next(dataloader)
 
-
-
 The whole responsitbility of this class is to use a key from the "sampler" and
 create a `Sample` from the `TimeSeriesCollection`.
 
+**`Flowchart Sketch <image_link_>`_**
 
-
-
-
-                                       ┌─────────────┐      ┌─────┐
-                                  ┌───►│FoldGenerator├─────►│Folds│
-                                  │    └─────────────┘      └──┬──┘
-          ┌────────────────────┐  │                            │
-          │TimeSeriesCollection├──┤           ┌────────────────┘
-          └───────────────┬────┘  │           ▼
-                          │       │    ┌──────────────┐     ┌──────┐ fit  ┌───────┐
-                          │       └───►│SplitGenerator├────►│Splits├─────►│encoder│
-                          │            └──────────────┘     └───┬──┘      └──┬────┘
-                          └─────────┐                           │            │
-                                    │                           │            │
-              ┌─────────────────────┼──────────┬────────────────┘            │
-              │                     │          │                             │???
-              │        ┌────┐       │???       │???    ┌───────┐             │
-              ▼     ┌─►│key1├─┐     ▼          ▼    ┌─►│sample1├──┐          ▼      ┌──────┐
-          ┌───────┐ │  └────┘ │  ┌───────────────┐  │  └───────┘  │  ┌──────────┐   │batch │
-          │sampler├─┤         ├─►│SampleGenerator├──┤             ├─►│collate_fn├──►│Tensor│
-          └───────┘ │  ┌────┐ │  └───────────────┘  │  ┌───────┐  │  └──────────┘   │CPU   │
-                    └─►│keyN├─┘                     └─►│sampleN├──┘                 └───┬──┘
-                       └────┘                          └───────┘                        │
-                                                                                        │
-                                        (copy tensors to GPU)                           │
-              ┌─────────────────────────────────────────────────────────────────────────┘
-              │
-              │                           ┌───────┐                                ┌─────────┐
-          ┌───┴──┐  ┌────────────────────►│targets├─────────┬───┐              ┌──►│targets  ├─────┐
-          │batch │  │                     └───────┘         │   │   ┌───────┐  │   └─────────┘     │  ┌───────────┐
-          │Tensor├──┤                                       │   ├──►│decoder├──┤                   ├─►│test_metric│
-          │GPU   │  │  ┌──────┐  ┌─────┐  ┌───────────┐     │   │   └───────┘  │   ┌───────────┐   │  └───────────┘
-          └──────┘  └─►│inputs├─►│model├─►│predictions├─┬───┼───┘              └──►│predictions├───┘
-                       └──────┘  └─────┘  └───────────┘ │   │                      └───────────┘
-                                    ▲                   │   │
-                                    │                   │   │
-                                    │                   ▼   ▼
-                                    │   ┌─────────┐    ┌─────┐
-                                    └───┤optimizer│◄───┤loss │
-                                        └─────────┘    └─────┘
-
-https://asciiflow.com/#/share/eJzdWLtu2zAU%2FRWBUwtkcbu0XjwEqLcgQJJNQKDKTEtUL0gMEDcIYBgdO3AQXA0dM2bqWOhr9CWVKZEixYeoeKs
-gxBLJe3nv4bmHYh5BEsQQLJP7KDoDUbCFOViCRx88%2BGD58f3izAfb9undh%2BMThg%2B4ffGBZ7ua8mdT7txuYjYhvp84TXH425T7T2m0WcME5gFO86b8
-PXbHBxXtr9XzvvspnXOomCU3eeFd7Uxz4DBh1EdlCZpOtL9GMbyCOYLFeRpFMMQoTQQwnl%2B5SkOqdBp3aEZwcLzkfJpDrVmRYQxfk1kRE1uaxLtD2OZSx
-z4xIgEDSq2rLELYSMBhSGHiJkzCdANzPTtH6z9zCSojP3cKe19Ua208tTUGYmKqLhdbOU5R3%2Bjs5Krb0RxnEdt9LTTh6rOU2idU4Ni%2FWq1UjwoWRDJQ
-XixVMZ6PTXaoxZkoob%2FB7YKRva%2FFfpT4IloUQZxFcCFUCFHGmyvaKrWkw0MhbcXa57KFibK5DCrP2TfpwPwc4PCrx8W8g4NrySDefUsnKnSQTnhEsZd
-twnZvCDC8vRP2BtpxDZMizVkA5sT0eZkwdqmJCaSm0RadHceeX95IDGUolCI%2FL1j%2BUlVqR3eLcSHgq9rI0XH1UARUw0LjZeWXyUS3nZ52ufh8E6bZ1s
-OUQ4WHU299efPWyScF63%2B%2BhzyHJysybgI8y7R3oMhkLfg%2BddekpYKD%2FAvUfuhIt7h5ElMSokMuYpqEBu207aXTpdTZsr9TcjSpR9Xg1A3aPhsmx
-AYxty1%2FF5Yk6xvYf1pa3Yk7BIYFvo0hzlHIt6M1U1R7QgYWOZOLSHnYQa6ml2rsesYWZTnsVPLmgJLsnhOetsQt4JHYkOVwg%2Bh5jBeGWAC17FxPW5Oj
-IVwXvlf6HkOzzl5cnFl1NkbXwuPDHwu7X3NiOMmWfnvqj6nqDBMC7BkG2f7fMQb1Oc0witF3el5sfv0Qu6K0KCbzVF1qiWKgig%2BewNM%2FqIfMMw%3D%3
-D)
+.. literalinclude:: ../flowchart.txt
+.. _image_link:
+    https://asciiflow.com/#/share/eJzdWLtu2zAU%2FRWBUwtkcbu0XjwEqLcgQJJNQKDKTEtUL0gMEDcIYBgdO3AQXA0dM2bqWOhr9CWVKZEixYeo
+    eKsgxBLJe3nv4bmHYh5BEsQQLJP7KDoDUbCFOViCRx88%2BGD58f3izAfb9undh%2BMThg%2B4ffGBZ7ua8mdT7txuYjYhvp84TXH425T7T2m0WcME5g
+    FO86b8PXbHBxXtr9XzvvspnXOomCU3eeFd7Uxz4DBh1EdlCZpOtL9GMbyCOYLFeRpFMMQoTQQwnl%2B5SkOqdBp3aEZwcLzkfJpDrVmRYQxfk1kRE1ua
+    xLtD2OZSxz4xIgEDSq2rLELYSMBhSGHiJkzCdANzPTtH6z9zCSojP3cKe19Ua208tTUGYmKqLhdbOU5R3%2Bjs5Krb0RxnEdt9LTTh6rOU2idU4Ni%2F
+    Wq1UjwoWRDJQXixVMZ6PTXaoxZkoob%2FB7YKRva%2FFfpT4IloUQZxFcCFUCFHGmyvaKrWkw0MhbcXa57KFibK5DCrP2TfpwPwc4PCrx8W8g4NrySDe
+    fUsnKnSQTnhEsZdtwnZvCDC8vRP2BtpxDZMizVkA5sT0eZkwdqmJCaSm0RadHceeX95IDGUolCI%2FL1j%2BUlVqR3eLcSHgq9rI0XH1UARUw0LjZeWX
+    yUS3nZ52ufh8E6bZ1sOUQ4WHU299efPWyScF63%2B%2BhzyHJysybgI8y7R3oMhkLfg%2BddekpYKD%2FAvUfuhIt7h5ElMSokMuYpqEBu207aXTpdTZ
+    sr9TcjSpR9Xg1A3aPhsmxAYxty1%2FF5Yk6xvYf1pa3Yk7BIYFvo0hzlHIt6M1U1R7QgYWOZOLSHnYQa6ml2rsesYWZTnsVPLmgJLsnhOetsQt4JHYkO
+    Vwg%2Bh5jBeGWAC17FxPW5OjIVwXvlf6HkOzzl5cnFl1NkbXwuPDHwu7X3NiOMmWfnvqj6nqDBMC7BkG2f7fMQb1Oc0witF3el5sfv0Qu6K0KCbzVF1q
+    iWKgig%2BewNM%2FqIfMMw%3D%3D)
 """
-
-from __future__ import annotations
 
 __all__ = [
     # Classes
@@ -232,7 +185,6 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     r"""Optional task specific postprocessor (applied after batching)."""
 
     def __init__(self) -> None:
-        r"""Initialize."""
         warnings.warn("deprecated, use new class", DeprecationWarning)
 
     def __repr__(self) -> str:
@@ -328,7 +280,7 @@ class Sample(NamedTuple):
     def __repr__(self) -> str:
         return repr_namedtuple(self)
 
-    def sparsify_index(self) -> Sample:
+    def sparsify_index(self) -> tuple:  # FIXME: Return Self Sample:
         r"""Drop rows that contain only NAN values."""
         if self.inputs.x is not None:
             self.inputs.x.dropna(how="all", inplace=True)
@@ -357,15 +309,12 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
     - column-sparse
     - separate x and u and y
-
     - masked: In this format, two equimodal copies of the data are stored with appropriate masking.
         - inputs = (t, s, m)
         - targets = (s', m')
-
     - dense: Here, the data is split into groups of equal length. (x, u, y) share the same time index.
         - inputs = (t, x, u, m_x)
         - targets = (y, m_y)
-
     - sparse: Here, the data is split into groups sparse tensors. ALl NAN-only rows are dropped.
         - inputs = (t_y, (t_x, x), (t_u, u), m_x)
         - targets = (y, m_y)
@@ -460,7 +409,9 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     def __repr__(self) -> str:
         return repr_dataclass(self)
 
-    def get_subgenerator(self, key: KeyVar) -> TimeSeriesSampleGenerator:
+    def get_subgenerator(
+        self, key: KeyVar
+    ) -> Any:  # FIXME: Return Self TimeSeriesSampleGenerator:
         r"""Get a subgenerator."""
         other_kwargs = {k: v for k, v in self.__dict__.items() if k != "dataset"}
         # noinspection PyArgumentList
@@ -568,10 +519,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
 
 @dataclass
-class TimeSeriesTask(
-    Generic[SplitID, Sample_co],
-    metaclass=BaseTaskMetaClass,
-):
+class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -584,7 +532,7 @@ class TimeSeriesTask(
         - cross-validation + train/(valid)/test: (0, train), (0, test), ..., (n, train), (n, test)
         - nested cross-validation: (0, 0), (0, 1), ..., (0, n), (1, 0), ..., (n, n)
     - Provide a metric for evaluation
-        - must be of the form `Callable[[target, prediction], Sclar]`
+        - must be of the form `Callable[[target, prediction], Scalar]`
     - Provide a `torch.utils.data.DataLoader` for each split
         - Provide a `torch.utils.data.Dataset` for each split
             - Dataset should return `Sample` objects providing `Sample.Inputs` and `Sample.Targets`.
@@ -599,22 +547,23 @@ class TimeSeriesTask(
         - For the simple case when both the input and the target are DataFrames, the task should
           provide DataFrameEncoders, one for each of the index / timeseries / metadata.
         - Encoders must be fit on the training data, but also transform the test data.
-          - Need a way to associate a train split to each test/valid split.
-          - ASSUMPTION: the split key is of the form `*fold, partition`, where `partition` is one of
-            `train`, `valid`, `test`, and `fold` is an integer or tuple of integers.
+            - Need a way to associate a train split to each test/valid split.
+            - ASSUMPTION: the split key is of the form `*fold, partition`, where `partition` is one of
+              `train`, `valid`, `test`, and `fold` is an integer or tuple of integers.
 
     To make this simpler, we here first consider the `Mapping` interface, i.e.
     Samplers are all of fixed sized. and the dataset is a `Mapping` type.
     We do not support `torch.utils.data.IterableDataset`, as this point.
 
-    Note:
+    .. note::
+
         - `torch.utils.data.Dataset[T_co]` implements
             - `__getitem__(self, index) -> T_co`
             - `__add__(self, other: Dataset[T_co]) -> ConcatDataset[T_co]`.
         - `torch.utils.data.Sampler[T_co]`
             - `__iter__(self) -> Iterator[T_co]`.
         - `torch.utils.data.DataLoader[T_co]`
-            - attribute dataset: Dataset[T_co]
+            - attribute dataset: `Dataset[T_co]`
             - `__iter__(self) -> Iterator[Any]`
             - `__len__(self) -> int`.
     """

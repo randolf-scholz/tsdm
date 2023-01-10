@@ -123,7 +123,7 @@ def regularity_coefficient(
     .. math:: κ(𝐭) = \frac{(t_\max-t_\min)/𝗀𝖼𝖽(𝐭)}{|𝐭|}
 
     In particular, if the time-series is regular, $κ=1$, and if it is irregular, $κ=∞$.
-    To make the time-series regular, one would have to insert an additional $(κ(𝐭)-1)|𝐭|$ data-points.
+    To make the time-series regular, one would have to insert an additional :math:`(κ(𝐭)-1) | 𝐭 |` data-points.
     """
     if isinstance(s, DataFrame):
         return regularity_coefficient(Series(s.index))

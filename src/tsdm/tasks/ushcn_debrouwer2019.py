@@ -106,7 +106,7 @@ class TaskDataset(Dataset):
 def ushcn_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 
-    Transform the data slightly: t, x, t_target → T, X where X[t_target:] = NAN
+    Transform the data slightly: `t, x, t_target → T, X where X[t_target:] = NAN`.
     """
     x_vals: list[Tensor] = []
     y_vals: list[Tensor] = []
@@ -158,7 +158,9 @@ class USHCN_DeBrouwer2019(OldBaseTask):
     Evaluation Protocol
     -------------------
 
-        5.3Climate forecast
+    .. epigraph::
+
+        5.3 Climate forecast
 
         From short-term weather forecast to long-range prediction or assessment of systemic
         changes, such as global warming, climatic data has always been a popular application for

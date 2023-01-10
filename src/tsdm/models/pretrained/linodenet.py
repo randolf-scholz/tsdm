@@ -1,7 +1,5 @@
 r"""LinODEnet pretrained Models."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "OldLinODEnet",

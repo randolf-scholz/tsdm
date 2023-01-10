@@ -1,4 +1,4 @@
-r"""Predicting Final in BioProcesses."""
+r"""Predicting Final Biomass in BioProcesses."""
 
 __all__ = [
     # Classes

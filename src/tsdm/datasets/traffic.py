@@ -129,46 +129,50 @@ class Traffic(MultiFrameDataset[KEY]):
         Sampling rate = 10 minutes => 144 samples/day
 
         PEMS_train: 267 rows
-           - each row is data for 1 day.
-           - each row encodes a 963×144 matrix (stations×timestamps)
+
+        - each row is data for 1 day.
+        - each row encodes a 963×144 matrix (stations×timestamps)
 
         PEMS_test: same but only 172 rows
         station_labels: labels of the 963 stations
 
         In total 440 days of observations.
-          - original data range is 455 days: 2008-01-01 - 2009-03-30 (15 months)
-          - authors manually removed holidays as well as 2 anomalies: 2009-03-08 and 2008-03-09.
-          - in total 10 days missing.
+
+        - original data range is 455 days: 2008-01-01 - 2009-03-30 (15 months)
+        - authors manually removed holidays as well as 2 anomalies: 2009-03-08 and 2008-03-09.
+        - in total 10 days missing.
 
         The authors of N-BEATS guesstimate the missing days to be:
-            1. Jan. 1, 2008 (New Year’s Day)
-            2. Jan. 21, 2008 (Martin Luther King Jr. Day)
-            3. Feb. 18, 2008 (Washington’s Birthday)
-            4. Mar. 9, 2008 (Anomaly day)
-            5. May 26, 2008 (Memorial Day)
-            6. Jul. 4, 2008 (Independence Day)
-            7. Sep. 1, 2008 (Labor Day)
-            8. Oct. 13, 2008 (Columbus Day)
-            9. Nov. 11, 2008 (Veterans Day)
-            10. Nov. 27, 2008 (Thanksgiving)
-            11. Dec. 25, 2008 (Christmas Day)
-            12. Jan. 1, 2009 (New Year’s Day)
-            13. Jan. 19, 2009 (Martin Luther King Jr. Day)
-            14. Feb. 16, 2009 (Washington’s Birthday)
-            15. Mar. 8, 2009 (Anomaly day)
+
+        1. Jan. 1, 2008 (New Year’s Day)
+        2. Jan. 21, 2008 (Martin Luther King Jr. Day)
+        3. Feb. 18, 2008 (Washington’s Birthday)
+        4. Mar. 9, 2008 (Anomaly day)
+        5. May 26, 2008 (Memorial Day)
+        6. Jul. 4, 2008 (Independence Day)
+        7. Sep. 1, 2008 (Labor Day)
+        8. Oct. 13, 2008 (Columbus Day)
+        9. Nov. 11, 2008 (Veterans Day)
+        10. Nov. 27, 2008 (Thanksgiving)
+        11. Dec. 25, 2008 (Christmas Day)
+        12. Jan. 1, 2009 (New Year’s Day)
+        13. Jan. 19, 2009 (Martin Luther King Jr. Day)
+        14. Feb. 16, 2009 (Washington’s Birthday)
+        15. Mar. 8, 2009 (Anomaly day)
 
         The true missing dates appear to be, by reverse-engineering:
-            - "2008-01-02": "1 day off New Year’s Day",
-            - "2008-01-22": "1 day off Martin Luther King Jr. Day",
-            - "2008-02-19": "1 day off Washington’s Birthday",
-            - "2008-03-10": "1 day off anomaly + wrong year",
-            - "2008-05-27": "1 day off Memorial Day",
-            - "2008-07-05": "1 day off Independence Day",
-            - "2008-09-02": "1 day off Labor Day",
-            - "2008-10-21": "???",
-            - "2008-11-18": "???",
-            - "2008-12-08": "???",
-            - "2009-02-24": "???",
+
+        - "2008-01-02": "1 day off New Year’s Day",
+        - "2008-01-22": "1 day off Martin Luther King Jr. Day",
+        - "2008-02-19": "1 day off Washington’s Birthday",
+        - "2008-03-10": "1 day off anomaly + wrong year",
+        - "2008-05-27": "1 day off Memorial Day",
+        - "2008-07-05": "1 day off Independence Day",
+        - "2008-09-02": "1 day off Labor Day",
+        - "2008-10-21": "???",
+        - "2008-11-18": "???",
+        - "2008-12-08": "???",
+        - "2009-02-24": "???",
         """
         # The true anomalies were found by iteratively adding them 1 by one,
         # Each time checking when the first date was when

@@ -1,7 +1,5 @@
 r"""Base Classes for dataset."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "BaseDataset",
@@ -826,7 +824,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     A TimeSeriesCollection is a tuple (I, D, G) consiting of
 
     - index $I$
-    - indexed TimeSeriesDatasets $D = { (TS_i, M_i) | i ∈ I }$
+    - indexed TimeSeriesDatasets $D = { (TS_i, M_i) ∣ i ∈ I }$
     - global variables $G∈𝓖$
     """
 
@@ -878,7 +876,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         ...
 
     @overload
-    def __getitem__(self, key: slice) -> TimeSeriesCollection:
+    def __getitem__(self, key: slice) -> Any:  # FIXME: Return Self
         ...
 
     def __getitem__(self, key):
