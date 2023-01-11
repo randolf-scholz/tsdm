@@ -3,6 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../linodenet" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../linodenet-experiments" vcs="Git" />
   </component>
 </project>

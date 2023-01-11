@@ -176,6 +176,12 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         obj.__init__(*args, **kwargs)  # type: ignore[misc]
         return obj
 
+    @classmethod
+    def from_checkpoint(cls, key: str, /) -> Any:  # FIXME: USE SELF PreTrainedModel:
+        r"""Create model from checkpoint."""
+        # TODO: 3.11 use typing.Self
+        raise NotImplementedError
+
     def __len__(self) -> int:
         return len(self.components)
 
