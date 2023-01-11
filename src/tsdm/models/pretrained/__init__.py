@@ -11,7 +11,7 @@ __all__ = [
     "PreTrainedMetaClass",
     "PreTrainedModel",
     # Classes
-    "OldLinODEnet",
+    # "OldLinODEnet",
     "LinODEnet",
     # Encoders
     # "LinODEnetEncoder",
@@ -22,13 +22,13 @@ from typing import Final, TypeAlias
 from torch import nn
 
 from tsdm.models.pretrained.base import PreTrainedMetaClass, PreTrainedModel
-from tsdm.models.pretrained.linodenet import LinODEnet, OldLinODEnet
+from tsdm.models.pretrained.linodenet import LinODEnet
 
 Model: TypeAlias = PreTrainedModel
 r"""Type hint for models."""
 
 MODELS: Final[dict[str, type[Model]]] = {
-    "OldLinODEnet": OldLinODEnet,
+    # "OldLinODEnet": OldLinODEnet,
     "LinODEnet": LinODEnet,
 }
 r"""Dictionary of all available models."""
