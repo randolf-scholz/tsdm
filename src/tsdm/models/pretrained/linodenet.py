@@ -2,11 +2,11 @@ r"""LinODEnet pretrained Models."""
 
 __all__ = [
     # Classes
-    "OldLinODEnet",
     "LinODEnet",
 ]
 
 import pickle
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,42 +16,16 @@ from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.models.pretrained.base import PreTrainedModel
 
-CHECKPOINTS = {
-    "2022-11-16": "https://tubcloud.tu-berlin.de/s/ZQCatR7m28KBR3L/download/"
-    "2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip",
-    "2022-11-24": "https://tubcloud.tu-berlin.de/s/3ctPs6syJEHCJy4/download/"
-    "2022-11-24-linodenet-a44fc91eab7a98130266d1c37f072eb5.zip",
-    "2022-12-01": "https://tubcloud.tu-berlin.de/s/QgyJ58eW9JnZENz/download/"
-    "2022-12-01-linodenet-50-f79c5e885f2182835e7b88ba3205fb33.zip",
-}
-
-
-class OldLinODEnet(PreTrainedModel):  # Deprecated
-    """Import pre-trained LinODEnet model."""
-
-    rawdata_file = "linodenet.zip"
-    DOWNLOAD_URL = (
-        "https://tubcloud.tu-berlin.de/s/syEZCZrBqQXiA5i/download/linodenet.zip"
-    )
-    RAWDATA_HASH = "15897965202b8e66db0189f4778655a3c55d350ca406447d8571133cbdfb1732"
-    HASHES = {
-        "model": ...,
-        "encoder": ...,
-        "optimizer": ...,
-    }
-    component_files = {
-        "model": "LinODEnet-70",
-        "encoder": "encoder.pickle",
-    }
-
 
 class LinODEnet(PreTrainedModel):
     r"""Import pre-trained LinODEnet model."""
 
+    SHARE_URL = "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L"
+    INFO_URL = f"{SHARE_URL}?path=/LinODEnet"
+    BASE_URL = f"{SHARE_URL}/download?path=/LinODEnet"
+
     rawdata_file = "2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip"
-    DOWNLOAD_URL = (
-        f"https://tubcloud.tu-berlin.de/s/ZQCatR7m28KBR3L/download/{rawdata_file}"
-    )
+    DOWNLOAD_URL = f"{BASE_URL}/{rawdata_file}"
     RAWDATA_HASH = "d50d128b29e7310b4a9496494bea1ca1b614a7ffbf730f5a61d0b3026cb87ed8"
 
     component_files = {
@@ -60,6 +34,38 @@ class LinODEnet(PreTrainedModel):
         "optimizer": "optimizer",
         "hyperparameters": "hparams.yaml",
     }
+
+    CHECKPOINTS = (
+        pd.DataFrame(
+            [
+                (
+                    "2022-11-16",
+                    "legacy run",
+                    f"{BASE_URL}/2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip",
+                ),
+                (
+                    "2022-11-24",
+                    "legacy run",
+                    f"{BASE_URL}/2022-11-24-linodenet-a44fc91eab7a98130266d1c37f072eb5.zip",
+                ),
+                (
+                    "2022-12-01",
+                    "Longer training run (300+ epochs) recommended epochs: 270, 220, 150, 80",
+                    f"{BASE_URL}/2022-12-01T04:26:13/f=0_bs=64_lr=0.001_hs=64_ls=128",
+                ),
+            ],
+            columns=["time", "note", "url"],
+        )
+        .astype({"time": "string", "note": "string"})
+        .set_index("time")
+        # .style.format({"url": lambda x: f'<a href="{x}">{x}</a>'})
+        # .style.set_properties(
+        #     inline_size="10cm",
+        #     overflow_wrap="break-word",
+        #     text_align="left",
+        #     subset=["note"],
+        # )
+    )
 
     def predict(self, ts: DataFrame) -> DataFrame:
         r"""Predict function for LinODEnet."""
@@ -156,3 +162,11 @@ class LinODEnet(PreTrainedModel):
         setpoints = pd.concat(setpoints_dict, names=["experiment_id"])
 
         return timeseries, metadata, setpoints
+
+    @classmethod
+    def from_checkpoint(
+        cls, key: str, /, *selectors: str
+    ) -> Any:  # FIXME: USE SELF LinODEnet:
+        r"""Load model from checkpoint."""
+        url = cls.CHECKPOINTS[key, "url"] + "/".join(selectors)
+        return cls.from_url(url)

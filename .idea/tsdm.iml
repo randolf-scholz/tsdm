@@ -53,6 +53,14 @@
       <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/tensorboard" />
       <excludeFolder url="file://$MODULE_DIR$/experiments/kiwi/results" />
       <excludeFolder url="file://$MODULE_DIR$/experiments/evaluation/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/experiments/kiwi/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/experiments/kiwi/tensorboard" />
+      <excludeFolder url="file://$MODULE_DIR$/dev/plotting/pics" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/cluster/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/cluster/runs" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/pics" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/runs" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Poetry (tsdm)" jdkType="Python SDK" />
