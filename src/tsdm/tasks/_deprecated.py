@@ -25,11 +25,11 @@ from torch.utils.data import Sampler as TorchSampler
 from tsdm.datasets import Dataset
 from tsdm.encoders import ModularEncoder
 from tsdm.tasks.base import BaseTaskMetaClass
+from tsdm.types.variables import KeyVar as K
 from tsdm.utils import LazyDict
-from tsdm.utils.types import KeyVar
 
 
-class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
+class BaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
@@ -97,7 +97,7 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
     def dataset(self) -> Dataset | DataFrame:
         r"""Return the cached dataset associated with the task."""
 
-    def split_type(self, key: KeyVar) -> Literal["train", "infer", "unknown"]:
+    def split_type(self, key: K) -> Literal["train", "infer", "unknown"]:
         r"""Return the type of split."""
         train_patterns = ["train", "training"]
         infer_patterns = [
@@ -130,20 +130,20 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 
     @property
     @abstractmethod
-    def index(self) -> Sequence[KeyVar]:
+    def index(self) -> Sequence[K]:
         r"""List of index."""
 
     @abstractmethod
-    def make_split(self, key: KeyVar, /) -> TorchDataset:
+    def make_split(self, key: K, /) -> TorchDataset:
         r"""Return the split associated with the given key."""
 
     @abstractmethod
-    def make_sampler(self, key: KeyVar, /) -> TorchSampler:
+    def make_sampler(self, key: K, /) -> TorchSampler:
         r"""Create sampler for the given split."""
 
     def make_dataloader(
         self,
-        key: KeyVar,
+        key: K,
         /,
         **dataloader_kwargs: Any,
     ) -> DataLoader:
@@ -172,16 +172,16 @@ class BaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
         }
 
     @cached_property
-    def splits(self) -> Mapping[KeyVar, TorchDataset]:
+    def splits(self) -> Mapping[K, TorchDataset]:
         r"""Cache dictionary of dataset splits."""
         return LazyDict({k: self.make_split for k in self.splits})
 
     @cached_property
-    def samplers(self) -> Mapping[KeyVar, TorchSampler]:
+    def samplers(self) -> Mapping[K, TorchSampler]:
         r"""Return a dictionary of samplers for each split."""
         return LazyDict({k: self.make_sampler for k in self.splits})
 
     @cached_property
-    def dataloaders(self) -> Mapping[KeyVar, DataLoader]:
+    def dataloaders(self) -> Mapping[K, DataLoader]:
         r"""Cache dictionary of evaluation-dataloaders."""
         return LazyDict({k: self.make_dataloader for k in self.splits})

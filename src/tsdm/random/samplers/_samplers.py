@@ -41,22 +41,25 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from torch.utils.data import Sampler as TorchSampler
 
+from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
+from tsdm.types.variables import Any_co as T_co
+from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import ObjectVar as O
+from tsdm.types.variables import ValueVar as V
 from tsdm.utils.data.datasets import DatasetCollection
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import KeyVar, ObjectVar, T_co, ValueVar
-from tsdm.utils.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 
 Boxed: TypeAlias = Union[
-    Sequence[ValueVar],
-    Mapping[int, ValueVar],
-    Callable[[int], ValueVar],
+    Sequence[V],
+    Mapping[int, V],
+    Callable[[int], V],
 ]
 
 Nested: TypeAlias = Union[
-    ObjectVar,
-    Sequence[ObjectVar],
-    Mapping[int, ObjectVar],
-    Callable[[int], ObjectVar],
+    O,
+    Sequence[O],
+    Mapping[int, O],
+    Callable[[int], O],
 ]
 
 
@@ -231,7 +234,7 @@ class SliceSampler(TorchSampler[Sequence[T_co]]):
             yield self.data[start_index : start_index + window_size]
 
 
-class CollectionSampler(BaseSampler[tuple[KeyVar, T_co]]):
+class CollectionSampler(BaseSampler[tuple[K, T_co]]):
     r"""Samples a single random dataset from a collection of dataset.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
@@ -239,7 +242,7 @@ class CollectionSampler(BaseSampler[tuple[KeyVar, T_co]]):
 
     idx: Index
     r"""The shared index."""
-    subsamplers: Mapping[KeyVar, BaseSampler[T_co]]
+    subsamplers: Mapping[K, BaseSampler[T_co]]
     r"""The subsamplers to sample from the collection."""
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
@@ -254,7 +257,7 @@ class CollectionSampler(BaseSampler[tuple[KeyVar, T_co]]):
         self,
         data_source: DatasetCollection,
         /,
-        subsamplers: Mapping[KeyVar, BaseSampler[T_co]],
+        subsamplers: Mapping[K, BaseSampler[T_co]],
         *,
         shuffle: bool = True,
         early_stop: bool = False,
@@ -279,7 +282,7 @@ class CollectionSampler(BaseSampler[tuple[KeyVar, T_co]]):
             return min(self.sizes) * len(self.subsamplers)
         return sum(self.sizes)
 
-    def __iter__(self) -> Iterator[tuple[KeyVar, T_co]]:
+    def __iter__(self) -> Iterator[tuple[K, T_co]]:
         r"""Return indices of the samples.
 
         When `early_stop=True`, it will sample precisely `min() * len(subsamplers)` samples.
@@ -300,12 +303,12 @@ class CollectionSampler(BaseSampler[tuple[KeyVar, T_co]]):
             else:
                 yield key, value
 
-    def __getitem__(self, key: KeyVar) -> BaseSampler[T_co]:
+    def __getitem__(self, key: K) -> BaseSampler[T_co]:
         r"""Return the subsampler for the given key."""
         return self.subsamplers[key]
 
 
-class HierarchicalSampler(Sampler[tuple[KeyVar, T_co]]):
+class HierarchicalSampler(Sampler[tuple[K, T_co]]):
     r"""Samples a single random dataset from a collection of dataset.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
@@ -313,7 +316,7 @@ class HierarchicalSampler(Sampler[tuple[KeyVar, T_co]]):
 
     idx: Index
     r"""The shared index."""
-    subsamplers: Mapping[KeyVar, Sampler[T_co]]
+    subsamplers: Mapping[K, Sampler[T_co]]
     r"""The subsamplers to sample from the collection."""
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
@@ -326,9 +329,9 @@ class HierarchicalSampler(Sampler[tuple[KeyVar, T_co]]):
 
     def __init__(
         self,
-        data_source: Mapping[KeyVar, ObjectVar],
+        data_source: Mapping[K, O],
         /,
-        subsamplers: Mapping[KeyVar, Sampler[T_co]],
+        subsamplers: Mapping[K, Sampler[T_co]],
         *,
         shuffle: bool = True,
         early_stop: bool = False,
@@ -352,7 +355,7 @@ class HierarchicalSampler(Sampler[tuple[KeyVar, T_co]]):
             return min(self.sizes) * len(self.subsamplers)
         return sum(self.sizes)
 
-    def __iter__(self) -> Iterator[tuple[KeyVar, T_co]]:
+    def __iter__(self) -> Iterator[tuple[K, T_co]]:
         r"""Return indices of the samples.
 
         When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
@@ -376,7 +379,7 @@ class HierarchicalSampler(Sampler[tuple[KeyVar, T_co]]):
             else:
                 yield key, value
 
-    def __getitem__(self, key: KeyVar) -> Sampler[T_co]:
+    def __getitem__(self, key: K) -> Sampler[T_co]:
         r"""Return the subsampler for the given key."""
         return self.subsamplers[key]
 

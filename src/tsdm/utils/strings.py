@@ -29,9 +29,10 @@ from typing import Any, Final, Optional, overload
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 
+from tsdm.types.aliases import ScalarDType
+from tsdm.types.dtypes import TYPESTRINGS
+from tsdm.types.protocols import Array, Dataclass, NTuple
 from tsdm.utils.constants import BUILTIN_CONSTANTS
-from tsdm.utils.types.dtypes import TYPESTRINGS, ScalarDType
-from tsdm.utils.types.protocols import Array, Dataclass, NTuple
 
 __logger__ = logging.getLogger(__name__)
 

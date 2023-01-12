@@ -22,9 +22,11 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import Any, ClassVar, Generic, Iterator, TypeVar, overload
 
+from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import ObjectVar as O
+from tsdm.types.variables import ReturnVar as R
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.strings import repr_object
-from tsdm.utils.types import KeyVar, ObjectVar, ReturnVar
 
 
 class BaseEncoderMetaClass(ABCMeta):
@@ -35,7 +37,7 @@ class BaseEncoderMetaClass(ABCMeta):
         super().__init__(*args, **kwargs)
 
 
-class BaseEncoder(ABC, Generic[ObjectVar, ReturnVar], metaclass=BaseEncoderMetaClass):
+class BaseEncoder(ABC, Generic[O, R], metaclass=BaseEncoderMetaClass):
     r"""Base class that all encoders must subclass."""
 
     LOGGER: ClassVar[logging.Logger]
@@ -104,15 +106,15 @@ class BaseEncoder(ABC, Generic[ObjectVar, ReturnVar], metaclass=BaseEncoderMetaC
         r"""Whether the encoder is bijective."""
         return self.is_surjective and self.is_injective
 
-    def fit(self, data: ObjectVar, /) -> None:
+    def fit(self, data: O, /) -> None:
         r"""Implement as necessary."""
 
     @abstractmethod
-    def encode(self, data: ObjectVar, /) -> ReturnVar:
+    def encode(self, data: O, /) -> R:
         r"""Encode the data by transformation."""
 
     @abstractmethod
-    def decode(self, data: ObjectVar, /) -> ReturnVar:
+    def decode(self, data: O, /) -> R:
         r"""Decode the data by inverse transformation."""
 
     def _post_fit_hook(self) -> None:
@@ -136,10 +138,10 @@ class IdentityEncoder(BaseEncoder):
 
     requires_fit: ClassVar[bool] = False
 
-    def encode(self, data: ObjectVar, /) -> ObjectVar:
+    def encode(self, data: O, /) -> O:
         return data
 
-    def decode(self, data: ObjectVar, /) -> ObjectVar:
+    def decode(self, data: O, /) -> O:
         return data
 
 
@@ -289,30 +291,30 @@ class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
         return data
 
 
-class MappingEncoder(BaseEncoder, Mapping[KeyVar, EncoderVar]):
+class MappingEncoder(BaseEncoder, Mapping[K, EncoderVar]):
     r"""Encoder that maps keys to encoders."""
 
     requires_fit: bool = True  # type: ignore[misc]
 
-    encoders: Mapping[KeyVar, EncoderVar]
+    encoders: Mapping[K, EncoderVar]
     r"""Mapping of keys to encoders."""
 
-    def __init__(self, encoders: Mapping[KeyVar, EncoderVar]) -> None:
+    def __init__(self, encoders: Mapping[K, EncoderVar]) -> None:
         super().__init__()
         self.encoders = encoders
         self.requires_fit = any(e.requires_fit for e in self.encoders.values())
 
     @overload
-    def __getitem__(self, key: KeyVar) -> EncoderVar:
+    def __getitem__(self, key: K) -> EncoderVar:
         ...
 
     @overload
-    def __getitem__(self, key: list[KeyVar]) -> MappingEncoder[KeyVar, EncoderVar]:
+    def __getitem__(self, key: list[K]) -> MappingEncoder[K, EncoderVar]:
         ...
 
     def __getitem__(
-        self, key: KeyVar | list[KeyVar]
-    ) -> EncoderVar | MappingEncoder[KeyVar, EncoderVar]:
+        self, key: K | list[K]
+    ) -> EncoderVar | MappingEncoder[K, EncoderVar]:
         r"""Get the encoder for the given key."""
         if isinstance(key, list):
             return MappingEncoder({k: self.encoders[k] for k in key})
@@ -321,20 +323,20 @@ class MappingEncoder(BaseEncoder, Mapping[KeyVar, EncoderVar]):
     def __len__(self) -> int:
         return len(self.encoders)
 
-    def __iter__(self) -> Iterator[KeyVar]:
+    def __iter__(self) -> Iterator[K]:
         return iter(self.encoders)
 
-    def fit(self, data: Mapping[KeyVar, Any], /) -> None:
+    def fit(self, data: Mapping[K, Any], /) -> None:
         assert set(data.keys()) == set(self.encoders.keys())
         for key in data:
             self.encoders[key].fit(data[key])
 
-    def encode(self, data: Mapping[KeyVar, Any], /) -> Mapping[KeyVar, Any]:
+    def encode(self, data: Mapping[K, Any], /) -> Mapping[K, Any]:
         return {
             key: encoder.encode(data[key]) for key, encoder in self.encoders.items()
         }
 
-    def decode(self, data: Mapping[KeyVar, Any], /) -> Mapping[KeyVar, Any]:
+    def decode(self, data: Mapping[K, Any], /) -> Mapping[K, Any]:
         return {
             key: encoder.decode(data[key]) for key, encoder in self.encoders.items()
         }

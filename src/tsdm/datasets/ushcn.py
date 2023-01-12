@@ -20,8 +20,8 @@ import pandas
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiFrameDataset
-from tsdm.utils.types import ParameterVar as P
-from tsdm.utils.types import ReturnVar as R
+from tsdm.types.variables import ParameterVar as P
+from tsdm.types.variables import ReturnVar as R
 
 __logger__ = logging.getLogger(__name__)
 
