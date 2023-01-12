@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from tsdm.utils.types import TensorVar
+from tsdm.types.variables import TensorVar
 
 
 def apply_along_axes(

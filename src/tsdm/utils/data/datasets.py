@@ -12,26 +12,24 @@ from typing import Any, Optional, TypeVar, overload
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
 
+from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import NestedKeyVar as K2
+from tsdm.types.variables import ObjectVar as O
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import KeyVar, NestedKeyVar, ObjectVar
 
 TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 
 
-class DatasetCollection(
-    TorchDataset[TorchDataset[ObjectVar]], Mapping[KeyVar, TorchDataset[ObjectVar]]
-):
+class DatasetCollection(TorchDataset[TorchDataset[O]], Mapping[K, TorchDataset[O]]):
     r"""Represents a ``Mapping[index, torch.Datasets]``.
 
     All tensors must have a shared index, in the sense that ``index.unique()`` is identical for all inputs.
     """
 
-    dataset: Mapping[KeyVar, TorchDataset[ObjectVar]]
+    dataset: Mapping[K, TorchDataset[O]]
     r"""The dataset."""
 
-    def __init__(
-        self, indexed_datasets: Mapping[KeyVar, TorchDataset[ObjectVar]]
-    ) -> None:
+    def __init__(self, indexed_datasets: Mapping[K, TorchDataset[O]]) -> None:
         super().__init__()
         self.dataset = dict(indexed_datasets)
         self.index = list(self.dataset.keys())
@@ -44,11 +42,11 @@ class DatasetCollection(
         return len(self.dataset)
 
     @overload
-    def __getitem__(self, key: Sequence[KeyVar] | slice) -> ObjectVar:
+    def __getitem__(self, key: Sequence[K] | slice) -> O:
         ...
 
     @overload
-    def __getitem__(self, key: KeyVar) -> TorchDataset[ObjectVar]:
+    def __getitem__(self, key: K) -> TorchDataset[O]:
         ...
 
     def __getitem__(self, key):
@@ -63,7 +61,7 @@ class DatasetCollection(
         # no hierarchical indexing
         return self.dataset[key]
 
-    def __iter__(self) -> Iterator[TorchDataset[ObjectVar]]:  # type: ignore[override]
+    def __iter__(self) -> Iterator[TorchDataset[O]]:  # type: ignore[override]
         r"""Iterate over the dataset."""
         for key in self.index:
             yield self.dataset[key]
@@ -73,7 +71,7 @@ class DatasetCollection(
         return repr_mapping(self)
 
 
-class MappingDataset(Mapping[KeyVar, TorchDatasetVar]):
+class MappingDataset(Mapping[K, TorchDatasetVar]):
     r"""Represents a ``Mapping[Key, Dataset]``.
 
     ``ds[key]`` returns the dataset for the given key.
@@ -82,16 +80,16 @@ class MappingDataset(Mapping[KeyVar, TorchDatasetVar]):
     ``ds[(key, subkey)]=ds[key][subkey]``
     """
 
-    datasets: Mapping[KeyVar, TorchDatasetVar]
-    index: list[KeyVar]
+    datasets: Mapping[K, TorchDatasetVar]
+    index: list[K]
 
-    def __init__(self, datasets: Mapping[KeyVar, TorchDatasetVar], /) -> None:
+    def __init__(self, datasets: Mapping[K, TorchDatasetVar], /) -> None:
         super().__init__()
         assert isinstance(datasets, Mapping)
         self.index = list(datasets.keys())
         self.datasets = datasets
 
-    def __iter__(self) -> Iterator[KeyVar]:
+    def __iter__(self) -> Iterator[K]:
         r"""Iterate over the keys."""
         return iter(self.index)
 
@@ -100,11 +98,11 @@ class MappingDataset(Mapping[KeyVar, TorchDatasetVar]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: KeyVar) -> TorchDatasetVar:
+    def __getitem__(self, key: K) -> TorchDatasetVar:
         ...
 
     @overload
-    def __getitem__(self, key: tuple[KeyVar, NestedKeyVar]) -> Any:
+    def __getitem__(self, key: tuple[K, K2]) -> Any:
         ...
 
     def __getitem__(self, key):

@@ -32,8 +32,8 @@ from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
+from tsdm.types.aliases import ScalarDType
 from tsdm.utils.data.timeseries import TimeTensor
-from tsdm.utils.types.dtypes import ScalarDType
 
 
 class Time2Float(BaseEncoder):

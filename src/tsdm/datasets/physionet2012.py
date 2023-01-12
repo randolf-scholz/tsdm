@@ -161,7 +161,7 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import DATASET_OBJECT, MultiFrameDataset
 from tsdm.encoders import TripletDecoder
-from tsdm.utils.types import PathType
+from tsdm.types.aliases import PathLike
 
 GENERAL_DESCRIPTORS = {
     "Age": int,
@@ -397,7 +397,7 @@ class Physionet2012(MultiFrameDataset[KEY]):
 
     @staticmethod
     def serialize(
-        frames: tuple[DATASET_OBJECT, DATASET_OBJECT], path: PathType, /, **kwargs: Any
+        frames: tuple[DATASET_OBJECT, DATASET_OBJECT], path: PathLike, /, **kwargs: Any
     ) -> None:
         r"""Store the dataset as a tar archive with two feather dataframes."""
         metadata, series = frames
@@ -418,7 +418,7 @@ class Physionet2012(MultiFrameDataset[KEY]):
 
     @staticmethod
     def deserialize(
-        path: PathType, /, *, squeeze: bool = True
+        path: PathLike, /, *, squeeze: bool = True
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
         r"""Read provided tar archive."""
         with tarfile.open(path, mode="r") as archive:

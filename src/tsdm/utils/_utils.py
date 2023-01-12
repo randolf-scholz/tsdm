@@ -47,9 +47,12 @@ from numpy.typing import NDArray
 from pandas import Series
 from torch import nn
 
+from tsdm.types.abc import HashableType
+from tsdm.types.aliases import Nested, PathLike
+from tsdm.types.variables import AnyVar as T
+from tsdm.types.variables import ObjectVar as O
+from tsdm.types.variables import ReturnVar as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
-from tsdm.utils.types import AnyTypeVar, Nested, ObjectVar, PathType, ReturnVar
-from tsdm.utils.types.abc import HashableType
 
 __logger__ = getLogger(__name__)
 KEYWORD_ONLY = inspect.Parameter.KEYWORD_ONLY
@@ -92,10 +95,10 @@ def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
 
 
 def apply_nested(
-    nested: Nested[AnyTypeVar | None],
-    kind: type[AnyTypeVar],
-    func: Callable[[AnyTypeVar], ReturnVar],
-) -> Nested[ReturnVar | None]:
+    nested: Nested[Optional[T]],
+    kind: type[T],
+    func: Callable[[T], R],
+) -> Nested[Optional[R]]:
     r"""Apply function to nested iterables of a given kind.
 
     Args:
@@ -108,10 +111,10 @@ def apply_nested(
     if isinstance(nested, kind):
         return func(nested)
     if isinstance(nested, Mapping):
-        return {k: apply_nested(v, kind, func) for k, v in nested.items()}
+        return {k: apply_nested(v, kind, func) for k, v in nested.items()}  # type: ignore[arg-type]
     # TODO https://github.com/python/mypy/issues/11615
     if isinstance(nested, Collection):
-        return [apply_nested(obj, kind, func) for obj in nested]  # type: ignore[misc]
+        return [apply_nested(obj, kind, func) for obj in nested]  # type: ignore[arg-type]
     raise TypeError(f"Unsupported type: {type(nested)}")
 
 
@@ -223,7 +226,7 @@ def deep_kval_update(d: dict, **new_kvals: Any) -> dict:
 
 @overload
 def prepend_path(
-    files: Nested[PathType],
+    files: Nested[PathLike],
     parent: Path,
     *,
     keep_none: bool = False,
@@ -233,7 +236,7 @@ def prepend_path(
 
 @overload
 def prepend_path(
-    files: Nested[Optional[PathType]],
+    files: Nested[Optional[PathLike]],
     parent: Path,
     *,
     keep_none: Literal[False] = False,
@@ -243,7 +246,7 @@ def prepend_path(
 
 @overload
 def prepend_path(
-    files: Nested[Optional[PathType]],
+    files: Nested[Optional[PathLike]],
     parent: Path,
     *,
     keep_none: Literal[True] = True,
@@ -252,7 +255,7 @@ def prepend_path(
 
 
 def prepend_path(
-    files: Nested[Optional[PathType]],
+    files: Nested[Optional[PathLike]],
     parent: Path,
     *,
     keep_none: bool = True,
@@ -274,12 +277,12 @@ def prepend_path(
         }
     # TODO https://github.com/python/mypy/issues/11615
     if isinstance(files, Collection):
-        return [prepend_path(f, parent, keep_none=keep_none) for f in files]  # type: ignore[misc,arg-type]
+        return [prepend_path(f, parent, keep_none=keep_none) for f in files]  # type: ignore[arg-type]
     raise TypeError(f"Unsupported type: {type(files)}")
 
 
 def paths_exists(
-    paths: Nested[Optional[PathType]],
+    paths: Nested[Optional[PathLike]],
     *,
     parent: Path = EMPTY_PATH,
 ) -> bool:
@@ -315,15 +318,15 @@ def initialize_from_config(config: dict[str, Any]) -> nn.Module:
 
 @overload
 def initialize_from_table(  # type: ignore[misc]
-    lookup_table: dict[str, type[ObjectVar]], /, __name__: str, **kwargs: Any
-) -> ObjectVar:
+    lookup_table: dict[str, type[O]], /, __name__: str, **kwargs: Any
+) -> O:
     ...
 
 
 @overload
 def initialize_from_table(
-    lookup_table: dict[str, Callable[..., ReturnVar]], /, __name__: str, **kwargs: Any
-) -> Callable[..., ReturnVar]:
+    lookup_table: dict[str, Callable[..., R]], /, __name__: str, **kwargs: Any
+) -> Callable[..., R]:
     ...
 
 

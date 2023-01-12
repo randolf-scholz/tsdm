@@ -16,12 +16,11 @@ __all__ = [
 
 from collections.abc import Sequence
 from dataclasses import Field
-from typing import Any, Protocol, TypeAlias, TypeVar, Union, runtime_checkable
+from typing import Any, Protocol, TypeVar, runtime_checkable
 
 ScalarType_co = TypeVar("ScalarType_co", covariant=True)
-T = TypeVar("T")
-Either: TypeAlias = Union[T, "Array[T]"]
-Self = TypeVar("Self", bound="Array")
+# Either: TypeAlias = Union[T, "Array[T]"]
+A = TypeVar("A", bound="Array")
 
 
 @runtime_checkable
@@ -43,12 +42,10 @@ class NTuple(Protocol):
         ...
 
 
-A = TypeVar("A", bound="Array")
-
-
 @runtime_checkable
 class Array(Protocol[ScalarType_co]):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
+    # FIXME: Use Self
 
     @property
     def shape(self) -> Sequence[int]:
