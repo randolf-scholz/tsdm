@@ -17,7 +17,7 @@ from pytest import mark
 from typing_extensions import NamedTuple  # FIXME: remove with python 3.11
 
 from tsdm.random.samplers import compute_grid
-from tsdm.utils.types.time import DTVar, TDVar
+from tsdm.types.time import DTVar, TDVar
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)

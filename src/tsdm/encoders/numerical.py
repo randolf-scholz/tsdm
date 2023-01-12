@@ -36,8 +36,8 @@ from pandas import NA, DataFrame, Index, Series
 from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
+from tsdm.types.aliases import PandasObject
 from tsdm.utils.strings import repr_namedtuple
-from tsdm.utils.types import PandasObject
 
 TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
 r"""Type Hint for tensor-like objects."""

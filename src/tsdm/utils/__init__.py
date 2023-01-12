@@ -4,7 +4,6 @@ __all__ = [
     # Sub-Packages
     "data",
     "decorators",
-    "types",
     # Sub-Modules
     "remote",
     "system",
@@ -39,7 +38,7 @@ __all__ = [
     "unflatten_dict",
 ]
 
-from tsdm.utils import data, decorators, remote, system, types
+from tsdm.utils import data, decorators, remote, system
 from tsdm.utils._subclassing import PatchedABCMeta, abstractattribute
 from tsdm.utils._utils import (
     deep_dict_update,

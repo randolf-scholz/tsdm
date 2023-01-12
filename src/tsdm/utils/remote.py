@@ -14,7 +14,7 @@ from typing import Any, Optional
 import requests
 from tqdm.autonotebook import tqdm
 
-from tsdm.utils.types import PathType
+from tsdm.types.aliases import PathLike
 
 
 def hash_file(
@@ -32,7 +32,7 @@ def hash_file(
 
 
 def download(
-    url: str, fname: Optional[PathType] = None, *, chunk_size: int = 1024
+    url: str, fname: Optional[PathLike] = None, *, chunk_size: int = 1024
 ) -> None:
     r"""Download a file from a URL."""
     response = requests.get(url, stream=True, timeout=10)

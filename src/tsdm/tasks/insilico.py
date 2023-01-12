@@ -13,8 +13,8 @@ from torch.utils.data import Sampler as TorchSampler
 from tsdm.datasets import InSilicoData, TimeSeriesCollection
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesSampleGenerator, TimeSeriesTask
+from tsdm.types.variables import KeyVar as K
 from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
-from tsdm.utils.types import KeyVar
 
 
 class InSilicoSampleGenerator(TimeSeriesSampleGenerator):
@@ -47,10 +47,10 @@ class InSilicoTask(TimeSeriesTask):
     def default_test_metric(*, targets, predictions):
         pass
 
-    # def make_encoder(self, key: KeyVar, /) -> ModularEncoder:
+    # def make_encoder(self, key: K, /) -> ModularEncoder:
     #     ...
 
-    def make_sampler(self, key: KeyVar, /) -> TorchSampler:
+    def make_sampler(self, key: K, /) -> TorchSampler:
         split: TimeSeriesCollection = self.splits[key]
         subsamplers = {
             key: SlidingWindowSampler(tsd.index, horizons=["2h", "1h"], stride="1h")
@@ -71,6 +71,6 @@ class InSilicoTask(TimeSeriesTask):
         df = folds_as_frame(folds)
         return folds_as_sparse_frame(df)
 
-    def make_generator(self, key: KeyVar, /) -> InSilicoSampleGenerator:
+    def make_generator(self, key: K, /) -> InSilicoSampleGenerator:
         split = self.splits[key]
         return InSilicoSampleGenerator(split)

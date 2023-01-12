@@ -32,11 +32,12 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
+from tsdm.types.aliases import PandasObject, PathLike
+from tsdm.types.dtypes import TORCH_DTYPES
+from tsdm.types.protocols import NTuple
+from tsdm.types.variables import KeyVar as K
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import KeyVar, PandasObject, PathType
-from tsdm.utils.types.dtypes import TORCH_DTYPES
-from tsdm.utils.types.protocols import NTuple
 
 BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
 
@@ -51,7 +52,7 @@ IndexEncoderVar = TypeVar(
 class CSVEncoder(BaseEncoder):
     r"""Encode the data into a CSV file."""
 
-    filename: PathType
+    filename: PathLike
     r"""The filename of the CSV file."""
     dtypes: Series
     r"""The original dtypes."""
@@ -62,7 +63,7 @@ class CSVEncoder(BaseEncoder):
 
     def __init__(
         self,
-        filename: PathType,
+        filename: PathLike,
         *,
         to_csv_kwargs: Optional[dict[str, Any]] = None,
         read_csv_kwargs: Optional[dict[str, Any]] = None,
@@ -75,11 +76,11 @@ class CSVEncoder(BaseEncoder):
     def fit(self, data: DataFrame, /) -> None:
         self.dtypes = data.dtypes
 
-    def encode(self, data: DataFrame, /) -> PathType:
+    def encode(self, data: DataFrame, /) -> PathLike:
         data.to_csv(self.filename, **self.to_csv_kwargs)
         return self.filename
 
-    def decode(self, data: Optional[PathType] = None, /) -> DataFrame:
+    def decode(self, data: Optional[PathLike] = None, /) -> DataFrame:
         if data is None:
             data = self.filename
         frame = pd.read_csv(data, **self.read_csv_kwargs)
@@ -299,7 +300,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
         return repr_mapping(items, title=self.__class__.__name__, recursive=2)
 
 
-class FastFrameEncoder(Mapping[KeyVar, BaseEncoder], BaseEncoder):
+class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
     r"""Encode a DataFrame by group-wise transformations.
 
     Per-column encoding is possible through the dictionary input.
@@ -311,20 +312,20 @@ class FastFrameEncoder(Mapping[KeyVar, BaseEncoder], BaseEncoder):
     - [ ] Add support for groups of column-encoders
     """
 
-    original_columns: list[KeyVar]
+    original_columns: list[K]
     original_dtypes: Series
-    original_index_columns: list[KeyVar]
-    original_value_columns: list[KeyVar]
+    original_index_columns: list[K]
+    original_value_columns: list[K]
 
-    encoders: Mapping[KeyVar, BaseEncoder]
-    column_encoders: Mapping[KeyVar, BaseEncoder]
-    index_encoders: Mapping[KeyVar, BaseEncoder]
+    encoders: Mapping[K, BaseEncoder]
+    column_encoders: Mapping[K, BaseEncoder]
+    index_encoders: Mapping[K, BaseEncoder]
 
     def __init__(
         self,
-        column_encoders: Mapping[KeyVar, BaseEncoder] = NotImplemented,
+        column_encoders: Mapping[K, BaseEncoder] = NotImplemented,
         *,
-        index_encoders: Mapping[KeyVar, BaseEncoder] = NotImplemented,
+        index_encoders: Mapping[K, BaseEncoder] = NotImplemented,
     ):
         super().__init__()
         self.column_encoders = (
@@ -333,10 +334,10 @@ class FastFrameEncoder(Mapping[KeyVar, BaseEncoder], BaseEncoder):
         self.index_encoders = {} if index_encoders is NotImplemented else index_encoders
         self.encoders = {**column_encoders, **index_encoders}
 
-    def __getitem__(self, key: KeyVar) -> BaseEncoder:
+    def __getitem__(self, key: K) -> BaseEncoder:
         return self.encoders[key]
 
-    def __iter__(self) -> Iterator[KeyVar]:
+    def __iter__(self) -> Iterator[K]:
         return iter(self.encoders)
 
     def __len__(self) -> int:
