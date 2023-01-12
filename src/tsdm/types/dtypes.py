@@ -20,7 +20,6 @@ Numerical Type Hierarchy:
 
 __all__ = [
     # TypeVars and TypeAliases
-    "ScalarDType",
     # DTYPES
     "NUMPY_DTYPES",
     "TORCH_DTYPES",
@@ -61,7 +60,7 @@ __all__ = [
 ]
 
 from datetime import datetime, timedelta
-from typing import Final, TypeAlias
+from typing import Final
 
 import numpy as np
 import pandas
@@ -69,6 +68,33 @@ import torch
 from pandas.api.extensions import ExtensionDtype
 
 # region numpy typecodes -----------------------------------------------------------------------------------------------
+NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {
+    "int8": np.int8,
+    "int16": np.int16,
+    "int32": np.int32,
+    "int64": np.int64,
+    "float_": np.float_,
+    "float16": np.float16,
+    "float32": np.float32,
+    "float64": np.float64,
+    "float128": np.float128,
+    "complex64": np.complex64,
+    "complex128": np.complex128,
+    "complex256": np.complex256,
+    "uint8": np.uint8,
+    "uint16": np.uint16,
+    "uint32": np.uint32,
+    "uint64": np.uint64,
+    "timedelta64": np.timedelta64,
+    "datetime64": np.datetime64,
+    "bool": np.bool_,
+    "bytes": np.bytes_,
+    "str": np.str_,
+    "unicode": np.unicode_,
+    "void": np.void,
+    "object": np.object_,
+}
+r"""Dictionary of all `numpy` data types."""
 
 NUMPY_INT_TYPECODES: Final[dict[type[np.signedinteger], str]] = {
     np.int8: "b",
@@ -163,11 +189,10 @@ NUMPY_TYPECODES: Final[dict[type[np.generic], str]] = (
     | NUMPY_OBJECT_TYPECODES
 )
 r"""Dictionary of all `numpy` data type typecodes."""
-
 # endregion numpy typecodes --------------------------------------------------------------------------------------------
 
-# region numpy typestrings ---------------------------------------------------------------------------------------------
 
+# region numpy typestrings ---------------------------------------------------------------------------------------------
 NUMPY_INT_TYPESTRINGS: Final[dict[type[np.signedinteger], str]] = {
     np.int8: "int8",
     np.int16: "int16",
@@ -261,41 +286,10 @@ NUMPY_TYPESTRINGS: Final[dict[type[np.generic], str]] = (
     | NUMPY_OBJECT_TYPESTRINGS
 )
 r"""Dictionary of all `numpy` data type typestrings."""
-
 # endregion numpy typestrings ------------------------------------------------------------------------------------------
 
 
-NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {
-    "int8": np.int8,
-    "int16": np.int16,
-    "int32": np.int32,
-    "int64": np.int64,
-    "float_": np.float_,
-    "float16": np.float16,
-    "float32": np.float32,
-    "float64": np.float64,
-    "float128": np.float128,
-    "complex64": np.complex64,
-    "complex128": np.complex128,
-    "complex256": np.complex256,
-    "uint8": np.uint8,
-    "uint16": np.uint16,
-    "uint32": np.uint32,
-    "uint64": np.uint64,
-    "timedelta64": np.timedelta64,
-    "datetime64": np.datetime64,
-    "bool": np.bool_,
-    "bytes": np.bytes_,
-    "str": np.str_,
-    "unicode": np.unicode_,
-    "void": np.void,
-    "object": np.object_,
-}
-r"""Dictionary of all `numpy` data types."""
-
-
 # region pandas typestrings --------------------------------------------------------------------------------------------
-
 PANDAS_TYPESTRINGS: Final[dict[type[ExtensionDtype], str]] = {
     pandas.BooleanDtype: "boolean",
     pandas.CategoricalDtype: "category",
@@ -337,13 +331,10 @@ PANDAS_NULLABLE_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
     "UInt8": pandas.UInt8Dtype,
 }
 r"""Dictionary of all `pandas` data types."""
-
-
 # endregion pandas typestrings -----------------------------------------------------------------------------------------
 
 
 # region torch dtypes --------------------------------------------------------------------------------------------------
-
 TORCH_INT_TYPESTRINGS: Final[dict[torch.dtype, str]] = {
     torch.int8: "int8",
     torch.int16: "int16",
@@ -413,12 +404,10 @@ TORCH_DTYPES: Final[dict[str, torch.dtype]] = {
     "bool": torch.bool,
 }
 r"""Dictionary of all `torch` data types."""
-
-
 # endregion torch dtypes -----------------------------------------------------------------------------------------------
 
-# region python dtypes -------------------------------------------------------------------------------------------------
 
+# region python dtypes -------------------------------------------------------------------------------------------------
 PYTHON_DTYPES: Final[dict[str, type]] = {
     "bool": bool,
     "int": int,
@@ -444,12 +433,8 @@ PYTHON_TYPESTRINGS: Final[dict[type, str]] = {
     object: "object",
 }
 r"""Dictionary of all `python` data types."""
-
 # endregion python dtypes ----------------------------------------------------------------------------------------------
 
-
-ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]  # type: ignore[index]
-r"""TypeAlias for scalar types."""
 
 TYPESTRINGS: Final[dict[type[np.generic] | torch.dtype | type[ExtensionDtype], str]] = (
     NUMPY_TYPESTRINGS | TORCH_TYPESTRINGS | PANDAS_TYPESTRINGS  # type: ignore[operator]

@@ -129,9 +129,9 @@ from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.datasets import Dataset, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import ModularEncoder
+from tsdm.types.variables import KeyVar as K
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
-from tsdm.utils.types import KeyVar
 
 Sample_co = TypeVar("Sample_co", covariant=True)
 """Covariant type variable for `Sample`."""
@@ -151,7 +151,7 @@ class BaseTaskMetaClass(ABCMeta):
         super().__init__(*args, **kwargs)
 
 
-class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
+class OldBaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
@@ -208,18 +208,18 @@ class OldBaseTask(ABC, Generic[KeyVar], metaclass=BaseTaskMetaClass):
 
     @property
     @abstractmethod
-    def index(self) -> Sequence[KeyVar]:
+    def index(self) -> Sequence[K]:
         r"""List of index."""
 
     @property
     @abstractmethod
-    def splits(self) -> Mapping[KeyVar, Any]:
+    def splits(self) -> Mapping[K, Any]:
         r"""Cache dictionary of dataset slices."""
 
     @abstractmethod
     def make_dataloader(
         self,
-        key: KeyVar,
+        key: K,
         /,
         **dataloader_kwargs: Any,
     ) -> DataLoader:
@@ -393,7 +393,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, key: KeyVar) -> Sample:
+    def __getitem__(self, key: K) -> Sample:
         match self.sample_format:
             case "masked" | ("masked", "masked"):
                 return self.make_sample(key, sparse_index=False, sparse_columns=False)
@@ -410,7 +410,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         return repr_dataclass(self)
 
     def get_subgenerator(
-        self, key: KeyVar
+        self, key: K
     ) -> Any:  # FIXME: Return Self TimeSeriesSampleGenerator:
         r"""Get a subgenerator."""
         other_kwargs = {k: v for k, v in self.__dict__.items() if k != "dataset"}
@@ -418,7 +418,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         return self.__class__(self.dataset[key], **other_kwargs)
 
     def make_sample(
-        self, key: KeyVar, *, sparse_index: bool = False, sparse_columns: bool = False
+        self, key: K, *, sparse_index: bool = False, sparse_columns: bool = False
     ) -> Sample:
         r"""Create a sample from a TimeSeriesCollection."""
         # extract key
@@ -706,7 +706,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         r"""Return the splits associated with the specified key."""
         return NotImplemented
 
-    def make_sampler(self, key: SplitID, /) -> TorchSampler[KeyVar]:
+    def make_sampler(self, key: SplitID, /) -> TorchSampler[K]:
         r"""Create the sampler associated with the specified key."""
         return NotImplemented
 

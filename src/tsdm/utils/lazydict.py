@@ -13,23 +13,29 @@ __all__ = [
 import logging
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from typing import Any, NamedTuple, TypeAlias, Union, overload
+from typing import Any, Generic, TypeAlias, Union, overload
 
+from typing_extensions import NamedTuple
+
+from tsdm.types.variables import AnyVar as T
+from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import ObjectVar as O
+from tsdm.types.variables import ReturnVar as R
 from tsdm.utils._utils import get_function_args, is_positional
 from tsdm.utils.strings import repr_mapping, repr_short
-from tsdm.utils.types import KeyVar, ObjectVar
 
 __logger__ = logging.getLogger(__name__)
 
 
-class LazyFunction(NamedTuple):
+class LazyFunction(NamedTuple, Generic[R]):
     r"""A placeholder for uninitialized values."""
 
-    func: Callable[..., Any]
+    # FIXME: use typing.NamedTuple (3.11)
+    func: Callable[..., R]
     args: Iterable[Any] = ()
     kwargs: Mapping[str, Any] = {}
 
-    def __call__(self) -> Any:
+    def __call__(self) -> R:
         r"""Execute the function and return the result."""
         return self.func(*self.args, **self.kwargs)
 
@@ -40,18 +46,18 @@ class LazyFunction(NamedTuple):
 
 FuncSpec: TypeAlias = Union[
     LazyFunction,
-    Callable[[], ObjectVar],
-    Callable[[KeyVar], ObjectVar],
+    Callable[[], R],
+    Callable[[T], R],
     tuple[LazyFunction],
-    tuple[Callable[[], ObjectVar]],  # no args
-    tuple[Callable[[KeyVar], ObjectVar]],  # key arg
-    tuple[Callable[..., ObjectVar], tuple],  # args
-    tuple[Callable[..., ObjectVar], dict],  # kwargs
-    tuple[Callable[..., ObjectVar], tuple, dict],  # args, kwargs
+    tuple[Callable[[], R]],  # no args
+    tuple[Callable[[T], R]],  # key arg
+    tuple[Callable[..., R], tuple],  # args
+    tuple[Callable[..., R], dict],  # kwargs
+    tuple[Callable[..., R], tuple, dict],  # args, kwargs
 ]
 
 
-class LazyDict(dict[KeyVar, ObjectVar]):
+class LazyDict(dict[K, O]):
     r"""A Lazy Dictionary implementation.
 
     Values are allowed to be one of the following:
@@ -82,24 +88,24 @@ class LazyDict(dict[KeyVar, ObjectVar]):
         return super().__new__(cls, *args, **kwargs)
 
     @overload
-    def __init__(self, /, **kwargs: FuncSpec | ObjectVar) -> None:
+    def __init__(self, /, **kwargs: FuncSpec | O) -> None:
         ...
 
     @overload
     def __init__(
         self,
-        mapping: Mapping[KeyVar, FuncSpec | ObjectVar],
+        mapping: Mapping[K, FuncSpec | O],
         /,
-        **kwargs: FuncSpec | ObjectVar,
+        **kwargs: FuncSpec | O,
     ) -> None:
         ...
 
     @overload
     def __init__(
         self,
-        iterable: Iterable[tuple[KeyVar, FuncSpec | ObjectVar]],
+        iterable: Iterable[tuple[K, FuncSpec | O]],
         /,
-        **kwargs: FuncSpec | ObjectVar,
+        **kwargs: FuncSpec | O,
     ) -> None:
         ...
 
@@ -108,7 +114,7 @@ class LazyDict(dict[KeyVar, ObjectVar]):
         super().__init__()
         MutableMapping.update(self, *args, **kwargs)
 
-    def __getitem__(self, key: KeyVar) -> ObjectVar:
+    def __getitem__(self, key: K) -> O:
         r"""Get the value of the key."""
         value = super().__getitem__(key)
         if isinstance(value, LazyFunction):
@@ -117,7 +123,7 @@ class LazyDict(dict[KeyVar, ObjectVar]):
             return new_value
         return value
 
-    def __setitem__(self, key: KeyVar, value: FuncSpec | ObjectVar) -> None:
+    def __setitem__(self, key: K, value: FuncSpec | O) -> None:
         r"""Set the value of the key."""
         super().__setitem__(key, self._make_lazy_function(key, value))  # type: ignore[assignment]
 
@@ -153,14 +159,14 @@ class LazyDict(dict[KeyVar, ObjectVar]):
         self.update(other)
         return self
 
-    def asdict(self) -> dict[KeyVar, ObjectVar]:
+    def asdict(self) -> dict[K, O]:
         r"""Return a dictionary with all values evaluated."""
         return {k: self[k] for k in self}
 
     @staticmethod
     def _make_lazy_function(
-        key: KeyVar,
-        value: FuncSpec | ObjectVar,
+        key: K,
+        value: FuncSpec | O,
     ) -> LazyFunction:
         match value:
             case LazyFunction():
@@ -187,6 +193,6 @@ class LazyDict(dict[KeyVar, ObjectVar]):
             case _:
                 return LazyFunction(lambda: value)
 
-    def copy(self) -> Any:  # FIXME: Return Self LazyDict[KeyVar, ObjectVar]:
+    def copy(self) -> Any:  # FIXME: Return Self LazyDict[K, O]:
         r"""Return a shallow copy of the dictionary."""
         return self.__class__(self.items())

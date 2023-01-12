@@ -32,11 +32,12 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.config import CONFIG
+from tsdm.types.aliases import Nested, PathLike
+from tsdm.types.variables import KeyVar as K
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.hash import hash_pandas
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_dataclass, repr_mapping
-from tsdm.utils.types import KeyVar, Nested, PathType
 
 DATASET_OBJECT: TypeAlias = Series | DataFrame
 r"""Type hint for pandas objects."""
@@ -130,12 +131,12 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
     @property
     @abstractmethod
-    def dataset_files(self) -> Nested[Optional[PathType]]:
+    def dataset_files(self) -> Nested[Optional[PathLike]]:
         r"""Relative paths to the cleaned dataset file(s)."""
 
     @property
     @abstractmethod
-    def rawdata_files(self) -> Nested[Optional[PathType]]:
+    def rawdata_files(self) -> Nested[Optional[PathLike]]:
         r"""Relative paths to the raw dataset file(s)."""
 
     @cached_property
@@ -385,7 +386,7 @@ class SingleFrameDataset(FrameDataset):
         return self.__dataset
 
     @cached_property
-    def dataset_files(self) -> PathType:
+    def dataset_files(self) -> PathLike:
         r"""Return the dataset files."""
         return self.__class__.__name__ + f".{self.DEFAULT_FILE_FORMAT}"
 
@@ -469,16 +470,16 @@ class SingleFrameDataset(FrameDataset):
             self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
 
 
-class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
+class MultiFrameDataset(FrameDataset, Generic[K]):
     r"""Dataset class that consists of a multiple DataFrames.
 
     The Datasets are accessed by their index.
     We subclass `Mapping` to provide the mapping interface.
     """
 
-    DATASET_HASH: Optional[Mapping[KeyVar, str]] = None
+    DATASET_HASH: Optional[Mapping[K, str]] = None
     r"""Hash value of the dataset file(s), checked after clean."""
-    TABLE_HASH: Optional[Mapping[KeyVar, int]] = None
+    TABLE_HASH: Optional[Mapping[K, int]] = None
     r"""Hash value of the dataset file(s), checked after load."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
@@ -530,29 +531,29 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
     @property
     @abstractmethod
-    def KEYS(self) -> Sequence[KeyVar]:
+    def KEYS(self) -> Sequence[K]:
         r"""Return the index of the dataset."""
         # TODO: use abstract-attribute!
         # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
     @cached_property
-    def dataset(self) -> MutableMapping[KeyVar, DATASET_OBJECT]:
+    def dataset(self) -> MutableMapping[K, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
         return {key: None for key in self.KEYS}
 
     @cached_property
-    def dataset_files(self) -> Mapping[KeyVar, str]:
+    def dataset_files(self) -> Mapping[K, str]:
         r"""Relative paths to the dataset files for each key."""
         return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.KEYS}
 
     @cached_property
-    def dataset_paths(self) -> Mapping[KeyVar, Path]:
+    def dataset_paths(self) -> Mapping[K, Path]:
         r"""Absolute paths to the dataset files for each key."""
         return {
             key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
         }
 
-    def rawdata_files_exist(self, key: Optional[KeyVar] = None) -> bool:
+    def rawdata_files_exist(self, key: Optional[K] = None) -> bool:
         r"""Check if raw data files exist."""
         if key is None:
             return paths_exists(self.rawdata_paths)
@@ -560,19 +561,19 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
             return paths_exists(self.rawdata_paths[key])
         return paths_exists(self.rawdata_paths)
 
-    def dataset_files_exist(self, key: Optional[KeyVar] = None) -> bool:
+    def dataset_files_exist(self, key: Optional[K] = None) -> bool:
         r"""Check if dataset files exist."""
         if key is None:
             return paths_exists(self.dataset_paths)
         return paths_exists(self.dataset_paths[key])
 
     @abstractmethod
-    def clean_table(self, key: KeyVar) -> DATASET_OBJECT | None:
+    def clean_table(self, key: K) -> DATASET_OBJECT | None:
         r"""Clean the selected DATASET_OBJECT."""
 
     def clean(
         self,
-        key: Optional[KeyVar] = None,
+        key: Optional[K] = None,
         *,
         force: bool = False,
         validate: bool = True,
@@ -618,7 +619,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
         if validate:
             self.validate(self.dataset_paths[key], reference=self.DATASET_HASH)
 
-    def load_table(self, key: KeyVar) -> DATASET_OBJECT:
+    def load_table(self, key: K) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
         return self.deserialize(self.dataset_paths[key])
 
@@ -630,14 +631,14 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
-    ) -> Mapping[KeyVar, Any]:
+    ) -> Mapping[K, Any]:
         ...
 
     @overload
     def load(
         self,
         *,
-        key: Optional[KeyVar] = None,
+        key: Optional[K] = None,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
@@ -647,11 +648,11 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
     def load(
         self,
         *,
-        key: Optional[KeyVar] = None,
+        key: Optional[K] = None,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
-    ) -> Mapping[KeyVar, DATASET_OBJECT] | DATASET_OBJECT:
+    ) -> Mapping[K, DATASET_OBJECT] | DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT.
 
         Args:
@@ -691,11 +692,11 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
         return self.dataset[key]
 
-    def download_table(self, *, key: KeyVar = NotImplemented) -> None:
+    def download_table(self, *, key: K = NotImplemented) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
-        rawdata_files: Nested[Optional[PathType]]
+        rawdata_files: Nested[Optional[PathLike]]
         if isinstance(self.rawdata_files, Mapping):
             assert key is not NotImplemented, "key must be provided!"
             rawdata_files = self.rawdata_files[key]
@@ -712,7 +713,7 @@ class MultiFrameDataset(FrameDataset, Generic[KeyVar]):
 
     def download(
         self,
-        key: Optional[KeyVar] = None,
+        key: Optional[K] = None,
         *,
         force: bool = False,
         validate: bool = True,
@@ -797,11 +798,11 @@ class TimeSeriesDataset(TorchDataset[Series]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: KeyVar) -> Series:
+    def __getitem__(self, key: K) -> Series:
         ...
 
     @overload
-    def __getitem__(self, key: Index | slice | list[KeyVar]) -> DataFrame:
+    def __getitem__(self, key: Index | slice | list[K]) -> DataFrame:
         ...
 
     def __getitem__(self, key):
@@ -872,7 +873,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.index = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: KeyVar) -> TimeSeriesDataset:
+    def __getitem__(self, key: K) -> TimeSeriesDataset:
         ...
 
     @overload
@@ -949,7 +950,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         r"""Get the length of the collection."""
         return len(self.index)
 
-    def __iter__(self) -> Iterator[KeyVar]:
+    def __iter__(self) -> Iterator[K]:
         r"""Iterate over the collection."""
         return iter(self.index)
         # for key in self.index:

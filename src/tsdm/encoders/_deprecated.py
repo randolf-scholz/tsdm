@@ -20,9 +20,9 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
+from tsdm.types.abc import HashableType
+from tsdm.types.variables import AnyVar as T
 from tsdm.utils.strings import repr_mapping
-from tsdm.utils.types import AnyTypeVar
-from tsdm.utils.types.abc import HashableType
 
 
 class DataFrameEncoder(BaseEncoder):
@@ -285,7 +285,7 @@ class FrameSplitter(BaseEncoder):
         n = sum(len(u) for u in groups)
         return n == len(union)
 
-    def __init__(self, groups: dict[AnyTypeVar, Sequence[HashableType]]) -> None:
+    def __init__(self, groups: dict[T, Sequence[HashableType]]) -> None:
         super().__init__()
         self.groups = groups
         assert self._pairwise_disjoint(self.groups.values())

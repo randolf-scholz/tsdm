@@ -32,10 +32,10 @@ from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 
 from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
+from tsdm.types.aliases import Nested
 from tsdm.utils import LazyDict, initialize_from_config, is_zipfile, paths_exists
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_mapping, repr_short
-from tsdm.utils.types import Nested
 
 
 class PreTrainedMetaClass(ABCMeta):

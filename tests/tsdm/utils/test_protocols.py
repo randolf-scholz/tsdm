@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 from pandas import Series
 from torch import Tensor
 
-from tsdm.utils.types.protocols import Array
+from tsdm.types.protocols import Array
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)

@@ -16,7 +16,7 @@ import logging
 import pandas as pd
 from pandas import DataFrame, Index, Series
 
-from tsdm.utils.types import PandasVar
+from tsdm.types.variables import PandasVar
 
 __logger__ = logging.getLogger(__name__)
 

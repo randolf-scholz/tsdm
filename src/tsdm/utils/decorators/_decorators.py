@@ -34,12 +34,13 @@ from typing import Any, Concatenate, Optional, cast, overload
 from torch import jit, nn
 
 from tsdm.config import CONFIG
-from tsdm.utils.types import AnyTypeVar, ClassVar
-from tsdm.utils.types import ObjectVar as Obj
-from tsdm.utils.types import ParameterVar as P
-from tsdm.utils.types import ReturnVar as R
-from tsdm.utils.types import TorchModuleVar
-from tsdm.utils.types.abc import CollectionType
+from tsdm.types.abc import CollectionType
+from tsdm.types.variables import AnyVar as T
+from tsdm.types.variables import ClassVar as C
+from tsdm.types.variables import ObjectVar as O
+from tsdm.types.variables import ParameterVar as P
+from tsdm.types.variables import ReturnVar as R
+from tsdm.types.variables import TorchModuleVar
 
 __logger__ = logging.getLogger(__name__)
 
@@ -302,7 +303,7 @@ def decorator(deco: Callable) -> Callable:
     return _parametrized_decorator
 
 
-def attribute(func: Callable[[Obj], R]) -> R:
+def attribute(func: Callable[[O], R]) -> R:
     r"""Create decorator that converts method to attribute."""
 
     @wraps(func, updated=())
@@ -463,11 +464,11 @@ def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
 
 @decorator
 def vectorize(
-    func: Callable[[Obj], R],
+    func: Callable[[O], R],
     /,
     *,
     kind: type[CollectionType],
-) -> Callable[[Obj | CollectionType], R | CollectionType]:
+) -> Callable[[O | CollectionType], R | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly
@@ -504,16 +505,16 @@ def vectorize(
 
 
 @overload
-def IterItems(obj: ClassVar) -> ClassVar:
+def IterItems(obj: C) -> C:
     ...
 
 
 @overload
-def IterItems(obj: Obj) -> Obj:
+def IterItems(obj: O) -> O:
     ...
 
 
-def IterItems(obj: AnyTypeVar) -> AnyTypeVar:
+def IterItems(obj: T) -> T:
     r"""Wrap a class such that `__getitem__` returns (key, value) pairs."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
@@ -537,16 +538,16 @@ def IterItems(obj: AnyTypeVar) -> AnyTypeVar:
 
 
 @overload
-def IterKeys(obj: ClassVar) -> ClassVar:
+def IterKeys(obj: C) -> C:
     ...
 
 
 @overload
-def IterKeys(obj: Obj) -> Obj:
+def IterKeys(obj: O) -> O:
     ...
 
 
-def IterKeys(obj: AnyTypeVar) -> AnyTypeVar:
+def IterKeys(obj: T) -> T:
     r"""Wrap a class such that `__getitem__` returns key instead."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
@@ -650,15 +651,13 @@ def wrap_func(
 
 @decorator
 def wrap_method(
-    func: Callable[Concatenate[Obj, P], R],
+    func: Callable[Concatenate[O, P], R],
     /,
     *,
-    before: Optional[
-        Callable[[Obj], None] | Callable[Concatenate[Obj, P], None]
-    ] = None,
-    after: Optional[Callable[[Obj], None] | Callable[Concatenate[Obj, P], None]] = None,
+    before: Optional[Callable[[O], None] | Callable[Concatenate[O, P], None]] = None,
+    after: Optional[Callable[[O], None] | Callable[Concatenate[O, P], None]] = None,
     pass_args: bool = False,
-) -> Callable[Concatenate[Obj, P], R]:
+) -> Callable[Concatenate[O, P], R]:
     r"""Wrap a function with pre- and post-hooks."""
     if before is None and after is None:
         __logger__.debug("No hooks added to %s", func)
@@ -670,14 +669,14 @@ def wrap_method(
         if pass_args:
 
             @wraps(func)
-            def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
                 before(self, *args, **kwargs)  # type: ignore[misc]
                 return func(self, *args, **kwargs)
 
             return _wrapper
 
         @wraps(func)
-        def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+        def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
             before(self)  # type: ignore[misc]
             return func(self, *args, **kwargs)
 
@@ -689,7 +688,7 @@ def wrap_method(
         if pass_args:
 
             @wraps(func)
-            def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
                 after(self, *args, **kwargs)  # type: ignore[misc]
                 return result
@@ -697,7 +696,7 @@ def wrap_method(
             return _wrapper
 
         @wraps(func)
-        def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+        def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
             result = func(self, *args, **kwargs)
             after(self)  # type: ignore[misc]
             return result
@@ -710,7 +709,7 @@ def wrap_method(
         if pass_args:
 
             @wraps(func)
-            def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
                 before(self, *args, **kwargs)  # type: ignore[misc]
                 result = func(self, *args, **kwargs)
                 after(self, *args, **kwargs)  # type: ignore[misc]
@@ -719,7 +718,7 @@ def wrap_method(
             return _wrapper
 
         @wraps(func)
-        def _wrapper(self: Obj, *args: P.args, **kwargs: P.kwargs) -> R:
+        def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
             before(self)  # type: ignore[misc]
             result = func(self, *args, **kwargs)
             after(self)  # type: ignore[misc]
