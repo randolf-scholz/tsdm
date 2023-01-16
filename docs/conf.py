@@ -86,7 +86,7 @@ root_doc = "index"
 # The document name of the “root” document, that is, the document that contains the root toctree directive.
 # Default is 'index'.
 
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "_**"]
 # A list of glob-style patterns that should be excluded when looking for source files. They are matched against the
 # source file names relative to the source directory, using slashes as directory separators on all platforms.
 
@@ -124,8 +124,7 @@ keep_warnings = False
 suppress_warnings = []
 # A list of warning types to suppress arbitrary warning messages.
 
-
-needs_sphinx = "5.1"
+needs_sphinx = "6.1"
 # If set to a major.minor version string like '1.1',
 # Sphinx will compare it with its version and refuse to build if it is too old. Default is no requirement.
 
@@ -336,7 +335,7 @@ autoapi_generate_api_docs = True
 # Default: [ 'members', 'undoc-members', 'private-members', 'show-inheritance', 'show-module-summary',
 # 'special-members', 'imported-members', ]
 
-autoapi_ignore = ["*migrations*", "*sklearn*"]
+autoapi_ignore = ["*migrations*"]
 # A list of patterns to ignore when finding files. The defaults by language are:
 # Default = ['*migrations*']
 
@@ -509,8 +508,8 @@ autodoc_type_aliases = {
 # # recursively napoleon_type_aliases for tsdm classes / functions.
 # autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(torch)
 # autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(torch.utils)
-autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(tsdm)
-print(autodoc_type_aliases)
+# autodoc_type_aliases |= tsdm.utils.system.get_napoleon_type_aliases(tsdm)
+# print(autodoc_type_aliases)
 # # recursively napoleon_type_aliases for tsdm classes / functions.
 
 autodoc_typehints_format = "short"
@@ -595,7 +594,6 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "sklearn": ("https://scikit-learn.org/stable/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
-    # "tsdm": ("_build_old/html", None),
     # "xarray": ("https://xarray.pydata.org/en/stable/", None),
 }
 # This config value contains the locations and names of other projects that should be linked to
@@ -611,7 +609,7 @@ intersphinx_cache_limit = 5
 # meaning five days. Set this to a negative value to cache inventories for unlimited time.
 
 intersphinx_timeout = 2
-# The number of seconds for timeout. The default is None, meaning do not time out.
+# The number of seconds for timeout. The default is None, meaning do not timeout.
 
 intersphinx_disabled_reftypes = ["std:doc"]
 # When a cross-reference without an explicit inventory specification is being resolved by
@@ -834,8 +832,3 @@ viewcode_enable_epub = False
 
 
 # -- end of configuration ---------------------------------------------------------------------------------------------
-
-
-# extensions.append('sphinx_automodapi.automodapi')
-# extensions.append('sphinx_automodapi.smart_resolver')
-# numpydoc_show_class_members = False
