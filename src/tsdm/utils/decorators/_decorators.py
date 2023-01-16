@@ -13,6 +13,7 @@ __all__ = [
     "vectorize",
     "wrap_func",
     "wrap_method",
+    "lazy_torch_jit",
     # Class Decorators
     "autojit",
     "IterItems",
@@ -727,3 +728,19 @@ def wrap_method(
         return _wrapper
 
     raise RuntimeError(f"Unreachable code reached for {func}")
+
+
+def lazy_torch_jit(func: Callable[P, R]) -> Callable[P, R]:
+    """Decorator to lazily compile a function with `torch.jit.script`."""
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        # script the original function if it hasn't been scripted yet
+        if wrapper.__scripted is None:
+            wrapper.__scripted = jit.script(wrapper.__original_fn)
+        return wrapper.__scripted(*args, **kwargs)
+
+    wrapper.__original_fn = func
+    wrapper.__scripted = None
+    wrapper.__script_if_tracing_wrapper = True
+    return wrapper
