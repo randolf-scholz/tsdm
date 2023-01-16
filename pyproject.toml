@@ -133,6 +133,7 @@ enable= [
 ]
 disable= [
     "C0103",  # invalid-name
+    "C0415",  # import-outside-toplevel
     "C0144",  # non-ascii-name
     "E0611",  # no-name-in-module
     "E1130",  # invalid-unary-operand-type
