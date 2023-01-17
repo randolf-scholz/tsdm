@@ -2,7 +2,8 @@
 
 __all__ = [
     # Custom Type Aliases
-    "IntLookup",
+    "Nested",
+    "Map",
     "PandasObject",
     "PathLike",
     "ScalarDType",
@@ -11,7 +12,6 @@ __all__ = [
     "TOML",
     "YAML",
     # Nested ABCs
-    "Nested",
     "NestedCollection",
     "NestedIterable",
     "NestedMapping",
@@ -38,15 +38,18 @@ import torch
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
+from tsdm.types.protocols import Lookup
 from tsdm.types.variables import AnyVar as T
+from tsdm.types.variables import Key_contra
 from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import Value_co
 from tsdm.types.variables import ValueVar as V
 
 # region Custom Type Aliases -----------------------------------------------------------
+Map: TypeAlias = Lookup[Key_contra, Value_co] | Callable[[Key_contra], Value_co]
+r"""Type Alias for `Map`."""
 Nested: TypeAlias = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]
 r"""Type Alias for nested types (JSON-Like)."""
-IntLookup: TypeAlias = Sequence[T] | Mapping[int, T] | Callable[[int], T]
-"""Type Alias for a lookup table that can be indexed by an integer."""
 PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
 PathLike: TypeAlias = str | Path | os.PathLike[str]

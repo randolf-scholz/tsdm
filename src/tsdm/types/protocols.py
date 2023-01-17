@@ -10,16 +10,16 @@ References
 __all__ = [
     # Classes
     "Array",
-    "Map",
-    "NTuple",
     "Dataclass",
+    "Hash",
+    "Lookup",
+    "NTuple",
 ]
 
-from collections.abc import Collection, Sequence
+from collections.abc import Sequence
 from dataclasses import Field
-from typing import Any, Protocol, TypeVar, overload, runtime_checkable
+from typing import Any, Protocol, TypeVar, runtime_checkable
 
-from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import Key_contra, KeyVar, Value_co
 
 ScalarType_co = TypeVar("ScalarType_co", covariant=True)
@@ -95,8 +95,9 @@ class Array(Protocol[ScalarType_co]):
     # fmt: on
 
 
-class Map(Protocol[Key_contra, Value_co]):
-    """Subset of the Mapping protocol that is contravariant in the keys."""
+@runtime_checkable
+class Lookup(Protocol[Key_contra, Value_co]):
+    """Mapping/Sequence like generic that is contravariant in Keys."""
 
     def __contains__(self, key: KeyVar) -> bool:
         # Here, any Hashable input is accepted.
@@ -108,16 +109,27 @@ class Map(Protocol[Key_contra, Value_co]):
     def __len__(self) -> int:
         """Return the number of items in the map."""
 
-    def values(self) -> Collection[Value_co]:
-        """Return a collection of the values in the map."""
 
-    @overload
-    def get(self, key: Key_contra) -> Value_co | None:
-        ...
+@runtime_checkable
+class Hash(Protocol):
+    """Protocol for hash-functions."""
 
-    @overload
-    def get(self, __key: Key_contra, default: T) -> Value_co | T:
-        ...
+    name: str
 
-    # def get(self, key: Key_contra, default: Optional = None) -> Optional[Value_co]:
-    #     """Return the value associated with the given key, or default."""
+    def digest_size(self) -> int:
+        """Return the size of the hash in bytes."""
+
+    def block_size(self) -> int:
+        """Return the internal block size of the hash in bytes."""
+
+    def update(self, data: bytes) -> None:
+        """Update this hash object's state with the provided string."""
+
+    def digest(self) -> bytes:
+        """Return the digest value as a string of binary data."""
+
+    def hexdigest(self) -> str:
+        """Return the digest value as a string of hexadecimal digits."""
+
+    def copy(self) -> Any:  # TODO: Use typing.Self
+        """Return a copy ("clone") of the hash object."""  # noqa: D402
