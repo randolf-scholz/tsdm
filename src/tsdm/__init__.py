@@ -7,6 +7,8 @@ __all__ = [
     # Objects
     # Constants
     "__version__",
+    # Functions
+    "info",
     # Sub-Modules
     "config",
     "datasets",
@@ -21,7 +23,7 @@ __all__ = [
     "utils",
     "viz",
 ]
-__ALL__ = dir() + __all__
+# __ALL__ = dir() + __all__
 
 import sys
 from importlib import metadata
@@ -61,7 +63,28 @@ from tsdm import (
 __version__ = metadata.version(__package__)
 r"""The version number of the `tsdm` package."""
 
-del sys, metadata  # , import_module
+
+def info(obj: object | None = None) -> None:
+    """Opens the help page for the given object in a browser."""
+    import inspect
+    import webbrowser
+
+    url = config.PROJECT.DOC_URL
+    if obj is None:
+        webbrowser.open(url)
+        return
+
+    pkg = inspect.getmodule(obj)
+    if pkg is None:
+        pkg = inspect.getmodule(type(obj))
+    if pkg is None:
+        raise ValueError("Could not determine package of object!")
+    if not pkg.__name__.startswith(__package__):
+        raise ValueError(f"Object does not belong to {__package__!r}!")
+    webbrowser.open(f"{url}/apidoc/{pkg.__name__}.html")
+
+
+del sys, metadata
 
 
 # __logger__ = logging.getLogger(__name__)

@@ -166,7 +166,7 @@ class LinODEnet(PreTrainedModel):
     @classmethod
     def from_checkpoint(
         cls, key: str, /, *selectors: str
-    ) -> Any:  # FIXME: USE SELF LinODEnet:
+    ) -> Any:  # FIXME: Use typing.Self
         r"""Load model from checkpoint."""
         url = cls.CHECKPOINTS[key, "url"] + "/".join(selectors)
         return cls.from_url(url)

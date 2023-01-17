@@ -42,6 +42,8 @@ from tsdm.utils.strings import repr_dataclass, repr_mapping
 DATASET_OBJECT: TypeAlias = Series | DataFrame
 r"""Type hint for pandas objects."""
 
+__logger__ = logging.getLogger(__name__)
+
 
 class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
@@ -58,17 +60,17 @@ class BaseDatasetMetaClass(ABCMeta):
             raise ValueError("BaseDatasetMetaClass must be used with 1 or 3 arguments.")
 
         if "LOGGER" not in attributes:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+            cls.LOGGER = __logger__.getChild(cls.__name__)
 
         if "RAWDATA_DIR" not in attributes:
             if os.environ.get("GENERATING_DOCS", False):
-                cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+                cls.RAWDATA_DIR = Path("~/.tsdm/rawdata/") / cls.__name__
             else:
                 cls.RAWDATA_DIR = CONFIG.RAWDATADIR / cls.__name__
 
         if "DATASET_DIR" not in attributes:
             if os.environ.get("GENERATING_DOCS", False):
-                cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
+                cls.DATASET_DIR = Path("~/.tsdm/datasets") / cls.__name__
             else:
                 cls.DATASET_DIR = CONFIG.DATASETDIR / cls.__name__
 

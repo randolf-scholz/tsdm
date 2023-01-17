@@ -77,12 +77,12 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
 
     # Class Variables
     LOGGER: ClassVar[logging.Logger]
-    # COMPONENT_FILES: ClassVar[dict[str, str]] = NotImplemented
-    DOWNLOAD_URL: ClassVar[Optional[str]] = None
-    INFO_URL: ClassVar[Optional[str]] = None
-    RAWDATA_HASH: ClassVar[Optional[str]] = None
-    RAWDATA_DIR: ClassVar[Path]
-    IS_JIT: ClassVar[bool] = False
+
+    # Instance attributes
+    DOWNLOAD_URL: Optional[str] = None
+    INFO_URL: Optional[str] = None
+    RAWDATA_HASH: Optional[str] = None
+    RAWDATA_DIR: Path
 
     # Instance Variables
     device: Optional[str | torch.device] = None
@@ -148,8 +148,8 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
 
         # FIXME: This is an awful hack!
         obj = cls.__new__(cls)
-        obj.RAWDATA_DIR = path.parent  # type: ignore[misc]
-        obj.RAWDATA_HASH = None  # type: ignore[misc]
+        obj.RAWDATA_DIR = path.parent
+        obj.RAWDATA_HASH = None
         obj.rawdata_file = path.name
         obj.__init__(*args, **kwargs)  # type: ignore[misc]
         return obj
@@ -170,16 +170,14 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
 
         # FIXME: This is an awful hack!
         obj = cls.__new__(cls)
-        obj.RAWDATA_DIR = path.parent  # type: ignore[misc]
-        obj.RAWDATA_HASH = None  # type: ignore[misc]
+        obj.RAWDATA_HASH = None
         obj.rawdata_file = path.name
         obj.__init__(*args, **kwargs)  # type: ignore[misc]
         return obj
 
     @classmethod
-    def from_checkpoint(cls, key: str, /) -> Any:  # FIXME: USE SELF PreTrainedModel:
+    def from_checkpoint(cls, key: str, /) -> Any:  # FIXME: Use typing.Self
         r"""Create model from checkpoint."""
-        # TODO: 3.11 use typing.Self
         raise NotImplementedError
 
     def __len__(self) -> int:
@@ -434,6 +432,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
             for value in filespec.values():
                 self.validate(value, reference=reference)
             return
+
         if isinstance(filespec, Sequence) and not isinstance(filespec, (str, Path)):
             for value in filespec:
                 self.validate(value, reference=reference)

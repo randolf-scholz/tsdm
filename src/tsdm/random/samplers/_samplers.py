@@ -41,26 +41,28 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from torch.utils.data import Sampler as TorchSampler
 
+from tsdm.types.protocols import Lookup
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 from tsdm.types.variables import Any_co as T_co
+from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import ObjectVar as O
-from tsdm.types.variables import ValueVar as V
 from tsdm.utils.data.datasets import DatasetCollection
 from tsdm.utils.strings import repr_mapping
 
-Boxed: TypeAlias = Union[
-    Sequence[V],
-    Mapping[int, V],
-    Callable[[int], V],
-]
+ContainerLike: TypeAlias = T | Lookup[int, T] | Callable[[int], T]
+# ContainerLike[TDVar] = TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]
+__logger__ = logging.getLogger(__name__)
 
-Nested: TypeAlias = Union[
-    O,
-    Sequence[O],
-    Mapping[int, O],
-    Callable[[int], O],
-]
+
+@runtime_checkable
+class Sampler(Protocol[T_co]):
+    r"""Protocol for `Sampler`."""
+
+    def __iter__(self) -> Iterator[T_co]:
+        ...
+
+    def __len__(self) -> int:
+        ...
 
 
 def compute_grid(
@@ -104,23 +106,13 @@ def compute_grid(
     return cast(Sequence[int], np.arange(kmin, kmax + 1))
 
 
-@runtime_checkable
-class Sampler(Protocol[T_co]):
-    r"""Protocol for `Sampler`."""
-
-    def __iter__(self) -> Iterator[T_co]:
-        ...
-
-    def __len__(self) -> int:
-        ...
-
-
 class BaseSamplerMetaClass(ABCMeta):
     r"""Metaclass for BaseSampler."""
 
     def __init__(cls, *args, **kwargs):
-        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
         super().__init__(*args, **kwargs)
+        # cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+        cls.LOGGER = __logger__.getChild(cls.__name__)
 
 
 class BaseSampler(TorchSampler[T_co], Sized, ABC, metaclass=BaseSamplerMetaClass):
@@ -128,7 +120,6 @@ class BaseSampler(TorchSampler[T_co], Sized, ABC, metaclass=BaseSamplerMetaClass
 
     LOGGER: logging.Logger
     r"""Logger for the sampler."""
-
     data: Sized
     r"""Copy of the original Data source."""
 
@@ -329,7 +320,7 @@ class HierarchicalSampler(Sampler[tuple[K, T_co]]):
 
     def __init__(
         self,
-        data_source: Mapping[K, O],
+        data_source: Mapping[K, T],
         /,
         subsamplers: Mapping[K, Sampler[T_co]],
         *,
@@ -402,18 +393,18 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     """
 
     offset: TDVar
-    deltax: Nested[TDVar]
-    stride: Nested[TDVar]
+    deltax: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]
+    stride: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]
     shuffle: bool
     intervals: DataFrame
 
     @staticmethod
-    def _get_value(obj: TDVar | Boxed[TDVar], k: int) -> TDVar:
+    def _get_value(
+        obj: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar], k: int
+    ) -> TDVar:
         if callable(obj):
             return obj(k)
-        if isinstance(obj, Sequence):
-            return obj[k]
-        if isinstance(obj, Mapping):
+        if isinstance(obj, Lookup):  # Mapping/Sequence
             return obj[k]
         # Fallback: multiple!
         return obj
@@ -423,8 +414,8 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
         *,
         xmin: TDVar,
         xmax: TDVar,
-        deltax: Nested[TDVar],
-        stride: Optional[Nested[TDVar]] = None,
+        deltax: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar],
+        stride: Optional[TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]] = None,
         levels: Optional[Sequence[int]] = None,
         offset: Optional[TDVar] = None,
         shuffle: bool = True,
@@ -464,9 +455,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
         # validate levels
         assert all(self._get_value(deltax, k) <= delta_max for k in levels)
         # compute valid intervals
-        intervals: list[
-            tuple[Nested[TDVar], Nested[TDVar], Nested[TDVar], Nested[TDVar]]
-        ] = []
+        intervals: list[tuple[TDVar, TDVar, TDVar, TDVar]] = []
 
         # for each level, get all intervals
         for k in levels:

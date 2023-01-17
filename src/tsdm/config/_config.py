@@ -11,13 +11,13 @@ __all__ = [
 
 import logging
 import os
+from functools import cached_property
 from importlib import import_module, resources
 from itertools import chain
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-import torch
 import yaml
 
 from tsdm.config import config_files
@@ -60,10 +60,6 @@ def generate_folders(d: dict, current_path: Path) -> None:
 class Config:
     r"""Configuration Interface."""
 
-    DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    r"""The default `torch` device to use."""
-    DEFAULT_DTYPE = torch.float32
-    r"""The default `torch` datatype to use."""
     HOMEDIR: Path
     r"""The users home directory."""
     BASEDIR: Path
@@ -110,26 +106,26 @@ class Config:
         self._autojit = bool(value)
         os.environ["TSDM_AUTOJIT"] = str(value)
 
-    @property
+    @cached_property
     def CONFIG_FILE(self) -> dict:
         r"""Return dictionary containing basic configuration of TSDM."""
         with resources.open_text(config_files, "config.yaml") as file:
             # with open(file, "r", encoding="utf8") as f:
             return yaml.safe_load(file)
 
-    @property
+    @cached_property
     def MODELS(self) -> dict:
         r"""Dictionary containing sources of the available models."""
         with resources.open_text(config_files, "models.yaml") as file:
             return yaml.safe_load(file)
 
-    @property
+    @cached_property
     def DATASETS(self) -> dict:
         r"""Dictionary containing sources of the available datasets."""
         with resources.open_text(config_files, "datasets.yaml") as file:
             return yaml.safe_load(file)
 
-    @property
+    @cached_property
     def HASHES(self) -> dict:
         r"""Dictionary containing hashes of the available datasets."""
         with resources.open_text(config_files, "hashes.yaml") as file:
@@ -139,24 +135,26 @@ class Config:
 class Project:
     """Holds Project related data."""
 
-    @property
+    DOC_URL = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
+
+    @cached_property
     def NAME(self) -> str:
         r"""Get project name."""
         return self.ROOT_PACKAGE.__name__
 
-    @property
+    @cached_property
     def ROOT_PACKAGE(self) -> ModuleType:
         r"""Get project root package."""
         hierarchy = __package__.split(".")
         return import_module(hierarchy[0])
 
-    @property
+    @cached_property
     def ROOT_PATH(self) -> Path:
         r"""Return the root directory."""
         assert len(self.ROOT_PACKAGE.__path__) == 1
         return Path(self.ROOT_PACKAGE.__path__[0])
 
-    @property
+    @cached_property
     def TESTS_PATH(self) -> Path:
         r"""Return the test directory."""
         tests_path = self.ROOT_PATH.parent.parent / "tests"
@@ -170,7 +168,7 @@ class Project:
             raise ValueError(f"Tests directory {tests_path} does not exist!")
         return tests_path
 
-    @property
+    @cached_property
     def SOURCE_PATH(self) -> Path:
         r"""Return the source directory."""
         source_path = self.ROOT_PATH.parent.parent / "src"
@@ -214,7 +212,6 @@ class Project:
                     print(f"Creating {test_package_init}")
                     with open(test_package_init, "w", encoding="utf8") as file:
                         file.write(f'"""Tests for {package}."""\n')
-
         if dry_run:
             print("Pass option `dry_run=False` to actually create the folders.")
 
