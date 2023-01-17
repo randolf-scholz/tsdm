@@ -46,8 +46,8 @@ __all__ = [
     "ParameterVar",
     "ReturnVar",
     "ValueVar",
-    "ValueVar_co",
-    "ValueVar_contra",
+    "Value_co",
+    "Value_contra",
 ]
 
 from collections.abc import Hashable
@@ -167,8 +167,8 @@ r"""Type Variable for return values. Always covariant."""
 
 ValueVar = TypeVar("ValueVar")
 r"""Type Variable for `Mapping` values."""
-ValueVar_co = TypeVar("ValueVar_co", covariant=True)
+Value_co = TypeVar("Value_co", covariant=True)
 r"""Covariant type variable for `Mapping` values."""
-ValueVar_contra = TypeVar("ValueVar_contra", contravariant=True)
+Value_contra = TypeVar("Value_contra", contravariant=True)
 r"""Contravariant type variable for `Mapping` values."""
 # endregion Generic Type Variables -----------------------------------------------------
