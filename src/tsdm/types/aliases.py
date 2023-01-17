@@ -2,6 +2,7 @@
 
 __all__ = [
     # Custom Type Aliases
+    "IntLookup",
     "PandasObject",
     "PathLike",
     "ScalarDType",
@@ -30,7 +31,7 @@ __all__ = [
 import os
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any, Callable, TypeAlias
 
 import numpy as np
 import torch
@@ -44,6 +45,8 @@ from tsdm.types.variables import ValueVar as V
 # region Custom Type Aliases -----------------------------------------------------------
 Nested: TypeAlias = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]
 r"""Type Alias for nested types (JSON-Like)."""
+IntLookup: TypeAlias = Sequence[T] | Mapping[int, T] | Callable[[int], T]
+"""Type Alias for a lookup table that can be indexed by an integer."""
 PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
 PathLike: TypeAlias = str | Path | os.PathLike[str]

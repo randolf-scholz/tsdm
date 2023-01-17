@@ -10,13 +10,17 @@ References
 __all__ = [
     # Classes
     "Array",
+    "Map",
     "NTuple",
     "Dataclass",
 ]
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import Field
-from typing import Any, Protocol, TypeVar, runtime_checkable
+from typing import Any, Protocol, TypeVar, overload, runtime_checkable
+
+from tsdm.types.variables import AnyVar as T
+from tsdm.types.variables import Key_contra, KeyVar, Value_co
 
 ScalarType_co = TypeVar("ScalarType_co", covariant=True)
 # Either: TypeAlias = Union[T, "Array[T]"]
@@ -89,3 +93,31 @@ class Array(Protocol[ScalarType_co]):
     def __rtruediv__(self: A, other: Any) -> A: ...
     def __itruediv__(self: A, other: Any) -> A: ...
     # fmt: on
+
+
+class Map(Protocol[Key_contra, Value_co]):
+    """Subset of the Mapping protocol that is contravariant in the keys."""
+
+    def __contains__(self, key: KeyVar) -> bool:
+        # Here, any Hashable input is accepted.
+        """Return True if the map contains the given key."""
+
+    def __getitem__(self, key: Key_contra) -> Value_co:
+        """Return the value associated with the given key."""
+
+    def __len__(self) -> int:
+        """Return the number of items in the map."""
+
+    def values(self) -> Collection[Value_co]:
+        """Return a collection of the values in the map."""
+
+    @overload
+    def get(self, key: Key_contra) -> Value_co | None:
+        ...
+
+    @overload
+    def get(self, __key: Key_contra, default: T) -> Value_co | T:
+        ...
+
+    # def get(self, key: Key_contra, default: Optional = None) -> Optional[Value_co]:
+    #     """Return the value associated with the given key, or default."""
