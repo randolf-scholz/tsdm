@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 import pickle
-from typing import Any
+import webbrowser
 
 import numpy as np
 import pandas as pd
@@ -20,12 +20,13 @@ from tsdm.models.pretrained.base import PreTrainedModel
 class LinODEnet(PreTrainedModel):
     r"""Import pre-trained LinODEnet model."""
 
-    SHARE_URL = "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L"
-    INFO_URL = f"{SHARE_URL}?path=/LinODEnet"
-    BASE_URL = f"{SHARE_URL}/download?path=/LinODEnet"
+    INFO_URL = "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L?path=/LinODEnet"
+    CHECKPOINT_URL = (
+        "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L/download?path=/LinODEnet/"
+    )
 
     rawdata_file = "2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip"
-    DOWNLOAD_URL = f"{BASE_URL}/{rawdata_file}"
+    DOWNLOAD_URL = f"{CHECKPOINT_URL}/{rawdata_file}"
     RAWDATA_HASH = "d50d128b29e7310b4a9496494bea1ca1b614a7ffbf730f5a61d0b3026cb87ed8"
 
     component_files = {
@@ -41,17 +42,17 @@ class LinODEnet(PreTrainedModel):
                 (
                     "2022-11-16",
                     "legacy run",
-                    f"{BASE_URL}/2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip",
+                    f"{CHECKPOINT_URL}/2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip",
                 ),
                 (
                     "2022-11-24",
                     "legacy run",
-                    f"{BASE_URL}/2022-11-24-linodenet-a44fc91eab7a98130266d1c37f072eb5.zip",
+                    f"{CHECKPOINT_URL}/2022-11-24-linodenet-a44fc91eab7a98130266d1c37f072eb5.zip",
                 ),
                 (
                     "2022-12-01",
                     "Longer training run (300+ epochs) recommended epochs: 270, 220, 150, 80",
-                    f"{BASE_URL}/2022-12-01T04:26:13/f=0_bs=64_lr=0.001_hs=64_ls=128",
+                    f"{CHECKPOINT_URL}/2022-12-01T04:26:13/f=0_bs=64_lr=0.001_hs=64_ls=128",
                 ),
             ],
             columns=["time", "note", "url"],
@@ -66,6 +67,10 @@ class LinODEnet(PreTrainedModel):
         #     subset=["note"],
         # )
     )
+
+    def available_checkpoints(self) -> None:
+        r"""Open browser with folder containing available checkpoints."""
+        webbrowser.open(self.INFO_URL)
 
     def predict(self, ts: DataFrame) -> DataFrame:
         r"""Predict function for LinODEnet."""
@@ -163,10 +168,10 @@ class LinODEnet(PreTrainedModel):
 
         return timeseries, metadata, setpoints
 
-    @classmethod
-    def from_checkpoint(
-        cls, key: str, /, *selectors: str
-    ) -> Any:  # FIXME: Use typing.Self
-        r"""Load model from checkpoint."""
-        url = cls.CHECKPOINTS[key, "url"] + "/".join(selectors)
-        return cls.from_url(url)
+    # @classmethod
+    # def from_remote_checkpoint(
+    #     cls, key: str, /, *selectors: str
+    # ) -> Any:  # FIXME: Use typing.Self
+    #     r"""Load model from checkpoint."""
+    #     url = cls.CHECKPOINTS[key, "url"] + "/".join(selectors)
+    #     return cls.from_url(url)

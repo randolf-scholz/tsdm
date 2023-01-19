@@ -769,6 +769,9 @@ class TimeSeriesDataset(TorchDataset[Series]):
     More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
     """
 
+    timeseries: DataFrame
+    r"""The time series data."""
+
     _: KW_ONLY = NotImplemented
 
     # Main Attributes
@@ -776,8 +779,6 @@ class TimeSeriesDataset(TorchDataset[Series]):
     r"""The name of the dataset."""
     index: Index = NotImplemented
     r"""The time-index of the dataset."""
-    timeseries: DataFrame
-    r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
 
@@ -801,11 +802,11 @@ class TimeSeriesDataset(TorchDataset[Series]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: K) -> Series:
+    def __getitem__(self, key: Hashable) -> Series:
         ...
 
     @overload
-    def __getitem__(self, key: Index | slice | list[K]) -> DataFrame:
+    def __getitem__(self, key: Index | slice | list[Hashable]) -> DataFrame:
         ...
 
     def __getitem__(self, key):
