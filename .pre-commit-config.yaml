@@ -1,5 +1,5 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
-minimum_pre_commit_version: 2.2.0
+minimum_pre_commit_version: 2.9.0
 default_language_version:
   python: python3.10
   node: "18.12.1"
@@ -87,7 +87,8 @@ repos:
     rev: 1.13.0
     hooks:
       - id: blacken-docs
-        files: '^(src/|tests/).*\.py$'
+        files: (^src/|^tests/)
+        types: [python]
         description: " Run `black` on python code blocks in documentation files "
   # flake8
   - repo: https://github.com/pycqa/flake8
@@ -111,12 +112,12 @@ repos:
     rev: 6.3.0
     hooks:
       - id: pydocstyle
+        files: (^src/|^tests/)
         #        name: pydocstyle
         description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
         #        entry: pydocstyle
         #        language: python
         #        types: [ python ]
-        files: (^src/|^tests/)
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
     rev: v0.16.4
@@ -130,8 +131,9 @@ repos:
       - id: jupyter-nb-clear-output
         name: jupyter-nb-clear-output
         description: Clear output cells in Jupyter notebooks
-        files: '^(dev/|experiments/).*\.ipynb$'
+        files: (^dev/|^experiments/)
         stages: [commit]
+        types: [jupyter]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
   # mypy
