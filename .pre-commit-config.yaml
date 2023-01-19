@@ -113,6 +113,7 @@ repos:
     rev: v1.4.0
     hooks:
       - id: yesqa
+        files: (^src/|^tests/)
   # pydocstyle
   - repo: https://github.com/PyCQA/pydocstyle
     rev: 6.3.0
