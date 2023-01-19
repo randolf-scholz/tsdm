@@ -26,7 +26,7 @@ def is_dunder(s: str) -> bool:
     return s.isidentifier() and s.startswith("__") and s.endswith("__")
 
 
-class ConfigMetaclass(ABCMeta):  # noqa: B024
+class ConfigMetaclass(ABCMeta):
     r"""Metaclass for `BaseConfig`."""
 
     # fmt: off
