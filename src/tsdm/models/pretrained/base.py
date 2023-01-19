@@ -350,7 +350,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     def __load_torch_lr_scheduler(
         self,
         file: str | Path | IO[bytes],
-        /,  # noqa: W504 # FIXME: https://github.com/PyCQA/pycodestyle/issues/951
+        /,  # FIXME: https://github.com/PyCQA/pycodestyle/issues/951
     ) -> TorchLRScheduler:
         r"""Load a torch learning rate scheduler."""
         return cast(TorchLRScheduler, self.__load_torch_component("lr_scheduler", file))
