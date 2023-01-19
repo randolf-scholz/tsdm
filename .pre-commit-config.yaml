@@ -113,17 +113,14 @@ repos:
     hooks:
       - id: pydocstyle
         files: (^src/|^tests/)
-        #        name: pydocstyle
         description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
-        #        entry: pydocstyle
-        #        language: python
-        #        types: [ python ]
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
     rev: v0.16.4
     hooks:
       - id: slotscheck
         files: ^src/
+        language: system
         description: "Slotscheck: Ensure your __slots__ are working properly."
   # clear jupyter notebooks in dev-folder
   - repo: local
