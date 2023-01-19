@@ -1,5 +1,5 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
-minimum_pre_commit_version: 2.9.0
+minimum_pre_commit_version: 2.21.0
 default_language_version:
   python: python3.10
   node: "18.12.1"
@@ -123,7 +123,7 @@ repos:
     rev: v0.16.4
     hooks:
       - id: slotscheck
-        files: (^src/|^tests/)
+        files: ^src/
         description: "Slotscheck: Ensure your __slots__ are working properly."
   # clear jupyter notebooks in dev-folder
   - repo: local
