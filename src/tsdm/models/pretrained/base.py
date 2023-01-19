@@ -1,4 +1,31 @@
-r"""Base Class for pretrained models."""
+r"""Base Class for pretrained models.
+
+A Pretrained Model is a model that has been trained on a specific task.
+It can be used to make predictions without having to train the model again.
+
+Therefore, a pretrained model is a combination of a model, a task and an encoder/decoder.
+
+We allow several ways of initializing Pretrained Models:
+
+1. Load a pretrained model from a local directory or file
+    - keep the file in its original location and load it from there
+2. Load a pretrained model from a remote directory or file
+    - download the file to a local directory and load it from there
+3. Load a pretrained model from a remote database via a key / identifier
+    - download the file to a local directory and load it from there
+
+
+A model checkpoint might consist of several files, such as:
+
+- The model weights
+- The optimizer state
+- The training history
+- The hyperparameters
+
+Therefore, we need to define a way of storing and loading these files.
+
+- There should be some way to automatically determine which components are available
+"""
 
 __all__ = [
     # Classes
@@ -64,7 +91,7 @@ class PreTrainedMetaClass(ABCMeta):
     #     return cls.__new__(cls, *args, **kw)
 
 
-class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
+class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
     r"""Base class for all pretrained models.
 
     A pretrained model can provide multiple components:
@@ -77,6 +104,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
 
     # Class Variables
     LOGGER: ClassVar[logging.Logger]
+    CHECKPOINT_URL: ClassVar[str] = NotImplemented
 
     # Instance attributes
     DOWNLOAD_URL: Optional[str] = None
@@ -87,8 +115,8 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     # Instance Variables
     device: Optional[str | torch.device] = None
     components: Mapping[str, Any]
-    rawdata_path: Path
-    rawdata_file: str = NotImplemented
+    rawdata_path: Path = NotImplemented
+    rawdata_file: str | Path = NotImplemented
 
     component_files: Mapping[str, str] = {
         "model": "model",
@@ -110,18 +138,28 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         self,
         *,
         device: Optional[str | torch.device] = None,
-        reset: bool = False,
         initialize: bool = True,
+        reset: bool = False,
     ) -> None:
-        super().__init__()
+        if self.rawdata_path is NotImplemented:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} does not implement a default model!"
+                f"Please use one of the constructor methods to specify the model."
+            )
+
+        if not self.rawdata_path.exists():
+            raise FileNotFoundError(
+                f"Model not found at {self.rawdata_path}! Please download it first."
+            )
+
         self.rawdata_path = self.RAWDATA_DIR / self.rawdata_file
         self.device = device
 
         if not inspect.isabstract(self):
             if reset:
-                self.RAWDATA_DIR.rmdir()
+                self.rawdata_path.rmdir()
 
-            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
+            self.rawdata_path.mkdir(parents=True, exist_ok=True)
 
             if initialize:
                 self.download()
@@ -131,27 +169,21 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         )
 
     @classmethod
-    def from_zipfile(
-        cls, zipfile: str | Path, /, *args: Any, **kwargs: Any
-    ) -> Any:  # FIXME: Return Self PreTrainedModel:
-        r"""Create model from zipfile."""
-        path = Path(zipfile)
-        if path.suffix != ".zip":
-            raise ValueError(f"{path=} is not a zipfile!")
-
+    def from_path(
+        cls, file_or_directory: str | Path, /, *args: Any, **kwargs: Any
+    ) -> Any:
+        r"""Create model from directory."""
+        path = Path(file_or_directory)
         if not path.is_relative_to(Path.cwd()):
-            # print(f"No path provided assuming current working directory.")
             path = Path.cwd() / path
-
         if not path.exists():
-            raise ValueError(f"{path=} does not exist!")
+            raise ValueError(f"{path} does not exist!")
 
-        # FIXME: This is an awful hack!
         obj = cls.__new__(cls)
-        obj.RAWDATA_DIR = path.parent
+        obj.RAWDATA_DIR = path.parent  # .parent if path.is_file() else path.parent
         obj.RAWDATA_HASH = None
-        obj.rawdata_file = path.name
-        obj.__init__(*args, **kwargs)  # type: ignore[misc]
+        obj.rawdata_path = path
+        cls.__init__(obj, *args, **kwargs)
         return obj
 
     @classmethod
@@ -171,14 +203,33 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
         # FIXME: This is an awful hack!
         obj = cls.__new__(cls)
         obj.RAWDATA_HASH = None
-        obj.rawdata_file = path.name
-        obj.__init__(*args, **kwargs)  # type: ignore[misc]
+        obj.rawdata_path = path
+        cls.__init__(obj, *args, **kwargs)
         return obj
 
     @classmethod
-    def from_checkpoint(cls, key: str, /) -> Any:  # FIXME: Use typing.Self
-        r"""Create model from checkpoint."""
-        raise NotImplementedError
+    def from_remote_checkpoint(
+        cls, checkpoint: str, /, *args: Any, **kwargs: Any
+    ) -> Any:  # FIXME: Use typing.Self
+        r"""Create model from local."""
+        if cls.CHECKPOINT_URL is NotImplemented:
+            raise NotImplementedError(
+                f"{cls.__name__} does not implement a checkpoint url!"
+            )
+        url = cls.CHECKPOINT_URL + checkpoint
+        path = cls.RAWDATA_DIR / checkpoint
+
+        if path.exists():
+            warnings.warn(f"{Path=} already exists, skipping download.")
+        else:
+            download(url, path)
+
+        # FIXME: This is an awful hack!
+        obj = cls.__new__(cls)
+        obj.RAWDATA_HASH = None
+        obj.rawdata_file = path
+        cls.__init__(obj, *args, **kwargs)
+        return obj
 
     def __len__(self) -> int:
         return len(self.components)
@@ -231,6 +282,21 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     # @abstractmethod
     # def rawdata_file(self) -> str:
     #     r"""Return filename."""
+
+    def __detect_components_zipfile(self, path: str | Path) -> set[str]:
+        r"""Detect components in zipfile."""
+        with ZipFile(path, "r") as zf:
+            return set(self.component_files).intersection(
+                Path(f).stem for f in zf.namelist()
+            )
+
+    def detect_components(self) -> dict[str, str]:
+        r"""Detect which components are available."""
+        return {
+            k: v
+            for k, v in self.component_files.items()
+            if (self.RAWDATA_DIR / v).exists()
+        }
 
     def rawdata_file_exist(self) -> bool:
         r"""Check if raw data files exist."""

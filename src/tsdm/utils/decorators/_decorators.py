@@ -72,6 +72,7 @@ def rpartial(
 
     @wraps(func)
     def _wrapper(*func_args, **func_kwargs):
+        # TODO: https://github.com/python/typeshed/issues/8703
         return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
 
     return _wrapper

@@ -66,6 +66,10 @@ class BaseEncoder(ABC, Generic[O, R], metaclass=BaseEncoderMetaClass):
 
     # TODO: implement __invert__ (python 3.11)
 
+    def __invert__(self) -> BaseEncoder:
+        r"""Return the inverse encoder (i.e. decoder)."""
+        raise NotImplementedError
+
     def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
         r"""Return chained encoders."""
         return ChainedEncoder(self, other)
