@@ -353,10 +353,10 @@ del sys, metadata
 #     assert hasattr(module, "__all__"), f"{module=} has no __all__!"
 #     assert module.__name__ == module.__package__, f"{module=} is not a package!"
 #
-#     maxlen = max((len(key) for key in variables))
+#     max_length = max((len(key) for key in variables))
 #
 #     def _format(key: str) -> str:
-#         return key.ljust(maxlen)
+#         return key.ljust(max_length)
 #
 #     for key in list(variables):
 #         key_repr = _format(key)
