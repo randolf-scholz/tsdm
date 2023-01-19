@@ -119,6 +119,7 @@ types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 types-urllib3 = ">=1.26"
 wheel = ">=0.38"
+yesqa = "^1.4.0"
 
 
 [tool.poetry.scripts]
@@ -230,7 +231,7 @@ color = true
 # pydocstyle Configuration #
 ############################
 [tool.pydocstyle]
-convention = "numpy"
+#convention = "numpy"
 #count = true
 # https://github.com/PyCQA/pydocstyle/issues/363
 #match = '.*\.py$'

@@ -397,7 +397,7 @@ def is_keyword_only(p: inspect.Parameter, /) -> bool:
 
 
 def is_zipfile(path: Path) -> bool:
-    r"""Returns True if the file is a zipfile."""
+    r"""Return `True` if the file is a zipfile."""
     try:
         with ZipFile(path):
             return True

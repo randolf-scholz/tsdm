@@ -47,9 +47,8 @@ class NTuple(Protocol):
 
 
 @runtime_checkable
-class Array(Protocol[ScalarType_co]):
+class Array(Protocol[ScalarType_co]):  # FIXME: Use Self
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
-    # FIXME: Use Self
 
     @property
     def shape(self) -> Sequence[int]:
@@ -132,4 +131,4 @@ class Hash(Protocol):
         """Return the digest value as a string of hexadecimal digits."""
 
     def copy(self) -> Any:  # TODO: Use typing.Self
-        """Return a copy ("clone") of the hash object."""  # noqa: D402
+        """Return a clone of the hash object."""
