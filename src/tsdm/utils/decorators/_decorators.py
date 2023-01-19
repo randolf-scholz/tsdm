@@ -731,7 +731,7 @@ def wrap_method(
 
 
 def lazy_torch_jit(func: Callable[P, R]) -> Callable[P, R]:
-    """Decorator to lazily compile a function with `torch.jit.script`."""
+    """Create decorator to lazily compile a function with `torch.jit.script`."""
 
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:

@@ -65,7 +65,7 @@ r"""The version number of the `tsdm` package."""
 
 
 def info(obj: object | None = None) -> None:
-    """Opens the help page for the given object in a browser."""
+    """Open the help page for the given object in a browser."""
     import inspect
     import webbrowser
 

@@ -107,12 +107,20 @@ repos:
           - flake8-pyi
           - flake8-rst
           - flake8-rst-docstrings
+  # yesqa
+  # TODO: remove if https://github.com/PyCQA/flake8/issues/603 is fixed
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.4.0
+    hooks:
+      - id: yesqa
   # pydocstyle
   - repo: https://github.com/PyCQA/pydocstyle
     rev: 6.3.0
     hooks:
       - id: pydocstyle
         files: (^src/|^tests/)
+        additional_dependencies:
+          - tomli
         description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck

@@ -138,7 +138,7 @@ class LinODEnet(PreTrainedModel):
     def make_dataframes_from_pickle(
         filename: str,
     ) -> tuple[DataFrame, DataFrame, DataFrame]:
-        r"""Returns DataFrames from pickle.
+        r"""Return DataFrames from pickle.
 
         Pickle must return a nested dictionary of the schema:
 

@@ -366,6 +366,7 @@ class FrameDataset(BaseDataset, ABC):
 
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
+
     __dataset: DATASET_OBJECT = NotImplemented
     DATASET_HASH: Optional[str] = None
     r"""Hash value of the dataset file(s), checked after clean."""
