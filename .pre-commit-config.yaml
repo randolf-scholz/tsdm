@@ -44,7 +44,7 @@ repos:
       - id: trailing-whitespace
         description: "trims trailing whitespace.."
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: "v1.9.0"
+    rev: "v1.10.0"
     hooks:
       - id: python-check-blanket-noqa
         description: "Enforce that `noqa` annotations always occur with specific codes. Sample annotations: `# noqa: F401`, `# noqa: F401,W203`"
@@ -84,7 +84,7 @@ repos:
       - id: black-jupyter
   # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
-    rev: v1.12.1
+    rev: 1.13.0
     hooks:
       - id: blacken-docs
         files: '^(src/|tests/).*\.py$'
@@ -106,13 +106,23 @@ repos:
           - flake8-pyi
           - flake8-rst
           - flake8-rst-docstrings
+  # pydocstyle
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        #        name: pydocstyle
+        description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
+        #        entry: pydocstyle
+        #        language: python
+        #        types: [ python ]
+        files: (^src/|^tests/)
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
-    rev: v0.16.3
+    rev: v0.16.4
     hooks:
       - id: slotscheck
-        files: '^src/.*\.py$'
-        language: system
+        files: (^src/|^tests/)
         description: "Slotscheck: Ensure your __slots__ are working properly."
   # clear jupyter notebooks in dev-folder
   - repo: local
