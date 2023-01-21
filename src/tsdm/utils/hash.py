@@ -2,12 +2,14 @@ r"""Hash function utils."""
 
 __all__ = [
     # Functions
-    "hash_set",
-    "hash_mapping",
     "hash_iterable",
+    "hash_mapping",
+    "hash_object",
     "hash_pandas",
+    "hash_set",
 ]
 
+import string
 from collections import Counter
 from collections.abc import Hashable, Iterable, Mapping
 from typing import Any
@@ -75,3 +77,26 @@ def hash_pandas(
     if row_invariant:
         return hash_set(row_hash, ignore_duplicates=ignore_duplicates)
     return hash(tuple(row_hash))
+
+
+def to_base(n: int, b: int) -> list[int]:
+    r"""Convert non-negative integer to any basis.
+
+    The result satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
+
+    References
+    ----------
+    - https://stackoverflow.com/a/28666223/9318372
+    """
+    digits = []
+    while n:
+        n, d = divmod(n, b)
+        digits.append(d)
+    return digits[::-1] or [0]
+
+
+def to_alphanumeric(n: int) -> str:
+    r"""Convert integer to alphanumeric code."""
+    chars = string.ascii_uppercase + string.digits
+    digits = to_base(n, len(chars))
+    return "".join(chars[i] for i in digits)
