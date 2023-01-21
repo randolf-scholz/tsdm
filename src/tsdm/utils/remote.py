@@ -63,6 +63,9 @@ def download(
     total = int(response.headers.get("content-length", 0))
     path = Path(fname if fname is not None else url.split("/")[-1])
 
+    if not path.parent.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+
     if skip_existing and path.exists():
         if hash_value is not None:
             validate_hash(
@@ -71,7 +74,7 @@ def download(
         return
 
     try:
-        with path.open("wb") as file, tqdm(
+        with open(path, "wb") as file, tqdm(
             desc=str(path),
             total=total,
             unit="iB",
@@ -79,8 +82,9 @@ def download(
             unit_divisor=1024,
         ) as progress_bar:
             for data in response.iter_content(chunk_size=chunk_size):
-                size = file.write(data)
-                progress_bar.update(size)
+                if data:  # filter out keep-alive new chunks
+                    size = file.write(data)
+                    progress_bar.update(size)
     except Exception as e:
         path.unlink()
         raise RuntimeError(

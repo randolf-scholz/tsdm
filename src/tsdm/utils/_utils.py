@@ -26,18 +26,21 @@ __all__ = [
     "pairwise_disjoint_masks",
     "paths_exists",
     "prepend_path",
+    "repackage_zip",
     "round_relative",
     "unflatten_dict",
 ]
 
 import inspect
 import os
+import shutil
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, Literal, Optional, cast, overload
 from zipfile import BadZipFile, ZipFile
 
@@ -46,6 +49,7 @@ import pandas
 from numpy.typing import NDArray
 from pandas import Series
 from torch import nn
+from tqdm.auto import tqdm
 
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
@@ -513,49 +517,36 @@ def series_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
     return cast(bool, values.apply(float.is_integer).all())
 
 
-# def infer_dtype(series: Series) -> Union[None, ExtensionDtype, np.generic]:
-#     original_series = series.copy()
-#     inferred_series = series.copy().convert_dtypes()
-#     original_dtype = original_series.dtype
-#     inferred_dtype = inferred_series.dtype
-#
-#     series = inferred_series
-#     mask = pandas.notna(series)
-#
-#     # Series contains only NaN values...
-#     if not mask.any():
-#         return None
-#
-#     values = series[mask]
-#     uniques = values.unique()
-#
-#     # if string do string downcast
-#     if pandas.api.types.is_string_dtype(series):
-#         if string_is_bool(series, uniques=uniques):
-#             string_to_bool(series, uniques=uniques)
+def repackage_zip(path: PathLike, /) -> None:
+    """Remove the leading directory from a zip file."""
+    original_path = Path(path)
 
+    # guard clause: check if requirements are met
+    with ZipFile(original_path, "r") as original_archive:
+        contents = original_archive.namelist()
+        top = contents[0]
 
-# def get_integer_cols(df) -> set[str]:
-#     cols = set()
-#     for col in table:
-#         if np.issubdtype(table[col].dtype, np.integer):
-#             print(f"Integer column                       : {col}")
-#             cols.add(col)
-#         elif np.issubdtype(table[col].dtype, np.floating) and float_is_int(table[col]):
-#             print(f"Integer column pretending to be float: {col}")
-#             cols.add(col)
-#     return cols
-#
-#
-# def contains_nan_slice(series, slices, two_enough: bool = False) -> bool:
-#     num_missing = 0
-#     for idx in slices:
-#         if pd.isna(series[idx]).all():
-#             num_missing += 1
-#
-#     if (num_missing > 0 and not two_enough) or (
-#         num_missing >= len(slices) - 1 and two_enough
-#     ):
-#         print(f"{series.name}: data missing in {num_missing}/{len(slices)} slices!")
-#         return True
-#     return False
+        requirements = (
+            top.endswith("/")
+            # zip file name must match top directory name
+            and original_path.stem == top[:-1]
+            # all items must start with top directory name
+            and all(item.startswith(top) for item in contents)
+        )
+
+        if not requirements:
+            __logger__.info("%s: skipping repackage_zip.", original_path)
+            return
+
+    # create a temporary directory
+    with TemporaryDirectory() as temp_dir:
+        # move the zip file to the temporary directory
+        temp_path = Path(temp_dir) / original_path.name
+        shutil.move(original_path, temp_path)
+        # create a new zipfile with the modified contents:
+        with ZipFile(temp_path) as old_archive, ZipFile(path, "w") as new_archive:
+            contents = old_archive.namelist()
+            top = contents[0]
+            for item in tqdm(contents[1:], desc="Repackaging zip file"):
+                _, new_name = item.split(top, 1)
+                new_archive.writestr(new_name, old_archive.read(item))
