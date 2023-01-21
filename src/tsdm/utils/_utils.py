@@ -34,6 +34,7 @@ __all__ = [
 import inspect
 import os
 import shutil
+import warnings
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import partial
@@ -520,6 +521,10 @@ def series_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
 def repackage_zip(path: PathLike, /) -> None:
     """Remove the leading directory from a zip file."""
     original_path = Path(path)
+
+    if not is_zipfile(original_path):
+        warnings.warn(f"{original_path} is not a zip file.")
+        return
 
     # guard clause: check if requirements are met
     with ZipFile(original_path, "r") as original_archive:
