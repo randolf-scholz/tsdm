@@ -18,16 +18,16 @@ def test_pretrained():
 
     pretrained = LinODEnet()
 
-    model = pretrained["model"]
+    model = pretrained.components["model"]
     assert isinstance(model, torch.nn.Module)
 
-    encoder = pretrained["encoder"]
+    encoder = pretrained.components["encoder"]
     assert isinstance(encoder, BaseEncoder)
 
-    hyperparameters = pretrained["hyperparameters"]
+    hyperparameters = pretrained.components["hyperparameters"]
     assert isinstance(hyperparameters, dict)
 
-    optimzier = pretrained["optimizer"]
+    optimzier = pretrained.components["optimizer"]
     assert isinstance(optimzier, torch.optim.Optimizer)
 
 
