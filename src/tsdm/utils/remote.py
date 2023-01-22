@@ -8,6 +8,7 @@ __all__ = [
 ]
 
 import hashlib
+import logging
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -17,6 +18,8 @@ import requests
 from tqdm.autonotebook import tqdm
 
 from tsdm.types.aliases import PathLike
+
+__logger__ = logging.getLogger(__name__)
 
 
 def hash_file(
@@ -103,6 +106,7 @@ def import_from_url(
     """Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)
     path = Path(fname if fname is not None else url.split("/")[-1])
+    __logger__.info("Downloading %s to %s", url, path)
 
     if parsed_url.netloc == "www.kaggle.com":
         kaggle_name = Path(parsed_url.path).name
