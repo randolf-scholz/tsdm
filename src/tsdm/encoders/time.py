@@ -283,7 +283,7 @@ class SocialTimeEncoder(BaseEncoder):
 
     def __repr__(self) -> str:
         r"""Pretty print."""
-        return f"SocialTimeEncoder('{self.level_code}')"
+        return f"SocialTimeEncoder({self.level_code!r})"
 
 
 class PeriodicSocialTimeEncoder(SocialTimeEncoder):

@@ -200,6 +200,7 @@
       <w>levelv</w>
       <w>linalg</w>
       <w>linearness</w>
+      <w>ljust</w>
       <w>logdet</w>
       <w>logdir</w>
       <w>logit</w>
@@ -219,6 +220,7 @@
       <w>maxdim</w>
       <w>maxitems</w>
       <w>maxs</w>
+      <w>maxsplit</w>
       <w>mcuturi</w>
       <w>megaconsistency</w>
       <w>membername</w>

@@ -218,6 +218,7 @@ class Standardizer(BaseEncoder, Generic[TensorType]):
 
 class LinearScaler(BaseEncoder, Generic[TensorType]):
     r"""Maps the interval [x_min, x_max] to [y_min, y_max] (default: [0,1])."""
+
     # TODO: rewrite as dataclass
 
     requires_fit: ClassVar[bool] = False

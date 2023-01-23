@@ -1,5 +1,5 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
-minimum_pre_commit_version: 2.2.0
+minimum_pre_commit_version: 2.21.0
 default_language_version:
   python: python3.10
   node: "18.12.1"
@@ -44,7 +44,7 @@ repos:
       - id: trailing-whitespace
         description: "trims trailing whitespace.."
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: "v1.9.0"
+    rev: "v1.10.0"
     hooks:
       - id: python-check-blanket-noqa
         description: "Enforce that `noqa` annotations always occur with specific codes. Sample annotations: `# noqa: F401`, `# noqa: F401,W203`"
@@ -84,10 +84,11 @@ repos:
       - id: black-jupyter
   # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
-    rev: v1.12.1
+    rev: 1.13.0
     hooks:
       - id: blacken-docs
-        files: '^(src/|tests/).*\.py$'
+        files: (^src/|^tests/)
+        types: [python]
         description: " Run `black` on python code blocks in documentation files "
   # flake8
   - repo: https://github.com/pycqa/flake8
@@ -101,17 +102,32 @@ repos:
           - flake8-bugbear
           - flake8-comprehensions
           - flake8-docstrings # wraps pydocstyle
-          - flake8-mutable
           - flake8-nb
           - flake8-pyi
           - flake8-rst
           - flake8-rst-docstrings
+  # yesqa
+  # TODO: remove if https://github.com/PyCQA/flake8/issues/603 is fixed
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.4.0
+    hooks:
+      - id: yesqa
+        files: (^src/|^tests/)
+  # pydocstyle
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        files: (^src/|^tests/)
+        additional_dependencies:
+          - tomli
+        description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
-    rev: v0.16.3
+    rev: v0.16.4
     hooks:
       - id: slotscheck
-        files: '^src/.*\.py$'
+        files: ^src/
         language: system
         description: "Slotscheck: Ensure your __slots__ are working properly."
   # clear jupyter notebooks in dev-folder
@@ -120,8 +136,9 @@ repos:
       - id: jupyter-nb-clear-output
         name: jupyter-nb-clear-output
         description: Clear output cells in Jupyter notebooks
-        files: '^(dev/|experiments/).*\.ipynb$'
+        files: (^dev/|^experiments/)
         stages: [commit]
+        types: [jupyter]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
   # mypy

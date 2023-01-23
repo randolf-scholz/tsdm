@@ -31,10 +31,11 @@ __all__ = [
     "is_positional_only",
     "is_zipfile",
     "now",
+    "pairwise_disjoint",
     "paths_exists",
     "prepend_path",
+    "repackage_zip",
     "round_relative",
-    "pairwise_disjoint",
     "unflatten_dict",
 ]
 
@@ -60,6 +61,7 @@ from tsdm.utils._utils import (
     pairwise_disjoint,
     paths_exists,
     prepend_path,
+    repackage_zip,
     round_relative,
     unflatten_dict,
 )

@@ -1,4 +1,31 @@
-r"""Base Class for pretrained models."""
+r"""Base Class for pretrained models.
+
+A Pretrained Model is a model that has been trained on a specific task.
+It can be used to make predictions without having to train the model again.
+
+Therefore, a pretrained model is a combination of a model, a task and an encoder/decoder.
+
+We allow several ways of initializing Pretrained Models:
+
+1. Load a pretrained model from a local directory or file
+    - keep the file in its original location and load it from there
+2. Load a pretrained model from a remote directory or file
+    - download the file to a local directory and load it from there
+3. Load a pretrained model from a remote database via a key / identifier
+    - download the file to a local directory and load it from there
+
+
+A model checkpoint might consist of several files, such as:
+
+- The model weights
+- The optimizer state
+- The training history
+- The hyperparameters
+
+Therefore, we need to define a way of storing and loading these files.
+
+- There should be some way to automatically determine which components are available
+"""
 
 __all__ = [
     # Classes
@@ -11,17 +38,14 @@ import json
 import logging
 import os
 import pickle
-import subprocess
 import warnings
 import webbrowser
 from abc import ABC, ABCMeta
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Mapping
 from functools import cached_property
-from hashlib import sha256
 from io import IOBase
 from pathlib import Path
 from typing import IO, Any, ClassVar, Optional, cast
-from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import torch
@@ -32,10 +56,17 @@ from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 
 from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
-from tsdm.types.aliases import Nested
-from tsdm.utils import LazyDict, initialize_from_config, is_zipfile, paths_exists
-from tsdm.utils.remote import download
-from tsdm.utils.strings import repr_mapping, repr_short
+from tsdm.utils import (
+    LazyDict,
+    initialize_from_config,
+    is_zipfile,
+    paths_exists,
+    repackage_zip,
+)
+from tsdm.utils.remote import import_from_url
+from tsdm.utils.strings import repr_mapping
+
+# TODO: loading components!
 
 
 class PreTrainedMetaClass(ABCMeta):
@@ -59,12 +90,8 @@ class PreTrainedMetaClass(ABCMeta):
             else:
                 cls.RAWDATA_DIR = CONFIG.MODELDIR / cls.__name__
 
-    # def __call__(cls, *args: Any, **kw: Any) -> Any:
-    #     r"""Prevent __init__."""
-    #     return cls.__new__(cls, *args, **kw)
 
-
-class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
+class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
     r"""Base class for all pretrained models.
 
     A pretrained model can provide multiple components:
@@ -77,147 +104,153 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
 
     # Class Variables
     LOGGER: ClassVar[logging.Logger]
-    # COMPONENT_FILES: ClassVar[dict[str, str]] = NotImplemented
+    """Logger for the class."""
+    CHECKPOINT_URL: ClassVar[Optional[str]] = None
+    """URL with overview of available model checkpoints."""
     DOWNLOAD_URL: ClassVar[Optional[str]] = None
-    INFO_URL: ClassVar[Optional[str]] = None
-    RAWDATA_HASH: ClassVar[Optional[str]] = None
+    """URL from which model checkpoints can be downloaded."""
+    DOCUMENTATION_URL: ClassVar[Optional[str]] = None
+    """URL of online documentation for the model."""
     RAWDATA_DIR: ClassVar[Path]
-    IS_JIT: ClassVar[bool] = False
+    """Default directory where the raw data is stored."""
 
     # Instance Variables
-    device: Optional[str | torch.device] = None
     components: Mapping[str, Any]
-    rawdata_path: Path
-    rawdata_file: str = NotImplemented
-
-    component_files: Mapping[str, str] = {
-        "model": "model",
-        "encoder": "encoder.pickle",
-        "optimizer": "optimizer",
-        "hyperparameters": "hparams.yaml",
-        "lr_scheduler": "lr_scheduler",
-    }
-
-    # def __new__(
-    #     cls, *, initialize: bool = True, reset: bool = False, **kwds: Any
-    # ) -> PreTrainedModel:
-    #     r"""Construct the model object and initialize it."""
-    #     self: PreTrainedModel = super().__new__(cls)
-    #
-    #     return self
+    """Mapping of component names to their respective components."""
+    # component_files: Mapping[str, str] = {
+    #     "model": "model",
+    #     "encoder": "encoder.pickle",
+    #     "optimizer": "optimizer",
+    #     "hyperparameters": "hparams.yaml",
+    #     "lr_scheduler": "lr_scheduler",
+    # }
+    device: str | torch.device
+    """Device which the model components are loaded to."""
+    rawdata_path: Path = NotImplemented
+    """Path where the raw data is stored (subpath of RAWDATA_DIR)."""
+    rawdata_hash: Optional[dict[str, str]] = None
+    """Dictionary of hash-method:value pairs for the raw data."""
+    download_url: Optional[str] = None
+    """URL from which the raw data can be downloaded."""
 
     def __init__(
         self,
         *,
-        device: Optional[str | torch.device] = None,
-        reset: bool = False,
+        device: str | torch.device = "cpu",
         initialize: bool = True,
+        reset: bool = False,
+        rawdata_path: Optional[Path] = None,
+        rawdata_hash: Optional[dict[str, str]] = None,
+        download_url: Optional[str] = None,
     ) -> None:
-        super().__init__()
-        self.rawdata_path = self.RAWDATA_DIR / self.rawdata_file
-        self.device = device
+        if rawdata_path is not None:
+            self.rawdata_path = Path(rawdata_path)
+        if download_url is not None:
+            self.download_url = download_url
+        if rawdata_hash is not None:
+            self.rawdata_hash = rawdata_hash
+
+        if self.rawdata_path is NotImplemented:
+            raise NotImplementedError(
+                f"\n{self.__class__.__name__} does not implement a default model!"
+                f"\nPlease use one of the constructor methods to specify the model."
+                f"\nAvailable models are listed in {self.available_checkpoints}."
+            )
 
         if not inspect.isabstract(self):
             if reset:
-                self.RAWDATA_DIR.rmdir()
-
-            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
-
-            if initialize:
+                self.rawdata_path.rmdir()
+            if self.rawdata_path.is_dir():
+                self.rawdata_path.mkdir(parents=True, exist_ok=True)
+            if initialize and self.download_url is not None:
                 self.download()
+                repackage_zip(self.rawdata_path)
 
         self.components = LazyDict(
-            {k: self.get_component for k in self.component_files}
+            {k: self.get_component for k in self.detect_components()}
         )
+        self.device = device
+
+    def __repr__(self) -> str:
+        """Return a string representation of the model."""
+        return repr_mapping(self.components, wrapped=self, identifier="PreTrainedModel")
 
     @classmethod
-    def from_zipfile(
-        cls, zipfile: str | Path, /, *args: Any, **kwargs: Any
-    ) -> Any:  # FIXME: Return Self PreTrainedModel:
-        r"""Create model from zipfile."""
-        path = Path(zipfile)
-        if path.suffix != ".zip":
-            raise ValueError(f"{path=} is not a zipfile!")
+    def available_checkpoints(cls) -> None:
+        r"""Return a dictionary of available checkpoints."""
+        if cls.CHECKPOINT_URL is None:
+            raise NotImplementedError(
+                f"{cls.__name__} does not implement a checkpoint documentation URL!"
+            )
+        webbrowser.open_new_tab(cls.CHECKPOINT_URL)
 
+    @classmethod
+    def info(cls) -> None:
+        r"""Open information in about the model."""
+        if cls.DOCUMENTATION_URL is None:
+            raise NotImplementedError(
+                f"{cls.__name__} does not implement a model documentation URL!"
+            )
+        webbrowser.open_new_tab(cls.DOCUMENTATION_URL)
+
+    @classmethod
+    def from_path(
+        cls, file_or_directory: str | Path, /, *args: Any, **kwargs: Any
+    ) -> Any:
+        r"""Create model from directory."""
+        path = Path(file_or_directory)
         if not path.is_relative_to(Path.cwd()):
-            # print(f"No path provided assuming current working directory.")
             path = Path.cwd() / path
-
         if not path.exists():
-            raise ValueError(f"{path=} does not exist!")
-
-        # FIXME: This is an awful hack!
-        obj = cls.__new__(cls)
-        obj.RAWDATA_DIR = path.parent  # type: ignore[misc]
-        obj.RAWDATA_HASH = None  # type: ignore[misc]
-        obj.rawdata_file = path.name
-        obj.__init__(*args, **kwargs)  # type: ignore[misc]
-        return obj
+            raise ValueError(f"{path} does not exist!")
+        return cls(*args, rawdata_path=path, **kwargs)
 
     @classmethod
     def from_url(
         cls, url: str, /, *args: Any, **kwargs: Any
     ) -> Any:  # FIXME: Return Self PreTrainedModel
-        r"""Create model from url."""
-        # download the file into the model directory
+        r"""Obtain model from arbitrary url."""
         fname = url.split("/")[-1]
         path = cls.RAWDATA_DIR / fname
-
-        if path.exists():
-            warnings.warn(f"{Path=} already exists, skipping download.")
-        else:
-            download(url, path)
-
-        # FIXME: This is an awful hack!
-        obj = cls.__new__(cls)
-        obj.RAWDATA_DIR = path.parent  # type: ignore[misc]
-        obj.RAWDATA_HASH = None  # type: ignore[misc]
-        obj.rawdata_file = path.name
-        obj.__init__(*args, **kwargs)  # type: ignore[misc]
-        return obj
+        return cls(*args, rawdata_path=path, download_url=url, **kwargs)
 
     @classmethod
-    def from_checkpoint(cls, key: str, /) -> Any:  # FIXME: USE SELF PreTrainedModel:
-        r"""Create model from checkpoint."""
-        # TODO: 3.11 use typing.Self
-        raise NotImplementedError
-
-    def __len__(self) -> int:
-        return len(self.components)
-
-    def __getitem__(self, key: str) -> Any:
-        return self.components[key]
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.components)
-
-    def __repr__(self) -> str:
-        return repr_mapping(self.components, repr_fun=repr_short, wrapped=self)
+    def from_remote_checkpoint(
+        cls, checkpoint: str, /, *args: Any, **kwargs: Any
+    ) -> Any:  # FIXME: Use typing.Self
+        r"""Create model from local."""
+        if cls.DOWNLOAD_URL is None:
+            raise NotImplementedError(
+                f"{cls.__name__} does not implement a checkpoint url!"
+            )
+        url = cls.DOWNLOAD_URL + checkpoint
+        path = cls.RAWDATA_DIR / checkpoint
+        return cls(*args, rawdata_path=path, download_url=url, **kwargs)
 
     @cached_property
     def model(self) -> torch.nn.Module:
         r"""Return the model."""
-        return self.components["model"]
+        return self.components.get("model", NotImplemented)
 
     @cached_property
     def optimizer(self) -> torch.optim.Optimizer:
         r"""Return the optimizer."""
-        return self.components["optimizer"]
+        return self.components.get("optimizer", NotImplemented)
 
     @cached_property
     def hyperparameters(self) -> dict[str, Any]:
         r"""Return the hyperparameters."""
-        return self.components["hyperparameters"]
+        return self.components.get("hyperparameters", NotImplemented)
 
     @cached_property
     def encoder(self, /) -> BaseEncoder:
         r"""Return the encoder."""
-        return self.components["encoder"]
+        return self.components.get("encoder", NotImplemented)
 
     @cached_property
     def lr_scheduler(self) -> TorchLRScheduler:
         r"""Return the learning rate scheduler."""
-        return self.components["lr_scheduler"]
+        return self.components.get("lr_scheduler", NotImplemented)
 
     # @cached_property
     # def components(self) -> dict[str, Any]:
@@ -234,17 +267,47 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     # def rawdata_file(self) -> str:
     #     r"""Return filename."""
 
-    def rawdata_file_exist(self) -> bool:
+    # def __detect_components_zipfile(self, path: str | Path) -> set[str]:
+    #     r"""Detect components in zipfile."""
+    #     with ZipFile(path, "r") as zf:
+    #         return set(self.components).intersection(
+    #             Path(f).stem for f in zf.namelist()
+    #         )
+
+    def detect_components(self) -> list[str]:
+        r"""Detect which components are available."""
+        if is_zipfile(self.rawdata_path):
+            with ZipFile(self.rawdata_path, "r") as zf:
+                return [Path(f).stem for f in zf.namelist()]
+        if self.rawdata_path.is_dir():
+            return [f.stem for f in self.rawdata_path.iterdir()]
+        raise ValueError(f"{self.rawdata_path} unsupported filetype!")
+
+    def download(self, *, force: bool = False) -> None:
+        r"""Download model from url."""
+        if self.rawdata_path_exists() and not force:
+            self.LOGGER.info("Dataset already exists. Skipping download.")
+            return
+
+        if self.download_url is None:
+            raise NotImplementedError(f"{self} has no url")
+        self.LOGGER.debug("Starting to download dataset from %s.", self.download_url)
+        import_from_url(self.download_url, self.rawdata_path)
+        self.LOGGER.debug("Finished downloading dataset from %s.", self.download_url)
+
+    def rawdata_path_exists(self) -> bool:
         r"""Check if raw data files exist."""
         return paths_exists(self.rawdata_path)
 
     def get_component(self, component: str, /) -> Any:
         r"""Extract a model component."""
-        if not self.rawdata_file_exist():
+        if not self.rawdata_path_exists():
             self.LOGGER.debug("Obtaining rawdata file!")
-            self.download(validate=True)
+            self.download()
+        if component not in self.components:
+            raise ValueError(f"{component=} is not a valid component!")
 
-        file = self.component_files[component]
+        file = component
         extension = Path(file).suffix
 
         # if directory
@@ -278,6 +341,8 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
                 return yaml.safe_load(file)
             case _, ".pickle":
                 return pickle.load(file)
+            case _, _:
+                return self.__load_torch_component(component, file)
         raise ValueError(f"{component=} is not supported!")
 
     def __load_torch_component(
@@ -315,7 +380,7 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
             module_config = self.hyperparameters[component]
         except KeyError as exc:
             raise ValueError(
-                f"No '{component}' configuration in {self.hyperparameters}."
+                f"No {component!r} configuration in {self.hyperparameters}."
             ) from exc
 
         module = initialize_from_config(module_config | kwargs)
@@ -352,14 +417,14 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     def __load_torch_lr_scheduler(
         self,
         file: str | Path | IO[bytes],
-        /,  # noqa: W504 # FIXME: https://github.com/PyCQA/pycodestyle/issues/951
+        /,  # FIXME: https://github.com/PyCQA/pycodestyle/issues/951
     ) -> TorchLRScheduler:
         r"""Load a torch learning rate scheduler."""
         return cast(TorchLRScheduler, self.__load_torch_component("lr_scheduler", file))
 
     # def load(self, *, force: bool = False, validate: bool = True) -> torch.nn.Module:
     #     r"""Load the selected DATASET_OBJECT."""
-    #     if not self.rawdata_file_exist():
+    #     if not self.rawdata_path_exists():
     #         self.download(force=force, validate=validate)
     #     else:
     #         self.LOGGER.debug("Dataset files already exist!")
@@ -371,123 +436,3 @@ class PreTrainedModel(Mapping[str, Any], ABC, metaclass=PreTrainedMetaClass):
     #     ds = self._load()
     #     self.LOGGER.debug("Finished loading dataset.")
     #     return ds
-
-    @classmethod
-    def info(cls) -> None:
-        r"""Open dataset information in browser."""
-        if cls.INFO_URL is None:
-            print(cls.__doc__)
-        else:
-            webbrowser.open_new_tab(cls.INFO_URL)
-
-    def download(self, *, force: bool = False, validate: bool = True) -> None:
-        r"""Download model from url."""
-        if self.rawdata_file_exist() and not force:
-            self.LOGGER.info("Dataset already exists. Skipping download.")
-            return
-
-        if self.DOWNLOAD_URL is None:
-            self.LOGGER.info("Dataset provides no url. Assumed offline")
-            assert self.rawdata_file_exist(), "Dataset files do not exist!"
-
-        self.LOGGER.debug("Starting to download dataset.")
-        self.download_from_url(self.DOWNLOAD_URL)  # type: ignore[arg-type]
-        self.LOGGER.debug("Starting downloading dataset.")
-
-        if validate:
-            self.validate(self.rawdata_path, reference=self.RAWDATA_HASH)
-
-    @classmethod
-    def download_from_url(cls, url: str) -> None:
-        r"""Download files from a URL."""
-        cls.LOGGER.info("Downloading from %s", url)
-        parsed_url = urlparse(url)
-
-        if parsed_url.netloc == "www.kaggle.com":
-            kaggle_name = Path(parsed_url.path).name
-            subprocess.run(
-                f"kaggle competitions download -p {cls.RAWDATA_DIR} -c {kaggle_name}",
-                shell=True,
-                check=True,
-            )
-        elif parsed_url.netloc == "github.com":
-            subprocess.run(
-                f"svn export --force {url.replace('tree/main', 'trunk')} {cls.RAWDATA_DIR}",
-                shell=True,
-                check=True,
-            )
-        else:  # default parsing, including for UCI dataset
-            fname = url.split("/")[-1]
-            download(url, cls.RAWDATA_DIR / fname)
-
-    def validate(
-        self,
-        filespec: Nested[str | Path],
-        /,
-        *,
-        reference: Optional[str | Mapping[str, str]] = None,
-    ) -> None:
-        r"""Validate the file hash."""
-        self.LOGGER.debug("Starting to validate dataset")
-
-        if isinstance(filespec, Mapping):
-            for value in filespec.values():
-                self.validate(value, reference=reference)
-            return
-        if isinstance(filespec, Sequence) and not isinstance(filespec, (str, Path)):
-            for value in filespec:
-                self.validate(value, reference=reference)
-            return
-
-        assert isinstance(filespec, (str, Path)), f"{filespec=} wrong type!"
-        file = Path(filespec)
-
-        if not file.exists():
-            raise FileNotFoundError(f"File '{file.name}' does not exist!")
-
-        filehash = sha256(file.read_bytes()).hexdigest()
-
-        if reference is None:
-            warnings.warn(
-                f"File '{file.name}' cannot be validated as no hash is stored in {self.__class__}."
-                f"The filehash is '{filehash}'."
-            )
-
-        elif isinstance(reference, str):
-            if filehash != reference:
-                warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
-                )
-            self.LOGGER.info(
-                f"File '{file.name}' validated successfully '{filehash=}'."
-            )
-
-        elif isinstance(reference, Mapping):
-            if not (file.name in reference) ^ (file.stem in reference):
-                warnings.warn(
-                    f"File '{file.name}' cannot be validated as it is not contained in {reference}."
-                    f"The filehash is '{filehash}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
-                )
-            elif file.name in reference and filehash != reference[file.name]:
-                warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
-                )
-            elif file.stem in reference and filehash != reference[file.stem]:
-                warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.stem]}'."
-                    f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
-                )
-            else:
-                self.LOGGER.info(
-                    f"File '{file.name}' validated successfully '{filehash=}'."
-                )
-        else:
-            raise TypeError(f"Unsupported type for {reference=}.")
-
-        self.LOGGER.debug("Finished validating file.")

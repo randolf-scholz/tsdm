@@ -30,6 +30,24 @@ from tsdm.utils.strings import repr_mapping
 __logger__ = logging.getLogger(__name__)
 
 
+def get_requirements(package: str, version: Optional[str] = None) -> dict[str, str]:
+    r"""Return dictionary containing requirements with version numbers.
+
+    If `version=None`, then the latest version is used.
+    """
+    # get requirements as string of the form package==version\n.
+    reqs = subprocess.check_output(
+        (
+            r"johnnydep",
+            f"{package}" + f"=={version}" * bool(version),
+            r"--output-format",
+            r"pinned",
+        ),
+        text=True,
+    )
+    return dict(line.split("==") for line in reqs.rstrip("\n").split("\n"))
+
+
 def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
     r"""Automatically create type aliases for all exported functions and classes."""
     d: dict[str, str] = {}
@@ -97,13 +115,7 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
 
 def query_bool(question: str, default: Optional[bool] = True) -> bool:
     r"""Ask a yes/no question and returns answer as bool."""
-    responses = {
-        "y": True,
-        "yes": True,
-        "n": False,
-        "no": False,
-    }
-
+    responses = {"y": True, "yes": True, "n": False, "no": False}
     prompt = "([y]/n)" if default else "([n]/y)"
 
     while True:
@@ -165,23 +177,19 @@ def install_package(
     installer: str = "pip",
     options: tuple[str, ...] = (),
 ) -> None:
-    r"""Install a package via pip or other package manger.
+    r"""Install a package via pip or other package manager.
 
-    Parameters
-    ----------
-    package_name: str
-    non_interactive: bool, default False
-        If false, will generate a user prompt.
-    installer: str, default "pip"
-        Can also use `conda` or `mamba`
-    options: tuple[str, ...]
-        Options to pass to the installer
+    Args:
+        package_name: str
+        non_interactive: If False, will generate a user prompt.
+        installer: Can also use `conda` or `mamba`
+        options: Options to pass to the installer
     """
     package_available = importlib.util.find_spec(package_name)
     install_call = (installer, "install", package_name)
     if not package_available:
         if non_interactive or query_bool(
-            f"Package '{package_name}' not found. Do you want to install it?"
+            f"Package {package_name!r} not found. Do you want to install it?"
         ):
             try:
                 subprocess.run(install_call + options, check=True)
@@ -189,24 +197,6 @@ def install_package(
                 raise RuntimeError("Execution failed with error") from E
     else:
         __logger__.info("Package '%s' already installed.", package_name)
-
-
-def get_requirements(package: str, version: Optional[str] = None) -> dict[str, str]:
-    r"""Return dictionary containing requirements with version numbers.
-
-    If `version=None`, then the latest version is used.
-    """
-    # get requirements as string of the form package==version\n.
-    reqs = subprocess.check_output(
-        (
-            r"johnnydep",
-            f"{package}" + f"=={version}" * bool(version),
-            r"--output-format",
-            r"pinned",
-        ),
-        text=True,
-    )
-    return dict(line.split("==") for line in reqs.rstrip("\n").split("\n"))
 
 
 def write_requirements(

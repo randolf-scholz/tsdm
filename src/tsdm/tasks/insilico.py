@@ -31,6 +31,7 @@ class InSilicoSampleGenerator(TimeSeriesSampleGenerator):
 
 class InSilicoTask(TimeSeriesTask):
     r"""Task for the KIWI dataset."""
+
     dataset: TimeSeriesCollection
 
     observation_horizon: str = "2h"

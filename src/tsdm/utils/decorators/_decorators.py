@@ -13,6 +13,7 @@ __all__ = [
     "vectorize",
     "wrap_func",
     "wrap_method",
+    "lazy_torch_jit",
     # Class Decorators
     "autojit",
     "IterItems",
@@ -71,6 +72,7 @@ def rpartial(
 
     @wraps(func)
     def _wrapper(*func_args, **func_kwargs):
+        # TODO: https://github.com/python/typeshed/issues/8703
         return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
 
     return _wrapper
@@ -727,3 +729,19 @@ def wrap_method(
         return _wrapper
 
     raise RuntimeError(f"Unreachable code reached for {func}")
+
+
+def lazy_torch_jit(func: Callable[P, R]) -> Callable[P, R]:
+    """Create decorator to lazily compile a function with `torch.jit.script`."""
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        # script the original function if it hasn't been scripted yet
+        if wrapper.__scripted is None:  # type: ignore[attr-defined]
+            wrapper.__scripted = jit.script(wrapper.__original_fn)  # type: ignore[attr-defined]
+        return wrapper.__scripted(*args, **kwargs)  # type: ignore[attr-defined]
+
+    wrapper.__original_fn = func  # type: ignore[attr-defined]
+    wrapper.__scripted = None  # type: ignore[attr-defined]
+    wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
+    return wrapper

@@ -10,13 +10,17 @@ References
 __all__ = [
     # Classes
     "Array",
-    "NTuple",
     "Dataclass",
+    "Hash",
+    "Lookup",
+    "NTuple",
 ]
 
 from collections.abc import Sequence
 from dataclasses import Field
 from typing import Any, Protocol, TypeVar, runtime_checkable
+
+from tsdm.types.variables import Key_contra, KeyVar, Value_co
 
 ScalarType_co = TypeVar("ScalarType_co", covariant=True)
 # Either: TypeAlias = Union[T, "Array[T]"]
@@ -43,9 +47,8 @@ class NTuple(Protocol):
 
 
 @runtime_checkable
-class Array(Protocol[ScalarType_co]):
+class Array(Protocol[ScalarType_co]):  # FIXME: Use Self
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
-    # FIXME: Use Self
 
     @property
     def shape(self) -> Sequence[int]:
@@ -89,3 +92,43 @@ class Array(Protocol[ScalarType_co]):
     def __rtruediv__(self: A, other: Any) -> A: ...
     def __itruediv__(self: A, other: Any) -> A: ...
     # fmt: on
+
+
+@runtime_checkable
+class Lookup(Protocol[Key_contra, Value_co]):
+    """Mapping/Sequence like generic that is contravariant in Keys."""
+
+    def __contains__(self, key: KeyVar) -> bool:
+        # Here, any Hashable input is accepted.
+        """Return True if the map contains the given key."""
+
+    def __getitem__(self, key: Key_contra) -> Value_co:
+        """Return the value associated with the given key."""
+
+    def __len__(self) -> int:
+        """Return the number of items in the map."""
+
+
+@runtime_checkable
+class Hash(Protocol):
+    """Protocol for hash-functions."""
+
+    name: str
+
+    def digest_size(self) -> int:
+        """Return the size of the hash in bytes."""
+
+    def block_size(self) -> int:
+        """Return the internal block size of the hash in bytes."""
+
+    def update(self, data: bytes) -> None:
+        """Update this hash object's state with the provided string."""
+
+    def digest(self) -> bytes:
+        """Return the digest value as a string of binary data."""
+
+    def hexdigest(self) -> str:
+        """Return the digest value as a string of hexadecimal digits."""
+
+    def copy(self) -> Any:  # TODO: Use typing.Self
+        """Return a clone of the hash object."""
