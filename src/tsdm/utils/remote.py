@@ -57,7 +57,7 @@ def download(
     fname: Optional[PathLike] = None,
     *,
     chunk_size: int = 1024,
-    skip_existing: bool = True,
+    skip_existing: bool = False,
     hash_value: Optional[str] = None,
     hash_algorithm: str = "sha256",
     hash_kwargs: Optional[dict[str, Any]] = None,
