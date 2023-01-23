@@ -1,19 +1,17 @@
-r"""Submodule containing general purpose decorators.
-
-#TODO add module description.
-"""
+r"""Submodule containing general purpose decorators."""
 
 __all__ = [
     # Classes
     # Functions
     "decorator",
     # "sphinx_value",
+    "lazy_torch_jit",
+    "named_return",
     "timefun",
     "trace",
     "vectorize",
     "wrap_func",
     "wrap_method",
-    "lazy_torch_jit",
     # Class Decorators
     "autojit",
     "IterItems",
@@ -22,15 +20,17 @@ __all__ = [
     "DecoratorError",
 ]
 
+import ast
 import gc
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import wraps
-from inspect import Parameter, Signature, signature
+from inspect import Parameter, Signature, getsource, signature
 from time import perf_counter_ns
-from typing import Any, Concatenate, Optional, cast, overload
+from types import GenericAlias
+from typing import Any, Concatenate, NamedTuple, Optional, cast, overload
 
 from torch import jit, nn
 
@@ -63,6 +63,30 @@ PARAM_TYPES = (
     (KEYWORD_ONLY, False),
     (VAR_KEYWORD, True),
 )
+
+
+def collect_exit_points(func: Callable) -> list[ast.Return]:
+    tree = ast.parse(getsource(func))
+    exit_points = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Return):
+            exit_points.append(node)
+    return exit_points
+
+
+def exit_point_names(func: Callable) -> list[tuple[str, ...]]:
+    exit_points = collect_exit_points(func)
+
+    var_names = []
+    for exit_point in exit_points:
+        assert isinstance(exit_point.value, ast.Tuple)
+
+        e: tuple[str, ...] = ()
+        for obj in exit_point.value.elts:
+            assert isinstance(obj, ast.Name)
+            e += (obj.id,)
+        var_names.append(e)
+    return var_names
 
 
 def rpartial(
@@ -745,3 +769,47 @@ def lazy_torch_jit(func: Callable[P, R]) -> Callable[P, R]:
     wrapper.__scripted = None  # type: ignore[attr-defined]
     wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
     return wrapper
+
+
+@decorator
+def named_return(
+    func: Callable[P, tuple],
+    /,
+    *,
+    name: Optional[str] = None,
+    field_names: Optional[Sequence[str]] = None,
+) -> Callable[P, tuple]:
+    """Convert a function's return type to a namedtuple."""
+    name = f"{func.__name__}_tuple" if name is None else name
+
+    return_type: GenericAlias = func.__annotations__.get("return", NotImplemented)
+    if return_type is NotImplemented:
+        raise DecoratorError(func, "No return type hint found.")
+    if not issubclass(return_type.__origin__, tuple):
+        raise DecoratorError(func, "Return type hint is not a tuple.")
+
+    type_hints = return_type.__args__
+    potential_return_names = set(exit_point_names(func))
+
+    if len(type_hints) == 0:
+        raise DecoratorError(func, "Return type hint is an empty tuple.")
+    if Ellipsis in type_hints:
+        raise DecoratorError(func, "Return type hint is a variable length tuple.")
+    if field_names is None:
+        if len(potential_return_names) != 1:
+            raise DecoratorError(func, "Automatic detection of names failed.")
+        field_names = potential_return_names.pop()
+    elif any(len(r) != len(type_hints) for r in potential_return_names):
+        raise DecoratorError(
+            func, "Number of names does not match number of return values."
+        )
+
+    # create namedtuple
+    tuple_type: type[tuple] = NamedTuple(name, zip(field_names, type_hints))  # type: ignore[misc]
+
+    @wraps(func)
+    def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> tuple:
+        result = func(*func_args, **func_kwargs)
+        return tuple_type(*result)
+
+    return _wrapper
