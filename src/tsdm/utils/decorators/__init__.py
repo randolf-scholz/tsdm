@@ -9,16 +9,17 @@ __all__ = [
     "Decorator",
     "DECORATORS",
     # Functions
+    "IterItems",
+    "IterKeys",
     "autojit",
     "decorator",
-    # "sphinx_value",
+    "named_return",
     "timefun",
     "trace",
     "vectorize",
-    "IterItems",
-    "IterKeys",
     "wrap_func",
     "wrap_method",
+    # "sphinx_value",
 ]
 
 from collections.abc import Callable
@@ -29,6 +30,7 @@ from tsdm.utils.decorators._decorators import (
     IterKeys,
     autojit,
     decorator,
+    named_return,
     timefun,
     trace,
     vectorize,
@@ -44,12 +46,13 @@ DECORATORS: Final[dict[str, Decorator]] = {
     "IterKeys": IterKeys,
     "autojit": autojit,
     "decorator": decorator,
-    # "sphinx_value": sphinx_value,
+    "named_return": named_return,
     "timefun": timefun,
     "trace": trace,
     "vectorize": vectorize,
     "wrap_func": wrap_func,
     "wrap_method": wrap_method,
+    # "sphinx_value": sphinx_value,
 }
 r"""Dictionary of all available decorators."""
 
