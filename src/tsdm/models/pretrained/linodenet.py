@@ -19,7 +19,14 @@ from tsdm.utils.remote import download
 
 
 class LinODEnet(PreTrainedModel):
-    r"""Import pre-trained LinODEnet model."""
+    r"""Import pre-trained LinODEnet model.
+
+    Example:
+        >>> from tsdm.models.pretrained import LinODEnet
+        >>> pretrained = LinODEnet.from_remote_checkpoint("2022-12-01/270")
+        >>> pretrained.components["LinODEnet"]  # doctest: +ELLIPSIS
+        RecursiveScriptModule(...
+    """
 
     DOCUMENTATION_URL = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/linodenet/"
     CHECKPOINT_URL = "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L?path=/LinODEnet"
