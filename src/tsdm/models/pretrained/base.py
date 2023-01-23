@@ -41,7 +41,7 @@ import pickle
 import warnings
 import webbrowser
 from abc import ABC, ABCMeta
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from functools import cached_property
 from io import IOBase
 from pathlib import Path
@@ -56,6 +56,8 @@ from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 
 from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
+from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
+from tsdm.types.aliases import PathLike
 from tsdm.utils import (
     LazyDict,
     initialize_from_config,
@@ -117,13 +119,7 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
     # Instance Variables
     components: Mapping[str, Any]
     """Mapping of component names to their respective components."""
-    # component_files: Mapping[str, str] = {
-    #     "model": "model",
-    #     "encoder": "encoder.pickle",
-    #     "optimizer": "optimizer",
-    #     "hyperparameters": "hparams.yaml",
-    #     "lr_scheduler": "lr_scheduler",
-    # }
+
     device: str | torch.device
     """Device which the model components are loaded to."""
     rawdata_path: Path = NotImplemented
@@ -132,6 +128,17 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
     """Dictionary of hash-method:value pairs for the raw data."""
     download_url: Optional[str] = None
     """URL from which the raw data can be downloaded."""
+
+    __component_files: dict[str, PathLike]
+
+    __component_aliases: dict[str, Collection[str]] = {
+        "optimizer": OPTIMIZERS,
+        "lr_scheduler": LR_SCHEDULERS,
+        "model": ["model", "Model", "LinODEnet"],
+        "encoder": ["encoder", "Encoder"],
+        "hyperparameters": ["hyperparameters", "hparams", "hyperparameter", "hparam"],
+    }
+    """Mapping of potential component aliases for the model."""
 
     def __init__(
         self,
