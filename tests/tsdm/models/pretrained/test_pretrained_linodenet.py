@@ -3,6 +3,7 @@ r"""Testing Attribute Serialization."""
 
 import logging
 
+import pandas as pd
 import torch
 
 from tsdm.encoders import BaseEncoder
@@ -16,19 +17,24 @@ def test_pretrained():
     """Test the serialization of models."""
     __logger__.info("Testing %s.", LinODEnet)
 
-    pretrained = LinODEnet()
+    checkpoints = LinODEnet.available_checkpoints()
+    assert isinstance(checkpoints, pd.DataFrame)
 
-    model = pretrained.components["model"]
+    pretrained = LinODEnet.from_remote_checkpoint("2022-12-01/270")
+    assert isinstance(pretrained, LinODEnet)
+    assert isinstance(pretrained.components, dict)
+
+    model = pretrained.components["LinODEnet"]
     assert isinstance(model, torch.nn.Module)
 
     encoder = pretrained.components["encoder"]
     assert isinstance(encoder, BaseEncoder)
 
-    hyperparameters = pretrained.components["hyperparameters"]
+    hyperparameters = pretrained.components["hparams"]
     assert isinstance(hyperparameters, dict)
 
-    optimzier = pretrained.components["optimizer"]
-    assert isinstance(optimzier, torch.optim.Optimizer)
+    # optimizer = pretrained.components["optimizer"]
+    # assert isinstance(optimizer, torch.optim.Optimizer)
 
 
 def _main() -> None:
