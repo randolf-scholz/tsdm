@@ -24,6 +24,8 @@ METHOD: TypeAlias = Literal[
     None, "minimum", "quartile", "match-normal", "match-uniform"
 ]
 
+ROOT_3 = np.sqrt(3)
+
 
 class BoxCoxEncoder(BaseEncoder):
     r"""Encode data on logarithmic scale with offset.
@@ -71,7 +73,7 @@ class BoxCoxEncoder(BaseEncoder):
 
     @staticmethod
     def construct_loss_wasserstein_uniform(
-        x: NDArray, a: float = -np.sqrt(3), b: float = +np.sqrt(3)  # noqa: B008
+        x: NDArray, a: float = -ROOT_3, b: float = +ROOT_3
     ) -> Callable[[NDArray], NDArray]:
         r"""Construct the loss for the Uniform distribution.
 
@@ -259,7 +261,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
 
     @staticmethod
     def construct_loss_wasserstein_uniform(
-        x: NDArray, a: float = -np.sqrt(3), b: float = +np.sqrt(3)  # noqa: B008
+        x: NDArray, a: float = -ROOT_3, b: float = +ROOT_3
     ) -> Callable[[NDArray], NDArray]:
         r"""Construct the loss for the Uniform distribution.
 

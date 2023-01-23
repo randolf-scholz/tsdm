@@ -42,6 +42,8 @@ from tsdm.utils.strings import repr_dataclass, repr_mapping
 DATASET_OBJECT: TypeAlias = Series | DataFrame
 r"""Type hint for pandas objects."""
 
+__logger__ = logging.getLogger(__name__)
+
 
 class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
@@ -58,17 +60,17 @@ class BaseDatasetMetaClass(ABCMeta):
             raise ValueError("BaseDatasetMetaClass must be used with 1 or 3 arguments.")
 
         if "LOGGER" not in attributes:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+            cls.LOGGER = __logger__.getChild(cls.__name__)
 
         if "RAWDATA_DIR" not in attributes:
             if os.environ.get("GENERATING_DOCS", False):
-                cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
+                cls.RAWDATA_DIR = Path("~/.tsdm/rawdata/") / cls.__name__
             else:
                 cls.RAWDATA_DIR = CONFIG.RAWDATADIR / cls.__name__
 
         if "DATASET_DIR" not in attributes:
             if os.environ.get("GENERATING_DOCS", False):
-                cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
+                cls.DATASET_DIR = Path("~/.tsdm/datasets") / cls.__name__
             else:
                 cls.DATASET_DIR = CONFIG.DATASETDIR / cls.__name__
 
@@ -249,35 +251,35 @@ class FrameDataset(BaseDataset, ABC):
 
         if reference is None:
             warnings.warn(
-                f"Table '{table.name}' cannot be validated as no hash is stored in {self.__class__}."
-                f"The hash is '{filehash}'."
+                f"Table {table.name!r} cannot be validated as no hash is stored in {self.__class__}."
+                f"The hash is {filehash!r}."
             )
         elif isinstance(reference, int | str):
             if filehash != reference:
                 warnings.warn(
-                    f"Table '{table.name}' failed to validate!"
-                    f"Table hash '{filehash}' does not match reference '{reference}'."
+                    f"Table {table.name!r} failed to validate!"
+                    f"Table hash {filehash!r} does not match reference {reference!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             self.LOGGER.info(
-                f"Table '{table.name}' validated successfully '{filehash=}'."
+                f"Table {table.name!r} validated successfully {filehash=!r}."
             )
         elif isinstance(reference, Mapping):
             if table.name not in reference:
                 warnings.warn(
-                    f"Table '{table.name}' cannot be validated as it is not contained in {reference}."
-                    f"The hash is '{filehash}'."
+                    f"Table {table.name!r} cannot be validated as it is not contained in {reference}."
+                    f"The hash is {filehash!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             elif table.name in reference and filehash != reference[table.name]:
                 warnings.warn(
-                    f"Table '{table.name}' failed to validate!"
-                    f"Table hash '{filehash}' does not match reference '{reference[table.name]}'."
+                    f"Table {table.name!r} failed to validate!"
+                    f"Table hash {filehash!r} does not match reference {reference[table.name]!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             else:
                 self.LOGGER.info(
-                    f"Table '{table.name}' validated successfully '{filehash=}'."
+                    f"Table {table.name!r} validated successfully {filehash=!r}."
                 )
         else:
             raise TypeError(f"Unsupported type for {reference=}.")
@@ -314,47 +316,47 @@ class FrameDataset(BaseDataset, ABC):
         file = Path(filespec)
 
         if not file.exists():
-            raise FileNotFoundError(f"File '{file.name}' does not exist!")
+            raise FileNotFoundError(f"File {file.name!r} does not exist!")
 
         filehash = sha256(file.read_bytes()).hexdigest()
 
         if reference is None:
             warnings.warn(
-                f"File '{file.name}' cannot be validated as no hash is stored in {self.__class__}."
-                f"The filehash is '{filehash}'."
+                f"File {file.name!r} cannot be validated as no hash is stored in {self.__class__}."
+                f"The filehash is {filehash!r}."
             )
         elif isinstance(reference, str | Path):
             if filehash != reference:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             self.LOGGER.info(
-                f"File '{file.name}' validated successfully '{filehash=}'."
+                f"File {file.name!r} validated successfully {filehash=!r}."
             )
         elif isinstance(reference, Mapping):
             if not (file.name in reference) ^ (file.stem in reference):
                 warnings.warn(
-                    f"File '{file.name}' cannot be validated as it is not contained in {reference}."
-                    f"The filehash is '{filehash}'."
+                    f"File {file.name!r} cannot be validated as it is not contained in {reference}."
+                    f"The filehash is {filehash!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             elif file.name in reference and filehash != reference[file.name]:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.name]}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             elif file.stem in reference and filehash != reference[file.stem]:
                 warnings.warn(
-                    f"File '{file.name}' failed to validate!"
-                    f"File hash '{filehash}' does not match reference '{reference[file.stem]}'."
+                    f"File {file.name!r} failed to validate!"
+                    f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
                     f"Ignore this warning if the format is parquet."
                 )
             else:
                 self.LOGGER.info(
-                    f"File '{file.name}' validated successfully '{filehash=}'."
+                    f"File {file.name!r} validated successfully {filehash=!r}."
                 )
         else:
             raise TypeError(f"Unsupported type for {reference=}.")
@@ -364,6 +366,7 @@ class FrameDataset(BaseDataset, ABC):
 
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
+
     __dataset: DATASET_OBJECT = NotImplemented
     DATASET_HASH: Optional[str] = None
     r"""Hash value of the dataset file(s), checked after clean."""
@@ -490,7 +493,7 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
             if non_string_keys:
                 warnings.warn(
                     f"Not adding keys as attributes! "
-                    f"Keys '{non_string_keys}' are not strings!"
+                    f"Keys {non_string_keys!r} are not strings!"
                 )
                 break
 
@@ -500,7 +503,7 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
             if key_attributes:
                 warnings.warn(
                     f"Not adding keys as attributes! "
-                    f"Keys '{key_attributes}' already exist as attributes!"
+                    f"Keys {key_attributes!r} already exist as attributes!"
                 )
                 break
 
@@ -766,6 +769,9 @@ class TimeSeriesDataset(TorchDataset[Series]):
     More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
     """
 
+    timeseries: DataFrame
+    r"""The time series data."""
+
     _: KW_ONLY = NotImplemented
 
     # Main Attributes
@@ -773,8 +779,6 @@ class TimeSeriesDataset(TorchDataset[Series]):
     r"""The name of the dataset."""
     index: Index = NotImplemented
     r"""The time-index of the dataset."""
-    timeseries: DataFrame
-    r"""The time series data."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
 
@@ -798,11 +802,11 @@ class TimeSeriesDataset(TorchDataset[Series]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: K) -> Series:
+    def __getitem__(self, key: Hashable) -> Series:
         ...
 
     @overload
-    def __getitem__(self, key: Index | slice | list[K]) -> DataFrame:
+    def __getitem__(self, key: Index | slice | list[Hashable]) -> DataFrame:
         ...
 
     def __getitem__(self, key):

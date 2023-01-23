@@ -6,66 +6,41 @@ __all__ = [
 ]
 
 import pickle
-from typing import Any
 
 import numpy as np
+import pandas
 import pandas as pd
 import torch
 from pandas import DataFrame, Index, MultiIndex
 from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.models.pretrained.base import PreTrainedModel
+from tsdm.utils.remote import download
 
 
 class LinODEnet(PreTrainedModel):
     r"""Import pre-trained LinODEnet model."""
 
-    SHARE_URL = "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L"
-    INFO_URL = f"{SHARE_URL}?path=/LinODEnet"
-    BASE_URL = f"{SHARE_URL}/download?path=/LinODEnet"
-
-    rawdata_file = "2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip"
-    DOWNLOAD_URL = f"{BASE_URL}/{rawdata_file}"
-    RAWDATA_HASH = "d50d128b29e7310b4a9496494bea1ca1b614a7ffbf730f5a61d0b3026cb87ed8"
+    DOCUMENTATION_URL = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/linodenet/"
+    CHECKPOINT_URL = "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L?path=/LinODEnet"
+    DOWNLOAD_URL = (
+        "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L/download?path=/LinODEnet/"
+    )
 
     component_files = {
         "model": "LinODEnet",
         "encoder": "encoder.pickle",
         "optimizer": "optimizer",
         "hyperparameters": "hparams.yaml",
+        "lr_scheduler": "lr_scheduler",
     }
 
-    CHECKPOINTS = (
-        pd.DataFrame(
-            [
-                (
-                    "2022-11-16",
-                    "legacy run",
-                    f"{BASE_URL}/2022-11-16-linodenet-152669f30f5e5325bf916b154262eed5.zip",
-                ),
-                (
-                    "2022-11-24",
-                    "legacy run",
-                    f"{BASE_URL}/2022-11-24-linodenet-a44fc91eab7a98130266d1c37f072eb5.zip",
-                ),
-                (
-                    "2022-12-01",
-                    "Longer training run (300+ epochs) recommended epochs: 270, 220, 150, 80",
-                    f"{BASE_URL}/2022-12-01T04:26:13/f=0_bs=64_lr=0.001_hs=64_ls=128",
-                ),
-            ],
-            columns=["time", "note", "url"],
+    @classmethod
+    def available_checkpoints(cls) -> DataFrame:
+        download(
+            cls.DOWNLOAD_URL + "checkpoints.xlsx", cls.RAWDATA_DIR / "checkpoints.xlsx"
         )
-        .astype({"time": "string", "note": "string"})
-        .set_index("time")
-        # .style.format({"url": lambda x: f'<a href="{x}">{x}</a>'})
-        # .style.set_properties(
-        #     inline_size="10cm",
-        #     overflow_wrap="break-word",
-        #     text_align="left",
-        #     subset=["note"],
-        # )
-    )
+        return pandas.read_excel(cls.RAWDATA_DIR / "checkpoints.xlsx")
 
     def predict(self, ts: DataFrame) -> DataFrame:
         r"""Predict function for LinODEnet."""
@@ -138,7 +113,7 @@ class LinODEnet(PreTrainedModel):
     def make_dataframes_from_pickle(
         filename: str,
     ) -> tuple[DataFrame, DataFrame, DataFrame]:
-        r"""Returns DataFrames from pickle.
+        r"""Return DataFrames from pickle.
 
         Pickle must return a nested dictionary of the schema:
 
@@ -162,11 +137,3 @@ class LinODEnet(PreTrainedModel):
         setpoints = pd.concat(setpoints_dict, names=["experiment_id"])
 
         return timeseries, metadata, setpoints
-
-    @classmethod
-    def from_checkpoint(
-        cls, key: str, /, *selectors: str
-    ) -> Any:  # FIXME: USE SELF LinODEnet:
-        r"""Load model from checkpoint."""
-        url = cls.CHECKPOINTS[key, "url"] + "/".join(selectors)
-        return cls.from_url(url)

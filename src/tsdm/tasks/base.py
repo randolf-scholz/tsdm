@@ -793,7 +793,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         raise RuntimeError("Supposed to be unreachable")
 
     def validate_folds(self) -> None:
-        r"""Makes sure all keys are correct format `str` or `tuple[..., str]`.
+        r"""Make sure all keys are correct format `str` or `tuple[..., str]`.
 
         - If keys are `partition`, they are assumed to be `partition` keys.
         - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.

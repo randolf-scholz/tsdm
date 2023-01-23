@@ -240,7 +240,7 @@ def spectral_radius(x: Tensor) -> Tensor:
     r"""Return $\max_i | λ_i | $.
 
     .. Signature:: ``(..., n, n) -> ...``
-    """  # noqa: RST219
+    """
     λ = torch.linalg.eigvals(x)
     return λ.abs().amax(dim=-1)
 

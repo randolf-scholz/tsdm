@@ -1,4 +1,50 @@
-r"""Logging Utility Functions."""
+r"""Logging Utility Functions.
+
+We allow the user to define callbacks for logging, which are called at the end of
+batches/epochs.
+
+A callback is a function that takes the following arguments:
+
+- ``i``: The current iteration/epoch.
+- ``writer``: The ``SummaryWriter`` instance.
+- ``logged_object``: The object that is being logged.
+    - what if we need to pass multiple objects?
+- when used in callbacks, the
+- Should a callback be self-contained?
+- Does the callback need to reference the Logger it is being called from?
+
+Idea: We want to so something like this:
+
+.. code-block:: python
+
+    logger = Logger(...)
+    logger.add_callback(log_loss, on="batch")
+
+How do we ensure logging is fast?
+
+- loggers should not recompute things that have already been computed
+    - loggers need access to existing results
+
+Examples
+--------
+We want to log the left-inverse residual of the linodenet.
+Sometimes, this is also used as a regularization term.
+therefore the logging function either has to:
+
+- compute R and log it
+- use the existing R and log it
+
+Typical things the loggers need access to include:
+
+- the current iteration
+- the current loss
+- the current model
+- the current optimizer
+- the current data
+    - the current predictions
+    - the current targets
+- the current metrics
+"""
 
 __all__ = [
     # Functions
@@ -19,7 +65,16 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, TypeAlias, TypedDict, Union
+from typing import (
+    Any,
+    NamedTuple,
+    Optional,
+    Protocol,
+    TypeAlias,
+    TypedDict,
+    Union,
+    runtime_checkable,
+)
 
 import pandas as pd
 import torch
@@ -51,11 +106,22 @@ from tsdm.linalg import (
 )
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
+from tsdm.types.variables import Any_contra as T_contra
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 # from tqdm.autonotebook import tqdm
 
 Loss: TypeAlias = nn.Module | Callable[[Tensor, Tensor], Tensor]
+"""Type Alias for loss functions."""
+
+
+@runtime_checkable
+class Callback(Protocol[T_contra]):
+    def __call__(
+        self, i: int, logged_object: T_contra, /, writer: SummaryWriter
+    ) -> None:
+        # FIXME: works if '_' is renamed to 'score'
+        pass
 
 
 @torch.no_grad()

@@ -525,6 +525,7 @@ class KIWI_RUNS(MultiFrameDataset):
 
 class KiwiDataset(TimeSeriesCollection):
     r"""The KIWI dataset."""
+
     index: MultiIndex
     timeseries: DataFrame
     metadata: DataFrame

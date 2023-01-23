@@ -19,7 +19,7 @@ name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
 readme = "README.rst"
 repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi"
-version = "0.4.1"
+version = "0.4.2"
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -78,17 +78,18 @@ jupyterlab = ">=3.5"
 mypy = ">=0.991"
 nbsphinx = ">=0.8"
 openml = ">=0.12.2"
+openpyxl = ">=3.0"
 perflint = ">=0.7"
 piccolo-theme = ">=0.12.0"
 pip = ">=22.3"
-pre-commit = ">=2.20"
+pre-commit = ">=2.21"
 psutil = ">=5.9"
 pyall = ">=0.3"
 pybadges = ">=3.0"
 pycodestyle = ">=2.10"
 pydata-sphinx-theme = ">=0.10"
 pydeps = ">=1.11"
-pydocstyle = ">=6.1"
+pydocstyle = ">=6.3"
 pyflakes = ">=3.0"
 pygments = ">=2.11"
 pylint = ">=2.15"
@@ -119,6 +120,7 @@ types-six = ">=1.16"
 types-typing-extensions = ">=3.7"
 types-urllib3 = ">=1.26"
 wheel = ">=0.38"
+yesqa = ">=1.4"
 
 
 [tool.poetry.scripts]
@@ -133,6 +135,7 @@ enable= [
 ]
 disable= [
     "C0103",  # invalid-name
+    "C0415",  # import-outside-toplevel
     "C0144",  # non-ascii-name
     "E0611",  # no-name-in-module
     "E1130",  # invalid-unary-operand-type
@@ -229,7 +232,7 @@ color = true
 # pydocstyle Configuration #
 ############################
 [tool.pydocstyle]
-convention = "numpy"
+#convention = "numpy"
 #count = true
 # https://github.com/PyCQA/pydocstyle/issues/363
 #match = '.*\.py$'
