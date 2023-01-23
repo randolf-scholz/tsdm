@@ -166,8 +166,10 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
                 self.download()
                 repackage_zip(self.rawdata_path)
 
+        self.component_files = self.autodetect_component_files()
+
         self.components = LazyDict(
-            {k: self.get_component for k in self.detect_components()}
+            {k: self.get_component for k in self.component_files}
         )
         self.device = device
 
@@ -252,27 +254,14 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
         r"""Return the learning rate scheduler."""
         return self.components.get("lr_scheduler", NotImplemented)
 
-    # @cached_property
-    # def components(self) -> dict[str, Any]:
-    #     r"""Extract all components."""
-    #     return LazyDict({k: self.get_component for k in self.component_files})
-
-    # @property
-    # @abstractmethod
-    # def component_files(self) -> Mapping[str, str]:
-    #     r"""Return filename."""
-
-    # @property
-    # @abstractmethod
-    # def rawdata_file(self) -> str:
-    #     r"""Return filename."""
-
-    # def __detect_components_zipfile(self, path: str | Path) -> set[str]:
-    #     r"""Detect components in zipfile."""
-    #     with ZipFile(path, "r") as zf:
-    #         return set(self.components).intersection(
-    #             Path(f).stem for f in zf.namelist()
-    #         )
+    def autodetect_component_files(self) -> dict[str, str]:
+        r"""Detect which components are available."""
+        if is_zipfile(self.rawdata_path):
+            with ZipFile(self.rawdata_path, "r") as zf:
+                return {Path(f).stem: f for f in zf.namelist()}
+        if self.rawdata_path.is_dir():
+            return {f.stem: f.name for f in self.rawdata_path.iterdir()}
+        raise ValueError(f"{self.rawdata_path} unsupported filetype!")
 
     def detect_components(self) -> list[str]:
         r"""Detect which components are available."""
@@ -307,7 +296,7 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
         if component not in self.components:
             raise ValueError(f"{component=} is not a valid component!")
 
-        file = component
+        file = self.component_files[component]
         extension = Path(file).suffix
 
         # if directory
