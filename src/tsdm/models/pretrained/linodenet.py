@@ -6,6 +6,7 @@ __all__ = [
 ]
 
 import pickle
+from collections.abc import Collection
 
 import numpy as np
 import pandas
@@ -15,6 +16,7 @@ from pandas import DataFrame, Index, MultiIndex
 from torch.nn.utils.rnn import pad_sequence
 
 from tsdm.models.pretrained.base import PreTrainedModel
+from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.utils.remote import download
 
 
@@ -42,6 +44,24 @@ class LinODEnet(PreTrainedModel):
         "lr_scheduler": "lr_scheduler",
     }
 
+    component_aliases: dict[str, Collection[str]] = {
+        "optimizer": OPTIMIZERS,
+        "lr_scheduler": LR_SCHEDULERS,
+        "model": ["model", "Model", "LinODEnet"],
+        "encoder": ["encoder", "Encoder"],
+        "hyperparameters": ["hyperparameters", "hparams", "hyperparameter", "hparam"],
+    }
+    CONTROLS = Index(
+        [
+            "Cumulated_feed_volume_glucose",
+            "Cumulated_feed_volume_medium",
+            "InducerConcentration",
+            "StirringSpeed",
+            "Flow_Air",
+            "Probe_Volume",
+        ]
+    )
+
     @classmethod
     def available_checkpoints(cls) -> DataFrame:
         download(
@@ -54,7 +74,9 @@ class LinODEnet(PreTrainedModel):
         ts = self.clean_timeseries(ts)
         return self.get_predictions(ts)
 
-    def clean_timeseries(self, ts: DataFrame) -> DataFrame:
+    def clean_timeseries(
+        self, ts: DataFrame, /, *, ffill_controls: bool = True
+    ) -> DataFrame:
         r"""Preprocess the time-series input."""
         USED_COLUMNS = Index(self.encoder[-1].column_encoders)  # type: ignore[index]
 
@@ -62,6 +84,7 @@ class LinODEnet(PreTrainedModel):
         used_columns = list(columns.intersection(USED_COLUMNS))
         drop_columns = list(columns.difference(USED_COLUMNS))
         miss_columns = list(USED_COLUMNS.difference(columns))
+        control_cols = list(columns.intersection(self.CONTROLS))
 
         # drop unused columns
         print(f">>> Dropping columns {drop_columns}")
@@ -80,6 +103,11 @@ class LinODEnet(PreTrainedModel):
             print(">>> Converting float (seconds) to timedelta64")
             ts["measurement_time"] = ts["measurement_time"] * np.timedelta64(1, "s")
         ts = ts.set_index(["measurement_time"], append=True)
+
+        # ffill controls
+        if ffill_controls:
+            print(">>> Forward filling controls")
+            ts.loc[:, control_cols] = ts.loc[:, control_cols].ffill()
         return ts
 
     @torch.no_grad()
