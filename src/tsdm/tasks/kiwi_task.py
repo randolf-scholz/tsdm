@@ -44,6 +44,7 @@ class Batch(NamedTuple):
     x_time: Tensor  # B×N:   the input timestamps.
     x_vals: Tensor  # B×N×D: the input values.
     x_mask: Tensor  # B×N×D: the input mask.
+
     y_time: Tensor  # B×K:   the target timestamps.
     y_vals: Tensor  # B×K×D: the target values.
     y_mask: Tensor  # B×K×D: teh target mask.

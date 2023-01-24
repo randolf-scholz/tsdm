@@ -8,19 +8,33 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Literal, NamedTuple
+from typing import Any, Literal, NamedTuple, Optional
 
 import numpy as np
 import pandas as pd
 import torch
+from pandas import DataFrame
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import Electricity
 from tsdm.encoders import BaseEncoder, Standardizer
 from tsdm.random.samplers import SequenceSampler
-from tsdm.tasks.base import TimeSeriesTask
+from tsdm.tasks.base import OldBaseTask
 from tsdm.utils.strings import repr_namedtuple
+
+
+class Sample(NamedTuple):
+    r"""A sample of the data."""
+
+    key: tuple[tuple[int, int], slice]
+    inputs: tuple[DataFrame, DataFrame]
+    targets: float
+    originals: Optional[tuple[DataFrame, DataFrame]] = None
+
+    def __repr__(self) -> str:
+        r"""Return string representation."""
+        return repr_namedtuple(self)
 
 
 class Batch(NamedTuple):
@@ -38,7 +52,7 @@ class Batch(NamedTuple):
         return repr_namedtuple(self)
 
 
-class ElectricityLim2021(TimeSeriesTask):
+class ElectricityLim2021(OldBaseTask):
     r"""Experiments as performed by the "TFT" paper.
 
     Note that there is an issue: in the pipe-line, the hourly aggregation is done via mean,
