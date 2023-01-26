@@ -99,6 +99,7 @@ pyright = ">=1.1"
 pytest = ">=7.2"
 pytest-cov = ">=4.0"
 pytest-rerunfailures = ">=10.3"
+ruff = ">=0.0.235"
 setuptools = ">=65.6"
 slotscheck = ">=0.16"
 sphinx = ">=6.1"
@@ -321,3 +322,11 @@ exclude_lines = [
 
 [tool.coverage.run]
 source = ["src/"]
+
+
+
+######################
+# Ruff Configuration #
+######################
+[tool.ruff]
+line-length = 120

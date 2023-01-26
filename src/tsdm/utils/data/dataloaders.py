@@ -58,7 +58,7 @@ def collate_padded(
 def unpack_sequence(batch: PackedSequence) -> list[Tensor]:
     r"""Reverse operation of pack_sequence."""
     batch_pad_packed, lengths = pad_packed_sequence(batch, batch_first=True)
-    return [x[:l] for x, l in zip(batch_pad_packed, lengths)]
+    return [x[:n] for x, n in zip(batch_pad_packed, lengths)]
 
 
 def unpad_sequence(
@@ -74,7 +74,7 @@ def unpad_sequence(
     )
 
     if lengths is not None:
-        return [x[0:l] for x, l in zip(padded_seq, lengths)]
+        return [x[:n] for x, n in zip(padded_seq, lengths)]
 
     # infer lengths from mask
     if torch.isnan(padding):
@@ -88,4 +88,4 @@ def unpad_sequence(
     # count, starting from the back, until the first observation occurs.
     inferred_lengths = (~cumulative_and(agg.flip(dims=(1,)), dim=1)).sum(dim=1)
 
-    return [x[0:l] for x, l in zip(padded_seq, inferred_lengths)]
+    return [x[:n] for x, n in zip(padded_seq, inferred_lengths)]
