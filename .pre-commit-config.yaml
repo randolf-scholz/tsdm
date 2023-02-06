@@ -1,5 +1,5 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
-minimum_pre_commit_version: 2.21.0
+minimum_pre_commit_version: 3.0.1
 default_language_version:
   python: python3.10
   node: "18.12.1"
@@ -73,12 +73,12 @@ repos:
         description: Automatically convert relative imports to absolute
   # isort
   - repo: https://github.com/pycqa/isort
-    rev: 5.11.4
+    rev: 5.12.0
     hooks:
       - id: isort
   # black
   - repo: https://github.com/psf/black
-    rev: 22.12.0
+    rev: 23.1.0
     hooks:
       - id: black
       - id: black-jupyter
@@ -128,6 +128,7 @@ repos:
     hooks:
       - id: slotscheck
         files: ^src/
+        types: [python]
         language: system
         description: "Slotscheck: Ensure your __slots__ are working properly."
   # clear jupyter notebooks in dev-folder
