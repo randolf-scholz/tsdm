@@ -11,9 +11,7 @@ R = TypeVar("R")
 def foo(
     func: Callable[P, R], before_func: Optional[Callable[P, None]] = None
 ) -> Callable[P, R]:
-
     if before_func is not None:
-
         reveal_type(before_func)  # <--  Revealed type is "def (*Any, **Any) -> Any"
 
         @wraps(func)  # problem persists when removing @wraps

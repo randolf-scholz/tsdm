@@ -56,7 +56,6 @@ class BaseModel(ABC):
         self.LOGGER.info("Obtaining model from %s", self.SOURCE_URL)
 
         if parsed_url.netloc == "github.com":
-
             if "tree/main" in target_url:
                 export_url = target_url.replace("tree/main", "trunk")
             elif "tree/master" in target_url:

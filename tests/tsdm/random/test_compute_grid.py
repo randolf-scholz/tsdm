@@ -59,7 +59,6 @@ class GridTuple(NamedTuple, Generic[DTVar, TDVar]):
 
 
 def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
-
     match mode:
         case "numpy":
             # noinspection PyArgumentList
