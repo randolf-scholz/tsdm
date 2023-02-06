@@ -201,7 +201,6 @@ class KiwiTask(TimeSeriesTask):
         encoder = self.encoders[key]
 
         def collate_fn(samples: list[Sample]) -> Batch:
-
             x_vals: list[Tensor] = []
             y_vals: list[Tensor] = []
             x_time: list[Tensor] = []

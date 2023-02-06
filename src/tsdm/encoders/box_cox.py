@@ -54,7 +54,6 @@ class BoxCoxEncoder(BaseEncoder):
         method: METHOD = "match-uniform",
         initial_param: Optional[np.ndarray] = None,
     ) -> None:
-
         if method not in self.AVAILABLE_METHODS:
             raise ValueError(f"{method=} unknown. Available: {self.AVAILABLE_METHODS}")
         if method is None and initial_param is None:
@@ -242,7 +241,6 @@ class LogitBoxCoxEncoder(BaseEncoder):
         method: METHOD = "match-normal",
         initial_param: Optional[np.ndarray] = None,
     ) -> None:
-
         if method not in self.AVAILABLE_METHODS:
             raise ValueError(f"{method=} unknown. Available: {self.AVAILABLE_METHODS}")
         if method is None and initial_param is None:
