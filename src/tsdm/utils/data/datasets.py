@@ -11,6 +11,7 @@ from typing import Any, Optional, TypeVar, overload
 
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
+from typing_extensions import Self
 
 from tsdm.types.variables import KeyVar as K
 from tsdm.types.variables import NestedKeyVar as K2
@@ -120,10 +121,8 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
         except KeyError:
             return self.datasets[key]  # type: ignore[index]
 
-    @staticmethod
-    def from_dataframe(
-        df: DataFrame, levels: Optional[list[str]] = None
-    ) -> Any:  # FIXME: Return Self MappingDataset:
+    @classmethod
+    def from_dataframe(cls, df: DataFrame, levels: Optional[list[str]] = None) -> Self:
         r"""Create a `MappingDataset` from a `DataFrame`.
 
         If ``levels`` is given, the selected levels from the `DataFrame`'s `MultiIndex` are used as keys.
@@ -135,7 +134,7 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
         else:
             index = df.index
 
-        return MappingDataset({idx: df.loc[idx] for idx in index})
+        return cls({idx: df.loc[idx] for idx in index})
 
     def __repr__(self) -> str:
         r"""Representation of the dataset."""

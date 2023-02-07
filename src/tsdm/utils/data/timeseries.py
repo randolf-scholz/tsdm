@@ -18,6 +18,7 @@ import numpy as np
 from pandas import DataFrame, Index, Series, Timedelta
 from torch import Tensor
 from torch.utils.data import Dataset as TorchDataset
+from typing_extensions import Self
 
 from tsdm.utils.strings import repr_array, repr_sequence
 
@@ -62,7 +63,7 @@ class TimeTensor(Tensor):
 
     def __new__(
         cls, x: Sized, *args: Any, index: Optional[Index] = None, **kwargs: Any
-    ) -> Any:  # FIXME: return Self, need delayed annotation here!
+    ) -> Self:
         r"""Create new object.
 
         If index is not provided, then `range(len(x))` will be used as the index.
@@ -231,7 +232,7 @@ class TimeSeriesDataset(TorchDataset):
             return tmax - tmin
         return max(self.timeseries.index) - min(self.timeseries.index)
 
-    def __getitem__(self, item: Any) -> Any:  # FIXME: return Self
+    def __getitem__(self, item: Any) -> Self:
         r"""Return corresponding slice from each tensor."""
         if isinstance(self.timeseries, tuple):
             if hasattr(self.timeseries, "_fields"):  # namedtuple
@@ -243,7 +244,8 @@ class TimeSeriesDataset(TorchDataset):
         else:
             timeseries = self.timeseries.loc[item]
 
-        return TimeSeriesDataset(timeseries, metadata=self.metadata)
+        # TODO: Improve Type Hinting
+        return TimeSeriesDataset(timeseries, metadata=self.metadata)  # type: ignore[return-value]
 
     def __iter__(self) -> Iterator:
         r"""Iterate over each timeseries."""

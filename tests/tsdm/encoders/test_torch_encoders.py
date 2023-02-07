@@ -47,8 +47,7 @@ def test_PositionalEncoder() -> None:
     except Exception as E:
         LOGGER.error("Inverse failed")
         raise RuntimeError("Failed to run PositionalEncoder inverse") from E
-    else:
-        assert np.allclose(t_inverse, t), "inverse failed"
+    assert np.allclose(t_inverse, t), "inverse failed"
 
     LOGGER.info("Finished Testing")
 
@@ -84,8 +83,7 @@ def test_PositionalEncoder_Torch() -> None:
     except Exception as E:
         LOGGER.error("Inverse failed")
         raise RuntimeError("Failed to run PositionalEncoder inverse") from E
-    else:
-        assert torch.allclose(t_inverse, t), "inverse failed"
+    assert torch.allclose(t_inverse, t), "inverse failed"
 
     LOGGER.info("Finished Testing")
 
@@ -120,8 +118,7 @@ def test_Time2Vec() -> None:
     except Exception as E:
         LOGGER.error("Inverse failed")
         raise RuntimeError("Failed to run Time2Vec inverse") from E
-    else:
-        assert torch.allclose(t_inverse, t), "inverse failed"
+    assert torch.allclose(t_inverse, t), "inverse failed"
 
     LOGGER.info("Finished Testing")
 

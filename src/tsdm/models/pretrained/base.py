@@ -53,6 +53,7 @@ import yaml
 from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
+from typing_extensions import Self
 
 from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
@@ -215,9 +216,7 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
         return cls(*args, rawdata_path=path, **kwargs)
 
     @classmethod
-    def from_url(
-        cls, url: str, /, *args: Any, **kwargs: Any
-    ) -> Any:  # FIXME: Return Self PreTrainedModel
+    def from_url(cls, url: str, /, *args: Any, **kwargs: Any) -> Self:
         r"""Obtain model from arbitrary url."""
         fname = url.split("/")[-1]
         path = cls.RAWDATA_DIR / fname
@@ -226,7 +225,7 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
     @classmethod
     def from_remote_checkpoint(
         cls, checkpoint: str, /, *args: Any, **kwargs: Any
-    ) -> Any:  # FIXME: Use typing.Self
+    ) -> Self:
         r"""Create model from local."""
         if cls.DOWNLOAD_URL is None:
             raise NotImplementedError(
@@ -349,7 +348,7 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
 
         try:  # attempt loading via torch.jit.load
             logger.info("Trying to load as TorchScript.")
-            if isinstance(file, IOBase):  # type: ignore[unreachable]
+            if isinstance(file, IOBase):
                 file.seek(0, 0)
             return self.__load_torch_jit_model(file)
         except RuntimeError:
@@ -357,11 +356,11 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
 
         try:  # attempt loading via torch.load
             logger.info("Loading as regular torch component.")
-            if isinstance(file, IOBase):  # type: ignore[unreachable]
+            if isinstance(file, IOBase):
                 file.seek(0, 0)
             loaded_object = torch.load(file, map_location=self.device)
         except RuntimeError:
-            if isinstance(file, IOBase):  # type: ignore[unreachable]
+            if isinstance(file, IOBase):
                 file.seek(0, 0)
             loaded_object = torch.load(file, map_location=torch.device("cpu"))
             warnings.warn("Could not load to default device. Loaded to CPU.")
@@ -387,11 +386,11 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
         r"""Load a TorchScript model."""
         try:
             # load on CPU
-            if isinstance(file, IOBase):  # type: ignore[unreachable]
+            if isinstance(file, IOBase):
                 file.seek(0, 0)
             model = torch.jit.load(file, map_location=self.device)
         except RuntimeError:
-            if isinstance(file, IOBase):  # type: ignore[unreachable]
+            if isinstance(file, IOBase):
                 file.seek(0, 0)
             model = torch.jit.load(file, map_location=torch.device("cpu"))
             warnings.warn("Could not load model to default device. Loaded to CPU.")
