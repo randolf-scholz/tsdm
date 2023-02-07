@@ -54,7 +54,7 @@ PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
 PathLike: TypeAlias = str | Path | os.PathLike[str]
 r"""Type Alias for path-like objects."""
-ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]  # type: ignore[index]
+ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]
 r"""TypeAlias for scalar types."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
@@ -88,10 +88,10 @@ r"""Generic Type Alias for nested `tuple`."""
 
 
 # region Nested Configuration -------------------------------------------------
-JSON: TypeAlias = None | str | int | float | bool | list["JSON"] | dict[str, "JSON"]  # type: ignore[operator]
+JSON: TypeAlias = None | str | int | float | bool | list["JSON"] | dict[str, "JSON"]
 r"""Type Alias for JSON-Like objects."""
-TOML: TypeAlias = None | str | int | float | bool | list["TOML"] | dict[str, "TOML"]  # type: ignore[operator]
+TOML: TypeAlias = None | str | int | float | bool | list["TOML"] | dict[str, "TOML"]
 r"""Type Alias for JSON-Like objects."""
-YAML: TypeAlias = None | str | int | float | bool | list["YAML"] | dict[str, "YAML"]  # type: ignore[operator]
+YAML: TypeAlias = None | str | int | float | bool | list["YAML"] | dict[str, "YAML"]
 r"""Type Alias for JSON-Like objects."""
 # endregion Nested Configuration ----------------------------------------------

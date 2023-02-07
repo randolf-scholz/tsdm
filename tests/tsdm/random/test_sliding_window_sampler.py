@@ -39,7 +39,6 @@ def test_SlidingWindowSampler():
 
 
 def _main() -> None:
-
     test_SlidingWindowSampler()
 
 

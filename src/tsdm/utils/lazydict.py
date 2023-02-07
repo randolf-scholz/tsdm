@@ -3,6 +3,7 @@ r"""A Lazy Dictionary implementation.
 The LazyDict is a dictionary that is initialized with functions as the values.
 Once the value is accessed, the function is called and the result is stored.
 """
+from __future__ import annotations
 
 __all__ = [
     # Classes
@@ -10,21 +11,26 @@ __all__ = [
     "LazyFunction",
 ]
 
+
 import logging
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from typing import Any, Generic, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, Union, cast, overload
 
-from typing_extensions import NamedTuple
+from typing_extensions import NamedTuple, Self
 
+from tsdm.types.variables import Any2Var as T2
 from tsdm.types.variables import AnyVar as T
+from tsdm.types.variables import Key2Var as K2
 from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import ObjectVar as O
 from tsdm.types.variables import ReturnVar as R
 from tsdm.utils._utils import get_function_args, is_positional
 from tsdm.utils.strings import repr_mapping, repr_short
 
 __logger__ = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from _typeshed import SupportsKeysAndGetItem
 
 
 class LazyFunction(NamedTuple, Generic[R]):
@@ -57,7 +63,7 @@ FuncSpec: TypeAlias = Union[
 ]
 
 
-class LazyDict(dict[K, O]):
+class LazyDict(dict[K, T]):
     r"""A Lazy Dictionary implementation.
 
     Values are allowed to be one of the following:
@@ -88,24 +94,24 @@ class LazyDict(dict[K, O]):
         return super().__new__(cls, *args, **kwargs)
 
     @overload
-    def __init__(self, /, **kwargs: FuncSpec | O) -> None:
+    def __init__(self, /, **kwargs: FuncSpec | T) -> None:
         ...
 
     @overload
     def __init__(
         self,
-        mapping: Mapping[K, FuncSpec | O],
+        mapping: Mapping[K, FuncSpec | T],
         /,
-        **kwargs: FuncSpec | O,
+        **kwargs: FuncSpec | T,
     ) -> None:
         ...
 
     @overload
     def __init__(
         self,
-        iterable: Iterable[tuple[K, FuncSpec | O]],
+        iterable: Iterable[tuple[K, FuncSpec | T]],
         /,
-        **kwargs: FuncSpec | O,
+        **kwargs: FuncSpec | T,
     ) -> None:
         ...
 
@@ -114,7 +120,7 @@ class LazyDict(dict[K, O]):
         super().__init__()
         MutableMapping.update(self, *args, **kwargs)
 
-    def __getitem__(self, key: K) -> O:
+    def __getitem__(self, key: K) -> T:
         r"""Get the value of the key."""
         value = super().__getitem__(key)
         if isinstance(value, LazyFunction):
@@ -123,7 +129,7 @@ class LazyDict(dict[K, O]):
             return new_value
         return value
 
-    def __setitem__(self, key: K, value: FuncSpec | O) -> None:
+    def __setitem__(self, key: K, value: FuncSpec | T) -> None:
         r"""Set the value of the key."""
         super().__setitem__(key, self._make_lazy_function(key, value))  # type: ignore[assignment]
 
@@ -131,16 +137,12 @@ class LazyDict(dict[K, O]):
         r"""Return the representation of the dictionary."""
         return repr_mapping(self, repr_fun=repr_short)
 
-    def __or__(self, other, /):
-        # FIXME: https://github.com/python/cpython/issues/99327
-        # TODO: Self python 3.11
+    def __or__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         new = self.copy()
-        new.update(other)
-        return new
+        new.update(other)  # type: ignore[arg-type]
+        return cast(LazyDict[K | K2, T | T2], new)
 
-    def __ror__(self, other, /):
-        # FIXME: https://github.com/python/cpython/issues/99327
-        # TODO: Self python 3.11
+    def __ror__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         if isinstance(other, self.__class__):
             return other | self
         warnings.warn(
@@ -149,24 +151,23 @@ class LazyDict(dict[K, O]):
             category=RuntimeWarning,
             source=LazyDict,
         )
-        new = other.copy()
+        new = other.copy() if isinstance(other, LazyDict) else LazyDict(other)
         new.update(self.asdict())
         return new
 
-    def __ior__(self, other, /):
-        # FIXME: https://github.com/python/cpython/issues/99327
-        # TODO: Self python 3.11
+    def __ior__(self: Self, other: SupportsKeysAndGetItem[K, T], /) -> Self:  # type: ignore[override, misc]
+        # TODO: fix typing error
         self.update(other)
         return self
 
-    def asdict(self) -> dict[K, O]:
+    def asdict(self) -> dict[K, T]:
         r"""Return a dictionary with all values evaluated."""
         return {k: self[k] for k in self}
 
     @staticmethod
     def _make_lazy_function(
         key: K,
-        value: FuncSpec | O,
+        value: FuncSpec | T,
     ) -> LazyFunction:
         match value:
             case LazyFunction():
@@ -181,7 +182,7 @@ class LazyDict(dict[K, O]):
                     ):  # set the key as input
                         return LazyFunction(func=value, args=(key,))
                     case _:
-                        raise TypeError(f"Function {value} requires {nargs} arguments.")
+                        raise TypeError(f"Function {value} requires {nargs} args.")  # type: ignore[used-before-def]
             case [Callable()]:  # type: ignore[misc]
                 return LazyDict._make_lazy_function(key, value[0])  # type: ignore[index]
             case Callable(), tuple():  # type: ignore[misc]
@@ -193,6 +194,6 @@ class LazyDict(dict[K, O]):
             case _:
                 return LazyFunction(lambda: value)
 
-    def copy(self) -> Any:  # FIXME: Return Self LazyDict[K, O]:
+    def copy(self) -> Self:
         r"""Return a shallow copy of the dictionary."""
         return self.__class__(self.items())

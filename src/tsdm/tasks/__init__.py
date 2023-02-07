@@ -58,13 +58,13 @@ __all__ = [
 from typing import Final, TypeAlias
 
 from tsdm.tasks import base
+from tsdm.tasks._deprecated_electricity_lim2021 import ElectricityLim2021
+from tsdm.tasks._deprecated_kiwi_bioprocess import Kiwi_BioProcessTask
+from tsdm.tasks._deprecated_kiwi_runs_task import KIWI_RUNS_TASK
 from tsdm.tasks.base import OldBaseTask, TimeSeriesSampleGenerator, TimeSeriesTask
-from tsdm.tasks.electricity_lim2021 import ElectricityLim2021
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.insilico import InSilicoSampleGenerator, InSilicoTask
-from tsdm.tasks.kiwi_bioprocess import Kiwi_BioProcessTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
-from tsdm.tasks.kiwi_runs_task import KIWI_RUNS_TASK
 from tsdm.tasks.kiwi_task import KiwiTask
 from tsdm.tasks.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.tasks.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021

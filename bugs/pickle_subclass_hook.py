@@ -39,7 +39,6 @@ class Child(Parent):
 
 
 if __name__ == "__main__":
-
     obj = Child()
     result = obj.run()
     print(pickle.dumps(obj))

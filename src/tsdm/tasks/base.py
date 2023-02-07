@@ -126,6 +126,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler as TorchSampler
+from typing_extensions import Self
 
 from tsdm.datasets import Dataset, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import ModularEncoder
@@ -280,7 +281,7 @@ class Sample(NamedTuple):
     def __repr__(self) -> str:
         return repr_namedtuple(self)
 
-    def sparsify_index(self) -> tuple:  # FIXME: Return Self Sample:
+    def sparsify_index(self) -> Self:
         r"""Drop rows that contain only NAN values."""
         if self.inputs.x is not None:
             self.inputs.x.dropna(how="all", inplace=True)
@@ -409,9 +410,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     def __repr__(self) -> str:
         return repr_dataclass(self)
 
-    def get_subgenerator(
-        self, key: K
-    ) -> Any:  # FIXME: Return Self TimeSeriesSampleGenerator:
+    def get_subgenerator(self, key: K) -> Self:
         r"""Get a subgenerator."""
         other_kwargs = {k: v for k, v in self.__dict__.items() if k != "dataset"}
         # noinspection PyArgumentList
