@@ -291,8 +291,7 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
                 value = next(activate_iterators[key])
             except StopIteration as E:
                 raise RuntimeError(f"Iterator of {key=} exhausted prematurely.") from E
-            else:
-                yield key, value
+            yield key, value
 
     def __getitem__(self, key: K) -> BaseSampler[T_co]:
         r"""Return the subsampler for the given key."""
@@ -367,8 +366,7 @@ class HierarchicalSampler(Sampler[tuple[K, T_co]]):
                 value = next(activate_iterators[key])
             except StopIteration as E:
                 raise RuntimeError(f"Iterator of {key=} exhausted prematurely.") from E
-            else:
-                yield key, value
+            yield key, value
 
     def __getitem__(self, key: K) -> Sampler[T_co]:
         r"""Return the subsampler for the given key."""
@@ -770,4 +768,4 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
         for k in grid:
             vals = self.start_values + k * self.stride
-            yield yield_fn(vals)
+            yield yield_fn(vals)  # type: ignore[misc]

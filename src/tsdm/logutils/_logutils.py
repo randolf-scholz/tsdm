@@ -117,10 +117,12 @@ Loss: TypeAlias = nn.Module | Callable[[Tensor, Tensor], Tensor]
 
 @runtime_checkable
 class Callback(Protocol[T_contra]):
+    """Protocol for callbacks."""
+
     def __call__(
         self, i: int, logged_object: T_contra, /, writer: SummaryWriter
     ) -> None:
-        # FIXME: works if '_' is renamed to 'score'
+        # FIXME: works if '_' is renamed to 'logged_object'
         pass
 
 

@@ -15,6 +15,8 @@ from collections.abc import Callable, Iterable, Iterator, MutableMapping, Sequen
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Any
 
+from typing_extensions import Self
+
 
 def is_allcaps(s: str) -> bool:
     r"""Check if a string is all caps."""
@@ -122,7 +124,7 @@ class Config(MutableMapping, metaclass=ConfigMetaclass):
         # return hash((frozenset(self), frozenset(self.itervalues())))
         return hash(frozenset(self.items()))
 
-    def __or__(self, other: dict) -> Any:  # FIXME: Return Self Config:
+    def __or__(self, other: dict) -> Self:
         r"""Return a new dictionary with the keys from both dictionaries."""
         res: dict = {}
         res.update(self)

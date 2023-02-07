@@ -29,6 +29,7 @@ import pandas as pd
 import torch
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
 from torch import Tensor
+from typing_extensions import Self
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
@@ -302,9 +303,7 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
     }
     r"""The frequencies of the used `PeriodicEncoder`."""
 
-    def __new__(
-        cls, levels: str = "YMWDhms"
-    ) -> Any:  # FIXME: Return Self PeriodicSocialTimeEncoder:
+    def __new__(cls, levels: str = "YMWDhms") -> Self:
         r"""Construct a new encoder object."""
         self = super().__new__(cls)
         self.__init__(levels)  # type: ignore[misc]
@@ -313,7 +312,7 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
             for level in self.levels
         }
         obj = FrameEncoder(column_encoders) @ self
-        return cast(PeriodicSocialTimeEncoder, obj)
+        return cast(Self, obj)
 
 
 class PositionalEncoder(BaseEncoder):

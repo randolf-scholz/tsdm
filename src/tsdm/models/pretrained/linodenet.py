@@ -9,7 +9,6 @@ import pickle
 from collections.abc import Collection
 
 import numpy as np
-import pandas
 import pandas as pd
 import torch
 from pandas import DataFrame, Index, MultiIndex
@@ -67,7 +66,7 @@ class LinODEnet(PreTrainedModel):
         download(
             cls.DOWNLOAD_URL + "checkpoints.xlsx", cls.RAWDATA_DIR / "checkpoints.xlsx"
         )
-        return pandas.read_excel(cls.RAWDATA_DIR / "checkpoints.xlsx")
+        return pd.read_excel(cls.RAWDATA_DIR / "checkpoints.xlsx")
 
     def predict(self, ts: DataFrame) -> DataFrame:
         r"""Predict function for LinODEnet."""

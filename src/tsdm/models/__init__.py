@@ -38,7 +38,6 @@ r"""Type hint for models."""
 ModelType = type[nn.Module]
 r"""Type hint for models."""
 
-# TODO: replace Any with BaseModel class
 MODELS: Final[dict[str, ModelType]] = {
     "ODE_RNN": ODE_RNN,
     "SetFuncTS": SetFuncTS,

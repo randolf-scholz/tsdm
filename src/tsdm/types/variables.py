@@ -36,10 +36,16 @@ __all__ = [
     "AnyVar",
     "Any_co",
     "Any_contra",
+    "Any2Var",
+    "Any2_co",
+    "Any2_contra",
     "InputVar",
     "KeyVar",
     "Key_co",
     "Key_contra",
+    "Key2Var",
+    "Key2_co",
+    "Key2_contra",
     "NestedKeyVar",
     "NestedKey_co",
     "NestedKey_contra",
@@ -142,6 +148,13 @@ r"""Generic covariant type variable."""
 Any_contra = TypeVar("Any_contra", contravariant=True)
 r"""Generic contravariant type variable."""
 
+Any2Var = TypeVar("Any2Var")
+r"""Generic type variable."""
+Any2_co = TypeVar("Any2_co", covariant=True)
+r"""Generic covariant type variable."""
+Any2_contra = TypeVar("Any2_contra", contravariant=True)
+r"""Generic contravariant type variable."""
+
 InputVar = TypeVar("InputVar", contravariant=True)
 r"""Generic type variable for inputs. Always contravariant."""
 
@@ -150,6 +163,13 @@ r"""Type Variable for `Mapping` keys."""
 Key_co = TypeVar("Key_co", bound=Hashable, covariant=True)
 r"""Covariant type Variable for `Mapping` keys."""
 Key_contra = TypeVar("Key_contra", bound=Hashable, contravariant=True)
+r""" Contravariant type Variable for `Mapping` keys."""
+
+Key2Var = TypeVar("Key2Var", bound=Hashable)
+r"""Type Variable for `Mapping` keys."""
+Key2_co = TypeVar("Key2_co", bound=Hashable, covariant=True)
+r"""Covariant type Variable for `Mapping` keys."""
+Key2_contra = TypeVar("Key2_contra", bound=Hashable, contravariant=True)
 r""" Contravariant type Variable for `Mapping` keys."""
 
 NestedKeyVar = TypeVar("NestedKeyVar", bound=Hashable)
