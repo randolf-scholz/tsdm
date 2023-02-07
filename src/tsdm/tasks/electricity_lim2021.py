@@ -6,7 +6,6 @@ __all__ = [
 ]
 
 
-from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import Any, Literal, NamedTuple
 
@@ -108,7 +107,15 @@ class ElectricityLim2021(TimeSeriesTask):
     preprocessor: BaseEncoder
 
     def __init__(self) -> None:
-        super().__init__()
+        ds = Electricity().dataset
+        ds = ds.resample("1h").mean()
+        mask = (self.boundaries["start"] <= ds.index) & (
+            ds.index < self.boundaries["final"]
+        )
+        dataset = ds[mask]
+
+        super().__init__(dataset=dataset)
+
         self.observation_period = pd.Timedelta("7d")
         self.forecasting_period = pd.Timedelta("1d")
         self.observation_horizon = 24 * 7
@@ -126,26 +133,6 @@ class ElectricityLim2021(TimeSeriesTask):
             "valid": pd.Timestamp("2014-09-01"),
             "final": pd.Timestamp("2014-09-08"),
         }
-
-    @cached_property
-    def test_metric(self) -> Callable[..., Tensor]:
-        r"""Test metric."""
-        raise NotImplementedError
-
-    @cached_property
-    def dataset(self) -> pd.DataFrame:
-        r"""Return the cached dataset."""
-        ds = Electricity().dataset
-        ds = ds.resample("1h").mean()
-        mask = (self.boundaries["start"] <= ds.index) & (
-            ds.index < self.boundaries["final"]
-        )
-        return ds[mask]
-
-    @cached_property
-    def index(self) -> Sequence[KeyType]:
-        r"""List of entity identifiers."""
-        return ["train", "test", "valid", "joint", "whole"]
 
     @cached_property
     def masks(self) -> dict[KeyType, np.ndarray]:
@@ -167,19 +154,9 @@ class ElectricityLim2021(TimeSeriesTask):
             & (self.dataset.index < self.boundaries["valid"]),
         }
 
-    @cached_property
-    def splits(self) -> Mapping[KeyType, Any]:
-        r"""Return cached splits of the dataset."""
-        # We intentionally use these mask instead of the simpler
-        # ds[lower:upper], in order to get the boundary inclusion right.
-
-        return {
-            "train": self.dataset[self.masks["train"]],
-            "valid": self.dataset[self.masks["valid"]],
-            "test": self.dataset[self.masks["test"]],
-            "joint": self.dataset[self.masks["joint"]],
-            "whole": self.dataset[self.masks["whole"]],
-        }
+    def make_split(self, key: KeyType) -> Any:
+        r"""Return the split of the dataset."""
+        return self.dataset[self.masks[key]]  # type: ignore[call-overload]
 
     # @cached_property
     # def dataloader_kwargs(self) -> dict:

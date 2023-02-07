@@ -20,6 +20,8 @@ from collections.abc import Sequence
 from dataclasses import Field
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
+from typing_extensions import Self
+
 from tsdm.types.variables import Key_contra, KeyVar, Value_co
 
 ScalarType_co = TypeVar("ScalarType_co", covariant=True)
@@ -130,5 +132,5 @@ class Hash(Protocol):
     def hexdigest(self) -> str:
         """Return the digest value as a string of hexadecimal digits."""
 
-    def copy(self) -> Any:  # TODO: Use typing.Self
+    def copy(self) -> Self:
         """Return a clone of the hash object."""

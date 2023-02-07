@@ -33,6 +33,7 @@ from types import GenericAlias
 from typing import Any, Concatenate, NamedTuple, Optional, cast, overload
 
 from torch import jit, nn
+from typing_extensions import Self
 
 from tsdm.config import CONFIG
 from tsdm.types.abc import CollectionType
@@ -66,6 +67,7 @@ PARAM_TYPES = (
 
 
 def collect_exit_points(func: Callable) -> list[ast.Return]:
+    """Collect all exit points of a function as ast nodes."""
     tree = ast.parse(getsource(func))
     exit_points = []
     for node in ast.walk(tree):
@@ -75,6 +77,7 @@ def collect_exit_points(func: Callable) -> list[ast.Return]:
 
 
 def exit_point_names(func: Callable) -> list[tuple[str, ...]]:
+    """Return the variable names used in exit nodes."""
     exit_points = collect_exit_points(func)
 
     var_names = []
@@ -111,11 +114,10 @@ class DecoratorError(Exception):
     message: str = ""
     r"""Default message to print."""
 
-    def __call__(
-        self, *message_lines: str
-    ) -> Any:  # FIXME: Return Self DecoratorError:
+    def __call__(self: Self, *message_lines: str) -> Self:
         r"""Raise a new error."""
-        return DecoratorError(self.decorated, message="\n".join(message_lines))
+        # TODO: CHECK if dataclasses are the problem
+        return DecoratorError(self.decorated, message="\n".join(message_lines))  # type: ignore[return-value]
 
     def __str__(self) -> str:
         r"""Create Error Message."""
@@ -387,8 +389,7 @@ def timefun(
             timefun_logger.error(
                 loglevel, "%s failed with Exception %s", func.__qualname__, E
             )
-            RuntimeWarning(f"Function execution failed with Exception {E}")
-            raise E
+            raise RuntimeError("Function execution failed") from E
         finally:
             gc.enable()
 
@@ -432,10 +433,9 @@ def trace(func: Callable[P, R]) -> Callable[P, R]:
         except Exception as E:
             logger.error("%s: FAILURE with Exception %s", func.__qualname__, E)
             raise RuntimeError(f"Function execution failed with Exception {E}") from E
-        else:
-            logger.info(
-                "%s: SUCCESS with result=%s", func.__qualname__, type(result).__name__
-            )
+        logger.info(
+            "%s: SUCCESS with result=%s", func.__qualname__, type(result).__name__
+        )
         logger.info("%s", "\n\t".join((f"{func.__qualname__}: EXITING",)))
         return result
 

@@ -136,8 +136,9 @@ enable= [
 ]
 disable= [
     "C0103",  # invalid-name
-    "C0415",  # import-outside-toplevel
     "C0144",  # non-ascii-name
+    "C0204",  # bad-mcs-classmethod-argument
+    "C0415",  # import-outside-toplevel
     "E0611",  # no-name-in-module
     "E1130",  # invalid-unary-operand-type
     "R0801",  # similar lines
@@ -147,8 +148,8 @@ disable= [
     "R0914",  # too-many-locals
     "R0915",  # too-many-statements
     "W0221",  # arguments-differ
-#    "W0511",  # (fixme) (todos)
     "W1113",  # keyword-arg-before-vararg
+#    "W0511",  # (fixme) (todos)
 ]
 fail-on= [
     "C0116",  # missing-function-docstring

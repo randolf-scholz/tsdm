@@ -30,6 +30,7 @@ from urllib.parse import urlparse
 import pandas
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch.utils.data import Dataset as TorchDataset
+from typing_extensions import Self
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import Nested, PathLike
@@ -881,7 +882,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         ...
 
     @overload
-    def __getitem__(self, key: slice) -> Any:  # FIXME: Return Self
+    def __getitem__(self, key: slice) -> Self:
         ...
 
     def __getitem__(self, key):
