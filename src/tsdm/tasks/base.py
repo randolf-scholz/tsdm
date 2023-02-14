@@ -410,7 +410,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         if cols := covariates & observables:
             raise ValueError(f"Covariates and observables not disjoint! {cols}.")
         if cols := ts_columns - (observables | targets | covariates):
-            warnings.warn(f"Unused columns in timeseries: {cols}")
+            warnings.warn(f"Unused columns in timeseries: {cols}", stacklevel=2)
 
         if md is not None:
             if cols := md_observables - md_columns:
@@ -579,7 +579,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         # sampler
         sampler = self.samplers[key]
         if sampler is NotImplemented:
-            warnings.warn(f"No sampler provided for key={key}. ")
+            warnings.warn(f"No sampler provided for {key=}.", stacklevel=2)
             kwargs["sampler"] = None
         else:
             kwargs["sampler"] = sampler
@@ -587,7 +587,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         # collate_fn
         collate_fn = self.collate_fns[key]
         if collate_fn is NotImplemented:
-            warnings.warn(f"No collate_fn provided for key={key}. ")
+            warnings.warn(f"No collate_fn provided for {key=}.", stacklevel=2)
             kwargs["collate_fn"] = self.default_collate_fn
         else:
             kwargs["collate_fn"] = collate_fn
@@ -663,7 +663,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     @cached_property
     def train_split(self) -> Mapping[SplitID, SplitID]:
         r"""Return the matching train partition for the given key."""
-        if isinstance(self.folds, (Series, DataFrame)):
+        if isinstance(self.folds, Series | DataFrame):
             split_index = self.folds.T.index
         elif isinstance(self.folds, Mapping):
             split_index = Index(self.folds.keys())
@@ -699,7 +699,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         - If keys are `partition`, they are assumed to be `partition` keys.
         - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
         """
-        if isinstance(self.folds, (Series, DataFrame)):
+        if isinstance(self.folds, Series | DataFrame):
             split_index = self.folds.T.index
         elif isinstance(self.folds, Mapping):
             split_index = Index(self.folds.keys())

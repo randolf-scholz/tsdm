@@ -184,7 +184,7 @@ def time2float(ds: Series) -> Series:
     elif pd.api.types.is_timedelta64_dtype(ds):
         timedeltas = ds.view("timedelta64[ns]")
     elif pd.api.types.is_float_dtype(ds):
-        warnings.warn("Array is already floating dtype.")
+        warnings.warn("Array is already floating dtype.", stacklevel=2)
         return ds
     else:
         raise TypeError(f"{ds.dtype=} not supported")

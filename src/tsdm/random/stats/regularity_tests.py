@@ -31,7 +31,9 @@ def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> 
     - https://stackoverflow.com/q/45323619/9318372
     """
     warnings.warn(
-        "The implementation of approx_float_gcd does not work 100% correctly yet!"
+        "The implementation of approx_float_gcd does not work 100% correctly yet!",
+        RuntimeWarning,
+        stacklevel=2,
     )
     x = np.abs(x).flatten()
 

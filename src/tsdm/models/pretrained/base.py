@@ -363,7 +363,9 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
             if isinstance(file, IOBase):
                 file.seek(0, 0)
             loaded_object = torch.load(file, map_location=torch.device("cpu"))
-            warnings.warn("Could not load to default device. Loaded to CPU.")
+            warnings.warn(
+                "Could not load to default device. Loaded to CPU.", stacklevel=3
+            )
 
         if not isinstance(loaded_object, dict):
             return loaded_object
@@ -393,7 +395,9 @@ class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
             if isinstance(file, IOBase):
                 file.seek(0, 0)
             model = torch.jit.load(file, map_location=torch.device("cpu"))
-            warnings.warn("Could not load model to default device. Loaded to CPU.")
+            warnings.warn(
+                "Could not load model to default device. Loaded to CPU.", stacklevel=3
+            )
         return model
 
     def __load_torch_model(self, file: str | Path | IO[bytes], /) -> TorchModule:

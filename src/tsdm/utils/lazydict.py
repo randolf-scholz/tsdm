@@ -150,6 +150,7 @@ class LazyDict(dict[K, T]):
             "It causes all values to be evaluated.",
             category=RuntimeWarning,
             source=LazyDict,
+            stacklevel=2,
         )
         new = other.copy() if isinstance(other, LazyDict) else LazyDict(other)
         new.update(self.asdict())

@@ -81,7 +81,7 @@ def aggregate_nondestructive(df: PandasVar) -> PandasVar:
         2020-12-09 09:48:38  0.116585  <NA>  <NA>    1112.5  4.578233  0.445           200  <NA>
         2020-12-09 09:48:38  0.114842  <NA>  <NA>     912.5  4.554859  0.485          <NA>  <NA>
     """
-    if isinstance(df, (Index, Series)):
+    if isinstance(df, Index | Series):
         return df
 
     mask = df.notna()
