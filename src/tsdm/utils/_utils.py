@@ -13,7 +13,6 @@ __all__ = [
     "get_function_args",
     "get_mandatory_argcount",
     "initialize_from_config",
-    "initialize_from_table",
     "is_dunder",
     "is_keyword_only",
     "is_mandatory",
@@ -37,7 +36,6 @@ import shutil
 import warnings
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
-from functools import partial
 from importlib import import_module
 from logging import getLogger
 from pathlib import Path
@@ -55,7 +53,6 @@ from tqdm.auto import tqdm
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
 from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import ObjectVar as O
 from tsdm.types.variables import ReturnVar as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 
@@ -274,7 +271,7 @@ def prepend_path(
 
     if files is None:
         return None if keep_none else parent
-    if isinstance(files, (str, Path, os.PathLike)):
+    if isinstance(files, str | Path | os.PathLike):
         return parent / Path(files)
     if isinstance(files, Mapping):
         return {
@@ -311,53 +308,14 @@ def paths_exists(
 
 def initialize_from_config(config: dict[str, Any]) -> nn.Module:
     r"""Initialize `nn.Module` from config object."""
-    assert "__name__" in config, "__name__ not found in dict"
-    assert "__module__" in config, "__module__ not found in dict"
+    assert "__name__" in config, "__name__ not found in dict!"
+    assert "__module__" in config, "__module__ not found in dict!"
     __logger__.debug("Initializing %s", config)
     config = config.copy()
     module = import_module(config.pop("__module__"))
     cls = getattr(module, config.pop("__name__"))
     opts = {key: val for key, val in config.items() if not is_dunder("key")}
     return cls(**opts)
-
-
-@overload
-def initialize_from_table(  # type: ignore[misc]
-    lookup_table: dict[str, type[O]], /, __name__: str, **kwargs: Any
-) -> O:
-    ...
-
-
-@overload
-def initialize_from_table(
-    lookup_table: dict[str, Callable[..., R]], /, __name__: str, **kwargs: Any
-) -> Callable[..., R]:
-    ...
-
-
-def initialize_from_table(lookup_table, /, __name__, **kwargs):
-    r"""Lookup class/function from dictionary and initialize it.
-
-    Roughly equivalent to:
-
-    .. code-block:: python
-
-        obj = lookup_table[__name__]
-        if isclass(obj):
-            return obj(**kwargs)
-        return partial(obj, **kwargs)
-    """
-    obj = lookup_table[__name__]
-    assert callable(obj), f"Looked up object {obj} not callable class/function."
-
-    # check that obj is a class, but not metaclass or instance.
-    if isinstance(obj, type) and not issubclass(obj, type):
-        initialized_object = obj(**kwargs)
-        return initialized_object
-
-    # if it is function, fix kwargs
-    initialized_callable = partial(obj, **kwargs)
-    return initialized_callable
 
 
 def is_dunder(name: str) -> bool:
@@ -523,7 +481,7 @@ def repackage_zip(path: PathLike, /) -> None:
     original_path = Path(path)
 
     if not is_zipfile(original_path):
-        warnings.warn(f"{original_path} is not a zip file.")
+        warnings.warn(f"{original_path} is not a zip file.", stacklevel=2)
         return
 
     # guard clause: check if requirements are met

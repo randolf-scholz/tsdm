@@ -20,7 +20,7 @@ from tsdm.datasets import KIWI_RUNS
 from tsdm.encoders import BaseEncoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
-from tsdm.tasks import OldBaseTask
+from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.data import (
     MappingDataset,
     TimeSeriesDataset,

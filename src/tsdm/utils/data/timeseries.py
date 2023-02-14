@@ -20,6 +20,7 @@ from torch import Tensor
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Self
 
+from tsdm.types.protocols import NTuple
 from tsdm.utils.strings import repr_array, repr_sequence
 
 
@@ -234,18 +235,15 @@ class TimeSeriesDataset(TorchDataset):
 
     def __getitem__(self, item: Any) -> Self:
         r"""Return corresponding slice from each tensor."""
-        if isinstance(self.timeseries, tuple):
-            if hasattr(self.timeseries, "_fields"):  # namedtuple
-                timeseries = self.ts_type(*(ts[item] for ts in self.timeseries))
-            else:
-                timeseries = tuple(ts[item] for ts in self.timeseries)
-        # if isinstance(item, list):
-        #     return [self[x] for x in item]
+        if isinstance(self.timeseries, NTuple):
+            timeseries = self.ts_type(*(ts[item] for ts in self.timeseries))
+        elif isinstance(self.timeseries, tuple):
+            timeseries = tuple(ts[item] for ts in self.timeseries)
         else:
             timeseries = self.timeseries.loc[item]
 
-        # TODO: Improve Type Hinting
-        return TimeSeriesDataset(timeseries, metadata=self.metadata)  # type: ignore[return-value]
+        cls = type(self)
+        return cls(timeseries, metadata=self.metadata)
 
     def __iter__(self) -> Iterator:
         r"""Iterate over each timeseries."""

@@ -1,6 +1,6 @@
 """Deprecated Task code."""
 
-__all__ = ["BaseTask"]
+__all__ = ["BaseTask", "OldBaseTask"]
 
 import logging
 import warnings
@@ -222,7 +222,7 @@ class OldBaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
     r"""Optional task specific postprocessor (applied after batching)."""
 
     def __init__(self) -> None:
-        warnings.warn("deprecated, use new class", DeprecationWarning)
+        warnings.warn("deprecated, use new class", DeprecationWarning, stacklevel=1)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""

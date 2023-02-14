@@ -24,7 +24,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FrameEncoder, MinMaxScaler, Standardizer
-from tsdm.tasks import OldBaseTask
+from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 

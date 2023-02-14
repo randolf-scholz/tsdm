@@ -164,7 +164,9 @@ class BoxCoxEncoder(BaseEncoder):
         if not data.dtype == np.float64:
             warnings.warn(
                 "It is not recommended to use this encoder with non-float64 data. "
-                f"But {data.dtype}."
+                f"But {data.dtype=}.",
+                RuntimeWarning,
+                stacklevel=2,
             )
 
         match self.method:
@@ -351,7 +353,9 @@ class LogitBoxCoxEncoder(BaseEncoder):
         if not data.dtype == np.float64:
             warnings.warn(
                 "It is not recommended to use this encoder with non-float64 data. "
-                f"But {data.dtype}."
+                f"But {data.dtype=}.",
+                RuntimeWarning,
+                stacklevel=2,
             )
 
         match self.method:

@@ -118,7 +118,7 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
     def _names(obj: Index | Series | DataFrame) -> Hashable | FrozenList[Hashable]:
         if isinstance(obj, MultiIndex):
             return FrozenList(obj.names)
-        if isinstance(obj, (Series, Index)):
+        if isinstance(obj, Series | Index):
             return obj.name
         if isinstance(obj, DataFrame):
             return FrozenList(obj.columns)
@@ -402,7 +402,7 @@ class FrameIndexer(BaseEncoder):
             self.reset = []
         elif reset is Ellipsis:
             self.reset = Ellipsis
-        elif isinstance(reset, (str, int, tuple)):
+        elif isinstance(reset, str | int | tuple):
             self.reset = [reset]
         elif isinstance(reset, Iterable):
             self.reset = list(reset)
@@ -576,7 +576,9 @@ class FrameSplitter(BaseEncoder, Mapping):
         if not self.has_ellipsis and set(data.columns) > self.fixed_columns:
             warnings.warn(
                 f"Unknown columns {set(data.columns) - self.fixed_columns}."
-                "If you want to encode unknown columns add a group `...` (`Ellipsis`)."
+                "If you want to encode unknown columns add a group `...` (`Ellipsis`).",
+                RuntimeWarning,
+                stacklevel=2,
             )
 
         encoded_frames = []
@@ -836,7 +838,7 @@ class TensorEncoder(BaseEncoder):
             return tuple(self.encode(x) for x in data)
         if isinstance(data, np.ndarray):
             return torch.from_numpy(data).to(device=self.device, dtype=self.dtype)
-        if isinstance(data, (Index, Series, DataFrame)):
+        if isinstance(data, Index | Series | DataFrame):
             return torch.tensor(data.values, device=self.device, dtype=self.dtype)
         return torch.tensor(data, device=self.device, dtype=self.dtype)
 
@@ -886,7 +888,8 @@ class ValueEncoder(BaseEncoder):
                 "Non-uniform dtype detected!"
                 "This may cause unexpected behavior."
                 "Please specify dtype.",
-                UserWarning,
+                RuntimeWarning,
+                stacklevel=2,
             )
 
     def encode(self, data: DataFrame, /) -> NDArray:
