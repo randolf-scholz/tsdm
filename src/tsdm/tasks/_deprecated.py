@@ -24,7 +24,7 @@ from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.datasets import Dataset
-from tsdm.encoders import ModularEncoder
+from tsdm.encoders import Encoder
 from tsdm.tasks.base import BaseTaskMetaClass
 from tsdm.types.variables import KeyVar as K
 from tsdm.utils import LazyDict
@@ -50,9 +50,9 @@ class BaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
 
     LOGGER: ClassVar[logging.Logger]
     r"""Class specific logger instance."""
-    preprocessor: Optional[ModularEncoder] = None
+    preprocessor: Optional[Encoder] = None
     r"""Optional task specific preprocessor (applied before sampling/batching)."""
-    postprocessor: Optional[ModularEncoder] = None
+    postprocessor: Optional[Encoder] = None
     r"""Optional task specific postprocessor (applied after sampling/batching)."""
 
     dataloader_config_train = {
@@ -216,9 +216,9 @@ class OldBaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
     r"""Default batch size."""
     eval_batch_size: int = 128
     r"""Default batch size when evaluating."""
-    preprocessor: Optional[ModularEncoder] = None
+    preprocessor: Optional[Encoder] = None
     r"""Optional task specific preprocessor (applied before batching)."""
-    postprocessor: Optional[ModularEncoder] = None
+    postprocessor: Optional[Encoder] = None
     r"""Optional task specific postprocessor (applied after batching)."""
 
     def __init__(self) -> None:

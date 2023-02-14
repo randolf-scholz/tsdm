@@ -235,10 +235,11 @@ class TimeSeriesDataset(TorchDataset):
 
     def __getitem__(self, item: Any) -> Self:
         r"""Return corresponding slice from each tensor."""
-        if isinstance(self.timeseries, NTuple):
-            timeseries = self.ts_type(*(ts[item] for ts in self.timeseries))
-        elif isinstance(self.timeseries, tuple):
-            timeseries = tuple(ts[item] for ts in self.timeseries)
+        if isinstance(self.timeseries, tuple):
+            if isinstance(self.timeseries, NTuple):
+                timeseries = tuple(ts[item] for ts in self.timeseries)
+            else:
+                timeseries = self.ts_type(*(ts[item] for ts in self.timeseries))
         else:
             timeseries = self.timeseries.loc[item]
 

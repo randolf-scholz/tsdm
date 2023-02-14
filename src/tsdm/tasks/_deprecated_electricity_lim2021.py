@@ -18,7 +18,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import Electricity
-from tsdm.encoders import BaseEncoder, Standardizer
+from tsdm.encoders import Encoder, Standardizer
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.strings import repr_namedtuple
@@ -119,7 +119,7 @@ class ElectricityLim2021(OldBaseTask):
 
     KeyType = Literal["train", "test", "valid", "joint", "whole"]
     r"""Type Hint for index."""
-    preprocessor: BaseEncoder
+    preprocessor: Encoder
 
     def __init__(self) -> None:
         super().__init__()

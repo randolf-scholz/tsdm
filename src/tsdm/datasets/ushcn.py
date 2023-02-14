@@ -21,7 +21,7 @@ from pandas import DataFrame
 
 from tsdm.datasets.base import MultiFrameDataset
 from tsdm.types.variables import ParameterVar as P
-from tsdm.types.variables import ReturnVar as R
+from tsdm.types.variables import ReturnVar_co as R
 
 __logger__ = logging.getLogger(__name__)
 

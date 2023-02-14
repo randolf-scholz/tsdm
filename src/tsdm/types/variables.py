@@ -39,7 +39,7 @@ __all__ = [
     "Any2Var",
     "Any2_co",
     "Any2_contra",
-    "InputVar",
+    "InputVar_contra",
     "KeyVar",
     "Key_co",
     "Key_contra",
@@ -50,7 +50,7 @@ __all__ = [
     "NestedKey_co",
     "NestedKey_contra",
     "ParameterVar",
-    "ReturnVar",
+    "ReturnVar_co",
     "ValueVar",
     "Value_co",
     "Value_contra",
@@ -155,7 +155,7 @@ r"""Generic covariant type variable."""
 Any2_contra = TypeVar("Any2_contra", contravariant=True)
 r"""Generic contravariant type variable."""
 
-InputVar = TypeVar("InputVar", contravariant=True)
+InputVar_contra = TypeVar("InputVar_contra", contravariant=True)
 r"""Generic type variable for inputs. Always contravariant."""
 
 KeyVar = TypeVar("KeyVar", bound=Hashable)
@@ -182,7 +182,7 @@ r"""Contravariant type variable for `Mapping` keys."""
 ParameterVar = ParamSpec("ParameterVar")
 r"""TypeVar for decorated function inputs values."""
 
-ReturnVar = TypeVar("ReturnVar", covariant=True)
+ReturnVar_co = TypeVar("ReturnVar_co", covariant=True)
 r"""Type Variable for return values. Always covariant."""
 
 ValueVar = TypeVar("ValueVar")
