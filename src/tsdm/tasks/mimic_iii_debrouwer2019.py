@@ -24,7 +24,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
-from tsdm.tasks.base import OldBaseTask
+from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
 

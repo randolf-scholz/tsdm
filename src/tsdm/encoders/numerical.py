@@ -17,7 +17,6 @@ __all__ = [
 from dataclasses import KW_ONLY, dataclass
 from typing import (
     Any,
-    ClassVar,
     Generic,
     Literal,
     NamedTuple,
@@ -83,7 +82,7 @@ class BoundaryEncoder(BaseEncoder):
     mode: Literal["mask", "clip"] = "mask"
     mask_value: float = float("nan")
 
-    requires_fit: ClassVar[bool] = False
+    requires_fit: bool = False
 
     def __post_init__(self):
         self.lower_mask: float | np.ndarray
@@ -221,7 +220,7 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
 
     # TODO: rewrite as dataclass
 
-    requires_fit: ClassVar[bool] = False
+    requires_fit: bool = False
 
     xmin: TensorType  # NDArray[np.number] | Tensor
     xmax: TensorType  # NDArray[np.number] | Tensor
@@ -336,7 +335,7 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
 class MinMaxScaler(LinearScaler, Generic[TensorType]):
     r"""Maps the interval [x_min, x_max] to [y_min, y_max] (default: [0,1])."""
 
-    requires_fit: ClassVar[bool] = True
+    requires_fit: bool = True
 
     ymin: TensorType  # NDArray[np.number] | Tensor
     ymax: TensorType  # NDArray[np.number] | Tensor

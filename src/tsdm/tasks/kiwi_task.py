@@ -19,13 +19,13 @@ from tsdm.datasets import KiwiDataset
 from tsdm.encoders import (  # FrameEncoder,
     BoundaryEncoder,
     BoxCoxEncoder,
+    Encoder,
     FastFrameEncoder,
     Frame2TensorDict,
     IdentityEncoder,
     LinearScaler,
     LogitBoxCoxEncoder,
     MinMaxScaler,
-    ModularEncoder,
     Standardizer,
     TimeDeltaEncoder,
 )
@@ -235,11 +235,11 @@ class KiwiTask(TimeSeriesTask):
 
         return collate_fn
 
-    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
+    def make_encoder(self, key: SplitID, /) -> Encoder:
         VF = self.dataset.value_features
         column_encoders = {}
         for col, scale, lower, upper in VF[["scale", "lower", "upper"]].itertuples():
-            encoder: ModularEncoder
+            encoder: Encoder
             match scale:
                 case "percent":
                     encoder = (

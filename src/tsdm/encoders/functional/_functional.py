@@ -8,6 +8,8 @@ Contains encoders in functional form.
 """
 
 __all__ = [
+    # Types
+    "FunctionalEncoder",
     # Functions
     "make_dense_triplets",
     "make_masked_format",
@@ -20,10 +22,15 @@ __all__ = [
 
 
 import warnings
+from typing import Callable, TypeAlias, TypeVar
 
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
+
+S = TypeVar("S", DataFrame, Series)
+
+FunctionalEncoder: TypeAlias = Callable[[S], S]
 
 
 def infer_categories(s: Series) -> set:
@@ -184,7 +191,7 @@ def time2float(ds: Series) -> Series:
     elif pd.api.types.is_timedelta64_dtype(ds):
         timedeltas = ds.view("timedelta64[ns]")
     elif pd.api.types.is_float_dtype(ds):
-        warnings.warn("Array is already floating dtype.")
+        warnings.warn("Array is already floating dtype.", stacklevel=2)
         return ds
     else:
         raise TypeError(f"{ds.dtype=} not supported")

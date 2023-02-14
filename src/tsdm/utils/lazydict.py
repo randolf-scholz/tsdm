@@ -23,7 +23,7 @@ from tsdm.types.variables import Any2Var as T2
 from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import Key2Var as K2
 from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import ReturnVar as R
+from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils._utils import get_function_args, is_positional
 from tsdm.utils.strings import repr_mapping, repr_short
 
@@ -150,6 +150,7 @@ class LazyDict(dict[K, T]):
             "It causes all values to be evaluated.",
             category=RuntimeWarning,
             source=LazyDict,
+            stacklevel=2,
         )
         new = other.copy() if isinstance(other, LazyDict) else LazyDict(other)
         new.update(self.asdict())

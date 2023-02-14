@@ -634,6 +634,7 @@ class StandardLogger:
                 "We recommend using a NamedTuple or a dictionary as the return type."
                 " Ensure that 'targets'/'predics' is the first/second output.",
                 UserWarning,
+                stacklevel=2,
             )
 
         # Schema: identifier:category/key, e.g. `metrics:MSE/train`
