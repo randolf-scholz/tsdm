@@ -36,7 +36,6 @@ __all__ = [
     "Task",
     "TASKS",
     # Classes
-    "OldBaseTask",
     "TimeSeriesTask",
     "TimeSeriesSampleGenerator",
     # Tasks
@@ -58,10 +57,11 @@ __all__ = [
 from typing import Final, TypeAlias
 
 from tsdm.tasks import base
+from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.tasks._deprecated_electricity_lim2021 import ElectricityLim2021
 from tsdm.tasks._deprecated_kiwi_bioprocess import Kiwi_BioProcessTask
 from tsdm.tasks._deprecated_kiwi_runs_task import KIWI_RUNS_TASK
-from tsdm.tasks.base import OldBaseTask, TimeSeriesSampleGenerator, TimeSeriesTask
+from tsdm.tasks.base import TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.insilico import InSilicoSampleGenerator, InSilicoTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT

@@ -3,6 +3,7 @@
 __all__ = ["BaseTask"]
 
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import (
@@ -185,3 +186,100 @@ class BaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
     def dataloaders(self) -> Mapping[K, DataLoader]:
         r"""Cache dictionary of evaluation-dataloaders."""
         return LazyDict({k: self.make_dataloader for k in self.splits})
+
+
+class OldBaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
+    r"""Abstract Base Class for Tasks.
+
+    A task is a combination of a dataset and an evaluation protocol (EVP).
+
+    The DataLoader will return batches of data consisting of tuples of the form:
+    `(inputs, targets)`. The model will be trained on the inputs, and the targets
+    will be used to evaluate the model.
+    That is, the model must product an output of the same shape and data type of the targets.
+
+    Attributes
+    ----------
+    train_batch_size: int, default 32
+        Default batch-size used by batchloader.
+    eval_batch_size: int, default 128
+        Default batch-size used by dataloaders (for evaluation).
+    dataset: Dataset
+        The attached dataset
+    """
+
+    # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
+
+    LOGGER: ClassVar[logging.Logger]
+    r"""Class specific logger instance."""
+    train_batch_size: int = 32
+    r"""Default batch size."""
+    eval_batch_size: int = 128
+    r"""Default batch size when evaluating."""
+    preprocessor: Optional[ModularEncoder] = None
+    r"""Optional task specific preprocessor (applied before batching)."""
+    postprocessor: Optional[ModularEncoder] = None
+    r"""Optional task specific postprocessor (applied after batching)."""
+
+    def __init__(self) -> None:
+        warnings.warn("deprecated, use new class", DeprecationWarning)
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the object."""
+        string = (
+            f"{self.__class__.__name__}("
+            # f"dataset={self.dataset.name}, "
+            f"test_metric={type(self.test_metric).__name__})"
+        )
+        return string
+
+    @property
+    @abstractmethod
+    def test_metric(self) -> Callable[..., Tensor]:
+        r"""The metric to be used for evaluation."""
+
+    @property
+    @abstractmethod
+    def dataset(self) -> Dataset | DataFrame:
+        r"""Return the cached dataset associated with the task."""
+
+    @property
+    @abstractmethod
+    def index(self) -> Sequence[K]:
+        r"""List of index."""
+
+    @property
+    @abstractmethod
+    def splits(self) -> Mapping[K, Any]:
+        r"""Cache dictionary of dataset slices."""
+
+    @abstractmethod
+    def make_dataloader(
+        self,
+        key: K,
+        /,
+        **dataloader_kwargs: Any,
+    ) -> DataLoader:
+        r"""Return a DataLoader object for the specified split.
+
+        Args:
+            key: From which part of the dataset to construct the loader.
+            dataloader_kwargs: Options to be passed directly to the dataloader such as the generator.
+
+        Returns:
+            DataLoader: A DataLoader for the selected key.
+        """
+
+    @cached_property
+    def dataloaders(self) -> Mapping[Any, DataLoader]:
+        r"""Cache dictionary of evaluation-dataloaders."""
+        kwargs: dict[Any, Any] = {
+            # "key": key,
+            "batch_size": self.eval_batch_size,
+            "shuffle": False,
+            "drop_last": False,
+        }
+
+        return LazyDict(
+            {key: (self.make_dataloader, (key,), kwargs) for key in self.splits}
+        )

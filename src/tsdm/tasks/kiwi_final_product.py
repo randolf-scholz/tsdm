@@ -23,7 +23,7 @@ from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
-from tsdm.tasks.base import OldBaseTask
+from tsdm.tasks import OldBaseTask
 from tsdm.utils.data import MappingDataset, TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 

@@ -26,7 +26,7 @@ from tsdm.encoders import (
     TensorEncoder,
 )
 from tsdm.random.samplers import SequenceSampler
-from tsdm.tasks.base import OldBaseTask
+from tsdm.tasks import OldBaseTask
 
 
 class ETT_Zhou2021(OldBaseTask):
