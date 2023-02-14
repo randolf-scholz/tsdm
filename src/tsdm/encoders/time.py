@@ -12,17 +12,7 @@ __all__ = [
     "TimeSlicer",
 ]
 
-from typing import (
-    Any,
-    ClassVar,
-    Final,
-    Hashable,
-    Literal,
-    Optional,
-    Sequence,
-    cast,
-    overload,
-)
+from typing import Any, Final, Hashable, Literal, Optional, Sequence, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -171,7 +161,7 @@ class DateTimeEncoder(BaseEncoder):
 class TimeDeltaEncoder(BaseEncoder):
     r"""Encode TimeDelta as Float."""
 
-    requires_fit: ClassVar[bool] = False
+    requires_fit: bool = False
 
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
@@ -323,7 +313,7 @@ class PositionalEncoder(BaseEncoder):
         x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
     """
 
-    requires_fit: ClassVar[bool] = False
+    requires_fit: bool = False
 
     # Constants
     num_dim: Final[int]
@@ -359,7 +349,7 @@ class PositionalEncoder(BaseEncoder):
 class TimeSlicer(BaseEncoder):
     r"""Reorganizes the data by slicing."""
 
-    requires_fit: ClassVar[bool] = False
+    requires_fit: bool = False
 
     horizon: Any
     r"""The horizon of the data."""

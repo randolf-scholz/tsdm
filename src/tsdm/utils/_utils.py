@@ -53,7 +53,7 @@ from tqdm.auto import tqdm
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
 from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import ReturnVar as R
+from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 
 __logger__ = getLogger(__name__)

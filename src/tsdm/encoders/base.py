@@ -5,6 +5,8 @@ from __future__ import annotations
 __all__ = [
     # TypeVars
     "EncoderVar",
+    # Types
+    "Encoder",
     # Classes
     "BaseEncoder",
     "IdentityEncoder",
@@ -20,13 +22,48 @@ import logging
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
-from typing import Any, ClassVar, Generic, Iterator, TypeVar, overload
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    Iterator,
+    Protocol,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
 
+from tsdm.types.variables import Any2Var as S
+from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import ObjectVar as O
-from tsdm.types.variables import ReturnVar as R
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.strings import repr_object
+
+
+@runtime_checkable
+class Encoder(Protocol[T, S]):
+    """Protocol for Encoders."""
+
+    is_fitted: bool
+    requires_fit: bool
+
+    def __invert__(self) -> Encoder:
+        r"""Return the inverse encoder (i.e. decoder)."""
+
+    def __matmul__(self, other: Encoder) -> Encoder:
+        r"""Return chained encoders."""
+
+    def __or__(self, other: Encoder) -> Encoder:
+        r"""Return product encoders."""
+
+    def encode(self, data: T, /) -> S:
+        """Encode the data by transformation."""
+
+    def decode(self, data: S, /) -> T:
+        """Decode the data by transformation."""
+
+    def fit(self, data: T, /) -> None:
+        r"""Fits the encoder to data."""
 
 
 class BaseEncoderMetaClass(ABCMeta):
@@ -37,13 +74,13 @@ class BaseEncoderMetaClass(ABCMeta):
         super().__init__(*args, **kwargs)
 
 
-class BaseEncoder(ABC, Generic[O, R], metaclass=BaseEncoderMetaClass):
+class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     r"""Base class that all encoders must subclass."""
 
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the Encoder."""
 
-    requires_fit: ClassVar[bool] = True
+    requires_fit: bool = NotImplemented
     r"""Whether the encoder requires fitting."""
 
     _is_fitted: bool = False
@@ -66,15 +103,15 @@ class BaseEncoder(ABC, Generic[O, R], metaclass=BaseEncoderMetaClass):
 
     # TODO: implement __invert__ (python 3.11)
 
-    def __invert__(self) -> BaseEncoder:
+    def __invert__(self) -> Encoder:
         r"""Return the inverse encoder (i.e. decoder)."""
         raise NotImplementedError
 
-    def __matmul__(self, other: BaseEncoder) -> ChainedEncoder:
+    def __matmul__(self, other: Encoder) -> ChainedEncoder:
         r"""Return chained encoders."""
         return ChainedEncoder(self, other)
 
-    def __or__(self, other: BaseEncoder) -> ProductEncoder:
+    def __or__(self, other: Encoder) -> ProductEncoder:
         r"""Return product encoders."""
         return ProductEncoder(self, other)
 
@@ -110,15 +147,15 @@ class BaseEncoder(ABC, Generic[O, R], metaclass=BaseEncoderMetaClass):
         r"""Whether the encoder is bijective."""
         return self.is_surjective and self.is_injective
 
-    def fit(self, data: O, /) -> None:
+    def fit(self, data: T, /) -> None:
         r"""Implement as necessary."""
 
     @abstractmethod
-    def encode(self, data: O, /) -> R:
+    def encode(self, data: T, /) -> S:
         r"""Encode the data by transformation."""
 
     @abstractmethod
-    def decode(self, data: O, /) -> R:
+    def decode(self, data: S, /) -> T:
         r"""Decode the data by inverse transformation."""
 
     def _post_fit_hook(self) -> None:
@@ -140,19 +177,19 @@ EncoderVar = TypeVar("EncoderVar", bound=BaseEncoder)
 class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
-    requires_fit: ClassVar[bool] = False
+    requires_fit: bool = False
 
-    def encode(self, data: O, /) -> O:
+    def encode(self, data: T, /) -> T:
         return data
 
-    def decode(self, data: O, /) -> O:
+    def decode(self, data: T, /) -> T:
         return data
 
 
 class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Product-Type for Encoders."""
 
-    requires_fit: bool = True  # type: ignore[misc]
+    requires_fit: bool = True
 
     encoders: list[EncoderVar]
     r"""The encoders."""
@@ -224,7 +261,7 @@ class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
 class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Represents function composition of encoders."""
 
-    requires_fit: bool = True  # type: ignore[misc]
+    requires_fit: bool = True
 
     encoders: list[EncoderVar]
     r"""List of encoders."""
@@ -298,7 +335,7 @@ class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
 class MappingEncoder(BaseEncoder, Mapping[K, EncoderVar]):
     r"""Encoder that maps keys to encoders."""
 
-    requires_fit: bool = True  # type: ignore[misc]
+    requires_fit: bool = True
 
     encoders: Mapping[K, EncoderVar]
     r"""Mapping of keys to encoders."""

@@ -8,6 +8,8 @@ Contains encoders in functional form.
 """
 
 __all__ = [
+    # Types
+    "FunctionalEncoder",
     # Functions
     "make_dense_triplets",
     "make_masked_format",
@@ -20,10 +22,15 @@ __all__ = [
 
 
 import warnings
+from typing import Callable, TypeAlias, TypeVar
 
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
+
+S = TypeVar("S", DataFrame, Series)
+
+FunctionalEncoder: TypeAlias = Callable[[S], S]
 
 
 def infer_categories(s: Series) -> set:

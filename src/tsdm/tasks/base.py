@@ -128,7 +128,7 @@ from torch.utils.data import Sampler as TorchSampler
 from typing_extensions import Self
 
 from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
-from tsdm.encoders import ModularEncoder
+from tsdm.encoders import Encoder
 from tsdm.types.variables import KeyVar as K
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
@@ -489,7 +489,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     r"""Collate function used to create batches from samples."""
     dataloaders: Mapping[SplitID, DataLoader[Sample_co]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
-    encoders: Mapping[SplitID, ModularEncoder] = NotImplemented
+    encoders: Mapping[SplitID, Encoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
     generators: Mapping[SplitID, TimeSeriesSampleGenerator] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
@@ -595,7 +595,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         kwargs |= dataloader_kwargs
         return DataLoader(dataset, **kwargs)
 
-    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
+    def make_encoder(self, key: SplitID, /) -> Encoder:
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 

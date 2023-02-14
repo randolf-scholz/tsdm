@@ -17,7 +17,7 @@ from torch import Tensor, jit
 from torch.utils.data import DataLoader
 
 from tsdm.datasets import KIWI_RUNS
-from tsdm.encoders import BaseEncoder
+from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
@@ -82,7 +82,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
     r"""The number of datapoints observed during prediction."""
     forecasting_horizon: int = 24
     r"""The number of datapoints the model should forecast."""
-    preprocessor: BaseEncoder
+    preprocessor: Encoder
     r"""Encoder for the observations."""
     controls: Series
     r"""The control variables."""
