@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from tsdm.datasets import Electricity
 from tsdm.encoders import BaseEncoder, Standardizer
 from tsdm.random.samplers import SequenceSampler
-from tsdm.tasks.base import OldBaseTask
+from tsdm.tasks import OldBaseTask
 from tsdm.utils.strings import repr_namedtuple
 
 
