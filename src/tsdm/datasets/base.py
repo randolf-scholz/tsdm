@@ -253,14 +253,18 @@ class FrameDataset(BaseDataset, ABC):
         if reference is None:
             warnings.warn(
                 f"Table {table.name!r} cannot be validated as no hash is stored in {self.__class__}."
-                f"The hash is {filehash!r}."
+                f"The hash is {filehash!r}.",
+                RuntimeWarning,
+                stacklevel=2,
             )
         elif isinstance(reference, int | str):
             if filehash != reference:
                 warnings.warn(
                     f"Table {table.name!r} failed to validate!"
                     f"Table hash {filehash!r} does not match reference {reference!r}."
-                    f"Ignore this warning if the format is parquet."
+                    f"Ignore this warning if the format is parquet.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             self.LOGGER.info(
                 f"Table {table.name!r} validated successfully {filehash=!r}."
@@ -270,13 +274,17 @@ class FrameDataset(BaseDataset, ABC):
                 warnings.warn(
                     f"Table {table.name!r} cannot be validated as it is not contained in {reference}."
                     f"The hash is {filehash!r}."
-                    f"Ignore this warning if the format is parquet."
+                    f"Ignore this warning if the format is parquet.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             elif table.name in reference and filehash != reference[table.name]:
                 warnings.warn(
                     f"Table {table.name!r} failed to validate!"
                     f"Table hash {filehash!r} does not match reference {reference[table.name]!r}."
-                    f"Ignore this warning if the format is parquet."
+                    f"Ignore this warning if the format is parquet.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             else:
                 self.LOGGER.info(
@@ -305,14 +313,14 @@ class FrameDataset(BaseDataset, ABC):
             for value in filespec.values():
                 self.validate(value, reference=reference)
             return
-        if isinstance(filespec, Sequence) and not isinstance(filespec, (str, Path)):
+        if isinstance(filespec, Sequence) and not isinstance(filespec, str | Path):
             for value in filespec:
                 self.validate(value, reference=reference)
             return
         if filespec is None:
             return
 
-        assert isinstance(filespec, (str, Path)), f"{filespec=} wrong type!"
+        assert isinstance(filespec, str | Path), f"{filespec=} wrong type!"
         filespec = Path(filespec)
         file = Path(filespec)
 
@@ -324,14 +332,18 @@ class FrameDataset(BaseDataset, ABC):
         if reference is None:
             warnings.warn(
                 f"File {file.name!r} cannot be validated as no hash is stored in {self.__class__}."
-                f"The filehash is {filehash!r}."
+                f"The filehash is {filehash!r}.",
+                RuntimeWarning,
+                stacklevel=2,
             )
         elif isinstance(reference, str | Path):
             if filehash != reference:
                 warnings.warn(
                     f"File {file.name!r} failed to validate!"
                     f"File hash {filehash!r} does not match reference {reference!r}."
-                    f"Ignore this warning if the format is parquet."
+                    f"Ignore this warning if the format is parquet.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             self.LOGGER.info(
                 f"File {file.name!r} validated successfully {filehash=!r}."
@@ -341,19 +353,25 @@ class FrameDataset(BaseDataset, ABC):
                 warnings.warn(
                     f"File {file.name!r} cannot be validated as it is not contained in {reference}."
                     f"The filehash is {filehash!r}."
-                    f"Ignore this warning if the format is parquet."
+                    f"Ignore this warning if the format is parquet.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             elif file.name in reference and filehash != reference[file.name]:
                 warnings.warn(
                     f"File {file.name!r} failed to validate!"
                     f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
-                    f"Ignore this warning if the format is parquet."
+                    f"Ignore this warning if the format is parquet.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             elif file.stem in reference and filehash != reference[file.stem]:
                 warnings.warn(
                     f"File {file.name!r} failed to validate!"
                     f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
-                    f"Ignore this warning if the format is parquet."
+                    f"Ignore this warning if the format is parquet.",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             else:
                 self.LOGGER.info(
@@ -494,7 +512,9 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
             if non_string_keys:
                 warnings.warn(
                     f"Not adding keys as attributes! "
-                    f"Keys {non_string_keys!r} are not strings!"
+                    f"Keys {non_string_keys!r} are not strings!",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
                 break
 
@@ -504,7 +524,9 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
             if key_attributes:
                 warnings.warn(
                     f"Not adding keys as attributes! "
-                    f"Keys {key_attributes!r} already exist as attributes!"
+                    f"Keys {key_attributes!r} already exist as attributes!",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
                 break
 

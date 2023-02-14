@@ -479,7 +479,7 @@ class FrameEncoder(BaseEncoder):
     def _names(obj: Index | Series | DataFrame) -> Hashable | FrozenList[Hashable]:
         if isinstance(obj, MultiIndex):
             return FrozenList(obj.names)
-        if isinstance(obj, (Series, Index)):
+        if isinstance(obj, Series | Index):
             return obj.name
         if isinstance(obj, DataFrame):
             return FrozenList(obj.columns)
@@ -652,7 +652,7 @@ class FastFrameEncoder(BaseEncoder):
     def _names(obj: Index | Series | DataFrame) -> Hashable | FrozenList[Hashable]:
         if isinstance(obj, MultiIndex):
             return FrozenList(obj.names)
-        if isinstance(obj, (Series, Index)):
+        if isinstance(obj, Series | Index):
             return obj.name
         if isinstance(obj, DataFrame):
             return FrozenList(obj.columns)

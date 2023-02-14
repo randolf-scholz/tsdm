@@ -41,7 +41,7 @@ from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import ClassVar as C
 from tsdm.types.variables import ObjectVar as O
 from tsdm.types.variables import ParameterVar as P
-from tsdm.types.variables import ReturnVar as R
+from tsdm.types.variables import ReturnVar_co as R
 from tsdm.types.variables import TorchModuleVar
 
 __logger__ = logging.getLogger(__name__)

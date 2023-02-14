@@ -47,6 +47,9 @@ class NTuple(Protocol):
     def _asdict(self) -> dict[str, object]:
         ...
 
+    def __len__(self) -> int:
+        ...
+
 
 @runtime_checkable
 class Array(Protocol[ScalarType_co]):  # FIXME: Use Self

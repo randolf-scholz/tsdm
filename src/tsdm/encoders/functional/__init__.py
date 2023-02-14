@@ -31,10 +31,8 @@ __all__ = [
     # "scale",
 ]
 
-from collections.abc import Callable
-from typing import Any, Final, TypeAlias
-
 from tsdm.encoders.functional._functional import (
+    FunctionalEncoder,
     make_dense_triplets,
     make_masked_format,
     make_sparse_triplets,
@@ -55,11 +53,6 @@ from tsdm.encoders.functional._functional import (
 #     robust_scale,
 #     scale,
 # )
-
-
-FunctionalEncoder: TypeAlias = Callable[..., Any]
-r"""Type hint for functional encoders."""
-
 # SKLEARN_FUNCTIONAL_ENCODERS: Final[dict[str, FunctionalEncoder]] = {
 #     "binarize": binarize,
 #     "label_binarize": label_binarize,
@@ -72,7 +65,7 @@ r"""Type hint for functional encoders."""
 #     "scale": scale,
 # }
 
-FUNCTIONAL_ENCODERS: Final[dict[str, FunctionalEncoder]] = {
+FUNCTIONAL_ENCODERS: dict[str, FunctionalEncoder] = {
     "make_dense_triplets": make_dense_triplets,
     "make_masked_format": make_masked_format,
     "make_sparse_triplets": make_sparse_triplets,

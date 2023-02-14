@@ -15,16 +15,16 @@ from collections.abc import Hashable, Iterable, Mapping
 from typing import Any
 
 import pandas
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 
 
 def hash_object(x: Any, /) -> int:
     r"""Hash an object in a permutation invariant manner."""
     if isinstance(x, Hashable):
         return hash(x)
-    if isinstance(x, (DataFrame, Series)):
+    if isinstance(x, DataFrame | Series):
         return hash_pandas(x)
-    if isinstance(x, (Index, pandas.MultiIndex)):
+    if isinstance(x, Index | MultiIndex):
         return hash_pandas(x.to_frame())
     if isinstance(x, Mapping):
         return hash_mapping(x)

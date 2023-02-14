@@ -110,7 +110,6 @@ __all__ = [
     "pytorch",
     # Types
     "Encoder",
-    "ModularEncoder",
     "FunctionalEncoder",
     # Constants
     "ENCODERS",
@@ -159,8 +158,6 @@ __all__ = [
     "ValueEncoder",
 ]
 
-from typing import Final, TypeAlias
-
 from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
 
@@ -171,6 +168,7 @@ from tsdm.encoders.base import (
     ChainedEncoder,
     CloneEncoder,
     DuplicateEncoder,
+    Encoder,
     IdentityEncoder,
     MappingEncoder,
     ProductEncoder,
@@ -215,13 +213,7 @@ from tsdm.encoders.time import (
     TimeSlicer,
 )
 
-ModularEncoder: TypeAlias = BaseEncoder
-r"""Type hint for modular encoders."""
-
-Encoder: TypeAlias = FunctionalEncoder | ModularEncoder
-r"""Type hint for encoders."""
-
-SKLEARN_MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
+SKLEARN_MODULAR_ENCODERS: dict[str, type[BaseEstimator]] = {
     "Binarizer": sk_preprocessing.Binarizer,
     "FunctionTransformer": sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer": sk_preprocessing.KBinsDiscretizer,
@@ -243,7 +235,7 @@ SKLEARN_MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
 }
 r"""Dictionary of all available sklearn encoders."""
 
-MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
+MODULAR_ENCODERS: dict[str, type[Encoder]] = {
     "BaseEncoder": BaseEncoder,
     "BoundaryEncoder": BoundaryEncoder,
     "BoxCoxEncoder": BoxCoxEncoder,
@@ -276,10 +268,10 @@ MODULAR_ENCODERS: Final[dict[str, type[BaseEstimator]]] = {
 r"""Dictionary of all available modular encoders."""
 
 
-ENCODERS: Final[dict[str, FunctionalEncoder | type[ModularEncoder]]] = {
+ENCODERS: dict[str, FunctionalEncoder | type[Encoder]] = {
     **FUNCTIONAL_ENCODERS,
     **MODULAR_ENCODERS,
 }
 r"""Dictionary of all available encoders."""
 
-del Final, TypeAlias, sk_preprocessing, BaseEstimator
+del sk_preprocessing, BaseEstimator

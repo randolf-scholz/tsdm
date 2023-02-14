@@ -655,7 +655,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         self.stride = stride
 
         if tmin is None:
-            if isinstance(self.data, (Series, DataFrame)):
+            if isinstance(self.data, Series | DataFrame):
                 self.tmin = self.data.iloc[0]
             else:
                 self.tmin = self.data[0]
@@ -663,7 +663,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
             self.tmin = tmin
 
         if tmax is None:
-            if isinstance(self.data, (Series, DataFrame)):
+            if isinstance(self.data, Series | DataFrame):
                 self.tmax = self.data.iloc[-1]
             else:
                 self.tmax = self.data[-1]
@@ -676,7 +676,7 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
         if isinstance(horizons, Sequence):
             self.multi_horizon = True
-            if isinstance(horizons[0], (str, Timedelta, py_td)):
+            if isinstance(horizons[0], str | Timedelta | py_td):
                 self.horizons = pd.to_timedelta(horizons)
                 concat_horizons = self.horizons.insert(0, self.zero_td)  # type: ignore[union-attr]
             else:

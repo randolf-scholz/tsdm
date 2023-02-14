@@ -18,15 +18,15 @@ from tsdm.datasets import ETT
 from tsdm.encoders import (
     ChainedEncoder,
     DateTimeEncoder,
+    Encoder,
     FloatEncoder,
     FrameEncoder,
     MinMaxScaler,
-    ModularEncoder,
     Standardizer,
     TensorEncoder,
 )
 from tsdm.random.samplers import SequenceSampler
-from tsdm.tasks.base import OldBaseTask
+from tsdm.tasks._deprecated import OldBaseTask
 
 
 class ETT_Zhou2021(OldBaseTask):
@@ -99,7 +99,7 @@ class ETT_Zhou2021(OldBaseTask):
     r"""Default batch size when evaluating."""
 
     # additional attributes
-    preprocessor: ModularEncoder
+    preprocessor: Encoder
     r"""Encoder for the observations."""
     observation_horizon: Literal[24, 48, 96, 168, 336, 720] = 96
     r"""The number of datapoints observed during prediction."""
@@ -181,7 +181,7 @@ class ETT_Zhou2021(OldBaseTask):
             assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
 
         ds = self.splits[key]
-        tensors = self.preprocessor.transform(ds)
+        tensors = self.preprocessor.encode(ds)
         # tensors = self.encoder.encode(ds)
         dataset = TensorDataset(*tensors)
         sampler = SequenceSampler(

@@ -98,14 +98,13 @@ __all__ = [
     "Inputs",
     "Targets",
     "Batch",
-    "OldBaseTask",
     "TimeSeriesTask",
     "TimeSeriesSampleGenerator",
 ]
 
 import logging
 import warnings
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta
 from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
@@ -128,8 +127,8 @@ from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler as TorchSampler
 from typing_extensions import Self
 
-from tsdm.datasets import Dataset, TimeSeriesCollection, TimeSeriesDataset
-from tsdm.encoders import ModularEncoder
+from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.encoders import Encoder
 from tsdm.types.variables import KeyVar as K
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
@@ -150,103 +149,6 @@ class BaseTaskMetaClass(ABCMeta):
     def __init__(cls, *args, **kwargs):
         cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
         super().__init__(*args, **kwargs)
-
-
-class OldBaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
-    r"""Abstract Base Class for Tasks.
-
-    A task is a combination of a dataset and an evaluation protocol (EVP).
-
-    The DataLoader will return batches of data consisting of tuples of the form:
-    `(inputs, targets)`. The model will be trained on the inputs, and the targets
-    will be used to evaluate the model.
-    That is, the model must product an output of the same shape and data type of the targets.
-
-    Attributes
-    ----------
-    train_batch_size: int, default 32
-        Default batch-size used by batchloader.
-    eval_batch_size: int, default 128
-        Default batch-size used by dataloaders (for evaluation).
-    dataset: Dataset
-        The attached dataset
-    """
-
-    # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
-
-    LOGGER: ClassVar[logging.Logger]
-    r"""Class specific logger instance."""
-    train_batch_size: int = 32
-    r"""Default batch size."""
-    eval_batch_size: int = 128
-    r"""Default batch size when evaluating."""
-    preprocessor: Optional[ModularEncoder] = None
-    r"""Optional task specific preprocessor (applied before batching)."""
-    postprocessor: Optional[ModularEncoder] = None
-    r"""Optional task specific postprocessor (applied after batching)."""
-
-    def __init__(self) -> None:
-        warnings.warn("deprecated, use new class", DeprecationWarning)
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the object."""
-        string = (
-            f"{self.__class__.__name__}("
-            # f"dataset={self.dataset.name}, "
-            f"test_metric={type(self.test_metric).__name__})"
-        )
-        return string
-
-    @property
-    @abstractmethod
-    def test_metric(self) -> Callable[..., Tensor]:
-        r"""The metric to be used for evaluation."""
-
-    @property
-    @abstractmethod
-    def dataset(self) -> Dataset | DataFrame:
-        r"""Return the cached dataset associated with the task."""
-
-    @property
-    @abstractmethod
-    def index(self) -> Sequence[K]:
-        r"""List of index."""
-
-    @property
-    @abstractmethod
-    def splits(self) -> Mapping[K, Any]:
-        r"""Cache dictionary of dataset slices."""
-
-    @abstractmethod
-    def make_dataloader(
-        self,
-        key: K,
-        /,
-        **dataloader_kwargs: Any,
-    ) -> DataLoader:
-        r"""Return a DataLoader object for the specified split.
-
-        Args:
-            key: From which part of the dataset to construct the loader.
-            dataloader_kwargs: Options to be passed directly to the dataloader such as the generator.
-
-        Returns:
-            DataLoader: A DataLoader for the selected key.
-        """
-
-    @cached_property
-    def dataloaders(self) -> Mapping[Any, DataLoader]:
-        r"""Cache dictionary of evaluation-dataloaders."""
-        kwargs: dict[Any, Any] = {
-            # "key": key,
-            "batch_size": self.eval_batch_size,
-            "shuffle": False,
-            "drop_last": False,
-        }
-
-        return LazyDict(
-            {key: (self.make_dataloader, (key,), kwargs) for key in self.splits}
-        )
 
 
 class Inputs(NamedTuple):
@@ -508,7 +410,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         if cols := covariates & observables:
             raise ValueError(f"Covariates and observables not disjoint! {cols}.")
         if cols := ts_columns - (observables | targets | covariates):
-            warnings.warn(f"Unused columns in timeseries: {cols}")
+            warnings.warn(f"Unused columns in timeseries: {cols}", stacklevel=2)
 
         if md is not None:
             if cols := md_observables - md_columns:
@@ -587,7 +489,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     r"""Collate function used to create batches from samples."""
     dataloaders: Mapping[SplitID, DataLoader[Sample_co]] = NotImplemented
     r"""Dictionary holding `DataLoader` associated with each key."""
-    encoders: Mapping[SplitID, ModularEncoder] = NotImplemented
+    encoders: Mapping[SplitID, Encoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
     generators: Mapping[SplitID, TimeSeriesSampleGenerator] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
@@ -677,7 +579,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         # sampler
         sampler = self.samplers[key]
         if sampler is NotImplemented:
-            warnings.warn(f"No sampler provided for key={key}. ")
+            warnings.warn(f"No sampler provided for {key=}.", stacklevel=2)
             kwargs["sampler"] = None
         else:
             kwargs["sampler"] = sampler
@@ -685,7 +587,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         # collate_fn
         collate_fn = self.collate_fns[key]
         if collate_fn is NotImplemented:
-            warnings.warn(f"No collate_fn provided for key={key}. ")
+            warnings.warn(f"No collate_fn provided for {key=}.", stacklevel=2)
             kwargs["collate_fn"] = self.default_collate_fn
         else:
             kwargs["collate_fn"] = collate_fn
@@ -693,7 +595,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         kwargs |= dataloader_kwargs
         return DataLoader(dataset, **kwargs)
 
-    def make_encoder(self, key: SplitID, /) -> ModularEncoder:
+    def make_encoder(self, key: SplitID, /) -> Encoder:
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
@@ -761,7 +663,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     @cached_property
     def train_split(self) -> Mapping[SplitID, SplitID]:
         r"""Return the matching train partition for the given key."""
-        if isinstance(self.folds, (Series, DataFrame)):
+        if isinstance(self.folds, Series | DataFrame):
             split_index = self.folds.T.index
         elif isinstance(self.folds, Mapping):
             split_index = Index(self.folds.keys())
@@ -797,7 +699,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         - If keys are `partition`, they are assumed to be `partition` keys.
         - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
         """
-        if isinstance(self.folds, (Series, DataFrame)):
+        if isinstance(self.folds, Series | DataFrame):
             split_index = self.folds.T.index
         elif isinstance(self.folds, Mapping):
             split_index = Index(self.folds.keys())
