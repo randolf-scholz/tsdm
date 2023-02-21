@@ -6,7 +6,7 @@ __all__ = [
     "decorator",
     # "sphinx_value",
     "lazy_torch_jit",
-    "named_return",
+    "return_namedtuple",
     "timefun",
     "trace",
     "vectorize",
@@ -772,7 +772,7 @@ def lazy_torch_jit(func: Callable[P, R]) -> Callable[P, R]:
 
 
 @decorator
-def named_return(
+def return_namedtuple(
     func: Callable[P, tuple],
     /,
     *,

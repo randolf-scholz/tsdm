@@ -104,7 +104,10 @@ def dict2string(d: dict[str, Any]) -> str:
 
 
 def repr_object(obj: Any, /, **kwargs: Any) -> str:
-    r"""Return a string representation of an object."""
+    r"""Return a string representation of an object.
+
+    Special casing for a bunch of cases.
+    """
     if isinstance(obj, str):
         return obj
     if inspect.isclass(obj) or inspect.isbuiltin(obj):
@@ -119,8 +122,6 @@ def repr_object(obj: Any, /, **kwargs: Any) -> str:
         return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, **kwargs)
-    if type(obj).__module__.split(".", maxsplit=1)[0] == "tsdm":
-        return f"{obj.__class__.__name__}()"
     return repr(obj)
 
 
