@@ -7,7 +7,7 @@ import subprocess
 
 # run pip list with json format and load the output into a dictionary
 pip_list = json.loads(subprocess.check_output(["pip", "list", "--format=json"]))
-pkg_dict = {pkg["name"]: pkg["version"] for pkg in pip_list}
+pkg_dict = {pkg["name"].lower(): pkg["version"] for pkg in pip_list}
 
 
 def strip(version: str) -> str:
@@ -20,7 +20,7 @@ def strip(version: str) -> str:
 
 
 # regex to match the dependencies in pyproject.toml
-regex = r'\n([a-zA-Z0-9_-]*) = ">=([0-9.]*)"\n'
+regex = r'([a-zA-Z0-9_-]*) = ">=([0-9.]*)"'
 regex = re.compile(regex)
 
 with open("pyproject.toml", "r", encoding="utf8") as file:
@@ -31,8 +31,8 @@ for match in matches:
     pkg, old_version = match
     new_version = strip(pkg_dict.get(pkg, old_version))
     if old_version != new_version:
-        old = f'\n{pkg} = ">={old_version}"\n'
-        new = f'\n{pkg} = ">={new_version}"\n'
+        old = f'{pkg} = ">={old_version}"'
+        new = f'{pkg} = ">={new_version}"'
         print(f"replacing: {old!r:36}  {new!r}")
         pyproject = pyproject.replace(old, new)
 
