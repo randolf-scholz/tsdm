@@ -170,5 +170,5 @@ def distributiveness(s: Series) -> float:
     and a regular time series with the same average frequency.
     """
     # TODO: implement correct function
-    print(s.index.diff().std())
+    print(s.index.to_series().diff().std())
     raise NotImplementedError
