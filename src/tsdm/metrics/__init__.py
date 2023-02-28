@@ -46,15 +46,14 @@ __all__ = [
     # Sub-Modules
     "functional",
     # Types
-    "Loss",
+    "BaseLoss",
     "FunctionalLoss",
-    "ModularLoss",
     # Constants
     "LOSSES",
     "FUNCTIONAL_LOSSES",
     "MODULAR_LOSSES",
     # Base Classes
-    "Loss",
+    "BaseLoss",
     "WeightedLoss",
     # Classes
     "ND",
@@ -79,7 +78,6 @@ __all__ = [
 
 
 from abc import ABCMeta
-from typing import Final, TypeAlias
 
 from torch import nn
 
@@ -92,6 +90,7 @@ from tsdm.metrics._modular import (
     WMAE,
     WMSE,
     WRMSE,
+    BaseLoss,
     Loss,
     Q_Quantile,
     Q_Quantile_Loss,
@@ -109,11 +108,7 @@ from tsdm.metrics.functional import (
     rmse,
 )
 
-ModularLoss: TypeAlias = nn.Module
-r"""Type hint for modular losses."""
-
-
-TORCH_ALIASES: Final[dict[str, type[nn.Module]]] = {
+TORCH_ALIASES: dict[str, type[nn.Module]] = {
     "MAE": nn.L1Loss,
     "L2": nn.MSELoss,
     "XENT": nn.CrossEntropyLoss,
@@ -122,7 +117,7 @@ TORCH_ALIASES: Final[dict[str, type[nn.Module]]] = {
 r"""Dictionary containing additional aliases for modular losses in torch."""
 
 
-TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
+TORCH_LOSSES: dict[str, type[nn.Module]] = {
     "L1": nn.L1Loss,
     "CosineEmbedding": nn.CosineEmbeddingLoss,
     "CrossEntropy": nn.CrossEntropyLoss,
@@ -148,7 +143,7 @@ TORCH_LOSSES: Final[dict[str, type[nn.Module]]] = {
 r"""Dictionary of all available modular losses in torch."""
 
 
-MODULAR_LOSSES: Final[dict[str, type[nn.Module] | ABCMeta]] = {
+MODULAR_LOSSES: dict[str, type[Loss]] = {
     "ND": ND,
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,
@@ -165,10 +160,10 @@ MODULAR_LOSSES: Final[dict[str, type[nn.Module] | ABCMeta]] = {
 r"""Dictionary of all available modular losses."""
 
 
-LOSSES: Final[dict[str, FunctionalLoss | type[ModularLoss]]] = {
+LOSSES: dict[str, FunctionalLoss | type[Loss]] = {
     **FUNCTIONAL_LOSSES,
     **MODULAR_LOSSES,
 }
 r"""Dictionary of all available losses."""
 
-del Final, TypeAlias, nn, ABCMeta
+del nn, ABCMeta

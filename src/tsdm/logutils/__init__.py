@@ -12,14 +12,12 @@ __all__ = [
     "log_metrics",
     "log_values",
     # Classes
-    "StandardLogger",
 ]
 
 from collections.abc import Callable
-from typing import Final, TypeAlias
+from typing import TypeAlias
 
-from tsdm.logutils._logutils import (
-    StandardLogger,
+from tsdm.logutils._callbacks import (
     compute_metrics,
     log_kernel_information,
     log_metrics,
@@ -27,14 +25,15 @@ from tsdm.logutils._logutils import (
     log_optimizer_state,
     log_values,
 )
+from tsdm.logutils.base import StandardLogger
 
 Logger: TypeAlias = Callable[..., None]
 
-LOGGERS: Final[dict[str, Logger]] = {
+LOGGERS: dict[str, Logger] = {
     "log_optimizer_state": log_optimizer_state,
     "log_kernel_information": log_kernel_information,
     "log_model_state": log_model_state,
     "log_metrics": log_metrics,
 }
 
-del Final, TypeAlias, Callable
+del TypeAlias, Callable

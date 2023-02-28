@@ -7,7 +7,7 @@ from math import pi, prod, sqrt
 import pytest
 import torch
 
-from tsdm.metrics import MAE, MSE, RMSE, Loss, TimeSeriesMSE
+from tsdm.metrics import MAE, MSE, RMSE, BaseLoss, TimeSeriesMSE
 
 BATCH_SHAPES = [
     (),
@@ -31,7 +31,7 @@ LOSSES = [MSE, RMSE, MAE]
 @pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES)
 @pytest.mark.parametrize("batch_shape", BATCH_SHAPES)
 def test_loss_normalization(
-    loss: type[Loss],
+    loss: type[BaseLoss],
     batch_shape: tuple[int, ...],
     channel_shape: tuple[int, ...],
     atol: float = 0.01,

@@ -8,8 +8,8 @@ Each model comes with several components:
 
 __all__ = [
     # Abstract Base Classes
-    "PreTrainedMetaClass",
-    "PreTrainedModel",
+    "PreTrainedMeta",
+    "PreTrainedBase",
     # Classes
     # "OldLinODEnet",
     "LinODEnet",
@@ -21,10 +21,10 @@ from typing import Final, TypeAlias
 
 from torch import nn
 
-from tsdm.models.pretrained.base import PreTrainedMetaClass, PreTrainedModel
+from tsdm.models.pretrained.base import PreTrainedBase, PreTrainedMeta
 from tsdm.models.pretrained.linodenet import LinODEnet
 
-Model: TypeAlias = PreTrainedModel
+Model: TypeAlias = PreTrainedBase
 r"""Type hint for models."""
 
 MODELS: Final[dict[str, type[Model]]] = {
