@@ -7,7 +7,7 @@ import subprocess
 
 # run pip list with json format and load the output into a dictionary
 pip_list = json.loads(subprocess.check_output(["pip", "list", "--format=json"]))
-pkg_dict = {pkg["name"]: pkg["version"] for pkg in pip_list}
+pkg_dict = {pkg["name"].lower(): pkg["version"] for pkg in pip_list}
 
 
 def strip(version: str) -> str:
