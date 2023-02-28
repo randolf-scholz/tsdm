@@ -29,8 +29,8 @@ Therefore, we need to define a way of storing and loading these files.
 
 __all__ = [
     # Classes
-    "PreTrainedMetaClass",
-    "PreTrainedModel",
+    "PreTrainedMeta",
+    "PreTrainedBase",
 ]
 
 import inspect
@@ -45,7 +45,7 @@ from collections.abc import Collection, Mapping
 from functools import cached_property
 from io import IOBase
 from pathlib import Path
-from typing import IO, Any, ClassVar, Optional, cast
+from typing import IO, Any, ClassVar, Optional, Protocol, cast
 from zipfile import ZipFile
 
 import torch
@@ -72,7 +72,14 @@ from tsdm.utils.strings import repr_mapping
 # TODO: loading components!
 
 
-class PreTrainedMetaClass(ABCMeta):
+class PreTrained(Protocol):
+    """Protocol for General Pretrained Models."""
+
+    components: Mapping[str, Any]
+    """Mapping of component names to their respective components."""
+
+
+class PreTrainedMeta(ABCMeta):
     r"""Metaclass for `PreTrainedModel`."""
 
     def __init__(
@@ -94,7 +101,7 @@ class PreTrainedMetaClass(ABCMeta):
                 cls.RAWDATA_DIR = CONFIG.MODELDIR / cls.__name__
 
 
-class PreTrainedModel(ABC, metaclass=PreTrainedMetaClass):
+class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
     r"""Base class for all pretrained models.
 
     A pretrained model can provide multiple components:
