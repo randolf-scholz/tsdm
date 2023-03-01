@@ -285,34 +285,6 @@ def log_kernel_information(
         writer.add_image(f"{identifier}:spectrum", image, i, dataformats="HWC")
 
 
-@dataclass
-class KernelCallback(BaseCallback):
-    """Callback to log kernel information to tensorboard."""
-
-    writer: SummaryWriter
-    kernel: Tensor
-
-    _: KW_ONLY
-
-    log_figures: bool = True
-    log_scalars: bool = True
-
-    # individual switches
-    log_distances: bool = True
-    log_heatmap: bool = True
-    log_linalg: bool = True
-    log_norms: bool = True
-    log_scaled_norms: bool = True
-    log_spectrum: bool = True
-
-    name: str = "kernel"
-    prefix: str = ""
-    postfix: str = ""
-
-    def __call__(self, i: int) -> None:
-        log_kernel_information(i, **asdict(self))
-
-
 def log_optimizer_state(
     i: int,
     /,
@@ -359,22 +331,6 @@ def log_optimizer_state(
             writer.add_histogram(f"{identifier}:param-moments_2/{j}", b, i)
 
 
-@dataclass
-class OptimizerCallback(BaseCallback):
-    writer: SummaryWriter
-    optimizer: Optimizer
-    _: KW_ONLY
-    log_histograms: bool = True
-    log_scalars: bool = True
-    loss: Optional[float | Tensor] = None
-    name: str = "optimizer"
-    prefix: str = ""
-    postfix: str = ""
-
-    def __call__(self, i: int, /) -> None:
-        log_optimizer_state(i, **asdict(self))
-
-
 @torch.no_grad()
 def log_model_state(
     i: int,
@@ -412,6 +368,51 @@ def log_model_state(
             writer.add_histogram(f"{identifier}:gradients/{key}", gradient, i)
 
 
+@dataclass
+class KernelCallback(BaseCallback):
+    """Callback to log kernel information to tensorboard."""
+
+    writer: SummaryWriter
+    kernel: Tensor
+
+    _: KW_ONLY
+
+    log_figures: bool = True
+    log_scalars: bool = True
+
+    # individual switches
+    log_distances: bool = True
+    log_heatmap: bool = True
+    log_linalg: bool = True
+    log_norms: bool = True
+    log_scaled_norms: bool = True
+    log_spectrum: bool = True
+
+    name: str = "kernel"
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, i: int) -> None:
+        log_kernel_information(i, **asdict(self))
+
+
+@dataclass
+class OptimizerCallback(BaseCallback):
+    writer: SummaryWriter
+    optimizer: Optimizer
+    _: KW_ONLY
+    log_histograms: bool = True
+    log_scalars: bool = True
+    loss: Optional[float | Tensor] = None
+    name: str = "optimizer"
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, i: int, /) -> None:
+        log_optimizer_state(i, **asdict(self))
+
+
+@dataclass
 class ModelCallback(BaseCallback):
     """Callback to log model information to tensorboard."""
 
@@ -504,3 +505,14 @@ def make_checkpoint(i: int, /, path: Path, **objects) -> None:
             case _:
                 with open(path / f"{name}.pickle", "wb") as file:
                     pickle.dump(obj, file)
+
+
+@dataclass
+class CheckpointCallback(BaseCallback):
+    """Callback to save checkpoints."""
+
+    path: Path
+    objects: dict[str, object]
+
+    def __call__(self, i: int) -> None:
+        make_checkpoint(i, self.path, **self.objects)

@@ -89,7 +89,7 @@ class BaseLogger(ABC):
 
     def log_batch_end(self, i: int, /, targets, predictions) -> None:
         r"""Log at the end of a batch."""
-
+        self.log_metrics(i, targets, predictions)
         for frequency, callback in zip(
             self.frequency["batch"], self.callbacks["batch"]
         ):
