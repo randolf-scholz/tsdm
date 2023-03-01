@@ -7,7 +7,7 @@ __all__ = [
     # Functions
     "compute_metrics",
     "log_optimizer_state",
-    "log_kernel_information",
+    "log_kernel_state",
     "log_model_state",
     "log_metrics",
     "log_values",
@@ -19,7 +19,7 @@ from typing import TypeAlias
 
 from tsdm.logutils._callbacks import (
     compute_metrics,
-    log_kernel_information,
+    log_kernel_state,
     log_metrics,
     log_model_state,
     log_optimizer_state,
@@ -31,7 +31,7 @@ Logger: TypeAlias = Callable[..., None]
 
 LOGGERS: dict[str, Logger] = {
     "log_optimizer_state": log_optimizer_state,
-    "log_kernel_information": log_kernel_information,
+    "log_kernel_information": log_kernel_state,
     "log_model_state": log_model_state,
     "log_metrics": log_metrics,
 }
