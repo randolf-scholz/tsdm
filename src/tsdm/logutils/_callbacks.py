@@ -49,7 +49,7 @@ Typical things the loggers need access to include:
 __all__ = [
     # Functions
     "compute_metrics",
-    "log_kernel_information",
+    "log_kernel_state",
     "log_optimizer_state",
     "log_model_state",
     "log_metrics",
@@ -64,7 +64,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 from typing import Any, Optional, Protocol, runtime_checkable
-
+from pandas import DataFrame
 import torch
 import yaml
 from matplotlib.pyplot import Figure
@@ -156,7 +156,7 @@ def compute_metrics(
 
 
 @torch.no_grad()
-def log_kernel_information(
+def log_kernel_state(
     i: int,
     /,
     writer: SummaryWriter,
@@ -368,69 +368,6 @@ def log_model_state(
             writer.add_histogram(f"{identifier}:gradients/{key}", gradient, i)
 
 
-@dataclass
-class KernelCallback(BaseCallback):
-    """Callback to log kernel information to tensorboard."""
-
-    writer: SummaryWriter
-    kernel: Tensor
-
-    _: KW_ONLY
-
-    log_figures: bool = True
-    log_scalars: bool = True
-
-    # individual switches
-    log_distances: bool = True
-    log_heatmap: bool = True
-    log_linalg: bool = True
-    log_norms: bool = True
-    log_scaled_norms: bool = True
-    log_spectrum: bool = True
-
-    name: str = "kernel"
-    prefix: str = ""
-    postfix: str = ""
-
-    def __call__(self, i: int) -> None:
-        log_kernel_information(i, **asdict(self))
-
-
-@dataclass
-class OptimizerCallback(BaseCallback):
-    writer: SummaryWriter
-    optimizer: Optimizer
-    _: KW_ONLY
-    log_histograms: bool = True
-    log_scalars: bool = True
-    loss: Optional[float | Tensor] = None
-    name: str = "optimizer"
-    prefix: str = ""
-    postfix: str = ""
-
-    def __call__(self, i: int, /) -> None:
-        log_optimizer_state(i, **asdict(self))
-
-
-@dataclass
-class ModelCallback(BaseCallback):
-    """Callback to log model information to tensorboard."""
-
-    writer: SummaryWriter
-    model: Model
-
-    _: KW_ONLY
-
-    log_histograms: bool = True
-    log_scalars: bool = True
-
-    name: str = "model"
-    prefix: str = ""
-    postfix: str = ""
-
-    def __call__(self, i: int) -> None:
-        log_model_state(i, **asdict(self))
-
 
 def log_scalar(
     i: int,
@@ -484,6 +421,38 @@ def log_metrics(
     log_values(i, writer, values, key=key, prefix=prefix, postfix=postfix)
 
 
+def log_table(
+    i: int,
+    /,
+    path: Path,
+    table: DataFrame,
+    *,
+    options: Optional[dict[str, Any]] = None,
+    filetype: str = "parquet",
+    key: str = "",
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    r"""Log multiple metrics at once."""
+    options = {} if options is None else options
+    identifier = f"{prefix+':'*bool(prefix)}{key}{':'*bool(postfix)+postfix}"
+    path = path / f"{identifier+'-'*bool(identifier)}{i}"
+
+    match filetype:
+        case "parquet":
+            table.to_parquet(f"{path}.parquet", **options)
+        case "csv":
+            table.to_csv(f"{path}.csv", **options)
+        case "feather":
+            table.to_feather(f"{path}.feather", **options)
+        case "json":
+            table.to_json(f"{path}.json", **options)
+        case "pickle":
+            table.to_pickle(f"{path}.pickle", **options)
+        case _:
+            raise ValueError(f"Unknown {filetype=!r}!")
+
+
 def make_checkpoint(i: int, /, path: Path, **objects) -> None:
     """Save checkpoints of given paths."""
     path = path / f"{i}"
@@ -516,3 +485,114 @@ class CheckpointCallback(BaseCallback):
 
     def __call__(self, i: int) -> None:
         make_checkpoint(i, self.path, **self.objects)
+
+
+
+@dataclass
+class LogKernelState(BaseCallback):
+    """Callback to log kernel information to tensorboard."""
+
+    writer: SummaryWriter
+    kernel: Tensor
+
+    _: KW_ONLY
+
+    log_figures: bool = True
+    log_scalars: bool = True
+
+    # individual switches
+    log_distances: bool = True
+    log_heatmap: bool = True
+    log_linalg: bool = True
+    log_norms: bool = True
+    log_scaled_norms: bool = True
+    log_spectrum: bool = True
+
+    name: str = "kernel"
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, i: int) -> None:
+        log_kernel_state(i, **asdict(self))
+
+
+@dataclass
+class LogOptimizerState(BaseCallback):
+    """Callback to log optimizer information to tensorboard."""
+
+    writer: SummaryWriter
+    optimizer: Optimizer
+    _: KW_ONLY
+    log_histograms: bool = True
+    log_scalars: bool = True
+    loss: Optional[float | Tensor] = None
+    name: str = "optimizer"
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, i: int, /) -> None:
+        log_optimizer_state(i, **asdict(self))
+
+
+@dataclass
+class LogModelState(BaseCallback):
+    """Callback to log model information to tensorboard."""
+
+    writer: SummaryWriter
+    model: Model
+    _: KW_ONLY
+    log_histograms: bool = True
+    log_scalars: bool = True
+    name: str = "model"
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, i: int) -> None:
+        log_model_state(i, **asdict(self))
+
+@dataclass
+class LogScalar(BaseCallback):
+    """Callback to log a scalar to tensorboard."""
+
+    writer: SummaryWriter
+    value: float
+    _: KW_ONLY
+    key: str = ""
+    name: str = "metrics"
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, i: int) -> None:
+        log_scalar(i, **asdict(self))
+
+@dataclass
+class LogTable(BaseCallback):
+    """Callback to log a table to disk."""
+
+    path: Path
+    table: DataFrame
+    _: KW_ONLY
+    options: Optional[dict[str, Any]] = None
+    filetype: str = "parquet"
+    key: str = ""
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, i: int) -> None:
+        log_table(i, **asdict(self))
+
+
+@dataclass
+class LogValues(BaseCallback):
+    """Callback to log multiple values to tensorboard."""
+
+    writer: SummaryWriter
+    values: dict[str, Tensor]
+    _: KW_ONLY
+    key: str = ""
+    name: str = "metrics"
+    prefix: str = ""
+    postfix: str = ""
+
+    def __call__(self, i: int) -> None:
+        log_values(i, **asdict(self))

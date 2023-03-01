@@ -32,7 +32,7 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tsdm.encoders import BaseEncoder
 from tsdm.logutils import (
     compute_metrics,
-    log_kernel_information,
+    log_kernel_state,
     log_metrics,
     log_model_state,
     log_optimizer_state,
@@ -107,8 +107,14 @@ class BaseLogger(ABC):
 
 class DefaultLogger(BaseLogger):
     r"""Logger for training and validation."""
+
     log_dir: Path
     """Path to the logging directory."""
+    results_dir: Path
+    """Path to the results directory."""
+    checkpoint_dir: Path
+    """Path to the checkpoint directory."""
+
     writer: SummaryWriter
     """Tensorboard writer."""
     callbacks: dict[str, list[Callback]] = defaultdict(list)
@@ -145,6 +151,9 @@ class DefaultLogger(BaseLogger):
             self.add_callback(log_all_metrics)
         if make_checkpoint:
             self.add_callback(make_checkpoint, **checkpointable_objects)
+
+        # add results callbacks
+        self.add_callback(log_table, on="results")
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> ResultTuple:
@@ -197,7 +206,7 @@ class DefaultLogger(BaseLogger):
 
             log_values(i, writer=self.writer, values=values, key=key)
 
-    def log_history(self, i: int, /) -> None:
+    def log_results(self, i: int, /) -> None:
         r"""Store history dataframe to file (default format: parquet)."""
         assert self.results_dir is not None
         path = self.results_dir / f"history-{i}.parquet"
@@ -529,4 +538,4 @@ class StandardLogger:
         r"""Log kernel information."""
         assert self.model is not NotImplemented
         assert hasattr(self.model, "kernel") and isinstance(self.model.kernel, Tensor)
-        log_kernel_information(i, writer=self.writer, kernel=self.model.kernel, **kwds)
+        log_kernel_state(i, writer=self.writer, kernel=self.model.kernel, **kwds)
