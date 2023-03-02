@@ -164,28 +164,40 @@ def repr_mapping(
 ) -> str:
     r"""Return a string representation of a mapping object.
 
-    - if recursive=True:  Name<Mapping>{key: repr_short(value), ...}
-    - if recursive=False: Name<Mapping>{key: repr_object(value), ...}
+    Args:
+        obj: Mapping object.
+        align: Align keys and values.
+        identifier: Identifier of the object.
+        indent: Indentation level.
+        linebreaks: Use linebreaks.
+        maxitems: Maximum number of items to print.
+        padding: Padding between keys and values.
+        recursive: Recursively print values.
+        repr_fun: Function to use for printing values.
+        title: Title of the object.
+        wrapped: Object to wrap the mapping in.
 
+    Notes:
+        - if recursive=True:  Name<Mapping>{key: repr_short(value), ...}
+        - if recursive=False: Name<Mapping>{key: repr_object(value), ...}
 
-    type only
+        type only
 
-         name<Mapping>
+             name<Mapping>
 
-    value-type
+        value-type
 
-        name<Mapping>:
-            key1: repr_type(value1)
-            key2: repr_type(value2)
-            key3: repr_type(value3)
+            name<Mapping>:
+                key1: repr_type(value1)
+                key2: repr_type(value2)
+                key3: repr_type(value3)
 
-    fully recursive:
+        fully recursive:
 
-        name<Mapping>(
-            key1: repr_object(value1)
-            key2: repr_object(value2)
-            key3: repr_object(value3)
-
+            name<Mapping>(
+                key1: repr_object(value1)
+                key2: repr_object(value2)
+                key3: repr_object(value3)
     """
     # set linebreaks
     if linebreaks is None:

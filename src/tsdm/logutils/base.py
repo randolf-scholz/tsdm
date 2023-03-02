@@ -32,15 +32,25 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from tsdm.encoders import BaseEncoder
 from tsdm.logutils import (
     compute_metrics,
-    log_kernel_state,
+    log_kernel,
     log_metrics,
-    log_model_state,
-    log_optimizer_state,
+    log_model,
+    log_optimizer,
     log_scalars,
 )
-from tsdm.logutils._callbacks import Callback
+from tsdm.logutils._callbacks import (
+    Callback,
+    CheckpointCallback,
+    KernelCallback,
+    MetricsCallback,
+    ModelCallback,
+    OptimizerCallback,
+    ScalarsCallback,
+    TableCallback,
+)
 from tsdm.metrics import Loss
 from tsdm.types.aliases import PathLike
+from tsdm.utils.strings import repr_mapping
 
 
 class ResultTuple(NamedTuple):
@@ -78,36 +88,19 @@ class BaseLogger(ABC):
 
     callbacks: dict[str, list[Callback]] = defaultdict(list)
     """Callbacks to be called at the end of a batch/epoch."""
-    frequency: dict[str, list[int]] = defaultdict(list)
-    """How often to call the callbacks."""
+    state_dict: dict[str, Any] = {}
+    """State dictionary of the logger."""
 
-    def add_callback(
-        self,
-        key: str,
-        callback: Callback,
-        /,
-        *,
-        frequency: int = 1,
-    ) -> None:
-        """Add a callback to the logger."""
-        self.callbacks[key].append(callback)
-        self.frequency[key].append(frequency)
+    def run_callbacks(self, i: int, /, key: str, **kwargs: Any) -> None:
+        """Call the logger."""
+        # update the state dict
+        self.state_dict.update(kwargs)
+        for callback in self.callbacks[key]:
+            callback(i, **self.state_dict)
+        print(self.state_dict)
 
-    def log_batch_end(self, i: int, /, targets, predictions) -> None:
-        r"""Log at the end of a batch."""
-        for frequency, callback in zip(
-            self.frequency["batch"], self.callbacks["batch"]
-        ):
-            if i % frequency == 0:
-                callback(i)
-
-    def log_epoch_end(self, i: int, /) -> None:
-        """Log at the end of an epoch."""
-        for frequency, callback in zip(
-            self.frequency["epoch"], self.callbacks["epoch"]
-        ):
-            if i % frequency == 0:
-                callback(i)
+    def __repr__(self) -> str:
+        return repr_mapping(self.callbacks, wrapped=self)
 
 
 class DefaultLogger(BaseLogger):
@@ -134,32 +127,34 @@ class DefaultLogger(BaseLogger):
     def __init__(
         self,
         log_dir: PathLike,
+        checkpointable_objects: Optional[Mapping[str, Any]] = None,
+        checkpoint_frequency: int = 1,
     ) -> None:
         self.writer = SummaryWriter(log_dir=log_dir)
         self.log_dir = Path(self.writer.log_dir)
 
-        # add default batch callbacks
-        if self.optimizer is not None:
-            self.add_callback(log_optimizer_state)
-        if self.metrics is not None:
-            self.add_callback(log_metrics)
-
-        # add default epoch callbacks
-        if self.model is not None:
-            self.add_callback(log_model_state)
-        if self.optimizer is not None:
-            self.add_callback(log_optimizer_state)
-        if self.lr_scheduler is not None:
-            self.add_callback(log_lr_scheduler_state)
-        # if self.model is not None and hasattr(self.model, "kernel"):
-        #     self.add_callback(log_kernel_information)
-        if self.metrics is not None:
-            self.add_callback(log_all_metrics)
-        if make_checkpoint:
-            self.add_callback(make_checkpoint, **checkpointable_objects)
-
-        # add results callbacks
-        self.add_callback(log_table, on="results")
+        # # add default batch callbacks
+        # if self.optimizer is not None:
+        #     self.add_callback(log_optimizer_state)
+        # if self.metrics is not None:
+        #     self.add_callback(log_metrics)
+        #
+        # # add default epoch callbacks
+        # if self.model is not None:
+        #     self.add_callback(log_model_state)
+        # if self.optimizer is not None:
+        #     self.add_callback(log_optimizer_state)
+        # if self.lr_scheduler is not None:
+        #     self.add_callback(log_lr_scheduler_state)
+        # # if self.model is not None and hasattr(self.model, "kernel"):
+        # #     self.add_callback(log_kernel_information)
+        # if self.metrics is not None:
+        #     self.add_callback(log_all_metrics)
+        if checkpointable_objects is not None:
+            self.add_callback(CheckpointCallback(**checkpointable_objects))
+        #
+        # # add results callbacks
+        # self.add_callback(log_table, on="results")
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> ResultTuple:
@@ -533,15 +528,15 @@ class StandardLogger:
     def log_optimizer_state(self, i: int, /, **kwds: Any) -> None:
         r"""Log optimizer state."""
         assert self.optimizer is not NotImplemented
-        log_optimizer_state(i, writer=self.writer, optimizer=self.optimizer, **kwds)
+        log_optimizer(i, writer=self.writer, optimizer=self.optimizer, **kwds)
 
     def log_model_state(self, i: int, /, **kwds: Any) -> None:
         r"""Log model state."""
         assert self.model is not NotImplemented
-        log_model_state(i, writer=self.writer, model=self.model, **kwds)
+        log_model(i, writer=self.writer, model=self.model, **kwds)
 
     def log_kernel_information(self, i: int, /, **kwds: Any) -> None:
         r"""Log kernel information."""
         assert self.model is not NotImplemented
         assert hasattr(self.model, "kernel") and isinstance(self.model.kernel, Tensor)
-        log_kernel_state(i, writer=self.writer, kernel=self.model.kernel, **kwds)
+        log_kernel(i, writer=self.writer, kernel=self.model.kernel, **kwds)

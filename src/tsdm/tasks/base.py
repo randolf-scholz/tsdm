@@ -389,17 +389,17 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         md = self.dataset.metadata
         observables = set(self.observables)
         targets = set(self.targets)
-        covariates = set(self.covariates) if self.covariates is not None else set()
+        covariates = set() if self.covariates is None else set(self.covariates)
         md_observables = (
             set(self.metadata_observables)
             if self.metadata_observables is not None
             else set()
         )
         md_targets = (
-            set(self.metadata_targets) if self.metadata_targets is not None else set()
+            set() if self.metadata_targets is None else set(self.metadata_targets)
         )
         ts_columns = set(ts.columns)
-        md_columns = set(md.columns) if md is not None else set()
+        md_columns = set() if md is None else set(md.columns)
 
         if cols := covariates - ts_columns:
             raise ValueError(f"Covariates {cols} not in found timeseries columns!")
