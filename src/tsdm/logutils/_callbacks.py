@@ -1,50 +1,4 @@
-r"""Logging Utility Functions.
-
-We allow the user to define callbacks for logging, which are called at the end of
-batches/epochs.
-
-A callback is a function that takes the following arguments:
-
-- ``i``: The current iteration/epoch.
-- ``writer``: The ``SummaryWriter`` instance.
-- ``logged_object``: The object that is being logged.
-    - what if we need to pass multiple objects?
-- when used in callbacks, the
-- Should a callback be self-contained?
-- Does the callback need to reference the Logger it is being called from?
-
-Idea: We want to so something like this:
-
-.. code-block:: python
-
-    logger = Logger(...)
-    logger.add_callback(log_loss, on="batch")
-
-How do we ensure logging is fast?
-
-- loggers should not recompute things that have already been computed
-    - loggers need access to existing results
-
-Examples
---------
-We want to log the left-inverse residual of the linodenet.
-Sometimes, this is also used as a regularization term.
-therefore the logging function either has to:
-
-- compute R and log it
-- use the existing R and log it
-
-Typical things the loggers need access to include:
-
-- the current iteration
-- the current loss
-- the current model
-- the current optimizer
-- the current data
-    - the current predictions
-    - the current targets
-- the current metrics
-"""
+"""Callback utilities for logging."""
 
 __all__ = [
     # Functions
@@ -59,6 +13,7 @@ __all__ = [
     # Classes
     # Protocols
     "Callback",
+    "LogFunction",
     # Callbacks
     "BaseCallback",
     "CheckpointCallback",
@@ -70,13 +25,27 @@ __all__ = [
     "ScalarsCallback",
     "TableCallback",
 ]
+
 import logging
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional, Protocol, runtime_checkable
+
+# from tsdm.types.variables import ParameterVar as P
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Concatenate,
+    Literal,
+    Optional,
+    ParamSpec,
+    Protocol,
+    TypeAlias,
+    runtime_checkable,
+)
 
 import torch
 import yaml
@@ -105,6 +74,25 @@ from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
+
+# class LogFunction(Protocol):
+#     """Protocol for logging functions."""
+#
+#     def __call__(
+#         self,
+#         i: int,
+#         /,
+#         writer: SummaryWriter,
+#         name: str = "optimizer",
+#         prefix: str = "",
+#         postfix: str = "",
+#     ) -> None:
+#         """Log to tensorboard."""
+
+P = ParamSpec("P")
+# https://youtrack.jetbrains.com/issue/PY-59329/
+_LogFunction: TypeAlias = Callable[Concatenate[int, P], None]
+LogFunction: TypeAlias = _LogFunction[...]  # type: ignore[misc]
 
 
 @torch.no_grad()
@@ -471,10 +459,13 @@ class Callback(Protocol):
     mutable object.
     """
 
-    log_dir: Path
-    """The Path where things will be logged in."""
-    frequency: int
-    """The frequency at which the callback is called."""
+    # @property
+    # def log_dir(self) -> Path:
+    #     """The Path where things will be logged in."""
+
+    @property
+    def frequency(self) -> int:
+        """The frequency at which the callback is called."""
 
     def __call__(self, i: int, /, **state_dict: Any) -> None:
         """Log something at time index i."""
@@ -492,12 +483,12 @@ class CallbackMetaclass(ABCMeta):
 class BaseCallback(metaclass=CallbackMetaclass):
     """Base class for callbacks."""
 
-    Logger: ClassVar[logging.Logger]
+    LOGGER: ClassVar[logging.Logger]
     """The debug-logger for the callback."""
 
     _: KW_ONLY
 
-    frequency: int
+    frequency: int = 1
     """The frequency at which the callback is called."""
 
     @abstractmethod
@@ -518,6 +509,7 @@ class CheckpointCallback(BaseCallback):
 
     path: Path
     objects: dict[str, object]
+    _: KW_ONLY
 
     def __callback(self, i: int, /, **state_dict: Any) -> None:
         for key in state_dict:
