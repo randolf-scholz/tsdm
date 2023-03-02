@@ -10,7 +10,7 @@ __all__ = [
     "log_kernel_state",
     "log_model_state",
     "log_metrics",
-    "log_values",
+    "log_scalars",
     # Classes
 ]
 
@@ -23,7 +23,7 @@ from tsdm.logutils._callbacks import (
     log_metrics,
     log_model_state,
     log_optimizer_state,
-    log_values,
+    log_scalars,
 )
 from tsdm.logutils.base import StandardLogger
 

@@ -36,10 +36,11 @@ from tsdm.logutils import (
     log_metrics,
     log_model_state,
     log_optimizer_state,
-    log_values,
+    log_scalars,
 )
 from tsdm.logutils._callbacks import Callback
 from tsdm.metrics import Loss
+from tsdm.types.aliases import PathLike
 
 
 class ResultTuple(NamedTuple):
@@ -81,7 +82,12 @@ class BaseLogger(ABC):
     """How often to call the callbacks."""
 
     def add_callback(
-        self, key: str, callback: Callback, /, *, frequency: int = 1
+        self,
+        key: str,
+        callback: Callback,
+        /,
+        *,
+        frequency: int = 1,
     ) -> None:
         """Add a callback to the logger."""
         self.callbacks[key].append(callback)
@@ -89,7 +95,6 @@ class BaseLogger(ABC):
 
     def log_batch_end(self, i: int, /, targets, predictions) -> None:
         r"""Log at the end of a batch."""
-        self.log_metrics(i, targets, predictions)
         for frequency, callback in zip(
             self.frequency["batch"], self.callbacks["batch"]
         ):
@@ -127,10 +132,11 @@ class DefaultLogger(BaseLogger):
     lr_scheduler: TorchLRScheduler
 
     def __init__(
-        self, writer: SummaryWriter, logged_objects: dict[str, Any], /, **kwds: Any
+        self,
+        log_dir: PathLike,
     ) -> None:
-        self.writer = writer
-        self.log_dir = self.writer.log_dir
+        self.writer = SummaryWriter(log_dir=log_dir)
+        self.log_dir = Path(self.writer.log_dir)
 
         # add default batch callbacks
         if self.optimizer is not None:
@@ -204,7 +210,7 @@ class DefaultLogger(BaseLogger):
             for metric, value in values.items():
                 self.history.loc[i, (key, metric)] = value.cpu().item()
 
-            log_values(i, writer=self.writer, values=values, key=key)
+            log_scalars(i, writer=self.writer, values=values, key=key)
 
     def log_results(self, i: int, /) -> None:
         r"""Store history dataframe to file (default format: parquet)."""
@@ -480,7 +486,7 @@ class StandardLogger:
             for metric, value in values.items():
                 self.history.loc[i, (key, metric)] = value.cpu().item()
 
-            log_values(
+            log_scalars(
                 i,
                 writer=self.writer,
                 values=values,
