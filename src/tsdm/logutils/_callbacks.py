@@ -49,10 +49,11 @@ Typical things the loggers need access to include:
 __all__ = [
     # Functions
     "compute_metrics",
-    "make_checkpoint" "log_kernel_state",
+    "make_checkpoint",
+    "log_kernel",
     "log_metrics",
-    "log_model_state",
-    "log_optimizer_state",
+    "log_model",
+    "log_optimizer",
     "log_scalars",
     "log_table",
     # Classes
@@ -61,20 +62,21 @@ __all__ = [
     # Callbacks
     "BaseCallback",
     "CheckpointCallback",
-    "LogKernelStateCallback",
-    "LogMetricsCallback",
-    "LogModelStateCallback",
-    "LogOptimizerStateCallback",
-    "LogScalarsCallback",
-    "LogTableCallback",
+    "KernelCallback",
+    "LRSchedulerCallback",
+    "MetricsCallback",
+    "ModelCallback",
+    "OptimizerCallback",
+    "ScalarsCallback",
+    "TableCallback",
 ]
-
+import logging
 import pickle
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
-from typing import Any, Literal, Optional, Protocol, runtime_checkable
+from typing import Any, ClassVar, Literal, Optional, Protocol, runtime_checkable
 
 import torch
 import yaml
@@ -82,6 +84,7 @@ from matplotlib.pyplot import Figure
 from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame
 from torch import Tensor, nn
+from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.tensorboard import SummaryWriter
 
 from tsdm.linalg import (
@@ -130,7 +133,7 @@ def compute_metrics(
     return results
 
 
-def make_checkpoint(i: int, /, path: Path, **objects) -> None:
+def make_checkpoint(i: int, /, path: Path, **objects: Any) -> None:
     """Save checkpoints of given paths."""
     path = path / f"{i}"
     path.mkdir(parents=True, exist_ok=True)
@@ -154,7 +157,7 @@ def make_checkpoint(i: int, /, path: Path, **objects) -> None:
 
 
 @torch.no_grad()
-def log_kernel_state(
+def log_kernel(
     i: int,
     /,
     writer: SummaryWriter,
@@ -283,6 +286,20 @@ def log_kernel_state(
         writer.add_image(f"{identifier}:spectrum", image, i, dataformats="HWC")
 
 
+def log_lr_scheduler(
+    i: int,
+    /,
+    writer: SummaryWriter,
+    lr_scheduler: LRScheduler,
+    *,
+    name: str = "lr_scheduler",
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    # identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
+    raise NotImplementedError("Not implemented yet.")
+
+
 def log_metrics(
     i: int,
     /,
@@ -297,7 +314,6 @@ def log_metrics(
     postfix: str = "",
 ) -> None:
     r"""Log multiple metrics at once."""
-
     if targets is not None and predics is not None and inputs is None:
         pass
     elif targets is None and predics is None and inputs is not None:
@@ -314,14 +330,14 @@ def log_metrics(
 
 
 @torch.no_grad()
-def log_model_state(
+def log_model(
     i: int,
     /,
     writer: SummaryWriter,
     model: Model,
     *,
     log_histograms: bool = True,
-    log_scalars: bool = True,
+    log_norms: bool = True,
     name: str = "model",
     prefix: str = "",
     postfix: str = "",
@@ -334,7 +350,7 @@ def log_model_state(
         k: w.grad for k, w in variables.items() if w.grad is not None
     }
 
-    if log_scalars:
+    if log_norms:
         writer.add_scalar(f"{identifier}/gradients", multi_norm(variables), i)
         writer.add_scalar(f"{identifier}/variables", multi_norm(gradients), i)
 
@@ -350,14 +366,14 @@ def log_model_state(
             writer.add_histogram(f"{identifier}:gradients/{key}", gradient, i)
 
 
-def log_optimizer_state(
+def log_optimizer(
     i: int,
     /,
     writer: SummaryWriter,
     optimizer: Optimizer,
     *,
     log_histograms: bool = True,
-    log_scalars: bool = True,
+    log_norms: bool = True,
     loss: Optional[float | Tensor] = None,
     name: str = "optimizer",
     prefix: str = "",
@@ -372,7 +388,7 @@ def log_optimizer_state(
     moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values() if "exp_avg_sq" in d]
     log = writer.add_scalar
 
-    if log_scalars:
+    if log_norms:
         log(f"{identifier}/model-gradients", multi_norm(gradients), i)
         log(f"{identifier}/model-variables", multi_norm(variables), i)
         if loss is not None:
@@ -400,7 +416,7 @@ def log_scalars(
     i: int,
     /,
     writer: SummaryWriter,
-    values: Mapping[str, Tensor],
+    scalars: Mapping[str, Tensor],
     *,
     key: str = "",
     name: str = "metrics",
@@ -409,8 +425,8 @@ def log_scalars(
 ) -> None:
     r"""Log multiple metrics at once."""
     identifier = f"{prefix + ':' * bool(prefix)}{name}{':' * bool(postfix) + postfix}"
-    for metric in values:
-        writer.add_scalar(f"{identifier}:{metric}/{key}", values[metric], i)
+    for _id, scalar in scalars.items():
+        writer.add_scalar(f"{identifier}:{_id}/{key}", scalar, i)
 
 
 def log_table(
@@ -457,39 +473,43 @@ class Callback(Protocol):
 
     log_dir: Path
     """The Path where things will be logged in."""
+    frequency: int
+    """The frequency at which the callback is called."""
 
-    def __call__(self, i: int, /) -> None:
+    def __call__(self, i: int, /, **state_dict: Any) -> None:
         """Log something at time index i."""
 
 
-class BaseCallback(ABC):
+class CallbackMetaclass(ABCMeta):
+    """Metaclass for callbacks."""
+
+    def __init__(cls, *args: Any, **kwargs: Any) -> None:
+        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+        super().__init__(*args, **kwargs)
+
+
+@dataclass
+class BaseCallback(metaclass=CallbackMetaclass):
     """Base class for callbacks."""
 
-    writer: SummaryWriter
-    """The ``SummaryWriter`` instance."""
-    log_dir: Path
-    """The Path where things will be logged in."""
-    logged_object: Any
-    """The object that is being logged."""
-    identifier: str
-    """The identifier of the logged object."""
+    Logger: ClassVar[logging.Logger]
+    """The debug-logger for the callback."""
 
-    def __init__(
-        self,
-        writer: SummaryWriter,
-        /,
-        key: str = "",
-        name: str = "metrics",
-        prefix: str = "",
-        postfix: str = "",
-    ) -> None:
-        self.writer = writer
-        self.log_dir = Path(writer.log_dir)
-        self.identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
+    _: KW_ONLY
+
+    frequency: int
+    """The frequency at which the callback is called."""
 
     @abstractmethod
-    def __call__(self, i: int, /) -> None:
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
         """Log something at the end of a batch/epoch."""
+
+    def __call__(self, i: int, /, **state_dict: Any) -> None:
+        """Log something at the end of a batch/epoch."""
+        if i % self.frequency == 0:
+            self.__callback(i, **state_dict)
+        else:
+            self.LOGGER.debug("Skipping callback.")
 
 
 @dataclass
@@ -499,12 +519,15 @@ class CheckpointCallback(BaseCallback):
     path: Path
     objects: dict[str, object]
 
-    def __call__(self, i: int) -> None:
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
+        for key in state_dict:
+            if key in self.objects:
+                self.objects[key] = state_dict.pop(key)
         make_checkpoint(i, self.path, **self.objects)
 
 
 @dataclass
-class LogKernelStateCallback(BaseCallback):
+class KernelCallback(BaseCallback):
     """Callback to log kernel information to tensorboard."""
 
     writer: SummaryWriter
@@ -527,28 +550,46 @@ class LogKernelStateCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(self, i: int) -> None:
-        log_kernel_state(i, **asdict(self))
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
+        log_kernel(i, **asdict(self))
 
 
 @dataclass
-class LogMetricsCallback(BaseCallback):
-    """Callback to log multiple metrics to tensorboard."""
+class LRSchedulerCallback(BaseCallback):
+    """Callback to log learning rate information to tensorboard."""
 
     writer: SummaryWriter
-    metrics: Sequence[str] | Mapping[str, Loss]
-    inputs: Mapping[Literal["targets", "predics"], Tensor]
+    scheduler: LRScheduler
     _: KW_ONLY
     key: str = ""
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(self, i: int) -> None:
-        log_metrics(i, **asdict(self))
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
+        log_lr_scheduler(i, **asdict(self))
 
 
 @dataclass
-class LogModelStateCallback(BaseCallback):
+class MetricsCallback(BaseCallback):
+    """Callback to log multiple metrics to tensorboard."""
+
+    writer: SummaryWriter
+    metrics: Sequence[str] | Mapping[str, Loss]
+    _: KW_ONLY
+    key: str = ""
+    prefix: str = ""
+    postfix: str = ""
+
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
+        if "targets" not in state_dict and "predics" not in state_dict:
+            raise RuntimeWarning("No targets or predictions found in state_dict!")
+        targets = state_dict.pop("targets")
+        predics = state_dict.pop("predics")
+        log_metrics(i, **asdict(self), targets=targets, predics=predics)
+
+
+@dataclass
+class ModelCallback(BaseCallback):
     """Callback to log model information to tensorboard."""
 
     writer: SummaryWriter
@@ -560,12 +601,14 @@ class LogModelStateCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(self, i: int) -> None:
-        log_model_state(i, **asdict(self))
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
+        if "model" in state_dict:
+            self.model = state_dict.pop("model")
+        log_model(i, **asdict(self))
 
 
 @dataclass
-class LogOptimizerStateCallback(BaseCallback):
+class OptimizerCallback(BaseCallback):
     """Callback to log optimizer information to tensorboard."""
 
     writer: SummaryWriter
@@ -578,28 +621,33 @@ class LogOptimizerStateCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(self, i: int, /) -> None:
-        log_optimizer_state(i, **asdict(self))
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
+        if "optimizer" in state_dict:
+            self.optimizer = state_dict.pop("optimizer")
+        log_optimizer(i, **asdict(self))
 
 
 @dataclass
-class LogScalarsCallback(BaseCallback):
+class ScalarsCallback(BaseCallback):
     """Callback to log multiple values to tensorboard."""
 
     writer: SummaryWriter
-    values: dict[str, Tensor]
+    scalars: dict[str, Tensor]
     _: KW_ONLY
     key: str = ""
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(self, i: int) -> None:
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
+        for key in state_dict:
+            if key in self.scalars:
+                self.scalars[key] = state_dict.pop(key)
         log_scalars(i, **asdict(self))
 
 
 @dataclass
-class LogTableCallback(BaseCallback):
+class TableCallback(BaseCallback):
     """Callback to log a table to disk."""
 
     path: Path
@@ -611,5 +659,8 @@ class LogTableCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __call__(self, i: int) -> None:
+    def __callback(self, i: int, /, **state_dict: Any) -> None:
+        if hasattr(self.table, "name") and isinstance(self.table.name, str):
+            if self.table.name in state_dict:
+                self.table = state_dict.pop(self.table.name)
         log_table(i, **asdict(self))

@@ -66,7 +66,7 @@ def download(
     hash_kwargs = {} if hash_kwargs is None else hash_kwargs
     response = requests.get(url, stream=True, timeout=10)
     total = int(response.headers.get("content-length", 0))
-    path = Path(fname if fname is not None else url.split("/")[-1])
+    path = Path(url.split("/")[-1] if fname is None else fname)
 
     if not path.parent.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -105,7 +105,7 @@ def import_from_url(
 ) -> None:
     """Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)
-    path = Path(fname if fname is not None else url.split("/")[-1])
+    path = Path(url.split("/")[-1] if fname is None else fname)
     __logger__.info("Downloading %s to %s", url, path)
 
     if parsed_url.netloc == "www.kaggle.com":
