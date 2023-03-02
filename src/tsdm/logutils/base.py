@@ -1,3 +1,58 @@
+r"""Logging Utility Functions.
+
+We allow the user to define callbacks for logging, which are called at the end of
+batches/epochs.
+
+A callback is a function that takes the following arguments:
+
+- ``i``: The current iteration/epoch.
+- ``writer``: The ``SummaryWriter`` instance.
+- ``logged_object``: The object that is being logged.
+    - what if we need to pass multiple objects?
+- when used in callbacks, the
+- Should a callback be self-contained?
+- Does the callback need to reference the Logger it is being called from?
+
+Idea: We want to so something like this:
+
+.. code-block:: python
+
+    logger = Logger(...)
+    logger.add_callback(log_loss, on="batch")
+
+How do we ensure logging is fast?
+
+- loggers should not recompute things that have already been computed
+    - loggers need access to existing results
+
+Examples
+--------
+We want to log the left-inverse residual of the linodenet.
+Sometimes, this is also used as a regularization term.
+therefore the logging function either has to:
+
+- compute R and log it
+- use the existing R and log it
+
+Typical things the loggers need access to include:
+
+- the current iteration
+- the current loss
+- the current model
+- the current optimizer
+- the current data
+    - the current predictions
+    - the current targets
+- the current metrics
+"""
+
+__all__ = [
+    "Logger",
+    "BaseLogger",
+    "StandardLogger",
+    "DefaultLogger",
+]
+
 import pickle
 import shutil
 import warnings
@@ -64,26 +119,30 @@ class ResultTuple(NamedTuple):
 class Logger(Protocol):
     """Generic Logger Protocol."""
 
-    callbacks: Mapping[str, list[Callback]]
-    """Callbacks to be called at the end of a batch/epoch."""
+    @property
+    def callbacks(self) -> Mapping[str, list[Callback]]:
+        """Callbacks to be called at the end of a batch/epoch."""
 
-    def add_callback(self, callback: Callback, /, *, on: str = "batch") -> None:
-        """Add a callback to the logger."""
+    def run_callbacks(self, i: int, /, key: str, **kwargs: Any) -> None:
+        """Call the logger."""
 
-    def log_config(self) -> None:
-        """Log the experimental configuration."""
+    # def add_callback(self, callback: Callback, /, *, on: str = "batch") -> None:
+    #     """Add a callback to the logger."""
+    #
+    # def log_config(self) -> None:
+    #     """Log the experimental configuration."""
+    #
+    # def log_batch_end(self, i: int, /, targets: Tensor, predictions: Tensor) -> None:
+    #     """Log end of a batch."""
+    #
+    # def log_epoch_end(self, i: int, /) -> None:
+    #     """Log at the end of an epoch."""
+    #
+    # def log_results(self) -> None:
+    #     """Log experiment results post training."""
 
-    def log_batch_end(self, i: int, /, targets: Tensor, predictions: Tensor) -> None:
-        """Log end of a batch."""
 
-    def log_epoch_end(self, i: int, /) -> None:
-        """Log at the end of an epoch."""
-
-    def log_results(self) -> None:
-        """Log experiment results post training."""
-
-
-class BaseLogger(ABC):
+class BaseLogger:
     """Base class for loggers."""
 
     callbacks: dict[str, list[Callback]] = defaultdict(list)
@@ -101,6 +160,10 @@ class BaseLogger(ABC):
 
     def __repr__(self) -> str:
         return repr_mapping(self.callbacks, wrapped=self)
+
+
+b: Mapping = {}
+a: Logger = BaseLogger()
 
 
 class DefaultLogger(BaseLogger):
@@ -198,14 +261,14 @@ class DefaultLogger(BaseLogger):
         # Schema: identifier:category/key, e.g. `metrics:MSE/train`
         for key, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
-            values = compute_metrics(
+            scalars = compute_metrics(
                 self.metrics, targets=result.targets, predics=result.predics
             )
 
-            for metric, value in values.items():
+            for metric, value in scalars.items():
                 self.history.loc[i, (key, metric)] = value.cpu().item()
 
-            log_scalars(i, writer=self.writer, values=values, key=key)
+            log_scalars(i, writer=self.writer, scalars=scalars, key=key)
 
     def log_results(self, i: int, /) -> None:
         r"""Store history dataframe to file (default format: parquet)."""
@@ -474,17 +537,17 @@ class StandardLogger:
         # Schema: identifier:category/key, e.g. `metrics:MSE/train`
         for key, dataloader in self.dataloaders.items():
             result = self.get_all_predictions(dataloader)
-            values = compute_metrics(
+            scalars = compute_metrics(
                 self.metrics, targets=result.targets, predics=result.predics
             )
 
-            for metric, value in values.items():
+            for metric, value in scalars.items():
                 self.history.loc[i, (key, metric)] = value.cpu().item()
 
             log_scalars(
                 i,
                 writer=self.writer,
-                values=values,
+                scalars=scalars,
                 key=key,
             )
 

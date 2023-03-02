@@ -4,8 +4,10 @@ __all__ = [
     # Types
     "Logger",
     "Callback",
+    "LogFunction",
     # Constants
     "LOGGERS",
+    "LOGFUNCS",
     "CALLBACKS",
     # Functions
     "compute_metrics",
@@ -37,6 +39,7 @@ from tsdm.logutils._callbacks import (
     Callback,
     CheckpointCallback,
     KernelCallback,
+    LogFunction,
     LRSchedulerCallback,
     MetricsCallback,
     ModelCallback,
@@ -54,7 +57,7 @@ from tsdm.logutils._callbacks import (
 )
 from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger, StandardLogger
 
-CALLBACKS: dict[str, Callback] = {
+CALLBACKS: dict[str, type[Callback]] = {
     "CheckpointCallback": CheckpointCallback,
     "KernelCallback": KernelCallback,
     "LRSchedulerCallback": LRSchedulerCallback,
@@ -65,7 +68,7 @@ CALLBACKS: dict[str, Callback] = {
     "TableCallback": TableCallback,
 }
 
-LOGGERS: dict[str, Logger] = {
+LOGFUNCS: dict[str, LogFunction] = {
     "log_kernel_information": log_kernel,
     "log_lr_scheduler": log_lr_scheduler,
     "log_metrics": log_metrics,
@@ -73,4 +76,10 @@ LOGGERS: dict[str, Logger] = {
     "log_optimizer_state": log_optimizer,
     "log_scalars": log_scalars,
     "log_table": log_table,
+}
+
+LOGGERS: dict[str, type[Logger]] = {
+    "BaseLogger": BaseLogger,
+    "DefaultLogger": DefaultLogger,
+    "StandardLogger": StandardLogger,
 }
