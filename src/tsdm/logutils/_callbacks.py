@@ -61,11 +61,10 @@ from tsdm.metrics import LOSSES, Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import PathLike
-from tsdm.utils import dataclass_args_kwargs
+from tsdm.utils import dataclass_args_kwargs, mandatory_kwargs
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 
-# from tsdm.types.variables import ParameterVar as P
 class LogFunction(Protocol):
     """Protocol for logging functions."""
 
@@ -81,15 +80,6 @@ class LogFunction(Protocol):
         postfix: str = "",
     ) -> None:
         """Log to tensorboard."""
-
-
-# P = ParamSpec("P")
-# # https://youtrack.jetbrains.com/issue/PY-59329/
-# _LogFunction: TypeAlias = Callable[Concatenate[int, P], None]
-# LogFunction: TypeAlias = _LogFunction[...]  # type: ignore[misc]
-
-# TODO: write a Protocol for this
-# LogFunction: TypeAlias = Callable[..., None]
 
 
 @torch.no_grad()
@@ -468,9 +458,8 @@ class Callback(Protocol):
     mutable object.
     """
 
-    # @property
-    # def log_dir(self) -> Path:
-    #     """The Path where things will be logged in."""
+    required_kwargs: ClassVar[set[str]]
+    """The required kwargs for the callback."""
 
     @property
     def frequency(self) -> int:
@@ -494,34 +483,30 @@ class BaseCallback(metaclass=CallbackMetaclass):
 
     LOGGER: ClassVar[logging.Logger]
     """The debug-logger for the callback."""
+    required_kwargs: ClassVar[set[str]]
+    """The required kwargs for the callback."""
 
     _: KW_ONLY
 
     frequency: int = 1
     """The frequency at which the callback is called."""
 
-    def __post_init__(self):
+    def __init_subclass__(cls) -> None:
+        """Automatically set the required kwargs for the callback."""
+        cls.required_kwargs = mandatory_kwargs(cls.callback)
+
+    def __post_init__(self) -> None:
+        """Automatically set the fixed args/kwargs for the callback."""
         self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
 
-    # def __init_subclass__(cls, **kwargs):
-    #     if hasattr(cls, "__post_init__"):
-    #         raise NotImplementedError(
-    #             "TODO: Implement wrapping existing __post_init__!"
-    #         )
-    #
-    #     def __post_init__(self) -> None:
-    #         self.args, self.kwargs = dataclass_args_kwargs(self)
-    #
-    #     cls.__post_init__ = __post_init__
-
     @abstractmethod
-    def callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **kwargs: Any) -> None:
         """Log something at the end of a batch/epoch."""
 
-    def __call__(self, i: int, /, **state_dict: Any) -> None:
+    def __call__(self, i: int, /, **kwargs: Any) -> None:
         """Log something at the end of a batch/epoch."""
         if i % self.frequency == 0:
-            self.callback(i, **state_dict)
+            self.callback(i, **kwargs)
         else:
             self.LOGGER.debug("Skipping callback.")
 
@@ -600,11 +585,11 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
-        if "targets" not in state_dict and "predics" not in state_dict:
-            raise RuntimeWarning("No targets or predictions found in state_dict!")
-        targets = state_dict["targets"]
-        predics = state_dict["predics"]
+    def callback(self, i: int, /, targets: Tensor, predics: Tensor) -> None:
+        # if "targets" not in state_dict and "predics" not in state_dict:
+        #     raise RuntimeWarning("No targets or predictions found in state_dict!")
+        # targets = state_dict["targets"]
+        # predics = state_dict["predics"]
         log_metrics(i, *self.args, targets=targets, predics=predics, **self.kwargs)
 
 

@@ -126,21 +126,6 @@ class Logger(Protocol):
     def run_callbacks(self, i: int, /, key: str, **kwargs: Any) -> None:
         """Call the logger."""
 
-    # def add_callback(self, callback: Callback, /, *, on: str = "batch") -> None:
-    #     """Add a callback to the logger."""
-    #
-    # def log_config(self) -> None:
-    #     """Log the experimental configuration."""
-    #
-    # def log_batch_end(self, i: int, /, targets: Tensor, predictions: Tensor) -> None:
-    #     """Log end of a batch."""
-    #
-    # def log_epoch_end(self, i: int, /) -> None:
-    #     """Log at the end of an epoch."""
-    #
-    # def log_results(self) -> None:
-    #     """Log experiment results post training."""
-
 
 class BaseLogger:
     """Base class for loggers."""
@@ -158,13 +143,25 @@ class BaseLogger:
     #         callback = Callback(*args, **kwargs)
     #     self.callbacks[key].append(callback)
 
-    def run_callbacks(self, i: int, /, key: str, **kwargs: Any) -> None:
+    @property
+    def required_kwargs(self, key: str, /) -> list[set[str]]:
+        return [callback.required_kwargs for callback in self.callbacks[key]]
+
+    def run_callbacks(self, i: int, key: str, /, **kwargs: Any) -> None:
         """Call the logger."""
-        # update the state dict
-        self.state_dict.update(kwargs)
-        for callback in self.callbacks[key]:
-            callback(i, **self.state_dict)
-        print(self.state_dict)
+        required_kwargs = self.required_kwargs(key)
+
+        # safety checks
+        combined_kwargs = set.union(*required_kwargs)
+        if missing_kwargs := (combined_kwargs - set(kwargs)):
+            raise TypeError(f"Missing required kwargs: {missing_kwargs}")
+        if unexpected_kwargs := (set(kwargs) - combined_kwargs):
+            raise RuntimeWarning(f"Unexpected kwargs: {unexpected_kwargs}")
+
+        # call callbacks
+        for num, callback in enumerate(self.callbacks[key]):
+            kwds = required_kwargs[num]
+            callback(i, **{kwd: kwargs[kwd] for kwd in kwds})
 
     def __repr__(self) -> str:
         return repr_mapping(self.callbacks, wrapped=self)
