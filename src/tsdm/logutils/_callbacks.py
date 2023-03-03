@@ -33,7 +33,6 @@ from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
 
-# from tsdm.types.variables import ParameterVar as P
 from typing import (
     Any,
     Callable,
@@ -73,27 +72,30 @@ from tsdm.linalg import (
 from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
+# from tsdm.types.variables import ParameterVar as P
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
-# class LogFunction(Protocol):
-#     """Protocol for logging functions."""
-#
-#     def __call__(
-#         self,
-#         i: int,
-#         /,
-#         writer: SummaryWriter,
-#         name: str = "optimizer",
-#         prefix: str = "",
-#         postfix: str = "",
-#     ) -> None:
-#         """Log to tensorboard."""
+class LogFunction(Protocol):
+    """Protocol for logging functions."""
 
-P = ParamSpec("P")
-# https://youtrack.jetbrains.com/issue/PY-59329/
-_LogFunction: TypeAlias = Callable[Concatenate[int, P], None]
-LogFunction: TypeAlias = _LogFunction[...]  # type: ignore[misc]
+    def __call__(
+        self,
+        i: int,
+        /,
+        _: Any,
+        *,
+        writer: SummaryWriter,
+        name: str = "",
+        prefix: str = "",
+        postfix: str = "",
+    ) -> None:
+        """Log to tensorboard."""
 
+# P = ParamSpec("P")
+# # https://youtrack.jetbrains.com/issue/PY-59329/
+# _LogFunction: TypeAlias = Callable[Concatenate[int, P], None]
+# LogFunction: TypeAlias = _LogFunction[...]  # type: ignore[misc]
+# LogFunction: TypeAlias = Callable[..., None]
 
 @torch.no_grad()
 def compute_metrics(
@@ -148,8 +150,8 @@ def make_checkpoint(i: int, /, path: Path, **objects: Any) -> None:
 def log_kernel(
     i: int,
     /,
-    writer: SummaryWriter,
     kernel: Tensor,
+    writer: SummaryWriter,
     *,
     log_figures: bool = True,
     log_scalars: bool = True,
@@ -276,9 +278,9 @@ def log_kernel(
 
 def log_lr_scheduler(
     i: int,
+    lr_scheduler: LRScheduler,
     /,
     writer: SummaryWriter,
-    lr_scheduler: LRScheduler,
     *,
     name: str = "lr_scheduler",
     prefix: str = "",
@@ -291,8 +293,8 @@ def log_lr_scheduler(
 def log_metrics(
     i: int,
     /,
-    writer: SummaryWriter,
     metrics: Sequence[str] | Mapping[str, Loss],
+    writer: SummaryWriter,
     *,
     inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,
     targets: Optional[Tensor] = None,
@@ -313,16 +315,16 @@ def log_metrics(
     assert len(targets) == len(predics)
     assert isinstance(metrics, Mapping)
 
-    values = compute_metrics(metrics, targets=targets, predics=predics)
-    log_scalars(i, writer, values, key=key, prefix=prefix, postfix=postfix)
+    scalars = compute_metrics(metrics, targets=targets, predics=predics)
+    log_scalars(i, scalars, writer, key=key, prefix=prefix, postfix=postfix)
 
 
 @torch.no_grad()
 def log_model(
     i: int,
     /,
-    writer: SummaryWriter,
     model: Model,
+    writer: SummaryWriter,
     *,
     log_histograms: bool = True,
     log_norms: bool = True,
@@ -357,8 +359,8 @@ def log_model(
 def log_optimizer(
     i: int,
     /,
-    writer: SummaryWriter,
     optimizer: Optimizer,
+    writer: SummaryWriter,
     *,
     log_histograms: bool = True,
     log_norms: bool = True,
@@ -403,8 +405,8 @@ def log_optimizer(
 def log_scalars(
     i: int,
     /,
-    writer: SummaryWriter,
     scalars: Mapping[str, Tensor],
+    writer: SummaryWriter,
     *,
     key: str = "",
     name: str = "metrics",
@@ -420,8 +422,8 @@ def log_scalars(
 def log_table(
     i: int,
     /,
-    writer: SummaryWriter | Path,
     table: DataFrame,
+    writer: SummaryWriter | Path,
     *,
     options: Optional[dict[str, Any]] = None,
     filetype: str = "parquet",
@@ -507,8 +509,9 @@ class BaseCallback(metaclass=CallbackMetaclass):
 class CheckpointCallback(BaseCallback):
     """Callback to save checkpoints."""
 
-    path: Path
     objects: dict[str, object]
+    path: Path
+
     _: KW_ONLY
 
     def __callback(self, i: int, /, **state_dict: Any) -> None:
@@ -522,8 +525,8 @@ class CheckpointCallback(BaseCallback):
 class KernelCallback(BaseCallback):
     """Callback to log kernel information to tensorboard."""
 
-    writer: SummaryWriter
     kernel: Tensor
+    writer: SummaryWriter
 
     _: KW_ONLY
 
@@ -550,9 +553,11 @@ class KernelCallback(BaseCallback):
 class LRSchedulerCallback(BaseCallback):
     """Callback to log learning rate information to tensorboard."""
 
-    writer: SummaryWriter
     scheduler: LRScheduler
+    writer: SummaryWriter
+
     _: KW_ONLY
+
     key: str = ""
     prefix: str = ""
     postfix: str = ""
@@ -565,9 +570,11 @@ class LRSchedulerCallback(BaseCallback):
 class MetricsCallback(BaseCallback):
     """Callback to log multiple metrics to tensorboard."""
 
-    writer: SummaryWriter
     metrics: Sequence[str] | Mapping[str, Loss]
+    writer: SummaryWriter
+
     _: KW_ONLY
+
     key: str = ""
     prefix: str = ""
     postfix: str = ""
@@ -584,9 +591,11 @@ class MetricsCallback(BaseCallback):
 class ModelCallback(BaseCallback):
     """Callback to log model information to tensorboard."""
 
-    writer: SummaryWriter
     model: Model
+    writer: SummaryWriter
+
     _: KW_ONLY
+
     log_histograms: bool = True
     log_scalars: bool = True
     name: str = "model"
@@ -603,9 +612,11 @@ class ModelCallback(BaseCallback):
 class OptimizerCallback(BaseCallback):
     """Callback to log optimizer information to tensorboard."""
 
-    writer: SummaryWriter
     optimizer: Optimizer
+    writer: SummaryWriter
+
     _: KW_ONLY
+
     log_histograms: bool = True
     log_scalars: bool = True
     loss: Optional[float | Tensor] = None
@@ -623,9 +634,11 @@ class OptimizerCallback(BaseCallback):
 class ScalarsCallback(BaseCallback):
     """Callback to log multiple values to tensorboard."""
 
-    writer: SummaryWriter
     scalars: dict[str, Tensor]
+    writer: SummaryWriter
+
     _: KW_ONLY
+
     key: str = ""
     name: str = "metrics"
     prefix: str = ""
@@ -642,9 +655,11 @@ class ScalarsCallback(BaseCallback):
 class TableCallback(BaseCallback):
     """Callback to log a table to disk."""
 
-    path: Path
     table: DataFrame
+    path: Path
+
     _: KW_ONLY
+
     options: Optional[dict[str, Any]] = None
     filetype: str = "parquet"
     key: str = ""
