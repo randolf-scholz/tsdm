@@ -162,9 +162,6 @@ class BaseLogger:
         return repr_mapping(self.callbacks, wrapped=self)
 
 
-b: Mapping = {}
-a: Logger = BaseLogger()
-
 
 class DefaultLogger(BaseLogger):
     r"""Logger for training and validation."""
