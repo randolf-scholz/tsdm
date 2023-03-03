@@ -46,7 +46,7 @@ from tsdm.utils.decorators import autojit
 class Loss(Protocol):
     r"""Protocol for a loss function."""
 
-    def __call__(self, targets: Tensor, predictions: Tensor) -> Tensor:
+    def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
         r"""Compute the loss."""
 
 

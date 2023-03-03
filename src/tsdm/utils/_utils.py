@@ -15,11 +15,11 @@ __all__ = [
     "get_mandatory_argcount",
     "initialize_from_config",
     "is_dunder",
-    "is_keyword_only",
-    "is_mandatory",
+    "is_keyword_only_arg",
+    "is_mandatory_arg",
     "is_partition",
-    "is_positional",
-    "is_positional_only",
+    "is_positional_arg",
+    "is_positional_only_arg",
     "is_zipfile",
     "now",
     "pairwise_disjoint",
@@ -77,9 +77,12 @@ def dataclass_args_kwargs(
 
     forbidden_keys: set[str] = set()
     if ignore_parent_fields:
-        for parent_class in obj.__class__.__mro__[1:]:
-            if is_dataclass(parent_class):
-                forbidden_keys.update(parent_class.__dataclass_fields__)
+        for parent in obj.__class__.__mro__[1:]:
+            if is_dataclass(parent):
+                cls = cast(
+                    Dataclass, parent
+                )  # FIXME: https://github.com/python/cpython/issues/102395
+                forbidden_keys.update(cls.__dataclass_fields__)
 
     args = tuple(
         getattr(obj, key)
@@ -366,7 +369,7 @@ def is_partition(*partition: Collection, union: Optional[Sequence] = None) -> bo
     return len(part_union) == sum(len(p) for p in partition)
 
 
-def is_mandatory(p: inspect.Parameter, /) -> bool:
+def is_mandatory_arg(p: inspect.Parameter, /) -> bool:
     r"""Check if parameter is mandatory."""
     return p.default is inspect.Parameter.empty and p.kind not in (
         VAR_POSITIONAL,
@@ -374,19 +377,47 @@ def is_mandatory(p: inspect.Parameter, /) -> bool:
     )
 
 
-def is_positional(p: inspect.Parameter, /) -> bool:
-    r"""Check if parameter is positional."""
-    return p.kind in (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL)
+@overload
+def is_positional_arg(p: inspect.Parameter, /) -> bool:
+    ...
 
 
-def is_positional_only(p: inspect.Parameter, /) -> bool:
-    """Check if parameter is positional only."""
+@overload
+def is_positional_arg(p: Callable, name: str, /) -> bool:
+    ...
+
+
+def is_positional_arg(*args):
+    r"""Check if parameter is positional argument."""
+    match args:
+        case (inspect.Parameter() as p,):
+            return p.kind in (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL)
+        case Callable() as func, str() as name:  # type: ignore[misc]
+            sig = inspect.signature(func)
+            if name not in sig.parameters:
+                raise ValueError(f"Function {func} takes np argument named {name!r}.")
+            return is_positional_arg(sig.parameters[name])
+        case (_, _, *_):
+            raise TypeError(
+                f"{is_positional_arg} takes 1 or 2 arguments, got {len(args)}"
+            )
+        case _:
+            raise TypeError(f"Unsupported types: {[type(arg) for arg in args]}")
+
+
+def is_positional_only_arg(p: inspect.Parameter, /) -> bool:
+    """Check if parameter is positional only argument."""
     return p.kind in (POSITIONAL_ONLY, VAR_POSITIONAL)
 
 
-def is_keyword_only(p: inspect.Parameter, /) -> bool:
-    """Check if parameter is keyword only."""
+def is_keyword_only_arg(p: inspect.Parameter, /) -> bool:
+    """Check if parameter is keyword only argument."""
     return p.kind in (KEYWORD_ONLY, VAR_KEYWORD)
+
+
+def is_keyword_arg(p: inspect.Parameter, /) -> bool:
+    """Check if parameter is keyword argument."""
+    return p.kind in (POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD)
 
 
 def is_zipfile(path: Path) -> bool:
@@ -401,7 +432,17 @@ def is_zipfile(path: Path) -> bool:
 def get_mandatory_argcount(f: Callable[..., Any]) -> int:
     r"""Get the number of mandatory arguments of a function."""
     sig = inspect.signature(f)
-    return sum(is_mandatory(p) for p in sig.parameters.values())
+    return sum(is_mandatory_arg(p) for p in sig.parameters.values())
+
+
+def mandatory_kwargs(f: Callable[..., Any]) -> list[str]:
+    r"""Get the mandatory keyword arguments of a function."""
+    sig = inspect.signature(f)
+    return [
+        name
+        for name, p in sig.parameters.items()
+        if is_mandatory_arg(p) and is_keyword_arg(p)
+    ]
 
 
 def get_function_args(
@@ -451,7 +492,9 @@ def get_function_args(
         return [p for p in params if p.kind in allowed_kinds]
 
     return [
-        p for p in params if is_mandatory(p) is mandatory and p.kind in allowed_kinds
+        p
+        for p in params
+        if is_mandatory_arg(p) is mandatory and p.kind in allowed_kinds
     ]
 
 

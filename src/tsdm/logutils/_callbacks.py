@@ -32,16 +32,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Literal,
-    Optional,
-    Protocol,
-    TypeAlias,
-    runtime_checkable,
-)
+from typing import Any, ClassVar, Literal, Optional, Protocol, runtime_checkable
 
 import torch
 import yaml
@@ -73,22 +64,23 @@ from tsdm.types.aliases import PathLike
 from tsdm.utils import dataclass_args_kwargs
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
+
 # from tsdm.types.variables import ParameterVar as P
-# class LogFunction(Protocol):
-#     """Protocol for logging functions."""
-#
-#     def __call__(
-#         self,
-#         i: int,
-#         /,
-#         _: Any,
-#         writer: SummaryWriter,
-#         *,
-#         name: str = "",
-#         prefix: str = "",
-#         postfix: str = "",
-#     ) -> None:
-#         """Log to tensorboard."""
+class LogFunction(Protocol):
+    """Protocol for logging functions."""
+
+    def __call__(
+        self,
+        i: int,
+        logged_object: Any,
+        writer: SummaryWriter,
+        /,
+        *,
+        name: str = "",
+        prefix: str = "",
+        postfix: str = "",
+    ) -> None:
+        """Log to tensorboard."""
 
 
 # P = ParamSpec("P")
@@ -97,17 +89,21 @@ from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 # LogFunction: TypeAlias = _LogFunction[...]  # type: ignore[misc]
 
 # TODO: write a Protocol for this
-LogFunction: TypeAlias = Callable[..., None]
+# LogFunction: TypeAlias = Callable[..., None]
 
 
 @torch.no_grad()
 def compute_metrics(
-    metrics: list | Mapping[str, Any], /, *, targets: Tensor, predics: Tensor
+    metrics: Sequence[Loss | type[Loss]] | Mapping[str, Loss | type[Loss]],
+    /,
+    *,
+    targets: Tensor,
+    predics: Tensor,
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics."""
     results: dict[str, Tensor] = {}
 
-    if isinstance(metrics, list):
+    if isinstance(metrics, Sequence):
         for metric in metrics:
             if isinstance(metric, type) and callable(metric):
                 results[metric.__name__] = metric()(targets, predics)
@@ -300,13 +296,13 @@ def log_lr_scheduler(
 def log_metrics(
     i: int,
     /,
-    metrics: Sequence[str] | Mapping[str, Loss],
+    metrics: Sequence[Loss | type[Loss]] | Mapping[str, Loss | type[Loss]],
     writer: SummaryWriter,
     *,
     inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,
     targets: Optional[Tensor] = None,
     predics: Optional[Tensor] = None,
-    key: str = "",
+    name: str = "metrics",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -323,7 +319,7 @@ def log_metrics(
     assert isinstance(metrics, Mapping)
 
     scalars = compute_metrics(metrics, targets=targets, predics=predics)
-    log_scalars(i, scalars, writer, key=key, prefix=prefix, postfix=postfix)
+    log_scalars(i, scalars, writer, name=name, prefix=prefix, postfix=postfix)
 
 
 @torch.no_grad()
@@ -434,13 +430,13 @@ def log_table(
     *,
     options: Optional[dict[str, Any]] = None,
     filetype: str = "parquet",
-    key: str = "",
+    name: str = "",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
     r"""Log multiple metrics at once."""
     options = {} if options is None else options
-    identifier = f"{prefix+':'*bool(prefix)}{key}{':'*bool(postfix)+postfix}"
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
     path = path / f"{identifier+'-'*bool(identifier)}{i}"
 
@@ -538,8 +534,8 @@ class CheckpointCallback(BaseCallback):
     def callback(self, i: int, /, **state_dict: Any) -> None:
         for key in state_dict:
             if key in self.objects:
-                self.objects[key] = state_dict.pop(key)
-        make_checkpoint(i, self.objects, self.path)
+                self.objects[key] = state_dict[key]
+        make_checkpoint(i, self.objects, self.writer)
 
 
 @dataclass
@@ -591,7 +587,7 @@ class LRSchedulerCallback(BaseCallback):
 class MetricsCallback(BaseCallback):
     """Callback to log multiple metrics to tensorboard."""
 
-    metrics: Sequence[str] | Mapping[str, Loss]
+    metrics: Sequence[Loss | type[Loss]] | Mapping[str, Loss | type[Loss]]
     writer: SummaryWriter
 
     _: KW_ONLY
@@ -603,8 +599,8 @@ class MetricsCallback(BaseCallback):
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if "targets" not in state_dict and "predics" not in state_dict:
             raise RuntimeWarning("No targets or predictions found in state_dict!")
-        targets = state_dict.pop("targets")
-        predics = state_dict.pop("predics")
+        targets = state_dict["targets"]
+        predics = state_dict["predics"]
         log_metrics(i, *self.args, targets=targets, predics=predics, **self.kwargs)
 
 
@@ -625,7 +621,7 @@ class ModelCallback(BaseCallback):
 
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if "model" in state_dict:
-            self.model = state_dict.pop("model")
+            self.model = state_dict["model"]
         log_model(i, *self.args, **self.kwargs)
 
 
@@ -647,7 +643,7 @@ class OptimizerCallback(BaseCallback):
 
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if "optimizer" in state_dict:
-            self.optimizer = state_dict.pop("optimizer")
+            self.optimizer = state_dict["optimizer"]
         log_optimizer(i, *self.args, **self.kwargs)
 
 
@@ -668,7 +664,7 @@ class ScalarsCallback(BaseCallback):
     def callback(self, i: int, /, **state_dict: Any) -> None:
         for key in state_dict:
             if key in self.scalars:
-                self.scalars[key] = state_dict.pop(key)
+                self.scalars[key] = state_dict[key]
         log_scalars(i, *self.args, **self.kwargs)
 
 
@@ -690,5 +686,5 @@ class TableCallback(BaseCallback):
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if hasattr(self.table, "name") and isinstance(self.table.name, str):
             if self.table.name in state_dict:
-                self.table = state_dict.pop(self.table.name)
+                self.table = state_dict[self.table.name]
         log_table(i, *self.args, **self.kwargs)
