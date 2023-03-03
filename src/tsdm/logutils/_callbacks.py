@@ -57,7 +57,7 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
-from tsdm.metrics import Loss
+from tsdm.metrics import LOSSES, Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import PathLike
@@ -94,7 +94,7 @@ class LogFunction(Protocol):
 
 @torch.no_grad()
 def compute_metrics(
-    metrics: Sequence[Loss | type[Loss]] | Mapping[str, Loss | type[Loss]],
+    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]],
     /,
     *,
     targets: Tensor,
@@ -105,6 +105,8 @@ def compute_metrics(
 
     if isinstance(metrics, Sequence):
         for metric in metrics:
+            if isinstance(metric, str):
+                metric = LOSSES[metric]
             if isinstance(metric, type) and callable(metric):
                 results[metric.__name__] = metric()(targets, predics)
             elif callable(metric):
@@ -114,6 +116,8 @@ def compute_metrics(
         return results
 
     for name, metric in metrics.items():
+        if isinstance(metric, str):
+            metric = LOSSES[metric]
         if isinstance(metric, type) and callable(metric):
             results[name] = metric()(targets, predics)
         elif callable(metric):
@@ -296,7 +300,7 @@ def log_lr_scheduler(
 def log_metrics(
     i: int,
     /,
-    metrics: Sequence[Loss | type[Loss]] | Mapping[str, Loss | type[Loss]],
+    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]],
     writer: SummaryWriter,
     *,
     inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,
@@ -587,7 +591,7 @@ class LRSchedulerCallback(BaseCallback):
 class MetricsCallback(BaseCallback):
     """Callback to log multiple metrics to tensorboard."""
 
-    metrics: Sequence[Loss | type[Loss]] | Mapping[str, Loss | type[Loss]]
+    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]]
     writer: SummaryWriter
 
     _: KW_ONLY
