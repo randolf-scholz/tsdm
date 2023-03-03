@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Test the logutils module."""
 
 import logging
 
@@ -14,7 +15,6 @@ __logger__ = logging.getLogger(__name__)
 
 def test_BaseLogger() -> None:
     """Test the BaseLogger class."""
-
     # initialize logger
     logger = tsdm.logutils.BaseLogger()
 

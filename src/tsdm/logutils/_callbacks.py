@@ -30,9 +30,8 @@ import logging
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
-from dataclasses import KW_ONLY, asdict, dataclass
+from dataclasses import KW_ONLY, dataclass
 from pathlib import Path
-from types import MethodType
 from typing import (
     Any,
     Callable,
@@ -49,7 +48,7 @@ import yaml
 from matplotlib.pyplot import Figure
 from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame
-from torch import Tensor, nn
+from torch import Tensor
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.tensorboard import SummaryWriter
 
