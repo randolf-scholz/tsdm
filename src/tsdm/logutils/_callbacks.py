@@ -424,7 +424,7 @@ def log_table(
     *,
     options: Optional[dict[str, Any]] = None,
     filetype: str = "parquet",
-    name: str = "",
+    name: str = "tables",
     prefix: str = "",
     postfix: str = "",
 ) -> None:
@@ -564,7 +564,7 @@ class LRSchedulerCallback(BaseCallback):
 
     _: KW_ONLY
 
-    key: str = ""
+    name: str = "lr_scheduler"
     prefix: str = ""
     postfix: str = ""
 
@@ -581,7 +581,7 @@ class MetricsCallback(BaseCallback):
 
     _: KW_ONLY
 
-    key: str = ""
+    name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
 
@@ -668,7 +668,7 @@ class TableCallback(BaseCallback):
 
     options: Optional[dict[str, Any]] = None
     filetype: str = "parquet"
-    key: str = ""
+    name: str = "tables"
     prefix: str = ""
     postfix: str = ""
 
