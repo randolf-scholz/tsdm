@@ -19,7 +19,7 @@ __all__ = [
     "log_scalars",
     "log_table",
     # Classes
-    "StandardLogger",
+    # "StandardLogger",
     "BaseLogger",
     "DefaultLogger",
     # Callbacks
@@ -55,7 +55,7 @@ from tsdm.logutils._callbacks import (
     log_scalars,
     log_table,
 )
-from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger, StandardLogger
+from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger  # , StandardLogger
 
 CALLBACKS: dict[str, type[Callback]] = {
     "CheckpointCallback": CheckpointCallback,

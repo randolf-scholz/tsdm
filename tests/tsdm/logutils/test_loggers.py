@@ -27,7 +27,7 @@ def test_BaseLogger() -> None:
     # run callbacks
     targets = torch.randn(10, 3)
     predics = torch.randn(10, 3)
-    logger.run_callbacks(1, key="batch", targets=targets, predics=predics)
+    logger.run_callbacks(1, "batch", targets=targets, predics=predics)
 
 
 def _main() -> None:

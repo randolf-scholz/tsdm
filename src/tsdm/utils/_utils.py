@@ -393,7 +393,9 @@ def is_positional_arg(*args):
     match args:
         case (inspect.Parameter() as p,):
             return p.kind in (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL)
+        # FIXME: https://github.com/python/mypy/issues/14014
         case Callable() as func, str() as name:  # type: ignore[misc]
+            func = cast(Callable, func)  # type: ignore[has-type]
             sig = inspect.signature(func)
             if name not in sig.parameters:
                 raise ValueError(f"Function {func} takes np argument named {name!r}.")
