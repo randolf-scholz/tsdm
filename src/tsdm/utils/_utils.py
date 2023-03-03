@@ -12,7 +12,8 @@ __all__ = [
     "flatten_dict",
     "flatten_nested",
     "get_function_args",
-    "get_mandatory_argcount",
+    "mandatory_argcount",
+    "mandatory_kwargs",
     "initialize_from_config",
     "is_dunder",
     "is_keyword_only_arg",
@@ -429,20 +430,20 @@ def is_zipfile(path: Path) -> bool:
         return False
 
 
-def get_mandatory_argcount(f: Callable[..., Any]) -> int:
+def mandatory_argcount(f: Callable[..., Any]) -> int:
     r"""Get the number of mandatory arguments of a function."""
     sig = inspect.signature(f)
     return sum(is_mandatory_arg(p) for p in sig.parameters.values())
 
 
-def mandatory_kwargs(f: Callable[..., Any]) -> list[str]:
+def mandatory_kwargs(f: Callable[..., Any]) -> set[str]:
     r"""Get the mandatory keyword arguments of a function."""
     sig = inspect.signature(f)
-    return [
+    return {
         name
         for name, p in sig.parameters.items()
         if is_mandatory_arg(p) and is_keyword_arg(p)
-    ]
+    }
 
 
 def get_function_args(
