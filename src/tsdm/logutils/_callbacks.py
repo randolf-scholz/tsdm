@@ -100,7 +100,7 @@ def compute_metrics(
             if isinstance(metric, type) and callable(metric):
                 results[metric.__name__] = metric()(targets, predics)
             elif callable(metric):
-                results[metric.__name__] = metric(targets, predics)
+                results[metric.__class__.__name__] = metric(targets, predics)
             else:
                 raise ValueError(f"{type(metric)=} not understood!")
         return results
