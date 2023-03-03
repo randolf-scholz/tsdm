@@ -81,5 +81,5 @@ LOGFUNCS: dict[str, LogFunction] = {
 LOGGERS: dict[str, type[Logger]] = {
     "BaseLogger": BaseLogger,
     "DefaultLogger": DefaultLogger,
-    "StandardLogger": StandardLogger,
+    # "StandardLogger": StandardLogger,
 }

@@ -16,12 +16,13 @@ __all__ = [
     "NTuple",
 ]
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import Field
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
 from typing_extensions import Self
 
+from tsdm.types.variables import Any_co as T_co
 from tsdm.types.variables import Key_contra, KeyVar, Value_co
 
 ScalarType_co = TypeVar("ScalarType_co", covariant=True)
@@ -33,18 +34,20 @@ A = TypeVar("A", bound="Array")
 class Dataclass(Protocol):
     r"""Protocol for anonymous dataclasses."""
 
-    __dataclass_fields__: dict[str, Field]
+    @property
+    def __dataclass_fields__(self) -> Mapping[str, Field]:
+        r"""Return the fields of the dataclass."""
 
 
 @runtime_checkable
-class NTuple(Protocol):
+class NTuple(Protocol[T_co]):
     r"""Protocol for anonymous namedtuple."""
 
     @property
     def _fields(self) -> tuple[str, ...]:
         return ()
 
-    def _asdict(self) -> dict[str, object]:
+    def _asdict(self) -> Mapping[str, T_co]:
         ...
 
     def __len__(self) -> int:

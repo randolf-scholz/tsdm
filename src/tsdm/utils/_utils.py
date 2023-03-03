@@ -52,6 +52,7 @@ from tqdm.auto import tqdm
 
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
+from tsdm.types.protocols import Dataclass
 from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
@@ -63,6 +64,10 @@ POSITIONAL_OR_KEYWORD = inspect.Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD = inspect.Parameter.VAR_KEYWORD
 VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
 Kind = inspect._ParameterKind  # pylint: disable=protected-access
+
+
+def as_args(obj: Dataclass) -> None:
+    pass
 
 
 def variants(s: str | list[str]) -> list[str]:

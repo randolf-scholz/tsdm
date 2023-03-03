@@ -22,7 +22,7 @@ __ALL__ = dir() + __all__
 import inspect
 import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
-from dataclasses import Field, is_dataclass
+from dataclasses import is_dataclass
 from functools import partial
 from typing import Any, Final, Optional, overload
 
@@ -496,7 +496,7 @@ def repr_dataclass(
     """
     assert is_dataclass(obj), f"Object {obj} is not a dataclass."
     assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."
-    fields: dict[str, Field] = obj.__dataclass_fields__
+    fields = obj.__dataclass_fields__
 
     self = obj if wrapped is None else wrapped
     cls = type(self)

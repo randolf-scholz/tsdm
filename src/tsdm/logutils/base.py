@@ -162,7 +162,6 @@ class BaseLogger:
         return repr_mapping(self.callbacks, wrapped=self)
 
 
-
 class DefaultLogger(BaseLogger):
     r"""Logger for training and validation."""
 
@@ -211,7 +210,11 @@ class DefaultLogger(BaseLogger):
         # if self.metrics is not None:
         #     self.add_callback(log_all_metrics)
         if checkpointable_objects is not None:
-            self.add_callback(CheckpointCallback(**checkpointable_objects))
+            self.add_callback(
+                CheckpointCallback(
+                    **checkpointable_objects, frequency=checkpoint_frequency
+                )
+            )
         #
         # # add results callbacks
         # self.add_callback(log_table, on="results")
