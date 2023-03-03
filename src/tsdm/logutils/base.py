@@ -150,6 +150,14 @@ class BaseLogger:
     state_dict: dict[str, Any] = {}
     """State dictionary of the logger."""
 
+    # def add_callback(self, key: str, callback: Callback | type[Callback], /, *args: Any, **kwargs: Any) -> None:
+    #     """Add a callback to the logger."""
+    #     if isinstance(callback, Callback):
+    #         assert args == () and kwargs == {}
+    #     else:
+    #         callback = Callback(*args, **kwargs)
+    #     self.callbacks[key].append(callback)
+
     def run_callbacks(self, i: int, /, key: str, **kwargs: Any) -> None:
         """Call the logger."""
         # update the state dict
@@ -186,6 +194,7 @@ class DefaultLogger(BaseLogger):
     def __init__(
         self,
         log_dir: PathLike,
+        metrics: Optional[Mapping[str, Loss]] = None,
         checkpointable_objects: Optional[Mapping[str, Any]] = None,
         checkpoint_frequency: int = 1,
     ) -> None:

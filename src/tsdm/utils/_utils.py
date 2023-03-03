@@ -6,6 +6,7 @@ TODO:  Module description
 __all__ = [
     # Classes
     # Functions
+    "dataclass_args_kwargs",
     "deep_dict_update",
     "deep_kval_update",
     "flatten_dict",
@@ -35,6 +36,7 @@ import os
 import shutil
 import warnings
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
+from dataclasses import is_dataclass
 from datetime import datetime
 from importlib import import_module
 from logging import getLogger
@@ -66,8 +68,31 @@ VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
 Kind = inspect._ParameterKind  # pylint: disable=protected-access
 
 
-def as_args(obj: Dataclass) -> None:
-    pass
+def dataclass_args_kwargs(
+    obj: Dataclass, *, ignore_parent_fields: bool = False
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    r"""Return positional and keyword arguments of a dataclass."""
+    if not isinstance(obj, Dataclass):
+        raise TypeError(f"Expected dataclass, got {type(obj)}")
+
+    forbidden_keys: set[str] = set()
+    if ignore_parent_fields:
+        for parent_class in obj.__class__.__mro__[1:]:
+            if is_dataclass(parent_class):
+                forbidden_keys.update(parent_class.__dataclass_fields__)
+
+    args = tuple(
+        getattr(obj, key)
+        for key, val in obj.__dataclass_fields__.items()
+        if not val.kw_only and key not in forbidden_keys
+    )
+    kwargs = {
+        key: getattr(obj, key)
+        for key, val in obj.__dataclass_fields__.items()
+        if val.kw_only and key not in forbidden_keys
+    }
+
+    return args, kwargs
 
 
 def variants(s: str | list[str]) -> list[str]:
