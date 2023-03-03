@@ -32,6 +32,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
+from types import MethodType
 from typing import (
     Any,
     Callable,
@@ -70,6 +71,7 @@ from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import PathLike
+from tsdm.utils import dataclass_args_kwargs
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 # from tsdm.types.variables import ParameterVar as P
@@ -105,21 +107,22 @@ def compute_metrics(
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics."""
     results: dict[str, Tensor] = {}
+
     if isinstance(metrics, list):
         for metric in metrics:
-            if issubclass(metric, nn.Module):
+            if isinstance(metric, type) and callable(metric):
                 results[metric.__name__] = metric()(targets, predics)
-            elif callable(metric) | isinstance(metric, nn.Module):
+            elif callable(metric):
                 results[metric.__name__] = metric(targets, predics)
             else:
-                raise ValueError(metric)
+                raise ValueError(f"{type(metric)=} not understood!")
         return results
 
     for name, metric in metrics.items():
-        if callable(metric) | isinstance(metric, nn.Module):
-            results[name] = metric(targets, predics)
-        elif isinstance(metric, type) and issubclass(metric, nn.Module):
+        if isinstance(metric, type) and callable(metric):
             results[name] = metric()(targets, predics)
+        elif callable(metric):
+            results[name] = metric(targets, predics)
         else:
             raise ValueError(f"{type(metric)=} not understood!")
     return results
@@ -498,14 +501,28 @@ class BaseCallback(metaclass=CallbackMetaclass):
     frequency: int = 1
     """The frequency at which the callback is called."""
 
+    def __post_init__(self):
+        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
+
+    # def __init_subclass__(cls, **kwargs):
+    #     if hasattr(cls, "__post_init__"):
+    #         raise NotImplementedError(
+    #             "TODO: Implement wrapping existing __post_init__!"
+    #         )
+    #
+    #     def __post_init__(self) -> None:
+    #         self.args, self.kwargs = dataclass_args_kwargs(self)
+    #
+    #     cls.__post_init__ = __post_init__
+
     @abstractmethod
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **state_dict: Any) -> None:
         """Log something at the end of a batch/epoch."""
 
     def __call__(self, i: int, /, **state_dict: Any) -> None:
         """Log something at the end of a batch/epoch."""
         if i % self.frequency == 0:
-            self.__callback(i, **state_dict)
+            self.callback(i, **state_dict)
         else:
             self.LOGGER.debug("Skipping callback.")
 
@@ -519,7 +536,7 @@ class CheckpointCallback(BaseCallback):
 
     _: KW_ONLY
 
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **state_dict: Any) -> None:
         for key in state_dict:
             if key in self.objects:
                 self.objects[key] = state_dict.pop(key)
@@ -550,8 +567,8 @@ class KernelCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
-        log_kernel(i, **asdict(self))
+    def callback(self, i: int, /, **state_dict: Any) -> None:
+        log_kernel(i, *self.args, **self.kwargs)
 
 
 @dataclass
@@ -567,8 +584,8 @@ class LRSchedulerCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
-        log_lr_scheduler(i, **asdict(self))
+    def callback(self, i: int, /, **state_dict: Any) -> None:
+        log_lr_scheduler(i, *self.args, **self.kwargs)
 
 
 @dataclass
@@ -584,12 +601,12 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **state_dict: Any) -> None:
         if "targets" not in state_dict and "predics" not in state_dict:
             raise RuntimeWarning("No targets or predictions found in state_dict!")
         targets = state_dict.pop("targets")
         predics = state_dict.pop("predics")
-        log_metrics(i, **asdict(self), targets=targets, predics=predics)
+        log_metrics(i, *self.args, targets=targets, predics=predics, **self.kwargs)
 
 
 @dataclass
@@ -607,10 +624,10 @@ class ModelCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **state_dict: Any) -> None:
         if "model" in state_dict:
             self.model = state_dict.pop("model")
-        log_model(i, **asdict(self))
+        log_model(i, *self.args, **self.kwargs)
 
 
 @dataclass
@@ -629,10 +646,10 @@ class OptimizerCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **state_dict: Any) -> None:
         if "optimizer" in state_dict:
             self.optimizer = state_dict.pop("optimizer")
-        log_optimizer(i, **asdict(self))
+        log_optimizer(i, *self.args, **self.kwargs)
 
 
 @dataclass
@@ -649,11 +666,11 @@ class ScalarsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **state_dict: Any) -> None:
         for key in state_dict:
             if key in self.scalars:
                 self.scalars[key] = state_dict.pop(key)
-        log_scalars(i, **asdict(self))
+        log_scalars(i, *self.args, **self.kwargs)
 
 
 @dataclass
@@ -671,8 +688,8 @@ class TableCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **state_dict: Any) -> None:
         if hasattr(self.table, "name") and isinstance(self.table.name, str):
             if self.table.name in state_dict:
                 self.table = state_dict.pop(self.table.name)
-        log_table(i, **asdict(self))
+        log_table(i, *self.args, **self.kwargs)

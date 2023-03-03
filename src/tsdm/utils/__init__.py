@@ -15,6 +15,7 @@ __all__ = [
     # decorators
     "abstractattribute",
     # Functions
+    "dataclass_args_kwargs",
     "deep_dict_update",
     "deep_kval_update",
     "flatten_dict",
@@ -41,6 +42,7 @@ __all__ = [
 from tsdm.utils import data, decorators, remote, system
 from tsdm.utils._subclassing import PatchedABCMeta, abstractattribute
 from tsdm.utils._utils import (
+    dataclass_args_kwargs,
     deep_dict_update,
     deep_kval_update,
     flatten_dict,
