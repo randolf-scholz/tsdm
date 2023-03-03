@@ -32,15 +32,12 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, asdict, dataclass
 from pathlib import Path
-
 from typing import (
     Any,
     Callable,
     ClassVar,
-    Concatenate,
     Literal,
     Optional,
-    ParamSpec,
     Protocol,
     TypeAlias,
     runtime_checkable,
@@ -72,30 +69,35 @@ from tsdm.linalg import (
 from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
-# from tsdm.types.variables import ParameterVar as P
+from tsdm.types.aliases import PathLike
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
-class LogFunction(Protocol):
-    """Protocol for logging functions."""
+# from tsdm.types.variables import ParameterVar as P
+# class LogFunction(Protocol):
+#     """Protocol for logging functions."""
+#
+#     def __call__(
+#         self,
+#         i: int,
+#         /,
+#         _: Any,
+#         writer: SummaryWriter,
+#         *,
+#         name: str = "",
+#         prefix: str = "",
+#         postfix: str = "",
+#     ) -> None:
+#         """Log to tensorboard."""
 
-    def __call__(
-        self,
-        i: int,
-        /,
-        _: Any,
-        *,
-        writer: SummaryWriter,
-        name: str = "",
-        prefix: str = "",
-        postfix: str = "",
-    ) -> None:
-        """Log to tensorboard."""
 
 # P = ParamSpec("P")
 # # https://youtrack.jetbrains.com/issue/PY-59329/
 # _LogFunction: TypeAlias = Callable[Concatenate[int, P], None]
 # LogFunction: TypeAlias = _LogFunction[...]  # type: ignore[misc]
-# LogFunction: TypeAlias = Callable[..., None]
+
+# TODO: write a Protocol for this
+LogFunction: TypeAlias = Callable[..., None]
+
 
 @torch.no_grad()
 def compute_metrics(
@@ -123,8 +125,11 @@ def compute_metrics(
     return results
 
 
-def make_checkpoint(i: int, /, path: Path, **objects: Any) -> None:
+def make_checkpoint(
+    i: int, /, objects: Mapping[str, Any], writer: PathLike | SummaryWriter
+) -> None:
     """Save checkpoints of given paths."""
+    path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
     path = path / f"{i}"
     path.mkdir(parents=True, exist_ok=True)
 
@@ -278,8 +283,8 @@ def log_kernel(
 
 def log_lr_scheduler(
     i: int,
-    lr_scheduler: LRScheduler,
     /,
+    lr_scheduler: LRScheduler,
     writer: SummaryWriter,
     *,
     name: str = "lr_scheduler",
@@ -510,7 +515,7 @@ class CheckpointCallback(BaseCallback):
     """Callback to save checkpoints."""
 
     objects: dict[str, object]
-    path: Path
+    writer: SummaryWriter | Path
 
     _: KW_ONLY
 
@@ -518,7 +523,7 @@ class CheckpointCallback(BaseCallback):
         for key in state_dict:
             if key in self.objects:
                 self.objects[key] = state_dict.pop(key)
-        make_checkpoint(i, self.path, **self.objects)
+        make_checkpoint(i, self.objects, self.path)
 
 
 @dataclass
