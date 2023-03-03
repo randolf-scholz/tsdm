@@ -80,7 +80,6 @@ def compute_grid(
     # cast strings to timestamp/timedelta
     tmin = cast(DTVar, Timestamp(tmin) if isinstance(tmin, str) else tmin)
     tmax = cast(DTVar, Timestamp(tmax) if isinstance(tmax, str) else tmax)
-
     td = Timedelta(timedelta) if isinstance(timedelta, str) else timedelta
 
     offset = cast(
@@ -92,13 +91,13 @@ def compute_grid(
         else offset,
     )
 
-    # offset = cast(DTVar, Timestamp(offset) if isinstance(offset, str) else offset)
+    # generates zero variable of correct type
+    zero_dt = tmin - tmin
 
-    # offset = tmin if offset is None else offset
-    zero_dt = tmin - tmin  # generates zero variable of correct type
-
-    assert td > zero_dt, "Assumption ∆t>0 violated!"
-    assert tmin <= offset <= tmax, "Assumption: tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!"
+    if td == zero_dt:
+        raise ValueError("Δt=0 is not allowed!")
+    if tmin > offset or offset > tmax:
+        raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
 
     kmax = math.floor((tmax - offset) / td)
     kmin = math.ceil((tmin - offset) / td)
