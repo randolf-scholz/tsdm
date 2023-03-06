@@ -96,7 +96,9 @@ from tsdm.logutils import (
 from tsdm.logutils._callbacks import (
     Callback,
     CheckpointCallback,
+    EvaluationCallback,
     KernelCallback,
+    LRSchedulerCallback,
     MetricsCallback,
     ModelCallback,
     OptimizerCallback,
@@ -104,7 +106,7 @@ from tsdm.logutils._callbacks import (
     TableCallback,
 )
 from tsdm.metrics import Loss
-from tsdm.types.aliases import PathLike
+from tsdm.types.aliases import JSON, PathLike
 from tsdm.utils.strings import repr_mapping
 
 
@@ -130,18 +132,14 @@ class Logger(Protocol):
 class BaseLogger:
     """Base class for loggers."""
 
-    callbacks: dict[str, list[Callback]] = defaultdict(list)
+    callbacks: dict[str, list[Callback[...]]] = defaultdict(list)
     """Callbacks to be called at the end of a batch/epoch."""
     state_dict: dict[str, Any] = {}
     """State dictionary of the logger."""
 
-    # def add_callback(self, key: str, callback: Callback | type[Callback], /, *args: Any, **kwargs: Any) -> None:
-    #     """Add a callback to the logger."""
-    #     if isinstance(callback, Callback):
-    #         assert args == () and kwargs == {}
-    #     else:
-    #         callback = Callback(*args, **kwargs)
-    #     self.callbacks[key].append(callback)
+    def add_callback(self, key: str, callback: Callback) -> None:
+        """Add a callback to the logger."""
+        self.callbacks[key].append(callback)
 
     def required_kwargs(self, key: str, /) -> list[set[str]]:
         return [callback.required_kwargs for callback in self.callbacks[key]]
@@ -167,62 +165,112 @@ class BaseLogger:
 
 
 class DefaultLogger(BaseLogger):
-    r"""Logger for training and validation."""
-
+    r"""Logger that adds pre-made batch/epoch logging."""
     log_dir: Path
     """Path to the logging directory."""
     results_dir: Path
     """Path to the results directory."""
     checkpoint_dir: Path
     """Path to the checkpoint directory."""
+    checkpoint_frequency: int
+    """Frequency of checkpoints."""
 
-    writer: SummaryWriter
-    """Tensorboard writer."""
-    callbacks: dict[str, list[Callback]] = defaultdict(list)
-    """Callbacks to be called at the end of a batch/epoch."""
-    frequency: dict[str, list[int]] = defaultdict(list)
-    """How often to call the callbacks."""
-
-    model: TorchModule
-    optimizer: TorchOptimizer
-    lr_scheduler: TorchLRScheduler
+    config: Optional[JSON] = None
+    """Configuration of the experiment."""
+    dataloaders: Optional[Mapping[str, DataLoader]] = None
+    """Dataloaders used for evaluation."""
+    kernel: Optional[Tensor] = None
+    """Kernel used for the model."""
+    hparam_dict: Optional[dict[str, Any]] = None
+    """Hyperparameters used for the experiment."""
+    lr_scheduler: Optional[TorchLRScheduler] = None
+    """Learning rate scheduler."""
+    metrics: Optional[Mapping[str, Loss]] = None
+    """Metrics used for evaluation."""
+    model: Optional[TorchModule] = None
+    """Model used for training."""
+    optimizer: Optional[TorchOptimizer] = None
+    """Optimizer used for training."""
+    history: Optional[DataFrame] = None
+    """History of the training process."""
 
     def __init__(
         self,
+        *,
         log_dir: PathLike,
-        metrics: Optional[Mapping[str, Loss]] = None,
-        checkpointable_objects: Optional[Mapping[str, Any]] = None,
         checkpoint_frequency: int = 1,
+        checkpointable_objects: Optional[Mapping[str, Any]] = None,
+        config: Optional[JSON] = None,
+        dataloaders: Optional[Mapping[str, DataLoader]] = None,
+        kernel: Optional[Tensor] = None,
+        lr_scheduler: Optional[TorchLRScheduler] = None,
+        metrics: Optional[Mapping[str, Loss]] = None,
+        model: Optional[TorchModule] = None,
+        optimizer: Optional[TorchOptimizer] = None,
     ) -> None:
         self.writer = SummaryWriter(log_dir=log_dir)
         self.log_dir = Path(self.writer.log_dir)
+        self.config = config
+        self.dataloaders = dataloaders
+        self.kernel = kernel
+        self.lr_scheduler = lr_scheduler
+        self.metrics = metrics
+        self.model = model
+        self.optimizer = optimizer
 
-        # # add default batch callbacks
-        # if self.optimizer is not None:
-        #     self.add_callback(log_optimizer_state)
-        # if self.metrics is not None:
-        #     self.add_callback(log_metrics)
-        #
-        # # add default epoch callbacks
-        # if self.model is not None:
-        #     self.add_callback(log_model_state)
-        # if self.optimizer is not None:
-        #     self.add_callback(log_optimizer_state)
-        # if self.lr_scheduler is not None:
-        #     self.add_callback(log_lr_scheduler_state)
-        # # if self.model is not None and hasattr(self.model, "kernel"):
-        # #     self.add_callback(log_kernel_information)
-        # if self.metrics is not None:
-        #     self.add_callback(log_all_metrics)
-        if checkpointable_objects is not None:
-            self.add_callback(
-                CheckpointCallback(
-                    **checkpointable_objects, frequency=checkpoint_frequency
-                )
+        # add default batch callbacks
+        if self.optimizer is not None:
+            self.add_callback("batch", OptimizerCallback(self.optimizer, self.writer))
+        if self.metrics is not None:
+            self.add_callback("batch", MetricsCallback(self.metrics, self.writer))
+
+        # add default epoch callbacks
+        if (
+            self.metrics is not None
+            and self.model is not None
+            and self.dataloaders is not None
+        ):
+            self.history = DataFrame(
+                columns=MultiIndex.from_product(dataloaders.keys(), metrics.keys())
             )
-        #
-        # # add results callbacks
-        # self.add_callback(log_table, on="results")
+            self.add_callback(
+                "epoch",
+                EvaluationCallback(
+                    model=self.model,
+                    writer=self.writer,
+                    metrics=self.metrics,
+                    dataloaders=self.dataloaders,
+                    history=self.history,
+                ),
+            )
+        if self.model is not None:
+            self.add_callback("epoch", ModelCallback(self.model, self.writer))
+        if self.optimizer is not None:
+            self.add_callback("epoch", OptimizerCallback(self.optimizer, self.writer))
+        if self.lr_scheduler is not None:
+            self.add_callback(
+                "epoch", LRSchedulerCallback(self.lr_scheduler, self.writer)
+            )
+        if self.kernel is not None:
+            self.add_callback("epoch", KernelCallback(self.kernel, self.writer))
+        if self.checkpointable_objects is not None:
+            self.add_callback(
+                "epoch",
+                CheckpointCallback(
+                    {
+                        "config": self.config,
+                        "model": self.model,
+                        "optimizer": self.optimizer,
+                        "lr_scheduler": self.lr_scheduler,
+                    }
+                    | checkpointable_objects,
+                    writer=self.writer,
+                    frequency=checkpoint_frequency,
+                ),
+            )
+
+        # add default end callbacks
+        self.add_callback("result", HParamCallback(self.writer))
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> ResultTuple:
@@ -246,35 +294,6 @@ class DefaultLogger(BaseLogger):
             ).squeeze(),
         )
 
-    def log_all_metrics(self, i: int) -> None:
-        r"""Log all metrics for all dataloaders."""
-        if i not in self.history.index:
-            empty_row = DataFrame(
-                index=[i], columns=self.history.columns, dtype="Float32"
-            )
-            self.history = pd.concat([self.history, empty_row], sort=True)
-
-        if not self._warned_tuple:
-            self._warned_tuple = True
-            warnings.warn(
-                "We recommend using a NamedTuple or a dictionary as the return type."
-                " Ensure that 'targets'/'predics' is the first/second output.",
-                UserWarning,
-                stacklevel=2,
-            )
-
-        # Schema: identifier:category/key, e.g. `metrics:MSE/train`
-        for key, dataloader in self.dataloaders.items():
-            result = self.get_all_predictions(dataloader)
-            scalars = compute_metrics(
-                self.metrics, targets=result.targets, predics=result.predics
-            )
-
-            for metric, value in scalars.items():
-                self.history.loc[i, (key, metric)] = value.cpu().item()
-
-            log_scalars(i, writer=self.writer, scalars=scalars, key=key)
-
     def log_results(self, i: int, /) -> None:
         r"""Store history dataframe to file (default format: parquet)."""
         assert self.results_dir is not None
@@ -286,7 +305,7 @@ class DefaultLogger(BaseLogger):
         # Find the best epoch on the smoothed validation curve
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
 
-        scores = {
+        scores: dict[str, dict[str, float]] = {
             split: {
                 metric: float(self.history.loc[idx, (split, metric)])
                 for metric, idx in best_epochs["valid"].items()

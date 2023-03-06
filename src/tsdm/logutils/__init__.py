@@ -57,7 +57,7 @@ from tsdm.logutils._callbacks import (
 )
 from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger  # , StandardLogger
 
-CALLBACKS: dict[str, type[Callback]] = {
+CALLBACKS: dict[str, type[Callback[...]]] = {
     "CheckpointCallback": CheckpointCallback,
     "KernelCallback": KernelCallback,
     "LRSchedulerCallback": LRSchedulerCallback,
