@@ -17,6 +17,7 @@ __all__ = [
     # Callbacks
     "BaseCallback",
     "CheckpointCallback",
+    "EvaluationCallback",
     "KernelCallback",
     "LRSchedulerCallback",
     "MetricsCallback",
@@ -31,8 +32,20 @@ import pickle
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
+from functools import wraps
+from itertools import chain
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Literal,
+    NamedTuple,
+    Optional,
+    Protocol,
+    runtime_checkable,
+)
 
 import torch
 import yaml
@@ -41,6 +54,7 @@ from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame
 from torch import Tensor
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from tsdm.linalg import (
@@ -60,9 +74,17 @@ from tsdm.linalg import (
 from tsdm.metrics import LOSSES, Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
-from tsdm.types.aliases import PathLike
+from tsdm.types.aliases import JSON, PathLike
+from tsdm.types.variables import ParameterVar as P
 from tsdm.utils import dataclass_args_kwargs, mandatory_kwargs
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
+
+
+class TargetsAndPredics(NamedTuple):
+    """Targets and predictions."""
+
+    targets: Tensor
+    predics: Tensor
 
 
 class LogFunction(Protocol):
@@ -127,6 +149,8 @@ def make_checkpoint(
 
     for name, obj in objects.items():
         match obj:
+            case None:
+                pass
             case torch.jit.ScriptModule():
                 torch.jit.save(obj, path / name)
             case torch.nn.Module():
@@ -449,8 +473,27 @@ def log_table(
             raise ValueError(f"Unknown {filetype=!r}!")
 
 
+def save_config(
+    config: JSON,
+    writer: SummaryWriter | Path,
+    /,
+    *,
+    name: str = "config",
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    r"""Save the config to the log directory."""
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
+
+    path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
+    path = path / f"{identifier+'-'*bool(identifier)}config.json"
+
+    with open(path, "w") as file:
+        yaml.safe_dump(config, file, indent=4)
+
+
 @runtime_checkable
-class Callback(Protocol):
+class Callback(Protocol[P]):
     """Protocol for callbacks.
 
     Callbacks should be initialized with mutable objects that are being logged.
@@ -465,7 +508,7 @@ class Callback(Protocol):
     def frequency(self) -> int:
         """The frequency at which the callback is called."""
 
-    def __call__(self, i: int, /, **state_dict: Any) -> None:
+    def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
         """Log something at time index i."""
 
 
@@ -478,7 +521,7 @@ class CallbackMetaclass(ABCMeta):
 
 
 @dataclass
-class BaseCallback(metaclass=CallbackMetaclass):
+class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
     """Base class for callbacks."""
 
     LOGGER: ClassVar[logging.Logger]
@@ -495,20 +538,139 @@ class BaseCallback(metaclass=CallbackMetaclass):
         """Automatically set the required kwargs for the callback."""
         cls.required_kwargs = mandatory_kwargs(cls.callback)
 
-    def __post_init__(self) -> None:
-        """Automatically set the fixed args/kwargs for the callback."""
-        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
-
     @abstractmethod
-    def callback(self, i: int, /, **kwargs: Any) -> None:
+    def callback(self, i: int, /, **kwargs: P.kwargs) -> None:
         """Log something at the end of a batch/epoch."""
 
-    def __call__(self, i: int, /, **kwargs: Any) -> None:
+    @wraps(callback)
+    def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
         """Log something at the end of a batch/epoch."""
         if i % self.frequency == 0:
             self.callback(i, **kwargs)
         else:
             self.LOGGER.debug("Skipping callback.")
+
+
+@dataclass
+class EvaluationCallback(BaseCallback):
+    """Callback to log evaluation metrics to tensorboard."""
+
+    _: KW_ONLY
+
+    dataloaders: Mapping[str, DataLoader]
+    history: Optional[DataFrame] = None
+    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]]
+    model: Model
+    predict: Callable[[Mapping[str, Tensor]], tuple[Tensor, Tensor]]
+    writer: SummaryWriter
+
+    name: str = "metrics"
+    prefix: str = ""
+    postfix: str = ""
+
+    def callback(self, i: int, /, **kwargs: Any) -> None:
+        for key in ...:
+            log_scalars(
+                i,
+                scalars=self.history.loc[i, key].to_dict(),
+                writer=self.writer,
+                key=key,
+                name=self.name,
+                prefix=self.prefix,
+                postfix=self.postfix,
+            )
+            log_scalars(
+                i,
+                scalars=self.best_val.loc[i, key].to_dict(),
+                writer=self.writer,
+                key=key,
+                name=self.name,
+                prefix=self.prefix,
+                postfix=self.postfix,
+            )
+
+        # store the results as dataframe
+        assert self.results_dir is not None
+        path = self.results_dir / f"history-{i}.parquet"
+        self.history.to_parquet(path)
+
+    def compute_results(self, i: int) -> None:
+        """Return the results at the minimal validation loss."""
+        for key, dataloader in self.dataloaders.items():
+            result = self.get_all_predictions(dataloader)
+            scalars = compute_metrics(
+                self.metrics, targets=result.targets, predics=result.predics
+            )
+            for metric, value in scalars.items():
+                self.history.loc[i, (key, metric)] = value.cpu().item()
+
+        # get the best epoch
+        mask = self.history.index <= i
+        best_epoch = (
+            self.history.loc[mask, "validation"].rolling(5, center=True).mean().idxmin()
+        )
+        self.best_val.loc[i] = self.history.iloc[best_epoch]
+
+    @torch.no_grad()
+    def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredics:
+        targets_list: list[Tensor] = []
+        predics_list: list[Tensor] = []
+
+        for batch in dataloader:
+            target, predic = self.perdict(batch)
+            targets_list.append(target)
+            predics_list.append(predic)
+
+        targets = (
+            torch.nn.utils.rnn.pad_sequence(
+                chain.from_iterable(targets_list),  # type: ignore[arg-type]
+                batch_first=True,
+                padding_value=torch.nan,
+            ).squeeze(),
+        )
+        predics = (
+            torch.nn.utils.rnn.pad_sequence(
+                chain.from_iterable(predics_list),  # type: ignore[arg-type]
+                batch_first=True,
+                padding_value=torch.nan,
+            ).squeeze(),
+        )
+
+        return TargetsAndPredics(targets=targets, predics=predics)
+
+    def save_scores(self, i: int, /, **kwargs: Any) -> None:
+        """Save the scores to disk."""
+
+        assert self.results_dir is not None
+        path = self.results_dir / f"scores-{i}.parquet"
+        self.scores.to_parquet(path)
+
+
+@dataclass
+class HParamCallback(BaseCallback):
+    """Callback to log hyperparameters to tensorboard."""
+
+    hparam_dict: dict[str, Any]
+    writer: SummaryWriter
+
+    _: KW_ONLY
+
+    def callback(self, i: int | str, /, **objects: Any) -> None:
+        """Log the test-error selected by validation-error."""
+
+        # add postfix
+        test_scores = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
+
+        self.writer.add_hparams(
+            hparam_dict=self.hparam_dict, metric_dict=test_scores, run_name="hparam"
+        )
+        print(f"{test_scores=} achieved by {self.hparam_dict=}")
+
+        # # FIXME: https://github.com/pytorch/pytorch/issues/32651
+        # # os.path.dirname(os.path.realpath(__file__)) + os.sep + log_path
+        # for files in (self.log_dir / "hparam").iterdir():
+        #     shutil.move(files, self.log_dir)
+        # (self.log_dir / "hparam").rmdir()
 
 
 @dataclass
@@ -520,10 +682,9 @@ class CheckpointCallback(BaseCallback):
 
     _: KW_ONLY
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
-        for key in state_dict:
-            if key in self.objects:
-                self.objects[key] = state_dict[key]
+    def callback(self, i: int, /, **objects: Any) -> None:
+        for key, val in objects.items():
+            self.objects[key] = val
         make_checkpoint(i, self.objects, self.writer)
 
 
@@ -585,11 +746,8 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, targets: Tensor, predics: Tensor) -> None:
-        # if "targets" not in state_dict and "predics" not in state_dict:
-        #     raise RuntimeWarning("No targets or predictions found in state_dict!")
-        # targets = state_dict["targets"]
-        # predics = state_dict["predics"]
+    def callback(self, i: int, /, *, targets: Tensor, predics: Tensor) -> None:  # type: ignore[override]
+        # FIXME: https://peps.python.org/pep-0698/
         log_metrics(i, *self.args, targets=targets, predics=predics, **self.kwargs)
 
 
