@@ -6,6 +6,13 @@ For simplicity, the evaluation protocol is, in this iteration, restricted to a t
 and a test_loader object. We decided to use a dataloader instead of, say, a key to cater to the question of
 forecasting horizons.
 
+
+Forecasting Model
+-----------------
+
+
+
+
 Decomposable METRICS
 --------------------
 
@@ -154,10 +161,14 @@ class BaseTaskMetaClass(ABCMeta):
 class Inputs(NamedTuple):
     r"""Tuple of inputs."""
 
-    t_target: Series
+    q: Series
+    """Query time points."""
     x: DataFrame
+    """Observations"""
     u: Optional[DataFrame] = None
+    """Covariates."""
     metadata: Optional[DataFrame] = None
+    """Metadata."""
 
     def __repr__(self) -> str:
         return repr_namedtuple(self)
@@ -167,7 +178,9 @@ class Targets(NamedTuple):
     r"""Tuple of inputs."""
 
     y: DataFrame
+    """Target values at the query times."""
     metadata: Optional[DataFrame] = None
+    """Target metadata."""
 
     def __repr__(self) -> str:
         return repr_namedtuple(self)
@@ -177,8 +190,11 @@ class Sample(NamedTuple):
     r"""A sample for forecasting task."""
 
     key: Hashable
+    """The key of the sample - e.g. tuple[outer_index, (obs_rane, forecasting_range)]."""
     inputs: Inputs
+    """The predictors the model is allowed to base its forecast on."""
     targets: Targets
+    """The targets the model is supposed to predict."""
 
     def __repr__(self) -> str:
         return repr_namedtuple(self)
@@ -194,9 +210,9 @@ class Sample(NamedTuple):
         if self.targets.y is not None:
             self.targets.y.dropna(how="all", inplace=True)
 
-        if self.inputs.t_target is not None:
-            diff = self.inputs.t_target.index.difference(self.targets.y.index)
-            self.inputs.t_target.drop(diff, inplace=True)
+        if self.inputs.q is not None:
+            diff = self.inputs.q.index.difference(self.targets.y.index)
+            self.inputs.q.drop(diff, inplace=True)
 
         return self
 
@@ -374,7 +390,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             md = md.drop(columns=self.metadata_targets)
 
         # assemble sample
-        inputs = Inputs(t_target=t_target, x=x, u=u, metadata=md)
+        inputs = Inputs(q=t_target, x=x, u=u, metadata=md)
         targets = Targets(y=y, metadata=md_targets)
         sample = Sample(key=key, inputs=inputs, targets=targets)
 
