@@ -159,7 +159,7 @@ class LazyDict(dict[K, T]):
 
     def __repr__(self) -> str:
         r"""Return the representation of the dictionary."""
-        return repr_mapping(self)  # , repr_fun=repr_short)
+        return repr_mapping(self)
 
     def __or__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         new = self.copy()
