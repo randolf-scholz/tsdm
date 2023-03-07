@@ -121,9 +121,6 @@ def torch_experiment(timer, mat1, mat2, results, repetitions=100) -> None:
                     torch.einsum(reduction, operator, operand)
             results.loc[(size, dtype, "torch"), reduction] = timer.duration
 
-# %%
-
-# %%
 
 # %% [markdown]
 # ## torch results
@@ -131,7 +128,7 @@ def torch_experiment(timer, mat1, mat2, results, repetitions=100) -> None:
 
 # %%
 for size in tqdm(SIZES):
-    mat1 = torch.randn((size, size, size, size), device=torch.device((DEVICE))
+    mat1 = torch.randn((size, size, size, size), device=torch.device(DEVICE))
     mat2 = torch.randn((size, size), device=torch.device(DEVICE))
 
     for dtype in tqdm(DTYPES, leave=False):
