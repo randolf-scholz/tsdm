@@ -15,7 +15,7 @@ __all__ = [
     "repr_object",
     "repr_sequence",
     "repr_sized",
-    "repr_short",
+    "repr_type",
 ]
 __ALL__ = dir() + __all__
 
@@ -24,7 +24,7 @@ import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from dataclasses import is_dataclass
 from functools import partial
-from typing import Any, Final, Optional, overload
+from typing import Any, Final, Optional, Protocol, cast, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
@@ -103,7 +103,29 @@ def dict2string(d: dict[str, Any]) -> str:
     return string
 
 
-def repr_object(obj: Any, /, **kwargs: Any) -> str:
+class ReprProtocol(Protocol):
+    """Protocol for recursive repr functions."""
+
+    def __call__(
+        self,
+        obj: Any,
+        /,
+        *,
+        align: bool = ALIGN,
+        identifier: Optional[str] = None,
+        indent: int = 0,
+        linebreaks: Optional[bool] = None,
+        maxitems: Optional[int] = None,
+        padding: int = PADDING,
+        recursive: bool | int = RECURSIVE,
+        repr_fun: Callable[..., str] = NotImplemented,
+        title: Optional[str] = None,
+        wrapped: Optional[object] = None,
+    ) -> str:
+        ...
+
+
+def repr_object(obj: Any, /, fallback: Callable[..., str] = repr, **kwargs: Any) -> str:
     r"""Return a string representation of an object.
 
     Special casing for a bunch of cases.
@@ -122,29 +144,7 @@ def repr_object(obj: Any, /, **kwargs: Any) -> str:
         return repr_namedtuple(obj, **kwargs)
     if isinstance(obj, Sequence):
         return repr_sequence(obj, **kwargs)
-    return repr(obj)
-
-
-def repr_short(obj: Any, /, **_: Any) -> str:
-    r"""Return a string representation of an object."""
-    if isinstance(obj, str):
-        return obj
-    if inspect.isclass(obj) or inspect.isbuiltin(obj):
-        return repr(obj)
-    for item in BUILTIN_CONSTANTS:
-        if obj is item:
-            return repr(obj)
-    if is_dataclass(obj):
-        return repr_dataclass(obj, recursive=False)
-    if isinstance(obj, NTuple):
-        return repr_namedtuple(obj, recursive=False)
-    if isinstance(obj, Array | DataFrame | Series):
-        return repr_array(obj)
-    if isinstance(obj, Mapping):  # type: ignore[unreachable]
-        return repr_mapping(obj, recursive=False)
-    if isinstance(obj, Sequence):
-        return repr_sequence(obj, recursive=False)
-    return repr(type(obj))
+    return fallback(obj)
 
 
 def repr_mapping(
@@ -158,7 +158,7 @@ def repr_mapping(
     maxitems: Optional[int] = None,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
-    repr_fun: Callable[..., str] = repr_object,
+    repr_fun: Callable[..., str] = NotImplemented,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -195,10 +195,16 @@ def repr_mapping(
         fully recursive:
 
             name<Mapping>(
-                key1: repr_object(value1)
-                key2: repr_object(value2)
-                key3: repr_object(value3)
+                key1: repr_func(value1)
+                key2: repr_func(value2)
+                key3: repr_func(value3)
     """
+    if not isinstance(obj, Mapping):
+        raise TypeError(f"Expected Mapping, got {type(obj)}.")
+
+    if repr_fun is NotImplemented:
+        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+
     # set linebreaks
     if linebreaks is None:
         linebreaks = bool(recursive)
@@ -274,7 +280,7 @@ def repr_mapping(
         indent=indent + max_key_length,
         padding=padding,
         recursive=r,
-        repr_fun=repr_fun,
+        # repr_fun=repr_fun,
     )
 
     items = [(str(key), to_string(value)) for key, value in obj.items()]
@@ -328,7 +334,7 @@ def repr_sequence(
     maxitems: Optional[int] = None,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
-    repr_fun: Callable[..., str] = repr_object,
+    repr_fun: Callable[..., str] = NotImplemented,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -357,6 +363,12 @@ def repr_sequence(
             ),
         )
     """
+    if not isinstance(obj, Sequence):
+        raise TypeError(f"Expected Sequence, got {type(obj)}.")
+
+    if repr_fun is NotImplemented:
+        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+
     # set linebreaks
     if linebreaks is None:
         linebreaks = bool(recursive)
@@ -428,14 +440,13 @@ def repr_sequence(
     # else:
     #     to_string = partial(repr_short, indent=indent + pad)
 
-    r = recursive if isinstance(recursive, bool) else recursive - 1 or False
     to_string = partial(
         repr_fun,
         align=align,
         indent=indent + padding,
         padding=padding,
-        recursive=r,
-        repr_fun=repr_fun,
+        recursive=recursive if isinstance(recursive, bool) else recursive - 1 or False,
+        # repr_fun=repr_fun,
         wrapped=wrapped,
     )
 
@@ -485,7 +496,7 @@ def repr_dataclass(
     maxitems: Optional[int] = None,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
-    repr_fun: Callable[..., str] = repr_object,
+    repr_fun: Callable[..., str] = NotImplemented,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -494,8 +505,12 @@ def repr_dataclass(
     - recursive=`False`:  ``Name<dataclass>(item1, item2, ...)``
     - recursive=`True`: ``Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)``
     """
-    assert is_dataclass(obj), f"Object {obj} is not a dataclass."
-    assert isinstance(obj, Dataclass), f"Object {obj} is not a dataclass."
+    if not is_dataclass(obj) or not isinstance(obj, Dataclass):
+        raise TypeError(f"Expected Sequence, got {type(obj)}.")
+
+    if repr_fun is NotImplemented:
+        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+
     fields = obj.__dataclass_fields__
 
     self = obj if wrapped is None else wrapped
@@ -552,7 +567,7 @@ def repr_namedtuple(
     maxitems: Optional[int] = None,
     padding: int = PADDING,
     recursive: bool | int = RECURSIVE,
-    repr_fun: Callable[..., str] = repr_object,
+    repr_fun: Callable[..., str] = NotImplemented,
     title: Optional[str] = None,
     wrapped: Optional[object] = None,
 ) -> str:
@@ -561,8 +576,11 @@ def repr_namedtuple(
     - recursive=True:  Name<tuple>(item1, item2, ...)
     - recursive=False: Name<tuple>(item1=repr(item1), item2=repr(item2), ...)
     """
-    assert isinstance(obj, tuple), f"Object {obj} is not a namedtuple."
-    assert isinstance(obj, NTuple), f"Object {obj} is not a namedtuple."
+    if not isinstance(obj, tuple) or not isinstance(obj, NTuple):
+        raise TypeError(f"Expected NamedTuple, got {type(obj)}.")
+
+    if repr_fun is NotImplemented:
+        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
 
     self = obj if wrapped is None else wrapped
     title = type(self).__name__ if title is None else title
@@ -595,6 +613,35 @@ def repr_namedtuple(
         title=title,
         wrapped=wrapped,
     )
+
+
+def repr_type(obj: Any, /, **_: Any) -> str:
+    r"""Return a string representation using an object's type."""
+    print("repr_type", type(obj), id(obj))
+
+    if isinstance(obj, str):
+        return obj
+    if inspect.isclass(obj) or inspect.isbuiltin(obj):
+        return repr(obj)
+    for item in BUILTIN_CONSTANTS:
+        if obj is item:
+            return repr(obj)
+    if is_dataclass(obj):
+        identifier = "<dataclass>"
+    elif isinstance(obj, NTuple):
+        identifier = "<tuple>"
+    elif isinstance(obj, Array | DataFrame | Series):
+        identifier = "<array>"
+    elif isinstance(obj, Mapping):  # type: ignore[unreachable]
+        identifier = "<mapping>"
+    elif isinstance(obj, Sequence):
+        identifier = "<sequence>"
+    else:
+        identifier = ""
+
+    is_type = isinstance(obj, type)
+    obj_repr = obj.__name__ if is_type else obj.__class__.__name__
+    return f"{obj_repr}{identifier}{'()'*(~is_type)}"
 
 
 def repr_array(

@@ -37,7 +37,7 @@ from tsdm.types.variables import Any2Var as S
 from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import KeyVar as K
 from tsdm.utils.decorators import wrap_method
-from tsdm.utils.strings import repr_object
+from tsdm.utils.strings import repr_object, repr_type
 
 
 @runtime_checkable
@@ -120,7 +120,7 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
-        return repr_object(self)
+        return repr_object(self, fallback=repr_type)
 
     @property
     def is_fitted(self) -> bool:

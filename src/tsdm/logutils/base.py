@@ -179,6 +179,8 @@ class DefaultLogger(BaseLogger):
     def __init__(
         self,
         log_dir: PathLike,
+        checkpoint_dir: PathLike,
+        results_dir: PathLike,
         *,
         checkpoint_frequency: int = 1,
         checkpointable_objects: Optional[Mapping[str, Any]] = None,
@@ -192,9 +194,11 @@ class DefaultLogger(BaseLogger):
         predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None,
     ) -> None:
         # convert to absolute path
-        log_dir = Path(log_dir).absolute()
-        self.writer = SummaryWriter(log_dir=Path(log_dir))
-        self.log_dir = Path(self.writer.log_dir)
+        self.log_dir = Path(log_dir).absolute()
+        self.checkpoint_dir = Path(checkpoint_dir).absolute()
+        self.results_dir = Path(results_dir).absolute()
+
+        self.writer = SummaryWriter(log_dir=self.log_dir)
         self.config = config
         self.dataloaders = dataloaders
         self.kernel = kernel
