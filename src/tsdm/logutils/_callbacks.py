@@ -29,9 +29,9 @@ __all__ = [
 
 import logging
 import pickle
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from collections.abc import Mapping, Sequence
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from functools import wraps
 from itertools import chain
 from pathlib import Path
@@ -51,7 +51,7 @@ import torch
 import yaml
 from matplotlib.pyplot import Figure
 from matplotlib.pyplot import close as close_figure
-from pandas import DataFrame
+from pandas import DataFrame, MultiIndex
 from torch import Tensor
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
@@ -139,12 +139,9 @@ def compute_metrics(
     return results
 
 
-def make_checkpoint(
-    i: int, /, objects: Mapping[str, Any], writer: PathLike | SummaryWriter
-) -> None:
+def make_checkpoint(i: int, /, objects: Mapping[str, Any], path: PathLike) -> None:
     """Save checkpoints of given paths."""
-    path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
-    path = path / f"{i}"
+    path = Path(path) / f"{i}"
     path.mkdir(parents=True, exist_ok=True)
 
     for name, obj in objects.items():
@@ -538,7 +535,7 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
         """Automatically set the required kwargs for the callback."""
         cls.required_kwargs = mandatory_kwargs(cls.callback)
 
-    @abstractmethod
+    # @abstractmethod
     def callback(self, i: int, /, **kwargs: P.kwargs) -> None:
         """Log something at the end of a batch/epoch."""
 
@@ -558,18 +555,31 @@ class EvaluationCallback(BaseCallback):
     _: KW_ONLY
 
     dataloaders: Mapping[str, DataLoader]
-    history: Optional[DataFrame] = None
     metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]]
     model: Model
-    predict: Callable[[Mapping[str, Tensor]], tuple[Tensor, Tensor]]
+    predict_fn: Callable[..., tuple[Tensor, Tensor]]
     writer: SummaryWriter
 
+    history: DataFrame = NotImplemented
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
 
+    best_epoch: DataFrame = field(init=False)
+
+    def __post_init__(self) -> None:
+        """Initialize the callback."""
+        if self.history is NotImplemented:
+            self.history = DataFrame(
+                columns=MultiIndex.from_product([self.dataloaders, self.metrics])
+            )
+        self.best_epoch = self.history.copy()
+
+        for i in self.history.index:
+            self.compute_results(i)
+
     def callback(self, i: int, /, **kwargs: Any) -> None:
-        for key in ...:
+        for key in self.dataloaders:
             log_scalars(
                 i,
                 scalars=self.history.loc[i, key].to_dict(),
@@ -581,17 +591,15 @@ class EvaluationCallback(BaseCallback):
             )
             log_scalars(
                 i,
-                scalars=self.best_val.loc[i, key].to_dict(),
+                scalars=self.best_epoch.loc[i, key].to_dict(),
                 writer=self.writer,
                 key=key,
-                name=self.name,
+                name=f"{self.name}:best",
                 prefix=self.prefix,
                 postfix=self.postfix,
             )
 
-        # store the results as dataframe
-        assert self.results_dir is not None
-        path = self.results_dir / f"history-{i}.parquet"
+        path = self.writer.log_dir / f"history-{i}.parquet"
         self.history.to_parquet(path)
 
     def compute_results(self, i: int) -> None:
@@ -604,12 +612,12 @@ class EvaluationCallback(BaseCallback):
             for metric, value in scalars.items():
                 self.history.loc[i, (key, metric)] = value.cpu().item()
 
-        # get the best epoch
+    def compute_best_epoch(self, i: int) -> None:
+        """Compute the best epoch for the given index."""
+        # unoptimized...
         mask = self.history.index <= i
-        best_epoch = (
-            self.history.loc[mask, "validation"].rolling(5, center=True).mean().idxmin()
-        )
-        self.best_val.loc[i] = self.history.iloc[best_epoch]
+        best_epoch = self.history.loc[mask, "validation"].rolling(5).mean().idxmin()
+        self.best_epoch.loc[i] = self.history.iloc[best_epoch]
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredics:
@@ -617,75 +625,99 @@ class EvaluationCallback(BaseCallback):
         predics_list: list[Tensor] = []
 
         for batch in dataloader:
-            target, predic = self.perdict(batch)
+            target, predic = self.predict_fn(batch)
             targets_list.append(target)
             predics_list.append(predic)
 
-        targets = (
-            torch.nn.utils.rnn.pad_sequence(
-                chain.from_iterable(targets_list),  # type: ignore[arg-type]
-                batch_first=True,
-                padding_value=torch.nan,
-            ).squeeze(),
-        )
-        predics = (
-            torch.nn.utils.rnn.pad_sequence(
-                chain.from_iterable(predics_list),  # type: ignore[arg-type]
-                batch_first=True,
-                padding_value=torch.nan,
-            ).squeeze(),
-        )
+        targets = torch.nn.utils.rnn.pad_sequence(
+            chain.from_iterable(targets_list),  # type: ignore[arg-type]
+            batch_first=True,
+            padding_value=torch.nan,
+        ).squeeze()
+
+        predics = torch.nn.utils.rnn.pad_sequence(
+            chain.from_iterable(predics_list),  # type: ignore[arg-type]
+            batch_first=True,
+            padding_value=torch.nan,
+        ).squeeze()
 
         return TargetsAndPredics(targets=targets, predics=predics)
 
-    def save_scores(self, i: int, /, **kwargs: Any) -> None:
-        """Save the scores to disk."""
 
-        assert self.results_dir is not None
-        path = self.results_dir / f"scores-{i}.parquet"
-        self.scores.to_parquet(path)
-
-
-@dataclass
-class HParamCallback(BaseCallback):
-    """Callback to log hyperparameters to tensorboard."""
-
-    hparam_dict: dict[str, Any]
-    writer: SummaryWriter
-
-    _: KW_ONLY
-
-    def callback(self, i: int | str, /, **objects: Any) -> None:
-        """Log the test-error selected by validation-error."""
-
-        # add postfix
-        test_scores = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
-
-        self.writer.add_hparams(
-            hparam_dict=self.hparam_dict, metric_dict=test_scores, run_name="hparam"
-        )
-        print(f"{test_scores=} achieved by {self.hparam_dict=}")
-
-        # # FIXME: https://github.com/pytorch/pytorch/issues/32651
-        # # os.path.dirname(os.path.realpath(__file__)) + os.sep + log_path
-        # for files in (self.log_dir / "hparam").iterdir():
-        #     shutil.move(files, self.log_dir)
-        # (self.log_dir / "hparam").rmdir()
+# @dataclass
+# class HParamCallback(BaseCallback):
+#     """Callback to log hyperparameters to tensorboard."""
+#
+#     hparam_dict: dict[str, Any]
+#     writer: SummaryWriter
+#
+#     _: KW_ONLY
+#
+#     def callback(self, i: int | str, /, **objects: Any) -> None:
+#         """Log the test-error selected by validation-error."""
+#
+#         # add postfix
+#         test_scores = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
+#
+#         self.writer.add_hparams(
+#             hparam_dict=self.hparam_dict, metric_dict=test_scores, run_name="hparam"
+#         )
+#         print(f"{test_scores=} achieved by {self.hparam_dict=}")
+#
+#         # # FIXME: https://github.com/pytorch/pytorch/issues/32651
+#         # # os.path.dirname(os.path.realpath(__file__)) + os.sep + log_path
+#         # for files in (self.log_dir / "hparam").iterdir():
+#         #     shutil.move(files, self.log_dir)
+#         # (self.log_dir / "hparam").rmdir()
 
 
 @dataclass
 class CheckpointCallback(BaseCallback):
     """Callback to save checkpoints."""
 
-    objects: dict[str, object]
-    writer: SummaryWriter | Path
+    objects: Mapping[str, object]
+    path: PathLike
 
     _: KW_ONLY
 
     def callback(self, i: int, /, **objects: Any) -> None:
-        for key, val in objects.items():
-            self.objects[key] = val
-        make_checkpoint(i, self.objects, self.writer)
+        make_checkpoint(i, self.objects, path=self.path)
+
+
+@dataclass
+class HParamCallback(BaseCallback):
+    history: DataFrame
+    hparam_dict: JSON
+    writer: SummaryWriter
+    results_dir: PathLike
+
+    _: KW_ONLY
+
+    def __post_init__(self) -> None:
+        self.results_dir = Path(self.results_dir).absolute()
+        self.results_dir.mkdir(exist_ok=True, parents=True)
+
+    def callback(self, i: int, /, **objects: Any) -> None:
+        best_epochs = self.history.rolling(5, center=True).mean().idxmin()
+
+        scores: dict[str, dict[str, float]] = {
+            split: {
+                metric: float(self.history.loc[idx, (split, metric)])
+                for metric, idx in best_epochs["valid"].items()
+            }
+            for split in ("train", "valid", "test")
+        }
+
+        with open(self.results_dir / f"{i}.yaml", "w", encoding="utf8") as file:
+            file.write(yaml.dump(scores))
+
+        metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
+        run_name = self.writer.log_dir
+
+        self.writer.add_hparams(
+            hparam_dict=self.hparam_dict, metric_dict=metric_dict, run_name=run_name
+        )
+        print(f"Scores {metric_dict=} achieved by {self.hparam_dict=}")
 
 
 @dataclass
@@ -712,6 +744,9 @@ class KernelCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
+    def __post_init__(self) -> None:
+        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
+
     def callback(self, i: int, /, **state_dict: Any) -> None:
         log_kernel(i, *self.args, **self.kwargs)
 
@@ -720,7 +755,7 @@ class KernelCallback(BaseCallback):
 class LRSchedulerCallback(BaseCallback):
     """Callback to log learning rate information to tensorboard."""
 
-    scheduler: LRScheduler
+    lr_scheduler: LRScheduler
     writer: SummaryWriter
 
     _: KW_ONLY
@@ -728,6 +763,9 @@ class LRSchedulerCallback(BaseCallback):
     name: str = "lr_scheduler"
     prefix: str = ""
     postfix: str = ""
+
+    def __post_init__(self) -> None:
+        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
 
     def callback(self, i: int, /, **state_dict: Any) -> None:
         log_lr_scheduler(i, *self.args, **self.kwargs)
@@ -746,8 +784,10 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
+    def __post_init__(self) -> None:
+        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
+
     def callback(self, i: int, /, *, targets: Tensor, predics: Tensor) -> None:  # type: ignore[override]
-        # FIXME: https://peps.python.org/pep-0698/
         log_metrics(i, *self.args, targets=targets, predics=predics, **self.kwargs)
 
 
@@ -765,6 +805,9 @@ class ModelCallback(BaseCallback):
     name: str = "model"
     prefix: str = ""
     postfix: str = ""
+
+    def __post_init__(self) -> None:
+        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
 
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if "model" in state_dict:
@@ -788,6 +831,9 @@ class OptimizerCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
+    def __post_init__(self) -> None:
+        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
+
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if "optimizer" in state_dict:
             self.optimizer = state_dict["optimizer"]
@@ -807,6 +853,9 @@ class ScalarsCallback(BaseCallback):
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
+
+    def __post_init__(self) -> None:
+        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
 
     def callback(self, i: int, /, **state_dict: Any) -> None:
         for key in state_dict:
@@ -830,8 +879,11 @@ class TableCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
+    def __post_init__(self) -> None:
+        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
+
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if hasattr(self.table, "name") and isinstance(self.table.name, str):
             if self.table.name in state_dict:
                 self.table = state_dict[self.table.name]
-        log_table(i, *self.args, **self.kwargs)
+        log_table(i, self.args, **self.kwargs)

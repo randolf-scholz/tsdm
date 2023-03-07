@@ -181,6 +181,8 @@ class DefaultLogger(BaseLogger):
     """Dataloaders used for evaluation."""
     kernel: Optional[Tensor] = None
     """Kernel used for the model."""
+    history: Optional[DataFrame] = None
+    """History of the training process."""
     hparam_dict: Optional[dict[str, Any]] = None
     """Hyperparameters used for the experiment."""
     lr_scheduler: Optional[TorchLRScheduler] = None
@@ -191,13 +193,13 @@ class DefaultLogger(BaseLogger):
     """Model used for training."""
     optimizer: Optional[TorchOptimizer] = None
     """Optimizer used for training."""
-    history: Optional[DataFrame] = None
-    """History of the training process."""
+    predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None
+    """Function used for prediction."""
 
     def __init__(
         self,
-        *,
         log_dir: PathLike,
+        *,
         checkpoint_frequency: int = 1,
         checkpointable_objects: Optional[Mapping[str, Any]] = None,
         config: Optional[JSON] = None,
@@ -207,8 +209,11 @@ class DefaultLogger(BaseLogger):
         metrics: Optional[Mapping[str, Loss]] = None,
         model: Optional[TorchModule] = None,
         optimizer: Optional[TorchOptimizer] = None,
+        predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None,
     ) -> None:
-        self.writer = SummaryWriter(log_dir=log_dir)
+        # convert to absolute path
+        log_dir = Path(log_dir).absolute()
+        self.writer = SummaryWriter(log_dir=Path(log_dir))
         self.log_dir = Path(self.writer.log_dir)
         self.config = config
         self.dataloaders = dataloaders
@@ -217,7 +222,11 @@ class DefaultLogger(BaseLogger):
         self.metrics = metrics
         self.model = model
         self.optimizer = optimizer
+        self.predict_fn = predict_fn
 
+        checkpointable_objects = (
+            {} if checkpointable_objects is None else checkpointable_objects
+        )
         # add default batch callbacks
         if self.optimizer is not None:
             self.add_callback("batch", OptimizerCallback(self.optimizer, self.writer))
@@ -229,9 +238,10 @@ class DefaultLogger(BaseLogger):
             self.metrics is not None
             and self.model is not None
             and self.dataloaders is not None
+            and self.predict_fn is not None
         ):
             self.history = DataFrame(
-                columns=MultiIndex.from_product(dataloaders.keys(), metrics.keys())
+                columns=MultiIndex.from_product(dataloaders, metrics)
             )
             self.add_callback(
                 "epoch",
@@ -241,6 +251,7 @@ class DefaultLogger(BaseLogger):
                     metrics=self.metrics,
                     dataloaders=self.dataloaders,
                     history=self.history,
+                    predict_fn=self.predict_fn,
                 ),
             )
         if self.model is not None:
@@ -253,52 +264,24 @@ class DefaultLogger(BaseLogger):
             )
         if self.kernel is not None:
             self.add_callback("epoch", KernelCallback(self.kernel, self.writer))
-        if self.checkpointable_objects is not None:
-            self.add_callback(
-                "epoch",
-                CheckpointCallback(
-                    {
-                        "config": self.config,
-                        "model": self.model,
-                        "optimizer": self.optimizer,
-                        "lr_scheduler": self.lr_scheduler,
-                    }
-                    | checkpointable_objects,
-                    writer=self.writer,
-                    frequency=checkpoint_frequency,
-                ),
-            )
 
-        # add default end callbacks
-        self.add_callback("result", HParamCallback(self.writer))
-
-    @torch.no_grad()
-    def get_all_predictions(self, dataloader: DataLoader) -> ResultTuple:
-        r"""Get all predictions for a dataloader."""
-        # TODO: generic version
-        targets = []
-        predics = []
-
-        for batch in dataloader:
-            result = self.predict_fn(self.model, batch)
-            targets.append(result[0])
-            predics.append(result[1])
-
-        return ResultTuple(
-            # batch the list of batches by converting to list of single elements
-            targets=torch.nn.utils.rnn.pad_sequence(
-                chain.from_iterable(targets), batch_first=True, padding_value=torch.nan  # type: ignore[arg-type]
-            ).squeeze(),
-            predics=torch.nn.utils.rnn.pad_sequence(
-                chain.from_iterable(predics), batch_first=True, padding_value=torch.nan  # type: ignore[arg-type]
-            ).squeeze(),
+        self.add_callback(
+            "epoch",
+            CheckpointCallback(
+                {
+                    "config": self.config,
+                    "model": self.model,
+                    "optimizer": self.optimizer,
+                    "lr_scheduler": self.lr_scheduler,
+                }
+                | checkpointable_objects,
+                path=self.checkpoint_dir,
+                frequency=checkpoint_frequency,
+            ),
         )
 
-    def log_results(self, i: int, /) -> None:
-        r"""Store history dataframe to file (default format: parquet)."""
-        assert self.results_dir is not None
-        path = self.results_dir / f"history-{i}.parquet"
-        self.history.to_parquet(path)
+        # add default end callbacks
+        self.add_callback("result", self.log_hparam)
 
     def log_hparams(self, i: int, /) -> None:
         r"""Log hyperparameters."""
@@ -317,19 +300,14 @@ class DefaultLogger(BaseLogger):
             with open(self.results_dir / f"{i}.yaml", "w", encoding="utf8") as file:
                 file.write(yaml.dump(scores))
 
-        # add postfix
-        test_scores = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
+        metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
+        run_name = self.writer.log_dir
 
+        # NOTE: https://github.com/pytorch/pytorch/issues/32651
         self.writer.add_hparams(
-            hparam_dict=self.hparam_dict, metric_dict=test_scores, run_name="hparam"
+            hparam_dict=self.hparam_dict, metric_dict=metric_dict, run_name=run_name
         )
-        print(f"{test_scores=} achieved by {self.hparam_dict=}")
-
-        # FIXME: https://github.com/pytorch/pytorch/issues/32651
-        # os.path.dirname(os.path.realpath(__file__)) + os.sep + log_path
-        for files in (self.log_dir / "hparam").iterdir():
-            shutil.move(files, self.log_dir)
-        (self.log_dir / "hparam").rmdir()
+        print(f"Scores {metric_dict} achieved by {self.hparam_dict=}")
 
 
 #
