@@ -15,6 +15,7 @@ __all__ = [
 import logging
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
+from itertools import chain
 from types import FunctionType, MethodType
 from typing import TYPE_CHECKING, Any, Generic, TypeAlias, Union, cast, overload
 
@@ -54,9 +55,9 @@ class LazyFunction(Generic[R]):
         self.args = args if args is not NotImplemented else ()
         self.kwargs = kwargs if kwargs is not NotImplemented else {}
 
-    def __call__(self) -> R:
+    def __call__(self, *args: Any, **kwargs: Any) -> R:
         r"""Execute the function and return the result."""
-        return self.func(*self.args, **self.kwargs)
+        return self.func(*chain(self.args, args), **(self.kwargs | kwargs))
 
     def __repr__(self) -> str:
         r"""Return a string representation of the function."""
