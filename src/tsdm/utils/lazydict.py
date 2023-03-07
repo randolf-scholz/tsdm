@@ -110,13 +110,13 @@ class LazyDict(dict[K, T]):
         # inherit Mixin Methods from MutableMapping
         # This is crucial because dict.get does not call __getitem__
         # Reference: https://stackoverflow.com/a/2390997/9318372
-        cls.get = MutableMapping.get  # type: ignore[assignment]
-        cls.clear = MutableMapping.clear  # type: ignore[assignment]
-        cls.pop = MutableMapping.pop  # type: ignore[assignment]
-        cls.popitem = MutableMapping.popitem  # type: ignore[assignment]
-        cls.setdefault = MutableMapping.setdefault  # type: ignore[assignment]
-        cls.update = MutableMapping.update  # type: ignore[assignment]
-        return super().__new__(cls, *args, **kwargs)
+        cls.get = MutableMapping.get  # type: ignore[assignment, method-assign]
+        cls.clear = MutableMapping.clear  # type: ignore[method-assign]
+        cls.pop = MutableMapping.pop  # type: ignore[method-assign]
+        cls.popitem = MutableMapping.popitem  # type: ignore[method-assign]
+        cls.setdefault = MutableMapping.setdefault  # type: ignore[method-assign]
+        cls.update = MutableMapping.update  # type: ignore[method-assign]
+        return super().__new__(cls, *args, **kwargs)  # type: ignore[type-var]
 
     @overload
     def __init__(self, /, **kwargs: FuncSpec | T) -> None:

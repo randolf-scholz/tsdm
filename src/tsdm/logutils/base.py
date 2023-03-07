@@ -121,6 +121,7 @@ class BaseLogger:
         self.callbacks[key].append(callback)
 
     def required_kwargs(self, key: str, /) -> list[set[str]]:
+        """Return the required kwargs for each callback."""
         return [callback.required_kwargs for callback in self.callbacks[key]]
 
     def run_callbacks(self, i: int, key: str, /, **kwargs: Any) -> None:
@@ -129,9 +130,9 @@ class BaseLogger:
 
         # safety checks
         combined_kwargs = set.union(*required_kwargs)
-        if missing_kwargs := (combined_kwargs - set(kwargs)):
+        if missing_kwargs := combined_kwargs - set(kwargs):
             raise TypeError(f"Missing required kwargs: {missing_kwargs}")
-        if unexpected_kwargs := (set(kwargs) - combined_kwargs):
+        if unexpected_kwargs := set(kwargs) - combined_kwargs:
             raise RuntimeWarning(f"Unexpected kwargs: {unexpected_kwargs}")
 
         # call callbacks
@@ -486,7 +487,7 @@ class DefaultLogger(BaseLogger):
 #         r"""Log batch end."""
 #         if targets is not None and predics is not None:
 #             self.log_metrics(i, targets=targets, predics=predics, key="batch")
-#         self.log_optimizer_state(i, loss=loss, log_scalars=True, log_histograms=False)
+#         self.log_optimizer_state(i, loss=loss, log_values=True, log_histograms=False)
 #
 #     def log_epoch_end(
 #         self,
@@ -505,10 +506,10 @@ class DefaultLogger(BaseLogger):
 #             self.log_kernel_information(i)
 #
 #         if log_model and i % log_model == 0:
-#             self.log_model_state(i, log_scalars=False, log_histograms=True)
+#             self.log_model_state(i, log_values=False, log_histograms=True)
 #
 #         if log_optimizer and i % log_optimizer == 0:
-#             self.log_optimizer_state(i, log_scalars=False, log_histograms=True)
+#             self.log_optimizer_state(i, log_values=False, log_histograms=True)
 #
 #         if make_checkpoint and i % make_checkpoint == 0:
 #             self.make_checkpoint(i)
@@ -540,7 +541,7 @@ class DefaultLogger(BaseLogger):
 #             for metric, value in scalars.items():
 #                 self.history.loc[i, (key, metric)] = value.cpu().item()
 #
-#             log_scalars(
+#             log_values(
 #                 i,
 #                 writer=self.writer,
 #                 scalars=scalars,

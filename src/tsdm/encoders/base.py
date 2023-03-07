@@ -97,9 +97,9 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
         The wrapping of fit/encode/decode must be done here to avoid `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
-        cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
-        cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
+        cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[method-assign]
+        cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[method-assign]
+        cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[method-assign]
 
     # TODO: implement __invert__ (python 3.11)
     # def __invert__(self) -> Encoder:
