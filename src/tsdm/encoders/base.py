@@ -47,8 +47,8 @@ class Encoder(Protocol[T, S]):
     is_fitted: bool
     requires_fit: bool
 
-    def __invert__(self) -> Encoder:
-        r"""Return the inverse encoder (i.e. decoder)."""
+    # def __invert__(self) -> Encoder:
+    #     r"""Return the inverse encoder (i.e. decoder)."""
 
     def __matmul__(self, other: Encoder) -> Encoder:
         r"""Return chained encoders."""
@@ -102,10 +102,9 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
         cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
 
     # TODO: implement __invert__ (python 3.11)
-
-    def __invert__(self) -> Encoder:
-        r"""Return the inverse encoder (i.e. decoder)."""
-        raise NotImplementedError
+    # def __invert__(self) -> Encoder:
+    #     r"""Return the inverse encoder (i.e. decoder)."""
+    #     raise NotImplementedError
 
     def __matmul__(self, other: Encoder) -> ChainedEncoder:
         r"""Return chained encoders."""

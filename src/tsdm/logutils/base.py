@@ -49,34 +49,23 @@ Typical things the loggers need access to include:
 __all__ = [
     "Logger",
     "BaseLogger",
-    # "StandardLogger",
     "DefaultLogger",
+    # "StandardLogger",
 ]
 
-import pickle
-import shutil
-import warnings
-from abc import ABC, abstractmethod
 from collections import defaultdict
-from dataclasses import KW_ONLY, dataclass, field
-from itertools import chain
 from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Literal,
     Mapping,
     NamedTuple,
     Optional,
     Protocol,
-    Union,
     runtime_checkable,
 )
 
-import pandas as pd
-import torch
-import yaml
-from pandas import DataFrame, Index, MultiIndex
+from pandas import DataFrame, MultiIndex
 from torch import Tensor
 from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
@@ -84,26 +73,16 @@ from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from tsdm.encoders import BaseEncoder
-from tsdm.logutils import (
-    compute_metrics,
-    log_kernel,
-    log_metrics,
-    log_model,
-    log_optimizer,
-    log_scalars,
-)
 from tsdm.logutils._callbacks import (
     Callback,
     CheckpointCallback,
     EvaluationCallback,
+    HParamCallback,
     KernelCallback,
     LRSchedulerCallback,
     MetricsCallback,
     ModelCallback,
     OptimizerCallback,
-    ScalarsCallback,
-    TableCallback,
 )
 from tsdm.metrics import Loss
 from tsdm.types.aliases import JSON, PathLike
@@ -125,7 +104,7 @@ class Logger(Protocol):
     def callbacks(self) -> Mapping[str, list[Callback]]:
         """Callbacks to be called at the end of a batch/epoch."""
 
-    def run_callbacks(self, i: int, /, key: str, **kwargs: Any) -> None:
+    def run_callbacks(self, i: int, key: str, /, **kwargs: Any) -> None:
         """Call the logger."""
 
 
@@ -166,6 +145,7 @@ class BaseLogger:
 
 class DefaultLogger(BaseLogger):
     r"""Logger that adds pre-made batch/epoch logging."""
+
     log_dir: Path
     """Path to the logging directory."""
     results_dir: Path
@@ -281,33 +261,42 @@ class DefaultLogger(BaseLogger):
         )
 
         # add default end callbacks
-        self.add_callback("result", self.log_hparam)
+        if self.history is not None and self.hparam_dict is not None:
+            self.add_callback(
+                "end",
+                HParamCallback(
+                    hparam_dict=self.hparam_dict,
+                    history=self.history,
+                    results_dir=self.results_dir,
+                    writer=self.writer,
+                ),
+            )
 
-    def log_hparams(self, i: int, /) -> None:
-        r"""Log hyperparameters."""
-        # Find the best epoch on the smoothed validation curve
-        best_epochs = self.history.rolling(5, center=True).mean().idxmin()
-
-        scores: dict[str, dict[str, float]] = {
-            split: {
-                metric: float(self.history.loc[idx, (split, metric)])
-                for metric, idx in best_epochs["valid"].items()
-            }
-            for split in ("train", "valid", "test")
-        }
-
-        if self.results_dir is not None:
-            with open(self.results_dir / f"{i}.yaml", "w", encoding="utf8") as file:
-                file.write(yaml.dump(scores))
-
-        metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
-        run_name = self.writer.log_dir
-
-        # NOTE: https://github.com/pytorch/pytorch/issues/32651
-        self.writer.add_hparams(
-            hparam_dict=self.hparam_dict, metric_dict=metric_dict, run_name=run_name
-        )
-        print(f"Scores {metric_dict} achieved by {self.hparam_dict=}")
+    # def log_hparams(self, i: int, /) -> None:
+    #     r"""Log hyperparameters."""
+    #     # Find the best epoch on the smoothed validation curve
+    #     best_epochs = self.history.rolling(5, center=True).mean().idxmin()
+    #
+    #     scores: dict[str, dict[str, float]] = {
+    #         split: {
+    #             metric: float(self.history.loc[idx, (split, metric)])
+    #             for metric, idx in best_epochs["valid"].items()
+    #         }
+    #         for split in ("train", "valid", "test")
+    #     }
+    #
+    #     if self.results_dir is not None:
+    #         with open(self.results_dir / f"{i}.yaml", "w", encoding="utf8") as file:
+    #             file.write(yaml.dump(scores))
+    #
+    #     metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
+    #     run_name = self.writer.log_dir
+    #
+    #     # NOTE: https://github.com/pytorch/pytorch/issues/32651
+    #     self.writer.add_hparams(
+    #         hparam_dict=self.hparam_dict, metric_dict=metric_dict, run_name=run_name
+    #     )
+    #     print(f"Scores {metric_dict} achieved by {self.hparam_dict=}")
 
 
 #

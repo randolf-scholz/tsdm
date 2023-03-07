@@ -600,7 +600,7 @@ class EvaluationCallback(BaseCallback):
                 postfix=self.postfix,
             )
 
-        path = self.writer.log_dir / f"history-{i}.parquet"
+        path = Path(self.writer.log_dir) / f"history-{i}.parquet"
         self.history.to_parquet(path)
 
     def compute_results(self, i: int) -> None:
@@ -691,14 +691,11 @@ class HParamCallback(BaseCallback):
 
     history: DataFrame
     hparam_dict: JSON
+    results_dir: PathLike
 
     _: KW_ONLY
 
     writer: SummaryWriter
-
-    def __post_init__(self) -> None:
-        self.results_dir = Path(self.results_dir).absolute()
-        self.results_dir.mkdir(exist_ok=True, parents=True)
 
     def callback(self, i: int, /, **objects: Any) -> None:
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
