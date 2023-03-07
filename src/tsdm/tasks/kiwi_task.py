@@ -54,7 +54,10 @@ class Batch(NamedTuple):
 
 
 class KiwiTask(TimeSeriesTask):
-    r"""Task for the KIWI dataset."""
+    r"""Task for the KIWI dataset.
+
+    The task is to forecast the observables inside the forecasting horizon.
+    """
 
     dataset: KiwiDataset
 

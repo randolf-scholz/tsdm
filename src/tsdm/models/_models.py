@@ -24,7 +24,7 @@ class ForecastingModel(Protocol):
 
     def __call__(
         self,
-        t: Tensor,
+        q: Tensor,
         X: tuple[Tensor, Tensor],
         U: Optional[tuple[Tensor, Tensor]] = None,
         M: Optional[Tensor] = None,
@@ -32,7 +32,26 @@ class ForecastingModel(Protocol):
         """Return the encoded forecast x(t) for time t.
 
         Args:
-            t: Time at which to make the forecast.
+            q: Query time at which to make the forecast.
+            X: Tuple of tensors (t, x) containing the time and observation of the system. (observables)
+            U: Tuple of tensors (t, u) containing the time and control input of the system. (covariates)
+            M: Static metadata for the system. (time-invariant covariates)
+
+        Returns:
+            y(q | (t, x), (t, u), m): Forecast for time t given the system state.
+        """
+
+    def predict(
+        self,
+        q: Tensor,
+        X: tuple[Tensor, Tensor],
+        U: Optional[tuple[Tensor, Tensor]] = None,
+        M: Optional[Tensor] = None,
+    ) -> Tensor:
+        """Return the actual forecast x(t) for time t.
+
+        Args:
+            q: Query time at which to make the forecast.
             X: Tuple of tensors (t, x) containing the time and observation of the system. (observables)
             U: Tuple of tensors (t, u) containing the time and control input of the system. (covariates)
             M: Static metadata for the system. (time-invariant covariates)
@@ -41,20 +60,51 @@ class ForecastingModel(Protocol):
             x(t): Forecast for time t.
         """
 
-    def predict(
+
+class StateSpaceForecastingModel(ForecastingModel, Protocol):
+    """State Space forecasting model."""
+
+    def __call__(
         self,
-        t: Tensor,
+        q: Tensor,
         X: tuple[Tensor, Tensor],
         U: Optional[tuple[Tensor, Tensor]] = None,
         M: Optional[Tensor] = None,
+        t0: Optional[Tensor] = None,
+        z0: Optional[Tensor] = None,
+    ) -> Tensor:
+        """Return the encoded forecast x(t) for time t.
+
+        Args:
+            q: Query time at which to make the forecast.
+            X: Tuple of tensors (t, x) containing the time and observation of the system. (observables)
+            U: Tuple of tensors (t, u) containing the time and control input of the system. (covariates)
+            M: Static metadata for the system. (time-invariant covariates)
+            t0: Initial time of the system.
+            z0: Initial (latent) state of the system.
+
+        Returns:
+            y(q | (t, x), (t, u), m): Forecast for time t given the system state.
+        """
+
+    def predict(
+        self,
+        q: Tensor,
+        X: tuple[Tensor, Tensor],
+        U: Optional[tuple[Tensor, Tensor]] = None,
+        M: Optional[Tensor] = None,
+        t0: Optional[Tensor] = None,
+        z0: Optional[Tensor] = None,
     ) -> Tensor:
         """Return the actual forecast x(t) for time t.
 
         Args:
-            t: Time at which to make the forecast.
+            q: Query time at which to make the forecast.
             X: Tuple of tensors (t, x) containing the time and observation of the system. (observables)
             U: Tuple of tensors (t, u) containing the time and control input of the system. (covariates)
             M: Static metadata for the system. (time-invariant covariates)
+            t0: Initial time of the system.
+            z0: Initial (latent) state of the system.
 
         Returns:
             x(t): Forecast for time t.
