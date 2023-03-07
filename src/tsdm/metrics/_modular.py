@@ -466,8 +466,6 @@ class TimeSeriesMSE(nn.Module):
     r"""CONST: Whether to normalize over time."""
     normalize_channels: Final[bool]
     r"""CONST: Whether to normalize the loss by the number of channels."""
-    rank: Final[int]
-    r"""CONST: The number of dimensions over which the loss is computed"""
 
     def __init__(
         self,
@@ -489,7 +487,6 @@ class TimeSeriesMSE(nn.Module):
         self.discount = discount
         self.normalize_channels = normalize_channels
         self.normalize_time = normalize_time
-        self.rank = len(self.axes)
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
