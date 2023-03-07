@@ -18,6 +18,7 @@ __all__ = [
     "BaseCallback",
     "CheckpointCallback",
     "EvaluationCallback",
+    "HParamCallback",
     "KernelCallback",
     "LRSchedulerCallback",
     "MetricsCallback",
@@ -686,12 +687,14 @@ class CheckpointCallback(BaseCallback):
 
 @dataclass
 class HParamCallback(BaseCallback):
+    """Callback to log hyperparameters to tensorboard."""
+
     history: DataFrame
     hparam_dict: JSON
-    writer: SummaryWriter
-    results_dir: PathLike
 
     _: KW_ONLY
+
+    writer: SummaryWriter
 
     def __post_init__(self) -> None:
         self.results_dir = Path(self.results_dir).absolute()
@@ -708,11 +711,11 @@ class HParamCallback(BaseCallback):
             for split in ("train", "valid", "test")
         }
 
-        with open(self.results_dir / f"{i}.yaml", "w", encoding="utf8") as file:
-            file.write(yaml.dump(scores))
-
         metric_dict = {f"metrics:hparam/{k}": v for k, v in scores["test"].items()}
-        run_name = self.writer.log_dir
+        run_name = Path(self.writer.log_dir).absolute()
+
+        with open(run_name / f"{i}.yaml", "w", encoding="utf8") as file:
+            file.write(yaml.dump(scores))
 
         self.writer.add_hparams(
             hparam_dict=self.hparam_dict, metric_dict=metric_dict, run_name=run_name
