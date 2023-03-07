@@ -8,7 +8,7 @@ __all__ = [
     "log_metrics",
     "log_model",
     "log_optimizer",
-    "log_scalars",
+    "log_values",
     "log_table",
     # Classes
     # Protocols
@@ -155,7 +155,7 @@ def make_checkpoint(i: int, /, objects: Mapping[str, Any], path: PathLike) -> No
                 torch.save(obj, path / name)
             case torch.optim.Optimizer():
                 torch.save(obj, path / name)
-            case torch.optim.lr_scheduler._LRScheduler():
+            case LRScheduler():
                 torch.save(obj, path / name)
             case dict() | list() | tuple() | set() | str() | int() | float() | None:
                 with open(path / f"{name}.yaml", "w", encoding="utf8") as file:
@@ -305,6 +305,7 @@ def log_lr_scheduler(
     prefix: str = "",
     postfix: str = "",
 ) -> None:
+    r"""Log learning rate scheduler."""
     # identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
     raise NotImplementedError("Not implemented yet.")
 
@@ -335,7 +336,7 @@ def log_metrics(
     assert isinstance(metrics, Mapping)
 
     scalars = compute_metrics(metrics, targets=targets, predics=predics)
-    log_scalars(i, scalars, writer, name=name, prefix=prefix, postfix=postfix)
+    log_values(i, scalars, writer, name=name, prefix=prefix, postfix=postfix)
 
 
 @torch.no_grad()
@@ -421,7 +422,7 @@ def log_optimizer(
             writer.add_histogram(f"{identifier}:param-moments_2/{j}", b, i)
 
 
-def log_scalars(
+def log_values(
     i: int,
     /,
     scalars: Mapping[str, Tensor],
@@ -486,7 +487,7 @@ def save_config(
     path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
     path = path / f"{identifier+'-'*bool(identifier)}config.json"
 
-    with open(path, "w") as file:
+    with open(path, "w", encoding="utf8") as file:
         yaml.safe_dump(config, file, indent=4)
 
 
@@ -581,7 +582,7 @@ class EvaluationCallback(BaseCallback):
 
     def callback(self, i: int, /, **kwargs: Any) -> None:
         for key in self.dataloaders:
-            log_scalars(
+            log_values(
                 i,
                 scalars=self.history.loc[i, key].to_dict(),
                 writer=self.writer,
@@ -590,7 +591,7 @@ class EvaluationCallback(BaseCallback):
                 prefix=self.prefix,
                 postfix=self.postfix,
             )
-            log_scalars(
+            log_values(
                 i,
                 scalars=self.best_epoch.loc[i, key].to_dict(),
                 writer=self.writer,
@@ -622,6 +623,7 @@ class EvaluationCallback(BaseCallback):
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredics:
+        """Return the targets and predictions for the given dataloader."""
         targets_list: list[Tensor] = []
         predics_list: list[Tensor] = []
 
@@ -858,10 +860,10 @@ class ScalarsCallback(BaseCallback):
         self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
 
     def callback(self, i: int, /, **state_dict: Any) -> None:
-        for key in state_dict:
+        for key, value in state_dict.items():
             if key in self.scalars:
-                self.scalars[key] = state_dict[key]
-        log_scalars(i, *self.args, **self.kwargs)
+                self.scalars[key] = value
+        log_values(i, *self.args, **self.kwargs)
 
 
 @dataclass

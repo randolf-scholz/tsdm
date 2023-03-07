@@ -16,7 +16,7 @@ __all__ = [
     "log_lr_scheduler",
     "log_model",
     "log_metrics",
-    "log_scalars",
+    "log_values",
     "log_table",
     # Classes
     # "StandardLogger",
@@ -52,8 +52,8 @@ from tsdm.logutils._callbacks import (
     log_metrics,
     log_model,
     log_optimizer,
-    log_scalars,
     log_table,
+    log_values,
 )
 from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger  # , StandardLogger
 
@@ -74,7 +74,7 @@ LOGFUNCS: dict[str, LogFunction] = {
     "log_metrics": log_metrics,
     "log_model_state": log_model,
     "log_optimizer_state": log_optimizer,
-    "log_scalars": log_scalars,
+    "log_values": log_values,
     "log_table": log_table,
 }
 
