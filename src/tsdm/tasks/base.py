@@ -124,7 +124,6 @@ from typing import (
     Optional,
     TypeAlias,
     TypeVar,
-    Union,
 )
 
 from pandas import NA, DataFrame, Index, MultiIndex, Series
@@ -288,10 +287,10 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     r"""Columns of the metadata that are targets."""
     metadata_observables: Optional[Index | list] = NotImplemented
     r"""Columns of the metadata that are targets."""
-    sample_format: Union[
-        Literal["masked", "sparse"],
-        tuple[Literal["masked", "sparse"], Literal["masked", "sparse"]],
-    ] = "masked"
+    sparse_index: bool = False
+    r"""Whether to drop sparse rows from the index."""
+    sparse_columns: bool = False
+    r"""Whether to drop sparse cols from the data."""
 
     def __post_init__(self) -> None:
         r"""Post init."""
@@ -315,17 +314,9 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         return len(self.dataset)
 
     def __getitem__(self, key: K) -> Sample:
-        match self.sample_format:
-            case "masked" | ("masked", "masked"):
-                return self.make_sample(key, sparse_index=False, sparse_columns=False)
-            case ("sparse", "masked"):
-                return self.make_sample(key, sparse_index=True, sparse_columns=False)
-            case ("masked", "sparse"):
-                return self.make_sample(key, sparse_index=False, sparse_columns=True)
-            case "sparse" | ("sparse", "sparse"):
-                return self.make_sample(key, sparse_index=True, sparse_columns=True)
-            case _:
-                raise ValueError(f"Unknown sample format {self.sample_format=}")
+        return self.make_sample(
+            key, sparse_index=self.sparse_index, sparse_columns=self.sparse_columns
+        )
 
     def __repr__(self) -> str:
         return repr_dataclass(self)
