@@ -795,7 +795,7 @@ class TimeSeriesDataset(TorchDataset[Series]):
     timeseries: DataFrame
     r"""The time series data."""
 
-    _: KW_ONLY = NotImplemented
+    _: KW_ONLY
 
     # Main Attributes
     name: str = NotImplemented
@@ -858,7 +858,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
 
     timeseries: DataFrame
     r"""The time series data."""
-    _: KW_ONLY = NotImplemented
+
+    _: KW_ONLY
 
     # Main attributes
     name: str = NotImplemented
