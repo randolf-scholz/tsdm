@@ -1033,25 +1033,47 @@ class FrameAsDict(BaseEncoder):
             else:
                 assert isinstance(self.dtypes[key], None | torch.dtype)
 
-    def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
+    def encode(self, data: DataFrame, /) -> dict[str, Tensor | None]:
+        """Encode a DataFrame as a dict of Tensors.
+
+        The encode method ensures treatment of missingness:
+        if columns in the dataframe are missing the correponding tensor columns
+        will be filled with NANs, if the datatype allows it.
+        """
         if self.encode_index:
             data = data.reset_index()
-        return {
-            key: torch.tensor(
-                data[cols].to_numpy(),
-                device=self.device,
-                dtype=self.dtypes[key],
-            ).squeeze()
-            for key, cols in self.groups.items()
-            if set(cols).issubset(data.columns)
-        }
 
-    def decode(self, data: dict[str, Tensor], /) -> DataFrame:
+        result = {}
+        for key, cols in self.groups.items():
+            if set(cols).issubset(data.columns):
+                result[key] = torch.tensor(
+                    data[cols].to_numpy(),
+                    device=self.device,
+                    dtype=self.dtypes[key],
+                ).squeeze()
+            else:
+                result[key] = None
+        return result
+
+        # return {
+        #     key: torch.tensor(
+        #         data[cols].to_numpy(),
+        #         device=self.device,
+        #         dtype=self.dtypes[key],
+        #     ).squeeze()
+        #     for key, cols in self.groups.items()
+        #     if set(cols).issubset(data.columns)
+        # }
+
+    def decode(self, data: dict[str, Tensor | None], /) -> DataFrame:
         dfs = []
         for key, tensor in data.items():
-            tensor = tensor.clone().detach().cpu()
             cols = self.groups[key]
-            df = DataFrame(tensor, columns=cols).astype(self.original_dtypes[cols])
+            if tensor is None:
+                df = DataFrame(columns=cols).astype(self.original_dtypes[cols])
+            else:
+                tensor = tensor.clone().detach().cpu()
+                df = DataFrame(tensor, columns=cols).astype(self.original_dtypes[cols])
             dfs.append(df)
 
         # Assemble the DataFrame
