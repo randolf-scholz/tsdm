@@ -22,7 +22,6 @@ from tsdm.encoders import (
     Encoder,
     FastFrameEncoder,
     FrameAsDict,
-    IdentityEncoder,
     LinearScaler,
     LogitBoxCoxEncoder,
     MinMaxScaler,
@@ -246,39 +245,38 @@ class KiwiTask(TimeSeriesTask):
             match scale:
                 case "percent":
                     encoder = (
-                        LogitBoxCoxEncoder()
+                        Standardizer()
+                        @ LogitBoxCoxEncoder()
                         @ LinearScaler(lower, upper)
                         @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 case "absolute":
-                    encoder = BoxCoxEncoder() @ BoundaryEncoder(
-                        lower, upper, mode="clip"
+                    encoder = (
+                        Standardizer()
+                        @ BoxCoxEncoder()
+                        @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 case "linear":
-                    encoder = IdentityEncoder()
+                    encoder = Standardizer()
                 case _:
                     raise ValueError(f"{scale=} unknown")
             column_encoders[col] = encoder
 
-        encoder = (
-            FrameAsDict(
-                groups={
-                    "key": ["run_id", "experiment_id"],
-                    "T": ["measurement_time"],
-                    "X": ...,
-                },
-                dtypes={"T": "float32", "X": "float32"},
-            )
-            @ Standardizer()
-            @ FastFrameEncoder(
-                column_encoders=column_encoders,
-                index_encoders={
-                    # "run_id": IdentityEncoder(),
-                    # "experiment_id": IdentityEncoder(),
-                    "measurement_time": MinMaxScaler()
-                    @ TimeDeltaEncoder(),
-                },
-            )
+        encoder = FrameAsDict(
+            groups={
+                "key": ["run_id", "experiment_id"],
+                "T": ["measurement_time"],
+                "X": ...,
+            },
+            dtypes={"T": "float32", "X": "float32"},
+        ) @ FastFrameEncoder(
+            column_encoders=column_encoders,
+            index_encoders={
+                # "run_id": IdentityEncoder(),
+                # "experiment_id": IdentityEncoder(),
+                "measurement_time": MinMaxScaler()
+                @ TimeDeltaEncoder(),
+            },
         )
 
         self.LOGGER.info("Initializing Encoder for key='%s'", key)
