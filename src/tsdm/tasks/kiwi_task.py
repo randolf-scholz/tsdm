@@ -16,7 +16,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.datasets import KiwiDataset
-from tsdm.encoders import (  # FrameEncoder,
+from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
     Encoder,
@@ -200,7 +200,7 @@ class KiwiTask(TimeSeriesTask):
         return folds_as_sparse_frame(df)
 
     def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:
-        r"""TODO: implement this."""
+        r"""Create the collate function for the given split."""
         encoder = self.encoders[key]
 
         def collate_fn(samples: list[Sample]) -> Batch:

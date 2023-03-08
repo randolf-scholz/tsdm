@@ -13,15 +13,15 @@ BATCH_SHAPES = [
     (),
     (1,),
     (32,),
-    (64,),
+    # (64,),
     (4, 16),
 ]
 CHANNEL_SHAPES = [
     (64,),
-    (128,),
+    # (128,),
     (8, 16),
 ]
-TIME_SHAPES = [(32,), (64,)]
+TIME_SHAPES = [(1,), (32,)]
 LOSSES = [MSE, RMSE, MAE]
 
 

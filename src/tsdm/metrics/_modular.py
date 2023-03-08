@@ -429,6 +429,8 @@ class WRMSE(WeightedLoss):
 class TimeSeriesMSE(nn.Module):
     r"""Time-Series Mean Square Error.
 
+    Each channel is normalized by the number of observations in that channel.
+
     .. math:: ∑_t ∑_i \frac{[m_{t_i} ? (x̂_{t, i} - x_{t, i})^2 : 0]}{∑_t m_{t_i}}
 
     Or, more precisely, to avoid division by zero, we use the following
