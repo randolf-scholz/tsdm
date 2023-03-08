@@ -168,7 +168,7 @@ from zipfile import ZipFile
 
 import pandas as pd
 from pandas import DataFrame
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 from tsdm.datasets.base import SingleFrameDataset
 

@@ -104,7 +104,7 @@ class Logger(Protocol):
     def callbacks(self) -> Mapping[str, list[Callback]]:
         """Callbacks to be called at the end of a batch/epoch."""
 
-    def run_callbacks(self, i: int, key: str, /, **kwargs: Any) -> None:
+    def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
         """Call the logger."""
 
 
@@ -124,12 +124,12 @@ class BaseLogger:
         """Return the required kwargs for each callback."""
         return [callback.required_kwargs for callback in self.callbacks[key]]
 
-    def run_callbacks(self, i: int, key: str, /, **kwargs: Any) -> None:
+    def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
         """Call the logger."""
         required_kwargs = self.required_kwargs(key)
 
         # safety checks
-        combined_kwargs = set.union(*required_kwargs)
+        combined_kwargs = set().union(*required_kwargs)
         if missing_kwargs := combined_kwargs - set(kwargs):
             raise TypeError(f"Missing required kwargs: {missing_kwargs}")
         if unexpected_kwargs := set(kwargs) - combined_kwargs:
@@ -139,6 +139,18 @@ class BaseLogger:
         for num, callback in enumerate(self.callbacks[key]):
             kwds = required_kwargs[num]
             callback(i, **{kwd: kwargs[kwd] for kwd in kwds})
+
+    def log_epoch_end(self, i: int, /, **kwargs: Any) -> None:
+        """Log the end of an epoch."""
+        self.callback("epoch", i, **kwargs)
+
+    def log_batch_end(self, i: int, /, **kwargs: Any) -> None:
+        """Log the end of a batch."""
+        self.callback("batch", i, **kwargs)
+
+    def log_results(self, i: int, /, **kwargs: Any) -> None:
+        """Log the results of the experiment."""
+        self.callback("results", i, **kwargs)
 
     def __repr__(self) -> str:
         return repr_mapping(self.callbacks, wrapped=self)
@@ -187,6 +199,7 @@ class DefaultLogger(BaseLogger):
         checkpointable_objects: Optional[Mapping[str, Any]] = None,
         config: Optional[JSON] = None,
         dataloaders: Optional[Mapping[str, DataLoader]] = None,
+        hparam_dict: Optional[dict[str, Any]] = None,
         kernel: Optional[Tensor] = None,
         lr_scheduler: Optional[TorchLRScheduler] = None,
         metrics: Optional[Mapping[str, Loss]] = None,
@@ -199,15 +212,16 @@ class DefaultLogger(BaseLogger):
         self.checkpoint_dir = Path(checkpoint_dir).absolute()
         self.results_dir = Path(results_dir).absolute()
 
-        self.writer = SummaryWriter(log_dir=self.log_dir)
         self.config = config
         self.dataloaders = dataloaders
+        self.hparam_dict = hparam_dict
         self.kernel = kernel
         self.lr_scheduler = lr_scheduler
         self.metrics = metrics
         self.model = model
         self.optimizer = optimizer
         self.predict_fn = predict_fn
+        self.writer = SummaryWriter(log_dir=self.log_dir)
 
         checkpointable_objects = (
             {} if checkpointable_objects is None else checkpointable_objects
@@ -226,7 +240,7 @@ class DefaultLogger(BaseLogger):
             and self.predict_fn is not None
         ):
             self.history = DataFrame(
-                columns=MultiIndex.from_product(dataloaders, metrics)
+                columns=MultiIndex.from_product([dataloaders, metrics])
             )
             self.add_callback(
                 "epoch",
@@ -268,7 +282,7 @@ class DefaultLogger(BaseLogger):
         # add default end callbacks
         if self.history is not None and self.hparam_dict is not None:
             self.add_callback(
-                "end",
+                "results",
                 HParamCallback(
                     hparam_dict=self.hparam_dict,
                     history=self.history,
