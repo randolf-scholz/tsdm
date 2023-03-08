@@ -127,8 +127,8 @@ __all__ = [
     "DateTimeEncoder",
     "DuplicateEncoder",
     "FloatEncoder",
-    "Frame2TensorDict",
-    "Frame2TensorTuple",
+    "FrameAsDict",
+    "FrameAsTuple",
     "FrameEncoder",
     "FastFrameEncoder",
     "FrameIndexer",
@@ -176,8 +176,8 @@ from tsdm.encoders.base import (
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
     FastFrameEncoder,
-    Frame2TensorDict,
-    Frame2TensorTuple,
+    FrameAsDict,
+    FrameAsTuple,
     FrameEncoder,
     FrameIndexer,
     FrameSplitter,

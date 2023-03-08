@@ -26,7 +26,7 @@ from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import Key2Var as K2
 from tsdm.types.variables import KeyVar as K
 from tsdm.types.variables import ReturnVar_co as R
-from tsdm.utils._utils import get_function_args, is_positional_arg
+from tsdm.utils import get_function_args, is_positional_arg
 from tsdm.utils.strings import repr_mapping
 
 __logger__ = logging.getLogger(__name__)
@@ -203,9 +203,8 @@ class LazyDict(dict[K, T]):
                 match nargs := len(args):
                     case 0:
                         return LazyFunction(func=value)
-                    case 1 if all(
-                        is_positional_arg(p) for p in args
-                    ):  # set the key as input
+                    case 1 if all(is_positional_arg(p) for p in args):
+                        # set the key as input
                         return LazyFunction(func=value, args=(key,))
                     case _:
                         raise TypeError(f"Function {value} requires {nargs} args.")

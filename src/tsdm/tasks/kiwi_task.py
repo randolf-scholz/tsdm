@@ -21,7 +21,7 @@ from tsdm.encoders import (  # FrameEncoder,
     BoxCoxEncoder,
     Encoder,
     FastFrameEncoder,
-    Frame2TensorDict,
+    FrameAsDict,
     IdentityEncoder,
     LinearScaler,
     LogitBoxCoxEncoder,
@@ -261,7 +261,7 @@ class KiwiTask(TimeSeriesTask):
             column_encoders[col] = encoder
 
         encoder = (
-            Frame2TensorDict(
+            FrameAsDict(
                 groups={
                     "key": ["run_id", "experiment_id"],
                     "T": ["measurement_time"],
