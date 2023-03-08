@@ -72,7 +72,7 @@ class LazyFunction(Generic[R]):
         else:
             val = str(ann)
 
-        return f"LazyFunction<{val}>"
+        return f"LazyFunction<{val}>()"
 
 
 FuncSpec: TypeAlias = Union[
