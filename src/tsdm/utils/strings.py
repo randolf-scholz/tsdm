@@ -154,6 +154,9 @@ def repr_object(obj: Any, /, fallback: Callable[..., str] = repr, **kwargs: Any)
 
     Special casing for a bunch of cases.
     """
+    # TODO: test if obj.__repr__ statisfies pprint protocol
+    # if accepts_varkwargs(obj.__repr__):
+    #     return obj.__repr__(**kwargs)
     if isinstance(obj, str):
         return obj
     if inspect.isclass(obj) or inspect.isbuiltin(obj):
@@ -265,7 +268,7 @@ def repr_mapping(
 
     # set identifier
     if identifier is None:
-        identifier = get_identifier(self)
+        identifier = get_identifier(self) * bool(recursive)
 
     # # TODO: automatic linebreak detection if string length exceeds max_length
     # if recursive:
@@ -422,7 +425,7 @@ def repr_sequence(
 
     # set identifier
     if identifier is None:
-        identifier = get_identifier(self)
+        identifier = get_identifier(self) * bool(recursive)
 
     # if recursive:
     #     if repr_fun not in RECURSIVE_REPR_FUNS:
@@ -528,7 +531,7 @@ def repr_dataclass(
 
     # set identifier
     if identifier is None:
-        identifier = get_identifier(self)
+        identifier = get_identifier(self) * bool(recursive)
 
     if recursive:
         return repr_mapping(
@@ -597,7 +600,7 @@ def repr_namedtuple(
 
     # set identifier
     if identifier is None:
-        identifier = get_identifier(self)
+        identifier = get_identifier(self) * bool(recursive)
 
     if recursive:
         return repr_mapping(
@@ -628,7 +631,13 @@ def repr_namedtuple(
     )
 
 
-def repr_type(obj: Any, /, **_: Any) -> str:
+def repr_type(
+    obj: Any,
+    /,
+    identifier: Optional[str] = None,
+    recursive: bool | int = False,
+    **_: Any,
+) -> str:
     r"""Return a string representation using an object's type."""
     if isinstance(obj, str):
         return obj
@@ -637,20 +646,10 @@ def repr_type(obj: Any, /, **_: Any) -> str:
     for item in BUILTIN_CONSTANTS:
         if obj is item:
             return repr(obj)
-    if is_dataclass(obj):
-        identifier = "<dataclass>"
-    elif isinstance(obj, NTuple):
-        identifier = "<tuple>"
-    elif isinstance(obj, Array | DataFrame | Series):
-        identifier = "<array>"
-    elif isinstance(obj, Mapping):  # type: ignore[unreachable]
-        identifier = "<mapping>"
-    elif isinstance(obj, Sequence):
-        identifier = "<sequence>"
-    else:
-        identifier = ""
-    if type(obj) in BUILTIN_TYPES:
-        identifier = ""
+
+    # set identifier
+    if identifier is None:
+        identifier = get_identifier(obj) * bool(recursive)
 
     is_type = isinstance(obj, type)
     obj_repr = obj.__name__ if is_type else obj.__class__.__name__

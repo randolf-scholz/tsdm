@@ -965,7 +965,8 @@ class FrameAsDict(BaseEncoder):
         self.encode_index = encode_index
 
     def __repr__(self, **kwargs: Any) -> str:
-        return repr_mapping(self.groups, wrapped=self, **kwargs)
+        kwargs.update(wrapped=self)
+        return repr_mapping(self.groups, **kwargs)
 
     def fit(self, data: DataFrame, /) -> None:
         index = data.index.to_frame()
