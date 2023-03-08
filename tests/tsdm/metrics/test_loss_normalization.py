@@ -12,14 +12,12 @@ from tsdm.metrics import MAE, MSE, RMSE, BaseLoss, TimeSeriesMSE
 BATCH_SHAPES = [
     (),
     (1,),
-    (32,),
-    # (64,),
+    (64,),
     (4, 16),
 ]
 CHANNEL_SHAPES = [
     (64,),
-    # (128,),
-    (8, 16),
+    (4, 16),
 ]
 TIME_SHAPES = [(1,), (32,)]
 LOSSES = [MSE, RMSE, MAE]
@@ -44,7 +42,7 @@ def test_loss_normalization(
     predictions = torch.randn(*shape)
     result = l(targets, predictions)
 
-    if prod(batch_shape) < 10:
+    if prod(batch_shape) <= 1:
         return
 
     expected = 2 / sqrt(pi) if loss == MAE else 1
@@ -74,7 +72,8 @@ def test_time_loss_normalization(
     predictions = torch.randn(*shape)
     result = l(targets, predictions)
 
-    if prod(batch_shape) < 10:
+    # skip for edge case test
+    if prod(batch_shape) <= 1 or prod(time_shape) <= 1:
         return
 
     expected = prod(channel_shape)
