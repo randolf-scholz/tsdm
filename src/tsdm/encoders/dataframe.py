@@ -5,8 +5,8 @@ from __future__ import annotations
 __all__ = [
     # ABC
     # Classes
-    "Frame2TensorDict",
-    "Frame2TensorTuple",
+    "FrameAsDict",
+    "FrameAsTuple",
     "FrameEncoder",
     "FastFrameEncoder",
     "FrameIndexer",
@@ -918,7 +918,7 @@ class ValueEncoder(BaseEncoder):
         return decoded
 
 
-class Frame2TensorDict(BaseEncoder):
+class FrameAsDict(BaseEncoder):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.
@@ -927,9 +927,9 @@ class Frame2TensorDict(BaseEncoder):
     .. code-block:: pycon
 
         >>> from pandas import DataFrame
-        >>> from tsdm.encoders import Frame2TensorDict
+        >>> from tsdm.encoders import FrameAsDict
         >>> df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-        >>> encoder = Frame2TensorDict(groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False)
+        >>> encoder = FrameAsDict(groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False)
         >>> encoder.fit(df)
         >>> encoded = encoder.encode(df)
         >>> assert isinstance(encoded, dict)
@@ -941,14 +941,14 @@ class Frame2TensorDict(BaseEncoder):
     original_index_columns: Index | list[str]
     original_columns: Index
     original_dtypes: Series
+    groups: dict[str, list[str]]
 
     # Parameters
     column_dtype: Optional[torch.dtype] = None
-    index_dtype: Optional[torch.dtype] = None
     device: Optional[str | torch.device] = None
-    encode_index: Optional[bool] = None
-    groups: dict[str, list[str]]
     dtypes: dict[str, None | torch.dtype]
+    encode_index: Optional[bool] = None
+    index_dtype: Optional[torch.dtype] = None
 
     def __init__(
         self,
@@ -964,8 +964,8 @@ class Frame2TensorDict(BaseEncoder):
         self.device = device  # type: ignore[assignment]
         self.encode_index = encode_index
 
-    def __repr__(self) -> str:
-        return repr_mapping(self.groups, title=self.__class__.__name__)
+    def __repr__(self, **kwargs: Any) -> str:
+        return repr_mapping(self.groups, wrapped=self, **kwargs)
 
     def fit(self, data: DataFrame, /) -> None:
         index = data.index.to_frame()
@@ -1063,7 +1063,7 @@ class Frame2TensorDict(BaseEncoder):
         return df
 
 
-class Frame2TensorTuple(BaseEncoder):
+class FrameAsTuple(BaseEncoder):
     r"""Encodes a DataFrame as a tuple of column and index tensor."""
 
     # Attributes

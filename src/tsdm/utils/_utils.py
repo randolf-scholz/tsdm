@@ -6,21 +6,13 @@ TODO:  Module description
 __all__ = [
     # Classes
     # Functions
-    "dataclass_args_kwargs",
     "deep_dict_update",
     "deep_kval_update",
     "flatten_dict",
     "flatten_nested",
-    "get_function_args",
-    "mandatory_argcount",
-    "mandatory_kwargs",
     "initialize_from_config",
     "is_dunder",
-    "is_keyword_only_arg",
-    "is_mandatory_arg",
     "is_partition",
-    "is_positional_arg",
-    "is_positional_only_arg",
     "is_zipfile",
     "now",
     "pairwise_disjoint",
@@ -32,12 +24,10 @@ __all__ = [
     "unflatten_dict",
 ]
 
-import inspect
 import os
 import shutil
 import warnings
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
-from dataclasses import is_dataclass
 from datetime import datetime
 from importlib import import_module
 from logging import getLogger
@@ -55,48 +45,11 @@ from tqdm.auto import tqdm
 
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.protocols import Dataclass
 from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 
 __logger__ = getLogger(__name__)
-KEYWORD_ONLY = inspect.Parameter.KEYWORD_ONLY
-POSITIONAL_ONLY = inspect.Parameter.POSITIONAL_ONLY
-POSITIONAL_OR_KEYWORD = inspect.Parameter.POSITIONAL_OR_KEYWORD
-VAR_KEYWORD = inspect.Parameter.VAR_KEYWORD
-VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
-Kind = inspect._ParameterKind  # pylint: disable=protected-access
-
-
-def dataclass_args_kwargs(
-    obj: Dataclass, *, ignore_parent_fields: bool = False
-) -> tuple[tuple[Any, ...], dict[str, Any]]:
-    r"""Return positional and keyword arguments of a dataclass."""
-    if not isinstance(obj, Dataclass):
-        raise TypeError(f"Expected dataclass, got {type(obj)}")
-
-    forbidden_keys: set[str] = set()
-    if ignore_parent_fields:
-        for parent in obj.__class__.__mro__[1:]:
-            if is_dataclass(parent):
-                cls = cast(
-                    Dataclass, parent
-                )  # FIXME: https://github.com/python/cpython/issues/102395
-                forbidden_keys.update(cls.__dataclass_fields__)
-
-    args = tuple(
-        getattr(obj, key)
-        for key, val in obj.__dataclass_fields__.items()
-        if not val.kw_only and key not in forbidden_keys
-    )
-    kwargs = {
-        key: getattr(obj, key)
-        for key, val in obj.__dataclass_fields__.items()
-        if val.kw_only and key not in forbidden_keys
-    }
-
-    return args, kwargs
 
 
 def variants(s: str | list[str]) -> list[str]:
@@ -370,59 +323,6 @@ def is_partition(*partition: Collection, union: Optional[Sequence] = None) -> bo
     return len(part_union) == sum(len(p) for p in partition)
 
 
-def is_mandatory_arg(p: inspect.Parameter, /) -> bool:
-    r"""Check if parameter is mandatory."""
-    return p.default is inspect.Parameter.empty and p.kind not in (
-        VAR_POSITIONAL,
-        VAR_KEYWORD,
-    )
-
-
-@overload
-def is_positional_arg(p: inspect.Parameter, /) -> bool:
-    ...
-
-
-@overload
-def is_positional_arg(p: Callable, name: str, /) -> bool:
-    ...
-
-
-def is_positional_arg(*args):
-    r"""Check if parameter is positional argument."""
-    match args:
-        case (inspect.Parameter() as p,):
-            return p.kind in (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL)
-        # FIXME: https://github.com/python/mypy/issues/14014
-        case Callable() as func, str() as name:  # type: ignore[misc]
-            func = cast(Callable, func)  # type: ignore[has-type]
-            sig = inspect.signature(func)
-            if name not in sig.parameters:
-                raise ValueError(f"Function {func} takes np argument named {name!r}.")
-            return is_positional_arg(sig.parameters[name])
-        case (_, _, *_):
-            raise TypeError(
-                f"{is_positional_arg} takes 1 or 2 arguments, got {len(args)}"
-            )
-        case _:
-            raise TypeError(f"Unsupported types: {[type(arg) for arg in args]}")
-
-
-def is_positional_only_arg(p: inspect.Parameter, /) -> bool:
-    """Check if parameter is positional only argument."""
-    return p.kind in (POSITIONAL_ONLY, VAR_POSITIONAL)
-
-
-def is_keyword_only_arg(p: inspect.Parameter, /) -> bool:
-    """Check if parameter is keyword only argument."""
-    return p.kind in (KEYWORD_ONLY, VAR_KEYWORD)
-
-
-def is_keyword_arg(p: inspect.Parameter, /) -> bool:
-    """Check if parameter is keyword argument."""
-    return p.kind in (POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD)
-
-
 def is_zipfile(path: Path) -> bool:
     r"""Return `True` if the file is a zipfile."""
     try:
@@ -430,75 +330,6 @@ def is_zipfile(path: Path) -> bool:
             return True
     except (BadZipFile, IsADirectoryError):
         return False
-
-
-def mandatory_argcount(f: Callable[..., Any]) -> int:
-    r"""Get the number of mandatory arguments of a function."""
-    sig = inspect.signature(f)
-    return sum(is_mandatory_arg(p) for p in sig.parameters.values())
-
-
-def mandatory_kwargs(f: Callable[..., Any]) -> set[str]:
-    r"""Get the mandatory keyword arguments of a function."""
-    sig = inspect.signature(f)
-    return {
-        name
-        for name, p in sig.parameters.items()
-        if is_mandatory_arg(p) and is_keyword_arg(p)
-    }
-
-
-def get_function_args(
-    f: Callable[..., Any],
-    mandatory: Optional[bool] = None,
-    kinds: Optional[str | Kind | list[Kind]] = None,
-) -> list[inspect.Parameter]:
-    r"""Filter function parameters by kind and optionality."""
-
-    def get_kinds(s: str | Kind) -> set[Kind]:
-        if isinstance(s, Kind):
-            return {s}
-
-        match s.lower():
-            case "p" | "positional":
-                return {POSITIONAL_ONLY, VAR_POSITIONAL}
-            case "k" | "keyword":
-                return {KEYWORD_ONLY, VAR_KEYWORD}
-            case "v" | "var":
-                return {VAR_POSITIONAL, VAR_KEYWORD}
-            case "po" | "positional_only":
-                return {POSITIONAL_ONLY}
-            case "ko" | "keyword_only":
-                return {KEYWORD_ONLY}
-            case "pk" | "positional_or_keyword":
-                return {POSITIONAL_OR_KEYWORD}
-            case "vp" | "var_positional":
-                return {VAR_POSITIONAL}
-            case "vk" | "var_keyword":
-                return {VAR_KEYWORD}
-        raise ValueError(f"Unknown kind {s}")
-
-    match kinds:
-        case None:
-            allowed_kinds = set(Kind)
-        case str() | Kind():
-            allowed_kinds = get_kinds(kinds)
-        case Sequence():
-            allowed_kinds = set().union(*map(get_kinds, kinds))
-        case _:
-            raise ValueError(f"Unknown type for kinds: {type(kinds)}")
-
-    sig = inspect.signature(f)
-    params = list(sig.parameters.values())
-
-    if mandatory is None:
-        return [p for p in params if p.kind in allowed_kinds]
-
-    return [
-        p
-        for p in params
-        if is_mandatory_arg(p) is mandatory and p.kind in allowed_kinds
-    ]
 
 
 def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:

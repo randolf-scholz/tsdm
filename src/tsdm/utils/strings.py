@@ -292,7 +292,7 @@ def repr_mapping(
         repr_fun,
         align=align,
         indent=indent + max_key_length,
-        padding=padding,
+        padding=padding + padding,
         recursive=r,
         # repr_fun=repr_fun,
     )

@@ -5,7 +5,7 @@ import logging
 
 from pandas import DataFrame
 
-from tsdm.encoders import Frame2TensorDict
+from tsdm.encoders import FrameAsDict
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ def test_frame2tensordict():
             "D": [1, 2, 3],
         }
     )
-    encoder = Frame2TensorDict(groups={"X": ["B"], "Y": ...})
+    encoder = FrameAsDict(groups={"X": ["B"], "Y": ...})
     encoder.fit(df)
     encoded = encoder.encode(df)
     X = encoded["X"].numpy()
