@@ -195,6 +195,7 @@ class Sample(NamedTuple):
     """The predictors the model is allowed to base its forecast on."""
     targets: Targets
     """The targets the model is supposed to predict."""
+    rawdata: Optional[Any] = None
 
     def __repr__(self) -> str:
         return repr_namedtuple(self)
@@ -275,7 +276,8 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     dataset: TimeSeriesDataset | TimeSeriesCollection
     """The dataset to sample from."""
 
-    _: KW_ONLY = NotImplemented
+    _: KW_ONLY
+
     targets: Index | list = NotImplemented
     r"""Columns of the data that are used as targets."""
     observables: Index | list = NotImplemented
@@ -354,8 +356,8 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         # timeseries
         ts_observed = tsd[observation_horizon]
         ts_forecast = tsd[forecasting_horizon]
-        horizon_index = ts_observed.index.union(ts_forecast.index)
-        ts = tsd[horizon_index]
+        joint_horizon_index = ts_observed.index.union(ts_forecast.index)
+        ts = tsd[joint_horizon_index]
         u: Optional[DataFrame] = None
 
         if sparse_columns:
@@ -392,7 +394,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         # assemble sample
         inputs = Inputs(q=t_target, x=x, u=u, metadata=md)
         targets = Targets(y=y, metadata=md_targets)
-        sample = Sample(key=key, inputs=inputs, targets=targets)
+        sample = Sample(key=key, inputs=inputs, targets=targets, rawdata=ts)
 
         if sparse_index:
             sample.sparsify_index()
@@ -494,7 +496,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     dataset: TimeSeriesCollection
     r"""Dataset from which the splits are constructed."""
 
-    _: KW_ONLY = NotImplemented
+    _: KW_ONLY
 
     index: Sequence[SplitID] = NotImplemented
     r"""List of index."""

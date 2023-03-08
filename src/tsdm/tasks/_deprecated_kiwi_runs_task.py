@@ -333,7 +333,9 @@ class KIWI_RUNS_TASK(OldBaseTask):
 class _Dataset(torch.utils.data.Dataset):
     timeseries: DataFrame
     metadata: DataFrame
-    _: KW_ONLY = NotImplemented
+
+    _: KW_ONLY
+
     observables: list[str]
     targets: list[str]
     observation_horizon: int

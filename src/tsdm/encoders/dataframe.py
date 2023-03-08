@@ -1033,7 +1033,7 @@ class FrameAsDict(BaseEncoder):
             else:
                 assert isinstance(self.dtypes[key], None | torch.dtype)
 
-    def encode(self, data: DataFrame, /) -> dict[str, Tensor | None]:
+    def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
         """Encode a DataFrame as a dict of Tensors.
 
         The encode method ensures treatment of missingness:
@@ -1043,27 +1043,15 @@ class FrameAsDict(BaseEncoder):
         if self.encode_index:
             data = data.reset_index()
 
-        result = {}
-        for key, cols in self.groups.items():
-            if set(cols).issubset(data.columns):
-                result[key] = torch.tensor(
-                    data[cols].to_numpy(),
-                    device=self.device,
-                    dtype=self.dtypes[key],
-                ).squeeze()
-            else:
-                result[key] = None
-        return result
-
-        # return {
-        #     key: torch.tensor(
-        #         data[cols].to_numpy(),
-        #         device=self.device,
-        #         dtype=self.dtypes[key],
-        #     ).squeeze()
-        #     for key, cols in self.groups.items()
-        #     if set(cols).issubset(data.columns)
-        # }
+        return {
+            key: torch.tensor(
+                data[cols].to_numpy(),
+                device=self.device,
+                dtype=self.dtypes[key],
+            ).squeeze()
+            for key, cols in self.groups.items()
+            if set(cols).issubset(data.columns)
+        }
 
     def decode(self, data: dict[str, Tensor | None], /) -> DataFrame:
         dfs = []
