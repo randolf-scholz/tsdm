@@ -5,6 +5,7 @@ TODO: Add module description.
 
 __all__ = [
     "BUILTIN_CONSTANTS",
+    "BUILTIN_TYPES",
     "EMPTY_PATH",
     "NULL_VALUES",
     "PRECISION",
@@ -26,6 +27,28 @@ import torch
 
 BUILTIN_CONSTANTS = [None, True, False, Ellipsis, NotImplemented]
 """Builtin constants https://docs.python.org/3/library/constants.html."""
+
+BUILTIN_TYPES: Final[list[type]] = [
+    type(None),
+    bool,
+    int,
+    float,
+    complex,
+    str,
+    bytes,
+    list,
+    tuple,
+    set,
+    frozenset,
+    dict,
+    type,
+    slice,
+    range,
+    object,
+    type(Ellipsis),
+    type(NotImplemented),
+]
+"""Builtin types https://docs.python.org/3/library/stdtypes.html."""
 
 EMPTY_PATH: Final[Path] = Path()
 r"""Constant: Blank path."""

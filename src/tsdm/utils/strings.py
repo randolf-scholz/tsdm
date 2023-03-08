@@ -24,6 +24,7 @@ import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from dataclasses import is_dataclass
 from functools import partial
+from types import FunctionType
 from typing import Any, Final, Optional, Protocol, cast, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -32,7 +33,7 @@ from torch import Tensor
 from tsdm.types.aliases import ScalarDType
 from tsdm.types.dtypes import TYPESTRINGS
 from tsdm.types.protocols import Array, Dataclass, NTuple
-from tsdm.utils.constants import BUILTIN_CONSTANTS
+from tsdm.utils.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
 
 __logger__ = logging.getLogger(__name__)
 
@@ -123,6 +124,29 @@ class ReprProtocol(Protocol):
         wrapped: Optional[object] = None,
     ) -> str:
         ...
+
+
+def get_identifier(obj: Any, /, **_: Any) -> str:
+    r"""Return the identifier of an object."""
+    if is_dataclass(obj):
+        identifier = "<dataclass>"
+    elif isinstance(obj, NTuple):
+        identifier = "<tuple>"
+    elif isinstance(obj, Array | DataFrame | Series):
+        identifier = "<array>"
+    elif isinstance(obj, Mapping):  # type: ignore[unreachable]
+        identifier = "<mapping>"
+    elif isinstance(obj, Sequence):
+        identifier = "<sequence>"
+    elif isinstance(obj, type):
+        identifier = "<type>"
+    elif isinstance(obj, FunctionType):
+        identifier = "<function>"
+    else:
+        identifier = ""
+    if type(obj) in BUILTIN_TYPES:
+        identifier = ""
+    return identifier
 
 
 def repr_object(obj: Any, /, fallback: Callable[..., str] = repr, **kwargs: Any) -> str:
@@ -229,29 +253,19 @@ def repr_mapping(
     else:
         max_key_length = 0
 
-    # check builtin
     self = obj if wrapped is None else wrapped
-    if type(self) == dict:  # pylint: disable=unidiomatic-typecheck
-        if title is None:
-            title = ""
-        if identifier is None:
-            identifier = dict.__name__
+    cls = type(self)
 
     # set title
-    cls = type(self)
     if title is None:
-        title = cls.__name__
+        if cls is dict:
+            title = ""
+        else:
+            title = cls.__name__
 
     # set identifier
-    if identifier is None and title != cls.__name__:
-        identifier = cls.__name__
-    if identifier is None and title == cls.__name__:
-        for base in cls.__bases__:
-            if issubclass(base, Mapping):
-                identifier = base.__name__
-                break
-        else:
-            identifier = "Mapping"
+    if identifier is None:
+        identifier = get_identifier(self)
 
     # # TODO: automatic linebreak detection if string length exceeds max_length
     # if recursive:
@@ -286,7 +300,7 @@ def repr_mapping(
     items = [(str(key), to_string(value)) for key, value in obj.items()]
 
     # Assemble the string
-    string = f"{title}<{identifier}>" + "(" + br
+    string = f"{title}{identifier}" + "(" + br
     if len(obj) <= maxitems:
         string += f"{sep}{br}".join(
             f"{pad}{key:<{max_key_length}}: {value}" for key, value in items
@@ -396,30 +410,19 @@ def repr_sequence(
     else:
         left, right = "(", ")"
 
-    # check builtin
     self = obj if wrapped is None else wrapped
-    for builtin in (list, tuple, set):
-        if type(self) == builtin:  # pylint: disable=unidiomatic-typecheck
-            if title is None:
-                title = ""
-            if identifier is None:
-                identifier = builtin.__name__
+    cls = type(self)
 
     # set title
-    cls = type(self)
     if title is None:
-        title = cls.__name__
+        if cls in (list, tuple, set):
+            title = ""
+        else:
+            title = cls.__name__
 
     # set identifier
-    if identifier is None and title != cls.__name__:
-        identifier = cls.__name__
-    if identifier is None and title == cls.__name__:
-        for base in cls.__bases__:
-            if issubclass(base, Mapping):
-                identifier = base.__name__
-                break
-        else:
-            identifier = "Sequence"
+    if identifier is None:
+        identifier = get_identifier(self)
 
     # if recursive:
     #     if repr_fun not in RECURSIVE_REPR_FUNS:
@@ -451,7 +454,7 @@ def repr_sequence(
     )
 
     # Assemble the string
-    string = f"{title}<{identifier}>" + left + br
+    string = f"{title}{identifier}" + left + br
     if len(obj) <= maxitems:
         string += f"{sep}{br}".join(f"{pad}{to_string(value)}" for value in obj)
     else:
@@ -515,17 +518,17 @@ def repr_dataclass(
 
     self = obj if wrapped is None else wrapped
     cls = type(self)
-    title = cls.__name__ if title is None else title
 
-    if identifier is None and title != cls.__name__:
-        identifier = cls.__name__
-    if identifier is None and title == cls.__name__:
-        for base in cls.__bases__:
-            if is_dataclass(base):
-                identifier = base.__name__
-                break
+    # set title
+    if title is None:
+        if cls in BUILTIN_CONSTANTS:
+            title = ""
         else:
-            identifier = "dataclass"
+            title = cls.__name__
+
+    # set identifier
+    if identifier is None:
+        identifier = get_identifier(self)
 
     if recursive:
         return repr_mapping(
@@ -583,8 +586,18 @@ def repr_namedtuple(
         repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
 
     self = obj if wrapped is None else wrapped
-    title = type(self).__name__ if title is None else title
-    identifier = "tuple" if identifier is None else identifier
+    cls = type(self)
+
+    # set title
+    if title is None:
+        if cls in BUILTIN_CONSTANTS:
+            title = ""
+        else:
+            title = cls.__name__
+
+    # set identifier
+    if identifier is None:
+        identifier = get_identifier(self)
 
     if recursive:
         return repr_mapping(
@@ -636,10 +649,12 @@ def repr_type(obj: Any, /, **_: Any) -> str:
         identifier = "<sequence>"
     else:
         identifier = ""
+    if type(obj) in BUILTIN_TYPES:
+        identifier = ""
 
     is_type = isinstance(obj, type)
     obj_repr = obj.__name__ if is_type else obj.__class__.__name__
-    return f"{obj_repr}{identifier}{'()'*(~is_type)}"
+    return f"{obj_repr}{identifier}{()*(not is_type)}"
 
 
 def repr_array(
