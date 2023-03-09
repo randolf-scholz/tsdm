@@ -34,6 +34,7 @@ from abc import ABCMeta
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from functools import wraps
+from itertools import chain
 from pathlib import Path
 from typing import (
     Any,
@@ -56,7 +57,7 @@ from torch import Tensor
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from tqdm.auto import tqdm
+from tqdm.autonotebook import tqdm
 
 from tsdm.linalg import (
     col_corr,
@@ -77,7 +78,8 @@ from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
 from tsdm.types.variables import ParameterVar as P
-from tsdm.utils import dataclass_args_kwargs, mandatory_kwargs
+from tsdm.utils import mandatory_kwargs
+from tsdm.utils.strings import repr_object
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 
@@ -361,13 +363,18 @@ def log_model(
     }
 
     if log_norms:
-        writer.add_scalar(f"{identifier}/gradients", multi_norm(variables), i)
-        writer.add_scalar(f"{identifier}/variables", multi_norm(gradients), i)
+        writer.add_scalar(
+            f"{identifier}/gradients", multi_norm(list(variables.values())), i
+        )
+        writer.add_scalar(
+            f"{identifier}/variables", multi_norm(list(gradients.values())), i
+        )
 
     if log_histograms:
         for key, weight in variables.items():
             if not weight.numel():
                 continue
+            print(weight)
             writer.add_histogram(f"{identifier}:variables/{key}", weight, i)
 
         for key, gradient in gradients.items():
@@ -384,7 +391,6 @@ def log_optimizer(
     *,
     log_histograms: bool = True,
     log_norms: bool = True,
-    loss: Optional[float | Tensor] = None,
     name: str = "optimizer",
     prefix: str = "",
     postfix: str = "",
@@ -401,8 +407,6 @@ def log_optimizer(
     if log_norms:
         log(f"{identifier}/model-gradients", multi_norm(gradients), i)
         log(f"{identifier}/model-variables", multi_norm(variables), i)
-        if loss is not None:
-            log(f"{identifier}/loss", loss, i)
         if moments_1:
             log(f"{identifier}/param-moments_1", multi_norm(moments_1), i)
         if moments_2:
@@ -519,7 +523,7 @@ class CallbackMetaclass(ABCMeta):
         super().__init__(*args, **kwargs)
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
     """Base class for callbacks."""
 
@@ -548,6 +552,10 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
             self.callback(i, **kwargs)
         else:
             self.LOGGER.debug("Skipping callback.")
+
+    def __repr__(self):
+        """Return a string representation of the callback."""
+        return repr_object(self)
 
 
 @dataclass
@@ -580,9 +588,23 @@ class EvaluationCallback(BaseCallback):
         for i in self.history.index:
             self.compute_results(i)
 
+        # make sure there is exactly one validation split.
+        candidate = None
+        for key in self.dataloaders:
+            if key.lower() in ("val", "valid", "validation"):
+                if candidate is not None:
+                    raise ValueError(
+                        f"Found multiple validation splits: {candidate} and {key}!"
+                    )
+                candidate = key
+        if candidate is None:
+            raise ValueError("Could not find a validation split!")
+        self._val_key = candidate
+
     def callback(self, i: int, /, **kwargs: Any) -> None:
         # update the history
         self.compute_results(i)
+        self.compute_best_epoch(i)
 
         for key in self.dataloaders:
             log_values(
@@ -599,7 +621,7 @@ class EvaluationCallback(BaseCallback):
                 scalars=self.best_epoch.loc[i, key].to_dict(),
                 writer=self.writer,
                 key=key,
-                name=f"{self.name}:best",
+                name="score",
                 prefix=self.prefix,
                 postfix=self.postfix,
             )
@@ -621,8 +643,16 @@ class EvaluationCallback(BaseCallback):
         """Compute the best epoch for the given index."""
         # unoptimized...
         mask = self.history.index <= i
-        best_epoch = self.history.loc[mask, "validation"].rolling(5).mean().idxmin()
-        self.best_epoch.loc[i] = self.history.iloc[best_epoch]
+        best_epochs = (
+            self.history.loc[mask, self._val_key]
+            .rolling(5, min_periods=1)
+            .mean()
+            .idxmin()
+        )
+        for key in self.dataloaders:
+            for metric in self.metrics:
+                best_value = self.history.loc[best_epochs[metric], (key, metric)]
+                self.best_epoch.loc[i, (key, metric)] = best_value
 
     @torch.no_grad()
     def get_all_predictions(self, dataloader: DataLoader) -> TargetsAndPredics:
@@ -636,13 +666,13 @@ class EvaluationCallback(BaseCallback):
             predics_list.append(predic)
 
         targets = torch.nn.utils.rnn.pad_sequence(
-            targets_list,
+            chain.from_iterable(targets_list),  # type: ignore[arg-type]
             batch_first=True,
             padding_value=torch.nan,
         ).squeeze()
 
         predics = torch.nn.utils.rnn.pad_sequence(
-            predics_list,
+            chain.from_iterable(predics_list),  # type: ignore[arg-type]
             batch_first=True,
             padding_value=torch.nan,
         ).squeeze()
@@ -749,11 +779,23 @@ class KernelCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __post_init__(self) -> None:
-        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
-
     def callback(self, i: int, /, **state_dict: Any) -> None:
-        log_kernel(i, *self.args, **self.kwargs)
+        log_kernel(
+            i,
+            kernel=self.kernel,
+            writer=self.writer,
+            log_figures=self.log_figures,
+            log_scalars=self.log_scalars,
+            log_distances=self.log_distances,
+            log_heatmap=self.log_heatmap,
+            log_linalg=self.log_linalg,
+            log_norms=self.log_norms,
+            log_scaled_norms=self.log_scaled_norms,
+            log_spectrum=self.log_spectrum,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )
 
 
 @dataclass
@@ -769,11 +811,15 @@ class LRSchedulerCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __post_init__(self) -> None:
-        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
-
     def callback(self, i: int, /, **state_dict: Any) -> None:
-        log_lr_scheduler(i, *self.args, **self.kwargs)
+        log_lr_scheduler(
+            i,
+            lr_scheduler=self.lr_scheduler,
+            writer=self.writer,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )
 
 
 @dataclass
@@ -789,11 +835,17 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __post_init__(self) -> None:
-        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
-
     def callback(self, i: int, /, *, targets: Tensor, predics: Tensor) -> None:  # type: ignore[override]
-        log_metrics(i, *self.args, targets=targets, predics=predics, **self.kwargs)
+        log_metrics(
+            i,
+            metrics=self.metrics,
+            writer=self.writer,
+            targets=targets,
+            predics=predics,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )
 
 
 @dataclass
@@ -805,19 +857,25 @@ class ModelCallback(BaseCallback):
 
     _: KW_ONLY
 
-    log_histograms: bool = True
-    log_scalars: bool = True
+    log_histograms: bool = False
+    log_norms: bool = True
     name: str = "model"
     prefix: str = ""
     postfix: str = ""
 
-    def __post_init__(self) -> None:
-        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
-
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if "model" in state_dict:
             self.model = state_dict["model"]
-        log_model(i, *self.args, **self.kwargs)
+        log_model(
+            i,
+            model=self.model,
+            writer=self.writer,
+            log_histograms=self.log_histograms,
+            log_norms=self.log_norms,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )
 
 
 @dataclass
@@ -829,20 +887,25 @@ class OptimizerCallback(BaseCallback):
 
     _: KW_ONLY
 
-    log_histograms: bool = True
-    log_scalars: bool = True
-    loss: Optional[float | Tensor] = None
+    log_histograms: bool = False
+    log_norms: bool = True
     name: str = "optimizer"
     prefix: str = ""
     postfix: str = ""
 
-    def __post_init__(self) -> None:
-        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
-
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if "optimizer" in state_dict:
             self.optimizer = state_dict["optimizer"]
-        log_optimizer(i, *self.args, **self.kwargs)
+        log_optimizer(
+            i,
+            optimizer=self.optimizer,
+            writer=self.writer,
+            log_histograms=self.log_histograms,
+            log_norms=self.log_norms,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )
 
 
 @dataclass
@@ -859,14 +922,19 @@ class ScalarsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __post_init__(self) -> None:
-        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
-
     def callback(self, i: int, /, **state_dict: Any) -> None:
         for key, value in state_dict.items():
             if key in self.scalars:
                 self.scalars[key] = value
-        log_values(i, *self.args, **self.kwargs)
+        log_values(
+            i,
+            scalars=self.scalars,
+            writer=self.writer,
+            key=self.key,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )
 
 
 @dataclass
@@ -874,7 +942,7 @@ class TableCallback(BaseCallback):
     """Callback to log a table to disk."""
 
     table: DataFrame
-    path: Path
+    writer: SummaryWriter | Path
 
     _: KW_ONLY
 
@@ -884,11 +952,17 @@ class TableCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def __post_init__(self) -> None:
-        self.args, self.kwargs = dataclass_args_kwargs(self, ignore_parent_fields=True)
-
     def callback(self, i: int, /, **state_dict: Any) -> None:
         if hasattr(self.table, "name") and isinstance(self.table.name, str):
             if self.table.name in state_dict:
                 self.table = state_dict[self.table.name]
-        log_table(i, self.args, **self.kwargs)
+        log_table(
+            i,
+            table=self.table,
+            writer=self.writer,
+            options=self.options,
+            filetype=self.filetype,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )

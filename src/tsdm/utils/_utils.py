@@ -41,7 +41,7 @@ import pandas
 from numpy.typing import NDArray
 from pandas import Series
 from torch import nn
-from tqdm.auto import tqdm
+from tqdm.autonotebook import tqdm
 
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike

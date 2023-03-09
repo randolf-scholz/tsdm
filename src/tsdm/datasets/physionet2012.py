@@ -157,7 +157,7 @@ from typing import IO, Any, Literal, TypeAlias
 
 import numpy as np
 import pandas as pd
-from tqdm.auto import tqdm
+from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import DATASET_OBJECT, MultiFrameDataset
 from tsdm.encoders import TripletDecoder

@@ -15,7 +15,7 @@ from typing import Any, Optional
 from urllib.parse import urlparse
 
 import requests
-from tqdm.auto import tqdm
+from tqdm.autonotebook import tqdm
 
 from tsdm.types.aliases import PathLike
 
