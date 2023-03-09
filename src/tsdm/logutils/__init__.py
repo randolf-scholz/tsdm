@@ -34,7 +34,8 @@ __all__ = [
     "TableCallback",
 ]
 
-from tsdm.logutils._callbacks import (
+from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger  # , StandardLogger
+from tsdm.logutils.callbacks import (
     BaseCallback,
     Callback,
     CheckpointCallback,
@@ -55,7 +56,6 @@ from tsdm.logutils._callbacks import (
     log_table,
     log_values,
 )
-from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger  # , StandardLogger
 
 CALLBACKS: dict[str, type[Callback[...]]] = {
     "CheckpointCallback": CheckpointCallback,

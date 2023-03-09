@@ -73,7 +73,7 @@ from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from tsdm.logutils._callbacks import (
+from tsdm.logutils.callbacks import (  # ModelCallback,
     Callback,
     CheckpointCallback,
     EvaluationCallback,
@@ -81,7 +81,6 @@ from tsdm.logutils._callbacks import (
     KernelCallback,
     LRSchedulerCallback,
     MetricsCallback,
-    ModelCallback,
     OptimizerCallback,
 )
 from tsdm.metrics import Loss
@@ -137,6 +136,8 @@ class BaseLogger:
 
         # call callbacks
         for num, callback in enumerate(self.callbacks[key]):
+            # pbar := tqdm(self.callbacks[key], desc="callbacks", leave=False)
+            # pbar.set_postfix(callback=f"{type(callback).__name__}")
             kwds = required_kwargs[num]
             callback(i, **{kwd: kwargs[kwd] for kwd in kwds})
 
@@ -227,10 +228,13 @@ class DefaultLogger(BaseLogger):
             {} if checkpointable_objects is None else checkpointable_objects
         )
         # add default batch callbacks
-        if self.optimizer is not None:
-            self.add_callback("batch", OptimizerCallback(self.optimizer, self.writer))
         if self.metrics is not None:
             self.add_callback("batch", MetricsCallback(self.metrics, self.writer))
+        if self.optimizer is not None:
+            self.add_callback(
+                "batch",
+                OptimizerCallback(self.optimizer, self.writer, log_histograms=False),
+            )
 
         # add default epoch callbacks
         if (
@@ -253,8 +257,8 @@ class DefaultLogger(BaseLogger):
                     predict_fn=self.predict_fn,
                 ),
             )
-        if self.model is not None:
-            self.add_callback("epoch", ModelCallback(self.model, self.writer))
+        # if self.model is not None:
+        #     self.add_callback("epoch", ModelCallback(self.model, self.writer))
         if self.optimizer is not None:
             self.add_callback("epoch", OptimizerCallback(self.optimizer, self.writer))
         if self.lr_scheduler is not None:
