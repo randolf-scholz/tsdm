@@ -660,7 +660,7 @@ class EvaluationCallback(BaseCallback):
         targets_list: list[Tensor] = []
         predics_list: list[Tensor] = []
 
-        for batch in tqdm(dataloader, desc="evaluating...", leave=False):
+        for batch in tqdm(dataloader, desc="Evaluation", leave=False):
             target, predic = self.predict_fn(self.model, batch)
             targets_list.append(target)
             predics_list.append(predic)
