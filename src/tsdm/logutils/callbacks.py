@@ -17,6 +17,7 @@ __all__ = [
     # Callbacks
     "BaseCallback",
     "CheckpointCallback",
+    "ConfigCallback",
     "EvaluationCallback",
     "HParamCallback",
     "KernelCallback",
@@ -28,6 +29,7 @@ __all__ = [
     "TableCallback",
 ]
 
+import json
 import logging
 import pickle
 from abc import ABCMeta
@@ -165,6 +167,34 @@ def make_checkpoint(i: int, /, objects: Mapping[str, Any], path: PathLike) -> No
             case _:
                 with open(path / f"{name}.pickle", "wb") as file:
                     pickle.dump(obj, file)
+
+
+def log_config(
+    i: int | str,
+    /,
+    config: JSON,
+    writer: SummaryWriter | Path,
+    *,
+    fmt: Literal["json", "yaml", "toml"] = "yaml",
+    name: str = "config",
+    prefix: str = "",
+    postfix: str = "",
+) -> None:
+    """Log config to tensorboard."""
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
+    path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
+    path = path / f"{identifier}-{i}.{fmt}"
+    match fmt:
+        case "json":
+            with open(path, "w", encoding="utf8") as file:
+                json.dump(config, file)
+        case "yaml":
+            with open(path, "w", encoding="utf8") as file:
+                yaml.safe_dump(config, file)
+        case "toml":
+            raise NotImplementedError("toml not implemented yet!")
+        case _:
+            raise ValueError(f"{fmt=} not understood!")
 
 
 @torch.no_grad()
@@ -321,6 +351,7 @@ def log_metrics(
     inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,
     targets: Optional[Tensor] = None,
     predics: Optional[Tensor] = None,
+    key: str = "",
     name: str = "metrics",
     prefix: str = "",
     postfix: str = "",
@@ -338,7 +369,7 @@ def log_metrics(
     assert isinstance(metrics, Mapping)
 
     scalars = compute_metrics(metrics, targets=targets, predics=predics)
-    log_values(i, scalars, writer, name=name, prefix=prefix, postfix=postfix)
+    log_values(i, scalars, writer, key=key, name=name, prefix=prefix, postfix=postfix)
 
 
 @torch.no_grad()
@@ -476,25 +507,6 @@ def log_table(
             raise ValueError(f"Unknown {filetype=!r}!")
 
 
-def save_config(
-    config: JSON,
-    writer: SummaryWriter | Path,
-    /,
-    *,
-    name: str = "config",
-    prefix: str = "",
-    postfix: str = "",
-) -> None:
-    r"""Save the config to the log directory."""
-    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
-
-    path = Path(writer.log_dir if isinstance(writer, SummaryWriter) else writer)
-    path = path / f"{identifier+'-'*bool(identifier)}config.json"
-
-    with open(path, "w", encoding="utf8") as file:
-        yaml.safe_dump(config, file, indent=4)
-
-
 @runtime_checkable
 class Callback(Protocol[P]):
     """Protocol for callbacks.
@@ -556,6 +568,33 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
     def __repr__(self):
         """Return a string representation of the callback."""
         return repr_object(self)
+
+
+@dataclass
+class ConfigCallback(BaseCallback):
+    """Callback to log the config to tensorboard."""
+
+    config: JSON
+    writer: SummaryWriter | Path
+
+    _: KW_ONLY
+
+    fmt: Literal["json", "yaml", "toml"] = "yaml"
+    name: str = "config"
+    prefix: str = ""
+    postfix: str = ""
+
+    def callback(self, i: int, /, **_: Any) -> None:
+        """Log the config to tensorboard."""
+        log_config(
+            i,
+            config=self.config,
+            writer=self.writer,
+            fmt=self.fmt,
+            name=self.name,
+            prefix=self.prefix,
+            postfix=self.postfix,
+        )
 
 
 @dataclass
@@ -831,6 +870,7 @@ class MetricsCallback(BaseCallback):
 
     _: KW_ONLY
 
+    key: str = ""
     name: str = "metrics"
     prefix: str = ""
     postfix: str = ""
@@ -842,6 +882,7 @@ class MetricsCallback(BaseCallback):
             writer=self.writer,
             targets=targets,
             predics=predics,
+            key=self.key,
             name=self.name,
             prefix=self.prefix,
             postfix=self.postfix,

@@ -229,7 +229,9 @@ class DefaultLogger(BaseLogger):
         )
         # add default batch callbacks
         if self.metrics is not None:
-            self.add_callback("batch", MetricsCallback(self.metrics, self.writer))
+            self.add_callback(
+                "batch", MetricsCallback(self.metrics, self.writer, key="batch")
+            )
         if self.optimizer is not None:
             self.add_callback(
                 "batch",
@@ -259,8 +261,8 @@ class DefaultLogger(BaseLogger):
             )
         # if self.model is not None:
         #     self.add_callback("epoch", ModelCallback(self.model, self.writer))
-        if self.optimizer is not None:
-            self.add_callback("epoch", OptimizerCallback(self.optimizer, self.writer))
+        # if self.optimizer is not None:
+        #     self.add_callback("epoch", OptimizerCallback(self.optimizer, self.writer))
         if self.lr_scheduler is not None:
             self.add_callback(
                 "epoch", LRSchedulerCallback(self.lr_scheduler, self.writer)
