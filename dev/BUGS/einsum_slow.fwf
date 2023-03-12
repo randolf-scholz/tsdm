@@ -1,16 +1,16 @@
-size            128
-dtype       float32
-framework     torch
+size               128
+dtype          float32
+framework          jax  torch
 reduction
-kl,ijkl->ij   0.314
-lk,ijkl->ij   0.314
-ji,ijkl->kl   0.317
-ij,ijkl->kl   0.950
-jk,ijkl->il   0.963
-ki,ijkl->jl   0.964
-kj,ijkl->il   0.964
-ik,ijkl->jl   0.965
-il,ijkl->jk   1.768
-li,ijkl->jk   1.772
-jl,ijkl->ik   1.838
-lj,ijkl->ik   1.841
+ijkl, kl -> ij   0.049  0.670
+ijkl, lk -> ij   0.049  1.456
+ijkl, ki -> jl   0.054  0.003
+ijkl, jl -> ik   0.054  0.886
+ijkl, li -> jk   0.056  0.003
+ijkl, ji -> kl   0.057  0.003
+ijkl, jk -> il   0.057  1.597
+ijkl, kj -> il   0.059  1.867
+ijkl, il -> jk   0.062  0.002
+ijkl, lj -> ik   0.066  0.900
+ijkl, ik -> jl   0.069  0.003
+ijkl, ij -> kl   0.372  0.969

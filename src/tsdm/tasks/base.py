@@ -6,6 +6,13 @@ For simplicity, the evaluation protocol is, in this iteration, restricted to a t
 and a test_loader object. We decided to use a dataloader instead of, say, a key to cater to the question of
 forecasting horizons.
 
+
+Forecasting Model
+-----------------
+
+
+
+
 Decomposable METRICS
 --------------------
 
@@ -117,7 +124,6 @@ from typing import (
     Optional,
     TypeAlias,
     TypeVar,
-    Union,
 )
 
 from pandas import NA, DataFrame, Index, MultiIndex, Series
@@ -154,10 +160,14 @@ class BaseTaskMetaClass(ABCMeta):
 class Inputs(NamedTuple):
     r"""Tuple of inputs."""
 
-    t_target: Series
+    q: Series
+    """Query time points."""
     x: DataFrame
+    """Observations"""
     u: Optional[DataFrame] = None
+    """Covariates."""
     metadata: Optional[DataFrame] = None
+    """Metadata."""
 
     def __repr__(self) -> str:
         return repr_namedtuple(self)
@@ -167,7 +177,9 @@ class Targets(NamedTuple):
     r"""Tuple of inputs."""
 
     y: DataFrame
+    """Target values at the query times."""
     metadata: Optional[DataFrame] = None
+    """Target metadata."""
 
     def __repr__(self) -> str:
         return repr_namedtuple(self)
@@ -177,8 +189,12 @@ class Sample(NamedTuple):
     r"""A sample for forecasting task."""
 
     key: Hashable
+    """The key of the sample - e.g. tuple[outer_index, (obs_rane, forecasting_range)]."""
     inputs: Inputs
+    """The predictors the model is allowed to base its forecast on."""
     targets: Targets
+    """The targets the model is supposed to predict."""
+    rawdata: Optional[Any] = None
 
     def __repr__(self) -> str:
         return repr_namedtuple(self)
@@ -194,9 +210,9 @@ class Sample(NamedTuple):
         if self.targets.y is not None:
             self.targets.y.dropna(how="all", inplace=True)
 
-        if self.inputs.t_target is not None:
-            diff = self.inputs.t_target.index.difference(self.targets.y.index)
-            self.inputs.t_target.drop(diff, inplace=True)
+        if self.inputs.q is not None:
+            diff = self.inputs.q.index.difference(self.targets.y.index)
+            self.inputs.q.drop(diff, inplace=True)
 
         return self
 
@@ -259,7 +275,8 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     dataset: TimeSeriesDataset | TimeSeriesCollection
     """The dataset to sample from."""
 
-    _: KW_ONLY = NotImplemented
+    _: KW_ONLY
+
     targets: Index | list = NotImplemented
     r"""Columns of the data that are used as targets."""
     observables: Index | list = NotImplemented
@@ -270,10 +287,10 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     r"""Columns of the metadata that are targets."""
     metadata_observables: Optional[Index | list] = NotImplemented
     r"""Columns of the metadata that are targets."""
-    sample_format: Union[
-        Literal["masked", "sparse"],
-        tuple[Literal["masked", "sparse"], Literal["masked", "sparse"]],
-    ] = "masked"
+    sparse_index: bool = False
+    r"""Whether to drop sparse rows from the index."""
+    sparse_columns: bool = False
+    r"""Whether to drop sparse cols from the data."""
 
     def __post_init__(self) -> None:
         r"""Post init."""
@@ -297,17 +314,9 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         return len(self.dataset)
 
     def __getitem__(self, key: K) -> Sample:
-        match self.sample_format:
-            case "masked" | ("masked", "masked"):
-                return self.make_sample(key, sparse_index=False, sparse_columns=False)
-            case ("sparse", "masked"):
-                return self.make_sample(key, sparse_index=True, sparse_columns=False)
-            case ("masked", "sparse"):
-                return self.make_sample(key, sparse_index=False, sparse_columns=True)
-            case "sparse" | ("sparse", "sparse"):
-                return self.make_sample(key, sparse_index=True, sparse_columns=True)
-            case _:
-                raise ValueError(f"Unknown sample format {self.sample_format=}")
+        return self.make_sample(
+            key, sparse_index=self.sparse_index, sparse_columns=self.sparse_columns
+        )
 
     def __repr__(self) -> str:
         return repr_dataclass(self)
@@ -338,8 +347,8 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         # timeseries
         ts_observed = tsd[observation_horizon]
         ts_forecast = tsd[forecasting_horizon]
-        horizon_index = ts_observed.index.union(ts_forecast.index)
-        ts = tsd[horizon_index]
+        joint_horizon_index = ts_observed.index.union(ts_forecast.index)
+        ts = tsd[joint_horizon_index]
         u: Optional[DataFrame] = None
 
         if sparse_columns:
@@ -374,9 +383,9 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             md = md.drop(columns=self.metadata_targets)
 
         # assemble sample
-        inputs = Inputs(t_target=t_target, x=x, u=u, metadata=md)
+        inputs = Inputs(q=t_target, x=x, u=u, metadata=md)
         targets = Targets(y=y, metadata=md_targets)
-        sample = Sample(key=key, inputs=inputs, targets=targets)
+        sample = Sample(key=key, inputs=inputs, targets=targets, rawdata=ts)
 
         if sparse_index:
             sample.sparsify_index()
@@ -389,17 +398,17 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         md = self.dataset.metadata
         observables = set(self.observables)
         targets = set(self.targets)
-        covariates = set(self.covariates) if self.covariates is not None else set()
+        covariates = set() if self.covariates is None else set(self.covariates)
         md_observables = (
             set(self.metadata_observables)
             if self.metadata_observables is not None
             else set()
         )
         md_targets = (
-            set(self.metadata_targets) if self.metadata_targets is not None else set()
+            set() if self.metadata_targets is None else set(self.metadata_targets)
         )
         ts_columns = set(ts.columns)
-        md_columns = set(md.columns) if md is not None else set()
+        md_columns = set() if md is None else set(md.columns)
 
         if cols := covariates - ts_columns:
             raise ValueError(f"Covariates {cols} not in found timeseries columns!")
@@ -478,7 +487,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     dataset: TimeSeriesCollection
     r"""Dataset from which the splits are constructed."""
 
-    _: KW_ONLY = NotImplemented
+    _: KW_ONLY
 
     index: Sequence[SplitID] = NotImplemented
     r"""List of index."""

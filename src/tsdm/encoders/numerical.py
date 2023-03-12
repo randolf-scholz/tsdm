@@ -77,7 +77,9 @@ class BoundaryEncoder(BaseEncoder):
 
     lower: float | np.ndarray
     upper: float | np.ndarray
-    _: KW_ONLY = NotImplemented
+
+    _: KW_ONLY
+
     axis: int | tuple[int, ...] = -1
     mode: Literal["mask", "clip"] = "mask"
     mask_value: float = float("nan")

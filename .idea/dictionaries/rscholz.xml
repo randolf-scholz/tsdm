@@ -154,6 +154,7 @@
       <w>hyperparameters</w>
       <w>iculos</w>
       <w>idxenc</w>
+      <w>idxmin</w>
       <w>iinfo</w>
       <w>iloader</w>
       <w>iloc</w>
@@ -170,6 +171,7 @@
       <w>isort</w>
       <w>issubclass</w>
       <w>issubdtype</w>
+      <w>iterdir</w>
       <w>janahan</w>
       <w>januschowski</w>
       <w>jaspreet</w>
@@ -363,6 +365,7 @@
       <w>sphinxcontrib</w>
       <w>sphinxopts</w>
       <w>sprop</w>
+      <w>stacklevel</w>
       <w>standardizer</w>
       <w>staticattribute</w>
       <w>stdev</w>

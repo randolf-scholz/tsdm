@@ -14,7 +14,7 @@ from tsdm.encoders import (
     BaseEncoder,
     BoundaryEncoder,
     BoxCoxEncoder,
-    Frame2TensorDict,
+    FrameAsDict,
     FrameEncoder,
     IdentityEncoder,
     LinearScaler,
@@ -71,7 +71,7 @@ def test_combined_encoder(SplitID=(0, "train")):
         column_encoders[col] = encoder
 
     encoder = (
-        Frame2TensorDict(
+        FrameAsDict(
             groups={
                 "key": ["run_id", "experiment_id"],
                 "T": ["measurement_time"],

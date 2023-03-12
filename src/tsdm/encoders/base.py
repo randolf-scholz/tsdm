@@ -37,7 +37,7 @@ from tsdm.types.variables import Any2Var as S
 from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import KeyVar as K
 from tsdm.utils.decorators import wrap_method
-from tsdm.utils.strings import repr_object
+from tsdm.utils.strings import repr_object, repr_type
 
 
 @runtime_checkable
@@ -47,8 +47,8 @@ class Encoder(Protocol[T, S]):
     is_fitted: bool
     requires_fit: bool
 
-    def __invert__(self) -> Encoder:
-        r"""Return the inverse encoder (i.e. decoder)."""
+    # def __invert__(self) -> Encoder:
+    #     r"""Return the inverse encoder (i.e. decoder)."""
 
     def __matmul__(self, other: Encoder) -> Encoder:
         r"""Return chained encoders."""
@@ -97,15 +97,14 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
         The wrapping of fit/encode/decode must be done here to avoid `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[assignment]
-        cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[assignment]
-        cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[assignment]
+        cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[method-assign]
+        cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[method-assign]
+        cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[method-assign]
 
     # TODO: implement __invert__ (python 3.11)
-
-    def __invert__(self) -> Encoder:
-        r"""Return the inverse encoder (i.e. decoder)."""
-        raise NotImplementedError
+    # def __invert__(self) -> Encoder:
+    #     r"""Return the inverse encoder (i.e. decoder)."""
+    #     raise NotImplementedError
 
     def __matmul__(self, other: Encoder) -> ChainedEncoder:
         r"""Return chained encoders."""
@@ -121,7 +120,7 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
-        return repr_object(self)
+        return repr_object(self, fallback=repr_type, recursive=2)
 
     @property
     def is_fitted(self) -> bool:

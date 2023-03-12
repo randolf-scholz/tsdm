@@ -43,7 +43,8 @@ def test_time_series_sample_generator():
         targets=targets,
         observables=observables,
         covariates=covariates,
-        sample_format=("sparse", "sparse"),
+        sparse_index=True,
+        sparse_columns=True,
     )
     sample = task[key]
     assert isinstance(sample, Sample)
@@ -56,7 +57,8 @@ def test_time_series_sample_generator():
         targets=targets,
         observables=observables,
         covariates=covariates,
-        sample_format=("sparse", "sparse"),
+        sparse_index=True,
+        sparse_columns=True,
     )
     sample = task[key[1]]
     assert isinstance(sample, Sample)

@@ -1,40 +1,85 @@
 r"""Logging Utility Functions."""
 
 __all__ = [
-    # Constants
+    # Types
     "Logger",
+    "Callback",
+    "LogFunction",
+    # Constants
     "LOGGERS",
+    "LOGFUNCS",
+    "CALLBACKS",
     # Functions
     "compute_metrics",
-    "log_optimizer_state",
-    "log_kernel_information",
-    "log_model_state",
+    "log_optimizer",
+    "log_kernel",
+    "log_lr_scheduler",
+    "log_model",
     "log_metrics",
     "log_values",
+    "log_table",
     # Classes
-    "StandardLogger",
+    # "StandardLogger",
+    "BaseLogger",
+    "DefaultLogger",
+    # Callbacks
+    "BaseCallback",
+    "CheckpointCallback",
+    "KernelCallback",
+    "LRSchedulerCallback",
+    "MetricsCallback",
+    "ModelCallback",
+    "OptimizerCallback",
+    "ScalarsCallback",
+    "TableCallback",
 ]
 
-from collections.abc import Callable
-from typing import Final, TypeAlias
-
-from tsdm.logutils._logutils import (
-    StandardLogger,
+from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger  # , StandardLogger
+from tsdm.logutils.callbacks import (
+    BaseCallback,
+    Callback,
+    CheckpointCallback,
+    KernelCallback,
+    LogFunction,
+    LRSchedulerCallback,
+    MetricsCallback,
+    ModelCallback,
+    OptimizerCallback,
+    ScalarsCallback,
+    TableCallback,
     compute_metrics,
-    log_kernel_information,
+    log_kernel,
+    log_lr_scheduler,
     log_metrics,
-    log_model_state,
-    log_optimizer_state,
+    log_model,
+    log_optimizer,
+    log_table,
     log_values,
 )
 
-Logger: TypeAlias = Callable[..., None]
-
-LOGGERS: Final[dict[str, Logger]] = {
-    "log_optimizer_state": log_optimizer_state,
-    "log_kernel_information": log_kernel_information,
-    "log_model_state": log_model_state,
-    "log_metrics": log_metrics,
+CALLBACKS: dict[str, type[Callback[...]]] = {
+    "CheckpointCallback": CheckpointCallback,
+    "KernelCallback": KernelCallback,
+    "LRSchedulerCallback": LRSchedulerCallback,
+    "MetricsCallback": MetricsCallback,
+    "ModelCallback": ModelCallback,
+    "OptimizerCallback": OptimizerCallback,
+    "ScalarsCallback": ScalarsCallback,
+    "TableCallback": TableCallback,
 }
 
-del Final, TypeAlias, Callable
+LOGFUNCS: dict[str, LogFunction] = {
+    "log_kernel_information": log_kernel,
+    "log_lr_scheduler": log_lr_scheduler,
+    "log_metrics": log_metrics,
+    "log_model_state": log_model,
+    "log_optimizer_state": log_optimizer,
+    "log_values": log_values,
+    "log_table": log_table,
+}
+
+LOGGERS: dict[str, type[Logger]] = {
+    "BaseLogger": BaseLogger,
+    "DefaultLogger": DefaultLogger,
+    # "StandardLogger": StandardLogger,
+}

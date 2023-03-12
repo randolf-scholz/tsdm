@@ -14,7 +14,101 @@ from pathlib import Path
 from typing import Any, Optional, Protocol
 from urllib.parse import urlparse
 
+from torch import Tensor
+
 from tsdm.config import CONFIG
+
+
+class ForecastingModel(Protocol):
+    """Generic forecasting model."""
+
+    def __call__(
+        self,
+        q: Tensor,
+        X: tuple[Tensor, Tensor],
+        U: Optional[tuple[Tensor, Tensor]] = None,
+        M: Optional[Tensor] = None,
+    ) -> Tensor:
+        """Return the encoded forecast x(t) for time t.
+
+        Args:
+            q: Query time at which to make the forecast.
+            X: Tuple of tensors (t, x) containing the time and observation of the system. (observables)
+            U: Tuple of tensors (t, u) containing the time and control input of the system. (covariates)
+            M: Static metadata for the system. (time-invariant covariates)
+
+        Returns:
+            y(q | (t, x), (t, u), m): Forecast for time t given the system state.
+        """
+
+    def predict(
+        self,
+        q: Tensor,
+        X: tuple[Tensor, Tensor],
+        U: Optional[tuple[Tensor, Tensor]] = None,
+        M: Optional[Tensor] = None,
+    ) -> Tensor:
+        """Return the actual forecast x(t) for time t.
+
+        Args:
+            q: Query time at which to make the forecast.
+            X: Tuple of tensors (t, x) containing the time and observation of the system. (observables)
+            U: Tuple of tensors (t, u) containing the time and control input of the system. (covariates)
+            M: Static metadata for the system. (time-invariant covariates)
+
+        Returns:
+            x(t): Forecast for time t.
+        """
+
+
+class StateSpaceForecastingModel(ForecastingModel, Protocol):
+    """State Space forecasting model."""
+
+    def __call__(
+        self,
+        q: Tensor,
+        X: tuple[Tensor, Tensor],
+        U: Optional[tuple[Tensor, Tensor]] = None,
+        M: Optional[Tensor] = None,
+        t0: Optional[Tensor] = None,
+        z0: Optional[Tensor] = None,
+    ) -> Tensor:
+        """Return the encoded forecast x(t) for time t.
+
+        Args:
+            q: Query time at which to make the forecast.
+            X: Tuple of tensors (t, x) containing the time and observation of the system. (observables)
+            U: Tuple of tensors (t, u) containing the time and control input of the system. (covariates)
+            M: Static metadata for the system. (time-invariant covariates)
+            t0: Initial time of the system.
+            z0: Initial (latent) state of the system.
+
+        Returns:
+            y(q | (t, x), (t, u), m): Forecast for time t given the system state.
+        """
+
+    def predict(
+        self,
+        q: Tensor,
+        X: tuple[Tensor, Tensor],
+        U: Optional[tuple[Tensor, Tensor]] = None,
+        M: Optional[Tensor] = None,
+        t0: Optional[Tensor] = None,
+        z0: Optional[Tensor] = None,
+    ) -> Tensor:
+        """Return the actual forecast x(t) for time t.
+
+        Args:
+            q: Query time at which to make the forecast.
+            X: Tuple of tensors (t, x) containing the time and observation of the system. (observables)
+            U: Tuple of tensors (t, u) containing the time and control input of the system. (covariates)
+            M: Static metadata for the system. (time-invariant covariates)
+            t0: Initial time of the system.
+            z0: Initial (latent) state of the system.
+
+        Returns:
+            x(t): Forecast for time t.
+        """
 
 
 class BaseModelMetaClass(ABCMeta):
@@ -90,33 +184,3 @@ class BaseModel(ABC):
     @abstractmethod
     def forward(self, *args):
         r"""Synonym for forward and __call__."""
-
-
-class RemoteModelProtocol(Protocol):
-    r"""Thin wrapper for models that are provided by an external GIT repository."""
-
-
-class RemotePreTrainedModel(Protocol):
-    r"""Thin wrapper for pretrained models that are provided by an external GIT repository."""
-
-
-class PreTrainedModel(ABC):
-    r"""Base class for all pretrained models."""
-
-    @classmethod
-    @abstractmethod
-    def from_hyperparameters(cls) -> None:
-        r"""Create a model from hyperparameters."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def download(self) -> None:
-        r"""Download the model."""
-
-    @abstractmethod
-    def forward(self):
-        r"""Give the model output given encoded data."""
-
-    @abstractmethod
-    def predict(self):
-        r"""Wrap the forward with encode and decode."""

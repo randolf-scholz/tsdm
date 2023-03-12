@@ -3,10 +3,9 @@ r"""Implementation of encoders."""
 from __future__ import annotations
 
 __all__ = [
-    # ABC
     # Classes
-    "Frame2TensorDict",
-    "Frame2TensorTuple",
+    "FrameAsDict",
+    "FrameAsTuple",
     "FrameEncoder",
     "FastFrameEncoder",
     "FrameIndexer",
@@ -39,14 +38,8 @@ from tsdm.types.variables import KeyVar as K
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.strings import repr_mapping
 
-BaseEncVar = TypeVar("BaseEncVar", bound=BaseEncoder)
-
-ColumnEncoderVar = TypeVar(
-    "ColumnEncoderVar", bound=BaseEncoder | Mapping[Any, BaseEncoder]
-)
-IndexEncoderVar = TypeVar(
-    "IndexEncoderVar", bound=BaseEncoder | Mapping[Any, BaseEncoder]
-)
+ColEncVar = TypeVar("ColEncVar", bound=BaseEncoder | Mapping[Any, BaseEncoder])
+IndEncVar = TypeVar("IndEncVar", bound=BaseEncoder | Mapping[Any, BaseEncoder])
 
 
 class CSVEncoder(BaseEncoder):
@@ -87,7 +80,7 @@ class CSVEncoder(BaseEncoder):
         return DataFrame(frame).astype(self.dtypes)
 
 
-class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
+class FrameEncoder(BaseEncoder, Generic[ColEncVar, IndEncVar]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Per-column encoding is possible through the dictionary input.
@@ -105,13 +98,13 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
     index_dtypes: Series
     duplicate: bool = False
 
-    column_encoders: ColumnEncoderVar
+    column_encoders: ColEncVar
     r"""Encoders for the columns."""
-    column_decoders: ColumnEncoderVar
+    column_decoders: ColEncVar
     r"""Reverse Dictionary from encoded column name -> encoder"""
-    index_encoders: IndexEncoderVar
+    index_encoders: IndEncVar
     r"""Optional Encoder for the index."""
-    index_decoders: IndexEncoderVar
+    index_decoders: IndEncVar
     r"""Reverse Dictionary from encoded index name -> encoder"""
 
     @staticmethod
@@ -126,20 +119,20 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
 
     def __init__(
         self,
-        column_encoders: Optional[ColumnEncoderVar] = None,
+        column_encoders: Optional[ColEncVar] = None,
         *,
-        index_encoders: Optional[IndexEncoderVar] = None,
+        index_encoders: Optional[IndEncVar] = None,
         duplicate: bool = False,
     ):
         super().__init__()
 
         if column_encoders is None:
-            self.column_encoders = cast(ColumnEncoderVar, None)
+            self.column_encoders = cast(ColEncVar, None)
         else:
             self.column_encoders = column_encoders
 
         if index_encoders is None:
-            self.index_encoders = cast(IndexEncoderVar, None)
+            self.index_encoders = cast(IndEncVar, None)
         else:
             self.index_encoders = index_encoders
 
@@ -167,9 +160,9 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             self.column_decoders = self.column_encoders  # type: ignore[unreachable]
         elif isinstance(self.column_encoders, BaseEncoder):
             self.column_encoders.fit(data)
-            self.column_decoders = cast(ColumnEncoderVar, self.column_encoders)
+            self.column_decoders = cast(ColEncVar, self.column_encoders)
         elif isinstance(self.column_encoders, Mapping):
-            self.column_decoders = cast(ColumnEncoderVar, {})
+            self.column_decoders = cast(ColEncVar, {})
             for group, encoder in self.column_encoders.items():
                 encoder.fit(data[group])
                 encoded = encoder.encode(data[group])
@@ -181,9 +174,9 @@ class FrameEncoder(BaseEncoder, Generic[ColumnEncoderVar, IndexEncoderVar]):
             self.index_decoders = self.index_encoders  # type: ignore[unreachable]
         elif isinstance(self.index_encoders, BaseEncoder):
             self.index_encoders.fit(index)
-            self.index_decoders = cast(IndexEncoderVar, self.index_encoders)
+            self.index_decoders = cast(IndEncVar, self.index_encoders)
         elif isinstance(self.index_encoders, Mapping):
-            self.index_decoders = cast(IndexEncoderVar, {})
+            self.index_decoders = cast(IndEncVar, {})
             for group, encoder in self.index_encoders.items():
                 encoder.fit(index[group])
                 encoded = encoder.encode(index[group])
@@ -918,7 +911,7 @@ class ValueEncoder(BaseEncoder):
         return decoded
 
 
-class Frame2TensorDict(BaseEncoder):
+class FrameAsDict(BaseEncoder):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.
@@ -927,9 +920,9 @@ class Frame2TensorDict(BaseEncoder):
     .. code-block:: pycon
 
         >>> from pandas import DataFrame
-        >>> from tsdm.encoders import Frame2TensorDict
+        >>> from tsdm.encoders import FrameAsDict
         >>> df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
-        >>> encoder = Frame2TensorDict(groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False)
+        >>> encoder = FrameAsDict(groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False)
         >>> encoder.fit(df)
         >>> encoded = encoder.encode(df)
         >>> assert isinstance(encoded, dict)
@@ -941,14 +934,14 @@ class Frame2TensorDict(BaseEncoder):
     original_index_columns: Index | list[str]
     original_columns: Index
     original_dtypes: Series
+    groups: dict[str, list[str]]
 
     # Parameters
     column_dtype: Optional[torch.dtype] = None
-    index_dtype: Optional[torch.dtype] = None
     device: Optional[str | torch.device] = None
-    encode_index: Optional[bool] = None
-    groups: dict[str, list[str]]
     dtypes: dict[str, None | torch.dtype]
+    encode_index: Optional[bool] = None
+    index_dtype: Optional[torch.dtype] = None
 
     def __init__(
         self,
@@ -964,8 +957,9 @@ class Frame2TensorDict(BaseEncoder):
         self.device = device  # type: ignore[assignment]
         self.encode_index = encode_index
 
-    def __repr__(self) -> str:
-        return repr_mapping(self.groups, title=self.__class__.__name__)
+    def __repr__(self, **kwargs: Any) -> str:
+        kwargs.update(wrapped=self)
+        return repr_mapping(self.groups, **kwargs)
 
     def fit(self, data: DataFrame, /) -> None:
         index = data.index.to_frame()
@@ -1033,8 +1027,15 @@ class Frame2TensorDict(BaseEncoder):
                 assert isinstance(self.dtypes[key], None | torch.dtype)
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
+        """Encode a DataFrame as a dict of Tensors.
+
+        The encode method ensures treatment of missingness:
+        if columns in the dataframe are missing the correponding tensor columns
+        will be filled with NANs, if the datatype allows it.
+        """
         if self.encode_index:
             data = data.reset_index()
+
         return {
             key: torch.tensor(
                 data[cols].to_numpy(),
@@ -1045,12 +1046,15 @@ class Frame2TensorDict(BaseEncoder):
             if set(cols).issubset(data.columns)
         }
 
-    def decode(self, data: dict[str, Tensor], /) -> DataFrame:
+    def decode(self, data: dict[str, Tensor | None], /) -> DataFrame:
         dfs = []
         for key, tensor in data.items():
-            tensor = tensor.clone().detach().cpu()
             cols = self.groups[key]
-            df = DataFrame(tensor, columns=cols).astype(self.original_dtypes[cols])
+            if tensor is None:
+                df = DataFrame(columns=cols).astype(self.original_dtypes[cols])
+            else:
+                tensor = tensor.clone().detach().cpu()
+                df = DataFrame(tensor, columns=cols).astype(self.original_dtypes[cols])
             dfs.append(df)
 
         # Assemble the DataFrame
@@ -1063,7 +1067,7 @@ class Frame2TensorDict(BaseEncoder):
         return df
 
 
-class Frame2TensorTuple(BaseEncoder):
+class FrameAsTuple(BaseEncoder):
     r"""Encodes a DataFrame as a tuple of column and index tensor."""
 
     # Attributes
@@ -1139,3 +1143,7 @@ class Frame2TensorTuple(BaseEncoder):
         else:
             decoded = columns.set_index(MultiIndex.from_frame(index))
         return decoded
+
+
+Frame2TensorDict = FrameAsDict  # Do not remove! For old pickle files
+"""Alias for `FrameAsDict`"""

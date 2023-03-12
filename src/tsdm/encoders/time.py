@@ -135,7 +135,7 @@ class DateTimeEncoder(BaseEncoder):
             raise ValueError(f"Incompatible {type(data)=}")
 
         self.offset = Timestamp(Series(data).iloc[0])
-        self.name = str(data.name) if data.name is not None else None
+        self.name = None if data.name is None else str(data.name)
         self.dtype = data.dtype
         if isinstance(data, DatetimeIndex):
             self.freq = data.freq

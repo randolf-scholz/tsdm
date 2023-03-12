@@ -22,18 +22,16 @@ def test_make_masked_format():
     LOGGER = __logger__.getChild(make_masked_format.__name__)
     LOGGER.info("Testing.")
 
-    x = [[47, 49, NA, 40, NA, 43, 55], [NA, 15, 14, NA, NA, NA, 15]]
-    t = [0, 0.1, 0.6, 1.6, 2.2, 2.5, 3.1]
+    x_raw = [[47, 49, NA, 40, NA, 43, 55], [NA, 15, 14, NA, NA, NA, 15]]
+    t_raw = [0, 0.1, 0.6, 1.6, 2.2, 2.5, 3.1]
+    d_raw = [[0.0, 0.1, 0.5, 1.5, 0.6, 0.9, 0.6], [0.0, 0.1, 0.5, 1.0, 1.6, 1.9, 2.5]]
+    m_raw = [[1, 1, 0, 1, 0, 1, 1], [0, 1, 1, 0, 0, 0, 1]]
 
-    d = [[0.0, 0.1, 0.5, 1.5, 0.6, 0.9, 0.6], [0.0, 0.1, 0.5, 1.0, 1.6, 1.9, 2.5]]
-
-    m = [[1, 1, 0, 1, 0, 1, 1], [0, 1, 1, 0, 0, 0, 1]]
-
-    data = DataFrame(x, columns=t).T
-    mask = DataFrame(m, columns=t).T
-    diff = DataFrame(d, columns=t).T
-
+    data = DataFrame(x_raw, columns=t_raw).T
+    mask = DataFrame(m_raw, columns=t_raw).T
+    diff = DataFrame(d_raw, columns=t_raw).T
     x, m, d = make_masked_format(data)
+
     testing.assert_frame_equal(x, data, check_dtype=False)
     testing.assert_frame_equal(m, mask, check_dtype=False)
     testing.assert_frame_equal(d, diff, check_dtype=False)
