@@ -15,17 +15,19 @@ __all__ = [
 import logging
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
+from itertools import chain
+from types import FunctionType, MethodType
 from typing import TYPE_CHECKING, Any, Generic, TypeAlias, Union, cast, overload
 
-from typing_extensions import NamedTuple, Self
+from typing_extensions import Self
 
 from tsdm.types.variables import Any2Var as T2
 from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import Key2Var as K2
 from tsdm.types.variables import KeyVar as K
 from tsdm.types.variables import ReturnVar_co as R
-from tsdm.utils._utils import get_function_args, is_positional
-from tsdm.utils.strings import repr_mapping, repr_short
+from tsdm.utils import get_function_args, is_positional_arg
+from tsdm.utils.strings import repr_mapping
 
 __logger__ = logging.getLogger(__name__)
 
@@ -33,21 +35,44 @@ if TYPE_CHECKING:
     from _typeshed import SupportsKeysAndGetItem
 
 
-class LazyFunction(NamedTuple, Generic[R]):
+class LazyFunction(Generic[R]):
     r"""A placeholder for uninitialized values."""
 
+    # TODO: Check for Type Hints and add it to __repr__
     # FIXME: use typing.NamedTuple (3.11)
     func: Callable[..., R]
-    args: Iterable[Any] = ()
-    kwargs: Mapping[str, Any] = {}
+    args: Iterable[Any]
+    kwargs: Mapping[str, Any]
 
-    def __call__(self) -> R:
+    def __init__(
+        self,
+        func: Callable[..., R],
+        *,
+        args: Iterable[Any] = NotImplemented,
+        kwargs: Mapping[str, Any] = NotImplemented,
+    ) -> None:
+        self.func = func
+        self.args = args if args is not NotImplemented else ()
+        self.kwargs = kwargs if kwargs is not NotImplemented else {}
+
+    def __call__(self, *args: Any, **kwargs: Any) -> R:
         r"""Execute the function and return the result."""
-        return self.func(*self.args, **self.kwargs)
+        return self.func(*chain(self.args, args), **(self.kwargs | kwargs))
 
     def __repr__(self) -> str:
         r"""Return a string representation of the function."""
-        return f"<LazyFunction: {self.func.__name__}>"
+        if isinstance(self.func, FunctionType | MethodType):
+            ann = self.func.__annotations__.get("return", object)  # type: ignore[unreachable]
+        else:
+            ann = self.func.__call__.__annotations__.get("return", object)  # type: ignore[operator]
+
+        # TODO: pretty print annotations, especially for typing types
+        if isinstance(ann, type):
+            val = ann.__name__
+        else:
+            val = str(ann)
+
+        return f"LazyFunction<{val}>()"
 
 
 FuncSpec: TypeAlias = Union[
@@ -85,13 +110,13 @@ class LazyDict(dict[K, T]):
         # inherit Mixin Methods from MutableMapping
         # This is crucial because dict.get does not call __getitem__
         # Reference: https://stackoverflow.com/a/2390997/9318372
-        cls.get = MutableMapping.get  # type: ignore[assignment]
-        cls.clear = MutableMapping.clear  # type: ignore[assignment]
-        cls.pop = MutableMapping.pop  # type: ignore[assignment]
-        cls.popitem = MutableMapping.popitem  # type: ignore[assignment]
-        cls.setdefault = MutableMapping.setdefault  # type: ignore[assignment]
-        cls.update = MutableMapping.update  # type: ignore[assignment]
-        return super().__new__(cls, *args, **kwargs)
+        cls.get = MutableMapping.get  # type: ignore[assignment, method-assign]
+        cls.clear = MutableMapping.clear  # type: ignore[method-assign]
+        cls.pop = MutableMapping.pop  # type: ignore[method-assign]
+        cls.popitem = MutableMapping.popitem  # type: ignore[method-assign]
+        cls.setdefault = MutableMapping.setdefault  # type: ignore[method-assign]
+        cls.update = MutableMapping.update  # type: ignore[method-assign]
+        return super().__new__(cls, *args, **kwargs)  # type: ignore[type-var]
 
     @overload
     def __init__(self, /, **kwargs: FuncSpec | T) -> None:
@@ -135,7 +160,7 @@ class LazyDict(dict[K, T]):
 
     def __repr__(self) -> str:
         r"""Return the representation of the dictionary."""
-        return repr_mapping(self, repr_fun=repr_short)
+        return repr_mapping(self)
 
     def __or__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         new = self.copy()
@@ -172,26 +197,25 @@ class LazyDict(dict[K, T]):
     ) -> LazyFunction:
         match value:
             case LazyFunction():
-                return value  # type: ignore[return-value]
+                return value
             case Callable():  # type: ignore[misc]
                 args = get_function_args(value, mandatory=True)  # type: ignore[unreachable]
                 match nargs := len(args):
                     case 0:
                         return LazyFunction(func=value)
-                    case 1 if all(
-                        is_positional(p) for p in args
-                    ):  # set the key as input
+                    case 1 if all(is_positional_arg(p) for p in args):
+                        # set the key as input
                         return LazyFunction(func=value, args=(key,))
                     case _:
-                        raise TypeError(f"Function {value} requires {nargs} args.")  # type: ignore[used-before-def]
+                        raise TypeError(f"Function {value} requires {nargs} args.")
             case [Callable()]:  # type: ignore[misc]
                 return LazyDict._make_lazy_function(key, value[0])  # type: ignore[index]
             case Callable(), tuple():  # type: ignore[misc]
-                return LazyFunction(func=value[0], args=value[1])  # type: ignore[index, arg-type, misc]
+                return LazyFunction(func=value[0], args=value[1])  # type: ignore[index, misc]
             case Callable(), dict():  # type: ignore[misc]
                 return LazyFunction(func=value[0], kwargs=value[1])  # type: ignore[index, arg-type, misc]
             case Callable(), tuple(), dict():  # type: ignore[misc]
-                return LazyFunction(value[0], args=value[1], kwargs=value[2])  # type: ignore[index,  arg-type, misc]
+                return LazyFunction(value[0], args=value[1], kwargs=value[2])  # type: ignore[index, misc]
             case _:
                 return LazyFunction(lambda: value)
 

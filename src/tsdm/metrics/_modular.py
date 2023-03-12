@@ -10,6 +10,7 @@ Contains losses in modular form.
 __all__ = [
     # Base Classes
     "Loss",
+    "BaseLoss",
     "WeightedLoss",
     # Classes
     "ND",
@@ -32,7 +33,7 @@ __all__ = [
 
 
 from abc import ABCMeta, abstractmethod
-from typing import Final, Optional
+from typing import Final, Optional, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, jit, nn
@@ -41,7 +42,15 @@ from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.utils.decorators import autojit
 
 
-class Loss(nn.Module, metaclass=ABCMeta):
+@runtime_checkable
+class Loss(Protocol):
+    r"""Protocol for a loss function."""
+
+    def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
+        r"""Compute the loss."""
+
+
+class BaseLoss(nn.Module, metaclass=ABCMeta):
     r"""Base class for a loss function."""
 
     # Constants
@@ -119,7 +128,7 @@ class WeightedLoss(nn.Module, metaclass=ABCMeta):
 
 
 @autojit
-class ND(Loss):
+class ND(BaseLoss):
     r"""Compute the normalized deviation score.
 
     .. math:: 𝖭𝖣(x, x̂) = \frac{∑_{t,k} |x̂_{t,k} -  x_{t,k}|}{∑_{t,k} |x_{t,k}|}
@@ -142,7 +151,7 @@ class ND(Loss):
 
 
 @autojit
-class NRMSE(Loss):
+class NRMSE(BaseLoss):
     r"""Compute the normalized root mean square error.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
@@ -160,7 +169,7 @@ class NRMSE(Loss):
 
 
 @autojit
-class Q_Quantile(Loss):
+class Q_Quantile(BaseLoss):
     r"""The q-quantile.
 
     .. math:: 𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
@@ -178,7 +187,7 @@ class Q_Quantile(Loss):
 
 
 @autojit
-class Q_Quantile_Loss(Loss):
+class Q_Quantile_Loss(BaseLoss):
     r"""The q-quantile loss.
 
     .. math:: 𝖰𝖫_q(x,x̂) = 2\frac{∑_{it}𝖯_q(x_{it},x̂_{it})}{∑_{it}|x_{it}|}
@@ -196,7 +205,7 @@ class Q_Quantile_Loss(Loss):
 
 
 @autojit
-class MAE(Loss):
+class MAE(BaseLoss):
     r"""Mean Absolute Error.
 
     .. math:: 𝖬𝖠𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖]}
@@ -254,7 +263,7 @@ class WMAE(WeightedLoss):
 
 
 @autojit
-class MSE(Loss):
+class MSE(BaseLoss):
     r"""Mean Square Error.
 
     .. math:: 𝖬𝖲𝖤(x,x̂) = 𝔼[½‖x̂-x‖^2] ∼ \tfrac{1}{2N}∑_{n=1}^N ‖x̂_n - x_n‖^2
@@ -359,7 +368,7 @@ class WMSE(WeightedLoss):
 
 
 @autojit
-class RMSE(Loss):
+class RMSE(BaseLoss):
     r"""Root Mean Square Error.
 
     .. math:: 𝖱𝖬𝖲𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
@@ -420,6 +429,8 @@ class WRMSE(WeightedLoss):
 class TimeSeriesMSE(nn.Module):
     r"""Time-Series Mean Square Error.
 
+    Each channel is normalized by the number of observations in that channel.
+
     .. math:: ∑_t ∑_i \frac{[m_{t_i} ? (x̂_{t, i} - x_{t, i})^2 : 0]}{∑_t m_{t_i}}
 
     Or, more precisely, to avoid division by zero, we use the following
@@ -457,8 +468,6 @@ class TimeSeriesMSE(nn.Module):
     r"""CONST: Whether to normalize over time."""
     normalize_channels: Final[bool]
     r"""CONST: Whether to normalize the loss by the number of channels."""
-    rank: Final[int]
-    r"""CONST: The number of dimensions over which the loss is computed"""
 
     def __init__(
         self,
@@ -480,7 +489,6 @@ class TimeSeriesMSE(nn.Module):
         self.discount = discount
         self.normalize_channels = normalize_channels
         self.normalize_time = normalize_time
-        self.rank = len(self.axes)
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:

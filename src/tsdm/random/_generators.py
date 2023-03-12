@@ -14,10 +14,13 @@ __all__ = [
     "GENERATORS",
 ]
 
-from typing import Any, Final, TypeAlias
+from typing import Protocol, runtime_checkable
 
-Generator: TypeAlias = Any
-r"""Type hint for generators."""
 
-GENERATORS: Final[dict[str, Generator]] = {}
+@runtime_checkable
+class Generator(Protocol):
+    r"""Protocol for generators."""
+
+
+GENERATORS: dict[str, Generator] = {}
 r"""Dictionary of all available generators."""

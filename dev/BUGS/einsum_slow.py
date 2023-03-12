@@ -1,45 +1,35 @@
 #!/usr/bin/env python
-
-# # Title
-
-# In[1]:
-
-
-# %config InteractiveShell.ast_node_interactivity='last_expr_or_assign'  # always print last expr.
-# %config InlineBackend.figure_format = 'svg'
-# %load_ext autoreload
-# %autoreload 2
-# %matplotlib inline
-
-# import logging
-# logging.basicConfig(level=logging.INFO)
-
-
-# In[2]:
-
+# %%
+# %config InteractiveShell.ast_node_interactivity='last_expr_or_assign'
 
 import gc
 from contextlib import ContextDecorator
-from itertools import product
+from itertools import combinations, permutations, product
 from pathlib import Path
 from time import perf_counter
+from typing import Iterator
 
+import jax.numpy as jnp
 import numpy as np
 import torch
 from pandas import DataFrame, MultiIndex, Series
 from tqdm.auto import tqdm
 
+np.set_printoptions(precision=4, floatmode="fixed", suppress=True)
+rng = np.random.default_rng()
 
-class Timer(ContextDecorator):
+
+# %%
+class PerformanceTimer(ContextDecorator):
     __slots__ = ("start", "stop", "duration")  # faster access to the attributes
     start: float
     stop: float
     duration: float
 
     def __enter__(self):
-        gc.collect()  # make space
-        gc.disable()  # disable gc
         torch.cuda.synchronize()  # wait for cuda to finish
+        gc.collect()  # run gc to free up memory
+        gc.disable()  # disable gc
         self.start = perf_counter()
 
     def __exit__(self, *exc):
@@ -47,37 +37,64 @@ class Timer(ContextDecorator):
         self.stop = perf_counter()
         self.duration = self.stop - self.start
         gc.enable()  # enable gc
-        gc.collect()  # make space
+        gc.collect()  # run gc to free up memory
 
 
-np.set_printoptions(precision=4, floatmode="fixed", suppress=True)
-rng = np.random.default_rng()
+# %%
+def generate_reductions(n: int, m: int) -> Iterator[str]:
+    """Generate all possible einsum-reductions over m-axes of an n-dim tensor."""
+    assert m <= n, "m must be smaller or equal to n"
+    operator = "ijklmnopqrstuv"[:n]
+    for subset in combinations(operator, m):
+        for operand in permutations(subset):
+            # remove subset from letters
+            result = "".join(c for c in operator if c not in operand)
+            yield f"{operator}, {''.join(operand)} -> {result}"
 
 
-# In[3]:
+REDUCTIONS = list(generate_reductions(4, 2))
 
 
-reductions = []
-for a, b in product("ijkl", "ijkl"):
-    if a == b:
-        continue
-    reduction = f"{a}{b},ijkl->" + "ijkl".replace(a, "").replace(b, "")
-    reductions.append(reduction)
-
-FRAMEWORKS = ["torch"]
-DTYPES = ["float32"]
+# %%
+FRAMEWORKS = ["torch", "jax"]
 SIZES = [128]
-DEVICES = [torch.device("cpu"), torch.device("cuda")]
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-TORCH_DTYPES = {
-    "int32": torch.int32,
-    "int64": torch.int64,
-    "float32": torch.float32,
-    "float64": torch.float64,
+FWORK_DTYPES = {
+    "torch": {
+        "int32": torch.int32,
+        "int64": torch.int64,
+        "float32": torch.float32,
+        "float64": torch.float64,
+    },
+    "jax": {},
+    "numpy": NotImplemented,
+    "tensorflow": NotImplemented,
+    "cupy": NotImplemented,
+    "mxnet": NotImplemented,
+}
+CHOSEN_DTYPES = ["float32"]
+DTYPES = {
+    fwork: [FWORK_DTYPES[fwork][dtype] for dtype in CHOSEN_DTYPES]
+    for fwork in FRAMEWORKS
 }
 
-columns = Series(reductions, name="reduction")
+
+FWORK_DEVICES = {
+    "torch": [torch.device(x) for x in _DEVICES],
+    "jax": NotImplemented,
+    "numpy": NotImplemented,
+    "tensorflow": NotImplemented,
+    "cupy": NotImplemented,
+    "mxnet": NotImplemented,
+}
+CHOSEN_DEVICES = ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"]
+DEVICES = {
+    fwork: [FWORK_DEVICES[fwork][device] for device in CHOSEN_DEVICES]
+    for fwork in FRAMEWORKS
+}
+
+
+columns = Series(REDUCTIONS, name="reduction")
 index = MultiIndex.from_product(
     [SIZES, DTYPES, FRAMEWORKS], names=["size", "dtype", "framework"]
 )
@@ -85,58 +102,92 @@ results = DataFrame(np.nan, index=index, columns=columns, dtype=float)
 results.to_csv("einsum_slow.csv")
 
 
-# In[ ]:
+# %%
+timer = PerformanceTimer()
 
-timer = Timer()
 
+# %%
+def torch_experiment(timer, mat1, mat2, results, repetitions=100) -> None:
+    dtypes = DTYPES["torch"]
+    devices = DEVICES["torch"]
 
-# torch_results
-for size in tqdm(SIZES):
-    _mat1 = torch.randn((size, size, size, size), device=DEVICE)
-    _mat2 = torch.randn((size, size), device=DEVICE)
+    for dtype, device in tqdm(product(dtypes, devices), leave=False):
+        operator = torch.tensor(mat1, dtype=dtype, device=device)
+        operand = torch.tensor(mat2, dtype=dtype, device=device)
 
-    for dtype in tqdm(DTYPES, leave=False):
-        mat1 = _mat1.to(dtype=TORCH_DTYPES[dtype])
-        mat2 = _mat2.to(dtype=TORCH_DTYPES[dtype])
-
-        for reduction in tqdm(reductions, leave=False):
+        for reduction in tqdm(REDUCTIONS, leave=False):
             with timer:
-                for k in range(100):
-                    torch.einsum(reduction, mat2, mat1)
-                torch.cuda.synchronize()
+                for k in range(repetitions):
+                    torch.einsum(reduction, operator, operand)
             results.loc[(size, dtype, "torch"), reduction] = timer.duration
 
 
-# In[ ]:
+# %% [markdown]
+# ## torch results
 
 
-# # numpy results
-# for size in tqdm(sizes):
-#     _mat1 = np.random.normal(size=(size, size, size, size))
-#     _mat2 = np.random.normal(size=(size, size))
-#
-#     for dtype in tqdm(dtypes, leave=False):
-#         mat1 = _mat1.astype(dtype)
-#         mat2 = _mat2.astype(dtype)
-#
-#         for reduction in tqdm(reductions, leave=False):
-#             with timer:
-#                 np.einsum(reduction, mat2, mat1, optimize=False)
-#             results.loc[(size, dtype, "numpy"), reduction] = timer.duration
-#
+# %%
+for size in tqdm(SIZES):
+    mat1 = torch.randn((size, size, size, size), device=torch.device(DEVICE))
+    mat2 = torch.randn((size, size), device=torch.device(DEVICE))
 
-# In[ ]:
+    for dtype in tqdm(DTYPES, leave=False):
+        operator = mat1.to(dtype=TORCH_DTYPES[dtype])
+        operand = mat2.to(dtype=TORCH_DTYPES[dtype])
+
+        for reduction in tqdm(REDUCTIONS, leave=False):
+            with timer:
+                for k in range(100):
+                    torch.einsum(reduction, operator, operand)
+            results.loc[(size, dtype, "torch"), reduction] = timer.duration
 
 
+# %% [markdown]
+# ## jax results
+
+# %%
+for size in tqdm(SIZES):
+    mat1 = np.random.normal(size=(size, size, size, size))
+    mat2 = np.random.normal(size=(size, size))
+
+    for dtype in tqdm(DTYPES, leave=False):
+        operator = jnp.array(mat1.astype(dtype))
+        operand = jnp.array(mat2.astype(dtype))
+
+        for reduction in tqdm(REDUCTIONS, leave=False):
+            with timer:
+                jnp.einsum(reduction, operator, operand, optimize=True)
+            results.loc[(size, dtype, "jax"), reduction] = timer.duration
+
+# %% [markdown]
+# ## numpy results
+
+# %%
+for size in tqdm(SIZES):
+    mat1 = np.random.normal(size=(size, size, size, size))
+    mat2 = np.random.normal(size=(size, size))
+
+    for dtype in tqdm(DTYPES, leave=False):
+        operator = mat1.astype(dtype)
+        operand = mat2.astype(dtype)
+
+        for reduction in tqdm(REDUCTIONS, leave=False):
+            with timer:
+                np.einsum(reduction, mat2, mat1, optimize=False)
+            results.loc[(size, dtype, "numpy"), reduction] = timer.duration
+
+# %% [markdown]
+# # Results
+
+# %%
 df = results.round(3).sort_values(["size", "dtype", "framework"])
 df = df.T
-print(df.columns)
 df = df.sort_values(by=df.columns.tolist())
-path = Path(__file__).parent
+
+
+# %%
+path = Path.cwd()
 with open(path / "einsum_slow.fwf", "w") as file:
     print(f"Writing results to {path / 'einsum_slow.fwf'}")
     file.write(df.to_string())
 df.to_csv(path / "einsum_slow.csv")
-
-
-# In[ ]:

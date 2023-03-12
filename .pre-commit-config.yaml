@@ -62,7 +62,7 @@ repos:
         description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.0-alpha.4" # Use the sha or tag you want to point at
+    rev: "v3.0.0-alpha.6" # Use the sha or tag you want to point at
     hooks:
       - id: prettier
   # absolufy-imports
@@ -124,7 +124,7 @@ repos:
         description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
-    rev: v0.16.4
+    rev: v0.16.5
     hooks:
       - id: slotscheck
         files: ^src/

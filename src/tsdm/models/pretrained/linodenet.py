@@ -14,12 +14,12 @@ import torch
 from pandas import DataFrame, Index, MultiIndex
 from torch.nn.utils.rnn import pad_sequence
 
-from tsdm.models.pretrained.base import PreTrainedModel
+from tsdm.models.pretrained.base import PreTrainedBase
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.utils.remote import download
 
 
-class LinODEnet(PreTrainedModel):
+class LinODEnet(PreTrainedBase):
     r"""Import pre-trained LinODEnet model.
 
     Example:

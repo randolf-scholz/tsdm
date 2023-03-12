@@ -10,15 +10,9 @@ __all__ = [
     "deep_kval_update",
     "flatten_dict",
     "flatten_nested",
-    "get_function_args",
-    "get_mandatory_argcount",
     "initialize_from_config",
     "is_dunder",
-    "is_keyword_only",
-    "is_mandatory",
     "is_partition",
-    "is_positional",
-    "is_positional_only",
     "is_zipfile",
     "now",
     "pairwise_disjoint",
@@ -30,7 +24,6 @@ __all__ = [
     "unflatten_dict",
 ]
 
-import inspect
 import os
 import shutil
 import warnings
@@ -48,7 +41,7 @@ import pandas
 from numpy.typing import NDArray
 from pandas import Series
 from torch import nn
-from tqdm.auto import tqdm
+from tqdm.autonotebook import tqdm
 
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
@@ -57,12 +50,6 @@ from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 
 __logger__ = getLogger(__name__)
-KEYWORD_ONLY = inspect.Parameter.KEYWORD_ONLY
-POSITIONAL_ONLY = inspect.Parameter.POSITIONAL_ONLY
-POSITIONAL_OR_KEYWORD = inspect.Parameter.POSITIONAL_OR_KEYWORD
-VAR_KEYWORD = inspect.Parameter.VAR_KEYWORD
-VAR_POSITIONAL = inspect.Parameter.VAR_POSITIONAL
-Kind = inspect._ParameterKind  # pylint: disable=protected-access
 
 
 def variants(s: str | list[str]) -> list[str]:
@@ -336,29 +323,6 @@ def is_partition(*partition: Collection, union: Optional[Sequence] = None) -> bo
     return len(part_union) == sum(len(p) for p in partition)
 
 
-def is_mandatory(p: inspect.Parameter, /) -> bool:
-    r"""Check if parameter is mandatory."""
-    return p.default is inspect.Parameter.empty and p.kind not in (
-        VAR_POSITIONAL,
-        VAR_KEYWORD,
-    )
-
-
-def is_positional(p: inspect.Parameter, /) -> bool:
-    r"""Check if parameter is positional."""
-    return p.kind in (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL)
-
-
-def is_positional_only(p: inspect.Parameter, /) -> bool:
-    """Check if parameter is positional only."""
-    return p.kind in (POSITIONAL_ONLY, VAR_POSITIONAL)
-
-
-def is_keyword_only(p: inspect.Parameter, /) -> bool:
-    """Check if parameter is keyword only."""
-    return p.kind in (KEYWORD_ONLY, VAR_KEYWORD)
-
-
 def is_zipfile(path: Path) -> bool:
     r"""Return `True` if the file is a zipfile."""
     try:
@@ -366,63 +330,6 @@ def is_zipfile(path: Path) -> bool:
             return True
     except (BadZipFile, IsADirectoryError):
         return False
-
-
-def get_mandatory_argcount(f: Callable[..., Any]) -> int:
-    r"""Get the number of mandatory arguments of a function."""
-    sig = inspect.signature(f)
-    return sum(is_mandatory(p) for p in sig.parameters.values())
-
-
-def get_function_args(
-    f: Callable[..., Any],
-    mandatory: Optional[bool] = None,
-    kinds: Optional[str | Kind | list[Kind]] = None,
-) -> list[inspect.Parameter]:
-    r"""Filter function parameters by kind and optionality."""
-
-    def get_kinds(s: str | Kind) -> set[Kind]:
-        if isinstance(s, Kind):
-            return {s}
-
-        match s.lower():
-            case "p" | "positional":
-                return {POSITIONAL_ONLY, VAR_POSITIONAL}
-            case "k" | "keyword":
-                return {KEYWORD_ONLY, VAR_KEYWORD}
-            case "v" | "var":
-                return {VAR_POSITIONAL, VAR_KEYWORD}
-            case "po" | "positional_only":
-                return {POSITIONAL_ONLY}
-            case "ko" | "keyword_only":
-                return {KEYWORD_ONLY}
-            case "pk" | "positional_or_keyword":
-                return {POSITIONAL_OR_KEYWORD}
-            case "vp" | "var_positional":
-                return {VAR_POSITIONAL}
-            case "vk" | "var_keyword":
-                return {VAR_KEYWORD}
-        raise ValueError(f"Unknown kind {s}")
-
-    match kinds:
-        case None:
-            allowed_kinds = set(Kind)
-        case str() | Kind():
-            allowed_kinds = get_kinds(kinds)
-        case Sequence():
-            allowed_kinds = set().union(*map(get_kinds, kinds))
-        case _:
-            raise ValueError(f"Unknown type for kinds: {type(kinds)}")
-
-    sig = inspect.signature(f)
-    params = list(sig.parameters.values())
-
-    if mandatory is None:
-        return [p for p in params if p.kind in allowed_kinds]
-
-    return [
-        p for p in params if is_mandatory(p) is mandatory and p.kind in allowed_kinds
-    ]
 
 
 def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:

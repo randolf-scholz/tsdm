@@ -16,13 +16,12 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.datasets import KiwiDataset
-from tsdm.encoders import (  # FrameEncoder,
+from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
     Encoder,
     FastFrameEncoder,
-    Frame2TensorDict,
-    IdentityEncoder,
+    FrameAsDict,
     LinearScaler,
     LogitBoxCoxEncoder,
     MinMaxScaler,
@@ -54,7 +53,10 @@ class Batch(NamedTuple):
 
 
 class KiwiTask(TimeSeriesTask):
-    r"""Task for the KIWI dataset."""
+    r"""Task for the KIWI dataset.
+
+    The task is to forecast the observables inside the forecasting horizon.
+    """
 
     dataset: KiwiDataset
 
@@ -197,7 +199,7 @@ class KiwiTask(TimeSeriesTask):
         return folds_as_sparse_frame(df)
 
     def make_collate_fn(self, key: SplitID, /) -> Callable[[list[Sample]], Batch]:
-        r"""TODO: implement this."""
+        r"""Create the collate function for the given split."""
         encoder = self.encoders[key]
 
         def collate_fn(samples: list[Sample]) -> Batch:
@@ -243,39 +245,38 @@ class KiwiTask(TimeSeriesTask):
             match scale:
                 case "percent":
                     encoder = (
-                        LogitBoxCoxEncoder()
+                        Standardizer()
+                        @ LogitBoxCoxEncoder()
                         @ LinearScaler(lower, upper)
                         @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 case "absolute":
-                    encoder = BoxCoxEncoder() @ BoundaryEncoder(
-                        lower, upper, mode="clip"
+                    encoder = (
+                        Standardizer()
+                        @ BoxCoxEncoder()
+                        @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 case "linear":
-                    encoder = IdentityEncoder()
+                    encoder = Standardizer()
                 case _:
                     raise ValueError(f"{scale=} unknown")
             column_encoders[col] = encoder
 
-        encoder = (
-            Frame2TensorDict(
-                groups={
-                    "key": ["run_id", "experiment_id"],
-                    "T": ["measurement_time"],
-                    "X": ...,
-                },
-                dtypes={"T": "float32", "X": "float32"},
-            )
-            @ Standardizer()
-            @ FastFrameEncoder(
-                column_encoders=column_encoders,
-                index_encoders={
-                    # "run_id": IdentityEncoder(),
-                    # "experiment_id": IdentityEncoder(),
-                    "measurement_time": MinMaxScaler()
-                    @ TimeDeltaEncoder(),
-                },
-            )
+        encoder = FrameAsDict(
+            groups={
+                "key": ["run_id", "experiment_id"],
+                "T": ["measurement_time"],
+                "X": ...,
+            },
+            dtypes={"T": "float32", "X": "float32"},
+        ) @ FastFrameEncoder(
+            column_encoders=column_encoders,
+            index_encoders={
+                # "run_id": IdentityEncoder(),
+                # "experiment_id": IdentityEncoder(),
+                "measurement_time": MinMaxScaler()
+                @ TimeDeltaEncoder(),
+            },
         )
 
         self.LOGGER.info("Initializing Encoder for key='%s'", key)

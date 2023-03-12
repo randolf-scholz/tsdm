@@ -34,9 +34,9 @@ class DatasetCollection(TorchDataset[TorchDataset[O]], Mapping[K, TorchDataset[O
         super().__init__()
         self.dataset = dict(indexed_datasets)
         self.index = list(self.dataset.keys())
-        self.keys = self.dataset.keys  # type: ignore[assignment]
-        self.values = self.dataset.values  # type: ignore[assignment]
-        self.items = self.dataset.items  # type: ignore[assignment]
+        self.keys = self.dataset.keys  # type: ignore[method-assign]
+        self.values = self.dataset.values  # type: ignore[method-assign]
+        self.items = self.dataset.items  # type: ignore[method-assign]
 
     def __len__(self) -> int:
         r"""Length of the dataset."""

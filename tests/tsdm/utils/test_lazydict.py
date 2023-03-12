@@ -118,7 +118,7 @@ def test_lazydict_copy():
         assert keyA is keyB
         assert valueA is valueB
         assert isinstance(valueA, LazyFunction)
-        assert isinstance(valueB, LazyFunction)  # type: ignore[unreachable]
+        assert isinstance(valueB, LazyFunction)
 
     # compute the value in the second dictionary
     for keyB in ldB:
