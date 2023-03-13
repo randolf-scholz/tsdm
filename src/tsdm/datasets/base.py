@@ -305,23 +305,30 @@ class FrameDataset(BaseDataset, ABC):
         r"""Validate the file hash."""
         self.LOGGER.debug("Validating %s", filespec)
 
-        if isinstance(filespec, DataFrame):
-            self.validate_table(filespec, reference=reference)
-            return
+        match filespec:
+            case str() | Path():
+                self.validate_file(filespec, reference=reference)
+            case DataFrame():  # type: ignore[misc]
+                self.validate_table(filespec, reference=reference)  # type: ignore[unreachable]
+            case Mapping():
+                for value in filespec.values():
+                    self.validate(value, reference=reference)
+            case Sequence():
+                for value in filespec:
+                    self.validate(value, reference=reference)
+            case None:
+                pass
+            case _:
+                raise TypeError(f"Unsupported type for {filespec=}.")
+        return
 
-        if isinstance(filespec, Mapping):
-            for value in filespec.values():
-                self.validate(value, reference=reference)
-            return
-        if isinstance(filespec, Sequence) and not isinstance(filespec, str | Path):
-            for value in filespec:
-                self.validate(value, reference=reference)
-            return
-        if filespec is None:
-            return
-
-        assert isinstance(filespec, str | Path), f"{filespec=} wrong type!"
-        filespec = Path(filespec)
+    def validate_file(
+        self,
+        filespec: str | Path,
+        /,
+        *,
+        reference: Optional[Hashable | Mapping[str, Hashable]] = None,
+    ) -> None:
         file = Path(filespec)
 
         if not file.exists():
@@ -329,56 +336,57 @@ class FrameDataset(BaseDataset, ABC):
 
         filehash = sha256(file.read_bytes()).hexdigest()
 
-        if reference is None:
-            warnings.warn(
-                f"File {file.name!r} cannot be validated as no hash is stored in {self.__class__}."
-                f"The filehash is {filehash!r}.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-        elif isinstance(reference, str | Path):
-            if filehash != reference:
+        match reference:
+            case None:
                 warnings.warn(
-                    f"File {file.name!r} failed to validate!"
-                    f"File hash {filehash!r} does not match reference {reference!r}."
-                    f"Ignore this warning if the format is parquet.",
+                    f"File {file.name!r} cannot be validated as no hash is stored in {self.__class__}."
+                    f"The filehash is {filehash!r}.",
                     RuntimeWarning,
                     stacklevel=2,
                 )
-            self.LOGGER.info(
-                f"File {file.name!r} validated successfully {filehash=!r}."
-            )
-        elif isinstance(reference, Mapping):
-            if not (file.name in reference) ^ (file.stem in reference):
-                warnings.warn(
-                    f"File {file.name!r} cannot be validated as it is not contained in {reference}."
-                    f"The filehash is {filehash!r}."
-                    f"Ignore this warning if the format is parquet.",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-            elif file.name in reference and filehash != reference[file.name]:
-                warnings.warn(
-                    f"File {file.name!r} failed to validate!"
-                    f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
-                    f"Ignore this warning if the format is parquet.",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-            elif file.stem in reference and filehash != reference[file.stem]:
-                warnings.warn(
-                    f"File {file.name!r} failed to validate!"
-                    f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
-                    f"Ignore this warning if the format is parquet.",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-            else:
+            case str() | Path():
+                if filehash != reference:
+                    warnings.warn(
+                        f"File {file.name!r} failed to validate!"
+                        f"File hash {filehash!r} does not match reference {reference!r}."
+                        f"Ignore this warning if the format is parquet.",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
                 self.LOGGER.info(
                     f"File {file.name!r} validated successfully {filehash=!r}."
                 )
-        else:
-            raise TypeError(f"Unsupported type for {reference=}.")
+            case Mapping():
+                if not (file.name in reference) ^ (file.stem in reference):
+                    warnings.warn(
+                        f"File {file.name!r} cannot be validated as it is not contained in {reference}."
+                        f"The filehash is {filehash!r}."
+                        f"Ignore this warning if the format is parquet.",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+                elif file.name in reference and filehash != reference[file.name]:
+                    warnings.warn(
+                        f"File {file.name!r} failed to validate!"
+                        f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
+                        f"Ignore this warning if the format is parquet.",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+                elif file.stem in reference and filehash != reference[file.stem]:
+                    warnings.warn(
+                        f"File {file.name!r} failed to validate!"
+                        f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
+                        f"Ignore this warning if the format is parquet.",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+                else:
+                    self.LOGGER.info(
+                        f"File {file.name!r} validated successfully {filehash=!r}."
+                    )
+            case _:
+                raise TypeError(f"Unsupported type for {reference=}.")
 
         self.LOGGER.debug("Validated %s", filespec)
 

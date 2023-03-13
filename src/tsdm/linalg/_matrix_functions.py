@@ -85,8 +85,8 @@ def col_corr(x: Tensor) -> Tensor:
     u = torch.linalg.norm(x, dim=0)
     xx = torch.einsum("...n, ...k -> ...nk", u, u)
     xtx = torch.einsum("...mn, ...mk  -> ...nk", x, x)
-    I = torch.eye(n, dtype=x.dtype, device=x.device)
-    c = I - xtx / xx
+    eye = torch.eye(n, dtype=x.dtype, device=x.device)
+    c = eye - xtx / xx
     return c.abs().sum(dim=(-2, -1)) / (n * (n - 1))
 
 
@@ -102,8 +102,8 @@ def row_corr(x: Tensor) -> Tensor:
     v = torch.linalg.norm(x, dim=1)
     xx = torch.einsum("...m, ...k -> ...mk", v, v)
     xxt = torch.einsum("...mn, ...kn  -> ...mk", x, x)
-    I = torch.eye(m, dtype=x.dtype, device=x.device)
-    c = I - xxt / xx
+    eye = torch.eye(m, dtype=x.dtype, device=x.device)
+    c = eye - xxt / xx
     return c.abs().sum(dim=(-2, -1)) / (m * (m - 1))
 
 

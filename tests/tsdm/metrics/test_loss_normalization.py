@@ -36,11 +36,11 @@ def test_loss_normalization(
     rtol: float = 0.01,
 ) -> None:
     r"""Test whether the modular losses are normalized."""
-    l = loss(normalize=True)
+    loss_func = loss(normalize=True)
     shape = batch_shape + channel_shape
     targets = torch.randn(*shape)
     predictions = torch.randn(*shape)
-    result = l(targets, predictions)
+    result = loss_func(targets, predictions)
 
     if prod(batch_shape) <= 1:
         return
@@ -66,11 +66,11 @@ def test_time_loss_normalization(
     r"""Test whether the time-series losses are normalized."""
     axes = tuple(range(-len(channel_shape), 0))
 
-    l = TimeSeriesMSE(axes)
+    loss_func = TimeSeriesMSE(axes)
     shape = batch_shape + time_shape + channel_shape
     targets = torch.randn(*shape)
     predictions = torch.randn(*shape)
-    result = l(targets, predictions)
+    result = loss_func(targets, predictions)
 
     # skip for edge case test
     if prod(batch_shape) <= 1 or prod(time_shape) <= 1:
