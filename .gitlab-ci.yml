@@ -318,7 +318,7 @@ pypi:
       --right-text="$TEXT"
       --right-color="$COLOR"
       --whole-link="https://pypi.org/"
-      --logo="https://pypi.org/static/images/logo-small.95de8436.svg"
+      --logo="https://upload.wikimedia.org/wikipedia/commons/6/64/PyPI_logo.svg"
       --embed-logo
       > $BADGE_DIR/pypi.svg
   artifacts:
