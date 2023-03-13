@@ -103,8 +103,8 @@ setup:
     - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
-    - PYTHON_VERSION=$(poetry version -s)
-    - PYTHON_VERSION="${PYTHON_VERSION%.*}"
+    - VERSION="$(poetry version -s)"
+    - PYTHON_VERSION="≥3.10"
     # generate python version badge
     - python -m pybadges
       --left-text="python"
