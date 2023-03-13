@@ -57,7 +57,7 @@ typing-extensions = ">=4.3"
 
 
 [tool.poetry.group.dev.dependencies]
-bandit = ">=1.7.4"
+bandit = ">=1.7.5"
 black = {version = ">=23.1", extras = ["jupyter"]}
 blacken-docs = ">=1.13.0"
 coverage = ">=7.2.1"
@@ -65,7 +65,7 @@ docutils = ">=0.19"
 flake8 = ">=6.0.0"
 flake8-annotations = ">=3.0.0"
 flake8-black = ">=0.3.6"
-flake8-bugbear = ">=23.2.13"
+flake8-bugbear = ">=23.3.12"
 flake8-comprehensions = ">=3.10.1"
 flake8-docstrings = ">=1.7.0"
 flake8-pyi = ">=23.1.2"
@@ -75,7 +75,7 @@ ipywidgets = ">=8.0.4"
 isort = ">=5.12.0"
 jupyterlab = ">=3.6.1"
 mypy = ">=1.1.1"
-nbsphinx = ">=0.8.12"
+nbsphinx = ">=0.9.0"
 openml = ">=0.13.0"
 openpyxl = ">=3.1.1"
 perflint = ">=0.7.3"
@@ -91,10 +91,10 @@ pydeps = ">=1.11.1"
 pydocstyle = ">=6.3.0"
 pyflakes = ">=3.0.1"
 pygments = ">=2.14.0"
-pylint = ">=2.16.4"
+pylint = ">=2.17.0"
 pylint-gitlab = ">=1.2.0"
 pyre-check = ">=0.9.18"
-pyright = ">=1.1.296"
+pyright = ">=1.1.298"
 pytest = ">=7.2.2"
 pytest-cov = ">=4.0.0"
 pytest-rerunfailures = ">=11.1.1"
@@ -117,7 +117,7 @@ types-psutil = ">=5.9.5"
 types-pygments = ">=2.14.0"
 types-pyyaml = ">=6.0.12"
 types-requests = ">=2.28.11"
-types-setuptools = ">=67.5.0"
+types-setuptools = ">=67.6.0"
 types-six = ">=1.16.21"
 types-typing-extensions = ">=3.7.3"
 types-urllib3 = ">=1.26.25"
@@ -139,7 +139,7 @@ disable= [
     "C0103",  # invalid-name
     "C0144",  # non-ascii-name
     "C0204",  # bad-mcs-classmethod-argument
-    "C0415",  # import-outside-toplevel
+#    "C0415",  # import-outside-toplevel
     "E0611",  # no-name-in-module
     "E1130",  # invalid-unary-operand-type
     "R0801",  # similar lines
@@ -235,7 +235,7 @@ color = true
 # pydocstyle Configuration #
 ############################
 [tool.pydocstyle]
-#convention = "numpy"
+convention = "google"
 #count = true
 # https://github.com/PyCQA/pydocstyle/issues/363
 #match = '.*\.py$'

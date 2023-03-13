@@ -66,8 +66,8 @@ r"""The version number of the `tsdm` package."""
 
 def info(obj: object | None = None) -> None:
     """Open the help page for the given object in a browser."""
-    import inspect
-    import webbrowser
+    import inspect  # pylint: disable=import-outside-toplevel
+    import webbrowser  # pylint: disable=import-outside-toplevel
 
     url = config.PROJECT.DOC_URL
     if obj is None:
