@@ -103,7 +103,7 @@ class MIMIC_IV(MultiFrameDataset):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} ",
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {self.rawdata_paths}",
             shell=True,
             check=True,
         )

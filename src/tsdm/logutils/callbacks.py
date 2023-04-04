@@ -429,7 +429,7 @@ def log_optimizer(
     r"""Log optimizer data under ``prefix:optimizer:postfix/``."""
     identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
 
-    variables = list(optimizer.state.keys())
+    variables = list(optimizer.state.values())
     gradients = [w.grad for w in variables]
     moments_1 = [d["exp_avg"] for d in optimizer.state.values() if "exp_avg" in d]
     moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values() if "exp_avg_sq" in d]
