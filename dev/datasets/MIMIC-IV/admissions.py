@@ -234,7 +234,7 @@ chartevents = chartevents.loc[
 # In[ ]:
 
 
-raise
+raise Exception
 
 
 # In[ ]:
