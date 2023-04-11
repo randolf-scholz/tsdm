@@ -53,11 +53,15 @@ __all__ = [
     # "StandardLogger",
 ]
 
+import logging
+from abc import ABCMeta
 from collections import defaultdict
+from collections.abc import Sequence
 from pathlib import Path
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Mapping,
     NamedTuple,
     Optional,
@@ -85,6 +89,7 @@ from tsdm.logutils.callbacks import (  # ModelCallback,
 )
 from tsdm.metrics import Loss
 from tsdm.types.aliases import JSON, PathLike
+from tsdm.utils.funcutils import get_mandatory_kwargs
 from tsdm.utils.strings import repr_mapping
 
 
@@ -100,46 +105,65 @@ class Logger(Protocol):
     """Generic Logger Protocol."""
 
     @property
-    def callbacks(self) -> Mapping[str, list[Callback]]:
+    def callbacks(self) -> Mapping[str, Sequence[Callback]]:
         """Callbacks to be called at the end of a batch/epoch."""
 
     def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
         """Call the logger."""
 
 
-class BaseLogger:
+class LoggerkMetaclass(ABCMeta):
+    """Metaclass for callbacks."""
+
+    def __init__(cls, *args: Any, **kwargs: Any) -> None:
+        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+        super().__init__(*args, **kwargs)
+
+
+class BaseLogger(metaclass=LoggerkMetaclass):
     """Base class for loggers."""
 
-    callbacks: dict[str, list[Callback[...]]] = defaultdict(list)
+    LOGGER: ClassVar[logging.Logger]
+    """The debug logger."""
+
+    _callbacks: dict[str, list[tuple[Callback[...], int, set[str]]]] = defaultdict(list)
     """Callbacks to be called at the end of a batch/epoch."""
-    state_dict: dict[str, Any] = {}
-    """State dictionary of the logger."""
 
-    def add_callback(self, key: str, callback: Callback) -> None:
+    @property
+    def callbacks(self) -> dict[str, list[Callback]]:
+        """Callbacks to be called at the end of a batch/epoch."""
+        return {k: [cb for cb, _, _ in v] for k, v in self._callbacks.items()}
+
+    def add_callback(self, key: str, callback: Callback, *, frequency: int = 1) -> None:
         """Add a callback to the logger."""
-        self.callbacks[key].append(callback)
+        required_kwargs = set(
+            callback.required_kwargs
+            if hasattr(callback, "required_kwargs")
+            else get_mandatory_kwargs(callback)
+        )
+        frequency = callback.frequency if hasattr(callback, "frequency") else frequency
 
-    def required_kwargs(self, key: str, /) -> list[set[str]]:
-        """Return the required kwargs for each callback."""
-        return [callback.required_kwargs for callback in self.callbacks[key]]
+        self._callbacks[key].append((callback, frequency, required_kwargs))
+
+    def combined_kwargs(self, key: str) -> set[str]:
+        """Get the combined kwargs of all callbacks."""
+        return set().union(*(kwargs for _, _, kwargs in self._callbacks[key]))
 
     def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
         """Call the logger."""
-        required_kwargs = self.required_kwargs(key)
-
-        # safety checks
-        combined_kwargs = set().union(*required_kwargs)
+        combined_kwargs = self.combined_kwargs(key)
         if missing_kwargs := combined_kwargs - set(kwargs):
             raise TypeError(f"Missing required kwargs: {missing_kwargs}")
         if unexpected_kwargs := set(kwargs) - combined_kwargs:
             raise RuntimeWarning(f"Unexpected kwargs: {unexpected_kwargs}")
 
         # call callbacks
-        for num, callback in enumerate(self.callbacks[key]):
-            # pbar := tqdm(self.callbacks[key], desc="callbacks", leave=False)
-            # pbar.set_postfix(callback=f"{type(callback).__name__}")
-            kwds = required_kwargs[num]
-            callback(i, **{kwd: kwargs[kwd] for kwd in kwds})
+        for cb, freq, callback_kwargs in self._callbacks[key]:
+            if i % freq:
+                self.LOGGER.debug("skipping callback %s", cb)
+                continue
+            self.LOGGER.debug("executing callback %s", cb)
+            cb(i, **{k: kwargs[k] for k in callback_kwargs})
 
     def log_epoch_end(self, i: int, /, **kwargs: Any) -> None:
         """Log the end of an epoch."""

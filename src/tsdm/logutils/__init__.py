@@ -1,6 +1,10 @@
 r"""Logging Utility Functions."""
 
 __all__ = [
+    # Submodules
+    "callbacks",
+    "logfuncs",
+    "loggers",
     # Types
     "Logger",
     "Callback",
@@ -10,16 +14,15 @@ __all__ = [
     "LOGFUNCS",
     "CALLBACKS",
     # Functions
-    "compute_metrics",
-    "log_optimizer",
+    "make_checkpoint",
     "log_kernel",
     "log_lr_scheduler",
-    "log_model",
     "log_metrics",
-    "log_values",
+    "log_model",
+    "log_optimizer",
     "log_table",
+    "log_values",
     # Classes
-    # "StandardLogger",
     "BaseLogger",
     "DefaultLogger",
     # Callbacks
@@ -34,7 +37,7 @@ __all__ = [
     "TableCallback",
 ]
 
-from tsdm.logutils.base import BaseLogger, DefaultLogger, Logger  # , StandardLogger
+from tsdm.logutils import callbacks, logfuncs, loggers
 from tsdm.logutils.callbacks import (
     BaseCallback,
     Callback,
@@ -47,7 +50,8 @@ from tsdm.logutils.callbacks import (
     OptimizerCallback,
     ScalarsCallback,
     TableCallback,
-    compute_metrics,
+)
+from tsdm.logutils.logfuncs import (
     log_kernel,
     log_lr_scheduler,
     log_metrics,
@@ -55,7 +59,9 @@ from tsdm.logutils.callbacks import (
     log_optimizer,
     log_table,
     log_values,
+    make_checkpoint,
 )
+from tsdm.logutils.loggers import BaseLogger, DefaultLogger, Logger
 
 CALLBACKS: dict[str, type[Callback[...]]] = {
     "CheckpointCallback": CheckpointCallback,
@@ -69,11 +75,11 @@ CALLBACKS: dict[str, type[Callback[...]]] = {
 }
 
 LOGFUNCS: dict[str, LogFunction] = {
-    "log_kernel_information": log_kernel,
+    "log_kernel": log_kernel,
     "log_lr_scheduler": log_lr_scheduler,
     "log_metrics": log_metrics,
-    "log_model_state": log_model,
-    "log_optimizer_state": log_optimizer,
+    "log_model": log_model,
+    "log_optimizer": log_optimizer,
     "log_values": log_values,
     "log_table": log_table,
 }
@@ -81,5 +87,4 @@ LOGFUNCS: dict[str, LogFunction] = {
 LOGGERS: dict[str, type[Logger]] = {
     "BaseLogger": BaseLogger,
     "DefaultLogger": DefaultLogger,
-    # "StandardLogger": StandardLogger,
 }
