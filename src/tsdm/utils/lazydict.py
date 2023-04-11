@@ -26,7 +26,7 @@ from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import Key2Var as K2
 from tsdm.types.variables import KeyVar as K
 from tsdm.types.variables import ReturnVar_co as R
-from tsdm.utils import get_function_args, is_positional_arg
+from tsdm.utils.funcutils import get_function_args, is_positional_arg
 from tsdm.utils.strings import repr_mapping
 
 __logger__ = logging.getLogger(__name__)
@@ -38,7 +38,6 @@ if TYPE_CHECKING:
 class LazyFunction(Generic[R]):
     r"""A placeholder for uninitialized values."""
 
-    # TODO: Check for Type Hints and add it to __repr__
     # FIXME: use typing.NamedTuple (3.11)
     func: Callable[..., R]
     args: Iterable[Any]
