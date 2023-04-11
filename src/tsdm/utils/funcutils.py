@@ -11,8 +11,8 @@ __all__ = [
     "is_positional_arg",
     "is_positional_only_arg",
     "is_variadic_arg",
-    "mandatory_argcount",
-    "mandatory_kwargs",
+    "get_mandatory_argcount",
+    "get_mandatory_kwargs",
 ]
 
 import inspect
@@ -120,6 +120,22 @@ def get_function_args(
     ]
 
 
+def get_mandatory_argcount(f: Callable[..., Any]) -> int:
+    r"""Get the number of mandatory arguments of a function."""
+    sig = inspect.signature(f)
+    return sum(is_mandatory_arg(p) for p in sig.parameters.values())
+
+
+def get_mandatory_kwargs(f: Callable[..., Any]) -> set[str]:
+    r"""Get the mandatory keyword arguments of a function."""
+    sig = inspect.signature(f)
+    return {
+        name
+        for name, p in sig.parameters.items()
+        if is_mandatory_arg(p) and is_keyword_arg(p)
+    }
+
+
 def is_mandatory_arg(p: Parameter, /) -> bool:
     r"""Check if parameter is mandatory."""
     return p.default is Parameter.empty and p.kind not in (
@@ -164,19 +180,3 @@ def is_keyword_arg(p: Parameter, /) -> bool:
 def is_variadic_arg(p: Parameter, /) -> bool:
     """Check if parameter is variadic argument."""
     return p.kind in (VAR_POSITIONAL, VAR_KEYWORD)
-
-
-def mandatory_argcount(f: Callable[..., Any]) -> int:
-    r"""Get the number of mandatory arguments of a function."""
-    sig = inspect.signature(f)
-    return sum(is_mandatory_arg(p) for p in sig.parameters.values())
-
-
-def mandatory_kwargs(f: Callable[..., Any]) -> set[str]:
-    r"""Get the mandatory keyword arguments of a function."""
-    sig = inspect.signature(f)
-    return {
-        name
-        for name, p in sig.parameters.items()
-        if is_mandatory_arg(p) and is_keyword_arg(p)
-    }

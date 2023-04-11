@@ -42,8 +42,8 @@ __all__ = [
     "is_positional_arg",
     "is_positional_only_arg",
     "is_variadic_arg",
-    "mandatory_argcount",
-    "mandatory_kwargs",
+    "get_mandatory_argcount",
+    "get_mandatory_kwargs",
 ]
 
 from tsdm.utils import data, decorators, remote, system
@@ -70,6 +70,8 @@ from tsdm.utils.funcutils import (
     accepts_varkwargs,
     dataclass_args_kwargs,
     get_function_args,
+    get_mandatory_argcount,
+    get_mandatory_kwargs,
     get_parameter_kind,
     is_keyword_arg,
     is_keyword_only_arg,
@@ -77,7 +79,5 @@ from tsdm.utils.funcutils import (
     is_positional_arg,
     is_positional_only_arg,
     is_variadic_arg,
-    mandatory_argcount,
-    mandatory_kwargs,
 )
 from tsdm.utils.lazydict import LazyDict, LazyFunction
