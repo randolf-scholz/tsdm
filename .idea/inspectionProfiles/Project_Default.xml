@@ -17,6 +17,7 @@
     <inspection_tool class="AngularMissingEventHandler" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AngularMissingOrInvalidDeclarationInModule" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AngularMultipleStructuralDirectives" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="AngularNgOptimizedImage" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="AngularNonEmptyNgContent" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AngularRecursiveModuleImportExport" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AngularUndefinedBinding" enabled="true" level="ERROR" enabled_by_default="true" />
@@ -110,6 +111,7 @@
     <inspection_tool class="CucumberMissedExamples" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="CucumberTableInspection" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="CucumberUndefinedStep" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CustomRegExpInspection" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CyclomaticComplexityJS" enabled="false" level="WARNING" enabled_by_default="false">
       <option name="m_limit" value="10" />
     </inspection_tool>
@@ -363,6 +365,7 @@
     <inspection_tool class="JSUnresolvedFunction" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="JSUnresolvedLibraryURL" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="JSUnresolvedReactComponent" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="JSUnresolvedReference" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="JSUnresolvedVariable" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="JSUnusedAssignment" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="JSUnusedGlobalSymbols" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -371,6 +374,7 @@
     <inspection_tool class="JSValidateJSDoc" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="JSValidateTypes" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="JSVoidFunctionReturnValueUsed" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="JSXDomNesting" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="JSXNamespaceValidation" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="JSXSyntaxUsed" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="JSXUnresolvedComponent" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
@@ -400,6 +404,7 @@
     <inspection_tool class="LoopStatementThatDoesntLoopJS" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="LossyEncoding" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="MagicNumberJS" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="MakefileUnresolvedPrerequisite" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="MakoArgumentListInspection" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="MarkdownIncorrectTableFormatting" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="MarkdownIncorrectlyNumberedListItem" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -419,6 +424,7 @@
     <inspection_tool class="MsOrderByInspection" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="MysqlLoadDataPathInspection" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="MysqlParsingInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="MysqlSpaceAfterFunctionNameInspection" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="NegatedConditionalExpressionJS" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="NegatedIfStatementJS" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="NestedAssignmentJS" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -463,6 +469,11 @@
       <option name="m_ignoreExpressionsContainingConstants" value="false" />
     </inspection_tool>
     <inspection_tool class="PointlessBooleanExpressionJS" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PostCssCustomMedia" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="PostCssCustomSelector" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="PostCssMediaRange" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="PostCssNesting" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="PostCssUnresolvedModuleValueReference" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="ProblematicWhitespace" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="Puppet3Deprecations" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="Puppet4Deprecations" enabled="true" level="WARNING" enabled_by_default="true" />
@@ -765,6 +776,7 @@
     <inspection_tool class="TypeScriptUMDGlobal" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="TypeScriptUnresolvedFunction" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="TypeScriptUnresolvedReactComponent" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="TypeScriptUnresolvedReference" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="TypeScriptUnresolvedVariable" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="TypeScriptValidateGenericTypes" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="TypeScriptValidateJSTypes" enabled="true" level="WEAK WARNING" enabled_by_default="true" />

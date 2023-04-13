@@ -5,49 +5,49 @@ __all__ = [
     "Optimizer",
     "OPTIMIZERS",
     # Classes
-    "LR_Scheduler",
+    "LRScheduler",
     "LR_SCHEDULERS",
 ]
 
 from typing import Final, TypeAlias
 
-import torch.optim
+from torch import optim
 from torch.optim import lr_scheduler
 
-Optimizer: TypeAlias = torch.optim.Optimizer
+Optimizer: TypeAlias = optim.Optimizer
 r"""Type hint for optimizers."""
+LRScheduler = lr_scheduler.LRScheduler
+r"""Type hint for lr_schedulers."""
 
-OPTIMIZERS: Final[dict[str, type[torch.optim.Optimizer]]] = {
-    "Adadelta": torch.optim.Adadelta,
+
+OPTIMIZERS: Final[dict[str, type[Optimizer]]] = {
+    "Adadelta": optim.Adadelta,
     # Implements Adadelta algorithm.
-    "Adagrad": torch.optim.Adagrad,
+    "Adagrad": optim.Adagrad,
     # Implements Adagrad algorithm.
-    "Adam": torch.optim.Adam,
+    "Adam": optim.Adam,
     # Implements Adam algorithm.
-    "AdamW": torch.optim.AdamW,
+    "AdamW": optim.AdamW,
     # Implements AdamW algorithm.
-    "SparseAdam": torch.optim.SparseAdam,
+    "SparseAdam": optim.SparseAdam,
     # Implements lazy version of Adam algorithm suitable for sparse tensors.
-    "Adamax": torch.optim.Adamax,
+    "Adamax": optim.Adamax,
     # Implements Adamax algorithm (a variant of Adam based on infinity norm).
-    "ASGD": torch.optim.ASGD,
+    "ASGD": optim.ASGD,
     # Implements Averaged Stochastic Gradient Descent.
-    "LBFGS": torch.optim.LBFGS,
+    "LBFGS": optim.LBFGS,
     # Implements L-BFGS algorithm, heavily inspired by minFunc.
-    "RMSprop": torch.optim.RMSprop,
+    "RMSprop": optim.RMSprop,
     # Implements RMSprop algorithm.
-    "Rprop": torch.optim.Rprop,
+    "Rprop": optim.Rprop,
     # Implements the resilient backpropagation algorithm.
-    "SGD": torch.optim.SGD,
+    "SGD": optim.SGD,
     # Implements stochastic gradient descent (optionally with momentum).
 }
 r"""Dictionary of all available optimizers."""
 
-# noinspection PyProtectedMember
-LR_Scheduler = lr_scheduler._LRScheduler  # pylint: disable=protected-access
-r"""Type hint for lr_schedulers."""
 
-LR_SCHEDULERS: Final[dict[str, type[lr_scheduler._LRScheduler]]] = {
+LR_SCHEDULERS: Final[dict[str, type[LRScheduler]]] = {
     "LambdaLR": lr_scheduler.LambdaLR,
     "MultiplicativeLR": lr_scheduler.MultiplicativeLR,
     "StepLR": lr_scheduler.StepLR,
@@ -61,4 +61,4 @@ LR_SCHEDULERS: Final[dict[str, type[lr_scheduler._LRScheduler]]] = {
 }
 r"""Dictionary of all available lr_schedulers."""
 
-del Final, TypeAlias, lr_scheduler
+del Final, TypeAlias, lr_scheduler, optim

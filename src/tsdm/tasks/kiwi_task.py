@@ -128,8 +128,8 @@ class KiwiTask(TimeSeriesTask):
     def __init__(
         self,
         *,
-        # observation_horizon: str = "2h",
-        # forecasting_horizon: str = "1h",
+        observation_horizon: str = "2h",
+        forecasting_horizon: str = "1h",
         # stride: str = "15min",
         # observables: list[str] | None = None,
         # covariates: list[str] | None = None,
