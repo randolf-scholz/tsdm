@@ -320,7 +320,6 @@ class FrameDataset(BaseDataset, ABC):
                 pass
             case _:
                 raise TypeError(f"Unsupported type for {filespec=}.")
-        return
 
     def validate_file(
         self,
@@ -329,6 +328,7 @@ class FrameDataset(BaseDataset, ABC):
         *,
         reference: Optional[Hashable | Mapping[str, Hashable]] = None,
     ) -> None:
+        """Validate the file hash."""
         file = Path(filespec)
 
         if not file.exists():
