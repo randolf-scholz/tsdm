@@ -4,6 +4,9 @@ TODO: Add module description.
 """
 
 __all__ = [
+    # Protocols
+    "LogFunction",
+    # Functions
     "make_checkpoint",
     "log_config",
     "log_kernel",
@@ -18,7 +21,7 @@ __all__ = [
 import json
 import pickle
 from pathlib import Path
-from typing import Any, Literal, Mapping, Optional, Sequence
+from typing import Any, Literal, Mapping, NamedTuple, Optional, Protocol, Sequence
 
 import torch
 import yaml
@@ -48,6 +51,30 @@ from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
+
+
+class LogFunction(Protocol):
+    """Protocol for logging functions."""
+
+    def __call__(
+        self,
+        i: int,
+        logged_object: Any,
+        writer: SummaryWriter,
+        /,
+        *,
+        name: str = "",
+        prefix: str = "",
+        postfix: str = "",
+    ) -> None:
+        """Log to tensorboard."""
+
+
+class TargetsAndPredics(NamedTuple):
+    """Targets and predictions."""
+
+    targets: Tensor
+    predics: Tensor
 
 
 @torch.no_grad()
@@ -279,8 +306,10 @@ def log_lr_scheduler(
     postfix: str = "",
 ) -> None:
     r"""Log learning rate scheduler."""
-    # identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
-    raise NotImplementedError("Not implemented yet.")
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
+    cls_name = lr_scheduler.__class__.__name__
+    lr = lr_scheduler.get_last_lr()
+    writer.add_scalar(f"{identifier}:{cls_name}/lr", lr, i)
 
 
 def log_metrics(

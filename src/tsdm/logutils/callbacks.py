@@ -5,7 +5,6 @@ __all__ = [
     # Classes
     # Protocols
     "Callback",
-    "LogFunction",
     # Callbacks
     "BaseCallback",
     "CheckpointCallback",
@@ -22,7 +21,7 @@ __all__ = [
 ]
 
 import logging
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from functools import wraps
@@ -34,7 +33,6 @@ from typing import (
     ClassVar,
     Generic,
     Literal,
-    NamedTuple,
     Optional,
     Protocol,
     runtime_checkable,
@@ -48,8 +46,10 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.autonotebook import tqdm
+from typing_extensions import Self
 
 from tsdm.logutils.logfuncs import (
+    TargetsAndPredics,
     compute_metrics,
     log_config,
     log_kernel,
@@ -90,30 +90,6 @@ class Callback(Protocol[P]):
         """Log something at time index i."""
 
 
-class TargetsAndPredics(NamedTuple):
-    """Targets and predictions."""
-
-    targets: Tensor
-    predics: Tensor
-
-
-class LogFunction(Protocol):
-    """Protocol for logging functions."""
-
-    def __call__(
-        self,
-        i: int,
-        logged_object: Any,
-        writer: SummaryWriter,
-        /,
-        *,
-        name: str = "",
-        prefix: str = "",
-        postfix: str = "",
-    ) -> None:
-        """Log to tensorboard."""
-
-
 class CallbackMetaclass(ABCMeta):
     """Metaclass for callbacks."""
 
@@ -140,17 +116,23 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
         """Automatically set the required kwargs for the callback."""
         cls.required_kwargs = get_mandatory_kwargs(cls.callback)
 
-    # @abstractmethod
-    def callback(self, i: int, /, **kwargs: P.kwargs) -> None:
-        """Log something at the end of a batch/epoch."""
+        @wraps(cls.callback)
+        def __call__(self: Self, i: int, /, **kwargs: P.kwargs) -> None:
+            """Log something at the end of a batch/epoch."""
+            if i % self.frequency == 0:
+                self.callback(i, **kwargs)
+            else:
+                self.LOGGER.debug("Skipping callback.")
 
-    @wraps(callback)
+        cls.__call__ = __call__  # type: ignore[method-assign]
+        super().__init_subclass__()
+
     def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
         """Log something at the end of a batch/epoch."""
-        if i % self.frequency == 0:
-            self.callback(i, **kwargs)
-        else:
-            self.LOGGER.debug("Skipping callback.")
+
+    @abstractmethod
+    def callback(self, i: int, /, **kwargs: P.kwargs) -> None:
+        """Log something at the end of a batch/epoch."""
 
     def __repr__(self):
         """Return a string representation of the callback."""
@@ -182,6 +164,16 @@ class ConfigCallback(BaseCallback):
             prefix=self.prefix,
             postfix=self.postfix,
         )
+
+
+@dataclass
+class WrapCallback(BaseCallback):
+    """Wraps a callable as a callback."""
+
+    func: Callable[..., None]
+
+    def callback(self, i: int, /, **kwargs: Any) -> None:
+        self.func(i, **kwargs)
 
 
 @dataclass

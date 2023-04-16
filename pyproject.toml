@@ -19,7 +19,7 @@ name = "tsdm"
 packages = [{include = "tsdm", from="src"}]
 readme = "README.rst"
 repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi"
-version = "0.4.6"
+version = "0.4.7"
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -67,9 +67,9 @@ flake8 = ">=6.0.0"
 flake8-annotations = ">=3.0.0"
 flake8-black = ">=0.3.6"
 flake8-bugbear = ">=23.3.23"
-flake8-comprehensions = ">=3.11.1"
+flake8-comprehensions = ">=3.12.0"
 flake8-docstrings = ">=1.7.0"
-flake8-pyi = ">=23.4.0"
+flake8-pyi = ">=23.4.1"
 flake8-rst = ">=0.8.0"
 flake8-rst-docstrings = ">=0.3.0"
 ipywidgets = ">=8.0.6"
