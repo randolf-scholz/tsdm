@@ -25,9 +25,12 @@ __all__ = [
     # Classes
     "BaseLogger",
     "DefaultLogger",
-    # Callbacks
     "BaseCallback",
+    # Callbacks
     "CheckpointCallback",
+    "ConfigCallback",
+    "EvaluationCallback",
+    "HParamCallback",
     "KernelCallback",
     "LRSchedulerCallback",
     "MetricsCallback",
@@ -42,8 +45,10 @@ from tsdm.logutils.callbacks import (
     BaseCallback,
     Callback,
     CheckpointCallback,
+    ConfigCallback,
+    EvaluationCallback,
+    HParamCallback,
     KernelCallback,
-    LogFunction,
     LRSchedulerCallback,
     MetricsCallback,
     ModelCallback,
@@ -52,6 +57,7 @@ from tsdm.logutils.callbacks import (
     TableCallback,
 )
 from tsdm.logutils.logfuncs import (
+    LogFunction,
     log_kernel,
     log_lr_scheduler,
     log_metrics,
@@ -65,6 +71,9 @@ from tsdm.logutils.loggers import BaseLogger, DefaultLogger, Logger
 
 CALLBACKS: dict[str, type[Callback[...]]] = {
     "CheckpointCallback": CheckpointCallback,
+    "ConfigCallback": ConfigCallback,
+    "EvaluationCallback": EvaluationCallback,
+    "HParamCallback": HParamCallback,
     "KernelCallback": KernelCallback,
     "LRSchedulerCallback": LRSchedulerCallback,
     "MetricsCallback": MetricsCallback,
