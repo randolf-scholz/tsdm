@@ -39,7 +39,7 @@ def validate_model_attribute(model: nn.Module, attr: str) -> None:
 
 
 @pytest.mark.skip(reason="not implemented")
-def test_model_serialization():
+def test_model_serialization() -> None:
     """Test the serialization of models."""
     __logger__.info("Testing %s.", object)
 

@@ -382,7 +382,7 @@ class MappingEncoder(BaseEncoder, Mapping[K, EncoderVar]):
         }
 
 
-class DuplicateEncoder(BaseEncoder):
+class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     r"""Duplicate encoder multiple times (references same object)."""
 
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
@@ -392,17 +392,17 @@ class DuplicateEncoder(BaseEncoder):
         self.encoder = ProductEncoder(*(self.base_encoder for _ in range(n)))
         self.is_fitted = self.encoder.is_fitted
 
-    def fit(self, data: Any, /) -> None:
+    def fit(self, data: tuple[T, ...], /) -> None:
         return self.encoder.fit(data)
 
-    def encode(self, data, /):
+    def encode(self, data: tuple[T, ...], /) -> tuple[S, ...]:
         return self.encoder.encode(data)
 
-    def decode(self, data, /):
+    def decode(self, data: tuple[S, ...], /) -> tuple[T, ...]:
         return self.encoder.decode(data)
 
 
-class CloneEncoder(BaseEncoder):
+class CloneEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     r"""Clone encoder multiple times (distinct copies)."""
 
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
@@ -412,11 +412,11 @@ class CloneEncoder(BaseEncoder):
         self.encoder = ProductEncoder(*(deepcopy(self.base_encoder) for _ in range(n)))
         self.is_fitted = self.encoder.is_fitted
 
-    def fit(self, data: Any, /) -> None:
+    def fit(self, data: tuple[T, ...], /) -> None:
         return self.encoder.fit(data)
 
-    def encode(self, data, /):
+    def encode(self, data: tuple[T, ...], /) -> tuple[S, ...]:
         return self.encoder.encode(data)
 
-    def decode(self, data, /):
+    def decode(self, data: tuple[S, ...], /) -> tuple[T, ...]:
         return self.encoder.decode(data)

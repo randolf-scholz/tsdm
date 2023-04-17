@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
-def test_array():
+def test_array() -> None:
     """Test the Array protocol."""
     LOGGER = __logger__.getChild(Array.__name__)
     LOGGER.info("Testing.")

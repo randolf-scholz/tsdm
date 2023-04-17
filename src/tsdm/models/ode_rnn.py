@@ -12,10 +12,11 @@ from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
+from typing import Any, Optional
 
 import torch
-from torch import nn
+from torch import Tensor, nn
+from typing_extensions import Self
 
 from tsdm.models._models import BaseModel
 from tsdm.utils import deep_dict_update
@@ -134,7 +135,7 @@ class ODE_RNN(BaseModel, nn.Module):
         },
     }
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         r"""TODO: add docstring."""
         return super(ODE_RNN, cls).__new__(*args, **kwargs)
 
@@ -248,7 +249,7 @@ class ODE_RNN(BaseModel, nn.Module):
             train_classif_w_reconstr=train_classif_w_reconstr,
         )
 
-    def forward(self, T, X):
+    def forward(self, T: Tensor, X: Tensor) -> Tensor:
         r"""TODO: add docstring."""
         (pred,) = self.model.get_reconstruction(
             # Note: n_traj_samples and mode have no effect -> omitted!

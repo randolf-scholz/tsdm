@@ -108,7 +108,7 @@ def compute_grid(
 class BaseSamplerMetaClass(ABCMeta):
     r"""Metaclass for BaseSampler."""
 
-    def __init__(cls, *args, **kwargs):
+    def __init__(cls, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
         cls.LOGGER = __logger__.getChild(cls.__name__)

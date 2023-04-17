@@ -23,7 +23,7 @@ from typing_extensions import Self
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.types.aliases import ScalarDType
+from tsdm.types.aliases import PandasObject, ScalarDType
 from tsdm.utils.data.timeseries import TimeTensor
 
 
@@ -174,10 +174,10 @@ class TimeDeltaEncoder(BaseEncoder):
         self.base_freq = base_freq
         self.timedelta = Timedelta(1, unit=self.unit)
 
-    def encode(self, data, /):
+    def encode(self, data: PandasObject, /) -> PandasObject:
         return data / self.timedelta
 
-    def decode(self, data, /):
+    def decode(self, data: PandasObject, /) -> PandasObject:
         result = data * self.timedelta
         if hasattr(result, "apply"):
             return result.apply(lambda x: x.round(self.base_freq))

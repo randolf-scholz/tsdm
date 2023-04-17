@@ -161,7 +161,7 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
         return paths_exists(self.dataset_paths)
 
     @abstractmethod
-    def clean(self):
+    def clean(self) -> None:
         r"""Clean an already downloaded raw dataset and stores it in self.data_dir.
 
         Preferably, use the '.parquet' data format.
