@@ -86,7 +86,7 @@ class BoundaryEncoder(BaseEncoder):
 
     requires_fit: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.lower_mask: float | np.ndarray
         self.upper_mask: float | np.ndarray
         if self.mode == "mask":
@@ -544,7 +544,7 @@ class IntEncoder(BaseEncoder):
     def encode(self, data: PandasObject, /) -> PandasObject:
         return data.astype("int32")
 
-    def decode(self, data, /):
+    def decode(self, data: PandasObject, /) -> PandasObject:
         return data.astype(self.dtypes)
 
 

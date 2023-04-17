@@ -524,7 +524,7 @@ def repr_dataclass(
 
     # set title
     if title is None:
-        if cls in BUILTIN_CONSTANTS:
+        if self in BUILTIN_CONSTANTS:
             title = ""
         else:
             title = cls.__name__
@@ -593,7 +593,7 @@ def repr_namedtuple(
 
     # set title
     if title is None:
-        if cls in BUILTIN_CONSTANTS:
+        if self in BUILTIN_CONSTANTS:
             title = ""
         else:
             title = cls.__name__

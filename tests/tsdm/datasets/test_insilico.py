@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
-def test_caching():
+def test_caching() -> None:
     """Test the caching of the dataset."""
     # NOTE: this test must be executed first!!!
     LOGGER = __logger__.getChild(InSilicoData.__name__)
@@ -33,7 +33,7 @@ def test_caching():
     LOGGER.info("%s passes caching test ✔.")
 
 
-def test_attributes():
+def test_attributes() -> None:
     """Test the attributes of the dataset."""
     LOGGER = __logger__.getChild(InSilicoData.__name__)
     LOGGER.info("Testing attributes.")

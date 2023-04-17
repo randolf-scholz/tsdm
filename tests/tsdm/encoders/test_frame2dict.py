@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
-def test_frame2tensordict():
+def test_frame2tensordict() -> None:
     """Make sure that the column order is preserved."""
     df = DataFrame(
         {

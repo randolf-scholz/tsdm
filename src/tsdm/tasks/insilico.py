@@ -20,7 +20,7 @@ from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_gr
 class InSilicoSampleGenerator(TimeSeriesSampleGenerator):
     r"""Sample generator for the KIWI dataset."""
 
-    def __init__(self, dataset):
+    def __init__(self, dataset: TimeSeriesCollection) -> None:
         super().__init__(
             dataset,
             targets=["Biomass", "Product"],

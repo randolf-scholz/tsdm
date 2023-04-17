@@ -338,12 +338,14 @@ def attribute(func: Callable[[O], R]) -> R:
     class _attribute:
         __slots__ = ("func", "payload")
         sentinel = object()
+        func: Callable[[O], R]
+        payload: R
 
         def __init__(self, function: Callable) -> None:
             self.func = function
-            self.payload = self.sentinel
+            self.payload = cast(Any, self.sentinel)
 
-        def __get__(self, obj, obj_type=None):
+        def __get__(self, obj: O | None, obj_type: Optional[type] = None) -> Self | R:
             if obj is None:
                 return self
             if self.payload is self.sentinel:
@@ -497,16 +499,15 @@ def vectorize(
 ) -> Callable[[O | CollectionType], R | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
-    The signature will change accordingly
+    The signature will change accordingly.
 
-    Examples
-    --------
-    >>> @vectorize(kind=list)
-    ... def f(x):
-    ...     return x + 1
-    ...
-    >>> assert f(1) == 2
-    >>> assert f(1,2) == [2,3]
+    Examples:
+        >>> @vectorize(kind=list)
+        ... def f(x):
+        ...     return x + 1
+        ...
+        >>> assert f(1) == 2
+        >>> assert f(1,2) == [2,3]
     """
     params = list(signature(func).parameters.values())
 

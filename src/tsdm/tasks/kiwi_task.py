@@ -48,7 +48,7 @@ class Batch(NamedTuple):
     y_vals: Tensor  # B×K×D: the target values.
     y_mask: Tensor  # B×K×D: teh target mask.
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr_namedtuple(self)
 
 

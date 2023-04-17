@@ -98,7 +98,7 @@ class ConfigMetaclass(ABCMeta):
         return dataclass(config_type, eq=False, frozen=True)  # type: ignore[call-overload]
 
 
-class Config(MutableMapping, metaclass=ConfigMetaclass):
+class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):
     r"""Base Config."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -109,7 +109,7 @@ class Config(MutableMapping, metaclass=ConfigMetaclass):
         r"""Return an iterator over the keys of the dictionary."""
         return iter(self.__dict__)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         r"""Return the value of the specified key."""
         return self.__dict__[key]
 

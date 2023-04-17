@@ -8,7 +8,7 @@ __all__ = [
 import logging
 import os
 import subprocess
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, ABCMeta
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Protocol
@@ -180,7 +180,3 @@ class BaseModel(ABC):
             # subprocess.run(F"git -C {model_path} pull", shell=True)
 
         self.LOGGER.info("Finished importing model from %s", self.SOURCE_URL)
-
-    @abstractmethod
-    def forward(self, *args):
-        r"""Synonym for forward and __call__."""
