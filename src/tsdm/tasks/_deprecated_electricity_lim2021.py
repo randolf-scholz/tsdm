@@ -86,6 +86,7 @@ class ElectricityLim2021(OldBaseTask):
 
     Evaluation Protocol
     -------------------
+
     .. epigraph::
 
         In accordance with [9], we use the past week (i.e. 168 hours) to

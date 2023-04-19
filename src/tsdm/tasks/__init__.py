@@ -23,7 +23,7 @@ forecasting horizons.
 
 More generally, eligible inputs are:
 
-- `DataFrame`, ``TimeTensor``, `tuple[DataFrame]`, `tuple[TimeTensor]`
+- `DataFrame`, `TimeTensor`, `tuple[DataFrame]`, `tuple[TimeTensor]`
 - Product-types.
 
 Must return a `NamedTuple` that agrees with the original column names!

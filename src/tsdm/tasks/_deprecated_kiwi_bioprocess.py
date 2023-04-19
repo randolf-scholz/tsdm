@@ -21,12 +21,8 @@ from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import (
-    MappingDataset,
-    TimeSeriesDataset,
-    folds_as_frame,
-    folds_from_groups,
-)
+from tsdm.utils.data import MappingDataset, folds_as_frame, folds_from_groups
+from tsdm.utils.data.timeseries import TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 

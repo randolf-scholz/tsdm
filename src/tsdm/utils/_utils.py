@@ -178,9 +178,8 @@ def now() -> str:
 def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
     r"""Update nested dictionary recursively in-place with new dictionary.
 
-    References
-    ----------
-    - https://stackoverflow.com/a/30655448/9318372
+    References:
+        - https://stackoverflow.com/a/30655448/9318372
     """
     # if not inplace:
     #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)
@@ -197,9 +196,8 @@ def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
 def deep_kval_update(d: dict, **new_kvals: Any) -> dict:
     r"""Update nested dictionary recursively in-place with key-value pairs.
 
-    References
-    ----------
-    - https://stackoverflow.com/a/30655448/9318372
+    References:
+        - https://stackoverflow.com/a/30655448/9318372
     """
     # if not inplace:
     #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)

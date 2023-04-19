@@ -158,11 +158,10 @@ class SliceSampler(TorchSampler[Sequence[T_co]]):
       - start stop locations from the set t_offset + [t_min, t_max] ∩ Δtℤ
       - [sₖ, tⱼ], sᵢ = t₀ + k⋅Δt, tⱼ = t₀ + k⋅Δt
 
-    Attributes
-    ----------
-    data:
-    idx: range(len(data))
-    rng: a numpy random Generator
+    Attributes:
+        data:
+        idx: range(len(data))
+        rng: a numpy random Generator
     """
 
     data: Sequence[T_co]

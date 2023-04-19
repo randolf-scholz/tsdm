@@ -171,13 +171,12 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         an ODE with a regular neural network does not outperform GRU-ODE [16]. Finally, we report
         that the model with GRU flow requires 60% less time to run one training epoch.
 
-    References
-    ----------
-    - | `Neural Flows: Efficient Alternative to Neural ODEs
-        <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
-      | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann
-      | `Advances in Neural Information Processing Systems 2021
-        <https://proceedings.neurips.cc/paper/2021>`_
+    References:
+        - | `Neural Flows: Efficient Alternative to Neural ODEs
+            <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
+          | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann
+          | `Advances in Neural Information Processing Systems 2021
+            <https://proceedings.neurips.cc/paper/2021>`_
     """
 
     observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)

@@ -390,7 +390,7 @@ class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
     __dataset: DATASET_OBJECT = NotImplemented
-    DATASET_HASH: Optional[str] = None
+    DATASET_HASH: Optional[tuple[str, str]] = None
     r"""Hash value of the dataset file(s), checked after clean."""
     TABLE_HASH: Optional[int] = None
     r"""Hash value of the table file(s), checked after load."""
@@ -501,10 +501,10 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
     The tables are stored in a dictionary-like object.
     """
 
-    DATASET_HASH: Optional[Mapping[K, str]] = None
+    DATASET_HASH: Optional[Mapping[K, tuple[str, str]]] = None
     r"""Hash value of the dataset file(s), checked after clean."""
     TABLE_HASH: Optional[Mapping[K, int]] = None
-    r"""Hash value of the dataset file(s), checked after load."""
+    r"""Hash value of the dataset file(s), checked after loading."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""
