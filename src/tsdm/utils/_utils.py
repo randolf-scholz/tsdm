@@ -24,13 +24,13 @@ __all__ = [
     "unflatten_dict",
 ]
 
+import logging
 import os
 import shutil
 import warnings
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
 from importlib import import_module
-from logging import getLogger
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Literal, Optional, cast, overload
@@ -49,7 +49,7 @@ from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 
-__logger__ = getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def variants(s: str | list[str]) -> list[str]:

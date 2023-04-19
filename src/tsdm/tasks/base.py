@@ -152,9 +152,10 @@ Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
 class BaseTaskMetaClass(ABCMeta):
     r"""Metaclass for BaseTask."""
 
-    def __init__(cls, *args: Any, **kwargs: Any) -> None:
-        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
-        super().__init__(*args, **kwargs)
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        super().__init__(name, bases, namespace, **kwds)
 
 
 class Inputs(NamedTuple):

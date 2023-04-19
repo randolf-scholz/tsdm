@@ -19,8 +19,6 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.types.aliases import PathLike
 
-__logger__ = logging.getLogger(__name__)
-
 
 def hash_file(
     file: PathLike,
@@ -106,7 +104,8 @@ def import_from_url(
     """Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)
     path = Path(url.split("/")[-1] if fname is None else fname)
-    __logger__.info("Downloading %s to %s", url, path)
+    logger = logging.getLogger(__name__)
+    logger.info("Downloading %s to %s", url, path)
 
     if parsed_url.netloc == "www.kaggle.com":
         kaggle_name = Path(parsed_url.path).name

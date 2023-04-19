@@ -9,7 +9,6 @@ __all__ = [
     "KiwiDataset",
 ]
 
-import logging
 import pickle
 from pathlib import Path
 
@@ -19,9 +18,6 @@ from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.datasets.base import MultiFrameDataset, TimeSeriesCollection
 from tsdm.utils.constants import NULL_VALUES
-
-__logger__ = logging.getLogger(__name__)
-
 
 # fmt: off
 column_dtypes = {

@@ -56,6 +56,8 @@ PathLike: TypeAlias = str | Path | os.PathLike[str]
 r"""Type Alias for path-like objects."""
 ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]
 r"""TypeAlias for scalar types."""
+ContainerLike: TypeAlias = T | Lookup[int, T] | Callable[[int], T]
+r"""Type Alias for container-like objects."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
 

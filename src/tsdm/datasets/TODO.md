@@ -71,8 +71,11 @@ Thus, it seems versions should be different classes.
 class DerivedDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args, **kwargs):
-        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+    def __init__(cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any) -> None:
+        super().__init__(name, bases, namespace, **kwds)
+
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         if os.environ.get("GENERATING_DOCS", False):
             cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
@@ -80,8 +83,6 @@ class DerivedDatasetMetaClass(ABCMeta):
         else:
             cls.RAWDATA_DIR = RAWDATADIR / cls.__name__
             cls.DATASET_DIR = DATASETDIR / cls.__name__
-
-        super().__init__(*args, **kwargs)
 
     def __getitem__(cls, klass: type[BaseDataset]) -> type[BaseDataset]:
         r"""Get the dataset class."""
