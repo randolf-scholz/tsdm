@@ -62,6 +62,8 @@
       <excludeFolder url="file://$MODULE_DIR$/examples/pics" />
       <excludeFolder url="file://$MODULE_DIR$/examples/runs" />
       <excludeFolder url="file://$MODULE_DIR$/.ruff_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/_docs_autoapi" />
+      <excludeFolder url="file://$MODULE_DIR$/_docs_autosummary" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Poetry (tsdm)" jdkType="Python SDK" />
