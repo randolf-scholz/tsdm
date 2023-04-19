@@ -1,4 +1,7 @@
 r"""Base Classes for dataset."""
+# NOTE: signature of metaclass.__init__ should match that of type.__new__
+# NOTE: type.__new__(cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs: Any)
+# NOTE: type.__init__(self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs: Any)
 
 __all__ = [
     # Classes
@@ -43,33 +46,25 @@ from tsdm.utils.strings import repr_dataclass, repr_mapping
 DATASET_OBJECT: TypeAlias = Series | DataFrame
 r"""Type hint for pandas objects."""
 
-__logger__ = logging.getLogger(__name__)
-
 
 class BaseDatasetMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        super().__init__(name, bases, namespace, **kwds)
 
-        # signature: type.__init__(name, bases, attributes)
-        if len(args) == 1:
-            attributes = {}
-        elif len(args) == 3:
-            _, _, attributes = args
-        else:
-            raise ValueError("BaseDatasetMetaClass must be used with 1 or 3 arguments.")
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
-        if "LOGGER" not in attributes:
-            cls.LOGGER = __logger__.getChild(cls.__name__)
-
-        if "RAWDATA_DIR" not in attributes:
+        if "RAWDATA_DIR" not in namespace:
             if os.environ.get("GENERATING_DOCS", False):
                 cls.RAWDATA_DIR = Path("~/.tsdm/rawdata/") / cls.__name__
             else:
                 cls.RAWDATA_DIR = CONFIG.RAWDATADIR / cls.__name__
 
-        if "DATASET_DIR" not in attributes:
+        if "DATASET_DIR" not in namespace:
             if os.environ.get("GENERATING_DOCS", False):
                 cls.DATASET_DIR = Path("~/.tsdm/datasets") / cls.__name__
             else:
@@ -501,10 +496,9 @@ class SingleFrameDataset(FrameDataset):
 
 
 class MultiFrameDataset(FrameDataset, Generic[K]):
-    r"""Dataset class that consists of a multiple DataFrames.
+    r"""Dataset class that consists of multiple tables.
 
-    The Datasets are accessed by their index.
-    We subclass `Mapping` to provide the mapping interface.
+    The tables are stored in a dictionary-like object.
     """
 
     DATASET_HASH: Optional[Mapping[K, str]] = None

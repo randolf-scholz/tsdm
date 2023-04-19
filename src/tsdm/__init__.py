@@ -87,8 +87,6 @@ def info(obj: object | None = None) -> None:
 del sys, metadata
 
 
-# __logger__ = logging.getLogger(__name__)
-#
 # import logging
 # from datetime import datetime
 # c_now=datetime.now()

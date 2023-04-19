@@ -16,13 +16,11 @@ from importlib import import_module, resources
 from itertools import chain
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, ClassVar
 
 import yaml
 
 from tsdm.config import config_files
-
-__logger__ = logging.getLogger(__name__)
 
 
 def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
@@ -44,21 +42,32 @@ def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
 def generate_folders(d: dict, current_path: Path) -> None:
     r"""Create nested folder structure based on nested dictionary index.
 
-    References
-    ----------
-    - https://stackoverflow.com/a/22058144/9318372
+    References:
+        - https://stackoverflow.com/a/22058144/9318372
     """
     for directory in d:
         path = current_path.joinpath(directory)
         if d[directory] is None:
-            __logger__.debug("creating folder %s", path)
+            print(f"Creating folder {path!r}.")
             path.mkdir(parents=True, exist_ok=True)
         else:
             generate_folders(d[directory], path)
 
 
-class Config:
+class ConfigMeta(type):
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        super().__init__(name, bases, namespace, **kwds)
+
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+
+
+class Config(metaclass=ConfigMeta):
     r"""Configuration Interface."""
+
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}.{__name__}")
 
     HOMEDIR: Path
     r"""The users home directory."""
@@ -89,11 +98,11 @@ class Config:
 
         # further initialization
         self.LOGDIR.mkdir(parents=True, exist_ok=True)
-        __logger__.info("Available Models: %s", set(self.MODELS))
-        __logger__.info("Available Datasets: %s", set(self.DATASETS))
-        __logger__.debug("Initializing folder structure")
+        self.LOGGER.info("Available Models: %s", set(self.MODELS))
+        self.LOGGER.info("Available Datasets: %s", set(self.DATASETS))
+        self.LOGGER.debug("Initializing folder structure")
         generate_folders(self.CONFIG_FILE["folders"], self.BASEDIR)
-        __logger__.debug("Created folder structure in %s", self.BASEDIR)
+        self.LOGGER.debug("Created folder structure in %s", self.BASEDIR)
 
     @property
     def autojit(self) -> bool:

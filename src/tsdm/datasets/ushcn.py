@@ -9,10 +9,6 @@ __all__ = [
 ]
 
 import importlib
-import logging
-import os
-from collections.abc import Callable
-from functools import wraps
 from pathlib import Path
 from typing import Literal, TypeAlias
 
@@ -20,34 +16,7 @@ import pandas
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiFrameDataset
-from tsdm.types.variables import ParameterVar as P
-from tsdm.types.variables import ReturnVar_co as R
-
-__logger__ = logging.getLogger(__name__)
-
-
-def with_ray_cluster(func: Callable[P, R]) -> Callable[P, R]:
-    r"""Run function with ray cluster."""
-
-    @wraps(func)
-    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        if importlib.util.find_spec("ray") is not None:
-            ray = importlib.import_module("ray")
-            # Only use 80% of the available CPUs.
-            num_cpus = max(1, ((os.cpu_count() or 0) * 4) // 5)
-            __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
-            ray.init(num_cpus=num_cpus)
-            try:
-                return func(*args, **kwargs)
-            finally:
-                __logger__.warning("Tearing down ray cluster.")
-                ray.shutdown()
-        else:
-            __logger__.warning("Ray not found, skipping ray cluster.")
-            return func(*args, **kwargs)
-
-    return _wrapper
-
+from tsdm.utils.decorators import ray_cluster
 
 KEY: TypeAlias = Literal["us_daily", "states", "stations"]
 
@@ -245,8 +214,6 @@ class USHCN(MultiFrameDataset[KEY]):
         states = pandas.DataFrame(state_codes, columns=columns)
         states = states.astype(state_dtypes)
         return states
-        # states.to_feather(self.dataset_paths["states"])
-        # self.__logger__.info("Finished cleaning 'states' DataFrame")
 
     def _clean_stations(self) -> DataFrame:
         stations_file = self.rawdata_paths["stations"]
@@ -314,7 +281,7 @@ class USHCN(MultiFrameDataset[KEY]):
         return stations
         # stations.to_parquet(self.dataset_paths["stations"])
 
-    @with_ray_cluster
+    @ray_cluster
     def _clean_us_daily(self) -> DataFrame:
         if importlib.util.find_spec("modin") is not None:
             mpd = importlib.import_module("modin.pandas")

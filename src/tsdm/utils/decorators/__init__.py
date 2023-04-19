@@ -20,11 +20,14 @@ __all__ = [
     "wrap_func",
     "wrap_method",
     # "sphinx_value",
+    # context managers
+    "ray_cluster",
 ]
 
 from collections.abc import Callable
 from typing import Final, TypeAlias
 
+from tsdm.utils.decorators._contextmanagers import ray_cluster
 from tsdm.utils.decorators._decorators import (
     IterItems,
     IterKeys,

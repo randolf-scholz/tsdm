@@ -28,7 +28,6 @@ from typing import (
     Literal,
     Optional,
     Protocol,
-    TypeAlias,
     Union,
     cast,
     runtime_checkable,
@@ -48,10 +47,6 @@ from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import KeyVar as K
 from tsdm.utils.data.datasets import DatasetCollection
 from tsdm.utils.strings import repr_mapping
-
-ContainerLike: TypeAlias = T | Lookup[int, T] | Callable[[int], T]
-# ContainerLike[TDVar] = TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]
-__logger__ = logging.getLogger(__name__)
 
 
 @runtime_checkable
@@ -108,10 +103,13 @@ def compute_grid(
 class BaseSamplerMetaClass(ABCMeta):
     r"""Metaclass for BaseSampler."""
 
-    def __init__(cls, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        # cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
-        cls.LOGGER = __logger__.getChild(cls.__name__)
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        super().__init__(name, bases, namespace, **kwds)
+
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
 class BaseSampler(TorchSampler[T_co], Sized, ABC, metaclass=BaseSamplerMetaClass):

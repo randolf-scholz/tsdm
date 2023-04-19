@@ -23,14 +23,14 @@ __all__ = [
 import ast
 import gc
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, getsource, signature
 from time import perf_counter_ns
 from types import GenericAlias
-from typing import Any, Concatenate, NamedTuple, Optional, cast, overload
+from typing import Any, Callable, Concatenate, NamedTuple, Optional, cast, overload
 
 from torch import jit, nn
 from typing_extensions import Self

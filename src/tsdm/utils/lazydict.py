@@ -12,12 +12,11 @@ __all__ = [
 ]
 
 
-import logging
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from itertools import chain
 from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Any, Generic, TypeAlias, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, Union, overload
 
 from typing_extensions import Self
 
@@ -28,8 +27,6 @@ from tsdm.types.variables import KeyVar as K
 from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils.funcutils import get_function_args, is_positional_arg
 from tsdm.utils.strings import repr_mapping
-
-__logger__ = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from _typeshed import SupportsKeysAndGetItem
@@ -104,7 +101,7 @@ class LazyDict(dict[K, T]):
 
     __slots__ = ()
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         r"""Create a new instance of the class."""
         # inherit Mixin Methods from MutableMapping
         # This is crucial because dict.get does not call __getitem__
@@ -163,8 +160,7 @@ class LazyDict(dict[K, T]):
 
     def __or__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         new = self.copy()
-        new.update(other)  # type: ignore[arg-type]
-        return cast(LazyDict[K | K2, T | T2], new)
+        return new.update(other)  # type: ignore[arg-type, return-value]
 
     def __ror__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         if isinstance(other, self.__class__):
