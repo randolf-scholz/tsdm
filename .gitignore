@@ -3,6 +3,9 @@
 #######################################################################################
 
 
+# top level folders starting with underscore
+_*/
+
 # jupyterlab_lsp
 .virtual_documents
 

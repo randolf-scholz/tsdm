@@ -9,11 +9,3 @@
    CONTRIBUTING <CONTRIBUTING>
    LICENSE <LICENSE>
    README <README>
-
-..
-    .. autosummary::
-       :toctree: _autosummary
-       :template: autosummary-example/custom-module-template.rst
-       :recursive:
-
-       tsdm

@@ -73,7 +73,7 @@ extensions = [
     # 1st party extensions
     "signatures",
     # 3rd party extensions
-    # "autoapi.extension",
+    "autoapi.extension",
     "sphinx_copybutton",
     "sphinx_math_dollar",
     # "sphinx_autodoc_typehints",
