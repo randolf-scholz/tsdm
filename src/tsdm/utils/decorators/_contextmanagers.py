@@ -9,26 +9,22 @@ import logging
 import os
 from contextlib import ContextDecorator
 from types import ModuleType, TracebackType
-from typing import ClassVar, Optional
+from typing import ClassVar, Literal, Optional
 
 from typing_extensions import Self
-
-if __name__ == "__main__":
-    # main program
-    pass
 
 
 class ray_cluster(ContextDecorator):
     """Context manager for starting and stopping a ray cluster."""
 
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(__qualname__)
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")  # type: ignore[name-defined]
     """Logger for this class."""
     ray: ModuleType | None = None
     """Ray module."""
     num_cpus: int
     """Number of CPUs to use for the ray cluster."""
 
-    def __init__(self, num_cpus: Optional[int] = None) -> None:
+    def __init__(self, *, num_cpus: Optional[int] = None) -> None:
         super().__init__()
         self.num_cpus = (
             max(1, ((os.cpu_count() or 0) * 4) // 5) if num_cpus is None else num_cpus
@@ -49,7 +45,7 @@ class ray_cluster(ContextDecorator):
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
         self.LOGGER.warning("Tearing down ray cluster.")
 
         if self.ray is not None:
