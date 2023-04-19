@@ -67,7 +67,8 @@ class ConfigMeta(type):
 class Config(metaclass=ConfigMeta):
     r"""Configuration Interface."""
 
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}.{__name__}")
+    LOGGER: ClassVar[logging.Logger]
+    r"""Logger for the class."""
 
     HOMEDIR: Path
     r"""The users home directory."""

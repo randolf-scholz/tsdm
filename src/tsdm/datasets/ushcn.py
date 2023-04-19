@@ -281,7 +281,7 @@ class USHCN(MultiFrameDataset[KEY]):
         return stations
         # stations.to_parquet(self.dataset_paths["stations"])
 
-    @ray_cluster
+    @ray_cluster()
     def _clean_us_daily(self) -> DataFrame:
         if importlib.util.find_spec("modin") is not None:
             mpd = importlib.import_module("modin.pandas")
