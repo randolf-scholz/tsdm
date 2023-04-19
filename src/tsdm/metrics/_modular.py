@@ -136,12 +136,11 @@ class ND(BaseLoss):
     TODO: How to distinguish batch univariate vs single multivariate?
     => Batch makes little sense since all could have different length!
 
-    References
-    ----------
-    - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-      | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-    - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
-      | https://openreview.net/forum?id=r1ecqn4YwB
+    References:
+        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+        - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
+          | https://openreview.net/forum?id=r1ecqn4YwB
     """
 
     @jit.export
@@ -156,10 +155,9 @@ class NRMSE(BaseLoss):
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
 
-    References
-    ----------
-    - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-      | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
+    References:
+        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
+          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
     """
 
     @jit.export
@@ -174,10 +172,9 @@ class Q_Quantile(BaseLoss):
 
     .. math:: 𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
 
-    References
-    ----------
-    - | Deep State Space Models for Time Series Forecasting
-      | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    References:
+        - | Deep State Space Models for Time Series Forecasting
+          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
 
     @jit.export
@@ -192,10 +189,9 @@ class Q_Quantile_Loss(BaseLoss):
 
     .. math:: 𝖰𝖫_q(x,x̂) = 2\frac{∑_{it}𝖯_q(x_{it},x̂_{it})}{∑_{it}|x_{it}|}
 
-    References
-    ----------
-    - | Deep State Space Models for Time Series Forecasting
-      | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
+    References:
+        - | Deep State Space Models for Time Series Forecasting
+          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
     """
 
     @jit.export

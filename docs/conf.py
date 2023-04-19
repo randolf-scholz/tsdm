@@ -75,7 +75,7 @@ extensions = [
     # 3rd party extensions
     # "autoapi.extension",
     "sphinx_copybutton",
-    # "sphinx_math_dollar",
+    "sphinx_math_dollar",
     # "sphinx_autodoc_typehints",
 ]
 # Add any Sphinx extension module names here, as strings. They can be extensions coming with Sphinx
@@ -821,11 +821,13 @@ viewcode_enable_epub = False
 # region sphinx_math_dollar configuration ------------------------------------------------------------------------------
 
 # https://www.sympy.org/sphinx-math-dollar/#configuration
-# from sphinx_math_dollar import NODE_BLACKLIST
-# from docutils.nodes import header
-# from sphinx.addnodes import pending_xref_condition
 # math_dollar_debug = True
 # math_dollar_node_blacklist = NODE_BLACKLIST + (header, pending_xref_condition)
+
+from sphinx.addnodes import pending_xref_condition
+from sphinx.util.docutils import register_node
+
+register_node(pending_xref_condition)
 
 
 # endregion sphinx_math_dollar configuration ---------------------------------------------------------------------------

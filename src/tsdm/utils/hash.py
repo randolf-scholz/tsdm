@@ -84,9 +84,8 @@ def to_base(n: int, b: int) -> list[int]:
 
     The result satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
 
-    References
-    ----------
-    - https://stackoverflow.com/a/28666223/9318372
+    References:
+        - https://stackoverflow.com/a/28666223/9318372
     """
     digits = []
     while n:

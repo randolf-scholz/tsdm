@@ -29,27 +29,25 @@ from tsdm.utils.decorators import autojit
 class SetFuncTS(nn.Module):
     r"""Set function for time series.
 
-    Attributes
-    ----------
-    time_encoder: nn.Module, default PositionalEncoder
-        Signature: ``(..., *N) -> (..., *N, dₜ)``
-    key_encoder: nn.Module, default DeepSet
-        Signature ``(..., *N, K) -> (..., *N, dₖ)``
-    value_encoder: nn.Module, default MLP
-        Signature: ``(..., *N, V) -> (..., *N, dᵥ)``
-    attention: nn.Module, default ScaledDotProductAttention
-        Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``
-    head: nn.Module, default MLP
-        Signature: ``(..., F) -> (..., E)``
+    Attributes:
+        time_encoder (nn.Module): default PositionalEncoder
+            Signature: ``(..., *N) -> (..., *N, dₜ)``
+        key_encoder (nn.Module): default DeepSet
+            Signature ``(..., *N, K) -> (..., *N, dₖ)``
+        value_encoder (nn.Module): default MLP
+            Signature: ``(..., *N, V) -> (..., *N, dᵥ)``
+        attention (nn.Module): default ScaledDotProductAttention
+            Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``
+        head (nn.Module): default MLP
+            Signature: ``(..., F) -> (..., E)``
 
-    References
-    ----------
-    - | Set Functions for Time Series
-      | Max Horn, Michael Moor, Christian Bock, Bastian Rieck, Karsten Borgwardt
-      | Proceedings of the 37th International Conference on Machine Learning
-      | PMLR 119:4353-4363, 2020.
-      | https://proceedings.mlr.press/v119/horn20a.html
-      | https://github.com/BorgwardtLab/Set_Functions_for_Time_Series
+    References:
+        - | Set Functions for Time Series
+          | Max Horn, Michael Moor, Christian Bock, Bastian Rieck, Karsten Borgwardt
+          | Proceedings of the 37th International Conference on Machine Learning
+          | PMLR 119:4353-4363, 2020.
+          | https://proceedings.mlr.press/v119/horn20a.html
+          | https://github.com/BorgwardtLab/Set_Functions_for_Time_Series
     """
 
     HP: dict = {
@@ -148,27 +146,25 @@ class SetFuncTS(nn.Module):
 class GroupedSetFuncTS(nn.Module):
     r"""Set function for time series.
 
-    Attributes
-    ----------
-    time_encoder: nn.Module, default PositionalEncoder
-        Signature: ``(..., *N) -> (..., *N, dₜ)``
-    key_encoder: nn.Module, default DeepSet
-        Signature: ``(..., *N, K) -> (..., *N, dₖ)``
-    value_encoder: nn.Module, default MLP
-        Signature: ``(..., *N, V) -> (..., *N, dᵥ)``
-    attention: nn.Module, default ScaledDotProductAttention
-        Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``
-    head: nn.Module, default MLP
-        Signature: ``(..., F) -> (..., E)``
+    Attributes:
+        time_encoder (nn.Module): default PositionalEncoder
+            Signature: ``(..., *N) -> (..., *N, dₜ)``
+        key_encoder (nn.Module): default DeepSet
+            Signature: ``(..., *N, K) -> (..., *N, dₖ)``
+        value_encoder (nn.Module): default MLP
+            Signature: ``(..., *N, V) -> (..., *N, dᵥ)``
+        attention (nn.Module): default ScaledDotProductAttention
+            Signature: ``(..., *N, dₖ), (..., *N, dᵥ) -> (..., F)``
+        head (nn.Module): default MLP
+            Signature: ``(..., F) -> (..., E)``
 
-    References
-    ----------
-    - | Set Functions for Time Series
-      | Max Horn, Michael Moor, Christian Bock, Bastian Rieck, Karsten Borgwardt
-      | Proceedings of the 37th International Conference on Machine Learning
-      | PMLR 119:4353-4363, 2020.
-      | https://proceedings.mlr.press/v119/horn20a.html
-      | https://github.com/BorgwardtLab/Set_Functions_for_Time_Series
+    References:
+        - | Set Functions for Time Series
+          | Max Horn, Michael Moor, Christian Bock, Bastian Rieck, Karsten Borgwardt
+          | Proceedings of the 37th International Conference on Machine Learning
+          | PMLR 119:4353-4363, 2020.
+          | https://proceedings.mlr.press/v119/horn20a.html
+          | https://github.com/BorgwardtLab/Set_Functions_for_Time_Series
     """
 
     HP: dict = {

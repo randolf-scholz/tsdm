@@ -48,13 +48,12 @@ def erank(x: Tensor) -> Tensor:
 
     .. Signature:: ``(..., m, n) -> ...``
 
-    References
-    ----------
-    - | `The effective rank: A measure of effective dimensionality
-        <https://ieeexplore.ieee.org/document/7098875>`_
-      | Olivier Roy, Martin Vetterli
-      | `15th European Signal Processing Conference (EUSIPCO), 2007
-        <https://ieeexplore.ieee.org/xpl/conhome/7067185/proceeding>`_
+    References:
+        - | `The effective rank: A measure of effective dimensionality
+            <https://ieeexplore.ieee.org/document/7098875>`_
+          | Olivier Roy, Martin Vetterli
+          | `15th European Signal Processing Conference (EUSIPCO), 2007
+            <https://ieeexplore.ieee.org/xpl/conhome/7067185/proceeding>`_
     """
     σ = torch.linalg.svdvals(x)
     σ = σ / torch.linalg.norm(σ, ord=1, dim=-1)
@@ -220,11 +219,9 @@ def stiffness_ratio(x: Tensor) -> Tensor:
 
     .. Signature:: ``(..., n, n) -> ...``
 
-    References
-    ----------
-    - | Numerical Methods for Ordinary Differential Systems: The Initial Value Problem
-      | J. D. Lambert
-      | ISBN: 978-0-471-92990-1
+    References:
+        - | Numerical Methods for Ordinary Differential Systems: The Initial Value Problem
+          | J. D. Lambert, ISBN: 978-0-471-92990-1
     """
     x = x.to(dtype=torch.complex128)
     λ = torch.linalg.eigvals(x)
@@ -307,13 +304,12 @@ def logarithmic_norm(
     - p=-2: minimum eigenvalue of symmetric part of A
     - p=-∞: minimum rowsum, using real value for diagonal
 
-    References
-    ----------
-    - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
-    - | The logarithmic norm. History and modern theory
-      | Gustaf Söderlind, BIT Numerical Mathematics, 2006
-      | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
-    - https://en.wikipedia.org/wiki/Logarithmic_norm
+    References:
+        - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
+        - | The logarithmic norm. History and modern theory
+          | Gustaf Söderlind, BIT Numerical Mathematics, 2006
+          | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
+        - https://en.wikipedia.org/wiki/Logarithmic_norm
     """
     rowdim, coldim = dim
     rowdim = rowdim % x.ndim
@@ -396,10 +392,8 @@ def schatten_norm(
 
     .. Signature:: ``(..., n, n) -> ...``
 
-    References
-    ----------
-    - | Schatten Norms
-      | <https://en.wikipedia.org/wiki/Schatten_norms>_
+    References:
+        - Schatten Norms <https://en.wikipedia.org/wiki/Schatten_norms>_
     """
     if not torch.is_floating_point(x):
         x = x.to(dtype=torch.float)

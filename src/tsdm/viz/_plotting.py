@@ -132,9 +132,8 @@ def shared_grid_plot(
 ) -> tuple[Figure, NDArray[Axes]]:
     r"""Create a compute_grid plot with shared axes and row/col headers.
 
-    References
-    ----------
-    https://stackoverflow.com/a/25814386/9318372
+    References:
+        - https://stackoverflow.com/a/25814386/9318372
     """
     array = np.array(data)
 
@@ -241,17 +240,12 @@ def plot_spectrum(
 ) -> Figure:
     r"""Create scatter-plot of complex matrix eigenvalues.
 
-    Parameters
-    ----------
-    kernel: Tensor
-    style: str = "bmh"
-        Which matplotlib style to use.
-    axis_kwargs: Optional[dict] = None,
-        Keyword-Arguments to pass to `Axes.set`
-    figure_kwargs: Optional[dict] = None
-        Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
-    scatter_kwargs: Optional[dict] = None
-        Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
+    Arguments:
+        kernel: Tensor
+        style: Which matplotlib style to use.
+        axis_kwargs: Keyword-Arguments to pass to `Axes.set`
+        figure_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
+        scatter_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
     """
     axis_kwargs = {
         "xlim": (-2.5, +2.5),

@@ -77,10 +77,9 @@ cyclic
 - ordered: False
 - Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
 
-See Also
---------
-- `tsdm.encoders.functional` for functional implementations.
-- `tsdm.encoders` for modular implementations.
+See Also:
+    - `tsdm.encoders.functional` for functional implementations.
+    - `tsdm.encoders` for modular implementations.
 """
 #  TODO: Add more encoders
 # - Target Encoding: enc(x) = mean(enc(y|x))

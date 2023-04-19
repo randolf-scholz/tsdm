@@ -22,18 +22,13 @@ def folds_from_groups(
 ) -> FOLDS:
     r"""Create folds from a Series of groups.
 
-    Parameters
-    ----------
-    groups: Series[int]
-        Series of group labels.
-    num_folds: int
-        Number of folds to create.
-    seed: int
-        Seed for the random number generator.
-    splits: int
-        Relative number of samples in each split.
-        E.g. ``folds_from_groups(groups, train=7, valid=2, test=1)`` uses 7/10 of the
-        samples for training, 2/10 for validation and 1/10 for testing.
+    Arguments:
+        groups: Series of group labels.
+        num_folds: Number of folds to create.
+        seed: Seed for the random number generator.
+        splits: Relative number of samples in each split.
+            E.g. ``folds_from_groups(groups, train=7, valid=2, test=1)`` uses 7/10 of the
+            samples for training, 2/10 for validation and 1/10 for testing.
 
     This is useful, when the data needs to be grouped, e.g. due to replicate experiments.
     Simply use `pandas.groupby` and pass the result to this function.

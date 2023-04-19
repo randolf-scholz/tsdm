@@ -180,13 +180,12 @@ class USHCN_DeBrouwer2019(OldBaseTask):
         those 4 years. Appendix L contains additional details regarding this procedure.
         The task is then to predict the next 3 measurements after the first 3 years of observation.
 
-    References
-    ----------
-    - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
-        <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
-      | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
-      | `Advances in Neural Information Processing Systems 2019
-        <https://proceedings.neurips.cc/paper/2019>`_
+    References:
+        - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
+            <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+          | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
+          | `Advances in Neural Information Processing Systems 2019
+            <https://proceedings.neurips.cc/paper/2019>`_
     """
 
     observation_time = 150

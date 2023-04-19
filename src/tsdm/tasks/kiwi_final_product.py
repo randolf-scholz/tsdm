@@ -24,7 +24,8 @@ from torch.utils.data import DataLoader
 from tsdm.datasets import KIWI_RUNS
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import MappingDataset, TimeSeriesDataset
+from tsdm.utils.data import MappingDataset
+from tsdm.utils.data.timeseries import TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 __logger__ = logging.getLogger(__name__)

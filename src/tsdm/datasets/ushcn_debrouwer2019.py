@@ -22,13 +22,12 @@ __logger__ = logging.getLogger(__name__)
 class USHCN_DeBrouwer2019(SingleFrameDataset):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
 
-    References
-    ----------
-    - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
-        <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
-      | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
-      | `Advances in Neural Information Processing Systems 2019
-        <https://proceedings.neurips.cc/paper/2019>`_
+    References:
+        - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
+            <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+          | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
+          | `Advances in Neural Information Processing Systems 2019
+            <https://proceedings.neurips.cc/paper/2019>`_
     """
 
     BASE_URL = (

@@ -21,12 +21,11 @@ from tsdm.utils.decorators import autojit
 class ResNetBlock(nn.Sequential):
     r"""Pre-activation ResNet block.
 
-    References
-    ----------
-    - | Identity Mappings in Deep Residual Networks
-      | Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
-      | European Conference on Computer Vision 2016
-      | https://link.springer.com/chapter/10.1007/978-3-319-46493-0_38
+    References:
+        - | Identity Mappings in Deep Residual Networks
+          | Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
+          | European Conference on Computer Vision 2016
+          | https://link.springer.com/chapter/10.1007/978-3-319-46493-0_38
     """
 
     HP: Final[dict] = {
