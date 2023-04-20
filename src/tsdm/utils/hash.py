@@ -16,6 +16,7 @@ __all__ = [
     "validate_file_hash",
     "validate_object_hash",
     "validate_table_hash",
+    "validate_table_schema",
 ]
 
 import hashlib
@@ -29,10 +30,12 @@ from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.types.aliases import PathLike
+from tsdm.types.namedtuples import TableSchema
 from tsdm.types.protocols import Table
 
 __logger__ = logging.getLogger(__name__)
@@ -320,9 +323,50 @@ def validate_table_hash(
         )
 
 
+def validate_table_schema(table: Table, reference_schema: TableSchema, /) -> None:
+    """Validate the schema of a pandas object, given schema values from a table.
+
+    Checks if the columns and dtypes of the table match the reference schema.
+    Checks if the shape of the table matches the reference schema.
+    """
+    if (shape := table.shape) != reference_schema.shape:
+        raise ValueError(
+            f"Table {shape=} does not match "
+            f"reference shape {reference_schema.shape}!"
+        )
+
+    match table:
+        case DataFrame() as df:  # type: ignore[misc]
+            if (columns := df.columns.tolist()) != reference_schema.columns:  # type: ignore[unreachable]
+                raise ValueError(
+                    f"DataFrame {columns=} do not match "
+                    f"reference columns {reference_schema.columns=}!"
+                )
+            if (dtypes := df.dtypes.tolist()) != reference_schema.dtypes:
+                raise ValueError(
+                    f"DataFrame {dtypes=} do not match "
+                    f"reference dtypes {reference_schema.dtypes}!"
+                )
+        case pa.Table() as arrow_table:
+            if (columns := arrow_table.schema.names) != reference_schema.columns:
+                raise ValueError(
+                    f"PyArrow Table {columns=} do not match "
+                    f"reference columns {reference_schema.columns=}!"
+                )
+            if (dtypes := arrow_table.schema.types) != reference_schema.dtypes:
+                raise ValueError(
+                    f"PyArrow Table {dtypes=} do not match "
+                    f"reference dtypes {reference_schema.dtypes}!"
+                )
+        case _:
+            raise NotImplementedError(
+                f"Cannot validate schema for {type(table)} objects!"
+            )
+
+
 def validate_object_hash(
     obj: Any,
-    reference_hash: str | None,
+    reference_hash: Any,
     *,
     hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,
@@ -340,9 +384,15 @@ def validate_object_hash(
                 **hash_kwargs,
             )
         case Table():
-            validate_table_hash(obj)
+            validate_table_hash(
+                obj,
+                reference_hash=reference_hash,
+                hash_algorithm=hash_algorithm,
+                logger=logger,
+                **hash_kwargs,
+            )
         case Mapping():  # apply recursively to all values
-            if not isinstance(reference_hash, Mapping):
+            if not isinstance(reference_hash, None | Mapping):
                 raise ValueError(
                     "If a mapping of objects is provided, reference_hash must be a mapping as well!"
                 )
@@ -355,7 +405,7 @@ def validate_object_hash(
                     **hash_kwargs,
                 )
         case Iterable():
-            if not isinstance(reference_hash, Iterable):
+            if not isinstance(reference_hash, None | Iterable):
                 raise ValueError(
                     "If a sequence of objects is provided, then "
                     "reference_hash must be a sequence as well!"
@@ -370,7 +420,7 @@ def validate_object_hash(
                     **hash_kwargs,
                 )
         case _:
-            hash_value = hash_object(obj, hash_algorithm=hash_algorithm, **hash_kwargs)
+            hash_value = hash_object(obj)
             name = f"{type(obj)} {id(obj)}"
             if reference_hash is None:
                 warnings.warn(
