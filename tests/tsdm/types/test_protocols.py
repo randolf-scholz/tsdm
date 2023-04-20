@@ -13,7 +13,6 @@ from torch import Tensor
 
 from tsdm.types.protocols import Array, Table
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -23,22 +22,22 @@ def test_table() -> None:
     LOGGER.info("Testing.")
 
     torch_tensor: Tensor = torch.tensor([1, 2, 3])
-    torch_array: Table = torch_tensor
+    torch_table: Table = torch_tensor
     assert isinstance(
-        torch_array, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(torch_array))}"
+        torch_table, Table
+    ), f"Missing Attributes: {set(dir(Table)) - set(dir(torch_table))}"
 
     numpy_ndarray: NDArray = ndarray([1, 2, 3])
-    numpy_array: Table = numpy_ndarray
+    numpy_table: Table = numpy_ndarray
     assert isinstance(
-        numpy_array, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(numpy_array))}"
+        numpy_table, Table
+    ), f"Missing Attributes: {set(dir(Table)) - set(dir(numpy_table))}"
 
     pandas_frame: DataFrame = DataFrame(numpy.random.randn(3, 3))
-    pandas_array: Table = pandas_frame
+    pandas_table: Table = pandas_frame
     assert isinstance(
-        pandas_array, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_array))}"
+        pandas_table, Table
+    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_table))}"
 
     pandas_series: Series = Series([1, 2, 3])
     pandas_series_array: Table = pandas_series
@@ -52,19 +51,26 @@ def test_table() -> None:
         pandas_index_array, Table
     ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_index_array))}"
 
-    pyarrow_table: pa.Table = pa.Table.from_pandas(pandas_frame)
-    pyarrow_array: Table = pyarrow_table
+    pyarrow_frame: pa.Table = pa.Table.from_pandas(pandas_frame)
+    pyarrow_table: Table = pyarrow_frame
     assert isinstance(
-        pyarrow_array, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pyarrow_array))}"
+        pyarrow_table, Table
+    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pyarrow_table))}"
+
+    pyarrow_series: pa.Array = pa.Array.from_pandas(pandas_series)
+    pyarrow_series_table: Table = pyarrow_series
+    assert isinstance(
+        pyarrow_table, Table
+    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pyarrow_series_table))}"
 
     tables = [
-        torch_array,
-        numpy_array,
-        pandas_array,
+        torch_table,
+        numpy_table,
+        pandas_table,
         pandas_series_array,
         pandas_index_array,
-        pyarrow_array,
+        pyarrow_table,
+        pyarrow_series_table,
     ]
     shared_attrs = set.intersection(*(set(dir(tab)) for tab in tables))
     __logger__.info("Shared attributes/methods of Tables: %s", shared_attrs)
@@ -96,6 +102,7 @@ def test_array() -> None:
 
 
 def _main() -> None:
+    logging.basicConfig(level=logging.INFO)
     test_table()
     test_array()
 
