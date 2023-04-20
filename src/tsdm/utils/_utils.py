@@ -46,6 +46,7 @@ from tqdm.autonotebook import tqdm
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
 from tsdm.types.variables import AnyVar as T
+from tsdm.types.variables import KeyVar as K
 from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 
@@ -84,9 +85,9 @@ def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
 
 
 def apply_nested(
+    func: Callable[[T], R],
     nested: Nested[Optional[T]],
     kind: type[T],
-    func: Callable[[T], R],
 ) -> Nested[Optional[R]]:
     r"""Apply function to nested iterables of a given kind.
 
@@ -100,10 +101,10 @@ def apply_nested(
     if isinstance(nested, kind):
         return func(nested)
     if isinstance(nested, Mapping):
-        return {k: apply_nested(v, kind, func) for k, v in nested.items()}  # type: ignore[arg-type]
+        return {k: apply_nested(func, v, kind) for k, v in nested.items()}  # type: ignore[arg-type]
     # TODO https://github.com/python/mypy/issues/11615
     if isinstance(nested, Collection):
-        return [apply_nested(obj, kind, func) for obj in nested]  # type: ignore[arg-type]
+        return [apply_nested(func, obj, kind) for obj in nested]  # type: ignore[arg-type]
     raise TypeError(f"Unsupported type: {type(nested)}")
 
 
@@ -213,6 +214,36 @@ def deep_kval_update(d: dict, **new_kvals: Any) -> dict:
 
 @overload
 def prepend_path(
+    files: Mapping[K, PathLike],
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> dict[K, Path]:
+    ...
+
+
+@overload
+def prepend_path(
+    files: Sequence[PathLike],
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> list[Path]:
+    ...
+
+
+@overload
+def prepend_path(
+    files: PathLike,
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> Path:
+    ...
+
+
+@overload
+def prepend_path(
     files: Nested[PathLike],
     parent: Path,
     *,
@@ -249,8 +280,7 @@ def prepend_path(
 ) -> Nested[Optional[Path]]:
     r"""Prepends path to all files in nested iterable.
 
-    If `keep_none=True`, then `None` values are kept, else they are replaced by
-    ``parent``.
+    If `keep_none=True`, then `None` values are kept, else they are replaced by `parent`.
     """
     # TODO: change it to apply_nested in python 3.10
 

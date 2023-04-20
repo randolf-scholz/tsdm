@@ -3,10 +3,11 @@
 
 import logging
 
+import numpy
 import torch
 from numpy import ndarray
 from numpy.typing import NDArray
-from pandas import Series
+from pandas import DataFrame, Series
 from torch import Tensor
 
 from tsdm.types.protocols import Array
@@ -39,11 +40,18 @@ def test_array() -> None:
     ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array2))}"
 
     # Misses .dtype, has .dtypes instead
-    # pandas_frame: DataFrame = DataFrame([1, 2, 3])
-    # pandas_array: Array = pandas_frame
+    pandas_frame: DataFrame = DataFrame(numpy.random.randn(3, 3))
+    pandas_array: Array = pandas_frame
+    assert isinstance(
+        pandas_array, Array
+    ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array))}"
+
+    # pyarrow lacks ndim
+    # pyarrow_table: Table = Table.from_pandas(pandas_frame)
+    # pyarrow_array: Array = pyarrow_table
     # assert isinstance(
-    #     pandas_array, Array
-    # ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array))}"
+    #     pyarrow_array, Array
+    # ), f"Missing Attributes: {set(dir(Array)) - set(dir(pyarrow_array))}"
 
 
 def _main() -> None:
