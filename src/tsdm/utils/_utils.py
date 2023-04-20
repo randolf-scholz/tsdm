@@ -224,7 +224,7 @@ def prepend_path(
 
 @overload
 def prepend_path(
-    files: Sequence[PathLike],
+    files: list[PathLike],
     parent: Path,
     *,
     keep_none: bool = False,

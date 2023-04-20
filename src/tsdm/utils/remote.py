@@ -15,7 +15,7 @@ import requests
 from tqdm.autonotebook import tqdm
 
 from tsdm.types.aliases import PathLike
-from tsdm.utils.hash import validate_file
+from tsdm.utils.hash import validate_file_hash
 
 
 def download(
@@ -39,7 +39,7 @@ def download(
 
     if skip_existing and path.exists():
         if hash_value is not None:
-            validate_file(
+            validate_file_hash(
                 path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
             )
         return
@@ -63,7 +63,9 @@ def download(
         ) from e
 
     if hash_value is not None:
-        validate_file(path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs)
+        validate_file_hash(
+            path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
+        )
 
 
 def import_from_url(

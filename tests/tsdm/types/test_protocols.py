@@ -8,7 +8,7 @@ import pyarrow as pa
 import torch
 from numpy import ndarray
 from numpy.typing import NDArray
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, Series
 from torch import Tensor
 
 from tsdm.types.protocols import Array, Table
@@ -34,18 +34,23 @@ def test_table() -> None:
         numpy_array, Table
     ), f"Missing Attributes: {set(dir(Table)) - set(dir(numpy_array))}"
 
-    pandas_series: Series = Series([1, 2, 3])
-    pandas_array2: Table = pandas_series
-    assert isinstance(
-        pandas_array2, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_array2))}"
-
-    # Misses .dtype, has .dtypes instead
     pandas_frame: DataFrame = DataFrame(numpy.random.randn(3, 3))
     pandas_array: Table = pandas_frame
     assert isinstance(
         pandas_array, Table
     ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_array))}"
+
+    pandas_series: Series = Series([1, 2, 3])
+    pandas_series_array: Table = pandas_series
+    assert isinstance(
+        pandas_series_array, Table
+    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_series_array))}"
+
+    pandas_index: Index = Index([1, 2, 3])
+    pandas_index_array: Table = pandas_index
+    assert isinstance(
+        pandas_index_array, Table
+    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_index_array))}"
 
     pyarrow_table: pa.Table = pa.Table.from_pandas(pandas_frame)
     pyarrow_array: Table = pyarrow_table
@@ -53,9 +58,16 @@ def test_table() -> None:
         pyarrow_array, Table
     ), f"Missing Attributes: {set(dir(Table)) - set(dir(pyarrow_array))}"
 
-    # tables = [torch_array, numpy_array, pandas_array, pandas_array2, pyarrow_array]
-    # shared_attrs = set.intersection(*(set(dir(tab)) for tab in tables))
-    # print(shared_attrs)
+    tables = [
+        torch_array,
+        numpy_array,
+        pandas_array,
+        pandas_series_array,
+        pandas_index_array,
+        pyarrow_array,
+    ]
+    shared_attrs = set.intersection(*(set(dir(tab)) for tab in tables))
+    __logger__.info("Shared attributes/methods of Tables: %s", shared_attrs)
 
 
 def test_array() -> None:
@@ -78,9 +90,9 @@ def test_array() -> None:
         pandas_array2, Array
     ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array2))}"
 
-    # arrays = [torch_array, numpy_array, pandas_array2]
-    # shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
-    # print(shared_attrs)
+    arrays = [torch_array, numpy_array, pandas_array2]
+    shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
+    __logger__.info("Shared attributes/methods of Arrays: %s", shared_attrs)
 
 
 def _main() -> None:
