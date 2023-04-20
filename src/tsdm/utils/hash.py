@@ -315,6 +315,83 @@ def validate_array(
         )
 
 
+def validate_object(
+    obj: Any,
+    reference_hash: str | None,
+    *,
+    hash_algorithm: Optional[str] = None,
+    logger: logging.Logger = __logger__,
+    **hash_kwargs: Any,
+) -> None:
+    """Validate object(s) given reference hash values."""
+    # Try to determine the hash algorithm from the array type
+    match obj:
+        case str() | Path():
+            validate_file(
+                obj,
+                reference_hash=reference_hash,
+                hash_algorithm=hash_algorithm,
+                logger=logger,
+                **hash_kwargs,
+            )
+        case pd.DataFrame() | pd.Series() | pd.Index() | np.ndarray():
+            validate_array()
+
+        case Mapping():  # apply recursively to all values
+            if not isinstance(reference_hash, Mapping):
+                raise ValueError(
+                    "If a mapping of objects is provided, reference_hash must be a mapping as well!"
+                )
+            for key, value in obj.items():
+                validate_object(
+                    value,
+                    reference_hash=reference_hash.get(key, None),
+                    hash_algorithm=hash_algorithm,
+                    logger=logger,
+                    **hash_kwargs,
+                )
+        case Iterable():
+            if not isinstance(reference_hash, Iterable):
+                raise ValueError(
+                    "If a sequence of objects is provided, then "
+                    "reference_hash must be a sequence as well!"
+                )
+            # apply recursively to all values
+            for value, ref_hash in zip(obj, reference_hash):
+                validate_object(
+                    value,
+                    reference_hash=ref_hash,
+                    hash_algorithm=hash_algorithm,
+                    logger=logger,
+                    **hash_kwargs,
+                )
+
+    hash_value = hash_object(obj, hash_algorithm=hash_algorithm, **hash_kwargs)
+    name = f"{type(obj)} {id(obj)}"
+    if reference_hash is None:
+        warnings.warn(
+            f"No reference hash given for object {name!r}."
+            f"The {hash_algorithm!r}-hash is {hash_value!r}.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    elif hash_value != reference_hash:
+        warnings.warn(
+            f"Object {name!r} failed to validate!"
+            f"Hash {hash_value!r} does not match reference {reference_hash!r}."
+            f"Ignore this warning if the format is parquet.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    else:
+        logger.info(
+            "Object '%s' validated successfully with '%s'-hash '%s'.",
+            name,
+            hash_algorithm,
+            hash_value,
+        )
+
+
 # def validate_file(
 #     fname: PathLike, hash_value: str, *, hash_algorithm: str = "sha256", **kwargs: Any
 # ) -> None:
