@@ -10,6 +10,7 @@ References
 __all__ = [
     # Classes
     "Array",
+    "Table",
     "Dataclass",
     "Hash",
     "Lookup",
@@ -55,22 +56,34 @@ class NTuple(Protocol[T_co]):
 
 
 @runtime_checkable
-class Array(Protocol):  # FIXME: Use Self
+class Table(Protocol):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
     @property
     def shape(self) -> Sequence[int]:
-        r"""Yield the shape of the array."""
+        """Yield the shape of the array."""
+
+    def __len__(self) -> int:
+        """Number of elements along first axis."""
+
+    def __getitem__(self, key: Any) -> Self:
+        """Return an element/slice of the table."""
+
+
+@runtime_checkable
+class Array(Protocol[ScalarType_co]):
+    r"""Protocol for array-like objects.
+
+    Compared to a Table (e.g. `pandas.DataFrame` / `pyarrow.Table`), an Array has a single dtype.
+    """
 
     @property
     def ndim(self) -> int:
         r"""Number of dimensions."""
 
-    def __len__(self) -> int:
-        r"""Number of elements along first axis."""
-
-    def __getitem__(self, key: Any) -> Self:
-        ...
+    @property
+    def dtype(self) -> ScalarType_co:
+        r"""Yield the data type of the array."""
 
     #
     # {
