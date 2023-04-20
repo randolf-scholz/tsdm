@@ -29,6 +29,9 @@ __all__ = [
     "SetVar",
     "Set_co",
     "Set_contra",
+    "StringVar",
+    "String_co",
+    "String_contra",
     "TupleVar",
     "Tuple_co",
     "Tuple_contra",
@@ -129,6 +132,13 @@ Set_co = TypeVar("Set_co", bound=set, covariant=True)
 r"""Covariant type variable for `set`."""
 Set_contra = TypeVar("Set_contra", bound=set, contravariant=True)
 r"""Contravariant type variable for `set`."""
+
+StringVar = TypeVar("StringVar", bound=str)
+r"""Type Variable for `str`."""
+String_co = TypeVar("String_co", bound=str, covariant=True)
+r"""Covariant type variable for `str`."""
+String_contra = TypeVar("String_contra", bound=str, contravariant=True)
+r"""Contravariant type variable for `str`."""
 
 TupleVar = TypeVar("TupleVar", bound=tuple)
 r"""Type Variable for `tuple`."""
