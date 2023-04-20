@@ -85,24 +85,16 @@ class Array(Protocol[ScalarType_co]):
     def dtype(self) -> ScalarType_co:
         r"""Yield the data type of the array."""
 
-    #
-    # {
-    #     "__eq__",
-    #     "__ge__",
-    #     "__getitem__",
-    #     "__gt__",
-    #     "__hash__",
-    #     "__len__",
-    #     "__lt__",
-    #     "__ne__",
-    #     "shape",
-    #     "take",
-    # }
+    @property
+    def shape(self) -> Sequence[int]:
+        """Yield the shape of the array."""
 
-    # # @property
-    # # def dtype(self) -> ScalarType_co:
-    # #     r"""Yield the data type of the array."""
-    #
+    def __len__(self) -> int:
+        """Number of elements along first axis."""
+
+    def __getitem__(self, key: Any) -> Self:
+        """Return an element/slice of the table."""
+
     # # fmt: off
     # def __len__(self) -> int: ...
     # # @overload
