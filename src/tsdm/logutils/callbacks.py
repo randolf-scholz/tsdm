@@ -65,7 +65,7 @@ from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
-from tsdm.types.variables import ParameterVar as P
+from tsdm.types.variables import parameter_spec as P
 from tsdm.utils.funcutils import get_mandatory_kwargs
 from tsdm.utils.strings import repr_object
 

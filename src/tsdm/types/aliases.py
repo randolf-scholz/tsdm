@@ -42,11 +42,11 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
 from tsdm.types.protocols import Lookup
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import Key_contra
-from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import Value_co
-from tsdm.types.variables import ValueVar as V
+from tsdm.types.variables import any_var as T
+from tsdm.types.variables import key_contra
+from tsdm.types.variables import key_var as K
+from tsdm.types.variables import value_co
+from tsdm.types.variables import value_var as V
 
 
 class schema(NamedTuple):
@@ -61,7 +61,7 @@ class schema(NamedTuple):
 
 
 # region Custom Type Aliases -----------------------------------------------------------
-Map: TypeAlias = Lookup[Key_contra, Value_co] | Callable[[Key_contra], Value_co]
+Map: TypeAlias = Lookup[key_contra, value_co] | Callable[[key_contra], value_co]
 r"""Type Alias for `Map`."""
 Nested: TypeAlias = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]
 r"""Type Alias for nested types (JSON-Like)."""

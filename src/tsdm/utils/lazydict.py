@@ -20,11 +20,11 @@ from typing import TYPE_CHECKING, Any, Generic, TypeAlias, Union, overload
 
 from typing_extensions import Self
 
-from tsdm.types.variables import Any2Var as T2
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import Key2Var as K2
-from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import ReturnVar_co as R
+from tsdm.types.variables import any2_var as T2
+from tsdm.types.variables import any_var as T
+from tsdm.types.variables import key2_var as K2
+from tsdm.types.variables import key_var as K
+from tsdm.types.variables import return_var_co as R
 from tsdm.utils.funcutils import get_function_args, is_positional_arg
 from tsdm.utils.strings import repr_mapping
 

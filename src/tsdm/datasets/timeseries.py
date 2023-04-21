@@ -6,7 +6,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Self
 
-from tsdm.types.variables import StringVar as Key
+from tsdm.types.variables import str_var as Key
 from tsdm.utils.strings import repr_dataclass
 
 

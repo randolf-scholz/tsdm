@@ -48,12 +48,12 @@ from typing_extensions import Self
 from tsdm.config import CONFIG
 from tsdm.types.abc import CollectionType
 from tsdm.types.aliases import Nested
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import ClassVar as C
-from tsdm.types.variables import ObjectVar as O
-from tsdm.types.variables import ParameterVar as P
-from tsdm.types.variables import ReturnVar_co as R
-from tsdm.types.variables import TorchModuleVar
+from tsdm.types.variables import any_var as T
+from tsdm.types.variables import class_var as C
+from tsdm.types.variables import object_var as O
+from tsdm.types.variables import parameter_spec as P
+from tsdm.types.variables import return_var_co as R
+from tsdm.types.variables import torch_module_var
 
 __logger__ = logging.getLogger(__name__)
 
@@ -455,7 +455,7 @@ def trace(func: Callable[P, R]) -> Callable[P, R]:
     return _wrapper
 
 
-def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
+def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
     r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
 
     Makes it so that
@@ -487,13 +487,13 @@ def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
     class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
         r"""A simple Wrapper."""
 
-        def __new__(cls, *args: Any, **kwargs: Any) -> TorchModuleVar:  # type: ignore[misc]
+        def __new__(cls, *args: Any, **kwargs: Any) -> torch_module_var:  # type: ignore[misc]
             # Note: If __new__() does not return an instance of cls,
             # then the new instance's __init__() method will not be invoked.
-            instance: TorchModuleVar = base_class(*args, **kwargs)
+            instance: torch_module_var = base_class(*args, **kwargs)
 
             if CONFIG.autojit:
-                scripted: TorchModuleVar = jit.script(instance)
+                scripted: torch_module_var = jit.script(instance)
                 return scripted
             return instance
 
