@@ -63,7 +63,7 @@ class InSilicoData(SingleFrameDataset):
         ds = ds.astype("Float32")
         return ds
 
-    def download_table(self) -> None:
+    def download_all_files(self) -> None:
         r"""Download the dataset."""
         self.LOGGER.info("Copying data files into %s.", self.rawdata_paths)
         with resources.path(examples, self.rawdata_files) as path:
