@@ -4,6 +4,8 @@ r"""Base Classes for dataset."""
 # NOTE: type.__init__(self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs: Any)
 
 __all__ = [
+    # Protocol
+    "Dataset",
     # Classes
     "BaseDataset",
     "BaseDatasetMetaClass",
@@ -23,7 +25,16 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Mapping, MutableMapping, Sequence
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Any, ClassVar, Generic, Optional, TypeAlias, overload
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    Optional,
+    Protocol,
+    TypeAlias,
+    overload,
+    runtime_checkable,
+)
 from urllib.parse import urlparse
 
 import pandas
@@ -39,6 +50,35 @@ from tsdm.utils.strings import repr_mapping
 
 DATASET_OBJECT: TypeAlias = Series | DataFrame
 r"""Type hint for pandas objects."""
+
+
+@runtime_checkable
+class Dataset(Protocol):
+    """Protocol for Dataset."""
+
+    INFO_URL: ClassVar[Optional[str]] = None
+    r"""HTTP address containing additional information about the dataset."""
+    RAWDATA_DIR: ClassVar[Path]
+    r"""The directory where the raw data is stored."""
+    DATASET_DIR: ClassVar[Path]
+    r"""The directory where the dataset is stored."""
+
+    @classmethod
+    def info(cls) -> None:
+        """Print information about the dataset."""
+
+    @property
+    def rawdata_paths(self) -> Sequence[Path]:
+        """Return list of paths to the rawdata files."""
+
+    def clean(self) -> None:
+        """Clean the dataset."""
+
+    def download(self) -> None:
+        """Download the dataset."""
+
+    def load(self) -> None:
+        """Load the dataset."""
 
 
 class BaseDatasetMetaClass(ABCMeta):

@@ -50,12 +50,11 @@ __all__ = [
     "USHCN_DeBrouwer2019",
 ]
 
-from typing import Final, TypeAlias
-
 from tsdm.datasets import base
 from tsdm.datasets.base import (
     DATASET_OBJECT,
     BaseDataset,
+    Dataset,
     MultiFrameDataset,
     SingleFrameDataset,
 )
@@ -76,16 +75,12 @@ from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN
 from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
-Dataset: TypeAlias = BaseDataset
-r"""Type hint for dataset."""
-
-
-TSC: Final[dict[str, type[TimeSeriesCollection]]] = {
+TSC: dict[str, type[TimeSeriesCollection]] = {
     "KiwiDataset": KiwiDataset,
 }
 
 
-DATASETS: Final[dict[str, type[Dataset]]] = {
+DATASETS: dict[str, type[Dataset]] = {
     "BeijingAirQuality": BeijingAirQuality,
     "ETT": ETT,
     "Electricity": Electricity,
@@ -103,5 +98,3 @@ DATASETS: Final[dict[str, type[Dataset]]] = {
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available dataset."""
-
-del Final, TypeAlias
