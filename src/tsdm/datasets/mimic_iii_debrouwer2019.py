@@ -23,13 +23,13 @@ from typing import Any, Literal, TypeAlias
 
 import pandas as pd
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 from tsdm.encoders import TripletDecoder
 
 KEY: TypeAlias = Literal["timeseries", "metadata"]
 
 
-class MIMIC_III_DeBrouwer2019(MultiFrameDataset[KEY]):
+class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY]):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data

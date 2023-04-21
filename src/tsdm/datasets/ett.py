@@ -8,17 +8,16 @@ __all__ = [
     "ETT"
 ]
 
-from pathlib import Path
 from typing import Literal, TypeAlias
 
 from pandas import read_csv
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 
 KEY: TypeAlias = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
-class ETT(MultiFrameDataset[KEY]):
+class ETT(MultiTableDataset[KEY]):
     r"""ETT-small-h1.
 
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
@@ -50,12 +49,10 @@ class ETT(MultiFrameDataset[KEY]):
         "ETTm1": ((69680, 7), None, None),
         "ETTm2": ((69680, 7), None, None),
     }
-    KEYS = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
+    table_names = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
-    rawdata_files = {key: f"{key}.csv" for key in KEYS}
+    rawdata_files = {key: f"{key}.csv" for key in table_names}
     r"""Files containing the raw data."""
-    rawdata_paths: dict[KEY, Path]
-    r"""Paths to the raw data."""
 
     def clean_table(self, key: KEY) -> None:
         df = read_csv(

@@ -23,10 +23,10 @@ import subprocess
 from getpass import getpass
 from typing import Any
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
-class MIMIC_III(MultiFrameDataset):
+class MIMIC_III(MultiTableDataset):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data

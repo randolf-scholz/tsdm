@@ -9,8 +9,8 @@ __all__ = [
     # Classes
     "BaseDataset",
     "BaseDatasetMetaClass",
-    "SingleFrameDataset",
-    "MultiFrameDataset",
+    "SingleTableDataset",
+    "MultiTableDataset",
     # Types
     "DATASET_OBJECT",
 ]
@@ -22,7 +22,7 @@ import subprocess
 import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from functools import cached_property, partial
 from pathlib import Path
 from typing import (
@@ -41,9 +41,9 @@ import pandas
 from pandas import DataFrame, Series
 
 from tsdm.config import CONFIG
-from tsdm.types.aliases import Nested, PathLike
+from tsdm.types.aliases import PathLike, Schema
 from tsdm.types.variables import str_var as Key
-from tsdm.utils import flatten_nested, paths_exists, prepend_path
+from tsdm.utils import paths_exists
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_mapping
@@ -148,6 +148,8 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     # instance attribute
     __version__: str
     r"""Version of the dataset, keep empty for unversioned dataset."""
+    rawdata_hashes: Mapping[str, str] = NotImplemented
+    r"""Hashes of the raw dataset file(s)."""
 
     def __init__(
         self,
@@ -172,7 +174,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the dataset."""
-        return f"{self.__class__.__name__}\n{self.dataset}"
+        return f"{self.__class__.__name__}()"
 
     @staticmethod
     def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
@@ -213,42 +215,23 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         else:
             webbrowser.open_new_tab(cls.INFO_URL)
 
-    @cached_property
-    @abstractmethod
-    def dataset(self) -> Any | MutableMapping:
-        r"""Store cached version of dataset."""
-        return self.load()
-
-    @property
-    @abstractmethod
-    def dataset_files(self) -> Mapping[Key, PathLike]:
-        r"""Relative paths to the cleaned dataset file(s)."""
-
     @property
     @abstractmethod
     def rawdata_files(self) -> Sequence[PathLike]:
         r"""Relative paths to the raw dataset file(s)."""
 
     @cached_property
-    def dataset_paths(self) -> Mapping[Key, Path]:
+    def rawdata_paths(self) -> Sequence[Path]:
         r"""Absolute paths to the raw dataset file(s)."""
-        return prepend_path(self.dataset_files, parent=self.RAWDATA_DIR)
+        return [self.RAWDATA_DIR / fname for fname in self.rawdata_files]
 
-    @cached_property
-    def rawdata_paths(self) -> Mapping[Key, list[Path]]:
-        r"""Absolute paths to the raw dataset file(s)."""
-        if self.rawdata_mapping is not NotImplemented:
-            return prepend_path(self.rawdata_mapping, parent=self.RAWDATA_DIR)
-        else:
-            return {None: prepend_path(self.rawdata_files, parent=self.RAWDATA_DIR)}
-
-    def rawdata_files_exist(self) -> bool:
+    def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
         r"""Check if raw data files exist."""
-        return paths_exists(self.rawdata_paths)
-
-    def dataset_files_exist(self) -> bool:
-        r"""Check if dataset files exist."""
-        return paths_exists(self.dataset_paths)
+        if key is None:
+            return paths_exists(self.rawdata_paths)
+        if key not in self.rawdata_paths:
+            raise KeyError(f"{key=} not in {self.rawdata_paths=}")
+        return paths_exists(key)
 
     @abstractmethod
     def clean(self) -> None:
@@ -260,10 +243,6 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     @abstractmethod
     def load(self):
         r"""Load the pre-processed dataset."""
-
-    @abstractmethod
-    def download(self) -> None:
-        r"""Download the raw data."""
 
     @classmethod
     def download_from_url(cls, url: str) -> None:
@@ -288,70 +267,60 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
             fname = url.split("/")[-1]
             download(url, cls.RAWDATA_DIR / fname)
 
-
-# class VersionedDataset(BaseDataset, ABC):
-#     """Base class for datasets that have multiple versions."""
-#
-#     VERSION: str
-#     """Version of the dataset."""
-#
-#     def __init__(
-#         self, *, version: str, initialize: bool = True, reset: bool = False
-#     ) -> None:
-#         r"""Initialize the dataset."""
-#         self.VERSION = version
-#         self.RAWDATA_DIR = self.RAWDATA_DIR / self.VERSION
-#         self.DATASET_DIR = self.DATASET_DIR / self.VERSION
-#         super().__init__(initialize=initialize, reset=reset)
-#
-#     def __repr__(self) -> str:
-#         r"""Return a string representation of the dataset."""
-#         return f"{self.__class__.__name__}@{self.VERSION}\n{self.dataset}"
-
-
-class FrameDataset(BaseDataset, ABC):
-    r"""Base class for datasets that are stored as pandas.DataFrame."""
-
-    DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
-    r"""Default format for the dataset."""
-
-    @staticmethod
-    def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
-        r"""Serialize the dataset."""
-        file_type = path.suffix
-        assert file_type.startswith("."), "File must have a suffix!"
-        file_type = file_type[1:]
-
-        if isinstance(frame, Series):
-            frame = frame.to_frame()
-
-        if hasattr(frame, f"to_{file_type}"):
-            pandas_writer = getattr(frame, f"to_{file_type}")
-            pandas_writer(path, **kwargs)
+    def download_file(self, fname: str) -> None:
+        r"""Download a single file."""
+        if self.BASE_URL is None:
+            self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 
-        raise NotImplementedError(f"No loader for {file_type=}")
+        self.download_from_url(self.BASE_URL + fname)
 
-    @staticmethod
-    def deserialize(path: Path, /, *, squeeze: bool = True) -> DATASET_OBJECT:
-        r"""Deserialize the dataset."""
-        file_type = path.suffix
-        assert file_type.startswith("."), "File must have a suffix!"
-        file_type = file_type[1:]
+    def download(
+        self, *, fname: Optional[str] = None, force: bool = True, validate: bool = True
+    ) -> None:
+        r"""Download the dataset."""
+        # Recurse if key is None.
+        if fname is None:
+            self.LOGGER.debug("Starting to download dataset.")
+            for path in self.rawdata_paths:
+                self.download(fname=path.name, force=force, validate=validate)
+            self.LOGGER.debug("Finished downloading dataset.")
+            return
 
-        if hasattr(pandas, f"read_{file_type}"):
-            pandas_loader = getattr(pandas, f"read_{file_type}")
-            pandas_object = pandas_loader(path)
-            return pandas_object.squeeze() if squeeze else pandas_object
+        # Check if file already exists.
+        if self.rawdata_files_exist(fname) and not force:
+            self.LOGGER.info("Dataset already exists. Skipping download.")
+            return
 
-        raise NotImplementedError(f"No loader for {file_type=}")
+        # Check if dataset provides a base_url.
+        if self.BASE_URL is None:
+            self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
+            return
+
+        # Download file.
+        self.LOGGER.debug("Starting to download dataset <%s>", fname)
+        self.download_file(fname)
+        self.LOGGER.debug("Finished downloading dataset <%s>", fname)
+
+        # Validate file.
+        if validate and self.rawdata_hashes is not NotImplemented:
+            validate_file_hash(fname, reference=self.rawdata_hashes)
 
 
-class SingleFrameDataset(FrameDataset):
+class SingleTableDataset(BaseDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
     __dataset: DATASET_OBJECT = NotImplemented
     """INTERNAL: the dataset."""
+
+    # Validation - Implement on per dataset basis!
+
+    dataset_hash: str = NotImplemented
+    r"""Hashes of the cleaned dataset file(s)."""
+    table_hash: str = NotImplemented
+    r"""Hashes of the in-memory cleaned dataset table(s)."""
+    table_schema: Schema = NotImplemented
+    r"""Schema of the in-memory cleaned dataset table(s)."""
 
     def _repr_html_(self) -> str:
         if hasattr(self.dataset, "_repr_html_"):
@@ -369,14 +338,18 @@ class SingleFrameDataset(FrameDataset):
         return self.__dataset
 
     @cached_property
-    def dataset_files(self) -> PathLike:
+    def dataset_file(self) -> PathLike:
         r"""Return the dataset files."""
-        return self.__class__.__name__ + f".{self.DEFAULT_FILE_FORMAT}"
+        return f"{self.__class__.__name__}.{self.DEFAULT_FILE_FORMAT}"
 
     @cached_property
-    def dataset_paths(self) -> Path:
+    def dataset_path(self) -> Path:
         r"""Path to raw data."""
-        return self.DATASET_DIR / (self.dataset_files or "")
+        return self.DATASET_DIR / self.dataset_file
+
+    def dataset_file_exists(self) -> bool:
+        r"""Check if dataset file exists."""
+        return paths_exists(self.dataset_path)
 
     @abstractmethod
     def clean_table(self) -> DATASET_OBJECT | None:
@@ -384,24 +357,11 @@ class SingleFrameDataset(FrameDataset):
 
     def load_table(self) -> DATASET_OBJECT:
         r"""Load the dataset."""
-        return self.deserialize(self.dataset_paths)
-
-    def download_all_files(self) -> None:
-        r"""Download the dataset."""
-        if self.BASE_URL is None:
-            raise ValueError("No base URL provided!")
-
-        nested_files: Nested[Path] = prepend_path(
-            self.rawdata_files, Path(), keep_none=False
-        )
-        files: set[Path] = flatten_nested(nested_files, kind=Path)
-
-        for file in files:
-            self.download_from_url(self.BASE_URL + file.name)
+        return self.deserialize(self.dataset_path)
 
     def load(self, *, force: bool = True, validate: bool = True) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
-        if not self.dataset_files_exist():
+        if not self.dataset_file_exists():
             self.clean(force=force, validate=validate)
         else:
             self.LOGGER.debug("Dataset files already exist!")
@@ -412,58 +372,55 @@ class SingleFrameDataset(FrameDataset):
         self.__dataset = table
         self.LOGGER.debug("Finished loading dataset.")
 
-        if validate:  # check the in-memory table hash
-            validate_table_hash(table, reference=self.table_hashes)
+        if validate and self.table_hash is not NotImplemented:
+            validate_table_hash(table, reference=self.table_hash)
 
         return table
 
     def clean(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
-        if self.dataset_files_exist() and not force:
+        if self.dataset_file_exists() and not force:
             self.LOGGER.debug("Dataset files already exist, skipping.")
             return
 
         if not self.rawdata_files_exist():
             self.download(force=force, validate=validate)
 
-        if validate:  # check the raw file hashes
+        if validate and self.rawdata_hashes is not NotImplemented:
             validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
 
         self.LOGGER.debug("Starting to clean dataset.")
         df = self.clean_table()
         if df is not None:
             self.LOGGER.info("Serializing dataset.")
-            self.serialize(df, self.dataset_paths)
+            self.serialize(df, self.dataset_path)
         self.LOGGER.debug("Finished cleaning dataset.")
 
-        if validate:  # check the cleaned file hashes
-            validate_file_hash(self.dataset_paths, reference=self.dataset_hashes)
-
-    def download(self, *, force: bool = True, validate: bool = True) -> None:
-        r"""Download the dataset."""
-        if self.rawdata_files_exist() and not force:
-            self.LOGGER.info("Dataset already exists. Skipping download.")
-            return
-
-        self.LOGGER.debug("Starting to download dataset.")
-        self.download_all_files()
-        self.LOGGER.debug("Starting downloading dataset.")
-
-        if validate:  # check the raw file hashes
-            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
+        if validate and self.dataset_hash is not NotImplemented:
+            validate_file_hash(self.dataset_path, reference=self.dataset_hash)
 
 
-class MultiFrameDataset(FrameDataset, Generic[Key]):
+class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     r"""Dataset class that consists of multiple tables.
 
     The tables are stored in a dictionary-like object.
     """
 
+    # Validation - Implement on per dataset basis!
+    dataset_hashes: Mapping[Key, str] = NotImplemented
+    r"""Hashes of the cleaned dataset file(s)."""
+    table_hashes: Mapping[Key, str] = NotImplemented
+    r"""Hashes of the in-memory cleaned dataset table(s)."""
+    table_schemas: Mapping[Key, Schema] = NotImplemented
+    r"""Schema of the in-memory cleaned dataset table(s)."""
+
     def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""
         self.LOGGER.info("Adding keys as attributes.")
         while initialize:
-            non_string_keys = {key for key in self.KEYS if not isinstance(key, str)}
+            non_string_keys = {
+                key for key in self.table_names if not isinstance(key, str)
+            }
             if non_string_keys:
                 warnings.warn(
                     f"Not adding keys as attributes! "
@@ -474,7 +431,9 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
                 break
 
             key_attributes = {
-                key for key in self.KEYS if isinstance(key, str) and hasattr(self, key)
+                key
+                for key in self.table_names
+                if isinstance(key, str) and hasattr(self, key)
             }
             if key_attributes:
                 warnings.warn(
@@ -485,7 +444,7 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
                 )
                 break
 
-            for key in self.KEYS:
+            for key in self.table_names:
                 assert isinstance(key, str) and not hasattr(self, key)
                 _get_table = partial(self.__class__.load, key=key)
                 _get_table.__doc__ = f"Load dataset for {key=}."
@@ -494,57 +453,49 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
 
         super().__init__(initialize=initialize, reset=reset)
 
-    # def __len__(self) -> int:
-    #     r"""Return the number of samples in the dataset."""
-    #     return self.dataset.__len__()
-    #
-    # def __getitem__(self, idx):
-    #     r"""Return the sample at index `idx`."""
-    #     return self.dataset.__getitem__(idx)
-    #
-    # def __iter__(self) -> Iterator:
-    #     r"""Return an iterator over the dataset."""
-    #     return self.dataset.__iter__()
+    def __len__(self) -> int:
+        r"""Return the number of samples in the dataset."""
+        return self.tables.__len__()
+
+    def __getitem__(self, idx: Key) -> DATASET_OBJECT:
+        r"""Return the sample at index `idx`."""
+        return self.tables.__getitem__(idx)
+
+    def __iter__(self) -> Iterator[Key]:
+        r"""Return an iterator over the dataset."""
+        return self.tables.__iter__()
 
     def __repr__(self) -> str:
         r"""Pretty Print."""
-        return repr_mapping(self.dataset, title=self.__class__.__name__)
+        return repr_mapping(self.tables, title=self.__class__.__name__)
 
     @property
     @abstractmethod
-    def KEYS(self) -> Sequence[Key]:
+    def table_names(self) -> Sequence[Key]:
         r"""Return the index of the dataset."""
         # TODO: use abstract-attribute!
         # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
     @cached_property
-    def dataset(self) -> MutableMapping[Key, DATASET_OBJECT]:
+    def tables(self) -> MutableMapping[Key, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
-        return {key: None for key in self.KEYS}
+        return {key: None for key in self.table_names}
 
     @cached_property
     def dataset_files(self) -> Mapping[Key, str]:
         r"""Relative paths to the dataset files for each key."""
-        return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.KEYS}
+        return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.table_names}
 
     @cached_property
-    def dataset_paths(self) -> dict[Key, Path]:
-        r"""Absolute paths to the dataset files for each key."""
-        return {
-            key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
-        }
-
-    def rawdata_files_exist(self, key: Optional[Key] = None) -> bool:
-        r"""Check if raw data files exist."""
-        if isinstance(self.rawdata_paths, Mapping) and key is not None:
-            return paths_exists(self.rawdata_paths[key])
-        return super().rawdata_files_exist()
+    def dataset_paths(self) -> Mapping[Key, Path]:
+        r"""Absolute paths to the raw dataset file(s)."""
+        return {k: self.DATASET_DIR / fname for k, fname in self.dataset_files.items()}
 
     def dataset_files_exist(self, key: Optional[Key] = None) -> bool:
         r"""Check if dataset files exist."""
         if isinstance(self.dataset_files, Mapping) and key is not None:
             return paths_exists(self.dataset_files[key])
-        return super().dataset_files_exist()
+        return paths_exists(self.dataset_paths)
 
     @abstractmethod
     def clean_table(self, key: Key) -> DATASET_OBJECT | None:
@@ -567,7 +518,7 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
         # TODO: Do we need this code block?
         if not self.rawdata_files_exist(key=key):
             self.LOGGER.debug("Raw files missing, fetching it now! <%s>", key)
-            self.download(key=key, force=force, validate=validate)
+            self.download(fname=key, force=force, validate=validate)
 
         if (
             key in self.dataset_files
@@ -576,7 +527,7 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
         ):
             self.LOGGER.debug("Clean files already exists, skipping <%s>", key)
             assert key is not None
-            if validate:
+            if validate and self.dataset_hashes is not NotImplemented:
                 validate_file_hash(
                     self.dataset_paths[key], reference=self.dataset_hashes[key]
                 )
@@ -584,7 +535,7 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
 
         if key is None:
             self.LOGGER.debug("Starting to clean dataset.")
-            for key_ in self.KEYS:
+            for key_ in self.table_names:
                 self.clean(key=key_, force=force, validate=validate)
             self.LOGGER.debug("Finished cleaning dataset.")
             return
@@ -597,7 +548,7 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
             self.serialize(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
-        if validate:
+        if validate and self.dataset_hashes is not NotImplemented:
             validate_file_hash(
                 self.dataset_paths[key], reference=self.dataset_hashes[key]
             )
@@ -614,18 +565,18 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
-    ) -> Mapping[Key, Any]:
+    ) -> Mapping[Key, DATASET_OBJECT]:
         ...
 
     @overload
     def load(
         self,
         *,
-        key: Optional[Key] = None,
+        key: Key = ...,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
-    ) -> Any:
+    ) -> DATASET_OBJECT:
         ...
 
     def load(
@@ -654,88 +605,23 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
             self.LOGGER.debug("Starting to load  dataset.")
             ds = {
                 k: self.load(key=k, force=force, validate=validate, **kwargs)
-                for k in self.KEYS
+                for k in self.table_names
             }
             self.LOGGER.debug("Finished loading  dataset.")
             return ds
 
         # download specific key
-        if key in self.dataset and self.dataset[key] is not None and not force:
+        if key in self.tables and self.tables[key] is not None and not force:
             self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
-            return self.dataset[key]
+            return self.tables[key]
 
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
         table = self.load_table(key=key)
         table.name = key
-        self.dataset[key] = table
+        self.tables[key] = table
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
 
-        if validate:
+        if validate and self.table_hashes is not NotImplemented:
             validate_table_hash(table, reference=self.table_hashes[key])
 
-        return self.dataset[key]
-
-    def download_table(self, *, key: Key = NotImplemented) -> None:
-        r"""Download the selected DATASET_OBJECT."""
-        assert self.BASE_URL is not None, "base_url is not set!"
-
-        rawdata_files: Nested[Optional[PathLike]]
-        if isinstance(self.rawdata_files, Mapping):
-            assert key is not NotImplemented, "key must be provided!"
-            rawdata_files = self.rawdata_files[key]
-        else:
-            rawdata_files = self.rawdata_files
-
-        nested_files: Nested[Path] = prepend_path(
-            rawdata_files, Path(), keep_none=False
-        )
-        files: set[Path] = flatten_nested(nested_files, kind=Path)
-
-        for file in files:
-            self.download_from_url(self.BASE_URL + file.name)
-
-    def download(
-        self,
-        key: Optional[Key] = None,
-        *,
-        force: bool = False,
-        validate: bool = True,
-        **kwargs: Any,
-    ) -> None:
-        r"""Download the dataset.
-
-        Args:
-            key: The key of the rawdata file
-            validate: Validate the downloaded files.
-            force: Force re-downloading of dataset.
-        """
-        if self.BASE_URL is None:
-            self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
-            return
-
-        if self.rawdata_files is None:
-            self.LOGGER.debug("Dataset needs no raw data files. Skipping.")
-            return
-
-        if not force and self.rawdata_files_exist(key=key):
-            self.LOGGER.debug("Rawdata files already exist, skipping. <%s>", str(key))
-            return
-
-        if key is None:
-            # Download full dataset
-            self.LOGGER.debug("Starting to download dataset.")
-            if isinstance(self.rawdata_files, Mapping):
-                for key_ in self.rawdata_files:
-                    self.download(key=key_, force=force, validate=validate, **kwargs)
-            else:
-                self.download_table()
-            self.LOGGER.debug("Finished downloading dataset.")
-
-            if validate:
-                validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
-            return
-
-        # Download specific key
-        self.LOGGER.debug("Starting to download dataset <%s>", key)
-        self.download_table(key=key)
-        self.LOGGER.debug("Finished downloading dataset <%s>", key)
+        return self.tables[key]

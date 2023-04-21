@@ -13,10 +13,10 @@ from zipfile import ZipFile
 import pandas as pd
 
 from tsdm.datasets import examples
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import SingleTableDataset
 
 
-class InSilicoData(SingleFrameDataset):
+class InSilicoData(SingleTableDataset):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+

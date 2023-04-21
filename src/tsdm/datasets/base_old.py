@@ -1,4 +1,5 @@
 r"""Base Classes for dataset."""
+# mypy: ignore-errors
 # NOTE: signature of metaclass.__init__ should match that of type.__new__
 # NOTE: type.__new__(cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs: Any)
 # NOTE: type.__init__(self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs: Any)

@@ -14,13 +14,13 @@ from typing import Literal, TypeAlias
 import pandas
 from pandas import DataFrame
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils.decorators import ray_cluster
 
 KEY: TypeAlias = Literal["us_daily", "states", "stations"]
 
 
-class USHCN(MultiFrameDataset[KEY]):
+class USHCN(MultiTableDataset[KEY]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -164,8 +164,8 @@ class USHCN(MultiFrameDataset[KEY]):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
-    KEYS = ["us_daily", "states", "stations"]
-    r"""The names of the DataFrames associated with this dataset."""
+
+    table_names = ["us_daily", "states", "stations"]
     rawdata_hashes = {
         "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
         "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
@@ -182,7 +182,6 @@ class USHCN(MultiFrameDataset[KEY]):
         "states": ((48, 3), None, None),
         "stations": ((1218, 9), None, None),
     }
-    index = ["us_daily", "states", "stations"]
     rawdata_files = {
         "metadata": "data_format.txt",
         "stations": "ushcn-stations.txt",

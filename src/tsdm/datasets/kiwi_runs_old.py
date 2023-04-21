@@ -17,7 +17,7 @@ from typing import Any, Final, Literal, Optional
 import pandas as pd
 from pandas import DataFrame, Series
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils import round_relative
 
 __logger__ = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ def get_useless_cols(
     return useless_cols
 
 
-class KIWI_RUNS_OLD(MultiFrameDataset):
+class KIWI_RUNS_OLD(MultiTableDataset):
     r"""KIWI RUN Data.
 
     The cleaned data will consist of 2 parts:

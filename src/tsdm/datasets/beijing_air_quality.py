@@ -75,10 +75,10 @@ import zipfile
 
 from pandas import DataFrame, Timestamp, concat, read_csv
 
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import SingleTableDataset
 
 
-class BeijingAirQuality(SingleFrameDataset):
+class BeijingAirQuality(SingleTableDataset):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
