@@ -48,7 +48,7 @@ from typing_extensions import Self
 from tsdm.config import CONFIG
 from tsdm.types.abc import CollectionType
 from tsdm.types.aliases import Nested
-from tsdm.types.variables import AnyVar as T, ReturnVar_co as R
+from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import ClassVar as C
 from tsdm.types.variables import ObjectVar as O
 from tsdm.types.variables import ParameterVar as P
