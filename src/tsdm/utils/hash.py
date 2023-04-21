@@ -34,8 +34,7 @@ import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
-from tsdm.types.aliases import PathLike
-from tsdm.types.namedtuples import TableSchema
+from tsdm.types.aliases import PathLike, Schema
 from tsdm.types.protocols import Table
 
 __logger__ = logging.getLogger(__name__)
@@ -405,45 +404,68 @@ def validate_table_hash(
         )
 
 
-def validate_table_schema(table: Table, /, reference_schema: TableSchema) -> None:
+def validate_table_schema(table: Table, /, reference_schema: Schema) -> None:
     """Validate the schema of a pandas object, given schema values from a table.
 
     Checks if the columns and dtypes of the table match the reference schema.
     Checks if the shape of the table matches the reference schema.
     """
-    if (shape := table.shape) != reference_schema.shape:
-        raise ValueError(
-            f"Table {shape=} does not match "
-            f"reference shape {reference_schema.shape}!"
-        )
-
+    # get shape, columns and dtypes from table
     match table:
+        case pd.MultiIndex() as multiindex:
+            shape = multiindex.shape
+            columns = multiindex.names
+            dtypes = multiindex.dtypes
+        case pd.Index() as index:
+            shape = index.shape
+            columns = index.name
+            dtypes = index.dtype
+        case pd.Series() as series:
+            shape = series.shape
+            columns = series.name
+            dtypes = series.dtype
         case DataFrame() as df:  # type: ignore[misc]
-            if (columns := df.columns.tolist()) != reference_schema.columns:  # type: ignore[unreachable]
-                raise ValueError(
-                    f"DataFrame {columns=} do not match "
-                    f"reference columns {reference_schema.columns=}!"
-                )
-            if (dtypes := df.dtypes.tolist()) != reference_schema.dtypes:
-                raise ValueError(
-                    f"DataFrame {dtypes=} do not match "
-                    f"reference dtypes {reference_schema.dtypes}!"
-                )
+            shape = df.shape  # type: ignore[unreachable]
+            columns = df.columns.tolist()
+            dtypes = df.dtypes.tolist()
         case pa.Table() as arrow_table:
-            if (columns := arrow_table.schema.names) != reference_schema.columns:
-                raise ValueError(
-                    f"PyArrow Table {columns=} do not match "
-                    f"reference columns {reference_schema.columns=}!"
-                )
-            if (dtypes := arrow_table.schema.types) != reference_schema.dtypes:
-                raise ValueError(
-                    f"PyArrow Table {dtypes=} do not match "
-                    f"reference dtypes {reference_schema.dtypes}!"
-                )
+            shape = arrow_table.shape
+            columns = arrow_table.schema.names
+            dtypes = arrow_table.schema.types
+        case np.ndarray() as arr:
+            shape = arr.shape
+            columns = None
+            dtypes = [arr.dtype]
         case _:
             raise NotImplementedError(
                 f"Cannot validate schema for {type(table)} objects!"
             )
+
+    reference_shape, reference_columns, reference_dtypes = reference_schema
+
+    # Validate shape.
+    if reference_shape is None:
+        __logger__.info("No reference shape given, skipping shape validation.")
+    elif shape != reference_shape:
+        raise ValueError(f"Table {shape=!r} does not match {reference_shape=!r}!")
+    else:
+        __logger__.info("Table shape validated successfully.")
+
+    # Validate columns.
+    if reference_columns is None:
+        __logger__.info("No reference columns given, skipping column validation.")
+    elif columns != reference_columns:
+        raise ValueError(f"Table {columns=!r} does not match {reference_columns=!r}!")
+    else:
+        __logger__.info("Table columns validated successfully.")
+
+    # Validate dtypes.
+    if reference_dtypes is None:
+        __logger__.info("No reference dtypes given, skipping dtype validation.")
+    elif dtypes != reference_dtypes:
+        raise ValueError(f"Table {dtypes=!r} does not match {reference_dtypes=!r}!")
+    else:
+        __logger__.info("Table dtypes validated successfully.")
 
 
 def validate_object_hash(
