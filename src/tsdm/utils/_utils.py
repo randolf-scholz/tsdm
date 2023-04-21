@@ -45,9 +45,7 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import AnyVar as T
 from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import ReturnVar_co as R
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 
 __logger__ = logging.getLogger(__name__)
@@ -82,30 +80,6 @@ def pairwise_disjoint(sets: Iterable[set]) -> bool:
 def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
     r"""Check if masks are pairwise disjoint."""
     return all(sum(masks) == 1)  # type: ignore[arg-type]
-
-
-def apply_nested(
-    func: Callable[[T], R],
-    nested: Nested[Optional[T]],
-    kind: type[T],
-) -> Nested[Optional[R]]:
-    r"""Apply function to nested iterables of a given kind.
-
-    Args:
-        nested: Nested Data-Structure (Iterable, Mapping, ...)
-        kind: The type of the leave nodes
-        func: A function to apply to all leave Nodes
-    """
-    if nested is None:
-        return None
-    if isinstance(nested, kind):
-        return func(nested)
-    if isinstance(nested, Mapping):
-        return {k: apply_nested(func, v, kind) for k, v in nested.items()}  # type: ignore[arg-type]
-    # TODO https://github.com/python/mypy/issues/11615
-    if isinstance(nested, Collection):
-        return [apply_nested(func, obj, kind) for obj in nested]  # type: ignore[arg-type]
-    raise TypeError(f"Unsupported type: {type(nested)}")
 
 
 def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:

@@ -25,7 +25,6 @@ from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property, partial
-from hashlib import sha256
 from pathlib import Path
 from typing import Any, ClassVar, Generic, Optional, TypeAlias, overload
 from urllib.parse import urlparse
@@ -37,9 +36,9 @@ from typing_extensions import Self
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import StringVar as Key
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
-from tsdm.utils.hash import hash_pandas
+from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_dataclass, repr_mapping
 
@@ -53,6 +52,7 @@ class BaseDatasetMetaClass(ABCMeta):
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
+        """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
@@ -81,7 +81,7 @@ class BaseDatasetMetaClass(ABCMeta):
     # return super().__getitem__(parent)
 
 
-class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
+class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     r"""Abstract base class that all dataset must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -98,8 +98,30 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
 
-    def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
+    # instance attribute
+    __version__: str
+    r"""Version of the dataset, keep empty for unversioned dataset."""
+    rawdata_hashes: Mapping[str, tuple[str, str]] = {}
+    r"""Hashes of the raw dataset file(s)."""
+    dataset_hashes: Mapping[Key, tuple[str, str]] = {}
+    r"""Hashes of the cleaned dataset file(s)."""
+    table_hashes: Mapping[Key, tuple[str, str]] = {}
+    r"""Hashes of the cleaned dataset table(s)."""
+    table_schemas: Mapping[Key, dict[str, Any]] = {}
+    r"""Schema of the cleaned dataset table(s)."""
+
+    def __init__(
+        self,
+        *,
+        initialize: bool = True,
+        reset: bool = False,
+        version: str = "",
+    ) -> None:
         r"""Initialize the dataset."""
+        self.__version__ = version
+        self.RAWDATA_DIR = self.RAWDATA_DIR / self.__version__  # type: ignore[misc]
+        self.DATASET_DIR = self.DATASET_DIR / self.__version__  # type: ignore[misc]
+
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
             self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
@@ -129,23 +151,23 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
 
     @property
     @abstractmethod
-    def dataset_files(self) -> Nested[Optional[PathLike]]:
+    def dataset_files(self) -> dict[Key, PathLike]:
         r"""Relative paths to the cleaned dataset file(s)."""
 
     @property
     @abstractmethod
-    def rawdata_files(self) -> Nested[Optional[PathLike]]:
+    def rawdata_files(self) -> list[PathLike]:
         r"""Relative paths to the raw dataset file(s)."""
 
     @cached_property
-    def rawdata_paths(self) -> Nested[Path]:
-        r"""Absolute paths to the raw dataset file(s)."""
-        return prepend_path(self.rawdata_files, parent=self.RAWDATA_DIR)
-
-    @cached_property
-    def dataset_paths(self) -> Nested[Path]:
+    def dataset_paths(self) -> dict[Key, Path]:
         r"""Absolute paths to the raw dataset file(s)."""
         return prepend_path(self.dataset_files, parent=self.RAWDATA_DIR)
+
+    @cached_property
+    def rawdata_paths(self) -> list[Path]:
+        r"""Absolute paths to the raw dataset file(s)."""
+        return prepend_path(self.rawdata_files, parent=self.RAWDATA_DIR)
 
     def rawdata_files_exist(self) -> bool:
         r"""Check if raw data files exist."""
@@ -194,17 +216,31 @@ class BaseDataset(ABC, metaclass=BaseDatasetMetaClass):
             download(url, cls.RAWDATA_DIR / fname)
 
 
+# class VersionedDataset(BaseDataset, ABC):
+#     """Base class for datasets that have multiple versions."""
+#
+#     VERSION: str
+#     """Version of the dataset."""
+#
+#     def __init__(
+#         self, *, version: str, initialize: bool = True, reset: bool = False
+#     ) -> None:
+#         r"""Initialize the dataset."""
+#         self.VERSION = version
+#         self.RAWDATA_DIR = self.RAWDATA_DIR / self.VERSION
+#         self.DATASET_DIR = self.DATASET_DIR / self.VERSION
+#         super().__init__(initialize=initialize, reset=reset)
+#
+#     def __repr__(self) -> str:
+#         r"""Return a string representation of the dataset."""
+#         return f"{self.__class__.__name__}@{self.VERSION}\n{self.dataset}"
+
+
 class FrameDataset(BaseDataset, ABC):
     r"""Base class for datasets that are stored as pandas.DataFrame."""
 
-    DEFAULT_FILE_FORMAT: str = "parquet"
+    DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
     r"""Default format for the dataset."""
-    RAWDATA_HASH: Optional[str | Mapping[str, str]] = None
-    r"""Hash value of the raw data file(s), checked after download."""
-    # DATASET_HASH: Optional[str | Mapping[str, str]] = None
-    # r"""Hash value of the dataset file(s), checked after clean."""
-    # TABLE_HASH: Optional[str | Mapping[str, str]] = None
-    # r"""Hash value of the dataset table(s), checked after load."""
 
     @staticmethod
     def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
@@ -237,163 +273,12 @@ class FrameDataset(BaseDataset, ABC):
 
         raise NotImplementedError(f"No loader for {file_type=}")
 
-    def validate_table(
-        self,
-        table: DataFrame,
-        reference: Optional[Hashable | Mapping[str, Hashable]] = None,
-    ) -> None:
-        r"""Validate the table."""
-        filehash = hash_pandas(table)
-
-        if reference is None:
-            warnings.warn(
-                f"Table {table.name!r} cannot be validated as no hash is stored in {self.__class__}."
-                f"The hash is {filehash!r}.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-        elif isinstance(reference, int | str):
-            if filehash != reference:
-                warnings.warn(
-                    f"Table {table.name!r} failed to validate!"
-                    f"Table hash {filehash!r} does not match reference {reference!r}."
-                    f"Ignore this warning if the format is parquet.",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-            self.LOGGER.info(
-                f"Table {table.name!r} validated successfully {filehash=!r}."
-            )
-        elif isinstance(reference, Mapping):
-            if table.name not in reference:
-                warnings.warn(
-                    f"Table {table.name!r} cannot be validated as it is not contained in {reference}."
-                    f"The hash is {filehash!r}."
-                    f"Ignore this warning if the format is parquet.",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-            elif table.name in reference and filehash != reference[table.name]:
-                warnings.warn(
-                    f"Table {table.name!r} failed to validate!"
-                    f"Table hash {filehash!r} does not match reference {reference[table.name]!r}."
-                    f"Ignore this warning if the format is parquet.",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-            else:
-                self.LOGGER.info(
-                    f"Table {table.name!r} validated successfully {filehash=!r}."
-                )
-        else:
-            raise TypeError(f"Unsupported type for {reference=}.")
-
-        self.LOGGER.debug("Validated %s", table.name)
-
-    def validate(
-        self,
-        filespec: Nested[None | str | Path],
-        /,
-        *,
-        reference: Optional[Hashable | Mapping[str, Hashable]] = None,
-    ) -> None:
-        r"""Validate the file hash."""
-        self.LOGGER.debug("Validating %s", filespec)
-
-        match filespec:
-            case str() | Path():
-                self.validate_file(filespec, reference=reference)
-            case DataFrame():  # type: ignore[misc]
-                self.validate_table(filespec, reference=reference)  # type: ignore[unreachable]
-            case Mapping():
-                for value in filespec.values():
-                    self.validate(value, reference=reference)
-            case Sequence():
-                for value in filespec:
-                    self.validate(value, reference=reference)
-            case None:
-                pass
-            case _:
-                raise TypeError(f"Unsupported type for {filespec=}.")
-
-    def validate_file(
-        self,
-        filespec: str | Path,
-        /,
-        *,
-        reference: Optional[Hashable | Mapping[str, Hashable]] = None,
-    ) -> None:
-        """Validate the file hash."""
-        file = Path(filespec)
-
-        if not file.exists():
-            raise FileNotFoundError(f"File {file.name!r} does not exist!")
-
-        filehash = sha256(file.read_bytes()).hexdigest()
-
-        match reference:
-            case None:
-                warnings.warn(
-                    f"File {file.name!r} cannot be validated as no hash is stored in {self.__class__}."
-                    f"The filehash is {filehash!r}.",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-            case str() | Path():
-                if filehash != reference:
-                    warnings.warn(
-                        f"File {file.name!r} failed to validate!"
-                        f"File hash {filehash!r} does not match reference {reference!r}."
-                        f"Ignore this warning if the format is parquet.",
-                        RuntimeWarning,
-                        stacklevel=2,
-                    )
-                self.LOGGER.info(
-                    f"File {file.name!r} validated successfully {filehash=!r}."
-                )
-            case Mapping():
-                if not (file.name in reference) ^ (file.stem in reference):
-                    warnings.warn(
-                        f"File {file.name!r} cannot be validated as it is not contained in {reference}."
-                        f"The filehash is {filehash!r}."
-                        f"Ignore this warning if the format is parquet.",
-                        RuntimeWarning,
-                        stacklevel=2,
-                    )
-                elif file.name in reference and filehash != reference[file.name]:
-                    warnings.warn(
-                        f"File {file.name!r} failed to validate!"
-                        f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
-                        f"Ignore this warning if the format is parquet.",
-                        RuntimeWarning,
-                        stacklevel=2,
-                    )
-                elif file.stem in reference and filehash != reference[file.stem]:
-                    warnings.warn(
-                        f"File {file.name!r} failed to validate!"
-                        f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
-                        f"Ignore this warning if the format is parquet.",
-                        RuntimeWarning,
-                        stacklevel=2,
-                    )
-                else:
-                    self.LOGGER.info(
-                        f"File {file.name!r} validated successfully {filehash=!r}."
-                    )
-            case _:
-                raise TypeError(f"Unsupported type for {reference=}.")
-
-        self.LOGGER.debug("Validated %s", filespec)
-
 
 class SingleFrameDataset(FrameDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
     __dataset: DATASET_OBJECT = NotImplemented
-    DATASET_HASH: Optional[tuple[str, str]] = None
-    r"""Hash value of the dataset file(s), checked after clean."""
-    TABLE_HASH: Optional[int] = None
-    r"""Hash value of the table file(s), checked after load."""
+    """INTERNAL: the dataset."""
 
     def _repr_html_(self) -> str:
         if hasattr(self.dataset, "_repr_html_"):
@@ -428,7 +313,7 @@ class SingleFrameDataset(FrameDataset):
         r"""Load the dataset."""
         return self.deserialize(self.dataset_paths)
 
-    def download_table(self) -> None:
+    def download_all_files(self) -> None:
         r"""Download the dataset."""
         if self.BASE_URL is None:
             raise ValueError("No base URL provided!")
@@ -454,8 +339,8 @@ class SingleFrameDataset(FrameDataset):
         self.__dataset = table
         self.LOGGER.debug("Finished loading dataset.")
 
-        if validate:
-            self.validate(table, reference=self.TABLE_HASH)
+        if validate:  # check the in-memory table hash
+            validate_table_hash(table, reference=self.table_hashes)
 
         return table
 
@@ -468,8 +353,8 @@ class SingleFrameDataset(FrameDataset):
         if not self.rawdata_files_exist():
             self.download(force=force, validate=validate)
 
-        if validate:
-            self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
+        if validate:  # check the raw file hashes
+            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
 
         self.LOGGER.debug("Starting to clean dataset.")
         df = self.clean_table()
@@ -478,8 +363,8 @@ class SingleFrameDataset(FrameDataset):
             self.serialize(df, self.dataset_paths)
         self.LOGGER.debug("Finished cleaning dataset.")
 
-        if validate:
-            self.validate(self.dataset_paths, reference=self.DATASET_HASH)
+        if validate:  # check the cleaned file hashes
+            validate_file_hash(self.dataset_paths, reference=self.dataset_hashes)
 
     def download(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Download the dataset."""
@@ -488,23 +373,18 @@ class SingleFrameDataset(FrameDataset):
             return
 
         self.LOGGER.debug("Starting to download dataset.")
-        self.download_table()
+        self.download_all_files()
         self.LOGGER.debug("Starting downloading dataset.")
 
-        if validate:
-            self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
+        if validate:  # check the raw file hashes
+            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
 
 
-class MultiFrameDataset(FrameDataset, Generic[K]):
+class MultiFrameDataset(FrameDataset, Generic[Key]):
     r"""Dataset class that consists of multiple tables.
 
     The tables are stored in a dictionary-like object.
     """
-
-    DATASET_HASH: Optional[Mapping[K, tuple[str, str]]] = None
-    r"""Hash value of the dataset file(s), checked after clean."""
-    TABLE_HASH: Optional[Mapping[K, int]] = None
-    r"""Hash value of the dataset file(s), checked after loading."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""
@@ -559,49 +439,47 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
 
     @property
     @abstractmethod
-    def KEYS(self) -> Sequence[K]:
+    def KEYS(self) -> Sequence[Key]:
         r"""Return the index of the dataset."""
         # TODO: use abstract-attribute!
         # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
     @cached_property
-    def dataset(self) -> MutableMapping[K, DATASET_OBJECT]:
+    def dataset(self) -> MutableMapping[Key, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
         return {key: None for key in self.KEYS}
 
     @cached_property
-    def dataset_files(self) -> Mapping[K, str]:
+    def dataset_files(self) -> Mapping[Key, str]:
         r"""Relative paths to the dataset files for each key."""
         return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.KEYS}
 
     @cached_property
-    def dataset_paths(self) -> Mapping[K, Path]:
+    def dataset_paths(self) -> Mapping[Key, Path]:
         r"""Absolute paths to the dataset files for each key."""
         return {
             key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
         }
 
-    def rawdata_files_exist(self, key: Optional[K] = None) -> bool:
+    def rawdata_files_exist(self, key: Optional[Key] = None) -> bool:
         r"""Check if raw data files exist."""
-        if key is None:
-            return paths_exists(self.rawdata_paths)
-        if isinstance(self.rawdata_paths, Mapping):
+        if isinstance(self.rawdata_paths, Mapping) and key is not None:
             return paths_exists(self.rawdata_paths[key])
-        return paths_exists(self.rawdata_paths)
+        return super().rawdata_files_exist()
 
-    def dataset_files_exist(self, key: Optional[K] = None) -> bool:
+    def dataset_files_exist(self, key: Optional[Key] = None) -> bool:
         r"""Check if dataset files exist."""
-        if key is None:
-            return paths_exists(self.dataset_paths)
-        return paths_exists(self.dataset_paths[key])
+        if isinstance(self.dataset_files, Mapping) and key is not None:
+            return paths_exists(self.dataset_files[key])
+        return super().dataset_files_exist()
 
     @abstractmethod
-    def clean_table(self, key: K) -> DATASET_OBJECT | None:
+    def clean_table(self, key: Key) -> DATASET_OBJECT | None:
         r"""Clean the selected DATASET_OBJECT."""
 
     def clean(
         self,
-        key: Optional[K] = None,
+        key: Optional[Key] = None,
         *,
         force: bool = False,
         validate: bool = True,
@@ -626,7 +504,9 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
             self.LOGGER.debug("Clean files already exists, skipping <%s>", key)
             assert key is not None
             if validate:
-                self.validate(self.dataset_paths[key], reference=self.DATASET_HASH)
+                validate_file_hash(
+                    self.dataset_paths[key], reference=self.dataset_hashes[key]
+                )
             return
 
         if key is None:
@@ -645,9 +525,11 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
         if validate:
-            self.validate(self.dataset_paths[key], reference=self.DATASET_HASH)
+            validate_file_hash(
+                self.dataset_paths[key], reference=self.dataset_hashes[key]
+            )
 
-    def load_table(self, key: K) -> DATASET_OBJECT:
+    def load_table(self, key: Key) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
         return self.deserialize(self.dataset_paths[key])
 
@@ -659,14 +541,14 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
-    ) -> Mapping[K, Any]:
+    ) -> Mapping[Key, Any]:
         ...
 
     @overload
     def load(
         self,
         *,
-        key: Optional[K] = None,
+        key: Optional[Key] = None,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
@@ -676,11 +558,11 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
     def load(
         self,
         *,
-        key: Optional[K] = None,
+        key: Optional[Key] = None,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
-    ) -> Mapping[K, DATASET_OBJECT] | DATASET_OBJECT:
+    ) -> Mapping[Key, DATASET_OBJECT] | DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT.
 
         Args:
@@ -716,11 +598,11 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
 
         if validate:
-            self.validate(table, reference=self.TABLE_HASH)
+            validate_table_hash(table, reference=self.table_hashes[key])
 
         return self.dataset[key]
 
-    def download_table(self, *, key: K = NotImplemented) -> None:
+    def download_table(self, *, key: Key = NotImplemented) -> None:
         r"""Download the selected DATASET_OBJECT."""
         assert self.BASE_URL is not None, "base_url is not set!"
 
@@ -741,7 +623,7 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
 
     def download(
         self,
-        key: Optional[K] = None,
+        key: Optional[Key] = None,
         *,
         force: bool = False,
         validate: bool = True,
@@ -777,7 +659,7 @@ class MultiFrameDataset(FrameDataset, Generic[K]):
             self.LOGGER.debug("Finished downloading dataset.")
 
             if validate:
-                self.validate(self.rawdata_paths, reference=self.RAWDATA_HASH)
+                validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
             return
 
         # Download specific key
@@ -903,7 +785,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.index = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: K) -> TimeSeriesDataset:
+    def __getitem__(self, key: Key) -> TimeSeriesDataset:
         ...
 
     @overload
@@ -980,7 +862,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         r"""Get the length of the collection."""
         return len(self.index)
 
-    def __iter__(self) -> Iterator[K]:
+    def __iter__(self) -> Iterator[Key]:
         r"""Iterate over the collection."""
         return iter(self.index)
         # for key in self.index:

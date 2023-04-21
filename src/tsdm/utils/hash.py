@@ -26,7 +26,7 @@ import warnings
 from collections import Counter
 from collections.abc import Hashable, Iterable, Mapping
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -169,8 +169,9 @@ def hash_array(
 
 
 def validate_file_hash(
-    file: PathLike | Mapping[str, PathLike],
-    reference_hash: None | str | Mapping[str, tuple[str, str]] = None,
+    file: PathLike | Sequence[PathLike] | Mapping[str, PathLike],
+    /,
+    reference: None | str | Mapping[str, tuple[str, str]] = None,
     *,
     hash_algorithm: str | None = None,
     logger: logging.Logger = __logger__,
@@ -181,7 +182,7 @@ def validate_file_hash(
 
     Arguments:
         file: The file to validate. If a mapping is given, every file in the mapping is validated.
-        reference_hash: The reference hash value, or a mapping from file names to
+        reference: The reference hash value, or a mapping from file names to
             (hash_algorithm, hash_value) pairs.
         hash_algorithm: The hash algorithm to use, if no reference hash is given.
         logger: Optional logger to use.
@@ -200,20 +201,20 @@ def validate_file_hash(
 
     if isinstance(file, Mapping):
         for key, value in file.items():
-            if isinstance(reference_hash, Mapping):
-                alg, ref = reference_hash.get(key, (None, None))
+            if isinstance(reference, Mapping):
+                alg, ref = reference.get(key, (None, None))
                 validate_file_hash(
                     value,
-                    reference_hash=ref,
+                    reference=ref,
                     hash_algorithm=alg,
                     logger=logger,
                     errors=errors,
                     **hash_kwargs,
                 )
-            elif reference_hash is None:
+            elif reference is None:
                 validate_file_hash(
                     value,
-                    reference_hash=reference_hash,
+                    reference=reference,
                     hash_algorithm=hash_algorithm,
                     logger=logger,
                     errors=errors,
@@ -223,6 +224,17 @@ def validate_file_hash(
                 raise ValueError(
                     "If a mapping of files is provided, reference_hash must be a mapping as well!"
                 )
+        return
+    elif isinstance(file, Sequence) and not isinstance(file, str | Path):
+        for f in file:
+            validate_file_hash(
+                f,
+                reference=reference,
+                hash_algorithm=hash_algorithm,
+                logger=logger,
+                errors=errors,
+                **hash_kwargs,
+            )
         return
 
     # code for single path
@@ -235,9 +247,9 @@ def validate_file_hash(
             stacklevel=2,
         )
 
-    if isinstance(reference_hash, Mapping):
-        hash_table = reference_hash
-        hash_algorithm, reference_hash = hash_table.get(
+    if isinstance(reference, Mapping):
+        hash_table = reference
+        hash_algorithm, reference = hash_table.get(
             str(file),
             hash_table.get(file.name, hash_table.get(file.stem, (None, None))),
         )  # try to match by full path, then by name, then by stem
@@ -245,7 +257,7 @@ def validate_file_hash(
     hash_algorithm = "sha256" if hash_algorithm is None else hash_algorithm
     hash_value = hash_file(file, hash_algorithm=hash_algorithm, **hash_kwargs)
 
-    if reference_hash is None:
+    if reference is None:
         msg = (
             f"No reference hash given for file {file.name!r}."
             f"The {hash_algorithm!r}-hash is {hash_value!r}."
@@ -256,10 +268,10 @@ def validate_file_hash(
             warnings.warn(msg, UserWarning, stacklevel=2)
         else:
             logger.info(msg)
-    elif hash_value != reference_hash:
+    elif hash_value != reference:
         msg = (
             f"File {file.name!r} failed to validate!"
-            f"File hash {hash_value!r} does not match reference {reference_hash!r}."
+            f"File hash {hash_value!r} does not match reference {reference!r}."
             f"Ignore this warning if the format is parquet."
         )
         if errors == "raise":
@@ -277,7 +289,8 @@ def validate_file_hash(
 
 def validate_table_hash(
     table: Table,
-    reference_hash: str | None,
+    /,
+    reference: str | None,
     *,
     hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,
@@ -299,17 +312,17 @@ def validate_table_hash(
 
     hash_value = hash_array(table, hash_algorithm=hash_algorithm, **hash_kwargs)
     name = f"{type(table)}<{table.shape}> {id(table)}"
-    if reference_hash is None:
+    if reference is None:
         warnings.warn(
             f"No reference hash given for array-like object {name!r}."
             f"The {hash_algorithm!r}-hash is {hash_value!r}.",
             RuntimeWarning,
             stacklevel=2,
         )
-    elif hash_value != reference_hash:
+    elif hash_value != reference:
         warnings.warn(
             f"Array-Like  object {name!r} failed to validate!"
-            f"Hash {hash_value!r} does not match reference {reference_hash!r}."
+            f"Hash {hash_value!r} does not match reference {reference!r}."
             f"Ignore this warning if the format is parquet.",
             RuntimeWarning,
             stacklevel=2,
@@ -323,7 +336,7 @@ def validate_table_hash(
         )
 
 
-def validate_table_schema(table: Table, reference_schema: TableSchema, /) -> None:
+def validate_table_schema(table: Table, /, reference_schema: TableSchema) -> None:
     """Validate the schema of a pandas object, given schema values from a table.
 
     Checks if the columns and dtypes of the table match the reference schema.
@@ -366,6 +379,7 @@ def validate_table_schema(table: Table, reference_schema: TableSchema, /) -> Non
 
 def validate_object_hash(
     obj: Any,
+    /,
     reference_hash: Any,
     *,
     hash_algorithm: Optional[str] = None,
@@ -378,7 +392,7 @@ def validate_object_hash(
         case str() | Path():
             validate_file_hash(
                 obj,
-                reference_hash=reference_hash,
+                reference_hash,
                 hash_algorithm=hash_algorithm,
                 logger=logger,
                 **hash_kwargs,
@@ -386,7 +400,7 @@ def validate_object_hash(
         case Table():
             validate_table_hash(
                 obj,
-                reference_hash=reference_hash,
+                reference_hash,
                 hash_algorithm=hash_algorithm,
                 logger=logger,
                 **hash_kwargs,
@@ -399,7 +413,7 @@ def validate_object_hash(
             for key, value in obj.items():
                 validate_object_hash(
                     value,
-                    reference_hash=reference_hash.get(key, None),
+                    reference_hash.get(key, None),
                     hash_algorithm=hash_algorithm,
                     logger=logger,
                     **hash_kwargs,
@@ -414,7 +428,7 @@ def validate_object_hash(
             for value, ref_hash in zip(obj, reference_hash):
                 validate_object_hash(
                     value,
-                    reference_hash=ref_hash,
+                    ref_hash,
                     hash_algorithm=hash_algorithm,
                     logger=logger,
                     **hash_kwargs,
