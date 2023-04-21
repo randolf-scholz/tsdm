@@ -21,7 +21,6 @@ __all__ = ["MIMIC_III"]
 import os
 import subprocess
 from getpass import getpass
-from pathlib import Path
 from typing import Any
 
 from tsdm.datasets.base import MultiFrameDataset
@@ -59,8 +58,10 @@ class MIMIC_III(MultiFrameDataset):
     VERSION = r"1.0"
     RAWDATA_HASH = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
 
-    rawdata_files = "mimic-iv-1.0.zip"
-    rawdata_paths: Path
+    rawdata_files = ["mimic-iv-1.0.zip"]
+    rawdata_hashes = {
+        "mimic-iv-1.0.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd",
+    }
     # fmt: off
     dataset_files = {
         "ADMISSIONS"         : "mimic-iii-clinical-database-1.4/ADMISSIONS.csv.gz",

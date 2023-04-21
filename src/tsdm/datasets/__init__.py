@@ -20,6 +20,7 @@ Some design decisions:
 __all__ = [
     # Sub-Modules
     "base",
+    "timeseries",
     # Types
     "Dataset",
     "DATASET_OBJECT",
@@ -30,8 +31,6 @@ __all__ = [
     "SingleFrameDataset",
     "MultiFrameDataset",
     # Classes
-    "TimeSeriesDataset",
-    "TimeSeriesCollection",
     # Datasets
     "BeijingAirQuality",
     "ETT",
@@ -59,8 +58,6 @@ from tsdm.datasets.base import (
     BaseDataset,
     MultiFrameDataset,
     SingleFrameDataset,
-    TimeSeriesCollection,
-    TimeSeriesDataset,
 )
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
@@ -74,6 +71,7 @@ from tsdm.datasets.mimic_iv import MIMIC_IV
 from tsdm.datasets.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.datasets.physionet2012 import Physionet2012
 from tsdm.datasets.physionet2019 import Physionet2019
+from tsdm.datasets.timeseries import TimeSeriesCollection
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN
 from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019

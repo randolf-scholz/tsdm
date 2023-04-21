@@ -19,7 +19,6 @@ vital signs, laboratory results, and medications.
 __all__ = ["MIMIC_III_DeBrouwer2019"]
 
 
-from pathlib import Path
 from typing import Any, Literal, TypeAlias
 
 import pandas as pd
@@ -59,17 +58,24 @@ class MIMIC_III_DeBrouwer2019(MultiFrameDataset[KEY]):
     INFO_URL = r"https://physionet.org/content/mimiciii/1.4/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
-    RAWDATA_HASH = "8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
-    RAWDATA_SHAPE = (3082224, 7)
-    DATASET_HASH = {
-        "timeseries": "2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
-        "metadata": "4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
+
+    rawdata_files = ["complete_tensor.csv"]
+    rawdata_hashes = {
+        "complete_tensor.csv": "sha256:8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2",
     }
-    TABLE_SHAPE = {"timeseries": (552327, 96), "metadata": (96, 3)}
+    rawdata_schemas = {
+        "complete_tensor.csv": ((3082224, 7), None, None),
+    }
+    dataset_hashes = {
+        "timeseries": "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
+        "metadata": "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
+    }
+    table_schemas = {
+        "timeseries": ((552327, 96), None, None),
+        "metadata": ((96, 3), None, None),
+    }
 
     # dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
-    rawdata_files = "complete_tensor.csv"
-    rawdata_paths: Path
     KEYS = ["timeseries", "metadata"]
 
     timeseries: pd.DataFrame
