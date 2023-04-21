@@ -9,8 +9,6 @@ __all__ = [
     "BaseDatasetMetaClass",
     "SingleFrameDataset",
     "MultiFrameDataset",
-    "TimeSeriesDataset",
-    "TimeSeriesCollection",
     # Types
     "DATASET_OBJECT",
 ]
@@ -22,25 +20,22 @@ import subprocess
 import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Hashable, Iterator, Mapping, MutableMapping, Sequence
-from dataclasses import KW_ONLY, dataclass
+from collections.abc import Mapping, MutableMapping, Sequence
 from functools import cached_property, partial
 from pathlib import Path
 from typing import Any, ClassVar, Generic, Optional, TypeAlias, overload
 from urllib.parse import urlparse
 
 import pandas
-from pandas import DataFrame, Index, MultiIndex, Series
-from torch.utils.data import Dataset as TorchDataset
-from typing_extensions import Self
+from pandas import DataFrame, Series
 
 from tsdm.config import CONFIG
-from tsdm.types.aliases import Nested, PathLike
+from tsdm.types.aliases import Nested, PathLike, Schema
 from tsdm.types.variables import StringVar as Key
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.remote import download
-from tsdm.utils.strings import repr_dataclass, repr_mapping
+from tsdm.utils.strings import repr_mapping
 
 DATASET_OBJECT: TypeAlias = Series | DataFrame
 r"""Type hint for pandas objects."""
@@ -85,6 +80,16 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     r"""Abstract base class that all dataset must subclass.
 
     Implements methods that are available for all dataset classes.
+
+
+    We allow for systematic validation of the datasets.
+    Users can check the validity of the datasets by implementing the following attributes/properites:
+
+    - rawdata_hashes: Used to verify rawdata files after `download` and before `clean`.
+    - dataset_hashes: Used to verify cleaned dataset files after `clean` and before `load`.
+    - table_hashes: Used to verify in-memory tables after `load`.
+    - table_schemas: Used to verify in-memory tables after `load`.
+
     """
 
     BASE_URL: ClassVar[Optional[str]] = None
@@ -101,14 +106,16 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     # instance attribute
     __version__: str
     r"""Version of the dataset, keep empty for unversioned dataset."""
-    rawdata_hashes: Mapping[str, tuple[str, str]] = {}
+
+    # Validation - Implement on per dataset basis!
+    rawdata_hashes: Mapping[str, str] = NotImplemented
     r"""Hashes of the raw dataset file(s)."""
-    dataset_hashes: Mapping[Key, tuple[str, str]] = {}
+    dataset_hashes: Mapping[Key, str] = NotImplemented
     r"""Hashes of the cleaned dataset file(s)."""
-    table_hashes: Mapping[Key, tuple[str, str]] = {}
-    r"""Hashes of the cleaned dataset table(s)."""
-    table_schemas: Mapping[Key, dict[str, Any]] = {}
-    r"""Schema of the cleaned dataset table(s)."""
+    table_hashes: Mapping[Key, str] = NotImplemented
+    r"""Hashes of the in-memory cleaned dataset table(s)."""
+    table_schemas: Mapping[Key, Schema] = NotImplemented
+    r"""Schema of the in-memory cleaned dataset table(s)."""
 
     def __init__(
         self,
@@ -151,23 +158,26 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
 
     @property
     @abstractmethod
-    def dataset_files(self) -> dict[Key, PathLike]:
+    def dataset_files(self) -> Mapping[Key, PathLike]:
         r"""Relative paths to the cleaned dataset file(s)."""
 
     @property
     @abstractmethod
-    def rawdata_files(self) -> list[PathLike]:
+    def rawdata_files(self) -> Sequence[PathLike]:
         r"""Relative paths to the raw dataset file(s)."""
 
     @cached_property
-    def dataset_paths(self) -> dict[Key, Path]:
+    def dataset_paths(self) -> Mapping[Key, Path]:
         r"""Absolute paths to the raw dataset file(s)."""
         return prepend_path(self.dataset_files, parent=self.RAWDATA_DIR)
 
     @cached_property
-    def rawdata_paths(self) -> list[Path]:
+    def rawdata_paths(self) -> Mapping[Key, list[Path]]:
         r"""Absolute paths to the raw dataset file(s)."""
-        return prepend_path(self.rawdata_files, parent=self.RAWDATA_DIR)
+        if self.rawdata_mapping is not NotImplemented:
+            return prepend_path(self.rawdata_mapping, parent=self.RAWDATA_DIR)
+        else:
+            return {None: prepend_path(self.rawdata_files, parent=self.RAWDATA_DIR)}
 
     def rawdata_files_exist(self) -> bool:
         r"""Check if raw data files exist."""
@@ -455,7 +465,7 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
         return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.KEYS}
 
     @cached_property
-    def dataset_paths(self) -> Mapping[Key, Path]:
+    def dataset_paths(self) -> dict[Key, Path]:
         r"""Absolute paths to the dataset files for each key."""
         return {
             key: self.DATASET_DIR / file for key, file in self.dataset_files.items()
@@ -475,7 +485,7 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
 
     @abstractmethod
     def clean_table(self, key: Key) -> DATASET_OBJECT | None:
-        r"""Clean the selected DATASET_OBJECT."""
+        r"""Create thecleaned  table for the given key."""
 
     def clean(
         self,
@@ -666,208 +676,3 @@ class MultiFrameDataset(FrameDataset, Generic[Key]):
         self.LOGGER.debug("Starting to download dataset <%s>", key)
         self.download_table(key=key)
         self.LOGGER.debug("Finished downloading dataset <%s>", key)
-
-
-@dataclass
-class TimeSeriesDataset(TorchDataset[Series]):
-    r"""Abstract Base Class for TimeSeriesDatasets.
-
-    A TimeSeriesDataset is a dataset that contains time series data and MetaData.
-    More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
-    """
-
-    timeseries: DataFrame
-    r"""The time series data."""
-
-    _: KW_ONLY
-
-    # Main Attributes
-    name: str = NotImplemented
-    r"""The name of the dataset."""
-    index: Index = NotImplemented
-    r"""The time-index of the dataset."""
-    metadata: Optional[DataFrame] = None
-    r"""The metadata of the dataset."""
-
-    # Space Descriptors
-    time_features: Optional[DataFrame] = None
-    r"""Data associated with the time such as measurement device, unit, etc."""
-    value_features: Optional[DataFrame] = None
-    r"""Data associated with each channel such as measurement device, unit, etc."""
-    metadata_features: Optional[DataFrame] = None
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
-
-    def __post_init__(self) -> None:
-        r"""Post init."""
-        if self.name is NotImplemented:
-            self.name = self.__class__.__name__
-        if self.index is NotImplemented:
-            self.index = self.timeseries.index.copy().unqiue()
-
-    def __len__(self) -> int:
-        r"""Return the number of timestamps."""
-        return len(self.index)
-
-    @overload
-    def __getitem__(self, key: Hashable) -> Series:
-        ...
-
-    @overload
-    def __getitem__(self, key: Index | slice | list[Hashable]) -> DataFrame:
-        ...
-
-    def __getitem__(self, key):
-        r"""Get item from timeseries."""
-        return self.timeseries.loc[key]
-
-    def __iter__(self) -> Iterator[Series]:
-        r"""Iterate over the timestamps."""
-        return iter(self.index)
-
-    def __repr__(self) -> str:
-        r"""Get the representation of the collection."""
-        return repr_dataclass(self, title=self.name)
-
-
-@dataclass
-class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
-    r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
-
-    A TimeSeriesCollection is a tuple (I, D, G) consiting of
-
-    - index $I$
-    - indexed TimeSeriesDatasets $D = { (TS_i, M_i) ∣ i ∈ I }$
-    - global variables $G∈𝓖$
-    """
-
-    timeseries: DataFrame
-    r"""The time series data."""
-
-    _: KW_ONLY
-
-    # Main attributes
-    name: str = NotImplemented
-    r"""The name of the collection."""
-    index: Index = NotImplemented
-    r"""The index of the collection."""
-
-    metadata: Optional[DataFrame] = None
-    r"""The metadata of the dataset."""
-    global_metadata: Optional[DataFrame] = None
-    r"""The global data of the dataset."""
-
-    # Space descriptors
-    index_features: Optional[DataFrame] = None
-    r"""Data associated with each index such as measurement device, unit, etc."""
-    time_features: Optional[DataFrame] = None
-    r"""Data associated with the time such as measurement device, unit, etc."""
-    value_features: Optional[DataFrame] = None
-    r"""Data associated with each channel such as measurement device, unit, etc."""
-    metadata_features: Optional[DataFrame] = None
-    r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    global_features: Optional[DataFrame] = None
-    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
-
-    def __post_init__(self) -> None:
-        r"""Post init."""
-        if self.name is NotImplemented:
-            if hasattr(self.timeseries, "name") and self.timeseries.name is not None:
-                self.name = str(self.timeseries.name)
-            else:
-                self.name = self.__class__.__name__
-        if self.index is NotImplemented:
-            if self.metadata is not None:
-                self.index = self.metadata.index.copy().unique()
-            elif isinstance(self.timeseries.index, MultiIndex):
-                self.index = self.timeseries.index.copy().droplevel(-1).unique()
-                # self.timeseries = self.timeseries.droplevel(0)
-            else:
-                self.index = self.timeseries.index.copy().unique()
-
-    @overload
-    def __getitem__(self, key: Key) -> TimeSeriesDataset:
-        ...
-
-    @overload
-    def __getitem__(self, key: slice) -> Self:
-        ...
-
-    def __getitem__(self, key):
-        r"""Get the timeseries and metadata of the dataset at index `key`."""
-        # TODO: There must be a better way to slice this
-        if (
-            isinstance(key, Series)
-            and isinstance(key.index, Index)
-            and not isinstance(key.index, MultiIndex)
-        ):
-            ts = self.timeseries.loc[key[key].index]
-        else:
-            ts = self.timeseries.loc[key]
-
-        # make sure metadata is always DataFrame.
-        if self.metadata is None:
-            md = None
-        elif isinstance(_md := self.metadata.loc[key], Series):
-            md = self.metadata.loc[[key]]
-        else:
-            md = _md
-
-        if self.time_features is None:
-            tf = None
-        elif self.time_features.index.equals(self.index):
-            tf = self.time_features.loc[key]
-        else:
-            tf = self.time_features
-
-        if self.value_features is None:
-            vf = None
-        elif self.value_features.index.equals(self.index):
-            vf = self.value_features.loc[key]
-        else:
-            vf = self.value_features
-
-        if self.metadata_features is None:
-            mf = None
-        elif self.metadata_features.index.equals(self.index):
-            mf = self.metadata_features.loc[key]
-        else:
-            mf = self.metadata_features
-
-        if isinstance(ts.index, MultiIndex):
-            index = ts.index.droplevel(-1).unique()
-            return TimeSeriesCollection(
-                name=self.name,
-                index=index,
-                timeseries=ts,
-                metadata=md,
-                time_features=tf,
-                value_features=vf,
-                metadata_features=mf,
-                global_metadata=self.global_metadata,
-                global_features=self.global_features,
-                index_features=self.index_features,
-            )
-
-        return TimeSeriesDataset(
-            name=self.name,
-            index=ts.index,
-            timeseries=ts,
-            metadata=md,
-            time_features=tf,
-            value_features=vf,
-            metadata_features=mf,
-        )
-
-    def __len__(self) -> int:
-        r"""Get the length of the collection."""
-        return len(self.index)
-
-    def __iter__(self) -> Iterator[Key]:
-        r"""Iterate over the collection."""
-        return iter(self.index)
-        # for key in self.index:
-        #     yield self[key]
-
-    def __repr__(self) -> str:
-        r"""Get the representation of the collection."""
-        return repr_dataclass(self, title=self.name)

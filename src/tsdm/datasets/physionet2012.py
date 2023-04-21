@@ -152,7 +152,6 @@ import os
 import tarfile
 import tempfile
 from collections.abc import Mapping
-from pathlib import Path
 from typing import IO, Any, Literal, TypeAlias
 
 import numpy as np
@@ -314,14 +313,16 @@ class Physionet2012(MultiFrameDataset[KEY]):
     INFO_URL = r"https://archive.physionet.org/challenge/2012/"
     r"""HTTP address containing additional information about the dataset."""
 
-    RAWDATA_HASH = {
-        "set-a.tar.gz": "8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920",
-        "set-b.tar.gz": "b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
-        "set-c.tar.gz": "a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
+    rawdata_hashes = {
+        "set-a.tar.gz": "sha256:8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920",
+        "set-b.tar.gz": "sha256:b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
+        "set-c.tar.gz": "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
     }
-
-    rawdata_files = {"A": "set-a.tar.gz", "B": "set-b.tar.gz", "C": "set-c.tar.gz"}
-    rawdata_paths: dict[str, Path]
+    rawdata_files = {
+        "A": "set-a.tar.gz",
+        "B": "set-b.tar.gz",
+        "C": "set-c.tar.gz",
+    }
     unravel_triplets: bool
     KEYS = ["A", "B", "C"]
 

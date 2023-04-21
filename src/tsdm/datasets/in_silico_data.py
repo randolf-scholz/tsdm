@@ -30,11 +30,14 @@ class InSilicoData(SingleFrameDataset):
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """
 
-    RAWDATA_HASH = "ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba"
     DATASET_HASH = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
     DATASET_SHAPE = (5206, 7)
     TABLE_HASH = 652930435272677160
-    rawdata_files = "in_silico.zip"
+
+    rawdata_files = ["in_silico.zip"]
+    rawdata_hashes = {
+        "in_silico.zip": "sha256:ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba",
+    }
 
     @cached_property
     def index(self) -> pd.Index:

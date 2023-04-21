@@ -9,7 +9,6 @@ __all__ = [
 ]
 
 import importlib
-from pathlib import Path
 from typing import Literal, TypeAlias
 
 import pandas
@@ -167,21 +166,21 @@ class USHCN(MultiFrameDataset[KEY]):
     r"""HTTP address containing additional information about the dataset."""
     KEYS = ["us_daily", "states", "stations"]
     r"""The names of the DataFrames associated with this dataset."""
-    RAWDATA_HASH = {
-        "data_format.txt": "0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
-        "ushcn-stations.txt": "002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
-        "station_file_format.txt": "4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
-        "us.txt.gz": "4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
+    rawdata_hashes = {
+        "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
+        "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
+        "station_file_format.txt": "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
+        "us.txt.gz": "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
     }
-    DATASET_HASH = {
-        "us_daily": "03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
-        "states": "388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
-        "stations": "1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
+    dataset_hashes = {
+        "us_daily": "sha256:03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
+        "states": "sha256:388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
+        "stations": "sha256:1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
     }
-    TABLE_SHAPE = {
-        "us_daily": (204771562, 5),
-        "states": (48, 3),
-        "stations": (1218, 9),
+    table_schemas = {
+        "us_daily": ((204771562, 5), None, None),
+        "states": ((48, 3), None, None),
+        "stations": ((1218, 9), None, None),
     }
     index = ["us_daily", "states", "stations"]
     rawdata_files = {
@@ -191,7 +190,6 @@ class USHCN(MultiFrameDataset[KEY]):
         "us_daily": "us.txt.gz",
         "states": None,
     }
-    rawdata_paths: dict[str, Path]
 
     def clean_table(self, key: KEY = "us_daily") -> DataFrame:
         if key == "us_daily":

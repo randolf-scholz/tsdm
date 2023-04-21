@@ -18,8 +18,6 @@ MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad se
 __all__ = ["MIMIC_IV_Bilos2021"]
 
 
-from pathlib import Path
-
 import numpy as np
 import pyarrow.csv
 
@@ -46,13 +44,21 @@ class MIMIC_IV_Bilos2021(SingleFrameDataset):
     INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
-    TABLE_HASH = -5464950709022187442
-    RAWDATA_HASH = "f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
-    DATASET_SHAPE = (2485649, 102)
-    RAWDATA_SHAPE = (2485649, 206)
-    dataset_files = "timeseries.parquet"
-    rawdata_files = r"full_dataset.csv"
-    rawdata_paths: Path
+
+    rawdata_files = ["full_dataset.csv"]
+    rawdata_hashes = {
+        "full_dataset.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
+    }
+    rawdata_schemas = {
+        "full_dataset.csv": ((2485649, 206), None, None),
+    }
+    dataset_files = ["timeseries.parquet"]
+    table_hashes = {
+        "timeseries": "pandas:-5464950709022187442",
+    }
+    table_schemas = {
+        "timeseries": ((2485649, 102), None, None),
+    }
     index = ["timeseries"]
 
     def clean_table(self) -> None:

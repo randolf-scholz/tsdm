@@ -50,7 +50,6 @@ M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference 
 __all__ = ["Traffic"]
 
 from io import StringIO
-from pathlib import Path
 from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
@@ -91,16 +90,18 @@ class Traffic(MultiFrameDataset[KEY]):
     r"""HTTP address containing additional information about the dataset."""
     KEYS = ["timeseries", "labels", "randperm", "invperm"]
     r"""The names of the DataFrames associated with this dataset."""
-    RAWDATA_HASH = "371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
-    DATASET_HASH = {
+
+    rawdata_files = ["PEMS-SF.zip"]
+    rawdata_hashes = {
+        "PEMS-SF.zip": "sha256:371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e",
+    }
+    dataset_hashes = {
         "timeseries": "acb7f2a37e14691d67a325e18eecf88c22bc4c175f1a11b5566a07fdf2cd8f62",
         "labels": "c26dc7683548344c5b71ef30d551b6e3f0e726e0d505f45162fde167de7b51cf",
         "randperm": "4d8fa113fd20e397b2802bcc851a8dca861d3e8b806be490a6dff3e0c112f613",
         "invperm": "2838f7df33a292830acf09a3870b495ca0e5524f085aea0b66452248012c9817",
     }
-    rawdata_files = "PEMS-SF.zip"
-    r"""The name of the zip file containing the raw data."""
-    rawdata_paths: Path
+
     timeseries: DataFrame
     labels: DataFrame
     randperm: DataFrame

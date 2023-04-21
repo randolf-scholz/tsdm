@@ -20,7 +20,6 @@ __all__ = ["MIMIC_IV"]
 import os
 import subprocess
 from getpass import getpass
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -48,11 +47,12 @@ class MIMIC_IV(MultiFrameDataset):
     INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
-    VERSION = r"1.0"
-    RAWDATA_HASH = "dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
 
-    rawdata_files = "mimic-iv-1.0.zip"
-    rawdata_paths: Path
+    __version__ = "1.0"
+    rawdata_files = ["mimic-iv-1.0.zip"]
+    rawdata_hashes = {
+        "mimic-iv-1.0.zip": "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+    }
 
     # fmt: off
     internal_files = {

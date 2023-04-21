@@ -10,13 +10,13 @@ __all__ = [
 ]
 
 import pickle
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
 
-from tsdm.datasets.base import MultiFrameDataset, TimeSeriesCollection
+from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.timeseries import TimeSeriesCollection
 from tsdm.utils.constants import NULL_VALUES
 
 # fmt: off
@@ -243,22 +243,22 @@ class KIWI_RUNS(MultiFrameDataset):
     BASE_URL = (
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/fGFEJicrcjsxDBd/download/"
     )
-    RAWDATA_HASH = r"dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181"
 
-    TABLE_HASH = {
-        "timeseries": 7423431600366696406,
-        "metadata": 2037390744336738142,
-        "time_features": 4775909302393294764,
-        "value_features": 2922380847858661758,
-        "metadata_features": 4215379263850919231,
+    table_hashes = {
+        "timeseries": "pandas:7423431600366696406",
+        "metadata": "pandas:2037390744336738142",
+        "time_features": "pandas:4775909302393294764",
+        "value_features": "pandas:2922380847858661758",
+        "metadata_features": "pandas:4215379263850919231",
     }
 
-    rawdata_files = "kiwi_experiments.pk"
-    rawdata_paths: Path
+    rawdata_files = ["kiwi_experiments.pk"]
+    rawdata_hashes = {
+        "kiwi_experiments.pk": "sha256:dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181",
+    }
 
     timeseries: DataFrame
     metadata: DataFrame
-
     time_features: DataFrame
     value_features: DataFrame
     metadata_features: DataFrame

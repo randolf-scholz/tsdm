@@ -133,7 +133,7 @@ from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler as TorchSampler
 from typing_extensions import Self
 
-from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
 from tsdm.types.variables import KeyVar as K
 from tsdm.utils import LazyDict
