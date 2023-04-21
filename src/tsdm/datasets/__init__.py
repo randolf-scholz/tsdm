@@ -51,6 +51,7 @@ __all__ = [
 ]
 
 from tsdm.datasets import base
+from tsdm.datasets._deprecated_kiwi_runs_old import KIWI_RUNS_OLD
 from tsdm.datasets.base import (
     DATASET_OBJECT,
     BaseDataset,
@@ -63,7 +64,6 @@ from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_runs import KIWI_RUNS, KiwiDataset
-from tsdm.datasets.kiwi_runs_old import KIWI_RUNS_OLD
 from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.datasets.mimic_iv import MIMIC_IV
