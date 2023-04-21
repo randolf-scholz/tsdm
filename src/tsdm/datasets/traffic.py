@@ -57,7 +57,7 @@ import numpy as np
 import pandas
 from pandas import DataFrame, Series
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
 def _reformat(s: str, replacements: dict) -> str:
@@ -72,7 +72,7 @@ def _reformat(s: str, replacements: dict) -> str:
 KEY: TypeAlias = Literal["timeseries", "labels", "randperm", "invperm"]
 
 
-class Traffic(MultiFrameDataset[KEY]):
+class Traffic(MultiTableDataset[KEY]):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+

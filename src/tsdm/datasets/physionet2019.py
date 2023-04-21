@@ -170,10 +170,10 @@ import pandas as pd
 from pandas import DataFrame
 from tqdm.autonotebook import tqdm
 
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import SingleTableDataset
 
 
-class Physionet2019(SingleFrameDataset):
+class Physionet2019(SingleTableDataset):
     r"""Physionet Challenge 2019.
 
     Each training data file provides a table with measurements over time. Each column of the table
@@ -206,10 +206,7 @@ class Physionet2019(SingleFrameDataset):
     INFO_URL = r"https://physionet.org/content/challenge-2019/"
     r"""HTTP address containing additional information about the dataset"""
 
-    rawdata_files: dict[str, str] = {
-        "A": "training_setA.zip",
-        "B": "training_setB.zip",
-    }
+    rawdata_files = ["training_setA.zip", "training_setB.zip"]
     rawdata_hashes = {
         "training_setA.zip": "sha256:c0def317798312e4facc0f33ac0202b3a34f412052d9096e8b122b4d3ecb7935",
         "training_setB.zip": "sha256:8a88d69a5f64bc9a87d869f527fcc2741c0712cb9a7cb1f5cdcb725336b4c8cc",

@@ -21,10 +21,10 @@ __all__ = ["MIMIC_IV_Bilos2021"]
 import numpy as np
 import pyarrow.csv
 
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import SingleTableDataset
 
 
-class MIMIC_IV_Bilos2021(SingleFrameDataset):
+class MIMIC_IV_Bilos2021(SingleTableDataset):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and

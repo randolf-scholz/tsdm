@@ -28,8 +28,8 @@ __all__ = [
     "DATASETS",
     # ABCs
     "BaseDataset",
-    "SingleFrameDataset",
-    "MultiFrameDataset",
+    "SingleTableDataset",
+    "MultiTableDataset",
     # Classes
     # Datasets
     "BeijingAirQuality",
@@ -55,8 +55,8 @@ from tsdm.datasets.base import (
     DATASET_OBJECT,
     BaseDataset,
     Dataset,
-    MultiFrameDataset,
-    SingleFrameDataset,
+    MultiTableDataset,
+    SingleTableDataset,
 )
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity

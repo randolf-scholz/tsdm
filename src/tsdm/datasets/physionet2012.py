@@ -158,7 +158,7 @@ import numpy as np
 import pandas as pd
 from tqdm.autonotebook import tqdm
 
-from tsdm.datasets.base import DATASET_OBJECT, MultiFrameDataset
+from tsdm.datasets.base import DATASET_OBJECT, MultiTableDataset
 from tsdm.encoders import TripletDecoder
 from tsdm.types.aliases import PathLike
 
@@ -240,7 +240,7 @@ def read_physionet_record(
 KEY: TypeAlias = Literal["A", "B", "C"]
 
 
-class Physionet2012(MultiFrameDataset[KEY]):
+class Physionet2012(MultiTableDataset[KEY]):
     r"""Physionet Challenge 2012.
 
     Each training data file provides two tables.
@@ -313,18 +313,14 @@ class Physionet2012(MultiFrameDataset[KEY]):
     INFO_URL = r"https://archive.physionet.org/challenge/2012/"
     r"""HTTP address containing additional information about the dataset."""
 
+    rawdata_files = ["set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz"]
     rawdata_hashes = {
         "set-a.tar.gz": "sha256:8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920",
         "set-b.tar.gz": "sha256:b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
         "set-c.tar.gz": "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
     }
-    rawdata_files = {
-        "A": "set-a.tar.gz",
-        "B": "set-b.tar.gz",
-        "C": "set-c.tar.gz",
-    }
-    unravel_triplets: bool
     KEYS = ["A", "B", "C"]
+    unravel_triplets: bool
 
     @property
     def dataset_files(self) -> dict[KEY, str]:
@@ -392,7 +388,7 @@ class Physionet2012(MultiFrameDataset[KEY]):
         )
         time_series_df.columns.name = None
 
-        self.dataset[key] = metadata_df, time_series_df
+        self.tables[key] = metadata_df, time_series_df
 
         return metadata_df, time_series_df
 

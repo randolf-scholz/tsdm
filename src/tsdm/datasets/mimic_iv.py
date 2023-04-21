@@ -24,10 +24,10 @@ from typing import Any
 
 import pandas as pd
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
-class MIMIC_IV(MultiFrameDataset):
+class MIMIC_IV(MultiTableDataset):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and

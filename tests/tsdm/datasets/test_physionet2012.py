@@ -17,7 +17,7 @@ def test_physionet_2012() -> None:
     """Test the PhysioNet 2012 dataset."""
     LOGGER = __logger__.getChild(Physionet2012.__name__)
     LOGGER.info("Testing.")
-    dataset = Physionet2012().dataset
+    dataset = Physionet2012().tables
     metadata, timeseries = dataset["A"]
     assert isinstance(metadata, DataFrame)
     assert isinstance(timeseries, DataFrame)

@@ -150,7 +150,7 @@ class ETT_Zhou2021(OldBaseTask):
     @cached_property
     def dataset(self) -> DataFrame:
         ds = ETT()
-        return ds.dataset[self.dataset_id]
+        return ds.tables[self.dataset_id]
 
     @cached_property
     def test_metric(self) -> Callable[[Tensor, Tensor], Tensor]:

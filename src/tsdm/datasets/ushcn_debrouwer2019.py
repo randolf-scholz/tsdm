@@ -13,12 +13,12 @@ import logging
 import pandas
 from pandas import DataFrame
 
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import SingleTableDataset
 
 __logger__ = logging.getLogger(__name__)
 
 
-class USHCN_DeBrouwer2019(SingleFrameDataset):
+class USHCN_DeBrouwer2019(SingleTableDataset):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
 
     References:

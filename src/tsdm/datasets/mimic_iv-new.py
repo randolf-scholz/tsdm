@@ -76,7 +76,7 @@ from typing import Any
 import pandas as pd
 import pyarrow as pa
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 
 ID_TYPE = "uint32"
 VALUE_TYPE = "float32"
@@ -120,7 +120,7 @@ TRUE_VALUES = ["Y", "Yes", "1"]
 FALSE_VALUES = ["N", "No", "0"]
 
 
-class MIMIC_IV(MultiFrameDataset):
+class MIMIC_IV(MultiTableDataset):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and

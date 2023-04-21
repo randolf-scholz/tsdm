@@ -47,10 +47,10 @@ from zipfile import ZipFile
 
 from pandas import DataFrame, read_csv
 
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import SingleTableDataset
 
 
-class Electricity(SingleFrameDataset):
+class Electricity(SingleTableDataset):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+

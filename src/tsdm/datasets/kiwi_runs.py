@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 from tsdm.datasets.timeseries import TimeSeriesCollection
 from tsdm.utils.constants import NULL_VALUES
 
@@ -207,7 +207,7 @@ null_values = NULL_VALUES + [
 ]
 
 
-class KIWI_RUNS(MultiFrameDataset):
+class KIWI_RUNS(MultiTableDataset):
     r"""KIWI RUN Data.
 
     The cleaned data will consist of 3 parts:
