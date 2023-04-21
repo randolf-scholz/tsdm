@@ -1,12 +1,15 @@
 """Collection of Useful Type Aliases."""
 
 __all__ = [
+    # namedtuple
+    "schema",
     # Custom Type Aliases
     "Nested",
     "Map",
     "PandasObject",
     "PathLike",
     "ScalarDType",
+    "Schema",
     # Configuration
     "JSON",
     "TOML",
@@ -31,7 +34,7 @@ __all__ = [
 import os
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from pathlib import Path
-from typing import Any, Callable, TypeAlias
+from typing import Any, Callable, NamedTuple, Optional, TypeAlias
 
 import numpy as np
 import torch
@@ -44,6 +47,18 @@ from tsdm.types.variables import Key_contra
 from tsdm.types.variables import KeyVar as K
 from tsdm.types.variables import Value_co
 from tsdm.types.variables import ValueVar as V
+
+
+class schema(NamedTuple):
+    """Table schema."""
+
+    shape: Optional[tuple[int, int]] = None
+    """Shape of the table."""
+    columns: Optional[Sequence[str]] = None
+    """Column names of the table."""
+    dtypes: Optional[Sequence[str]] = None
+    """Data types of the columns."""
+
 
 # region Custom Type Aliases -----------------------------------------------------------
 Map: TypeAlias = Lookup[Key_contra, Value_co] | Callable[[Key_contra], Value_co]
@@ -58,6 +73,12 @@ ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]
 r"""TypeAlias for scalar types."""
 ContainerLike: TypeAlias = T | Lookup[int, T] | Callable[[int], T]
 r"""Type Alias for container-like objects."""
+Schema: TypeAlias = tuple[
+    tuple[int, int] | None,  # shape
+    Sequence[str] | None,  # column names
+    Sequence[str] | None,  # column types
+]
+r"""Type Alias for table schemas."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
 
@@ -96,4 +117,6 @@ TOML: TypeAlias = None | str | int | float | bool | list["TOML"] | dict[str, "TO
 r"""Type Alias for JSON-Like objects."""
 YAML: TypeAlias = None | str | int | float | bool | list["YAML"] | dict[str, "YAML"]
 r"""Type Alias for JSON-Like objects."""
+
+
 # endregion Nested Configuration ----------------------------------------------
