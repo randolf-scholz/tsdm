@@ -2,6 +2,7 @@ r"""KIWI Run Data.
 
 Extracted from iLab DataBase.
 """
+# mypy: ignore-errors
 
 __all__ = [
     # Classes
