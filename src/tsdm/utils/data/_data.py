@@ -16,7 +16,7 @@ import logging
 import pandas as pd
 from pandas import DataFrame, Index, Series
 
-from tsdm.types.variables import PandasVar
+from tsdm.types.variables import pandas_var
 
 __logger__ = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def vlookup_uniques(df: DataFrame, /, values: Series) -> dict[str, list]:
     return uniques
 
 
-def aggregate_nondestructive(df: PandasVar) -> PandasVar:
+def aggregate_nondestructive(df: pandas_var) -> pandas_var:
     r"""Aggregate multiple simulataneous measurements in a non-destructive way.
 
     Given a `DataFrame` of size $m×k$, this will construct a new DataFrame of size $m'×k$,

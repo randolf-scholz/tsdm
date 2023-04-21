@@ -2,61 +2,61 @@ r"""Generic types for type hints etc."""
 
 __all__ = [
     # Custom Type Aliases
-    "AliasVar",
-    "DtypeVar",
-    "PandasVar",
-    "TensorVar",
-    "TorchModuleVar",
+    "alias_var",
+    "dtype_var",
+    "pandas_var",
+    "tensor_var",
+    "torch_module_var",
     # Builtin Type Variables
-    "ClassVar",
-    "Class_co",
-    "Class_contra",
-    "DictVar",
-    "Dict_co",
-    "Dict_contra",
-    "ModuleVar",
-    "Module_co",
-    "Module_contra",
-    "ListVar",
-    "List_co",
-    "List_contra",
-    "ObjectVar",
-    "Object_co",
-    "Object_contra",
-    "PathVar",
-    "Path_co",
-    "Path_contra",
-    "SetVar",
-    "Set_co",
-    "Set_contra",
-    "StringVar",
-    "String_co",
-    "String_contra",
-    "TupleVar",
-    "Tuple_co",
-    "Tuple_contra",
+    "class_var",
+    "class_co",
+    "class_contra",
+    "dict_var",
+    "dict_co",
+    "dict_contra",
+    "module_var",
+    "module_co",
+    "module_contra",
+    "list_var",
+    "list_co",
+    "list_contra",
+    "object_var",
+    "object_co",
+    "object_contra",
+    "path_var",
+    "path_co",
+    "path_contra",
+    "set_var",
+    "set_co",
+    "set_contra",
+    "str_var",
+    "str_co",
+    "str_contra",
+    "tuple_var",
+    "tuple_co",
+    "tuple_contra",
     # Generic Type Variables
-    "AnyVar",
-    "Any_co",
-    "Any_contra",
-    "Any2Var",
-    "Any2_co",
-    "Any2_contra",
-    "InputVar_contra",
-    "KeyVar",
-    "Key_co",
-    "Key_contra",
-    "Key2Var",
-    "Key2_co",
-    "Key2_contra",
-    "NestedKeyVar",
-    "NestedKey_co",
-    "NestedKey_contra",
-    "ParameterVar",
-    "ReturnVar_co",
-    "ValueVar",
-    "Value_co",
-    "Value_contra",
+    "any_var",
+    "any_co",
+    "any_contra",
+    "any2_var",
+    "any2_co",
+    "any2_contra",
+    "input_var_contra",
+    "key_var",
+    "key_co",
+    "key_contra",
+    "key2_var",
+    "key2_co",
+    "key2_contra",
+    "nested_key_var",
+    "nested_key_co",
+    "nested_key_contra",
+    "parameter_spec",
+    "return_var_co",
+    "value_var",
+    "value_co",
+    "value_contra",
 ]
 
 from collections.abc import Hashable
@@ -69,136 +69,138 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor, nn
 
 # region Custom Type Variables ---------------------------------------------------------
-AliasVar = TypeVar("AliasVar", bound=GenericAlias)
+alias_var = TypeVar("alias_var", bound=GenericAlias)
 r"""Type Variable `TypeAlias`."""
-DtypeVar = TypeVar("DtypeVar")
+dtype_var = TypeVar("dtype_var")
 r"""Type Variable for `Dtype`."""
-PandasVar = TypeVar("PandasVar", Index, Series, DataFrame, MultiIndex)
+pandas_var = TypeVar("pandas_var", Index, Series, DataFrame, MultiIndex)
 r"""Type Variable for `pandas` objects."""
-TensorVar = TypeVar("TensorVar", Tensor, ndarray)
+tensor_var = TypeVar("tensor_var", Tensor, ndarray)
 r"""Type Variable for `torch.Tensor` or `numpy.ndarray` objects."""
-TorchModuleVar = TypeVar("TorchModuleVar", bound=nn.Module)
+torch_module_var = TypeVar("torch_module_var", bound=nn.Module)
 r"""Type Variable for `torch.nn.Modules`."""
 # endregion Custom Type Variables ------------------------------------------------------
 
 
 # Type variables of Built-in Types
 # region Builtins ----------------------------------------------------------------------
-ClassVar = TypeVar("ClassVar", bound=type)
+class_var = TypeVar("class_var", bound=type)
 r"""Type Variable for `type`."""
-Class_co = TypeVar("Class_co", bound=type, covariant=True)
+class_co = TypeVar("class_co", bound=type, covariant=True)
 r"""Type Variable for `type`."""
-Class_contra = TypeVar("Class_contra", bound=type, contravariant=True)
+class_contra = TypeVar("class_contra", bound=type, contravariant=True)
 r"""Type Variable for `type`."""
 
-DictVar = TypeVar("DictVar", bound=dict)
+dict_var = TypeVar("dict_var", bound=dict)
 r"""Type Variable for `dict`."""
-Dict_co = TypeVar("Dict_co", bound=dict, covariant=True)
+dict_co = TypeVar("dict_co", bound=dict, covariant=True)
 r"""Covariant type variable for `dict`."""
-Dict_contra = TypeVar("Dict_contra", bound=dict, contravariant=True)
+dict_contra = TypeVar("dict_contra", bound=dict, contravariant=True)
 r"""Contravariant type variable for `dict`."""
 
-ModuleVar = TypeVar("ModuleVar", bound=ModuleType)
+module_var = TypeVar("module_var", bound=ModuleType)
 r"""Type Variable for `ModuleType`."""
-Module_co = TypeVar("Module_co", bound=ModuleType, covariant=True)
+module_co = TypeVar("module_co", bound=ModuleType, covariant=True)
 r"""Covariant type variable for `ModuleType`."""
-Module_contra = TypeVar("Module_contra", bound=ModuleType, contravariant=True)
+module_contra = TypeVar("module_contra", bound=ModuleType, contravariant=True)
 r"""Contravariant type variable for `ModuleType`."""
 
-ListVar = TypeVar("ListVar", bound=list)
+list_var = TypeVar("list_var", bound=list)
 r"""Type Variable for `list`."""
-List_co = TypeVar("List_co", bound=list, covariant=True)
+list_co = TypeVar("list_co", bound=list, covariant=True)
 r"""Covariant type variable for `list`."""
-List_contra = TypeVar("List_contra", bound=list, contravariant=True)
+list_contra = TypeVar("list_contra", bound=list, contravariant=True)
 r"""Contravariant type variable for `list`."""
 
-ObjectVar = TypeVar("ObjectVar", bound=object)
+object_var = TypeVar("object_var", bound=object)
 r"""Type Variable for `object`."""
-Object_co = TypeVar("Object_co", bound=object, covariant=True)
+object_co = TypeVar("object_co", bound=object, covariant=True)
 r"""Covariant type variable for `object`."""
-Object_contra = TypeVar("Object_contra", bound=object, contravariant=True)
+object_contra = TypeVar("object_contra", bound=object, contravariant=True)
 r"""Contravariant type variable for `object`."""
 
-PathVar = TypeVar("PathVar", bound=Path)
+path_var = TypeVar("path_var", bound=Path)
 r"""Type Variable for `Path`."""
-Path_co = TypeVar("Path_co", bound=Path, covariant=True)
+path_co = TypeVar("path_co", bound=Path, covariant=True)
 r"""Covariant type variable for `Path`."""
-Path_contra = TypeVar("Path_contra", bound=Path, contravariant=True)
+path_contra = TypeVar("path_contra", bound=Path, contravariant=True)
 r"""Contravariant type variable for `Path`."""
 
-SetVar = TypeVar("SetVar", bound=set)
+set_var = TypeVar("set_var", bound=set)
 r"""Type Variable for `set`."""
-Set_co = TypeVar("Set_co", bound=set, covariant=True)
+set_co = TypeVar("set_co", bound=set, covariant=True)
 r"""Covariant type variable for `set`."""
-Set_contra = TypeVar("Set_contra", bound=set, contravariant=True)
+set_contra = TypeVar("set_contra", bound=set, contravariant=True)
 r"""Contravariant type variable for `set`."""
 
-StringVar = TypeVar("StringVar", bound=str)
+str_var = TypeVar("str_var", bound=str)
 r"""Type Variable for `str`."""
-String_co = TypeVar("String_co", bound=str, covariant=True)
+str_co = TypeVar("str_co", bound=str, covariant=True)
 r"""Covariant type variable for `str`."""
-String_contra = TypeVar("String_contra", bound=str, contravariant=True)
+str_contra = TypeVar("str_contra", bound=str, contravariant=True)
 r"""Contravariant type variable for `str`."""
 
-TupleVar = TypeVar("TupleVar", bound=tuple)
+tuple_var = TypeVar("tuple_var", bound=tuple)
 r"""Type Variable for `tuple`."""
-Tuple_co = TypeVar("Tuple_co", bound=tuple, covariant=True)
+tuple_co = TypeVar("tuple_co", bound=tuple, covariant=True)
 r"""Covariant type variable for `tuple`."""
-Tuple_contra = TypeVar("Tuple_contra", bound=tuple, contravariant=True)
+tuple_contra = TypeVar("tuple_contra", bound=tuple, contravariant=True)
 r"""Contravariant type variable for `tuple`."""
 # endregion Builtins -------------------------------------------------------------------
 
 
 # Generic purpose type variables
 # region Generic Type Variables --------------------------------------------------------
-AnyVar = TypeVar("AnyVar")
+any_var = TypeVar("any_var")
 r"""Generic type variable."""
-Any_co = TypeVar("Any_co", covariant=True)
+any_co = TypeVar("any_co", covariant=True)
 r"""Generic covariant type variable."""
-Any_contra = TypeVar("Any_contra", contravariant=True)
+any_contra = TypeVar("any_contra", contravariant=True)
 r"""Generic contravariant type variable."""
 
-Any2Var = TypeVar("Any2Var")
+any2_var = TypeVar("any2_var")
 r"""Generic type variable."""
-Any2_co = TypeVar("Any2_co", covariant=True)
+any2_co = TypeVar("any2_co", covariant=True)
 r"""Generic covariant type variable."""
-Any2_contra = TypeVar("Any2_contra", contravariant=True)
+any2_contra = TypeVar("any2_contra", contravariant=True)
 r"""Generic contravariant type variable."""
 
-InputVar_contra = TypeVar("InputVar_contra", contravariant=True)
+# inputs are always contravariant!
+input_var_contra = TypeVar("input_var_contra", contravariant=True)
 r"""Generic type variable for inputs. Always contravariant."""
 
-KeyVar = TypeVar("KeyVar", bound=Hashable)
+key_var = TypeVar("key_var", bound=Hashable)
 r"""Type Variable for `Mapping` keys."""
-Key_co = TypeVar("Key_co", bound=Hashable, covariant=True)
+key_co = TypeVar("key_co", bound=Hashable, covariant=True)
 r"""Covariant type Variable for `Mapping` keys."""
-Key_contra = TypeVar("Key_contra", bound=Hashable, contravariant=True)
+key_contra = TypeVar("key_contra", bound=Hashable, contravariant=True)
 r""" Contravariant type Variable for `Mapping` keys."""
 
-Key2Var = TypeVar("Key2Var", bound=Hashable)
+key2_var = TypeVar("key2_var", bound=Hashable)
 r"""Type Variable for `Mapping` keys."""
-Key2_co = TypeVar("Key2_co", bound=Hashable, covariant=True)
+key2_co = TypeVar("key2_co", bound=Hashable, covariant=True)
 r"""Covariant type Variable for `Mapping` keys."""
-Key2_contra = TypeVar("Key2_contra", bound=Hashable, contravariant=True)
+key2_contra = TypeVar("key2_contra", bound=Hashable, contravariant=True)
 r""" Contravariant type Variable for `Mapping` keys."""
 
-NestedKeyVar = TypeVar("NestedKeyVar", bound=Hashable)
+nested_key_var = TypeVar("nested_key_var", bound=Hashable)
 r"""Type Variable for `Mapping` keys."""
-NestedKey_co = TypeVar("NestedKey_co", bound=Hashable, covariant=True)
+nested_key_co = TypeVar("nested_key_co", bound=Hashable, covariant=True)
 r"""Covariant type variable for `Mapping` keys."""
-NestedKey_contra = TypeVar("NestedKey_contra", bound=Hashable, contravariant=True)
+nested_key_contra = TypeVar("nested_key_contra", bound=Hashable, contravariant=True)
 r"""Contravariant type variable for `Mapping` keys."""
 
-ParameterVar = ParamSpec("ParameterVar")
+parameter_spec = ParamSpec("parameter_spec")
 r"""TypeVar for decorated function inputs values."""
 
-ReturnVar_co = TypeVar("ReturnVar_co", covariant=True)
+# outputs/returns are always covariant!
+return_var_co = TypeVar("return_var_co", covariant=True)
 r"""Type Variable for return values. Always covariant."""
 
-ValueVar = TypeVar("ValueVar")
+value_var = TypeVar("value_var")
 r"""Type Variable for `Mapping` values."""
-Value_co = TypeVar("Value_co", covariant=True)
+value_co = TypeVar("value_co", covariant=True)
 r"""Covariant type variable for `Mapping` values."""
-Value_contra = TypeVar("Value_contra", contravariant=True)
+value_contra = TypeVar("value_contra", contravariant=True)
 r"""Contravariant type variable for `Mapping` values."""
 # endregion Generic Type Variables -----------------------------------------------------

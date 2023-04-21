@@ -69,14 +69,12 @@ class Electricity(SingleFrameDataset):
     )
     r"""HTTP address containing additional information about the dataset."""
 
-    dataset: DataFrame
-    r"""Store cached version of dataset."""
     rawdata_files = ["LD2011_2014.txt.zip"]
     rawdata_hashes = {
         "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
     }
-    table_schemas = {"dataset": ((140256, 370), None, None)}
-    table_hashes = {"dataset": "pandas:7114453877232760046"}
+    table_schema = ((140256, 370), None, None)
+    table_hash = "pandas:7114453877232760046"
 
     def clean_table(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""

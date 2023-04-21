@@ -33,9 +33,9 @@ from typing import (
     runtime_checkable,
 )
 
-from tsdm.types.variables import Any2Var as S
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import any2_var as S
+from tsdm.types.variables import any_var as T
+from tsdm.types.variables import key_var as K
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.strings import repr_object, repr_type
 

@@ -26,7 +26,7 @@ from torch.utils.data import Sampler as TorchSampler
 from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
 from tsdm.tasks.base import BaseTaskMetaClass
-from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
 
 

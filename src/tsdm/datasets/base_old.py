@@ -41,7 +41,7 @@ import pandas
 from pandas import DataFrame, Series
 
 from tsdm.config import CONFIG
-from tsdm.types.aliases import Nested, PathLike
+from tsdm.types.aliases import Nested, PathLike, Schema
 from tsdm.types.variables import str_var as Key
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
@@ -56,6 +56,8 @@ r"""Type hint for pandas objects."""
 class Dataset(Protocol):
     """Protocol for Dataset."""
 
+    BASE_URL: ClassVar[Optional[str]] = None
+    r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL: ClassVar[Optional[str]] = None
     r"""HTTP address containing additional information about the dataset."""
     RAWDATA_DIR: ClassVar[Path]
@@ -77,7 +79,7 @@ class Dataset(Protocol):
     def download(self) -> None:
         """Download the dataset."""
 
-    def load(self) -> None:
+    def load(self) -> Any:
         """Load the dataset."""
 
 
@@ -88,6 +90,7 @@ class BaseDatasetMetaClass(ABCMeta):
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
         """When a new class/subclass is created, this method is called."""
+        # TODO: maybe use __init_subclass__ instead?
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
@@ -142,12 +145,20 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     r"""Location where the pre-processed data is stored."""
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the dataset."""
-    DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
-    r"""Default format for the dataset."""
 
     # instance attribute
     __version__: str
     r"""Version of the dataset, keep empty for unversioned dataset."""
+
+    # Validation - Implement on per dataset basis!
+    rawdata_hashes: Mapping[str, str] = NotImplemented
+    r"""Hashes of the raw dataset file(s)."""
+    dataset_hashes: Mapping[Key, str] = NotImplemented
+    r"""Hashes of the cleaned dataset file(s)."""
+    table_hashes: Mapping[Key, str] = NotImplemented
+    r"""Hashes of the in-memory cleaned dataset table(s)."""
+    table_schemas: Mapping[Key, Schema] = NotImplemented
+    r"""Schema of the in-memory cleaned dataset table(s)."""
 
     def __init__(
         self,
@@ -174,37 +185,6 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         r"""Return a string representation of the dataset."""
         return f"{self.__class__.__name__}\n{self.dataset}"
 
-    @staticmethod
-    def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
-        r"""Serialize the dataset."""
-        file_type = path.suffix
-        assert file_type.startswith("."), "File must have a suffix!"
-        file_type = file_type[1:]
-
-        if isinstance(frame, Series):
-            frame = frame.to_frame()
-
-        if hasattr(frame, f"to_{file_type}"):
-            pandas_writer = getattr(frame, f"to_{file_type}")
-            pandas_writer(path, **kwargs)
-            return
-
-        raise NotImplementedError(f"No loader for {file_type=}")
-
-    @staticmethod
-    def deserialize(path: Path, /, *, squeeze: bool = True) -> DATASET_OBJECT:
-        r"""Deserialize the dataset."""
-        file_type = path.suffix
-        assert file_type.startswith("."), "File must have a suffix!"
-        file_type = file_type[1:]
-
-        if hasattr(pandas, f"read_{file_type}"):
-            pandas_loader = getattr(pandas, f"read_{file_type}")
-            pandas_object = pandas_loader(path)
-            return pandas_object.squeeze() if squeeze else pandas_object
-
-        raise NotImplementedError(f"No loader for {file_type=}")
-
     @classmethod
     def info(cls) -> None:
         r"""Open dataset information in browser."""
@@ -212,58 +192,6 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
             print(cls.__doc__)
         else:
             webbrowser.open_new_tab(cls.INFO_URL)
-
-    @cached_property
-    @abstractmethod
-    def dataset(self) -> Any | MutableMapping:
-        r"""Store cached version of dataset."""
-        return self.load()
-
-    @property
-    @abstractmethod
-    def dataset_files(self) -> Mapping[Key, PathLike]:
-        r"""Relative paths to the cleaned dataset file(s)."""
-
-    @property
-    @abstractmethod
-    def rawdata_files(self) -> Sequence[PathLike]:
-        r"""Relative paths to the raw dataset file(s)."""
-
-    @cached_property
-    def dataset_paths(self) -> Mapping[Key, Path]:
-        r"""Absolute paths to the raw dataset file(s)."""
-        return prepend_path(self.dataset_files, parent=self.RAWDATA_DIR)
-
-    @cached_property
-    def rawdata_paths(self) -> Mapping[Key, list[Path]]:
-        r"""Absolute paths to the raw dataset file(s)."""
-        if self.rawdata_mapping is not NotImplemented:
-            return prepend_path(self.rawdata_mapping, parent=self.RAWDATA_DIR)
-        else:
-            return {None: prepend_path(self.rawdata_files, parent=self.RAWDATA_DIR)}
-
-    def rawdata_files_exist(self) -> bool:
-        r"""Check if raw data files exist."""
-        return paths_exists(self.rawdata_paths)
-
-    def dataset_files_exist(self) -> bool:
-        r"""Check if dataset files exist."""
-        return paths_exists(self.dataset_paths)
-
-    @abstractmethod
-    def clean(self) -> None:
-        r"""Clean an already downloaded raw dataset and stores it in self.data_dir.
-
-        Preferably, use the '.parquet' data format.
-        """
-
-    @abstractmethod
-    def load(self):
-        r"""Load the pre-processed dataset."""
-
-    @abstractmethod
-    def download(self) -> None:
-        r"""Download the raw data."""
 
     @classmethod
     def download_from_url(cls, url: str) -> None:
@@ -287,6 +215,58 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         else:  # default parsing, including for UCI dataset
             fname = url.split("/")[-1]
             download(url, cls.RAWDATA_DIR / fname)
+
+    @cached_property
+    def dataset_paths(self) -> Mapping[Key, Path]:
+        r"""Absolute paths to the raw dataset file(s)."""
+        return prepend_path(self.dataset_files, parent=self.RAWDATA_DIR)
+
+    @cached_property
+    def rawdata_paths(self) -> Mapping[Key, list[Path]]:
+        r"""Absolute paths to the raw dataset file(s)."""
+        if self.rawdata_mapping is not NotImplemented:
+            return prepend_path(self.rawdata_mapping, parent=self.RAWDATA_DIR)
+        else:
+            return {None: prepend_path(self.rawdata_files, parent=self.RAWDATA_DIR)}
+
+    def rawdata_files_exist(self) -> bool:
+        r"""Check if raw data files exist."""
+        return paths_exists(self.rawdata_paths)
+
+    def dataset_files_exist(self) -> bool:
+        r"""Check if dataset files exist."""
+        return paths_exists(self.dataset_paths)
+
+    @cached_property
+    @abstractmethod
+    def dataset(self) -> Any | MutableMapping:
+        r"""Store cached version of dataset."""
+        return self.load()
+
+    @property
+    @abstractmethod
+    def dataset_files(self) -> Mapping[Key, PathLike]:
+        r"""Relative paths to the cleaned dataset file(s)."""
+
+    @property
+    @abstractmethod
+    def rawdata_files(self) -> Sequence[PathLike]:
+        r"""Relative paths to the raw dataset file(s)."""
+
+    @abstractmethod
+    def clean(self) -> None:
+        r"""Clean an already downloaded raw dataset and stores it in self.data_dir.
+
+        Preferably, use the '.parquet' data format.
+        """
+
+    @abstractmethod
+    def load(self) -> Any:
+        r"""Load the pre-processed dataset."""
+
+    @abstractmethod
+    def download(self) -> None:
+        r"""Download the raw data."""
 
 
 # class VersionedDataset(BaseDataset, ABC):

@@ -11,12 +11,12 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from tsdm.types.variables import TensorVar
+from tsdm.types.variables import tensor_var
 
 
 def apply_along_axes(
-    a: TensorVar, b: TensorVar, op: Callable, axes: tuple[int, ...]
-) -> TensorVar:
+    a: tensor_var, b: tensor_var, op: Callable, axes: tuple[int, ...]
+) -> tensor_var:
     r"""Apply a function to multiple axes of a tensor."""
     axes = tuple(axes)
     rank = len(a.shape)

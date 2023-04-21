@@ -21,7 +21,7 @@ from torch import Tensor
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.abc import HashableType
-from tsdm.types.variables import AnyVar as T
+from tsdm.types.variables import any_var as T
 from tsdm.utils.strings import repr_mapping
 
 

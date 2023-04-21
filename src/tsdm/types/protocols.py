@@ -23,8 +23,8 @@ from typing import Any, Protocol, TypeVar, runtime_checkable
 
 from typing_extensions import Self
 
-from tsdm.types.variables import Any_co as T_co
-from tsdm.types.variables import Key_contra, KeyVar, Value_co
+from tsdm.types.variables import any_co as T_co
+from tsdm.types.variables import key_contra, key_var, value_co
 
 ScalarType_co = TypeVar("ScalarType_co", covariant=True)
 # Either: TypeAlias = Union[T, "Array[T]"]
@@ -128,14 +128,14 @@ class Array(Protocol[ScalarType_co]):
 
 
 @runtime_checkable
-class Lookup(Protocol[Key_contra, Value_co]):
+class Lookup(Protocol[key_contra, value_co]):
     """Mapping/Sequence like generic that is contravariant in Keys."""
 
-    def __contains__(self, key: KeyVar) -> bool:
+    def __contains__(self, key: key_var) -> bool:
         # Here, any Hashable input is accepted.
         """Return True if the map contains the given key."""
 
-    def __getitem__(self, key: Key_contra) -> Value_co:
+    def __getitem__(self, key: key_contra) -> value_co:
         """Return the value associated with the given key."""
 
     def __len__(self) -> int:
