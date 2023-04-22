@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-from typing import List
+from typing import List, Tuple, Union
 
 import torch
 from torch import Tensor, jit
@@ -41,7 +41,8 @@ from torch import Tensor, jit
 def erank(x: Tensor) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
-    .. math:: \operatorname{erank}(A) = e^{H(\tfrac{𝛔}{‖𝛔‖_1})} = ∏ σ_{i}^{-σ_i}
+    .. math:: \operatorname{erank}(A) ≔ e^{H(\frac{𝛔}{‖𝛔‖_1})}
+        = ∏ \bigl(\frac{σ_i}{‖σ_i‖}\bigr)^{- \frac{σ_i}{‖σ_i‖}}
 
     By definition, the effective rank is equal to the exponential of the entropy of the
     distribution of the singular values.
@@ -159,7 +160,7 @@ def closest_diag(x: Tensor) -> Tensor:
 def reldist(x: Tensor, y: Tensor) -> Tensor:
     r"""Relative distance between two matrices.
 
-    .. math::  ‖x-y‖/‖y‖
+    .. math::  \frac{‖x-y‖}{‖y‖}
 
     .. Signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
     """
@@ -173,7 +174,7 @@ def reldist(x: Tensor, y: Tensor) -> Tensor:
 def reldist_diag(x: Tensor) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
-    .. math:: ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    .. math:: \frac{‖A-X‖}{‖A‖}  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
 
     .. Signature:: ``(..., n, n) -> ...``
     """
@@ -202,7 +203,7 @@ def reldist_skew(x: Tensor) -> Tensor:
 def reldist_orth(x: Tensor) -> Tensor:
     r"""Relative magnitude of orthogonal part.
 
-    .. math:: \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
+    .. math:: \min_{Q: Q^⊤Q = 𝕀} \frac{‖A-Q‖}{‖A‖}
 
     .. Signature:: ``(..., n, n) -> ...``
     """
@@ -213,7 +214,7 @@ def reldist_orth(x: Tensor) -> Tensor:
 def stiffness_ratio(x: Tensor) -> Tensor:
     r"""Compute the stiffness ratio of a matrix.
 
-    .. math:: \frac{ | \Re(λ_\max) | }{ | \Re{λ_\min} | }
+    .. math:: \frac{|\Re(λ_\max)|}{|\Re(λ_\min)|}
 
     Only applicable if $\Re(λ_i)<0$ for all $i$.
 
@@ -497,7 +498,7 @@ def tensor_norm(
     keepdim: bool = True,
     scaled: bool = False,
 ) -> Tensor:
-    r"""Vector norm of $p$-th order.
+    r"""Entry-wise norm of $p$-th order.
 
     +--------+-----------------------------------+------------------------------------+
     |        | standard                          | size normalized                    |
@@ -547,17 +548,39 @@ def tensor_norm(
 @jit.script
 def matrix_norm(
     x: Tensor,
-    p: float = 2.0,
     dim: tuple[int, int] = (-2, -1),
-    keepdim: bool = True,
-    scaled: bool = False,
+    p: Union[float, Tuple[float, float]] = 2.0,
+    keepdim: Union[bool, Tuple[bool, bool]] = True,
+    scaled: Union[bool, Tuple[bool, bool]] = False,
 ) -> Tensor:
-    r"""Matrix norm of $p$-th order.
+    r"""Entry-Wise Matrix norm of $p,q$-th order.
+
+    .. math:: ‖A‖_{p,q} ≔ \Bigl(∑_n \Bigl(∑_m |A_{mn}|^p\Bigr)^{q/p} \Bigr)^{1/q}
+
+    If $q$ is not specified, then $q=p$ is used. The scaled version is defined as
+
+    .. math:: ‖A‖_{p,q}^* ≔ \Bigl(𝐄_n \Bigl(𝐄_m |A_{mn}|^p\Bigr)^{q/p}\Bigr)^{1/q}
+
+    where $𝐄$ is the averaging operator, which estimates the expected value $𝔼$.
 
     References:
         - [1] https://en.wikipedia.org/wiki/Matrix_norm
     """
-    return tensor_norm(x, p=p, dim=dim, keepdim=keepdim, scaled=scaled)
+    # convert to tuple
+    p = (p, p) if isinstance(p, float) else p
+    dim = (dim[0] % x.ndim, dim[1] % x.ndim)  # absolufy dim
+    keepdim = (keepdim, keepdim) if isinstance(keepdim, bool) else keepdim
+    scaled = (scaled, scaled) if isinstance(scaled, bool) else scaled
+
+    # if keepdim[0] is False then we need to adjust dim[1] accordingly:
+    # this only happens if dim[0] < dim[1], otherwise dim[1] is already correct
+    # 1 if dim[1] needs to change, 0 otherwise
+    m = int(dim[0] < dim[1]) * (1 - int(keepdim[0]))
+    dim = (dim[0], dim[1] - m)
+
+    x = tensor_norm(x, p=p[0], dim=dim[:1], keepdim=keepdim[0], scaled=scaled[0])
+    x = tensor_norm(x, p=p[1], dim=dim[1:], keepdim=keepdim[1], scaled=scaled[1])
+    return x
 
 
 @jit.script
