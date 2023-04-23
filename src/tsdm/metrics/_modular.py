@@ -13,18 +13,12 @@ __all__ = [
     "BaseLoss",
     "WeightedLoss",
     # Classes
-    "ND",
-    "NRMSE",
-    "Q_Quantile",
-    "Q_Quantile_Loss",
     "WRMSE",
     "RMSE",
     "MSE",
     "WMSE",
     "MAE",
     "WMAE",
-    "TimeSeriesMSE",
-    "TimeSeriesWMSE",
     # "TimeSeriesMAE",
     # "TimeSeriesWMAE",
     # "TimeSeriesRMSE",
@@ -38,7 +32,6 @@ from typing import Final, Optional, Protocol, runtime_checkable
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.utils.decorators import autojit
 
 
@@ -128,83 +121,16 @@ class WeightedLoss(nn.Module, metaclass=ABCMeta):
 
 
 @autojit
-class ND(BaseLoss):
-    r"""Compute the normalized deviation score.
-
-    .. math:: 𝖭𝖣(x, x̂) = \frac{∑_{t,k} |x̂_{t,k} -  x_{t,k}|}{∑_{t,k} |x_{t,k}|}
-
-    TODO: How to distinguish batch univariate vs single multivariate?
-    => Batch makes little sense since all could have different length!
-
-    References:
-        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-        - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
-          | https://openreview.net/forum?id=r1ecqn4YwB
-    """
-
-    @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., n), (..., n) -> ()``."""
-        return nd(targets, predictions)
-
-
-@autojit
-class NRMSE(BaseLoss):
-    r"""Compute the normalized root mean square error.
-
-    .. math:: 𝖭𝖱𝖬𝖲𝖤(x, x̂) = \frac{\sqrt{ \frac{1}{T}∑_{t,k} |x̂_{t,k} - x_{t,k}|^2 }}{∑_{t,k} |x_{t,k}|}
-
-    References:
-        - | Temporal Regularized Matrix Factorization for High-dimensional Time Series Prediction
-          | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
-    """
-
-    @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r"""Compute the loss value."""
-        return nrmse(targets, predictions)
-
-
-@autojit
-class Q_Quantile(BaseLoss):
-    r"""The q-quantile.
-
-    .. math:: 𝖯_q(x,x̂) = \begin{cases} q |x-x̂|:& x≥x̂ \\ (1-q)|x-x̂|:& x≤x̂ \end{cases}
-
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-    """
-
-    @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r"""Compute the loss value."""
-        return q_quantile(targets, predictions)
-
-
-@autojit
-class Q_Quantile_Loss(BaseLoss):
-    r"""The q-quantile loss.
-
-    .. math:: 𝖰𝖫_q(x,x̂) = 2\frac{∑_{it}𝖯_q(x_{it},x̂_{it})}{∑_{it}|x_{it}|}
-
-    References:
-        - | Deep State Space Models for Time Series Forecasting
-          | https://papers.nips.cc/paper/2018/hash/5cf68969fb67aa6082363a6d4e6468e2-Abstract.html
-    """
-
-    @jit.export
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r"""Compute the loss value."""
-        return q_quantile_loss(targets, predictions)
-
-
-@autojit
 class MAE(BaseLoss):
     r"""Mean Absolute Error.
 
-    .. math:: 𝖬𝖠𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖]}
+    Given two random vectors $x,x̂∈ℝ^K$, the mean absolute error is defined as:
+
+    .. math:: 𝖬𝖠𝖤(x，x̂) ≔ 𝔼[‖x - x̂‖]
+
+    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+
+    .. math:: 𝖬𝖠𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖
     """
 
     @jit.export
@@ -233,7 +159,13 @@ class MAE(BaseLoss):
 class WMAE(WeightedLoss):
     r"""Weighted Mean Absolute Error.
 
-    .. math:: w𝖬𝖠𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖_w]}
+    Given two random vectors $x,x̂∈ℝ^K$, the weighted mean absolute error is defined as:
+
+    .. math:: 𝗐𝖬𝖠𝖤(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖_w]}
+
+    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+
+    .. math:: 𝗐𝖬𝖠𝖤(x，x̂) ≔ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w}
     """
 
     @jit.export
@@ -262,16 +194,22 @@ class WMAE(WeightedLoss):
 class MSE(BaseLoss):
     r"""Mean Square Error.
 
-    .. math:: 𝖬𝖲𝖤(x,x̂) = 𝔼[½‖x̂-x‖^2] ∼ \tfrac{1}{2N}∑_{n=1}^N ‖x̂_n - x_n‖^2
+    Given two random vectors $x,x̂∈ℝ^K$, the mean square error is defined as:
+
+    .. math:: 𝖬𝖲𝖤(x，x̂) ≔ 𝔼[‖x̂-x‖^2] ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^2
+
+    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+
+    .. math:: 𝖬𝖲𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^2
 
     If the normalize option is set to True, then the normalized ℓ²-norm is used instead:
 
-    .. math:: ‖x‖² = \frac{1}{m}∑_{i=1}^m x_i^2
+    .. math:: ‖z‖^2_{2^*} ≔ \frac{1}{K}∑_{k=1}^K z_k^2
 
     If nan_policy is set to 'omit', then NaN targets are ignored, not counting them as observations.
     In this case, the loss is computed as-if the NaN channels would not exist.
 
-    .. math:: ‖x‖² = \frac{1}{∑ m_i} ∑_{i=1}^m [m_i ? x_i^2 : 0]
+    .. math:: ‖z‖^2_{2^*} ≔ \frac{1}{∑_k m_k} ∑_{k=1}^K [m_k \? z_k^2 : 0]
 
     Since it could happen that all channels are NaN, the loss is set to zero in this case.
 
@@ -280,13 +218,20 @@ class MSE(BaseLoss):
     Note that this is equivalent to a weighted MSE loss with weights equal to 1.0.
 
     1. MSE with normalization and NaNs ignored
-       .. math:: \tfrac{1}{2N}∑_{n=1}^N \tfrac{1}{∑_j m_j}∑_{i=1}^M [m_i ? (x̂_{n,i} - x_{n, i})^2 : 0]
+
+       .. math:: \frac{1}{N}∑_{n=1}^N \frac{1}{∑_k m_k}∑_{k=1}^K [m_k \? (x̂_{n,k} - x_{n,k})^2 : 0]
+
     2. MSE with normalization and NaNs counted
-       .. math:: \tfrac{1}{2N}∑_{n=1}^N \tfrac{1}{M} ∑_{i=1}^M (x̂_{n,i - x_{n,i})^2
+
+       .. math:: \frac{1}{N}∑_{n=1}^N \frac{1}{K}∑_{k=1}^K (x̂_{n,k} - x_{n,k})^2
+
     3. MSE without normalization and NaNs ignored
-       .. math:: \tfrac{1}{2N}∑_{n=1}^N ∑_{i=1}^M [m_i ? (x̂_{n,i} - x_{n, i})^2 : 0]
+
+       .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K [m_i \? (x̂_{n,k} - x_{n,k})^2 : 0]
+
     4. MSE without normalization and NaNs counted
-       .. math:: \tfrac{1}{2N}∑_{n=1}^N ∑_{i=1}^M (x̂_{n,i} - x_{n, i})^2
+
+       .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K (x̂_{n,k} - x_{n,k})^2
     """
 
     @jit.export
@@ -308,37 +253,50 @@ class MSE(BaseLoss):
 
         # aggregate over batch dimensions
         r = torch.mean(r)
-        return r / 2
+        return r
 
 
 @autojit
 class WMSE(WeightedLoss):
     r"""Weighted Mean Square Error.
 
-    .. math:: 𝗐𝖬𝖲𝖤(x,x̂) = 𝔼[‖(x - x̂)‖_w^2] ∼ \tfrac{1}{2N}∑_{n=1}^N w_i ‖x̂_n - x_n‖^2
+    Given two random vectors $x,x̂∈ℝ^K$, the weighted mean square error is defined as:
 
-    If the normalize option is set to True, then the normalized ℓ²-norm is used instead:
+    .. math:: 𝗐𝖬𝖲𝖤(x，x̂) ≔ 𝔼[‖x - x̂‖_w^2]
 
-    .. math:: ‖x‖² = ∑_{i=1}^m w̃_i x_i^2 \qquad w̃_i = \frac{w_i}{∑_j w_j}
+    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+
+    .. math:: 𝗐𝖬𝖲𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w^2
+
+    If the normalize option is set to True, then the weighted normalized weighted ℓ²-norm instead:
+
+    .. math:: ‖z‖^2_{w^*} ≔ \frac{1}{∑_k m_k} ∑_{k=1}^K w_k z_k^2
 
     If nan_policy is set to 'omit', then NaN targets are ignored, not counting them as observations.
-    In this case, the loss is computed as-if the NaN channels would not exist. In this case,
-    the existing weights are re-weighted:
+    In this case, the loss is computed as-if the NaN channels would not exist.
+    Crucially, the existing weights are re-weighted:
 
-    .. math:: ‖x‖² = \frac{1}{∑ m_i} ∑_{i=1}^m [m_i ?  w̃_i x_i^2 : 0]
+    .. math:: ‖z‖^2_{w^*} ≔ \frac{1}{∑_k m_k w_k} ∑_{k=1}^K [m_k \? w_k z_k^2 : 0]
 
     Since it could happen that all channels are NaN, the loss is set to zero in this case.
 
     So, in total, there are 4 variants of the weighted MSE loss:
 
     1. wMSE with normalization and NaNs ignored
-       .. math:: \tfrac{1}{2N}∑_{n=1}^N \tfrac{1}{∑_j m_j w_j}∑_{i=1}^M [m_i ? w_i(x̂_{n,i} - x_{n, i})^2 : 0]
+
+       .. math:: \frac{1}{N}∑_{n=1}^N \frac{1}{∑_k m_k w_k} ∑_{k=1}^K [m_k \? w_k(x̂_{nk} - x_{nk})^2 : 0]
+
     2. wMSE with normalization and NaNs counted
-       .. math:: \tfrac{1}{2N}∑_{n=1}^N \tfrac{1}{∑_j w_j}∑_{i=1}^M w_i(x̂_{n,i} - x_{n, i})^2
+
+       .. math:: \frac{1}{N}∑_{n=1}^N \frac{1}{∑_k m_k}∑_{k=1}^K w_k(x̂_{nk} - x_{nk})^2
+
     3. wMSE without normalization and NaNs ignored
-       .. math:: \tfrac{1}{2N}∑_{n=1}^N ∑_{i=1}^M [m_i ? w_i(x̂_{n,i} - x_{n, i})^2 : 0]
+
+       .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K [m_k \? w_k(x̂_{nk} - x_{nk})^2 : 0]
+
     4. wMSE without normalization and NaNs counted
-       .. math:: \tfrac{1}{2N}∑_{n=1}^N ∑_{i=1}^M w_i(x̂_{n,i} - x_{n, i})^2
+
+       .. math:: \frac{1}{N}∑_{n=1}^N ∑_{k=1}^K w_k(x̂_{nk} - x_{nk})^2
     """
 
     @jit.export
@@ -360,14 +318,20 @@ class WMSE(WeightedLoss):
 
         # aggregate over batch dimensions
         r = torch.mean(r)
-        return r / 2
+        return r
 
 
 @autojit
 class RMSE(BaseLoss):
     r"""Root Mean Square Error.
 
-    .. math:: 𝖱𝖬𝖲𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖^2]}
+    Given two random vectors $x,x̂∈ℝ^K$, the root-mean-square error is defined as:
+
+    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖^2]}
+
+    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
+
+    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^2}
     """
 
     @jit.export
@@ -389,14 +353,20 @@ class RMSE(BaseLoss):
 
         # aggregate over batch dimensions
         r = torch.mean(r)
-        return torch.sqrt(r / 2)
+        return torch.sqrt(r)
 
 
 @autojit
 class WRMSE(WeightedLoss):
     r"""Weighted Root Mean Square Error.
 
-    .. math:: 𝗐𝖱𝖬𝖲𝖤(x,x̂) = \sqrt{𝔼[‖x - x̂‖_w^2]}
+    Given two random vectors $x,x̂∈ℝ^K$, the root-mean-square error is defined as:
+
+    .. math:: 𝗐𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt{𝔼[‖x - x̂‖_w^2]}
+
+    Given $N$ random samples $x_1, …, x_n ∼ x$ and $x̂_1, …, x̂_n ∼ x̂$, it can be estimated as:
+
+    .. math:: 𝗐𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w^2}
     """
 
     @jit.export
@@ -418,170 +388,110 @@ class WRMSE(WeightedLoss):
 
         # aggregate over batch dimensions
         r = torch.mean(r)
-        return torch.sqrt(r / 2)
+        return torch.sqrt(r)
 
 
-@autojit
-class TimeSeriesMSE(nn.Module):
-    r"""Time-Series Mean Square Error.
+class LP(BaseLoss):
+    r"""$L^p$ Loss.
 
-    Each channel is normalized by the number of observations in that channel.
+    Given two random vectors $x,x̂∈ℝ^K$, the $L^p$-loss is defined as:
 
-    .. math:: ∑_t ∑_i \frac{[m_{t_i} ? (x̂_{t, i} - x_{t, i})^2 : 0]}{∑_t m_{t_i}}
+    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt[p]{𝔼[‖x - x̂‖^p]}
 
-    Or, more precisely, to avoid division by zero, we use the following
+    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
 
-    .. math:: ∑_{ti} [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
+    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt[p]{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^p}
 
-    With time-normalization:
-
-    .. math:: ∑_{ti} \frac{1}{∑_τ m_{τi}} [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
-
-    with channel-normalization:
-
-    .. math:: ∑_{ti} \frac{1}{∑_j m_{tj}} [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
-
-    with both:
-
-    .. math:: ∑_{ti} \frac{1}{∑_{τj} m_{τj}} [m_{ti} ? (x̂_{ti} - x_{ti})^2 : 0]
-
-    Moreover, we can consider adding a discount factor with respect to the time,
-    i.e. a simple geometric dsitribution, which amounts to adding a term of the form
-    $γ^{∑_k ∆t_k}$ to the denominator, where $γ$ is the discount factor and $∆t_k$
-    is the time difference between the $k$-th and $(k+1)$-th time point.
-
-    Possible batch-dimensions are averaged over.
+    Special cases:
+        - $p=1$: :class:`.MAE`
+        - $p=2$: :class:`.RMSE`
+        - $p=∞$: :class:`.MXE`
     """
 
-    # Constants
-    axes: Final[tuple[int, ...]]
-    r"""CONST: The axes over which the loss is computed."""
-    discount: Final[float]
-    r"""CONST: The discount factor for the time-series."""
-    time_axes: Final[tuple[int, ...]]
-    r"""CONST: The time axis."""
-    normalize_time: Final[bool]
-    r"""CONST: Whether to normalize over time."""
-    normalize_channels: Final[bool]
-    r"""CONST: Whether to normalize the loss by the number of channels."""
+    p: Final[float]
+    """The $p$-norm to use."""
 
     def __init__(
         self,
-        axes: int | tuple[int, ...] = -1,
-        time_axes: Optional[int | tuple[int, ...]] = None,
-        /,
-        *,
-        discount: float = 1.0,
-        normalize_time: bool = True,
-        normalize_channels: bool = False,
-    ) -> None:
-        super().__init__()
-        self.axes = (axes,) if isinstance(axes, int) else tuple(axes)
-        t_axes = min(self.axes) - 1 if time_axes is None else time_axes
-        self.time_axes = (t_axes,) if isinstance(t_axes, int) else tuple(t_axes)
-        assert set(self.time_axes).isdisjoint(
-            self.axes
-        ), "time and channel axes must be disjoint"
-        self.discount = discount
-        self.normalize_channels = normalize_channels
-        self.normalize_time = normalize_time
+        p: float = 2.0,
+        learnable: bool = False,
+        normalize: bool = False,
+        axes: Optional[tuple[int, ...]] = None,
+    ):
+        super().__init__(normalize=normalize, learnable=learnable, axes=axes)
+        self.p = p
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
+        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
-        m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
+        m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
-        r = r**2  # must come after where, else we get NaN gradients!
+        r = r**self.p
+        r = torch.sum(r, dim=self.axes)
 
-        # compute normalization constant
-        if self.normalize_channels and self.normalize_time:
-            c = torch.sum(m, dim=self.axes + self.time_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-        elif self.normalize_channels and not self.normalize_time:
-            c = torch.sum(m, dim=self.axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.axes, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.time_axes, keepdim=True)
-        elif not self.normalize_channels and self.normalize_time:
-            c = torch.sum(m, dim=self.time_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.time_axes, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.axes, keepdim=True)
+        if self.normalize:
+            c = torch.sum(m, dim=self.axes)
         else:
-            r = torch.sum(r, dim=self.axes + self.time_axes, keepdim=True)
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        # aggregate over batch-dimensions
+        r = torch.where(c > 0, r / c, 0.0)
+
+        # aggregate over batch dimensions
         r = torch.mean(r)
-        return r / 2
+        return torch.pow(r, 1 / self.p)
 
 
-@autojit
-class TimeSeriesWMSE(WeightedLoss):
-    r"""Time-Series Mean Square Error.
+class WLP(WeightedLoss):
+    r"""Weighted $L^p$ Loss.
 
-    .. math:: ∑_t ∑_i \frac{[m_{t_i} ? (x̂_{t, i} - x_{t, i})^2 : 0]}{∑_t m_{t_i}}
+    Given two random vectors $x,x̂∈ℝ^K$, the weighted $L^p$-loss is defined as:
 
-    Or, more precisely, to avoid division by zero, we use the following
+    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ≔ \sqrt[p]{𝔼[‖x - x̂‖_w^p]}
 
-    .. math:: ∑_t ∑_i [w_i>0 ? \frac{[m_{t_i} ? (x̂_{t, i} - x_{t, i})^2 : 0]}{w_i} : 0]
+    Given $N$ random samples $x_1, …, x_N ∼ x$ and $x̂_1, …, x̂_N ∼ x̂$, it can be estimated as:
 
-    where $w_i = ∑_t m_{t_i}$. Possible batch-dimensions are averaged over.
+    .. math:: 𝖱𝖬𝖲𝖤(x，x̂) ∼ \sqrt[p]{\frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w^p}
 
-    Remark: When there are many channels,
+    Special cases:
+        - $p=1$: :class:`.WMAE`
+        - $p=2$: :class:`.WRMSE`
+        - $p=∞$: :class:`.WMXE`
     """
 
-    time_axes: Final[tuple[int, ...]]
-    r"""CONST: The time axis."""
+    p: Final[float]
+    """The $p$-norm to use."""
 
     def __init__(
         self,
         weight: Tensor,
-        /,
         *,
+        p: float = 2.0,
         learnable: bool = False,
         normalize: bool = False,
         axes: Optional[tuple[int, ...]] = None,
-        time_axes: Optional[int | tuple[int, ...]] = None,
     ):
-        super().__init__(weight, learnable=learnable, normalize=normalize, axes=axes)
-        t_axes = min(self.axes) - 1 if time_axes is None else time_axes
-        self.time_axes = (t_axes,) if isinstance(t_axes, int) else tuple(t_axes)
+        super().__init__(weight, normalize=normalize, learnable=learnable, axes=axes)
+        self.p = p
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., t, m), (..., t, m)] → ...``."""
+        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
-        m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
+        m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
-        r = self.weight * r**2  # must come after where, else we get NaN gradients!
+        r = self.weight * r**self.p
+        r = torch.sum(r, dim=self.axes)
 
-        # compute normalization constant
-        if self.normalize_channels and self.normalize_time:
-            c = torch.sum(self.weight * m, dim=self.axes + self.time_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-        elif self.normalize_channels and not self.normalize_time:
-            c = torch.sum(self.weight * m, dim=self.axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.axes, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.time_axes, keepdim=True)
-        elif not self.normalize_channels and self.normalize_time:
-            c = torch.sum(m, dim=self.time_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.time_axes, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.axes, keepdim=True)
+        if self.normalize:
+            c = torch.sum(m * self.weight, dim=self.axes)
         else:
-            # c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-            r = torch.sum(r, dim=self.axes + self.time_axes, keepdim=True)
+            c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
-        # # aggregate over time
-        # s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
-        # r = torch.where(c > 0, s, 0.0)
+        r = torch.where(c > 0, r / c, 0.0)
 
-        # aggregate over batch-dimensions
+        # aggregate over batch dimensions
         r = torch.mean(r)
-        return r / 2
+        return torch.pow(r, 1 / self.p)
