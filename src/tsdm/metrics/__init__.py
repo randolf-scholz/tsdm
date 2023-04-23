@@ -56,18 +56,12 @@ __all__ = [
     "BaseLoss",
     "WeightedLoss",
     # Classes
-    "ND",
-    "NRMSE",
-    "Q_Quantile",
-    "Q_Quantile_Loss",
     "MAE",
     "MSE",
     "RMSE",
     "WMAE",
     "WMSE",
     "WRMSE",
-    "TimeSeriesMSE",
-    "TimeSeriesWMSE",
     # Functions
     "nd",
     "nrmse",
@@ -84,19 +78,21 @@ from torch import nn
 from tsdm.metrics._modular import (
     MAE,
     MSE,
-    ND,
-    NRMSE,
     RMSE,
     WMAE,
     WMSE,
     WRMSE,
     BaseLoss,
     Loss,
+    WeightedLoss,
+)
+from tsdm.metrics._timeseries import (
+    ND,
+    NRMSE,
     Q_Quantile,
     Q_Quantile_Loss,
     TimeSeriesMSE,
     TimeSeriesWMSE,
-    WeightedLoss,
 )
 from tsdm.metrics.functional import (
     FUNCTIONAL_LOSSES,
