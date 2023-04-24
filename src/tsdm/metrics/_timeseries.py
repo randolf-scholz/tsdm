@@ -27,7 +27,6 @@ from typing import Callable, Final, Optional, Protocol, runtime_checkable
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.metrics._modular import WeightedLoss
 from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.utils.decorators import autojit
 
@@ -55,14 +54,21 @@ class TimeSeriesLoss(Protocol):
 class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
     r"""Base class for a time-series function.
 
-    Because the loss is computed over a sequence of variable length,
-    the default is to normalize the loss by the sequence length, so that loss
-    values are comparable across sequences.
+    Because the loss is computed over a sequence of variable length, the default is to normalize
+    the loss by the sequence length, so that loss values are comparable across sequences.
+    This class can be used to express decomposable losses of the form
+
+    .. math:: 𝓛(x，x̂) ≔ 𝐀_t ℓ(x_t，x̂_t)
+
+    By default, the aggregation $𝐀_t$ is the mean over the time-axes $𝐄_t$, but simply
+    summing over the time-axes is also possible.
     """
 
     # Constants
-    axes: Final[tuple[int, ...]]
-    r"""CONST: The axes over which the loss is computed."""
+    time_axes: Final[tuple[int, ...]]
+    r"""CONST: The time-axes over which the loss is computed."""
+    channel_axes: Final[tuple[int, ...]]
+    """CONST: The channel-axes over which the loss is computed."""
     normalize_time: Final[bool]
     r"""CONST: Whether to normalize the weights."""
     normalize_channels: Final[bool]
@@ -72,14 +78,23 @@ class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
         self,
         /,
         *,
-        axes: int | tuple[int, ...] = -1,
+        time_axes: int | tuple[int, ...] = -2,
+        channel_axes: int | tuple[int, ...] = -1,
         normalize_time: bool = True,
         normalize_channels: bool = False,
     ):
         super().__init__()
-        self.normalize_time = normalize_time
-        self.normalize_channels = normalize_channels
-        self.axes = (axes,) if isinstance(axes, int) else tuple(axes)
+        self.normalize_time = bool(normalize_time)
+        self.normalize_channels = bool(normalize_channels)
+        self.time_axes = (
+            (time_axes,) if isinstance(time_axes, int) else tuple(time_axes)
+        )
+        self.channel_axes = (
+            (channel_axes,) if isinstance(channel_axes, int) else tuple(channel_axes)
+        )
+
+        if not set(self.time_axes).isdisjoint(self.channel_axes):
+            raise ValueError("Time and channel axes must be disjoint!")
 
     @abstractmethod
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
@@ -90,9 +105,18 @@ class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
 class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
     r"""Base class for a weighted time series loss function.
 
-    Because the loss is computed over a sequence of variable length,
-    the default is to normalize the loss by the sequence length, so that loss
-    values are comparable across sequences.
+    Because the loss is computed over a sequence of variable length, the default is to normalize
+    the loss by the sequence length, so that loss values are comparable across sequences.
+    This class can be used to express decomposable losses of the form
+
+    .. math:: 𝓛(𝐭，x，x̂) ≔ ∑_t ω_t ℓ(x_t，x̂_t；w)
+
+    Where $w$ are the channel weights, and $ω_t$ is a time-dependent discount factor,
+    and $ℓ$ is a time-independent loss function. Typically, these losses take the form:
+
+    .. math:: 𝓛(x，x̂)  = ∑_t ω_t Φ(w ⊙ (x_t - x̂_t))
+
+    where $Φ$ is some function acting on the weighted residuals, for example $Φ(r) = ‖r‖$.
     """
 
     # Parameters
@@ -112,10 +136,11 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
         weight: Tensor,
         /,
         *,
-        axes: None | int | tuple[int, ...] = None,
-        learnable: bool = False,
+        time_axes: None | int | tuple[int, ...] = None,
+        channel_axes: None | int | tuple[int, ...] = None,
         normalize_channels: bool = False,
         normalize_time: bool = True,
+        learnable: bool = False,
     ) -> None:
         r"""Initialize the loss function."""
         w = torch.as_tensor(weight, dtype=torch.float32)
@@ -123,9 +148,13 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
             raise ValueError(
                 "Weights must be non-negative and at least one must be positive."
             )
-        axes = tuple(range(-w.ndim, 0)) if axes is None else axes
+        channel_axes = (
+            tuple(range(-w.ndim, 0)) if channel_axes is None else channel_axes
+        )
+        time_axes = (-w.ndim - 1,) if time_axes is None else time_axes
         super().__init__(
-            axes=axes,
+            time_axes=time_axes,
+            channel_axes=channel_axes,
             normalize_channels=normalize_channels,
             normalize_time=normalize_time,
         )
@@ -136,10 +165,10 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
         self.learnable = learnable
 
         # Validate the axes.
-        if len(self.axes) != self.weight.ndim:
+        if len(self.channel_axes) != self.weight.ndim:
             raise ValueError(
                 f"Number of axes does not match weight shape:"
-                f" {len(self.axes)} != {self.weight.ndim=}"
+                f" {len(self.channel_axes)} != {self.weight.ndim=}"
             )
 
     @abstractmethod
@@ -222,7 +251,7 @@ class Q_Quantile_Loss(TimeSeriesBaseLoss):
 
 
 @autojit
-class TimeSeriesMSE(nn.Module):
+class TimeSeriesMSE(TimeSeriesBaseLoss):
     r"""Time-Series Mean Square Error.
 
     Given two random sequences $x,x̂∈(ℝ∪𝙽𝚊𝙽)^{T×K}$, the time-series mean square error is defined as:
@@ -257,41 +286,6 @@ class TimeSeriesMSE(nn.Module):
     Possible batch-dimensions are averaged over.
     """
 
-    # Constants
-    axes: Final[tuple[int, ...]]
-    r"""CONST: The axes over which the loss is computed."""
-    discount: Final[float]
-    r"""CONST: The discount factor for the time-series."""
-    time_axes: Final[tuple[int, ...]]
-    r"""CONST: The time axis."""
-    normalize_time: Final[bool]
-    r"""CONST: Whether to normalize over time."""
-    normalize_channels: Final[bool]
-    r"""CONST: Whether to normalize the loss by the number of channels."""
-
-    def __init__(
-        self,
-        /,
-        *,
-        time_axes: None | int | tuple[int, ...] = None,
-        channel_axes: None | int | tuple[int, ...] = None,
-        discount: float = 1.0,
-        normalize_time: bool = True,
-        normalize_channels: bool = False,
-    ) -> None:
-        super().__init__()
-        self.axes = (
-            (channel_axes,) if isinstance(channel_axes, int) else tuple(channel_axes)
-        )
-        t_axes = min(self.axes) - 1 if time_axes is None else time_axes
-        self.time_axes = (t_axes,) if isinstance(t_axes, int) else tuple(t_axes)
-        assert set(self.time_axes).isdisjoint(
-            self.axes
-        ), "time and channel axes must be disjoint"
-        self.discount = discount
-        self.normalize_channels = normalize_channels
-        self.normalize_time = normalize_time
-
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
         r""".. Signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
@@ -300,24 +294,23 @@ class TimeSeriesMSE(nn.Module):
         m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
         r = torch.where(m, r, 0.0)
         r = r**2  # must come after where, else we get NaN gradients!
-
         # compute normalization constant
-        if self.normalize_channels and self.normalize_time:
-            c = torch.sum(m, dim=self.axes + self.time_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
+        if self.normalize_time and self.normalize_channels:
+            c = torch.sum(m, dim=self.time_axes + self.channel_axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.time_axes + self.channel_axes, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
-        elif self.normalize_channels and not self.normalize_time:
-            c = torch.sum(m, dim=self.axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.axes, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.time_axes, keepdim=True)
-        elif not self.normalize_channels and self.normalize_time:
+        elif self.normalize_time and not self.normalize_channels:
             c = torch.sum(m, dim=self.time_axes, keepdim=True)
             s = torch.sum(r / c, dim=self.time_axes, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.axes, keepdim=True)
+            r = torch.sum(r, dim=self.channel_axes, keepdim=True)
+        elif not self.normalize_time and self.normalize_channels:
+            c = torch.sum(m, dim=self.channel_axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.channel_axes, keepdim=True)
+            r = torch.where(c > 0, s, 0.0)
+            r = torch.sum(r, dim=self.time_axes, keepdim=True)
         else:
-            r = torch.sum(r, dim=self.axes + self.time_axes, keepdim=True)
+            r = torch.sum(r, dim=self.time_axes + self.channel_axes, keepdim=True)
 
         # aggregate over batch-dimensions
         r = torch.mean(r)
@@ -325,7 +318,7 @@ class TimeSeriesMSE(nn.Module):
 
 
 @autojit
-class TimeSeriesWMSE(WeightedLoss):
+class TimeSeriesWMSE(WeightedTimeSeriesLoss):
     r"""Weighted Time-Series Mean Square Error.
 
     Given two random sequences $x,x̂∈ℝ^{T×K}$, the weighted time-series mean square error is defined as:
@@ -339,25 +332,6 @@ class TimeSeriesWMSE(WeightedLoss):
     Possible batch-dimensions are averaged over.
     """
 
-    time_axes: Final[tuple[int, ...]]
-    r"""CONST: The time axis."""
-
-    def __init__(
-        self,
-        weight: Tensor,
-        /,
-        *,
-        time_axes: None | int | tuple[int, ...] = None,
-        channel_axes: None | int | tuple[int, ...] = None,
-        learnable: bool = False,
-        normalize: bool = False,
-    ):
-        super().__init__(
-            weight, axes=channel_axes, learnable=learnable, normalize=normalize
-        )
-        t_axes = min(self.axes) - 1 if time_axes is None else time_axes
-        self.time_axes = (t_axes,) if isinstance(t_axes, int) else tuple(t_axes)
-
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
         r""".. Signature:: ``[(..., t, m), (..., t, m)] → ...``."""
@@ -368,23 +342,25 @@ class TimeSeriesWMSE(WeightedLoss):
         r = self.weight * r**2  # must come after where, else we get NaN gradients!
 
         # compute normalization constant
-        if self.normalize_channels and self.normalize_time:
-            c = torch.sum(self.weight * m, dim=self.axes + self.time_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)
+        if self.normalize_time and self.normalize_channels:
+            c = torch.sum(
+                self.weight * m, dim=self.time_axes + self.channel_axes, keepdim=True
+            )
+            s = torch.sum(r / c, dim=self.time_axes + self.channel_axes, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
-        elif self.normalize_channels and not self.normalize_time:
-            c = torch.sum(self.weight * m, dim=self.axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.axes, keepdim=True)
-            r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.time_axes, keepdim=True)
-        elif not self.normalize_channels and self.normalize_time:
+        elif self.normalize_time and not self.normalize_channels:
             c = torch.sum(m, dim=self.time_axes, keepdim=True)
             s = torch.sum(r / c, dim=self.time_axes, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.axes, keepdim=True)
+            r = torch.sum(r, dim=self.channel_axes, keepdim=True)
+        elif not self.normalize_time and self.normalize_channels:
+            c = torch.sum(self.weight * m, dim=self.channel_axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.channel_axes, keepdim=True)
+            r = torch.where(c > 0, s, 0.0)
+            r = torch.sum(r, dim=self.time_axes, keepdim=True)
         else:
             # c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-            r = torch.sum(r, dim=self.axes + self.time_axes, keepdim=True)
+            r = torch.sum(r, dim=self.time_axes + self.channel_axes, keepdim=True)
 
         # # aggregate over time
         # s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)

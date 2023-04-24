@@ -36,8 +36,8 @@ def nd(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
         - | N-BEATS: Neural basis expansion analysis for interpretable time series forecasting
           | https://openreview.net/forum?id=r1ecqn4YwB
     """
-    res = torch.sum(torch.abs(xhat - x), dim=(-1, -2))
-    mag = torch.sum(torch.abs(x), dim=(-1, -2))
+    res = torch.sum(torch.abs(xhat - x), dim=(-2, -1))
+    mag = torch.sum(torch.abs(x), dim=(-2, -1))
     mag = torch.maximum(mag, torch.tensor(eps, dtype=x.dtype, device=x.device))
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
@@ -54,8 +54,8 @@ def nrmse(x: Tensor, xhat: Tensor, eps: float = 2**-24) -> Tensor:
           | Advances in Neural Information Processing Systems 29 (NIPS 2016)
           | https://papers.nips.cc/paper/2016/hash/85422afb467e9456013a2a51d4dff702-Abstract.html
     """
-    res = torch.sqrt(torch.sum(torch.abs(xhat - x) ** 2, dim=(-1, -2)))
-    mag = torch.sum(torch.abs(x), dim=(-1, -2))
+    res = torch.sqrt(torch.sum(torch.abs(xhat - x) ** 2, dim=(-2, -1)))
+    mag = torch.sum(torch.abs(x), dim=(-2, -1))
     mag = torch.maximum(mag, torch.tensor(eps, dtype=x.dtype, device=x.device))
     return torch.mean(res / mag)  # get rid of any batch dimensions
 
