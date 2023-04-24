@@ -25,6 +25,7 @@ repos:
         description: "ensures that (non-binary) executables have a shebang."
       - id: check-shebang-scripts-are-executable
         description: "ensures that (non-binary) files with a shebang are executable."
+        stages: [commit]
       - id: check-symlinks
         description: "checks for symlinks which do not point to anything."
       - id: check-toml
