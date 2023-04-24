@@ -59,14 +59,14 @@ def test_lazydict() -> None:
     # test __or__ operator with other LazyDict
     ld = EMPTY | LazyDict({0: lambda: 0})
     assert ld is not EMPTY, "__or__ should create a new dictionary"
-    assert isinstance(ld, LazyDict)
+    assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
         assert isinstance(value, LazyFunction)
 
     # test __or__ operator with other dict
     ld = EMPTY | {0: lambda: 0}
     assert ld is not EMPTY, "__or__ should create a new dictionary"
-    assert isinstance(ld, LazyDict)
+    assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
         assert isinstance(value, LazyFunction)
 
@@ -82,7 +82,7 @@ def test_lazydict() -> None:
     ld = EMPTY
     ld |= {0: lambda: 0}
     assert ld is EMPTY, "__ior__ should modify existing dictionary"
-    assert isinstance(ld, LazyDict)
+    assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
         assert isinstance(value, LazyFunction)
 
