@@ -31,6 +31,8 @@ __all__ = [
     "SingleTableDataset",
     "MultiTableDataset",
     # Classes
+    "TimeSeriesDataset",
+    "TimeSeriesCollection",
     # Datasets
     "BeijingAirQuality",
     "ETT",
@@ -70,7 +72,7 @@ from tsdm.datasets.mimic_iv import MIMIC_IV
 from tsdm.datasets.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.datasets.physionet2012 import Physionet2012
 from tsdm.datasets.physionet2019 import Physionet2019
-from tsdm.datasets.timeseries import TimeSeriesCollection
+from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN
 from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019

@@ -27,6 +27,17 @@ MODULE_DIR = "src/tsdm"
 VERSION = metadata.version(MODULE)
 YEAR = datetime.datetime.now().year
 
+from pprint import pformat
+
+
+def object_description(object) -> str:
+    return pformat(object, indent=4)
+
+
+from sphinx.util import inspect
+
+inspect.object_description = object_description
+
 
 # region Project Information ------------------------------------------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -73,7 +84,7 @@ extensions = [
     # 1st party extensions
     "signatures",
     # 3rd party extensions
-    "autoapi.extension",
+    # "autoapi.extension",
     "sphinx_copybutton",
     "sphinx_math_dollar",
     # "sphinx_autodoc_typehints",
@@ -269,6 +280,16 @@ html_favicon = None
 # of the docs, or URL that points an image file for the favicon.
 # Modern browsers use this as the icon for tabs, windows and bookmarks.
 # It should be a Windows-style icon file (.ico), which is 16x16 or 32x32 pixels large. Default: None.
+
+html_css_files = ["css/custom.css"]
+# A list of CSS files. The entry must be a filename string or a tuple containing the filename string and the
+# attributes dictionary. The filename must be relative to the html_static_path, or a full URI with scheme like
+# https://example.org/style.css. The attributes is used for attributes of <link> tag. It defaults to an empty list.
+
+html_js_files = []
+# A list of JavaScript filename. The entry must be a filename string or a tuple containing the filename string and
+# the attributes dictionary. The filename must be relative to the html_static_path, or a full URI with scheme like
+# https://example.org/script.js. The attributes is used for attributes of <script> tag. It defaults to an empty list.
 
 html_static_path = ["_static"]
 # A list of paths that contain custom static files (such as style sheets or script files).
@@ -641,6 +662,7 @@ mathjax3_config = {
         "macros": {
             "argmax": r"\operatorname*{arg\,max}",
             "argmin": r"\operatorname*{arg\,min}",
+            "Median": r"\operatorname{Median}",
             "diag": r"\operatorname{diag}",
             "rank": r"\operatorname{rank}",
             "relu": r"\operatorname{ReLU}",
@@ -831,6 +853,5 @@ register_node(pending_xref_condition)
 
 
 # endregion sphinx_math_dollar configuration ---------------------------------------------------------------------------
-
 
 # -- end of configuration ---------------------------------------------------------------------------------------------
