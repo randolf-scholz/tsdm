@@ -380,6 +380,9 @@ class SingleTableDataset(BaseDataset):
         else:
             self.LOGGER.debug("Dataset files already exist!")
 
+        if validate and self.dataset_hash is not NotImplemented:
+            validate_file_hash(self.dataset_path, reference=self.dataset_hash)
+
         self.LOGGER.debug("Starting to load dataset.")
         table = self.load_table()
         table.name = self.__class__.__name__
@@ -634,6 +637,11 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         if key in self.tables and self.tables[key] is not None and not force:
             self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
             return self.tables[key]
+
+        if validate and self.dataset_hashes is not NotImplemented:
+            validate_file_hash(
+                self.dataset_paths[key], reference=self.dataset_hashes[key]
+            )
 
         # Load the table.
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
