@@ -45,6 +45,7 @@ from tsdm.types.aliases import PathLike, Schema
 from tsdm.types.variables import str_var as Key
 from tsdm.utils import paths_exists
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
+from tsdm.utils.lazydict import LazyDict
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_mapping
 
@@ -223,9 +224,12 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         r"""Relative paths to the raw dataset file(s)."""
 
     @cached_property
-    def rawdata_paths(self) -> Sequence[Path]:
-        r"""Absolute paths to the raw dataset file(s)."""
-        return [self.RAWDATA_DIR / fname for fname in self.rawdata_files]
+    def rawdata_paths(self) -> Mapping[str, Path]:
+        r"""Absolute paths corresponding to the raw dataset file(s)."""
+        return {
+            str(fname): (self.RAWDATA_DIR / fname).absolute()
+            for fname in self.rawdata_files
+        }
 
     def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
         r"""Check if raw data files exist."""
@@ -284,7 +288,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         # Recurse if key is None.
         if fname is None:
             self.LOGGER.debug("Starting to download dataset.")
-            for path in self.rawdata_paths:
+            for path in self.rawdata_paths.values():
                 self.download(fname=path.name, force=force, validate=validate)
             self.LOGGER.debug("Finished downloading dataset.")
             return
@@ -355,10 +359,18 @@ class SingleTableDataset(BaseDataset):
 
     @abstractmethod
     def clean_table(self) -> DATASET_OBJECT | None:
-        r"""Clean the dataset."""
+        r"""Generate the cleaned dataset table.
+
+        If table is returned, the `self.serialize` method is used to write it to disk.
+        If manually writing the table to disk, return None.
+        """
 
     def load_table(self) -> DATASET_OBJECT:
-        r"""Load the dataset."""
+        r"""Load the dataset.
+
+        By default, `self.deserialize` is used to load the table from disk.
+        Override this method if you want to customize loading the table from disk.
+        """
         return self.deserialize(self.dataset_path)
 
     def load(self, *, force: bool = True, validate: bool = True) -> DATASET_OBJECT:
@@ -469,7 +481,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
 
     def __repr__(self) -> str:
         r"""Pretty Print."""
-        return repr_mapping(self.tables, title=self.__class__.__name__)
+        return repr_mapping(self, title=self.__class__.__name__)
 
     @property
     @abstractmethod
@@ -481,7 +493,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     @cached_property
     def tables(self) -> MutableMapping[Key, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
-        return {key: None for key in self.table_names}
+        return LazyDict({key: self.load_table for key in self.table_names})
 
     @cached_property
     def dataset_files(self) -> Mapping[Key, str]:
@@ -501,7 +513,11 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
 
     @abstractmethod
     def clean_table(self, key: Key) -> DATASET_OBJECT | None:
-        r"""Create thecleaned  table for the given key."""
+        r"""Create the cleaned table for the given key.
+
+        If table is returned, the `self.serialize` method is used to write it to disk.
+        If manually writing the table to disk, return None.
+        """
 
     def clean(
         self,
@@ -556,7 +572,11 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             )
 
     def load_table(self, key: Key) -> DATASET_OBJECT:
-        r"""Load the selected DATASET_OBJECT."""
+        r"""Load the selected DATASET_OBJECT.
+
+        By default, `self.deserialize` is used to load the table from disk.
+        Override this method if you want to customize loading the table from disk.
+        """
         return self.deserialize(self.dataset_paths[key])
 
     @overload
@@ -602,28 +622,25 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         if not self.dataset_files_exist(key=key):
             self.clean(key=key, force=force)
 
+        # key=None: Recursively load all tables.
         if key is None:
-            # Download full dataset
             self.LOGGER.debug("Starting to load  dataset.")
-            ds = {
-                k: self.load(key=k, force=force, validate=validate, **kwargs)
-                for k in self.table_names
-            }
+            for key in self.table_names:
+                self.load(key=key, force=force, validate=validate, **kwargs)
             self.LOGGER.debug("Finished loading  dataset.")
-            return ds
+            return self.tables
 
-        # download specific key
+        # Skip if already loaded.
         if key in self.tables and self.tables[key] is not None and not force:
             self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
             return self.tables[key]
 
+        # Load the table.
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
-        table = self.load_table(key=key)
-        table.name = key
-        self.tables[key] = table
+        table = self.tables[key]  # implicitly calls self.load_table via LazyDict
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
 
         if validate and self.table_hashes is not NotImplemented:
             validate_table_hash(table, reference=self.table_hashes[key])
 
-        return self.tables[key]
+        return table
