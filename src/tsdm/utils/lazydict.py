@@ -160,7 +160,8 @@ class LazyDict(dict[K, T]):
 
     def __or__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         new = self.copy()
-        return new.update(other)  # type: ignore[arg-type, return-value]
+        new.update(other)  # type: ignore[arg-type]
+        return new  # type: ignore[return-value]
 
     def __ror__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         if isinstance(other, self.__class__):
