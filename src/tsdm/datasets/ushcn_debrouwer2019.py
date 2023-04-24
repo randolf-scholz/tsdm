@@ -38,6 +38,7 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
     INFO_URL = "https://github.com/edebrouwer/gru_ode_bayes"
     r"""HTTP address containing additional information about the dataset."""
 
+    # rawdata_files = ["small_chunked_sporadic.csv"]
     rawdata_files = ["small_chunked_sporadic.csv"]
     rawdata_hashes = {
         "small_chunked_sporadic.csv": "sha256:671eb8d121522e98891c84197742a6c9e9bb5015e42b328a93ebdf2cfd393ecf",

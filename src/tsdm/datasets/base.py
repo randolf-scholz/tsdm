@@ -150,6 +150,8 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     r"""Version of the dataset, keep empty for unversioned dataset."""
     rawdata_hashes: Mapping[str, str] = NotImplemented
     r"""Hashes of the raw dataset file(s)."""
+    rawdata_schemas: Mapping[str, Mapping[str, str]] = NotImplemented
+    r"""Schemas for the raw dataset file(s)."""
 
     def __init__(
         self,
