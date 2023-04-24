@@ -282,19 +282,19 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         self.download_from_url(self.BASE_URL + fname)
 
     def download(
-        self, *, fname: Optional[str] = None, force: bool = True, validate: bool = True
+        self, *, key: Optional[str] = None, force: bool = True, validate: bool = True
     ) -> None:
         r"""Download the dataset."""
         # Recurse if key is None.
-        if fname is None:
+        if key is None:
             self.LOGGER.debug("Starting to download dataset.")
-            for path in self.rawdata_paths.values():
-                self.download(fname=path.name, force=force, validate=validate)
+            for _key in self.rawdata_paths:
+                self.download(key=_key, force=force, validate=validate)
             self.LOGGER.debug("Finished downloading dataset.")
             return
 
         # Check if file already exists.
-        if self.rawdata_files_exist(fname) and not force:
+        if self.rawdata_files_exist(key) and not force:
             self.LOGGER.info("Dataset already exists. Skipping download.")
             return
 
@@ -304,13 +304,13 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
             return
 
         # Download file.
-        self.LOGGER.debug("Starting to download dataset <%s>", fname)
-        self.download_file(fname)
-        self.LOGGER.debug("Finished downloading dataset <%s>", fname)
+        self.LOGGER.debug("Starting to download dataset <%s>", key)
+        self.download_file(key)
+        self.LOGGER.debug("Finished downloading dataset <%s>", key)
 
         # Validate file.
         if validate and self.rawdata_hashes is not NotImplemented:
-            validate_file_hash(fname, reference=self.rawdata_hashes)
+            validate_file_hash(self.rawdata_paths[key], reference=self.rawdata_hashes)
 
 
 class SingleTableDataset(BaseDataset):
@@ -536,7 +536,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         # TODO: Do we need this code block?
         if not self.rawdata_files_exist(key=key):
             self.LOGGER.debug("Raw files missing, fetching it now! <%s>", key)
-            self.download(fname=key, force=force, validate=validate)
+            self.download(key=key, force=force, validate=validate)
 
         if (
             key in self.dataset_files

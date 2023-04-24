@@ -10,8 +10,7 @@ __all__ = [
 
 import logging
 
-import pandas
-from pandas import DataFrame
+import pandas as pd
 
 from tsdm.datasets.base import SingleTableDataset
 
@@ -43,18 +42,8 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
     rawdata_hashes = {
         "small_chunked_sporadic.csv": "sha256:671eb8d121522e98891c84197742a6c9e9bb5015e42b328a93ebdf2cfd393ecf",
     }
-    rawdata_schemas = {"small_chunked_sporadic.csv": ((350665, 12), None, None)}
-    dataset_hashes = {
-        "dataset": "sha256:bbd12ab38b4b7f9c69a07409c26967fe16af3b608daae9816312859199b5ce86",
-    }
-    table_schemas = {
-        "dataset": ((350665, 5), None, None),
-    }
-    # dataset_files = "SmallChunkedSporadic.feather"
-
-    def clean_table(self) -> None:
-        r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
-        dtypes = {
+    rawdata_schemas = {
+        "small_chunked_sporadic.csv": {
             "ID": "int16",
             "Time": "float32",
             "Value_0": "float32",
@@ -68,15 +57,19 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
             "Mask_3": "bool",
             "Mask_4": "bool",
         }
-        df = pandas.read_csv(self.rawdata_paths, dtype=dtypes)
-        df = DataFrame(df)
+    }
+    dataset_hashes = {
+        "dataset": "sha256:bbd12ab38b4b7f9c69a07409c26967fe16af3b608daae9816312859199b5ce86",
+    }
+    table_schemas = {
+        "dataset": ((350665, 5), None, None),
+    }
+    # dataset_files = "SmallChunkedSporadic.feather"
 
-        if df.shape != self.RAWDATA_SHAPE:
-            raise ValueError(
-                f"The {df.shape=} is not correct."
-                "Please apply the modified preprocessing using bin_k=2, as outlined in"
-                "the appendix. The resulting tensor should have 3082224 rows and 7 columns."
-            )
+    def clean_table(self) -> None:
+        r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
+        key = "small_chunked_sporadic.csv"
+        df = pd.read_csv(self.rawdata_paths[key], dtype=self.rawdata_schemas[key])
 
         channels = {}
         for k in range(5):
