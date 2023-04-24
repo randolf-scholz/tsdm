@@ -58,12 +58,10 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
             "Mask_4": "bool",
         }
     }
-    dataset_hashes = {
-        "dataset": "sha256:bbd12ab38b4b7f9c69a07409c26967fe16af3b608daae9816312859199b5ce86",
-    }
-    table_schemas = {
-        "dataset": ((350665, 5), None, None),
-    }
+    dataset_hash = (
+        "sha256:bbd12ab38b4b7f9c69a07409c26967fe16af3b608daae9816312859199b5ce86"
+    )
+
     # dataset_files = "SmallChunkedSporadic.feather"
 
     def clean_table(self) -> None:
