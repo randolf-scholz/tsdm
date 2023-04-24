@@ -245,13 +245,7 @@ def validate_file_hash(
     # Now, we know that file is a single file.
     assert isinstance(file, str | Path)
     file = Path(file)
-
-    if file.suffix == ".parquet":
-        warnings.warn(
-            f"Parquet file {file.name!r} not validated since the format is not binary stable!",
-            UserWarning,
-            stacklevel=2,
-        )
+    print(file)
 
     if isinstance(reference, Mapping):
         reference = reference.get(
@@ -292,10 +286,17 @@ def validate_file_hash(
     hash_value = hash_file(file, hash_algorithm=hash_algorithm, **hash_kwargs)
 
     # Finally, compare the hashes.
-    if reference_hash is None:
+    if file.suffix == ".parquet":
+        warnings.warn(
+            f"Parquet file {file.name!r} not validated since the format is not binary stable!"
+            f" The {hash_algorithm!r}-hash is {hash_value!r}.",
+            UserWarning,
+            stacklevel=2,
+        )
+    elif reference_hash is None:
         msg = (
             f"No reference hash given for file {file.name!r}."
-            f"The {hash_algorithm!r}-hash is {hash_value!r}."
+            f" The {hash_algorithm!r}-hash is {hash_value!r}."
         )
         if errors == "raise":
             raise LookupError(msg)
@@ -305,9 +306,9 @@ def validate_file_hash(
             logger.info(msg)
     elif hash_value != reference_hash:
         msg = (
-            f"File {file.name!r} failed to validate! {reference_alg!r}-hash-"
-            f"value {hash_value!r} does not match reference {reference_hash!r}."
-            f"Ignore this warning if the format is parquet."
+            f"File {file.name!r} failed to validate!"
+            f" The {hash_algorithm!r}-hash-value {hash_value!r}"
+            f" does not match reference {reference_hash!r}."
         )
         if errors == "raise":
             raise ValueError(msg)
