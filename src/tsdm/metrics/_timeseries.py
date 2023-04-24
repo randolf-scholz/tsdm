@@ -1,9 +1,25 @@
-"""TODO: add package summary.
+"""Loss functions for time series.
 
-TODO: add package description.
+Note:
+    Contains losses in modular form.
+    See `tsdm.metrics.functional` for functional implementations.
 """
 
-__all__ = []
+__all__ = [
+    "TimeSeriesLoss",
+    "TimeSeriesBaseLoss",
+    "WeightedTimeSeriesLoss",
+    "ND",
+    "NRMSE",
+    "Q_Quantile",
+    "Q_Quantile_Loss",
+    "TimeSeriesMSE",
+    "TimeSeriesWMSE",
+    # "TimeSeriesMAE",
+    # "TimeSeriesWMAE",
+    # "TimeSeriesRMSE",
+    # "TimeSeriesWRMSE",
+]
 
 from abc import ABCMeta, abstractmethod
 from typing import Callable, Final, Optional, Protocol, runtime_checkable
@@ -17,7 +33,7 @@ from tsdm.utils.decorators import autojit
 
 
 @runtime_checkable
-class TimeSeries(Protocol):
+class TimeSeriesLoss(Protocol):
     r"""Protocol for a loss function."""
 
     def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
@@ -51,14 +67,12 @@ class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
     r"""CONST: Whether to normalize the weights."""
     normalize_channels: Final[bool]
     r"""CONST: Whether to normalize the weights."""
-    rank: Final[int]
-    r"""CONST: The number of dimensions over which the loss is computed"""
 
     def __init__(
         self,
-        axes: int | tuple[int, ...] = -1,
         /,
         *,
+        axes: int | tuple[int, ...] = -1,
         normalize_time: bool = True,
         normalize_channels: bool = False,
     ):
@@ -66,7 +80,6 @@ class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
         self.normalize_time = normalize_time
         self.normalize_channels = normalize_channels
         self.axes = (axes,) if isinstance(axes, int) else tuple(axes)
-        self.rank = len(self.axes)
 
     @abstractmethod
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
@@ -74,7 +87,7 @@ class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class WeightedTimeSeriesLoss(nn.Module, metaclass=ABCMeta):
+class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
     r"""Base class for a weighted time series loss function.
 
     Because the loss is computed over a sequence of variable length,
@@ -91,41 +104,43 @@ class WeightedTimeSeriesLoss(nn.Module, metaclass=ABCMeta):
     r"""Optional: Use a more complicated discounting schema."""
 
     # Constants
-    axes: Final[tuple[int, ...]]
-    r"""CONST: The axes over which the loss is computed."""
     learnable: Final[bool]
     r"""CONST: Whether the weights are learnable."""
-    normalize_time: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
-    normalize_channels: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
-    rank: Final[int]
-    r"""CONST: The number of dimensions of the weight tensor."""
-    shape: Final[tuple[int, ...]]
-    r"""CONST: The shape of the weight tensor."""
 
     def __init__(
         self,
         weight: Tensor,
         /,
         *,
+        axes: None | int | tuple[int, ...] = None,
         learnable: bool = False,
-        normalize: bool = False,
-        axes: Optional[tuple[int, ...]] = None,
-    ):
-        super().__init__()
-        self.learnable = learnable
-        self.normalize = normalize
-
+        normalize_channels: bool = False,
+        normalize_time: bool = True,
+    ) -> None:
+        r"""Initialize the loss function."""
         w = torch.as_tensor(weight, dtype=torch.float32)
-        assert torch.all(w >= 0) and torch.any(w > 0)
-        w = w / torch.sum(w) if self.normalize else w
+        if not torch.all(w >= 0) and torch.any(w > 0):
+            raise ValueError(
+                "Weights must be non-negative and at least one must be positive."
+            )
+        axes = tuple(range(-w.ndim, 0)) if axes is None else axes
+        super().__init__(
+            axes=axes,
+            normalize_channels=normalize_channels,
+            normalize_time=normalize_time,
+        )
 
+        # Set the weight tensor.
+        w = w / torch.sum(w)
         self.weight = nn.Parameter(w, requires_grad=self.learnable)
-        self.rank = len(self.weight.shape)
-        self.shape = tuple(self.weight.shape)
-        self.axes = tuple(range(-self.rank, 0)) if axes is None else axes
-        assert len(self.axes) == self.rank
+        self.learnable = learnable
+
+        # Validate the axes.
+        if len(self.axes) != self.weight.ndim:
+            raise ValueError(
+                f"Number of axes does not match weight shape:"
+                f" {len(self.axes)} != {self.weight.ndim=}"
+            )
 
     @abstractmethod
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
@@ -256,16 +271,18 @@ class TimeSeriesMSE(nn.Module):
 
     def __init__(
         self,
-        axes: int | tuple[int, ...] = -1,
-        time_axes: Optional[int | tuple[int, ...]] = None,
         /,
         *,
+        time_axes: None | int | tuple[int, ...] = None,
+        channel_axes: None | int | tuple[int, ...] = None,
         discount: float = 1.0,
         normalize_time: bool = True,
         normalize_channels: bool = False,
     ) -> None:
         super().__init__()
-        self.axes = (axes,) if isinstance(axes, int) else tuple(axes)
+        self.axes = (
+            (channel_axes,) if isinstance(channel_axes, int) else tuple(channel_axes)
+        )
         t_axes = min(self.axes) - 1 if time_axes is None else time_axes
         self.time_axes = (t_axes,) if isinstance(t_axes, int) else tuple(t_axes)
         assert set(self.time_axes).isdisjoint(
@@ -330,12 +347,14 @@ class TimeSeriesWMSE(WeightedLoss):
         weight: Tensor,
         /,
         *,
+        time_axes: None | int | tuple[int, ...] = None,
+        channel_axes: None | int | tuple[int, ...] = None,
         learnable: bool = False,
         normalize: bool = False,
-        axes: Optional[tuple[int, ...]] = None,
-        time_axes: Optional[int | tuple[int, ...]] = None,
     ):
-        super().__init__(weight, learnable=learnable, normalize=normalize, axes=axes)
+        super().__init__(
+            weight, axes=channel_axes, learnable=learnable, normalize=normalize
+        )
         t_axes = min(self.axes) - 1 if time_axes is None else time_axes
         self.time_axes = (t_axes,) if isinstance(t_axes, int) else tuple(t_axes)
 

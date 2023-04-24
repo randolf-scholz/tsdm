@@ -1,10 +1,8 @@
 r"""Implementations of loss functions.
 
-Notes
------
-Contains losses in modular form.
-
-- See `tsdm.losses.functional` for functional implementations.
+Note:
+    Contains losses in modular form.
+    See `tsdm.metrics.functional` for functional implementations.
 """
 
 __all__ = [
@@ -19,15 +17,13 @@ __all__ = [
     "WMSE",
     "MAE",
     "WMAE",
-    # "TimeSeriesMAE",
-    # "TimeSeriesWMAE",
-    # "TimeSeriesRMSE",
-    # "TimeSeriesWRMSE",
+    "LP",
+    "WLP",
 ]
 
 
 from abc import ABCMeta, abstractmethod
-from typing import Final, Optional, Protocol, runtime_checkable
+from typing import Final, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, jit, nn
@@ -51,20 +47,17 @@ class BaseLoss(nn.Module, metaclass=ABCMeta):
     r"""CONST: The axes over which the loss is computed."""
     normalize: Final[bool]
     r"""CONST: Whether to normalize the weights."""
-    rank: Final[int]
-    r"""CONST: The number of dimensions over which the loss is computed"""
 
     def __init__(
         self,
-        axes: int | tuple[int, ...] = -1,
         /,
         *,
+        axes: int | tuple[int, ...] = -1,
         normalize: bool = False,
     ):
         super().__init__()
         self.normalize = normalize
         self.axes = (axes,) if isinstance(axes, int) else tuple(axes)
-        self.rank = len(self.axes)
 
     @abstractmethod
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
@@ -72,7 +65,7 @@ class BaseLoss(nn.Module, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class WeightedLoss(nn.Module, metaclass=ABCMeta):
+class WeightedLoss(BaseLoss, metaclass=ABCMeta):
     r"""Base class for a weighted loss function."""
 
     # Parameters
@@ -80,16 +73,8 @@ class WeightedLoss(nn.Module, metaclass=ABCMeta):
     r"""PARAM: The weight-vector."""
 
     # Constants
-    axes: Final[tuple[int, ...]]
-    r"""CONST: The axes over which the loss is computed."""
     learnable: Final[bool]
     r"""CONST: Whether the weights are learnable."""
-    normalize: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
-    rank: Final[int]
-    r"""CONST: The number of dimensions of the weight tensor."""
-    shape: Final[tuple[int, ...]]
-    r"""CONST: The shape of the weight tensor."""
 
     def __init__(
         self,
@@ -98,21 +83,28 @@ class WeightedLoss(nn.Module, metaclass=ABCMeta):
         *,
         learnable: bool = False,
         normalize: bool = False,
-        axes: Optional[tuple[int, ...]] = None,
-    ):
-        super().__init__()
-        self.learnable = learnable
-        self.normalize = normalize
-
+        axes: None | int | tuple[int, ...] = None,
+    ) -> None:
+        r"""Initialize the loss function."""
         w = torch.as_tensor(weight, dtype=torch.float32)
-        assert torch.all(w >= 0) and torch.any(w > 0)
-        w = w / torch.sum(w) if self.normalize else w
+        if not torch.all(w >= 0) and torch.any(w > 0):
+            raise ValueError(
+                "Weights must be non-negative and at least one must be positive."
+            )
+        axes = tuple(range(-w.ndim, 0)) if axes is None else axes
+        super().__init__(axes=axes, normalize=normalize)
 
+        # Set the weight tensor.
+        w = w / torch.sum(w)
         self.weight = nn.Parameter(w, requires_grad=self.learnable)
-        self.rank = len(self.weight.shape)
-        self.shape = tuple(self.weight.shape)
-        self.axes = tuple(range(-self.rank, 0)) if axes is None else axes
-        assert len(self.axes) == self.rank
+        self.learnable = learnable
+
+        # Validate the axes.
+        if len(self.axes) != self.weight.ndim:
+            raise ValueError(
+                f"Number of axes does not match weight shape:"
+                f" {len(self.axes)} != {self.weight.ndim=}"
+            )
 
     @abstractmethod
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
@@ -391,6 +383,7 @@ class WRMSE(WeightedLoss):
         return torch.sqrt(r)
 
 
+@autojit
 class LP(BaseLoss):
     r"""$L^p$ Loss.
 
@@ -414,11 +407,10 @@ class LP(BaseLoss):
     def __init__(
         self,
         p: float = 2.0,
-        learnable: bool = False,
         normalize: bool = False,
-        axes: Optional[tuple[int, ...]] = None,
+        axes: int | tuple[int, ...] = -1,
     ):
-        super().__init__(normalize=normalize, learnable=learnable, axes=axes)
+        super().__init__(normalize=normalize, axes=axes)
         self.p = p
 
     @jit.export
@@ -443,6 +435,7 @@ class LP(BaseLoss):
         return torch.pow(r, 1 / self.p)
 
 
+@autojit
 class WLP(WeightedLoss):
     r"""Weighted $L^p$ Loss.
 
@@ -470,7 +463,7 @@ class WLP(WeightedLoss):
         p: float = 2.0,
         learnable: bool = False,
         normalize: bool = False,
-        axes: Optional[tuple[int, ...]] = None,
+        axes: None | int | tuple[int, ...] = None,
     ):
         super().__init__(weight, normalize=normalize, learnable=learnable, axes=axes)
         self.p = p
