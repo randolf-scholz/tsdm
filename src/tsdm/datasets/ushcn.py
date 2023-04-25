@@ -174,15 +174,15 @@ class USHCN(MultiTableDataset[KEY]):
     }
     rawdata_schemas = {
         "metadata": {
-            "COOP_ID": "string",
-            "LATITUDE": "float32",
-            "LONGITUDE": "float32",
-            "ELEVATION": "float32",
-            "STATE": "string",
-            "NAME": "string",
-            "COMPONENT_1": "Int32",
-            "COMPONENT_2": "Int32",
-            "COMPONENT_3": "Int32",
+            "COOP_ID": "string[pyarrow]",
+            "LATITUDE": "float32[pyarrow]",
+            "LONGITUDE": "float32[pyarrow]",
+            "ELEVATION": "float32[pyarrow]",
+            "STATE": "string[pyarrow]",
+            "NAME": "string[pyarrow]",
+            "COMPONENT_1": "int32[pyarrow]",
+            "COMPONENT_2": "int32[pyarrow]",
+            "COMPONENT_3": "int32[pyarrow]",
             "UTC_OFFSET": "timedelta64[s]",
         },
     }
