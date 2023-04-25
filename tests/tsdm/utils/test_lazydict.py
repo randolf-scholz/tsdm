@@ -6,7 +6,7 @@ from collections.abc import MutableMapping
 
 import pytest
 
-from tsdm.utils import LazyDict, LazyFunction
+from tsdm.utils import LazyDict, LazyValue
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def test_lazydict() -> None:
     assert isinstance(ld, MutableMapping)
 
     for value in ld.values():
-        assert isinstance(value, LazyFunction)
+        assert isinstance(value, LazyValue)
 
     for key in ld:
         assert isinstance(ld[key], int)
@@ -61,14 +61,14 @@ def test_lazydict() -> None:
     assert ld is not EMPTY, "__or__ should create a new dictionary"
     assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
-        assert isinstance(value, LazyFunction)
+        assert isinstance(value, LazyValue)
 
     # test __or__ operator with other dict
     ld = EMPTY | {0: lambda: 0}
     assert ld is not EMPTY, "__or__ should create a new dictionary"
     assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
-        assert isinstance(value, LazyFunction)
+        assert isinstance(value, LazyValue)
 
     # test __ror__ operator
     empty: dict = {}
@@ -84,7 +84,7 @@ def test_lazydict() -> None:
     assert ld is EMPTY, "__ior__ should modify existing dictionary"
     assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
-        assert isinstance(value, LazyFunction)
+        assert isinstance(value, LazyValue)
 
 
 def test_lazydict_fromkeys() -> None:
@@ -99,7 +99,7 @@ def test_lazydict_fromkeys() -> None:
     assert isinstance(ld, MutableMapping)
 
     for value in ld.values():
-        assert isinstance(value, LazyFunction)
+        assert isinstance(value, LazyValue)
 
     for key in ld:
         assert isinstance(ld[key], int)
@@ -117,8 +117,8 @@ def test_lazydict_copy() -> None:
     for (keyA, valueA), (keyB, valueB) in zip(ldA.items(), ldB.items()):
         assert keyA is keyB
         assert valueA is valueB
-        assert isinstance(valueA, LazyFunction)
-        assert isinstance(valueB, LazyFunction)
+        assert isinstance(valueA, LazyValue)
+        assert isinstance(valueB, LazyValue)
 
     # compute the value in the second dictionary
     for keyB in ldB:
@@ -129,7 +129,7 @@ def test_lazydict_copy() -> None:
         assert keyA is keyB
         assert valueA is not valueB
         assert isinstance(valueB, int)
-        assert isinstance(valueA, LazyFunction)
+        assert isinstance(valueA, LazyValue)
 
 
 def _main() -> None:
