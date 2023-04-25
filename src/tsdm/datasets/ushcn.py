@@ -1,14 +1,10 @@
-r"""#TODO add module summary line.
-
-#TODO add module description.
-"""
+r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 
 __all__ = [
     # Classes
     "USHCN",
 ]
 
-import importlib
 import warnings
 from typing import Literal, TypeAlias
 
@@ -17,7 +13,7 @@ from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
 
-KEY: TypeAlias = Literal["us_daily", "states", "stations"]
+KEY: TypeAlias = Literal["timeseries", "metadata", "timeseries_complete", "state_codes"]
 
 
 class USHCN(MultiTableDataset[KEY]):
@@ -165,7 +161,7 @@ class USHCN(MultiTableDataset[KEY]):
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = ["timeseries", "metadata", "state_codes"]
+    table_names = ["timeseries", "timeseries_complete", "metadata", "state_codes"]
     rawdata_hashes = {
         "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
         "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
@@ -178,7 +174,7 @@ class USHCN(MultiTableDataset[KEY]):
             "LATITUDE": "float32[pyarrow]",
             "LONGITUDE": "float32[pyarrow]",
             "ELEVATION": "float32[pyarrow]",
-            "STATE": "string[pyarrow]",
+            "STATE": "string",  # not pyarrow due to bug in pandas.
             "NAME": "string[pyarrow]",
             "COMPONENT_1": "int32[pyarrow]",
             "COMPONENT_2": "int32[pyarrow]",
@@ -187,7 +183,8 @@ class USHCN(MultiTableDataset[KEY]):
         },
     }
     dataset_hashes = {
-        "timeseries": "sha256:03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
+        "timeseries_complete": "sha256:03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
+        "timeseries": None,
         "metadata": "sha256:1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
         "state_codes": "sha256:388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
     }
@@ -204,19 +201,19 @@ class USHCN(MultiTableDataset[KEY]):
     }
 
     def clean_table(self, key: KEY = "timeseries") -> DataFrame:
-        if key == "timeseries":
-            return self._clean_timeseries()
-        if key == "metadata":
-            return self._clean_metadata()
-        if key == "state_codes":
-            return self._clean_state_codes()
-        raise KeyError(f"Unknown key: {key}")
+        match key:
+            case "timeseries":
+                return self._clean_timeseries()
+            case "timeseries_complete":
+                return self._clean_timeseries_complete()
+            case "metadata":
+                return self._clean_metadata()
+            case "state_codes":
+                return self._clean_state_codes()
+            case _:
+                raise KeyError(f"Unknown key: {key}")
 
     def _clean_metadata(self) -> DataFrame:
-        stations_file = self.rawdata_paths["ushcn-stations.txt"]
-        if not stations_file.exists():
-            self.download()
-
         stations_colspecs = {
             "COOP_ID": (1, 6),
             "LATITUDE": (8, 15),
@@ -240,7 +237,7 @@ class USHCN(MultiTableDataset[KEY]):
         }
 
         stations = pd.read_fwf(
-            stations_file,
+            self.rawdata_paths["ushcn-stations.txt"],
             colspecs=stations_cspecs,
             dtype=self.rawdata_schemas["metadata"],
             names=stations_colspecs,
@@ -253,17 +250,17 @@ class USHCN(MultiTableDataset[KEY]):
         return stations
 
     def _clean_timeseries(self) -> DataFrame:
+        self.LOGGER.info("Creating simplified timeseries table.")
+        data = self.tables["timeseries_complete"]
+        return data.pivot(columns="ELEMENT", values="VALUE")
+
+    def _clean_timeseries_complete(self) -> DataFrame:
         warnings.warn(
             "This can take a while to run. Consider using the Modin backend."
             "Refactor if read_fwf becomes available in polars or pyarrow.",
             UserWarning,
             stacklevel=2,
         )
-
-        if importlib.util.find_spec("modin") is not None:
-            mpd = importlib.import_module("modin.pandas")
-        else:
-            mpd = pd
 
         # column: (start, stop)
         colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
@@ -323,7 +320,7 @@ class USHCN(MultiTableDataset[KEY]):
         na_values = {("VALUE", k): ["-9999"] for k in range(1, 32)}
 
         self.LOGGER.info("Loading main file...")
-        ds = mpd.read_fwf(
+        ds = pd.read_fwf(
             self.rawdata_paths["us.txt.gz"],
             colspecs=cspec,
             names=colspecs,
@@ -342,7 +339,7 @@ class USHCN(MultiTableDataset[KEY]):
         self.LOGGER.info("Cleaning up columns...")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
         data.columns = pd.MultiIndex.from_frame(
-            mpd.DataFrame(data_cols, columns=["VAR", "DAY"])
+            pd.DataFrame(data_cols, columns=["VAR", "DAY"])
             .astype({"VAR": "string", "DAY": "uint8"})
             .astype("category")
         )
@@ -369,7 +366,7 @@ class USHCN(MultiTableDataset[KEY]):
         self.LOGGER.info("Creating time index...")
         date_cols = ["YEAR", "MONTH", "DAY"]
         data = (
-            data.assign(DATE=mpd.to_datetime(data[date_cols], errors="coerce"))
+            data.assign(DATE=pd.to_datetime(data[date_cols], errors="coerce"))
             .drop(columns=date_cols)
             .dropna(subset=["DATE", "VALUE"])
         )
@@ -381,26 +378,10 @@ class USHCN(MultiTableDataset[KEY]):
             .sort_values(by=["COOP_ID", "DATE", "ELEMENT"])
         )
 
-        # Unstack on ELEMENT
-        # values = (
-        #     data.pivot(
-        #         index=["COOP_ID", "DATE"],
-        #         columns="ELEMENT",
-        #         values=["VALUE", "MFLAG", "QFLAG", "SFLAG"],
-        #     )
-        #     .swaplevel(0, 1, axis="columns")
-        #     .sort_index()
-        # )
-
         return data
 
     @staticmethod
     def _clean_state_codes() -> DataFrame:
-        state_dtypes = {
-            "ID": pd.CategoricalDtype(ordered=True),
-            "Abbr.": pd.CategoricalDtype(ordered=True),
-            "State": pd.StringDtype(),
-        }
         state_codes = [
             ("ID", "Abbr.", "State"),
             ("01", "AL", "Alabama"),
@@ -453,6 +434,5 @@ class USHCN(MultiTableDataset[KEY]):
             ("48", "WY", "Wyoming"),
         ]
         columns = state_codes.pop(0)
-        states = pd.DataFrame(state_codes, columns=columns)
-        states = states.astype(state_dtypes)
+        states = pd.DataFrame(state_codes, columns=columns, dtype="string[pyarrow]")
         return states
