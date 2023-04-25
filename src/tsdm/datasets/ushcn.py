@@ -236,18 +236,19 @@ class USHCN(MultiTableDataset[KEY]):
             "COMPONENT_3": ["------"],
         }
 
-        stations = pd.read_fwf(
-            self.rawdata_paths["ushcn-stations.txt"],
-            colspecs=stations_cspecs,
-            dtype=self.rawdata_schemas["metadata"],
-            names=stations_colspecs,
-            na_values=na_values,
-            dtype_backend="pyarrow",
-        ).astype({"STATE": "category"})
-
-        stations = stations.set_index("COOP_ID")
-
-        return stations
+        metadata = (
+            pd.read_fwf(
+                self.rawdata_paths["ushcn-stations.txt"],
+                colspecs=stations_cspecs,
+                dtype=self.rawdata_schemas["metadata"],
+                names=stations_colspecs,
+                na_values=na_values,
+                dtype_backend="pyarrow",
+            )
+            .astype({"STATE": "category"})
+            .set_index("COOP_ID")
+        )
+        return metadata
 
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Creating simplified timeseries table.")
