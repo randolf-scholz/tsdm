@@ -173,7 +173,7 @@ def hash_array(
 def validate_file_hash(
     file: PathLike | Sequence[PathLike] | Mapping[str, PathLike],
     /,
-    reference: None | str | Mapping[str, str] = None,
+    reference: None | str | Mapping[str, str | None] = None,
     *,
     hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,

@@ -193,12 +193,12 @@ class USHCN(MultiTableDataset[KEY]):
         "metadata": ((1218, 9), None, None),
         "state_codes": ((48, 3), None, None),
     }
-    rawdata_files = {
+    rawdata_files = [
         "data_format.txt",
         "ushcn-stations.txt",
         "station_file_format.txt",
         "us.txt.gz",
-    }
+    ]
 
     def clean_table(self, key: KEY = "timeseries") -> DataFrame:
         match key:
