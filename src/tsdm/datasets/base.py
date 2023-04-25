@@ -149,7 +149,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     # instance attribute
     __version__: str
     r"""Version of the dataset, keep empty for unversioned dataset."""
-    rawdata_hashes: Mapping[str, str] = NotImplemented
+    rawdata_hashes: Mapping[str, str | None] = NotImplemented
     r"""Hashes of the raw dataset file(s)."""
     rawdata_schemas: Mapping[str, Mapping[str, str]] = NotImplemented
     r"""Schemas for the raw dataset file(s)."""
@@ -431,9 +431,9 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     """
 
     # Validation - Implement on per dataset basis!
-    dataset_hashes: Mapping[Key, str] = NotImplemented
+    dataset_hashes: Mapping[Key, str | None] = NotImplemented
     r"""Hashes of the cleaned dataset file(s)."""
-    table_hashes: Mapping[Key, str] = NotImplemented
+    table_hashes: Mapping[Key, str | None] = NotImplemented
     r"""Hashes of the in-memory cleaned dataset table(s)."""
     table_schemas: Mapping[Key, Schema] = NotImplemented
     r"""Schema of the in-memory cleaned dataset table(s)."""
