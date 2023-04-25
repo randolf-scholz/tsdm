@@ -11,7 +11,7 @@ __all__ = [
 import importlib
 from typing import Literal, TypeAlias
 
-import pandas
+import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
@@ -172,6 +172,20 @@ class USHCN(MultiTableDataset[KEY]):
         "station_file_format.txt": "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
         "us.txt.gz": "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
     }
+    rawdata_schemas = {
+        "stations": {
+            "COOP_ID": "string",
+            "LATITUDE": "float32",
+            "LONGITUDE": "float32",
+            "ELEVATION": "float32",
+            "STATE": "string",
+            "NAME": "string",
+            "COMPONENT_1": "Int32",
+            "COMPONENT_2": "Int32",
+            "COMPONENT_3": "Int32",
+            "UTC_OFFSET": "timedelta64[s]",
+        },
+    }
     dataset_hashes = {
         "us_daily": "sha256:03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
         "states": "sha256:388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
@@ -183,11 +197,10 @@ class USHCN(MultiTableDataset[KEY]):
         "stations": ((1218, 9), None, None),
     }
     rawdata_files = {
-        "metadata": "data_format.txt",
-        "stations": "ushcn-stations.txt",
-        "stations_metadata": "station_file_format.txt",
-        "us_daily": "us.txt.gz",
-        "states": None,
+        "data_format.txt",
+        "ushcn-stations.txt",
+        "station_file_format.txt",
+        "us.txt.gz",
     }
 
     def clean_table(self, key: KEY = "us_daily") -> DataFrame:
@@ -202,13 +215,13 @@ class USHCN(MultiTableDataset[KEY]):
 
     def _clean_states(self) -> DataFrame:
         state_dtypes = {
-            "ID": pandas.CategoricalDtype(ordered=True),
-            "Abbr.": pandas.CategoricalDtype(ordered=True),
-            "State": pandas.StringDtype(),
+            "ID": pd.CategoricalDtype(ordered=True),
+            "Abbr.": pd.CategoricalDtype(ordered=True),
+            "State": pd.StringDtype(),
         }
         state_codes = self._state_codes
         columns = state_codes.pop(0)
-        states = pandas.DataFrame(state_codes, columns=columns)
+        states = pd.DataFrame(state_codes, columns=columns)
         states = states.astype(state_dtypes)
         return states
 
@@ -229,30 +242,8 @@ class USHCN(MultiTableDataset[KEY]):
             "COMPONENT_3": (82, 87),
             "UTC_OFFSET": (89, 90),
         }
-
         # pandas wants list[tuple[int, int]], 0 indexed, half open intervals.
         stations_cspecs = [(a - 1, b) for a, b in stations_colspecs.values()]
-
-        stations_dtypes = {
-            "COOP_ID": "string",
-            "LATITUDE": "float32",
-            "LONGITUDE": "float32",
-            "ELEVATION": "float32",
-            "STATE": "string",
-            "NAME": "string",
-            "COMPONENT_1": "string",
-            "COMPONENT_2": "string",
-            "COMPONENT_3": "string",
-            "UTC_OFFSET": "timedelta64[h]",
-        }
-
-        stations_new_dtypes = {
-            "COOP_ID": "category",
-            "COMPONENT_1": "Int32",
-            "COMPONENT_2": "Int32",
-            "COMPONENT_3": "Int32",
-            "STATE": "category",
-        }
 
         stations_na_values = {
             "ELEVATION": "-999.9",
@@ -261,18 +252,15 @@ class USHCN(MultiTableDataset[KEY]):
             "COMPONENT_3": "------",
         }
 
-        stations = pandas.read_fwf(
+        stations = pd.read_fwf(
             stations_file,
             colspecs=stations_cspecs,
-            dtype=stations_dtypes,
+            dtype=self.rawdata_schemas["stations"],
             names=stations_colspecs,
-            na_value=stations_na_values,
-        )
+            na_values=stations_na_values,
+            dtype_backend="pyarrow",
+        ).astype({"STATE": "category"})
 
-        for col, na_value in stations_na_values.items():
-            stations[col] = stations[col].replace(na_value, pandas.NA)
-
-        stations = stations.astype(stations_new_dtypes)
         stations = stations.set_index("COOP_ID")
 
         return stations
@@ -283,7 +271,7 @@ class USHCN(MultiTableDataset[KEY]):
         if importlib.util.find_spec("modin") is not None:
             mpd = importlib.import_module("modin.pandas")
         else:
-            mpd = pandas
+            mpd = pd
 
         # column: (start, stop)
         colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
@@ -293,6 +281,7 @@ class USHCN(MultiTableDataset[KEY]):
             "ELEMENT": (13, 16),
         }
 
+        # Add columns for each day of the month.
         for k, i in enumerate(range(17, 258, 8)):
             colspecs |= {
                 ("VALUE", k + 1): (i, i + 4),
@@ -301,100 +290,122 @@ class USHCN(MultiTableDataset[KEY]):
                 ("SFLAG", k + 1): (i + 7, i + 7),
             }
 
-        MFLAGS = pandas.CategoricalDtype(list("BDHKLOPTW"))
-        QFLAGS = pandas.CategoricalDtype(list("DGIKLMNORSTWXZ"))
-        SFLAGS = pandas.CategoricalDtype(list("067ABFGHKMNRSTUWXZ"))
-        ELEMENTS = pandas.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
-
-        dtypes = {
-            "COOP_ID": "string",
-            "YEAR": "int16",
-            "MONTH": "int8",
-            "ELEMENT": ELEMENTS,
-            "VALUE": pandas.Int16Dtype(),
-            "MFLAG": MFLAGS,
-            "QFLAG": QFLAGS,
-            "SFLAG": SFLAGS,
-        }
-
-        # dtypes but with same index as colspec.
-        dtype = {
-            key: (dtypes[key[0]] if isinstance(key, tuple) else dtypes[key])
-            for key in colspecs
-        }
-
         # pandas wants list[tuple[int, int]], 0 indexed, half open intervals.
         cspec = [(a - 1, b) for a, b in colspecs.values()]
 
+        MFLAGS_DTYPE = pd.CategoricalDtype(list("BDHKLOPTW"))
+        QFLAGS_DTYPE = pd.CategoricalDtype(list("DGIKLMNORSTWXZ"))
+        SFLAGS_DTYPE = pd.CategoricalDtype(list("067ABFGHKMNRSTUWXZ"))
+        ELEMENTS_DTYPE = pd.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
+        VALUES_DTYPE = "int16[pyarrow]"
+
+        # MFLAGS_DTYPE = "string[pyarrow]"
+        # QFLAGS_DTYPE = "string[pyarrow]"
+        # SFLAGS_DTYPE = "string[pyarrow]"
+        # ELEMENTS_DTYPE = "string[pyarrow]"
+        # VALUES_DTYPE = "int16[pyarrow]"
+
+        base_dtypes = {
+            "COOP_ID": "string[pyarrow]",
+            "YEAR": "int16[pyarrow]",
+            "MONTH": "int8[pyarrow]",
+            "ELEMENT": "string[pyarrow]",
+            "VALUE": "int16[pyarrow]",
+            "MFLAG": "string[pyarrow]",
+            "QFLAG": "string[pyarrow]",
+            "SFLAG": "string[pyarrow]",
+        }
+
+        updated_dtypes = {
+            "COOP_ID": "category",
+            "YEAR": "int16[pyarrow]",
+            "MONTH": "int8[pyarrow]",
+            "ELEMENT": ELEMENTS_DTYPE,
+            "VALUE": "int16[pyarrow]",
+            "MFLAG": MFLAGS_DTYPE,
+            "QFLAG": QFLAGS_DTYPE,
+            "SFLAG": SFLAGS_DTYPE,
+        }
+
+        # dtypes but with same index as colspec.
+        column_dtypes = {
+            key: (base_dtypes[key[0]] if isinstance(key, tuple) else base_dtypes[key])
+            for key in colspecs
+        }
+
         # per column values to be interpreted as nan
-        na_values = {("VALUE", k): "-9999" for k in range(1, 32)}
-        us_daily_path = self.rawdata_paths["us_daily"]
+        na_values = {("VALUE", k): ["-9999"] for k in range(1, 32)}
 
         self.LOGGER.info("Loading main file...")
         ds = mpd.read_fwf(
-            us_daily_path,
+            self.rawdata_paths["us.txt.gz"],
             colspecs=cspec,
             names=colspecs,
             na_values=na_values,
-            dtype=dtype,
+            dtype=column_dtypes,
             compression="gzip",
-        )
+        ).rename_axis(index="ID")
 
-        self.LOGGER.info("Cleaning up columns...")
+        self.LOGGER.info("Splitting dataframe...")
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
         data_cols = [col for col in ds.columns if col not in id_cols]
-        columns = mpd.DataFrame(data_cols, columns=["VAR", "DAY"])
-        columns = columns.astype({"VAR": "string", "DAY": "uint8"})
-        columns = columns.astype("category")
+        data, index = ds[data_cols], ds[id_cols]
+        del ds
+
+        self.LOGGER.info("Cleaning up columns...")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
-        data = ds[data_cols]
-        data.columns = pandas.MultiIndex.from_frame(columns)
+        data.columns = pd.MultiIndex.from_frame(
+            mpd.DataFrame(data_cols, columns=["VAR", "DAY"])
+            .astype({"VAR": "string", "DAY": "uint8"})
+            .astype("category")
+        )
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
-        data = data.stack(level="DAY", dropna=False)
-        data = data.reset_index(level="DAY")
+        data = (
+            data.stack(level="DAY", dropna=False)
+            .reset_index(level="DAY")
+            .astype(  # correct dtypes after stacking operation
+                {
+                    "DAY": "int8",
+                    "VALUE": VALUES_DTYPE,
+                    "MFLAG": MFLAGS_DTYPE,
+                    "QFLAG": QFLAGS_DTYPE,
+                    "SFLAG": SFLAGS_DTYPE,
+                }
+            )
+        )
 
         self.LOGGER.info("Merging on ID columns...")
-        # correct dtypes after stacking operation
-        _dtypes = {k: v for k, v in dtypes.items() if k in data.columns}
-        data = data.astype(_dtypes | {"DAY": "int8"})
-
-        # recombine data columns with original data
-        data = ds[id_cols].join(data, how="inner")
-        data = data.astype(dtypes | {"DAY": "int8", "COOP_ID": "category"})
+        data = index.join(data, how="inner").astype(updated_dtypes)
 
         self.LOGGER.info("Creating time index...")
-        data = data.reset_index(drop=True)
-        datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
-        data = data.drop(columns=["YEAR", "MONTH", "DAY"])
-        data["TIME"] = datetimes
-        data = data.dropna(subset=["TIME"])
-
-        self.LOGGER.info("Pre-Sorting index....")
-        data = data.set_index("COOP_ID")
-        data = data.sort_index()  # fast pre-sort with single index
-        data = data.set_index("TIME", append=True)
-
-        self.LOGGER.info("Converting back to standard pandas DataFrame....")
-        try:
-            data = data._to_pandas()  # pylint: disable=protected-access
-        except AttributeError:
-            pass
-
-        self.LOGGER.info("Sorting columns....")
-        data = data.reindex(
-            columns=[
-                "ELEMENT",
-                "MFLAG",
-                "QFLAG",
-                "SFLAG",
-                "VALUE",
-            ]
+        date_cols = ["YEAR", "MONTH", "DAY"]
+        data = (
+            data.assign(DATE=mpd.to_datetime(data[date_cols], errors="coerce"))
+            .drop(columns=date_cols)
+            .dropna(subset=["DATE", "VALUE"])
         )
-        self.LOGGER.info("Sorting index....")
-        data = data.sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
+
+        self.LOGGER.info("Set index and sort...")
+        data = (
+            data.set_index(["COOP_ID", "TIME"])
+            .reindex(columns=["ELEMENT", "MFLAG", "QFLAG", "SFLAG", "VALUE"])
+            .sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
+            .sort_index()
+        )
+
+        # Unstack on ELEMENT
+        # values = (
+        #     data.pivot(
+        #         index=["COOP_ID", "DATE"],
+        #         columns="ELEMENT",
+        #         values=["VALUE", "MFLAG", "QFLAG", "SFLAG"],
+        #     )
+        #     .swaplevel(0, 1, axis="columns")
+        #     .sort_index()
+        # )
 
         return data
 

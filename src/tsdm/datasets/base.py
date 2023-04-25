@@ -484,7 +484,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
 
     def __repr__(self) -> str:
         r"""Pretty Print."""
-        return repr_mapping(self, title=self.__class__.__name__)
+        return repr_mapping(self.tables, wrapped=self)
 
     @property
     @abstractmethod
