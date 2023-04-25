@@ -375,20 +375,22 @@ class SingleTableDataset(BaseDataset):
 
     def load(self, *, force: bool = True, validate: bool = True) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
+        # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_file_exists():
             self.clean(force=force, validate=validate)
-        else:
-            self.LOGGER.debug("Dataset files already exist!")
 
+        # Validate file if hash is provided.
         if validate and self.dataset_hash is not NotImplemented:
             validate_file_hash(self.dataset_path, reference=self.dataset_hash)
 
+        # Load table.
         self.LOGGER.debug("Starting to load dataset.")
         table = self.load_table()
         table.name = self.__class__.__name__
         self.__dataset = table
         self.LOGGER.debug("Finished loading dataset.")
 
+        # Validate table if hash/schema is provided.
         if validate and self.table_hash is not NotImplemented:
             validate_table_hash(table, reference=self.table_hash)
 
@@ -396,16 +398,20 @@ class SingleTableDataset(BaseDataset):
 
     def clean(self, *, force: bool = True, validate: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
+        # Skip if dataset file already exists.
         if self.dataset_file_exists() and not force:
             self.LOGGER.debug("Dataset files already exist, skipping.")
             return
 
+        # Download raw data if it does not exist.
         if not self.rawdata_files_exist():
             self.download(force=force, validate=validate)
 
+        # Validate raw data.
         if validate and self.rawdata_hashes is not NotImplemented:
             validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
 
+        # Clean dataset.
         self.LOGGER.debug("Starting to clean dataset.")
         df = self.clean_table()
         if df is not None:
@@ -413,6 +419,7 @@ class SingleTableDataset(BaseDataset):
             self.serialize(df, self.dataset_path)
         self.LOGGER.debug("Finished cleaning dataset.")
 
+        # Validate pre-processed file.
         if validate and self.dataset_hash is not NotImplemented:
             validate_file_hash(self.dataset_path, reference=self.dataset_hash)
 
@@ -496,7 +503,8 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     @cached_property
     def tables(self) -> MutableMapping[Key, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
-        return LazyDict({key: self.load_table for key in self.table_names})
+        # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
+        return LazyDict({key: (self.load, (key,), {}) for key in self.table_names})
 
     @cached_property
     def dataset_files(self) -> Mapping[Key, str]:
@@ -536,24 +544,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             force: Force cleaning of dataset.
             validate: Validate the dataset after cleaning.
         """
-        # TODO: Do we need this code block?
-        if not self.rawdata_files_exist():
-            self.LOGGER.debug("Raw files missing, fetching them now!")
-            self.download(force=force, validate=validate)
-
-        if (
-            key in self.dataset_files
-            and self.dataset_files_exist(key=key)
-            and not force
-        ):
-            self.LOGGER.debug("Clean files already exists, skipping <%s>", key)
-            assert key is not None
-            if validate and self.dataset_hashes is not NotImplemented:
-                validate_file_hash(
-                    self.dataset_paths[key], reference=self.dataset_hashes[key]
-                )
-            return
-
+        # key=None: Recursively clean all tables
         if key is None:
             self.LOGGER.debug("Starting to clean dataset.")
             for key_ in self.table_names:
@@ -561,6 +552,22 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             self.LOGGER.debug("Finished cleaning dataset.")
             return
 
+        # skip if cleaned files already exist
+        if self.dataset_files_exist(key=key) and not force:
+            self.LOGGER.debug("Raw file already exists, skipping <%s>", key)
+            return
+
+        # download raw data files if they don't exist
+        if not self.rawdata_files_exist():
+            self.LOGGER.debug("Raw files missing, fetching them now!")
+            self.download(force=force, validate=validate)
+
+        # validate the raw data files
+        if validate and self.rawdata_hashes is not NotImplemented:
+            self.LOGGER.debug("Validating raw data files.")
+            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
+
+        # Clean the selected table
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
         df = self.clean_table(key=key)
         if df is not None:
@@ -568,6 +575,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             self.serialize(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
+        # Validate the cleaned table
         if validate and self.dataset_hashes is not NotImplemented:
             validate_file_hash(
                 self.dataset_paths[key], reference=self.dataset_hashes[key]
@@ -584,8 +592,8 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     @overload
     def load(
         self,
-        *,
         key: None = None,
+        *,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
@@ -595,8 +603,8 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     @overload
     def load(
         self,
-        *,
         key: Key = ...,
+        *,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
@@ -605,8 +613,8 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
 
     def load(
         self,
-        *,
         key: Optional[Key] = None,
+        *,
         force: bool = False,
         validate: bool = True,
         **kwargs: Any,
@@ -621,9 +629,6 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         Returns:
             The loaded dataset
         """
-        if not self.dataset_files_exist(key=key):
-            self.clean(key=key, force=force)
-
         # key=None: Recursively load all tables.
         if key is None:
             self.LOGGER.debug("Starting to load  dataset.")
@@ -632,11 +637,16 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             self.LOGGER.debug("Finished loading  dataset.")
             return self.tables
 
-        # Skip if already loaded.
-        if key in self.tables and self.tables[key] is not None and not force:
-            self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
-            return self.tables[key]
+        # # Skip if already loaded.
+        # if key in self.tables and self.tables[key] is not None and not force:
+        #     self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
+        #     return self.tables[key]
 
+        # Create the pre-processed dataset file if it doesn't exist.
+        if not self.dataset_files_exist(key=key):
+            self.clean(key=key, force=force)
+
+        # Validate the dataset file.
         if validate and self.dataset_hashes is not NotImplemented:
             validate_file_hash(
                 self.dataset_paths[key], reference=self.dataset_hashes[key]
@@ -644,9 +654,10 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
 
         # Load the table.
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
-        table = self.tables[key]  # implicitly calls self.load_table via LazyDict
+        table = self.load_table(key=key)
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
 
+        # Validate the loaded table.
         if validate and self.table_hashes is not NotImplemented:
             validate_table_hash(table, reference=self.table_hashes[key])
 

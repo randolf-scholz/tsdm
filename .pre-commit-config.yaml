@@ -63,7 +63,7 @@ repos:
         description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.0-alpha.6" # Use the sha or tag you want to point at
+    rev: "v3.0.0-alpha.9-for-vscode" # Use the sha or tag you want to point at
     hooks:
       - id: prettier
   # absolufy-imports
@@ -139,7 +139,6 @@ repos:
         name: jupyter-nb-clear-output
         description: Clear output cells in Jupyter notebooks
         files: (^dev/|^experiments/)
-        stages: [commit]
         types: [jupyter]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
