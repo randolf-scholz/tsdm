@@ -13,6 +13,7 @@ __all__ = [
     "is_variadic_arg",
     "get_mandatory_argcount",
     "get_mandatory_kwargs",
+    "get_return_typehint",
 ]
 
 import inspect
@@ -134,6 +135,26 @@ def get_mandatory_kwargs(f: Callable[..., Any]) -> set[str]:
         for name, p in sig.parameters.items()
         if is_mandatory_arg(p) and is_keyword_arg(p)
     }
+
+
+def get_return_typehint(f: Callable[..., Any]) -> Any:
+    r"""Get the return typehint of a function."""
+    # if isinstance(self.func, FunctionType | MethodType):
+    #     ann = self.func.__annotations__.get("return", object)  # type: ignore[unreachable]
+    # else:
+    #     ann = self.func.__call__.__annotations__.get("return", object)  # type: ignore[operator]
+    #
+    # ann.__name__ if isinstance(ann, type) else str(ann)
+    sig = inspect.signature(f)
+    ann = sig.return_annotation
+
+    match ann:
+        case type():
+            return ann.__name__
+        case sig.empty:
+            return Any
+        case _:
+            return ann
 
 
 def is_mandatory_arg(p: Parameter, /) -> bool:

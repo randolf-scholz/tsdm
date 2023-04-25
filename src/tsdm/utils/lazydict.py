@@ -15,8 +15,7 @@ __all__ = [
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from itertools import chain
-from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Any, Generic, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, Union, overload
 
 from typing_extensions import Self
 
@@ -25,7 +24,11 @@ from tsdm.types.variables import any_var as T
 from tsdm.types.variables import key2_var as K2
 from tsdm.types.variables import key_var as K
 from tsdm.types.variables import return_var_co as R
-from tsdm.utils.funcutils import get_function_args, is_positional_arg
+from tsdm.utils.funcutils import (
+    get_function_args,
+    get_return_typehint,
+    is_positional_arg,
+)
 from tsdm.utils.strings import repr_mapping
 
 if TYPE_CHECKING:
@@ -38,6 +41,7 @@ class LazyValue(Generic[R]):
     func: Callable[..., R]
     args: Iterable[Any]
     kwargs: Mapping[str, Any]
+    type_hint: str
 
     def __init__(
         self,
@@ -45,10 +49,14 @@ class LazyValue(Generic[R]):
         *,
         args: Iterable[Any] = NotImplemented,
         kwargs: Mapping[str, Any] = NotImplemented,
+        type_hint: Optional[str] = None,
     ) -> None:
         self.func = func
         self.args = args if args is not NotImplemented else ()
         self.kwargs = kwargs if kwargs is not NotImplemented else {}
+        self.type_hint = (
+            get_return_typehint(self.func) if type_hint is None else type_hint
+        )
 
     def __call__(self, *args: Any, **kwargs: Any) -> R:
         r"""Execute the function and return the result."""
@@ -56,18 +64,7 @@ class LazyValue(Generic[R]):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the function."""
-        if isinstance(self.func, FunctionType | MethodType):
-            ann = self.func.__annotations__.get("return", object)  # type: ignore[unreachable]
-        else:
-            ann = self.func.__call__.__annotations__.get("return", object)  # type: ignore[operator]
-
-        # TODO: pretty print annotations, especially for typing types
-        if isinstance(ann, type):
-            val = ann.__name__
-        else:
-            val = str(ann)
-
-        return f"{self.__class__.__name__}<{val}>()"
+        return f"{self.__class__.__name__}<{self.type_hint}>()"
 
 
 FuncSpec: TypeAlias = Union[
