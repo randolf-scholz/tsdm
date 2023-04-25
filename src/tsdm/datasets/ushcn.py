@@ -15,7 +15,6 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.decorators import ray_cluster
 
 KEY: TypeAlias = Literal["us_daily", "states", "stations"]
 
@@ -165,7 +164,7 @@ class USHCN(MultiTableDataset[KEY]):
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = ["us_daily", "states", "stations"]
+    table_names = ["timeseries", "metadata", "state_codes"]
     rawdata_hashes = {
         "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
         "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
@@ -173,7 +172,7 @@ class USHCN(MultiTableDataset[KEY]):
         "us.txt.gz": "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
     }
     rawdata_schemas = {
-        "stations": {
+        "metadata": {
             "COOP_ID": "string",
             "LATITUDE": "float32",
             "LONGITUDE": "float32",
@@ -187,14 +186,14 @@ class USHCN(MultiTableDataset[KEY]):
         },
     }
     dataset_hashes = {
-        "us_daily": "sha256:03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
-        "states": "sha256:388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
-        "stations": "sha256:1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
+        "timeseries": "sha256:03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
+        "metadata": "sha256:1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
+        "state_codes": "sha256:388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
     }
     table_schemas = {
-        "us_daily": ((204771562, 5), None, None),
-        "states": ((48, 3), None, None),
-        "stations": ((1218, 9), None, None),
+        "timeseries": ((204771562, 5), None, None),
+        "metadata": ((1218, 9), None, None),
+        "state_codes": ((48, 3), None, None),
     }
     rawdata_files = {
         "data_format.txt",
@@ -203,30 +202,17 @@ class USHCN(MultiTableDataset[KEY]):
         "us.txt.gz",
     }
 
-    def clean_table(self, key: KEY = "us_daily") -> DataFrame:
-        if key == "us_daily":
-            return self._clean_us_daily()
-        if key == "states":
-            return self._clean_states()
-        if key == "stations":
-            return self._clean_stations()
-
+    def clean_table(self, key: KEY = "timeseries") -> DataFrame:
+        if key == "timeseries":
+            return self._clean_timeseries()
+        if key == "metadata":
+            return self._clean_metadata()
+        if key == "state_codes":
+            return self._clean_state_codes()
         raise KeyError(f"Unknown key: {key}")
 
-    def _clean_states(self) -> DataFrame:
-        state_dtypes = {
-            "ID": pd.CategoricalDtype(ordered=True),
-            "Abbr.": pd.CategoricalDtype(ordered=True),
-            "State": pd.StringDtype(),
-        }
-        state_codes = self._state_codes
-        columns = state_codes.pop(0)
-        states = pd.DataFrame(state_codes, columns=columns)
-        states = states.astype(state_dtypes)
-        return states
-
-    def _clean_stations(self) -> DataFrame:
-        stations_file = self.rawdata_paths["stations"]
+    def _clean_metadata(self) -> DataFrame:
+        stations_file = (self.rawdata_paths["ushcn-stations.txt"],)
         if not stations_file.exists():
             self.download()
 
@@ -245,29 +231,27 @@ class USHCN(MultiTableDataset[KEY]):
         # pandas wants list[tuple[int, int]], 0 indexed, half open intervals.
         stations_cspecs = [(a - 1, b) for a, b in stations_colspecs.values()]
 
-        stations_na_values = {
-            "ELEVATION": "-999.9",
-            "COMPONENT_1": "------",
-            "COMPONENT_2": "------",
-            "COMPONENT_3": "------",
+        na_values = {
+            "ELEVATION": ["-999.9"],
+            "COMPONENT_1": ["------"],
+            "COMPONENT_2": ["------"],
+            "COMPONENT_3": ["------"],
         }
 
         stations = pd.read_fwf(
             stations_file,
             colspecs=stations_cspecs,
-            dtype=self.rawdata_schemas["stations"],
+            dtype=self.rawdata_schemas["metadata"],
             names=stations_colspecs,
-            na_values=stations_na_values,
+            na_values=na_values,
             dtype_backend="pyarrow",
         ).astype({"STATE": "category"})
 
         stations = stations.set_index("COOP_ID")
 
         return stations
-        # stations.to_parquet(self.dataset_paths["stations"])
 
-    @ray_cluster()
-    def _clean_us_daily(self) -> DataFrame:
+    def _clean_timeseries(self) -> DataFrame:
         if importlib.util.find_spec("modin") is not None:
             mpd = importlib.import_module("modin.pandas")
         else:
@@ -299,12 +283,6 @@ class USHCN(MultiTableDataset[KEY]):
         ELEMENTS_DTYPE = pd.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
         VALUES_DTYPE = "int16[pyarrow]"
 
-        # MFLAGS_DTYPE = "string[pyarrow]"
-        # QFLAGS_DTYPE = "string[pyarrow]"
-        # SFLAGS_DTYPE = "string[pyarrow]"
-        # ELEMENTS_DTYPE = "string[pyarrow]"
-        # VALUES_DTYPE = "int16[pyarrow]"
-
         base_dtypes = {
             "COOP_ID": "string[pyarrow]",
             "YEAR": "int16[pyarrow]",
@@ -321,7 +299,7 @@ class USHCN(MultiTableDataset[KEY]):
             "YEAR": "int16[pyarrow]",
             "MONTH": "int8[pyarrow]",
             "ELEMENT": ELEMENTS_DTYPE,
-            "VALUE": "int16[pyarrow]",
+            "VALUE": VALUES_DTYPE,
             "MFLAG": MFLAGS_DTYPE,
             "QFLAG": QFLAGS_DTYPE,
             "SFLAG": SFLAGS_DTYPE,
@@ -390,9 +368,9 @@ class USHCN(MultiTableDataset[KEY]):
 
         self.LOGGER.info("Set index and sort...")
         data = (
-            data.set_index(["COOP_ID", "TIME"])
+            data.set_index(["COOP_ID", "DATE"])
             .reindex(columns=["ELEMENT", "MFLAG", "QFLAG", "SFLAG", "VALUE"])
-            .sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
+            .sort_values(by=["COOP_ID", "DATE", "ELEMENT"])
             .sort_index()
         )
 
@@ -409,9 +387,14 @@ class USHCN(MultiTableDataset[KEY]):
 
         return data
 
-    @property
-    def _state_codes(self) -> list[tuple[str, str, str]]:
-        return [
+    @staticmethod
+    def _clean_state_codes() -> DataFrame:
+        state_dtypes = {
+            "ID": pd.CategoricalDtype(ordered=True),
+            "Abbr.": pd.CategoricalDtype(ordered=True),
+            "State": pd.StringDtype(),
+        }
+        state_codes = [
             ("ID", "Abbr.", "State"),
             ("01", "AL", "Alabama"),
             ("02", "AZ", "Arizona"),
@@ -462,3 +445,7 @@ class USHCN(MultiTableDataset[KEY]):
             ("47", "WI", "Wisconsin"),
             ("48", "WY", "Wyoming"),
         ]
+        columns = state_codes.pop(0)
+        states = pd.DataFrame(state_codes, columns=columns)
+        states = states.astype(state_dtypes)
+        return states

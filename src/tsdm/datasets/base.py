@@ -510,8 +510,8 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
 
     def dataset_files_exist(self, key: Optional[Key] = None) -> bool:
         r"""Check if dataset files exist."""
-        if isinstance(self.dataset_files, Mapping) and key is not None:
-            return paths_exists(self.dataset_files[key])
+        if isinstance(self.dataset_paths, Mapping) and key is not None:
+            return paths_exists(self.dataset_paths[key])
         return paths_exists(self.dataset_paths)
 
     @abstractmethod
@@ -529,7 +529,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         force: bool = False,
         validate: bool = True,
     ) -> None:
-        r"""Clean the selected DATASET_OBJECT.
+        r"""Create the preprocessed table for the selected key.
 
         Args:
             key: The key of the dataset to clean. If None, clean all dataset.
@@ -537,9 +537,9 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             validate: Validate the dataset after cleaning.
         """
         # TODO: Do we need this code block?
-        if not self.rawdata_files_exist(key=key):
-            self.LOGGER.debug("Raw files missing, fetching it now! <%s>", key)
-            self.download(key=key, force=force, validate=validate)
+        if not self.rawdata_files_exist():
+            self.LOGGER.debug("Raw files missing, fetching them now!")
+            self.download(force=force, validate=validate)
 
         if (
             key in self.dataset_files
@@ -562,7 +562,6 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             return
 
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
-
         df = self.clean_table(key=key)
         if df is not None:
             self.LOGGER.info("Serializing dataset <%s>", key)
