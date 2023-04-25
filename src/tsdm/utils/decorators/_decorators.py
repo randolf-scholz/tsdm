@@ -281,18 +281,17 @@ def decorator(deco: Callable) -> Callable:
     for key, param in deco_sig.parameters.items():
         BUCKETS[param.kind, param.default is EMPTY].add(key)
 
-    __logger__.debug(
+    error_msg = (
         "DETECTED SIGNATURE:"
-        "\n\t%s POSITIONAL_ONLY       (mandatory)"
-        "\n\t%s POSITIONAL_ONLY       (optional)"
-        "\n\t%s POSITIONAL_OR_KEYWORD (mandatory)"
-        "\n\t%s POSITIONAL_OR_KEYWORD (optional)"
-        "\n\t%s VAR_POSITIONAL"
-        "\n\t%s KEYWORD_ONLY          (mandatory)"
-        "\n\t%s KEYWORD_ONLY          (optional)"
-        "\n\t%s VAR_KEYWORD",
-        *(len(BUCKETS[key]) for key in PARAM_TYPES),
-    )
+        "\n\t %s: %s     (mandatory)"
+        "\n\t %s: %s     (optional)"
+        "\n\t %s: %s     (mandatory)"
+        "\n\t %s: %s     (optional)"
+        "\n\t %s: %s     (optional)"
+        "\n\t %s: %s     (mandatory)"
+        "\n\t %s: %s     (optional)"
+        "\n\t %s: %s     (optional)"
+    ).format(*(x for pair in [(k, len(v)) for k, v in BUCKETS.items()] for x in pair))
 
     if BUCKETS[POSITIONAL_OR_KEYWORD, True] or BUCKETS[POSITIONAL_OR_KEYWORD, False]:
         raise ErrorHandler(
@@ -300,18 +299,24 @@ def decorator(deco: Callable) -> Callable:
             "Separate positional and keyword arguments using '/' and '*':"
             ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
             "Cf. https://www.python.org/dev/peps/pep-0570/",
+            error_msg,
         )
     if BUCKETS[POSITIONAL_ONLY, False]:
         raise ErrorHandler(
-            "Decorator does not support POSITIONAL_ONLY arguments with defaults!!"
+            "Decorator does not support POSITIONAL_ONLY arguments with defaults!!",
+            error_msg,
         )
     if not len(BUCKETS[POSITIONAL_ONLY, True]) == 1:
         raise ErrorHandler(
             "Decorator must have exactly 1 POSITIONAL_ONLY argument: the function to be decorated."
             ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
+            error_msg,
         )
     if BUCKETS[VAR_POSITIONAL, True]:
-        raise ErrorHandler("Decorator does not support VAR_POSITIONAL arguments!!")
+        raise ErrorHandler(
+            "Decorator does not support VAR_POSITIONAL arguments!!",
+            error_msg,
+        )
 
     # (1b) modify the signature to add a new parameter '__func__' as the single
     # positional-only argument with a default value.
