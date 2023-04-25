@@ -44,8 +44,9 @@ from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike, Schema
 from tsdm.types.variables import str_var as Key
 from tsdm.utils import paths_exists
+from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
-from tsdm.utils.lazydict import LazyDict
+from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_mapping
 
@@ -206,7 +207,13 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
 
         if hasattr(pandas, f"read_{file_type}"):
             pandas_loader = getattr(pandas, f"read_{file_type}")
-            pandas_object = pandas_loader(path)
+
+            if file_type in ("parquet", "feather"):
+                pandas_object = pandas_loader(
+                    path, engine="pyarrow", dtype_backend="pyarrow"
+                )
+            else:
+                pandas_object = pandas_loader(path)
             return pandas_object.squeeze() if squeeze else pandas_object
 
         raise NotImplementedError(f"No loader for {file_type=}")
@@ -505,7 +512,17 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     def tables(self) -> MutableMapping[Key, DATASET_OBJECT]:
         r"""Store cached version of dataset."""
         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
-        return LazyDict({key: (self.load, (key,), {}) for key in self.table_names})
+        return LazyDict(
+            {
+                key: LazyValue(
+                    self.load,
+                    args=(key,),
+                    kwargs={"initializing": True},
+                    type_hint=get_return_typehint(self.clean_table),
+                )
+                for key in self.table_names
+            }
+        )
 
     @cached_property
     def dataset_files(self) -> Mapping[Key, str]:
@@ -618,6 +635,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         *,
         force: bool = False,
         validate: bool = True,
+        initializing: bool = False,
         **kwargs: Any,
     ) -> Mapping[Key, DATASET_OBJECT] | DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT.
@@ -626,6 +644,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             key: The key associated with the datset
             force: Reload the dataset even if it already exists.
             validate: Validate the dataset against hash.
+            initializing: Whether this is the first time the dataset is being loaded.
 
         Returns:
             The loaded dataset
@@ -638,10 +657,9 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
             self.LOGGER.debug("Finished loading  dataset.")
             return self.tables
 
-        # # Skip if already loaded.
-        # if key in self.tables and self.tables[key] is not None and not force:
-        #     self.LOGGER.debug("Dataset already exists, skipping! <%s>", key)
-        #     return self.tables[key]
+        # Skip if already loaded.
+        if not initializing:
+            return self.tables[key]
 
         # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_files_exist(key=key):
@@ -653,9 +671,9 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
                 self.dataset_paths[key], reference=self.dataset_hashes[key]
             )
 
-        # Load the table.
+        # Load the table, make sure to use the cached version if it exists.
         self.LOGGER.debug("Starting to load  dataset <%s>", key)
-        table = self.load_table(key=key)
+        table = self.load_table(key)
         self.LOGGER.debug("Finished loading  dataset <%s>", key)
 
         # Validate the loaded table.
