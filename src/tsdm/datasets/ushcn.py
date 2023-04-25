@@ -9,6 +9,7 @@ __all__ = [
 ]
 
 import importlib
+import warnings
 from typing import Literal, TypeAlias
 
 import pandas as pd
@@ -212,7 +213,7 @@ class USHCN(MultiTableDataset[KEY]):
         raise KeyError(f"Unknown key: {key}")
 
     def _clean_metadata(self) -> DataFrame:
-        stations_file = (self.rawdata_paths["ushcn-stations.txt"],)
+        stations_file = self.rawdata_paths["ushcn-stations.txt"]
         if not stations_file.exists():
             self.download()
 
@@ -252,6 +253,13 @@ class USHCN(MultiTableDataset[KEY]):
         return stations
 
     def _clean_timeseries(self) -> DataFrame:
+        warnings.warn(
+            "This can take a while to run. Consider using the Modin backend."
+            "Refactor if read_fwf becomes available in polars or pyarrow.",
+            UserWarning,
+            stacklevel=2,
+        )
+
         if importlib.util.find_spec("modin") is not None:
             mpd = importlib.import_module("modin.pandas")
         else:
@@ -284,7 +292,7 @@ class USHCN(MultiTableDataset[KEY]):
         VALUES_DTYPE = "int16[pyarrow]"
 
         base_dtypes = {
-            "COOP_ID": "string[pyarrow]",
+            "COOP_ID": "string",  # not pyarrow due to bug in pandas.
             "YEAR": "int16[pyarrow]",
             "MONTH": "int8[pyarrow]",
             "ELEMENT": "string[pyarrow]",
@@ -295,7 +303,7 @@ class USHCN(MultiTableDataset[KEY]):
         }
 
         updated_dtypes = {
-            "COOP_ID": "category",
+            "COOP_ID": pd.CategoricalDtype(ordered=True),
             "YEAR": "int16[pyarrow]",
             "MONTH": "int8[pyarrow]",
             "ELEMENT": ELEMENTS_DTYPE,
@@ -356,7 +364,7 @@ class USHCN(MultiTableDataset[KEY]):
         )
 
         self.LOGGER.info("Merging on ID columns...")
-        data = index.join(data, how="inner").astype(updated_dtypes)
+        data = data.join(index, how="inner").astype(updated_dtypes)
 
         self.LOGGER.info("Creating time index...")
         date_cols = ["YEAR", "MONTH", "DAY"]
@@ -371,7 +379,6 @@ class USHCN(MultiTableDataset[KEY]):
             data.set_index(["COOP_ID", "DATE"])
             .reindex(columns=["ELEMENT", "MFLAG", "QFLAG", "SFLAG", "VALUE"])
             .sort_values(by=["COOP_ID", "DATE", "ELEMENT"])
-            .sort_index()
         )
 
         # Unstack on ELEMENT
