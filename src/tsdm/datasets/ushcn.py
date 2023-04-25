@@ -252,7 +252,9 @@ class USHCN(MultiTableDataset[KEY]):
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Creating simplified timeseries table.")
         data = self.tables["timeseries_complete"]
-        return data.pivot(columns="ELEMENT", values="VALUE")
+        data = data.pivot(columns="ELEMENT", values="VALUE")
+        data.columns = data.columns.astype("string[pyarrow]")  # BUG: categorical index
+        return data
 
     def _clean_timeseries_complete(self) -> DataFrame:
         warnings.warn(

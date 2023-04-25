@@ -54,7 +54,7 @@ from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import numpy as np
-import pandas
+import pandas as pd
 from pandas import DataFrame, Series
 
 from tsdm.datasets.base import MultiTableDataset
@@ -88,18 +88,17 @@ class Traffic(MultiTableDataset[KEY]):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
     r"""HTTP address containing additional information about the dataset."""
-    KEYS = ["timeseries", "labels", "randperm", "invperm"]
-    r"""The names of the DataFrames associated with this dataset."""
 
+    table_names = ["timeseries", "labels", "randperm", "invperm"]
     rawdata_files = ["PEMS-SF.zip"]
     rawdata_hashes = {
         "PEMS-SF.zip": "sha256:371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e",
     }
     dataset_hashes = {
-        "timeseries": "acb7f2a37e14691d67a325e18eecf88c22bc4c175f1a11b5566a07fdf2cd8f62",
-        "labels": "c26dc7683548344c5b71ef30d551b6e3f0e726e0d505f45162fde167de7b51cf",
-        "randperm": "4d8fa113fd20e397b2802bcc851a8dca861d3e8b806be490a6dff3e0c112f613",
-        "invperm": "2838f7df33a292830acf09a3870b495ca0e5524f085aea0b66452248012c9817",
+        "timeseries": "sha256:acb7f2a37e14691d67a325e18eecf88c22bc4c175f1a11b5566a07fdf2cd8f62",
+        "labels": "sha256:c26dc7683548344c5b71ef30d551b6e3f0e726e0d505f45162fde167de7b51cf",
+        "randperm": "sha256:4d8fa113fd20e397b2802bcc851a8dca861d3e8b806be490a6dff3e0c112f613",
+        "invperm": "sha256:2838f7df33a292830acf09a3870b495ca0e5524f085aea0b66452248012c9817",
     }
 
     timeseries: DataFrame
@@ -178,8 +177,8 @@ class Traffic(MultiTableDataset[KEY]):
         # The true anomalies were found by iteratively adding them 1 by one,
         # Each time checking when the first date was when
         # labels[invperm].map(weekdays) didn't match with dates.day_name()
-        true_dates = pandas.date_range("2008-01-01", "2009-03-26", freq="d", name="day")
-        true_anomalies = pandas.DatetimeIndex(
+        true_dates = pd.date_range("2008-01-01", "2009-03-26", freq="d", name="day")
+        true_anomalies = pd.DatetimeIndex(
             {
                 "2008-01-01": "New Year’s Day",
                 "2008-01-21": "Martin Luther King Jr. Day",
@@ -204,10 +203,8 @@ class Traffic(MultiTableDataset[KEY]):
             "7": "Saturday",
         }
 
-        false_dates = pandas.date_range(
-            "2008-01-01", "2009-03-30", freq="d", name="day"
-        )
-        false_anomalies = pandas.DatetimeIndex(
+        false_dates = pd.date_range("2008-01-01", "2009-03-30", freq="d", name="day")
+        false_anomalies = pd.DatetimeIndex(
             {
                 "Jan. 1, 2008": "New Year’s Day",
                 "Jan. 21, 2008": "Martin Luther King Jr. Day",
@@ -248,29 +245,25 @@ class Traffic(MultiTableDataset[KEY]):
         # Shuffle dates according to permutation the authors applied
         shuffled_dates = dates[self.randperm]
 
-        timestamps = pandas.timedelta_range(
+        timestamps = pd.timedelta_range(
             "0:00:00", "23:59:59", freq="10min", name="time"
         )
         assert len(timestamps) == 144
 
-        with ZipFile(self.rawdata_paths) as files:
-            with files.open("stations_list") as file:
+        with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
+            with archive.open("stations_list") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
-                stations = pandas.read_csv(
-                    StringIO(content),
-                    names=["station"],
-                    dtype="category",
+                stations = pd.read_csv(
+                    StringIO(content), names=["station"], dtype="category"
                 ).squeeze()
                 stations = Series(stations)  # make sure it's not TextFileReader
 
-            with files.open("PEMS_trainlabels") as file:
+            with archive.open("PEMS_trainlabels") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "\n", " ": "\n"})
-                trainlabels = pandas.read_csv(
-                    StringIO(content),
-                    names=["labels"],
-                    dtype="category",
+                trainlabels = pd.read_csv(
+                    StringIO(content), names=["labels"], dtype="category"
                 ).squeeze()
                 train_dates = shuffled_dates[: len(trainlabels)]
                 trainlabels.index = train_dates
@@ -280,13 +273,11 @@ class Traffic(MultiTableDataset[KEY]):
                 trainlabels.index.day_name() == trainlabels.values.map(weekdays)
             ), "Labels do not match with dates!"
 
-            with files.open("PEMS_testlabels") as file:
+            with archive.open("PEMS_testlabels") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
-                testlabels = pandas.read_csv(
-                    StringIO(content),
-                    names=["labels"],
-                    dtype="category",
+                testlabels = pd.read_csv(
+                    StringIO(content), names=["labels"], dtype="category"
                 ).squeeze()
                 test_dates = shuffled_dates[len(trainlabels) :]
                 testlabels.index = test_dates
@@ -300,58 +291,54 @@ class Traffic(MultiTableDataset[KEY]):
                 trainlabels.dtype == testlabels.dtype
             ), "Train and test have different labels!"
 
-            with files.open("PEMS_train") as file:
+            with archive.open("PEMS_train") as file:
                 _PEMS_train = []
                 for line in file:
                     content = line.decode("utf8")
                     content = _reformat(
                         content, {"[": "", "]": "", ";": "\n", " ": ","}
                     )
-                    df = pandas.read_csv(
-                        StringIO(content),
-                        header=None,
-                    ).squeeze()
+                    df = pd.read_csv(StringIO(content), header=None).squeeze()
                     df = DataFrame(df.values, index=stations, columns=timestamps)
                     _PEMS_train.append(df.T)
-                PEMS_train = pandas.concat(_PEMS_train, keys=train_dates)
+                PEMS_train = pd.concat(_PEMS_train, keys=train_dates)
 
-            with files.open("PEMS_test") as file:
+            with archive.open("PEMS_test") as file:
                 _PEMS_test = []
                 for line in file:
                     content = line.decode("utf8")
                     content = _reformat(
                         content, {"[": "", "]": "", ";": "\n", " ": ","}
                     )
-                    df = pandas.read_csv(
-                        StringIO(content),
-                        header=None,
-                    ).squeeze()
+                    df = pd.read_csv(StringIO(content), header=None).squeeze()
                     df = DataFrame(df.values, index=stations, columns=timestamps)
                     _PEMS_test.append(df.T)
-                PEMS_test = pandas.concat(_PEMS_test, keys=test_dates)
+                PEMS_test = pd.concat(_PEMS_test, keys=test_dates)
 
-        PEMS = pandas.concat([PEMS_train, PEMS_test])
-        labels = pandas.concat([trainlabels, testlabels]).rename("labels")
+        PEMS = pd.concat([PEMS_train, PEMS_test])
+        labels = pd.concat([trainlabels, testlabels]).rename("labels")
 
         mismatches = labels[self.invperm].map(weekdays) != dates.day_name()
         assert len(dates[mismatches]) == 0, "Mismatches in label and date weekday!"
 
-        PEMS = PEMS.reset_index()
+        PEMS = (
+            PEMS.reset_index()
+            .assign(time=PEMS["day"] + PEMS["time"])
+            .drop(columns="day")
+            .set_index("time")
+            .astype("float32")
+        )
 
-        PEMS["time"] = PEMS["day"] + PEMS["time"]
-        PEMS = PEMS.drop(columns="day")
-        PEMS = PEMS.set_index("time")
-        PEMS = PEMS.astype("float32")
         PEMS.columns = PEMS.columns.astype("string")
-        PEMS.to_parquet(self.dataset_paths["timeseries"], compression="gzip")
-        DataFrame(labels).to_parquet(self.dataset_paths["labels"], compression="gzip")
+        PEMS.to_parquet(self.dataset_paths["timeseries"])
+        DataFrame(labels).to_parquet(self.dataset_paths["labels"])
 
     def _clean_randperm(self) -> None:
-        with ZipFile(self.rawdata_paths) as files:
+        with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as files:
             with files.open("randperm") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
-                randperm = pandas.read_csv(
+                randperm = pd.read_csv(
                     StringIO(content),
                     names=["randperm"],
                     dtype="uint16",
@@ -361,7 +348,5 @@ class Traffic(MultiTableDataset[KEY]):
                 invperm.name = "invperm"
                 assert (randperm[invperm] == np.arange(len(randperm))).all()
 
-        DataFrame(randperm).to_parquet(
-            self.dataset_paths["randperm"], compression="gzip"
-        )
-        DataFrame(invperm).to_parquet(self.dataset_paths["invperm"], compression="gzip")
+        DataFrame(randperm).to_parquet(self.dataset_paths["randperm"])
+        DataFrame(invperm).to_parquet(self.dataset_paths["invperm"])

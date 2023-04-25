@@ -57,8 +57,9 @@ r"""Type hint for pandas objects."""
 class Dataset(Protocol):
     """Protocol for Dataset."""
 
-    INFO_URL: ClassVar[Optional[str]] = None
-    r"""HTTP address containing additional information about the dataset."""
+    # TODO: make a bug report. Mypy does not honor the type hint for INFO_URL
+    # INFO_URL: ClassVar[Optional[str]]
+    # r"""HTTP address containing additional information about the dataset."""
     RAWDATA_DIR: ClassVar[Path]
     r"""The directory where the raw data is stored."""
     DATASET_DIR: ClassVar[Path]
@@ -69,7 +70,7 @@ class Dataset(Protocol):
         """Print information about the dataset."""
 
     @property
-    def rawdata_paths(self) -> Sequence[Path]:
+    def rawdata_paths(self) -> Mapping[str, Path]:
         """Return list of paths to the rawdata files."""
 
     def clean(self) -> None:
@@ -253,7 +254,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     @classmethod
     def download_from_url(cls, url: str) -> None:
         r"""Download files from a URL."""
-        cls.LOGGER.info("Downloading from %s", url)
+        cls.LOGGER.debug("Downloading from %s", url)
         parsed_url = urlparse(url)
 
         if parsed_url.netloc == "www.kaggle.com":
@@ -295,7 +296,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
 
         # Check if file already exists.
         if self.rawdata_files_exist(key) and not force:
-            self.LOGGER.info("Dataset already exists. Skipping download.")
+            self.LOGGER.debug("Dataset already exists. Skipping download.")
             return
 
         # Check if dataset provides a base_url.
@@ -415,7 +416,7 @@ class SingleTableDataset(BaseDataset):
         self.LOGGER.debug("Starting to clean dataset.")
         df = self.clean_table()
         if df is not None:
-            self.LOGGER.info("Serializing dataset.")
+            self.LOGGER.debug("Serializing dataset.")
             self.serialize(df, self.dataset_path)
         self.LOGGER.debug("Finished cleaning dataset.")
 
@@ -440,7 +441,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
 
     def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""
-        self.LOGGER.info("Adding keys as attributes.")
+        self.LOGGER.debug("Adding keys as attributes.")
         while initialize:
             non_string_keys = {
                 key for key in self.table_names if not isinstance(key, str)
@@ -571,7 +572,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         self.LOGGER.debug("Starting to clean dataset <%s>", key)
         df = self.clean_table(key=key)
         if df is not None:
-            self.LOGGER.info("Serializing dataset <%s>", key)
+            self.LOGGER.debug("Serializing dataset <%s>", key)
             self.serialize(df, self.dataset_paths[key])
         self.LOGGER.debug("Finished cleaning dataset <%s>", key)
 
