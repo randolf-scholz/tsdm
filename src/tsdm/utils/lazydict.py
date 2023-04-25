@@ -67,7 +67,7 @@ class LazyValue(Generic[R]):
         else:
             val = str(ann)
 
-        return f"LazyFunction<{val}>()"
+        return f"{self.__class__.__name__}<{val}>()"
 
 
 FuncSpec: TypeAlias = Union[
