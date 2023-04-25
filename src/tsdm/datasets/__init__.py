@@ -82,6 +82,9 @@ TSC: dict[str, type[TimeSeriesCollection]] = {
 }
 
 
+# x: Dataset = USHCN()
+
+
 DATASETS: dict[str, type[Dataset]] = {
     "BeijingAirQuality": BeijingAirQuality,
     "ETT": ETT,

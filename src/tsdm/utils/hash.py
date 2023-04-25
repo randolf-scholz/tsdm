@@ -245,7 +245,6 @@ def validate_file_hash(
     # Now, we know that file is a single file.
     assert isinstance(file, str | Path)
     file = Path(file)
-    print(file)
 
     if isinstance(reference, Mapping):
         reference = reference.get(
