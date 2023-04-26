@@ -11,6 +11,7 @@ __all__ = [
 import logging
 
 import pandas as pd
+from pandas import DataFrame
 
 from tsdm.datasets.base import SingleTableDataset
 
@@ -64,11 +65,13 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
 
     # dataset_files = "SmallChunkedSporadic.feather"
 
-    def clean_table(self) -> None:
+    def clean_table(self) -> DataFrame:
         r"""Clean an already downloaded raw dataset and stores it in hdf5 format."""
-        key = "small_chunked_sporadic.csv"
-        df = pd.read_csv(self.rawdata_paths[key], dtype=self.rawdata_schemas[key])
+        fname = "small_chunked_sporadic.csv"
+        file = self.rawdata_paths[fname]
+        df = pd.read_csv(file, dtype=self.rawdata_schemas[fname])
 
+        # replace missing values with NaN, using the mask
         channels = {}
         for k in range(5):
             key = f"CH_{k}"
@@ -76,9 +79,12 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
             channels[key] = value
             df[key] = df[value].where(df[f"Mask_{k}"])
 
-        df = df[["ID", "Time", *channels]]
-        df = df.sort_values(["ID", "Time"])
-        df = df.set_index(["ID", "Time"])
-        df = df.rename(columns=channels)
-        # df = df.reset_index(drop=True)
+        # set index and sort
+        df = (
+            df[["ID", "Time", *channels]]
+            .set_index(["ID", "Time"])
+            .sort_index()
+            .rename(columns=channels)
+        )
+
         return df
