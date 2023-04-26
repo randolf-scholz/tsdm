@@ -241,7 +241,7 @@ def read_physionet_record(
 KEY: TypeAlias = Literal["A", "B", "C"]
 
 
-class Physionet2012(MultiTableDataset[KEY]):
+class Physionet2012(MultiTableDataset[KEY, DataFrame]):
     r"""Physionet Challenge 2012.
 
     Each training data file provides two tables.
@@ -320,7 +320,7 @@ class Physionet2012(MultiTableDataset[KEY]):
         "set-b.tar.gz": "sha256:b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
         "set-c.tar.gz": "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
     }
-    KEYS = ["A", "B", "C"]
+    table_names = ["A", "B", "C"]
     unravel_triplets: bool
 
     @property

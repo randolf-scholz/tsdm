@@ -16,7 +16,7 @@ from tsdm.datasets.base import MultiTableDataset
 KEY: TypeAlias = Literal["timeseries", "metadata", "timeseries_complete", "state_codes"]
 
 
-class USHCN(MultiTableDataset[KEY]):
+class USHCN(MultiTableDataset[KEY, DataFrame]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -188,10 +188,10 @@ class USHCN(MultiTableDataset[KEY]):
         "metadata": "sha256:1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
         "state_codes": "sha256:388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
     }
-    table_schemas = {
-        "timeseries": ((204771562, 5), None, None),
-        "metadata": ((1218, 9), None, None),
-        "state_codes": ((48, 3), None, None),
+    table_shapes = {
+        "timeseries": (204771562, 5),
+        "metadata": (1218, 9),
+        "state_codes": (48, 3),
     }
     rawdata_files = [
         "data_format.txt",

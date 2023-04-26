@@ -10,14 +10,14 @@ __all__ = [
 
 from typing import Literal, TypeAlias
 
-from pandas import read_csv
+from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import MultiTableDataset
 
 KEY: TypeAlias = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
-class ETT(MultiTableDataset[KEY]):
+class ETT(MultiTableDataset[KEY, DataFrame]):
     r"""ETT-small-h1.
 
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
@@ -43,19 +43,24 @@ class ETT(MultiTableDataset[KEY]):
         "ETTm1.csv": "sha256:6ce1759b1a18e3328421d5d75fadcb316c449fcd7cec32820c8dafda71986c9e",
         "ETTm2.csv": "sha256:db973ca252c6410a30d0469b13d696cf919648d0f3fd588c60f03fdbdbadd1fd",
     }
-    table_schemas = {
-        "ETTh1": ((17420, 7), None, None),
-        "ETTh2": ((17420, 7), None, None),
-        "ETTm1": ((69680, 7), None, None),
-        "ETTm2": ((69680, 7), None, None),
+    table_shapes = {
+        "ETTh1": (17420, 7),
+        "ETTh2": (17420, 7),
+        "ETTm1": (69680, 7),
+        "ETTm2": (69680, 7),
     }
     table_names = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
-    rawdata_files = {key: f"{key}.csv" for key in table_names}
+    rawdata_files = ["ETTh1.csv", "ETTh2.csv", "ETTm1.csv", "ETTm2.csv"]
     r"""Files containing the raw data."""
 
-    def clean_table(self, key: KEY) -> None:
+    def clean_table(self, key: KEY) -> DataFrame:
         df = read_csv(
-            self.rawdata_paths[key], parse_dates=[0], index_col=0, dtype="float32"
+            self.rawdata_paths[f"{key}.csv"],
+            parse_dates=[0],
+            index_col=0,
+            dtype="float32",
+            dtype_backend="pyarrow",
         )
+        df.columns = df.columns.astype("string")
         return df

@@ -73,14 +73,14 @@ class Electricity(SingleTableDataset):
     rawdata_hashes = {
         "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
     }
-    table_schema = ((140256, 370), None, None)
+    table_shape = (140256, 370)
     table_hash = "pandas:7114453877232760046"
 
     def clean_table(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
-        with ZipFile(self.rawdata_paths) as files:
-            fname = self.rawdata_paths.with_suffix("").name
-            with files.open(fname) as file:
+        with ZipFile(self.rawdata_paths["LD2011_2014.txt.zip"]) as archive:
+            # can't use pandas.read_csv because of the zip contains other files.
+            with archive.open("LD2011_2014.txt") as file:
                 df = read_csv(
                     file,
                     sep=";",

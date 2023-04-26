@@ -33,7 +33,7 @@ from tsdm.datasets.base import MultiTableDataset
 KEY: TypeAlias = Literal["timeseries", "metadata"]
 
 
-class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY]):
+class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -83,9 +83,9 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY]):
         "timeseries": "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
         "metadata": "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
     }
-    table_schemas = {
-        "timeseries": ((552327, 96), None, None),
-        "metadata": ((96, 3), None, None),
+    table_shapes = {
+        "timeseries": (552327, 96),
+        "metadata": (96, 3),
     }
 
     # dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}

@@ -244,6 +244,14 @@ class KIWI_RUNS(MultiTableDataset):
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/fGFEJicrcjsxDBd/download/"
     )
 
+    table_names = [
+        "timeseries",
+        "metadata",
+        "time_features",
+        "value_features",
+        "metadata_features",
+    ]
+
     table_hashes = {
         "timeseries": "pandas:7423431600366696406",
         "metadata": "pandas:2037390744336738142",
@@ -267,14 +275,6 @@ class KIWI_RUNS(MultiTableDataset):
     global_metadata = None
     global_features = None
 
-    KEYS = [
-        "timeseries",
-        "metadata",
-        "time_features",
-        "value_features",
-        "metadata_features",
-    ]
-
     @property
     def index(self) -> Index:
         r"""Return the index of the dataset."""
@@ -289,7 +289,7 @@ class KIWI_RUNS(MultiTableDataset):
     def clean_metadata(self) -> None:
         r"""Clean metadata."""
         # load rawdata
-        with open(self.rawdata_paths, "rb") as file:
+        with open(self.rawdata_paths["kiwi_experiments.pk"], "rb") as file:
             self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
             data = pickle.load(file)
 
@@ -389,7 +389,7 @@ class KIWI_RUNS(MultiTableDataset):
     def clean_timeseries(self) -> None:
         r"""Clean timeseries data and save to disk."""
         # load rawdata
-        with open(self.rawdata_paths, "rb") as file:
+        with open(self.rawdata_paths["kiwi_experiments.pk"], "rb") as file:
             self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
             data = pickle.load(file)
 

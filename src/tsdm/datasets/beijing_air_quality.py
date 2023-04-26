@@ -71,7 +71,7 @@ __all__ = [
     "BeijingAirQuality",
 ]
 
-import zipfile
+from zipfile import ZipFile
 
 from pandas import DataFrame, Timestamp, concat, read_csv
 
@@ -110,24 +110,17 @@ class BeijingAirQuality(SingleTableDataset):
         def _to_time(x: list[int]) -> Timestamp:
             return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
 
-        dtypes = {
-            "wd": "string",
-            "station": "string",
-        }
-
-        new_dtypes = {
-            "wd": "category",
-            "station": "category",
-        }
+        dtypes = {"wd": "string", "station": "string"}
+        new_dtypes = {"wd": "category", "station": "category"}
 
         self.LOGGER.info("Extracting Data.")
-        with zipfile.ZipFile(self.rawdata_paths) as compressed_archive:
+        file = self.rawdata_paths["PRSA2017_Data_20130301-20170228.zip"]
+        with ZipFile(file) as compressed_archive:
             stations = []
             for csv_file in compressed_archive.namelist():
-                if not csv_file.endswith(".csv"):
-                    continue
                 with compressed_archive.open(csv_file) as compressed_file:
                     df = read_csv(compressed_file, dtype=dtypes)
+
                 # Make multiple date columns to pandas.Timestamp
                 df["time"] = df.apply(_to_time, axis=1)
                 # Remove date columns and index
