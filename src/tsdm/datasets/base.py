@@ -12,7 +12,6 @@ __all__ = [
     "SingleTableDataset",
     "MultiTableDataset",
     # Types
-    "DATASET_OBJECT",
 ]
 
 import html
@@ -32,7 +31,6 @@ from typing import (
     Generic,
     Optional,
     Protocol,
-    TypeAlias,
     overload,
     runtime_checkable,
 )
@@ -42,6 +40,7 @@ import pandas
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike
+from tsdm.types.variables import any_var as T
 from tsdm.types.variables import str_var as Key
 from tsdm.utils import paths_exists
 from tsdm.utils.funcutils import get_return_typehint, rpartial
@@ -49,9 +48,6 @@ from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_mapping
-
-DATASET_OBJECT: TypeAlias = Any
-r"""Type hint for pandas objects."""
 
 
 @runtime_checkable
@@ -119,7 +115,7 @@ class BaseDatasetMetaClass(ABCMeta):
     # return super().__getitem__(parent)
 
 
-class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
+class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
     r"""Abstract base class that all dataset must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -184,7 +180,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         return f"{self.__class__.__name__}()"
 
     @staticmethod
-    def serialize(table: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
+    def serialize(table: T, path: Path, /, **kwargs: Any) -> None:
         r"""Serialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
@@ -199,7 +195,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         raise NotImplementedError(f"No loader for {file_type=}")
 
     @staticmethod
-    def deserialize(path: Path, /, *, backend: str = "pandas") -> DATASET_OBJECT:
+    def deserialize(path: Path, /, *, backend: str = "pandas") -> T:
         r"""Deserialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
@@ -321,10 +317,10 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
             validate_file_hash(self.rawdata_paths[key], reference=self.rawdata_hashes)
 
 
-class SingleTableDataset(BaseDataset):
+class SingleTableDataset(BaseDataset[T]):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    __table: DATASET_OBJECT = NotImplemented
+    __table: T = NotImplemented
     """INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
@@ -350,7 +346,7 @@ class SingleTableDataset(BaseDataset):
         raise NotImplementedError
 
     @cached_property
-    def table(self) -> DATASET_OBJECT:
+    def table(self) -> T:
         r"""Store cached version of dataset."""
         if self.__table is NotImplemented:
             self.__table = self.load_table()
@@ -371,14 +367,14 @@ class SingleTableDataset(BaseDataset):
         return paths_exists(self.dataset_path)
 
     @abstractmethod
-    def clean_table(self) -> DATASET_OBJECT | None:
+    def clean_table(self) -> T | None:
         r"""Generate the cleaned dataset table.
 
         If table is returned, the `self.serialize` method is used to write it to disk.
         If manually writing the table to disk, return None.
         """
 
-    def load_table(self) -> DATASET_OBJECT:
+    def load_table(self) -> T:
         r"""Load the dataset.
 
         By default, `self.deserialize` is used to load the table from disk.
@@ -391,7 +387,7 @@ class SingleTableDataset(BaseDataset):
         *,
         force: bool = True,
         validate: bool = True,
-    ) -> DATASET_OBJECT:
+    ) -> T:
         r"""Load the selected DATASET_OBJECT."""
         # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_file_exists():
@@ -444,7 +440,11 @@ class SingleTableDataset(BaseDataset):
             validate_file_hash(self.dataset_path, reference=self.dataset_hash)
 
 
-class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
+class MultiTableDataset(
+    Mapping[Key, T],
+    BaseDataset[T],
+    Generic[Key, T],
+):
     r"""Dataset class that consists of multiple tables.
 
     The tables are stored in a dictionary-like object.
@@ -496,7 +496,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         r"""Return the number of samples in the dataset."""
         return self.tables.__len__()
 
-    def __getitem__(self, idx: Key) -> DATASET_OBJECT:
+    def __getitem__(self, idx: Key) -> T:
         r"""Return the sample at index `idx`."""
         return self.tables.__getitem__(idx)
 
@@ -516,7 +516,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
     @cached_property
-    def tables(self) -> MutableMapping[Key, DATASET_OBJECT]:
+    def tables(self) -> MutableMapping[Key, T]:
         r"""Store cached version of dataset."""
         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
         return LazyDict(
@@ -548,7 +548,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         return paths_exists(self.dataset_paths)
 
     @abstractmethod
-    def clean_table(self, key: Key) -> DATASET_OBJECT | None:
+    def clean_table(self, key: Key) -> T | None:
         r"""Create the cleaned table for the given key.
 
         If table is returned, the `self.serialize` method is used to write it to disk.
@@ -606,7 +606,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
                 self.dataset_paths[key], reference=self.dataset_hashes[key]
             )
 
-    def load_table(self, key: Key) -> DATASET_OBJECT:
+    def load_table(self, key: Key) -> T:
         r"""Load the selected DATASET_OBJECT.
 
         By default, `self.deserialize` is used to load the table from disk.
@@ -615,19 +615,11 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         return self.deserialize(self.dataset_paths[key])
 
     @overload
-    def load(
-        self,
-        key: None = None,
-        **kwargs: Any,
-    ) -> Mapping[Key, DATASET_OBJECT]:
+    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T]:  # type: ignore[misc]
         ...
 
     @overload
-    def load(
-        self,
-        key: Key = ...,
-        **kwargs: Any,
-    ) -> DATASET_OBJECT:
+    def load(self, key: Key = ..., **kwargs: Any) -> T:
         ...
 
     def load(
@@ -638,7 +630,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         validate: bool = True,
         initializing: bool = False,
         **kwargs: Any,
-    ) -> Mapping[Key, DATASET_OBJECT] | DATASET_OBJECT:
+    ) -> Mapping[Key, T] | T:
         r"""Load the selected DATASET_OBJECT.
 
         Args:

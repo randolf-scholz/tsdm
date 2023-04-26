@@ -156,9 +156,10 @@ from typing import IO, Any, Literal, TypeAlias
 
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 from tqdm.autonotebook import tqdm
 
-from tsdm.datasets.base import DATASET_OBJECT, MultiTableDataset
+from tsdm.datasets.base import MultiTableDataset
 from tsdm.encoders import TripletDecoder
 from tsdm.types.aliases import PathLike
 
@@ -180,7 +181,7 @@ def _append_record(d: dict[str, list], r: Mapping) -> dict[str, list]:
 
 def read_physionet_record(
     f: IO[bytes], unravel_triplets: bool = False
-) -> tuple[int, dict, DATASET_OBJECT]:
+) -> tuple[int, dict, DataFrame]:
     r"""Read a single record."""
     lines = iter(f)
 
@@ -394,7 +395,7 @@ class Physionet2012(MultiTableDataset[KEY]):
 
     @staticmethod
     def serialize(
-        frames: tuple[DATASET_OBJECT, DATASET_OBJECT], path: PathLike, /, **kwargs: Any
+        frames: tuple[DataFrame, DataFrame], path: PathLike, /, **kwargs: Any
     ) -> None:
         r"""Store the dataset as a tar archive with two feather dataframes."""
         metadata, series = frames
