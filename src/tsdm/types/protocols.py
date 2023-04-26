@@ -26,7 +26,7 @@ from typing_extensions import Self
 from tsdm.types.variables import any_co as T_co
 from tsdm.types.variables import key_contra, key_var, value_co
 
-ScalarType_co = TypeVar("ScalarType_co", covariant=True)
+scalar_co = TypeVar("scalar_co", covariant=True)
 # Either: TypeAlias = Union[T, "Array[T]"]
 A = TypeVar("A", bound="Array")
 
@@ -56,7 +56,7 @@ class NTuple(Protocol[T_co]):
 
 
 @runtime_checkable
-class Table(Protocol):
+class Table(Protocol[scalar_co]):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
     @property
@@ -66,12 +66,12 @@ class Table(Protocol):
     def __len__(self) -> int:
         """Number of elements along first axis."""
 
-    def __getitem__(self, key: Any) -> Self:
+    def __getitem__(self, key: Any) -> Self | scalar_co:
         """Return an element/slice of the table."""
 
 
 @runtime_checkable
-class Array(Protocol[ScalarType_co]):
+class Array(Protocol[scalar_co]):
     r"""Protocol for array-like objects.
 
     Compared to a Table (e.g. `pandas.DataFrame` / `pyarrow.Table`), an Array has a single dtype.
@@ -82,7 +82,7 @@ class Array(Protocol[ScalarType_co]):
         r"""Number of dimensions."""
 
     @property
-    def dtype(self) -> ScalarType_co:
+    def dtype(self) -> scalar_co:
         r"""Yield the data type of the array."""
 
     @property
