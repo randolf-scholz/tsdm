@@ -323,7 +323,7 @@ def validate_file_hash(
 
 
 def validate_table_hash(
-    table: Table,
+    table: Any,
     /,
     reference: str | None,
     *,
