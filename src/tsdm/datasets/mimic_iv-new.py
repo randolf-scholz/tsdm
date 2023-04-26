@@ -71,7 +71,6 @@ __all__ = ["MIMIC_IV"]
 import os
 import subprocess
 from getpass import getpass
-from typing import Any
 
 import pandas as pd
 import pyarrow as pa
@@ -194,7 +193,9 @@ class MIMIC_IV(MultiTableDataset):
     def load_table(self, key: str) -> pd.DataFrame:
         return pd.read_parquet(self.dataset_paths[key])
 
-    def download_table(self, **_: Any) -> None:
+    def download_file(self, fname: str) -> None:
+        path = self.rawdata_paths[fname]
+
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-IV username: ")
         password = getpass(prompt="MIMIC-IV password: ", stream=None)
@@ -203,10 +204,10 @@ class MIMIC_IV(MultiTableDataset):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {self.rawdata_paths}",
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
             shell=True,
             check=True,
         )
 
         file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, self.rawdata_files)
+        os.rename(file, fname)
