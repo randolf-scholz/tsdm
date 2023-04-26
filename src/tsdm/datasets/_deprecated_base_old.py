@@ -42,7 +42,7 @@ import pandas
 from pandas import DataFrame, Series
 
 from tsdm.config import CONFIG
-from tsdm.types.aliases import Nested, PathLike, Schema
+from tsdm.types.aliases import Nested, PathLike
 from tsdm.types.variables import str_var as Key
 from tsdm.utils import flatten_nested, paths_exists, prepend_path
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
@@ -158,7 +158,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     r"""Hashes of the cleaned dataset file(s)."""
     table_hashes: Mapping[Key, str] = NotImplemented
     r"""Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[Key, Schema] = NotImplemented
+    table_schemas: Mapping[Key, Any] = NotImplemented
     r"""Schema of the in-memory cleaned dataset table(s)."""
 
     def __init__(

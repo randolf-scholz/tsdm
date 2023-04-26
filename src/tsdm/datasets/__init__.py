@@ -23,7 +23,6 @@ __all__ = [
     "timeseries",
     # Types
     "Dataset",
-    "DATASET_OBJECT",
     # Constants
     "DATASETS",
     # ABCs
@@ -55,7 +54,6 @@ __all__ = [
 from tsdm.datasets import base
 from tsdm.datasets._deprecated_kiwi_runs_old import KIWI_RUNS_OLD
 from tsdm.datasets.base import (
-    DATASET_OBJECT,
     BaseDataset,
     Dataset,
     MultiTableDataset,
@@ -80,10 +78,6 @@ from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 TSC: dict[str, type[TimeSeriesCollection]] = {
     "KiwiDataset": KiwiDataset,
 }
-
-
-# x: Dataset = USHCN()
-
 
 DATASETS: dict[str, type[Dataset]] = {
     "BeijingAirQuality": BeijingAirQuality,
