@@ -24,7 +24,7 @@ import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
-from functools import cached_property, partial
+from functools import cached_property
 from pathlib import Path
 from typing import (
     Any,
@@ -45,7 +45,7 @@ from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike, Schema
 from tsdm.types.variables import str_var as Key
 from tsdm.utils import paths_exists
-from tsdm.utils.funcutils import get_return_typehint
+from tsdm.utils.funcutils import get_return_typehint, rpartial
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.remote import download
@@ -155,7 +155,9 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
     rawdata_hashes: Mapping[str, str | None] = NotImplemented
     r"""Hashes of the raw dataset file(s)."""
     rawdata_schemas: Mapping[str, Mapping[str, str]] = NotImplemented
-    r"""Schemas for the raw dataset file(s)."""
+    r"""Schemas for the raw dataset tables(s)."""
+    rawdata_shapes: Mapping[str, tuple[int, ...]] = NotImplemented
+    r"""Shapes for the raw dataset tables(s)."""
 
     def __init__(
         self,
@@ -460,39 +462,32 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""
         self.LOGGER.debug("Adding keys as attributes.")
-        while initialize:
-            non_string_keys = {
-                key for key in self.table_names if not isinstance(key, str)
-            }
-            if non_string_keys:
-                warnings.warn(
-                    f"Not adding keys as attributes! "
-                    f"Keys {non_string_keys!r} are not strings!",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-                break
 
-            key_attributes = {
-                key
-                for key in self.table_names
-                if isinstance(key, str) and hasattr(self, key)
-            }
-            if key_attributes:
-                warnings.warn(
-                    f"Not adding keys as attributes! "
-                    f"Keys {key_attributes!r} already exist as attributes!",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-                break
-
+        # if possible, add keys as attributes
+        if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
+            warnings.warn(
+                f"Not adding keys as attributes (properties)!"
+                f" Keys {invalid_keys} are not valid identifiers!",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        elif hasattr_keys := {key for key in self.table_names if hasattr(self, key)}:
+            warnings.warn(
+                "Not adding keys as attributes (properties)!"
+                f" Keys {hasattr_keys} already exist as attributes!",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        else:
+            cls = self.__class__
             for key in self.table_names:
-                assert isinstance(key, str) and not hasattr(self, key)
-                _get_table = partial(self.__class__.load, key=key)
+                # Making use of the LazyDict.__getitem__ method
+                # We need to use rpartial to make sure that the key is passed to __getitem__
+                # can't use functools.partial because then we would effectively be calling
+                # cls.__getitem__(key, self) instead of cls.__getitem__(self, key)
+                _get_table = rpartial(cls.__getitem__, key)
                 _get_table.__doc__ = f"Load dataset for {key=}."
-                setattr(self.__class__, key, property(_get_table))
-            break
+                setattr(cls, key, property(_get_table))
 
         super().__init__(initialize=initialize, reset=reset)
 
