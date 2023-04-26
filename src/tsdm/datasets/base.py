@@ -42,7 +42,7 @@ import pandas
 from pandas import DataFrame, Series
 
 from tsdm.config import CONFIG
-from tsdm.types.aliases import PathLike, Schema
+from tsdm.types.aliases import PathLike
 from tsdm.types.variables import str_var as Key
 from tsdm.utils import paths_exists
 from tsdm.utils.funcutils import get_return_typehint, rpartial
@@ -336,8 +336,10 @@ class SingleTableDataset(BaseDataset):
     r"""Hashes of the cleaned dataset file(s)."""
     table_hash: str = NotImplemented
     r"""Hashes of the in-memory cleaned dataset table(s)."""
-    table_schema: Schema = NotImplemented
+    table_schema: Mapping[str, str] = NotImplemented
     r"""Schema of the in-memory cleaned dataset table(s)."""
+    table_shape: tuple[int, ...] = NotImplemented
+    r"""Shape of the in-memory cleaned dataset table(s)."""
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}<{get_return_typehint(self.clean_table)}>"
@@ -456,8 +458,10 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     r"""Hashes of the cleaned dataset file(s)."""
     table_hashes: Mapping[Key, str | None] = NotImplemented
     r"""Hashes of the in-memory cleaned dataset table(s)."""
-    table_schemas: Mapping[Key, Schema] = NotImplemented
-    r"""Schema of the in-memory cleaned dataset table(s)."""
+    table_schemas: Mapping[Key, Mapping[str, str]] = NotImplemented
+    r"""Schemas of the in-memory cleaned dataset table(s)."""
+    table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
+    r"""Shapes of the in-memory cleaned dataset table(s)."""
 
     def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""

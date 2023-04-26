@@ -9,7 +9,6 @@ __all__ = [
     "PandasObject",
     "PathLike",
     "ScalarDType",
-    "Schema",
     # Configuration
     "JSON",
     "TOML",
@@ -73,12 +72,6 @@ ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]
 r"""TypeAlias for scalar types."""
 ContainerLike: TypeAlias = T | Lookup[int, T] | Callable[[int], T]
 r"""Type Alias for container-like objects."""
-Schema: TypeAlias = tuple[
-    tuple[int, int] | None,  # shape
-    Sequence[str] | None,  # column names
-    Sequence[str] | None,  # column types
-]
-r"""Type Alias for table schemas."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
 
