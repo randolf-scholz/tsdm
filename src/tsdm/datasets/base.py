@@ -39,7 +39,6 @@ from typing import (
 from urllib.parse import urlparse
 
 import pandas
-from pandas import DataFrame, Series
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike
@@ -51,7 +50,7 @@ from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_mapping
 
-DATASET_OBJECT: TypeAlias = Series | DataFrame
+DATASET_OBJECT: TypeAlias = Any
 r"""Type hint for pandas objects."""
 
 
@@ -185,39 +184,37 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
         return f"{self.__class__.__name__}()"
 
     @staticmethod
-    def serialize(frame: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
+    def serialize(table: DATASET_OBJECT, path: Path, /, **kwargs: Any) -> None:
         r"""Serialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
         file_type = file_type[1:]
 
-        if isinstance(frame, Series):
-            frame = frame.to_frame()
-
-        if hasattr(frame, f"to_{file_type}"):
-            pandas_writer = getattr(frame, f"to_{file_type}")
-            pandas_writer(path, **kwargs)
+        # check if table has a custom writer.
+        if hasattr(table, f"to_{file_type}"):
+            writer = getattr(table, f"to_{file_type}")
+            writer(path, **kwargs)
             return
 
         raise NotImplementedError(f"No loader for {file_type=}")
 
     @staticmethod
-    def deserialize(path: Path, /, *, squeeze: bool = True) -> DATASET_OBJECT:
+    def deserialize(path: Path, /, *, backend: str = "pandas") -> DATASET_OBJECT:
         r"""Deserialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
         file_type = file_type[1:]
 
-        if hasattr(pandas, f"read_{file_type}"):
-            pandas_loader = getattr(pandas, f"read_{file_type}")
+        if backend == "pandas":
+            if hasattr(pandas, f"read_{file_type}"):
+                loader = getattr(pandas, f"read_{file_type}")
 
-            if file_type in ("parquet", "feather"):
-                pandas_object = pandas_loader(
-                    path, engine="pyarrow", dtype_backend="pyarrow"
-                )
-            else:
-                pandas_object = pandas_loader(path)
-            return pandas_object.squeeze() if squeeze else pandas_object
+                if file_type in ("parquet", "feather"):
+                    table = loader(path, engine="pyarrow", dtype_backend="pyarrow")
+                else:
+                    table = loader(path)
+
+                return table.squeeze()
 
         raise NotImplementedError(f"No loader for {file_type=}")
 
