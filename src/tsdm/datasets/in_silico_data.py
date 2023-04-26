@@ -11,12 +11,13 @@ from importlib import resources
 from zipfile import ZipFile
 
 import pandas as pd
+from pandas import DataFrame
 
 from tsdm.datasets import examples
 from tsdm.datasets.base import SingleTableDataset
 
 
-class InSilicoData(SingleTableDataset):
+class InSilicoData(SingleTableDataset[DataFrame]):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -30,9 +31,11 @@ class InSilicoData(SingleTableDataset):
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """
 
-    dataset_hash = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
+    dataset_hash = (
+        "sha256:f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
+    )
     table_shape = (5206, 7)
-    table_hash = "652930435272677160"
+    # table_hash = "652930435272677160"
 
     rawdata_files = ["in_silico.zip"]
     rawdata_hashes = {
@@ -49,21 +52,23 @@ class InSilicoData(SingleTableDataset):
         r"""Return the timeseries of the dataset."""
         return self.table
 
-    def clean_table(self) -> None:
+    def clean_table(self) -> DataFrame:
         with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:
             dfs = {}
             for fname in files.namelist():
                 key = int(fname.split(".csv")[0])
                 with files.open(fname) as file:
                     df = pd.read_csv(file, index_col=0, parse_dates=[0])
-                df = df.rename_axis(index="time")
-                df["DOTm"] /= 100
-                dfs[key] = df
-        ds = pd.concat(dfs, names=["run_id"])
-        ds = ds.reset_index()
-        ds = ds.set_index(["run_id", "time"])
-        ds = ds.sort_values(by=["run_id", "time"])
-        ds = ds.astype("Float32")
+                    dfs[key] = df.rename_axis(index="time")
+
+        # Set index, dtype and sort.
+        ds = (
+            pd.concat(dfs, names=["run_id"])
+            .reset_index()
+            .set_index(["run_id", "time"])
+            .sort_index()
+            .astype("Float32")
+        )
         return ds
 
     def download_file(self, fname: str) -> None:

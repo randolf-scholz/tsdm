@@ -301,11 +301,6 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
             self.LOGGER.debug("Dataset already exists. Skipping download.")
             return
 
-        # Check if dataset provides a base_url.
-        if self.BASE_URL is None:
-            self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
-            return
-
         # Download file.
         self.LOGGER.debug("Starting to download dataset <%s>", key)
         self.download_file(key)
