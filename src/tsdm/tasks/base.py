@@ -157,6 +157,9 @@ class BaseTaskMetaClass(ABCMeta):
     ) -> None:
         super().__init__(name, bases, namespace, **kwds)
 
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+
 
 class Inputs(NamedTuple):
     r"""Tuple of inputs."""
