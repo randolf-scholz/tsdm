@@ -140,6 +140,11 @@ def hash_numpy(array: NDArray, /) -> int:
     return hash_value
 
 
+def hash_pyarrow(array: pa.Array, /) -> int:
+    """Hash a pyarrow array."""
+    raise NotImplementedError(f"Can't hash {type(array)} yet.")
+
+
 def hash_file(
     file: PathLike,
     *,
@@ -160,14 +165,20 @@ def hash_file(
 
 def hash_array(
     array: Any, *, hash_algorithm: str = "pandas", **hash_kwargs: Any
-) -> int:
+) -> str:
     """Hash an array like object (pandas/numpy/pyarrow/etc)."""
-    if hash_algorithm == "pandas":
-        return hash_pandas(array, **hash_kwargs)
-    elif hash_algorithm == "numpy":
-        return hash_numpy(array, **hash_kwargs)
+    match hash_algorithm:
+        case "pandas":
+            hash_value = hash_pandas(array, **hash_kwargs)
+        case "numpy":
+            hash_value = hash_numpy(array, **hash_kwargs)
+        case "pyarrow":
+            hash_value = hash_pyarrow(array, **hash_kwargs)
+        case _:
+            raise NotImplementedError(f"No algorithm {hash_algorithm!r} known.")
 
-    raise NotImplementedError(f"No algorithm {hash_algorithm!r} known.")
+    formatter = to_alphanumeric
+    return formatter(hash_value)
 
 
 def validate_file_hash(
@@ -333,7 +344,7 @@ def validate_table_hash(
 ) -> None:
     """Validate the hash of a pandas object, given hash values from a table."""
     # Try to determine the hash algorithm from the array type
-    name = f"{type(table)}<{table.shape}> {id(table)}"
+    name = f"{type(table)} of shape={table.shape}"
 
     # Determine the reference hash
     match reference:
@@ -358,17 +369,14 @@ def validate_table_hash(
                 case np.ndarray():
                     hash_algorithm = "numpy"
                 case _:
-                    raise ValueError(
-                        f"Cannot determine hash algorithm for array-like object {table!r}."
-                        "Please specify the hash algorithm manually."
-                    )
+                    hash_algorithm = DEFAULT_HASH_METHOD
+
             warnings.warn(
                 "No hash algorithm given for reference hash!"
-                f"Using {DEFAULT_HASH_METHOD!r} as default.",
+                f"Trying with {hash_algorithm!r} (auto-selected).",
                 UserWarning,
                 stacklevel=2,
             )
-            hash_algorithm = DEFAULT_HASH_METHOD
         case str() as alg, _:
             hash_algorithm = alg
         case None, str() as alg:
