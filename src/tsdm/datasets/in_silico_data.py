@@ -47,7 +47,7 @@ class InSilicoData(SingleTableDataset):
     @cached_property
     def timeseries(self) -> pd.DataFrame:
         r"""Return the timeseries of the dataset."""
-        return self.dataset
+        return self.table
 
     def clean_table(self) -> None:
         with ZipFile(str(self.rawdata_paths)) as files:
