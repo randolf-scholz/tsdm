@@ -18,10 +18,13 @@ __all__ = [
 
 import inspect
 from dataclasses import is_dataclass
+from functools import wraps
 from inspect import Parameter
 from typing import Any, Callable, Optional, Sequence, cast
 
 from tsdm.types.protocols import Dataclass
+from tsdm.types.variables import parameter_spec as P
+from tsdm.types.variables import return_var_co as R
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -201,3 +204,16 @@ def is_keyword_arg(p: Parameter, /) -> bool:
 def is_variadic_arg(p: Parameter, /) -> bool:
     """Check if parameter is variadic argument."""
     return p.kind in (VAR_POSITIONAL, VAR_KEYWORD)
+
+
+def rpartial(
+    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Callable[..., R]:
+    r"""Apply positional arguments from the right."""
+
+    @wraps(func)
+    def _wrapper(*func_args, **func_kwargs):
+        # TODO: https://github.com/python/typeshed/issues/8703
+        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
+
+    return _wrapper

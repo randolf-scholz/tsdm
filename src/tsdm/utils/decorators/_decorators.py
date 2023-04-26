@@ -54,8 +54,10 @@ from tsdm.types.variables import object_var as O
 from tsdm.types.variables import parameter_spec as P
 from tsdm.types.variables import return_var_co as R
 from tsdm.types.variables import torch_module_var
+from tsdm.utils.funcutils import rpartial
 
 __logger__ = logging.getLogger(__name__)
+
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -101,19 +103,6 @@ def exit_point_names(func: Callable) -> list[tuple[str, ...]]:
             e += (obj.id,)
         var_names.append(e)
     return var_names
-
-
-def rpartial(
-    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Callable[..., R]:
-    r"""Apply positional arguments from the right."""
-
-    @wraps(func)
-    def _wrapper(*func_args, **func_kwargs):
-        # TODO: https://github.com/python/typeshed/issues/8703
-        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
-
-    return _wrapper
 
 
 @dataclass
