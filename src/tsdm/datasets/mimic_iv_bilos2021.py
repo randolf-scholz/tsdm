@@ -50,48 +50,51 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
         "full_dataset.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
     }
     rawdata_schemas = {
-        "full_dataset.csv": ((2485649, 206), None, None),
+        "full_dataset.csv": "",
     }
-    dataset_files = ["timeseries.parquet"]
+
+    rawdata_shape = (2485649, 206)
+    table_names = ["timeseries"]
     table_hashes = {
         "timeseries": "pandas:-5464950709022187442",
     }
     table_schemas = {
         "timeseries": ((2485649, 102), None, None),
     }
-    index = ["timeseries"]
 
     def clean_table(self) -> None:
-        if not self.rawdata_paths.exists():
+        if not self.rawdata_path.exists():
             raise RuntimeError(
                 f"Please apply the preprocessing code found at {self.GITHUB_URL}."
                 f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
             )
 
-        # self.validate_filehash(key, self.rawdata_paths, reference=self.RAWDATA_SHA256)
-
+        self.LOGGER.info("")
         table: pyarrow.Table = pyarrow.csv.read_csv(self.rawdata_paths)
         ts = table.to_pandas(self_destruct=True)
 
-        if ts.shape != self.RAWDATA_SHAPE:
+        if ts.shape != self.rawdata_shape:
             raise ValueError(f"The {ts.shape=} is not correct.")
 
-        ts = ts.sort_values(by=["hadm_id", "time_stamp"])
-        ts = ts.astype(
-            {
-                "hadm_id": "int32",
-                "time_stamp": "int16",
-            }
+        ts = (
+            ts.sort_values(by=["hadm_id", "time_stamp"])
+            .astype(
+                {
+                    "hadm_id": "int32",
+                    "time_stamp": "int16",
+                }
+            )
+            .set_index(list(ts.columns[:2]))
         )
-        ts = ts.set_index(list(ts.columns[:2]))
+
         for i, col in enumerate(ts):
             if i % 2 == 1:
                 continue
             ts[col] = np.where(ts.iloc[:, i + 1], ts[col], np.nan)
-        ts = ts.drop(columns=ts.columns[1::2])
-        ts = ts.sort_index()
-        ts = ts.astype("float32")
-        ts.to_parquet(self.dataset_paths)
+        ts = ts.drop(columns=ts.columns[1::2]).sort_index().astype("float32")
+
+        return ts
+        # ts.to_parquet(self.dataset_path)
 
     def download_all_files(self) -> None:
         if not self.rawdata_paths.exists():
