@@ -80,7 +80,7 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
                 f"\nauthors did not provide a license for it."
             )
 
-        self.LOGGER.info("")
+        self.LOGGER.info("Loading main file.")
         table: pa.Table = pyarrow.csv.read_csv(self.rawdata_paths["full_dataset.csv"])
 
         if table.shape != self.rawdata_shape:

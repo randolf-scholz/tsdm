@@ -19,12 +19,16 @@ vital signs, laboratory results, and medications.
 __all__ = ["MIMIC_III_DeBrouwer2019"]
 
 
-from typing import Any, Literal, TypeAlias
+import os
+import subprocess
+from getpass import getpass
+from typing import Literal, TypeAlias
 
+import matplotlib.pyplot as plt
 import pandas as pd
+from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.encoders import TripletDecoder
 
 KEY: TypeAlias = Literal["timeseries", "metadata"]
 
@@ -59,12 +63,21 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY]):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
 
+    table_names = ["timeseries", "metadata"]
     rawdata_files = ["complete_tensor.csv"]
     rawdata_hashes = {
         "complete_tensor.csv": "sha256:8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2",
     }
+    rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
     rawdata_schemas = {
-        "complete_tensor.csv": ((3082224, 7), None, None),
+        "complete_tensor.csv": {
+            "UNIQUE_ID": "int16",
+            "TIME_STAMP": "int16",
+            "LABEL_CODE": "int16",
+            "VALUENORM": "float32",
+            "MEAN": "float32",
+            "STD": "float32",
+        }
     }
     dataset_hashes = {
         "timeseries": "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
@@ -78,66 +91,75 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY]):
     # dataset_files = {"timeseries": "timeseries.parquet", "metadata": "metadata.parquet"}
     KEYS = ["timeseries", "metadata"]
 
-    timeseries: pd.DataFrame
-    metadata: pd.DataFrame
+    timeseries: DataFrame
+    metadata: DataFrame
 
-    def clean_table(self, key: KEY) -> None:
-        if not self.rawdata_paths.exists():
+    def clean_table(self, key: KEY) -> DataFrame:
+        if not self.rawdata_files_exist():
             raise RuntimeError(
-                f"Please apply the preprocessing code found at {self.GITHUB_URL}."
+                f"Please manually apply the preprocessing code found at {self.GITHUB_URL}."
                 f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
+                f"\nThe cleaning code is not included in this package because the original."
+                f"\nauthors did not provide a license for it."
             )
+        if key == "metadata":
+            return self.timeseries.describe().T.astype("float32")
 
-        ts = pd.read_csv(self.rawdata_paths, index_col=0)
+        if key != "timeseries":
+            raise KeyError(f"{key=} is not a valid key.")
 
-        if ts.shape != self.RAWDATA_SHAPE:
+        self.LOGGER.info("Loading main file.")
+        ts = pd.read_csv(self.rawdata_paths["complete_tensor.csv"], index_col=0)
+
+        # Check shape.
+        if ts.shape != self.rawdata_shapes["complete_tensor.csv"]:
             raise ValueError(
                 f"The {ts.shape=} is not correct."
                 "Please apply the modified preprocessing using bin_k=2, as outlined in"
                 "the appendix. The resulting tensor should have 3082224 rows and 7 columns."
             )
 
-        ts = ts.sort_values(by=["UNIQUE_ID", "TIME_STAMP"])
-        ts = ts.astype(
-            {
-                "UNIQUE_ID": "int16",
-                "TIME_STAMP": "int16",
-                "LABEL_CODE": "int16",
-                "VALUENORM": "float32",
-                "MEAN": "float32",
-                "STD": "float32",
-            }
+        # Extract Original Data Table.
+        ts = (
+            ts.astype(self.rawdata_schemas["complete_tensor.csv"])
+            .loc[:, ["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM"]]
+            .reset_index(drop=True)
+            .set_index(["UNIQUE_ID", "TIME_STAMP"])
+            .pivot(columns="LABEL_CODE", values="VALUENUM")
+            .astype("float32")
+            .sort_index()
+            .sort_index(axis=1)
         )
-
-        means = ts.groupby("LABEL_CODE").mean()["VALUENUM"].rename("MEANS")
-        stdvs = ts.groupby("LABEL_CODE").std()["VALUENUM"].rename("STDVS")
-        stats = pd.DataFrame([means, stdvs]).T.reset_index()
-        stats = stats.astype(
-            {
-                "LABEL_CODE": "int16",
-                "MEANS": "float32",
-                "STDVS": "float32",
-            }
-        )
-
-        ts = ts[["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENORM"]]
-        ts = ts.reset_index(drop=True)
-        ts = ts.set_index(["UNIQUE_ID", "TIME_STAMP"])
-        ts = ts.sort_index()
-        encoder = TripletDecoder(value_name="VALUENORM", var_name="LABEL_CODE")
-        encoder.fit(ts)
-        ts = encoder.encode(ts)
         ts.columns = ts.columns.astype("string")
-        stats.to_parquet(self.dataset_paths["metadata"])
-        ts.to_parquet(self.dataset_paths["timeseries"])
+        return ts
 
-    def load_table(self, key: KEY) -> pd.DataFrame:
-        # return NotImplemented
-        return pd.read_parquet(self.dataset_paths[key])
+    def download_file(self, fname: str) -> None:
+        path = self.rawdata_paths[fname]
 
-    def download_table(self, **_: Any) -> None:
-        if not self.rawdata_paths.exists():
-            raise RuntimeError(
-                f"Please apply the preprocessing code found at {self.GITHUB_URL}."
-                f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
-            )
+        cut_dirs = self.BASE_URL.count("/") - 3
+        user = input("MIMIC-III username: ")
+        password = getpass(prompt="MIMIC-III password: ", stream=None)
+
+        os.environ["PASSWORD"] = password
+
+        subprocess.run(
+            f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
+            shell=True,
+            check=True,
+        )
+
+        file = self.RAWDATA_DIR / "index.html"
+        os.rename(file, fname)
+
+    def make_histograms(self) -> tuple[plt.Figure, plt.Axes]:
+        """Make histograms of the timeseries."""
+        fig, axes = plt.subplots(
+            16, 6, figsize=(20, 32), constrained_layout=True, sharey=True
+        )
+
+        for col, ax in zip(self.timeseries, axes.flatten()):
+            self.timeseries[col].hist(ax=ax, density=True, log=True, bins=20)
+            ax.set_ylim(10**-6, 1)
+
+        return fig, axes
