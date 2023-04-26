@@ -203,7 +203,7 @@ class USHCN_DeBrouwer2019(OldBaseTask):
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ts = USHCN_DeBrouwer2019_Dataset().dataset
+        ts = USHCN_DeBrouwer2019_Dataset().table
 
         if self.normalize_time:
             ts = ts.reset_index()

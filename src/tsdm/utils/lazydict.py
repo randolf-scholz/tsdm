@@ -64,7 +64,7 @@ class LazyValue(Generic[R]):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the function."""
-        return f"{self.__class__.__name__}<{self.type_hint}>()"
+        return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
 FuncSpec: TypeAlias = Union[

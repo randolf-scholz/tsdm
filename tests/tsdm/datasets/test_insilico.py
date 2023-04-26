@@ -21,8 +21,8 @@ def test_caching() -> None:
     LOGGER.info("Testing caching.")
 
     ds = InSilicoData(initialize=False)
-    _, pre_cache_time = timefun(lambda: ds.dataset, append=True)()
-    _, post_cache_time = timefun(lambda: ds.dataset, append=True)()
+    _, pre_cache_time = timefun(lambda: ds.table, append=True)()
+    _, post_cache_time = timefun(lambda: ds.table, append=True)()
 
     LOGGER.info("%f, %f", pre_cache_time, post_cache_time)
 
@@ -52,7 +52,7 @@ def test_attributes() -> None:
     }
 
     assert attrs <= base_attrs, f"{attrs - base_attrs} missing!"
-    assert isinstance(ds.dataset, DataFrame)
+    assert isinstance(ds.table, DataFrame)
     assert issubclass(InSilicoData, BaseDataset)
 
     for attr in attrs:

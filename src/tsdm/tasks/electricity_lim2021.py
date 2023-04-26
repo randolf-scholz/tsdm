@@ -107,7 +107,7 @@ class ElectricityLim2021(TimeSeriesTask):
     preprocessor: BaseEncoder
 
     def __init__(self) -> None:
-        ds = Electricity().dataset
+        ds = Electricity().table
         ds = ds.resample("1h").mean()
         mask = (self.boundaries["start"] <= ds.index) & (
             ds.index < self.boundaries["final"]

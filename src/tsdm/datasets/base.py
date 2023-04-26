@@ -15,6 +15,7 @@ __all__ = [
     "DATASET_OBJECT",
 ]
 
+import html
 import inspect
 import logging
 import os
@@ -324,7 +325,7 @@ class BaseDataset(Generic[Key], ABC, metaclass=BaseDatasetMetaClass):
 class SingleTableDataset(BaseDataset):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    __dataset: DATASET_OBJECT = NotImplemented
+    __table: DATASET_OBJECT = NotImplemented
     """INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
@@ -336,20 +337,23 @@ class SingleTableDataset(BaseDataset):
     table_schema: Schema = NotImplemented
     r"""Schema of the in-memory cleaned dataset table(s)."""
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}<{get_return_typehint(self.clean_table)}>"
+
     def _repr_html_(self) -> str:
-        if hasattr(self.dataset, "_repr_html_"):
-            header = f"<h3>{self.__class__.__name__}</h3>"
+        if hasattr(self.table, "_repr_html_"):
+            header = f"<h3>{html.escape(repr(self))}</h3>"
             # noinspection PyProtectedMember
-            html_repr = self.dataset._repr_html_()  # pylint: disable=protected-access
+            html_repr = self.table._repr_html_()  # pylint: disable=protected-access
             return header + html_repr
         raise NotImplementedError
 
     @cached_property
-    def dataset(self) -> DATASET_OBJECT:
+    def table(self) -> DATASET_OBJECT:
         r"""Store cached version of dataset."""
-        if self.__dataset is NotImplemented:
-            self.load()
-        return self.__dataset
+        if self.__table is NotImplemented:
+            self.__table = self.load_table()
+        return self.__table
 
     @cached_property
     def dataset_file(self) -> PathLike:
@@ -381,11 +385,20 @@ class SingleTableDataset(BaseDataset):
         """
         return self.deserialize(self.dataset_path)
 
-    def load(self, *, force: bool = True, validate: bool = True) -> DATASET_OBJECT:
+    def load(
+        self,
+        *,
+        force: bool = True,
+        validate: bool = True,
+    ) -> DATASET_OBJECT:
         r"""Load the selected DATASET_OBJECT."""
         # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_file_exists():
             self.clean(force=force, validate=validate)
+
+        # Skip if already loaded.
+        if self.__table is not NotImplemented:
+            return self.table
 
         # Validate file if hash is provided.
         if validate and self.dataset_hash is not NotImplemented:
@@ -394,8 +407,6 @@ class SingleTableDataset(BaseDataset):
         # Load table.
         self.LOGGER.debug("Starting to load dataset.")
         table = self.load_table()
-        table.name = self.__class__.__name__
-        self.__dataset = table
         self.LOGGER.debug("Finished loading dataset.")
 
         # Validate table if hash/schema is provided.
@@ -611,9 +622,6 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     def load(
         self,
         key: None = None,
-        *,
-        force: bool = False,
-        validate: bool = True,
         **kwargs: Any,
     ) -> Mapping[Key, DATASET_OBJECT]:
         ...
@@ -622,9 +630,6 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
     def load(
         self,
         key: Key = ...,
-        *,
-        force: bool = False,
-        validate: bool = True,
         **kwargs: Any,
     ) -> DATASET_OBJECT:
         ...
@@ -665,7 +670,7 @@ class MultiTableDataset(BaseDataset, Mapping[Key, DATASET_OBJECT]):
         if not self.dataset_files_exist(key=key):
             self.clean(key=key, force=force)
 
-        # Validate the dataset file.
+        # Validate file if hash is provided.
         if validate and self.dataset_hashes is not NotImplemented:
             validate_file_hash(
                 self.dataset_paths[key], reference=self.dataset_hashes[key]

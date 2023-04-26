@@ -94,7 +94,7 @@ class MIMIC_IV(MultiTableDataset):
     def load_table(self, key: str) -> pd.DataFrame:
         return pd.read_parquet(self.dataset_paths[key])
 
-    def download_table(self, **_: Any) -> None:
+    def download_file(self, *args: Any) -> None:
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-IV username: ")
         password = getpass(prompt="MIMIC-IV password: ", stream=None)

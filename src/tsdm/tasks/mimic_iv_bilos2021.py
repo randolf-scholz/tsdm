@@ -207,7 +207,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         # bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
 
         # Standardize the x-values, min-max scale the t values.
-        ts = ds.dataset
+        ts = ds.table
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor.index_encoders["time_stamp"]
