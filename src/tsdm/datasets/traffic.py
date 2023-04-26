@@ -72,7 +72,7 @@ def _reformat(s: str, replacements: dict) -> str:
 KEY: TypeAlias = Literal["timeseries", "labels", "randperm", "invperm"]
 
 
-class Traffic(MultiTableDataset[KEY]):
+class Traffic(MultiTableDataset[KEY, DataFrame]):
     r"""15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different car lanes of the San Francisco bay area freeways across time.
 
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+

@@ -85,7 +85,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "Electricity": Electricity,
     "InSilicoData": InSilicoData,
     "KIWI_RUNS": KIWI_RUNS,
-    "KIWI_RUNS_OLD": KIWI_RUNS_OLD,
+    # "KIWI_RUNS_OLD": KIWI_RUNS_OLD,
     "MIMIC_III": MIMIC_III,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV": MIMIC_IV,

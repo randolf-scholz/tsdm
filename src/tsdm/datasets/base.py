@@ -195,22 +195,21 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         raise NotImplementedError(f"No loader for {file_type=}")
 
     @staticmethod
-    def deserialize(path: Path, /, *, backend: str = "pandas") -> T:
+    def deserialize(path: Path, /) -> T:
         r"""Deserialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
         file_type = file_type[1:]
 
-        if backend == "pandas":
-            if hasattr(pandas, f"read_{file_type}"):
-                loader = getattr(pandas, f"read_{file_type}")
+        if hasattr(pandas, f"read_{file_type}"):
+            loader = getattr(pandas, f"read_{file_type}")
 
-                if file_type in ("parquet", "feather"):
-                    table = loader(path, engine="pyarrow", dtype_backend="pyarrow")
-                else:
-                    table = loader(path)
+            if file_type in ("parquet", "feather"):
+                table = loader(path, engine="pyarrow", dtype_backend="pyarrow")
+            else:
+                table = loader(path)
 
-                return table.squeeze()
+            return table.squeeze()
 
         raise NotImplementedError(f"No loader for {file_type=}")
 

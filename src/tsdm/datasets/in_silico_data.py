@@ -30,9 +30,9 @@ class InSilicoData(SingleTableDataset):
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """
 
-    DATASET_HASH = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
-    DATASET_SHAPE = (5206, 7)
-    TABLE_HASH = 652930435272677160
+    dataset_hash = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
+    table_shape = (5206, 7)
+    table_hash = "652930435272677160"
 
     rawdata_files = ["in_silico.zip"]
     rawdata_hashes = {
@@ -50,7 +50,7 @@ class InSilicoData(SingleTableDataset):
         return self.table
 
     def clean_table(self) -> None:
-        with ZipFile(str(self.rawdata_paths)) as files:
+        with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:
             dfs = {}
             for fname in files.namelist():
                 key = int(fname.split(".csv")[0])
@@ -66,8 +66,8 @@ class InSilicoData(SingleTableDataset):
         ds = ds.astype("Float32")
         return ds
 
-    def download_all_files(self) -> None:
+    def download_file(self, fname: str) -> None:
         r"""Download the dataset."""
-        self.LOGGER.info("Copying data files into %s.", self.rawdata_paths)
-        with resources.path(examples, self.rawdata_files) as path:
-            shutil.copy(path, str(self.rawdata_paths))
+        self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
+        with resources.path(examples, fname) as path:
+            shutil.copy(path, self.rawdata_paths[fname])
