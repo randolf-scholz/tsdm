@@ -21,7 +21,6 @@ __all__ = ["MIMIC_III"]
 import os
 import subprocess
 from getpass import getpass
-from typing import Any
 
 from tsdm.datasets.base import MultiTableDataset
 
@@ -98,7 +97,9 @@ class MIMIC_III(MultiTableDataset):
     def clean_table(self, key: str) -> None:
         raise NotImplementedError
 
-    def download_table(self, **_: Any) -> None:
+    def download_file(self, fname: str) -> None:
+        path = self.rawdata_paths[fname]
+
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)
@@ -107,10 +108,10 @@ class MIMIC_III(MultiTableDataset):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} ",
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
             shell=True,
             check=True,
         )
 
         file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, self.rawdata_files)
+        os.rename(file, fname)
