@@ -45,6 +45,7 @@ __all__ = [
 
 from zipfile import ZipFile
 
+import matplotlib.pyplot as plt
 from pandas import DataFrame, read_csv
 
 from tsdm.datasets.base import SingleTableDataset
@@ -60,6 +61,34 @@ class Electricity(SingleTableDataset):
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**          | Regression, Clustering | **Missing Values?**       | N/A    | **Number of Web Hits:** | 93733      |
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
+
+    Notes:
+        More than 200 channels are completly missing before 2012-01-01 00:15:00.
+        There are 3 extra dates with large number of missing values:
+
+            - 2012-03-25
+            - 2013-03-31
+            - 2014-03-30
+
+        More specifically, the timestamps:
+
+            - 2011-MM-DD hh:mm:ss
+            - 2012-01-01 00:00:00
+            - 2012-03-25 01:00:00
+            - 2012-03-25 01:15:00
+            - 2012-03-25 01:30:00
+            - 2012-03-25 01:45:00
+            - 2013-03-31 01:00:00
+            - 2013-03-31 01:15:00
+            - 2013-03-31 01:30:00
+            - 2013-03-31 01:45:00
+            - 2014-03-30 01:00:00
+            - 2014-03-30 01:15:00
+            - 2014-03-30 01:30:00
+            - 2014-03-30 01:45:00
+
+    Recommendation:
+        At the given dates, replace zero with NaN.
     """  # pylint: disable=line-too-long # noqa: E501
 
     BASE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
@@ -90,3 +119,6 @@ class Electricity(SingleTableDataset):
                     dtype="float32",
                 )
         return df.rename_axis(index="time", columns="client")
+
+    def make_zero_plot(self) -> plt.Axes:
+        self.table.where(self.table > 0).isna().sum(axis=1).plot(ylabel="zero-values")
