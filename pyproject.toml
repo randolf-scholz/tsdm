@@ -152,6 +152,7 @@ disable= [
     "W0221",  # arguments-differ
     "W1113",  # keyword-arg-before-vararg
 #    "W0511",  # (fixme) (todos)
+    "E1101",  # no-member  # FIXME: too many false positives
 ]
 fail-on= [
     "C0116",  # missing-function-docstring
