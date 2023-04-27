@@ -314,7 +314,7 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
 class SingleTableDataset(BaseDataset[T]):
     r"""Dataset class that consists of a singular DataFrame."""
 
-    __table: T = NotImplemented
+    _table: T = NotImplemented
     """INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
@@ -332,10 +332,10 @@ class SingleTableDataset(BaseDataset[T]):
         return f"{self.__class__.__name__}<{get_return_typehint(self.clean_table)}>"
 
     def _repr_html_(self) -> str:
-        if self.__table is NotImplemented:
-            return NotImplemented
-        if hasattr(self.table, "_repr_html_"):
-            header = f"<h3>{html.escape(repr(self))}</h3>"
+        if self._table is NotImplemented:
+            return f"<pre>{html.escape(repr(self))}</pre>"
+        if hasattr(self._table, "_repr_html_"):
+            header = f"<h3><pre>{html.escape(repr(self))}</pre></h3>"
             # noinspection PyProtectedMember
             html_repr = self.table._repr_html_()  # pylint: disable=protected-access
             return header + html_repr
@@ -344,9 +344,9 @@ class SingleTableDataset(BaseDataset[T]):
     @cached_property
     def table(self) -> T:
         r"""Store cached version of dataset."""
-        if self.__table is NotImplemented:
-            self.__table = self.load_table()
-        return self.__table
+        if self._table is NotImplemented:
+            self._table = self.load(initializing=True)
+        return self._table
 
     @cached_property
     def dataset_file(self) -> PathLike:
@@ -381,6 +381,7 @@ class SingleTableDataset(BaseDataset[T]):
     def load(
         self,
         *,
+        initializing: bool = False,
         force: bool = True,
         validate: bool = True,
     ) -> T:
@@ -390,7 +391,7 @@ class SingleTableDataset(BaseDataset[T]):
             self.clean(force=force, validate=validate)
 
         # Skip if already loaded.
-        if self.__table is not NotImplemented:
+        if not initializing:
             return self.table
 
         # Validate file if hash is provided.
