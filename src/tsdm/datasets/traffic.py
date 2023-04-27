@@ -49,13 +49,15 @@ M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference 
 
 __all__ = ["Traffic"]
 
+import warnings
+from functools import cached_property
 from io import StringIO
 from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, Series
+from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
 
@@ -63,7 +65,8 @@ from tsdm.datasets.base import MultiTableDataset
 def _reformat(s: str, replacements: dict) -> str:
     r"""Replace multiple substrings via dict.
 
-    https://stackoverflow.com/a/64500851/9318372
+    References:
+        https://stackoverflow.com/a/64500851/9318372
     """
     *_, result = (s := s.replace(c, r) for c, r in replacements.items())  # noqa: F841
     return result
@@ -89,6 +92,16 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     INFO_URL = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
     r"""HTTP address containing additional information about the dataset."""
 
+    def __init__(
+        self,
+        *,
+        use_corrected_dates: bool = True,
+        initialize: bool = True,
+        reset: bool = False,
+    ) -> None:
+        self.use_corrected_dates = use_corrected_dates
+        super().__init__(initialize=initialize, reset=reset)
+
     table_names = ["timeseries", "labels", "randperm", "invperm"]
     rawdata_files = ["PEMS-SF.zip"]
     rawdata_hashes = {
@@ -106,11 +119,81 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     randperm: DataFrame
     invperm: DataFrame
 
-    def clean_table(self, key: KEY) -> None:
+    @cached_property
+    def weekdays(self) -> dict[int, str]:
+        if self.use_corrected_dates:
+            weekdays = {
+                1: "Sunday",
+                2: "Monday",
+                3: "Tuesday",
+                4: "Wednesday",
+                5: "Thursday",
+                6: "Friday",
+                7: "Saturday",
+            }
+        else:
+            weekdays = {
+                1: "Monday",
+                2: "Tuesday",
+                3: "Wednesday",
+                4: "Thursday",
+                5: "Friday",
+                6: "Saturday",
+                7: "Sunday",
+            }
+        return weekdays
+
+    @cached_property
+    def dates(self) -> pd.DatetimeIndex:
+        if self.use_corrected_dates:
+            dates = pd.date_range("2008-01-01", "2009-03-26", freq="d", name="day")
+            anomalies = pd.DatetimeIndex(
+                {
+                    "2008-01-01": "New Year’s Day",
+                    "2008-01-21": "Martin Luther King Jr. Day",
+                    "2008-02-18": "Washington’s Birthday",
+                    "2008-03-09": "anomaly",
+                    "2008-05-26": "Memorial Day",
+                    "2008-07-04": "Independence Day",
+                    "2008-09-01": "Labor Day",
+                    "2008-10-20": "???",
+                    "2008-11-17": "???",
+                    "2008-12-07": "???",
+                    "2009-02-23": "???",
+                    # "2009-03-08": "anomaly",
+                }
+            )
+        else:
+            dates = pd.date_range("2008-01-01", "2009-03-30", freq="d", name="day")
+            anomalies = pd.DatetimeIndex(
+                {
+                    "Jan. 1, 2008": "New Year’s Day",
+                    "Jan. 21, 2008": "Martin Luther King Jr. Day",
+                    "Feb. 18, 2008": "Washington’s Birthday",
+                    "Mar. 9, 2008": "Anomaly day",
+                    "May 26, 2008": "Memorial Day",
+                    "Jul. 4, 2008": "Independence Day",
+                    "Sep. 1, 2008": "Labor Day",
+                    "Oct. 13, 2008": "Columbus Day",
+                    "Nov. 11, 2008": "Veterans Day",
+                    "Nov. 27, 2008": "Thanksgiving",
+                    "Dec. 25, 2008": "Christmas Day",
+                    "Jan. 1, 2009": "New Year’s Day",
+                    "Jan. 19, 2009": "Martin Luther King Jr. Day",
+                    "Feb. 16, 2009": "Washington’s Birthday",
+                    "Mar. 8, 2009": "Anomaly day",
+                }
+            )
+        # remove anomalies
+        dates = dates[~dates.isin(anomalies)]
+
+        return dates
+
+    def clean_table(self, key: KEY) -> DataFrame:
         if key == "timeseries":
-            return self._clean_data()
+            return self._clean_timeseries()
         if key == "labels":
-            return self._clean_data()
+            return self._clean_labels()
         if key == "randperm":
             return self._clean_randperm()
         if key == "invperm":
@@ -118,15 +201,18 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
 
         raise KeyError(f"{key} is not a valid key")
 
-    def _clean_data(self, *, use_corrected_dates: bool = True) -> None:
+    def _clean_timeseries(self) -> DataFrame:
         r"""Create DataFrame from raw data.
 
-        Args:
-            use_corrected_dates: Use correct dates and anomalies found through reverse engineering the dataset.
+        Notes:
+            Sampling rate = 10 minutes => 144 samples/day
 
-        Notes
-        -----
-        Sampling rate = 10 minutes => 144 samples/day
+        Despite the description of the dataset stating:
+
+        The task we propose on this dataset is to classify each observed day as the correct day of the week,
+        from Monday to Sunday, e.g. label it with an integer in {1,2,3,4,5,6,7}.
+
+        In truth 1 encodes as Sunday and 7 as Saturday.
 
         PEMS_train: 267 rows
 
@@ -139,7 +225,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         In total 440 days of observations.
 
         - original data range is 455 days: 2008-01-01 - 2009-03-30 (15 months)
-        - authors manually removed holidays as well as 2 anomalies: 2009-03-08 and 2008-03-09.
+        - authors manually removed holidays as well as 2 anomalies: 2008-03-09 and 2009-03-08.
         - in total 10 days missing.
 
         The authors of N-BEATS guesstimate the missing days to be:
@@ -160,6 +246,8 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         14. Feb. 16, 2009 (Washington’s Birthday)
         15. Mar. 8, 2009 (Anomaly day)
 
+        However, there was a big mistake made: they assumed 1 encodes as
+
         The true missing dates appear to be, by reverse-engineering:
 
         - "2008-01-02": "1 day off New Year’s Day",
@@ -173,82 +261,15 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         - "2008-11-18": "???",
         - "2008-12-08": "???",
         - "2009-02-24": "???",
+
+        The true anomalies were found by iteratively adding days one by one,
+        Each time checking when the first date was when `labels[invperm].map(weekdays)`
+        didn't match with `dates.day_name()`
         """
-        # The true anomalies were found by iteratively adding them 1 by one,
-        # Each time checking when the first date was when
-        # labels[invperm].map(weekdays) didn't match with dates.day_name()
-        true_dates = pd.date_range("2008-01-01", "2009-03-26", freq="d", name="day")
-        true_anomalies = pd.DatetimeIndex(
-            {
-                "2008-01-01": "New Year’s Day",
-                "2008-01-21": "Martin Luther King Jr. Day",
-                "2008-02-18": "Washington’s Birthday",
-                "2008-03-09": "anomaly + wrong year",
-                "2008-05-26": "Memorial Day",
-                "2008-07-04": "Independence Day",
-                "2008-09-01": "Labor Day",
-                "2008-10-20": "???",
-                "2008-11-17": "???",
-                "2008-12-07": "???",
-                "2009-02-23": "???",
-            }
-        )
-        true_weekdays = {
-            "1": "Sunday",
-            "2": "Monday",
-            "3": "Tuesday",
-            "4": "Wednesday",
-            "5": "Thursday",
-            "6": "Friday",
-            "7": "Saturday",
-        }
+        shuffled_dates = self.dates[self.randperm]
 
-        false_dates = pd.date_range("2008-01-01", "2009-03-30", freq="d", name="day")
-        false_anomalies = pd.DatetimeIndex(
-            {
-                "Jan. 1, 2008": "New Year’s Day",
-                "Jan. 21, 2008": "Martin Luther King Jr. Day",
-                "Feb. 18, 2008": "Washington’s Birthday",
-                "Mar. 9, 2008": "Anomaly day",
-                "May 26, 2008": "Memorial Day",
-                "Jul. 4, 2008": "Independence Day",
-                "Sep. 1, 2008": "Labor Day",
-                "Oct. 13, 2008": "Columbus Day",
-                "Nov. 11, 2008": "Veterans Day",
-                "Nov. 27, 2008": "Thanksgiving",
-                "Dec. 25, 2008": "Christmas Day",
-                "Jan. 1, 2009": "New Year’s Day",
-                "Jan. 19, 2009": "Martin Luther King Jr. Day",
-                "Feb. 16, 2009": "Washington’s Birthday",
-                "Mar. 8, 2009": "Anomaly day",
-            }
-        )
-        false_weekdays = {
-            "1": "Monday",
-            "2": "Tuesday",
-            "3": "Wednesday",
-            "4": "Thursday",
-            "5": "Friday",
-            "6": "Saturday",
-            "7": "Sunday",
-        }
-
-        dates = true_dates if use_corrected_dates else false_dates
-        anomalies = true_anomalies if use_corrected_dates else false_anomalies
-        weekdays = true_weekdays if use_corrected_dates else false_weekdays
-
-        # remove anomalies
-        mask = dates.isin(anomalies)
-        assert sum(mask) == len(anomalies)
-        dates = dates[~mask]
-
-        # Shuffle dates according to permutation the authors applied
-        shuffled_dates = dates[self.randperm]
-
-        timestamps = pd.timedelta_range(
-            "0:00:00", "23:59:59", freq="10min", name="time"
-        )
-        assert len(timestamps) == 144
+        time = pd.timedelta_range("0:00:00", "23:59:59", freq="10min", name="time")
+        assert len(time) == 144
 
         with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
             with archive.open("stations_list") as file:
@@ -257,85 +278,93 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
                 stations = pd.read_csv(
                     StringIO(content), names=["station"], dtype="category"
                 ).squeeze()
-                stations = Series(stations)  # make sure it's not TextFileReader
 
+            with archive.open("PEMS_train") as file:
+                train_dfs = []
+                for line in file:
+                    content = line.decode("utf8")
+                    content = _reformat(
+                        content, {"[": "", "]": "", ";": "\n", " ": ","}
+                    )
+                    df = pd.read_csv(StringIO(content), header=None).squeeze()
+                    df = DataFrame(df.values, index=stations, columns=time)
+                    train_dfs.append(df.T)
+                ts_train = pd.concat(train_dfs, keys=shuffled_dates[: len(train_dfs)])
+
+            with archive.open("PEMS_test") as file:
+                test_dfs = []
+                for line in file:
+                    content = line.decode("utf8")
+                    content = _reformat(
+                        content, {"[": "", "]": "", ";": "\n", " ": ","}
+                    )
+                    df = pd.read_csv(StringIO(content), header=None).squeeze()
+                    df = DataFrame(df.values, index=stations, columns=time)
+                    test_dfs.append(df.T)
+                ts_test = pd.concat(test_dfs, keys=shuffled_dates[len(train_dfs) :])
+
+        ts = pd.concat([ts_train, ts_test]).reset_index()
+
+        ts = (
+            ts.assign(time=ts["day"] + ts["time"])
+            .drop(columns="day")
+            .set_index("time")
+            .astype("float32")
+        )
+        ts.columns = ts.columns.astype("string")
+        return ts
+
+    def _clean_labels(self) -> DataFrame:
+        """Clean the labels of the PEMS-SF dataset."""
+        # Shuffle dates according to permutation the authors applied
+        shuffled_dates = self.dates[self.randperm]
+
+        with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
             with archive.open("PEMS_trainlabels") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "\n", " ": "\n"})
                 trainlabels = pd.read_csv(
-                    StringIO(content), names=["labels"], dtype="category"
+                    StringIO(content), names=["label"], dtype="uint8"
                 ).squeeze()
                 train_dates = shuffled_dates[: len(trainlabels)]
                 trainlabels.index = train_dates
-                trainlabels = Series(trainlabels)  # make sure it's not TextFileReader
+
             # Check that the labels match with the actual weekdays
             assert all(
-                trainlabels.index.day_name() == trainlabels.values.map(weekdays)
+                trainlabels.index.day_name() == trainlabels.map(self.weekdays)
             ), "Labels do not match with dates!"
 
             with archive.open("PEMS_testlabels") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
                 testlabels = pd.read_csv(
-                    StringIO(content), names=["labels"], dtype="category"
+                    StringIO(content), names=["label"], dtype="uint8"
                 ).squeeze()
                 test_dates = shuffled_dates[len(trainlabels) :]
                 testlabels.index = test_dates
-                testlabels = Series(testlabels)  # make sure it's not TextFileReader
 
             # Check that the labels match with the actual weekdays
             assert all(
-                testlabels.index.day_name() == testlabels.values.map(weekdays)
+                testlabels.index.day_name() == testlabels.map(self.weekdays)
             ), "Labels do not match with dates!"
-            assert (
-                trainlabels.dtype == testlabels.dtype
-            ), "Train and test have different labels!"
 
-            with archive.open("PEMS_train") as file:
-                _PEMS_train = []
-                for line in file:
-                    content = line.decode("utf8")
-                    content = _reformat(
-                        content, {"[": "", "]": "", ";": "\n", " ": ","}
-                    )
-                    df = pd.read_csv(StringIO(content), header=None).squeeze()
-                    df = DataFrame(df.values, index=stations, columns=timestamps)
-                    _PEMS_train.append(df.T)
-                PEMS_train = pd.concat(_PEMS_train, keys=train_dates)
-
-            with archive.open("PEMS_test") as file:
-                _PEMS_test = []
-                for line in file:
-                    content = line.decode("utf8")
-                    content = _reformat(
-                        content, {"[": "", "]": "", ";": "\n", " ": ","}
-                    )
-                    df = pd.read_csv(StringIO(content), header=None).squeeze()
-                    df = DataFrame(df.values, index=stations, columns=timestamps)
-                    _PEMS_test.append(df.T)
-                PEMS_test = pd.concat(_PEMS_test, keys=test_dates)
-
-        PEMS = pd.concat([PEMS_train, PEMS_test])
         labels = pd.concat([trainlabels, testlabels]).rename("labels")
 
-        mismatches = labels[self.invperm].map(weekdays) != dates.day_name()
-        assert len(dates[mismatches]) == 0, "Mismatches in label and date weekday!"
+        matches = labels.iloc[self.invperm].map(self.weekdays) == self.dates.day_name()
+        if all(matches):
+            self.LOGGER.info("All encoded labels match with the day name!")
+        else:
+            warnings.warn(
+                "Mismatches detected!" f"{labels[~matches]}",
+                UserWarning,
+                stacklevel=2,
+            )
 
-        PEMS = (
-            PEMS.reset_index()
-            .assign(time=PEMS["day"] + PEMS["time"])
-            .drop(columns="day")
-            .set_index("time")
-            .astype("float32")
-        )
-
-        PEMS.columns = PEMS.columns.astype("string")
-        PEMS.to_parquet(self.dataset_paths["timeseries"])
-        DataFrame(labels).to_parquet(self.dataset_paths["labels"])
+        return labels.to_frame()
 
     def _clean_randperm(self) -> None:
-        with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as files:
-            with files.open("randperm") as file:
+        with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
+            with archive.open("randperm") as file:
                 content = file.read().decode("utf8")
                 content = _reformat(content, {"[": "", "]": "", " ": "\n"})
                 randperm = pd.read_csv(
