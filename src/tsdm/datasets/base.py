@@ -345,7 +345,7 @@ class SingleTableDataset(BaseDataset[T]):
     def table(self) -> T:
         r"""Store cached version of dataset."""
         if self._table is NotImplemented:
-            self._table = self.load(initializing=True)
+            self._table = self.load()
         return self._table
 
     @cached_property
@@ -381,7 +381,6 @@ class SingleTableDataset(BaseDataset[T]):
     def load(
         self,
         *,
-        initializing: bool = False,
         force: bool = True,
         validate: bool = True,
     ) -> T:
@@ -391,7 +390,7 @@ class SingleTableDataset(BaseDataset[T]):
             self.clean(force=force, validate=validate)
 
         # Skip if already loaded.
-        if not initializing:
+        if self._table is not NotImplemented:
             return self.table
 
         # Validate file if hash is provided.
