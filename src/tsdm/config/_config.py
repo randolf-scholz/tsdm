@@ -55,6 +55,8 @@ def generate_folders(d: dict, current_path: Path) -> None:
 
 
 class ConfigMeta(type):
+    """Metaclass for Config."""
+
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
