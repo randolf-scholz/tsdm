@@ -332,6 +332,8 @@ class SingleTableDataset(BaseDataset[T]):
         return f"{self.__class__.__name__}<{get_return_typehint(self.clean_table)}>"
 
     def _repr_html_(self) -> str:
+        if self.__table is NotImplemented:
+            return NotImplemented
         if hasattr(self.table, "_repr_html_"):
             header = f"<h3>{html.escape(repr(self))}</h3>"
             # noinspection PyProtectedMember
