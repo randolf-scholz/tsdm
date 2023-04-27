@@ -85,7 +85,7 @@ class MIMIC_IV(MultiTableDataset):
     }
     # fmt: on
 
-    KEYS = list(internal_files.keys())
+    table_names = list(internal_files.keys())
 
     def clean_table(self, key: str) -> None:
         ...

@@ -308,24 +308,26 @@ def validate_file_hash(
             f"No reference hash given for file {file.name!r}."
             f" The {hash_algorithm!r}-hash is {hash_value!r}."
         )
-        if errors == "raise":
-            raise LookupError(msg)
-        elif errors == "warn":
-            warnings.warn(msg, UserWarning, stacklevel=2)
-        else:
-            logger.info(msg)
+        match errors:
+            case "raise":
+                raise LookupError(msg)
+            case "warn":
+                warnings.warn(msg, UserWarning, stacklevel=2)
+            case "ignore":
+                logger.info(msg)
     elif hash_value != reference_hash:
         msg = (
             f"File {file.name!r} failed to validate!"
             f" The {hash_algorithm!r}-hash-value {hash_value!r}"
             f" does not match reference {reference_hash!r}."
         )
-        if errors == "raise":
-            raise ValueError(msg)
-        elif errors == "warn":
-            warnings.warn(msg, UserWarning, stacklevel=2)
-        else:
-            logger.info(msg)
+        match errors:
+            case "raise":
+                raise LookupError(msg)
+            case "warn":
+                warnings.warn(msg, UserWarning, stacklevel=2)
+            case "ignore":
+                logger.info(msg)
     else:
         logger.info(
             "File '%s' validated successfully with '%s'-hash '%s'.",

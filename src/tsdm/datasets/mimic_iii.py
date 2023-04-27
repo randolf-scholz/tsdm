@@ -91,8 +91,7 @@ class MIMIC_III(MultiTableDataset):
         "TRANSFERS"          : "mimic-iii-clinical-database-1.4/TRANSFERS.csv.gz",
     }
     # fmt: on
-
-    KEYS = list(dataset_files.keys())
+    table_names = list(dataset_files.keys())
 
     def clean_table(self, key: str) -> None:
         raise NotImplementedError

@@ -313,6 +313,10 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
 
 class SingleTableDataset(BaseDataset[T]):
     r"""Dataset class that consists of a singular DataFrame."""
+    RAWDATA_DIR: ClassVar[Path]
+    """Path to raw data directory."""
+    DATASET_DIR: ClassVar[Path]
+    """Path to pre-processed data directory."""
 
     _table: T = NotImplemented
     """INTERNAL: the dataset."""
@@ -446,6 +450,10 @@ class MultiTableDataset(
 
     The tables are stored in a dictionary-like object.
     """
+    RAWDATA_DIR: ClassVar[Path]
+    """Path to raw data directory."""
+    DATASET_DIR: ClassVar[Path]
+    """Path to pre-processed data directory."""
 
     # Validation - Implement on per dataset basis!
     dataset_hashes: Mapping[Key, str | None] = NotImplemented
