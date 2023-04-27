@@ -1,12 +1,12 @@
 """Time series dataset."""
 from dataclasses import KW_ONLY, dataclass
-from typing import Any, Hashable, Iterator, Mapping, Optional, overload
+from typing import Any, Iterator, Mapping, Optional, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Self
 
-from tsdm.types.variables import str_var as Key
+from tsdm.types.variables import key_var as K
 from tsdm.utils.strings import repr_dataclass
 
 
@@ -51,11 +51,11 @@ class TimeSeriesDataset(TorchDataset[Series]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: Hashable) -> Series:
+    def __getitem__(self, key: K) -> Series:
         ...
 
     @overload
-    def __getitem__(self, key: Index | slice | list[Hashable]) -> DataFrame:
+    def __getitem__(self, key: Index | slice | list[K]) -> DataFrame:
         ...
 
     def __getitem__(self, key):
@@ -127,7 +127,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.index = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: Key) -> TimeSeriesDataset:
+    def __getitem__(self, key: K) -> TimeSeriesDataset:
         ...
 
     @overload
@@ -204,7 +204,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         r"""Get the length of the collection."""
         return len(self.index)
 
-    def __iter__(self) -> Iterator[Key]:
+    def __iter__(self) -> Iterator[K]:
         r"""Iterate over the collection."""
         return iter(self.index)
         # for key in self.index:
