@@ -89,7 +89,7 @@ class Electricity(SingleTableDataset):
 
     Recommendation:
         At the given dates, replace zero with NaN.
-    """  # pylint: disable=line-too-long # noqa: E501
+    """  # noqa: E501
 
     BASE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
     r"""HTTP address from where the dataset can be downloaded."""
@@ -121,4 +121,5 @@ class Electricity(SingleTableDataset):
         return df.rename_axis(index="time", columns="client")
 
     def make_zero_plot(self) -> plt.Axes:
+        """Plot number of zero values per timestamp."""
         self.table.where(self.table > 0).isna().sum(axis=1).plot(ylabel="zero-values")

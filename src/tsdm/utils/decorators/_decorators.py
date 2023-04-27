@@ -271,7 +271,7 @@ def decorator(deco: Callable) -> Callable:
         BUCKETS[param.kind, param.default is EMPTY].add(key)
 
     error_msg = (
-        "DETECTED SIGNATURE:"
+        "DETECTED SIGNATURE:"  # pylint: disable=consider-using-f-string
         "\n\t %s: %s     (mandatory)"
         "\n\t %s: %s     (optional)"
         "\n\t %s: %s     (mandatory)"
