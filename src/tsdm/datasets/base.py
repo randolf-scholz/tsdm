@@ -43,7 +43,7 @@ from tsdm.types.aliases import PathLike
 from tsdm.types.variables import any_var as T
 from tsdm.types.variables import str_var as Key
 from tsdm.utils import paths_exists
-from tsdm.utils.funcutils import get_return_typehint, rpartial
+from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.remote import download
@@ -462,40 +462,42 @@ class MultiTableDataset(
         self.LOGGER.debug("Adding keys as attributes.")
 
         # if possible, add keys as attributes
+        self._key_attributes = False
         if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
             warnings.warn(
-                f"Not adding keys as attributes (properties)!"
+                f"Not adding keys as attributes!"
                 f" Keys {invalid_keys} are not valid identifiers!",
                 RuntimeWarning,
                 stacklevel=2,
             )
         elif hasattr_keys := {key for key in self.table_names if hasattr(self, key)}:
             warnings.warn(
-                "Not adding keys as attributes (properties)!"
+                "Not adding keys as attributes!"
                 f" Keys {hasattr_keys} already exist as attributes!",
                 RuntimeWarning,
                 stacklevel=2,
             )
         else:
-            cls = self.__class__
-            for key in self.table_names:
-                # Making use of the LazyDict.__getitem__ method
-                # We need to use rpartial to make sure that the key is passed to __getitem__
-                # can't use functools.partial because then we would effectively be calling
-                # cls.__getitem__(key, self) instead of cls.__getitem__(self, key)
-                _get_table = rpartial(cls.__getitem__, key)
-                _get_table.__doc__ = f"Load dataset for {key=}."
-                setattr(cls, key, property(_get_table))
+            self._key_attributes = True
 
         super().__init__(initialize=initialize, reset=reset)
+
+    def __getattr__(self, key):
+        r"""Get attribute."""
+        if self._key_attributes and key in self.table_names:
+            return self.tables[key]
+        raise AttributeError(f"{self.__class__.__name__} has no attribute {key}!")
 
     def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""
         return self.tables.__len__()
 
-    def __getitem__(self, idx: Key) -> T:
+    def __getitem__(self, key: Key) -> T:
         r"""Return the sample at index `idx`."""
-        return self.tables.__getitem__(idx)
+        # need to manually raise KeyError otherwise __getitem__ will execute.
+        if key not in self.tables:
+            raise KeyError(f"Key {key} not in {self.__class__.__name__}!")
+        return self.tables.__getitem__(key)
 
     def __iter__(self) -> Iterator[Key]:
         r"""Return an iterator over the dataset."""
