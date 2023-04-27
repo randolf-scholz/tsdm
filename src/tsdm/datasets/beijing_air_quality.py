@@ -73,7 +73,8 @@ __all__ = [
 
 from zipfile import ZipFile
 
-from pandas import DataFrame, Timestamp, concat, read_csv
+import pandas as pd
+from pandas import DataFrame
 
 from tsdm.datasets.base import SingleTableDataset
 
@@ -97,48 +98,68 @@ class BeijingAirQuality(SingleTableDataset):
         r"https://archive.ics.uci.edu/ml/datasets/Beijing+Multi-Site+Air-Quality+Data"
     )
     r"""HTTP address containing additional information about the dataset."""
-    DATASET_HASH = "32a7c2bcf2fa28e8c321777f321c0ed23fc8bdfd66090b3ad9c1191fa402bc78"
-    DATASET_SHAPE = (420768, 12)
+    dataset_hash = (
+        "sha256:32a7c2bcf2fa28e8c321777f321c0ed23fc8bdfd66090b3ad9c1191fa402bc78"
+    )
+    table_shape = (420768, 12)
     rawdata_files = ["PRSA2017_Data_20130301-20170228.zip"]
     rawdata_hashes = {
         "PRSA2017_Data_20130301-20170228.zip": "sha256:d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
     }
 
+    rawdata_schema = {
+        # fmt: off
+        "No"      : "uint16[pyarrow]",
+        "year"    : "uint16[pyarrow]",
+        "month"   : "uint8[pyarrow]",
+        "day"     : "uint8[pyarrow]",
+        "hour"    : "uint8[pyarrow]",
+        "PM2.5"   : "float32[pyarrow]",
+        "PM10"    : "float32[pyarrow]",
+        "SO2"     : "float32[pyarrow]",
+        "NO2"     : "float32[pyarrow]",
+        "CO"      : "float32[pyarrow]",
+        "O3"      : "float32[pyarrow]",
+        "TEMP"    : "float32[pyarrow]",
+        "PRES"    : "float32[pyarrow]",
+        "DEWP"    : "float32[pyarrow]",
+        "RAIN"    : "float32[pyarrow]",
+        "wd"      : "string",  # FIXME bug in pandas prevents using pyarrrow here.
+        "station" : "string",  # FIXME bug in pandas prevents using pyarrrow here.
+        "WSPM"    : "float32[pyarrow]",
+        # fmt: on
+    }
+
     def clean_table(self) -> DataFrame:
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
-
-        def _to_time(x: list[int]) -> Timestamp:
-            return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
-
-        dtypes = {"wd": "string", "station": "string"}
-        new_dtypes = {"wd": "category", "station": "category"}
-
-        self.LOGGER.info("Extracting Data.")
+        self.LOGGER.info("Loading Data.")
         file = self.rawdata_paths["PRSA2017_Data_20130301-20170228.zip"]
         with ZipFile(file) as compressed_archive:
             stations = []
             for csv_file in compressed_archive.namelist():
+                if not csv_file.endswith(".csv"):
+                    self.LOGGER.warning("Skipping '%s': is not a csv-file!", csv_file)
+                    continue
+
                 with compressed_archive.open(csv_file) as compressed_file:
-                    df = read_csv(compressed_file, dtype=dtypes)
+                    df = pd.read_csv(
+                        compressed_file,
+                        dtype=self.rawdata_schema,
+                        index_col=0,
+                    )
+                    df.columns = df.columns.astype("string")
+                    stations.append(df)
 
-                # Make multiple date columns to pandas.Timestamp
-                df["time"] = df.apply(_to_time, axis=1)
-                # Remove date columns and index
-                df = df.drop(labels=["No", "year", "month", "day", "hour"], axis=1)
-                stations.append(df)
+        self.LOGGER.info("Merging Tables.")
+        table = pd.concat(stations, ignore_index=True)
 
-        self.LOGGER.info("Merging Stations.")
-        df = concat(stations, ignore_index=True)
-
-        self.LOGGER.info("Setting dtypes.")
-        other_columns = {
-            col for col in df.columns if col not in ["time", "station", "wd"]
-        }
-        new_dtypes |= {col: "float32" for col in other_columns}
-        df = df.astype(new_dtypes)
-
-        self.LOGGER.info("Setting Index.")
-        df = df.sort_values(by=["station", "time"])
-        df = df.set_index(["station", "time"])
-
-        return df
+        self.LOGGER.info("Adding Time Data.")
+        time_cols = ["year", "month", "day", "hour"]
+        table = (
+            table.assign(time=pd.to_datetime(table[time_cols]))
+            .drop(columns=time_cols)
+            .astype({"wd": "category", "station": "category"})
+            .set_index(["station", "time"])
+            .sort_index()
+        )
+        return table
