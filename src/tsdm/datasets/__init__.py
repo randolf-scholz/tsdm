@@ -39,7 +39,6 @@ __all__ = [
     "InSilicoData",
     "KiwiDataset",
     "KIWI_RUNS",
-    "KIWI_RUNS_OLD",
     "MIMIC_III",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV",
@@ -52,7 +51,6 @@ __all__ = [
 ]
 
 from tsdm.datasets import base
-from tsdm.datasets._deprecated_kiwi_runs_old import KIWI_RUNS_OLD
 from tsdm.datasets.base import (
     BaseDataset,
     Dataset,
