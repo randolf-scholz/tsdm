@@ -22,7 +22,7 @@ import subprocess
 import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import Collection, Iterator, Mapping, MutableMapping, Sequence
 from functools import cached_property
 from pathlib import Path
 from typing import (
@@ -517,7 +517,7 @@ class MultiTableDataset(
 
     @property
     @abstractmethod
-    def table_names(self) -> Sequence[Key]:
+    def table_names(self) -> Collection[Key]:
         r"""Return the index of the dataset."""
         # TODO: use abstract-attribute!
         # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
@@ -526,13 +526,20 @@ class MultiTableDataset(
     def tables(self) -> MutableMapping[Key, T]:
         r"""Store cached version of dataset."""
         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
+
+        if isinstance(self.table_names, Mapping):
+            type_hints = self.table_names
+        else:
+            return_type = get_return_typehint(self.clean_table)
+            type_hints = {key: return_type for key in self.table_names}
+
         return LazyDict(
             {
                 key: LazyValue(
                     self.load,
                     args=(key,),
                     kwargs={"initializing": True},
-                    type_hint=get_return_typehint(self.clean_table),
+                    type_hint=type_hints[key],
                 )
                 for key in self.table_names
             }
@@ -576,6 +583,11 @@ class MultiTableDataset(
             force: Force cleaning of dataset.
             validate: Validate the dataset after cleaning.
         """
+        # download raw data files if they don't exist
+        if not self.rawdata_files_exist():
+            self.LOGGER.debug("Raw files missing, fetching them now!")
+            self.download(force=force, validate=validate)
+
         # key=None: Recursively clean all tables
         if key is None:
             self.LOGGER.debug("Starting to clean dataset.")
@@ -586,13 +598,8 @@ class MultiTableDataset(
 
         # skip if cleaned files already exist
         if self.dataset_files_exist(key=key) and not force:
-            self.LOGGER.debug("Raw file already exists, skipping <%s>", key)
+            self.LOGGER.debug("Cleaned data file already exists, skipping <%s>", key)
             return
-
-        # download raw data files if they don't exist
-        if not self.rawdata_files_exist():
-            self.LOGGER.debug("Raw files missing, fetching them now!")
-            self.download(force=force, validate=validate)
 
         # validate the raw data files
         if validate and self.rawdata_hashes is not NotImplemented:
