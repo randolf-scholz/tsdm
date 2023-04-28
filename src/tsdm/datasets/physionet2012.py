@@ -143,16 +143,10 @@ Given these definitions and constraints,
 - 2 <= Survival <= Length of stay  =>  In-hospital death
 """
 
-__all__ = [
-    # Classes
-    "Physionet2012",
-]
+__all__ = ["PhysioNet2012"]
 
-import os
 import tarfile
-import tempfile
-from collections.abc import Mapping
-from typing import IO, Any, Literal, TypeAlias
+from typing import Literal, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -160,88 +154,11 @@ from pandas import DataFrame
 from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.encoders import TripletDecoder
-from tsdm.types.aliases import PathLike
 
-GENERAL_DESCRIPTORS = {
-    "Age": int,
-    "Gender": int,
-    "Height": float,
-    "ICUType": int,
-    "Weight": float,
-}
+KEY: TypeAlias = Literal["timeseries", "metadata"]
 
 
-def _append_record(d: dict[str, list], r: Mapping) -> dict[str, list]:
-    for key in d:
-        d[key].append(r[key])
-
-    return d
-
-
-def read_physionet_record(
-    f: IO[bytes], unravel_triplets: bool = False
-) -> tuple[int, dict, DataFrame]:
-    r"""Read a single record."""
-    lines = iter(f)
-
-    # header
-    _ = next(lines)
-
-    general_descriptors = {}
-    record_id = None
-
-    timestamps: list[int] = []
-    timeseries: dict[str, Any] = {"Parameter": [], "Value": []}
-
-    for line in lines:
-        time, parameter_bytes, value_bytes = (
-            token.strip() for token in line.split(b",")
-        )
-        hours, minutes = time.split(b":")
-        time_minutes = int(hours) * 60 + int(minutes)
-        parameter = parameter_bytes.decode(encoding="utf-8")
-
-        if parameter == "RecordID":
-            record_id = int(value_bytes.decode())
-
-        elif parameter in GENERAL_DESCRIPTORS and time_minutes == 0:
-            v = GENERAL_DESCRIPTORS[parameter](value_bytes.decode())
-            general_descriptors[parameter] = v if v > -1 else np.nan
-
-        else:
-            value = float(value_bytes.decode())
-            timestamps.append(time_minutes)
-            timeseries["Parameter"].append(parameter)
-            timeseries["Value"].append(value)
-
-    if record_id is None:
-        raise ValueError("RecordID not found")
-
-    for key in GENERAL_DESCRIPTORS:
-        assert key in general_descriptors, "incomplete metadata"
-
-    parameters = np.array(timeseries["Parameter"], dtype=np.unicode_)
-    values = np.array(timeseries["Value"], dtype=np.float32)
-    df = pd.DataFrame(
-        {"Parameter": parameters, "Value": values},
-        index=pd.Index(np.array(timestamps, dtype=np.int32), name="Time"),
-    )
-
-    if unravel_triplets:
-        decoder = TripletDecoder(sparse=False, var_name="Parameter", value_name="Value")
-        decoder.fit(df)
-        ts = decoder.encode(df)
-    else:
-        ts = df
-
-    return record_id, general_descriptors, ts
-
-
-KEY: TypeAlias = Literal["A", "B", "C"]
-
-
-class Physionet2012(MultiTableDataset[KEY, DataFrame]):
+class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
     r"""Physionet Challenge 2012.
 
     Each training data file provides two tables.
@@ -320,116 +237,207 @@ class Physionet2012(MultiTableDataset[KEY, DataFrame]):
         "set-b.tar.gz": "sha256:b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30",
         "set-c.tar.gz": "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1",
     }
-    table_names = ["A", "B", "C"]
-    unravel_triplets: bool
+    rawdata_schema = {
+        "Time": "string[pyarrow]",
+        "Parameter": "string[pyarrow]",
+        "Value": "float32[pyarrow]",
+    }
+    table_schemas = {
+        "metadata": {
+            "Age": "uint8[pyarrow]",
+            "Gender": "int8[pyarrow]",
+            "Height": "float32[pyarrow]",
+            "ICUType": "uint8[pyarrow]",
+            "Weight": "float32[pyarrow]",
+        },
+        "timeseries": {
+            "Albumin": "float32[pyarrow]",
+            "ALP": "float32[pyarrow]",
+            "ALT": "float32[pyarrow]",
+            "AST": "float32[pyarrow]",
+            "Bilirubin": "float32[pyarrow]",
+            "BUN": "float32[pyarrow]",
+            "Cholesterol": "float32[pyarrow]",
+            "Creatinine": "float32[pyarrow]",
+            "DiasABP": "float32[pyarrow]",
+            "FiO2": "float32[pyarrow]",
+            "GCS": "float32[pyarrow]",
+            "Glucose": "float32[pyarrow]",
+            "HCO3": "float32[pyarrow]",
+            "HCT": "float32[pyarrow]",
+            "HR": "float32[pyarrow]",
+            "K": "float32[pyarrow]",
+            "Lactate": "float32[pyarrow]",
+            "MAP": "float32[pyarrow]",
+            "MechVent": "float32[pyarrow]",
+            "Mg": "float32[pyarrow]",
+            "Na": "float32[pyarrow]",
+            "NIDiasABP": "float32[pyarrow]",
+            "NIMAP": "float32[pyarrow]",
+            "NISysABP": "float32[pyarrow]",
+            "PaCO2": "float32[pyarrow]",
+            "PaO2": "float32[pyarrow]",
+            "pH": "float32[pyarrow]",
+            "Platelets": "float32[pyarrow]",
+            "RespRate": "float32[pyarrow]",
+            "SaO2": "float32[pyarrow]",
+            "SysABP": "float32[pyarrow]",
+            "Temp": "float32[pyarrow]",
+            "TroponinI": "float32[pyarrow]",
+            "TroponinT": "float32[pyarrow]",
+            "Urine": "float32[pyarrow]",
+            "WBC": "float32[pyarrow]",
+            "Weight": "float32[pyarrow]",
+        },
+    }
 
-    @property
-    def dataset_files(self) -> dict[KEY, str]:
-        r"""Map splits into filenames."""
-        postfix = "triplet" if self.unravel_triplets else "sparse"
-        return {
-            "A": f"Physionet2019-set-A-{postfix}.tar",
-            "B": f"Physionet2019-set-B-{postfix}.tar",
-            "C": f"Physionet2019-set-C-{postfix}.tar",
-        }
+    na_values = {
+        "DiasABP": -1,
+        "NIDiasABP": -1,
+    }
 
-    def __init__(self, *, unravel_triplets: bool = False) -> None:
-        self.unravel_triplets = unravel_triplets
-        super().__init__()
+    outliers = {
+        "timeseries": {
+            ("DiasABP", 0, None),
+            ("HR", 0, None),
+            ("MAP", 0, None),
+            ("NIMAP", 0, None),
+            ("NISysABP", 0, None),
+            ("NIDiasABP", 0, None),
+            ("PaCO2", 0, None),
+            ("PaO2", 0, None),
+            ("Platelets", None, None),
+            ("RespRate", 0, None),
+            ("SaO2", 0, None),
+            ("SysABP", 0, None),
+            ("Temp", 0, None),
+            ("TroponinI", None, None),
+            ("WBC", 0, 1000),
+            ("Weight", 20, None),
+            ("pH", 5, 10),
+        },
+        "metadata": {
+            ("Height", 20, 270),
+            ("Weight", 20, None),
+        },
+    }
 
-    # @property
-    # def KEYS(self) -> list:
-    #     r"""Return the index of the dataset."""
-    #     return list(self.dataset_files.keys())
+    table_names = {"timeseries": DataFrame, "metadata": DataFrame}
 
-    def clean_table(self, key: KEY) -> tuple[pd.DataFrame, pd.DataFrame]:
-        record_ids_list = []
-        metadata: dict[str, list[float]] = {key: [] for key in GENERAL_DESCRIPTORS}
-        time_series = []
-
+    def _clean_data(self, fname: str) -> tuple[DataFrame, DataFrame]:
         with (
-            tarfile.open(str(self.rawdata_paths[key]), "r:gz") as archive,
+            tarfile.open(self.rawdata_paths[fname], "r") as archive,
             tqdm(archive.getmembers()) as progress_bar,
         ):
+            progress_bar.set_description(f"Loading patient data from {fname}")
+            id_list = []
+            md_list = []
+            ts_list = []
+
             for member in progress_bar:
-                progress_bar.set_description(f"Loading patient data {member}")
-
-                if not member.isreg():
+                if not member.isfile():
                     continue
-                with archive.extractfile(member) as record_f:  # type: ignore[union-attr]
-                    record_id, descriptors, observations = read_physionet_record(
-                        record_f, unravel_triplets=self.unravel_triplets
+
+                record_id = int("".join(c for c in member.name if c.isdigit()))
+                progress_bar.set_postfix(record_id=record_id)
+                with archive.extractfile(member) as file:  # type: ignore[union-attr]
+                    df = pd.read_csv(
+                        file, dtype=self.rawdata_schema, dtype_backend="pyarrow"
                     )
-                    record_ids_list.append(record_id)
+                    assert record_id == int(df.iloc[0, -1]), "RecordID mismatch!"
+                    df = df.iloc[1:]
 
-                    for k in metadata:
-                        metadata[k].append(descriptors[k])
+                    # drop rows if Parameter is NaN
+                    df = df.dropna(subset=["Parameter"])
 
-                    time_series.append(observations)
+                    # select metadata items
+                    md_mask = (df["Time"] == "00:00") & df["Parameter"].isin(
+                        self.table_schemas["metadata"]
+                    )
+                    # keep first instance of each metadata item
+                    md_mask &= ~df.loc[md_mask, "Parameter"].duplicated()
+                    md_frame = df.loc[md_mask].drop(columns=["Time"])
+                    assert len(md_frame) <= 5, "Too many metadata items!"
 
-        record_ids = np.array(record_ids_list, dtype=np.int64)
-        record_ids_unraveled = np.repeat(
-            record_ids, repeats=[len(ts) for ts in time_series]
+                    ts_frame = df.loc[~md_mask]  # remaining items
+                    assert all(
+                        ts_frame["Parameter"].isin(self.table_schemas["timeseries"])
+                    )
+                    id_list.append(record_id)
+                    md_list.append(md_frame)
+                    ts_list.append(ts_frame)
+
+        record_ids = pd.Series(id_list, name="RecordID")
+
+        self.LOGGER.info("%s: Combining metadata.", fname)
+        md = pd.concat(md_list, axis=0, keys=record_ids).reset_index(
+            level=-1, drop=True
         )
-        timestamps_unraveled = np.concatenate([ts.index for ts in time_series])
 
-        metadata_df = pd.DataFrame(
-            metadata, index=pd.Index(record_ids, name="RecordID")
+        self.LOGGER.info("%s: Performing pivot on metadata.", fname)
+        md = md.pivot(columns="Parameter", values="Value").astype(
+            self.table_schemas["metadata"]
         )
 
-        time_series_df = pd.concat(
-            time_series,
-            ignore_index=True,
+        self.LOGGER.info("%s: Mapping categoricals in metadata.", fname)
+        md = md.assign(
+            Gender=md["Gender"]
+            .replace(-1, pd.NA)
+            .map({0: "female", 1: "male"})
+            .astype("category")
         )
-        time_series_df.set_index(
-            pd.MultiIndex.from_arrays(
-                (record_ids_unraveled, timestamps_unraveled), names=("RecordID", "Time")
-            ),
-            inplace=True,
+
+        self.LOGGER.info("Removing outliers from metadata.")
+        for col, lower, upper in self.outliers["metadata"]:
+            mask = (md[col] <= lower).fillna(False) | (md[col] >= upper).fillna(False)
+            md.loc[mask, col] = float("nan")
+        md = md.dropna(how="all", axis="index")
+
+        self.LOGGER.info("%s: Combining timeseries data.", fname)
+        ts = pd.concat(ts_list, axis=0, keys=record_ids).reset_index(
+            level=-1, drop=True
         )
-        time_series_df.columns.name = None
+        ts = ts.assign(  # from hh:mm to timedelta64
+            Time=ts["Time"]
+            .str.split(":", expand=True)
+            .astype(int)
+            .dot([3600, 60])
+            .mul(np.timedelta64(1, "s"))
+        )
 
-        self.tables[key] = metadata_df, time_series_df
+        self.LOGGER.info("%s: Performing non-aggregating pivot.", fname)
+        ts = (
+            ts.reset_index()
+            .set_index(
+                ts.groupby(["RecordID", "Time", "Parameter"]).cumcount().rename("count")
+            )
+            .set_index(["RecordID", "Time", "Parameter"], append=True)
+            .unstack(level="Parameter")
+            .reset_index("count", drop=True)
+            .droplevel(0, axis="columns")
+            .sort_index()
+        )
 
-        return metadata_df, time_series_df
+        self.LOGGER.info("Removing outliers from timeseries.")
+        for col, lower, upper in self.outliers["timeseries"]:
+            mask = (ts[col] <= lower).fillna(False) | (ts[col] >= upper).fillna(False)
+            ts.loc[mask, col] = float("nan")
+        ts = ts.dropna(how="all", axis="index")
 
-    @staticmethod
-    def serialize(
-        frames: tuple[DataFrame, DataFrame], path: PathLike, /, **kwargs: Any
-    ) -> None:
-        r"""Store the dataset as a tar archive with two feather dataframes."""
-        metadata, series = frames
+        return ts, md
 
-        with tarfile.open(path, mode="w") as archive:
-            with tempfile.TemporaryDirectory(prefix="tsdm") as tmp_dir:
-                path_metadata = os.path.join(tmp_dir, "metadata.feather")
-                metadata.reset_index().to_feather(path_metadata)
+    def clean_table(self, key: KEY) -> None:
+        ts_list = []
+        md_list = []
+        for fname in "set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz":
+            ts, md = self._clean_data(fname)
+            ts_list.append(ts)
+            md_list.append(md)
+        ts = pd.concat(ts_list)
+        md = pd.concat(md_list)
 
-                archive.add(name=path_metadata, arcname="/metadata.feather")
-
-                path_series = os.path.join(tmp_dir, "series.feather")
-                series.reset_index().to_feather(path_series)
-
-                archive.add(name=path_series, arcname="/series.feather")
-
-        archive.close()
-
-    @staticmethod
-    def deserialize(
-        path: PathLike, /, *, squeeze: bool = True
-    ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        r"""Read provided tar archive."""
-        with tarfile.open(path, mode="r") as archive:
-            with archive.extractfile(archive.getmember("metadata.feather")) as meta_f:  # type: ignore[union-attr]
-                metadata = pd.read_feather(meta_f)
-            metadata.set_index(keys="RecordID", drop=True, inplace=True)
-
-            with archive.extractfile(archive.getmember("series.feather")) as series_f:  # type: ignore[union-attr]
-                series = pd.read_feather(series_f)
-            series.set_index(["RecordID", "Time"], drop=True, inplace=True)
-
-            if squeeze:
-                metadata = metadata.squeeze()
-                series = series.squeeze()
-
-            return series, metadata
+        # NOTE: TS is missing a few records, since no time series data was available
+        # For tasks, it is recommended to drop records with less than 24 observations
+        # assert md.index == ts.index.get_level_values("RecordID").unique()
+        self.serialize(md, self.dataset_paths["metadata"])
+        self.serialize(ts, self.dataset_paths["timeseries"])
