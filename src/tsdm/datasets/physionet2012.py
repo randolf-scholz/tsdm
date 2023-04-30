@@ -314,7 +314,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             ("TroponinI", None, None),
             ("WBC", 0, 1000),
             ("Weight", 20, None),
-            ("pH", 5, 10),
+            ("pH", 0, 14),
         },
         "metadata": {
             ("Height", 20, 270),
@@ -327,22 +327,24 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
     def _clean_data(self, fname: str) -> tuple[DataFrame, DataFrame]:
         with (
             tarfile.open(self.rawdata_paths[fname], "r") as archive,
-            tqdm(archive.getmembers()) as progress_bar,
+            tqdm(archive.getmembers()) as iter_archive,
         ):
-            progress_bar.set_description(f"Loading patient data from {fname}")
+            iter_archive.set_description(f"Loading patient data from {fname}")
             id_list = []
             md_list = []
             ts_list = []
 
-            for member in progress_bar:
-                if not member.isfile():
+            for compressed_file in iter_archive:
+                if not compressed_file.isfile():
                     continue
 
-                record_id = int("".join(c for c in member.name if c.isdigit()))
-                progress_bar.set_postfix(record_id=record_id)
-                with archive.extractfile(member) as file:  # type: ignore[union-attr]
+                record_id = int("".join(c for c in compressed_file.name if c.isdigit()))
+                iter_archive.set_postfix(record_id=record_id)
+                with archive.extractfile(compressed_file) as file:  # type: ignore[union-attr]
                     df = pd.read_csv(
-                        file, dtype=self.rawdata_schema, dtype_backend="pyarrow"
+                        file,
+                        dtype=self.rawdata_schema,
+                        dtype_backend="pyarrow",
                     )
                     assert record_id == int(df.iloc[0, -1]), "RecordID mismatch!"
                     df = df.iloc[1:]
