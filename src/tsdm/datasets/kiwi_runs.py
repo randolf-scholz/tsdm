@@ -267,11 +267,11 @@ class KIWI_RUNS(MultiTableDataset):
 
     timeseries: DataFrame
     metadata: DataFrame
-    time_features: DataFrame
-    value_features: DataFrame
-    metadata_features: DataFrame
+    timeindex_description: DataFrame
+    timeseries_description: DataFrame
+    metadata_description: DataFrame
 
-    index_features = None
+    metaindex_description = None
     global_metadata = None
     global_features = None
 
@@ -487,7 +487,7 @@ class KIWI_RUNS(MultiTableDataset):
 
         # Remove data outside of time bounds
         ts = timeseries.reset_index("measurement_time")
-        ts = ts.join(self.time_features[["start_time", "end_time"]])
+        ts = ts.join(self.timeindex_description[["start_time", "end_time"]])
         time = ts["measurement_time"]
         mask = (ts["start_time"] <= time) & (time <= ts["end_time"])
         print(f"Removing {(~mask).mean():.2%} of data that does not match tmin/tmax")
@@ -522,29 +522,29 @@ class KIWI_RUNS(MultiTableDataset):
 class KiwiDataset(TimeSeriesCollection):
     r"""The KIWI dataset."""
 
-    index: MultiIndex
+    metaindex: MultiIndex
     timeseries: DataFrame
     metadata: DataFrame
     global_metadata: None
-    index_features: DataFrame
-    time_features: DataFrame
-    value_features: DataFrame
-    metadata_features: DataFrame
-    global_features: None
+    metaindex_description: DataFrame
+    timeindex_description: DataFrame
+    timeseries_description: DataFrame
+    metadata_description: DataFrame
+    globals_description: None
 
     def __init__(self) -> None:
         ds = KIWI_RUNS()
 
         super().__init__(
-            index=ds.index,
+            metaindex=ds.index,
             timeseries=ds.timeseries,
             metadata=ds.metadata,
             global_metadata=None,
-            index_features=ds.index_features,
-            time_features=ds.time_features,
-            value_features=ds.value_features,
-            metadata_features=ds.metadata_features,
-            global_features=None,
+            metaindex_description=ds.metaindex_description,
+            timeindex_description=ds.timeindex_description,
+            timeseries_description=ds.timeseries_description,
+            metadata_description=ds.metadata_description,
+            globals_description=None,
         )
 
 
