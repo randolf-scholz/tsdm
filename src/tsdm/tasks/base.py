@@ -131,7 +131,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler as TorchSampler
-from typing_extensions import Self
+from typing_extensions import Self, assert_type
 
 from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
@@ -348,32 +348,34 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         else:
             raise NotImplementedError
 
+        assert_type(tsd, TimeSeriesDataset)
+
         # timeseries
-        ts_observed = tsd[observation_horizon]
-        ts_forecast = tsd[forecasting_horizon]
-        joint_horizon_index = ts_observed.timeindex.union(ts_forecast.timeindex)
+        ts_observed: DataFrame = tsd[observation_horizon]
+        ts_forecast: DataFrame = tsd[forecasting_horizon]
+        joint_horizon_index = ts_observed.index.union(ts_forecast.index)
         ts = tsd[joint_horizon_index]
         u: Optional[DataFrame] = None
 
         if sparse_columns:
             x = ts[self.observables].copy()
-            x.loc[ts_forecast.timeindex] = NA
+            x.loc[ts_forecast.index] = NA
 
             y = ts[self.targets].copy()
-            y.loc[ts_observed.timeindex] = NA
+            y.loc[ts_observed.index] = NA
 
             u = ts[self.covariates].copy()
         else:
             x = ts.copy()
             # mask everything except covariates and observables
             columns = ts.columns.difference(self.covariates)
-            x.loc[ts_observed.timeindex, columns.difference(self.observables)] = NA
-            x.loc[ts_forecast.timeindex, columns] = NA
+            x.loc[ts_observed.index, columns.difference(self.observables)] = NA
+            x.loc[ts_forecast.index, columns] = NA
 
             y = ts.copy()
             # mask everything except targets in forecasting horizon
-            y.loc[ts_observed.timeindex] = NA
-            y.loc[ts_forecast.timeindex, ts.columns.difference(self.targets)] = NA
+            y.loc[ts_observed.index] = NA
+            y.loc[ts_forecast.index, ts.columns.difference(self.targets)] = NA
 
         # t_target
         t_target = y.index.to_series().copy()
