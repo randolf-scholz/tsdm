@@ -296,8 +296,8 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "NIDiasABP": -1,
     }
 
-    outliers = {
-        "timeseries": {
+    outliers: dict[str, list[tuple[str, int | None, int | None]]] = {
+        "timeseries": [
             ("DiasABP", 0, None),
             ("HR", 0, None),
             ("MAP", 0, None),
@@ -315,11 +315,11 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             ("WBC", 0, 1000),
             ("Weight", 20, None),
             ("pH", 0, 14),
-        },
-        "metadata": {
+        ],
+        "metadata": [
             ("Height", 20, 270),
             ("Weight", 20, None),
-        },
+        ],
     }
 
     table_names = {"timeseries": DataFrame, "metadata": DataFrame}

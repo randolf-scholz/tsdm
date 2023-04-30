@@ -238,7 +238,7 @@ class KiwiTask(TimeSeriesTask):
         return collate_fn
 
     def make_encoder(self, key: SplitID, /) -> Encoder:
-        VF = self.dataset.value_features
+        VF = self.dataset.timeseries_description
         column_encoders = {}
         for col, scale, lower, upper in VF[["scale", "lower", "upper"]].itertuples():
             encoder: Encoder
@@ -303,7 +303,7 @@ class KiwiTask(TimeSeriesTask):
 
         subsamplers = {
             key: SlidingWindowSampler(  # type: ignore[type-var]
-                tsd.index,
+                tsd.timeindex,
                 horizons=[observation_horizon, forecasting_horizon],
                 stride=stride,
                 shuffle=shuffle,

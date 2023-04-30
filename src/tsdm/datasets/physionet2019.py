@@ -338,4 +338,4 @@ class Physionet2019(SingleTableDataset):
         return table
 
     def clean_table(self) -> DataFrame:
-        return pd.concat([self._get_frame(fname) for fname in self.rawdata_files])
+        return pd.concat([self._get_frame(str(fname)) for fname in self.rawdata_files])
