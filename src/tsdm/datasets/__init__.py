@@ -43,7 +43,7 @@ __all__ = [
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV",
     "MIMIC_IV_Bilos2021",
-    "Physionet2019",
+    "PhysioNet2019",
     "PhysioNet2012",
     "Traffic",
     "USHCN",
@@ -67,7 +67,7 @@ from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.datasets.mimic_iv import MIMIC_IV
 from tsdm.datasets.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.datasets.physionet2012 import PhysioNet2012
-from tsdm.datasets.physionet2019 import Physionet2019
+from tsdm.datasets.physionet2019 import PhysioNet2019
 from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.datasets.traffic import Traffic
 from tsdm.datasets.ushcn import USHCN
@@ -89,7 +89,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "MIMIC_IV": MIMIC_IV,
     "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
     "Physionet2012": PhysioNet2012,
-    "Physionet2019": Physionet2019,
+    "Physionet2019": PhysioNet2019,
     "Traffic": Traffic,
     "USHCN": USHCN,
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,

@@ -24,31 +24,31 @@ class TimeSeriesDataset(TorchDataset[Series]):
     _: KW_ONLY
 
     # Main Attributes
-    name: str = NotImplemented
-    r"""The name of the dataset."""
-    index: Index = NotImplemented
-    r"""The time-index of the dataset."""
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
+    timeindex: Index = NotImplemented
+    r"""The time-index of the dataset."""
+    name: str = NotImplemented
+    r"""The name of the dataset."""
 
     # Space Descriptors
-    time_features: Optional[DataFrame] = None
+    index_description: Optional[DataFrame] = None
     r"""Data associated with the time such as measurement device, unit, etc."""
-    value_features: Optional[DataFrame] = None
+    timeseries_description: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
-    metadata_features: Optional[DataFrame] = None
+    metadata_description: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
     def __post_init__(self) -> None:
         r"""Post init."""
         if self.name is NotImplemented:
             self.name = self.__class__.__name__
-        if self.index is NotImplemented:
-            self.index = self.timeseries.index.copy().unqiue()
+        if self.timeindex is NotImplemented:
+            self.timeindex = self.timeseries.index.copy().unqiue()
 
     def __len__(self) -> int:
         r"""Return the number of timestamps."""
-        return len(self.index)
+        return len(self.timeindex)
 
     @overload
     def __getitem__(self, key: K) -> Series:
@@ -64,7 +64,7 @@ class TimeSeriesDataset(TorchDataset[Series]):
 
     def __iter__(self) -> Iterator[Series]:
         r"""Iterate over the timestamps."""
-        return iter(self.index)
+        return iter(self.timeindex)
 
     def __repr__(self) -> str:
         r"""Get the representation of the collection."""
@@ -88,26 +88,27 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     _: KW_ONLY
 
     # Main attributes
-    name: str = NotImplemented
-    r"""The name of the collection."""
-    index: Index = NotImplemented
-    r"""The index of the collection."""
-
     metadata: Optional[DataFrame] = None
     r"""The metadata of the dataset."""
+    timeindex: MultiIndex = NotImplemented
+    r"""The time-index of the collection."""
+    metaindex: Index = NotImplemented
+    r"""The index of the collection."""
     global_metadata: Optional[DataFrame] = None
-    r"""The global data of the dataset."""
+    r"""Metaindex-independent data."""
+    name: str = NotImplemented
+    r"""The name of the collection."""
 
     # Space descriptors
-    index_features: Optional[DataFrame] = None
+    metaindex_description: Optional[DataFrame] = None
     r"""Data associated with each index such as measurement device, unit, etc."""
-    time_features: Optional[DataFrame] = None
+    timeindex_description: Optional[DataFrame] = None
     r"""Data associated with the time such as measurement device, unit, etc."""
-    value_features: Optional[DataFrame] = None
+    timeseries_description: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
-    metadata_features: Optional[DataFrame] = None
+    metadata_description: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    global_features: Optional[DataFrame] = None
+    globals_description: Optional[DataFrame] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
 
     def __post_init__(self) -> None:
@@ -117,14 +118,14 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.name = str(self.timeseries.name)
             else:
                 self.name = self.__class__.__name__
-        if self.index is NotImplemented:
+        if self.metaindex is NotImplemented:
             if self.metadata is not None:
-                self.index = self.metadata.index.copy().unique()
+                self.metaindex = self.metadata.index.copy().unique()
             elif isinstance(self.timeseries.index, MultiIndex):
-                self.index = self.timeseries.index.copy().droplevel(-1).unique()
+                self.metaindex = self.timeseries.index.copy().droplevel(-1).unique()
                 # self.timeseries = self.timeseries.droplevel(0)
             else:
-                self.index = self.timeseries.index.copy().unique()
+                self.metaindex = self.timeseries.index.copy().unique()
 
     @overload
     def __getitem__(self, key: K) -> TimeSeriesDataset:
@@ -154,59 +155,59 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         else:
             md = _md
 
-        if self.time_features is None:
+        if self.timeindex_description is None:
             tf = None
-        elif self.time_features.index.equals(self.index):
-            tf = self.time_features.loc[key]
+        elif self.timeindex_description.index.equals(self.metaindex):
+            tf = self.timeindex_description.loc[key]
         else:
-            tf = self.time_features
+            tf = self.timeindex_description
 
-        if self.value_features is None:
+        if self.timeseries_description is None:
             vf = None
-        elif self.value_features.index.equals(self.index):
-            vf = self.value_features.loc[key]
+        elif self.timeseries_description.index.equals(self.metaindex):
+            vf = self.timeseries_description.loc[key]
         else:
-            vf = self.value_features
+            vf = self.timeseries_description
 
-        if self.metadata_features is None:
+        if self.metadata_description is None:
             mf = None
-        elif self.metadata_features.index.equals(self.index):
-            mf = self.metadata_features.loc[key]
+        elif self.metadata_description.index.equals(self.metaindex):
+            mf = self.metadata_description.loc[key]
         else:
-            mf = self.metadata_features
+            mf = self.metadata_description
 
         if isinstance(ts.index, MultiIndex):
             index = ts.index.droplevel(-1).unique()
             return TimeSeriesCollection(
                 name=self.name,
-                index=index,
+                metaindex=index,
                 timeseries=ts,
                 metadata=md,
-                time_features=tf,
-                value_features=vf,
-                metadata_features=mf,
+                timeindex_description=tf,
+                timeseries_description=vf,
+                metadata_description=mf,
                 global_metadata=self.global_metadata,
-                global_features=self.global_features,
-                index_features=self.index_features,
+                globals_description=self.globals_description,
+                metaindex_description=self.metaindex_description,
             )
 
         return TimeSeriesDataset(
             name=self.name,
-            index=ts.index,
+            timeindex=ts.index,
             timeseries=ts,
             metadata=md,
-            time_features=tf,
-            value_features=vf,
-            metadata_features=mf,
+            index_description=tf,
+            timeseries_description=vf,
+            metadata_description=mf,
         )
 
     def __len__(self) -> int:
         r"""Get the length of the collection."""
-        return len(self.index)
+        return len(self.metaindex)
 
     def __iter__(self) -> Iterator[K]:
         r"""Iterate over the collection."""
-        return iter(self.index)
+        return iter(self.metaindex)
         # for key in self.index:
         #     yield self[key]
 

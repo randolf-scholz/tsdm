@@ -35,7 +35,7 @@ def test_combined_encoder(SplitID=(0, "train")):
     r"""Test complicated combined encoder."""
     task = KiwiTask()
     ts = task.dataset.timeseries.iloc[:20_000]  # use first 20_000 values only
-    VF = task.dataset.value_features
+    VF = task.dataset.timeseries_description
     sampler = task.samplers[SplitID]
     generator = task.generators[SplitID]
     key = next(iter(sampler))
