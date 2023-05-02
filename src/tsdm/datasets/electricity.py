@@ -38,10 +38,7 @@ First column present date and time as a string with the following format 'yyyy-m
 Other columns present float values with consumption in kW
 """  # pylint: disable=line-too-long # noqa: E501
 
-__all__ = [
-    # Classes
-    "Electricity",
-]
+__all__ = ["Electricity"]
 
 from zipfile import ZipFile
 

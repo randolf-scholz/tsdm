@@ -1,4 +1,10 @@
 """Time series dataset."""
+
+__all__ = [
+    "TimeSeriesDataset",
+    "TimeSeriesCollection",
+]
+
 from dataclasses import KW_ONLY, dataclass
 from typing import Any, Iterator, Mapping, Optional, overload
 

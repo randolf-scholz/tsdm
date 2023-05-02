@@ -1,9 +1,6 @@
 r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 
-__all__ = [
-    # Classes
-    "USHCN",
-]
+__all__ = ["USHCN"]
 
 import warnings
 from typing import Literal, TypeAlias

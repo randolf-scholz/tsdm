@@ -1,21 +1,11 @@
-r"""#TODO add module summary line.
+r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al."""
 
-#TODO add module description.
-"""
-
-__all__ = [
-    # Classes
-    "USHCN_DeBrouwer2019",
-]
-
-import logging
+__all__ = ["USHCN_DeBrouwer2019"]
 
 import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import SingleTableDataset
-
-__logger__ = logging.getLogger(__name__)
 
 
 class USHCN_DeBrouwer2019(SingleTableDataset):
