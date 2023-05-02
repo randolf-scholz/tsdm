@@ -580,6 +580,7 @@ class MultiTableDataset(
         *,
         force: bool = False,
         validate: bool = True,
+        validate_rawdata: bool = True,
     ) -> None:
         r"""Create the preprocessed table for the selected key.
 
@@ -587,17 +588,25 @@ class MultiTableDataset(
             key: The key of the dataset to clean. If None, clean all dataset.
             force: Force cleaning of dataset.
             validate: Validate the dataset after cleaning.
+            validate_rawdata: Validate the raw data files before cleaning.
         """
         # download raw data files if they don't exist
-        if not self.rawdata_files_exist():
+        if validate_rawdata and not self.rawdata_files_exist():
             self.LOGGER.debug("Raw files missing, fetching them now!")
             self.download(force=force, validate=validate)
+
+        # validate the raw data files
+        if validate_rawdata and self.rawdata_hashes is not NotImplemented:
+            self.LOGGER.debug("Validating raw data files.")
+            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
 
         # key=None: Recursively clean all tables
         if key is None:
             self.LOGGER.debug("Starting to clean dataset.")
             for key_ in self.table_names:
-                self.clean(key=key_, force=force, validate=validate)
+                self.clean(
+                    key=key_, force=force, validate=validate, validate_rawdata=False
+                )
             self.LOGGER.debug("Finished cleaning dataset.")
             return
 
@@ -605,11 +614,6 @@ class MultiTableDataset(
         if self.dataset_files_exist(key=key) and not force:
             self.LOGGER.debug("Cleaned data file already exists, skipping <%s>", key)
             return
-
-        # validate the raw data files
-        if validate and self.rawdata_hashes is not NotImplemented:
-            self.LOGGER.debug("Validating raw data files.")
-            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
 
         # Clean the selected table
         self.LOGGER.debug("Starting to clean dataset <%s>", key)

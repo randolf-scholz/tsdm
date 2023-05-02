@@ -17,16 +17,18 @@ __all__ = [
     "unpad_sequence",
     "unpack_sequence",
     # Functions
+    "aggregate_nondestructive",
     "float_is_int",
     "get_integer_cols",
+    "remove_outliers",
     "vlookup_uniques",
-    "aggregate_nondestructive",
 ]
 from tsdm.utils.data import timeseries
 from tsdm.utils.data._data import (
     aggregate_nondestructive,
     float_is_int,
     get_integer_cols,
+    remove_outliers,
     vlookup_uniques,
 )
 from tsdm.utils.data.dataloaders import (

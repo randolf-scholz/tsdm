@@ -1,7 +1,4 @@
-r"""Data Utilities.
-
-TODO: Add module description.
-"""
+r"""Data Utilities."""
 
 __all__ = [
     # Functions
@@ -9,6 +6,7 @@ __all__ = [
     "get_integer_cols",
     "vlookup_uniques",
     "aggregate_nondestructive",
+    "remove_outliers",
 ]
 
 import logging
@@ -18,7 +16,49 @@ from pandas import DataFrame, Index, Series
 
 from tsdm.types.variables import pandas_var
 
-__logger__ = logging.getLogger(__name__)
+__logger__ = logging.getLogger(__package__)
+
+
+def remove_outliers(
+    df: DataFrame, /, description: DataFrame, dropna: bool = True
+) -> DataFrame:
+    """Remove outliers from a DataFrame, given boundary values."""
+    if mismatch := set(df.columns) ^ set(description.index):
+        raise ValueError(f"Columns of data and description do not match {mismatch}.")
+
+    boundary_cols = ["lower", "upper", "lower_included", "upper_included"]
+
+    if missing_columns := set(boundary_cols) - set(description.columns):
+        raise ValueError(f"Description table is missing columns {missing_columns}!")
+
+    __logger__.info("Removing outliers from table.")
+    M = max(map(len, df.columns)) + 1
+
+    for col in df:
+        s = df[col]
+        if s.dtype == "category":
+            __logger__.info(f"%-{M}s: Skipping categorical column.", col)
+            continue
+
+        lower, upper, lbi, ubi = description.loc[col, boundary_cols]
+        if lbi:
+            mask = (s < lower).fillna(False)
+        else:
+            mask = (s <= lower).fillna(False)
+        if ubi:
+            mask |= (s > upper).fillna(False)
+        else:
+            mask |= (s >= upper).fillna(False)
+        if mask.any():
+            __logger__.info(
+                f"%-{M}s: Dropping %8.4f%% outliers.", col, mask.mean() * 100
+            )
+        else:
+            __logger__.info(f"%-{M}s: No outliers detected.", col)
+        df.loc[mask, col] = None
+    if dropna:
+        df = df.dropna(how="all", axis="index")
+    return df
 
 
 def float_is_int(series: Series) -> bool:
