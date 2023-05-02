@@ -638,6 +638,7 @@
           <option value="inspect._ParameterKind" />
           <option value="typing_extensions.NamedTuple" />
           <option value="types.UnionType.to_frame" />
+          <option value="bool.*" />
         </list>
       </option>
     </inspection_tool>
