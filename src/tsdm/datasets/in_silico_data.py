@@ -1,9 +1,6 @@
 r"""In silico experiments."""
 
-__all__ = [
-    # Classes
-    "InSilicoData",
-]
+__all__ = ["InSilicoData"]
 
 import shutil
 from functools import cached_property

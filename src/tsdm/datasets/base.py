@@ -11,7 +11,6 @@ __all__ = [
     "BaseDatasetMetaClass",
     "SingleTableDataset",
     "MultiTableDataset",
-    # Types
 ]
 
 import html

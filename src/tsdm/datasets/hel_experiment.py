@@ -1,7 +1,4 @@
-r"""TODO: Add module summary line.
-
-TODO: Add module description.
-"""
+r"""Experiments with HEL data."""
 
 # __all__ = []
 

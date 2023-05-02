@@ -67,8 +67,8 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
     table_hashes = {
         "timeseries": "pandas:-5464950709022187442",
     }
-    table_schemas = {
-        "timeseries": ((2485649, 102), None, None),
+    table_shapes = {
+        "timeseries": (2485649, 102),
     }
 
     def clean_table(self) -> DataFrame:
