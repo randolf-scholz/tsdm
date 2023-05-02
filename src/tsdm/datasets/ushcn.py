@@ -13,7 +13,14 @@ from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
 
-KEY: TypeAlias = Literal["timeseries", "metadata", "timeseries_complete", "state_codes"]
+KEY: TypeAlias = Literal[
+    "timeseries",
+    "timeseries_description",
+    "metadata",
+    "metadata_description",
+    "state_codes",
+    "timeseries_complete",
+]
 
 
 class USHCN(MultiTableDataset[KEY, DataFrame]):
@@ -161,7 +168,20 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = ["timeseries", "timeseries_complete", "metadata", "state_codes"]
+    table_names = [
+        "timeseries",
+        "timeseries_description",
+        "metadata",
+        "metadata_description",
+        "state_codes",
+        "timeseries_complete",
+    ]
+    rawdata_files = [
+        "data_format.txt",
+        "ushcn-stations.txt",
+        "station_file_format.txt",
+        "us.txt.gz",
+    ]
     rawdata_hashes = {
         "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
         "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
@@ -170,35 +190,71 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
     }
     rawdata_schemas = {
         "metadata": {
-            "COOP_ID": "string[pyarrow]",
-            "LATITUDE": "float32[pyarrow]",
-            "LONGITUDE": "float32[pyarrow]",
-            "ELEVATION": "float32[pyarrow]",
-            "STATE": "string",  # not pyarrow due to bug in pandas.
-            "NAME": "string[pyarrow]",
-            "COMPONENT_1": "int32[pyarrow]",
-            "COMPONENT_2": "int32[pyarrow]",
-            "COMPONENT_3": "int32[pyarrow]",
-            "UTC_OFFSET": "timedelta64[s]",
+            # fmt: off
+            "COOP_ID"     : "string[pyarrow]",
+            "LATITUDE"    : "float32[pyarrow]",
+            "LONGITUDE"   : "float32[pyarrow]",
+            "ELEVATION"   : "float32[pyarrow]",
+            "STATE"       : "string",  # not pyarrow due to bug in pandas.
+            "NAME"        : "string[pyarrow]",
+            "COMPONENT_1" : "int32[pyarrow]",
+            "COMPONENT_2" : "int32[pyarrow]",
+            "COMPONENT_3" : "int32[pyarrow]",
+            "UTC_OFFSET"  : "timedelta64[s]",
+            # fmt: on
         },
-    }
-    dataset_hashes = {
-        "timeseries_complete": "sha256:03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
-        "timeseries": None,
-        "metadata": "sha256:1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
-        "state_codes": "sha256:388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
     }
     table_shapes = {
         "timeseries": (204771562, 5),
         "metadata": (1218, 9),
         "state_codes": (48, 3),
     }
-    rawdata_files = [
-        "data_format.txt",
-        "ushcn-stations.txt",
-        "station_file_format.txt",
-        "us.txt.gz",
-    ]
+    table_schemas = {
+        "timeseries": {
+            # fmt: off
+            "PRCP" : "int16[pyarrow]",
+            "SNOW" : "int16[pyarrow]",
+            "SNWD" : "int16[pyarrow]",
+            "TMAX" : "int16[pyarrow]",
+            "TMIN" : "int16[pyarrow]",
+            # fmt: on
+        },
+        "metadata": {
+            # fmt: off
+            "LATITUDE"    : "float[pyarrow]",
+            "LONGITUDE"   : "float[pyarrow]",
+            "ELEVATION"   : "float[pyarrow]",
+            "STATE"       : "dictionary[int32, string][pyarrow]",
+            "NAME"        : "string[pyarrow]",
+            "COMPONENT_1" : "int32[pyarrow]",
+            "COMPONENT_2" : "int32[pyarrow]",
+            "COMPONENT_3" : "int32[pyarrow]",
+            "UTC_OFFSET"  : "duration[s][pyarrow]",
+            # fmt: on
+        },
+        "timeseries_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
+        },
+        "metadata_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
+        },
+    }
 
     def clean_table(self, key: KEY = "timeseries") -> DataFrame:
         match key:
@@ -209,22 +265,28 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             case "metadata":
                 return self._clean_metadata()
             case "state_codes":
-                return self._clean_state_codes()
+                return self._state_codes()
+            case "timeseries_description":
+                return self._timeseries_description()
+            case "metadata_description":
+                return self._metadata_description()
             case _:
                 raise KeyError(f"Unknown key: {key}")
 
     def _clean_metadata(self) -> DataFrame:
         stations_colspecs = {
-            "COOP_ID": (1, 6),
-            "LATITUDE": (8, 15),
-            "LONGITUDE": (17, 25),
-            "ELEVATION": (27, 32),
-            "STATE": (34, 35),
-            "NAME": (37, 66),
+            # fmt: off
+            "COOP_ID":     (1, 6),
+            "LATITUDE":    (8, 15),
+            "LONGITUDE":   (17, 25),
+            "ELEVATION":   (27, 32),
+            "STATE":       (34, 35),
+            "NAME":        (37, 66),
             "COMPONENT_1": (68, 73),
             "COMPONENT_2": (75, 80),
             "COMPONENT_3": (82, 87),
-            "UTC_OFFSET": (89, 90),
+            "UTC_OFFSET":  (89, 90),
+            # fmt: on
         }
         # pandas wants list[tuple[int, int]], 0 indexed, half open intervals.
         stations_cspecs = [(a - 1, b) for a, b in stations_colspecs.values()]
@@ -252,10 +314,74 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
 
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Creating simplified timeseries table.")
-        data = self.tables["timeseries_complete"]
-        data = data.pivot(columns="ELEMENT", values="VALUE")
-        data.columns = data.columns.astype("string[pyarrow]")  # BUG: categorical index
-        return data
+        table = self.tables["timeseries_complete"]
+
+        self.LOGGER.info("dropping all data with raised quality flags.")
+        table = table.loc[table["QFLAG"].isna()]
+
+        # FIXME: ArrowNotImplementedError: Function 'dictionary_encode' has no kernel matching input types dictionary
+        # FIXME: https://github.com/apache/arrow/issues/34890
+        table = table[["ELEMENT", "VALUE"]].astype({"ELEMENT": "string[pyarrow]"})
+
+        self.LOGGER.info("Performing pivot operation.")
+        ts = table.pivot(columns="ELEMENT", values="VALUE")
+        ts.columns = ts.columns.astype("string[pyarrow]")
+
+        self.LOGGER.info("Removing outliers from timeseries.")
+        for col in ts:
+            lower, upper, lbi, ubi = self.timeseries_description.loc[
+                col, ["lower", "upper", "lower_included", "upper_included"]
+            ]
+            if lbi:
+                mask = (ts[col] < lower).fillna(False)
+            else:
+                mask = (ts[col] <= lower).fillna(False)
+            if ubi:
+                mask |= (ts[col] > upper).fillna(False)
+            else:
+                mask |= (ts[col] >= upper).fillna(False)
+            ts.loc[mask, col] = float("nan")
+        ts = ts.dropna(how="all", axis="index")
+
+        return ts
+
+    def _timeseries_description(self) -> DataFrame:
+        r"""Metadata for each unit."""
+        data = [
+            # fmt: off
+            ("PRCP", 0,    None, True,  True,  "10²in", "precipitation"),
+            ("SNOW", 0,    None, True,  True,  "10¹in", "snowfall"),
+            ("SNWD", 0,    None, True,  True,  "in",    "snow depth"),
+            ("TMAX", -100, 150,  False, False, "°F",    "maximum temperature"),
+            ("TMIN", -100, 150,  False, False, "°F",    "minimum temperature"),
+            # fmt: on
+        ]
+        return (
+            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
+            .astype(self.table_schemas["timeseries_description"])
+            .set_index("variable")
+        )
+
+    def _metadata_description(self) -> DataFrame:
+        r"""Metadata for each unit."""
+        data = [
+            # fmt: off
+            ("LATITUDE",    -90,  90,    True, True,  "°",  "latitude"),
+            ("LONGITUDE",   -180, 180,   True, True,  "°",  "longitude"),
+            ("ELEVATION",   -100, 10000, True, True,  "m",  "elevation"),
+            ("STATE",       None, None,  True, True,  "ID", "state"),
+            ("NAME",        None, None,  True, True,  None, "name"),
+            ("COMPONENT_1", 0,    None,  True, True,  "ID", "station ID"),
+            ("COMPONENT_2", 0,    None,  True, True,  "ID", "station ID"),
+            ("COMPONENT_3", 0,    None,  True, True,  "ID", "station ID"),
+            ("UTC_OFFSET",  None, None,  True, True,  "h",  "UTC offset"),
+            # fmt: on
+        ]
+        return (
+            DataFrame(data, columns=list(self.table_schemas["metadata_description"]))
+            .astype(self.table_schemas["metadata_description"])
+            .set_index("variable")
+        )
 
     def _clean_timeseries_complete(self) -> DataFrame:
         warnings.warn(
@@ -292,25 +418,29 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         VALUES_DTYPE = "int16[pyarrow]"
 
         base_dtypes = {
-            "COOP_ID": "string",  # not pyarrow due to bug in pandas.
-            "YEAR": "int16[pyarrow]",
-            "MONTH": "int8[pyarrow]",
-            "ELEMENT": "string[pyarrow]",
-            "VALUE": "int16[pyarrow]",
-            "MFLAG": "string[pyarrow]",
-            "QFLAG": "string[pyarrow]",
-            "SFLAG": "string[pyarrow]",
+            # fmt: off
+            "COOP_ID" : "string",  # not pyarrow due to bug in pandas.
+            "YEAR"    : "int16[pyarrow]",
+            "MONTH"   : "int8[pyarrow]",
+            "ELEMENT" : "string[pyarrow]",
+            "VALUE"   : "int16[pyarrow]",
+            "MFLAG"   : "string[pyarrow]",
+            "QFLAG"   : "string[pyarrow]",
+            "SFLAG"   : "string[pyarrow]",
+            # fmt: on
         }
 
         updated_dtypes = {
-            "COOP_ID": pd.CategoricalDtype(ordered=True),
-            "YEAR": "int16[pyarrow]",
-            "MONTH": "int8[pyarrow]",
-            "ELEMENT": ELEMENTS_DTYPE,
-            "VALUE": VALUES_DTYPE,
-            "MFLAG": MFLAGS_DTYPE,
-            "QFLAG": QFLAGS_DTYPE,
-            "SFLAG": SFLAGS_DTYPE,
+            # fmt: off
+            "COOP_ID" : pd.CategoricalDtype(ordered=True),
+            "YEAR"    : "int16[pyarrow]",
+            "MONTH"   : "int8[pyarrow]",
+            "ELEMENT" : ELEMENTS_DTYPE,
+            "VALUE"   : VALUES_DTYPE,
+            "MFLAG"   : MFLAGS_DTYPE,
+            "QFLAG"   : QFLAGS_DTYPE,
+            "SFLAG"   : SFLAGS_DTYPE,
+            # fmt: on
         }
 
         # dtypes but with same index as colspec.
@@ -384,7 +514,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         return data
 
     @staticmethod
-    def _clean_state_codes() -> DataFrame:
+    def _state_codes() -> DataFrame:
         return pd.DataFrame(
             [
                 ("01", "AL", "Alabama"),

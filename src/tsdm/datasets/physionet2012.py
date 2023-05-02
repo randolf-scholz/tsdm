@@ -357,7 +357,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             ("PaO2"       , 0,    None, False, True, "mmHg",     "Partial pressure of arterial O2"               ),
             ("pH"         , 0,    14,   False, True, "0-14",     "Arterial pH"                                   ),
             ("Platelets"  , 0,    None, False, True, "cells/nL", "N/A"                                           ),
-            ("RespRate"   , 0,    None, True, True, "bpm",      "Respiration rate"                              ),
+            ("RespRate"   , 0,    None, True, True,  "bpm",      "Respiration rate"                              ),
             ("SaO2"       , 0,    100,  True,  True, "%", "      O2 saturation in hemoglobin"                    ),
             ("SysABP"     , 0,    None, False, True, "mmHg",     "Invasive systolic arterial blood pressure"     ),
             ("Temp"       , 0,    None, False, True, "°C",       "Temperature"                                   ),
