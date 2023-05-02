@@ -12,6 +12,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
+from tsdm.utils.data import remove_outliers
 
 KEY: TypeAlias = Literal[
     "timeseries",
@@ -310,6 +311,10 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             .astype({"STATE": "category"})
             .set_index("COOP_ID")
         )
+
+        self.LOGGER.info("Removing outliers from metadata.")
+        metadata = remove_outliers(metadata, self.table_schemas["metadata"])
+
         return metadata
 
     def _clean_timeseries(self) -> DataFrame:
@@ -328,20 +333,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         ts.columns = ts.columns.astype("string[pyarrow]")
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        for col in ts:
-            lower, upper, lbi, ubi = self.timeseries_description.loc[
-                col, ["lower", "upper", "lower_included", "upper_included"]
-            ]
-            if lbi:
-                mask = (ts[col] < lower).fillna(False)
-            else:
-                mask = (ts[col] <= lower).fillna(False)
-            if ubi:
-                mask |= (ts[col] > upper).fillna(False)
-            else:
-                mask |= (ts[col] >= upper).fillna(False)
-            ts.loc[mask, col] = float("nan")
-        ts = ts.dropna(how="all", axis="index")
+        ts = remove_outliers(ts, self.table_schemas["timeseries"])
 
         return ts
 

@@ -154,6 +154,7 @@ from pandas import DataFrame
 from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import MultiTableDataset
+from tsdm.utils.data import remove_outliers
 
 KEY: TypeAlias = Literal[
     "timeseries", "timeseries_description", "metadata", "metadata_description"
@@ -329,13 +330,13 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         data = [
             # fmt: off
             # variable, lower, upper, lower_included, upper_included, unit, description
-            ("Albumin"    , 0,    None, False, True, "g/dL",     "N/A"                                           ),
+            ("Albumin"    , 0,    None, False, True, "g/dL",     None                                            ),
             ("ALP"        , 0,    None, False, True, "IU/L",     "Alkaline phosphatase"                          ),
             ("ALT"        , 0,    None, False, True, "IU/L",     "Alanine transaminase"                          ),
             ("AST"        , 0,    None, False, True, "IU/L",     "Aspartate transaminase"                        ),
             ("Bilirubin"  , 0,    None, False, True, "mg/dL",    "Bilirubin"                                     ),
             ("BUN"        , 0,    None, False, True, "mg/dL",    "BUN"                                           ),
-            ("Cholesterol", 0,    None, False, True, "mg/dL",    "N/A"                                           ),
+            ("Cholesterol", 0,    None, False, True, "mg/dL",    None                                            ),
             ("Creatinine" , 0,    None, False, True, "mg/dL",    "Serum creatinine"                              ),
             ("DiasABP"    , 0,    None, False, True, "mmHg",     "Invasive diastolic arterial blood pressure"    ),
             ("FiO2"       , 0,    1,    True,  True, "0-1",      "Fractional inspired O2"                        ),
@@ -345,7 +346,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             ("HCT"        , 0,    100,  True,  True, "%",        "Hematocrit"                                    ),
             ("HR"         , 0,    None, True,  True, "bpm",      "Heart rate"                                    ),
             ("K"          , 0,    None, False, True, "mEq/L",    "Serum potassium"                               ),
-            ("Lactate"    , 0,    None, False, True, "mmol/L",   "N/A"                                           ),
+            ("Lactate"    , 0,    None, False, True, "mmol/L",   None                                            ),
             ("Mg"         , 0,    None, False, True, "mmol/L",   "Serum magnesium"                               ),
             ("MAP"        , 0,    None, False, True, "mmHg",     "Invasive mean arterial blood pressure"         ),
             ("MechVent"   , None, None, True,  True, "bool",     "Mechanical ventilation respiration"            ),
@@ -356,7 +357,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             ("PaCO2"      , 0,    None, False, True, "mmHg",     "partial pressure of arterial CO2"              ),
             ("PaO2"       , 0,    None, False, True, "mmHg",     "Partial pressure of arterial O2"               ),
             ("pH"         , 0,    14,   False, True, "0-14",     "Arterial pH"                                   ),
-            ("Platelets"  , 0,    None, False, True, "cells/nL", "N/A"                                           ),
+            ("Platelets"  , 0,    None, False, True, "cells/nL", None                                            ),
             ("RespRate"   , 0,    None, True, True,  "bpm",      "Respiration rate"                              ),
             ("SaO2"       , 0,    100,  True,  True, "%", "      O2 saturation in hemoglobin"                    ),
             ("SysABP"     , 0,    None, False, True, "mmHg",     "Invasive systolic arterial blood pressure"     ),
@@ -365,7 +366,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             ("TroponinT"  , 0,    None, False, True, "μg/L",     "Troponin-T"                                    ),
             ("Urine"      , 0,    None, True,  True, "mL",       "Urine output"                                  ),
             ("WBC"        , 0,    1000, False, True, "cells/nL", "White blood cell count"                        ),
-            ("Weight"     , 20,   None, True,  True, "kg",       "N/A"                                           ),
+            ("Weight"     , 20,   None, True,  True, "kg",       None                                            ),
             # fmt: on
         ]
 
@@ -378,10 +379,10 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
     def _metadata_description(self) -> DataFrame:
         data = [
             # fmt: off
-            ("Age",     0,    100,  True, True, "years", "N/A"),
+            ("Age",     0,    100,  True, True, "years", None),
             ("Gender",  None, None, True, True, "bool",  "0: female, 1: male"),
-            ("Height",  20,   270,  True, True, "cm",    "N/A"),
-            ("Weight",  20,   None, True, True, "kg",    "N/A"),
+            ("Height",  20,   270,  True, True, "cm",    None),
+            ("Weight",  20,   None, True, True, "kg",    None),
             ("ICUType", 1,    4,    True, True, "1-4",
                 "1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU"),
             # fmt: on
@@ -493,36 +494,10 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         md = pd.concat(md_list)
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        for col in ts:
-            lower, upper, lbi, ubi = self.timeseries_description.loc[
-                col, ["lower", "upper", "lower_included", "upper_included"]
-            ]
-            if lbi:
-                mask = (ts[col] < lower).fillna(False)
-            else:
-                mask = (ts[col] <= lower).fillna(False)
-            if ubi:
-                mask |= (ts[col] > upper).fillna(False)
-            else:
-                mask |= (ts[col] >= upper).fillna(False)
-            ts.loc[mask, col] = float("nan")
-        ts = ts.dropna(how="all", axis="index")
+        ts = remove_outliers(ts, self.timeseries_description)
 
         self.LOGGER.info("Removing outliers from metadata.")
-        for col in md:
-            lower, upper, lbi, ubi = self.metadata_description.loc[
-                col, ["lower", "upper", "lower_included", "upper_included"]
-            ]
-            if lbi:
-                mask = (md[col] < lower).fillna(False)
-            else:
-                mask = (md[col] <= lower).fillna(False)
-            if ubi:
-                mask |= (md[col] > upper).fillna(False)
-            else:
-                mask |= (md[col] >= upper).fillna(False)
-            md.loc[mask, col] = float("nan")
-        md = md.dropna(how="all", axis="index")
+        md = remove_outliers(md, self.metadata_description)
 
         # NOTE: TS is missing a few records, since no time series data was available
         # For tasks, it is recommended to drop records with less than 24 observations

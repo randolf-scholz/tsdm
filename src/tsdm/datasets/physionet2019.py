@@ -168,6 +168,7 @@ from pandas import DataFrame
 from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import MultiTableDataset
+from tsdm.utils.data import remove_outliers
 
 KEY: TypeAlias = Literal[
     "timeseries", "timeseries_description", "metadata", "metadata_description"
@@ -341,41 +342,41 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         r"""Metadata for each unit."""
         data = [
             # fmt: off
-            ("HR",    0,    None, True, True, "bpm",     "Heart rate"),
-            ("O2Sat", 0,    100,  True, True, "%",       "Pulse oximetry"),
-            ("Temp",  0,    None, True, True, "°C",      "Temperature"),
-            ("SBP",   0,    None, True, True, "mm Hg",   "Systolic BP"),
-            ("MAP",   0,    None, True, True, "mm Hg",   "Mean arterial pressure"),
-            ("DBP",   0,    None, True, True, "mm Hg",   "Diastolic BP"),
-            ("Resp",  0,    None, True, True, "bpm",     "Respiration rate"),
-            ("EtCO2", 0,    None, True, True, "mm Hg",   "End tidal carbon dioxide"),
+            ("HR",               0,    None, True, True, "bpm",     "Heart rate"                                 ),
+            ("O2Sat",            0,    100,  True, True, "%",       "Pulse oximetry"                             ),
+            ("Temp",             0,    None, True, True, "°C",      "Temperature"                                ),
+            ("SBP",              0,    None, True, True, "mm Hg",   "Systolic BP"                                ),
+            ("MAP",              0,    None, True, True, "mm Hg",   "Mean arterial pressure"                     ),
+            ("DBP",              0,    None, True, True, "mm Hg",   "Diastolic BP"                               ),
+            ("Resp",             0,    None, True, True, "bpm",     "Respiration rate"                           ),
+            ("EtCO2",            0,    None, True, True, "mm Hg",   "End tidal carbon dioxide"                   ),
             # Laboratory values (columns 9-34)
-            ("BaseExcess",       None, None, True, True, "mmol/L",  "Measure of excess bicarbonate"),
-            ("HCO3",             0,    None, True, True, "mmol/L",  "Bicarbonate"),
-            ("FiO2",             0,    100,  True, True, "%",       "Fraction of inspired oxygen"),
-            ("pH",               0,    14,   True, True, "pH",      "N/A"),
+            ("BaseExcess",       None, None, True, True, "mmol/L",  "Measure of excess bicarbonate"              ),
+            ("HCO3",             0,    None, True, True, "mmol/L",  "Bicarbonate"                                ),
+            ("FiO2",             0,    100,  True, True, "%",       "Fraction of inspired oxygen"                ),
+            ("pH",               0,    14,   True, True, "pH",      None                                         ),
             ("PaCO2",            0,    None, True, True, "mm Hg",   "Partial pressure of CO₂ from arterial blood"),
-            ("SaO2",             0,    100,  True, True, "%",       "Oxygen saturation from arterial blood"),
-            ("AST",              0,    None, True, True, "IU/L",    "Aspartate transaminase"),
-            ("BUN",              0,    None, True, True, "mg/dL",   "Blood urea nitrogen"),
-            ("Alkalinephos",     0,    None, True, True, "IU/L",    "Alkaline phosphatase"),
-            ("Calcium",          0,    None, True, True, "mg/dL",   "N/A"),
-            ("Chloride",         0,    None, True, True, "mmol/L",  "N/A"),
-            ("Creatinine",       0,    None, True, True, "mg/dL",   "N/A"),
-            ("Bilirubin_direct", 0,    None, True, True, "mg/dL",   "Bilirubin direct"),
-            ("Glucose",          0,    None, True, True, "mg/dL",   "Serum glucose"),
-            ("Lactate",          0,    None, True, True, "mg/dL",   "Lactic acid"),
-            ("Magnesium",        0,    None, True, True, "mmol/dL", "N/A"),
-            ("Phosphate",        0,    None, True, True, "mg/dL",   "N/A"),
-            ("Potassium",        0,    None, True, True, "mmol/L",  "N/A"),
-            ("Bilirubin_total",  0,    None, True, True, "mg/dL",   "Total bilirubin"),
-            ("TroponinI",        0,    None, True, True, "ng/mL",   "Troponin I"),
-            ("Hct",              0,    100,  True, True, "%",       "Hematocrit"),
-            ("Hgb",              0,    None, True, True, "g/dL",    "Hemoglobin"),
-            ("PTT",              0,    None, True, True, "seconds", "partial thromboplastin time"),
-            ("WBC",              0,    None, True, True, "10³/µL",  "Leukocyte count"),
-            ("Fibrinogen",       0,    None, True, True, "mg/dL",   "N/A"),
-            ("Platelets",        0,    None, True, True, "10³/µL",  "Platelet count"),
+            ("SaO2",             0,    100,  True, True, "%",       "Oxygen saturation from arterial blood"      ),
+            ("AST",              0,    None, True, True, "IU/L",    "Aspartate transaminase"                     ),
+            ("BUN",              0,    None, True, True, "mg/dL",   "Blood urea nitrogen"                        ),
+            ("Alkalinephos",     0,    None, True, True, "IU/L",    "Alkaline phosphatase"                       ),
+            ("Calcium",          0,    None, True, True, "mg/dL",   None                                         ),
+            ("Chloride",         0,    None, True, True, "mmol/L",  None                                         ),
+            ("Creatinine",       0,    None, True, True, "mg/dL",   None                                         ),
+            ("Bilirubin_direct", 0,    None, True, True, "mg/dL",   "Bilirubin direct"                           ),
+            ("Glucose",          0,    None, True, True, "mg/dL",   "Serum glucose"                              ),
+            ("Lactate",          0,    None, True, True, "mg/dL",   "Lactic acid"                                ),
+            ("Magnesium",        0,    None, True, True, "mmol/dL", None                                         ),
+            ("Phosphate",        0,    None, True, True, "mg/dL",   None                                         ),
+            ("Potassium",        0,    None, True, True, "mmol/L",  None                                         ),
+            ("Bilirubin_total",  0,    None, True, True, "mg/dL",   "Total bilirubin"                            ),
+            ("TroponinI",        0,    None, True, True, "ng/mL",   "Troponin I"                                 ),
+            ("Hct",              0,    100,  True, True, "%",       "Hematocrit"                                 ),
+            ("Hgb",              0,    None, True, True, "g/dL",    "Hemoglobin"                                 ),
+            ("PTT",              0,    None, True, True, "seconds", "partial thromboplastin time"                ),
+            ("WBC",              0,    None, True, True, "10³/µL",  "Leukocyte count"                            ),
+            ("Fibrinogen",       0,    None, True, True, "mg/dL",   None                                         ),
+            ("Platelets",        0,    None, True, True, "10³/µL",  "Platelet count"                             ),
             # Outcome (column 41)
             ("SepsisLabel",      None, None, True, True, "bool",
                 "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and 0 if t<tsepsis−6."
@@ -469,20 +470,7 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         )
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        for col in ts:
-            lower, upper, lbi, ubi = self.timeseries_description.loc[
-                col, ["lower", "upper", "lower_included", "upper_included"]
-            ]
-            if lbi:
-                mask = (ts[col] < lower).fillna(False)
-            else:
-                mask = (ts[col] <= lower).fillna(False)
-            if ubi:
-                mask |= (ts[col] > upper).fillna(False)
-            else:
-                mask |= (ts[col] >= upper).fillna(False)
-            ts.loc[mask, col] = float("nan")
-        ts = ts.dropna(how="all", axis="index")
+        ts = remove_outliers(ts, self.timeseries_description)
 
         self.LOGGER.info("Creating Metadata Table.")
         md = table[list(self.table_schemas["metadata"])]
@@ -492,20 +480,7 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         md = md.groupby("patient").first()
 
         self.LOGGER.info("Removing outliers from metadata.")
-        for col in md:
-            lower, upper, lbi, ubi = self.metadata_description.loc[
-                col, ["lower", "upper", "lower_included", "upper_included"]
-            ]
-            if lbi:
-                mask = (md[col] < lower).fillna(False)
-            else:
-                mask = (md[col] <= lower).fillna(False)
-            if ubi:
-                mask |= (md[col] > upper).fillna(False)
-            else:
-                mask |= (md[col] >= upper).fillna(False)
-            md.loc[mask, col] = float("nan")
-        md = md.dropna(how="all", axis="index")
+        md = remove_outliers(md, self.metadata_description)
 
         self.LOGGER.info("Finalizing metadata table.")
         md = (
