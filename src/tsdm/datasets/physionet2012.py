@@ -155,7 +155,9 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import MultiTableDataset
 
-KEY: TypeAlias = Literal["timeseries", "metadata"]
+KEY: TypeAlias = Literal[
+    "timeseries", "timeseries_description", "metadata", "metadata_description"
+]
 
 
 class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
@@ -242,87 +244,154 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "Parameter": "string[pyarrow]",
         "Value": "float32[pyarrow]",
     }
+    table_names = {
+        "timeseries": DataFrame,
+        "metadata": DataFrame,
+        "timeseries_description": DataFrame,
+        "metadata_description": DataFrame,
+    }
     table_schemas = {
-        "metadata": {
-            "Age": "uint8[pyarrow]",
-            "Gender": "int8[pyarrow]",
-            "Height": "float32[pyarrow]",
-            "ICUType": "uint8[pyarrow]",
-            "Weight": "float32[pyarrow]",
-        },
         "timeseries": {
-            "Albumin": "float32[pyarrow]",
-            "ALP": "float32[pyarrow]",
-            "ALT": "float32[pyarrow]",
-            "AST": "float32[pyarrow]",
-            "Bilirubin": "float32[pyarrow]",
-            "BUN": "float32[pyarrow]",
-            "Cholesterol": "float32[pyarrow]",
-            "Creatinine": "float32[pyarrow]",
-            "DiasABP": "float32[pyarrow]",
-            "FiO2": "float32[pyarrow]",
-            "GCS": "float32[pyarrow]",
-            "Glucose": "float32[pyarrow]",
-            "HCO3": "float32[pyarrow]",
-            "HCT": "float32[pyarrow]",
-            "HR": "float32[pyarrow]",
-            "K": "float32[pyarrow]",
-            "Lactate": "float32[pyarrow]",
-            "MAP": "float32[pyarrow]",
-            "MechVent": "float32[pyarrow]",
-            "Mg": "float32[pyarrow]",
-            "Na": "float32[pyarrow]",
-            "NIDiasABP": "float32[pyarrow]",
-            "NIMAP": "float32[pyarrow]",
-            "NISysABP": "float32[pyarrow]",
-            "PaCO2": "float32[pyarrow]",
-            "PaO2": "float32[pyarrow]",
-            "pH": "float32[pyarrow]",
-            "Platelets": "float32[pyarrow]",
-            "RespRate": "float32[pyarrow]",
-            "SaO2": "float32[pyarrow]",
-            "SysABP": "float32[pyarrow]",
-            "Temp": "float32[pyarrow]",
-            "TroponinI": "float32[pyarrow]",
-            "TroponinT": "float32[pyarrow]",
-            "Urine": "float32[pyarrow]",
-            "WBC": "float32[pyarrow]",
-            "Weight": "float32[pyarrow]",
+            # fmt: off
+            "Albumin"     : "float32[pyarrow]",
+            "ALP"         : "float32[pyarrow]",
+            "ALT"         : "float32[pyarrow]",
+            "AST"         : "float32[pyarrow]",
+            "Bilirubin"   : "float32[pyarrow]",
+            "BUN"         : "float32[pyarrow]",
+            "Cholesterol" : "float32[pyarrow]",
+            "Creatinine"  : "float32[pyarrow]",
+            "DiasABP"     : "float32[pyarrow]",
+            "FiO2"        : "float32[pyarrow]",
+            "GCS"         : "float32[pyarrow]",
+            "Glucose"     : "float32[pyarrow]",
+            "HCO3"        : "float32[pyarrow]",
+            "HCT"         : "float32[pyarrow]",
+            "HR"          : "float32[pyarrow]",
+            "K"           : "float32[pyarrow]",
+            "Lactate"     : "float32[pyarrow]",
+            "MAP"         : "float32[pyarrow]",
+            "MechVent"    : "float32[pyarrow]",
+            "Mg"          : "float32[pyarrow]",
+            "Na"          : "float32[pyarrow]",
+            "NIDiasABP"   : "float32[pyarrow]",
+            "NIMAP"       : "float32[pyarrow]",
+            "NISysABP"    : "float32[pyarrow]",
+            "PaCO2"       : "float32[pyarrow]",
+            "PaO2"        : "float32[pyarrow]",
+            "pH"          : "float32[pyarrow]",
+            "Platelets"   : "float32[pyarrow]",
+            "RespRate"    : "float32[pyarrow]",
+            "SaO2"        : "float32[pyarrow]",
+            "SysABP"      : "float32[pyarrow]",
+            "Temp"        : "float32[pyarrow]",
+            "TroponinI"   : "float32[pyarrow]",
+            "TroponinT"   : "float32[pyarrow]",
+            "Urine"       : "float32[pyarrow]",
+            "WBC"         : "float32[pyarrow]",
+            "Weight"      : "float32[pyarrow]",
+            # fmt: on
         },
-    }
-
-    na_values = {
-        "DiasABP": -1,
-        "NIDiasABP": -1,
-    }
-
-    outliers = {
-        "timeseries": {
-            ("DiasABP", 0, None),
-            ("HR", 0, None),
-            ("MAP", 0, None),
-            ("NIMAP", 0, None),
-            ("NISysABP", 0, None),
-            ("NIDiasABP", 0, None),
-            ("PaCO2", 0, None),
-            ("PaO2", 0, None),
-            ("Platelets", None, None),
-            ("RespRate", 0, None),
-            ("SaO2", 0, None),
-            ("SysABP", 0, None),
-            ("Temp", 0, None),
-            ("TroponinI", None, None),
-            ("WBC", 0, 1000),
-            ("Weight", 20, None),
-            ("pH", 5, 10),
+        "timeseries_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
         },
         "metadata": {
-            ("Height", 20, 270),
-            ("Weight", 20, None),
+            # fmt: off
+            "Age"     : "uint8[pyarrow]",
+            "Gender"  : "int8[pyarrow]",
+            "Height"  : "float32[pyarrow]",
+            "ICUType" : "uint8[pyarrow]",
+            "Weight"  : "float32[pyarrow]",
+            # fmt:on
+        },
+        "metadata_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
         },
     }
 
-    table_names = {"timeseries": DataFrame, "metadata": DataFrame}
+    def _timeseries_description(self) -> DataFrame:
+        data = [
+            # fmt: off
+            # variable, lower, upper, lower_included, upper_included, unit, description
+            ("Albumin"    , 0,    None, False, True, "g/dL",     "N/A"                                           ),
+            ("ALP"        , 0,    None, False, True, "IU/L",     "Alkaline phosphatase"                          ),
+            ("ALT"        , 0,    None, False, True, "IU/L",     "Alanine transaminase"                          ),
+            ("AST"        , 0,    None, False, True, "IU/L",     "Aspartate transaminase"                        ),
+            ("Bilirubin"  , 0,    None, False, True, "mg/dL",    "Bilirubin"                                     ),
+            ("BUN"        , 0,    None, False, True, "mg/dL",    "BUN"                                           ),
+            ("Cholesterol", 0,    None, False, True, "mg/dL",    "N/A"                                           ),
+            ("Creatinine" , 0,    None, False, True, "mg/dL",    "Serum creatinine"                              ),
+            ("DiasABP"    , 0,    None, False, True, "mmHg",     "Invasive diastolic arterial blood pressure"    ),
+            ("FiO2"       , 0,    1,    True,  True, "0-1",      "Fractional inspired O2"                        ),
+            ("GCS"        , 3,    15,   True,  True, "3-15",     "Glasgow Coma Score "                           ),
+            ("Glucose"    , 0,    None, False, True, "mg/dL",    "Serum glucose"                                 ),
+            ("HCO3"       , 0,    None, False, True, "mmol/L",   "Serum bicarbonate"                             ),
+            ("HCT"        , 0,    100,  True,  True, "%",        "Hematocrit"                                    ),
+            ("HR"         , 0,    None, True,  True, "bpm",      "Heart rate"                                    ),
+            ("K"          , 0,    None, False, True, "mEq/L",    "Serum potassium"                               ),
+            ("Lactate"    , 0,    None, False, True, "mmol/L",   "N/A"                                           ),
+            ("Mg"         , 0,    None, False, True, "mmol/L",   "Serum magnesium"                               ),
+            ("MAP"        , 0,    None, False, True, "mmHg",     "Invasive mean arterial blood pressure"         ),
+            ("MechVent"   , None, None, True,  True, "bool",     "Mechanical ventilation respiration"            ),
+            ("Na"         , 0,    None, False, True, "mEq/L",    "Serum sodium"                                  ),
+            ("NIDiasABP"  , 0,    None, False, True, "mmHg",     "Non-invasive diastolic arterial blood pressure"),
+            ("NIMAP"      , 0,    None, False, True, "mmHg",     "Non-invasive mean arterial blood pressure"     ),
+            ("NISysABP"   , 0,    None, False, True, "mmHg",     "Non-invasive systolic arterial blood pressure" ),
+            ("PaCO2"      , 0,    None, False, True, "mmHg",     "partial pressure of arterial CO2"              ),
+            ("PaO2"       , 0,    None, False, True, "mmHg",     "Partial pressure of arterial O2"               ),
+            ("pH"         , 0,    14,   False, True, "0-14",     "Arterial pH"                                   ),
+            ("Platelets"  , 0,    None, False, True, "cells/nL", "N/A"                                           ),
+            ("RespRate"   , 0,    None, True, True, "bpm",      "Respiration rate"                              ),
+            ("SaO2"       , 0,    100,  True,  True, "%", "      O2 saturation in hemoglobin"                    ),
+            ("SysABP"     , 0,    None, False, True, "mmHg",     "Invasive systolic arterial blood pressure"     ),
+            ("Temp"       , 0,    None, False, True, "°C",       "Temperature"                                   ),
+            ("TroponinI"  , 0,    None, False, True, "μg/L",     "Troponin-I"                                    ),
+            ("TroponinT"  , 0,    None, False, True, "μg/L",     "Troponin-T"                                    ),
+            ("Urine"      , 0,    None, True,  True, "mL",       "Urine output"                                  ),
+            ("WBC"        , 0,    1000, False, True, "cells/nL", "White blood cell count"                        ),
+            ("Weight"     , 20,   None, True,  True, "kg",       "N/A"                                           ),
+            # fmt: on
+        ]
+
+        return (
+            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
+            .astype(self.table_schemas["timeseries_description"])
+            .set_index("variable")
+        )
+
+    def _metadata_description(self) -> DataFrame:
+        data = [
+            # fmt: off
+            ("Age",     0,    100,  True, True, "years", "N/A"),
+            ("Gender",  None, None, True, True, "bool",  "0: female, 1: male"),
+            ("Height",  20,   270,  True, True, "cm",    "N/A"),
+            ("Weight",  20,   None, True, True, "kg",    "N/A"),
+            ("ICUType", 1,    4,    True, True, "1-4",
+                "1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU"),
+            # fmt: on
+        ]
+
+        return (
+            DataFrame(data, columns=list(self.table_schemas["metadata_description"]))
+            .astype(self.table_schemas["metadata_description"])
+            .set_index("variable")
+        )
 
     def _clean_data(self, fname: str) -> tuple[DataFrame, DataFrame]:
         with (
@@ -379,20 +448,6 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             self.table_schemas["metadata"]
         )
 
-        self.LOGGER.info("%s: Mapping categoricals in metadata.", fname)
-        md = md.assign(
-            Gender=md["Gender"]
-            .replace(-1, pd.NA)
-            .map({0: "female", 1: "male"})
-            .astype("category")
-        )
-
-        self.LOGGER.info("Removing outliers from metadata.")
-        for col, lower, upper in self.outliers["metadata"]:
-            mask = (md[col] <= lower).fillna(False) | (md[col] >= upper).fillna(False)
-            md.loc[mask, col] = float("nan")
-        md = md.dropna(how="all", axis="index")
-
         self.LOGGER.info("%s: Combining timeseries data.", fname)
         ts = pd.concat(ts_list, axis=0, keys=record_ids).reset_index(
             level=-1, drop=True
@@ -416,17 +471,18 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             .reset_index("count", drop=True)
             .droplevel(0, axis="columns")
             .sort_index()
+            .reindex(columns=self.table_schemas["timeseries"])
         )
-
-        self.LOGGER.info("Removing outliers from timeseries.")
-        for col, lower, upper in self.outliers["timeseries"]:
-            mask = (ts[col] <= lower).fillna(False) | (ts[col] >= upper).fillna(False)
-            ts.loc[mask, col] = float("nan")
-        ts = ts.dropna(how="all", axis="index")
-
         return ts, md
 
-    def clean_table(self, key: KEY) -> None:
+    def clean_table(self, key: KEY) -> None | DataFrame:
+        if key == "timeseries_description":
+            return self._timeseries_description()
+        if key == "metadata_description":
+            return self._metadata_description()
+        if key not in ("timeseries", "metadata"):
+            raise KeyError(f"Unknown table: {key}")
+
         ts_list = []
         md_list = []
         for fname in "set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz":
@@ -436,8 +492,41 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         ts = pd.concat(ts_list)
         md = pd.concat(md_list)
 
+        self.LOGGER.info("Removing outliers from timeseries.")
+        for col in ts:
+            lower, upper, lbi, ubi = self.timeseries_description.loc[
+                col, ["lower", "upper", "lower_included", "upper_included"]
+            ]
+            if lbi:
+                mask = (ts[col] < lower).fillna(False)
+            else:
+                mask = (ts[col] <= lower).fillna(False)
+            if ubi:
+                mask |= (ts[col] > upper).fillna(False)
+            else:
+                mask |= (ts[col] >= upper).fillna(False)
+            ts.loc[mask, col] = float("nan")
+        ts = ts.dropna(how="all", axis="index")
+
+        self.LOGGER.info("Removing outliers from metadata.")
+        for col in md:
+            lower, upper, lbi, ubi = self.metadata_description.loc[
+                col, ["lower", "upper", "lower_included", "upper_included"]
+            ]
+            if lbi:
+                mask = (md[col] < lower).fillna(False)
+            else:
+                mask = (md[col] <= lower).fillna(False)
+            if ubi:
+                mask |= (md[col] > upper).fillna(False)
+            else:
+                mask |= (md[col] >= upper).fillna(False)
+            md.loc[mask, col] = float("nan")
+        md = md.dropna(how="all", axis="index")
+
         # NOTE: TS is missing a few records, since no time series data was available
         # For tasks, it is recommended to drop records with less than 24 observations
         # assert md.index == ts.index.get_level_values("RecordID").unique()
         self.serialize(md, self.dataset_paths["metadata"])
         self.serialize(ts, self.dataset_paths["timeseries"])
+        return None
