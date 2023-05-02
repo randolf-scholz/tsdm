@@ -490,6 +490,11 @@ class MultiTableDataset(
 
         super().__init__(initialize=initialize, reset=reset)
 
+    def __dir__(self) -> list[str]:
+        if self._key_attributes:
+            return list(super().__dir__()) + list(self.table_names)
+        return list(super().__dir__())
+
     def __getattr__(self, key):
         r"""Get attribute."""
         if self._key_attributes and key in self.table_names:
