@@ -131,7 +131,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler as TorchSampler
-from typing_extensions import Self
+from typing_extensions import Self, assert_type
 
 from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
@@ -348,9 +348,11 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         else:
             raise NotImplementedError
 
+        assert_type(tsd, TimeSeriesDataset)
+
         # timeseries
-        ts_observed = tsd[observation_horizon]
-        ts_forecast = tsd[forecasting_horizon]
+        ts_observed: DataFrame = tsd[observation_horizon]
+        ts_forecast: DataFrame = tsd[forecasting_horizon]
         joint_horizon_index = ts_observed.index.union(ts_forecast.index)
         ts = tsd[joint_horizon_index]
         u: Optional[DataFrame] = None

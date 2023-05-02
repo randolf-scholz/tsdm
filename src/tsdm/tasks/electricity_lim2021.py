@@ -15,7 +15,7 @@ import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
-from tsdm.datasets import Electricity
+from tsdm.datasets import Electricity, TimeSeriesDataset
 from tsdm.encoders import BaseEncoder, Standardizer
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import TimeSeriesTask
@@ -106,6 +106,9 @@ class ElectricityLim2021(TimeSeriesTask):
     r"""Type Hint for index."""
     preprocessor: BaseEncoder
 
+    # FIXME: neeed a different base class for this task!
+    dataset: TimeSeriesDataset  # type: ignore[assignment]
+
     def __init__(self) -> None:
         ds = Electricity().table
         ds = ds.resample("1h").mean()
@@ -138,25 +141,27 @@ class ElectricityLim2021(TimeSeriesTask):
     def masks(self) -> dict[KeyType, np.ndarray]:
         r"""Masks for the training, validation and test sets."""
         return {
-            "train": (self.boundaries["start"] <= self.dataset.index)
-            & (self.dataset.index < self.boundaries["train"]),
+            "train": (self.boundaries["start"] <= self.dataset.timeindex)
+            & (self.dataset.timeindex < self.boundaries["train"]),
             "valid": (
-                self.boundaries["train"] - self.observation_period <= self.dataset.index
+                self.boundaries["train"] - self.observation_period
+                <= self.dataset.timeindex
             )
-            & (self.dataset.index < self.boundaries["valid"]),
+            & (self.dataset.timeindex < self.boundaries["valid"]),
             "test": (
-                self.boundaries["valid"] - self.observation_period <= self.dataset.index
+                self.boundaries["valid"] - self.observation_period
+                <= self.dataset.timeindex
             )
-            & (self.dataset.index < self.boundaries["final"]),
-            "whole": (self.boundaries["start"] <= self.dataset.index)
-            & (self.dataset.index < self.boundaries["final"]),
-            "joint": (self.boundaries["start"] <= self.dataset.index)
-            & (self.dataset.index < self.boundaries["valid"]),
+            & (self.dataset.timeindex < self.boundaries["final"]),
+            "whole": (self.boundaries["start"] <= self.dataset.timeindex)
+            & (self.dataset.timeindex < self.boundaries["final"]),
+            "joint": (self.boundaries["start"] <= self.dataset.timeindex)
+            & (self.dataset.timeindex < self.boundaries["valid"]),
         }
 
     def make_split(self, key: KeyType) -> Any:
         r"""Return the split of the dataset."""
-        return self.dataset[self.masks[key]]  # type: ignore[call-overload]
+        return self.dataset[self.masks[key]]
 
     # @cached_property
     # def dataloader_kwargs(self) -> dict:
