@@ -159,6 +159,7 @@ HR 	Heart rate (beats per minute)
 
 __all__ = ["PhysioNet2019"]
 
+from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import numpy as np
@@ -168,7 +169,9 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import MultiTableDataset
 
-KEY = ["timeseries", "timeseries_description"]
+KEY: TypeAlias = Literal[
+    "timeseries", "timeseries_description", "metadata", "metadata_description"
+]
 
 
 class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
@@ -209,23 +212,13 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         "training_setA.zip": "sha256:c0def317798312e4facc0f33ac0202b3a34f412052d9096e8b122b4d3ecb7935",
         "training_setB.zip": "sha256:8a88d69a5f64bc9a87d869f527fcc2741c0712cb9a7cb1f5cdcb725336b4c8cc",
     }
-
-    table_names = [
-        "timeseries",
-        "timeseries_description",
-        "metadata",
-        "metadata_description",
-    ]
+    table_names = {
+        "timeseries": DataFrame,
+        "timeseries_description": DataFrame,
+        "metadata": DataFrame,
+        "metadata_description": DataFrame,
+    }
     table_schemas = {
-        "metadata": {
-            # fmt: off
-            "Age"         : "float32[pyarrow]",
-            "Gender"      : "bool[pyarrow]",
-            "Unit1"       : "bool[pyarrow]",
-            "Unit2"       : "bool[pyarrow]",
-            "HospAdmTime" : "float32[pyarrow]",
-            # fmt: on
-        },
         "timeseries": {
             # fmt: off
             "HR"               : "float32[pyarrow]",
@@ -262,13 +255,38 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
             "WBC"              : "float32[pyarrow]",
             "Fibrinogen"       : "float32[pyarrow]",
             "Platelets"        : "float32[pyarrow]",
-            "Age"              : "float32[pyarrow]",
-            "Gender"           : "boolean",
-            "Unit1"            : "boolean",
-            "Unit2"            : "boolean",
-            "HospAdmTime"      : "float32[pyarrow]",
-            "ICULOS"           : "int32",
-            "SepsisLabel"      : "boolean",
+            "SepsisLabel"      : "bool[pyarrow]",
+            # fmt: on
+        },
+        "metadata": {
+            # fmt: off
+            "Age"         : "float32[pyarrow]",
+            "Gender"      : "category",
+            "Unit1"       : "bool[pyarrow]",
+            "Unit2"       : "bool[pyarrow]",
+            "HospAdmTime" : "timedelta64[ns]",
+            # fmt: on
+        },
+        "timeseries_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
+        },
+        "metadata_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
             # fmt: on
         },
     }
@@ -310,86 +328,81 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         "Fibrinogen"       : "float32[pyarrow]",
         "Platelets"        : "float32[pyarrow]",
         "Age"              : "float32[pyarrow]",
-        "Gender"           : "boolean",
-        "Unit1"            : "boolean",
+        "Gender"           : "boolean",  # FIXME: TypeError: ArrowExtensionArray._from_sequence_of_strings()
+        "Unit1"            : "boolean",  # got an unexpected keyword argument 'true_values'
         "Unit2"            : "boolean",
         "HospAdmTime"      : "float32[pyarrow]",
-        "ICULOS"           : "int32",
+        "ICULOS"           : "int32[pyarrow]",
         "SepsisLabel"      : "boolean",
         # fmt: on
     }
 
-    @staticmethod
-    def _clean_timeseries_description() -> DataFrame:
+    def _timeseries_description(self) -> DataFrame:
         r"""Metadata for each unit."""
-        return DataFrame(
+        data = [
             # fmt: off
-            [
-                ("HR",               0, None,    "bpm",     "Heart rate"),
-                ("O2Sat",            0, 100,     "%",       "Pulse oximetry"),
-                ("Temp",             0, None,    "°C",      "Temperature"),
-                ("SBP",              0, None,    "mm Hg",   "Systolic BP"),
-                ("MAP",              0, None,    "mm Hg",   "Mean arterial pressure"),
-                ("DBP",              0, None,    "mm Hg",   "Diastolic BP"),
-                ("Resp",             0, None,    "bpm",     "Respiration rate"),
-                ("EtCO2",            0, None,    "mm Hg",   "End tidal carbon dioxide"),
-                # Laboratory values (columns 9-34)
-                ("BaseExcess",       None, None, "mmol/L",  "Measure of excess bicarbonate"),
-                ("HCO3",             0, None,    "mmol/L",  "Bicarbonate"),
-                ("FiO2",             0, 100,     "%",       "Fraction of inspired oxygen"),
-                ("pH",               0, 14,      "pH",      "N/A"),
-                ("PaCO2",            0, None,    "mm Hg",   "Partial pressure of carbon dioxide from arterial blood"),
-                ("SaO2",             0, 100,     "%",       "Oxygen saturation from arterial blood"),
-                ("AST",              0, None,    "IU/L",    "Aspartate transaminase"),
-                ("BUN",              0, None,    "mg/dL",   "Blood urea nitrogen"),
-                ("Alkalinephos",     0, None,    "IU/L",    "Alkaline phosphatase"),
-                ("Calcium",          0, None,    "mg/dL",   "N/A"),
-                ("Chloride",         0, None,    "mmol/L",  "N/A"),
-                ("Creatinine",       0, None,    "mg/dL",   "N/A"),
-                ("Bilirubin_direct", 0, None,    "mg/dL",   "Bilirubin direct"),
-                ("Glucose",          0, None,    "mg/dL",   "Serum glucose"),
-                ("Lactate",          0, None,    "mg/dL",   "Lactic acid"),
-                ("Magnesium",        0, None,    "mmol/dL", "N/A"),
-                ("Phosphate",        0, None,    "mg/dL",   "N/A"),
-                ("Potassium",        0, None,    "mmol/L",  "N/A"),
-                ("Bilirubin_total",  0, None,    "mg/dL",   "Total bilirubin"),
-                ("TroponinI",        0, None,    "ng/mL",   "Troponin I"),
-                ("Hct",              0, 100,     "%",       "Hematocrit"),
-                ("Hgb",              0, None,    "g/dL",    "Hemoglobin"),
-                ("PTT",              0, None,    "seconds", "partial thromboplastin time"),
-                ("WBC",              0, None,    "10^3/µL", "Leukocyte count"),
-                ("Fibrinogen",       0, None,    "mg/dL",   "N/A"),
-                ("Platelets",        0, None,    "10^3/µL", "N/A"),
-                # Demographics (columns 35-40)
-                # ("Age",              0, None,    "years",   "Years (100 for patients 90 or above)"),
-                # ("Gender",           0, None,    "bool",    "Female (0) or Male (1)"),
-                # ("Unit1",            0, None,    "MICU",    "Administrative identifier for ICU unit"),
-                # ("Unit2",            0, None,    "SICU",    "Administrative identifier for ICU unit"),
-                # ("HospAdmTime",      None, 0,    "h",       "Hours between hospital admit and ICU admit"),
-                ("ICULOS",           0, None,    "h",       "ICU length-of-stay (hours since ICU admit)"),
-                # Outcome (column 41)
-                ("SepsisLabel",      None, None, "bool",
-                    "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and 0 if t<tsepsis−6."
-                    " For non-sepsis patients, SepsisLabel is 0.",
-                ),  # noqa: E124 closing bracket does not match visual indentation
-            ],
-            # fmt: on
-            columns=["variable", "lower", "upper", "unit", "description"],
+            ("HR",    0,    None, True, True, "bpm",     "Heart rate"),
+            ("O2Sat", 0,    100,  True, True, "%",       "Pulse oximetry"),
+            ("Temp",  0,    None, True, True, "°C",      "Temperature"),
+            ("SBP",   0,    None, True, True, "mm Hg",   "Systolic BP"),
+            ("MAP",   0,    None, True, True, "mm Hg",   "Mean arterial pressure"),
+            ("DBP",   0,    None, True, True, "mm Hg",   "Diastolic BP"),
+            ("Resp",  0,    None, True, True, "bpm",     "Respiration rate"),
+            ("EtCO2", 0,    None, True, True, "mm Hg",   "End tidal carbon dioxide"),
+            # Laboratory values (columns 9-34)
+            ("BaseExcess",       None, None, True, True, "mmol/L",  "Measure of excess bicarbonate"),
+            ("HCO3",             0,    None, True, True, "mmol/L",  "Bicarbonate"),
+            ("FiO2",             0,    100,  True, True, "%",       "Fraction of inspired oxygen"),
+            ("pH",               0,    14,   True, True, "pH",      "N/A"),
+            ("PaCO2",            0,    None, True, True, "mm Hg",   "Partial pressure of CO₂ from arterial blood"),
+            ("SaO2",             0,    100,  True, True, "%",       "Oxygen saturation from arterial blood"),
+            ("AST",              0,    None, True, True, "IU/L",    "Aspartate transaminase"),
+            ("BUN",              0,    None, True, True, "mg/dL",   "Blood urea nitrogen"),
+            ("Alkalinephos",     0,    None, True, True, "IU/L",    "Alkaline phosphatase"),
+            ("Calcium",          0,    None, True, True, "mg/dL",   "N/A"),
+            ("Chloride",         0,    None, True, True, "mmol/L",  "N/A"),
+            ("Creatinine",       0,    None, True, True, "mg/dL",   "N/A"),
+            ("Bilirubin_direct", 0,    None, True, True, "mg/dL",   "Bilirubin direct"),
+            ("Glucose",          0,    None, True, True, "mg/dL",   "Serum glucose"),
+            ("Lactate",          0,    None, True, True, "mg/dL",   "Lactic acid"),
+            ("Magnesium",        0,    None, True, True, "mmol/dL", "N/A"),
+            ("Phosphate",        0,    None, True, True, "mg/dL",   "N/A"),
+            ("Potassium",        0,    None, True, True, "mmol/L",  "N/A"),
+            ("Bilirubin_total",  0,    None, True, True, "mg/dL",   "Total bilirubin"),
+            ("TroponinI",        0,    None, True, True, "ng/mL",   "Troponin I"),
+            ("Hct",              0,    100,  True, True, "%",       "Hematocrit"),
+            ("Hgb",              0,    None, True, True, "g/dL",    "Hemoglobin"),
+            ("PTT",              0,    None, True, True, "seconds", "partial thromboplastin time"),
+            ("WBC",              0,    None, True, True, "10³/µL",  "Leukocyte count"),
+            ("Fibrinogen",       0,    None, True, True, "mg/dL",   "N/A"),
+            ("Platelets",        0,    None, True, True, "10³/µL",  "Platelet count"),
+            # Outcome (column 41)
+            ("SepsisLabel",      None, None, True, True, "bool",
+                "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and 0 if t<tsepsis−6."
+                " For non-sepsis patients, SepsisLabel is 0.",
+            ),  # noqa: E124 closing bracket does not match visual indentation
+        ]
+        return (
+            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
+            .astype(self.table_schemas["timeseries_description"])
+            .set_index("variable")
         )
 
-    @staticmethod
-    def _clean_metadata_description() -> DataFrame:
-        return DataFrame(
+    def _metadata_description(self) -> DataFrame:
+        data = [
             # fmt: off
-            [
-                ("Age",              0, None,    "years",   "Years (100 for patients 90 or above)"),
-                ("Gender",           0, None,    "bool",    "Female (0) or Male (1)"),
-                ("Unit1",            0, None,    "MICU",    "Administrative identifier for ICU unit"),
-                ("Unit2",            0, None,    "SICU",    "Administrative identifier for ICU unit"),
-                ("HospAdmTime",      None, 0,    "h",       "Hours between hospital admit and ICU admit"),
-            ],
+            # Demographics (columns 35-40)
+            ("Age",              0,    100, False, True,  "years", "Years (100 for patients 90 or above)"),
+            ("Gender",           0,    1,   True,  True,  "bool",  "Female (0) or Male (1)"),
+            ("Unit1",            0,    1,   True,  True,  "MICU",  "Administrative identifier for ICU unit"),
+            ("Unit2",            0,    1,   True,  True,  "SICU",  "Administrative identifier for ICU unit"),
+            ("HospAdmTime",      None, 0,   True,  False, "h",     "Hours between hospital admit and ICU admit"),
             # fmt: on
-            columns=["variable", "lower", "upper", "unit", "description"],
+        ]
+        return (
+            DataFrame(data, columns=list(self.table_schemas["metadata_description"]))
+            .astype(self.table_schemas["metadata_description"])
+            .set_index("variable")
         )
 
     def read_patient_file(self, archive: ZipFile, compressed_file: str) -> DataFrame:
@@ -416,7 +429,8 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
                 if not compressed_file.endswith(".psv"):
                     continue
 
-                record_id = compressed_file.split("/")[-1].split(".")[0]
+                record_id = compressed_file.split("/p")[-1].split(".")[0]
+                iter_archive.set_postfix(record_id=record_id)
                 with archive.open(compressed_file) as file:
                     frames[record_id] = pd.read_csv(
                         file,
@@ -431,36 +445,78 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         table = pd.concat(frames, names=["patient", "ID"]).reset_index(
             level=1, drop=True
         )
-
-        self.LOGGER.info("removing outliers")
-
         return table
 
-    def clean_table(self, key: KEY) -> DataFrame:
+    def clean_table(self, key: KEY) -> DataFrame | None:
         if key == "timeseries_description":
-            return self._clean_timeseries_description()
+            return self._timeseries_description()
+        if key == "metadata_description":
+            return self._metadata_description()
         if key not in ["timeseries", "metadata"]:
             raise KeyError(f"Unknown table {key}")
 
         table = pd.concat([self._get_frame(str(fname)) for fname in self.rawdata_files])
 
-        self.LOGGER.info("Creating Metadata Table.")
-        metadata = table[self.table_schemas["metadata"]]
-        self.LOGGER.info("Validating Metadata is constant.")
-        for col in metadata.columns:
-            assert all(metadata.groupby("patient")[col].nunique() == 1)
-        metadata = metadata.groupby("patient").first()
-        metadata = metadata.assign(
-            HospAdmTime=metadata["HospAdmTime"] * np.timedelta64(1, "h")
+        self.LOGGER.info("Creating Timeseries Table.")
+        ts = table[list(self.table_schemas["timeseries"])]
+        self.LOGGER.info("Setting timeindex")
+        ts = (
+            ts.assign(ICULOS=table["ICULOS"].astype("int32") * np.timedelta64(1, "h"))
+            .rename({"ICULOS": "time"}, axis=1)
+            .set_index("time", append=True)
+            .sort_index()
+            .astype(self.table_schemas["timeseries"])
         )
 
-        self.LOGGER.info("Creating Timeseries Table.")
-        timeseries = table[self.table_schemas["timeseries"]]
-        self.LOGGER.info("Setting timeindex")
-        timeseries = (
-            timeseries.assign(ICULOS=timeseries["ICULOS"] * np.timedelta64(1, "h"))
-            .rename({"ICULOS": "time"}, axis=1)
-            .set_index("time")
+        self.LOGGER.info("Removing outliers from timeseries.")
+        for col in ts:
+            lower, upper, lbi, ubi = self.timeseries_description.loc[
+                col, ["lower", "upper", "lower_included", "upper_included"]
+            ]
+            if lbi:
+                mask = (ts[col] < lower).fillna(False)
+            else:
+                mask = (ts[col] <= lower).fillna(False)
+            if ubi:
+                mask |= (ts[col] > upper).fillna(False)
+            else:
+                mask |= (ts[col] >= upper).fillna(False)
+            ts.loc[mask, col] = float("nan")
+        ts = ts.dropna(how="all", axis="index")
+
+        self.LOGGER.info("Creating Metadata Table.")
+        md = table[list(self.table_schemas["metadata"])]
+        self.LOGGER.info("Validating Metadata is constant.")
+        for col in md.columns:
+            assert all(md[col].dropna().groupby("patient").nunique() == 1)
+        md = md.groupby("patient").first()
+
+        self.LOGGER.info("Removing outliers from metadata.")
+        for col in md:
+            lower, upper, lbi, ubi = self.metadata_description.loc[
+                col, ["lower", "upper", "lower_included", "upper_included"]
+            ]
+            if lbi:
+                mask = (md[col] < lower).fillna(False)
+            else:
+                mask = (md[col] <= lower).fillna(False)
+            if ubi:
+                mask |= (md[col] > upper).fillna(False)
+            else:
+                mask |= (md[col] >= upper).fillna(False)
+            md.loc[mask, col] = float("nan")
+        md = md.dropna(how="all", axis="index")
+
+        self.LOGGER.info("Finalizing metadata table.")
+        md = (
+            md.assign(
+                HospAdmTime=md["HospAdmTime"].astype("float32") * np.timedelta64(1, "h")
+            )
+            .assign(Gender=md["Gender"].map({False: "female", True: "male"}))
+            .astype(self.table_schemas["metadata"])
+            .sort_index()
         )
-        self.serialize(timeseries, self.dataset_paths["timeseries"])
-        self.serialize(metadata, self.dataset_paths["metadata"])
+
+        self.serialize(ts, self.dataset_paths["timeseries"])
+        self.serialize(md, self.dataset_paths["metadata"])
+        return None

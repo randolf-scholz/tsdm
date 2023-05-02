@@ -536,7 +536,7 @@ class MultiTableDataset(
             type_hints = self.table_names
         else:
             return_type = get_return_typehint(self.clean_table)
-            type_hints = {key: return_type for key in self.table_names}
+            type_hints = {key: str(return_type) for key in self.table_names}
 
         return LazyDict(
             {
