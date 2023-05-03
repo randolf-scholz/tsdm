@@ -10,11 +10,11 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets import examples
-from tsdm.datasets.base import SingleTableDataset
+from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils.data import remove_outliers
 
 
-class InSilicoData(SingleTableDataset[DataFrame]):
+class InSilicoData(MultiTableDataset[str, DataFrame]):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -32,6 +32,7 @@ class InSilicoData(SingleTableDataset[DataFrame]):
     rawdata_hashes = {
         "in_silico.zip": "sha256:ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba",
     }
+    table_names = ["timeseries", "timeseries_description"]
     table_shapes = {"timeseries": (5206, 7)}
     table_schemas = {
         "timeseries": {
@@ -76,7 +77,7 @@ class InSilicoData(SingleTableDataset[DataFrame]):
             .set_index("variable")
         )
 
-    def clean_table(self) -> DataFrame:
+    def _timeseries(self) -> DataFrame:
         with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:
             dfs = {}
             for fname in files.namelist():
@@ -95,6 +96,13 @@ class InSilicoData(SingleTableDataset[DataFrame]):
         )
         ts = remove_outliers(ts, self._timeseries_description())
         return ts
+
+    def clean_table(self, key: str) -> DataFrame:
+        if key == "timeseries":
+            return self._timeseries()
+        if key == "timeseries_description":
+            return self._timeseries_description()
+        raise KeyError(f"Unknown table {key}.")
 
     def download_file(self, fname: str) -> None:
         r"""Download the dataset."""
