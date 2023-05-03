@@ -17,7 +17,6 @@ MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad se
 
 Preprocessing Details
 ---------------------
-
 emar_detail
     1. cast/drop the following columns to float:
         - dose_due
@@ -53,7 +52,6 @@ chartevents:
 
 Tables that may require unstacking
 ----------------------------------
-
 - icu/chartevents
 - icu/inputevents  <- has 3 of them...
 - icu/outputevents
@@ -74,6 +72,7 @@ from getpass import getpass
 
 import pandas as pd
 import pyarrow as pa
+from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
 
@@ -85,7 +84,8 @@ BOOL_TYPE = "bool"
 STRING_TYPE = "string"
 DICT_TYPE = pa.dictionary("int32", "string")
 
-
+TRUE_VALUES = ["Y", "Yes", "1"]
+FALSE_VALUES = ["N", "No", "0"]
 NULL_VALUES = [
     "        ",
     "       ",
@@ -115,8 +115,43 @@ NULL_VALUES = [
     "___.",
     "unknown",
 ]
-TRUE_VALUES = ["Y", "Yes", "1"]
-FALSE_VALUES = ["N", "No", "0"]
+
+
+disallow_nan_values = {
+    # fmt: off
+    "admissions"         : ["admit_provider_id"],
+    "d_hcpcs"            : (..., ["code", "short_description"]),
+    "d_icd_diagnoses"    : [],
+    "d_icd_procedures"   : [],
+    "d_labitems"         : [],
+    "diagnoses_icd"      : [],
+    "drgcodes"           : ["drg_severity", "drg_mortality"],
+    "emar"               : ["pharmacy_id", "enter_provider_id"],
+    "emar_detail"        : ...,
+    "hcpcsevents"        : [],
+    "labevents"          : ["storetime"],
+    "microbiologyevents" : ["storedate", "storetime", "spec_type_desc"],
+    "omr"                : [],
+    "patients"           : [],
+    "pharmacy"           : [],
+    "poe"                : ["order_provider_id"],
+    "poe_detail"         : [],
+    "prescriptions"      : [],
+    "procedures_icd"     : [],
+    "provider"           : [],
+    "services"           : [],
+    "transfers"          : [],
+    "caregiver"          : [],
+    "chartevents"        : ["valueuom"],
+    "d_items"            : [],
+    "datetimeevents"     : [],
+    "icustays"           : [],
+    "ingredientevents"   : [],
+    "inputevents"        : [],
+    "outputevents"       : [],
+    "procedureevents"    : [],
+    # fmt: on
+}
 
 
 class MIMIC_IV(MultiTableDataset):
@@ -140,50 +175,55 @@ class MIMIC_IV(MultiTableDataset):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
 
-    __version__ = "1.0"
-    rawdata_files = ["mimic-iv-1.0.zip"]
+    __version__ = "2.2"
+    rawdata_files = [f"mimic-iv-{__version__}.zip"]
     rawdata_hashes = {
         "mimic-iv-1.0.zip": "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d",
     }
 
-    # fmt: off
-    filelist = [
-        "mimic-iv-2.2/CHANGELOG.txt",
-        "mimic-iv-2.2/LICENSE.txt",
-        "mimic-iv-2.2/SHA256SUMS.txt",
-        "mimic-iv-2.2/hosp/admissions.csv.gz",
-        "mimic-iv-2.2/hosp/d_hcpcs.csv.gz",
-        "mimic-iv-2.2/hosp/d_icd_diagnoses.csv.gz",
-        "mimic-iv-2.2/hosp/d_icd_procedures.csv.gz",
-        "mimic-iv-2.2/hosp/d_labitems.csv.gz",
-        "mimic-iv-2.2/hosp/diagnoses_icd.csv.gz",
-        "mimic-iv-2.2/hosp/drgcodes.csv.gz",
-        "mimic-iv-2.2/hosp/emar.csv.gz",
-        "mimic-iv-2.2/hosp/emar_detail.csv.gz",
-        "mimic-iv-2.2/hosp/hcpcsevents.csv.gz",
-        "mimic-iv-2.2/hosp/labevents.csv.gz",
-        "mimic-iv-2.2/hosp/microbiologyevents.csv.gz",
-        "mimic-iv-2.2/hosp/omr.csv.gz",
-        "mimic-iv-2.2/hosp/patients.csv.gz",
-        "mimic-iv-2.2/hosp/pharmacy.csv.gz",
-        "mimic-iv-2.2/hosp/poe.csv.gz",
-        "mimic-iv-2.2/hosp/poe_detail.csv.gz",
-        "mimic-iv-2.2/hosp/prescriptions.csv.gz",
-        "mimic-iv-2.2/hosp/procedures_icd.csv.gz",
-        "mimic-iv-2.2/hosp/provider.csv.gz",
-        "mimic-iv-2.2/hosp/services.csv.gz",
-        "mimic-iv-2.2/hosp/transfers.csv.gz",
-        "mimic-iv-2.2/icu/caregiver.csv.gz",
-        "mimic-iv-2.2/icu/chartevents.csv.gz",
-        "mimic-iv-2.2/icu/d_items.csv.gz",
-        "mimic-iv-2.2/icu/datetimeevents.csv.gz",
-        "mimic-iv-2.2/icu/icustays.csv.gz",
-        "mimic-iv-2.2/icu/ingredientevents.csv.gz",
-        "mimic-iv-2.2/icu/inputevents.csv.gz",
-        "mimic-iv-2.2/icu/outputevents.csv.gz",
-        "mimic-iv-2.2/icu/procedureevents.csv.gz",
-    ]
-    # fmt: on
+    filelist = {
+        # fmt: off
+        "CHANGELOG"  : "mimic-iv-2.2/CHANGELOG.txt",
+        "LICENSE"    : "mimic-iv-2.2/LICENSE.txt",
+        "SHA256SUMS" : "mimic-iv-2.2/SHA256SUMS.txt",
+        "admissions"         : "mimic-iv-2.2/hosp/admissions.csv.gz",
+        "d_hcpcs"            : "mimic-iv-2.2/hosp/d_hcpcs.csv.gz",
+        "d_icd_diagnoses"    : "mimic-iv-2.2/hosp/d_icd_diagnoses.csv.gz",
+        "d_icd_procedures"   : "mimic-iv-2.2/hosp/d_icd_procedures.csv.gz",
+        "d_labitems"         : "mimic-iv-2.2/hosp/d_labitems.csv.gz",
+        "diagnoses_icd"      : "mimic-iv-2.2/hosp/diagnoses_icd.csv.gz",
+        "drgcodes"           : "mimic-iv-2.2/hosp/drgcodes.csv.gz",
+        "emar"               : "mimic-iv-2.2/hosp/emar.csv.gz",
+        "emar_detail"        : "mimic-iv-2.2/hosp/emar_detail.csv.gz",
+        "hcpcsevents"        : "mimic-iv-2.2/hosp/hcpcsevents.csv.gz",
+        "labevents"          : "mimic-iv-2.2/hosp/labevents.csv.gz",
+        "microbiologyevents" : "mimic-iv-2.2/hosp/microbiologyevents.csv.gz",
+        "omr"                : "mimic-iv-2.2/hosp/omr.csv.gz",
+        "patients"           : "mimic-iv-2.2/hosp/patients.csv.gz",
+        "pharmacy"           : "mimic-iv-2.2/hosp/pharmacy.csv.gz",
+        "poe"                : "mimic-iv-2.2/hosp/poe.csv.gz",
+        "poe_detail"         : "mimic-iv-2.2/hosp/poe_detail.csv.gz",
+        "prescriptions"      : "mimic-iv-2.2/hosp/prescriptions.csv.gz",
+        "procedures_icd"     : "mimic-iv-2.2/hosp/procedures_icd.csv.gz",
+        "provider"           : "mimic-iv-2.2/hosp/provider.csv.gz",
+        "services"           : "mimic-iv-2.2/hosp/services.csv.gz",
+        "transfers"          : "mimic-iv-2.2/hosp/transfers.csv.gz",
+        "caregiver"          : "mimic-iv-2.2/icu/caregiver.csv.gz",
+        "chartevents"        : "mimic-iv-2.2/icu/chartevents.csv.gz",
+        "d_items"            : "mimic-iv-2.2/icu/d_items.csv.gz",
+        "datetimeevents"     : "mimic-iv-2.2/icu/datetimeevents.csv.gz",
+        "icustays"           : "mimic-iv-2.2/icu/icustays.csv.gz",
+        "ingredientevents"   : "mimic-iv-2.2/icu/ingredientevents.csv.gz",
+        "inputevents"        : "mimic-iv-2.2/icu/inputevents.csv.gz",
+        "outputevents"       : "mimic-iv-2.2/icu/outputevents.csv.gz",
+        "procedureevents"    : "mimic-iv-2.2/icu/procedureevents.csv.gz",
+        # fmt: on
+    }
+    table_names = {
+        key: DataFrame
+        for key in filelist.keys()
+        if key not in ["CHANGELOG", "LICENSE", "SHA256SUMS"]
+    }
 
     KEYS = filelist
 
