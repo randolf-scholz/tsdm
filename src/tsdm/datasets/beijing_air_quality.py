@@ -148,8 +148,8 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         "timeseries_description": {
             # fmt: off
             "variable"       : "string[pyarrow]",
-            "lower"          : "float32[pyarrow]",
-            "upper"          : "float32[pyarrow]",
+            "lower_bound"    : "float32[pyarrow]",
+            "upper_bound"    : "float32[pyarrow]",
             "lower_included" : "bool[pyarrow]",
             "upper_included" : "bool[pyarrow]",
             "unit"           : "string[pyarrow]",
@@ -162,17 +162,17 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         data = [
             # fmt: off
             ("PM2.5", 0,    None, True, True, "μg/m³", "PM2.5 concentration"),
-            ("PM10",  0,    None, True, True, "μg/m³", "PM10 concentration"),
-            ("SO2",   0,    None, True, True, "μg/m³", "SO2 concentration"),
-            ("NO2",   0,    None, True, True, "μg/m³", "NO2 concentration"),
-            ("CO",    0,    None, True, True, "μg/m³", "CO concentration"),
-            ("O3",    0,    None, True, True, "μg/m³", "O3 concentration"),
-            ("TEMP",  None, None, True, True, "°C",    "temperature"),
-            ("PRES",  0,    None, True, True, "hPa",   "pressure"),
-            ("DEWP",  None, None, True, True, "°C",    "dew point"),
-            ("RAIN",  0,    None, True, True, "mm",    "precipitation"),
-            ("wd",    None, None, True, True, None,    "wind direction"),
-            ("WSPM",  0,    None, True, True, "m/s",   "wind speed"),
+            ("PM10",  0,    None, True, True, "μg/m³", "PM10 concentration" ),
+            ("SO2",   0,    None, True, True, "μg/m³", "SO2 concentration"  ),
+            ("NO2",   0,    None, True, True, "μg/m³", "NO2 concentration"  ),
+            ("CO",    0,    None, True, True, "μg/m³", "CO concentration"   ),
+            ("O3",    0,    None, True, True, "μg/m³", "O3 concentration"   ),
+            ("TEMP",  None, None, True, True, "°C",    "temperature"        ),
+            ("PRES",  0,    None, True, True, "hPa",   "pressure"           ),
+            ("DEWP",  None, None, True, True, "°C",    "dew point"          ),
+            ("RAIN",  0,    None, True, True, "mm",    "precipitation"      ),
+            ("wd",    None, None, True, True, None,    "wind direction"     ),
+            ("WSPM",  0,    None, True, True, "m/s",   "wind speed"         ),
             # fmt: on
         ]
 
