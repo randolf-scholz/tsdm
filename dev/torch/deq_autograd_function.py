@@ -5,7 +5,7 @@
 
 # %%
 import warnings
-from typing import Any, Callable, NamedTuple, Optional
+from typing import Callable, NamedTuple, Optional
 
 import numpy as np
 import torch
@@ -128,14 +128,21 @@ print(f"MSE between custom and reference solution: {diff}")
 
 # %%
 def fixed_point_iteration(
-    f: nn.Module,
+    f: Callable[tuple[Tensor, Tensor], Tensor],
     x: Tensor,
+    z0: Optional[Tensor] = None,
     maxiter: int = 100,
     atol: float = 10**-8,
     rtol: float = 10**-5,
 ) -> Tensor:
     """Solves $z⁎=f(x，z⁎)$ via FP iteration."""
-    z = torch.zeros(f.hidden_size)
+    if isinstance(f, nn.Module) and z0 is None:
+        z = torch.zeros(f.hidden_size)
+    elif z0 is None:
+        z = torch.zeros_like(x)
+    else:
+        z = z0
+
     for it in range(maxiter):
         z_new = f(x, z)
         converged = (z_new - z).norm() <= rtol * z.norm() + atol
@@ -242,92 +249,130 @@ for g1, g2 in zip(reference_gradients, gradients_deq):
 
 
 # %% [markdown]
-# ## 4. Using a custom autograd function (doesn't work)
+# ## 4. Using a custom autograd function - using [Chillee's](https://github.com/Chillee) suggestion
 
 
 # %%
-class DEQ_Layer(torch.autograd.Function):
-    @staticmethod
-    def forward(f: nn.Module, x: Tensor, **kwargs: Any) -> Tensor:
-        """Compute the fixed point $z⁎ = f(x, z⁎)$."""
-        zstar = fixed_point_iteration(f, x, **kwargs)
-        return zstar.requires_grad_()
+from functools import wraps
 
-    @staticmethod
-    def setup_context(ctx, inputs, output, **_):
-        f, x = inputs
-        zstar = output
-        ctx.save_for_backward(f, x, zstar)
+import torch.utils._pytree as pytree
 
-    @staticmethod
-    def backward(self, ctx, grad_output):
-        f, x, zstar = ctx.saved_tensors
 
-        with torch.enable_grad():
-            fstar = f(x, zstar)
+def rpartial(func, /, *fixed_args, **fixed_kwargs):
+    r"""Fix positional arguments from the right."""
 
-        # solve the linear system $(𝕀 - ∂f(x，z⁎)/∂z⁎)ᵀg = y$
-        L = lambda g: g - grad(fstar, zstar, g, retain_graph=True)[0]
-        gstar = cgs(L, grad_output).x
+    @wraps(func)
+    def _wrapper(*func_args, **func_kwargs):
+        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
 
-        # compute the outer grads
-        grad_f = [
-            (grad(fstar, w, gstar) if w.requires_grad else None) for w in f.parameters()
-        ]
-        grad_x = grad(fstar, x, gstar) if x.requires_grad else None
-        return grad_f, grad_x
+    return _wrapper
+
+
+def deq_layer_factory(
+    module: nn.Module,
+    fsolver=fixed_point_iteration,
+    fsolver_kwargs={},
+    bsolver=cgs,
+    bsolver_kwargs={},
+) -> Callable[[Tensor], Tensor]:
+    """Create functional deq_layer for the given module."""
+
+    params, param_spec = pytree.tree_flatten(
+        {**dict(module.named_parameters()), **dict(module.named_buffers())}
+    )
+
+    fsolver_kwargs = fsolver_kwargs | {"z0": torch.zeros(module.hidden_size)}
+
+    def func(x: Tensor, z: Tensor, *params_and_buffers) -> Tensor:
+        """Function call $f(x, z, θ)$."""
+        theta = pytree.tree_unflatten(params_and_buffers, param_spec)
+        return torch.func.functional_call(module, theta, (x, z))
+
+    class DEQ_Layer(torch.autograd.Function):
+        @staticmethod
+        def forward(x: Tensor, *params_and_buffers) -> Tensor:
+            """Compute the fixed point $z⁎ = f(x, z⁎)$."""
+            f = rpartial(func, *params_and_buffers)
+            return fsolver(f, x, **fsolver_kwargs)
+
+        @staticmethod
+        def setup_context(ctx, inputs, output):
+            x, *params_and_buffers = inputs
+            zstar = output
+            f = rpartial(func, *params_and_buffers)
+
+            with torch.enable_grad():
+                # NOTE: without detach, we get an infinite loop.
+                zstar = zstar.detach().requires_grad_()
+                fstar = f(x, zstar)
+
+            ctx.save_for_backward(fstar, zstar, x)
+
+        @staticmethod
+        def backward(ctx, grad_output):
+            fstar, zstar, x = ctx.saved_tensors
+
+            # solve the linear system $(𝕀 - ∂f(x，z⁎)/∂z⁎)ᵀg = y$
+            L = lambda g: g - grad(fstar, zstar, g, retain_graph=True)[0]
+            gstar = bsolver(L, grad_output, **bsolver_kwargs).x
+
+            # compute the outer grads
+            grad_x = (
+                grad(fstar, x, gstar, retain_graph=True) if x.requires_grad else None
+            )
+            grad_f = grad(fstar, params, gstar)
+            return grad_x, *grad_f
+
+    return rpartial(DEQ_Layer.apply, *params)
 
 
 # %%
+deq_layer = deq_layer_factory(model)
+
 model.zero_grad(set_to_none=True)
-
-# forward
-y = DEQ_Layer.apply(model, x).norm().pow(2)
-
-# backward
+y = deq_layer(x).norm().pow(2)
 y.backward()
-print([w.grad for w in model.parameters()])  # ✘ no gradients...
-model.zero_grad()
 
+gradients_function = [w.grad for w in model.parameters()]
+print("MSE between automatic gradients to manual gradients:")
+for g1, g2 in zip(reference_gradients, gradients_function):
+    print((g1 - g2).pow(2).mean())
 
 # %% [markdown]
-# ## 5. Proposed Solution via 'nn.Module.backward'
+# ## 5. Wrapping layer factory into an `nn.Module`
 
 
 # %%
-class DEQFixedPoint(nn.Module):
-    def __init__(self, f, solver):
+class DEQ_Module(nn.Module):
+    def __init__(
+        self,
+        f,
+        fsolver=fixed_point_iteration,
+        fsolver_kwargs={},
+        bsolver=cgs,
+        bsolver_kwargs={},
+    ) -> None:
         super().__init__()
         self.f = f
-        self.solver = solver
+        self.fsolver = rpartial(fsolver, **fsolver_kwargs)
+        self.bsolver = rpartial(bsolver, **bsolver_kwargs)
+        self.deq_layer = deq_layer_factory(
+            self.f, fsolver=self.fsolver, bsolver=self.bsolver
+        )
 
     def forward(self, x: Tensor) -> Tensor:
-        return fixed_point_iteration(self.f, x)
+        return self.deq_layer(x)
 
-    def backward(self, outer_grad):
-        """Computes gradients for inputs of forward.
 
-        Since this a nn.Module, we ought to compute gradients both for 'self' and 'x'
-        """
-        # let's just assume these are automatically captured somehow
-        # alternatively, one could make use of buffers.
-        x = self.forward.inputs
-        z = self.forward.outputs
+DEQ = DEQ_Module(model)
 
-        # backward step 1: solve for $g ≔ \Bigl(𝕀 - \frac{∂f}{∂z⁎}\Bigr)^{-⊤} y$
-        zstar = z.requires_grad_()
-        fstar = self.f(x, zstar)
-        L = lambda g: g - grad(fstar, zstar, g, retain_graph=True)[0]
-        gstar = self.solver(L, outer_grad)
-
-        # compute the outer grads
-        # grad_self = grad(fstar, self, gstar)  # <- would be nice to be able to do this.
-        grad_self = [
-            (grad(fstar, w, gstar) if w.requires_grad else None)
-            for w in self.parameters()
-        ]
-        grad_x = grad(fstar, x, gstar) if x.requires_grad else None
-        return grad_self, grad_x
+DEQ.zero_grad(set_to_none=True)
+y = DEQ(x)
+y.norm().pow(2).backward()
+gradients_module = [w.grad for w in DEQ.parameters()]
+print("MSE between automatic gradients to manual gradients:")
+for g1, g2 in zip(reference_gradients, gradients_module):
+    print((g1 - g2).pow(2).mean())
 
 
 # %% [markdown]
