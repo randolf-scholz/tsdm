@@ -1,15 +1,22 @@
 """Context managers for use in decorators."""
 
 __all__ = [
+    # Protocol
+    "ContextManager",
+    # Classes
     "ray_cluster",
+    "timer",
 ]
 
+import gc
 import importlib
 import logging
 import os
+import sys
 from contextlib import ContextDecorator
+from time import perf_counter_ns
 from types import ModuleType, TracebackType
-from typing import ClassVar, Literal, Optional
+from typing import ClassVar, ContextManager, Literal, Optional
 
 from typing_extensions import Self
 
@@ -51,4 +58,41 @@ class ray_cluster(ContextDecorator):
         if self.ray is not None:
             self.LOGGER.warning("Tearing down ray cluster.")
             self.ray.shutdown()
+        return False
+
+
+class timer(ContextDecorator):
+    """Context manager for timing a block of code."""
+
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")  # type: ignore[name-defined]
+
+    start_time: int
+    """Start time of the timer."""
+    end_time: int
+    """End time of the timer."""
+    elapsed: float
+    """Elapsed time of the timer in seconds."""
+
+    def __enter__(self) -> Self:
+        self.LOGGER.info("Flushing pending writes.")
+        sys.stdout.flush()
+        sys.stderr.flush()
+        self.LOGGER.info("Disabling garbage collection.")
+        gc.collect()
+        gc.disable()
+        self.LOGGER.info("Starting timer.")
+        self.start_time = perf_counter_ns()
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> Literal[False]:
+        self.end_time = perf_counter_ns()
+        self.elapsed = (self.end_time - self.start_time) / 10**9
+        self.LOGGER.info("Stopped timer.")
+        gc.enable()
+        self.LOGGER.info("Re-Enabled garbage collection.")
         return False
