@@ -4,10 +4,14 @@ r"""Submodule containing general purpose decorators.
 """
 
 __all__ = [
-    # Classes
-    # Constants
+    # Protocols
     "Decorator",
+    "ClassDecorator",
+    "ContextManager",
+    # Constants
     "DECORATORS",
+    "CONTEXT_MANAGERS",
+    "CLASS_DECORATORS",
     # Functions
     "IterItems",
     "IterKeys",
@@ -22,13 +26,13 @@ __all__ = [
     # "sphinx_value",
     # context managers
     "ray_cluster",
+    "timer",
 ]
 
-from collections.abc import Callable
-from typing import Final, TypeAlias
-
-from tsdm.utils.decorators._contextmanagers import ray_cluster
+from tsdm.utils.decorators._contextmanagers import ContextManager, ray_cluster, timer
 from tsdm.utils.decorators._decorators import (
+    ClassDecorator,
+    Decorator,
     IterItems,
     IterKeys,
     autojit,
@@ -41,13 +45,15 @@ from tsdm.utils.decorators._decorators import (
     wrap_method,
 )
 
-Decorator: TypeAlias = Callable[..., Callable]
-r"""Type hint for dataset."""
+CONTEXT_MANAGERS: dict[str, type[ContextManager]] = {
+    "ray_cluster": ray_cluster,
+    "timer": timer,
+}
+r"""Dictionary of all available context managers."""
 
-DECORATORS: Final[dict[str, Decorator]] = {
+DECORATORS: dict[str, Decorator] = {
     "IterItems": IterItems,
     "IterKeys": IterKeys,
-    "autojit": autojit,
     "decorator": decorator,
     "named_return": return_namedtuple,
     "timefun": timefun,
@@ -59,4 +65,10 @@ DECORATORS: Final[dict[str, Decorator]] = {
 }
 r"""Dictionary of all available decorators."""
 
-del Final, TypeAlias, Callable
+
+CLASS_DECORATORS: dict[str, ClassDecorator] = {
+    "autojit": autojit,
+}
+r"""Dictionary of all available class decorators."""
+
+del ContextManager

@@ -2,6 +2,8 @@ r"""Submodule containing general purpose decorators."""
 
 __all__ = [
     # Classes
+    "Decorator",
+    "ClassDecorator",
     # Functions
     "decorator",
     # "sphinx_value",
@@ -38,6 +40,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Protocol,
     cast,
     overload,
 )
@@ -77,6 +80,20 @@ PARAM_TYPES = (
     (KEYWORD_ONLY, False),
     (VAR_KEYWORD, True),
 )
+
+
+class Decorator(Protocol):
+    r"""Decorator Protocol."""
+
+    def __call__(self, func: Callable, /) -> Callable:
+        r"""Decorate a function."""
+
+
+class ClassDecorator(Protocol):
+    r"""Class Decorator Protocol."""
+
+    def __call__(self, cls: type, /) -> type:
+        r"""Decorate a class."""
 
 
 def collect_exit_points(func: Callable) -> list[ast.Return]:
