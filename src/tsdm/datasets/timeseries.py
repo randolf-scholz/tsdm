@@ -66,6 +66,7 @@ class TimeSeriesDataset(TorchDataset[Series]):
 
     def __getitem__(self, key):
         r"""Get item from timeseries."""
+        # we might get an index object, or a slice, or boolean mask...
         return self.timeseries.loc[key]
 
     def __iter__(self) -> Iterator[Series]:
