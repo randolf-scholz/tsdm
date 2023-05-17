@@ -25,7 +25,11 @@ def test_insilico_task(SplitID=(0, "train")):
 
     sampler = task.samplers[SplitID]
     key = next(iter(sampler))
-    sample = task.generators[SplitID][key]
+    assert isinstance(key, tuple)
+    fold = task.generators[SplitID]
+    print("key", type(key), key)
+    print("fold", type(fold), fold)
+    sample = fold[key]
     assert isinstance(sample, tuple)
 
     dataloader = task.dataloaders[SplitID]

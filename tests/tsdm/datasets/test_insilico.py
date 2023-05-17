@@ -16,8 +16,8 @@ def test_caching() -> None:
     LOGGER.info("Testing caching.")
 
     ds = InSilicoData(initialize=False)
-    _, pre_cache_time = timefun(lambda: ds.table, append=True)()
-    _, post_cache_time = timefun(lambda: ds.table, append=True)()
+    _, pre_cache_time = timefun(lambda: ds.timeseries, append=True)()
+    _, post_cache_time = timefun(lambda: ds.timeseries, append=True)()
 
     LOGGER.info("%f, %f", pre_cache_time, post_cache_time)
 
