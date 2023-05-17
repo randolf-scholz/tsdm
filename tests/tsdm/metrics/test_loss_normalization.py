@@ -26,8 +26,8 @@ LOSSES = [MSE, RMSE, MAE]
 @pytest.mark.slow
 @pytest.mark.flaky(reruns=3)
 @pytest.mark.parametrize("loss", LOSSES)
-@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES)
-@pytest.mark.parametrize("batch_shape", BATCH_SHAPES)
+@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES, ids=lambda cs: f"{cs=}")
+@pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
 def test_loss_normalization(
     loss: type[BaseLoss],
     batch_shape: tuple[int, ...],
@@ -57,9 +57,9 @@ def test_loss_normalization(
 
 @pytest.mark.slow
 @pytest.mark.flaky(reruns=3)
-@pytest.mark.parametrize("time_shape", TIME_SHAPES)
-@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES)
-@pytest.mark.parametrize("batch_shape", BATCH_SHAPES)
+@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES, ids=lambda cs: f"{cs=}")
+@pytest.mark.parametrize("time_shape", TIME_SHAPES, ids=lambda ts: f"{ts=}")
+@pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
 def test_time_loss_normalization(
     batch_shape: tuple[int, ...],
     time_shape: tuple[int, ...],
