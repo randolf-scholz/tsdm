@@ -229,7 +229,6 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
     Format Specification
     ~~~~~~~~~~~~~~~~~~~~
-
     - column-sparse
     - separate x and u and y
     - masked: In this format, two equimodal copies of the data are stored with appropriate masking.
@@ -354,6 +353,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         ts_observed: DataFrame = tsd[observation_horizon]
         ts_forecast: DataFrame = tsd[forecasting_horizon]
         joint_horizon_index = ts_observed.index.union(ts_forecast.index)
+        print(f"{type(joint_horizon_index)=}")
         ts = tsd[joint_horizon_index]
         u: Optional[DataFrame] = None
 
