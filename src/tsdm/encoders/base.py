@@ -84,7 +84,7 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the Encoder."""
 
-    requires_fit: bool = NotImplemented
+    requires_fit: bool = True
     r"""Whether the encoder requires fitting."""
 
     _is_fitted: bool = False
