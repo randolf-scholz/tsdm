@@ -121,26 +121,30 @@ class Config(metaclass=ConfigMeta):
     @cached_property
     def CONFIG_FILE(self) -> dict:
         r"""Return dictionary containing basic configuration of TSDM."""
-        with resources.open_text(config_files, "config.yaml") as file:
+        path = resources.files(config_files) / "config.yaml"
+        with path.open("r", encoding="utf8") as file:
             # with open(file, "r", encoding="utf8") as f:
             return yaml.safe_load(file)
 
     @cached_property
     def MODELS(self) -> dict:
         r"""Dictionary containing sources of the available models."""
-        with resources.open_text(config_files, "models.yaml") as file:
+        path = resources.files(config_files) / "models.yaml"
+        with path.open("r", encoding="utf8") as file:
             return yaml.safe_load(file)
 
     @cached_property
     def DATASETS(self) -> dict:
         r"""Dictionary containing sources of the available datasets."""
-        with resources.open_text(config_files, "datasets.yaml") as file:
+        path = resources.files(config_files) / "datasets.yaml"
+        with path.open("r", encoding="utf8") as file:
             return yaml.safe_load(file)
 
     @cached_property
     def HASHES(self) -> dict:
         r"""Dictionary containing hashes of the available datasets."""
-        with resources.open_text(config_files, "hashes.yaml") as file:
+        path = resources.files(config_files) / "hashes.yaml"
+        with path.open("r", encoding="utf8") as file:
             return yaml.safe_load(file)
 
 
