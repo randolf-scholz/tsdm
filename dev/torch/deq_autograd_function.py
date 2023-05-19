@@ -409,3 +409,5 @@ for g1, g2 in zip(reference_gradients, gradients_module):
 # 2. **Backward:** Given outer gradients y, we need  to compute the gradients $\frac{∂z⁎}{∂θ}$.
 #    1. Compute solution $g⁎$ of the linear system $g+\text{VJP}(f, z⁎，g) = y$.
 #    2. Compute $\text{VJP(z⁎，θ，y)} = \text{VJP}(f，θ，g⁎)$.In summary, the steps for computing the gradients are:
+
+# %%
