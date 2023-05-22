@@ -65,7 +65,7 @@ class InSilicoData(MultiTableDataset[str, DataFrame]):
             ("Biomass"  , 0, None, True, True, "g/L", None),
             ("Substrate", 0, None, True, True, "g/L", None),
             ("Acetate"  , 0, None, True, True, "g/L", None),
-            ("DOTm"     , 0, 1,    True, True, "%",   None),
+            ("DOTm"     , 0, 100,  True, True, "%",   None),
             ("Product"  , 0, None, True, True, "g/L", None),
             ("Volume"   , 0, None, True, True, "L",   None),
             ("Feed"     , 0, None, True, True, "μL",  None),
