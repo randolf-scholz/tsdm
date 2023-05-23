@@ -25,7 +25,7 @@ git remote set-url --add --push hildesheim $GITHUB
 git remote set-url --add --push hildesheim $BERLIN
 
 echo -e "\nAdding remote ${GITHUB}..."
-git remote add github GITHUB
+git remote add github $GITHUB
 git remote set-url --add --push github $GITHUB
 git remote set-url --add --push github $BERLIN
 git remote set-url --add --push github $HILDESHEIM
