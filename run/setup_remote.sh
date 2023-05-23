@@ -15,7 +15,7 @@ echo -e "\nAdding remote ${BERLIN}..."
 git remote add berlin $BERLIN
 git remote set-url --add --push berlin $BERLIN
 git remote set-url --add --push berlin $HILDESHEIM
-git remote set-url --add --push github $GITHUB
+git remote set-url --add --push berlin $GITHUB
 
 
 echo -e "\nAdding remote ${HILDESHEIM}..."
