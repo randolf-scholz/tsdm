@@ -25,21 +25,20 @@ classifiers = [
 ]
 
 
-
 dependencies = [
-    "h5py  >=3.8.0",
-    "matplotlib  >=3.7.1",
-    "numpy  >=1.24.3",
-    "pandas  >=2.0.1",
-    "pillow  >=9.5.0",
-    "pyarrow  >=12.0.0",
-    "pyyaml  >=6.0",
-    "scikit-learn >=1.2.2",
-    "scipy  >=1.10.1",
-    "tensorboard  >=2.13.0",
-    "torch  >=2.0.1",
-    "tqdm  >=4.65.0",
-    "typing-extensions >=4.3",
+    "h5py >= 3.8.0",
+    "matplotlib >= 3.7.1",
+    "numpy >= 1.24.3",
+    "pandas >= 2.0.1",
+    "pillow >= 9.5.0",
+    "pyarrow >= 12.0.0",
+    "pyyaml >= 6.0",
+    "scikit-learn >= 1.2.2",
+    "scipy >= 1.10.1",
+    "tensorboard >= 2.13.0",
+    "torch >= 2.0.1",
+    "tqdm >= 4.65.0",
+    "typing-extensions >= 4.3",
 ]
 
 [project.optional-dependencies]
@@ -437,25 +436,25 @@ openpyxl = ">=3.1.2"
 perflint = ">=0.7.3"
 piccolo-theme = ">=0.15.0"
 pip = ">=23.1.2"
-pre-commit = ">=3.3.1"
+pre-commit = ">=3.3.2"
 psutil = ">=5.9.5"
 pyall = ">=0.3.5"
 pybadges = ">=3.0.0"
 pycodestyle = ">=2.10.0"
 pydata-sphinx-theme = ">=0.13.3"
-pydeps = ">=1.12.5"
+pydeps = ">=1.12.7"
 pydocstyle = ">=6.3.0"
 pyflakes = ">=3.0.1"
 pygments = ">=2.15.1"
 pylint = ">=2.17.4"
 pylint-gitlab = ">=1.2.0"
 pyre-check = ">=0.9.18"
-pyright = ">=1.1.308"
+pyright = ">=1.1.309"
 pytest = ">=7.3.1"
 pytest-cov = ">=4.0.0"
 pytest-rerunfailures = ">=11.1.2"
-ruff = ">=0.0.267"
-setuptools = ">=67.7.2"
+ruff = ">=0.0.269"
+setuptools = ">=67.8.0"
 slotscheck = ">=0.16.5"
 sphinx = ">=7.0.1"
 sphinx-autoapi = ">=2.1.0"
@@ -472,8 +471,8 @@ types-protobuf = ">=4.23.0"
 types-psutil = ">=5.9.5"
 types-pygments = ">=2.15.0"
 types-pyyaml = ">=6.0.12"
-types-requests = ">=2.30.0"
-types-setuptools = ">=67.7.0"
+types-requests = ">=2.31.0"
+types-setuptools = ">=67.8.0"
 types-six = ">=1.16.21"
 types-typing-extensions = ">=3.7.3"
 types-urllib3 = ">=1.26.25"

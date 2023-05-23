@@ -487,7 +487,7 @@ class KIWI_RUNS(MultiTableDataset):
 
         # Remove data outside of time bounds
         ts = timeseries.reset_index("measurement_time")
-        ts = ts.join(self.timeindex_description[["start_time", "end_time"]])
+        ts = ts.join(self.metadata[["start_time", "end_time"]])
         time = ts["measurement_time"]
         mask = (ts["start_time"] <= time) & (time <= ts["end_time"])
         print(f"Removing {(~mask).mean():.2%} of data that does not match tmin/tmax")
