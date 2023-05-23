@@ -81,19 +81,12 @@ def test_combined_encoder(SplitID=(0, "train")):
         @ Standardizer()
         @ FrameEncoder(
             column_encoders=column_encoders,
-            index_encoders={
-                # "run_id": IdentityEncoder(),
-                # "experiment_id": IdentityEncoder(),
-                "measurement_time": MinMaxScaler()
-                @ TimeDeltaEncoder(),
-            },
+            index_encoders={"measurement_time": MinMaxScaler() @ TimeDeltaEncoder()},
         )
     )
 
-    # fit encoder to the whole dataset
-    encoder.fit(ts)
+    encoder.fit(ts)  # fit encoder to the whole dataset
     encoded = encoder.encode(ts)
-
     decoded = encoder.decode(encoded)
     MAD = (decoded - ts).abs().mean().mean()
     assert all(decoded.isna() == ts.isna()), "NaN pattern mismatch"
@@ -142,3 +135,26 @@ def _main() -> None:
 
 if __name__ == "__main__":
     _main()
+
+# encoder = (
+#    FrameAsDict(
+#        groups={
+#            "key": ["run_id", "experiment_id"],
+#            "T": ["measurement_time"],
+#            "X": ...,
+#        },
+#        dtypes={"T": "float32", "X": "float32"},
+#        encode_index=True,
+#    )
+#    @ Standardizer()
+#    @ FrameEncoder(
+#        column_encoders=column_encoders,
+#        index_encoders={
+#            "measurement_time": MinMaxScaler() @ TimeDeltaEncoder(),
+#        },
+#    )
+# )
+# encoder.fit(ts)  # fit encoder to the whole dataset
+# encoded = encoder.encode(ts)
+# decoded = encoder.decode(encoded)
+#
