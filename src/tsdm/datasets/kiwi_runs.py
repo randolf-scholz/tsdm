@@ -103,21 +103,21 @@ column_dtypes = {
     #     "Feed_dextrine_cum_setpoints" : "Int32",
     #     "Temperature"                 : "Int32",
     # },
-    "metadata_features" : {
+    "metadata_description" : {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
         "dtype" : "string[pyarrow]",
         "lower" : "Float32",
         "upper" : "Float32",
     },
-    "value_features" : {
+    "timeseries_description" : {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
         "dtype" : "string[pyarrow]",
         "lower" : "Float32",
         "upper" : "Float32",
     },
-    "time_features": {
+    "timeindex_description": {
         "unit"  : "string[pyarrow]",
         "scale" : "string[pyarrow]",
         "dtype" : "string[pyarrow]",
@@ -214,9 +214,9 @@ class KIWI_RUNS(MultiTableDataset):
 
     - timeseries
     - metadata
-    - time_features
-    - value_features
-    - metadata_features
+    - timeseries_description
+    - timeseries_description
+    - metadata_description
 
     Rawdata Format:
 
@@ -247,17 +247,17 @@ class KIWI_RUNS(MultiTableDataset):
     table_names = [
         "timeseries",
         "metadata",
-        "time_features",
-        "value_features",
-        "metadata_features",
+        "timeseries_description",
+        "metadata_description",
+        "timeindex_description",
     ]
 
     table_hashes = {
-        "timeseries": "pandas:7423431600366696406",
-        "metadata": "pandas:2037390744336738142",
-        "time_features": "pandas:4775909302393294764",
-        "value_features": "pandas:2922380847858661758",
-        "metadata_features": "pandas:4215379263850919231",
+        "timeseries": "pandas:BUOOC5Z2OKCIW",
+        "metadata": "pandas:PRI8003H72CW",
+        "timeseries_description": "pandas:WHK7T51NT1HS",
+        "metadata_description": "pandas:6A8LIT5JTX99",
+        "timeindex_description": "pandas:BAKJST6Y68SAM",
     }
 
     rawdata_files = ["kiwi_experiments.pk"]
@@ -270,10 +270,7 @@ class KIWI_RUNS(MultiTableDataset):
     timeindex_description: DataFrame
     timeseries_description: DataFrame
     metadata_description: DataFrame
-
     metaindex_description = None
-    global_metadata = None
-    global_features = None
 
     @property
     def index(self) -> Index:
@@ -281,9 +278,14 @@ class KIWI_RUNS(MultiTableDataset):
         return self.metadata.index
 
     def clean_table(self, key: str) -> None:
-        if key in ["timeseries", "value_features"]:
+        if key in ["timeseries", "timeseries_description"]:
             self.clean_timeseries()
-        if key in ["index", "metadata", "time_features", "metadata_features"]:
+        if key in [
+            # "index",
+            "metadata",
+            "metadata_description",
+            "timeindex_description",
+        ]:
             self.clean_metadata()
 
     def clean_metadata(self) -> None:
@@ -314,19 +316,23 @@ class KIWI_RUNS(MultiTableDataset):
         # fix datatypes
         metadata = metadata.astype(column_dtypes["metadata"])
 
-        # time_features
-        time_features = metadata[["start_time", "end_time"]].copy()
-        time_features["lower"] = (
-            time_features["start_time"] - time_features["start_time"]
+        # timeseries_description
+        timeindex_description = metadata[["start_time", "end_time"]].copy()
+        timeindex_description["lower"] = (
+            timeindex_description["start_time"] - timeindex_description["start_time"]
         )
-        time_features["upper"] = time_features["end_time"] - time_features["start_time"]
-        time_features["unit"] = "s"  # time is rounded to seconds
-        time_features["dtype"] = "datetime64[ns]"
-        time_features["scale"] = "linear"
-        time_features = time_features[
+        timeindex_description["upper"] = (
+            timeindex_description["end_time"] - timeindex_description["start_time"]
+        )
+        timeindex_description["unit"] = "s"  # time is rounded to seconds
+        timeindex_description["dtype"] = "datetime64[ns]"
+        timeindex_description["scale"] = "linear"
+        timeindex_description = timeindex_description[
             ["unit", "scale", "dtype", "lower", "upper", "start_time", "end_time"]
         ]
-        time_features = time_features.astype(column_dtypes["time_features"])
+        timeindex_description = timeindex_description.astype(
+            column_dtypes["timeindex_description"]
+        )
 
         # select columns
         columns = [key for key, val in selected_columns["metadata"].items() if val]
@@ -341,7 +347,7 @@ class KIWI_RUNS(MultiTableDataset):
         units["μ_set"] = "%"
 
         # fmt: off
-        metadata_features_dict = {
+        metadata_description_dict = {
             # column                   [unit,  scale,      dtype, lower , upper]
             "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
             "container_number"       : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
@@ -357,21 +363,23 @@ class KIWI_RUNS(MultiTableDataset):
         }
         # fmt: on
 
-        metadata_features = DataFrame.from_dict(
-            metadata_features_dict,
+        metadata_description = DataFrame.from_dict(
+            metadata_description_dict,
             orient="index",
-            columns=column_dtypes["metadata_features"],
+            columns=column_dtypes["metadata_description"],
         )
-        metadata_features["dtype"] = metadata.dtypes.astype("string[pyarrow]")
-        metadata_features = metadata_features[
+        metadata_description["dtype"] = metadata.dtypes.astype("string[pyarrow]")
+        metadata_description = metadata_description[
             ["unit", "scale", "dtype", "lower", "upper"]
         ]
-        metadata_features = metadata_features.astype(column_dtypes["metadata_features"])
+        metadata_description = metadata_description.astype(
+            column_dtypes["metadata_description"]
+        )
 
         # Remove values out of bounds
         for col in metadata.columns:
-            lower: Series = metadata_features.loc[col, "lower"]
-            upper: Series = metadata_features.loc[col, "upper"]
+            lower: Series = metadata_description.loc[col, "lower"]
+            upper: Series = metadata_description.loc[col, "upper"]
             value = metadata[col]
             mask = (lower > value) | (value > upper)
             if mask.any():
@@ -379,12 +387,14 @@ class KIWI_RUNS(MultiTableDataset):
                     f"Removing {mask.mean():.2%} of data that does not match {col} bounds"
                 )
                 metadata.loc[mask, col] = pd.NA
-
-        # Finalize tables
-        time_features.to_parquet(self.dataset_paths["time_features"])
         metadata = metadata.dropna(how="all")
-        metadata.to_parquet(self.dataset_paths["metadata"])
-        metadata_features.to_parquet(self.dataset_paths["metadata_features"])
+
+        # Serialize tables
+        self.serialize(
+            timeindex_description, self.dataset_paths["timeindex_description"]
+        )
+        self.serialize(metadata, self.dataset_paths["metadata"])
+        self.serialize(metadata_description, self.dataset_paths["metadata_description"])
 
     def clean_timeseries(self) -> None:
         r"""Clean timeseries data and save to disk."""
@@ -445,7 +455,7 @@ class KIWI_RUNS(MultiTableDataset):
 
         # Timeseries Features
         # fmt: off
-        value_features_dict = {
+        timeseries_description_dict = {
             "Acetate"                       : ["%",      "percent",  pd.NA, 0,   100      ],
             "Base"                          : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
             "Cumulated_feed_volume_glucose" : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
@@ -464,19 +474,21 @@ class KIWI_RUNS(MultiTableDataset):
         }
         # fmt: on
 
-        value_features = DataFrame.from_dict(
-            value_features_dict,
+        timeseries_description = DataFrame.from_dict(
+            timeseries_description_dict,
             orient="index",
-            columns=column_dtypes["value_features"],
+            columns=column_dtypes["timeseries_description"],
         )
-        value_features["dtype"] = timeseries.dtypes.astype("string[pyarrow]")
-        value_features = value_features.astype(column_dtypes["value_features"])
-        value_features = value_features.loc[timeseries.columns]
+        timeseries_description["dtype"] = timeseries.dtypes.astype("string[pyarrow]")
+        timeseries_description = timeseries_description.astype(
+            column_dtypes["timeseries_description"]
+        )
+        timeseries_description = timeseries_description.loc[timeseries.columns]
 
         # Remove values out of bounds
         for col in timeseries.columns:
-            lower: Series = value_features.loc[col, "lower"]
-            upper: Series = value_features.loc[col, "upper"]
+            lower: Series = timeseries_description.loc[col, "lower"]
+            upper: Series = timeseries_description.loc[col, "upper"]
             value = timeseries[col]
             mask = (lower > value) | (value > upper)
             if mask.any():
@@ -487,7 +499,7 @@ class KIWI_RUNS(MultiTableDataset):
 
         # Remove data outside of time bounds
         ts = timeseries.reset_index("measurement_time")
-        ts = ts.join(self.metadata[["start_time", "end_time"]])
+        ts = ts.join(self.timeindex_description[["start_time", "end_time"]])
         time = ts["measurement_time"]
         mask = (ts["start_time"] <= time) & (time <= ts["end_time"])
         print(f"Removing {(~mask).mean():.2%} of data that does not match tmin/tmax")
@@ -508,15 +520,15 @@ class KIWI_RUNS(MultiTableDataset):
             .reindex(timeseries.columns, axis=1)
             .reset_index(level=3, drop=True)
             .astype(timeseries.dtypes)
+            .dropna(how="all")
+            .sort_values(["run_id", "experiment_id", "measurement_time"])
         )
 
-        # Finalize Tables
-        value_features.to_parquet(self.dataset_paths["value_features"])
-        timeseries = timeseries.dropna(how="all")
-        timeseries = timeseries.sort_values(
-            ["run_id", "experiment_id", "measurement_time"]
+        # Serialize Tables
+        self.serialize(timeseries, self.dataset_paths["timeseries"])
+        self.serialize(
+            timeseries_description, self.dataset_paths["timeseries_description"]
         )
-        timeseries.to_parquet(self.dataset_paths["timeseries"])
 
 
 class KiwiDataset(TimeSeriesCollection):
@@ -551,7 +563,7 @@ class KiwiDataset(TimeSeriesCollection):
 # INFO:tsdm.datasets.kiwi_runs.KIWI_RUNS:Adding keys as attributes.
 # timeseries '7423431600366696406'
 # 'metadata.parquet' '2037390744336738142'
-#  'time_features.parquet''4775909302393294764'
-# 'value_features.parquet''-6386491732663357532'
-# 'metadata_features.parquet'  '4215379263850919231'
+#  'timeseries_description.parquet''4775909302393294764'
+# 'timeseries_description.parquet''-6386491732663357532'
+# 'metadata_description.parquet'  '4215379263850919231'
 # 'filehash='4215379263850919231''.

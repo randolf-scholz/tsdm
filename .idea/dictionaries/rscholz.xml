@@ -391,6 +391,7 @@
       <w>timedeltas</w>
       <w>timefeatures</w>
       <w>timefun</w>
+      <w>timeindex</w>
       <w>timepoints</w>
       <w>timeseries</w>
       <w>timeslices</w>
