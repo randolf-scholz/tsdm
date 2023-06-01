@@ -6,21 +6,21 @@ import logging
 import pytest
 from pandas import DataFrame
 
-from tsdm.datasets import Physionet2012
+from tsdm.datasets import PhysioNet2012
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
 @pytest.mark.skip("fails - PhysioNet2012 needs to be fixed")
-def test_physionet_2012():
+def test_physionet_2012() -> None:
     """Test the PhysioNet 2012 dataset."""
-    LOGGER = __logger__.getChild(Physionet2012.__name__)
+    LOGGER = __logger__.getChild(PhysioNet2012.__name__)
     LOGGER.info("Testing.")
-    dataset = Physionet2012().dataset
-    metadata, timeseries = dataset["A"]
-    assert isinstance(metadata, DataFrame)
-    assert isinstance(timeseries, DataFrame)
+    ds = PhysioNet2012()
+
+    assert isinstance(ds.metadata, DataFrame)
+    assert isinstance(ds.timeseries, DataFrame)
 
 
 def _main() -> None:

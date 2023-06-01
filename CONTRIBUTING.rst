@@ -76,3 +76,16 @@ Getting started
      git push origin feature-xyz
 
 11. Create a merge request
+
+
+Multiple Origins Push
+---------------------
+
+The project is located at
+
+ - https://software.ismll.uni-hildesheim.de/ISMLL-internal/time-series/tsdm
+ - https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm
+
+To push to both repositories run the `setup_remote` script:
+
+```./run/setup_remote.sh```

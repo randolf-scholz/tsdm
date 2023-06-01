@@ -20,15 +20,13 @@ __all__ = ["MIMIC_IV"]
 import os
 import subprocess
 from getpass import getpass
-from pathlib import Path
-from typing import Any
 
 import pandas as pd
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
-class MIMIC_IV(MultiFrameDataset):
+class MIMIC_IV(MultiTableDataset):
     r"""MIMIC-IV Clinical Database.
 
     Retrospectively collected medical data has the opportunity to improve patient care through knowledge discovery and
@@ -48,11 +46,12 @@ class MIMIC_IV(MultiFrameDataset):
     INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
-    VERSION = r"1.0"
-    RAWDATA_HASH = "dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
 
-    rawdata_files = "mimic-iv-1.0.zip"
-    rawdata_paths: Path
+    __version__ = "1.0"
+    rawdata_files = ["mimic-iv-1.0.zip"]
+    rawdata_hashes = {
+        "mimic-iv-1.0.zip": "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+    }
 
     # fmt: off
     internal_files = {
@@ -86,7 +85,7 @@ class MIMIC_IV(MultiFrameDataset):
     }
     # fmt: on
 
-    KEYS = list(internal_files.keys())
+    table_names = list(internal_files.keys())
 
     def clean_table(self, key: str) -> None:
         ...
@@ -94,7 +93,9 @@ class MIMIC_IV(MultiFrameDataset):
     def load_table(self, key: str) -> pd.DataFrame:
         return pd.read_parquet(self.dataset_paths[key])
 
-    def download_table(self, **_: Any) -> None:
+    def download_file(self, fname: str) -> None:
+        path = self.rawdata_paths[fname]
+
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-IV username: ")
         password = getpass(prompt="MIMIC-IV password: ", stream=None)
@@ -103,10 +104,10 @@ class MIMIC_IV(MultiFrameDataset):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {self.rawdata_paths}",
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
             shell=True,
             check=True,
         )
 
         file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, self.rawdata_files)
+        os.rename(file, fname)

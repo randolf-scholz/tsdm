@@ -8,7 +8,7 @@ __all__ = [
 import logging
 import os
 import subprocess
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, ABCMeta
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Protocol
@@ -114,15 +114,18 @@ class StateSpaceForecastingModel(ForecastingModel, Protocol):
 class BaseModelMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args: Any, **kwargs: Any) -> None:
-        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        super().__init__(name, bases, namespace, **kwds)
+
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
         if os.environ.get("GENERATING_DOCS", False):
             cls.MODEL_DIR = Path(f"~/.tsdm/models/{cls.__name__}/")
         else:
             cls.MODEL_DIR = CONFIG.MODELDIR / cls.__name__
-
-        super().__init__(*args, **kwargs)
 
 
 class BaseModel(ABC):
@@ -180,7 +183,3 @@ class BaseModel(ABC):
             # subprocess.run(F"git -C {model_path} pull", shell=True)
 
         self.LOGGER.info("Finished importing model from %s", self.SOURCE_URL)
-
-    @abstractmethod
-    def forward(self, *args):
-        r"""Synonym for forward and __call__."""

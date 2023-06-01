@@ -131,11 +131,11 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset as TorchDataset
 from torch.utils.data import Sampler as TorchSampler
-from typing_extensions import Self
+from typing_extensions import Self, assert_type
 
-from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
-from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 
@@ -152,9 +152,13 @@ Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
 class BaseTaskMetaClass(ABCMeta):
     r"""Metaclass for BaseTask."""
 
-    def __init__(cls, *args, **kwargs):
-        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
-        super().__init__(*args, **kwargs)
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        super().__init__(name, bases, namespace, **kwds)
+
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
 class Inputs(NamedTuple):
@@ -225,7 +229,6 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
     Format Specification
     ~~~~~~~~~~~~~~~~~~~~
-
     - column-sparse
     - separate x and u and y
     - masked: In this format, two equimodal copies of the data are stored with appropriate masking.
@@ -344,10 +347,13 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         else:
             raise NotImplementedError
 
+        assert_type(tsd, TimeSeriesDataset)
+
         # timeseries
-        ts_observed = tsd[observation_horizon]
-        ts_forecast = tsd[forecasting_horizon]
+        ts_observed: DataFrame = tsd[observation_horizon]
+        ts_forecast: DataFrame = tsd[forecasting_horizon]
         joint_horizon_index = ts_observed.index.union(ts_forecast.index)
+        print(f"{type(joint_horizon_index)=}")
         ts = tsd[joint_horizon_index]
         u: Optional[DataFrame] = None
 

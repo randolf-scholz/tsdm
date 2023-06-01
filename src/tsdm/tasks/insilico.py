@@ -13,14 +13,14 @@ from torch.utils.data import Sampler as TorchSampler
 from tsdm.datasets import InSilicoData, TimeSeriesCollection
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesSampleGenerator, TimeSeriesTask
-from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import key_var as K
 from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
 
 
 class InSilicoSampleGenerator(TimeSeriesSampleGenerator):
     r"""Sample generator for the KIWI dataset."""
 
-    def __init__(self, dataset):
+    def __init__(self, dataset: TimeSeriesCollection) -> None:
         super().__init__(
             dataset,
             targets=["Biomass", "Product"],
@@ -54,7 +54,7 @@ class InSilicoTask(TimeSeriesTask):
     def make_sampler(self, key: K, /) -> TorchSampler:
         split: TimeSeriesCollection = self.splits[key]
         subsamplers = {
-            key: SlidingWindowSampler(tsd.index, horizons=["2h", "1h"], stride="1h")
+            key: SlidingWindowSampler(tsd.timeindex, horizons=["2h", "1h"], stride="1h")
             for key, tsd in split.items()
         }
         return HierarchicalSampler(  # type: ignore[return-value]
@@ -63,7 +63,7 @@ class InSilicoTask(TimeSeriesTask):
 
     def make_folds(self, /) -> DataFrame:
         # TODO: refactor code, use **fold_kwargs, move code to base class?!?
-        idx = self.dataset.index
+        idx = self.dataset.metaindex
         df = idx.to_frame(index=False).set_index(idx.names)  # i.e. add dummy column
         groups = df.groupby(idx.names, sort=False).ngroup()
         folds = folds_from_groups(

@@ -2,6 +2,8 @@ r"""Submodule containing general purpose decorators."""
 
 __all__ = [
     # Classes
+    "Decorator",
+    "ClassDecorator",
     # Functions
     "decorator",
     # "sphinx_value",
@@ -23,28 +25,42 @@ __all__ = [
 import ast
 import gc
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, getsource, signature
 from time import perf_counter_ns
 from types import GenericAlias
-from typing import Any, Concatenate, NamedTuple, Optional, cast, overload
+from typing import (
+    Any,
+    Callable,
+    Collection,
+    Concatenate,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Protocol,
+    cast,
+    overload,
+)
 
 from torch import jit, nn
 from typing_extensions import Self
 
 from tsdm.config import CONFIG
 from tsdm.types.abc import CollectionType
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import ClassVar as C
-from tsdm.types.variables import ObjectVar as O
-from tsdm.types.variables import ParameterVar as P
-from tsdm.types.variables import ReturnVar_co as R
-from tsdm.types.variables import TorchModuleVar
+from tsdm.types.aliases import Nested
+from tsdm.types.variables import any_var as T
+from tsdm.types.variables import class_var as C
+from tsdm.types.variables import object_var as O
+from tsdm.types.variables import parameter_spec as P
+from tsdm.types.variables import return_var_co as R
+from tsdm.types.variables import torch_module_var
+from tsdm.utils.funcutils import rpartial
 
 __logger__ = logging.getLogger(__name__)
+
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -64,6 +80,20 @@ PARAM_TYPES = (
     (KEYWORD_ONLY, False),
     (VAR_KEYWORD, True),
 )
+
+
+class Decorator(Protocol):
+    r"""Decorator Protocol."""
+
+    def __call__(self, func: Callable, /) -> Callable:
+        r"""Decorate a function."""
+
+
+class ClassDecorator(Protocol):
+    r"""Class Decorator Protocol."""
+
+    def __call__(self, cls: type, /) -> type:
+        r"""Decorate a class."""
 
 
 def collect_exit_points(func: Callable) -> list[ast.Return]:
@@ -90,19 +120,6 @@ def exit_point_names(func: Callable) -> list[tuple[str, ...]]:
             e += (obj.id,)
         var_names.append(e)
     return var_names
-
-
-def rpartial(
-    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Callable[..., R]:
-    r"""Apply positional arguments from the right."""
-
-    @wraps(func)
-    def _wrapper(*func_args, **func_kwargs):
-        # TODO: https://github.com/python/typeshed/issues/8703
-        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
-
-    return _wrapper
 
 
 @dataclass
@@ -270,18 +287,17 @@ def decorator(deco: Callable) -> Callable:
     for key, param in deco_sig.parameters.items():
         BUCKETS[param.kind, param.default is EMPTY].add(key)
 
-    __logger__.debug(
-        "DETECTED SIGNATURE:"
-        "\n\t%s POSITIONAL_ONLY       (mandatory)"
-        "\n\t%s POSITIONAL_ONLY       (optional)"
-        "\n\t%s POSITIONAL_OR_KEYWORD (mandatory)"
-        "\n\t%s POSITIONAL_OR_KEYWORD (optional)"
-        "\n\t%s VAR_POSITIONAL"
-        "\n\t%s KEYWORD_ONLY          (mandatory)"
-        "\n\t%s KEYWORD_ONLY          (optional)"
-        "\n\t%s VAR_KEYWORD",
-        *(len(BUCKETS[key]) for key in PARAM_TYPES),
-    )
+    error_msg = (
+        "DETECTED SIGNATURE:"  # pylint: disable=consider-using-f-string
+        "\n\t %s: %s     (mandatory)"
+        "\n\t %s: %s     (optional)"
+        "\n\t %s: %s     (mandatory)"
+        "\n\t %s: %s     (optional)"
+        "\n\t %s: %s     (optional)"
+        "\n\t %s: %s     (mandatory)"
+        "\n\t %s: %s     (optional)"
+        "\n\t %s: %s     (optional)"
+    ).format(*(x for pair in [(k, len(v)) for k, v in BUCKETS.items()] for x in pair))
 
     if BUCKETS[POSITIONAL_OR_KEYWORD, True] or BUCKETS[POSITIONAL_OR_KEYWORD, False]:
         raise ErrorHandler(
@@ -289,18 +305,24 @@ def decorator(deco: Callable) -> Callable:
             "Separate positional and keyword arguments using '/' and '*':"
             ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
             "Cf. https://www.python.org/dev/peps/pep-0570/",
+            error_msg,
         )
     if BUCKETS[POSITIONAL_ONLY, False]:
         raise ErrorHandler(
-            "Decorator does not support POSITIONAL_ONLY arguments with defaults!!"
+            "Decorator does not support POSITIONAL_ONLY arguments with defaults!!",
+            error_msg,
         )
     if not len(BUCKETS[POSITIONAL_ONLY, True]) == 1:
         raise ErrorHandler(
             "Decorator must have exactly 1 POSITIONAL_ONLY argument: the function to be decorated."
             ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
+            error_msg,
         )
     if BUCKETS[VAR_POSITIONAL, True]:
-        raise ErrorHandler("Decorator does not support VAR_POSITIONAL arguments!!")
+        raise ErrorHandler(
+            "Decorator does not support VAR_POSITIONAL arguments!!",
+            error_msg,
+        )
 
     # (1b) modify the signature to add a new parameter '__func__' as the single
     # positional-only argument with a default value.
@@ -338,12 +360,14 @@ def attribute(func: Callable[[O], R]) -> R:
     class _attribute:
         __slots__ = ("func", "payload")
         sentinel = object()
+        func: Callable[[O], R]
+        payload: R
 
         def __init__(self, function: Callable) -> None:
             self.func = function
-            self.payload = self.sentinel
+            self.payload = cast(Any, self.sentinel)
 
-        def __get__(self, obj, obj_type=None):
+        def __get__(self, obj: O | None, obj_type: Optional[type] = None) -> Self | R:
             if obj is None:
                 return self
             if self.payload is self.sentinel:
@@ -442,7 +466,7 @@ def trace(func: Callable[P, R]) -> Callable[P, R]:
     return _wrapper
 
 
-def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
+def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
     r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
 
     Makes it so that
@@ -474,13 +498,13 @@ def autojit(base_class: type[TorchModuleVar]) -> type[TorchModuleVar]:
     class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
         r"""A simple Wrapper."""
 
-        def __new__(cls, *args: Any, **kwargs: Any) -> TorchModuleVar:  # type: ignore[misc]
+        def __new__(cls, *args: Any, **kwargs: Any) -> torch_module_var:  # type: ignore[misc]
             # Note: If __new__() does not return an instance of cls,
             # then the new instance's __init__() method will not be invoked.
-            instance: TorchModuleVar = base_class(*args, **kwargs)
+            instance: torch_module_var = base_class(*args, **kwargs)
 
             if CONFIG.autojit:
-                scripted: TorchModuleVar = jit.script(instance)
+                scripted: torch_module_var = jit.script(instance)
                 return scripted
             return instance
 
@@ -497,16 +521,15 @@ def vectorize(
 ) -> Callable[[O | CollectionType], R | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
-    The signature will change accordingly
+    The signature will change accordingly.
 
-    Examples
-    --------
-    >>> @vectorize(kind=list)
-    ... def f(x):
-    ...     return x + 1
-    ...
-    >>> assert f(1) == 2
-    >>> assert f(1,2) == [2,3]
+    Examples:
+        >>> @vectorize(kind=list)
+        ... def f(x):
+        ...     return x + 1
+        ...
+        >>> assert f(1) == 2
+        >>> assert f(1,2) == [2,3]
     """
     params = list(signature(func).parameters.values())
 
@@ -813,3 +836,27 @@ def return_namedtuple(
         return tuple_type(*result)
 
     return _wrapper
+
+
+def apply_nested(
+    func: Callable[[T], R],
+    nested: Nested[Optional[T]],
+    kind: type[T],
+) -> Nested[Optional[R]]:
+    r"""Apply function to nested iterables of a given kind.
+
+    Args:
+        nested: Nested Data-Structure (Iterable, Mapping, ...)
+        kind: The type of the leave nodes
+        func: A function to apply to all leave Nodes
+    """
+    if nested is None:
+        return None
+    if isinstance(nested, kind):
+        return func(nested)
+    if isinstance(nested, Mapping):
+        return {k: apply_nested(func, v, kind) for k, v in nested.items()}  # type: ignore[arg-type]
+    # TODO https://github.com/python/mypy/issues/11615
+    if isinstance(nested, Collection):
+        return [apply_nested(func, obj, kind) for obj in nested]  # type: ignore[arg-type]
+    raise TypeError(f"Unsupported type: {type(nested)}")

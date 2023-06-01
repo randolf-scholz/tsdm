@@ -66,20 +66,21 @@ Attribute Information
 +---------+-----------------------------------------+
 """  # pylint: disable=line-too-long # noqa: E501
 
-__all__ = [
-    # Classes
-    "BeijingAirQuality",
-]
+__all__ = ["BeijingAirQuality"]
 
-import zipfile
-from pathlib import Path
+from typing import Literal, TypeAlias
+from zipfile import ZipFile
 
-from pandas import DataFrame, Timestamp, concat, read_csv
+import pandas as pd
+from pandas import DataFrame
 
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import MultiTableDataset
+from tsdm.utils.data import remove_outliers
+
+KEY: TypeAlias = Literal["timeseries", "timeseries_description"]
 
 
-class BeijingAirQuality(SingleFrameDataset):
+class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
     r"""Hourly data set considers 6 main air pollutants and 6 relevant meteorological variables at multiple sites in Beijing.
 
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
@@ -98,54 +99,132 @@ class BeijingAirQuality(SingleFrameDataset):
         r"https://archive.ics.uci.edu/ml/datasets/Beijing+Multi-Site+Air-Quality+Data"
     )
     r"""HTTP address containing additional information about the dataset."""
-    RAWDATA_HASH = "d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
-    DATASET_HASH = "32a7c2bcf2fa28e8c321777f321c0ed23fc8bdfd66090b3ad9c1191fa402bc78"
-    DATASET_SHAPE = (420768, 12)
-    rawdata_files = "PRSA2017_Data_20130301-20170228.zip"
-    rawdata_paths: Path
 
-    def clean_table(self) -> DataFrame:
-        r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
+    rawdata_files = ["PRSA2017_Data_20130301-20170228.zip"]
+    rawdata_hashes = {
+        "PRSA2017_Data_20130301-20170228.zip": "sha256:d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
+    }
 
-        def _to_time(x: list[int]) -> Timestamp:
-            return Timestamp(year=x[1], month=x[2], day=x[3], hour=x[4])
+    rawdata_schema = {
+        # fmt: off
+        "No"      : "uint16[pyarrow]",
+        "year"    : "uint16[pyarrow]",
+        "month"   : "uint8[pyarrow]",
+        "day"     : "uint8[pyarrow]",
+        "hour"    : "uint8[pyarrow]",
+        "PM2.5"   : "float32[pyarrow]",
+        "PM10"    : "float32[pyarrow]",
+        "SO2"     : "float32[pyarrow]",
+        "NO2"     : "float32[pyarrow]",
+        "CO"      : "float32[pyarrow]",
+        "O3"      : "float32[pyarrow]",
+        "TEMP"    : "float32[pyarrow]",
+        "PRES"    : "float32[pyarrow]",
+        "DEWP"    : "float32[pyarrow]",
+        "RAIN"    : "float32[pyarrow]",
+        "wd"      : "string",  # FIXME bug in pandas prevents using pyarrow here.
+        "station" : "string",  # FIXME bug in pandas prevents using pyarrow here.
+        "WSPM"    : "float32[pyarrow]",
+        # fmt: on
+    }
+    table_names = ["timeseries", "timeseries_description"]
+    table_schemas = {
+        "timeseries": {
+            # fmt: off
+            "PM2.5" : "float[pyarrow]",
+            "PM10"  : "float[pyarrow]",
+            "SO2"   : "float[pyarrow]",
+            "NO2"   : "float[pyarrow]",
+            "CO"    : "float[pyarrow]",
+            "O3"    : "float[pyarrow]",
+            "TEMP"  : "float[pyarrow]",
+            "PRES"  : "float[pyarrow]",
+            "DEWP"  : "float[pyarrow]",
+            "RAIN"  : "float[pyarrow]",
+            "wd"    : "dictionary[int32,string]",
+            "WSPM"  : "float[pyarrow]",
+            # fmt: on
+        },
+        "timeseries_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower_bound"    : "float32[pyarrow]",
+            "upper_bound"    : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
+        },
+    }
 
-        dtypes = {
-            "wd": "string",
-            "station": "string",
-        }
+    def _timeseries_description(self) -> DataFrame:
+        data = [
+            # fmt: off
+            ("PM2.5", 0,    None, True, True, "μg/m³", "PM2.5 concentration"),
+            ("PM10",  0,    None, True, True, "μg/m³", "PM10 concentration" ),
+            ("SO2",   0,    None, True, True, "μg/m³", "SO2 concentration"  ),
+            ("NO2",   0,    None, True, True, "μg/m³", "NO2 concentration"  ),
+            ("CO",    0,    None, True, True, "μg/m³", "CO concentration"   ),
+            ("O3",    0,    None, True, True, "μg/m³", "O3 concentration"   ),
+            ("TEMP",  None, None, True, True, "°C",    "temperature"        ),
+            ("PRES",  0,    None, True, True, "hPa",   "pressure"           ),
+            ("DEWP",  None, None, True, True, "°C",    "dew point"          ),
+            ("RAIN",  0,    None, True, True, "mm",    "precipitation"      ),
+            ("wd",    None, None, True, True, None,    "wind direction"     ),
+            ("WSPM",  0,    None, True, True, "m/s",   "wind speed"         ),
+            # fmt: on
+        ]
 
-        new_dtypes = {
-            "wd": "category",
-            "station": "category",
-        }
+        return (
+            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
+            .astype(self.table_schemas["timeseries_description"])
+            .set_index("variable")
+        )
 
-        self.LOGGER.info("Extracting Data.")
-        with zipfile.ZipFile(self.rawdata_paths) as compressed_archive:
+    def _clean_timeseries(self) -> DataFrame:
+        self.LOGGER.info("Loading Data.")
+        file = self.rawdata_paths["PRSA2017_Data_20130301-20170228.zip"]
+        with ZipFile(file) as compressed_archive:
             stations = []
             for csv_file in compressed_archive.namelist():
                 if not csv_file.endswith(".csv"):
+                    self.LOGGER.warning("Skipping '%s': is not a csv-file!", csv_file)
                     continue
+
                 with compressed_archive.open(csv_file) as compressed_file:
-                    df = read_csv(compressed_file, dtype=dtypes)
-                # Make multiple date columns to pandas.Timestamp
-                df["time"] = df.apply(_to_time, axis=1)
-                # Remove date columns and index
-                df = df.drop(labels=["No", "year", "month", "day", "hour"], axis=1)
-                stations.append(df)
+                    df = pd.read_csv(
+                        compressed_file,
+                        dtype=self.rawdata_schema,
+                        index_col=0,
+                    )
+                    df.columns = df.columns.astype("string")
+                    stations.append(df)
 
-        self.LOGGER.info("Merging Stations.")
-        df = concat(stations, ignore_index=True)
+        self.LOGGER.info("Merging Tables.")
+        table = pd.concat(stations, ignore_index=True)
 
-        self.LOGGER.info("Setting dtypes.")
-        other_columns = {
-            col for col in df.columns if col not in ["time", "station", "wd"]
-        }
-        new_dtypes |= {col: "float32" for col in other_columns}
-        df = df.astype(new_dtypes)
+        self.LOGGER.info("Adding Time Data.")
+        time_cols = ["year", "month", "day", "hour"]
+        ts = (
+            table.assign(time=pd.to_datetime(table[time_cols]))
+            .drop(columns=time_cols)
+            .astype({"wd": "category", "station": "category"})
+            .set_index(["station", "time"])
+            .sort_index()
+        )
 
-        self.LOGGER.info("Setting Index.")
-        df = df.sort_values(by=["station", "time"])
-        df = df.set_index(["station", "time"])
+        self.LOGGER.info("Removing outliers from timeseries.")
+        ts = remove_outliers(ts, self.timeseries_description)
 
-        return df
+        return ts
+
+    def clean_table(self, key: KEY) -> DataFrame:
+        r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
+        match key:
+            case "timeseries":
+                return self._clean_timeseries()
+            case "timeseries_description":
+                return self._timeseries_description()
+            case _:
+                raise KeyError(f"Unknown table: '{key}'")

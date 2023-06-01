@@ -19,8 +19,7 @@ from tsdm.utils.decorators import autojit
 class Time2Vec(nn.Module):
     r"""Learnable Time Encoding.
 
-    References
-    ----------
+    References:
       - | Time2Vec: Learning a Vector Representation of Time
         | Seyed Mehran Kazemi, Rishab Goel, Sepehr Eghbali, Janahan Ramanan, Jaspreet
         | Sahota, Sanjay Thakur, Stella Wu, Cathal Smyth, Pascal Poupart, Marcus Brubaker

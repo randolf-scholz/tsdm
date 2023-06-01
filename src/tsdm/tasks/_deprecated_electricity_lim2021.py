@@ -86,6 +86,7 @@ class ElectricityLim2021(OldBaseTask):
 
     Evaluation Protocol
     -------------------
+
     .. epigraph::
 
         In accordance with [9], we use the past week (i.e. 168 hours) to
@@ -149,7 +150,7 @@ class ElectricityLim2021(OldBaseTask):
     @cached_property
     def dataset(self) -> pd.DataFrame:
         r"""Return the cached dataset."""
-        ds = Electricity().dataset
+        ds = Electricity().table
         ds = ds.resample("1h").mean()
         mask = (self.boundaries["start"] <= ds.index) & (
             ds.index < self.boundaries["final"]

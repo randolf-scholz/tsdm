@@ -1,22 +1,20 @@
 r"""In silico experiments."""
 
-__all__ = [
-    # Classes
-    "InSilicoData",
-]
+__all__ = ["InSilicoData"]
 
 import shutil
-from functools import cached_property
 from importlib import resources
 from zipfile import ZipFile
 
 import pandas as pd
+from pandas import DataFrame
 
 from tsdm.datasets import examples
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import MultiTableDataset
+from tsdm.utils.data import remove_outliers
 
 
-class InSilicoData(SingleFrameDataset):
+class InSilicoData(MultiTableDataset[str, DataFrame]):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -30,41 +28,84 @@ class InSilicoData(SingleFrameDataset):
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
     """
 
-    RAWDATA_HASH = "ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba"
-    DATASET_HASH = "f6938b4e9de35824c24c3bdc7f08c4d9bfcf9272eaeb76f579d823ca8628bff0"
-    DATASET_SHAPE = (5206, 7)
-    TABLE_HASH = 652930435272677160
-    rawdata_files = "in_silico.zip"
+    rawdata_files = ["in_silico.zip"]
+    rawdata_hashes = {
+        "in_silico.zip": "sha256:ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba",
+    }
+    table_names = ["timeseries", "timeseries_description"]
+    table_shapes = {"timeseries": (5206, 7)}
+    table_schemas = {
+        "timeseries": {
+            # fmt: off
+            "Biomass"   : "float[pyarrow]",
+            "Substrate" : "float[pyarrow]",
+            "Acetate"   : "float[pyarrow]",
+            "DOTm"      : "float[pyarrow]",
+            "Product"   : "float[pyarrow]",
+            "Volume"    : "float[pyarrow]",
+            "Feed"      : "float[pyarrow]",
+            # fmt: on
+        },
+        "timeseries_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
+        },
+    }
 
-    @cached_property
-    def index(self) -> pd.Index:
-        r"""Return the index of the dataset."""
-        return self.timeseries.index.get_level_values(0).unique()
+    def _timeseries_description(self) -> DataFrame:
+        data = [
+            # fmt: off
+            ("Biomass"  , 0, None, True, True, "g/L", None),
+            ("Substrate", 0, None, True, True, "g/L", None),
+            ("Acetate"  , 0, None, True, True, "g/L", None),
+            ("DOTm"     , 0, 100,  True, True, "%",   None),
+            ("Product"  , 0, None, True, True, "g/L", None),
+            ("Volume"   , 0, None, True, True, "L",   None),
+            ("Feed"     , 0, None, True, True, "μL",  None),
+            # fmt: on
+        ]
+        return (
+            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
+            .astype(self.table_schemas["timeseries_description"])
+            .set_index("variable")
+        )
 
-    @cached_property
-    def timeseries(self) -> pd.DataFrame:
-        r"""Return the timeseries of the dataset."""
-        return self.dataset
-
-    def clean_table(self) -> None:
-        with ZipFile(str(self.rawdata_paths)) as files:
+    def _timeseries(self) -> DataFrame:
+        with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:
             dfs = {}
             for fname in files.namelist():
                 key = int(fname.split(".csv")[0])
                 with files.open(fname) as file:
                     df = pd.read_csv(file, index_col=0, parse_dates=[0])
-                df = df.rename_axis(index="time")
-                df["DOTm"] /= 100
-                dfs[key] = df
-        ds = pd.concat(dfs, names=["run_id"])
-        ds = ds.reset_index()
-        ds = ds.set_index(["run_id", "time"])
-        ds = ds.sort_values(by=["run_id", "time"])
-        ds = ds.astype("Float32")
-        return ds
+                    dfs[key] = df.rename_axis(index="time")
 
-    def download_table(self) -> None:
+        # Set index, dtype and sort.
+        ts = (
+            pd.concat(dfs, names=["run_id"])
+            .reset_index()
+            .set_index(["run_id", "time"])
+            .sort_index()
+            .astype("float32[pyarrow]")
+        )
+        ts = remove_outliers(ts, self._timeseries_description())
+        return ts
+
+    def clean_table(self, key: str) -> DataFrame:
+        if key == "timeseries":
+            return self._timeseries()
+        if key == "timeseries_description":
+            return self._timeseries_description()
+        raise KeyError(f"Unknown table {key}.")
+
+    def download_file(self, fname: str) -> None:
         r"""Download the dataset."""
-        self.LOGGER.info("Copying data files into %s.", self.rawdata_paths)
-        with resources.path(examples, self.rawdata_files) as path:
-            shutil.copy(path, str(self.rawdata_paths))
+        self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
+        with resources.path(examples, fname) as path:
+            shutil.copy(path, self.rawdata_paths[fname])

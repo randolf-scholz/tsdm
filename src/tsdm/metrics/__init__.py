@@ -6,26 +6,30 @@ We define the following
 
 1. A metric is a  function
 
-    .. math:: 𝔪： 𝓟_0(𝓨×𝓨) ⟶ ℝ_{≥0}
+    .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)^n ⟶ ℝ_{≥0}
+        \qq{s.t.} \text{$𝔪(Y，Ŷ) = 0$ if and only if $y_n=ŷ_n∀n=1:N$}
 
-    such that $𝔪(\{ (y_i, \hat{y}_i) ∣ i=1:n \}) = 0$ if and only if $y_i=\hat{y}_i∀i$
+    I.e. a function that takes a finite number of pairs $(y_n, ŷ_n)_{n=1:N}$
+    and returns a non-negative scalar. We donote $Y≔(y_n)_n$ and $Ŷ≔(ŷ_n)_n$
+    and write $𝔪(Y，Ŷ)$ for the metric value.
 
-2. A metric is called decomposable, if it can be written as a function
+2. A metric is called **decomposable**, if and only if it can be written as a composition
+   of an **aggregation function** $Ψ$ and an **intance-wise loss function** $ℓ$:
 
-    .. math
-        𝔪 = Ψ∘(ℓ×𝗂𝖽)
-        ℓ： 𝓨×𝓨 ⟶ ℝ_{≥0}
-        Ψ： 𝓟_0(ℝ_{≥0}) ⟶ ℝ_{≥0}
+    .. math:: 𝔪 = Ψ∘(ℓ×𝗂𝖽) \qq{with} ℓ：𝓨×𝓨 ⟶ ℝ_{≥0} \qq{and} Ψ：⋃_{n∈ℕ}ℝ^n ⟶ ℝ_{≥0}
 
-    I.e. the function $ℓ$ is applied element-wise to all pairs $(y, \hat{y}$ and the function $Ψ$
-    "accumulates" the results. Oftentimes, $Ψ$ is just the sum/mean/expectation value, although
-    other accumulations such as the median value are also possible.
+    I.e. the function $ℓ$ is applied element-wise to all pairs $(y, ŷ)$ and the function $Ψ$
+    accumulates the results. Typical choices of $ψ$ are:
 
-3. A metric is called instance-wise, if it can be written in the form
+    - sum: $Ψ(r) = ∑_n r_n$
+    - mean: $Ψ(r) = 𝐄_n r_n ≔ \frac{1}{N} ∑_{n=1}^N r_N$
+    - median: $Ψ(r) = 𝐌_n r_n ≔ \Median((r_n)_{n=1:N})$
 
-    .. math::
-        𝔪： 𝓟_0(𝓨×𝓨) ⟶ ℝ_{≥ 0}, 𝔪(\{(y_i, \hat{y}_i) ∣  i=1:n \})
-        = ∑_{i=1}^n ω(i, n)ℓ(y_i, \hat{y}_i)
+3. A metric is called **instance-wise**, if it can be written in the form
+
+    .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)^n ⟶ ℝ_{≥0}, 𝔪(Y，Ŷ) = ∑_{n=1}^N ω(n,N) ℓ(y_n，ŷ_n)
+
+    with a weight function $ω：ℕ×ℕ ⟶ ℝ_{≥0}$ and an instance-wise loss function $ℓ$.
 
 4. A metric is called a loss-function, if and only if
 
@@ -56,18 +60,12 @@ __all__ = [
     "BaseLoss",
     "WeightedLoss",
     # Classes
-    "ND",
-    "NRMSE",
-    "Q_Quantile",
-    "Q_Quantile_Loss",
     "MAE",
     "MSE",
     "RMSE",
     "WMAE",
     "WMSE",
     "WRMSE",
-    "TimeSeriesMSE",
-    "TimeSeriesWMSE",
     # Functions
     "nd",
     "nrmse",
@@ -84,19 +82,21 @@ from torch import nn
 from tsdm.metrics._modular import (
     MAE,
     MSE,
-    ND,
-    NRMSE,
     RMSE,
     WMAE,
     WMSE,
     WRMSE,
     BaseLoss,
     Loss,
+    WeightedLoss,
+)
+from tsdm.metrics._timeseries import (
+    ND,
+    NRMSE,
     Q_Quantile,
     Q_Quantile_Loss,
     TimeSeriesMSE,
     TimeSeriesWMSE,
-    WeightedLoss,
 )
 from tsdm.metrics.functional import (
     FUNCTIONAL_LOSSES,

@@ -1,8 +1,7 @@
 r"""Implementation of encoders.
 
-See Also
---------
-`tsdm.encoders` for modular implementations.
+See Also:
+    `tsdm.encoders` for modular implementations.
 """
 
 __all__ = [

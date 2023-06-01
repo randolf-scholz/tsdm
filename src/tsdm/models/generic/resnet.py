@@ -7,9 +7,10 @@ __all__ = ["ResNet", "ResNetBlock"]
 
 
 from collections import OrderedDict
-from typing import Any, Final, TypeVar
+from typing import Any, Final, Iterable, Optional, TypeVar
 
 from torch import Tensor, jit, nn
+from typing_extensions import Self
 
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.utils import deep_dict_update, initialize_from_config
@@ -20,12 +21,11 @@ from tsdm.utils.decorators import autojit
 class ResNetBlock(nn.Sequential):
     r"""Pre-activation ResNet block.
 
-    References
-    ----------
-    - | Identity Mappings in Deep Residual Networks
-      | Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
-      | European Conference on Computer Vision 2016
-      | https://link.springer.com/chapter/10.1007/978-3-319-46493-0_38
+    References:
+        - | Identity Mappings in Deep Residual Networks
+          | Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
+          | European Conference on Computer Vision 2016
+          | https://link.springer.com/chapter/10.1007/978-3-319-46493-0_38
     """
 
     HP: Final[dict] = {
@@ -93,8 +93,11 @@ class ResNet(nn.ModuleList):
         "blocks": ResNetBlock.HP,
     }
 
-    def __new__(cls, *blocks, **hparams):
+    def __new__(
+        cls, modules: Optional[Iterable[nn.Module]] = None, **hparams: Any
+    ) -> Self:
         r"""Initialize from hyperparameters."""
+        blocks: list[nn.Module] = [] if modules is None else list(modules)
         assert len(blocks) ^ len(hparams), "Provide either blocks, or hyperparameters!"
 
         if hparams:
@@ -102,12 +105,15 @@ class ResNet(nn.ModuleList):
 
         return super().__new__(cls)
 
-    def __init__(self, *blocks: Any, **hparams: Any) -> None:
+    def __init__(
+        self, modules: Optional[Iterable[nn.Module]] = None, **hparams: Any
+    ) -> None:
+        r"""Initialize from hyperparameters."""
+        blocks: list[nn.Module] = [] if modules is None else list(modules)
         assert len(blocks) ^ len(hparams), "Provide either blocks, or hyperparameters!"
-
         if hparams:
             return
-        super().__init__(*blocks, **hparams)
+        super().__init__(blocks)
 
     @classmethod
     def from_hyperparameters(
@@ -127,7 +133,7 @@ class ResNet(nn.ModuleList):
         for _ in range(num_blocks):
             module: nn.Module = initialize_from_config(block_cfg)
             blocks.append(module)
-        return cls(*blocks)
+        return cls(blocks)
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:

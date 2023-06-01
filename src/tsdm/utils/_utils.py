@@ -24,13 +24,13 @@ __all__ = [
     "unflatten_dict",
 ]
 
+import logging
 import os
 import shutil
 import warnings
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from datetime import datetime
 from importlib import import_module
-from logging import getLogger
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Literal, Optional, cast, overload
@@ -45,28 +45,27 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import ReturnVar_co as R
+from tsdm.types.variables import key_var as K
 from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
 
-__logger__ = getLogger(__name__)
+__logger__ = logging.getLogger(__name__)
 
 
 def variants(s: str | list[str]) -> list[str]:
     r"""Return all variants of a string."""
     if isinstance(s, str):
-        cases = (
+        cases: list[Callable[[str], str]] = [
             lambda x: x.lower(),
             lambda x: x.capitalize(),
             lambda x: x.upper(),
-        )
-        decorations = (
+        ]
+        decorations: list[Callable[[str], str]] = [
             lambda x: x,
             lambda x: f"#{x}",
             lambda x: f"<{x}>",
             lambda x: f"+{x}",
             lambda x: f"-{x}",
-        )
+        ]
         return [deco(case(s)) for deco in decorations for case in cases]
     # return concatenation of all variants
     return [j for i in (variants(s_) for s_ in s) for j in i]
@@ -81,30 +80,6 @@ def pairwise_disjoint(sets: Iterable[set]) -> bool:
 def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
     r"""Check if masks are pairwise disjoint."""
     return all(sum(masks) == 1)  # type: ignore[arg-type]
-
-
-def apply_nested(
-    nested: Nested[Optional[T]],
-    kind: type[T],
-    func: Callable[[T], R],
-) -> Nested[Optional[R]]:
-    r"""Apply function to nested iterables of a given kind.
-
-    Args:
-        nested: Nested Data-Structure (Iterable, Mapping, ...)
-        kind: The type of the leave nodes
-        func: A function to apply to all leave Nodes
-    """
-    if nested is None:
-        return None
-    if isinstance(nested, kind):
-        return func(nested)
-    if isinstance(nested, Mapping):
-        return {k: apply_nested(v, kind, func) for k, v in nested.items()}  # type: ignore[arg-type]
-    # TODO https://github.com/python/mypy/issues/11615
-    if isinstance(nested, Collection):
-        return [apply_nested(obj, kind, func) for obj in nested]  # type: ignore[arg-type]
-    raise TypeError(f"Unsupported type: {type(nested)}")
 
 
 def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
@@ -178,9 +153,8 @@ def now() -> str:
 def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
     r"""Update nested dictionary recursively in-place with new dictionary.
 
-    References
-    ----------
-    - https://stackoverflow.com/a/30655448/9318372
+    References:
+        - https://stackoverflow.com/a/30655448/9318372
     """
     # if not inplace:
     #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)
@@ -197,9 +171,8 @@ def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
 def deep_kval_update(d: dict, **new_kvals: Any) -> dict:
     r"""Update nested dictionary recursively in-place with key-value pairs.
 
-    References
-    ----------
-    - https://stackoverflow.com/a/30655448/9318372
+    References:
+        - https://stackoverflow.com/a/30655448/9318372
     """
     # if not inplace:
     #     return deep_dict_update(deepcopy(d), new_kvals, inplace=False)
@@ -211,6 +184,36 @@ def deep_kval_update(d: dict, **new_kvals: Any) -> dict:
             # if value is not None or not safe:
             d[key] = new_kvals[key]
     return d
+
+
+@overload
+def prepend_path(
+    files: Mapping[K, PathLike],
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> dict[K, Path]:
+    ...
+
+
+@overload
+def prepend_path(
+    files: list[PathLike],
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> list[Path]:
+    ...
+
+
+@overload
+def prepend_path(
+    files: PathLike,
+    parent: Path,
+    *,
+    keep_none: bool = False,
+) -> Path:
+    ...
 
 
 @overload
@@ -251,8 +254,7 @@ def prepend_path(
 ) -> Nested[Optional[Path]]:
     r"""Prepends path to all files in nested iterable.
 
-    If `keep_none=True`, then `None` values are kept, else they are replaced by
-    ``parent``.
+    If `keep_none=True`, then `None` values are kept, else they are replaced by `parent`.
     """
     # TODO: change it to apply_nested in python 3.10
 

@@ -10,15 +10,9 @@ from tsdm.datasets import TimeSeriesCollection
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoSampleGenerator, InSilicoTask
 
-logging.basicConfig(level=logging.INFO)
-__logger__ = logging.getLogger(__name__)
-
 
 def test_insilico_task(SplitID=(0, "train")):
     r"""Test the TimeSeriesDatasetTask."""
-    LOGGER = __logger__.getChild(InSilicoTask.__name__)
-    LOGGER.info("Testing.")
-
     task = InSilicoTask()
     assert isinstance(task.folds, DataFrame)
     assert isinstance(task.index, MultiIndex)
@@ -31,7 +25,11 @@ def test_insilico_task(SplitID=(0, "train")):
 
     sampler = task.samplers[SplitID]
     key = next(iter(sampler))
-    sample = task.generators[SplitID][key]
+    assert isinstance(key, tuple)
+    fold = task.generators[SplitID]
+    print("key", type(key), key)
+    print("fold", type(fold), fold)
+    sample = fold[key]
     assert isinstance(sample, tuple)
 
     dataloader = task.dataloaders[SplitID]
@@ -40,6 +38,7 @@ def test_insilico_task(SplitID=(0, "train")):
 
 
 def _main() -> None:
+    logging.basicConfig(level=logging.INFO)
     test_insilico_task()
 
 

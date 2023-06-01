@@ -2,12 +2,9 @@ r"""Implements a downloader for the TSDM-package."""
 
 __all__ = [
     "download",
-    "hash_file",
     "import_from_url",
-    "validate_hash",
 ]
 
-import hashlib
 import logging
 import subprocess
 from pathlib import Path
@@ -18,38 +15,7 @@ import requests
 from tqdm.autonotebook import tqdm
 
 from tsdm.types.aliases import PathLike
-
-__logger__ = logging.getLogger(__name__)
-
-
-def hash_file(
-    file: PathLike,
-    *,
-    block_size: int = 65536,
-    hash_algorithm: str = "sha256",
-    **kwargs: Any,
-) -> str:
-    r"""Calculate the SHA256-hash of a file."""
-    algorithms = vars(hashlib)
-    hash_value = algorithms[hash_algorithm](**kwargs)
-
-    with open(file, "rb") as file_handle:
-        for byte_block in iter(lambda: file_handle.read(block_size), b""):
-            hash_value.update(byte_block)
-
-    return hash_value.hexdigest()
-
-
-def validate_hash(
-    fname: PathLike, hash_value: str, *, hash_algorithm: str = "sha256", **kwargs: Any
-) -> None:
-    r"""Validate a file against a hash value."""
-    hashed = hash_file(fname, hash_algorithm=hash_algorithm, **kwargs)
-    if hashed != hash_value:
-        raise ValueError(
-            f"Calculated hash value {hashed!r} and given hash value {hash_value!r} "
-            f"do not match for given file {fname!r} (using {hash_algorithm})."
-        )
+from tsdm.utils.hash import validate_file_hash
 
 
 def download(
@@ -73,7 +39,7 @@ def download(
 
     if skip_existing and path.exists():
         if hash_value is not None:
-            validate_hash(
+            validate_file_hash(
                 path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
             )
         return
@@ -97,7 +63,9 @@ def download(
         ) from e
 
     if hash_value is not None:
-        validate_hash(path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs)
+        validate_file_hash(
+            path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
+        )
 
 
 def import_from_url(
@@ -106,7 +74,8 @@ def import_from_url(
     """Wrap download so that it works with Kaggle and GitHub."""
     parsed_url = urlparse(url)
     path = Path(url.split("/")[-1] if fname is None else fname)
-    __logger__.info("Downloading %s to %s", url, path)
+    logger = logging.getLogger(__name__)
+    logger.info("Downloading %s to %s", url, path)
 
     if parsed_url.netloc == "www.kaggle.com":
         kaggle_name = Path(parsed_url.path).name

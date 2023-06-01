@@ -54,6 +54,7 @@ class ElectricityDeepAR:
 
     Evaluation Protocol
     -------------------
+
     .. epigraph::
 
         For electricity we train with data between 2014-01-01 and 2014-09-01, for traffic we train
@@ -131,6 +132,7 @@ class ElectricityELBMBTTF:
 
     Evaluation Protocol
     -------------------
+
     .. epigraph::
 
         For short-term forecasting, we evaluate rolling-day forecasts for seven days ( i.e.,

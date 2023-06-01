@@ -38,20 +38,17 @@ First column present date and time as a string with the following format 'yyyy-m
 Other columns present float values with consumption in kW
 """  # pylint: disable=line-too-long # noqa: E501
 
-__all__ = [
-    # Classes
-    "Electricity",
-]
+__all__ = ["Electricity"]
 
-from pathlib import Path
 from zipfile import ZipFile
 
+import matplotlib.pyplot as plt
 from pandas import DataFrame, read_csv
 
-from tsdm.datasets.base import SingleFrameDataset
+from tsdm.datasets.base import SingleTableDataset
 
 
-class Electricity(SingleFrameDataset):
+class Electricity(SingleTableDataset):
     r"""Data set containing electricity consumption of 370 points/clients.
 
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
@@ -61,7 +58,35 @@ class Electricity(SingleFrameDataset):
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
     | **Associated Tasks:**          | Regression, Clustering | **Missing Values?**       | N/A    | **Number of Web Hits:** | 93733      |
     +--------------------------------+------------------------+---------------------------+--------+-------------------------+------------+
-    """  # pylint: disable=line-too-long # noqa: E501
+
+    Notes:
+        More than 200 channels are completly missing before 2012-01-01 00:15:00.
+        There are 3 extra dates with large number of missing values:
+
+            - 2012-03-25
+            - 2013-03-31
+            - 2014-03-30
+
+        More specifically, the timestamps:
+
+            - 2011-MM-DD hh:mm:ss
+            - 2012-01-01 00:00:00
+            - 2012-03-25 01:00:00
+            - 2012-03-25 01:15:00
+            - 2012-03-25 01:30:00
+            - 2012-03-25 01:45:00
+            - 2013-03-31 01:00:00
+            - 2013-03-31 01:15:00
+            - 2013-03-31 01:30:00
+            - 2013-03-31 01:45:00
+            - 2014-03-30 01:00:00
+            - 2014-03-30 01:15:00
+            - 2014-03-30 01:30:00
+            - 2014-03-30 01:45:00
+
+    Recommendation:
+        At the given dates, replace zero with NaN.
+    """  # noqa: E501
 
     BASE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
     r"""HTTP address from where the dataset can be downloaded."""
@@ -70,21 +95,18 @@ class Electricity(SingleFrameDataset):
     )
     r"""HTTP address containing additional information about the dataset."""
 
-    TABLE_HASH = 7114453877232760046
-    RAWDATA_HASH = "f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
-    DATASET_SHAPE = (140256, 370)
-    RAWDATA_SHAPE = (140256, 370)
-
-    dataset: DataFrame
-    r"""Store cached version of dataset."""
-    rawdata_files = "LD2011_2014.txt.zip"
-    rawdata_paths: Path
+    rawdata_files = ["LD2011_2014.txt.zip"]
+    rawdata_hashes = {
+        "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
+    }
+    table_shape = (140256, 370)
+    table_hash = "pandas:7114453877232760046"
 
     def clean_table(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
-        with ZipFile(self.rawdata_paths) as files:
-            fname = self.rawdata_paths.with_suffix("").name
-            with files.open(fname) as file:
+        with ZipFile(self.rawdata_paths["LD2011_2014.txt.zip"]) as archive:
+            # can't use pandas.read_csv because of the zip contains other files.
+            with archive.open("LD2011_2014.txt") as file:
                 df = read_csv(
                     file,
                     sep=";",
@@ -94,3 +116,7 @@ class Electricity(SingleFrameDataset):
                     dtype="float32",
                 )
         return df.rename_axis(index="time", columns="client")
+
+    def make_zero_plot(self) -> plt.Axes:
+        """Plot number of zero values per timestamp."""
+        self.table.where(self.table > 0).isna().sum(axis=1).plot(ylabel="zero-values")

@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
-def test_pretrained():
+def test_pretrained() -> None:
     """Test the serialization of models."""
     __logger__.info("Testing %s.", LinODEnet)
 

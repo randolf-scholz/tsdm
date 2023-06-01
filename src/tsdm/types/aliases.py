@@ -1,6 +1,8 @@
 """Collection of Useful Type Aliases."""
 
 __all__ = [
+    # namedtuple
+    "schema",
     # Custom Type Aliases
     "Nested",
     "Map",
@@ -31,7 +33,7 @@ __all__ = [
 import os
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from pathlib import Path
-from typing import Any, Callable, TypeAlias
+from typing import Any, Callable, NamedTuple, Optional, TypeAlias
 
 import numpy as np
 import torch
@@ -39,14 +41,26 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
 from tsdm.types.protocols import Lookup
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import Key_contra
-from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import Value_co
-from tsdm.types.variables import ValueVar as V
+from tsdm.types.variables import any_var as T
+from tsdm.types.variables import key_contra
+from tsdm.types.variables import key_var as K
+from tsdm.types.variables import value_co
+from tsdm.types.variables import value_var as V
+
+
+class schema(NamedTuple):
+    """Table schema."""
+
+    shape: Optional[tuple[int, int]] = None
+    """Shape of the table."""
+    columns: Optional[Sequence[str]] = None
+    """Column names of the table."""
+    dtypes: Optional[Sequence[str]] = None
+    """Data types of the columns."""
+
 
 # region Custom Type Aliases -----------------------------------------------------------
-Map: TypeAlias = Lookup[Key_contra, Value_co] | Callable[[Key_contra], Value_co]
+Map: TypeAlias = Lookup[key_contra, value_co] | Callable[[key_contra], value_co]
 r"""Type Alias for `Map`."""
 Nested: TypeAlias = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]
 r"""Type Alias for nested types (JSON-Like)."""
@@ -56,6 +70,8 @@ PathLike: TypeAlias = str | Path | os.PathLike[str]
 r"""Type Alias for path-like objects."""
 ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]
 r"""TypeAlias for scalar types."""
+ContainerLike: TypeAlias = T | Lookup[int, T] | Callable[[int], T]
+r"""Type Alias for container-like objects."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
 
@@ -94,4 +110,6 @@ TOML: TypeAlias = None | str | int | float | bool | list["TOML"] | dict[str, "TO
 r"""Type Alias for JSON-Like objects."""
 YAML: TypeAlias = None | str | int | float | bool | list["YAML"] | dict[str, "YAML"]
 r"""Type Alias for JSON-Like objects."""
+
+
 # endregion Nested Configuration ----------------------------------------------

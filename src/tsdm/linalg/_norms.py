@@ -244,18 +244,15 @@ def multi_scaled_norm(
     q: float = 2,
 ) -> Tensor | NDArray:
     # TODO: figure out correct normalization
-    r"""Scaled Lpq-norm.
+    r"""Scaled $L_{p,q}$-norm.
 
     .. math::
-        ∥u_1⊕…⊕u_n∥_{⨁_{i=1:n}U_i}
-        \\&= ∥v∥_q where v_i = ∥u_i∥_p
+        ∥u_1⊕…⊕u_n∥_{\operatorname*{⨁}_{i=1:n}U_i}
+          &≔ ∥v∥_q \qq{where} v_i = ∥u_i∥_p
         \\&= ∑_{i=1:n} \frac{\dim U_i}{\dim 𝓤} ∥u_i∥_p
-        \\&= \left(
-                \frac{1}{n} ∑_{i=1:n}
-                \left(
-                    \frac{1}{m_i}∑_{j=1:m_i} |(u_i)_j|^{p}
-                \right)^{q/p}
-             \right)^{1/q}
+        \\&= \Bigl(\frac{1}{n} ∑_{i=1:n}
+                \Bigr(\frac{1}{m_i}∑_{j=1:m_i} |(u_i)_j|^{p}\Bigl)^{q/p}
+             \Bigr)^{1/q}
     """
     if isinstance(x[0], Tensor):
         x = cast(Sequence[Tensor], x)
@@ -294,7 +291,7 @@ def grad_norm(
 ) -> Tensor:
     r"""Return the (scaled) p-q norm of the gradients.
 
-    .. math:: ‖A‖_{p,q} ≔ |∑_{j=1}^n (∑_{i=1)^m |A_{ij}|^p)^{p/q} |^{1/q}
+    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
 
     If `normalize=True`, the sums are replaced with averages.
     """
@@ -326,7 +323,7 @@ def multi_norm(
 ) -> Tensor:
     r"""Return the (scaled) p-q norm of the gradients.
 
-    .. math:: ‖A‖_{p,q} ≔ |∑_{j=1}^n (∑_{i=1)^m |A_{ij}|^p)^{p/q} |^{1/q}
+    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
 
     If `normalize=True`, the sums are replaced with averages.
     """

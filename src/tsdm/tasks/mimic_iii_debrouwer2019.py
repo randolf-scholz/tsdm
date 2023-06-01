@@ -176,13 +176,12 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
         This gives a total of 3,082,224 unique measurements across all patients, or an average of 145
         measurements per patient over 48 hours.
 
-    References
-    ----------
-    - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
-        <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
-      | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
-      | `Advances in Neural Information Processing Systems 2019
-        <https://proceedings.neurips.cc/paper/2019>`_
+    References:
+        - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
+            <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+          | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
+          | `Advances in Neural Information Processing Systems 2019
+            <https://proceedings.neurips.cc/paper/2019>`_
     """
 
     observation_time = 75  # corresponds to 36 hours after admission (freq=30min)

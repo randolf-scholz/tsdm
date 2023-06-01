@@ -123,7 +123,7 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
 
 
 @mark.parametrize("mode", MODES)
-def test_grid_pandas(mode):
+def test_grid_pandas(mode: str) -> None:
     r"""Test compute_grid function with various input types."""
     LOGGER = __logger__.getChild(compute_grid.__name__)
     LOGGER.info("Testing mode: %s", mode)
@@ -135,7 +135,7 @@ def test_grid_pandas(mode):
     LOGGER.info("Finished testing mode: %s", mode)
 
 
-def test_grid_extra():
+def test_grid_extra() -> None:
     r"""Test on some intervals."""
     LOGGER = __logger__.getChild(compute_grid.__name__)
     LOGGER.info("Testing on extra data")

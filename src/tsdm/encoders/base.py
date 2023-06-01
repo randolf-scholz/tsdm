@@ -33,9 +33,9 @@ from typing import (
     runtime_checkable,
 )
 
-from tsdm.types.variables import Any2Var as S
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import any2_var as S
+from tsdm.types.variables import any_var as T
+from tsdm.types.variables import key_var as K
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.strings import repr_object, repr_type
 
@@ -69,9 +69,13 @@ class Encoder(Protocol[T, S]):
 class BaseEncoderMetaClass(ABCMeta):
     r"""Metaclass for BaseDataset."""
 
-    def __init__(cls, *args: Any, **kwargs: Any) -> None:
-        cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
-        super().__init__(*args, **kwargs)
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        super().__init__(name, bases, namespace, **kwds)
+
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
 class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
@@ -80,7 +84,7 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the Encoder."""
 
-    requires_fit: bool = NotImplemented
+    requires_fit: bool = True
     r"""Whether the encoder requires fitting."""
 
     _is_fitted: bool = False
@@ -382,7 +386,7 @@ class MappingEncoder(BaseEncoder, Mapping[K, EncoderVar]):
         }
 
 
-class DuplicateEncoder(BaseEncoder):
+class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     r"""Duplicate encoder multiple times (references same object)."""
 
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
@@ -392,17 +396,17 @@ class DuplicateEncoder(BaseEncoder):
         self.encoder = ProductEncoder(*(self.base_encoder for _ in range(n)))
         self.is_fitted = self.encoder.is_fitted
 
-    def fit(self, data: Any, /) -> None:
+    def fit(self, data: tuple[T, ...], /) -> None:
         return self.encoder.fit(data)
 
-    def encode(self, data, /):
+    def encode(self, data: tuple[T, ...], /) -> tuple[S, ...]:
         return self.encoder.encode(data)
 
-    def decode(self, data, /):
+    def decode(self, data: tuple[S, ...], /) -> tuple[T, ...]:
         return self.encoder.decode(data)
 
 
-class CloneEncoder(BaseEncoder):
+class CloneEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     r"""Clone encoder multiple times (distinct copies)."""
 
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
@@ -412,11 +416,11 @@ class CloneEncoder(BaseEncoder):
         self.encoder = ProductEncoder(*(deepcopy(self.base_encoder) for _ in range(n)))
         self.is_fitted = self.encoder.is_fitted
 
-    def fit(self, data: Any, /) -> None:
+    def fit(self, data: tuple[T, ...], /) -> None:
         return self.encoder.fit(data)
 
-    def encode(self, data, /):
+    def encode(self, data: tuple[T, ...], /) -> tuple[S, ...]:
         return self.encoder.encode(data)
 
-    def decode(self, data, /):
+    def decode(self, data: tuple[S, ...], /) -> tuple[T, ...]:
         return self.encoder.decode(data)

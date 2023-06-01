@@ -1,4 +1,5 @@
 r"""Deprecated Kiwi Task Object."""
+# mypy: ignore-errors
 
 __all__ = [
     # Classes
@@ -24,7 +25,8 @@ from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.tasks.base import TimeSeriesSampleGenerator
-from tsdm.utils.data import MappingDataset, TimeSeriesDataset
+from tsdm.utils.data import MappingDataset
+from tsdm.utils.data.timeseries import TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 

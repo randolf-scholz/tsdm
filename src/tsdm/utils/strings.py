@@ -323,20 +323,22 @@ def repr_mapping(
     # add indent
     string = string.replace("\n", "\n" + " " * indent)
 
-    config = {
-        "object": type(obj).__name__,
-        "size": len(obj),
-        "align": align,
-        "identifier": identifier,
-        "indent": indent,
-        "linebreaks": linebreaks,
-        "maxitems": maxitems,
-        "padding": padding,
-        "recursive": recursive,
-        "repr_fun": repr_fun,
-        "title": title,
-    }
-    __logger__.debug("config=%s", config)
+    __logger__.debug(
+        "config=%s",
+        {
+            "object": type(obj).__name__,
+            "size": len(obj),
+            "align": align,
+            "identifier": identifier,
+            "indent": indent,
+            "linebreaks": linebreaks,
+            "maxitems": maxitems,
+            "padding": padding,
+            "recursive": recursive,
+            "repr_fun": repr_fun,
+            "title": title,
+        },
+    )
     return string
 
 
@@ -474,20 +476,22 @@ def repr_sequence(
     # add indent
     string = string.replace("\n", "\n" + " " * indent)
 
-    config = {
-        "object": type(obj).__name__,
-        "size": len(obj),
-        "align": align,
-        "identifier": identifier,
-        "indent": indent,
-        "linebreaks": linebreaks,
-        "maxitems": maxitems,
-        "padding": padding,
-        "recursive": recursive,
-        "repr_fun": repr_fun,
-        "title": title,
-    }
-    __logger__.debug("config=%s", config)
+    __logger__.debug(
+        "config=%s",
+        {
+            "object": type(obj).__name__,
+            "size": len(obj),
+            "align": align,
+            "identifier": identifier,
+            "indent": indent,
+            "linebreaks": linebreaks,
+            "maxitems": maxitems,
+            "padding": padding,
+            "recursive": recursive,
+            "repr_fun": repr_fun,
+            "title": title,
+        },
+    )
     return string
 
 
@@ -524,7 +528,7 @@ def repr_dataclass(
 
     # set title
     if title is None:
-        if cls in BUILTIN_CONSTANTS:
+        if self in BUILTIN_CONSTANTS:
             title = ""
         else:
             title = cls.__name__
@@ -593,7 +597,7 @@ def repr_namedtuple(
 
     # set title
     if title is None:
-        if cls in BUILTIN_CONSTANTS:
+        if self in BUILTIN_CONSTANTS:
             title = ""
         else:
             title = cls.__name__

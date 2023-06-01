@@ -21,13 +21,11 @@ __all__ = ["MIMIC_III"]
 import os
 import subprocess
 from getpass import getpass
-from pathlib import Path
-from typing import Any
 
-from tsdm.datasets.base import MultiFrameDataset
+from tsdm.datasets.base import MultiTableDataset
 
 
-class MIMIC_III(MultiFrameDataset):
+class MIMIC_III(MultiTableDataset):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -59,8 +57,10 @@ class MIMIC_III(MultiFrameDataset):
     VERSION = r"1.0"
     RAWDATA_HASH = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
 
-    rawdata_files = "mimic-iv-1.0.zip"
-    rawdata_paths: Path
+    rawdata_files = ["mimic-iv-1.0.zip"]
+    rawdata_hashes = {
+        "mimic-iv-1.0.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd",
+    }
     # fmt: off
     dataset_files = {
         "ADMISSIONS"         : "mimic-iii-clinical-database-1.4/ADMISSIONS.csv.gz",
@@ -91,13 +91,14 @@ class MIMIC_III(MultiFrameDataset):
         "TRANSFERS"          : "mimic-iii-clinical-database-1.4/TRANSFERS.csv.gz",
     }
     # fmt: on
-
-    KEYS = list(dataset_files.keys())
+    table_names = list(dataset_files.keys())
 
     def clean_table(self, key: str) -> None:
         raise NotImplementedError
 
-    def download_table(self, **_: Any) -> None:
+    def download_file(self, fname: str) -> None:
+        path = self.rawdata_paths[fname]
+
         cut_dirs = self.BASE_URL.count("/") - 3
         user = input("MIMIC-III username: ")
         password = getpass(prompt="MIMIC-III password: ", stream=None)
@@ -106,10 +107,10 @@ class MIMIC_III(MultiFrameDataset):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} ",
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
             shell=True,
             check=True,
         )
 
         file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, self.rawdata_files)
+        os.rename(file, fname)

@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
-def test_make_masked_format():
+def test_make_masked_format() -> None:
     r"""Using example taken from Figure 2 in [1].
 
     References

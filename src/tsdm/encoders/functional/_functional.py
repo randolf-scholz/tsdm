@@ -70,14 +70,12 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
     value     same as input
     ========  ================================================
 
-    References
-    ----------
-    - `pandas.melt`
-    - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
+    References:
+        - `pandas.melt`
+        - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
-    See Also
-    --------
-    `make_sparse_triplets`, `make_masked_format`
+    See Also:
+        `make_sparse_triplets`, `make_masked_format`
     """
     result = df.melt(ignore_index=False)
     observed = result["value"].notna()
@@ -108,15 +106,13 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
     other   `pandas.SparseDtype`
     ======  ====================
 
-    References
-    ----------
-    - `pandas.melt`
-    - `pandas.get_dummies`
-    - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
+    References:
+        - `pandas.melt`
+        - `pandas.get_dummies`
+        - `Set-Functions For Time Series <https://proceedings.mlr.press/v119/horn20a.html>`_
 
-    See Also
-    --------
-    `make_dense_triplets`, `make_masked_format`
+    See Also:
+        `make_dense_triplets`, `make_masked_format`
     """
     triplets = make_dense_triplets(df)
     result = pd.get_dummies(
@@ -130,8 +126,8 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
 
     Returns:
         x: The original `DataFrame`
-        m: mask :math:`m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}`
-        d: time delta  :math:`δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt`, with $δ_0=0$
+        m: mask $m_t = \begin{cases}1:& x_t = \text{NaN} \\ 0:& \text{else} \end{cases}$
+        d: time delta  $δ_t = (1-m_{t-1})⊙δ_{t-1} + Δt$, with $δ_0=0$
 
     References:
         - | Recurrent Neural Networks for Multivariate Time Series with Missing Values

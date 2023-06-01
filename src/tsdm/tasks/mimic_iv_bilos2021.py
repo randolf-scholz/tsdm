@@ -171,13 +171,12 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         an ODE with a regular neural network does not outperform GRU-ODE [16]. Finally, we report
         that the model with GRU flow requires 60% less time to run one training epoch.
 
-    References
-    ----------
-    - | `Neural Flows: Efficient Alternative to Neural ODEs
-        <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
-      | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann
-      | `Advances in Neural Information Processing Systems 2021
-        <https://proceedings.neurips.cc/paper/2021>`_
+    References:
+        - | `Neural Flows: Efficient Alternative to Neural ODEs
+            <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
+          | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann
+          | `Advances in Neural Information Processing Systems 2021
+            <https://proceedings.neurips.cc/paper/2021>`_
     """
 
     observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)
@@ -208,7 +207,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         # bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
 
         # Standardize the x-values, min-max scale the t values.
-        ts = ds.dataset
+        ts = ds.table
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor.index_encoders["time_stamp"]

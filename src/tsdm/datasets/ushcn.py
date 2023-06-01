@@ -1,58 +1,27 @@
-r"""#TODO add module summary line.
+r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 
-#TODO add module description.
-"""
+__all__ = ["USHCN"]
 
-__all__ = [
-    # Classes
-    "USHCN",
-]
-
-import importlib
-import logging
-import os
-from collections.abc import Callable
-from functools import wraps
-from pathlib import Path
+import warnings
 from typing import Literal, TypeAlias
 
-import pandas
+import pandas as pd
 from pandas import DataFrame
 
-from tsdm.datasets.base import MultiFrameDataset
-from tsdm.types.variables import ParameterVar as P
-from tsdm.types.variables import ReturnVar_co as R
+from tsdm.datasets.base import MultiTableDataset
+from tsdm.utils.data import remove_outliers
 
-__logger__ = logging.getLogger(__name__)
-
-
-def with_ray_cluster(func: Callable[P, R]) -> Callable[P, R]:
-    r"""Run function with ray cluster."""
-
-    @wraps(func)
-    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        if importlib.util.find_spec("ray") is not None:
-            ray = importlib.import_module("ray")
-            # Only use 80% of the available CPUs.
-            num_cpus = max(1, ((os.cpu_count() or 0) * 4) // 5)
-            __logger__.warning("Starting ray cluster with num_cpus=%s.", num_cpus)
-            ray.init(num_cpus=num_cpus)
-            try:
-                return func(*args, **kwargs)
-            finally:
-                __logger__.warning("Tearing down ray cluster.")
-                ray.shutdown()
-        else:
-            __logger__.warning("Ray not found, skipping ray cluster.")
-            return func(*args, **kwargs)
-
-    return _wrapper
+KEY: TypeAlias = Literal[
+    "timeseries",
+    "timeseries_description",
+    "metadata",
+    "metadata_description",
+    "state_codes",
+    "timeseries_complete",
+]
 
 
-KEY: TypeAlias = Literal["us_daily", "states", "stations"]
-
-
-class USHCN(MultiFrameDataset[KEY]):
+class USHCN(MultiTableDataset[KEY, DataFrame]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -196,130 +165,220 @@ class USHCN(MultiFrameDataset[KEY]):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
-    KEYS = ["us_daily", "states", "stations"]
-    r"""The names of the DataFrames associated with this dataset."""
-    RAWDATA_HASH = {
-        "data_format.txt": "0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
-        "ushcn-stations.txt": "002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
-        "station_file_format.txt": "4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
-        "us.txt.gz": "4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
+
+    table_names = [
+        "timeseries",
+        "timeseries_description",
+        "metadata",
+        "metadata_description",
+        "state_codes",
+        "timeseries_complete",
+    ]
+    rawdata_files = [
+        "data_format.txt",
+        "ushcn-stations.txt",
+        "station_file_format.txt",
+        "us.txt.gz",
+    ]
+    rawdata_hashes = {
+        "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
+        "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
+        "station_file_format.txt": "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
+        "us.txt.gz": "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
     }
-    DATASET_HASH = {
-        "us_daily": "03ca354b90324f100402c487153e491ec1da53a3e1eda57575750645b44dbe12",
-        "states": "388175ed2bcd17253a7a2db2a6bd8ce91db903d323eaea8c9401024cd19af03f",
-        "stations": "1c45405915fd7a133bf7b551a196cc59f75d2a20387b950b432165fd2935153b",
+    rawdata_schemas = {
+        "metadata": {
+            # fmt: off
+            "COOP_ID"     : "string[pyarrow]",
+            "LATITUDE"    : "float32[pyarrow]",
+            "LONGITUDE"   : "float32[pyarrow]",
+            "ELEVATION"   : "float32[pyarrow]",
+            "STATE"       : "string",  # not pyarrow due to bug in pandas.
+            "NAME"        : "string[pyarrow]",
+            "COMPONENT_1" : "int32[pyarrow]",
+            "COMPONENT_2" : "int32[pyarrow]",
+            "COMPONENT_3" : "int32[pyarrow]",
+            "UTC_OFFSET"  : "timedelta64[s]",
+            # fmt: on
+        },
     }
-    TABLE_SHAPE = {
-        "us_daily": (204771562, 5),
-        "states": (48, 3),
-        "stations": (1218, 9),
+    table_shapes = {
+        "timeseries": (204771562, 5),
+        "metadata": (1218, 9),
+        "state_codes": (48, 3),
     }
-    index = ["us_daily", "states", "stations"]
-    rawdata_files = {
-        "metadata": "data_format.txt",
-        "stations": "ushcn-stations.txt",
-        "stations_metadata": "station_file_format.txt",
-        "us_daily": "us.txt.gz",
-        "states": None,
+    table_schemas = {
+        "timeseries": {
+            # fmt: off
+            "PRCP" : "int16[pyarrow]",
+            "SNOW" : "int16[pyarrow]",
+            "SNWD" : "int16[pyarrow]",
+            "TMAX" : "int16[pyarrow]",
+            "TMIN" : "int16[pyarrow]",
+            # fmt: on
+        },
+        "metadata": {
+            # fmt: off
+            "LATITUDE"    : "float[pyarrow]",
+            "LONGITUDE"   : "float[pyarrow]",
+            "ELEVATION"   : "float[pyarrow]",
+            "STATE"       : "dictionary[int32, string][pyarrow]",
+            "NAME"        : "string[pyarrow]",
+            "COMPONENT_1" : "int32[pyarrow]",
+            "COMPONENT_2" : "int32[pyarrow]",
+            "COMPONENT_3" : "int32[pyarrow]",
+            "UTC_OFFSET"  : "duration[s][pyarrow]",
+            # fmt: on
+        },
+        "timeseries_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
+        },
+        "metadata_description": {
+            # fmt: off
+            "variable"       : "string[pyarrow]",
+            "lower"          : "float32[pyarrow]",
+            "upper"          : "float32[pyarrow]",
+            "lower_included" : "bool[pyarrow]",
+            "upper_included" : "bool[pyarrow]",
+            "unit"           : "string[pyarrow]",
+            "description"    : "string[pyarrow]",
+            # fmt: on
+        },
     }
-    rawdata_paths: dict[str, Path]
 
-    def clean_table(self, key: KEY = "us_daily") -> DataFrame:
-        if key == "us_daily":
-            return self._clean_us_daily()
-        if key == "states":
-            return self._clean_states()
-        if key == "stations":
-            return self._clean_stations()
+    def clean_table(self, key: KEY = "timeseries") -> DataFrame:
+        match key:
+            case "timeseries":
+                return self._clean_timeseries()
+            case "timeseries_complete":
+                return self._clean_timeseries_complete()
+            case "metadata":
+                return self._clean_metadata()
+            case "state_codes":
+                return self._state_codes()
+            case "timeseries_description":
+                return self._timeseries_description()
+            case "metadata_description":
+                return self._metadata_description()
+            case _:
+                raise KeyError(f"Unknown key: {key}")
 
-        raise KeyError(f"Unknown key: {key}")
-
-    def _clean_states(self) -> DataFrame:
-        state_dtypes = {
-            "ID": pandas.CategoricalDtype(ordered=True),
-            "Abbr.": pandas.CategoricalDtype(ordered=True),
-            "State": pandas.StringDtype(),
-        }
-        state_codes = self._state_codes
-        columns = state_codes.pop(0)
-        states = pandas.DataFrame(state_codes, columns=columns)
-        states = states.astype(state_dtypes)
-        return states
-        # states.to_feather(self.dataset_paths["states"])
-        # self.__logger__.info("Finished cleaning 'states' DataFrame")
-
-    def _clean_stations(self) -> DataFrame:
-        stations_file = self.rawdata_paths["stations"]
-        if not stations_file.exists():
-            self.download()
-
+    def _clean_metadata(self) -> DataFrame:
         stations_colspecs = {
-            "COOP_ID": (1, 6),
-            "LATITUDE": (8, 15),
-            "LONGITUDE": (17, 25),
-            "ELEVATION": (27, 32),
-            "STATE": (34, 35),
-            "NAME": (37, 66),
+            # fmt: off
+            "COOP_ID":     (1, 6),
+            "LATITUDE":    (8, 15),
+            "LONGITUDE":   (17, 25),
+            "ELEVATION":   (27, 32),
+            "STATE":       (34, 35),
+            "NAME":        (37, 66),
             "COMPONENT_1": (68, 73),
             "COMPONENT_2": (75, 80),
             "COMPONENT_3": (82, 87),
-            "UTC_OFFSET": (89, 90),
+            "UTC_OFFSET":  (89, 90),
+            # fmt: on
         }
-
         # pandas wants list[tuple[int, int]], 0 indexed, half open intervals.
         stations_cspecs = [(a - 1, b) for a, b in stations_colspecs.values()]
 
-        stations_dtypes = {
-            "COOP_ID": "string",
-            "LATITUDE": "float32",
-            "LONGITUDE": "float32",
-            "ELEVATION": "float32",
-            "STATE": "string",
-            "NAME": "string",
-            "COMPONENT_1": "string",
-            "COMPONENT_2": "string",
-            "COMPONENT_3": "string",
-            "UTC_OFFSET": "timedelta64[h]",
+        na_values = {
+            "ELEVATION": ["-999.9"],
+            "COMPONENT_1": ["------"],
+            "COMPONENT_2": ["------"],
+            "COMPONENT_3": ["------"],
         }
 
-        stations_new_dtypes = {
-            "COOP_ID": "category",
-            "COMPONENT_1": "Int32",
-            "COMPONENT_2": "Int32",
-            "COMPONENT_3": "Int32",
-            "STATE": "category",
-        }
-
-        stations_na_values = {
-            "ELEVATION": "-999.9",
-            "COMPONENT_1": "------",
-            "COMPONENT_2": "------",
-            "COMPONENT_3": "------",
-        }
-
-        stations = pandas.read_fwf(
-            stations_file,
-            colspecs=stations_cspecs,
-            dtype=stations_dtypes,
-            names=stations_colspecs,
-            na_value=stations_na_values,
+        metadata = (
+            pd.read_fwf(
+                self.rawdata_paths["ushcn-stations.txt"],
+                colspecs=stations_cspecs,
+                dtype=self.rawdata_schemas["metadata"],
+                names=stations_colspecs,
+                na_values=na_values,
+                dtype_backend="pyarrow",
+            )
+            .astype({"STATE": "category"})
+            .set_index("COOP_ID")
         )
 
-        for col, na_value in stations_na_values.items():
-            stations[col] = stations[col].replace(na_value, pandas.NA)
+        self.LOGGER.info("Removing outliers from metadata.")
+        metadata = remove_outliers(metadata, self.table_schemas["metadata"])
 
-        stations = stations.astype(stations_new_dtypes)
-        stations = stations.set_index("COOP_ID")
+        return metadata
 
-        return stations
-        # stations.to_parquet(self.dataset_paths["stations"])
+    def _clean_timeseries(self) -> DataFrame:
+        self.LOGGER.info("Creating simplified timeseries table.")
+        table = self.tables["timeseries_complete"]
 
-    @with_ray_cluster
-    def _clean_us_daily(self) -> DataFrame:
-        if importlib.util.find_spec("modin") is not None:
-            mpd = importlib.import_module("modin.pandas")
-        else:
-            mpd = pandas
+        self.LOGGER.info("dropping all data with raised quality flags.")
+        table = table.loc[table["QFLAG"].isna()]
+
+        # FIXME: ArrowNotImplementedError: Function 'dictionary_encode' has no kernel matching input types dictionary
+        # FIXME: https://github.com/apache/arrow/issues/34890
+        table = table[["ELEMENT", "VALUE"]].astype({"ELEMENT": "string[pyarrow]"})
+
+        self.LOGGER.info("Performing pivot operation.")
+        ts = table.pivot(columns="ELEMENT", values="VALUE")
+        ts.columns = ts.columns.astype("string[pyarrow]")
+
+        self.LOGGER.info("Removing outliers from timeseries.")
+        ts = remove_outliers(ts, self.table_schemas["timeseries"])
+
+        return ts
+
+    def _timeseries_description(self) -> DataFrame:
+        r"""Metadata for each unit."""
+        data = [
+            # fmt: off
+            ("PRCP", 0,    None, True,  True,  "10²in", "precipitation"),
+            ("SNOW", 0,    None, True,  True,  "10¹in", "snowfall"),
+            ("SNWD", 0,    None, True,  True,  "in",    "snow depth"),
+            ("TMAX", -100, 150,  False, False, "°F",    "maximum temperature"),
+            ("TMIN", -100, 150,  False, False, "°F",    "minimum temperature"),
+            # fmt: on
+        ]
+        return (
+            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
+            .astype(self.table_schemas["timeseries_description"])
+            .set_index("variable")
+        )
+
+    def _metadata_description(self) -> DataFrame:
+        r"""Metadata for each unit."""
+        data = [
+            # fmt: off
+            ("LATITUDE",    -90,  90,    True, True,  "°",  "latitude"),
+            ("LONGITUDE",   -180, 180,   True, True,  "°",  "longitude"),
+            ("ELEVATION",   -100, 10000, True, True,  "m",  "elevation"),
+            ("STATE",       None, None,  True, True,  "ID", "state"),
+            ("NAME",        None, None,  True, True,  None, "name"),
+            ("COMPONENT_1", 0,    None,  True, True,  "ID", "station ID"),
+            ("COMPONENT_2", 0,    None,  True, True,  "ID", "station ID"),
+            ("COMPONENT_3", 0,    None,  True, True,  "ID", "station ID"),
+            ("UTC_OFFSET",  None, None,  True, True,  "h",  "UTC offset"),
+            # fmt: on
+        ]
+        return (
+            DataFrame(data, columns=list(self.table_schemas["metadata_description"]))
+            .astype(self.table_schemas["metadata_description"])
+            .set_index("variable")
+        )
+
+    def _clean_timeseries_complete(self) -> DataFrame:
+        warnings.warn(
+            "This can take a while to run. Consider using the Modin backend."
+            "Refactor if read_fwf becomes available in polars or pyarrow.",
+            UserWarning,
+            stacklevel=2,
+        )
 
         # column: (start, stop)
         colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
@@ -329,6 +388,7 @@ class USHCN(MultiFrameDataset[KEY]):
             "ELEMENT": (13, 16),
         }
 
+        # Add columns for each day of the month.
         for k, i in enumerate(range(17, 258, 8)):
             colspecs |= {
                 ("VALUE", k + 1): (i, i + 4),
@@ -337,153 +397,164 @@ class USHCN(MultiFrameDataset[KEY]):
                 ("SFLAG", k + 1): (i + 7, i + 7),
             }
 
-        MFLAGS = pandas.CategoricalDtype(list("BDHKLOPTW"))
-        QFLAGS = pandas.CategoricalDtype(list("DGIKLMNORSTWXZ"))
-        SFLAGS = pandas.CategoricalDtype(list("067ABFGHKMNRSTUWXZ"))
-        ELEMENTS = pandas.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
-
-        dtypes = {
-            "COOP_ID": "string",
-            "YEAR": "int16",
-            "MONTH": "int8",
-            "ELEMENT": ELEMENTS,
-            "VALUE": pandas.Int16Dtype(),
-            "MFLAG": MFLAGS,
-            "QFLAG": QFLAGS,
-            "SFLAG": SFLAGS,
-        }
-
-        # dtypes but with same index as colspec.
-        dtype = {
-            key: (dtypes[key[0]] if isinstance(key, tuple) else dtypes[key])
-            for key in colspecs
-        }
-
         # pandas wants list[tuple[int, int]], 0 indexed, half open intervals.
         cspec = [(a - 1, b) for a, b in colspecs.values()]
 
+        MFLAGS_DTYPE = pd.CategoricalDtype(list("BDHKLOPTW"))
+        QFLAGS_DTYPE = pd.CategoricalDtype(list("DGIKLMNORSTWXZ"))
+        SFLAGS_DTYPE = pd.CategoricalDtype(list("067ABFGHKMNRSTUWXZ"))
+        ELEMENTS_DTYPE = pd.CategoricalDtype(("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
+        VALUES_DTYPE = "int16[pyarrow]"
+
+        base_dtypes = {
+            # fmt: off
+            "COOP_ID" : "string",  # not pyarrow due to bug in pandas.
+            "YEAR"    : "int16[pyarrow]",
+            "MONTH"   : "int8[pyarrow]",
+            "ELEMENT" : "string[pyarrow]",
+            "VALUE"   : "int16[pyarrow]",
+            "MFLAG"   : "string[pyarrow]",
+            "QFLAG"   : "string[pyarrow]",
+            "SFLAG"   : "string[pyarrow]",
+            # fmt: on
+        }
+
+        updated_dtypes = {
+            # fmt: off
+            "COOP_ID" : pd.CategoricalDtype(ordered=True),
+            "YEAR"    : "int16[pyarrow]",
+            "MONTH"   : "int8[pyarrow]",
+            "ELEMENT" : ELEMENTS_DTYPE,
+            "VALUE"   : VALUES_DTYPE,
+            "MFLAG"   : MFLAGS_DTYPE,
+            "QFLAG"   : QFLAGS_DTYPE,
+            "SFLAG"   : SFLAGS_DTYPE,
+            # fmt: on
+        }
+
+        # dtypes but with same index as colspec.
+        column_dtypes = {
+            key: (base_dtypes[key[0]] if isinstance(key, tuple) else base_dtypes[key])
+            for key in colspecs
+        }
+
         # per column values to be interpreted as nan
-        na_values = {("VALUE", k): "-9999" for k in range(1, 32)}
-        us_daily_path = self.rawdata_paths["us_daily"]
+        na_values = {("VALUE", k): ["-9999"] for k in range(1, 32)}
 
         self.LOGGER.info("Loading main file...")
-        ds = mpd.read_fwf(
-            us_daily_path,
+        ds = pd.read_fwf(
+            self.rawdata_paths["us.txt.gz"],
             colspecs=cspec,
             names=colspecs,
             na_values=na_values,
-            dtype=dtype,
+            dtype=column_dtypes,
             compression="gzip",
-        )
+        ).rename_axis(index="ID")
 
-        self.LOGGER.info("Cleaning up columns...")
+        self.LOGGER.info("Splitting dataframe...")
         # convert data part (VALUES, SFLAGS, MFLAGS, QFLAGS) to stand-alone dataframe
         id_cols = ["COOP_ID", "YEAR", "MONTH", "ELEMENT"]
         data_cols = [col for col in ds.columns if col not in id_cols]
-        columns = mpd.DataFrame(data_cols, columns=["VAR", "DAY"])
-        columns = columns.astype({"VAR": "string", "DAY": "uint8"})
-        columns = columns.astype("category")
+        data, index = ds[data_cols], ds[id_cols]
+        del ds
+
+        self.LOGGER.info("Cleaning up columns...")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
-        data = ds[data_cols]
-        data.columns = pandas.MultiIndex.from_frame(columns)
+        data.columns = pd.MultiIndex.from_frame(
+            pd.DataFrame(data_cols, columns=["VAR", "DAY"])
+            .astype({"VAR": "string", "DAY": "uint8"})
+            .astype("category")
+        )
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
         # stack on day, this will collapse (VALUE1, ..., VALUE31) into a single VALUE column.
-        data = data.stack(level="DAY", dropna=False)
-        data = data.reset_index(level="DAY")
+        data = (
+            data.stack(level="DAY", dropna=False)
+            .reset_index(level="DAY")
+            .astype(  # correct dtypes after stacking operation
+                {
+                    "DAY": "int8",
+                    "VALUE": VALUES_DTYPE,
+                    "MFLAG": MFLAGS_DTYPE,
+                    "QFLAG": QFLAGS_DTYPE,
+                    "SFLAG": SFLAGS_DTYPE,
+                }
+            )
+        )
 
         self.LOGGER.info("Merging on ID columns...")
-        # correct dtypes after stacking operation
-        _dtypes = {k: v for k, v in dtypes.items() if k in data.columns}
-        data = data.astype(_dtypes | {"DAY": "int8"})
-
-        # recombine data columns with original data
-        data = ds[id_cols].join(data, how="inner")
-        data = data.astype(dtypes | {"DAY": "int8", "COOP_ID": "category"})
+        data = data.join(index, how="inner").astype(updated_dtypes)
 
         self.LOGGER.info("Creating time index...")
-        data = data.reset_index(drop=True)
-        datetimes = mpd.to_datetime(data[["YEAR", "MONTH", "DAY"]], errors="coerce")
-        data = data.drop(columns=["YEAR", "MONTH", "DAY"])
-        data["TIME"] = datetimes
-        data = data.dropna(subset=["TIME"])
-
-        self.LOGGER.info("Pre-Sorting index....")
-        data = data.set_index("COOP_ID")
-        data = data.sort_index()  # fast pre-sort with single index
-        data = data.set_index("TIME", append=True)
-
-        self.LOGGER.info("Converting back to standard pandas DataFrame....")
-        try:
-            data = data._to_pandas()  # pylint: disable=protected-access
-        except AttributeError:
-            pass
-
-        self.LOGGER.info("Sorting columns....")
-        data = data.reindex(
-            columns=[
-                "ELEMENT",
-                "MFLAG",
-                "QFLAG",
-                "SFLAG",
-                "VALUE",
-            ]
+        date_cols = ["YEAR", "MONTH", "DAY"]
+        data = (
+            data.assign(DATE=pd.to_datetime(data[date_cols], errors="coerce"))
+            .drop(columns=date_cols)
+            .dropna(subset=["DATE", "VALUE"])
         )
-        self.LOGGER.info("Sorting index....")
-        data = data.sort_values(by=["COOP_ID", "TIME", "ELEMENT"])
+
+        self.LOGGER.info("Set index and sort...")
+        data = (
+            data.set_index(["COOP_ID", "DATE"])
+            .reindex(columns=["ELEMENT", "MFLAG", "QFLAG", "SFLAG", "VALUE"])
+            .sort_values(by=["COOP_ID", "DATE", "ELEMENT"])
+        )
 
         return data
 
-    @property
-    def _state_codes(self) -> list[tuple[str, str, str]]:
-        return [
-            ("ID", "Abbr.", "State"),
-            ("01", "AL", "Alabama"),
-            ("02", "AZ", "Arizona"),
-            ("03", "AR", "Arkansas"),
-            ("04", "CA", "California"),
-            ("05", "CO", "Colorado"),
-            ("06", "CT", "Connecticut"),
-            ("07", "DE", "Delaware"),
-            ("08", "FL", "Florida"),
-            ("09", "GA", "Georgia"),
-            ("10", "ID", "Idaho"),
-            ("11", "IL", "Idaho"),
-            ("12", "IN", "Indiana"),
-            ("13", "IA", "Iowa"),
-            ("14", "KS", "Kansas"),
-            ("15", "KY", "Kentucky"),
-            ("16", "LA", "Louisiana"),
-            ("17", "ME", "Maine"),
-            ("18", "MD", "Maryland"),
-            ("19", "MA", "Massachusetts"),
-            ("20", "MI", "Michigan"),
-            ("21", "MN", "Minnesota"),
-            ("22", "MS", "Mississippi"),
-            ("23", "MO", "Missouri"),
-            ("24", "MT", "Montana"),
-            ("25", "NE", "Nebraska"),
-            ("26", "NV", "Nevada"),
-            ("27", "NH", "NewHampshire"),
-            ("28", "NJ", "NewJersey"),
-            ("29", "NM", "NewMexico"),
-            ("30", "NY", "NewYork"),
-            ("31", "NC", "NorthCarolina"),
-            ("32", "ND", "NorthDakota"),
-            ("33", "OH", "Ohio"),
-            ("34", "OK", "Oklahoma"),
-            ("35", "OR", "Oregon"),
-            ("36", "PA", "Pennsylvania"),
-            ("37", "RI", "RhodeIsland"),
-            ("38", "SC", "SouthCarolina"),
-            ("39", "SD", "SouthDakota"),
-            ("40", "TN", "Tennessee"),
-            ("41", "TX", "Texas"),
-            ("42", "UT", "Utah"),
-            ("43", "VT", "Vermont"),
-            ("44", "VA", "Virginia"),
-            ("45", "WA", "Washington"),
-            ("46", "WV", "WestVirginia"),
-            ("47", "WI", "Wisconsin"),
-            ("48", "WY", "Wyoming"),
-        ]
+    @staticmethod
+    def _state_codes() -> DataFrame:
+        return pd.DataFrame(
+            [
+                ("01", "AL", "Alabama"),
+                ("02", "AZ", "Arizona"),
+                ("03", "AR", "Arkansas"),
+                ("04", "CA", "California"),
+                ("05", "CO", "Colorado"),
+                ("06", "CT", "Connecticut"),
+                ("07", "DE", "Delaware"),
+                ("08", "FL", "Florida"),
+                ("09", "GA", "Georgia"),
+                ("10", "ID", "Idaho"),
+                ("11", "IL", "Idaho"),
+                ("12", "IN", "Indiana"),
+                ("13", "IA", "Iowa"),
+                ("14", "KS", "Kansas"),
+                ("15", "KY", "Kentucky"),
+                ("16", "LA", "Louisiana"),
+                ("17", "ME", "Maine"),
+                ("18", "MD", "Maryland"),
+                ("19", "MA", "Massachusetts"),
+                ("20", "MI", "Michigan"),
+                ("21", "MN", "Minnesota"),
+                ("22", "MS", "Mississippi"),
+                ("23", "MO", "Missouri"),
+                ("24", "MT", "Montana"),
+                ("25", "NE", "Nebraska"),
+                ("26", "NV", "Nevada"),
+                ("27", "NH", "NewHampshire"),
+                ("28", "NJ", "NewJersey"),
+                ("29", "NM", "NewMexico"),
+                ("30", "NY", "NewYork"),
+                ("31", "NC", "NorthCarolina"),
+                ("32", "ND", "NorthDakota"),
+                ("33", "OH", "Ohio"),
+                ("34", "OK", "Oklahoma"),
+                ("35", "OR", "Oregon"),
+                ("36", "PA", "Pennsylvania"),
+                ("37", "RI", "RhodeIsland"),
+                ("38", "SC", "SouthCarolina"),
+                ("39", "SD", "SouthDakota"),
+                ("40", "TN", "Tennessee"),
+                ("41", "TX", "Texas"),
+                ("42", "UT", "Utah"),
+                ("43", "VT", "Vermont"),
+                ("44", "VA", "Virginia"),
+                ("45", "WA", "Washington"),
+                ("46", "WV", "WestVirginia"),
+                ("47", "WI", "Wisconsin"),
+                ("48", "WY", "Wyoming"),
+            ],
+            columns=["ID", "Abbr.", "State"],
+            dtype="string[pyarrow]",
+        )

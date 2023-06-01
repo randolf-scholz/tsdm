@@ -11,7 +11,7 @@ __all__ = [
     # Classes
     "PatchedABCMeta",
     "LazyDict",
-    "LazyFunction",
+    "LazyValue",
     # decorators
     "abstractattribute",
     # utils
@@ -80,4 +80,4 @@ from tsdm.utils.funcutils import (
     is_positional_only_arg,
     is_variadic_arg,
 )
-from tsdm.utils.lazydict import LazyDict, LazyFunction
+from tsdm.utils.lazydict import LazyDict, LazyValue

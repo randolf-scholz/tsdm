@@ -1,13 +1,9 @@
 r"""Subclasses of `torch.util.data.Dataset`."""
 
 __all__ = [
-    # Types
-    "IndexedArray",
+    # Modules
+    "timeseries",
     # Classes
-    "TimeTensor",
-    "TimeSeriesDataset",
-    "TimeSeriesTuple",
-    "TimeSeriesBatch",
     "DatasetCollection",
     "MappingDataset",
     # folds
@@ -21,16 +17,24 @@ __all__ = [
     "unpad_sequence",
     "unpack_sequence",
     # Functions
+    "aggregate_nondestructive",
+    "compute_entropy",
     "float_is_int",
     "get_integer_cols",
+    "remove_outliers",
+    "strip_whitespace",
+    "table_info",
     "vlookup_uniques",
-    "aggregate_nondestructive",
 ]
-
+from tsdm.utils.data import timeseries
 from tsdm.utils.data._data import (
     aggregate_nondestructive,
+    compute_entropy,
     float_is_int,
     get_integer_cols,
+    remove_outliers,
+    strip_whitespace,
+    table_info,
     vlookup_uniques,
 )
 from tsdm.utils.data.dataloaders import (
@@ -45,11 +49,4 @@ from tsdm.utils.data.folds import (
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,
-)
-from tsdm.utils.data.timeseries import (
-    IndexedArray,
-    TimeSeriesBatch,
-    TimeSeriesDataset,
-    TimeSeriesTuple,
-    TimeTensor,
 )

@@ -35,7 +35,7 @@ def test_combined_encoder(SplitID=(0, "train")):
     r"""Test complicated combined encoder."""
     task = KiwiTask()
     ts = task.dataset.timeseries.iloc[:20_000]  # use first 20_000 values only
-    VF = task.dataset.value_features
+    VF = task.dataset.timeseries_description
     sampler = task.samplers[SplitID]
     generator = task.generators[SplitID]
     key = next(iter(sampler))
@@ -43,32 +43,30 @@ def test_combined_encoder(SplitID=(0, "train")):
     x = sample.inputs.x
 
     # Construct the encoder
-    column_encoders = {}
+    column_encoders: dict[str, BaseEncoder] = {}
     for col, scale, lower, upper in VF[["scale", "lower", "upper"]].itertuples():
-        encoder: BaseEncoder
         match scale:
             case "percent":
-                encoder = (
+                column_encoders[col] = (
                     LogitBoxCoxEncoder()
                     @ LinearScaler(lower, upper)
                     @ BoundaryEncoder(lower, upper, mode="clip")
                 )
             case "absolute":
                 if upper < np.inf:
-                    encoder = (
+                    column_encoders[col] = (
                         BoxCoxEncoder()
                         # @ LinearScaler(lower, upper)
                         @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 else:
-                    encoder = BoxCoxEncoder() @ BoundaryEncoder(
+                    column_encoders[col] = BoxCoxEncoder() @ BoundaryEncoder(
                         lower, upper, mode="clip"
                     )
             case "linear":
-                encoder = IdentityEncoder()
+                column_encoders[col] = IdentityEncoder()
             case _:
                 raise ValueError(f"{scale=} unknown")
-        column_encoders[col] = encoder
 
     encoder = (
         FrameAsDict(
@@ -83,19 +81,12 @@ def test_combined_encoder(SplitID=(0, "train")):
         @ Standardizer()
         @ FrameEncoder(
             column_encoders=column_encoders,
-            index_encoders={
-                # "run_id": IdentityEncoder(),
-                # "experiment_id": IdentityEncoder(),
-                "measurement_time": MinMaxScaler()
-                @ TimeDeltaEncoder(),
-            },
+            index_encoders={"measurement_time": MinMaxScaler() @ TimeDeltaEncoder()},
         )
     )
 
-    # fit encoder to the whole dataset
-    encoder.fit(ts)
+    encoder.fit(ts)  # fit encoder to the whole dataset
     encoded = encoder.encode(ts)
-
     decoded = encoder.decode(encoded)
     MAD = (decoded - ts).abs().mean().mean()
     assert all(decoded.isna() == ts.isna()), "NaN pattern mismatch"
@@ -144,3 +135,26 @@ def _main() -> None:
 
 if __name__ == "__main__":
     _main()
+
+# encoder = (
+#    FrameAsDict(
+#        groups={
+#            "key": ["run_id", "experiment_id"],
+#            "T": ["measurement_time"],
+#            "X": ...,
+#        },
+#        dtypes={"T": "float32", "X": "float32"},
+#        encode_index=True,
+#    )
+#    @ Standardizer()
+#    @ FrameEncoder(
+#        column_encoders=column_encoders,
+#        index_encoders={
+#            "measurement_time": MinMaxScaler() @ TimeDeltaEncoder(),
+#        },
+#    )
+# )
+# encoder.fit(ts)  # fit encoder to the whole dataset
+# encoded = encoder.encode(ts)
+# decoded = encoder.decode(encoded)
+#

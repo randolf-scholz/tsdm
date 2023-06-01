@@ -8,40 +8,40 @@ from __future__ import annotations
 __all__ = [
     # Classes
     "LazyDict",
-    "LazyFunction",
+    "LazyValue",
 ]
 
 
-import logging
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from itertools import chain
-from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Any, Generic, TypeAlias, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, Union, overload
 
 from typing_extensions import Self
 
-from tsdm.types.variables import Any2Var as T2
-from tsdm.types.variables import AnyVar as T
-from tsdm.types.variables import Key2Var as K2
-from tsdm.types.variables import KeyVar as K
-from tsdm.types.variables import ReturnVar_co as R
-from tsdm.utils.funcutils import get_function_args, is_positional_arg
+from tsdm.types.variables import any2_var as T2
+from tsdm.types.variables import any_var as T
+from tsdm.types.variables import key2_var as K2
+from tsdm.types.variables import key_var as K
+from tsdm.types.variables import return_var_co as R
+from tsdm.utils.funcutils import (
+    get_function_args,
+    get_return_typehint,
+    is_positional_arg,
+)
 from tsdm.utils.strings import repr_mapping
-
-__logger__ = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from _typeshed import SupportsKeysAndGetItem
 
 
-class LazyFunction(Generic[R]):
+class LazyValue(Generic[R]):
     r"""A placeholder for uninitialized values."""
 
-    # FIXME: use typing.NamedTuple (3.11)
     func: Callable[..., R]
     args: Iterable[Any]
     kwargs: Mapping[str, Any]
+    type_hint: str
 
     def __init__(
         self,
@@ -49,10 +49,14 @@ class LazyFunction(Generic[R]):
         *,
         args: Iterable[Any] = NotImplemented,
         kwargs: Mapping[str, Any] = NotImplemented,
+        type_hint: Optional[str] = None,
     ) -> None:
         self.func = func
         self.args = args if args is not NotImplemented else ()
         self.kwargs = kwargs if kwargs is not NotImplemented else {}
+        self.type_hint = (
+            get_return_typehint(self.func) if type_hint is None else type_hint
+        )
 
     def __call__(self, *args: Any, **kwargs: Any) -> R:
         r"""Execute the function and return the result."""
@@ -60,31 +64,21 @@ class LazyFunction(Generic[R]):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the function."""
-        if isinstance(self.func, FunctionType | MethodType):
-            ann = self.func.__annotations__.get("return", object)  # type: ignore[unreachable]
-        else:
-            ann = self.func.__call__.__annotations__.get("return", object)  # type: ignore[operator]
-
-        # TODO: pretty print annotations, especially for typing types
-        if isinstance(ann, type):
-            val = ann.__name__
-        else:
-            val = str(ann)
-
-        return f"LazyFunction<{val}>()"
+        return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
 FuncSpec: TypeAlias = Union[
-    LazyFunction,
+    LazyValue,
     Callable[[], R],
     Callable[[T], R],
-    tuple[LazyFunction],
+    tuple[LazyValue],
     tuple[Callable[[], R]],  # no args
     tuple[Callable[[T], R]],  # key arg
     tuple[Callable[..., R], tuple],  # args
     tuple[Callable[..., R], dict],  # kwargs
     tuple[Callable[..., R], tuple, dict],  # args, kwargs
 ]
+"""A type alias for the possible values of a LazyDict."""
 
 
 class LazyDict(dict[K, T]):
@@ -104,7 +98,7 @@ class LazyDict(dict[K, T]):
 
     __slots__ = ()
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         r"""Create a new instance of the class."""
         # inherit Mixin Methods from MutableMapping
         # This is crucial because dict.get does not call __getitem__
@@ -147,7 +141,7 @@ class LazyDict(dict[K, T]):
     def __getitem__(self, key: K) -> T:
         r"""Get the value of the key."""
         value = super().__getitem__(key)
-        if isinstance(value, LazyFunction):
+        if isinstance(value, LazyValue):
             new_value = value()
             super().__setitem__(key, new_value)
             return new_value
@@ -164,7 +158,7 @@ class LazyDict(dict[K, T]):
     def __or__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         new = self.copy()
         new.update(other)  # type: ignore[arg-type]
-        return cast(LazyDict[K | K2, T | T2], new)
+        return new  # type: ignore[return-value]
 
     def __ror__(self, other: Mapping[K2, T2], /) -> LazyDict[K | K2, T | T2]:
         if isinstance(other, self.__class__):
@@ -193,30 +187,36 @@ class LazyDict(dict[K, T]):
     def _make_lazy_function(
         key: K,
         value: FuncSpec | T,
-    ) -> LazyFunction:
+    ) -> LazyValue:
         match value:
-            case LazyFunction():
+            case LazyValue():
                 return value
             case Callable():  # type: ignore[misc]
                 args = get_function_args(value, mandatory=True)  # type: ignore[unreachable]
                 match nargs := len(args):
                     case 0:
-                        return LazyFunction(func=value)
+                        return LazyValue(func=value)
                     case 1 if all(is_positional_arg(p) for p in args):
                         # set the key as input
-                        return LazyFunction(func=value, args=(key,))
+                        return LazyValue(func=value, args=(key,))
                     case _:
                         raise TypeError(f"Function {value} requires {nargs} args.")
             case [Callable()]:  # type: ignore[misc]
                 return LazyDict._make_lazy_function(key, value[0])  # type: ignore[index]
             case Callable(), tuple():  # type: ignore[misc]
-                return LazyFunction(func=value[0], args=value[1])  # type: ignore[index, misc]
+                return LazyValue(func=value[0], args=value[1])  # type: ignore[index, misc]
             case Callable(), dict():  # type: ignore[misc]
-                return LazyFunction(func=value[0], kwargs=value[1])  # type: ignore[index, arg-type, misc]
+                return LazyValue(func=value[0], kwargs=value[1])  # type: ignore[index, arg-type, misc]
             case Callable(), tuple(), dict():  # type: ignore[misc]
-                return LazyFunction(value[0], args=value[1], kwargs=value[2])  # type: ignore[index, misc]
+                return LazyValue(value[0], args=value[1], kwargs=value[2])  # type: ignore[index, misc]
             case _:
-                return LazyFunction(lambda: value)
+                warnings.warn(
+                    f"Value {value} is not a callable, returning as is."
+                    f"Provide a tuple (func, args, kwargs) to create Lazy Entry",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                return LazyValue(lambda: value)
 
     def copy(self) -> Self:
         r"""Return a shallow copy of the dictionary."""

@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-from typing import List
+from typing import List, Tuple, Union
 
 import torch
 from torch import Tensor, jit
@@ -41,20 +41,20 @@ from torch import Tensor, jit
 def erank(x: Tensor) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
-    .. math:: \operatorname{erank}(A) = e^{H(\tfrac{𝛔}{‖𝛔‖_1})} = ∏ σ_{i}^{-σ_i}
+    .. math:: \operatorname{erank}(A) ≔ e^{H(\frac{𝛔}{‖𝛔‖_1})}
+        = ∏ \bigl(\frac{σ_i}{‖σ_i‖}\bigr)^{- \frac{σ_i}{‖σ_i‖}}
 
     By definition, the effective rank is equal to the exponential of the entropy of the
     distribution of the singular values.
 
     .. Signature:: ``(..., m, n) -> ...``
 
-    References
-    ----------
-    - | `The effective rank: A measure of effective dimensionality
-        <https://ieeexplore.ieee.org/document/7098875>`_
-      | Olivier Roy, Martin Vetterli
-      | `15th European Signal Processing Conference (EUSIPCO), 2007
-        <https://ieeexplore.ieee.org/xpl/conhome/7067185/proceeding>`_
+    References:
+        - | `The effective rank: A measure of effective dimensionality
+            <https://ieeexplore.ieee.org/document/7098875>`_
+          | Olivier Roy, Martin Vetterli
+          | `15th European Signal Processing Conference (EUSIPCO), 2007
+            <https://ieeexplore.ieee.org/xpl/conhome/7067185/proceeding>`_
     """
     σ = torch.linalg.svdvals(x)
     σ = σ / torch.linalg.norm(σ, ord=1, dim=-1)
@@ -160,7 +160,7 @@ def closest_diag(x: Tensor) -> Tensor:
 def reldist(x: Tensor, y: Tensor) -> Tensor:
     r"""Relative distance between two matrices.
 
-    .. math::  ‖x-y‖/‖y‖
+    .. math::  \frac{‖x-y‖}{‖y‖}
 
     .. Signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
     """
@@ -174,7 +174,7 @@ def reldist(x: Tensor, y: Tensor) -> Tensor:
 def reldist_diag(x: Tensor) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
-    .. math:: ‖A-X‖/‖A‖  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
+    .. math:: \frac{‖A-X‖}{‖A‖}  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
 
     .. Signature:: ``(..., n, n) -> ...``
     """
@@ -203,7 +203,7 @@ def reldist_skew(x: Tensor) -> Tensor:
 def reldist_orth(x: Tensor) -> Tensor:
     r"""Relative magnitude of orthogonal part.
 
-    .. math:: \min_{Q: Q^⊤Q = 𝕀} ‖A-Q‖/‖A‖
+    .. math:: \min_{Q: Q^⊤Q = 𝕀} \frac{‖A-Q‖}{‖A‖}
 
     .. Signature:: ``(..., n, n) -> ...``
     """
@@ -214,17 +214,15 @@ def reldist_orth(x: Tensor) -> Tensor:
 def stiffness_ratio(x: Tensor) -> Tensor:
     r"""Compute the stiffness ratio of a matrix.
 
-    .. math:: \frac{ | \Re(λ_\max) | }{ | \Re{λ_\min} | }
+    .. math:: \frac{|\Re(λ_\max)|}{|\Re(λ_\min)|}
 
     Only applicable if $\Re(λ_i)<0$ for all $i$.
 
     .. Signature:: ``(..., n, n) -> ...``
 
-    References
-    ----------
-    - | Numerical Methods for Ordinary Differential Systems: The Initial Value Problem
-      | J. D. Lambert
-      | ISBN: 978-0-471-92990-1
+    References:
+        - | Numerical Methods for Ordinary Differential Systems: The Initial Value Problem
+          | J. D. Lambert, ISBN: 978-0-471-92990-1
     """
     x = x.to(dtype=torch.complex128)
     λ = torch.linalg.eigvals(x)
@@ -307,13 +305,12 @@ def logarithmic_norm(
     - p=-2: minimum eigenvalue of symmetric part of A
     - p=-∞: minimum rowsum, using real value for diagonal
 
-    References
-    ----------
-    - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
-    - | The logarithmic norm. History and modern theory
-      | Gustaf Söderlind, BIT Numerical Mathematics, 2006
-      | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
-    - https://en.wikipedia.org/wiki/Logarithmic_norm
+    References:
+        - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
+        - | The logarithmic norm. History and modern theory
+          | Gustaf Söderlind, BIT Numerical Mathematics, 2006
+          | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
+        - https://en.wikipedia.org/wiki/Logarithmic_norm
     """
     rowdim, coldim = dim
     rowdim = rowdim % x.ndim
@@ -396,10 +393,8 @@ def schatten_norm(
 
     .. Signature:: ``(..., n, n) -> ...``
 
-    References
-    ----------
-    - | Schatten Norms
-      | <https://en.wikipedia.org/wiki/Schatten_norms>_
+    References:
+        - Schatten Norms <https://en.wikipedia.org/wiki/Schatten_norms>_
     """
     if not torch.is_floating_point(x):
         x = x.to(dtype=torch.float)
@@ -503,7 +498,7 @@ def tensor_norm(
     keepdim: bool = True,
     scaled: bool = False,
 ) -> Tensor:
-    r"""Vector norm of $p$-th order.
+    r"""Entry-wise norm of $p$-th order.
 
     +--------+-----------------------------------+------------------------------------+
     |        | standard                          | size normalized                    |
@@ -553,17 +548,39 @@ def tensor_norm(
 @jit.script
 def matrix_norm(
     x: Tensor,
-    p: float = 2.0,
     dim: tuple[int, int] = (-2, -1),
-    keepdim: bool = True,
-    scaled: bool = False,
+    p: Union[float, Tuple[float, float]] = 2.0,
+    keepdim: Union[bool, Tuple[bool, bool]] = True,
+    scaled: Union[bool, Tuple[bool, bool]] = False,
 ) -> Tensor:
-    r"""Matrix norm of $p$-th order.
+    r"""Entry-Wise Matrix norm of $p,q$-th order.
+
+    .. math:: ‖A‖_{p,q} ≔ \Bigl(∑_n \Bigl(∑_m |A_{mn}|^p\Bigr)^{q/p} \Bigr)^{1/q}
+
+    If $q$ is not specified, then $q=p$ is used. The scaled version is defined as
+
+    .. math:: ‖A‖_{p,q}^* ≔ \Bigl(𝐄_n \Bigl(𝐄_m |A_{mn}|^p\Bigr)^{q/p}\Bigr)^{1/q}
+
+    where $𝐄$ is the averaging operator, which estimates the expected value $𝔼$.
 
     References:
         - [1] https://en.wikipedia.org/wiki/Matrix_norm
     """
-    return tensor_norm(x, p=p, dim=dim, keepdim=keepdim, scaled=scaled)
+    # convert to tuple
+    p = (p, p) if isinstance(p, float) else p
+    dim = (dim[0] % x.ndim, dim[1] % x.ndim)  # absolufy dim
+    keepdim = (keepdim, keepdim) if isinstance(keepdim, bool) else keepdim
+    scaled = (scaled, scaled) if isinstance(scaled, bool) else scaled
+
+    # if keepdim[0] is False then we need to adjust dim[1] accordingly:
+    # this only happens if dim[0] < dim[1], otherwise dim[1] is already correct
+    # 1 if dim[1] needs to change, 0 otherwise
+    m = int(dim[0] < dim[1]) * (1 - int(keepdim[0]))
+    dim = (dim[0], dim[1] - m)
+
+    x = tensor_norm(x, p=p[0], dim=dim[:1], keepdim=keepdim[0], scaled=scaled[0])
+    x = tensor_norm(x, p=p[1], dim=dim[1:], keepdim=keepdim[1], scaled=scaled[1])
+    return x
 
 
 @jit.script

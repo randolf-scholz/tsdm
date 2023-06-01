@@ -26,7 +26,7 @@ from torch.utils.data import Sampler as TorchSampler
 from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
 from tsdm.tasks.base import BaseTaskMetaClass
-from tsdm.types.variables import KeyVar as K
+from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
 
 
@@ -40,10 +40,8 @@ class BaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
     will be used to evaluate the model.
     That is, the model must product an output of the same shape and data type of the targets.
 
-    Attributes
-    ----------
-    dataset: Dataset
-        The attached dataset
+    Attributes:
+        dataset (Dataset): The attached dataset
     """
 
     # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
@@ -198,14 +196,10 @@ class OldBaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
     will be used to evaluate the model.
     That is, the model must product an output of the same shape and data type of the targets.
 
-    Attributes
-    ----------
-    train_batch_size: int, default 32
-        Default batch-size used by batchloader.
-    eval_batch_size: int, default 128
-        Default batch-size used by dataloaders (for evaluation).
-    dataset: Dataset
-        The attached dataset
+    Attributes:
+        train_batch_size (int): Batch-size used by batchloader.
+        eval_batch_size (int): Default batch-size used by dataloaders (for evaluation).
+        dataset (Dataset): The attached dataset
     """
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372

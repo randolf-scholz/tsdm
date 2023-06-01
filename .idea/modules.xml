@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../linodenet/.idea/linodenet.iml" filepath="$PROJECT_DIR$/../linodenet/.idea/linodenet.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/tsdm.iml" filepath="$PROJECT_DIR$/.idea/tsdm.iml" />
     </modules>
   </component>

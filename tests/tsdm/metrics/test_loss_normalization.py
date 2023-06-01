@@ -17,7 +17,7 @@ BATCH_SHAPES = [
 ]
 CHANNEL_SHAPES = [
     (64,),
-    (4, 16),
+    (5, 16),
 ]
 TIME_SHAPES = [(1,), (32,)]
 LOSSES = [MSE, RMSE, MAE]
@@ -26,8 +26,8 @@ LOSSES = [MSE, RMSE, MAE]
 @pytest.mark.slow
 @pytest.mark.flaky(reruns=3)
 @pytest.mark.parametrize("loss", LOSSES)
-@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES)
-@pytest.mark.parametrize("batch_shape", BATCH_SHAPES)
+@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES, ids=lambda cs: f"{cs=}")
+@pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
 def test_loss_normalization(
     loss: type[BaseLoss],
     batch_shape: tuple[int, ...],
@@ -45,7 +45,11 @@ def test_loss_normalization(
     if prod(batch_shape) <= 1:
         return
 
-    expected = 2 / sqrt(pi) if loss == MAE else 1
+    expected = {
+        "MAE": 2 / sqrt(pi),
+        "MSE": 2,
+        "RMSE": sqrt(2),
+    }[loss.__name__]
     assert (
         abs(result - expected) < rtol * abs(expected) + atol
     ), f"tolerance exceeded! {shape=}, {result=}, {expected=}"
@@ -53,9 +57,9 @@ def test_loss_normalization(
 
 @pytest.mark.slow
 @pytest.mark.flaky(reruns=3)
-@pytest.mark.parametrize("time_shape", TIME_SHAPES)
-@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES)
-@pytest.mark.parametrize("batch_shape", BATCH_SHAPES)
+@pytest.mark.parametrize("channel_shape", CHANNEL_SHAPES, ids=lambda cs: f"{cs=}")
+@pytest.mark.parametrize("time_shape", TIME_SHAPES, ids=lambda ts: f"{ts=}")
+@pytest.mark.parametrize("batch_shape", BATCH_SHAPES, ids=lambda bs: f"{bs=}")
 def test_time_loss_normalization(
     batch_shape: tuple[int, ...],
     time_shape: tuple[int, ...],
@@ -63,31 +67,48 @@ def test_time_loss_normalization(
     atol: float = 0.01,
     rtol: float = 0.01,
 ) -> None:
-    r"""Test whether the time-series losses are normalized."""
-    axes = tuple(range(-len(channel_shape), 0))
+    r"""Test whether the time-series losses are normalized.
 
-    loss_func = TimeSeriesMSE(axes)
+    Note:
+        The expectation is that, if $x,x̂∼N(0,1)$, then $r=x-x̂ ∼ N(0,2)$.
+        Thus, $‖r‖^2  = ‖√2⋅p‖^2 = 2‖p‖^2 = 2⋅χ^2(K) = χ^2(2K)$.
+
+        The chi-squared distribution strongly concentrates around its mean,
+        so we should expect to see a value close to $2K$.
+    """
     shape = batch_shape + time_shape + channel_shape
     targets = torch.randn(*shape)
     predictions = torch.randn(*shape)
+
+    T, K = len(time_shape), len(channel_shape)
+    channel_axes = tuple(range(-K, 0))
+    time_axes = tuple(range(-T - K, -K))
+    print(shape, time_axes, channel_axes)
+    loss_func = TimeSeriesMSE(
+        time_axes=time_axes,
+        channel_axes=channel_axes,
+        normalize_time=True,
+        normalize_channels=False,
+    )
+
     result = loss_func(targets, predictions)
 
     # skip for edge case test
     if prod(batch_shape) <= 1 or prod(time_shape) <= 1:
         return
 
-    expected = prod(channel_shape)
+    expected = 2 * prod(channel_shape)
     assert (
         abs(result - expected) < rtol * abs(expected) + atol
     ), f"tolerance exceeded! {shape=}, {result=}, {expected=}"
 
 
 def _main() -> None:
-    r"""Main function."""
-    for loss, batch_shape, channel_shape in product(
-        LOSSES, BATCH_SHAPES, CHANNEL_SHAPES
-    ):
-        test_loss_normalization(loss, batch_shape, channel_shape)  # type: ignore[type-abstract]
+    for loss, b_shape, c_shape in product(LOSSES, BATCH_SHAPES, CHANNEL_SHAPES):
+        test_loss_normalization(loss, b_shape, c_shape)  # type: ignore[type-abstract]
+
+    for b_shape, t_shape, c_shape in product(BATCH_SHAPES, TIME_SHAPES, CHANNEL_SHAPES):
+        test_time_loss_normalization(b_shape, t_shape, c_shape)
 
 
 if __name__ == "__main__":

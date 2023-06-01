@@ -1,28 +1,23 @@
 #!/usr/bin/env python
-r"""Testing of Electricity dataset, as a token for the whole BaseDataset architecture."""
+r"""Testing of In Silico dataset, as a token for the whole BaseDataset architecture."""
 
 import logging
-from copy import copy
 
-from pandas import DataFrame
-
-from tsdm.datasets import BaseDataset, InSilicoData
+from tsdm.datasets import BaseDataset, Dataset, InSilicoData
 from tsdm.utils.decorators import timefun
-
-logging.basicConfig(level=logging.INFO)
 
 __logger__ = logging.getLogger(__name__)
 
 
-def test_caching():
+def test_caching() -> None:
     """Test the caching of the dataset."""
     # NOTE: this test must be executed first!!!
     LOGGER = __logger__.getChild(InSilicoData.__name__)
     LOGGER.info("Testing caching.")
 
     ds = InSilicoData(initialize=False)
-    _, pre_cache_time = timefun(lambda: ds.dataset, append=True)()
-    _, post_cache_time = timefun(lambda: ds.dataset, append=True)()
+    _, pre_cache_time = timefun(lambda: ds.timeseries, append=True)()
+    _, post_cache_time = timefun(lambda: ds.timeseries, append=True)()
 
     LOGGER.info("%f, %f", pre_cache_time, post_cache_time)
 
@@ -33,35 +28,19 @@ def test_caching():
     LOGGER.info("%s passes caching test ✔.")
 
 
-def test_attributes():
+def test_dataset_protocol() -> None:
     """Test the attributes of the dataset."""
     LOGGER = __logger__.getChild(InSilicoData.__name__)
     LOGGER.info("Testing attributes.")
     ds = InSilicoData()
-    base_attrs = copy(set(dir(ds)))
-    attrs = {
-        "BASE_URL",
-        "DATASET_DIR",
-        "RAWDATA_DIR",
-        "__dir__",
-        "clean",
-        "dataset",
-        "dataset_files",
-        "download",
-        "load",
-    }
-
-    assert attrs <= base_attrs, f"{attrs - base_attrs} missing!"
-    assert isinstance(ds.dataset, DataFrame)
-    assert issubclass(InSilicoData, BaseDataset)
-
-    for attr in attrs:
-        assert hasattr(ds, attr), f"{attr} missing!"
+    assert isinstance(ds, Dataset)
+    assert isinstance(ds, BaseDataset)
 
 
 def _main() -> None:
+    logging.basicConfig(level=logging.INFO)
     test_caching()
-    test_attributes()
+    test_dataset_protocol()
 
 
 if __name__ == "__main__":
