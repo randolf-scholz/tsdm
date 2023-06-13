@@ -934,7 +934,7 @@ class FrameAsDict(BaseEncoder):
     original_index_columns: Index | list[str]
     original_columns: Index
     original_dtypes: Series
-    inferred_dtypes: dict[str, torch.dtype]
+    inferred_dtypes: dict[str, torch.dtype | None]
     groups: dict[str, list[str]]
 
     # Parameters
@@ -1021,14 +1021,12 @@ class FrameAsDict(BaseEncoder):
         if not isinstance(self.dtypes, Mapping):
             self.dtypes = {key: self.dtypes for key in self.groups}  # type: ignore[unreachable]
         for key in self.groups:
-            if key not in self.dtypes:
-                self.dtypes[key] = None
-                self.inferred_dtypes[key] = None
-            elif isinstance(self.dtypes[key], str):
-                self.inferred_dtypes[key] = TORCH_DTYPES[self.dtypes[key]]  # type: ignore[index]
-            else:
-                assert isinstance(self.dtypes[key], None | torch.dtype)
-                self.inferred_dtypes[key] = self.dtypes[key]
+            val = self.dtypes.get(key, None)
+            assert isinstance(val, None | str | torch.dtype)
+            self.dtypes[key] = val
+            self.inferred_dtypes[key] = (
+                TORCH_DTYPES[val] if isinstance(val, str) else val
+            )
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
         """Encode a DataFrame as a dict of Tensors.
