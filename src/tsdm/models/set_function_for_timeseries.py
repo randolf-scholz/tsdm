@@ -14,7 +14,7 @@ from typing import Optional
 import torch
 from torch import Tensor, jit, nn
 
-from tsdm.encoders.pytorch import PositionalEncoder, Time2Vec
+from tsdm.encoders.pytorch import PositionalEncoding, Time2Vec
 from tsdm.models.generic import (
     MLP,
     DeepSet,
@@ -54,7 +54,7 @@ class SetFuncTS(nn.Module):
         "__name__": __qualname__,  # type: ignore[name-defined]
         "__doc__": __doc__,
         "__module__": __module__,  # type: ignore[name-defined]
-        "time_encoder": PositionalEncoder.HP,
+        "time_encoder": PositionalEncoding.HP,
         "key_encoder": DeepSet.HP,
         "value_encoder": MLP.HP,
         "attention": ScaledDotProductAttention.HP,
@@ -84,7 +84,7 @@ class SetFuncTS(nn.Module):
         latent_size = input_size if latent_size is None else latent_size
         # time_encoder
         # feature_encoder -> CNN?
-        self.time_encoder = PositionalEncoder(dim_time, scale=10.0)
+        self.time_encoder = PositionalEncoding(dim_time, scale=10.0)
         self.key_encoder = DeepSet(
             input_size + dim_time - 1,
             dim_keys,
@@ -171,7 +171,7 @@ class GroupedSetFuncTS(nn.Module):
         "__name__": __qualname__,  # type: ignore[name-defined]
         "__doc__": __doc__,
         "__module__": __module__,  # type: ignore[name-defined]
-        "time_encoder": PositionalEncoder.HP,
+        "time_encoder": PositionalEncoding.HP,
         "key_encoder": DeepSet.HP,
         "value_encoder": MLP.HP,
         "attention": ScaledDotProductAttention.HP,

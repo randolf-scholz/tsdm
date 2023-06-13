@@ -19,14 +19,14 @@ __all__ = [
     "NestedMapping",
     "NestedMutableMapping",
     "NestedSequence",
+    "NestedGeneric",
     # Nested Builtins
     "NestedList",
     "NestedDict",
     "NestedSet",
     "NestedTuple",
     "NestedFrozenSet",
-    "NestedMapping",
-    "NestedSequence",
+    "NestedBuiltin",
 ]
 
 
@@ -86,6 +86,10 @@ NestedMutableMapping: TypeAlias = MutableMapping[K, V | "NestedMutableMapping[K,
 r"""Generic Type Alias for nested `MutableMapping`."""
 NestedSequence: TypeAlias = Sequence[V | "NestedSequence[V]"]
 r"""Generic Type Alias for nested `Sequence`."""
+NestedGeneric: TypeAlias = (
+    Sequence[V | "NestedGeneric[V]"] | Mapping[str, V | "NestedGeneric[V]"]
+)
+r"""Generic Type Alias for nested `Sequence` or `Mapping`."""
 # endregion Nested collections.abc -----------------------------------------------------
 
 
@@ -100,6 +104,13 @@ NestedFrozenSet: TypeAlias = frozenset[V | "NestedFrozenSet[V]"]
 r"""Generic Type Alias for nested `set`."""
 NestedTuple: TypeAlias = tuple[V | "NestedTuple[V]", ...]
 r"""Generic Type Alias for nested `tuple`."""
+NestedBuiltin: TypeAlias = (
+    tuple[V | "NestedBuiltin[V]", ...]
+    | set[V | "NestedBuiltin[V]"]
+    | frozenset[V | "NestedBuiltin[V]"]
+    | list[V | "NestedBuiltin[V]"]
+    | dict[str, V | "NestedBuiltin[V]"]
+)
 # endregion Nested Builtins ------------------------------------------------------------
 
 
