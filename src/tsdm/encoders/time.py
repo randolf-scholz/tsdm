@@ -161,12 +161,13 @@ class DateTimeEncoder(BaseEncoder):
 class TimeDeltaEncoder(BaseEncoder):
     r"""Encode TimeDelta as Float."""
 
-    requires_fit: bool = False
+    requires_fit: bool = True
 
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
     base_freq: str = "s"
     r"""The frequency the decoding should be rounded to."""
+    original_dtype: Any
 
     def __init__(self, *, unit: str = "s", base_freq: str = "s") -> None:
         super().__init__()
@@ -175,7 +176,7 @@ class TimeDeltaEncoder(BaseEncoder):
         self.timedelta = Timedelta(1, unit=self.unit)
 
     def encode(self, data: PandasObject, /) -> PandasObject:
-        return data / self.timedelta
+        return data.astype("timedelta64[ns]") / self.timedelta
 
     def decode(self, data: PandasObject, /) -> PandasObject:
         result = data * self.timedelta

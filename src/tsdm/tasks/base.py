@@ -126,6 +126,7 @@ from typing import (
     TypeVar,
 )
 
+import numpy as np
 from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.utils.data import DataLoader
@@ -225,6 +226,9 @@ class Sample(NamedTuple):
 class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     r"""Creates sample from a TimeSeriesCollection.
 
+    This class is responsible for creating samples from a TimeSeriesCollection.
+    It acts as a Map-Stype Dataset, keys should be created from an appriopriate Sampler instance.
+
     There are different modus operandi for creating samples from a TimeSeriesCollection.
 
     Format Specification
@@ -310,7 +314,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 self.metadata_observables = self.dataset.metadata.columns
         self.validate()
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Sample]:
         return iter(self.dataset)
 
     def __len__(self) -> int:
@@ -349,33 +353,49 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
         assert_type(tsd, TimeSeriesDataset)
 
+        # NOTE: observation horizon and forecasting horizon might be given in different formats
+        # (1) slices  (2) indices (3) boolean masks
+
+        # NOTE: Currently there is a bug with pandas indexing using [pyarrow] timestamps.
+        # This means only boolean masks are supported.
+        # https://github.com/pandas-dev/pandas/issues/53644
+        # https://github.com/pandas-dev/pandas/issues/53645
+
         # timeseries
         ts_observed: DataFrame = tsd[observation_horizon]
         ts_forecast: DataFrame = tsd[forecasting_horizon]
         joint_horizon_index = ts_observed.index.union(ts_forecast.index)
-        print(f"{type(joint_horizon_index)=}")
-        ts = tsd[joint_horizon_index]
+
+        # FIXME: this is a workaround for the bug above.
+        # FIXME: ArrowNotImplementedError: Function 'is_in' has no kernel matching input types (duration[ns])
+
+        # NOTE: Using numpy since isin is broken for pyarrow timestamps.
+        joint_horizon_mask = np.isin(tsd.timeindex, joint_horizon_index)
+        ts = tsd[joint_horizon_mask]
+        ts_observed_mask = np.isin(ts.index, ts_observed.index)
+        ts_forecast_mask = np.isin(ts.index, ts_forecast.index)
+
         u: Optional[DataFrame] = None
 
         if sparse_columns:
             x = ts[self.observables].copy()
-            x.loc[ts_forecast.index] = NA
+            x.loc[ts_forecast_mask] = NA
 
             y = ts[self.targets].copy()
-            y.loc[ts_observed.index] = NA
+            y.loc[ts_observed_mask] = NA
 
             u = ts[self.covariates].copy()
         else:
             x = ts.copy()
             # mask everything except covariates and observables
             columns = ts.columns.difference(self.covariates)
-            x.loc[ts_observed.index, columns.difference(self.observables)] = NA
-            x.loc[ts_forecast.index, columns] = NA
+            x.loc[ts_observed_mask, columns.difference(self.observables)] = NA
+            x.loc[ts_forecast_mask, columns] = NA
 
             y = ts.copy()
             # mask everything except targets in forecasting horizon
-            y.loc[ts_observed.index] = NA
-            y.loc[ts_forecast.index, ts.columns.difference(self.targets)] = NA
+            y.loc[ts_observed_mask] = NA
+            y.loc[ts_forecast_mask, ts.columns.difference(self.targets)] = NA
 
         # t_target
         t_target = y.index.to_series().copy()

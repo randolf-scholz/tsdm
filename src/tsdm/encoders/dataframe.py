@@ -934,12 +934,13 @@ class FrameAsDict(BaseEncoder):
     original_index_columns: Index | list[str]
     original_columns: Index
     original_dtypes: Series
+    inferred_dtypes: dict[str, torch.dtype]
     groups: dict[str, list[str]]
 
     # Parameters
     column_dtype: Optional[torch.dtype] = None
     device: Optional[str | torch.device] = None
-    dtypes: dict[str, None | torch.dtype]
+    dtypes: dict[str, None | str | torch.dtype]
     encode_index: Optional[bool] = None
     index_dtype: Optional[torch.dtype] = None
 
@@ -956,6 +957,7 @@ class FrameAsDict(BaseEncoder):
         self.dtypes = dtypes  # type: ignore[assignment]
         self.device = device  # type: ignore[assignment]
         self.encode_index = encode_index
+        self.inferred_dtypes = {}
 
     def __repr__(self, **kwargs: Any) -> str:
         kwargs.update(wrapped=self)
@@ -1021,10 +1023,12 @@ class FrameAsDict(BaseEncoder):
         for key in self.groups:
             if key not in self.dtypes:
                 self.dtypes[key] = None
+                self.inferred_dtypes[key] = None
             elif isinstance(self.dtypes[key], str):
-                self.dtypes[key] = TORCH_DTYPES[self.dtypes[key]]  # type: ignore[index]
+                self.inferred_dtypes[key] = TORCH_DTYPES[self.dtypes[key]]  # type: ignore[index]
             else:
                 assert isinstance(self.dtypes[key], None | torch.dtype)
+                self.inferred_dtypes[key] = self.dtypes[key]
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
         """Encode a DataFrame as a dict of Tensors.
@@ -1038,9 +1042,9 @@ class FrameAsDict(BaseEncoder):
 
         return {
             key: torch.tensor(
-                data[cols].to_numpy(),
+                data[cols].astype(self.dtypes[key]).to_numpy(),
                 device=self.device,
-                dtype=self.dtypes[key],
+                dtype=self.inferred_dtypes[key],
             ).squeeze()
             for key, cols in self.groups.items()
             if set(cols).issubset(data.columns)

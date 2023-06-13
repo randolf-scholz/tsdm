@@ -291,8 +291,8 @@ class KIWI_RUNS(MultiTableDataset):
     def clean_metadata(self) -> None:
         r"""Clean metadata."""
         # load rawdata
+        self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
         with open(self.rawdata_paths["kiwi_experiments.pk"], "rb") as file:
-            self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
             data = pickle.load(file)
 
         # generate dataframe
@@ -390,6 +390,7 @@ class KIWI_RUNS(MultiTableDataset):
         metadata = metadata.dropna(how="all")
 
         # Serialize tables
+        self.LOGGER.info("Serializing metadata tables.")
         self.serialize(
             timeindex_description, self.dataset_paths["timeindex_description"]
         )
@@ -399,8 +400,8 @@ class KIWI_RUNS(MultiTableDataset):
     def clean_timeseries(self) -> None:
         r"""Clean timeseries data and save to disk."""
         # load rawdata
+        self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
         with open(self.rawdata_paths["kiwi_experiments.pk"], "rb") as file:
-            self.LOGGER.info("Loading raw data from %s", self.rawdata_paths)
             data = pickle.load(file)
 
         # Generate DataFrame
@@ -525,6 +526,7 @@ class KIWI_RUNS(MultiTableDataset):
         )
 
         # Serialize Tables
+        self.LOGGER.info("Serializing tiemseries tables.")
         self.serialize(timeseries, self.dataset_paths["timeseries"])
         self.serialize(
             timeseries_description, self.dataset_paths["timeseries_description"]

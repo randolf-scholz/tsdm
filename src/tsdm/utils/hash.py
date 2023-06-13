@@ -51,6 +51,7 @@ def to_base(n: int, b: int) -> list[int]:
     References:
         - https://stackoverflow.com/a/28666223/9318372
     """
+    assert n >= 0, "n must be non-negative!"
     digits = []
     while n:
         n, d = divmod(n, b)
@@ -59,9 +60,16 @@ def to_base(n: int, b: int) -> list[int]:
 
 
 def to_alphanumeric(n: int) -> str:
-    r"""Convert integer to alphanumeric code."""
+    r"""Convert integer to alphanumeric code.
+
+    NOTE: We assume n is an int64. We first convert it to uint64, then to base 36.
+    NOTE: doubling the alphabet size generally reduces the length of the code by
+    a factor of 1 + 1/log₂B, where B is the alphabet size.
+    """
+    # int64  range: [-2⁶³, 2⁶³-1] = [-9,223,372,036,854,775,808, +9,223,372,036,854,775,807]
+    # uint64 range: [0,    2⁶⁴-1] = [0, 18446744073709551615]
     chars = string.ascii_uppercase + string.digits
-    digits = to_base(n, len(chars))
+    digits = to_base(n + 2**63, len(chars))
     return "".join(chars[i] for i in digits)
 
 
