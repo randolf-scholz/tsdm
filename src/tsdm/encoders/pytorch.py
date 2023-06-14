@@ -21,6 +21,36 @@ from tsdm.utils.decorators import autojit
 # TODO: Add TensorEncoder
 
 
+class TensorEncoder(BaseEncoder):
+    """Encodes nested data as tensors."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def encode(self, data):
+        match data:
+            case Tensor():
+                return data
+            case list():
+                return [self.encode(d) for d in data]
+            case tuple():
+                return tuple(self.encode(d) for d in data)
+            case dict():
+                return {k: self.encode(v) for k, v in data.items()}
+            case set():
+                return {self.encode(d) for d in data}
+            case frozenset():
+                return frozenset({self.encode(d) for d in data})
+            case _:
+                try:
+                    return torch.tensor(data)
+                except Exception as e:
+                    raise TypeError(f"Cannot encode data of type {type(data)}") from e
+
+    def decode(self, data):
+        return data.numpy()
+
+
 @autojit
 class Time2Vec(nn.Module):
     r"""Learnable Time Encoding.

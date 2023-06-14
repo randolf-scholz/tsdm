@@ -1,0 +1,11 @@
+html[data-theme="dark"] .bd-content {
+  /*https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/layout.html#horizontal-spacing*/
+  flex-grow: 1;
+  max-width: 200%;
+}
+
+html[data-theme="light"] .bd-content {
+  /*https://pydata-sphinx-theme.readthedocs.io/en/stable/user_guide/layout.html#horizontal-spacing*/
+  flex-grow: 1;
+  max-width: 100%;
+}

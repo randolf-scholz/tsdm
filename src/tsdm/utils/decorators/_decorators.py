@@ -35,9 +35,7 @@ from types import GenericAlias
 from typing import (
     Any,
     Callable,
-    Collection,
     Concatenate,
-    Mapping,
     NamedTuple,
     Optional,
     Protocol,
@@ -838,11 +836,13 @@ def return_namedtuple(
     return _wrapper
 
 
-def apply_nested(
+def recurse_on_builtin_container(
     func: Callable[[T], R],
-    nested: Nested[Optional[T]],
+    /,
+    *,
+    nested: Nested[T],
     kind: type[T],
-) -> Nested[Optional[R]]:
+) -> Callable[[Nested[T]], Nested[R]]:
     r"""Apply function to nested iterables of a given kind.
 
     Args:
@@ -850,13 +850,25 @@ def apply_nested(
         kind: The type of the leave nodes
         func: A function to apply to all leave Nodes
     """
-    if nested is None:
-        return None
-    if isinstance(nested, kind):
-        return func(nested)
-    if isinstance(nested, Mapping):
-        return {k: apply_nested(func, v, kind) for k, v in nested.items()}  # type: ignore[arg-type]
-    # TODO https://github.com/python/mypy/issues/11615
-    if isinstance(nested, Collection):
-        return [apply_nested(func, obj, kind) for obj in nested]  # type: ignore[arg-type]
-    raise TypeError(f"Unsupported type: {type(nested)}")
+    if issubclass(kind, (tuple, list, set, frozenset, dict)):
+        raise TypeError(f"kind must not be a builtin container! Got {type(kind)=}")
+
+    @wraps(func)
+    def recurse(x: Nested[T]) -> Nested[R]:
+        match x:
+            case kind():
+                return func(x)
+            case dict():
+                return {k: recurse(v) for k, v in x.items()}  # type: ignore[arg-type]
+            case list():
+                return [recurse(obj) for obj in x]  # type: ignore[arg-type]
+            case tuple():
+                return tuple(recurse(obj) for obj in x)  # type: ignore[arg-type]
+            case set():
+                return {recurse(obj) for obj in x}  # type: ignore[arg-type]
+            case frozenset():
+                return frozenset(recurse(obj) for obj in x)  # type: ignore[arg-type]
+            case _:
+                raise TypeError(f"Unsupported type: {type(x)}")
+
+    return recurse
