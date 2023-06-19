@@ -244,7 +244,7 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
     requires_fit: bool = False
 
     class Parameters(NamedTuple):
-        r"""The parameters of the MinMaxScaler."""
+        r"""The parameters of the LinearScaler."""
 
         loc: TensorLike
         scale: TensorLike
@@ -267,8 +267,8 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
 
     def __init__(
         self,
-        loc: float | TensorType = 0,
-        scale: float | TensorType = 1,
+        loc: float | TensorType = 0.0,
+        scale: float | TensorType = 1.0,
         *,
         axis: Optional[int | tuple[int, ...]] = None,
     ):
@@ -303,8 +303,8 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
 
     def encode(self, data: TensorType, /) -> TensorType:
         broadcast = get_broadcast(data, axis=self.axis)
-        loc: TensorType = self.loc[broadcast]
-        scale: TensorType = self.scale[broadcast]
+        loc = self.loc[broadcast]
+        scale = self.scale[broadcast]
         return data * scale + loc
 
     def decode(self, data: TensorType, /) -> TensorType:
