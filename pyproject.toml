@@ -105,7 +105,6 @@ dev = [
     "types-requests >= 2.30.0",
     "types-setuptools >= 67.7.0",
     "types-six >= 1.16.21",
-    "types-typing-extensions >= 3.7.3",
     "types-urllib3 >= 1.26.25",
     "wheel >= 0.40.0",
     "yesqa >= 1.4.0",
@@ -463,7 +462,6 @@ types-pyyaml = ">=6.0.12"
 types-requests = ">=2.31.0"
 types-setuptools = ">=67.8.0"
 types-six = ">=1.16.21"
-types-typing-extensions = ">=3.7.3"
 types-urllib3 = ">=1.26.25"
 wheel = ">=0.40.0"
 yesqa = ">=1.5.0"
