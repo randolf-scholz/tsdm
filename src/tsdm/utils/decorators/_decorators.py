@@ -50,7 +50,7 @@ from tsdm.config import CONFIG
 from tsdm.types.abc import CollectionType
 from tsdm.types.aliases import Nested
 from tsdm.types.variables import any_var as T
-from tsdm.types.variables import class_var as C
+from tsdm.types.variables import class_var as Class
 from tsdm.types.variables import object_var as O
 from tsdm.types.variables import parameter_spec as P
 from tsdm.types.variables import return_var_co as R
@@ -552,7 +552,7 @@ def vectorize(
 
 
 @overload
-def IterItems(obj: C) -> C:
+def IterItems(obj: Class) -> Class:
     ...
 
 
@@ -585,7 +585,7 @@ def IterItems(obj: T) -> T:
 
 
 @overload
-def IterKeys(obj: C) -> C:
+def IterKeys(obj: Class) -> Class:
     ...
 
 
@@ -851,23 +851,23 @@ def recurse_on_builtin_container(
         func: A function to apply to all leave Nodes
     """
     if issubclass(kind, (tuple, list, set, frozenset, dict)):
-        raise TypeError(f"kind must not be a builtin container! Got {type(kind)=}")
+        raise TypeError(f"kind must not be a builtin container! Got {kind=}")
 
     @wraps(func)
     def recurse(x: Nested[T]) -> Nested[R]:
         match x:
-            case kind():
-                return func(x)
+            case kind():  # type: ignore[misc]
+                return func(x)  # type: ignore[unreachable]
             case dict():
-                return {k: recurse(v) for k, v in x.items()}  # type: ignore[arg-type]
+                return {k: recurse(v) for k, v in x.items()}
             case list():
-                return [recurse(obj) for obj in x]  # type: ignore[arg-type]
+                return [recurse(obj) for obj in x]
             case tuple():
-                return tuple(recurse(obj) for obj in x)  # type: ignore[arg-type]
+                return tuple(recurse(obj) for obj in x)
             case set():
-                return {recurse(obj) for obj in x}  # type: ignore[arg-type]
+                return {recurse(obj) for obj in x}
             case frozenset():
-                return frozenset(recurse(obj) for obj in x)  # type: ignore[arg-type]
+                return frozenset(recurse(obj) for obj in x)
             case _:
                 raise TypeError(f"Unsupported type: {type(x)}")
 
