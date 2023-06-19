@@ -1145,7 +1145,3 @@ class FrameAsTuple(BaseEncoder):
         else:
             decoded = columns.set_index(MultiIndex.from_frame(index))
         return decoded
-
-
-Frame2TensorDict = FrameAsDict  # Do not remove! For old pickle files
-"""Alias for `FrameAsDict`"""

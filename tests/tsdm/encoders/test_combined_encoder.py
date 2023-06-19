@@ -20,7 +20,7 @@ from tsdm.encoders import (
     LinearScaler,
     LogitBoxCoxEncoder,
     MinMaxScaler,
-    Standardizer,
+    StandardScaler,
     TimeDeltaEncoder,
 )
 from tsdm.tasks import KiwiTask
@@ -78,7 +78,7 @@ def test_combined_encoder(SplitID=(0, "train")):
             dtypes={"T": "float32", "X": "float32"},
             encode_index=True,
         )
-        @ Standardizer()
+        @ StandardScaler()
         @ FrameEncoder(
             column_encoders=column_encoders,
             index_encoders={"measurement_time": MinMaxScaler() @ TimeDeltaEncoder()},

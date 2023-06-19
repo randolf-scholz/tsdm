@@ -7,13 +7,13 @@ import numpy as np
 import torch
 from pytest import mark
 
-from tsdm.encoders import MinMaxScaler, Standardizer
+from tsdm.encoders import MinMaxScaler, StandardScaler
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
-@mark.parametrize("Encoder", (Standardizer, MinMaxScaler))
+@mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
 @mark.parametrize("tensor_type", (np.array, torch.tensor))
 def test_standardizer(Encoder, tensor_type):
     r"""Check whether the Standardizer encoder works as expected."""
@@ -70,7 +70,7 @@ def test_standardizer(Encoder, tensor_type):
 
 
 def _main() -> None:
-    test_standardizer(Standardizer, np.array)
+    test_standardizer(StandardScaler, np.array)
     test_standardizer(MinMaxScaler, np.array)
 
 

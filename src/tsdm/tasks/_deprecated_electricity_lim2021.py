@@ -18,7 +18,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 
 from tsdm.datasets import Electricity
-from tsdm.encoders import Encoder, Standardizer
+from tsdm.encoders import Encoder, StandardScaler
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.strings import repr_namedtuple
@@ -129,7 +129,7 @@ class ElectricityLim2021(OldBaseTask):
         self.observation_horizon = 24 * 7
         self.forecasting_horizon = 24
 
-        self.encoder = Standardizer()
+        self.encoder = StandardScaler()
         self.encoder.fit(self.splits["train"])
 
     @cached_property

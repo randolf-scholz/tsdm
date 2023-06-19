@@ -25,7 +25,7 @@ from tsdm.encoders import (
     LinearScaler,
     LogitBoxCoxEncoder,
     MinMaxScaler,
-    Standardizer,
+    StandardScaler,
     TimeDeltaEncoder,
 )
 from tsdm.metrics import TimeSeriesMSE
@@ -245,19 +245,19 @@ class KiwiTask(TimeSeriesTask):
             match scale:
                 case "percent":
                     encoder = (
-                        Standardizer()
+                        StandardScaler()
                         @ LogitBoxCoxEncoder()
                         @ LinearScaler(lower, upper)
                         @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 case "absolute":
                     encoder = (
-                        Standardizer()
+                        StandardScaler()
                         @ BoxCoxEncoder()
                         @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 case "linear":
-                    encoder = Standardizer()
+                    encoder = StandardScaler()
                 case _:
                     raise ValueError(f"{scale=} unknown")
             column_encoders[col] = encoder

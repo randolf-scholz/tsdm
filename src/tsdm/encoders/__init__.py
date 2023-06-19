@@ -145,7 +145,7 @@ __all__ = [
     "PositionalEncoder",
     "ProductEncoder",
     "SocialTimeEncoder",
-    "Standardizer",
+    "StandardScaler",
     "TensorConcatenator",
     "TensorEncoder",
     "TensorSplitter",
@@ -155,6 +155,9 @@ __all__ = [
     "TripletDecoder",
     "TripletEncoder",
     "ValueEncoder",
+    # Aliases
+    "Standardizer",
+    "Frame2TensorDict",
 ]
 
 from sklearn import preprocessing as sk_preprocessing
@@ -162,6 +165,7 @@ from sklearn.base import BaseEstimator
 
 from tsdm.encoders import base, functional, numerical, pytorch, time
 from tsdm.encoders._deprecated import DataFrameEncoder
+from tsdm.encoders.aliases import Frame2TensorDict, Standardizer
 from tsdm.encoders.base import (
     BaseEncoder,
     ChainedEncoder,
@@ -197,7 +201,7 @@ from tsdm.encoders.numerical import (
     LogEncoder,
     LogitEncoder,
     MinMaxScaler,
-    Standardizer,
+    StandardScaler,
     TensorConcatenator,
     TensorSplitter,
 )
@@ -256,7 +260,7 @@ MODULAR_ENCODERS: dict[str, type[Encoder]] = {
     "PeriodicSocialTimeEncoder": PeriodicSocialTimeEncoder,
     "ProductEncoder": ProductEncoder,
     "SocialTimeEncoder": SocialTimeEncoder,
-    "Standardizer": Standardizer,
+    "StandardScaler": StandardScaler,
     "TensorConcatenator": TensorConcatenator,
     "TensorEncoder": TensorEncoder,
     "TensorSplitter": TensorSplitter,
