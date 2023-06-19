@@ -25,6 +25,9 @@ classifiers = [
 ]
 
 
+
+
+
 dependencies = [
     "matplotlib >= 3.7.1",
     "numpy >= 1.24.3",
@@ -34,6 +37,7 @@ dependencies = [
     "pyyaml >= 6.0",
     "scikit-learn >= 1.2.2",
     "scipy >= 1.10.1",
+    "requests >= 2.31.0",
     "tensorboard >= 2.13.0",
     "torch >= 2.0.1",
     "tqdm >= 4.65.0",
@@ -82,8 +86,10 @@ dev = [
     "pyre-check >= 0.9.18",
     "pyright >= 1.1.308",
     "pytest >= 7.3.1",
+    "pytest-benchmark >= 4.0.0",
     "pytest-cov >= 4.0.0",
     "pytest-rerunfailures >= 11.1.2",
+    "pytest-xdist >= 3.3.1",
     "ruff >= 0.0.267",
     "setuptools >= 67.7.2",
     "slotscheck >= 0.16.5",
@@ -390,6 +396,7 @@ pyarrow = ">=12.0.1"
 pyyaml = ">=6.0"
 scikit-learn = ">=1.2.2"
 scipy = ">=1.10.1"
+requests = ">= 2.31.0"
 tensorboard = ">=2.13.0"
 torch = ">=2.0.1"
 tqdm = ">=4.65.0"
@@ -438,7 +445,9 @@ pylint-gitlab = ">=1.2.0"
 pyre-check = ">=0.9.18"
 pyright = ">=1.1.314"
 pytest = ">=7.3.2"
+pytest-benchmark = ">=4.0.0"
 pytest-cov = ">=4.1.0"
+pytest-xdist = ">=3.3.1"
 pytest-rerunfailures = ">=11.1.2"
 ruff = ">=0.0.272"
 setuptools = ">=67.8.0"
@@ -465,6 +474,7 @@ types-six = ">=1.16.21"
 types-urllib3 = ">=1.26.25"
 wheel = ">=0.40.0"
 yesqa = ">=1.5.0"
+
 
 
 [tool.poetry.extras]
