@@ -85,7 +85,7 @@ repos:
       - id: black-jupyter
   # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.13.0
+    rev: 1.14.0
     hooks:
       - id: blacken-docs
         files: (^src/|^tests/)
