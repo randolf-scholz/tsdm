@@ -1,4 +1,15 @@
-r"""Numerical Transformations, Standardization, Log-Transforms, etc."""
+r"""Numerical Transformations, Standardization, Log-Transforms, etc.
+
+Numerical Encoders should be able to be applied with different backends such as
+
+- numpy arrays
+- pandas dataframes
+- torch tensors
+- pyarrow tables
+- etc.
+
+To ensure performance during encoding/decoding, the backend should be fixed.
+"""
 
 from __future__ import annotations
 
@@ -18,7 +29,7 @@ __all__ = [
 ]
 
 import operator
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, dataclass
 from types import EllipsisType, ModuleType
 from typing import (
     Any,
@@ -175,7 +186,7 @@ def get_reduced_axes(item: INDEXER, axes: AXES) -> AXES:
 
 
 @dataclass
-class BoundaryEncoder(BaseEncoder):
+class BoundaryEncoder(BaseEncoder[TensorType, TensorType]):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -200,8 +211,10 @@ class BoundaryEncoder(BaseEncoder):
         - `BoundaryEncoder(0, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to `data_max`.
     """
 
-    lower_bound: float | np.ndarray = NotImplemented
-    upper_bound: float | np.ndarray = NotImplemented
+    # TODO: vectorize!
+
+    lower_bound: None | TensorType = NotImplemented
+    upper_bound: None | TensorType = NotImplemented
 
     _: KW_ONLY
 
@@ -212,13 +225,34 @@ class BoundaryEncoder(BaseEncoder):
 
     axis: int | tuple[int, ...] = -1
 
-    requires_fit: bool = field(default=True, init=False, repr=True)
-    upper_value: float | np.ndarray = field(
-        default=NotImplemented, init=False, repr=False
-    )
-    lower_value: float | np.ndarray = field(
-        default=NotImplemented, init=False, repr=False
-    )
+    upper_value: None | TensorType = NotImplemented
+    lower_value: None | TensorType = NotImplemented
+
+    def __repr__(self) -> str:
+        r"""Pretty print."""
+        return repr_dataclass(self)
+
+    # class Parameters(NamedTuple):
+    #     r"""The parameters of the LinearScaler."""
+    #
+    #     loc: TensorLike
+    #     scale: TensorLike
+    #     axis: tuple[int, ...]
+    #     requires_fit: bool
+    #
+    #     def __repr__(self) -> str:
+    #         r"""Pretty print."""
+    #         return repr_namedtuple(self)
+    #
+    # @property
+    # def params(self) -> Parameters:
+    #     r"""Parameters of the LinearScaler."""
+    #     return self.Parameters(
+    #         loc=self.loc,
+    #         scale=self.scale,
+    #         axis=self.axis,
+    #         requires_fit=self.requires_fit,
+    #     )
 
     @classmethod
     def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
@@ -239,10 +273,19 @@ class BoundaryEncoder(BaseEncoder):
             **kwargs,
         )
 
-    def __post_init__(self) -> None:
-        self.lower_compare = operator.ge if self.lower_included else operator.gt
-        self.upper_compare = operator.le if self.upper_included else operator.lt
+    @property
+    def requires_fit(self) -> bool:
+        return (
+            self.lower_bound is NotImplemented
+            or self.upper_bound is NotImplemented
+            or self.lower_value is NotImplemented
+            or self.upper_value is NotImplemented
+            or not hasattr(self, "lower_compare")
+            or not hasattr(self, "upper_compare")
+            or not hasattr(self, "where")
+        )
 
+    def __post_init__(self) -> None:
         match self.mode:
             case "clip":
                 mode = ("clip", "clip")
@@ -255,50 +298,59 @@ class BoundaryEncoder(BaseEncoder):
 
         match mode[0]:
             case "clip":
-                if self.lower_bound is not NotImplemented:
-                    self.lower_value = self.lower_bound
+                self.lower_value = self.lower_bound
             case "mask":
-                if self.lower_bound is not NotImplemented:
-                    raise ValueError("If mode is 'mask', no bound can be provided.")
                 self.lower_value = float("nan")
             case _:
                 raise ValueError(f"Invalid mode: {mode[0]}")
 
         match mode[1]:
             case "clip":
-                if self.upper_bound is not NotImplemented:
-                    self.upper_value = self.upper_bound
+                self.upper_value = self.upper_bound
             case "mask":
-                if self.upper_bound is not NotImplemented:
-                    raise ValueError("If mode is 'mask', no bound can be provided.")
                 self.upper_value = float("nan")
             case _:
                 raise ValueError(f"Invalid mode: {mode[1]}")
 
-        self.requires_fit = (self.lower_bound is NotImplemented) or (
-            self.upper_bound is NotImplemented
-        )
-
-    def fit(self, data: DataFrame) -> None:
-        # TODO: make _nan adapt to real data type!
+    def fit(self, data: TensorType) -> None:
+        # Fit if bounds not provided
         if self.requires_fit:
-            if self.lower_value is NotImplemented:
-                self.lower_value = data.min()
-            if self.upper_value is NotImplemented:
-                self.upper_value = data.max()
+            if self.lower_bound is NotImplemented:
+                self.lower_bound = data.min()
+            if self.upper_bound is NotImplemented:
+                self.upper_bound = data.max()
+            # reinitialize
+            self.__post_init__()
 
-        assert self.lower_bound is not NotImplemented
-        assert self.upper_bound is not NotImplemented
-        # if isinstance(data, Series | DataFrame) and pd.isna(self.mask_value):
-        #     self.mask_value = NA
+        # Create comparison functions
+        if self.lower_bound is None:
+            self.lower_compare = lambda data, bound: True
+        else:
+            self.lower_compare = operator.ge if self.lower_included else operator.gt
+        if self.upper_bound is None:
+            self.upper_compare = lambda data, bound: True
+        else:
+            self.upper_compare = operator.le if self.upper_included else operator.lt
 
-    def encode(self, data: DataFrame) -> DataFrame:
+        # Set Backend
+        if isinstance(data, Series | DataFrame):
+            self.where = lambda cond, data, other: data.where(cond, other)
+        elif isinstance(data, Tensor):
+            self.where = lambda cond, data, other: torch.where(cond, data, other)
+        else:
+            self.where = lambda cond, data, other: np.where(cond, data, other)
+
+        assert not self.requires_fit
+
+    def encode(self, data: TensorType) -> TensorType:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
-        data = data.where(self.lower_compare(data, self.lower_bound), self.lower_value)
-        data = data.where(self.upper_compare(data, self.lower_bound), self.upper_value)
+        lower_mask = self.lower_compare(data, self.lower_bound)
+        upper_mask = self.upper_compare(data, self.upper_bound)
+        data = self.where(lower_mask, data, self.lower_value)
+        data = self.where(upper_mask, data, self.upper_value)
         return data
 
-    def decode(self, data: DataFrame) -> DataFrame:
+    def decode(self, data: TensorType) -> TensorType:
         return data
 
 

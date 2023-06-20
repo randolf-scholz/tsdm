@@ -8,6 +8,7 @@ import torch
 from pytest import mark
 
 from tsdm.encoders.numerical import (
+    BoundaryEncoder,
     LinearScaler,
     MinMaxScaler,
     StandardScaler,
@@ -51,6 +52,55 @@ def test_reduce_axes():
     assert get_reduced_axes((..., 1, slice(None)), axes) == (-4, -3, -1)
     assert get_reduced_axes((1, ..., 1), axes) == (-3, -2)
     assert get_reduced_axes((1, ...), axes) == (-3, -2, -1)
+
+
+def test_boundary_encoder() -> None:
+    """Test the boundary encoder."""
+    data = np.random.randn(100)
+
+    # test clip + numpy
+    encoder = BoundaryEncoder(-1, +1, mode="clip")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert all((encoded >= -1) & (encoded <= 1))
+    assert (encoded == -1).sum() == (data <= -1).sum()
+    assert (encoded == +1).sum() == (data >= +1).sum()
+
+    # test numpy + mask
+    encoder = BoundaryEncoder(-1, +1, mode="mask")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert all(np.isnan(encoded) ^ ((encoded >= -1) & (encoded <= 1)))
+    assert np.isnan(encoded).sum() == ((data < -1).sum() + (data > +1).sum())
+
+    # test fitting with mask
+    encoder = BoundaryEncoder(mode="mask")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert not any(np.isnan(encoded))
+    assert all(data == encoded)
+
+    # encode some data that violates bounds
+    data2 = data * 2
+    encoded2 = encoder.encode(data2)
+    xmin, xmax = data.min(), data.max()
+    mask = (data2 >= xmin) & (data2 <= xmax)
+    assert all(encoded2[mask] == data2[mask])
+    assert all(np.isnan(encoded2[~mask]))
+
+    # test half-open interval + clip
+    encoder = BoundaryEncoder(0, None, mode="clip")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert all(encoded >= 0)
+    assert (encoded == 0).sum() == (data <= 0).sum()
+
+    # test half-open interval + mask
+    encoder = BoundaryEncoder(0, None, mode="mask")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert all(np.isnan(encoded) ^ (encoded >= 0))
+    assert np.isnan(encoded).sum() == (data < 0).sum()
 
 
 @mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))

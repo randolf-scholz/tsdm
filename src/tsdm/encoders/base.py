@@ -138,12 +138,12 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     @property
     def is_surjective(self) -> bool:
         r"""Whether the encoder is surjective."""
-        return False
+        raise NotImplementedError
 
     @property
     def is_injective(self) -> bool:
         r"""Whether the encoder is injective."""
-        return True
+        raise NotImplementedError
 
     @property
     def is_bijective(self) -> bool:
@@ -181,6 +181,9 @@ class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
     requires_fit: bool = False
+    is_injective: ClassVar[bool] = True
+    is_surjective: bool = True
+    is_bijective: bool = True
 
     def encode(self, data: T, /) -> T:
         return data
