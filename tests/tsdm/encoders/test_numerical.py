@@ -12,6 +12,7 @@ from tsdm.encoders.numerical import (
     MinMaxScaler,
     StandardScaler,
     get_broadcast,
+    get_reduced_axes,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -27,11 +28,28 @@ def test_get_broadcast(
     if isinstance(axis, tuple) and len(axis) > len(shape):
         return
 
-    a = np.random.randn(*shape)
-    broadcast = get_broadcast(a, axis=axis)
-    m = np.mean(a, axis=axis)
-    m_ref = np.mean(a, axis=axis, keepdims=True)
+    arr = np.random.randn(*shape)
+    broadcast = get_broadcast(arr.shape, axis=axis)
+    m = np.mean(arr, axis=axis)
+    m_ref = np.mean(arr, axis=axis, keepdims=True)
     assert m[broadcast].shape == m_ref.shape
+
+
+def test_reduce_axes():
+    axes: tuple[int, ...] = (-2, -1)
+    assert get_reduced_axes(..., axes) == axes
+    assert get_reduced_axes(0, axes) == (-1,)
+    assert get_reduced_axes([1], axes) == (-1,)
+    assert get_reduced_axes([1, 2], axes) == axes
+    assert get_reduced_axes(slice(None), axes) == axes
+    assert get_reduced_axes((), axes) == axes
+    assert get_reduced_axes((1,), axes) == (-1,)
+    assert get_reduced_axes((slice(None), 1), (-2, -1)) == (-2,)
+
+    axes = (-4, -3, -2, -1)
+    assert get_reduced_axes((..., 1, slice(None)), axes) == (-4, -3, -1)
+    assert get_reduced_axes((1, ..., 1), axes) == (-3, -2)
+    assert get_reduced_axes((1, ...), axes) == (-3, -2, -1)
 
 
 @mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
@@ -82,12 +100,12 @@ def test_scaler(Encoder, tensor_type):
     assert np.allclose(X, decoded)
     assert encoder.params[0].shape == (2, 3, 5), f"{encoder.params}"
 
-    # encoder = encoder[:-1]  # select the first two components
-    # # encoder.fit(X)
-    # encoded = encoder.encode(X[:-1])
-    # decoded = encoder.decode(encoded)
-    # assert np.allclose(X, decoded)
-    # assert encoder.params[0].shape == (2, 3)
+    encoder = encoder[:-1]  # select the first two components
+    # encoder.fit(X)
+    encoded = encoder.encode(X[:-1])
+    decoded = encoder.decode(encoded)
+    assert np.allclose(X, decoded)
+    assert encoder.params[0].shape == (1, 3, 5)
 
     LOGGER.info("Testing finished!")
 

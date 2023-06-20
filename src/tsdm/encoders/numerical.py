@@ -5,6 +5,7 @@ from __future__ import annotations
 __all__ = [
     # functions
     "get_broadcast",
+    "get_reduced_axes",
     # Classes
     "BoundaryEncoder",
     "LinearScaler",
@@ -18,14 +19,13 @@ __all__ = [
 
 import operator
 from dataclasses import KW_ONLY, dataclass, field
-from types import ModuleType
+from types import EllipsisType, ModuleType
 from typing import (
     Any,
     Callable,
     Generic,
     Literal,
     NamedTuple,
-    Optional,
     TypeAlias,
     TypeVar,
     cast,
@@ -53,7 +53,11 @@ r"""Type Hint for clipping mode."""
 
 
 def get_broadcast(
-    data: Any, /, *, axis: None | int | tuple[int, ...], keep_axis: bool = False
+    original_shape: tuple[int, ...],
+    /,
+    *,
+    axis: None | int | tuple[int, ...],
+    keep_axis: bool = False,
 ) -> tuple[slice | None, ...]:
     r"""Creates an indexer that broadcasts a tensors contracted via ``axis``.
 
@@ -64,11 +68,11 @@ def get_broadcast(
     element-wise operated with the original tensor, by expanding the contracted
     tensor to the shape of.
 
-    >>> a = np.random.randn(1, 2, 3, 4, 5)
+    >>> arr = np.random.randn(1, 2, 3, 4, 5)
     >>> axis = (1, -1)
-    >>> broadcast = get_broadcast(a, axis=axis)
-    >>> m = np.mean(a, axis)
-    >>> m_ref = np.mean(a, axis=axis, keepdims=True)
+    >>> broadcast = get_broadcast(arr.shape, axis=axis)
+    >>> m = np.mean(arr, axis)
+    >>> m_ref = np.mean(arr, axis=axis, keepdims=True)
     >>> m[broadcast].shape  # == m_ref.shape
     (1, 1, 3, 4, 1)
 
@@ -85,7 +89,7 @@ def get_broadcast(
     # selection = [(a % rank) for a in self.axis]
     # caxes = tuple(k for k in range(rank) if k not in selection)
     # broadcast = get_broadcast(data, axis=caxes)
-    rank = len(data.shape)
+    rank = len(original_shape)
 
     # determine contraction axes (caxes)
     match axis:
@@ -100,6 +104,73 @@ def get_broadcast(
         return tuple(slice(None) if a in contracted_axes else None for a in range(rank))
 
     return tuple(None if a in contracted_axes else slice(None) for a in range(rank))
+
+
+SINGLE_INDEXER: TypeAlias = None | int | list[int] | slice | EllipsisType
+r"""Type Hint for single indexer."""
+INDEXER: TypeAlias = SINGLE_INDEXER | tuple[SINGLE_INDEXER, ...]
+r"""Type Hint for indexer objects."""
+AXES: TypeAlias = None | int | tuple[int, ...]
+"""Type Hine for axes objects."""
+
+
+def slice_size(slc: slice) -> int | None:
+    if slc.stop is None or slc.start is None:
+        return None
+    return slc.stop - slc.start
+
+
+@overload
+def get_reduced_axes(item: INDEXER, axes: None) -> None:
+    ...
+
+
+@overload
+def get_reduced_axes(item: INDEXER, axes: int | tuple[int, ...]) -> tuple[int, ...]:
+    ...
+
+
+def get_reduced_axes(item: INDEXER, axes: AXES) -> AXES:
+    """Determine if a slice would remove some axes."""
+    if axes is None:
+        return None
+    if isinstance(axes, int):
+        axes = (axes,)
+    if len(axes) == 0:
+        return axes
+
+    match item:
+        case int():
+            return axes[1:]
+        case EllipsisType():
+            return axes
+        case None:
+            raise NotImplementedError("Slicing with None not implemented.")
+        case list() as lst:
+            if len(lst) <= 1:
+                return axes[1:]
+            return axes
+        case slice() as slc:
+            if slice_size(slc) in (0, 1):
+                return axes[1:]
+            return axes
+        case tuple() as tup:
+            if sum(x is Ellipsis for x in tup) > 1:
+                raise ValueError("Only one Ellipsis is allowed.")
+            if len(tup) == 0:
+                return axes
+            if Ellipsis in tup:
+                idx = tup.index(Ellipsis)
+                return (
+                    get_reduced_axes(tup[:idx], axes[:idx])
+                    + get_reduced_axes(tup[idx], axes[idx : idx + len(tup) - 1])
+                    + get_reduced_axes(tup[idx + 1 :], axes[idx + len(tup) - 1 :])
+                )
+            return get_reduced_axes(item[0], axes[:1]) + get_reduced_axes(
+                item[1:], axes[1:]
+            )
+        case _:
+            raise TypeError(f"Unknown type {type(item)}")
 
 
 @dataclass
@@ -232,7 +303,14 @@ class BoundaryEncoder(BaseEncoder):
 
 @dataclass(init=False)
 class LinearScaler(BaseEncoder, Generic[TensorType]):
-    r"""Maps the data linearly $x ↦ σ⋅x + μ$."""
+    r"""Maps the data linearly $x ↦ σ⋅x + μ$.
+
+    Args:
+        loc: the offset.
+        scale: the scaling factor.
+        axis: the axis along which to perform the operation. both μ and σ must have
+            shapes that can be broadcasted to the shape of the data along these axis.
+    """
 
     loc: TensorType  # NDArray[np.number] | Tensor
     scale: TensorType  # NDArray[np.number] | Tensor
@@ -270,26 +348,33 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
         loc: float | TensorType = 0.0,
         scale: float | TensorType = 1.0,
         *,
-        axis: Optional[int | tuple[int, ...]] = None,
+        axis: None | int | tuple[int, ...] = None,
     ):
         r"""Initialize the MinMaxScaler."""
         super().__init__()
-        self.loc = cast(TensorType, np.array(loc))
-        self.scale = cast(TensorType, np.array(scale))
-        self.axis = (axis,) if isinstance(axis, int) else axis  # type: ignore[assignment]
+        self.loc = cast(TensorType, loc)
+        self.scale = cast(TensorType, scale)
+        self.axis = axis  # type: ignore[assignment]
 
-    def __getitem__(self, item: int | slice | list[int]) -> Self:
-        r"""Return a slice of the LinearScaler."""
-        params = (self.loc, self.scale)
-        if all(x.ndim == 0 for x in params):
-            return self
+    def __getitem__(self, item: int | slice | tuple[int | slice, ...]) -> Self:
+        r"""Return a slice of the LinearScaler.
 
+        Args:
+            item: the slice, which is taken directly from the parameters.
+                If the parameters are scalars, then we return the same scaler.
+                E.g. taking slice encoder[:5] when loc and scale are scalars simply returns the same encoder.
+                However, encoder[5] will have to modify the axis, since now this new encoder will only operate
+                on the 5th-entry along the first axis.
+
+        Examples:
+            - axis is (-2, -1) and data shape is (10, 20, 30, 40). Then
+              loc/scale must be broadcastable to (30, 40), i.e. allowed shapes are
+              (), (1,), (1,1), (30,), (30,1), (1,40), (30,40).
+        """
+        # slice the parameters
         loc = self.loc if self.loc.ndim == 0 else self.loc[item]
         scale = self.scale if self.scale.ndim == 0 else self.scale[item]
-
-        newvals = (loc, scale)
-        lost_ranks = max(x.ndim for x in params) - max(x.ndim for x in newvals)
-        axis = self.axis[lost_ranks:]
+        axis = get_reduced_axes(item, self.axis)
 
         # initialize the new encoder
         cls = type(self)
@@ -301,16 +386,32 @@ class LinearScaler(BaseEncoder, Generic[TensorType]):
         r"""Pretty print."""
         return repr_dataclass(self)
 
+    def fit(self, data: TensorType, /) -> None:
+        if isinstance(data, Tensor):
+            self._fit_torch(data)
+        else:
+            self._fit_numpy(data)
+
+    def _fit_torch(self: LinearScaler[Tensor], data: Tensor) -> None:
+        # fix data type
+        self.loc = torch.tensor(self.loc, dtype=data.dtype, device=data.device)
+        self.scale = torch.tensor(self.scale, dtype=data.dtype, device=data.device)
+
+    def _fit_numpy(self: LinearScaler[np.ndarray], data: NDArray) -> None:
+        # fix data type
+        self.loc = np.array(self.loc, dtype=data.dtype)
+        self.scale = np.array(self.scale, dtype=data.dtype)
+
     def encode(self, data: TensorType, /) -> TensorType:
-        broadcast = get_broadcast(data, axis=self.axis)
-        loc = self.loc[broadcast]
-        scale = self.scale[broadcast]
+        broadcast = get_broadcast(data.shape, axis=self.axis)
+        loc = self.loc[broadcast] if self.loc.ndim > 0 else self.loc
+        scale = self.scale[broadcast] if self.scale.ndim > 0 else self.scale
         return data * scale + loc
 
     def decode(self, data: TensorType, /) -> TensorType:
-        broadcast = get_broadcast(data, axis=self.axis)
-        loc = self.loc[broadcast]
-        scale = self.scale[broadcast]
+        broadcast = get_broadcast(data.shape, axis=self.axis)
+        loc = self.loc[broadcast] if self.loc.ndim > 0 else self.loc
+        scale = self.scale[broadcast] if self.scale.ndim > 0 else self.scale
         return (data - loc) / scale
 
 
@@ -371,13 +472,14 @@ class StandardScaler(BaseEncoder, Generic[TensorType]):
 
     def __getitem__(self, item: int | slice | list[int]) -> Self:
         r"""Return a slice of the Standardizer."""
-        # Depending on the slice, the axis might change.
-
-        axis = self.axis if self.axis is None else self.axis[1:]
+        # slice the parameters
+        mean = self.mean[item] if self.mean.ndim > 0 else self.mean
+        stdv = self.stdv[item] if self.stdv.ndim > 0 else self.stdv
+        axis = get_reduced_axes(item, self.axis)
 
         # initialize the new encoder
         cls = type(self)
-        encoder = cls(mean=self.mean[item], stdv=self.stdv[item], axis=axis)
+        encoder = cls(mean=mean, stdv=stdv, axis=axis)
         encoder._is_fitted = self._is_fitted
         return encoder
 
@@ -400,7 +502,7 @@ class StandardScaler(BaseEncoder, Generic[TensorType]):
         # determine the axes to perform contraction over (caxes).
         selection = {(a % rank) for a in self.axis}
         caxes = tuple(k for k in range(rank) if k not in selection)
-        broadcast = get_broadcast(data, axis=caxes)
+        broadcast = get_broadcast(data.shape, axis=caxes)
 
         # determine the backend
         backend: ModuleType
@@ -426,11 +528,11 @@ class StandardScaler(BaseEncoder, Generic[TensorType]):
         self.stdv = as_tensor(self.stdv)
 
     def encode(self, data: TensorType, /) -> TensorType:
-        broadcast = get_broadcast(data, axis=self.axis, keep_axis=True)
+        broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         return (data - self.mean[broadcast]) / self.stdv[broadcast]
 
     def decode(self, data: TensorType, /) -> TensorType:
-        broadcast = get_broadcast(data, axis=self.axis, keep_axis=True)
+        broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         return data * self.stdv[broadcast] + self.mean[broadcast]
 
 
@@ -499,21 +601,16 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
 
     def __getitem__(self, item: int | slice | list[int]) -> Self:
         r"""Return a slice of the MinMaxScaler."""
-        params = (self.xmin, self.xmax, self.ymin, self.ymax)
-        if all(x.ndim == 0 for x in params):
-            return self
-
-        xmin = self.xmin if self.xmin.ndim == 0 else self.xmin[item]
-        xmax = self.xmax if self.xmax.ndim == 0 else self.xmax[item]
-        ymin = self.ymin if self.ymin.ndim == 0 else self.ymin[item]
-        ymax = self.ymax if self.ymax.ndim == 0 else self.ymax[item]
-
-        newvals = (xmin, xmax, ymin, ymax)
-        lost_ranks = max(x.ndim for x in params) - max(x.ndim for x in newvals)
+        # slice the parameters
+        xmin = self.xmin[item] if self.xmin.ndim > 0 else self.xmin
+        xmax = self.xmax[item] if self.xmax.ndim > 0 else self.xmax
+        ymin = self.ymin[item] if self.ymin.ndim > 0 else self.ymin
+        ymax = self.ymax[item] if self.ymax.ndim > 0 else self.ymax
+        axis = get_reduced_axes(item, self.axis)
 
         # initialize the new encoder
         cls = type(self)
-        encoder = cls(ymin, ymax, xmin=xmin, xmax=xmax, axis=self.axis[lost_ranks:])
+        encoder = cls(ymin, ymax, xmin=xmin, xmax=xmax, axis=axis)
         encoder._is_fitted = self._is_fitted
         return encoder
 
@@ -582,14 +679,14 @@ class MinMaxScaler(BaseEncoder, Generic[TensorType]):
         self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
     def encode(self, data: TensorType, /) -> TensorType:
-        broadcast = get_broadcast(data, axis=self.axis, keep_axis=True)
+        broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         xmin = self.xmin[broadcast]  # if self.xmin.ndim > 1 else self.xmin
         scale = self.scale[broadcast]  # if self.scale.ndim > 1 else self.scale
         ymin = self.ymin[broadcast]  # if self.ymin.ndim > 1 else self.ymin
         return (data - xmin) * scale + ymin
 
     def decode(self, data: TensorType, /) -> TensorType:
-        broadcast = get_broadcast(data, axis=self.axis, keep_axis=True)
+        broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         xmin = self.xmin[broadcast]  # if self.xmin.ndim > 1 else self.xmin
         scale = self.scale[broadcast]  # if self.scale.ndim > 1 else self.scale
         ymin = self.ymin[broadcast]  # if self.ymin.ndim > 1 else self.ymin
