@@ -14,7 +14,7 @@ from numpy import timedelta64 as np_td
 from pandas import Timedelta as pd_td
 from pandas import Timestamp as pd_dt
 from pytest import mark
-from typing_extensions import NamedTuple  # FIXME: remove with python 3.11
+from typing_extensions import NamedTuple
 
 from tsdm.random.samplers import compute_grid
 from tsdm.types.time import DTVar, TDVar

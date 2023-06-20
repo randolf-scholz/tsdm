@@ -36,6 +36,7 @@ def test_get_broadcast(
 
 
 def test_reduce_axes():
+    """Test the get_reduced_axes function."""
     axes: tuple[int, ...] = (-2, -1)
     assert get_reduced_axes(..., axes) == axes
     assert get_reduced_axes(0, axes) == (-1,)
@@ -111,6 +112,7 @@ def test_scaler(Encoder, tensor_type):
 
 
 def test_standard_scaler() -> None:
+    """Test the StandardScaler."""
     X = np.random.rand(100)
     encoder = StandardScaler()
     encoder.fit(X)
@@ -122,6 +124,7 @@ def test_standard_scaler() -> None:
 
 
 def test_minmax_scaler() -> None:
+    """Test the MinMaxScaler."""
     X = np.random.randn(100)
     encoder = MinMaxScaler()
     encoder.fit(X)

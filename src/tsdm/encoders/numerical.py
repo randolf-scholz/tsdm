@@ -115,6 +115,7 @@ AXES: TypeAlias = None | int | tuple[int, ...]
 
 
 def slice_size(slc: slice) -> int | None:
+    """Get the size of a slice."""
     if slc.stop is None or slc.start is None:
         return None
     return slc.stop - slc.start

@@ -148,6 +148,8 @@ disable= [
     "W1113",  # keyword-arg-before-vararg
 #    "W0511",  # (fixme) (todos)
     "E1101",  # no-member  # FIXME: too many false positives
+    "E1121",  # too-many-function-args  # too many false positives
+    "E1123",  # unexpected-keyword-arg  # too many false positives
 ]
 fail-on= [
     "C0116",  # missing-function-docstring
