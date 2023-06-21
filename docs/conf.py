@@ -14,8 +14,9 @@ import datetime
 import os
 import sys
 from importlib import metadata
+from pprint import pformat
 
-import tsdm
+from sphinx.util import inspect
 
 os.environ["GENERATING_DOCS"] = "true"
 sys.path.insert(0, os.path.abspath("."))
@@ -27,14 +28,11 @@ MODULE_DIR = "src/tsdm"
 VERSION = metadata.version(MODULE)
 YEAR = datetime.datetime.now().year
 
-from pprint import pformat
 
+def object_description(obj: object) -> str:
+    """Pretty print an object."""
+    return pformat(obj, indent=4)
 
-def object_description(object) -> str:
-    return pformat(object, indent=4)
-
-
-from sphinx.util import inspect
 
 inspect.object_description = object_description
 
@@ -846,8 +844,8 @@ viewcode_enable_epub = False
 # math_dollar_debug = True
 # math_dollar_node_blacklist = NODE_BLACKLIST + (header, pending_xref_condition)
 
-from sphinx.addnodes import pending_xref_condition
-from sphinx.util.docutils import register_node
+from sphinx.addnodes import pending_xref_condition  # noqa: E402
+from sphinx.util.docutils import register_node  # noqa: E402
 
 register_node(pending_xref_condition)
 

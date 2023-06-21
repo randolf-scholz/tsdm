@@ -1,9 +1,12 @@
-r"""TODO: Add module summary line.
-
-TODO: Add module description.
-"""
+r"""Constants used throughout the package."""
 
 __all__ = [
+    # Constant Functions
+    "CONST_TRUE_FN",
+    "CONST_FALSE_FN",
+    "CONST_NONE_FN",
+    "CONSTANT_FUNCTIONS",
+    # Constants
     "BUILTIN_CONSTANTS",
     "BUILTIN_TYPES",
     "EMPTY_PATH",
@@ -19,14 +22,32 @@ __all__ = [
 ]
 
 from pathlib import Path
-from typing import Final
+from typing import Any, Final, Literal
 
 import numpy as np
 import pandas
 import torch
 
+
+def CONST_TRUE_FN(*_: Any, **__: Any) -> Literal[True]:
+    """Constant True Function."""
+    return True
+
+
+def CONST_FALSE_FN(*_: Any, **__: Any) -> Literal[False]:
+    """Constant False Function."""
+    return False
+
+
+def CONST_NONE_FN(*_: Any, **__: Any) -> Literal[None]:
+    """Constant None Function."""
+    return None
+
+
 BUILTIN_CONSTANTS = [None, True, False, Ellipsis, NotImplemented]
 """Builtin constants https://docs.python.org/3/library/constants.html."""
+
+CONSTANT_FUNCTIONS = [CONST_TRUE_FN, CONST_FALSE_FN, CONST_NONE_FN]
 
 BUILTIN_TYPES: Final[list[type]] = [
     type(None),

@@ -88,7 +88,7 @@ def get_broadcast(
     (1, 1, 3, 4, 1)
 
     Args:
-        data: The tensor to be contracted.
+        original_shape: The tensor to be contracted.
         axis: The axes to be contracted.
         keep_axis: select `True` if axis are the axes to be kept instead.
 
@@ -232,17 +232,18 @@ class BoundaryEncoder(BaseEncoder[TensorType, TensorType]):
         r"""Pretty print."""
         return repr_dataclass(self)
 
-    # class Parameters(NamedTuple):
-    #     r"""The parameters of the LinearScaler."""
-    #
-    #     loc: TensorLike
-    #     scale: TensorLike
-    #     axis: tuple[int, ...]
-    #     requires_fit: bool
-    #
-    #     def __repr__(self) -> str:
-    #         r"""Pretty print."""
-    #         return repr_namedtuple(self)
+    class Parameters(NamedTuple):
+        r"""The parameters of the LinearScaler."""
+
+        loc: TensorLike
+        scale: TensorLike
+        axis: tuple[int, ...]
+        requires_fit: bool
+
+        def __repr__(self) -> str:
+            r"""Pretty print."""
+            return repr_namedtuple(self)
+
     #
     # @property
     # def params(self) -> Parameters:
@@ -323,14 +324,21 @@ class BoundaryEncoder(BaseEncoder[TensorType, TensorType]):
             self.__post_init__()
 
         # Create comparison functions
-        if self.lower_bound is None:
-            self.lower_compare = lambda data, bound: True
-        else:
-            self.lower_compare = operator.ge if self.lower_included else operator.gt
-        if self.upper_bound is None:
-            self.upper_compare = lambda data, bound: True
-        else:
-            self.upper_compare = operator.le if self.upper_included else operator.lt
+        self.lower_compare = (
+            (lambda *_: True)
+            if self.lower_bound is None
+            else operator.ge
+            if self.lower_included
+            else operator.gt
+        )
+
+        self.upper_compare = (
+            (lambda *_: True)
+            if self.upper_bound is None
+            else operator.le
+            if self.upper_included
+            else operator.lt
+        )
 
         # Set Backend
         if isinstance(data, Series | DataFrame):

@@ -56,7 +56,7 @@ def test_reduce_axes():
 
 def test_boundary_encoder() -> None:
     """Test the boundary encoder."""
-    data = np.random.randn(100)
+    data = np.array([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0])
 
     # test clip + numpy
     encoder = BoundaryEncoder(-1, +1, mode="clip")
@@ -95,12 +95,19 @@ def test_boundary_encoder() -> None:
     assert all(encoded >= 0)
     assert (encoded == 0).sum() == (data <= 0).sum()
 
-    # test half-open interval + mask
+    # test half-open unbounded interval + mask
     encoder = BoundaryEncoder(0, None, mode="mask")
     encoder.fit(data)
     encoded = encoder.encode(data)
     assert all(np.isnan(encoded) ^ (encoded >= 0))
     assert np.isnan(encoded).sum() == (data < 0).sum()
+
+    # test half-open bounded interval + mask
+    encoder = BoundaryEncoder(0, 1, mode="mask", lower_included=False)
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert all(np.isnan(encoded) ^ (encoded > 0))
+    assert np.isnan(encoded).sum() == ((data <= 0).sum() + (data > 1).sum())
 
 
 @mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))

@@ -3,7 +3,7 @@ requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
 
 
-
+# region project configuration ------------------------------------------------------
 [project]
 name = "tsdm"
 version = "0.4.7"
@@ -12,7 +12,7 @@ description = "Time-Series Datasets and Models"
 readme = "README.rst"
 keywords = ["time series", "machine learning"]
 authors = [{name="Randolf Scholz", email="randolf.scholz@gmail.com"},]
-license = {file="LICENSE.rst", text="MIT"}
+license = {file="LICENSE.rst"}
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -23,9 +23,6 @@ classifiers = [
     "Typing :: Typed",
     "Operating System :: POSIX :: Linux",
 ]
-
-
-
 
 
 dependencies = [
@@ -58,6 +55,7 @@ dev = [
     "flake8-comprehensions >= 3.12.0",
     "flake8-docstrings >= 1.7.0",
     "flake8-pyi >= 23.5.0",
+    "flake8-pyproject >= 1.2.3",
     "flake8-rst >= 0.8.0",
     "flake8-rst-docstrings >= 0.3.0",
     "ipywidgets >= 8.0.6",
@@ -121,11 +119,109 @@ dev = [
 homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
 documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
 repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi"
+# endregion project configuration ------------------------------------------------------
 
 
-########################
-# PyLint Configuration #
-########################
+# region flake8 configuration ----------------------------------------------------------
+[tool.flake8]
+count = true
+max-line-length = 120
+
+# ANN: Annotations
+# A:   builtins
+# B:   bugbear
+# B9:  bugbear future proof
+# BLK: black
+# C:   mccabe / comprehensions
+# D:   docstring
+# E:   pycodestyle errors
+# F:   pyflakes warnings
+# I:   import-order
+# M:   flake8 extension for mutable default arguments
+# RST: restructured text
+# W:   pycodestyle warnings
+# Y:   type hinting in stub files
+# select = B,B9,BLK,C,D,E,F,I,S,W
+
+#filename = [
+#    "src/",
+#    "tests/",
+#    "examples/",
+#    "docs/conf.py",
+#    "run/",
+#    "dev/",
+#]
+
+ignore = [
+    "ANN10",  # ANN10 Missing type annotation for self in method
+    "ANN10",  # ANN10 Missing type annotation for cls in classmethod
+    "ANN40",  # ANN40 Dynamically typed expressions (typing.Any) are disallowed
+    "B024",   # B024 BaseDatasetMetaClass is an abstract base class, but it has no abstract methods
+    "D102",   # D102 Missing docstring in public method
+    "D105",   # D105 Missing docstring in magic method
+    "D107",   # D107 Missing docstring in __init__
+    "E202",   # E202 whitespace before ']'
+    "E203",   # E203 whitespace before ':'
+    "E241",   # E241 multiple spaces after ','
+    "E704",   # E704 multiple statements on one line (def)
+    "E741",   # E741 ambiguous variable nam
+    "W503",   # W503 line break before binary operator
+]
+per-file-ignores = ["tests/*:D103"]
+
+#Google Python style is not RST until after processed by Napoleon
+#See https://github.com/peterjc/flake8-rst-docstrings/issues/17
+extend-ignore = [
+    "D407",    # Missing dashed underline after section
+    "RST201",  # Unexpected indentation.
+    "RST203",  # Definition list ends without a blank line# unexpected unindent.
+    "RST301",  # Block quote ends without a blank line# unexpected unindent.
+    # "ANN101",  # Missing type annotation for self in method
+    # "ANN201",  # Missing return type annotation for public function
+    # "RST303",  # Unknown directive type
+    # "RST304",  # Unknown interpreted text role
+]
+
+exclude = [
+    "*.pyi",
+    "./.git",
+    "./.idea",
+    "./.venv",
+    "./bugs",
+    "./build",
+    "./dev",
+    "./scripts",
+    "./venv",
+]
+
+# Annotations plugin
+# Suppress ANN200-level errors for functions that have no return (return None)
+suppress-none-returning = true
+allow-untyped-defs = true
+
+# docstring plugin
+docstring-convention = "google"
+rst-roles = [
+    "mod",
+    "func",
+    "data",
+    "const",
+    "class",
+    "meth",
+    "attr",
+    "exc",
+    "obj",
+]
+rst-directives = [
+    "Signature",
+    "literalinclude",
+]
+# endregion flake8 configuration -------------------------------------------------------
+
+
+
+
+# region PyLint Configuration ----------------------------------------------------------
 [tool.pylint]
 [tool.pylint."MESSAGES CONTROL"]
 enable= [
@@ -168,11 +264,11 @@ max-line-length=120
 # List of members which are set dynamically and missed by pylint inference system, and so shouldn't
 # trigger E1101 when accessed. Python regular expressions are accepted.
 generated-members=["numpy.*", "torch.*"]
+# endregion PyLint Configuration -------------------------------------------------------
 
 
-######################
-# MyPy Configuration #
-######################
+
+# region mypy configuration ------------------------------------------------------------
 [tool.mypy]
 python_version = "3.10"
 files = ["src/", "tests/"]
@@ -196,14 +292,6 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 
-
-# strictness flags
-#disallow_untyped_globals = true
-allow_redefinition = false
-check_untyped_defs = true
-#disallow_untyped_defs = true
-disallow_incomplete_defs = true
-
 #warn-unused-configs
 #disallow-any-generics
 #disallow-subclassing-any
@@ -219,6 +307,12 @@ disallow_incomplete_defs = true
 #strict-equality
 #strict-concatenate
 
+# strictness flags
+#disallow_untyped_globals = true
+allow_redefinition = false
+check_untyped_defs = true
+#disallow_untyped_defs = true
+disallow_incomplete_defs = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -233,11 +327,11 @@ module = [
     "tqdm.*",
 ]
 ignore_missing_imports = true
+# endregion mypy configuration ---------------------------------------------------------
 
 
-#######################
-# isort Configuration #
-#######################
+
+# region isort Configuration -----------------------------------------------------------
 [tool.isort]
 # isort profiles: black, django, pycharm, google, open_stack, plone, attrs, hug, wemake, appnexus
 # black-compatible: black, appnexus
@@ -247,18 +341,20 @@ src_paths=["src/", "tests/"]
 known_first_party = ["linodenet", "tsdm"]
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
 # black-compatible: black, appnexus
+# endregion isort Configuration --------------------------------------------------------
 
-#######################
-# black Configuration #
-#######################
+
+
+# region Black Configuration -----------------------------------------------------------
 [tool.black]
 line-length = 88
 target-version = ['py310']
 color = true
+# endregion Black Configuration --------------------------------------------------------
 
-############################
-# pydocstyle Configuration #
-############################
+
+
+# region Pydocstyle Configuration ------------------------------------------------------
 [tool.pydocstyle]
 convention = "google"
 #count = true
@@ -271,10 +367,11 @@ add-ignore = [
     "D102",    # Missing docstring in public method
     "D107",    # Missing docstring in __init__
 ]
+# endregion Pydocstyle Configuration ---------------------------------------------------
 
-#########################
-# pyright Configuration #
-#########################
+
+
+# region Pyright Configuration ---------------------------------------------------------
 [tool.pyright]
 root = ""
 venv = ".venv"
@@ -291,17 +388,16 @@ exclude = [
 executionEnvironments = [
     {root = "src/", pythonVersion = "3.10", pythonPlatform = "Linux", extraPaths = [""]}
 ]
-# region Type Check Diagnostics Settings
+# Type Check Diagnostics Settings
 reportMissingImports = false
 reportMissingTypeStubs = false
 reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false
-# endregion
+# endregion Pyright Configuration ------------------------------------------------------
 
 
-########################
-# PyTest Configuration #
-########################
+
+# region pytest configuration ----------------------------------------------------------
 [tool.pytest]
 # NOTE: currently unused https://docs.pytest.org/en/stable/reference/customize.html
 
@@ -329,11 +425,11 @@ required_plugins = [
     "pytest-rerunfailures",
     "pytest-cov",
 ]
+# endregion pytest configuration -------------------------------------------------------
 
 
-##########################
-# Coverage Configuration #
-##########################
+
+# region coverage configuration --------------------------------------------------------
 [tool.coverage]
 
 [tool.coverage.paths]
@@ -349,20 +445,18 @@ exclude_lines = [
 
 [tool.coverage.run]
 source = ["src/"]
+# endregion coverage configuration -----------------------------------------------------
 
 
 
-######################
-# Ruff Configuration #
-######################
+# region ruff configuration ------------------------------------------------------------
 [tool.ruff]
 line-length = 120
+# endregion ruff configuration ---------------------------------------------------------
 
 
-########################
-# Poetry Configuration #
-########################
 
+# region poetry configuration ----------------------------------------------------------
 [tool.poetry]
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
 description = "Time-Series Datasets and Models"
@@ -419,13 +513,14 @@ flake8-bugbear = ">=23.6.5"
 flake8-comprehensions = ">=3.13.0"
 flake8-docstrings = ">=1.7.0"
 flake8-pyi = ">=23.5.0"
+flake8-pyproject = ">=1.2.3"
 flake8-rst = ">=0.8.0"
 flake8-rst-docstrings = ">=0.3.0"
 ipympl = ">=0.9.3"
 ipywidgets = ">=8.0.6"
 isort = ">=5.12.0"
 jupyterlab = ">=4.0.2"
-mypy = ">=1.3.0"
+mypy = ">=1.4.0"
 nbsphinx = ">=0.9.2"
 openml = ">=0.13.1"
 openpyxl = ">=3.1.2"
@@ -451,7 +546,7 @@ pytest-benchmark = ">=4.0.0"
 pytest-cov = ">=4.1.0"
 pytest-xdist = ">=3.3.1"
 pytest-rerunfailures = ">=11.1.2"
-ruff = ">=0.0.272"
+ruff = ">=0.0.274"
 setuptools = ">=68.0.0"
 slotscheck = ">=0.16.5"
 sphinx = ">=7.0.1"
@@ -477,9 +572,8 @@ types-urllib3 = ">=1.26.25"
 wheel = ">=0.40.0"
 yesqa = ">=1.5.0"
 
-
-
 [tool.poetry.extras]
 
-
 [tool.poetry.scripts]
+
+# endregion poetry configuration -------------------------------------------------------

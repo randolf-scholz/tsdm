@@ -111,6 +111,7 @@ repos:
           - flake8-docstrings # wraps pydocstyle
           - flake8-nb
           - flake8-pyi
+          - flake8-pyproject
           - flake8-rst
           - flake8-rst-docstrings
   # yesqa
