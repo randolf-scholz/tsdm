@@ -43,7 +43,7 @@ repos:
       - id: requirements-txt-fixer
         description: "sorts entries in requirements.txt"
       - id: trailing-whitespace
-        description: "trims trailing whitespace.."
+        description: "trims trailing whitespace."
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.10.0"
     hooks:
@@ -93,7 +93,7 @@ repos:
         description: " Run `black` on python code blocks in documentation files "
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.272
+    rev: v0.0.274
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -146,6 +146,7 @@ repos:
         name: jupyter-nb-clear-output
         description: Clear output cells in Jupyter notebooks
         files: (^dev/|^experiments/)
+        stages: [commit]
         types: [jupyter]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace

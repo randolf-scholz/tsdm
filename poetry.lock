@@ -2111,13 +2111,13 @@ files = [
 
 [[package]]
 name = "keyring"
-version = "24.0.0"
+version = "24.0.1"
 description = "Store and access your passwords safely."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "keyring-24.0.0-py3-none-any.whl", hash = "sha256:770f609eed2a16c65a6349f3ba1545d00c73f9fed4254c13766c674fe6d0d22b"},
-    {file = "keyring-24.0.0.tar.gz", hash = "sha256:4e87665a19c514c7edada8b15015cf89bd99b8d7edabc5c43cca77166fa8dfad"},
+    {file = "keyring-24.0.1-py3-none-any.whl", hash = "sha256:b3eaa3874e2cffeba2d73e3f275c83827156d0616a2160a610a60d63922ad24b"},
+    {file = "keyring-24.0.1.tar.gz", hash = "sha256:f77da625a448baa77906b099be9feaa29aa90979547506ac1ec422926085cee0"},
 ]
 
 [package.dependencies]
@@ -3631,13 +3631,13 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pyright"
-version = "1.1.314"
+version = "1.1.315"
 description = "Command line wrapper for pyright"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.314-py3-none-any.whl", hash = "sha256:5008a2e04b71e35c5f1b78b16adae9d012601197442ae6c798e9bb3456d1eecb"},
-    {file = "pyright-1.1.314.tar.gz", hash = "sha256:bd104c206fe40eaf5f836efa9027f07cc0efcbc452e6d22dfae36759c5fd28b3"},
+    {file = "pyright-1.1.315-py3-none-any.whl", hash = "sha256:262744daa7455f6056f6d6609b6278258e2fd7bd100d8937203516ee71d0eb93"},
+    {file = "pyright-1.1.315.tar.gz", hash = "sha256:f124400a1a72ccc5fd04836e7e48ed235e8f7929bcc42b270a571fb34df17979"},
 ]
 
 [package.dependencies]
@@ -4606,17 +4606,21 @@ tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
 name = "stdlib-list"
-version = "0.8.0"
-description = "A list of Python Standard Libraries (2.6-7, 3.2-9)."
+version = "0.9.0"
+description = "A list of Python Standard Libraries (2.7 through 3.9)."
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "stdlib-list-0.8.0.tar.gz", hash = "sha256:a1e503719720d71e2ed70ed809b385c60cd3fb555ba7ec046b96360d30b16d9f"},
-    {file = "stdlib_list-0.8.0-py3-none-any.whl", hash = "sha256:2ae0712a55b68f3fbbc9e58d6fa1b646a062188f49745b495f94d3310a9fdd3e"},
+    {file = "stdlib_list-0.9.0-py3-none-any.whl", hash = "sha256:f79957d59e41930d44afcd81e465f740b9a7a9828707a40e24ab1092b12bd423"},
+    {file = "stdlib_list-0.9.0.tar.gz", hash = "sha256:98eb66135976c96b4ee3f4c0ef0552ebb5a9977ce3028433db79f4738b02af26"},
 ]
 
 [package.extras]
-develop = ["sphinx"]
+dev = ["build", "stdlib-list[doc,lint,test]"]
+doc = ["furo", "sphinx"]
+lint = ["black", "mypy", "ruff"]
+support = ["sphobjinv"]
+test = ["coverage[toml]", "pytest", "pytest-cov"]
 
 [[package]]
 name = "stevedore"
@@ -4988,13 +4992,13 @@ types-urllib3 = "*"
 
 [[package]]
 name = "types-setuptools"
-version = "67.8.0.0"
+version = "68.0.0.0"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-setuptools-67.8.0.0.tar.gz", hash = "sha256:95c9ed61871d6c0e258433373a4e1753c0a7c3627a46f4d4058c7b5a08ab844f"},
-    {file = "types_setuptools-67.8.0.0-py3-none-any.whl", hash = "sha256:6df73340d96b238a4188b7b7668814b37e8018168aef1eef94a3b1872e3f60ff"},
+    {file = "types-setuptools-68.0.0.0.tar.gz", hash = "sha256:fc958b4123b155ffc069a66d3af5fe6c1f9d0600c35c0c8444b2ab4147112641"},
+    {file = "types_setuptools-68.0.0.0-py3-none-any.whl", hash = "sha256:cc00e09ba8f535362cbe1ea8b8407d15d14b59c57f4190cceaf61a9e57616446"},
 ]
 
 [[package]]
@@ -5401,4 +5405,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "78ed59fd69002f95b854df54838354bb5210b02ef1f21edfaec424b900144d7e"
+content-hash = "75cac7ac617fdac238e68537aeb080f3eb49224e782518768c4ac31fdf200094"

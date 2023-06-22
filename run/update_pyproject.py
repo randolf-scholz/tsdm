@@ -4,10 +4,13 @@
 import json
 import re
 import subprocess
+from typing import Literal
 
 # run pip list with json format and load the output into a dictionary
-pip_list = json.loads(subprocess.check_output(["pip", "list", "--format=json"]))
-pkg_dict = {pkg["name"].lower(): pkg["version"] for pkg in pip_list}
+pip_list: list[dict[Literal["name", "version"], str]] = json.loads(
+    subprocess.check_output(["pip", "list", "--format=json"])
+)
+pkg_dict: dict[str, str] = {pkg["name"].lower(): pkg["version"] for pkg in pip_list}
 
 
 def strip(version: str) -> str:
