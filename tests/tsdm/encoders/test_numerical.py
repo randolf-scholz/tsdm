@@ -1,11 +1,19 @@
 #!/usr/bin/env python
-r"""Test the standardizer encoder."""
+r"""Test the standardizer encoder.
+
+
+
+
+
+
+
+"""
 
 import logging
 
 import numpy as np
 import torch
-from pytest import mark
+from pytest import mark, skip
 
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
@@ -20,19 +28,38 @@ logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
-@mark.parametrize("shape", ((1, 2, 3, 4), (7,)))
-@mark.parametrize("axis", ((1, -1), (-1,), 0, None, ()))
+@mark.parametrize("shape", ((5, 2, 3, 4), (7,)))
+@mark.parametrize("axis", ((1, -1), (-1,), -2, 0, None, ()))
 def test_get_broadcast(
     shape: tuple[int, ...], axis: None | int | tuple[int, ...]
 ) -> None:
     """Test the get_broadcast function."""
-    if isinstance(axis, tuple) and len(axis) > len(shape):
-        return
+    if (
+        isinstance(axis, tuple) and max(map(abs, axis), default=0) > len(shape) - 1
+    ) or (isinstance(axis, int) and abs(axis) > len(shape)):
+        skip(f"{shape=} {axis=}")
 
     arr = np.random.randn(*shape)
+
     broadcast = get_broadcast(arr.shape, axis=axis)
     m = np.mean(arr, axis=axis)
     m_ref = np.mean(arr, axis=axis, keepdims=True)
+    assert m[broadcast].shape == m_ref.shape
+
+    # test with keep_axis:
+    kept_axis = axis
+    broadcast = get_broadcast(arr.shape, axis=kept_axis, keep_axis=True)
+    match kept_axis:
+        case None:
+            contracted_axes = tuple(range(arr.ndim))
+        case int():
+            contracted_axes = tuple(set(range(arr.ndim)) - {kept_axis % arr.ndim})
+        case tuple():
+            contracted_axes = tuple(
+                set(range(arr.ndim)) - {a % arr.ndim for a in kept_axis}
+            )
+    m = np.mean(arr, axis=contracted_axes)
+    m_ref = np.mean(arr, axis=contracted_axes, keepdims=True)
     assert m[broadcast].shape == m_ref.shape
 
 
@@ -130,7 +157,7 @@ def test_scaler(Encoder, tensor_type):
     LOGGER.info("Testing with single batch-dim.")
     X = np.random.rand(3, 5)
     X = tensor_type(X)
-    encoder = Encoder()
+    encoder = Encoder(axis=-1)
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
@@ -180,16 +207,51 @@ def test_standard_scaler() -> None:
     assert np.allclose(encoded.std(), 1.0)
 
 
-def test_minmax_scaler() -> None:
+@mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
+def test_standard_scaler(axis) -> None:
     """Test the MinMaxScaler."""
-    X = np.random.randn(100)
-    encoder = MinMaxScaler()
+    TRUE_SHAPE = {
+        None: (2, 3, 4, 5),
+        (-2, -1): (4, 5),
+        -1: (5,),
+        (): (),
+    }[axis]
+
+    X = np.random.randn(2, 3, 4, 5)
+    encoder = StandardScaler(axis=axis)
     encoder.fit(X)
+    assert encoder.params[0].shape == TRUE_SHAPE
     encoded = encoder.encode(X)
+
+    if axis is None:
+        # std = 0.0
+        return
+
+    assert np.allclose(encoded.mean(), 0.0)
+    assert np.allclose(encoded.std(), 1.0)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
+
+
+@mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
+def test_minmax_scaler(axis) -> None:
+    """Test the MinMaxScaler."""
+    TRUE_SHAPE = {
+        None: (2, 3, 4, 5),
+        (-2, -1): (4, 5),
+        -1: (5,),
+        (): (),
+    }[axis]
+
+    X = np.random.randn(2, 3, 4, 5)
+    encoder = MinMaxScaler(axis=axis)
+    encoder.fit(X)
+    assert encoder.params[0].shape == TRUE_SHAPE
+    encoded = encoder.encode(X)
     assert encoded.min() >= 0.0
     assert encoded.max() <= 1.0
+    decoded = encoder.decode(encoded)
+    assert np.allclose(X, decoded)
 
 
 @mark.parametrize("tensor_type", (np.array, torch.tensor))

@@ -14,8 +14,8 @@ from tsdm.encoders import (
     BaseEncoder,
     BoundaryEncoder,
     BoxCoxEncoder,
+    FastFrameEncoder,
     FrameAsDict,
-    FrameEncoder,
     IdentityEncoder,
     LinearScaler,
     LogitBoxCoxEncoder,
@@ -49,14 +49,14 @@ def test_combined_encoder(SplitID=(0, "train")):
             case "percent":
                 column_encoders[col] = (
                     LogitBoxCoxEncoder()
-                    @ LinearScaler(lower, upper)
+                    @ MinMaxScaler(0, 1, xmin=lower, xmax=upper)
                     @ BoundaryEncoder(lower, upper, mode="clip")
                 )
             case "absolute":
                 if upper < np.inf:
                     column_encoders[col] = (
                         BoxCoxEncoder()
-                        # @ LinearScaler(lower, upper)
+                        # @ MinMaxScaler(lower, upper)
                         @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 else:
@@ -79,7 +79,7 @@ def test_combined_encoder(SplitID=(0, "train")):
             encode_index=True,
         )
         @ StandardScaler()
-        @ FrameEncoder(
+        @ FastFrameEncoder(
             column_encoders=column_encoders,
             index_encoders={"measurement_time": MinMaxScaler() @ TimeDeltaEncoder()},
         )

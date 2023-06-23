@@ -637,14 +637,14 @@ def wrap_func(
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                before(*args, **kwargs)  # type: ignore[misc]
+                before(*args, **kwargs)
                 return func(*args, **kwargs)
 
             return _wrapper
 
         @wraps(func)
         def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            before()  # type: ignore[misc]
+            before()
             return func(*args, **kwargs)
 
         return _wrapper
@@ -657,7 +657,7 @@ def wrap_func(
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(*args, **kwargs)
-                after(*args, **kwargs)  # type: ignore[misc]
+                after(*args, **kwargs)
                 return result
 
             return _wrapper
@@ -665,7 +665,7 @@ def wrap_func(
         @wraps(func)
         def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             result = func(*args, **kwargs)
-            after()  # type: ignore[misc]
+            after()
             return result
 
         return _wrapper
@@ -677,18 +677,18 @@ def wrap_func(
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                before(*args, **kwargs)  # type: ignore[misc]
+                before(*args, **kwargs)
                 result = func(*args, **kwargs)
-                after(*args, **kwargs)  # type: ignore[misc]
+                after(*args, **kwargs)
                 return result
 
             return _wrapper
 
         @wraps(func)
         def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            before()  # type: ignore[misc]
+            before()
             result = func(*args, **kwargs)
-            after()  # type: ignore[misc]
+            after()
             return result
 
         return _wrapper
@@ -717,14 +717,14 @@ def wrap_method(
 
             @wraps(func)
             def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-                before(self, *args, **kwargs)  # type: ignore[misc]
+                before(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
             return _wrapper
 
         @wraps(func)
         def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-            before(self)  # type: ignore[misc]
+            before(self)
             return func(self, *args, **kwargs)
 
         return _wrapper
@@ -737,7 +737,7 @@ def wrap_method(
             @wraps(func)
             def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
-                after(self, *args, **kwargs)  # type: ignore[misc]
+                after(self, *args, **kwargs)
                 return result
 
             return _wrapper
@@ -745,7 +745,7 @@ def wrap_method(
         @wraps(func)
         def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
             result = func(self, *args, **kwargs)
-            after(self)  # type: ignore[misc]
+            after(self)
             return result
 
         return _wrapper
@@ -757,18 +757,18 @@ def wrap_method(
 
             @wraps(func)
             def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-                before(self, *args, **kwargs)  # type: ignore[misc]
+                before(self, *args, **kwargs)
                 result = func(self, *args, **kwargs)
-                after(self, *args, **kwargs)  # type: ignore[misc]
+                after(self, *args, **kwargs)
                 return result
 
             return _wrapper
 
         @wraps(func)
         def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-            before(self)  # type: ignore[misc]
+            before(self)
             result = func(self, *args, **kwargs)
-            after(self)  # type: ignore[misc]
+            after(self)
             return result
 
         return _wrapper

@@ -22,6 +22,7 @@ import logging
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
+from functools import wraps
 from typing import (
     Any,
     ClassVar,
@@ -45,7 +46,11 @@ class Encoder(Protocol[T, S]):
     """Protocol for Encoders."""
 
     is_fitted: bool
-    requires_fit: bool
+    r"""Whether the encoder has been fitted."""
+
+    @property
+    def requires_fit(self) -> bool:
+        r"""Whether the encoder requires fitting."""
 
     # def __invert__(self) -> Encoder:
     #     r"""Return the inverse encoder (i.e. decoder)."""
@@ -84,11 +89,13 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the Encoder."""
 
-    requires_fit: bool = True
-    r"""Whether the encoder requires fitting."""
-
     _is_fitted: bool = False
     r"""Whether the encoder has been fitted."""
+
+    @property
+    @abstractmethod
+    def requires_fit(self) -> bool:
+        r"""Whether the encoder requires fitting."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -101,9 +108,44 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
         The wrapping of fit/encode/decode must be done here to avoid `~pickle.PickleError`!
         """
         super().__init_subclass__(*args, **kwargs)
-        cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[method-assign]
-        cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[method-assign]
-        cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[method-assign]
+
+        original_fit = cls.fit
+        original_encode = cls.encode
+        original_decode = cls.decode
+
+        @wraps(original_fit)
+        def fit(self: BaseEncoder, data: T, /) -> None:
+            r"""Fit the encoder to the data."""
+            if not self.requires_fit:
+                self.LOGGER.info(
+                    "Skipping fitting as encoder does not require fitting."
+                )
+            else:
+                self.LOGGER.info("Fitting encoder to data.")
+                original_fit(self, data)
+            self.is_fitted = True
+
+        @wraps(original_encode)
+        def encode(self: BaseEncoder, data: T, /) -> S:
+            r"""Encode the data."""
+            if not self.is_fitted:
+                raise RuntimeError("Encoder has not been fitted.")
+            return original_encode(self, data)
+
+        @wraps(original_decode)
+        def decode(self: BaseEncoder, data: S, /) -> T:
+            r"""Decode the data."""
+            if not self.is_fitted:
+                raise RuntimeError("Encoder has not been fitted.")
+            return original_decode(self, data)
+
+        cls.fit = fit  # type: ignore[method-assign]
+        cls.encode = encode  # type: ignore[method-assign]
+        cls.decode = decode  # type: ignore[method-assign]
+
+        # cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[method-assign]
+        # cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[method-assign]
+        # cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[method-assign]
 
     # TODO: implement __invert__ (python 3.11)
     # def __invert__(self) -> Encoder:
@@ -177,13 +219,13 @@ EncoderVar = TypeVar("EncoderVar", bound=BaseEncoder)
 """Type variable for encoders."""
 
 
-class IdentityEncoder(BaseEncoder):
+class IdentityEncoder(BaseEncoder[T, T]):
     r"""Dummy class that performs identity function."""
 
-    requires_fit: bool = False
+    requires_fit: ClassVar[bool] = False
     is_injective: ClassVar[bool] = True
-    is_surjective: bool = True
-    is_bijective: bool = True
+    is_surjective: ClassVar[bool] = True
+    is_bijective: ClassVar[bool] = True
 
     def encode(self, data: T, /) -> T:
         return data
@@ -195,10 +237,12 @@ class IdentityEncoder(BaseEncoder):
 class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Product-Type for Encoders."""
 
-    requires_fit: bool = True
-
     encoders: list[EncoderVar]
     r"""The encoders."""
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(e.requires_fit for e in self.encoders)
 
     @property
     def is_fitted(self) -> bool:
@@ -227,7 +271,6 @@ class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
                     self.encoders.append(enc)
             else:
                 self.encoders.append(encoder)
-        self.requires_fit = any(e.requires_fit for e in self.encoders)
 
     def __len__(self) -> int:
         r"""Return the number of the encoders."""
@@ -267,10 +310,12 @@ class ProductEncoder(BaseEncoder, Sequence[EncoderVar]):
 class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
     r"""Represents function composition of encoders."""
 
-    requires_fit: bool = True
-
     encoders: list[EncoderVar]
     r"""List of encoders."""
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(e.requires_fit for e in self.encoders)
 
     @property
     def is_fitted(self) -> bool:
@@ -291,16 +336,13 @@ class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
 
     def __init__(self, *encoders: EncoderVar, simplify: bool = True) -> None:
         super().__init__()
-
         self.encoders = []
-
         for encoder in encoders:
             if simplify and isinstance(encoder, ChainedEncoder):
                 for enc in encoder:
                     self.encoders.append(enc)
             else:
                 self.encoders.append(encoder)
-        self.requires_fit = any(e.requires_fit for e in self.encoders)
 
     def __len__(self) -> int:
         r"""Return number of chained encoders."""
@@ -324,7 +366,10 @@ class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
 
     def fit(self, data: Any, /) -> None:
         for encoder in reversed(self.encoders):
-            encoder.fit(data)
+            try:
+                encoder.fit(data)
+            except Exception as E:
+                raise RuntimeError(f"Failed to fit {type(encoder)}") from E
             data = encoder.encode(data)
 
     def encode(self, data: Any, /) -> Any:
@@ -341,15 +386,16 @@ class ChainedEncoder(BaseEncoder, Sequence[EncoderVar]):
 class MappingEncoder(BaseEncoder, Mapping[K, EncoderVar]):
     r"""Encoder that maps keys to encoders."""
 
-    requires_fit: bool = True
-
     encoders: Mapping[K, EncoderVar]
     r"""Mapping of keys to encoders."""
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(e.requires_fit for e in self.encoders.values())
 
     def __init__(self, encoders: Mapping[K, EncoderVar]) -> None:
         super().__init__()
         self.encoders = encoders
-        self.requires_fit = any(e.requires_fit for e in self.encoders.values())
 
     @overload
     def __getitem__(self, key: K) -> EncoderVar:
@@ -392,6 +438,10 @@ class MappingEncoder(BaseEncoder, Mapping[K, EncoderVar]):
 class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     r"""Duplicate encoder multiple times (references same object)."""
 
+    @property
+    def requires_fit(self) -> bool:
+        return self.encoder.requires_fit
+
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
         super().__init__()
         self.base_encoder = encoder
@@ -411,6 +461,10 @@ class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
 
 class CloneEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     r"""Clone encoder multiple times (distinct copies)."""
+
+    @property
+    def requires_fit(self) -> bool:
+        return self.encoder.requires_fit
 
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
         super().__init__()

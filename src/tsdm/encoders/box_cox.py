@@ -7,7 +7,7 @@ __all__ = [
 ]
 
 import warnings
-from typing import Callable, Literal, Optional, TypeAlias
+from typing import Callable, ClassVar, Literal, Optional, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -41,10 +41,12 @@ class BoxCoxEncoder(BaseEncoder):
         - a mean-0, variance-1 normal distribution
     """
 
+    requires_fit: ClassVar[bool] = True
+
     AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
 
     method: METHOD = "match-uniform"
-    offset: float
+    offset: float = NotImplemented
     initial_params: Optional[np.ndarray] = None
     verbose: bool = False
 
@@ -229,10 +231,12 @@ class LogitBoxCoxEncoder(BaseEncoder):
         - a mean-0, variance-1 normal distribution
     """
 
+    requires_fit: ClassVar[bool] = True
+
     AVAILABLE_METHODS = [None, "minimum", "quartile", "match-normal", "match-uniform"]
 
     method: METHOD = "match-normal"
-    offset: float
+    offset: float = NotImplemented
 
     initial_param: Optional[np.ndarray] = None
     verbose: bool = False
