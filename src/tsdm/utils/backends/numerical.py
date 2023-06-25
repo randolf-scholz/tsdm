@@ -1,8 +1,11 @@
 """Numerical functions with shared signatures for multiple backends."""
 
-__all__ = ["Backend", "get_backend", "where_kernel", "clip_kernel"]
+from __future__ import annotations
 
-from typing import Any, Callable, Literal, TypeAlias, TypeVar
+__all__ = ["Backend", "get_backend", "KernelProvider"]
+
+from collections.abc import Mapping, Sequence
+from typing import Any, Callable, Generic, Literal, TypeAlias, TypedDict, TypeVar
 
 import numpy
 import torch
@@ -38,14 +41,43 @@ def get_backend(*objs: Any, fallback: Backend = "numpy") -> Backend:
             raise ValueError(f"More than 1 backend detected: {types}.")
 
 
-where_kernel: dict[Backend, Callable[[T, T, T], T]] = {
-    "torch": torch.where,
-    "pandas": lambda cond, a, b: a.where(cond, b),
-    "numpy": numpy.where,
-}
+# where: TypeAlias = Callable[[T, T, T], T]
+# clip: TypeAlias = Callable[[T, T | None, T | None], T]
+#
+# where_kernel: dict[Backend, where] = {
+#     "torch": torch.where,
+#     "pandas": lambda cond, a, b: a.where(cond, b),
+#     "numpy": numpy.where,
+# }
+#
+# clip_kernel: dict[Backend, clip] = {
+#     "torch": torch.clip,
+#     "pandas": lambda x, lower=None, upper=None: x.clip(lower, upper),
+#     "numpy": numpy.clip,
+# }
 
-clip_kernel: dict[Backend, Callable[[T, T | None, T | None], T]] = {
-    "torch": torch.clip,
-    "pandas": lambda x, lower=None, upper=None: x.clip(lower, upper),
-    "numpy": numpy.clip,
-}
+
+class KernelProvider(Generic[T]):
+    backend: Backend
+
+    def __init__(self, backend: Backend):
+        self.backend = backend
+
+    @property
+    def where(self) -> Callable[[T, T, T], T]:
+        kernels = {
+            "torch": torch.where,
+            "pandas": lambda cond, a, b: a.where(cond, b),
+            "numpy": numpy.where,
+        }
+
+        return kernels[self.backend]
+
+    @property
+    def clip(self) -> Callable[[T, T | None, T | None], T]:
+        kernels = {
+            "torch": torch.clip,
+            "pandas": lambda x, lower=None, upper=None: x.clip(lower, upper),
+            "numpy": numpy.clip,
+        }
+        return kernels[self.backend]

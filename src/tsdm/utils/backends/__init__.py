@@ -5,23 +5,17 @@ Currently, supports pandas / numpy / torch.
 
 __all__ = [
     # Constants
-    "KERNELS",
+    # "KERNELS",
     # Type aliases
     "Backend",
     # Functions
     "get_backend",
-    "where_kernel",
-    "clip_kernel",
+    "KernelProvider",
 ]
 
-from tsdm.utils.backends.numerical import (
-    Backend,
-    clip_kernel,
-    get_backend,
-    where_kernel,
-)
+from tsdm.utils.backends.numerical import Backend, KernelProvider, get_backend
 
-KERNELS = {
-    "where": where_kernel,
-    "clip": clip_kernel,
-}
+# KERNELS = {
+#     "where": where_kernel,
+#     "clip": clip_kernel,
+# }

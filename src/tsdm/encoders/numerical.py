@@ -66,7 +66,7 @@ from typing_extensions import Self
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import PandasObject
-from tsdm.utils.backends import clip_kernel, get_backend, where_kernel
+from tsdm.utils.backends import KernelProvider, get_backend
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 
 TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
@@ -644,7 +644,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         We transform the formula, to cater to the edge case, by extending with the
         average of the min and max x-values: (Not implemented yet)
 
-        .. math:: 
+        .. math::
             \frac{yₘₐₓ - yₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(x - xₘᵢₙ) + yₘᵢₙ \\
             = \frac{x +½(xₘₐₓ - xₘᵢₙ) -½(xₘₐₓ - xₘᵢₙ) - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ \\
             = ½(yₘₐₓ - yₘᵢₙ) + \frac{x - ½(xₘₐₓ + xₘᵢₙ)}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ \\
@@ -659,11 +659,11 @@ class MinMaxScaler(BaseEncoder[T, T]):
         This might be violated due to numerical roundoff, so we need to be careful.
     """
 
-    ymin: T  # NDArray[np.number] | Tensor
-    ymax: T  # NDArray[np.number] | Tensor
-    xmin: T  # NDArray[np.number] | Tensor
-    xmax: T  # NDArray[np.number] | Tensor
-    scale: T  # NDArray[np.number] | Tensor
+    ymin: T
+    ymax: T
+    xmin: T
+    xmax: T
+    scale: T
     r"""The scaling factor."""
     axis: None | int | tuple[int, ...]
     r"""Over which axis to perform the scaling."""
@@ -723,13 +723,15 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
         if not self.requires_fit:
             self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-            self.xbar = (self.xmax + self.xmin) / 2
-            self.ybar = (self.ymax + self.ymin) / 2
+            self.xbar: T = (self.xmax + self.xmin) / 2
+            self.ybar: T = (self.ymax + self.ymin) / 2
 
         backend = get_backend(self.params)
+        kernel_provider: KernelProvider[T] = KernelProvider(backend)
 
-        self.where: Callable[[T, T, T], T] = where_kernel[backend]
-        self.clip: Callable[[T, T | None, T | None], T] = clip_kernel[backend]
+        self.where: Callable[[T, T, T], T] = kernel_provider.where
+        self.clip: Callable[[T, T | None, T | None], T] = kernel_provider.clip
+        reveal_type(self.where)
 
     def __getitem__(self, item: int | slice | list[int]) -> Self:
         r"""Return a slice of the MinMaxScaler."""
