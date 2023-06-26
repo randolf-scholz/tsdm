@@ -17,11 +17,11 @@ T = TypeVar("T", Series, DataFrame, Tensor, ndarray)
 Backend: TypeAlias = Literal["torch", "numpy", "pandas"]
 
 
-def get_backend(*objs: Any, fallback: Backend = "numpy") -> Backend:
+def get_backend(params: tuple, fallback: Backend = "numpy") -> Backend:
     """Get the backend of a set of objects."""
     types: set[Backend] = set()
-    for obj in objs:
-        match obj:
+    for param in params:
+        match param:
             case Tensor():
                 types.add("torch")
             case DataFrame() | Series():  # type: ignore[misc]
@@ -77,5 +77,14 @@ class KernelProvider(Generic[T]):
             "torch": torch.clip,
             "pandas": lambda x, lower=None, upper=None: x.clip(lower, upper),
             "numpy": numpy.clip,
+        }
+        return kernels[self.backend]  # type: ignore[return-value]
+
+    @property
+    def to_tensor(self) -> Callable[[Any], T]:
+        kernels = {
+            "torch": torch.tensor,
+            "pandas": numpy.array,
+            "numpy": numpy.array,
         }
         return kernels[self.backend]  # type: ignore[return-value]
