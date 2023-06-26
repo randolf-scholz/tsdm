@@ -87,14 +87,19 @@ def invert_axes(ndim: int, axis: AXES) -> tuple[int, ...]:
     r"""Invert axes-selection for a rank `ndim` tensor.
 
     Example:
-
+        +------+------------+-----------+
         | ndim | axis       | inverted  |
-        |------|------------|-----------|
+        +======+============+===========+
         | 4    | None       | ()        |
+        +------+------------+-----------+
         | 4    | (-3,-2,-1) | (0,)      |
+        +------+------------+-----------+
         | 4    | (-2,-1)    | (0,1)     |
+        +------+------------+-----------+
         | 4    | (-1)       | (0,1,2)   |
+        +------+------------+-----------+
         | 4    | ()         | (0,1,2,3) |
+        +------+------------+-----------+
     """
     match axis:
         case None:
@@ -716,7 +721,9 @@ class MinMaxScaler(BaseEncoder[T, T]):
         self.xmax = cast(T, xmax)
         self.ymin = cast(T, ymin)
         self.ymax = cast(T, ymax)
+        self.scale = NotImplemented
         self.axis = axis
+
         self.xmin_learnable = xmin is NotImplemented
         self.xmax_learnable = xmax is NotImplemented
         self.safe_computation = safe_computation
@@ -731,7 +738,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
         self.where: Callable[[T, T, T], T] = kernel_provider.where
         self.clip: Callable[[T, T | None, T | None], T] = kernel_provider.clip
-        reveal_type(self.where)
 
     def __getitem__(self, item: int | slice | list[int]) -> Self:
         r"""Return a slice of the MinMaxScaler."""
@@ -783,9 +789,9 @@ class MinMaxScaler(BaseEncoder[T, T]):
         self.ybar = (self.ymax + self.ymin) / 2
 
         # compute the scale
-        dx = self.xmax - self.xmin
-        dy = self.ymax - self.ymin
-        self.scale = torch.where(dx.to(bool), dy / dx, torch.ones_like(dx))
+        dx: Tensor = self.xmax - self.xmin
+        dy: Tensor = self.ymax - self.ymin
+        self.scale = torch.where(dx.to(bool), dy / dx, torch.ones_like(dx))  # type: ignore[call-overload]
 
         # set kernels
         self.where = torch.where
@@ -810,8 +816,8 @@ class MinMaxScaler(BaseEncoder[T, T]):
         self.ybar = (self.ymax + self.ymin) / 2
 
         # compute the scale
-        dx = self.xmax - self.xmin
-        dy = self.ymax - self.ymin
+        dx: np.ndarray = self.xmax - self.xmin
+        dy: np.ndarray = self.ymax - self.ymin
         self.scale = np.where(dx, dy / dx, np.ones_like(dx))
 
         # set kernels
@@ -841,7 +847,8 @@ class MinMaxScaler(BaseEncoder[T, T]):
             y = self.where(x < xmin, self.clip(y, None, ymin), y)
             y = self.where(x > xmax, self.clip(y, ymax, None), y)
             y = self.where((x >= xmin) & (x <= xmax), self.clip(y, ymin, ymax), y)
-            return y
+
+        return y
 
     def decode(self, y: T, /) -> T:
         """Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
@@ -863,7 +870,8 @@ class MinMaxScaler(BaseEncoder[T, T]):
             x = self.where(y < ymin, self.clip(x, None, xmin), x)
             x = self.where(y > ymax, self.clip(x, xmax, None), x)
             x = self.where((y >= ymin) & (y <= ymax), self.clip(x, xmin, xmax), x)
-            return x
+
+        return x
 
 
 class LogEncoder(BaseEncoder[NDArray, NDArray]):

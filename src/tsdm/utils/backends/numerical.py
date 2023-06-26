@@ -4,13 +4,12 @@ from __future__ import annotations
 
 __all__ = ["Backend", "get_backend", "KernelProvider"]
 
-from collections.abc import Mapping, Sequence
-from typing import Any, Callable, Generic, Literal, TypeAlias, TypedDict, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, Generic, Literal, TypeAlias, TypeVar
 
 import numpy
 import torch
 from numpy import ndarray
-from numpy.typing import NDArray
 from pandas import DataFrame, Series
 from torch import Tensor
 
@@ -25,7 +24,7 @@ def get_backend(*objs: Any, fallback: Backend = "numpy") -> Backend:
         match obj:
             case Tensor():
                 types.add("torch")
-            case DataFrame() | Series():  #  type: ignore[misc]
+            case DataFrame() | Series():  # type: ignore[misc]
                 types.add("pandas")  # type: ignore[unreachable]
             case ndarray():
                 types.add("numpy")
@@ -57,11 +56,11 @@ def get_backend(*objs: Any, fallback: Backend = "numpy") -> Backend:
 # }
 
 
+@dataclass
 class KernelProvider(Generic[T]):
-    backend: Backend
+    """Provides kernels for numerical operations."""
 
-    def __init__(self, backend: Backend):
-        self.backend = backend
+    backend: Backend
 
     @property
     def where(self) -> Callable[[T, T, T], T]:
@@ -70,7 +69,6 @@ class KernelProvider(Generic[T]):
             "pandas": lambda cond, a, b: a.where(cond, b),
             "numpy": numpy.where,
         }
-
         return kernels[self.backend]
 
     @property
@@ -80,4 +78,4 @@ class KernelProvider(Generic[T]):
             "pandas": lambda x, lower=None, upper=None: x.clip(lower, upper),
             "numpy": numpy.clip,
         }
-        return kernels[self.backend]
+        return kernels[self.backend]  # type: ignore[return-value]

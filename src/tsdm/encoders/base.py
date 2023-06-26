@@ -37,7 +37,6 @@ from typing import (
 from tsdm.types.variables import any2_var as S
 from tsdm.types.variables import any_var as T
 from tsdm.types.variables import key_var as K
-from tsdm.utils.decorators import wrap_method
 from tsdm.utils.strings import repr_object, repr_type
 
 

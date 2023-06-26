@@ -1,13 +1,5 @@
 #!/usr/bin/env python
-r"""Test the standardizer encoder.
-
-
-
-
-
-
-
-"""
+r"""Test the standardizer encoder."""
 
 import logging
 
@@ -34,9 +26,9 @@ def test_get_broadcast(
     shape: tuple[int, ...], axis: None | int | tuple[int, ...]
 ) -> None:
     """Test the get_broadcast function."""
-    if (
-        isinstance(axis, tuple) and max(map(abs, axis), default=0) > len(shape) - 1
-    ) or (isinstance(axis, int) and abs(axis) > len(shape)):
+    if (isinstance(axis, tuple) and any(abs(a) > len(shape) - 1 for a in axis)) or (
+        isinstance(axis, int) and abs(axis) > len(shape)
+    ):
         skip(f"{shape=} {axis=}")
 
     arr = np.random.randn(*shape)
@@ -195,20 +187,8 @@ def test_scaler(Encoder, tensor_type):
     LOGGER.info("Testing finished!")
 
 
-def test_standard_scaler() -> None:
-    """Test the StandardScaler."""
-    X = np.random.rand(100)
-    encoder = StandardScaler()
-    encoder.fit(X)
-    encoded = encoder.encode(X)
-    decoded = encoder.decode(encoded)
-    assert np.allclose(X, decoded)
-    assert np.allclose(encoded.mean(), 0.0)
-    assert np.allclose(encoded.std(), 1.0)
-
-
 @mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
-def test_standard_scaler(axis) -> None:
+def test_standard_scaler(axis):
     """Test the MinMaxScaler."""
     TRUE_SHAPE = {
         None: (2, 3, 4, 5),
@@ -234,7 +214,7 @@ def test_standard_scaler(axis) -> None:
 
 
 @mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
-def test_minmax_scaler(axis) -> None:
+def test_minmax_scaler(axis):
     """Test the MinMaxScaler."""
     TRUE_SHAPE = {
         None: (2, 3, 4, 5),
@@ -314,8 +294,8 @@ def _main() -> None:
     test_scaler(StandardScaler, np.array)
     test_scaler(MinMaxScaler, np.array)
     test_linear_scaler(np.array)
-    test_standard_scaler()
-    test_minmax_scaler()
+    test_standard_scaler(())
+    test_minmax_scaler(())
 
 
 if __name__ == "__main__":
