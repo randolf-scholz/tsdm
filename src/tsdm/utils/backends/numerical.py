@@ -4,32 +4,36 @@ from __future__ import annotations
 
 __all__ = ["Backend", "get_backend", "KernelProvider"]
 
-from dataclasses import dataclass
-from typing import Any, Callable, Generic, Literal, TypeAlias, TypeVar
+from typing import Any, Callable, Generic, Literal, TypeAlias, TypeVar, cast
 
 import numpy
 import torch
 from numpy import ndarray
 from pandas import DataFrame, Series
 from torch import Tensor
+from typing_extensions import get_args
 
 T = TypeVar("T", Series, DataFrame, Tensor, ndarray)
 Backend: TypeAlias = Literal["torch", "numpy", "pandas"]
 
 
-def get_backend(params: tuple, fallback: Backend = "numpy") -> Backend:
+def get_backend(obj: object, fallback: Backend = "numpy") -> Backend:
     """Get the backend of a set of objects."""
     types: set[Backend] = set()
-    for param in params:
-        match param:
-            case Tensor():
-                types.add("torch")
-            case DataFrame() | Series():  # type: ignore[misc]
-                types.add("pandas")  # type: ignore[unreachable]
-            case ndarray():
-                types.add("numpy")
-            case _:
-                pass
+
+    match obj:
+        case tuple() | set() | frozenset() | list() as container:
+            types |= {get_backend(o) for o in container}
+        case dict() as mapping:
+            types |= {get_backend(o) for o in mapping.values()}
+        case Tensor():
+            types.add("torch")
+        case DataFrame() | Series():  # type: ignore[misc]
+            types.add("pandas")  # type: ignore[unreachable]
+        case ndarray():
+            types.add("numpy")
+        case _:
+            pass
 
     match len(types):
         case 0:
@@ -56,17 +60,20 @@ def get_backend(params: tuple, fallback: Backend = "numpy") -> Backend:
 # }
 
 
-@dataclass
 class KernelProvider(Generic[T]):
     """Provides kernels for numerical operations."""
 
     backend: Backend
 
+    def __init__(self, backend: str) -> None:
+        assert backend in get_args(Backend)
+        self.backend = cast(Backend, backend)
+
     @property
     def where(self) -> Callable[[T, T, T], T]:
         kernels = {
             "torch": torch.where,
-            "pandas": lambda cond, a, b: a.where(cond, b),
+            "pandas": lambda cond, a, b=None: a.where(cond, b),
             "numpy": numpy.where,
         }
         return kernels[self.backend]
@@ -75,7 +82,9 @@ class KernelProvider(Generic[T]):
     def clip(self) -> Callable[[T, T | None, T | None], T]:
         kernels = {
             "torch": torch.clip,
-            "pandas": lambda x, lower=None, upper=None: x.clip(lower, upper),
+            "pandas": lambda x, lower=None, upper=None: x.clip(
+                lower, upper, axis="columns" if isinstance(x, DataFrame) else None
+            ),
             "numpy": numpy.clip,
         }
         return kernels[self.backend]  # type: ignore[return-value]

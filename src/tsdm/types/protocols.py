@@ -10,7 +10,7 @@ References
 __all__ = [
     # Classes
     "Array",
-    "Table",
+    "SupportsShape",
     "Dataclass",
     "Hash",
     "Lookup",
@@ -75,7 +75,7 @@ class NTuple(Protocol[T_co]):
 
 
 @runtime_checkable
-class Table(Protocol[scalar_co]):
+class SupportsShape(Protocol[scalar_co]):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
     @property

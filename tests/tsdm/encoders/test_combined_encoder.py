@@ -30,7 +30,7 @@ __logger__ = logging.getLogger(__name__)
 
 
 @pytest.mark.slow
-@pytest.mark.flaky(reruns=3)
+@pytest.mark.flaky(reruns=1)
 def test_combined_encoder(SplitID=(0, "train")):
     r"""Test complicated combined encoder."""
     task = KiwiTask()

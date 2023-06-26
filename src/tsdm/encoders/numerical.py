@@ -10,7 +10,6 @@ Numerical Encoders should be able to be applied with different backends such as
 
 To ensure performance during encoding/decoding, the backend should be fixed.
 
-
 Goals
 -----
 - numerical encoders should allow for different backends: numpy, pandas, torch, etc.
@@ -41,6 +40,7 @@ __all__ = [
     "TensorSplitter",
 ]
 
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import KW_ONLY, dataclass
 from types import EllipsisType, ModuleType
@@ -50,6 +50,7 @@ from typing import (
     ClassVar,
     Literal,
     NamedTuple,
+    NewType,
     TypeAlias,
     TypeVar,
     cast,
@@ -65,7 +66,8 @@ from torch import Tensor
 from typing_extensions import Self
 
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.aliases import PandasObject
+from tsdm.types.aliases import Nested, PandasObject
+from tsdm.types.protocols import NTuple
 from tsdm.utils.backends import KernelProvider, get_backend
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 
@@ -81,6 +83,34 @@ INDEXER: TypeAlias = SINGLE_INDEXER | tuple[SINGLE_INDEXER, ...]
 r"""Type Hint for indexer objects."""
 AXES: TypeAlias = None | int | tuple[int, ...]
 """Type Hine for axes objects."""
+Backend: TypeAlias = Literal["torch", "numpy", "pandas"]
+"""Type Hint for backend string."""
+
+scalars: TypeAlias = None | bool | int | float | complex | str
+"""Type Hint for scalar objects."""
+
+PARAMETERS: TypeAlias = tuple[
+    scalars
+    | T
+    | list[scalars]
+    | list[T]
+    | list["PARAMETERS"]
+    | tuple[scalars | T | "PARAMETERS", ...]
+    | dict[str, scalars]
+    | dict[str, T]
+    | dict[str, "PARAMETERS"],
+    ...,
+]
+"""Type Hint for parameters tuple."""
+
+
+def is_scalar(x: Any) -> bool:
+    """Determines whether an object is a scalar."""
+    # numpy: size, len  / shape + prod
+    # torch: size + prod / numel / shape+prod
+    # table: shape + prod
+    # DataFrame: shape + prod
+    # Series: shape + prod
 
 
 def invert_axes(ndim: int, axis: AXES) -> tuple[int, ...]:
@@ -231,6 +261,61 @@ def get_reduced_axes(item: INDEXER, axes: AXES) -> AXES:
             )
         case _:
             raise TypeError(f"Unknown type {type(item)}")
+
+
+class NumericalEncoder(BaseEncoder[T, T], ABC):
+    """Represents a numerical encoder."""
+
+    backend: Backend
+    """The backend of the encoder."""
+
+    Parameters = NewType("Parameters", tuple)
+    """The type of the parameters of the encoder."""
+
+    @property
+    @abstractmethod
+    def params(self) -> Parameters:
+        r"""The parameters of the encoder."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def switch_backend(self, backend: Backend) -> None:
+        r"""Switch the backend of the encoder."""
+        self.backend = backend
+        kernel_provider: KernelProvider[T] = KernelProvider(backend)
+        self.where: Callable[[T, T, T], T] = kernel_provider.where
+        self.clip: Callable[[T, T | None, T | None], T] = kernel_provider.clip
+        self.to_tensor: Callable[..., T] = kernel_provider.to_tensor
+
+        # recast the parameters
+        self.recast_parameters()
+
+    def recast_parameters(self) -> None:
+        r"""Recast the parameters to the current backend."""
+        # switch the backend of the parameters
+        self.cast_backend(self.params)
+
+    def cast_backend(self, params: Nested) -> Nested:
+        """Cast the parameters to the current backend."""
+
+        if isinstance(params, (Tensor, np.ndarray, Series, DataFrame)):
+            return self.to_tensor(params)
+
+        match params:
+            case NTuple() as ntup:
+                cls = type(ntup)
+                return cls(*(self.cast_backend(p) for p in ntup))
+            case tuple() as tup:
+                return tuple(self.cast_backend(p) for p in tup)
+            case list() as lst:
+                return [self.cast_backend(p) for p in lst]
+            case dict() as dct:
+                return {k: self.cast_backend(v) for k, v in dct.items()}
+            # FIXME: activate when mypy 1.5 releases
+            # case Tensor() | np.ndarray() | Series() | DataFrame() as t:
+            #     return self.to_tensor(t)
+            case _ as p:
+                return p
 
 
 @dataclass
@@ -589,39 +674,62 @@ class StandardScaler(BaseEncoder[T, T]):
         return encoder
 
     def fit(self, data: T, /) -> None:
-        # determine the axes to perform contraction over (caxes).
+        # switch the backend
+        # self.switch_backend(get_backend(data))
+
+        # fit the encoder
+        if isinstance(data, Tensor):
+            self._fit_torch(data)
+        elif isinstance(data, Series | DataFrame):
+            self._fit_pandas(data)
+        elif isinstance(data, np.ndarray):
+            self._fit_numpy(np.asarray(data))
+        else:
+            raise TypeError(f"Unsupported data type: {type(data)}.")
+
+    def _fit_torch(self: StandardScaler[Tensor], data: Tensor) -> None:
         axes = invert_axes(len(data.shape), self.axis)
         broadcast = get_broadcast(data.shape, axis=axes)
 
-        # determine the backend
-        backend: ModuleType
-        as_tensor: Callable[[Any], T]
-
-        if isinstance(data, Tensor):
-            backend = torch
-            as_tensor = torch.tensor
-        else:
-            backend = np
-            as_tensor = np.array
-
         # compute the mean
         if self.mean is NotImplemented:
-            self.mean = backend.nanmean(data, axis=axes)
-        self.mean = as_tensor(self.mean)
+            self.mean = torch.nanmean(data, axis=axes)
+        self.mean = torch.tensor(self.mean)
 
         # compute the standard deviation
         if self.stdv is NotImplemented:
             mean = self.mean[broadcast]
-            self.stdv = backend.sqrt(backend.nanmean((data - mean) ** 2, axis=axes))
-        self.stdv = as_tensor(self.stdv)
+            self.stdv = torch.sqrt(torch.nanmean((data - mean) ** 2, axis=axes))
+        self.stdv = torch.tensor(self.stdv)
+
+    def _fit_numpy(self: StandardScaler[np.ndarray], data: NDArray) -> None:
+        axes = invert_axes(len(data.shape), self.axis)
+        broadcast = get_broadcast(data.shape, axis=axes)
+
+        # compute the mean
+        if self.mean is NotImplemented:
+            self.mean = np.nanmean(data, axis=axes)
+        self.mean = np.array(self.mean)
+
+        # compute the standard deviation
+        if self.stdv is NotImplemented:
+            mean = self.mean[broadcast]
+            self.stdv = np.sqrt(np.nanmean((data - mean) ** 2, axis=axes))
+        self.stdv = np.array(self.stdv)
+
+    def _fit_pandas(self: StandardScaler[pd.DataFrame], data: pd.DataFrame) -> None:
+        self.mean = data.mean()
+        self.stdv = data.std(ddof=0)
 
     def encode(self, data: T, /) -> T:
-        broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
-        return (data - self.mean[broadcast]) / self.stdv[broadcast]
+        # broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
+        # return (data - self.mean[broadcast]) / self.stdv[broadcast]
+        return (data - self.mean) / self.stdv
 
     def decode(self, data: T, /) -> T:
-        broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
-        return data * self.stdv[broadcast] + self.mean[broadcast]
+        # broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
+        # return data * self.stdv[broadcast] + self.mean[broadcast]
+        return data * self.stdv + self.mean
 
 
 @dataclass(init=False)
@@ -664,11 +772,11 @@ class MinMaxScaler(BaseEncoder[T, T]):
         This might be violated due to numerical roundoff, so we need to be careful.
     """
 
-    ymin: T
-    ymax: T
-    xmin: T
-    xmax: T
-    scale: T
+    ymin: T  # or: ScalarType.
+    ymax: T  # or: ScalarType.
+    xmin: T  # or: ScalarType.
+    xmax: T  # or: ScalarType.
+    scale: T  # or: ScalarType.
     r"""The scaling factor."""
     axis: None | int | tuple[int, ...]
     r"""Over which axis to perform the scaling."""
@@ -732,12 +840,11 @@ class MinMaxScaler(BaseEncoder[T, T]):
             self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
             self.xbar: T = (self.xmax + self.xmin) / 2
             self.ybar: T = (self.ymax + self.ymin) / 2
-
-        backend = get_backend(self.params)
-        kernel_provider: KernelProvider[T] = KernelProvider(backend)
-
-        self.where: Callable[[T, T, T], T] = kernel_provider.where
-        self.clip: Callable[[T, T | None, T | None], T] = kernel_provider.clip
+            self.switch_backend(get_backend(self.params))
+        else:
+            self.scale = NotImplemented
+            self.xbar = NotImplemented
+            self.ybar = NotImplemented
 
     def __getitem__(self, item: int | slice | list[int]) -> Self:
         r"""Return a slice of the MinMaxScaler."""
@@ -758,13 +865,43 @@ class MinMaxScaler(BaseEncoder[T, T]):
         r"""Pretty print."""
         return repr_dataclass(self)
 
+    def switch_backend(self, backend: str) -> None:
+        r"""Switch the backend of the scaler."""
+        self.backend = backend
+        kernel_provider: KernelProvider[T] = KernelProvider(self.backend)
+        self.where: Callable[[T, T, T], T] = kernel_provider.where
+        self.clip: Callable[[T, T | None, T | None], T] = kernel_provider.clip
+        self.to_tensor: Callable[..., T] = kernel_provider.to_tensor
+
+        # recast the parameters
+        self.recast_parameters()
+
+    def recast_parameters(self) -> None:
+        r"""Recast the parameters to the current backend."""
+        # switch the backend of the parameters
+        self.xmin = self.to_tensor(self.xmin)
+        self.xmax = self.to_tensor(self.xmax)
+        self.ymin = self.to_tensor(self.ymin)
+        self.ymax = self.to_tensor(self.ymax)
+        # self.xbar = self.to_tensor(self.xbar)
+        # self.ybar = self.to_tensor(self.ybar)
+        self.scale = self.to_tensor(self.scale)
+
     def fit(self, data: T, /) -> None:
         # TODO: Why does singledispatch not work here? (wrap_func in BaseEncoder)
 
+        # switch the backend
+        self.switch_backend(get_backend(data))
+
+        # fit the encoder
         if isinstance(data, Tensor):
             self._fit_torch(data)
-        else:
+        elif isinstance(data, Series | DataFrame):
+            self._fit_pandas(data)
+        elif isinstance(data, np.ndarray):
             self._fit_numpy(np.asarray(data))
+        else:
+            raise TypeError(f"Unsupported data type: {type(data)}.")
 
     def _fit_torch(self: MinMaxScaler[Tensor], data: Tensor, /) -> None:
         r"""Compute the min and max."""
@@ -791,11 +928,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         # compute the scale
         dx: Tensor = self.xmax - self.xmin
         dy: Tensor = self.ymax - self.ymin
-        self.scale = torch.where(dx.to(bool), dy / dx, torch.ones_like(dx))  # type: ignore[call-overload]
-
-        # set kernels
-        self.where = torch.where
-        self.clip = torch.clip
+        self.scale = self.where(dx != 0, dy / dx, torch.ones_like(dx))  # type: ignore[call-overload]
 
     def _fit_numpy(self: MinMaxScaler[np.ndarray], data: NDArray, /) -> None:
         r"""Compute the min and max."""
@@ -818,32 +951,48 @@ class MinMaxScaler(BaseEncoder[T, T]):
         # compute the scale
         dx: np.ndarray = self.xmax - self.xmin
         dy: np.ndarray = self.ymax - self.ymin
-        self.scale = np.where(dx, dy / dx, np.ones_like(dx))
-
-        # set kernels
-        self.where = np.where
-        self.clip = np.clip
+        self.scale = self.where(dx != 0, dy / dx, np.ones_like(dx))
 
     def _fit_pandas(self: MinMaxScaler[Series | DataFrame], data: NDArray, /) -> None:
-        raise NotImplementedError
+        self.xmin = data.min(skipna=True)
+        self.xmax = data.max(skipna=True)
+
+        # broadcast y to the same shape as x
+        self.ymin = self.ymin + 0.0 * self.xmin
+        self.ymax = self.ymax + 0.0 * self.xmax
+
+        # update the average variables
+        self.xbar = (self.xmax + self.xmin) / 2
+        self.ybar = (self.ymax + self.ymin) / 2
+
+        # compute the scale
+        dx = self.xmax - self.xmin
+        dy = self.ymax - self.ymin
+        scale = dy / dx
+
+        # note: dy/dx and hence scale is dimensionless, so float is appropriate
+        if isinstance(dx, Series):
+            self.scale = self.where(dx != 0, scale, scale**0)
+        else:
+            self.scale = scale if dx != 0 else scale**0
 
     def encode(self, x: T, /) -> T:
         """Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
         broadcast = get_broadcast(x.shape, axis=self.axis, keep_axis=True)
-        xbar = self.xbar[broadcast]
-        ybar = self.ybar[broadcast]
-        scale = self.scale[broadcast]
+
+        xmin = self.xmin  # [broadcast]
+        xmax = self.xmax  # [broadcast]
+        ymin = self.ymin  # [broadcast]
+        ymax = self.ymax  # [broadcast]
+        xbar = self.xbar  # [broadcast]
+        ybar = self.ybar  # [broadcast]
+        scale = self.scale  # [broadcast]
+
         y = (x - xbar) * scale + ybar
 
         if self.safe_computation:
             # ensure the conditions
-            # x < x_min ⟹ y < y_min
-            # x > x_max ⟹ y > y_max
-            # x∈[x_min, x_max] ⟹ y∈[y_min, y_max]
-            xmin = self.xmin[broadcast]
-            xmax = self.xmax[broadcast]
-            ymin = self.ymin[broadcast]
-            ymax = self.ymax[broadcast]
+            # x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
             y = self.where(x < xmin, self.clip(y, None, ymin), y)
             y = self.where(x > xmax, self.clip(y, ymax, None), y)
             y = self.where((x >= xmin) & (x <= xmax), self.clip(y, ymin, ymax), y)
@@ -853,20 +1002,20 @@ class MinMaxScaler(BaseEncoder[T, T]):
     def decode(self, y: T, /) -> T:
         """Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
         broadcast = get_broadcast(y.shape, axis=self.axis, keep_axis=True)
-        xbar = self.xbar[broadcast]
-        ybar = self.ybar[broadcast]
-        scale = self.scale[broadcast]
+
+        xmin = self.xmin  # [broadcast]
+        xmax = self.xmax  # [broadcast]
+        ymin = self.ymin  # [broadcast]
+        ymax = self.ymax  # [broadcast]
+        xbar = self.xbar  # [broadcast]
+        ybar = self.ybar  # [broadcast]
+        scale = self.scale  # [broadcast]
+
         x = (y - ybar) / scale + xbar
 
         if self.safe_computation:
             # ensure the conditions
-            # y < y_min ⟹ x < x_min
-            # y > y_max ⟹ x > x_max
-            # y∈[y_min, y_max] ⟹ x∈[x_min, x_max]
-            xmin = self.xmin[broadcast]
-            xmax = self.xmax[broadcast]
-            ymin = self.ymin[broadcast]
-            ymax = self.ymax[broadcast]
+            # y < yₘᵢₙ ⟹ x < xₘᵢₙ  ∧  y > yₘₐₓ ⟹ x > xₘₐₓ  ∧  y∈[yₘᵢₙ, yₘₐₓ] ⟹ x∈[xₘᵢₙ, xₘₐₓ]
             x = self.where(y < ymin, self.clip(x, None, xmin), x)
             x = self.where(y > ymax, self.clip(x, xmax, None), x)
             x = self.where((y >= ymin) & (y <= ymax), self.clip(x, xmin, xmax), x)

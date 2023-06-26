@@ -35,7 +35,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.types.aliases import PathLike
-from tsdm.types.protocols import Table
+from tsdm.types.protocols import SupportsShape
 
 __logger__ = logging.getLogger(__name__)
 
@@ -442,7 +442,7 @@ def validate_object_hash(
                 logger=logger,
                 **hash_kwargs,
             )
-        case Table():
+        case SupportsShape():
             validate_table_hash(
                 obj,
                 reference,
@@ -532,7 +532,7 @@ def validate_object_hash(
 
 
 def validate_table_schema(
-    table: Table,
+    table: SupportsShape,
     /,
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,
