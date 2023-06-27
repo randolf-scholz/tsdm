@@ -195,7 +195,7 @@ def test_scaler_dataframe(Encoder):
 
     LOGGER.info("Testing without batching.")
     X = pd.DataFrame(np.random.rand(5, 3), columns=["a", "b", "c"])
-    encoder = Encoder()
+    encoder = Encoder(axis=-1)
 
     # validate fitting
     encoder.fit(X)

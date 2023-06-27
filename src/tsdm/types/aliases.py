@@ -4,6 +4,7 @@ __all__ = [
     # namedtuple
     "schema",
     # Custom Type Aliases
+    "Axes",
     "Nested",
     "Map",
     "PandasObject",
@@ -46,6 +47,9 @@ from tsdm.types.variables import key_contra
 from tsdm.types.variables import key_var as K
 from tsdm.types.variables import value_co
 from tsdm.types.variables import value_var as V
+
+Axes: TypeAlias = None | int | tuple[int, ...]
+r"""Type Alias for axes."""
 
 
 class schema(NamedTuple):

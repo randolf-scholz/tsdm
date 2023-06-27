@@ -11,9 +11,15 @@ __all__ = [
     # Functions
     "get_backend",
     "KernelProvider",
+    "is_singleton",
 ]
 
-from tsdm.utils.backends.numerical import Backend, KernelProvider, get_backend
+from tsdm.utils.backends.numerical import (
+    Backend,
+    KernelProvider,
+    get_backend,
+    is_singleton,
+)
 
 # KERNELS = {
 #     "where": where_kernel,
