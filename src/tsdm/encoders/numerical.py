@@ -399,15 +399,15 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         if self.upper_bound is NotImplemented:
             self.upper_bound = data.max()
 
-        cast_array: Callable[..., T] = (
-            torch.tensor  # type: ignore[assignment]
-            if isinstance(data, Tensor)
-            else np.array
-        )
-        TRUE: T = cast_array(True)
-        NAN: T = cast_array(float("nan"))
-        POSINF: T = cast_array(float("+inf"))
-        NEGINF: T = cast_array(float("-inf"))
+        backend = get_backend(data)
+        kernel_provider: KernelProvider[T] = KernelProvider(backend)
+        true_like: Callable[[T], T] = kernel_provider.true_like
+        self.where: Callable[[T, T, T], T] = kernel_provider.where
+        self.to_tensor: Callable[..., T] = kernel_provider.to_tensor
+
+        NAN: T = self.to_tensor(float("nan"))
+        POSINF: T = self.to_tensor(float("+inf"))
+        NEGINF: T = self.to_tensor(float("-inf"))
 
         self.lower_value: T = (
             NEGINF  # type: ignore[assignment]
@@ -431,7 +431,7 @@ class BoundaryEncoder(BaseEncoder[T, T]):
 
         # Create comparison functions
         self.lower_mask: Callable[[T], T] = (
-            (lambda x: TRUE)
+            true_like
             if self.lower_bound is None
             else (lambda x: x >= self.lower_bound)
             if self.lower_included
@@ -439,35 +439,24 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         )
 
         self.upper_mask: Callable[[T], T] = (
-            (lambda x: TRUE)
+            true_like
             if self.upper_bound is None
             else (lambda x: x <= self.upper_bound)
             if self.upper_included
             else (lambda x: x < self.upper_bound)
         )
 
-        self.where: Callable[[T, T, T], T]
         # FIXME: https://github.com/python/mypy/issues/15496
-        if isinstance(data, Series | DataFrame):
-            self._fit_pandas(data)
-        elif isinstance(data, Tensor):
-            self._fit_torch(data)
-        else:
-            self._fit_numpy(data)
-
-    def _fit_pandas(
-        self: BoundaryEncoder[Series | DataFrame], data: pd.Series | pd.DataFrame
-    ) -> None:
-        self.where = lambda cond, x, y: x.where(cond, y)
-
-    def _fit_torch(self: BoundaryEncoder[Tensor], data: Tensor) -> None:
-        self.where = torch.where
-
-    def _fit_numpy(self: BoundaryEncoder[np.ndarray], data: NDArray) -> None:
-        self.where = np.where
 
     def encode(self, data: T) -> T:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
+        # print(type(self.lower_mask(data)), type(data), type(self.lower_value))
+        print(type(self.upper_mask(data)), type(data), type(self.upper_value))
+        try:
+            # print(self.lower_mask(data).shape, data.shape, self.lower_value.shape)
+            print(self.upper_mask(data).shape, data.shape, self.upper_value.shape)
+        except Exception:
+            pass
         data = self.where(self.lower_mask(data), data, self.lower_value)
         data = self.where(self.upper_mask(data), data, self.upper_value)
         return data

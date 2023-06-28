@@ -12,13 +12,17 @@ __all__ = [
     "get_backend",
     "KernelProvider",
     "is_singleton",
+    "true_like",
+    "false_like",
 ]
 
 from tsdm.utils.backends.numerical import (
     Backend,
     KernelProvider,
+    false_like,
     get_backend,
     is_singleton,
+    true_like,
 )
 
 # KERNELS = {

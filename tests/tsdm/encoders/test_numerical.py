@@ -74,9 +74,20 @@ def test_reduce_axes():
     assert get_reduced_axes((1, ...), axes) == (-3, -2, -1)
 
 
-def test_boundary_encoder() -> None:
+@mark.parametrize("backend", ("numpy", "torch", "pandas"))
+def test_boundary_encoder(backend: str) -> None:
     """Test the boundary encoder."""
-    data = np.array([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0])
+    _data = [-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]
+
+    match backend:
+        case "numpy":
+            data = np.array(_data)
+        case "torch":
+            data = torch.tensor(_data)
+        case "pandas":
+            data = pd.Series(_data)
+        case _:
+            raise ValueError(f"Unknown backend {backend}")
 
     # test clip + numpy
     encoder = BoundaryEncoder(-1, +1, mode="clip")
@@ -85,6 +96,18 @@ def test_boundary_encoder() -> None:
     assert all((encoded >= -1) & (encoded <= 1))
     assert (encoded == -1).sum() == (data <= -1).sum()
     assert (encoded == +1).sum() == (data >= +1).sum()
+
+    if isinstance(data, pd.Series):
+        assert (
+            isinstance(encoded, pd.Series)
+            and encoded.shape == data.shape
+            and encoded.name == data.name
+            and encoded.index.equals(data.index)
+        )
+    if isinstance(data, torch.Tensor):
+        assert isinstance(encoded, torch.Tensor) and encoded.shape == data.shape
+    if isinstance(data, np.ndarray):
+        assert isinstance(encoded, np.ndarray) and encoded.shape == data.shape
 
     # test numpy + mask
     encoder = BoundaryEncoder(-1, +1, mode="mask")
@@ -97,8 +120,10 @@ def test_boundary_encoder() -> None:
     encoder = BoundaryEncoder(mode="mask")
     encoder.fit(data)
     encoded = encoder.encode(data)
+    decoded = encoder.decode(encoded)
     assert not any(np.isnan(encoded))
     assert all(data == encoded)
+    assert all(data == decoded)
 
     # encode some data that violates bounds
     data2 = data * 2

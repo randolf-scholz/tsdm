@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-__all__ = ["Backend", "get_backend", "KernelProvider", "is_singleton", "is_scalar"]
+__all__ = [
+    "Backend",
+    "get_backend",
+    "KernelProvider",
+    "is_singleton",
+    "is_scalar",
+    "true_like",
+    "false_like",
+]
 
 from math import prod
 from typing import Any, Callable, Generic, Literal, Protocol, TypeAlias, TypeVar, cast
@@ -72,6 +80,17 @@ def get_backend(obj: object, fallback: Backend = "numpy") -> Backend:
             return types.pop()
         case _:
             raise ValueError(f"More than 1 backend detected: {types}.")
+
+
+def false_like(x: T, /) -> T:
+    """Returns a boolean tensor with the same shape/device as `x`."""
+    z = x == x
+    return z ^ z
+
+
+def true_like(x: T, /) -> T:
+    """Returns a boolean tensor with the same shape/device as `x`."""
+    return ~false_like(x)
 
 
 class KernelProvider(Generic[T]):
@@ -145,6 +164,14 @@ class KernelProvider(Generic[T]):
             "torch": torch_nanstd,
         }
         return kernels[self.backend]  # type: ignore[return-value]
+
+    @property
+    def true_like(self) -> Callable[[T], T]:
+        return true_like
+
+    @property
+    def false_like(self) -> Callable[[T], T]:
+        return false_like
 
 
 def is_singleton(x: SupportsShape) -> bool:
