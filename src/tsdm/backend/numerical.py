@@ -6,19 +6,20 @@ __all__ = [
     # Classes
     "BackendID",
     "Kernels",
-    "KernelProvider",
+    "Backend",
     # Functions
     "get_backend",
     "is_scalar",
     "to_scalar",
 ]
 
+from collections.abc import Mapping
 from typing import (
     Any,
     Callable,
-    Final,
     Generic,
     Literal,
+    ParamSpec,
     Protocol,
     TypeAlias,
     TypeVar,
@@ -35,8 +36,7 @@ from pandas import DataFrame, Series
 from torch import Tensor
 from typing_extensions import get_args
 
-from tsdm.types.aliases import Axes
-from tsdm.utils.backends.pandas import (
+from tsdm.backend.pandas import (
     pandas_clip,
     pandas_nanmax,
     pandas_nanmean,
@@ -44,27 +44,59 @@ from tsdm.utils.backends.pandas import (
     pandas_nanstd,
     pandas_where,
 )
-from tsdm.utils.backends.torch import torch_nanmax, torch_nanmin, torch_nanstd
-from tsdm.utils.backends.universal import false_like as universal_false_like
-from tsdm.utils.backends.universal import true_like as universal_true_like
+from tsdm.backend.torch import torch_nanmax, torch_nanmin, torch_nanstd
+from tsdm.backend.universal import false_like as universal_false_like
+from tsdm.backend.universal import true_like as universal_true_like
+from tsdm.types.aliases import Axes
+from tsdm.types.protocols import SelfMap, SelfMapProto
 
-T = TypeVar("T", Series, DataFrame, Tensor, ndarray)
+P = ParamSpec("P")
+
+T = TypeVar("T")
 """A type variable for numerical objects."""
 BackendID: TypeAlias = Literal["torch", "numpy", "pandas"]
 """A type alias for the supported backends."""
 
 
-class SupportsAxis(Protocol[T]):
+class ContractionProto(Protocol[T]):
     """A protocol for callables that support the `axes` keyword argument."""
 
-    def __call__(self, x: T, /, axis: Axes = None) -> T:
+    def __call__(self, __x: T, *, axis: Axes = None) -> T:
         ...
 
 
-class SupportsKeepdims(Protocol[T]):
-    """A protocol for callables that support the `axes` and `keepdims` keyword arguments."""
+class ClipProto(Protocol[T]):
+    """Protocol for Clip functions."""
 
-    def __call__(self, x: T, /, axis: Axes = None, keepdims: bool = False) -> T:
+    def __call__(self, __x: T, __lower: T | None, __upper: T | None) -> T:
+        ...
+
+
+class WhereProto(Protocol[T]):
+    """Protocol for Where functions."""
+
+    def __call__(self, __cond: T, __x: T, __y: T) -> T:
+        ...
+
+
+class Contraction(Protocol):
+    """A protocol for callables that support the `axes` keyword argument."""
+
+    def __call__(self, __x: T, *, axis: Axes = None) -> T:
+        ...
+
+
+class Clip(Protocol):
+    """Protocol for Clip functions."""
+
+    def __call__(self, __x: T, __lower: T | None, __upper: T | None) -> T:
+        ...
+
+
+class Where(Protocol):
+    """Protocol for Where functions."""
+
+    def __call__(self, __cond: T, __x: T, __y: T) -> T:
         ...
 
 
@@ -96,83 +128,85 @@ def get_backend(obj: object, fallback: BackendID = "numpy") -> BackendID:
 
 
 class Kernels:
-    """A class that holds the kernels for each backend."""
+    """A class that provides backend kernels."""
 
-    where: Final[dict[BackendID, Callable[[T, T, T], T]]] = {
-        "numpy": numpy.where,
-        "pandas": pandas_where,
-        "torch": torch.where,
-    }
-
-    clip: Final[dict[BackendID, Callable[[T, T | None, T | None], T]]] = {
+    clip: Mapping[BackendID, ClipProto] = {
         "numpy": numpy.clip,
         "pandas": pandas_clip,
         "torch": torch.clip,
     }
 
-    to_tensor: Final[dict[BackendID, Callable[[Any], T]]] = {
-        "numpy": numpy.array,
-        "pandas": numpy.array,
-        "torch": torch.tensor,
-    }
-
-    nanmin: Final[dict[BackendID, SupportsAxis[T]]] = {
+    nanmin: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmin,
         "pandas": pandas_nanmin,
         "torch": torch_nanmin,
     }
 
-    nanmax: Final[dict[BackendID, SupportsAxis[T]]] = {
+    nanmax: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmax,
         "pandas": pandas_nanmax,
         "torch": torch_nanmax,
     }
 
-    nanmean: Final[dict[BackendID, SupportsAxis[T]]] = {
+    nanmean: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanmean,
         "pandas": pandas_nanmean,
-        "torch": torch.nanmean,
+        "torch": torch.nanmean,  # type: ignore[dict-item]
     }
 
-    nanstd: Final[dict[BackendID, SupportsAxis[T]]] = {
+    nanstd: Mapping[BackendID, ContractionProto] = {
         "numpy": np.nanstd,
         "pandas": pandas_nanstd,
         "torch": torch_nanstd,
     }
 
-    true_like: Final[dict[BackendID, Callable[[T], T]]] = {
-        "numpy": universal_true_like,
-        "pandas": universal_true_like,
-        "torch": universal_true_like,
-    }
-
-    false_like: Final[dict[BackendID, Callable[[T], T]]] = {
+    false_like: Mapping[BackendID, SelfMapProto] = {
         "numpy": universal_false_like,
         "pandas": universal_false_like,
         "torch": universal_false_like,
     }
 
+    true_like: Mapping[BackendID, SelfMapProto] = {
+        "numpy": universal_true_like,
+        "pandas": universal_true_like,
+        "torch": universal_true_like,
+    }
 
-class KernelProvider(Generic[T]):
+    to_tensor: Mapping[BackendID, SelfMapProto] = {
+        "numpy": numpy.array,
+        "pandas": numpy.array,
+        "torch": torch.tensor,
+    }
+
+    where: Mapping[BackendID, WhereProto] = {
+        "numpy": numpy.where,
+        "pandas": pandas_where,
+        "torch": torch.where,
+    }
+
+
+class Backend(Generic[T]):
     """Provides kernels for numerical operations."""
 
     selected_backend: BackendID
 
     # KERNELS
-    clip: Callable[[T, T | None, T | None], T]
-    false_like: Callable[[T], T]
-    nanmax: SupportsAxis[T]
-    nanmean: SupportsAxis[T]
-    nanmin: SupportsAxis[T]
-    nanstd: SupportsAxis[T]
     to_tensor: Callable[[Any], T]
-    true_like: Callable[[T], T]
-    where: Callable[[T, T, T], T]
+
+    clip: Clip
+    where: Where
+
+    nanmax: Contraction
+    nanmean: Contraction
+    nanmin: Contraction
+    nanstd: Contraction
+
+    true_like: SelfMap
+    false_like: SelfMap
 
     def __init__(self, backend: str) -> None:
         assert backend in get_args(BackendID)
         self.selected_backend = cast(BackendID, backend)
-
         self.clip = Kernels.clip[self.selected_backend]
         self.false_like = Kernels.false_like[self.selected_backend]
         self.nanmax = Kernels.nanmax[self.selected_backend]
@@ -182,9 +216,6 @@ class KernelProvider(Generic[T]):
         self.to_tensor = Kernels.to_tensor[self.selected_backend]
         self.true_like = Kernels.true_like[self.selected_backend]
         self.where = Kernels.where[self.selected_backend]
-
-    def switch_backend(self, backend: str) -> None:
-        self.__init__(backend)
 
 
 def is_scalar(x: Any) -> bool:

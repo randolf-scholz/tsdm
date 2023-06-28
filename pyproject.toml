@@ -304,7 +304,7 @@ disallow_untyped_defs = false
 
 # strictness flags
 allow_untyped_globals = false
-allow_redefinition = false
+#allow_redefinition = false
 #local_partial_types = true
 no_implicit_reexport = false
 #strict_equality = false
@@ -347,6 +347,8 @@ module = [
     "tqdm.*",
 ]
 ignore_missing_imports = true
+
+
 # endregion mypy configuration ---------------------------------------------------------
 
 

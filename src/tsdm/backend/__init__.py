@@ -10,19 +10,14 @@ __all__ = [
     "BackendID",
     # Classes
     "Kernels",
-    "KernelProvider",
+    "Backend",
     # Functions
     "get_backend",
     "is_singleton",
 ]
 
-from tsdm.utils.backends.numerical import (
-    BackendID,
-    KernelProvider,
-    Kernels,
-    get_backend,
-)
-from tsdm.utils.backends.universal import is_singleton
+from tsdm.backend.numerical import Backend, BackendID, Kernels, get_backend
+from tsdm.backend.universal import is_singleton
 
 # KERNELS = {
 #     "where": where_kernel,

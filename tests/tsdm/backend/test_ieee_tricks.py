@@ -11,19 +11,19 @@ There are some tricks to create such tensors in a backend-agnostic way, using IE
 `is_nan` can be tested via `x != x`.
 """
 
-from typing import Callable
+from typing import Any
 
 import numpy
 import pandas
 import torch
 from pytest import mark
 
-from tsdm.types.variables import any_var as T
-from tsdm.utils.backends import false_like, true_like
+from tsdm.backend.universal import false_like, true_like
+from tsdm.types.protocols import SelfMap
 
 
 @mark.parametrize("formula", [lambda z: z**0])
-def test_make_ones_like(formula: Callable[[T], T]) -> None:
+def test_make_ones_like(formula: SelfMap) -> None:
     """Analogous to `ones_like`.
 
     Candidates for creating ones are:
@@ -33,14 +33,17 @@ def test_make_ones_like(formula: Callable[[T], T]) -> None:
     However, `x**0` is not implemented for time-delta types.
     What could work
     """
-    data = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
-    # formula = lambda z: z / z
+    data = numpy.array([float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")])
+    x: Any
+    result: Any
+    expected: Any
 
     # torch
     x = torch.tensor(data)
     result = formula(x)
     expected = torch.ones_like(x)
     assert all(result == expected)
+    del x, result, expected
 
     # pandas
     x = pandas.Series(data)
@@ -71,7 +74,7 @@ def test_make_ones_like(formula: Callable[[T], T]) -> None:
 
 
 @mark.parametrize("formula", [lambda z: z**0 - z**0])
-def test_zeros_like(formula: Callable[[T], T]) -> None:
+def test_zeros_like(formula: SelfMap) -> None:
     """Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
@@ -80,9 +83,10 @@ def test_zeros_like(formula: Callable[[T], T]) -> None:
     - `0 * x`      # keeps NANs, introduces NaNs for inf
     - `0 ** x`  # doesn't for negatives, keeps NANs
     """
-    data = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
-    # formula = lambda z: 0 * z
-    # formula = lambda z: z - z
+    data = numpy.array([float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")])
+    x: Any
+    result: Any
+    expected: Any
 
     # torch
     x = torch.tensor(data)
@@ -119,19 +123,22 @@ def test_zeros_like(formula: Callable[[T], T]) -> None:
 
 
 @mark.parametrize("formula", [true_like, lambda z: (z == z) | (z != z)])
-def test_true_like(formula: Callable[[T], T]) -> None:
+def test_true_like(formula: SelfMap) -> None:
     """Analogous to `ones_like(x, dtype=bool)`.
 
     Candidates:
     - `where(x!=x, x!=x, x==x)`
     - `x==x | x!=x`
     """
-    data = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
+    data = numpy.array([float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")])
+    x: Any
+    result: Any
+    expected: Any
 
     # torch
     x = torch.tensor(data)
     result = formula(x)
-    expected = torch.ones_like(x, dtype=bool)
+    expected = torch.ones_like(x, dtype=torch.bool)
     assert all(result == expected)
 
     # pandas
@@ -143,7 +150,7 @@ def test_true_like(formula: Callable[[T], T]) -> None:
     # numpy
     x = numpy.array(data)
     result = formula(x)
-    expected = numpy.ones_like(x, dtype=bool)
+    expected = numpy.ones_like(x, dtype=numpy.bool_)
     assert all(result == expected)
 
     # test with time-delta type
@@ -158,24 +165,27 @@ def test_true_like(formula: Callable[[T], T]) -> None:
     # numpy
     x = numpy.array(data)
     result = formula(x)
-    expected = numpy.ones_like(x, dtype=bool)
+    expected = numpy.ones_like(x, dtype=numpy.bool_)
     assert all(result == expected)
 
 
 @mark.parametrize("formula", [false_like, lambda z: (z == z) ^ (z == z)])
-def test_false_like(formula: Callable[[T], T]) -> None:
+def test_false_like(formula: SelfMap) -> None:
     """Analogous to `zeros_like(x, dtype=bool)`.
 
     Candidates:
     - XOR-trick: (x==x) ^ (x==x)
     - (x==x) & (x!=x)
     """
-    data = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
+    data = numpy.array([float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")])
+    x: Any
+    result: Any
+    expected: Any
 
     # torch
     x = torch.tensor(data)
     result = formula(x)
-    expected = torch.zeros_like(x, dtype=bool)
+    expected = torch.zeros_like(x, dtype=torch.bool)
     assert all(result == expected)
 
     # pandas
@@ -187,7 +197,7 @@ def test_false_like(formula: Callable[[T], T]) -> None:
     # numpy
     x = numpy.array(data)
     result = formula(x)
-    expected = numpy.zeros_like(x, dtype=bool)
+    expected = numpy.zeros_like(x, dtype=numpy.bool_)
     assert all(result == expected)
 
     # test with time-delta type
@@ -202,7 +212,7 @@ def test_false_like(formula: Callable[[T], T]) -> None:
     # numpy
     x = numpy.array(data)
     result = formula(x)
-    expected = numpy.zeros_like(x, dtype=bool)
+    expected = numpy.zeros_like(x, dtype=numpy.bool_)
     assert all(result == expected)
 
 

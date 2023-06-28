@@ -12,7 +12,7 @@ from torch import Tensor
 from tsdm.types.aliases import Axes
 
 
-def torch_nanmin(x: Tensor, axis: Axes = None, keepdims: bool = False) -> Tensor:
+def torch_nanmin(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
     """Analogue to `numpy.nanmin`."""
     return torch.amin(
         torch.where(torch.isnan(x), float("+inf"), x),
@@ -21,7 +21,7 @@ def torch_nanmin(x: Tensor, axis: Axes = None, keepdims: bool = False) -> Tensor
     )
 
 
-def torch_nanmax(x: Tensor, axis: Axes = None, keepdims: bool = False) -> Tensor:
+def torch_nanmax(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
     """Analogue to `numpy.nanmax`."""
     return torch.amax(
         torch.where(torch.isnan(x), float("-inf"), x),
@@ -30,7 +30,7 @@ def torch_nanmax(x: Tensor, axis: Axes = None, keepdims: bool = False) -> Tensor
     )
 
 
-def torch_nanstd(x: Tensor, axis: Axes = None, keepdims: bool = False) -> Tensor:
+def torch_nanstd(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
     """Analogue to `numpy.nanstd`."""
     return torch.sqrt(
         torch.nanmean(  # type: ignore[call-arg]

@@ -2,6 +2,7 @@
 r"""Test the standardizer encoder."""
 
 import logging
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -78,6 +79,7 @@ def test_reduce_axes():
 def test_boundary_encoder(backend: str) -> None:
     """Test the boundary encoder."""
     _data = [-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]
+    data: Any
 
     match backend:
         case "numpy":

@@ -1,7 +1,5 @@
 """Universal backend functions that are independent of the backend used."""
 
-from __future__ import annotations
-
 __all__ = [
     "false_like",
     "true_like",
@@ -9,18 +7,21 @@ __all__ = [
 ]
 
 from math import prod
+from typing import TypeVar
 
-from tsdm.types.protocols import SupportsShape
-from tsdm.types.variables import any_var as T
+from tsdm.types.protocols import NumericalArray, SupportsShape
+
+A = TypeVar("A", bound=NumericalArray)
+"""A type variable for numerical objects."""
 
 
-def false_like(x: T, /) -> T:
+def false_like(x: A, /) -> A:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
     z = x == x
     return z ^ z
 
 
-def true_like(x: T, /) -> T:
+def true_like(x: A, /) -> A:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: (NAN == NAN) == False and (NAN != NAN) == True
     z = x == x

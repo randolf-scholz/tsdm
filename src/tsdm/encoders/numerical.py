@@ -70,10 +70,10 @@ from pandas import DataFrame, Index, Series
 from torch import Tensor
 from typing_extensions import Self
 
+from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axes, Nested, PandasObject
 from tsdm.types.protocols import NTuple
-from tsdm.utils.backends import KernelProvider, get_backend
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 
 TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
@@ -86,8 +86,6 @@ SINGLE_INDEXER: TypeAlias = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
 INDEXER: TypeAlias = SINGLE_INDEXER | tuple[SINGLE_INDEXER, ...]
 r"""Type Hint for indexer objects."""
-Backend: TypeAlias = Literal["torch", "numpy", "pandas"]
-"""Type Hint for backend string."""
 
 scalars: TypeAlias = None | bool | int | float | complex | str
 """Type Hint for scalar objects."""
@@ -260,7 +258,7 @@ def get_reduced_axes(item: INDEXER, axes: Axes) -> Axes:
 class NumericalEncoder(BaseEncoder[T, T], ABC):
     """Represents a numerical encoder."""
 
-    backend: Backend
+    backend: Backend[T]
     """The backend of the encoder."""
 
     Parameters = NewType("Parameters", tuple)
@@ -273,13 +271,9 @@ class NumericalEncoder(BaseEncoder[T, T], ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def switch_backend(self, backend: Backend) -> None:
+    def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the encoder."""
-        self.backend = backend
-        kernel_provider: KernelProvider[T] = KernelProvider(backend)
-        self.where: Callable[[T, T, T], T] = kernel_provider.where
-        self.clip: Callable[[T, T | None, T | None], T] = kernel_provider.clip
-        self.to_tensor: Callable[..., T] = kernel_provider.to_tensor
+        self.backend: Backend[T] = Backend(backend)
 
         # recast the parameters
         self.recast_parameters()
@@ -292,7 +286,7 @@ class NumericalEncoder(BaseEncoder[T, T], ABC):
     def cast_backend(self, params: Nested) -> Nested:
         """Cast the parameters to the current backend."""
         if isinstance(params, (Tensor, np.ndarray, Series, DataFrame)):
-            return self.to_tensor(params)
+            return self.backend.to_tensor(params)
 
         match params:
             case NTuple() as ntup:
@@ -405,7 +399,7 @@ class BoundaryEncoder(BaseEncoder[T, T]):
             self.upper_bound = data.max()
 
         backend = get_backend(data)
-        kernel_provider: KernelProvider[T] = KernelProvider(backend)
+        kernel_provider: Backend[T] = Backend(backend)
         true_like: Callable[[T], T] = kernel_provider.true_like
         self.where: Callable[[T, T, T], T] = kernel_provider.where
         self.to_tensor: Callable[..., T] = kernel_provider.to_tensor
@@ -846,13 +840,13 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
     def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the scaler."""
-        self.backend = backend
-        kernel_provider: KernelProvider[T] = KernelProvider(self.backend)
-        self.where: Callable[[T, T, T], T] = kernel_provider.where
-        self.clip: Callable[[T, T | None, T | None], T] = kernel_provider.clip
-        self.to_tensor: Callable[..., T] = kernel_provider.to_tensor
-        self.nanmin: Callable[[T, Axes], T] = kernel_provider.nanmin
-        self.nanmax: Callable[[T, Axes], T] = kernel_provider.nanmax
+        self.selected_backend = backend
+        self.backend: Backend[T] = Backend(self.selected_backend)
+        # self.where = backend.where
+        # self.clip = backend.clip
+        # self.to_tensor = backend.to_tensor
+        # self.nanmin = backend.nanmin
+        # self.nanmax = backend.nanmax
 
         # recast the parameters
         # self.recast_parameters()
@@ -860,13 +854,13 @@ class MinMaxScaler(BaseEncoder[T, T]):
     def recast_parameters(self) -> None:
         r"""Recast the parameters to the current backend."""
         # switch the backend of the parameters
-        self.xmin = self.to_tensor(self.xmin)
-        self.xmax = self.to_tensor(self.xmax)
-        self.ymin = self.to_tensor(self.ymin)
-        self.ymax = self.to_tensor(self.ymax)
-        self.xbar = self.to_tensor(self.xbar)
-        self.ybar = self.to_tensor(self.ybar)
-        self.scale = self.to_tensor(self.scale)
+        self.xmin = self.backend.to_tensor(self.xmin)
+        self.xmax = self.backend.to_tensor(self.xmax)
+        self.ymin = self.backend.to_tensor(self.ymin)
+        self.ymax = self.backend.to_tensor(self.ymax)
+        self.xbar = self.backend.to_tensor(self.xbar)
+        self.ybar = self.backend.to_tensor(self.ybar)
+        self.scale = self.backend.to_tensor(self.scale)
 
     def fit(self, data: T, /) -> None:
         # TODO: Why does singledispatch not work here? (wrap_func in BaseEncoder)
@@ -909,7 +903,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         dx = self.xmax - self.xmin
         dy = self.ymax - self.ymin
         scale = dx / dy
-        self.scale = self.where(dx != 0, scale, scale**0)
+        self.scale = self.backend.where(dx != 0, scale, scale**0)
 
     def _fit_numpy(self: MinMaxScaler[np.ndarray], data: NDArray, /) -> None:
         r"""Compute the min and max."""
@@ -935,15 +929,15 @@ class MinMaxScaler(BaseEncoder[T, T]):
         dx = self.xmax - self.xmin
         dy = self.ymax - self.ymin
         scale = dy / dx
-        self.scale = self.where(dx != 0, scale, scale**0)
+        self.scale = self.backend.where(dx != 0, scale, scale**0)
 
     def _fit_pandas(self: MinMaxScaler[Series | DataFrame], data: NDArray, /) -> None:
         axes = invert_axes(len(data.shape), self.axis)
 
         if self.xmin_learnable:
-            self.xmin = self.nanmin(data, axis=axes)
+            self.xmin = self.backend.nanmin(data, axis=axes)
         if self.xmax_learnable:
-            self.xmax = self.nanmax(data, axis=axes)
+            self.xmax = self.backend.nanmax(data, axis=axes)
 
         # broadcast y to the same shape as x
         self.ymin = self.ymin + 0.0 * self.xmin
@@ -959,7 +953,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         scale = dy / dx
 
         # note: dy/dx and hence scale is dimensionless, so float is appropriate
-        self.scale = self.where(dx != 0, scale, scale**0)
+        self.scale = self.backend.where(dx != 0, scale, scale**0)
 
     def encode(self, x: T, /) -> T:
         """Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
@@ -978,9 +972,11 @@ class MinMaxScaler(BaseEncoder[T, T]):
         if self.safe_computation:
             # ensure the conditions
             # x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
-            y = self.where(x < xmin, self.clip(y, None, ymin), y)
-            y = self.where(x > xmax, self.clip(y, ymax, None), y)
-            y = self.where((x >= xmin) & (x <= xmax), self.clip(y, ymin, ymax), y)
+            y = self.backend.where(x < xmin, self.backend.clip(y, None, ymin), y)
+            y = self.backend.where(x > xmax, self.backend.clip(y, ymax, None), y)
+            y = self.backend.where(
+                (x >= xmin) & (x <= xmax), self.backend.clip(y, ymin, ymax), y
+            )
 
         return y
 
@@ -1001,9 +997,11 @@ class MinMaxScaler(BaseEncoder[T, T]):
         if self.safe_computation:
             # ensure the conditions
             # y < yₘᵢₙ ⟹ x < xₘᵢₙ  ∧  y > yₘₐₓ ⟹ x > xₘₐₓ  ∧  y∈[yₘᵢₙ, yₘₐₓ] ⟹ x∈[xₘᵢₙ, xₘₐₓ]
-            x = self.where(y < ymin, self.clip(x, None, xmin), x)
-            x = self.where(y > ymax, self.clip(x, xmax, None), x)
-            x = self.where((y >= ymin) & (y <= ymax), self.clip(x, xmin, xmax), x)
+            x = self.backend.where(y < ymin, self.backend.clip(x, None, xmin), x)
+            x = self.backend.where(y > ymax, self.backend.clip(x, xmax, None), x)
+            x = self.backend.where(
+                (y >= ymin) & (y <= ymax), self.backend.clip(x, xmin, xmax), x
+            )
 
         return x
 
