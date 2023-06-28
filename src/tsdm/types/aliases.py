@@ -42,11 +42,13 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
 from tsdm.types.protocols import Lookup
-from tsdm.types.variables import any_var as T
-from tsdm.types.variables import key_contra
-from tsdm.types.variables import key_var as K
-from tsdm.types.variables import value_co
-from tsdm.types.variables import value_var as V
+from tsdm.types.variables import (
+    any_var as T,
+    key_contra,
+    key_var as K,
+    value_co,
+    value_var as V,
+)
 
 Axes: TypeAlias = None | int | tuple[int, ...]
 r"""Type Alias for axes."""

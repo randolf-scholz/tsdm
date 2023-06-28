@@ -17,9 +17,7 @@ import numpy as np
 import torch
 from pandas import DataFrame, Index, MultiIndex
 from sklearn.model_selection import train_test_split
-from torch import Tensor
-from torch import nan as NAN
-from torch import nn
+from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 

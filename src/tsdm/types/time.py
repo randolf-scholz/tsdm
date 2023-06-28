@@ -19,16 +19,16 @@ __all__ = [
 ]
 
 
-from datetime import datetime as py_dt
-from datetime import timedelta as py_td
+from datetime import datetime as py_dt, timedelta as py_td
 from typing import TypeAlias, TypeVar, Union
 
-from numpy import datetime64 as np_dt
-from numpy import floating as np_float
-from numpy import integer as np_int
-from numpy import timedelta64 as np_td
-from pandas import Timedelta as pd_td
-from pandas import Timestamp as pd_dt
+from numpy import (
+    datetime64 as np_dt,
+    floating as np_float,
+    integer as np_int,
+    timedelta64 as np_td,
+)
+from pandas import Timedelta as pd_td, Timestamp as pd_dt
 
 # Time-Type-Variables
 DTVar = TypeVar("DTVar", int, float, np_int, np_float, np_dt, pd_dt)

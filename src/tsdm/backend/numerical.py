@@ -45,8 +45,10 @@ from tsdm.backend.pandas import (
     pandas_where,
 )
 from tsdm.backend.torch import torch_nanmax, torch_nanmin, torch_nanstd
-from tsdm.backend.universal import false_like as universal_false_like
-from tsdm.backend.universal import true_like as universal_true_like
+from tsdm.backend.universal import (
+    false_like as universal_false_like,
+    true_like as universal_true_like,
+)
 from tsdm.types.aliases import Axes
 from tsdm.types.protocols import SelfMap, SelfMapProto
 

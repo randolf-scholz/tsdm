@@ -39,8 +39,7 @@ import pandas
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike
-from tsdm.types.variables import any_var as T
-from tsdm.types.variables import str_var as Key
+from tsdm.types.variables import any_var as T, str_var as Key
 from tsdm.utils import paths_exists
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.hash import validate_file_hash, validate_table_hash

@@ -361,6 +361,7 @@ py_version=310
 profile="black"
 src_paths=["src/", "tests/"]
 known_first_party = ["linodenet", "tsdm"]
+combine_as_imports = true
 # flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
 # black-compatible: black, appnexus
 # endregion isort Configuration --------------------------------------------------------

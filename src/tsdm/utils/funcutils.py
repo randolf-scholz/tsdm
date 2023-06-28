@@ -23,8 +23,7 @@ from inspect import Parameter
 from typing import Any, Callable, Optional, Sequence, cast
 
 from tsdm.types.protocols import Dataclass
-from tsdm.types.variables import parameter_spec as P
-from tsdm.types.variables import return_var_co as R
+from tsdm.types.variables import parameter_spec as P, return_var_co as R
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY

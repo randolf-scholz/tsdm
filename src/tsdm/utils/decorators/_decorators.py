@@ -49,12 +49,14 @@ from typing_extensions import Self
 from tsdm.config import CONFIG
 from tsdm.types.abc import CollectionType
 from tsdm.types.aliases import Nested
-from tsdm.types.variables import any_var as T
-from tsdm.types.variables import class_var as Class
-from tsdm.types.variables import object_var as O
-from tsdm.types.variables import parameter_spec as P
-from tsdm.types.variables import return_var_co as R
-from tsdm.types.variables import torch_module_var
+from tsdm.types.variables import (
+    any_var as T,
+    class_var as Class,
+    object_var as O,
+    parameter_spec as P,
+    return_var_co as R,
+    torch_module_var,
+)
 from tsdm.utils.funcutils import rpartial
 
 __logger__ = logging.getLogger(__name__)

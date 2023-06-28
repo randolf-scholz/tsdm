@@ -17,7 +17,6 @@ from tsdm.encoders import (
     FastFrameEncoder,
     FrameAsDict,
     IdentityEncoder,
-    LinearScaler,
     LogitBoxCoxEncoder,
     MinMaxScaler,
     StandardScaler,

@@ -1,7 +1,9 @@
-from pandas import DataFrame, Series
 from typing import TypeVar
 
+from pandas import DataFrame, Series
+
 T = TypeVar("T", Series, DataFrame)
+
 
 def f(x: T) -> None:
     match x:

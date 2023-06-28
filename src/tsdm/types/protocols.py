@@ -26,9 +26,13 @@ from typing import Any, Protocol, TypeVar, overload, runtime_checkable
 
 from typing_extensions import Self, SupportsIndex
 
-from tsdm.types.variables import any_co as T_co
-from tsdm.types.variables import any_var as T
-from tsdm.types.variables import key_contra, key_var, value_co
+from tsdm.types.variables import (
+    any_co as T_co,
+    any_var as T,
+    key_contra,
+    key_var,
+    value_co,
+)
 
 scalar_co = TypeVar("scalar_co", covariant=True)
 # Either: TypeAlias = Union[T, "Array[T]"]

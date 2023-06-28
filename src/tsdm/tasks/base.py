@@ -129,9 +129,11 @@ from typing import (
 import numpy as np
 from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset as TorchDataset
-from torch.utils.data import Sampler as TorchSampler
+from torch.utils.data import (
+    DataLoader,
+    Dataset as TorchDataset,
+    Sampler as TorchSampler,
+)
 from typing_extensions import Self, assert_type
 
 from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset

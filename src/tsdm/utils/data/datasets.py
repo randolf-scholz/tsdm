@@ -13,9 +13,7 @@ from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Self
 
-from tsdm.types.variables import key_var as K
-from tsdm.types.variables import nested_key_var as K2
-from tsdm.types.variables import object_var as O
+from tsdm.types.variables import key_var as K, nested_key_var as K2, object_var as O
 from tsdm.utils.strings import repr_mapping
 
 TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)

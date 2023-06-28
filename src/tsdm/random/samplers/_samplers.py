@@ -42,9 +42,7 @@ from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.types.protocols import Lookup
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
-from tsdm.types.variables import any_co as T_co
-from tsdm.types.variables import any_var as T
-from tsdm.types.variables import key_var as K
+from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
 from tsdm.utils.data.datasets import DatasetCollection
 from tsdm.utils.strings import repr_mapping
 
