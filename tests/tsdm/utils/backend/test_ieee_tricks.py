@@ -11,16 +11,19 @@ There are some tricks to create such tensors in a backend-agnostic way, using IE
 `is_nan` can be tested via `x != x`.
 """
 
+from typing import Callable
+
 import numpy
 import pandas
 import torch
 from pytest import mark
 
+from tsdm.types.variables import any_var as T
 from tsdm.utils.backends import false_like, true_like
 
 
 @mark.parametrize("formula", [lambda z: z**0])
-def test_make_ones_like(formula):
+def test_make_ones_like(formula: Callable[[T], T]) -> None:
     """Analogous to `ones_like`.
 
     Candidates for creating ones are:
@@ -68,7 +71,7 @@ def test_make_ones_like(formula):
 
 
 @mark.parametrize("formula", [lambda z: z**0 - z**0])
-def test_zeros_like(formula):
+def test_zeros_like(formula: Callable[[T], T]) -> None:
     """Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
@@ -116,7 +119,7 @@ def test_zeros_like(formula):
 
 
 @mark.parametrize("formula", [true_like, lambda z: (z == z) | (z != z)])
-def test_true_like(formula):
+def test_true_like(formula: Callable[[T], T]) -> None:
     """Analogous to `ones_like(x, dtype=bool)`.
 
     Candidates:
@@ -160,7 +163,7 @@ def test_true_like(formula):
 
 
 @mark.parametrize("formula", [false_like, lambda z: (z == z) ^ (z == z)])
-def test_false_like(formula):
+def test_false_like(formula: Callable[[T], T]) -> None:
     """Analogous to `zeros_like(x, dtype=bool)`.
 
     Candidates:

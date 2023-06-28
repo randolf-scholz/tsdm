@@ -7,23 +7,22 @@ __all__ = [
     # Constants
     # "KERNELS",
     # Type aliases
-    "Backend",
+    "BackendID",
+    # Classes
+    "Kernels",
+    "KernelProvider",
     # Functions
     "get_backend",
-    "KernelProvider",
     "is_singleton",
-    "true_like",
-    "false_like",
 ]
 
 from tsdm.utils.backends.numerical import (
-    Backend,
+    BackendID,
     KernelProvider,
-    false_like,
+    Kernels,
     get_backend,
-    is_singleton,
-    true_like,
 )
+from tsdm.utils.backends.universal import is_singleton
 
 # KERNELS = {
 #     "where": where_kernel,

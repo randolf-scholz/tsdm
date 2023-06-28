@@ -3,17 +3,27 @@
 from __future__ import annotations
 
 __all__ = [
-    "Backend",
-    "get_backend",
+    # Classes
+    "BackendID",
+    "Kernels",
     "KernelProvider",
-    "is_singleton",
+    # Functions
+    "get_backend",
     "is_scalar",
-    "true_like",
-    "false_like",
+    "to_scalar",
 ]
 
-from math import prod
-from typing import Any, Callable, Generic, Literal, Protocol, TypeAlias, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    Final,
+    Generic,
+    Literal,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    cast,
+)
 
 import numpy
 import numpy as np
@@ -26,7 +36,6 @@ from torch import Tensor
 from typing_extensions import get_args
 
 from tsdm.types.aliases import Axes
-from tsdm.types.protocols import SupportsShape
 from tsdm.utils.backends.pandas import (
     pandas_clip,
     pandas_nanmax,
@@ -36,9 +45,13 @@ from tsdm.utils.backends.pandas import (
     pandas_where,
 )
 from tsdm.utils.backends.torch import torch_nanmax, torch_nanmin, torch_nanstd
+from tsdm.utils.backends.universal import false_like as universal_false_like
+from tsdm.utils.backends.universal import true_like as universal_true_like
 
 T = TypeVar("T", Series, DataFrame, Tensor, ndarray)
-Backend: TypeAlias = Literal["torch", "numpy", "pandas"]
+"""A type variable for numerical objects."""
+BackendID: TypeAlias = Literal["torch", "numpy", "pandas"]
+"""A type alias for the supported backends."""
 
 
 class SupportsAxis(Protocol[T]):
@@ -55,9 +68,9 @@ class SupportsKeepdims(Protocol[T]):
         ...
 
 
-def get_backend(obj: object, fallback: Backend = "numpy") -> Backend:
+def get_backend(obj: object, fallback: BackendID = "numpy") -> BackendID:
     """Get the backend of a set of objects."""
-    types: set[Backend] = set()
+    types: set[BackendID] = set()
 
     match obj:
         case tuple() | set() | frozenset() | list() as container:
@@ -82,108 +95,96 @@ def get_backend(obj: object, fallback: Backend = "numpy") -> Backend:
             raise ValueError(f"More than 1 backend detected: {types}.")
 
 
-def false_like(x: T, /) -> T:
-    """Returns a boolean tensor with the same shape/device as `x`."""
-    z = x == x
-    return z ^ z
+class Kernels:
+    """A class that holds the kernels for each backend."""
 
+    where: Final[dict[BackendID, Callable[[T, T, T], T]]] = {
+        "numpy": numpy.where,
+        "pandas": pandas_where,
+        "torch": torch.where,
+    }
 
-def true_like(x: T, /) -> T:
-    """Returns a boolean tensor with the same shape/device as `x`."""
-    return ~false_like(x)
+    clip: Final[dict[BackendID, Callable[[T, T | None, T | None], T]]] = {
+        "numpy": numpy.clip,
+        "pandas": pandas_clip,
+        "torch": torch.clip,
+    }
+
+    to_tensor: Final[dict[BackendID, Callable[[Any], T]]] = {
+        "numpy": numpy.array,
+        "pandas": numpy.array,
+        "torch": torch.tensor,
+    }
+
+    nanmin: Final[dict[BackendID, SupportsAxis[T]]] = {
+        "numpy": np.nanmin,
+        "pandas": pandas_nanmin,
+        "torch": torch_nanmin,
+    }
+
+    nanmax: Final[dict[BackendID, SupportsAxis[T]]] = {
+        "numpy": np.nanmax,
+        "pandas": pandas_nanmax,
+        "torch": torch_nanmax,
+    }
+
+    nanmean: Final[dict[BackendID, SupportsAxis[T]]] = {
+        "numpy": np.nanmean,
+        "pandas": pandas_nanmean,
+        "torch": torch.nanmean,
+    }
+
+    nanstd: Final[dict[BackendID, SupportsAxis[T]]] = {
+        "numpy": np.nanstd,
+        "pandas": pandas_nanstd,
+        "torch": torch_nanstd,
+    }
+
+    true_like: Final[dict[BackendID, Callable[[T], T]]] = {
+        "numpy": universal_true_like,
+        "pandas": universal_true_like,
+        "torch": universal_true_like,
+    }
+
+    false_like: Final[dict[BackendID, Callable[[T], T]]] = {
+        "numpy": universal_false_like,
+        "pandas": universal_false_like,
+        "torch": universal_false_like,
+    }
 
 
 class KernelProvider(Generic[T]):
     """Provides kernels for numerical operations."""
 
-    backend: Backend
+    selected_backend: BackendID
+
+    # KERNELS
+    clip: Callable[[T, T | None, T | None], T]
+    false_like: Callable[[T], T]
+    nanmax: SupportsAxis[T]
+    nanmean: SupportsAxis[T]
+    nanmin: SupportsAxis[T]
+    nanstd: SupportsAxis[T]
+    to_tensor: Callable[[Any], T]
+    true_like: Callable[[T], T]
+    where: Callable[[T, T, T], T]
 
     def __init__(self, backend: str) -> None:
-        assert backend in get_args(Backend)
-        self.backend = cast(Backend, backend)
+        assert backend in get_args(BackendID)
+        self.selected_backend = cast(BackendID, backend)
 
-    @property
-    def where(self) -> Callable[[T, T, T], T]:
-        kernels = {
-            "numpy": numpy.where,
-            "pandas": pandas_where,
-            "torch": torch.where,
-        }
-        return kernels[self.backend]  # type: ignore[return-value]
+        self.clip = Kernels.clip[self.selected_backend]
+        self.false_like = Kernels.false_like[self.selected_backend]
+        self.nanmax = Kernels.nanmax[self.selected_backend]
+        self.nanmean = Kernels.nanmean[self.selected_backend]
+        self.nanmin = Kernels.nanmin[self.selected_backend]
+        self.nanstd = Kernels.nanstd[self.selected_backend]
+        self.to_tensor = Kernels.to_tensor[self.selected_backend]
+        self.true_like = Kernels.true_like[self.selected_backend]
+        self.where = Kernels.where[self.selected_backend]
 
-    @property
-    def clip(self) -> Callable[[T, T | None, T | None], T]:
-        kernels = {
-            "numpy": numpy.clip,
-            "pandas": pandas_clip,
-            "torch": torch.clip,
-        }
-        return kernels[self.backend]  # type: ignore[return-value]
-
-    @property
-    def to_tensor(self) -> Callable[[Any], T]:
-        kernels = {
-            "numpy": numpy.array,
-            "pandas": numpy.array,
-            "torch": torch.tensor,
-        }
-        return kernels[self.backend]  # type: ignore[return-value]
-
-    @property
-    def nanmin(self) -> SupportsAxis[T]:
-        kernels = {
-            "numpy": np.nanmin,
-            "pandas": pandas_nanmin,
-            "torch": torch_nanmin,
-        }
-        return kernels[self.backend]  # type: ignore[return-value]
-
-    @property
-    def nanmax(self) -> SupportsAxis[T]:
-        kernels = {
-            "numpy": np.nanmax,
-            "pandas": pandas_nanmax,
-            "torch": torch_nanmax,
-        }
-        return kernels[self.backend]  # type: ignore[return-value]
-
-    @property
-    def nanmean(self) -> SupportsAxis[T]:
-        kernels = {
-            "numpy": np.nanmean,
-            "pandas": pandas_nanmean,
-            "torch": torch.nanmean,
-        }
-        return kernels[self.backend]  # type: ignore[return-value]
-
-    @property
-    def nanstd(self) -> SupportsAxis[T]:
-        kernels = {
-            "numpy": np.nanstd,
-            "pandas": pandas_nanstd,
-            "torch": torch_nanstd,
-        }
-        return kernels[self.backend]  # type: ignore[return-value]
-
-    @property
-    def true_like(self) -> Callable[[T], T]:
-        return true_like
-
-    @property
-    def false_like(self) -> Callable[[T], T]:
-        return false_like
-
-
-def is_singleton(x: SupportsShape) -> bool:
-    """Determines whether a tensor like object has a single element."""
-    return prod(x.shape) == 1
-    # numpy: size, len  / shape + prod
-    # torch: size + prod / numel / shape + prod
-    # table: shape + prod
-    # DataFrame: shape + prod
-    # Series: shape + prod
-    # pyarrow table: shape + prod
-    # pyarrow array: ????
+    def switch_backend(self, backend: str) -> None:
+        self.__init__(backend)
 
 
 def is_scalar(x: Any) -> bool:

@@ -10,6 +10,11 @@ Numerical Encoders should be able to be applied with different backends such as
 
 To ensure performance during encoding/decoding, the backend should be fixed.
 
+Notes
+-----
+Golden Rule for implementation: init/fit can be slow, but transform should be fast.
+Use specialization/dispatch to ensure fast transforms.
+
 Goals
 -----
 - numerical encoders should allow for different backends: numpy, pandas, torch, etc.
@@ -405,14 +410,10 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         self.where: Callable[[T, T, T], T] = kernel_provider.where
         self.to_tensor: Callable[..., T] = kernel_provider.to_tensor
 
-        NAN: T = self.to_tensor(float("nan"))
-        POSINF: T = self.to_tensor(float("+inf"))
-        NEGINF: T = self.to_tensor(float("-inf"))
-
         self.lower_value: T = (
-            NEGINF  # type: ignore[assignment]
+            self.to_tensor(float("-inf"))  # type: ignore[assignment]
             if self.lower_bound is None
-            else NAN
+            else self.to_tensor(float("nan"))
             if self.lower_mode == "mask"
             else self.lower_bound
             if self.lower_mode == "clip"
@@ -420,16 +421,16 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         )
 
         self.upper_value: T = (
-            POSINF  # type: ignore[assignment]
+            self.to_tensor(float("+inf"))  # type: ignore[assignment]
             if self.upper_bound is None
-            else NAN
+            else self.to_tensor(float("nan"))
             if self.upper_mode == "mask"
             else self.upper_bound
             if self.upper_mode == "clip"
             else NotImplemented
         )
 
-        # Create comparison functions
+        # Create lower comparison function
         self.lower_mask: Callable[[T], T] = (
             true_like
             if self.lower_bound is None
@@ -438,6 +439,7 @@ class BoundaryEncoder(BaseEncoder[T, T]):
             else (lambda x: x > self.lower_bound)
         )
 
+        # Create upper comparison function
         self.upper_mask: Callable[[T], T] = (
             true_like
             if self.upper_bound is None
@@ -446,17 +448,8 @@ class BoundaryEncoder(BaseEncoder[T, T]):
             else (lambda x: x < self.upper_bound)
         )
 
-        # FIXME: https://github.com/python/mypy/issues/15496
-
     def encode(self, data: T) -> T:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
-        # print(type(self.lower_mask(data)), type(data), type(self.lower_value))
-        print(type(self.upper_mask(data)), type(data), type(self.upper_value))
-        try:
-            # print(self.lower_mask(data).shape, data.shape, self.lower_value.shape)
-            print(self.upper_mask(data).shape, data.shape, self.upper_value.shape)
-        except Exception:
-            pass
         data = self.where(self.lower_mask(data), data, self.lower_value)
         data = self.where(self.upper_mask(data), data, self.upper_value)
         return data
@@ -948,9 +941,9 @@ class MinMaxScaler(BaseEncoder[T, T]):
         axes = invert_axes(len(data.shape), self.axis)
 
         if self.xmin_learnable:
-            self.xmin = self.nanmin(data, axis=axes)  # .min(skipna=True, axis=axes)
+            self.xmin = self.nanmin(data, axis=axes)
         if self.xmax_learnable:
-            self.xmax = self.nanmax(data, axis=axes)  # data.max(skipna=True, axis=axes)
+            self.xmax = self.nanmax(data, axis=axes)
 
         # broadcast y to the same shape as x
         self.ymin = self.ymin + 0.0 * self.xmin
