@@ -10,6 +10,8 @@ __all__ = [
 ]
 
 from collections.abc import Mapping
+from datetime import datetime, timedelta
+from types import EllipsisType, NotImplementedType
 from typing import Generic, Literal, ParamSpec, TypeAlias, cast
 
 import numpy
@@ -51,23 +53,38 @@ BackendID: TypeAlias = Literal["torch", "numpy", "pandas"]
 """A type alias for the supported backends."""
 
 
-def get_backend(obj: object, fallback: BackendID = "numpy") -> BackendID:
-    """Get the backend of a set of objects."""
+def gather_types(obj: object) -> set[BackendID]:
+    """Gather the backend types of a set of objects."""
     types: set[BackendID] = set()
 
     match obj:
         case tuple() | set() | frozenset() | list() as container:
-            types |= {get_backend(o) for o in container}
+            types |= set().union(*map(gather_types, container))
         case dict() as mapping:
-            types |= {get_backend(o) for o in mapping.values()}
+            types |= set().union(*map(gather_types, mapping.values()))
         case Tensor():
             types.add("torch")
         case DataFrame() | Series():  # type: ignore[misc]
             types.add("pandas")  # type: ignore[unreachable]
         case ndarray():
             types.add("numpy")
-        case _:
+        case None | bool() | int() | float() | complex() | str() | datetime() | timedelta():
+            # FIXME: https://github.com/python/cpython/issues/106246
+            # use PythonScalar instead of Scalar when the above issue is fixed
+            # types.add("fallback")
             pass
+        case EllipsisType() | NotImplementedType():
+            # types.add("fallback")
+            pass
+        case _:
+            raise TypeError(f"Unsupported type: {type(obj)}.")
+
+    return types
+
+
+def get_backend(obj: object, fallback: BackendID = "numpy") -> BackendID:
+    """Get the backend of a set of objects."""
+    types: set[BackendID] = gather_types(obj)
 
     match len(types):
         case 0:

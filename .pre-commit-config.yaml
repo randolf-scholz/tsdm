@@ -55,8 +55,6 @@ repos:
         description: "Enforce that `eval` is not used."
       - id: python-no-log-warn
         description: "Enforce that `logging.warn` is not used."
-      - id: python-use-type-annotations
-        description: "Enforce that type annotations are used."
       - id: rst-directive-colons
         description: "Enforce that RST directives have colons."
       - id: rst-inline-touching-normal

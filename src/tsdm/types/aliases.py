@@ -33,6 +33,7 @@ __all__ = [
 
 import os
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, NamedTuple, Optional, TypeAlias
 
@@ -50,6 +51,13 @@ from tsdm.types.variables import (
     value_var as V,
 )
 
+# region Numeric Types ------------------------------------------------------------------
+PythonScalar: TypeAlias = (
+    None | bool | int | float | complex | bool | str | datetime | timedelta
+)
+r"""Type Alias for Python scalars."""
+
+
 Axes: TypeAlias = None | int | tuple[int, ...]
 r"""Type Alias for axes."""
 
@@ -63,6 +71,9 @@ class schema(NamedTuple):
     """Column names of the table."""
     dtypes: Optional[Sequence[str]] = None
     """Data types of the columns."""
+
+
+# endregion Numeric Types ---------------------------------------------------------------
 
 
 # region Custom Type Aliases -----------------------------------------------------------

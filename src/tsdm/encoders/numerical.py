@@ -786,6 +786,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         # initialize the new encoder
         cls: type[Self] = type(self)
         encoder = cls(ymin, ymax, xmin=xmin, xmax=xmax, axis=axis)
+        encoder.switch_backend(self.selected_backend)
         encoder._is_fitted = self._is_fitted
         return encoder
 
