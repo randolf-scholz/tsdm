@@ -16,7 +16,7 @@ __all__ = [
     "is_singleton",
 ]
 
-from tsdm.backend.numerical import Backend, BackendID, Kernels, get_backend
+from tsdm.backend._backend import Backend, BackendID, Kernels, get_backend
 from tsdm.backend.universal import is_singleton
 
 # KERNELS = {

@@ -344,7 +344,7 @@ def test_linear_scaler(tensor_type):
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-    assert encoder.params[0].shape == (), f"{encoder.params}"
+    assert isinstance(encoder.params[0], float), f"{encoder.params}"
 
     LOGGER.info("Testing with single batch-dim.")
     X = np.random.rand(3, 5)
@@ -354,7 +354,7 @@ def test_linear_scaler(tensor_type):
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-    assert encoder.params[0].shape == (), f"{encoder.params}"
+    assert isinstance(encoder.params[0], float), f"{encoder.params}"
 
     # LOGGER.info("Testing slicing.")
     # encoder = encoder[2]  # select the third encoder
@@ -375,7 +375,7 @@ def test_linear_scaler(tensor_type):
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-    assert encoder.params[0].shape == (), f"{encoder.params}"
+    assert isinstance(encoder.params[0], float), f"{encoder.params}"
 
     # encoder = encoder[:-1]  # select the first two components
     # # encoder.fit(X)

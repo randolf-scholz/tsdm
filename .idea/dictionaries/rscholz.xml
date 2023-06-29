@@ -267,6 +267,7 @@
       <w>nrmse</w>
       <w>nrows</w>
       <w>numdims</w>
+      <w>numel</w>
       <w>nunique</w>
       <w>objname</w>
       <w>objtype</w>

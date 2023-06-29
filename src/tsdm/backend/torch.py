@@ -4,9 +4,11 @@ __all__ = [
     "torch_nanmin",
     "torch_nanmax",
     "torch_nanstd",
+    "torch_like",
 ]
 
 import torch
+from numpy.typing import ArrayLike
 from torch import Tensor
 
 from tsdm.types.aliases import Axes
@@ -39,3 +41,8 @@ def torch_nanstd(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> 
             keepdim=keepdims,
         )
     )
+
+
+def torch_like(x: ArrayLike, ref: Tensor) -> Tensor:
+    """Return a tensor of the same dtype and other options as `ref`."""
+    return torch.tensor(x, dtype=ref.dtype, device=ref.device)

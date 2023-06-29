@@ -8,13 +8,15 @@ __all__ = [
     "pandas_nanmin",
     "pandas_nanstd",
     "pandas_where",
+    "pandas_like",
 ]
 
 from typing import Literal, TypeVar
 
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 from pandas import DataFrame, Series
 
+from tsdm.backend.protocols import Scalar
 from tsdm.types.aliases import Axes
 
 P = TypeVar("P", Series, DataFrame)
@@ -65,8 +67,17 @@ def pandas_nanstd(x: P, axis: Axes = None) -> P:
     return x.std(axis=pandas_axes(x.shape, axis), skipna=True, ddof=0)
 
 
-def pandas_where(cond: NDArray, a: P, b: NDArray) -> NDArray:
+def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray) -> NDArray:
     """Analogue to `numpy.where`."""
     if isinstance(a, Series | DataFrame):
         return a.where(cond, b)
     return a if cond else b  # scalar fallback
+
+
+def pandas_like(x: ArrayLike, ref: P) -> P:
+    """Create a Series/DataFrame with the same modality as a reference."""
+    if isinstance(ref, Series):
+        return Series(x, dtype=ref.dtype, index=ref.index)
+    if isinstance(ref, DataFrame):
+        return DataFrame(x, index=ref.index, columns=ref.columns).astype(ref.dtypes)
+    raise TypeError(f"Expected Series or DataFrame, got {type(ref)}.")

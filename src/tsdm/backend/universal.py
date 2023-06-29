@@ -4,10 +4,16 @@ __all__ = [
     "false_like",
     "true_like",
     "is_singleton",
+    "is_scalar",
+    "to_scalar",
 ]
 
 from math import prod
-from typing import TypeVar
+from typing import Any, TypeVar
+
+import numpy as np
+import pandas as pd
+import pyarrow as pa
 
 from tsdm.types.protocols import NumericalArray, SupportsShape
 
@@ -38,3 +44,18 @@ def is_singleton(x: SupportsShape) -> bool:
     # Series: shape + prod
     # pyarrow table: shape + prod
     # pyarrow array: ????
+
+
+def is_scalar(x: Any) -> bool:
+    """Determines whether an object is a scalar."""
+    return (
+        isinstance(x, (int, float, str, bool))
+        or np.isscalar(x)
+        or pd.api.types.is_scalar(x)
+        or isinstance(x, pa.Scalar)
+    )
+
+
+def to_scalar():
+    """Convert a singleton to a scalar."""
+    raise NotImplementedError
