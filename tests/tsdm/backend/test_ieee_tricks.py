@@ -11,7 +11,7 @@ There are some tricks to create such tensors in a backend-agnostic way, using IE
 `is_nan` can be tested via `x != x`.
 """
 
-from typing import Any
+from typing import TypeVar
 
 import numpy
 import pandas
@@ -19,11 +19,25 @@ import torch
 from pytest import mark
 
 from tsdm.backend.universal import false_like, true_like
-from tsdm.types.protocols import SelfMap
+from tsdm.types.protocols import SelfMapProto
+
+T = TypeVar("T", pandas.Series, numpy.ndarray, torch.Tensor)
+
+DATA = [float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")]
+TIME = numpy.array(DATA) * numpy.timedelta64(1, "s")
 
 
-@mark.parametrize("formula", [lambda z: z**0])
-def test_make_ones_like(formula: SelfMap) -> None:
+@mark.parametrize("formula", [lambda z: z**0], ids=["x**0"])
+@mark.parametrize(
+    "data, expected",
+    [
+        (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA))),
+        (pandas.Series(DATA), pandas.Series(numpy.ones_like(DATA))),
+        (numpy.array(DATA), numpy.ones_like(DATA)),
+    ],
+    ids=["torch", "pandas", "numpy"],
+)
+def test_make_ones_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
     """Analogous to `ones_like`.
 
     Candidates for creating ones are:
@@ -33,48 +47,21 @@ def test_make_ones_like(formula: SelfMap) -> None:
     However, `x**0` is not implemented for time-delta types.
     What could work
     """
-    data = numpy.array([float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")])
-    x: Any
-    result: Any
-    expected: Any
-
-    # torch
-    x = torch.tensor(data)
-    result = formula(x)
-    expected = torch.ones_like(x)
-    assert all(result == expected)
-    del x, result, expected
-
-    # pandas
-    x = pandas.Series(data)
-    result = formula(x)
-    expected = pandas.Series(numpy.ones_like(x))
+    result = formula(data)
     assert all(result == expected)
 
-    # numpy
-    x = numpy.array(data)
-    result = formula(x)
-    expected = numpy.ones_like(x)
-    assert all(result == expected)
 
-    # # test with time-delta type
-    # data = numpy.array(data) * numpy.timedelta64(1, "s")
-    #
-    # # pandas
-    # x = pandas.Series(data)
-    # result = formula(x)
-    # expected = pandas.Series(numpy.ones_like(x))
-    # assert all(result == expected)
-    #
-    # # numpy
-    # x = numpy.array(data)
-    # result = formula(x)
-    # expected = numpy.ones_like(x)
-    # assert all(result == expected)
-
-
-@mark.parametrize("formula", [lambda z: z**0 - z**0])
-def test_zeros_like(formula: SelfMap) -> None:
+@mark.parametrize("formula", [lambda z: z**0 - z**0], ids=["x**0 - x**0"])
+@mark.parametrize(
+    "data, expected",
+    [
+        (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA))),
+        (pandas.Series(DATA), pandas.Series(numpy.zeros_like(DATA))),
+        (numpy.array(DATA), numpy.zeros_like(DATA)),
+    ],
+    ids=["torch", "pandas", "numpy"],
+)
+def test_zeros_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
     """Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
@@ -83,136 +70,61 @@ def test_zeros_like(formula: SelfMap) -> None:
     - `0 * x`      # keeps NANs, introduces NaNs for inf
     - `0 ** x`  # doesn't for negatives, keeps NANs
     """
-    data = numpy.array([float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")])
-    x: Any
-    result: Any
-    expected: Any
-
-    # torch
-    x = torch.tensor(data)
-    result = formula(x)
-    expected = torch.zeros_like(x)
+    result = formula(data)
     assert all(result == expected)
 
-    # pandas
-    x = pandas.Series(data)
-    result = formula(x)
-    expected = pandas.Series(numpy.zeros_like(x))
-    assert all(result == expected)
 
-    # numpy
-    x = numpy.array(data)
-    result = formula(x)
-    expected = numpy.zeros_like(x)
-    assert all(result == expected)
-
-    # # test with time-delta type
-    # data = numpy.array(data) * numpy.timedelta64(1, "s")
-    #
-    # # pandas
-    # x = pandas.Series(data)
-    # result = formula(x)
-    # expected = pandas.Series(numpy.zeros_like(x), dtype=x.dtype)
-    # assert all(result == expected)
-    #
-    # # numpy
-    # x = numpy.array(data)
-    # result = formula(x)
-    # expected = numpy.zeros_like(x, dtype=x.dtype)
-    # assert all(result == expected)
-
-
-@mark.parametrize("formula", [true_like, lambda z: (z == z) | (z != z)])
-def test_true_like(formula: SelfMap) -> None:
+@mark.parametrize(
+    "formula",
+    [true_like, lambda z: (z == z) | (z != z)],
+    ids=["true_like", "(x==x)|(x!=x)"],
+)
+@mark.parametrize(
+    "data, expected",
+    [
+        (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA), dtype=torch.bool)),
+        (pandas.Series(DATA), pandas.Series(numpy.ones_like(DATA, dtype=bool))),
+        (numpy.array(DATA), numpy.ones_like(DATA, dtype=numpy.bool_)),
+        (pandas.Series(TIME), pandas.Series(numpy.ones_like(TIME, dtype=bool))),
+        (numpy.array(TIME), numpy.ones_like(TIME, dtype=numpy.bool_)),
+    ],
+    ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
+)
+def test_true_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
     """Analogous to `ones_like(x, dtype=bool)`.
 
     Candidates:
     - `where(x!=x, x!=x, x==x)`
     - `x==x | x!=x`
     """
-    data = numpy.array([float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")])
-    x: Any
-    result: Any
-    expected: Any
-
-    # torch
-    x = torch.tensor(data)
-    result = formula(x)
-    expected = torch.ones_like(x, dtype=torch.bool)
-    assert all(result == expected)
-
-    # pandas
-    x = pandas.Series(data)
-    result = formula(x)
-    expected = pandas.Series(numpy.ones_like(x, dtype=bool))
-    assert all(result == expected)
-
-    # numpy
-    x = numpy.array(data)
-    result = formula(x)
-    expected = numpy.ones_like(x, dtype=numpy.bool_)
-    assert all(result == expected)
-
-    # test with time-delta type
-    data = numpy.array(data) * numpy.timedelta64(1, "s")
-
-    # pandas
-    x = pandas.Series(data)
-    result = formula(x)
-    expected = pandas.Series(numpy.ones_like(x, dtype=bool))
-    assert all(result == expected)
-
-    # numpy
-    x = numpy.array(data)
-    result = formula(x)
-    expected = numpy.ones_like(x, dtype=numpy.bool_)
+    result = formula(data)
     assert all(result == expected)
 
 
-@mark.parametrize("formula", [false_like, lambda z: (z == z) ^ (z == z)])
-def test_false_like(formula: SelfMap) -> None:
+@mark.parametrize(
+    "formula",
+    [false_like, lambda z: (z == z) ^ (z == z)],
+    ids=["false_like", "(x==x)^(x==x)"],
+)
+@mark.parametrize(
+    "data, expected",
+    [
+        (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA), dtype=torch.bool)),
+        (pandas.Series(DATA), pandas.Series(numpy.zeros_like(DATA, dtype=bool))),
+        (numpy.array(DATA), numpy.zeros_like(DATA, dtype=numpy.bool_)),
+        (pandas.Series(TIME), pandas.Series(numpy.zeros_like(TIME, dtype=bool))),
+        (numpy.array(TIME), numpy.zeros_like(TIME, dtype=numpy.bool_)),
+    ],
+    ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
+)
+def test_false_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
     """Analogous to `zeros_like(x, dtype=bool)`.
 
     Candidates:
     - XOR-trick: (x==x) ^ (x==x)
     - (x==x) & (x!=x)
     """
-    data = numpy.array([float("-inf"), -1.0, 0.0, 1.0, float("inf"), float("nan")])
-    x: Any
-    result: Any
-    expected: Any
-
-    # torch
-    x = torch.tensor(data)
-    result = formula(x)
-    expected = torch.zeros_like(x, dtype=torch.bool)
-    assert all(result == expected)
-
-    # pandas
-    x = pandas.Series(data)
-    result = formula(x)
-    expected = pandas.Series(numpy.zeros_like(x, dtype=bool))
-    assert all(result == expected)
-
-    # numpy
-    x = numpy.array(data)
-    result = formula(x)
-    expected = numpy.zeros_like(x, dtype=numpy.bool_)
-    assert all(result == expected)
-
-    # test with time-delta type
-    data = numpy.array(data) * numpy.timedelta64(1, "s")
-
-    # pandas
-    x = pandas.Series(data)
-    result = formula(x)
-    expected = pandas.Series(numpy.zeros_like(x, dtype=bool))
-    assert all(result == expected)
-
-    # numpy
-    x = numpy.array(data)
-    result = formula(x)
-    expected = numpy.zeros_like(x, dtype=numpy.bool_)
+    result = formula(data)
     assert all(result == expected)
 
 

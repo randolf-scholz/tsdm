@@ -2,7 +2,7 @@
 r"""Test the standardizer encoder."""
 
 import logging
-from typing import Any
+from typing import TypeVar
 
 import numpy as np
 import pandas as pd
@@ -20,6 +20,9 @@ from tsdm.encoders.numerical import (
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
+
+
+T = TypeVar("T", pd.Series, np.ndarray, torch.Tensor)
 
 
 @mark.parametrize("shape", ((5, 2, 3, 4), (7,)))
@@ -75,22 +78,16 @@ def test_reduce_axes():
     assert get_reduced_axes((1, ...), axes) == (-3, -2, -1)
 
 
-@mark.parametrize("backend", ("numpy", "torch", "pandas"))
-def test_boundary_encoder(backend: str) -> None:
+@mark.parametrize(
+    "data",
+    (
+        np.array([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
+        torch.tensor([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
+        pd.Series([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
+    ),
+)
+def test_boundary_encoder(data: T) -> None:
     """Test the boundary encoder."""
-    _data = [-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]
-    data: Any
-
-    match backend:
-        case "numpy":
-            data = np.array(_data)
-        case "torch":
-            data = torch.tensor(_data)
-        case "pandas":
-            data = pd.Series(_data)
-        case _:
-            raise ValueError(f"Unknown backend {backend}")
-
     # test clip + numpy
     encoder = BoundaryEncoder(-1, +1, mode="clip")
     encoder.fit(data)

@@ -709,6 +709,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         ymin: TensorLike
         ymax: TensorLike
         axis: Axes
+        safe_computation: bool
 
         def __repr__(self) -> str:
             r"""Pretty print."""
@@ -723,6 +724,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
             ymin=self.ymin,
             ymax=self.ymax,
             axis=self.axis,
+            safe_computation=self.safe_computation,
         )
 
     @property
@@ -795,11 +797,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
         r"""Switch the backend of the scaler."""
         self.selected_backend = backend
         self.backend: Backend[T] = Backend(self.selected_backend)
-        # self.where = backend.where
-        # self.clip = backend.clip
-        # self.to_tensor = backend.to_tensor
-        # self.nanmin = backend.nanmin
-        # self.nanmax = backend.nanmax
 
         # recast the parameters
         # self.recast_parameters()
