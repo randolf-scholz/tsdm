@@ -172,7 +172,7 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
 
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
-        return repr_object(self, fallback=repr_type, recursive=2)
+        return repr_object(self, fallback=repr_type, recursive=1)
 
     @property
     def is_fitted(self) -> bool:
@@ -286,10 +286,6 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
     encoders: list[E]
     r"""List of encoders."""
 
-    def __invert__(self) -> Self:
-        cls = type(self)
-        return cls(*(~e for e in reversed(self.encoders)))  # type: ignore[arg-type]
-
     def __init__(self, *encoders: E, simplify: bool = True) -> None:
         super().__init__()
         self.encoders = []
@@ -299,6 +295,15 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
                     self.encoders.append(enc)
             else:
                 self.encoders.append(encoder)
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the encoder."""
+        # One more level of recursion than BaseEncoder.__repr__
+        return repr_object(self, fallback=repr_type, recursive=2)
+
+    def __invert__(self) -> Self:
+        cls = type(self)
+        return cls(*(~e for e in reversed(self.encoders)))  # type: ignore[arg-type]
 
     def __len__(self) -> int:
         r"""Return number of chained encoders."""
@@ -484,6 +489,11 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
             else:
                 self.encoders.append(encoder)
 
+    def __repr__(self) -> str:
+        r"""Return a string representation of the encoder."""
+        # One more level of recursion than BaseEncoder.__repr__
+        return repr_object(self, fallback=repr_type, recursive=2)
+
     def __len__(self) -> int:
         r"""Return the number of the encoders."""
         return len(self.encoders)
@@ -618,6 +628,11 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
     def __init__(self, encoders: Mapping[K, E]) -> None:
         super().__init__()
         self.encoders = encoders
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the encoder."""
+        # One more level of recursion than BaseEncoder.__repr__
+        return repr_object(self, fallback=repr_type, recursive=2)
 
     @overload
     def __getitem__(self, key: K) -> E:

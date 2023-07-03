@@ -327,7 +327,7 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
         column_encoders: Mapping[K, BaseEncoder] = NotImplemented,
         *,
         index_encoders: Mapping[K, BaseEncoder] = NotImplemented,
-    ):
+    ) -> None:
         super().__init__()
         self.column_encoders = (
             {} if column_encoders is NotImplemented else column_encoders
@@ -383,10 +383,6 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
         index_columns = data.columns.intersection(self.original_index_columns)
         data = data.set_index(index_columns.tolist())
         return data
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the encoder."""
-        return repr_mapping(self)
 
 
 class FrameIndexer(BaseEncoder):
@@ -832,10 +828,6 @@ class TensorEncoder(BaseEncoder):
 
         self.is_fitted = True
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"{self.__class__.__name__}()"
-
     def fit(self, data: PandasObject, /) -> None:
         ...
 
@@ -934,7 +926,7 @@ class ValueEncoder(BaseEncoder):
         return decoded
 
 
-class FrameAsDict(BaseEncoder):
+class FrameAsDict(Mapping[str, list[str]], BaseEncoder):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.
@@ -984,9 +976,17 @@ class FrameAsDict(BaseEncoder):
         self.encode_index = encode_index
         self.inferred_dtypes = {}
 
-    def __repr__(self, **kwargs: Any) -> str:
-        kwargs.update(wrapped=self)
-        return repr_mapping(self.groups, **kwargs)
+    # def __repr__(self) -> str:
+    #     return repr_mapping(self.groups, wrapped=self)
+
+    def __len__(self) -> int:
+        return len(self.groups)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.groups)
+
+    def __getitem__(self, key: str) -> list[str]:
+        return self.groups[key]
 
     def fit(self, data: DataFrame, /) -> None:
         index = data.index.to_frame()

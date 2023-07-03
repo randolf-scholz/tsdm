@@ -34,7 +34,7 @@ def test_combined_encoder(SplitID=(0, "train")):
     r"""Test complicated combined encoder."""
     task = KiwiTask()
     ts = task.dataset.timeseries.iloc[:20_000]  # use first 20_000 values only
-    VF = task.dataset.timeseries_description
+    descr = task.dataset.timeseries_description
     sampler = task.samplers[SplitID]
     generator = task.generators[SplitID]
     key = next(iter(sampler))
@@ -43,7 +43,7 @@ def test_combined_encoder(SplitID=(0, "train")):
 
     # Construct the encoder
     column_encoders: dict[str, BaseEncoder] = {}
-    for col, scale, lower, upper in VF[["scale", "lower", "upper"]].itertuples():
+    for col, scale, lower, upper in descr[["scale", "lower", "upper"]].itertuples():
         match scale:
             case "percent":
                 column_encoders[col] = (
@@ -111,7 +111,7 @@ def test_combined_encoder(SplitID=(0, "train")):
     decoded = encoder.decode(encoded)
     bounds = pd.concat([decoded.min(), decoded.max()], axis=1, keys=["lower", "upper"])
     for col, lower, upper in bounds.itertuples():
-        match VF.loc[col, "scale"]:
+        match descr.loc[col, "scale"]:
             case "percent":
                 assert lower == 0, "Lower bound violated"
                 assert upper == 100, "Upper bound violated"

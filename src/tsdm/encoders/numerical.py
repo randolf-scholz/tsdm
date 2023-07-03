@@ -354,12 +354,7 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         requires_fit: bool
 
         def __repr__(self) -> str:
-            r"""Pretty print."""
             return repr_namedtuple(self)
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_dataclass(self)
 
     @classmethod
     def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:
@@ -479,7 +474,6 @@ class LinearScaler(BaseEncoder[T, T]):
         axis: tuple[int, ...]
 
         def __repr__(self) -> str:
-            r"""Pretty print."""
             return repr_namedtuple(self)
 
     @property
@@ -579,7 +573,6 @@ class StandardScaler(BaseEncoder[T, T]):
         axis: Axes
 
         def __repr__(self) -> str:
-            r"""Pretty print."""
             return repr_namedtuple(self)
 
     @property
@@ -605,10 +598,6 @@ class StandardScaler(BaseEncoder[T, T]):
         self.axis = axis
         self.mean_learnable = mean is NotImplemented
         self.stdv_learnable = stdv is NotImplemented
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_dataclass(self)
 
     def __getitem__(self, item: int | slice | list[int]) -> Self:
         r"""Return a slice of the Standardizer."""
@@ -712,7 +701,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
         safe_computation: bool
 
         def __repr__(self) -> str:
-            r"""Pretty print."""
             return repr_namedtuple(self)
 
     @property
@@ -730,7 +718,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
     @property
     def requires_fit(self) -> bool:
         r"""Whether the scaler requires fitting."""
-        return self.xmin_learnable or self.xmax_learnable
+        return True
 
     def __init__(
         self,
@@ -741,6 +729,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         xmax: float | T = NotImplemented,
         axis: Axes = (),
         safe_computation: bool = True,
+        backend: str | None = None,
     ) -> None:
         super().__init__()
         self.xmin = cast(T, xmin)
@@ -753,15 +742,11 @@ class MinMaxScaler(BaseEncoder[T, T]):
         self.xmin_learnable = xmin is NotImplemented
         self.xmax_learnable = xmax is NotImplemented
 
-        if not self.requires_fit:
-            self.xbar: T = (self.xmax + self.xmin) / 2
-            self.ybar: T = (self.ymax + self.ymin) / 2
-            self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
-            self.switch_backend(get_backend(self.params))
-        else:
-            self.xbar = NotImplemented
-            self.ybar = NotImplemented
-            self.scale = NotImplemented
+        # set the backend
+        self.xbar = NotImplemented
+        self.ybar = NotImplemented
+        self.scale = NotImplemented
+        self.switch_backend(get_backend(self.params))
 
     def recompute_params(self):
         """Computes derived parameters from the base parameters."""
@@ -790,10 +775,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
         encoder._is_fitted = self._is_fitted
         return encoder
 
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_dataclass(self)
-
     def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the scaler."""
         self.selected_backend = backend
@@ -818,6 +799,12 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
         # switch the backend
         self.switch_backend(get_backend(data))
+
+        # skip fitting if the parameters are not learnable
+        if not (self.xmin_learnable or self.xmax_learnable):
+            self.xbar: T = (self.xmax + self.xmin) / 2
+            self.ybar: T = (self.ymax + self.ymin) / 2
+            self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
 
         # universal fitting procedure
         axes = invert_axes(len(data.shape), self.axis)
