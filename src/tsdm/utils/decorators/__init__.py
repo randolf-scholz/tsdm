@@ -15,6 +15,7 @@ __all__ = [
     # Functions
     "IterItems",
     "IterKeys",
+    "debug",
     "autojit",
     "decorator",
     "return_namedtuple",
@@ -36,6 +37,7 @@ from tsdm.utils.decorators._decorators import (
     IterItems,
     IterKeys,
     autojit,
+    debug,
     decorator,
     return_namedtuple,
     timefun,
@@ -55,6 +57,7 @@ DECORATORS: dict[str, Decorator] = {
     "IterItems": IterItems,
     "IterKeys": IterKeys,
     "decorator": decorator,
+    "debug": debug,
     "named_return": return_namedtuple,
     "timefun": timefun,
     "trace": trace,

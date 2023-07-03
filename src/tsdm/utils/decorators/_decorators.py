@@ -6,6 +6,7 @@ __all__ = [
     "ClassDecorator",
     # Functions
     "decorator",
+    "debug",
     # "sphinx_value",
     "lazy_torch_jit",
     "return_namedtuple",
@@ -38,6 +39,7 @@ from typing import (
     Concatenate,
     NamedTuple,
     Optional,
+    ParamSpec,
     Protocol,
     cast,
     overload,
@@ -53,7 +55,6 @@ from tsdm.types.variables import (
     any_var as T,
     class_var as Class,
     object_var as O,
-    parameter_spec as P,
     return_var_co as R,
     torch_module_var,
 )
@@ -61,6 +62,7 @@ from tsdm.utils.funcutils import rpartial
 
 __logger__ = logging.getLogger(__name__)
 
+P = ParamSpec("P")
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -375,6 +377,22 @@ def attribute(func: Callable[[O], R]) -> R:
             return self.payload
 
     return cast(R, _attribute(func))
+
+
+def debug(func: Callable[P, R]) -> Callable[P, R]:
+    """Print the function signature and return value."""
+
+    @wraps(func)
+    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        args_repr = [f"{type(a)}" for a in args]
+        kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
+        signature = ", ".join(args_repr + kwargs_repr)
+        print(f"Calling {func.__name__}({signature})")
+        value = func(*args, **kwargs)
+        # print(f"{func.__name__!r} returned {value!r}")
+        return value
+
+    return _wrapper
 
 
 @decorator
@@ -842,13 +860,11 @@ def recurse_on_builtin_container(
     func: Callable[[T], R],
     /,
     *,
-    nested: Nested[T],
     kind: type[T],
 ) -> Callable[[Nested[T]], Nested[R]]:
     r"""Apply function to nested iterables of a given kind.
 
     Args:
-        nested: Nested Data-Structure (Iterable, Mapping, ...)
         kind: The type of the leave nodes
         func: A function to apply to all leave Nodes
     """

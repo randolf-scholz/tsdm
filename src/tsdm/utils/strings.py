@@ -149,28 +149,61 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
     return identifier
 
 
+# def get_identifier_cls(cls: type, /, **_: Any) -> str:
+#     r"""Return the identifier of an object."""
+#     if is_dataclass(cls):
+#         identifier = "<dataclass>"
+#     elif issubclass(cls, NTuple):
+#         identifier = "<tuple>"
+#     elif issubclass(cls, Array | DataFrame | Series):
+#         identifier = "<array>"
+#     elif issubclass(cls, Mapping):
+#         identifier = "<mapping>"
+#     elif issubclass(cls, Sequence):
+#         identifier = "<sequence>"
+#     elif issubclass(cls, type):
+#         identifier = "<type>"
+#     elif issubclass(cls, FunctionType):
+#         identifier = "<function>"
+#     else:
+#         identifier = ""
+#     if cls in BUILTIN_TYPES:
+#         identifier = ""
+#     return identifier
+
+
 def repr_object(obj: Any, /, fallback: Callable[..., str] = repr, **kwargs: Any) -> str:
     r"""Return a string representation of an object.
 
     Special casing for a bunch of cases.
     """
-    # TODO: test if obj.__repr__ statisfies pprint protocol
-    # if accepts_varkwargs(obj.__repr__):
-    #     return obj.__repr__(**kwargs)
-    if isinstance(obj, str):
+    __logger__.debug("repr_object: %s, %s", type(obj), kwargs)
+
+    x = kwargs.get("wrapped", obj)
+    x = obj if x is None else obj
+
+    if isinstance(x, str):
+        __logger__.debug("repr_object: → str")
         return obj
-    if inspect.isclass(obj) or inspect.isbuiltin(obj):
+    if inspect.isclass(x) or inspect.isbuiltin(x):
+        __logger__.debug("repr_object: → type")
         return repr(obj)
-    if is_dataclass(obj):
+    if is_dataclass(x):
+        __logger__.debug("repr_object: → dataclass")
         return repr_dataclass(obj, **kwargs)
-    if isinstance(obj, Array | Tensor | Series | DataFrame | Index):
+    if isinstance(x, Array | Tensor | Series | DataFrame | Index):
+        __logger__.debug("repr_object: → array")
         return repr_array(obj, **kwargs)
-    if isinstance(obj, Mapping):  # type: ignore[unreachable]
+    if isinstance(x, Mapping):  # type: ignore[unreachable]
+        __logger__.debug("repr_object: → mapping")
         return repr_mapping(obj, **kwargs)
-    if isinstance(obj, NTuple):
+    if isinstance(x, NTuple):
+        __logger__.debug("repr_object: → namedtuple")
         return repr_namedtuple(obj, **kwargs)
-    if isinstance(obj, Sequence):
+    if isinstance(x, Sequence):
+        __logger__.debug("repr_object: → sequence")
         return repr_sequence(obj, **kwargs)
+    __logger__.debug("repr_object: → fallback %s", fallback)
     return fallback(obj)
 
 
@@ -226,11 +259,9 @@ def repr_mapping(
                 key2: repr_func(value2)
                 key3: repr_func(value3)
     """
+    # validate object
     if not isinstance(obj, Mapping):
         raise TypeError(f"Expected Mapping, got {type(obj)}.")
-
-    if repr_fun is NotImplemented:
-        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
 
     # set linebreaks
     if linebreaks is None:
@@ -245,10 +276,14 @@ def repr_mapping(
         else:
             maxitems = MAXITEMS_INLINE
 
+    # set separators
     br = "\n" if linebreaks else ""
     # key_sep = ": "
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
+
+    # set brackets
+    left, right = "{", "}"
 
     # set max_key_length
     if align and linebreaks:
@@ -256,6 +291,7 @@ def repr_mapping(
     else:
         max_key_length = 0
 
+    # set type
     self = obj if wrapped is None else wrapped
     cls = type(self)
 
@@ -290,41 +326,23 @@ def repr_mapping(
     # else:
     #     to_string = partial(repr_short, indent=indent + max_key_length)
 
-    r = recursive if isinstance(recursive, bool) else recursive - 1 or False
+    # create callable to stringify subitems
+    if repr_fun is NotImplemented:
+        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+    recurse = recursive if isinstance(recursive, bool) else recursive - 1 or False
+
     to_string = partial(
         repr_fun,
         align=align,
-        indent=indent + max_key_length,
-        padding=padding + padding,
-        recursive=r,
+        indent=indent + padding,  # + max_key_length,
+        padding=padding,
+        recursive=recurse,
         # repr_fun=repr_fun,
+        # wrapped=wrapped,
     )
 
-    items = [(str(key), to_string(value)) for key, value in obj.items()]
-
-    # Assemble the string
-    string = f"{title}{identifier}" + "(" + br
-    if len(obj) <= maxitems:
-        string += f"{sep}{br}".join(
-            f"{pad}{key:<{max_key_length}}: {value}" for key, value in items
-        )
-    else:
-        string += "".join(
-            f"{pad}{key:<{max_key_length}}: {value}{sep}{br}"
-            for key, value in items[: maxitems // 2]
-        )
-        string += f"{pad}...\n"
-        string += f"{sep}{br}".join(
-            f"{pad}{key:<{max_key_length}}: {value}"
-            for key, value in items[-maxitems // 2 :]
-        )
-    string += br + ")"
-
-    # add indent
-    string = string.replace("\n", "\n" + " " * indent)
-
     __logger__.debug(
-        "config=%s",
+        "repr_mapping: %s",
         {
             "object": type(obj).__name__,
             "size": len(obj),
@@ -337,8 +355,40 @@ def repr_mapping(
             "recursive": recursive,
             "repr_fun": repr_fun,
             "title": title,
+            "wrapped": type(wrapped),
         },
     )
+
+    # precompute the items
+    head_half = maxitems // 2
+    tail_half = max(len(obj) - head_half, head_half)
+    head_items = [
+        f"{str(key):<{max_key_length}}: {to_string(value)}"
+        for i, (key, value) in enumerate(obj.items())
+        if i < head_half
+    ]
+    tail_items = [
+        f"{str(key):<{max_key_length}}: {to_string(value)}"
+        for i, (key, value) in enumerate(obj.items())
+        if i >= tail_half
+    ]
+
+    # assemble the string
+    string = f"{title}{identifier}{left}{br}"
+    if head_items:
+        string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
+    if len(obj) > maxitems:
+        string += f"{sep}{br}{pad}..."
+    if tail_items:
+        string += f"{sep}{br}"
+        string += f"{sep}{br}".join(f"{pad}{item}" for item in tail_items)
+    if linebreaks:  # trailing comma
+        string += f"{sep}{br}"
+    string += f"{br}{right}"
+
+    # add indent
+    string = string.replace("\n", "\n" + " " * indent)
+
     return string
 
 
@@ -382,11 +432,9 @@ def repr_sequence(
             ),
         )
     """
+    # validate object
     if not isinstance(obj, Sequence):
         raise TypeError(f"Expected Sequence, got {type(obj)}.")
-
-    if repr_fun is NotImplemented:
-        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
 
     # set linebreaks
     if linebreaks is None:
@@ -401,11 +449,12 @@ def repr_sequence(
         else:
             maxitems = MAXITEMS_INLINE
 
+    # set separators
     br = "\n" if linebreaks else ""
     sep = "," if linebreaks else ", "
     pad = " " * padding * linebreaks
 
-    # determine brackets
+    # set brackets
     if isinstance(obj, list):
         left, right = "[", "]"
     elif isinstance(obj, set):
@@ -413,8 +462,9 @@ def repr_sequence(
     elif isinstance(obj, tuple):
         left, right = "(", ")"
     else:
-        left, right = "(", ")"
+        left, right = "[", "]"
 
+    # set type
     self = obj if wrapped is None else wrapped
     cls = type(self)
 
@@ -429,55 +479,23 @@ def repr_sequence(
     if identifier is None:
         identifier = get_identifier(self) * bool(recursive)
 
-    # if recursive:
-    #     if repr_fun not in RECURSIVE_REPR_FUNS:
-    #         raise ValueError("Must use repr_short for recursive=True.")
-    #
-    #     to_string = partial(
-    #         repr_fun,
-    #         align=align,
-    #         indent=indent + pad,
-    #         padding=padding,
-    #         recursive=recursive if isinstance(recursive, bool) else recursive - 1,
-    #         repr_fun=repr_fun,
-    #     )
-    #
-    #     # def to_string(x: Any) -> str:
-    #     #     return repr_fun(x).replace("\n", br + pad)
-    #
-    # else:
-    #     to_string = partial(repr_short, indent=indent + pad)
+    # create callable to stringify subitems
+    if repr_fun is NotImplemented:
+        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+    recurse = recursive if isinstance(recursive, bool) else recursive - 1 or False
 
     to_string = partial(
         repr_fun,
         align=align,
         indent=indent + padding,
         padding=padding,
-        recursive=recursive if isinstance(recursive, bool) else recursive - 1 or False,
+        recursive=recurse,
         # repr_fun=repr_fun,
-        wrapped=wrapped,
+        # wrapped=None,
     )
 
-    # Assemble the string
-    string = f"{title}{identifier}" + left + br
-    if len(obj) <= maxitems:
-        string += f"{sep}{br}".join(f"{pad}{to_string(value)}" for value in obj)
-    else:
-        string += "".join(
-            f"{pad}{to_string(value)}{sep}{br}" for value in obj[: maxitems // 2]
-        )
-        string += f"{pad}...{sep}" + br
-        string += f"{sep}{br}".join(
-            f"{pad}{to_string(value)}" for value in obj[-maxitems // 2 :]
-        )
-    # string = string[: -len(sep)]
-    string += br + right
-
-    # add indent
-    string = string.replace("\n", "\n" + " " * indent)
-
     __logger__.debug(
-        "config=%s",
+        "repr_sequence: %s",
         {
             "object": type(obj).__name__,
             "size": len(obj),
@@ -490,8 +508,33 @@ def repr_sequence(
             "recursive": recursive,
             "repr_fun": repr_fun,
             "title": title,
+            "wrapped": type(wrapped),
         },
     )
+
+    # precompute the items
+    # If len(obj) < maxitems//2, then tail_items is empty.
+    head_half = maxitems // 2
+    tail_half = max(len(obj) - head_half, head_half)
+    head_items = [to_string(val) for val in obj[:head_half]]
+    tail_items = [to_string(val) for val in obj[tail_half:]]
+
+    # assemble the string
+    string = f"{title}{identifier}{left}{br}"
+    if head_items:
+        string += f"{sep}{br}".join(f"{pad}{item}" for item in head_items)
+    if len(obj) > maxitems:
+        string += f"{sep}{br}{pad}..."
+    if tail_items:
+        string += f"{sep}{br}"
+        string += f"{sep}{br}".join(f"{pad}{item}" for item in tail_items)
+    if linebreaks:  # trailing comma
+        string += f"{sep}{br}"
+    string += f"{br}{right}"
+
+    # add indent
+    string = string.replace("\n", "\n" + " " * indent)
+
     return string
 
 
@@ -643,6 +686,14 @@ def repr_type(
     **_: Any,
 ) -> str:
     r"""Return a string representation using an object's type."""
+    __logger__.debug(
+        "repr_type: %s, identifier=%s, recursive=%s, %s",
+        type(obj),
+        identifier,
+        recursive,
+        _,
+    )
+
     if isinstance(obj, str):
         return obj
     if inspect.isclass(obj) or inspect.isbuiltin(obj):
@@ -712,7 +763,7 @@ def repr_dtype(
     return str(obj)
 
 
-RECURSIVE_REPR_FUNS = [
+RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
     repr_object,
     repr_mapping,
     repr_sequence,
