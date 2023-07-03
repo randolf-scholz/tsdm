@@ -77,7 +77,7 @@ def test_combined_encoder(SplitID=(0, "train")):
             dtypes={"T": "float32", "X": "float32"},
             encode_index=True,
         )
-        @ StandardScaler()
+        @ StandardScaler(axis=-1)
         @ FastFrameEncoder(
             column_encoders=column_encoders,
             index_encoders={"measurement_time": MinMaxScaler() @ TimeDeltaEncoder()},

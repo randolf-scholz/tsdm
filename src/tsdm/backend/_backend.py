@@ -15,7 +15,7 @@ from types import EllipsisType, NotImplementedType
 from typing import Generic, Literal, ParamSpec, TypeAlias, cast
 
 import numpy
-import numpy as np
+import pandas
 import torch
 from numpy import ndarray
 from pandas import DataFrame, Series
@@ -104,26 +104,32 @@ class Kernels:
         "torch": torch.clip,
     }
 
+    isnan: Mapping[BackendID, SelfMapProto] = {
+        "numpy": numpy.isnan,
+        "pandas": pandas.isna,
+        "torch": torch.isnan,
+    }
+
     nanmin: Mapping[BackendID, ContractionProto] = {
-        "numpy": np.nanmin,
+        "numpy": numpy.nanmin,
         "pandas": pandas_nanmin,
         "torch": torch_nanmin,
     }
 
     nanmax: Mapping[BackendID, ContractionProto] = {
-        "numpy": np.nanmax,
+        "numpy": numpy.nanmax,
         "pandas": pandas_nanmax,
         "torch": torch_nanmax,
     }
 
     nanmean: Mapping[BackendID, ContractionProto] = {
-        "numpy": np.nanmean,
+        "numpy": numpy.nanmean,
         "pandas": pandas_nanmean,
         "torch": torch.nanmean,  # type: ignore[dict-item]
     }
 
     nanstd: Mapping[BackendID, ContractionProto] = {
-        "numpy": np.nanstd,
+        "numpy": numpy.nanstd,
         "pandas": pandas_nanstd,
         "torch": torch_nanstd,
     }
@@ -166,6 +172,7 @@ class Backend(Generic[T]):
 
     # KERNELS
     clip: ClipProto[T]
+    isnan: SelfMapProto[T]
     where: WhereProto[T]
 
     nanmax: ContractionProto[T]
@@ -185,6 +192,7 @@ class Backend(Generic[T]):
 
         # select the kernels
         self.clip = Kernels.clip[self.selected_backend]
+        self.isnan = Kernels.isnan[self.selected_backend]
         self.where = Kernels.where[self.selected_backend]
 
         # contractions

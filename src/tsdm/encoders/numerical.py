@@ -419,27 +419,39 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         )
 
         # Create lower comparison function
-        self.lower_mask: Callable[[T], T] = (
+        self.lower_satisfied: Callable[[T], T] = (
             self.backend.true_like
             if self.lower_bound is None
-            else (lambda x: x >= self.lower_bound)
+            else self._ge
             if self.lower_included
-            else (lambda x: x > self.lower_bound)
+            else self._gt
         )
 
         # Create upper comparison function
-        self.upper_mask: Callable[[T], T] = (
+        self.upper_satisfied: Callable[[T], T] = (
             self.backend.true_like
             if self.upper_bound is None
-            else (lambda x: x <= self.upper_bound)
+            else self._le
             if self.upper_included
-            else (lambda x: x < self.upper_bound)
+            else self._lt
         )
+
+    def _ge(self, x: T) -> T:
+        return (x >= self.lower_bound) | self.backend.isnan(x)
+
+    def _gt(self, x: T) -> T:
+        return (x > self.lower_bound) | self.backend.isnan(x)
+
+    def _le(self, x: T) -> T:
+        return (x <= self.upper_bound) | self.backend.isnan(x)
+
+    def _lt(self, x: T) -> T:
+        return (x < self.upper_bound) | self.backend.isnan(x)
 
     def encode(self, data: T, /) -> T:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
-        data = self.backend.where(self.lower_mask(data), data, self.lower_value)
-        data = self.backend.where(self.upper_mask(data), data, self.upper_value)
+        data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
+        data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
     def decode(self, data: T, /) -> T:
