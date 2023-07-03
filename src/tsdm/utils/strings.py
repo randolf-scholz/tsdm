@@ -130,7 +130,7 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
     r"""Return the identifier of an object."""
     if is_dataclass(obj):
         identifier = "<dataclass>"
-    elif isinstance(obj, NTuple):
+    elif isinstance(obj, tuple):
         identifier = "<tuple>"
     elif isinstance(obj, Array | DataFrame | Series):
         identifier = "<array>"

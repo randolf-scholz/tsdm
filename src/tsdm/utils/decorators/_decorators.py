@@ -51,6 +51,7 @@ from typing_extensions import Self
 from tsdm.config import CONFIG
 from tsdm.types.abc import CollectionType
 from tsdm.types.aliases import Nested
+from tsdm.types.protocols import NTuple
 from tsdm.types.variables import (
     any_var as T,
     class_var as Class,
@@ -819,7 +820,7 @@ def return_namedtuple(
     *,
     name: Optional[str] = None,
     field_names: Optional[Sequence[str]] = None,
-) -> Callable[P, tuple]:
+) -> Callable[P, NTuple]:
     """Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
 
@@ -846,12 +847,11 @@ def return_namedtuple(
         )
 
     # create namedtuple
-    tuple_type: type[tuple] = NamedTuple(name, zip(field_names, type_hints))  # type: ignore[misc]
+    tuple_type: type[NTuple] = NamedTuple(name, zip(field_names, type_hints))  # type: ignore[misc]
 
     @wraps(func)
-    def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> tuple:
-        result = func(*func_args, **func_kwargs)
-        return tuple_type(*result)
+    def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> NTuple:
+        return tuple_type(*func(*func_args, **func_kwargs))
 
     return _wrapper
 

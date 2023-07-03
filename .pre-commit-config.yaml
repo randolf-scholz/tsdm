@@ -91,7 +91,7 @@ repos:
         description: " Run `black` on python code blocks in documentation files "
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.274
+    rev: v0.0.275
     hooks:
       - id: ruff
         files: (^src/|^tests/)

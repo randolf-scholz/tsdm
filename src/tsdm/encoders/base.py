@@ -399,7 +399,7 @@ def chain_encoders(*encoders: E, simplify: Literal[False]) -> ChainedEncoder[E]:
 
 def chain_encoders(  # type: ignore[misc]
     *encoders: E, simplify: bool = True
-) -> IdentityEncoder | E | ChainedEncoder[E]:
+) -> Encoder:
     r"""Chain encoders."""
     if len(encoders) == 0 and simplify:
         return IdentityEncoder()
@@ -431,7 +431,7 @@ def pow_encoder(
 
 def pow_encoder(
     encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
-) -> IdentityEncoder | E | ChainedEncoder[E]:
+) -> Encoder:
     r"""Apply encoder n times."""
     encoder = encoder.simplify() if simplify else encoder
     encoders = [(deepcopy(encoder) if copy else encoder) for _ in range(n)]
@@ -548,13 +548,6 @@ def direct_sum_encoders(e: E, /, *, simplify: Literal[True] = True) -> E:
 
 @overload
 def direct_sum_encoders(
-    e1: E, e2: E, /, *encoders: E, simplify: Literal[True] = True
-) -> ProductEncoder[E]:
-    ...
-
-
-@overload
-def direct_sum_encoders(
     e1: E, e2: E, /, *encoders: E, simplify: Literal[False]
 ) -> ProductEncoder[E]:
     ...
@@ -562,7 +555,7 @@ def direct_sum_encoders(
 
 def direct_sum_encoders(  # type: ignore[misc]
     *encoders: E, simplify: bool = True, copy: bool = True
-) -> IdentityEncoder | E | ProductEncoder[E]:
+) -> Encoder:
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
@@ -597,7 +590,7 @@ def duplicate_encoder(
 
 def duplicate_encoder(
     encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
-) -> IdentityEncoder | E | ProductEncoder[E]:
+) -> Encoder:
     r"""Duplicate an encoder."""
     clone = lambda x: deepcopy(x) if copy else x  # noqa: E731
     encoder = encoder.simplify() if simplify else encoder
