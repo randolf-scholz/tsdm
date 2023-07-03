@@ -433,9 +433,8 @@ def pow_encoder(
     encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
 ) -> IdentityEncoder | E | ChainedEncoder[E]:
     r"""Apply encoder n times."""
-    clone = lambda x: deepcopy(x) if copy else x  # noqa: E731
     encoder = encoder.simplify() if simplify else encoder
-    encoders = [clone(encoder) for _ in range(n)]
+    encoders = [(deepcopy(encoder) if copy else encoder) for _ in range(n)]
 
     if n == -1 and simplify:
         return ~encoders[0]

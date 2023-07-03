@@ -754,10 +754,17 @@ class MinMaxScaler(BaseEncoder[T, T]):
         self.xmin_learnable = xmin is NotImplemented
         self.xmax_learnable = xmax is NotImplemented
 
-        # set the backend
-        self.xbar = NotImplemented
-        self.ybar = NotImplemented
-        self.scale = NotImplemented
+        # set derived parameters
+        if not (self.xmin_learnable or self.xmax_learnable):
+            self.xbar: T = (self.xmax + self.xmin) / 2
+            self.ybar: T = (self.ymax + self.ymin) / 2
+            self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+        else:
+            self.xbar = NotImplemented
+            self.ybar = NotImplemented
+            self.scale = NotImplemented
+
+        # set initial backend
         self.switch_backend(get_backend(self.params))
 
     def recompute_params(self):
@@ -812,11 +819,9 @@ class MinMaxScaler(BaseEncoder[T, T]):
         # switch the backend
         self.switch_backend(get_backend(data))
 
-        # skip fitting if the parameters are not learnable
+        # skip if the parameters are not learnable
         if not (self.xmin_learnable or self.xmax_learnable):
-            self.xbar: T = (self.xmax + self.xmin) / 2
-            self.ybar: T = (self.ymax + self.ymin) / 2
-            self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
+            return
 
         # universal fitting procedure
         axes = invert_axes(len(data.shape), self.axis)
@@ -1064,3 +1069,7 @@ class TensorConcatenator(BaseEncoder):
     def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
         result = torch.split(data, self.lengths, dim=self.axis)
         return tuple(x.squeeze() for x in result)
+
+
+Standardizer = StandardScaler  # Do not remove! For old pickle files
+"""Alias for `StandardScaler`"""
