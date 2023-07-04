@@ -145,7 +145,7 @@ __all__ = [
     "PositionalEncoder",
     "ProductEncoder",
     "SocialTimeEncoder",
-    "Standardizer",
+    "StandardScaler",
     "TensorConcatenator",
     "TensorEncoder",
     "TensorSplitter",
@@ -155,6 +155,9 @@ __all__ = [
     "TripletDecoder",
     "TripletEncoder",
     "ValueEncoder",
+    # Aliases
+    "Frame2TensorDict",
+    "Standardizer",
 ]
 
 from sklearn import preprocessing as sk_preprocessing
@@ -175,6 +178,7 @@ from tsdm.encoders.base import (
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
     FastFrameEncoder,
+    Frame2TensorDict,
     FrameAsDict,
     FrameAsTuple,
     FrameEncoder,
@@ -198,6 +202,7 @@ from tsdm.encoders.numerical import (
     LogitEncoder,
     MinMaxScaler,
     Standardizer,
+    StandardScaler,
     TensorConcatenator,
     TensorSplitter,
 )
@@ -256,7 +261,7 @@ MODULAR_ENCODERS: dict[str, type[Encoder]] = {
     "PeriodicSocialTimeEncoder": PeriodicSocialTimeEncoder,
     "ProductEncoder": ProductEncoder,
     "SocialTimeEncoder": SocialTimeEncoder,
-    "Standardizer": Standardizer,
+    "StandardScaler": StandardScaler,
     "TensorConcatenator": TensorConcatenator,
     "TensorEncoder": TensorEncoder,
     "TensorSplitter": TensorSplitter,

@@ -4,7 +4,8 @@
 
 
 # top level folders starting with underscore
-_*/
+**/_*/
+!docs/_static/
 
 # jupyterlab_lsp
 .virtual_documents
@@ -615,25 +616,6 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
-
-#######################################################################################
-# VSCode GitIgnore                                                                    #
-# https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore     #
-#######################################################################################
-
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-
-# Local History for Visual Studio Code
-.history/
-
-# Built Visual Studio Code Extensions
-*.vsix
-
 
 #######################################################################################
 # VSCode GitIgnore                                                                    #

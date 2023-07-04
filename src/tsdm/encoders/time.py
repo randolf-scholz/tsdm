@@ -12,7 +12,17 @@ __all__ = [
     "TimeSlicer",
 ]
 
-from typing import Any, Final, Hashable, Literal, Optional, Sequence, cast, overload
+from typing import (
+    Any,
+    ClassVar,
+    Final,
+    Hashable,
+    Literal,
+    Optional,
+    Sequence,
+    cast,
+    overload,
+)
 
 import numpy as np
 import pandas as pd
@@ -32,6 +42,8 @@ class Time2Float(BaseEncoder):
 
     By default, the data is mapped onto the unit interval $[0,1]$.
     """
+
+    requires_fit: ClassVar[bool] = True
 
     original_dtype: np.dtype
     offset: Any
@@ -106,6 +118,8 @@ class Time2Float(BaseEncoder):
 class DateTimeEncoder(BaseEncoder):
     r"""Encode DateTime as Float."""
 
+    requires_fit: ClassVar[bool] = True
+
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
     base_freq: str = "s"
@@ -161,12 +175,13 @@ class DateTimeEncoder(BaseEncoder):
 class TimeDeltaEncoder(BaseEncoder):
     r"""Encode TimeDelta as Float."""
 
-    requires_fit: bool = False
+    requires_fit: ClassVar[bool] = True
 
     unit: str = "s"
     r"""The base frequency to convert timedeltas to."""
     base_freq: str = "s"
     r"""The frequency the decoding should be rounded to."""
+    original_dtype: Any
 
     def __init__(self, *, unit: str = "s", base_freq: str = "s") -> None:
         super().__init__()
@@ -175,7 +190,7 @@ class TimeDeltaEncoder(BaseEncoder):
         self.timedelta = Timedelta(1, unit=self.unit)
 
     def encode(self, data: PandasObject, /) -> PandasObject:
-        return data / self.timedelta
+        return data.astype("timedelta64[ns]") / self.timedelta
 
     def decode(self, data: PandasObject, /) -> PandasObject:
         result = data * self.timedelta
@@ -188,6 +203,8 @@ class TimeDeltaEncoder(BaseEncoder):
 
 class PeriodicEncoder(BaseEncoder):
     r"""Encode periodic data as sin/cos waves."""
+
+    requires_fit: ClassVar[bool] = True
 
     period: float
     freq: float
@@ -227,6 +244,8 @@ class PeriodicEncoder(BaseEncoder):
 
 class SocialTimeEncoder(BaseEncoder):
     r"""Social time encoding."""
+
+    requires_fit: ClassVar[bool] = True
 
     level_codes = {
         "Y": "year",
@@ -280,6 +299,8 @@ class SocialTimeEncoder(BaseEncoder):
 class PeriodicSocialTimeEncoder(SocialTimeEncoder):
     r"""Combines SocialTimeEncoder with PeriodicEncoder using the right frequencies."""
 
+    requires_fit: ClassVar[bool] = True
+
     frequencies = {
         "year": 1,
         "month": 12,
@@ -313,7 +334,7 @@ class PositionalEncoder(BaseEncoder):
         x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
     """
 
-    requires_fit: bool = False
+    requires_fit: ClassVar[bool] = False
 
     # Constants
     num_dim: Final[int]
@@ -349,7 +370,7 @@ class PositionalEncoder(BaseEncoder):
 class TimeSlicer(BaseEncoder):
     r"""Reorganizes the data by slicing."""
 
-    requires_fit: bool = False
+    requires_fit: ClassVar[bool] = False
 
     horizon: Any
     r"""The horizon of the data."""

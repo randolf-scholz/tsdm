@@ -28,6 +28,7 @@ from typing import Final, Protocol, runtime_checkable
 import torch
 from torch import Tensor, jit, nn
 
+from tsdm.types.aliases import Axes
 from tsdm.utils.decorators import autojit
 
 
@@ -83,7 +84,7 @@ class WeightedLoss(BaseLoss, metaclass=ABCMeta):
         *,
         learnable: bool = False,
         normalize: bool = False,
-        axes: None | int | tuple[int, ...] = None,
+        axes: Axes = None,
     ) -> None:
         r"""Initialize the loss function."""
         w = torch.as_tensor(weight, dtype=torch.float32)
@@ -463,7 +464,7 @@ class WLP(WeightedLoss):
         p: float = 2.0,
         learnable: bool = False,
         normalize: bool = False,
-        axes: None | int | tuple[int, ...] = None,
+        axes: Axes = None,
     ):
         super().__init__(weight, normalize=normalize, learnable=learnable, axes=axes)
         self.p = p

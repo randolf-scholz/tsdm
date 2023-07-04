@@ -12,8 +12,8 @@ from tsdm.metrics import MAE, MSE, RMSE, BaseLoss, TimeSeriesMSE
 BATCH_SHAPES = [
     (),
     (1,),
-    (64,),
-    (4, 16),
+    (128,),
+    (8, 16),
 ]
 CHANNEL_SHAPES = [
     (64,),

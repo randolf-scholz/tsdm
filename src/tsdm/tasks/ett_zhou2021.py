@@ -22,7 +22,7 @@ from tsdm.encoders import (
     FloatEncoder,
     FrameEncoder,
     MinMaxScaler,
-    Standardizer,
+    StandardScaler,
     TensorEncoder,
 )
 from tsdm.random.samplers import SequenceSampler
@@ -137,7 +137,7 @@ class ETT_Zhou2021(OldBaseTask):
         self.preprocessor = ChainedEncoder(
             TensorEncoder(),
             FrameEncoder(
-                column_encoders=Standardizer() @ FloatEncoder(),
+                column_encoders=StandardScaler() @ FloatEncoder(),
                 index_encoders=MinMaxScaler() @ DateTimeEncoder(),
             ),
         )

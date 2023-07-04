@@ -35,7 +35,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
 from tsdm.types.aliases import PathLike
-from tsdm.types.protocols import Table
+from tsdm.types.protocols import SupportsShape
 
 __logger__ = logging.getLogger(__name__)
 
@@ -51,6 +51,7 @@ def to_base(n: int, b: int) -> list[int]:
     References:
         - https://stackoverflow.com/a/28666223/9318372
     """
+    assert n >= 0, "n must be non-negative!"
     digits = []
     while n:
         n, d = divmod(n, b)
@@ -59,9 +60,16 @@ def to_base(n: int, b: int) -> list[int]:
 
 
 def to_alphanumeric(n: int) -> str:
-    r"""Convert integer to alphanumeric code."""
+    r"""Convert integer to alphanumeric code.
+
+    NOTE: We assume n is an int64. We first convert it to uint64, then to base 36.
+    NOTE: doubling the alphabet size generally reduces the length of the code by
+    a factor of 1 + 1/log₂B, where B is the alphabet size.
+    """
+    # int64  range: [-2⁶³, 2⁶³-1] = [-9,223,372,036,854,775,808, +9,223,372,036,854,775,807]
+    # uint64 range: [0,    2⁶⁴-1] = [0, 18446744073709551615]
     chars = string.ascii_uppercase + string.digits
-    digits = to_base(n, len(chars))
+    digits = to_base(n + 2**63, len(chars))
     return "".join(chars[i] for i in digits)
 
 
@@ -434,7 +442,7 @@ def validate_object_hash(
                 logger=logger,
                 **hash_kwargs,
             )
-        case Table():
+        case SupportsShape():
             validate_table_hash(
                 obj,
                 reference,
@@ -524,7 +532,7 @@ def validate_object_hash(
 
 
 def validate_table_schema(
-    table: Table,
+    table: SupportsShape,
     /,
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,

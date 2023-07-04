@@ -43,7 +43,7 @@ repos:
       - id: requirements-txt-fixer
         description: "sorts entries in requirements.txt"
       - id: trailing-whitespace
-        description: "trims trailing whitespace.."
+        description: "trims trailing whitespace."
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.10.0"
     hooks:
@@ -55,8 +55,6 @@ repos:
         description: "Enforce that `eval` is not used."
       - id: python-no-log-warn
         description: "Enforce that `logging.warn` is not used."
-      - id: python-use-type-annotations
-        description: "Enforce that type annotations are used."
       - id: rst-directive-colons
         description: "Enforce that RST directives have colons."
       - id: rst-inline-touching-normal
@@ -85,12 +83,18 @@ repos:
       - id: black-jupyter
   # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.13.0
+    rev: 1.14.0
     hooks:
       - id: blacken-docs
         files: (^src/|^tests/)
         types: [python]
         description: " Run `black` on python code blocks in documentation files "
+  # ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.275
+    hooks:
+      - id: ruff
+        files: (^src/|^tests/)
   # flake8
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
@@ -105,12 +109,13 @@ repos:
           - flake8-docstrings # wraps pydocstyle
           - flake8-nb
           - flake8-pyi
+          - flake8-pyproject
           - flake8-rst
           - flake8-rst-docstrings
   # yesqa
   # TODO: remove if https://github.com/PyCQA/flake8/issues/603 is fixed
   - repo: https://github.com/asottile/yesqa
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
       - id: yesqa
         files: (^src/|^tests/)
@@ -139,6 +144,7 @@ repos:
         name: jupyter-nb-clear-output
         description: Clear output cells in Jupyter notebooks
         files: (^dev/|^experiments/)
+        stages: [commit]
         types: [jupyter]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace

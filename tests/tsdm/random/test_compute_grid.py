@@ -2,19 +2,19 @@
 r"""Test compute_grid function."""
 
 import logging
-from datetime import datetime as py_dt
-from datetime import timedelta as py_td
+from datetime import datetime as py_dt, timedelta as py_td
 from typing import Generic
 
 import pandas as pd
-from numpy import datetime64 as np_dt
-from numpy import float32 as np_float
-from numpy import int32 as np_int
-from numpy import timedelta64 as np_td
-from pandas import Timedelta as pd_td
-from pandas import Timestamp as pd_dt
+from numpy import (
+    datetime64 as np_dt,
+    float32 as np_float,
+    int32 as np_int,
+    timedelta64 as np_td,
+)
+from pandas import Timedelta as pd_td, Timestamp as pd_dt
 from pytest import mark
-from typing_extensions import NamedTuple  # FIXME: remove with python 3.11
+from typing_extensions import NamedTuple
 
 from tsdm.random.samplers import compute_grid
 from tsdm.types.time import DTVar, TDVar

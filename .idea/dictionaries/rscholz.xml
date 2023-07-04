@@ -267,6 +267,7 @@
       <w>nrmse</w>
       <w>nrows</w>
       <w>numdims</w>
+      <w>numel</w>
       <w>nunique</w>
       <w>objname</w>
       <w>objtype</w>
@@ -373,6 +374,7 @@
       <w>stdvs</w>
       <w>subblock</w>
       <w>subblocks</w>
+      <w>subitems</w>
       <w>subkey</w>
       <w>subsampler</w>
       <w>subsamplers</w>
@@ -471,6 +473,8 @@
       <w>ymin</w>
       <w>ytick</w>
       <w>yuyang</w>
+      <w>yₘᵢₙ</w>
+      <w>yₘₐₓ</w>
     </words>
   </dictionary>
 </component>

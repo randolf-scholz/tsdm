@@ -4,15 +4,53 @@ r"""Encoders that work with torch tensors."""
 __all__ = [
     # Classes
     "Time2Vec",
+    "PositionalEncoding",
+    # Encoders
+    "Time2VecEncoder",
     "PositionalEncoder",
 ]
 
-from typing import Final
+from typing import ClassVar, Final
 
 import torch
 from torch import Tensor, jit, nn
 
+from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.decorators import autojit
+
+# TODO: Add TensorEncoder
+
+
+class TensorEncoder(BaseEncoder):
+    """Encodes nested data as tensors."""
+
+    requires_fit: ClassVar[bool] = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def encode(self, data):
+        match data:
+            case Tensor():
+                return data
+            case list():
+                return [self.encode(d) for d in data]
+            case tuple():
+                return tuple(self.encode(d) for d in data)
+            case dict():
+                return {k: self.encode(v) for k, v in data.items()}
+            case set():
+                return {self.encode(d) for d in data}
+            case frozenset():
+                return frozenset({self.encode(d) for d in data})
+            case _:
+                try:
+                    return torch.tensor(data)
+                except Exception as e:
+                    raise TypeError(f"Cannot encode data of type {type(data)}") from e
+
+    def decode(self, data):
+        return data.numpy()
 
 
 @autojit
@@ -51,25 +89,35 @@ class Time2Vec(nn.Module):
             raise ValueError(f"Unknown activation function: {act}")
 
     @jit.export
-    def forward(self, t: Tensor) -> Tensor:
-        r""".. Signature:: ``... -> (..., d)``."""
+    def encode(self, t: Tensor) -> Tensor:
+        r""".. Signature:: ``(..., d) -> ...``."""
         z = torch.einsum("..., k -> ...k", t, self.freq) + self.phase
         z = self.act(z)
         return torch.cat([t.unsqueeze(dim=-1), z], dim=-1)
 
     @jit.export
-    def inverse(self, z: Tensor) -> Tensor:
+    def decode(self, z: Tensor) -> Tensor:
         r""".. Signature:: ``(..., d) -> ...``."""
         return z[..., 0]
 
+    @jit.export
+    def forward(self, t: Tensor) -> Tensor:
+        r""".. Signature:: ``... -> (..., d)``."""
+        return self.encode(t)
+
+    @jit.export
+    def inverse(self, z: Tensor) -> Tensor:
+        r""".. Signature:: ``(..., d) -> ...``."""
+        return self.decode(z)
+
 
 @autojit
-class PositionalEncoder(nn.Module):
+class PositionalEncoding(nn.Module):
     r"""Positional encoding.
 
     .. math::
-        x_{2 k}(t)   &:=\sin \left(\frac{t}{t^{2 k / τ}}\right) \\
-        x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
+        x_{2k}(t)   &≔\sin \left(\frac{t}{t^{2k/τ}}\right) \\
+        x_{2k+1}(t) &≔\cos \left(\frac{t}{t^{2k/τ}}\right)
     """
 
     HP: dict = {
@@ -100,15 +148,57 @@ class PositionalEncoder(nn.Module):
         self.register_buffer("scales", scales)
 
     @jit.export
+    def encode(self, t: Tensor) -> Tensor:
+        r""".. Signature:: ``(..., d) -> ...``."""
+        z = torch.einsum("..., d -> ...d", t, self.scales)
+        return torch.cat([torch.sin(z), torch.cos(z)], dim=-1)
+
+    @jit.export
+    def decode(self, z: Tensor) -> Tensor:
+        r""".. Signature:: ``(..., 2d) -> ...``."""
+        return torch.asin(z[..., 0])
+
+    @jit.export
     def forward(self, t: Tensor) -> Tensor:
         r""".. Signature:: ``... -> (..., 2d)``.
 
         Note: we simple concatenate the sin and cosine terms without interleaving them.
         """
-        z = torch.einsum("..., d -> ...d", t, self.scales)
-        return torch.cat([torch.sin(z), torch.cos(z)], dim=-1)
+        return self.encode(t)
 
     @jit.export
     def inverse(self, t: Tensor) -> Tensor:
         r""".. Signature:: ``(..., 2d) -> ...``."""
-        return torch.asin(t[..., 0])
+        return self.decode(t)
+
+
+class Time2VecEncoder(BaseEncoder):
+    """Wraps Time2Vec encoder."""
+
+    requires_fit: ClassVar[bool] = False
+
+    def __init__(self, num_dim: int, act: str = "sin") -> None:
+        super().__init__()
+        self.encoder = Time2Vec(num_dim, act)
+
+    def encode(self, data: Tensor, /) -> Tensor:
+        return self.encoder.encode(data)
+
+    def decode(self, data: Tensor, /) -> Tensor:
+        return self.encoder.decode(data)
+
+
+class PositionalEncoder(BaseEncoder):
+    """Wraps PositionalEncoder encoder."""
+
+    requires_fit: ClassVar[bool] = False
+
+    def __init__(self, num_dim: int, scale: float) -> None:
+        super().__init__()
+        self.encoder = PositionalEncoding(num_dim, scale=scale)
+
+    def encode(self, data: Tensor, /) -> Tensor:
+        return self.encoder.encode(data)
+
+    def decode(self, data: Tensor, /) -> Tensor:
+        return self.encoder.decode(data)

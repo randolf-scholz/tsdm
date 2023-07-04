@@ -6,6 +6,7 @@ __all__ = [
     "ClassDecorator",
     # Functions
     "decorator",
+    "debug",
     # "sphinx_value",
     "lazy_torch_jit",
     "return_namedtuple",
@@ -35,11 +36,10 @@ from types import GenericAlias
 from typing import (
     Any,
     Callable,
-    Collection,
     Concatenate,
-    Mapping,
     NamedTuple,
     Optional,
+    ParamSpec,
     Protocol,
     cast,
     overload,
@@ -51,16 +51,19 @@ from typing_extensions import Self
 from tsdm.config import CONFIG
 from tsdm.types.abc import CollectionType
 from tsdm.types.aliases import Nested
-from tsdm.types.variables import any_var as T
-from tsdm.types.variables import class_var as C
-from tsdm.types.variables import object_var as O
-from tsdm.types.variables import parameter_spec as P
-from tsdm.types.variables import return_var_co as R
-from tsdm.types.variables import torch_module_var
+from tsdm.types.protocols import NTuple
+from tsdm.types.variables import (
+    any_var as T,
+    class_var as Class,
+    object_var as O,
+    return_var_co as R,
+    torch_module_var,
+)
 from tsdm.utils.funcutils import rpartial
 
 __logger__ = logging.getLogger(__name__)
 
+P = ParamSpec("P")
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -377,6 +380,22 @@ def attribute(func: Callable[[O], R]) -> R:
     return cast(R, _attribute(func))
 
 
+def debug(func: Callable[P, R]) -> Callable[P, R]:
+    """Print the function signature and return value."""
+
+    @wraps(func)
+    def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        args_repr = [f"{type(a)}" for a in args]
+        kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
+        signature = ", ".join(args_repr + kwargs_repr)
+        print(f"Calling {func.__name__}({signature})")
+        value = func(*args, **kwargs)
+        # print(f"{func.__name__!r} returned {value!r}")
+        return value
+
+    return _wrapper
+
+
 @decorator
 def timefun(
     func: Callable[P, R],
@@ -554,7 +573,7 @@ def vectorize(
 
 
 @overload
-def IterItems(obj: C) -> C:
+def IterItems(obj: Class) -> Class:
     ...
 
 
@@ -587,7 +606,7 @@ def IterItems(obj: T) -> T:
 
 
 @overload
-def IterKeys(obj: C) -> C:
+def IterKeys(obj: Class) -> Class:
     ...
 
 
@@ -639,14 +658,14 @@ def wrap_func(
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                before(*args, **kwargs)  # type: ignore[misc]
+                before(*args, **kwargs)
                 return func(*args, **kwargs)
 
             return _wrapper
 
         @wraps(func)
         def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            before()  # type: ignore[misc]
+            before()
             return func(*args, **kwargs)
 
         return _wrapper
@@ -659,7 +678,7 @@ def wrap_func(
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(*args, **kwargs)
-                after(*args, **kwargs)  # type: ignore[misc]
+                after(*args, **kwargs)
                 return result
 
             return _wrapper
@@ -667,7 +686,7 @@ def wrap_func(
         @wraps(func)
         def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             result = func(*args, **kwargs)
-            after()  # type: ignore[misc]
+            after()
             return result
 
         return _wrapper
@@ -679,18 +698,18 @@ def wrap_func(
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                before(*args, **kwargs)  # type: ignore[misc]
+                before(*args, **kwargs)
                 result = func(*args, **kwargs)
-                after(*args, **kwargs)  # type: ignore[misc]
+                after(*args, **kwargs)
                 return result
 
             return _wrapper
 
         @wraps(func)
         def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            before()  # type: ignore[misc]
+            before()
             result = func(*args, **kwargs)
-            after()  # type: ignore[misc]
+            after()
             return result
 
         return _wrapper
@@ -719,14 +738,14 @@ def wrap_method(
 
             @wraps(func)
             def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-                before(self, *args, **kwargs)  # type: ignore[misc]
+                before(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
             return _wrapper
 
         @wraps(func)
         def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-            before(self)  # type: ignore[misc]
+            before(self)
             return func(self, *args, **kwargs)
 
         return _wrapper
@@ -739,7 +758,7 @@ def wrap_method(
             @wraps(func)
             def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
-                after(self, *args, **kwargs)  # type: ignore[misc]
+                after(self, *args, **kwargs)
                 return result
 
             return _wrapper
@@ -747,7 +766,7 @@ def wrap_method(
         @wraps(func)
         def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
             result = func(self, *args, **kwargs)
-            after(self)  # type: ignore[misc]
+            after(self)
             return result
 
         return _wrapper
@@ -759,18 +778,18 @@ def wrap_method(
 
             @wraps(func)
             def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-                before(self, *args, **kwargs)  # type: ignore[misc]
+                before(self, *args, **kwargs)
                 result = func(self, *args, **kwargs)
-                after(self, *args, **kwargs)  # type: ignore[misc]
+                after(self, *args, **kwargs)
                 return result
 
             return _wrapper
 
         @wraps(func)
         def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-            before(self)  # type: ignore[misc]
+            before(self)
             result = func(self, *args, **kwargs)
-            after(self)  # type: ignore[misc]
+            after(self)
             return result
 
         return _wrapper
@@ -801,7 +820,7 @@ def return_namedtuple(
     *,
     name: Optional[str] = None,
     field_names: Optional[Sequence[str]] = None,
-) -> Callable[P, tuple]:
+) -> Callable[P, NTuple]:
     """Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
 
@@ -828,35 +847,46 @@ def return_namedtuple(
         )
 
     # create namedtuple
-    tuple_type: type[tuple] = NamedTuple(name, zip(field_names, type_hints))  # type: ignore[misc]
+    tuple_type: type[NTuple] = NamedTuple(name, zip(field_names, type_hints))  # type: ignore[misc]
 
     @wraps(func)
-    def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> tuple:
-        result = func(*func_args, **func_kwargs)
-        return tuple_type(*result)
+    def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> NTuple:
+        return tuple_type(*func(*func_args, **func_kwargs))
 
     return _wrapper
 
 
-def apply_nested(
+def recurse_on_builtin_container(
     func: Callable[[T], R],
-    nested: Nested[Optional[T]],
+    /,
+    *,
     kind: type[T],
-) -> Nested[Optional[R]]:
+) -> Callable[[Nested[T]], Nested[R]]:
     r"""Apply function to nested iterables of a given kind.
 
     Args:
-        nested: Nested Data-Structure (Iterable, Mapping, ...)
         kind: The type of the leave nodes
         func: A function to apply to all leave Nodes
     """
-    if nested is None:
-        return None
-    if isinstance(nested, kind):
-        return func(nested)
-    if isinstance(nested, Mapping):
-        return {k: apply_nested(func, v, kind) for k, v in nested.items()}  # type: ignore[arg-type]
-    # TODO https://github.com/python/mypy/issues/11615
-    if isinstance(nested, Collection):
-        return [apply_nested(func, obj, kind) for obj in nested]  # type: ignore[arg-type]
-    raise TypeError(f"Unsupported type: {type(nested)}")
+    if issubclass(kind, (tuple, list, set, frozenset, dict)):
+        raise TypeError(f"kind must not be a builtin container! Got {kind=}")
+
+    @wraps(func)
+    def recurse(x: Nested[T]) -> Nested[R]:
+        match x:
+            case kind():  # type: ignore[misc]
+                return func(x)  # type: ignore[unreachable]
+            case dict():
+                return {k: recurse(v) for k, v in x.items()}
+            case list():
+                return [recurse(obj) for obj in x]
+            case tuple():
+                return tuple(recurse(obj) for obj in x)
+            case set():
+                return {recurse(obj) for obj in x}
+            case frozenset():
+                return frozenset(recurse(obj) for obj in x)
+            case _:
+                raise TypeError(f"Unsupported type: {type(x)}")
+
+    return recurse

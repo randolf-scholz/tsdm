@@ -19,11 +19,13 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, Union, over
 
 from typing_extensions import Self
 
-from tsdm.types.variables import any2_var as T2
-from tsdm.types.variables import any_var as T
-from tsdm.types.variables import key2_var as K2
-from tsdm.types.variables import key_var as K
-from tsdm.types.variables import return_var_co as R
+from tsdm.types.variables import (
+    any2_var as T2,
+    any_var as T,
+    key2_var as K2,
+    key_var as K,
+    return_var_co as R,
+)
 from tsdm.utils.funcutils import (
     get_function_args,
     get_return_typehint,

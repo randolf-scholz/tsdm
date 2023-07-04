@@ -258,12 +258,21 @@ class DefaultLogger(BaseLogger):
         # add default batch callbacks
         if self.metrics is not None:
             self.add_callback(
-                "batch", MetricsCallback(self.metrics, self.writer, key="batch")
+                "batch",
+                MetricsCallback(
+                    self.metrics,
+                    self.writer,
+                    key="batch",
+                ),
             )
         if self.optimizer is not None:
             self.add_callback(
                 "batch",
-                OptimizerCallback(self.optimizer, self.writer, log_histograms=False),
+                OptimizerCallback(
+                    self.optimizer,
+                    self.writer,
+                    log_histograms=False,
+                ),
             )
 
         # add default epoch callbacks

@@ -20,7 +20,7 @@ import warnings
 from collections import namedtuple
 from collections.abc import Hashable, Iterable, Iterator, Mapping
 from types import EllipsisType
-from typing import Any, Generic, Optional, TypeVar, cast, overload
+from typing import Any, ClassVar, Generic, Optional, TypeVar, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -29,6 +29,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
+from typing_extensions import deprecated
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import PandasObject, PathLike
@@ -44,6 +45,8 @@ IndEncVar = TypeVar("IndEncVar", bound=BaseEncoder | Mapping[Any, BaseEncoder])
 
 class CSVEncoder(BaseEncoder):
     r"""Encode the data into a CSV file."""
+
+    requires_fit: ClassVar[bool] = True
 
     filename: PathLike
     r"""The filename of the CSV file."""
@@ -80,6 +83,7 @@ class CSVEncoder(BaseEncoder):
         return DataFrame(frame).astype(self.dtypes)
 
 
+@deprecated("deprecated in favor of FastFrameEncoder")
 class FrameEncoder(BaseEncoder, Generic[ColEncVar, IndEncVar]):
     r"""Encode a DataFrame by group-wise transformations.
 
@@ -91,6 +95,8 @@ class FrameEncoder(BaseEncoder, Generic[ColEncVar, IndEncVar]):
 
     - [ ] Add support for groups of column-encoders
     """
+
+    requires_fit: ClassVar[bool] = True
 
     columns: Index
     dtypes: Series
@@ -305,6 +311,8 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
     - [ ] Add support for groups of column-encoders
     """
 
+    requires_fit: ClassVar[bool] = True
+
     original_columns: list[K]
     original_dtypes: Series
     original_index_columns: list[K]
@@ -319,7 +327,7 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
         column_encoders: Mapping[K, BaseEncoder] = NotImplemented,
         *,
         index_encoders: Mapping[K, BaseEncoder] = NotImplemented,
-    ):
+    ) -> None:
         super().__init__()
         self.column_encoders = (
             {} if column_encoders is NotImplemented else column_encoders
@@ -346,9 +354,12 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
         self.original_dtypes = data.dtypes
         self.original_columns = FrozenList(data.columns)
 
-        # Fit
+        # fit the encoders one by one
         for group, encoder in self.encoders.items():
-            encoder.fit(data[group])
+            try:
+                encoder.fit(data[group])
+            except Exception as E:
+                raise RuntimeError(f"Failed to fit {type(encoder)} on {group=}") from E
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()
@@ -373,16 +384,14 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
         data = data.set_index(index_columns.tolist())
         return data
 
-    def __repr__(self) -> str:
-        r"""Return a string representation of the encoder."""
-        return repr_mapping(self)
-
 
 class FrameIndexer(BaseEncoder):
     r"""Change index of a pandas DataFrame.
 
     For compatibility, this is done by integer index.
     """
+
+    requires_fit: ClassVar[bool] = True
 
     index_columns: Index
     index_dtypes: Series
@@ -445,6 +454,8 @@ class FrameSplitter(BaseEncoder, Mapping):
     | 1 | 2 | 0 | - | 5 | 4 |
     +---+---+---+---+---+---+
     """
+
+    requires_fit: ClassVar[bool] = True
 
     original_columns: Index
     original_dtypes: Series
@@ -604,6 +615,8 @@ class FrameSplitter(BaseEncoder, Mapping):
 class TripletEncoder(BaseEncoder):
     r"""Encode the data into triplets."""
 
+    requires_fit: ClassVar[bool] = True
+
     categories: pd.CategoricalDtype
     r"""The stored categories."""
     original_dtypes: Series
@@ -680,6 +693,8 @@ class TripletEncoder(BaseEncoder):
 
 class TripletDecoder(BaseEncoder):
     r"""Encode the data into triplets."""
+
+    requires_fit: ClassVar[bool] = True
 
     categories: pd.CategoricalDtype
     r"""The stored categories."""
@@ -786,6 +801,8 @@ class TripletDecoder(BaseEncoder):
 class TensorEncoder(BaseEncoder):
     r"""Converts objects to Tensor."""
 
+    requires_fit: ClassVar[bool] = True
+
     dtype: torch.dtype
     r"""The default dtype."""
     device: torch.device
@@ -810,10 +827,6 @@ class TensorEncoder(BaseEncoder):
             self.return_type = namedtuple("namedtuple", names)  # type: ignore[misc]
 
         self.is_fitted = True
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return f"{self.__class__.__name__}()"
 
     def fit(self, data: PandasObject, /) -> None:
         ...
@@ -854,6 +867,8 @@ class ValueEncoder(BaseEncoder):
 
     Remembers dtypes, index, columns
     """
+
+    requires_fit: ClassVar[bool] = True
 
     index_columns: Index
     index_dtypes: Series
@@ -911,7 +926,7 @@ class ValueEncoder(BaseEncoder):
         return decoded
 
 
-class FrameAsDict(BaseEncoder):
+class FrameAsDict(Mapping[str, list[str]], BaseEncoder):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.
@@ -930,16 +945,19 @@ class FrameAsDict(BaseEncoder):
         >>> pd.testing.assert_frame_equal(df, decoded)
     """
 
+    requires_fit: ClassVar[bool] = True
+
     # Attributes
     original_index_columns: Index | list[str]
     original_columns: Index
     original_dtypes: Series
+    inferred_dtypes: dict[str, torch.dtype | None]
     groups: dict[str, list[str]]
 
     # Parameters
     column_dtype: Optional[torch.dtype] = None
     device: Optional[str | torch.device] = None
-    dtypes: dict[str, None | torch.dtype]
+    dtypes: dict[str, None | str | torch.dtype]
     encode_index: Optional[bool] = None
     index_dtype: Optional[torch.dtype] = None
 
@@ -956,10 +974,19 @@ class FrameAsDict(BaseEncoder):
         self.dtypes = dtypes  # type: ignore[assignment]
         self.device = device  # type: ignore[assignment]
         self.encode_index = encode_index
+        self.inferred_dtypes = {}
 
-    def __repr__(self, **kwargs: Any) -> str:
-        kwargs.update(wrapped=self)
-        return repr_mapping(self.groups, **kwargs)
+    # def __repr__(self) -> str:
+    #     return repr_mapping(self.groups, wrapped=self)
+
+    def __len__(self) -> int:
+        return len(self.groups)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.groups)
+
+    def __getitem__(self, key: str) -> list[str]:
+        return self.groups[key]
 
     def fit(self, data: DataFrame, /) -> None:
         index = data.index.to_frame()
@@ -1019,12 +1046,12 @@ class FrameAsDict(BaseEncoder):
         if not isinstance(self.dtypes, Mapping):
             self.dtypes = {key: self.dtypes for key in self.groups}  # type: ignore[unreachable]
         for key in self.groups:
-            if key not in self.dtypes:
-                self.dtypes[key] = None
-            elif isinstance(self.dtypes[key], str):
-                self.dtypes[key] = TORCH_DTYPES[self.dtypes[key]]  # type: ignore[index]
-            else:
-                assert isinstance(self.dtypes[key], None | torch.dtype)
+            val = self.dtypes.get(key, None)
+            assert isinstance(val, None | str | torch.dtype)
+            self.dtypes[key] = val
+            self.inferred_dtypes[key] = (
+                TORCH_DTYPES[val] if isinstance(val, str) else val
+            )
 
     def encode(self, data: DataFrame, /) -> dict[str, Tensor]:
         """Encode a DataFrame as a dict of Tensors.
@@ -1038,9 +1065,9 @@ class FrameAsDict(BaseEncoder):
 
         return {
             key: torch.tensor(
-                data[cols].to_numpy(),
+                data[cols].astype(self.dtypes[key]).to_numpy(),
                 device=self.device,
-                dtype=self.dtypes[key],
+                dtype=self.inferred_dtypes[key],
             ).squeeze()
             for key, cols in self.groups.items()
             if set(cols).issubset(data.columns)
@@ -1069,6 +1096,8 @@ class FrameAsDict(BaseEncoder):
 
 class FrameAsTuple(BaseEncoder):
     r"""Encodes a DataFrame as a tuple of column and index tensor."""
+
+    requires_fit: ClassVar[bool] = True
 
     # Attributes
     original_index_columns: Index
@@ -1146,4 +1175,4 @@ class FrameAsTuple(BaseEncoder):
 
 
 Frame2TensorDict = FrameAsDict  # Do not remove! For old pickle files
-"""Alias for `FrameAsDict`"""
+"""Alias for FrameAsDict."""

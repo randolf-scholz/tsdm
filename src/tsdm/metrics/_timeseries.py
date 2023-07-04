@@ -28,6 +28,7 @@ import torch
 from torch import Tensor, jit, nn
 
 from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
+from tsdm.types.aliases import Axes
 from tsdm.utils.decorators import autojit
 
 
@@ -136,8 +137,8 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
         weight: Tensor,
         /,
         *,
-        time_axes: None | int | tuple[int, ...] = None,
-        channel_axes: None | int | tuple[int, ...] = None,
+        time_axes: Axes = None,
+        channel_axes: Axes = None,
         normalize_channels: bool = False,
         normalize_time: bool = True,
         learnable: bool = False,

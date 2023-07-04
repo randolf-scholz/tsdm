@@ -4,6 +4,7 @@ __all__ = [
     # namedtuple
     "schema",
     # Custom Type Aliases
+    "Axes",
     "Nested",
     "Map",
     "PandasObject",
@@ -19,19 +20,20 @@ __all__ = [
     "NestedMapping",
     "NestedMutableMapping",
     "NestedSequence",
+    "NestedGeneric",
     # Nested Builtins
     "NestedList",
     "NestedDict",
     "NestedSet",
     "NestedTuple",
     "NestedFrozenSet",
-    "NestedMapping",
-    "NestedSequence",
+    "NestedBuiltin",
 ]
 
 
 import os
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, NamedTuple, Optional, TypeAlias
 
@@ -41,11 +43,23 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
 
 from tsdm.types.protocols import Lookup
-from tsdm.types.variables import any_var as T
-from tsdm.types.variables import key_contra
-from tsdm.types.variables import key_var as K
-from tsdm.types.variables import value_co
-from tsdm.types.variables import value_var as V
+from tsdm.types.variables import (
+    any_var as T,
+    key_contra,
+    key_var as K,
+    value_co,
+    value_var as V,
+)
+
+# region Numeric Types ------------------------------------------------------------------
+PythonScalar: TypeAlias = (
+    None | bool | int | float | complex | bool | str | datetime | timedelta
+)
+r"""Type Alias for Python scalars."""
+
+
+Axes: TypeAlias = None | int | tuple[int, ...]
+r"""Type Alias for axes."""
 
 
 class schema(NamedTuple):
@@ -57,6 +71,9 @@ class schema(NamedTuple):
     """Column names of the table."""
     dtypes: Optional[Sequence[str]] = None
     """Data types of the columns."""
+
+
+# endregion Numeric Types ---------------------------------------------------------------
 
 
 # region Custom Type Aliases -----------------------------------------------------------
@@ -86,6 +103,10 @@ NestedMutableMapping: TypeAlias = MutableMapping[K, V | "NestedMutableMapping[K,
 r"""Generic Type Alias for nested `MutableMapping`."""
 NestedSequence: TypeAlias = Sequence[V | "NestedSequence[V]"]
 r"""Generic Type Alias for nested `Sequence`."""
+NestedGeneric: TypeAlias = (
+    Sequence[V | "NestedGeneric[V]"] | Mapping[str, V | "NestedGeneric[V]"]
+)
+r"""Generic Type Alias for nested `Sequence` or `Mapping`."""
 # endregion Nested collections.abc -----------------------------------------------------
 
 
@@ -100,6 +121,13 @@ NestedFrozenSet: TypeAlias = frozenset[V | "NestedFrozenSet[V]"]
 r"""Generic Type Alias for nested `set`."""
 NestedTuple: TypeAlias = tuple[V | "NestedTuple[V]", ...]
 r"""Generic Type Alias for nested `tuple`."""
+NestedBuiltin: TypeAlias = (
+    tuple[V | "NestedBuiltin[V]", ...]
+    | set[V | "NestedBuiltin[V]"]
+    | frozenset[V | "NestedBuiltin[V]"]
+    | list[V | "NestedBuiltin[V]"]
+    | dict[str, V | "NestedBuiltin[V]"]
+)
 # endregion Nested Builtins ------------------------------------------------------------
 
 

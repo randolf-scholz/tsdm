@@ -11,57 +11,57 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series
 from torch import Tensor
 
-from tsdm.types.protocols import Array, Table
+from tsdm.types.protocols import Array, SupportsShape
 
 __logger__ = logging.getLogger(__name__)
 
 
 def test_table() -> None:
     """Test the Table protocol (shape and __len__ and __getitem__)."""
-    LOGGER = __logger__.getChild(Table.__name__)
+    LOGGER = __logger__.getChild(SupportsShape.__name__)
     LOGGER.info("Testing.")
 
     torch_tensor: Tensor = torch.tensor([1, 2, 3])
-    torch_table: Table = torch_tensor
+    torch_table: SupportsShape = torch_tensor
     assert isinstance(
-        torch_table, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(torch_table))}"
+        torch_table, SupportsShape
+    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(torch_table))}"
 
     numpy_ndarray: NDArray = ndarray([1, 2, 3])
-    numpy_table: Table = numpy_ndarray
+    numpy_table: SupportsShape = numpy_ndarray
     assert isinstance(
-        numpy_table, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(numpy_table))}"
+        numpy_table, SupportsShape
+    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(numpy_table))}"
 
     pandas_frame: DataFrame = DataFrame(numpy.random.randn(3, 3))
-    pandas_table: Table = pandas_frame
+    pandas_table: SupportsShape = pandas_frame
     assert isinstance(
-        pandas_table, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_table))}"
+        pandas_table, SupportsShape
+    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_table))}"
 
     pandas_series: Series = Series([1, 2, 3])
-    pandas_series_array: Table = pandas_series
+    pandas_series_array: SupportsShape = pandas_series
     assert isinstance(
-        pandas_series_array, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_series_array))}"
+        pandas_series_array, SupportsShape
+    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_series_array))}"
 
     pandas_index: Index = Index([1, 2, 3])
-    pandas_index_array: Table = pandas_index
+    pandas_index_array: SupportsShape = pandas_index
     assert isinstance(
-        pandas_index_array, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pandas_index_array))}"
+        pandas_index_array, SupportsShape
+    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_index_array))}"
 
     pyarrow_frame: pa.Table = pa.Table.from_pandas(pandas_frame)
-    pyarrow_table: Table = pyarrow_frame
+    pyarrow_table: SupportsShape = pyarrow_frame
     assert isinstance(
-        pyarrow_table, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pyarrow_table))}"
+        pyarrow_table, SupportsShape
+    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_table))}"
 
     pyarrow_series: pa.Array = pa.Array.from_pandas(pandas_series)
-    pyarrow_series_table: Table = pyarrow_series
+    pyarrow_series_table: SupportsShape = pyarrow_series
     assert isinstance(
-        pyarrow_table, Table
-    ), f"Missing Attributes: {set(dir(Table)) - set(dir(pyarrow_series_table))}"
+        pyarrow_table, SupportsShape
+    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_series_table))}"
 
     tables = [
         torch_table,

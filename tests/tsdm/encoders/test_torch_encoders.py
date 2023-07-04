@@ -7,8 +7,10 @@ import numpy as np
 import torch
 
 from tsdm.encoders import PositionalEncoder
-from tsdm.encoders.pytorch import PositionalEncoder as PositionalEncoder_Torch
-from tsdm.encoders.pytorch import Time2Vec
+from tsdm.encoders.pytorch import (
+    PositionalEncoding as PositionalEncoder_Torch,
+    Time2Vec,
+)
 
 logging.basicConfig(level=logging.NOTSET)
 
