@@ -206,6 +206,45 @@ null_values = NULL_VALUES + [
     "value written to setpoints has been transferred to this table."
 ]
 
+# Timeseries Features
+# fmt: off
+timeseries_description_dict = {
+    # Name                          : [Unit,     Scale,      Dtype, Lower, Upper, Lower included, Upper included]
+    "Acetate"                       : ["%",      "percent",  pd.NA, 0,   100      , True, True],
+    "Base"                          : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
+    "Cumulated_feed_volume_glucose" : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
+    "Cumulated_feed_volume_medium"  : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
+    "DOT"                           : ["%",      "percent",  pd.NA, 0,   100      , True, True],
+    "Flow_Air"                      : ["Ln/min", "absolute", pd.NA, 0,   np.inf   , True, True],
+    "Fluo_GFP"                      : ["RFU",    "absolute", pd.NA, 0,   1_000_000, True, True],
+    "Glucose"                       : ["g/L",    "absolute", pd.NA, 0,   20       , True, True],
+    "InducerConcentration"          : ["mM",     "absolute", pd.NA, 0,   np.inf   , True, True],
+    "OD600"                         : ["%",      "percent",  pd.NA, 0,   100      , True, True],
+    "Probe_Volume"                  : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
+    "StirringSpeed"                 : ["U/min",  "absolute", pd.NA, 0,   np.inf   , True, True],
+    "Temperature"                   : ["°C",     "linear",   pd.NA, 20,  45       , True, True],
+    "Volume"                        : ["mL",     "absolute", pd.NA, 0,   np.inf   , True, True],
+    "pH"                            : ["pH",     "linear",   pd.NA, 4,   10       , True, True],
+}
+# fmt: on
+
+# fmt: off
+metadata_description_dict = {
+    # column                   [unit,  scale,      dtype, lower , upper]
+    "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+    "container_number"       : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+    "color"                  : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+    "profile_name"           : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+    "plasmid_id"             : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
+    "Feed_concentration_glc" : ["g/L", "absolute", pd.NA, pd.NA, pd.NA ],
+    "OD_Dilution"            : ["%",   "percent",  pd.NA, 0,     100   ],
+    "pH_correction_factor"   : [pd.NA, "factor",   pd.NA, 0,     np.inf],
+    "ph_Tolerance"           : [pd.NA, "linear",   pd.NA, 0,     np.inf],
+    "μ_set"                  : ["%",   "percent",  pd.NA, 0,     100   ],
+    "IPTG"                   : ["mM",  "absolute", pd.NA, 0,     np.inf],
+}
+# fmt: on
+
 
 class KIWI_RUNS(MultiTableDataset):
     r"""KIWI RUN Data.
@@ -346,23 +385,6 @@ class KIWI_RUNS(MultiTableDataset):
         units["IPTG"] = mu_set_unit[0]
         units["μ_set"] = "%"
 
-        # fmt: off
-        metadata_description_dict = {
-            # column                   [unit,  scale,      dtype, lower , upper]
-            "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
-            "container_number"       : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
-            "color"                  : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
-            "profile_name"           : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
-            "plasmid_id"             : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
-            "Feed_concentration_glc" : ["g/L", "absolute", pd.NA, pd.NA, pd.NA ],
-            "OD_Dilution"            : ["%",   "percent",  pd.NA, 0,     100   ],
-            "pH_correction_factor"   : [pd.NA, "factor",   pd.NA, 0,     np.inf],
-            "ph_Tolerance"           : [pd.NA, "linear",   pd.NA, 0,     np.inf],
-            "μ_set"                  : ["%",   "percent",  pd.NA, 0,     100   ],
-            "IPTG"                   : ["mM",  "absolute", pd.NA, 0,     np.inf],
-        }
-        # fmt: on
-
         metadata_description = DataFrame.from_dict(
             metadata_description_dict,
             orient="index",
@@ -453,27 +475,6 @@ class KIWI_RUNS(MultiTableDataset):
         # Select Columns
         columns = [key for key, val in selected_columns["timeseries"].items() if val]
         timeseries = timeseries[columns]
-
-        # Timeseries Features
-        # fmt: off
-        timeseries_description_dict = {
-            "Acetate"                       : ["%",      "percent",  pd.NA, 0,   100      ],
-            "Base"                          : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
-            "Cumulated_feed_volume_glucose" : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
-            "Cumulated_feed_volume_medium"  : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
-            "DOT"                           : ["%",      "percent",  pd.NA, 0,   100      ],
-            "Flow_Air"                      : ["Ln/min", "absolute", pd.NA, 0,   np.inf   ],
-            "Fluo_GFP"                      : ["RFU",    "absolute", pd.NA, 0,   1_000_000],
-            "Glucose"                       : ["g/L",    "absolute", pd.NA, 0,   20       ],
-            "InducerConcentration"          : ["mM",     "absolute", pd.NA, 0,   np.inf   ],
-            "OD600"                         : ["%",      "percent",  pd.NA, 0,   100      ],
-            "Probe_Volume"                  : ["uL",     "absolute", pd.NA, 0,   np.inf   ],
-            "StirringSpeed"                 : ["U/min",  "absolute", pd.NA, 0,   np.inf   ],
-            "Temperature"                   : ["°C",     "linear",   pd.NA, 20,  45       ],
-            "Volume"                        : ["mL",     "absolute", pd.NA, 0,   np.inf   ],
-            "pH"                            : ["pH",     "linear",   pd.NA, 4,   10       ],
-        }
-        # fmt: on
 
         timeseries_description = DataFrame.from_dict(
             timeseries_description_dict,
