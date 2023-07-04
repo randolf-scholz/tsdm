@@ -345,6 +345,25 @@ class BoundaryEncoder(BaseEncoder[T, T]):
     mode: CLIPPING_MODE | tuple[CLIPPING_MODE, CLIPPING_MODE] = "mask"
     axis: Axes = None
 
+    def __post_init__(self) -> None:
+        """Validate the parameters."""
+        if self.lower_bound is None and not self.lower_included:
+            raise ValueError(
+                "If no lower_bound is provided, then lower_included must be True."
+            )
+        if self.upper_bound is None and not self.upper_included:
+            raise ValueError(
+                "If no upper_bound is provided, then upper_included must be True."
+            )
+        try:
+            # NOTE: we test this way around since NaNs will return False.
+            upper_smaller_lower = self.upper_bound <= self.lower_bound
+        except Exception:
+            pass
+        else:
+            if upper_smaller_lower:
+                raise ValueError("lower_bound must be smaller than upper_bound.")
+
     class Parameters(NamedTuple):
         r"""The parameters of the LinearScaler."""
 
