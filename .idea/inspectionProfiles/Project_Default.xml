@@ -641,6 +641,7 @@
           <option value="bool.*" />
           <option value="typing_extensions.deprecated" />
           <option value="types.UnionType.where" />
+          <option value="typing_extensions.get_original_bases" />
         </list>
       </option>
     </inspection_tool>

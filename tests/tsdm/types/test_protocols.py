@@ -2,6 +2,7 @@
 """Test the Array protocol."""
 
 import logging
+from typing import NamedTuple
 
 import numpy
 import pyarrow as pa
@@ -11,9 +12,35 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series
 from torch import Tensor
 
-from tsdm.types.protocols import Array, SupportsShape
+from tsdm.types.protocols import Array, NTuple, SupportsShape
 
 __logger__ = logging.getLogger(__name__)
+
+
+def test_ntuple() -> None:
+    # test sample NamedTuple class
+    class Point(NamedTuple):
+        x: float
+        y: float
+
+    # check that NamedTuples are tuples.
+    assert issubclass(Point, tuple)
+    assert isinstance(Point(1, 2), tuple)
+
+    # check against plain tuple
+    # assert issubclass(NTuple, tuple)
+    assert not issubclass(tuple, NTuple)
+
+    assert isinstance((1, 2), tuple)
+    assert not isinstance((1, 2), NTuple)
+
+    assert issubclass(Point, NTuple)
+    assert issubclass(Point, tuple)
+    assert not issubclass(tuple, Point)
+    assert not issubclass(NTuple, Point)
+
+    assert isinstance(Point(1, 2), NTuple)
+    assert not isinstance((1, 2), Point)
 
 
 def test_table() -> None:

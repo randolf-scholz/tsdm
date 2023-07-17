@@ -17,6 +17,7 @@ from typing import overload
 
 import pandas as pd
 import pyarrow as pa
+import scipy.stats as stats
 from pandas import DataFrame, Index, Series
 from tqdm.autonotebook import tqdm
 
@@ -95,7 +96,15 @@ def _strip_whitespace_series(series: Series) -> Series:
 
 
 def compute_entropy(value_counts: pa.Array) -> float:
-    """Compute the entropy using a value_counts array."""
+    r"""Compute the normalized entropy using a value_counts array.
+
+    .. math:: ∑_{i=1}^n -pᵢ \log₂(pᵢ)/\log₂(n)
+
+    Note:
+        Since entropy is maximized for a uniform distribution, and the entropy
+        of a uniform distribution of n choices is log₂(n), the normalization
+        ensures that the entropy is in the range [0, 1].
+    """
     counts = pa.compute.struct_field(value_counts, 1)
     n = len(counts)
     freqs = pa.compute.divide(
@@ -248,3 +257,132 @@ def aggregate_nondestructive(df: pandas_var) -> pandas_var:
     for col in result.columns:
         result[col].iloc[: nitems[col]] = df[col].loc[mask[col]]
     return result
+
+
+def describe(
+    s: Series | DataFrame,
+    /,
+    *,
+    # entropy: bool = True,
+    # # special values
+    # max_value: bool = True,
+    # mean_value: bool = True,
+    # median_value: bool = True,
+    # min_value: bool = True,
+    # mode_value: bool = True,
+    # std_value: bool = True,
+    # # counts of special values
+    # max_count: bool = True,
+    # min_count: bool = True,
+    # nan_count: bool = True,
+    # neg_count: bool = True,
+    # pos_count: bool = True,
+    # unique_count: bool = True,
+    # zero_count: bool = True,
+    # # frequencies of special values
+    # max_rate: bool = True,
+    # min_rate: bool = True,
+    # mode_rate: bool = True,
+    # nan_rate: bool = True,
+    # neg_rate: bool = True,
+    # pos_rate: bool = True,
+    # zero_rate: bool = True,
+    # unique_rate: bool = True,
+    # stats
+    quantiles: tuple[float, ...] = (0, 0.01, 0.5, 0.99, 1),
+) -> DataFrame:
+    r"""Describe a DataFrame on a per column basis."""
+    if isinstance(s, DataFrame):
+        df = s
+        return pd.concat([describe(df[col]) for col in df])
+
+    # crete a zero-scalar of the same type as the series
+    N = len(s)
+
+    # compute the special values
+    max_value = s.max()
+    min_value = s.min()
+    mode_value = s.mode().iloc[0]
+
+    try:
+        mean_value = s.mean()
+        median_value = s.median()
+        std_value = s.std()
+    except Exception:
+        mean_value = float("nan")
+        std_value = float("nan")
+        median_value = float("nan")
+
+    # compute counts
+    max_count = (s == max_value).sum()
+    min_count = (s == min_value).sum()
+    mode_count = (s == mode_value).sum()
+    nan_count = s.isna().sum()
+    unique_count = s.nunique()
+
+    try:
+        idx = s.first_valid_index()
+        # NOTE: dropna is necessary for duplicate index
+        _val = s.loc[idx].dropna().iloc[0] if idx is not None else 0
+        ZERO = _val - _val
+        neg_count = (s < ZERO).sum()
+        pos_count = (s > ZERO).sum()
+        zero_count = (s == ZERO).sum()
+    except Exception:
+        neg_count = pd.NA
+        pos_count = pd.NA
+        zero_count = pd.NA
+
+    # compute the rates
+    max_rate = max_count / N
+    min_rate = min_count / N
+    mode_rate = mode_count / N
+    nan_rate = nan_count / N
+    neg_rate = neg_count / N
+    pos_rate = pos_count / N
+    unique_rate = unique_count / N
+    zero_rate = zero_count / N
+
+    # stats
+    try:
+        entropy = stats.entropy(s.value_counts(), base=2)
+    except Exception:
+        entropy = pd.NA
+    try:
+        quantile_values = s.quantile(quantiles)
+    except Exception:
+        quantile_values = Series([float("nan")] * len(quantiles))
+
+    return pd.DataFrame(
+        {
+            # stats
+            ("stats", "entropy"): entropy,
+            **{("quantile", f"{q:.2f}"): v for q, v in zip(quantiles, quantile_values)},
+            # special values
+            ("value", "max"): max_value,
+            ("value", "mean"): mean_value,
+            ("value", "median"): median_value,
+            ("value", "min"): min_value,
+            ("value", "mode"): mode_value,
+            ("value", "std"): std_value,
+            # counts
+            ("count", "max"): max_count,
+            ("count", "min"): min_count,
+            ("count", "mode"): mode_count,
+            ("count", "nan"): nan_count,
+            ("count", "neg"): neg_count,
+            ("count", "pos"): pos_count,
+            ("count", "unique"): unique_count,
+            ("count", "zero"): zero_count,
+            # rates
+            ("rate", "max"): max_rate,
+            ("rate", "min"): min_rate,
+            ("rate", "mode"): mode_rate,
+            ("rate", "nan"): nan_rate,
+            ("rate", "neg"): neg_rate,
+            ("rate", "pos"): pos_rate,
+            ("rate", "unique"): unique_rate,
+            ("rate", "zero"): zero_rate,
+        },
+        index=[s.name],
+    )

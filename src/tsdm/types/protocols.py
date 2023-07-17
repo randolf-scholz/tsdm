@@ -22,9 +22,9 @@ __all__ = [
 
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import Field
-from typing import Any, Protocol, TypeVar, overload, runtime_checkable
+from typing import Any, NamedTuple, Protocol, TypeVar, overload, runtime_checkable
 
-from typing_extensions import Self, SupportsIndex
+from typing_extensions import Self, SupportsIndex, get_original_bases
 
 from tsdm.types.variables import (
     any_co as T_co,
@@ -69,6 +69,14 @@ class NTuple(Protocol[T_co]):
     References:
         - https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi
     """
+
+    @classmethod
+    def __subclasshook__(cls, other: type) -> bool:
+        """Cf https://github.com/python/cpython/issues/106363."""
+        if NamedTuple in get_original_bases(other):
+            return True
+        return NotImplemented
+
     # fmt: off
     @property
     def _fields(self) -> tuple[str, ...]: ...

@@ -209,7 +209,7 @@ null_values = NULL_VALUES + [
 # Timeseries Features
 # fmt: off
 timeseries_description_dict = {
-    # Name                          : [Unit,     Scale,      Dtype, Lower, Upper, Lower included, Upper included]
+    # Name                          : [Unit,     Type,      Dtype, Lower, Upper, Lower included, Upper included]
     "Acetate"                       : ["%",      "percent",  pd.NA, 0,   100      , True, True],
     "Base"                          : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
     "Cumulated_feed_volume_glucose" : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
@@ -230,7 +230,7 @@ timeseries_description_dict = {
 
 # fmt: off
 metadata_description_dict = {
-    # column                   [unit,  scale,      dtype, lower , upper]
+    # Name                   : [Unit,     Type,      Dtype, Lower, Upper, Lower included, Upper included]
     "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
     "container_number"       : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
     "color"                  : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
