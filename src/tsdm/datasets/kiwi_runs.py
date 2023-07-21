@@ -545,7 +545,7 @@ class KiwiDataset(TimeSeriesCollection):
     timeindex_description: DataFrame
     timeseries_description: DataFrame
     metadata_description: DataFrame
-    globals_description: None
+    global_metadata_description: None
 
     def __init__(self) -> None:
         ds = KIWI_RUNS()
@@ -559,7 +559,7 @@ class KiwiDataset(TimeSeriesCollection):
             timeindex_description=ds.timeindex_description,
             timeseries_description=ds.timeseries_description,
             metadata_description=ds.metadata_description,
-            globals_description=None,
+            global_metadata_description=None,
         )
 
 

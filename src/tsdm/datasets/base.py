@@ -39,7 +39,7 @@ import pandas
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike
-from tsdm.types.variables import any_var as T, str_var as Key
+from tsdm.types.variables import any_co as T_co, str_var as Key
 from tsdm.utils import paths_exists
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
@@ -49,7 +49,7 @@ from tsdm.utils.strings import repr_mapping
 
 
 @runtime_checkable
-class Dataset(Protocol):
+class Dataset(Protocol[T_co]):
     """Protocol for Dataset."""
 
     # TODO: make a bug report. Mypy does not honor the type hint for INFO_URL
@@ -68,13 +68,13 @@ class Dataset(Protocol):
     def rawdata_paths(self) -> Mapping[str, Path]:
         """Return list of paths to the rawdata files."""
 
-    def clean(self) -> None:
+    def clean(self) -> T_co | None:
         """Clean the dataset."""
 
     def download(self) -> None:
         """Download the dataset."""
 
-    def load(self) -> None:
+    def load(self) -> T_co:
         """Load the dataset."""
 
 
@@ -113,7 +113,7 @@ class BaseDatasetMetaClass(ABCMeta):
     # return super().__getitem__(parent)
 
 
-class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
+class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
     r"""Abstract base class that all dataset must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -161,8 +161,8 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
     ) -> None:
         r"""Initialize the dataset."""
         self.__version__ = version
-        self.RAWDATA_DIR = self.RAWDATA_DIR / self.__version__  # type: ignore[misc]
-        self.DATASET_DIR = self.DATASET_DIR / self.__version__  # type: ignore[misc]
+        self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
+        self.DATASET_DIR /= self.__version__  # type: ignore[misc]
 
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -171,15 +171,16 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         if reset:
             self.clean()
         if initialize:
-            self.load()
+            self.load(initializing=True)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the dataset."""
         return f"{self.__class__.__name__}()"
 
     @staticmethod
-    def serialize(table: T, path: Path, /, **kwargs: Any) -> None:
+    def serialize(table: T_co, path: Path, /, **kwargs: Any) -> None:  # type: ignore[misc]
         r"""Serialize the dataset."""
+        # NOTE: This should be type safe even for covariant types.
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
         file_type = file_type[1:]
@@ -193,7 +194,7 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         raise NotImplementedError(f"No loader for {file_type=}")
 
     @staticmethod
-    def deserialize(path: Path, /, **kwargs: Any) -> T:
+    def deserialize(path: Path, /, **kwargs: Any) -> T_co:
         r"""Deserialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
@@ -243,7 +244,7 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
             return paths_exists(self.rawdata_paths)
         if key not in self.rawdata_paths:
             raise KeyError(f"{key=} not in {self.rawdata_paths=}")
-        return paths_exists(key)
+        return paths_exists(self.rawdata_paths[key])
 
     @abstractmethod
     def clean(self) -> None:
@@ -253,7 +254,7 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         """
 
     @abstractmethod
-    def load(self):
+    def load(self, *, initializing: bool = False) -> T_co:
         r"""Load the pre-processed dataset."""
 
     @classmethod
@@ -313,15 +314,27 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         if validate and self.rawdata_hashes is not NotImplemented:
             validate_file_hash(self.rawdata_paths[key], reference=self.rawdata_hashes)
 
+    def remove_rawdata_files(self) -> None:
+        r"""Recreate the rawdata directory."""
+        if self.RAWDATA_DIR.exists():
+            self.RAWDATA_DIR.rmdir()
+        self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
 
-class SingleTableDataset(BaseDataset[T]):
+    def remove_dataset_files(self) -> None:
+        r"""Recreate the dataset directory."""
+        if self.DATASET_DIR.exists():
+            self.DATASET_DIR.rmdir()
+        self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
+
+
+class SingleTableDataset(BaseDataset[T_co]):
     r"""Dataset class that consists of a singular DataFrame."""
     RAWDATA_DIR: ClassVar[Path]
     """Path to raw data directory."""
     DATASET_DIR: ClassVar[Path]
     """Path to pre-processed data directory."""
 
-    _table: T = NotImplemented
+    _table: T_co = NotImplemented
     """INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
@@ -349,7 +362,7 @@ class SingleTableDataset(BaseDataset[T]):
         raise NotImplementedError
 
     @cached_property
-    def table(self) -> T:
+    def table(self) -> T_co:
         r"""Store cached version of dataset."""
         if self._table is NotImplemented:
             self._table = self.load(initializing=True)
@@ -370,14 +383,14 @@ class SingleTableDataset(BaseDataset[T]):
         return paths_exists(self.dataset_path)
 
     @abstractmethod
-    def clean_table(self) -> T | None:
+    def clean_table(self) -> T_co | None:
         r"""Generate the cleaned dataset table.
 
         If table is returned, the `self.serialize` method is used to write it to disk.
         If manually writing the table to disk, return None.
         """
 
-    def load_table(self) -> T:
+    def load_table(self) -> T_co:
         r"""Load the dataset.
 
         By default, `self.deserialize` is used to load the table from disk.
@@ -391,7 +404,7 @@ class SingleTableDataset(BaseDataset[T]):
         initializing: bool = False,
         force: bool = True,
         validate: bool = True,
-    ) -> T:
+    ) -> T_co:
         r"""Load the selected DATASET_OBJECT."""
         # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_file_exists():
@@ -445,9 +458,9 @@ class SingleTableDataset(BaseDataset[T]):
 
 
 class MultiTableDataset(
-    Mapping[Key, T],
-    BaseDataset[T],
-    Generic[Key, T],
+    BaseDataset[T_co],
+    Mapping[Key, T_co],
+    Generic[Key, T_co],
 ):
     r"""Dataset class that consists of multiple tables.
 
@@ -470,9 +483,10 @@ class MultiTableDataset(
 
     def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
         r"""Initialize the Dataset."""
-        self.LOGGER.debug("Adding keys as attributes.")
+        self.LOGGER.debug("Calling Mapping.__init__")
+        Mapping.__init__(self)
 
-        # if possible, add keys as attributes
+        self.LOGGER.debug("Adding keys as attributes.")
         self._key_attributes = False
         if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
             warnings.warn(
@@ -491,6 +505,7 @@ class MultiTableDataset(
         else:
             self._key_attributes = True
 
+        self.LOGGER.debug("Calling super().__init__")
         super().__init__(initialize=initialize, reset=reset)
 
     def __dir__(self) -> list[str]:
@@ -508,7 +523,7 @@ class MultiTableDataset(
         r"""Return the number of samples in the dataset."""
         return self.tables.__len__()
 
-    def __getitem__(self, key: Key) -> T:
+    def __getitem__(self, key: Key) -> T_co:
         r"""Return the sample at index `idx`."""
         # need to manually raise KeyError otherwise __getitem__ will execute.
         if key not in self.tables:
@@ -531,7 +546,7 @@ class MultiTableDataset(
         # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
     @cached_property
-    def tables(self) -> MutableMapping[Key, T]:
+    def tables(self) -> MutableMapping[Key, T_co]:
         r"""Store cached version of dataset."""
         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
 
@@ -570,7 +585,7 @@ class MultiTableDataset(
         return paths_exists(self.dataset_paths)
 
     @abstractmethod
-    def clean_table(self, key: Key) -> T | None:
+    def clean_table(self, key: Key) -> T_co | None:
         r"""Create the cleaned table for the given key.
 
         If table is returned, the `self.serialize` method is used to write it to disk.
@@ -632,7 +647,7 @@ class MultiTableDataset(
                 self.dataset_paths[key], reference=self.dataset_hashes[key]
             )
 
-    def load_table(self, key: Key) -> T:
+    def load_table(self, key: Key) -> T_co:
         r"""Load the selected DATASET_OBJECT.
 
         By default, `self.deserialize` is used to load the table from disk.
@@ -641,11 +656,11 @@ class MultiTableDataset(
         return self.deserialize(self.dataset_paths[key])
 
     @overload
-    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T]:  # type: ignore[misc]
+    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T_co]:  # type: ignore[misc]
         ...
 
     @overload
-    def load(self, key: Key = ..., **kwargs: Any) -> T:
+    def load(self, key: Key = ..., **kwargs: Any) -> T_co:
         ...
 
     def load(
@@ -656,7 +671,7 @@ class MultiTableDataset(
         validate: bool = True,
         initializing: bool = False,
         **kwargs: Any,
-    ) -> Mapping[Key, T] | T:
+    ) -> Mapping[Key, T_co] | T_co:
         r"""Load the selected DATASET_OBJECT.
 
         Args:

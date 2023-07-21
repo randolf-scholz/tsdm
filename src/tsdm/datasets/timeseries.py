@@ -103,20 +103,22 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     r"""The index of the collection."""
     global_metadata: Optional[DataFrame] = None
     r"""Metaindex-independent data."""
-    name: str = NotImplemented
-    r"""The name of the collection."""
 
     # Space descriptors
-    metaindex_description: Optional[DataFrame] = None
-    r"""Data associated with each index such as measurement device, unit, etc."""
-    timeindex_description: Optional[DataFrame] = None
-    r"""Data associated with the time such as measurement device, unit, etc."""
     timeseries_description: Optional[DataFrame] = None
     r"""Data associated with each channel such as measurement device, unit, etc."""
     metadata_description: Optional[DataFrame] = None
     r"""Data associated with each metadata such as measurement device, unit,  etc."""
-    globals_description: Optional[DataFrame] = None
+    timeindex_description: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    metaindex_description: Optional[DataFrame] = None
+    r"""Data associated with each index such as measurement device, unit, etc."""
+    global_metadata_description: Optional[DataFrame] = None
     r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    # other
+    name: str = NotImplemented
+    r"""The name of the collection."""
 
     def __post_init__(self) -> None:
         r"""Post init."""
@@ -125,6 +127,10 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.name = str(self.timeseries.name)
             else:
                 self.name = self.__class__.__name__
+
+        if self.timeindex is NotImplemented:
+            self.timeindex = self.timeseries.index.copy()
+
         if self.metaindex is NotImplemented:
             if self.metadata is not None:
                 self.metaindex = self.metadata.index.copy().unique()
@@ -145,12 +151,11 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     def __getitem__(self, key):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
-        if (
-            isinstance(key, Series)
-            and isinstance(key.index, Index)
-            and not isinstance(key.index, MultiIndex)
-        ):
-            ts = self.timeseries.loc[key[key].index]
+        if isinstance(key, Series):
+            if isinstance(key.index, MultiIndex):
+                ts = self.timeseries.loc[key]
+            else:
+                ts = self.timeseries.loc[key[key].index]
         else:
             ts = self.timeseries.loc[key]
 
@@ -162,6 +167,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         else:
             md = _md
 
+        # slice the timeindex-descriptions
         if self.timeindex_description is None:
             tf = None
         elif self.timeindex_description.index.equals(self.metaindex):
@@ -169,6 +175,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         else:
             tf = self.timeindex_description
 
+        # slice the ts-descriptions
         if self.timeseries_description is None:
             vf = None
         elif self.timeseries_description.index.equals(self.metaindex):
@@ -176,6 +183,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         else:
             vf = self.timeseries_description
 
+        # slice the metadata-descriptions
         if self.metadata_description is None:
             mf = None
         elif self.metadata_description.index.equals(self.metaindex):
@@ -194,7 +202,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 timeseries_description=vf,
                 metadata_description=mf,
                 global_metadata=self.global_metadata,
-                globals_description=self.globals_description,
+                global_metadata_description=self.global_metadata_description,
                 metaindex_description=self.metaindex_description,
             )
 
@@ -215,8 +223,6 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     def __iter__(self) -> Iterator[K]:
         r"""Iterate over the collection."""
         return iter(self.metaindex)
-        # for key in self.index:
-        #     yield self[key]
 
     def __repr__(self) -> str:
         r"""Get the representation of the collection."""

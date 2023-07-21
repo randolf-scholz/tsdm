@@ -355,14 +355,13 @@ class BoundaryEncoder(BaseEncoder[T, T]):
             raise ValueError(
                 "If no upper_bound is provided, then upper_included must be True."
             )
-        try:
-            # NOTE: we test this way around since NaNs will return False.
-            upper_smaller_lower = self.upper_bound <= self.lower_bound
-        except Exception:
-            pass
-        else:
-            if upper_smaller_lower:
-                raise ValueError("lower_bound must be smaller than upper_bound.")
+
+        if (
+            self.upper_bound is not None
+            and self.lower_bound is not None
+            and self.upper_bound <= self.lower_bound
+        ):
+            raise ValueError("lower_bound must be smaller than upper_bound.")
 
     class Parameters(NamedTuple):
         r"""The parameters of the LinearScaler."""

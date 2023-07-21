@@ -46,7 +46,7 @@ from tqdm.autonotebook import tqdm
 from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
 from tsdm.types.variables import key_var as K
-from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
+from tsdm.utils.constants import BOOLEAN_PAIRS
 
 __logger__ = logging.getLogger(__name__)
 
@@ -272,25 +272,22 @@ def prepend_path(
     raise TypeError(f"Unsupported type: {type(files)}")
 
 
-def paths_exists(
-    paths: Nested[Optional[PathLike]],
-    *,
-    parent: Path = EMPTY_PATH,
-) -> bool:
+def paths_exists(paths: Nested[Optional[PathLike]], /) -> bool:
     r"""Check whether the files exist.
 
     The input can be arbitrarily nested data-structure with `Path` in leaves.
     """
-    if isinstance(paths, str):
-        return Path(paths).exists()
-    if paths is None:
-        return True
-    if isinstance(paths, Mapping):
-        return all(paths_exists(f, parent=parent) for f in paths.values())
-    if isinstance(paths, Collection):
-        return all(paths_exists(f, parent=parent) for f in paths)
-    if isinstance(paths, Path):
-        return (parent / paths).exists()
+    match paths:
+        case None:
+            return True
+        case str() as string:
+            return Path(string).exists()
+        case Path() as path:
+            return path.exists()
+        case Mapping() as mapping:
+            return all(paths_exists(f) for f in mapping.values())
+        case Iterable() as iterable:
+            return all(paths_exists(f) for f in iterable)
 
     raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
 

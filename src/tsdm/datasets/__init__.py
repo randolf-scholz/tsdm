@@ -61,6 +61,7 @@ from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
+from tsdm.datasets.kiwi_benchmark import KIWI, KIWI_Dataset
 from tsdm.datasets.kiwi_runs import KIWI_RUNS, KiwiDataset
 from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
@@ -75,6 +76,7 @@ from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
 TSC: dict[str, type[TimeSeriesCollection]] = {
     "KiwiDataset": KiwiDataset,
+    "KIWI": KIWI,
 }
 
 DATASETS: dict[str, type[Dataset]] = {
@@ -83,6 +85,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "Electricity": Electricity,
     "InSilicoData": InSilicoData,
     "KIWI_RUNS": KIWI_RUNS,
+    "KIWI_Dataset": KIWI_Dataset,
     # "KIWI_RUNS_OLD": KIWI_RUNS_OLD,
     "MIMIC_III": MIMIC_III,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
