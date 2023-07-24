@@ -1,11 +1,10 @@
 """The KIWI Benchmark Dataset."""
 
-__all__ = ["KIWI", "KIWI_Dataset"]
+__all__ = ["KIWI_Dataset"]
 
 from zipfile import ZipFile
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.datasets.timeseries import TimeSeriesCollection
 
 
 class KIWI_Dataset(MultiTableDataset):
@@ -32,10 +31,3 @@ class KIWI_Dataset(MultiTableDataset):
     def clean_table(self, key: str) -> None:
         with ZipFile(self.rawdata_paths["kiwi-benchmark.zip"], "r") as archive:
             archive.extract(f"{key}.parquet", self.DATASET_DIR)
-
-
-class KIWI(TimeSeriesCollection):
-    r"""The KIWI dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        super().__init__(**KIWI_Dataset())

@@ -1,6 +1,6 @@
 r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 
-__all__ = ["USHCN"]
+__all__ = ["USHCN_Dataset"]
 
 import warnings
 from typing import Literal, TypeAlias
@@ -21,7 +21,7 @@ KEY: TypeAlias = Literal[
 ]
 
 
-class USHCN(MultiTableDataset[KEY, DataFrame]):
+class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and

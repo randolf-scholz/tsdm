@@ -30,8 +30,8 @@ __all__ = [
     "SingleTableDataset",
     "MultiTableDataset",
     # Classes
-    "TimeSeriesDataset",
     "TimeSeriesCollection",
+    "TimeSeriesDataset",
     # Datasets
     "BeijingAirQuality",
     "ETT",
@@ -46,7 +46,7 @@ __all__ = [
     "PhysioNet2019",
     "PhysioNet2012",
     "Traffic",
-    "USHCN",
+    "USHCN_Dataset",
     "USHCN_DeBrouwer2019",
 ]
 
@@ -56,12 +56,14 @@ from tsdm.datasets.base import (
     Dataset,
     MultiTableDataset,
     SingleTableDataset,
+    TimeSeriesCollection,
+    TimeSeriesDataset,
 )
 from tsdm.datasets.beijing_air_quality import BeijingAirQuality
 from tsdm.datasets.electricity import Electricity
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
-from tsdm.datasets.kiwi_benchmark import KIWI, KIWI_Dataset
+from tsdm.datasets.kiwi_benchmark import KIWI_Dataset
 from tsdm.datasets.kiwi_runs import KIWI_RUNS, KiwiDataset
 from tsdm.datasets.mimic_iii import MIMIC_III
 from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
@@ -69,9 +71,9 @@ from tsdm.datasets.mimic_iv import MIMIC_IV
 from tsdm.datasets.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.datasets.physionet2012 import PhysioNet2012
 from tsdm.datasets.physionet2019 import PhysioNet2019
-from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.datasets.timeseries import KIWI
 from tsdm.datasets.traffic import Traffic
-from tsdm.datasets.ushcn import USHCN
+from tsdm.datasets.ushcn import USHCN_Dataset
 from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
 TSC: dict[str, type[TimeSeriesCollection]] = {
@@ -94,7 +96,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "Physionet2012": PhysioNet2012,
     "Physionet2019": PhysioNet2019,
     "Traffic": Traffic,
-    "USHCN": USHCN,
+    "USHCN": USHCN_Dataset,
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available dataset."""

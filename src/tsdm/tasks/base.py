@@ -136,7 +136,7 @@ from torch.utils.data import (
 )
 from typing_extensions import Self, assert_type
 
-from tsdm.datasets.timeseries import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
 from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
