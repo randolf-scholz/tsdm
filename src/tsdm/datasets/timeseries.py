@@ -21,4 +21,4 @@ class USHCN(TimeSeriesCollection):
     r"""The USHCN dataset wrapped as TimeSeriesCollection."""
 
     def __init__(self) -> None:
-        super().__init__(**USHCN_Dataset())
+        super().__init__(**USHCN_Dataset())  # type: ignore[misc]

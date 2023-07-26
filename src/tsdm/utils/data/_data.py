@@ -13,7 +13,8 @@ __all__ = [
 ]
 
 import logging
-from typing import overload
+from collections.abc import Mapping, Sequence
+from typing import Any, overload
 
 import pandas as pd
 import pyarrow as pa
@@ -24,6 +25,39 @@ from tqdm.autonotebook import tqdm
 from tsdm.types.variables import pandas_var
 
 __logger__ = logging.getLogger(__package__)
+
+
+def make_dataframe(
+    data: Sequence[tuple[Any, ...]],
+    /,
+    *,
+    columns: Sequence[str] = NotImplemented,
+    dtypes: Sequence[Any] = NotImplemented,
+    schema: Mapping[str, Any] = NotImplemented,
+    index: str = NotImplemented,
+) -> DataFrame:
+    """Make a DataFrame from a dictionary."""
+    if dtypes is not NotImplemented and schema is not NotImplemented:
+        raise ValueError("Cannot specify both dtypes and schema.")
+
+    if columns is not NotImplemented:
+        cols = list(columns)
+    elif schema is not NotImplemented:
+        cols = list(schema)
+    else:
+        cols = None
+
+    df = DataFrame.from_records(data, columns=cols)
+
+    if dtypes is not NotImplemented:
+        df = df.astype(dict(zip(df.columns, dtypes)))
+    elif schema is not NotImplemented:
+        df = df.astype(schema)
+
+    if index is not NotImplemented:
+        df = df.set_index(index)
+
+    return df
 
 
 @overload

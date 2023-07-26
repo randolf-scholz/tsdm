@@ -338,9 +338,9 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         r"""Metadata for each unit."""
         data = [
             # fmt: off
-            ("PRCP", 0,    None, True,  True,  "10²in", "precipitation"),
-            ("SNOW", 0,    None, True,  True,  "10¹in", "snowfall"),
-            ("SNWD", 0,    None, True,  True,  "in",    "snow depth"),
+            ("PRCP", 0,    None, True,  True,  "10²in", "precipitation"      ),
+            ("SNOW", 0,    None, True,  True,  "10¹in", "snowfall"           ),
+            ("SNWD", 0,    None, True,  True,  "in",    "snow depth"         ),
             ("TMAX", -100, 150,  False, False, "°F",    "maximum temperature"),
             ("TMIN", -100, 150,  False, False, "°F",    "minimum temperature"),
             # fmt: on
