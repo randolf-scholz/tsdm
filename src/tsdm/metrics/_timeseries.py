@@ -50,6 +50,7 @@ class TimeSeriesLoss(Protocol):
         However, for the sake of simplicity, we assume that the tensors are
         padded with missing values, such that they are of equal length.
         """
+        ...
 
 
 class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):

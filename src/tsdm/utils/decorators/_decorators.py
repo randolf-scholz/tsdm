@@ -90,6 +90,7 @@ class Decorator(Protocol):
 
     def __call__(self, func: Callable, /) -> Callable:
         r"""Decorate a function."""
+        ...
 
 
 class ClassDecorator(Protocol):
@@ -97,6 +98,7 @@ class ClassDecorator(Protocol):
 
     def __call__(self, cls: type, /) -> type:
         r"""Decorate a class."""
+        ...
 
 
 def collect_exit_points(func: Callable) -> list[ast.Return]:

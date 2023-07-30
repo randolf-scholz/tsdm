@@ -69,19 +69,24 @@ class Dataset(Protocol[T_co]):
     @classmethod
     def info(cls) -> None:
         """Print information about the dataset."""
+        ...
 
     @property
     def rawdata_paths(self) -> Mapping[str, Path]:
         """Return list of paths to the rawdata files."""
+        ...
 
     def clean(self) -> T_co | None:
         """Clean the dataset."""
+        ...
 
     def download(self) -> None:
         """Download the dataset."""
+        ...
 
     def load(self) -> T_co:
         """Load the dataset."""
+        ...
 
 
 class BaseDatasetMetaClass(ABCMeta):

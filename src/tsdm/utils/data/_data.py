@@ -18,8 +18,8 @@ from typing import Any, overload
 
 import pandas as pd
 import pyarrow as pa
-import scipy.stats as stats
 from pandas import DataFrame, Index, Series
+from scipy import stats
 from tqdm.autonotebook import tqdm
 
 from tsdm.types.variables import pandas_var

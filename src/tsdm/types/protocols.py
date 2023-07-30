@@ -44,6 +44,7 @@ class SelfMap(Protocol):
 
     def __call__(self, __x: T) -> T:
         r"""Returns the result of the endofunction."""
+        ...
 
 
 class SelfMapProto(Protocol[T]):
@@ -51,6 +52,7 @@ class SelfMapProto(Protocol[T]):
 
     def __call__(self, __x: T) -> T:
         r"""Returns the result of the endofunction."""
+        ...
 
 
 @runtime_checkable
@@ -60,6 +62,7 @@ class Dataclass(Protocol):
     @property
     def __dataclass_fields__(self) -> Mapping[str, Field]:
         r"""Return the fields of the dataclass."""
+        ...
 
 
 @runtime_checkable
@@ -112,12 +115,15 @@ class SupportsShape(Protocol[scalar_co]):
     @property
     def shape(self) -> Sequence[int]:
         """Yield the shape of the array."""
+        ...
 
     def __len__(self) -> int:
         """Number of elements along first axis."""
+        ...
 
     def __getitem__(self, key: Any) -> Self | scalar_co:
         """Return an element/slice of the table."""
+        ...
 
 
 @runtime_checkable
@@ -130,20 +136,25 @@ class Array(Protocol[scalar_co]):
     @property
     def ndim(self) -> int:
         r"""Number of dimensions."""
+        ...
 
     @property
     def dtype(self) -> scalar_co:
         r"""Yield the data type of the array."""
+        ...
 
     @property
     def shape(self) -> Sequence[int]:
         """Yield the shape of the array."""
+        ...
 
     def __len__(self) -> int:
         """Number of elements along first axis."""
+        ...
 
     def __getitem__(self, key: Any) -> Self:
         """Return an element/slice of the table."""
+        ...
 
     # # fmt: off
     # def __len__(self) -> int: ...
@@ -186,20 +197,25 @@ class NumericalArray(Protocol[scalar_co]):
     @property
     def ndim(self) -> int:
         r"""Number of dimensions."""
+        ...
 
     @property
     def dtype(self) -> scalar_co:
         r"""Yield the data type of the array."""
+        ...
 
     @property
     def shape(self) -> Sequence[int]:
         """Yield the shape of the array."""
+        ...
 
     def __len__(self) -> int:
         """Number of elements along first axis."""
+        ...
 
     def __getitem__(self, key: Any) -> Self:
         """Return an element/slice of the table."""
+        ...
 
     # Numerical Operations
     # fmt: off
@@ -252,12 +268,15 @@ class Lookup(Protocol[key_contra, value_co]):
     def __contains__(self, key: key_var) -> bool:
         # Here, any Hashable input is accepted.
         """Return True if the map contains the given key."""
+        ...
 
     def __getitem__(self, key: key_contra) -> value_co:
         """Return the value associated with the given key."""
+        ...
 
     def __len__(self) -> int:
         """Return the number of items in the map."""
+        ...
 
 
 @runtime_checkable
@@ -268,18 +287,24 @@ class Hash(Protocol):
 
     def digest_size(self) -> int:
         """Return the size of the hash in bytes."""
+        ...
 
     def block_size(self) -> int:
         """Return the internal block size of the hash in bytes."""
+        ...
 
     def update(self, data: bytes) -> None:
         """Update this hash object's state with the provided string."""
+        ...
 
     def digest(self) -> bytes:
         """Return the digest value as a string of binary data."""
+        ...
 
     def hexdigest(self) -> str:
         """Return the digest value as a string of hexadecimal digits."""
+        ...
 
     def copy(self) -> Self:
         """Return a clone of the hash object."""
+        ...

@@ -68,6 +68,7 @@ class LogFunction(Protocol):
         postfix: str = "",
     ) -> None:
         """Log to tensorboard."""
+        ...
 
 
 class TargetsAndPredics(NamedTuple):

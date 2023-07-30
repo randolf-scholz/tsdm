@@ -107,9 +107,11 @@ class Logger(Protocol):
     @property
     def callbacks(self) -> Mapping[str, Sequence[Callback]]:
         """Callbacks to be called at the end of a batch/epoch."""
+        ...
 
     def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
         """Call the logger."""
+        ...
 
 
 class LoggerMetaclass(ABCMeta):

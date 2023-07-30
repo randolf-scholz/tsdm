@@ -88,6 +88,7 @@ class Callback(Protocol[P]):
 
     def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
         """Log something at time index i."""
+        ...
 
 
 class CallbackMetaclass(ABCMeta):

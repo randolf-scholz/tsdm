@@ -38,6 +38,7 @@ class Loss(Protocol):
 
     def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
         r"""Compute the loss."""
+        ...
 
 
 class BaseLoss(nn.Module, metaclass=ABCMeta):

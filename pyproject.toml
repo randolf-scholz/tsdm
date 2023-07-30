@@ -233,21 +233,23 @@ disable= [
     "C0103",  # invalid-name
     "C0144",  # non-ascii-name
     "C0204",  # bad-mcs-classmethod-argument
-#    "C0415",  # import-outside-toplevel
+    "C0415",  # import-outside-toplevel
     "E0611",  # no-name-in-module
+    "E1101",  # no-member  # FIXME: too many false positives
+    "E1121",  # too-many-function-args  # too many false positives
+    "E1123",  # unexpected-keyword-arg  # too many false positives
     "E1130",  # invalid-unary-operand-type
     "R0801",  # similar lines
     "R0902",  # too-many-instance-attributes
     "R0903",  # too-few-public-methods
     "R0911",  # too-many-return-statements
+    "R0913",  # too-many-arguments
     "R0914",  # too-many-locals
     "R0915",  # too-many-statements
-    "W0221",  # arguments-differ
-    "W1113",  # keyword-arg-before-vararg
+#    "W0221",  # arguments-differ
 #    "W0511",  # (fixme) (todos)
-    "E1101",  # no-member  # FIXME: too many false positives
-    "E1121",  # too-many-function-args  # too many false positives
-    "E1123",  # unexpected-keyword-arg  # too many false positives
+    "W1113",  # keyword-arg-before-vararg
+    "W2301",  # unnecessary-ellipsis
 ]
 fail-on= [
     "C0116",  # missing-function-docstring
@@ -517,7 +519,7 @@ requests = ">=2.31.0"
 tensorboard = ">=2.13.0"
 torch = ">=2.0.1"
 tqdm = ">=4.65.0"
-typing-extensions = ">=4.6.3"
+typing-extensions = ">=4.7.1"
 
 
 [tool.poetry.group.test.dependencies]
@@ -535,7 +537,7 @@ black = {version = ">=23.1", extras = ["d", "jupyter"]}
 blacken-docs = ">=1.15.0"
 coverage = ">=7.2.7"
 docutils = ">=0.20.1"
-flake8 = ">=6.0.0"
+flake8 = ">=6.1.0"
 flake8-annotations = ">=3.0.1"
 flake8-black = ">=0.3.6"
 flake8-bugbear = ">=23.7.10"
@@ -557,19 +559,19 @@ pip = ">=23.2.1"
 pre-commit = ">=3.3.3"
 pyall = ">=0.3.5"
 pybadges = ">=3.0.0"
-pycodestyle = ">=2.10.0"
+pycodestyle = ">=2.11.0"
 pydata-sphinx-theme = ">=0.13.3"
 pydeps = ">=1.12.13"
 pydocstyle = ">=6.3.0"
-pyflakes = ">=3.0.1"
+pyflakes = ">=3.1.0"
 pygments = ">=2.15.1"
-pylint = ">=2.17.4"
+pylint = ">=2.17.5"
 pylint-gitlab = ">=1.2.0"
 pyright = ">=1.1.318"
 ruff = ">=0.0.280"
 setuptools = ">=68.0.0"
 slotscheck = ">=0.16.5"
-sphinx = ">=7.0.1"
+sphinx = ">=7.1.1"
 sphinx-autoapi = ">=2.1.1"
 sphinx-automodapi = ">=0.15.0"
 sphinx-copybutton = ">=0.5.2"

@@ -58,24 +58,30 @@ class Encoder(Protocol[T, S]):
     @property
     def requires_fit(self) -> bool:
         r"""Whether the encoder requires fitting."""
+        ...
 
     # def __invert__(self) -> Encoder:
     #     r"""Return the inverse encoder (i.e. decoder)."""
 
     def __matmul__(self, other: Encoder) -> Encoder:
         r"""Return chained encoders."""
+        ...
 
     def __or__(self, other: Encoder) -> Encoder:
         r"""Return product encoders."""
+        ...
 
     def encode(self, data: T, /) -> S:
         """Encode the data by transformation."""
+        ...
 
     def decode(self, data: S, /) -> T:
         """Decode the data by transformation."""
+        ...
 
     def fit(self, data: T, /) -> None:
         r"""Fits the encoder to data."""
+        ...
 
 
 class BaseEncoderMetaClass(ABCMeta):
