@@ -357,8 +357,8 @@ class BoundaryEncoder(BaseEncoder[T, T]):
             )
 
         if (
-            self.upper_bound is not None
-            and self.lower_bound is not None
+            self.upper_bound not in (None, NotImplemented)
+            and self.lower_bound not in (None, NotImplemented)
             and self.upper_bound <= self.lower_bound
         ):
             raise ValueError("lower_bound must be smaller than upper_bound.")

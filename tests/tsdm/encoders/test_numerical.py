@@ -85,6 +85,7 @@ def test_reduce_axes():
         torch.tensor([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
         pd.Series([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
     ),
+    ids=("numpy", "torch", "pandas"),
 )
 def test_boundary_encoder(data: T) -> None:
     """Test the boundary encoder."""
