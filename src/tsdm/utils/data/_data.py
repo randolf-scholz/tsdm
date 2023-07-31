@@ -31,10 +31,10 @@ def make_dataframe(
     data: Sequence[tuple[Any, ...]],
     /,
     *,
-    columns: Sequence[str] = NotImplemented,
-    dtypes: Sequence[Any] = NotImplemented,
+    columns: list[str] = NotImplemented,
+    dtypes: list[str | type] = NotImplemented,
     schema: Mapping[str, Any] = NotImplemented,
-    index: str = NotImplemented,
+    index: str | list[str] = NotImplemented,
 ) -> DataFrame:
     """Make a DataFrame from a dictionary."""
     if dtypes is not NotImplemented and schema is not NotImplemented:
