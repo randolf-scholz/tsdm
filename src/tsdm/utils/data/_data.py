@@ -1,6 +1,9 @@
 r"""Data Utilities."""
 
 __all__ = [
+    # classes
+    "InlineSchema",
+    "InlineTable",
     # Functions
     "aggregate_nondestructive",
     "compute_entropy",
@@ -15,17 +18,33 @@ __all__ = [
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Any, overload
+from typing import Any, Generic, overload
 
 import pandas as pd
 import pyarrow as pa
 from pandas import DataFrame, Index, Series
 from scipy import stats
 from tqdm.autonotebook import tqdm
+from typing_extensions import NotRequired, Required, TypedDict
 
-from tsdm.types.variables import pandas_var
+from tsdm.types.variables import pandas_var, tuple_co
 
 __logger__ = logging.getLogger(__package__)
+
+
+class InlineSchema(TypedDict):
+    """A table of data in a dictionary."""
+
+    columns: NotRequired[list[str]]
+    dtypes: NotRequired[list[str | type]]
+    schema: NotRequired[Mapping[str, Any]]
+    index: NotRequired[str | list[str]]
+
+
+class InlineTable(InlineSchema, Generic[tuple_co]):
+    """A table of data in a dictionary."""
+
+    data: Required[Sequence[tuple_co]]
 
 
 def make_dataframe(

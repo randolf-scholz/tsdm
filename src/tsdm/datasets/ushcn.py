@@ -9,7 +9,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import make_dataframe, remove_outliers
+from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 KEY: TypeAlias = Literal[
     "timeseries",
@@ -20,7 +20,7 @@ KEY: TypeAlias = Literal[
     "timeseries_complete",
 ]
 
-TIMESERIES_DESCRIPTION = {
+TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
         # fmt: off
         ("PRCP", "float32[pyarrow]",    0, None,  True,  True, "10²in", "precipitation"      ),
@@ -45,8 +45,8 @@ TIMESERIES_DESCRIPTION = {
     "index": ["name"],
 }
 
-METADATA_DESCRIPTION = {
-    "data": {
+METADATA_DESCRIPTION: InlineTable = {
+    "data": [
         # fmt: off
         ("LATITUDE"   , "float32[pyarrow]",  -90,    90, True, True,  "°" , "latitude"   ),
         ("LONGITUDE"  , "float32[pyarrow]", -180,   180, True, True,  "°" , "longitude"  ),
@@ -58,7 +58,7 @@ METADATA_DESCRIPTION = {
         ("COMPONENT_3", "int32[pyarrow]"  ,    0,  None, True, True,  None, "station ID" ),
         ("UTC_OFFSET" , "string[pyarrow]" , None,  None, True, True,  "h" ,  "UTC offset"),
         # fmt: on
-    },
+    ],
     "schema": {
         # fmt: off
         "name"            : "string[pyarrow]",
@@ -399,12 +399,12 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
     @staticmethod
     def _timeseries_description() -> DataFrame:
         r"""Metadata for each unit."""
-        return make_dataframe(**TIMESERIES_DESCRIPTION)  # type: ignore[arg-type]
+        return make_dataframe(**TIMESERIES_DESCRIPTION)
 
     @staticmethod
     def _metadata_description() -> DataFrame:
         r"""Metadata for each unit."""
-        return make_dataframe(**METADATA_DESCRIPTION)  # type: ignore[arg-type]
+        return make_dataframe(**METADATA_DESCRIPTION)
 
     def _clean_timeseries_complete(self) -> DataFrame:
         warnings.warn(

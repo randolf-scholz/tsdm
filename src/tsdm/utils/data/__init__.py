@@ -6,6 +6,8 @@ __all__ = [
     # Classes
     "DatasetCollection",
     "MappingDataset",
+    "InlineSchema",
+    "InlineTable",
     # folds
     "folds_as_frame",
     "folds_as_sparse_frame",
@@ -30,6 +32,8 @@ __all__ = [
 
 from tsdm.utils.data import timeseries
 from tsdm.utils.data._data import (
+    InlineSchema,
+    InlineTable,
     aggregate_nondestructive,
     compute_entropy,
     float_is_int,
