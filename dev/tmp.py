@@ -11,6 +11,17 @@ import logging
 logging.basicConfig(level=logging.INFO)
 # -
 
+f = lambda x: 0
+
+from types import FunctionType
+
+f_type = type(f)
+
+
+class Foo(FunctionType):
+    pass
+
+
 import tsdm
 
 tsdm.datasets.timeseries.USHCN()
