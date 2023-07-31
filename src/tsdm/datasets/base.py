@@ -640,7 +640,7 @@ class MultiTableDataset(
             return
 
         # skip if cleaned files already exist
-        if self.dataset_files_exist(key=key) and not force:
+        if not force and self.dataset_files_exist(key=key):
             self.LOGGER.debug("Cleaned data file already exists, skipping <%s>", key)
             return
 
@@ -696,14 +696,14 @@ class MultiTableDataset(
         """
         # key=None: Recursively load all tables.
         if key is None:
-            self.LOGGER.debug("Starting to load  dataset.")
+            self.LOGGER.debug("Starting to load dataset.")
             for key in self.table_names:
                 self.load(key=key, force=force, validate=validate, **kwargs)
-            self.LOGGER.debug("Finished loading  dataset.")
+            self.LOGGER.debug("Finished loading dataset.")
             return self.tables
 
         # Skip if already loaded.
-        if not initializing:
+        if not force and not initializing:
             return self.tables[key]
 
         # Create the pre-processed dataset file if it doesn't exist.
@@ -717,9 +717,9 @@ class MultiTableDataset(
             )
 
         # Load the table, make sure to use the cached version if it exists.
-        self.LOGGER.debug("Starting to load  dataset <%s>", key)
+        self.LOGGER.debug("Starting to load dataset <%s>", key)
         table = self.load_table(key)
-        self.LOGGER.debug("Finished loading  dataset <%s>", key)
+        self.LOGGER.debug("Finished loading dataset <%s>", key)
 
         # Validate the loaded table.
         if validate and self.table_hashes is not NotImplemented:

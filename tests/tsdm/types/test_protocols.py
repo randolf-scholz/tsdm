@@ -29,12 +29,12 @@ def test_ntuple() -> None:
 
     # check against plain tuple
     # assert issubclass(NTuple, tuple)
-    assert not issubclass(tuple, NTuple)
+    assert not issubclass(tuple, NTuple)  # type: ignore[misc]
 
     assert isinstance((1, 2), tuple)
     assert not isinstance((1, 2), NTuple)
 
-    assert issubclass(Point, NTuple)
+    assert issubclass(Point, NTuple)  # type: ignore[misc]
     assert issubclass(Point, tuple)
     assert not issubclass(tuple, Point)
     assert not issubclass(NTuple, Point)

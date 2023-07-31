@@ -21,6 +21,33 @@ KEY: TypeAlias = Literal[
 ]
 
 
+METADATA_DESCRIPTION = {
+    "data": {
+        # fmt: off
+        ("LATITUDE",   "float32[pyarrow]", -90,  90,    True, True,  "°",  "latitude"  ),
+        ("LONGITUDE",  "float32[pyarrow]", -180, 180,   True, True,  "°",  "longitude" ),
+        ("ELEVATION",  "float32[pyarrow]", -100, 10000, True, True,  "m",  "elevation" ),
+        ("STATE",      "string[pyarrow]",  None, None,  True, True,  None, "state"     ),
+        ("NAME",        "string[pyarrow]",  None, None,  True, True,  None, "name"      ),
+        ("COMPONENT_1", "int32[pyarrow]",  0,    None,  True, True,  None, "station ID"),
+        ("COMPONENT_2", "int32[pyarrow]",  0,    None,  True, True,  None, "station ID"),
+        ("COMPONENT_3", "int32[pyarrow]",  0,    None,  True, True,  None, "station ID"),
+        ("UTC_OFFSET",  "string[pyarrow]",  None, None,  True, True,  "h",  "UTC offset"),
+        # fmt: on
+    },
+    "schema": {
+        "name": "string[pyarrow]",
+        "dtype": "string[pyarrow]",
+        "lower": "float32[pyarrow]",
+        "upper": "float32[pyarrow]",
+        "lower_inclusive": "bool[pyarrow]",
+        "upper_inclusive": "bool[pyarrow]",
+        "unit": "string[pyarrow]",
+        "description": "string[pyarrow]",
+    },
+}
+
+
 class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
@@ -193,12 +220,12 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
             "LATITUDE"    : "float32[pyarrow]",
             "LONGITUDE"   : "float32[pyarrow]",
             "ELEVATION"   : "float32[pyarrow]",
-            "STATE"       : "string",  # not pyarrow due to bug in pandas.
+            "STATE"       : "string[pyarrow]",  # not pyarrow due to bug in pandas.
             "NAME"        : "string[pyarrow]",
             "COMPONENT_1" : "int32[pyarrow]",
             "COMPONENT_2" : "int32[pyarrow]",
             "COMPONENT_3" : "int32[pyarrow]",
-            "UTC_OFFSET"  : "timedelta64[s]",
+            "UTC_OFFSET"  : "int8[pyarrow]",
             # fmt: on
         },
     }
@@ -227,7 +254,7 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
             "COMPONENT_1" : "int32[pyarrow]",
             "COMPONENT_2" : "int32[pyarrow]",
             "COMPONENT_3" : "int32[pyarrow]",
-            "UTC_OFFSET"  : "duration[s][pyarrow]",
+            "UTC_OFFSET"  : "int8[pyarrow]",
             # fmt: on
         },
         "timeseries_description": {
@@ -310,7 +337,7 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         )
 
         self.LOGGER.info("Removing outliers from metadata.")
-        metadata = remove_outliers(metadata, self.table_schemas["metadata"])
+        # metadata = remove_outliers(metadata, self.table_schemas["metadata"])
 
         return metadata
 
