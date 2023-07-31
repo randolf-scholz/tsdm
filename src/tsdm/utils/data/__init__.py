@@ -21,17 +21,20 @@ __all__ = [
     "compute_entropy",
     "float_is_int",
     "get_integer_cols",
+    "make_dataframe",
     "remove_outliers",
     "strip_whitespace",
     "table_info",
     "vlookup_uniques",
 ]
+
 from tsdm.utils.data import timeseries
 from tsdm.utils.data._data import (
     aggregate_nondestructive,
     compute_entropy,
     float_is_int,
     get_integer_cols,
+    make_dataframe,
     remove_outliers,
     strip_whitespace,
     table_info,

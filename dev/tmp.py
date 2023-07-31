@@ -8,23 +8,49 @@
 
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 # -
-
-f = lambda x: 0
-
-from types import FunctionType
-
-f_type = type(f)
-
-
-class Foo(FunctionType):
-    pass
-
 
 import tsdm
 
-tsdm.datasets.timeseries.USHCN()
+ds = tsdm.datasets.ushcn.USHCN_Dataset(initialize=False)
+
+ds.metadata
+
+import pandas as pd
+
+pd.read_parquet("demo.parquet")
+
+
+ds.clean(key="metadata", force=True)
+
+ds.tables.update(foo=1)
+
+
+# +
+from tsdm.utils import LazyDict, LazyValue
+
+EMPTY: LazyDict = LazyDict()
+# test __or__ operator with other LazyDict
+ld = EMPTY | LazyDict({0: lambda: 0})
+ld.values()
+# -
+
+
+ds.tables.get("foo")
+
+ds.load("metadata", force=True)
+
+pd.DatetimeTZDtype(tz="UTC+06:00")
+
+md.UTC_OFFSET.min()
+
+pd.Series(["+6", "+7"]).astype()
+
+
+md.dtypes
+
+md.describe()
 
 METADATA_DESCRIPTION = {
     # NOTE: extracted from parameter_types
@@ -68,8 +94,19 @@ METADATA_DESCRIPTION = {
         # fmt: on
     }
     ,
+    "index": ["name"],
     # fmt: on
 }
+
+from typing import Any
+
+match {2, None}:
+    case {2: object(), None: object()}:  # ✔
+        print("Mappings work!")
+
+match {2: 0, None: 0}:
+    case {1: 0, None: 0}:  # ✔
+        print("Mappings work!")
 
 from abc import abstractmethod
 

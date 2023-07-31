@@ -6,6 +6,7 @@ __all__ = [
     "compute_entropy",
     "float_is_int",
     "get_integer_cols",
+    "make_dataframe",
     "remove_outliers",
     "strip_whitespace",
     "table_info",
@@ -29,7 +30,6 @@ __logger__ = logging.getLogger(__package__)
 
 def make_dataframe(
     data: Sequence[tuple[Any, ...]],
-    /,
     *,
     columns: list[str] = NotImplemented,
     dtypes: list[str | type] = NotImplemented,
