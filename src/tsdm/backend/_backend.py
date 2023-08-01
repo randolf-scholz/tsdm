@@ -30,6 +30,7 @@ from tsdm.backend.pandas import (
     pandas_nanmean,
     pandas_nanmin,
     pandas_nanstd,
+    pandas_strip_whitespace,
     pandas_where,
 )
 from tsdm.backend.protocols import (
@@ -39,6 +40,7 @@ from tsdm.backend.protocols import (
     ToTensorProto,
     WhereProto,
 )
+from tsdm.backend.pyarrow import arrow_strip_whitespace
 from tsdm.backend.torch import torch_like, torch_nanmax, torch_nanmin, torch_nanstd
 from tsdm.backend.universal import (
     false_like as universal_false_like,
@@ -49,7 +51,7 @@ from tsdm.types.variables import any_var as T
 
 P = ParamSpec("P")
 
-BackendID: TypeAlias = Literal["torch", "numpy", "pandas"]
+BackendID: TypeAlias = Literal["torch", "numpy", "pandas", "arrow"]
 """A type alias for the supported backends."""
 
 
@@ -164,6 +166,11 @@ class Kernels:
         "torch": torch.where,  # type: ignore[dict-item]
     }
 
+    strip_whitespace: Mapping[BackendID, SelfMapProto] = {
+        "pandas": pandas_strip_whitespace,
+        "arrow": arrow_strip_whitespace,
+    }
+
 
 class Backend(Generic[T]):
     """Provides kernels for numerical operations."""
@@ -185,24 +192,33 @@ class Backend(Generic[T]):
     true_like: SelfMapProto[T]
     false_like: SelfMapProto[T]
 
+    strip_whitespace: SelfMapProto[T]
+
     def __init__(self, backend: str) -> None:
         # set the selected backend
         assert backend in get_args(BackendID)
         self.selected_backend = cast(BackendID, backend)
 
         # select the kernels
-        self.clip = Kernels.clip[self.selected_backend]
-        self.isnan = Kernels.isnan[self.selected_backend]
-        self.where = Kernels.where[self.selected_backend]
+        self.clip = Kernels.clip.get(self.selected_backend, NotImplemented)
+        self.isnan = Kernels.isnan.get(self.selected_backend, NotImplemented)
+        self.where = Kernels.where.get(self.selected_backend, NotImplemented)
 
         # contractions
-        self.nanmax = Kernels.nanmax[self.selected_backend]
-        self.nanmean = Kernels.nanmean[self.selected_backend]
-        self.nanmin = Kernels.nanmin[self.selected_backend]
-        self.nanstd = Kernels.nanstd[self.selected_backend]
+        self.nanmax = Kernels.nanmax.get(self.selected_backend, NotImplemented)
+        self.nanmean = Kernels.nanmean.get(self.selected_backend, NotImplemented)
+        self.nanmin = Kernels.nanmin.get(self.selected_backend, NotImplemented)
+        self.nanstd = Kernels.nanstd.get(self.selected_backend, NotImplemented)
 
         # tensor creation
-        self.tensor_like = Kernels.tensor_like[self.selected_backend]
-        self.to_tensor = Kernels.to_tensor[self.selected_backend]
-        self.true_like = Kernels.true_like[self.selected_backend]
-        self.false_like = Kernels.false_like[self.selected_backend]
+        self.tensor_like = Kernels.tensor_like.get(
+            self.selected_backend, NotImplemented
+        )
+        self.to_tensor = Kernels.to_tensor.get(self.selected_backend, NotImplemented)
+        self.true_like = Kernels.true_like.get(self.selected_backend, NotImplemented)
+        self.false_like = Kernels.false_like.get(self.selected_backend, NotImplemented)
+
+        # other
+        self.strip_whitespace = Kernels.strip_whitespace.get(
+            self.selected_backend, NotImplemented
+        )

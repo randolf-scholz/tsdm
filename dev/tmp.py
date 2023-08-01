@@ -15,7 +15,11 @@ import tsdm
 
 ds = tsdm.datasets.ushcn.USHCN_Dataset(initialize=False)
 
-ds.metadata
+ds.timeseries
+
+
+list(ds.metadata.items())
+
 
 import pandas as pd
 

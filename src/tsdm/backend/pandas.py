@@ -1,6 +1,7 @@
 """implement pandas backend for tsdm."""
 
 __all__ = [
+    # Functions
     "pandas_axes",
     "pandas_clip",
     "pandas_nanmax",
@@ -9,6 +10,10 @@ __all__ = [
     "pandas_nanstd",
     "pandas_where",
     "pandas_like",
+    "pandas_strip_whitespace",
+    # auxiliary functions
+    "strip_whitespace_series",
+    "strip_whitespace_dataframe",
 ]
 
 from typing import Literal, TypeVar
@@ -81,3 +86,24 @@ def pandas_like(x: ArrayLike, ref: P) -> P:
     if isinstance(ref, DataFrame):
         return DataFrame(x, index=ref.index, columns=ref.columns).astype(ref.dtypes)
     raise TypeError(f"Expected Series or DataFrame, got {type(ref)}.")
+
+
+def strip_whitespace_dataframe(frame: DataFrame) -> DataFrame:
+    """Strip whitespace from all string columns in a DataFrame."""
+    return frame.apply(strip_whitespace_series)
+
+
+def strip_whitespace_series(series: Series) -> Series:
+    """Strip whitespace from all string elements in a Series."""
+    if series.dtype == "string":
+        return series.str.strip()
+    return series
+
+
+def pandas_strip_whitespace(obj: P) -> P:
+    """Strip whitespace from all string elements in a pandas object."""
+    if isinstance(obj, DataFrame):
+        return strip_whitespace_dataframe(obj)
+    if isinstance(obj, Series):
+        return strip_whitespace_series(obj)
+    raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")

@@ -9,7 +9,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
+from tsdm.utils.data import InlineTable, make_dataframe
 
 KEY: TypeAlias = Literal[
     "timeseries",
@@ -38,7 +38,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "upper_bound"     : "float32[pyarrow]",
         "lower_inclusive" : "bool[pyarrow]",
         "upper_inclusive" : "bool[pyarrow]",
-        "units"           : "string[pyarrow]",
+        "unit"            : "string[pyarrow]",
         "description"     : "string[pyarrow]",
         # fmt: on
     },
@@ -272,6 +272,8 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         "timeseries": (204771562, 5),
         "metadata": (1218, 9),
         "state_codes": (48, 3),
+        "metadata_description": (9, 6),
+        "timeseries_description": (8, 6),
     }
     table_schemas = {
         "timeseries": {
@@ -337,6 +339,36 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
             case _:
                 raise KeyError(f"Unknown key: {key}")
 
+    @staticmethod
+    def _timeseries_description() -> DataFrame:
+        r"""Metadata for each unit."""
+        return make_dataframe(**TIMESERIES_DESCRIPTION)
+
+    @staticmethod
+    def _metadata_description() -> DataFrame:
+        r"""Metadata for each unit."""
+        return make_dataframe(**METADATA_DESCRIPTION)
+
+    def _clean_timeseries(self) -> DataFrame:
+        self.LOGGER.info("Creating simplified timeseries table.")
+        table = self.tables["timeseries_complete"]
+
+        self.LOGGER.info("dropping all data with raised quality flags.")
+        table = table.loc[table["QFLAG"].isna()]
+
+        # FIXME: ArrowNotImplementedError: Function 'dictionary_encode' has no kernel matching input types dictionary
+        # FIXME: https://github.com/apache/arrow/issues/34890
+        table = table[["ELEMENT", "VALUE"]].astype({"ELEMENT": "string[pyarrow]"})
+
+        self.LOGGER.info("Performing pivot operation.")
+        ts = table.pivot(columns="ELEMENT", values="VALUE")
+        ts.columns = ts.columns.astype("string[pyarrow]")
+
+        self.LOGGER.info("Removing outliers from timeseries.")
+        # ts = remove_outliers(ts, self.timeseries_description)
+
+        return ts
+
     def _clean_metadata(self) -> DataFrame:
         stations_colspecs = {
             # fmt: off
@@ -372,39 +404,9 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         ).set_index("COOP_ID")
 
         self.LOGGER.info("Removing outliers from metadata.")
-        # metadata = remove_outliers(metadata, self.table_schemas["metadata"])
+        # metadata = remove_outliers(metadata, self.metadata_description)
 
         return metadata
-
-    def _clean_timeseries(self) -> DataFrame:
-        self.LOGGER.info("Creating simplified timeseries table.")
-        table = self.tables["timeseries_complete"]
-
-        self.LOGGER.info("dropping all data with raised quality flags.")
-        table = table.loc[table["QFLAG"].isna()]
-
-        # FIXME: ArrowNotImplementedError: Function 'dictionary_encode' has no kernel matching input types dictionary
-        # FIXME: https://github.com/apache/arrow/issues/34890
-        table = table[["ELEMENT", "VALUE"]].astype({"ELEMENT": "string[pyarrow]"})
-
-        self.LOGGER.info("Performing pivot operation.")
-        ts = table.pivot(columns="ELEMENT", values="VALUE")
-        ts.columns = ts.columns.astype("string[pyarrow]")
-
-        self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.table_schemas["timeseries"])
-
-        return ts
-
-    @staticmethod
-    def _timeseries_description() -> DataFrame:
-        r"""Metadata for each unit."""
-        return make_dataframe(**TIMESERIES_DESCRIPTION)
-
-    @staticmethod
-    def _metadata_description() -> DataFrame:
-        r"""Metadata for each unit."""
-        return make_dataframe(**METADATA_DESCRIPTION)
 
     def _clean_timeseries_complete(self) -> DataFrame:
         warnings.warn(
