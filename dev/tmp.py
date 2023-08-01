@@ -8,12 +8,52 @@
 
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 # -
 
 import tsdm
 
+tsdm.datasets.TimeSeriesCollection.__dataclass_fields__.keys()
+
 ds = tsdm.datasets.ushcn.USHCN_Dataset(initialize=False)
+
+dir(ds.timeseries_complete)
+
+ds.timeseries.shape
+
+ds.timeseries.isna().mean()
+
+ds.timeseries.describe().round(2)
+
+ds.timeseries_description
+
+
+ts = ds.timeseries_complete
+
+table = table.loc[table["QFLAG"].isna()]
+
+
+table.pivot(columns="ELEMENT", values="VALUE")
+
+ts.columns = ts.columns.astype("string[pyarrow]")
+
+ts.index.to_frame().COOP_ID.astype(int).max()
+
+ts
+
+# +
+import pandas as pd
+
+pd.read_parquet("foo.parquet", dtype_backend="pyarrow")
+# -
+
+ds = tsdm.datasets.timeseries.KIWI()
+
+ds.timeseries.hist(figsize=(16, 10), log=True)
+
+
+ds.load("timeseries", force=True)
+
 
 ds.timeseries
 

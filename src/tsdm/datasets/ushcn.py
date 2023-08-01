@@ -243,7 +243,7 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
     rawdata_schemas = {
         "timeseries": {
             # fmt: off
-            "COOP_ID" : "string",  # not pyarrow due to bug in pandas.
+            "COOP_ID" : "int32[pyarrow]",
             "YEAR"    : "int16[pyarrow]",
             "MONTH"   : "int8[pyarrow]",
             "ELEMENT" : "string[pyarrow]",
@@ -255,7 +255,7 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         },
         "metadata": {
             # fmt: off
-            "COOP_ID"     : "string[pyarrow]",
+            "COOP_ID"     : "int32[pyarrow]",
             "LATITUDE"    : "float32[pyarrow]",
             "LONGITUDE"   : "float32[pyarrow]",
             "ELEVATION"   : "float32[pyarrow]",
@@ -349,26 +349,6 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         r"""Metadata for each unit."""
         return make_dataframe(**METADATA_DESCRIPTION)
 
-    def _clean_timeseries(self) -> DataFrame:
-        self.LOGGER.info("Creating simplified timeseries table.")
-        table = self.tables["timeseries_complete"]
-
-        self.LOGGER.info("dropping all data with raised quality flags.")
-        table = table.loc[table["QFLAG"].isna()]
-
-        # FIXME: ArrowNotImplementedError: Function 'dictionary_encode' has no kernel matching input types dictionary
-        # FIXME: https://github.com/apache/arrow/issues/34890
-        table = table[["ELEMENT", "VALUE"]].astype({"ELEMENT": "string[pyarrow]"})
-
-        self.LOGGER.info("Performing pivot operation.")
-        ts = table.pivot(columns="ELEMENT", values="VALUE")
-        ts.columns = ts.columns.astype("string[pyarrow]")
-
-        self.LOGGER.info("Removing outliers from timeseries.")
-        # ts = remove_outliers(ts, self.timeseries_description)
-
-        return ts
-
     def _clean_metadata(self) -> DataFrame:
         stations_colspecs = {
             # fmt: off
@@ -408,6 +388,22 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
 
         return metadata
 
+    def _clean_timeseries(self) -> DataFrame:
+        self.LOGGER.info("Creating simplified timeseries table.")
+        table = self.tables["timeseries_complete"]
+
+        self.LOGGER.info("dropping all data with raised quality flags.")
+        table = table.loc[table["QFLAG"].isna()]
+
+        self.LOGGER.info("Performing pivot operation.")
+        ts = table.pivot(columns="ELEMENT", values="VALUE")
+        ts.columns = ts.columns.astype("string[pyarrow]")
+
+        self.LOGGER.info("Removing outliers from timeseries.")
+        # ts = remove_outliers(ts, self.timeseries_description)
+
+        return ts
+
     def _clean_timeseries_complete(self) -> DataFrame:
         warnings.warn(
             "This can take a while to run. Consider using the Modin backend."
@@ -444,7 +440,7 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
 
         updated_dtypes = {
             # fmt: off
-            "COOP_ID" : pd.CategoricalDtype(ordered=True),
+            "COOP_ID" : "int32[pyarrow]",
             "YEAR"    : "int16[pyarrow]",
             "MONTH"   : "int8[pyarrow]",
             "ELEMENT" : ELEMENTS_DTYPE,
@@ -485,9 +481,9 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         self.LOGGER.info("Cleaning up columns...")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
         data.columns = pd.MultiIndex.from_frame(
-            pd.DataFrame(data_cols, columns=["VAR", "DAY"])
-            .astype({"VAR": "string", "DAY": "uint8"})
-            .astype("category")
+            pd.DataFrame(data_cols, columns=["VAR", "DAY"]).astype(
+                {"VAR": "string[pyarrow]", "DAY": "int8[pyarrow]"}
+            )
         )
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
@@ -497,7 +493,7 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
             .reset_index(level="DAY")
             .astype(  # correct dtypes after stacking operation
                 {
-                    "DAY": "int8",
+                    "DAY": "int8[pyarrow]",
                     "VALUE": VALUES_DTYPE,
                     "MFLAG": MFLAGS_DTYPE,
                     "QFLAG": QFLAGS_DTYPE,
