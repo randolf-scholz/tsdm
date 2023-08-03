@@ -77,7 +77,7 @@ from pandas import DataFrame
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
-KEY: TypeAlias = Literal["timeseries", "timeseries_description", "raw_timeseries"]
+KEY: TypeAlias = Literal["timeseries", "timeseries_description"]
 
 
 TIMESERIES_DESCRIPTION: InlineTable = {
@@ -154,8 +154,8 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         "PRES"    : "float32[pyarrow]",
         "DEWP"    : "float32[pyarrow]",
         "RAIN"    : "float32[pyarrow]",
-        "wd"      : "string",  # FIXME bug in pandas prevents using pyarrow here.
-        "station" : "string",  # FIXME bug in pandas prevents using pyarrow here.
+        "wd"      : "string[pyarrow]",  # FIXME bug in pandas prevents using pyarrow here.
+        "station" : "string[pyarrow]",  # FIXME bug in pandas prevents using pyarrow here.
         "WSPM"    : "float32[pyarrow]",
         # fmt: on
     }
@@ -173,7 +173,7 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
             "PRES"  : "float[pyarrow]",
             "DEWP"  : "float[pyarrow]",
             "RAIN"  : "float[pyarrow]",
-            "wd"    : "dictionary[int32,string]",
+            "wd"    : "string[pyarrow]",
             "WSPM"  : "float[pyarrow]",
             # fmt: on
         },
@@ -207,10 +207,15 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         ts = (
             table.assign(time=pd.to_datetime(table[time_cols]))
             .drop(columns=time_cols)
-            .astype({"wd": "category", "station": "category"})
             .set_index(["station", "time"])
             .sort_index()
         )
+
+        self.LOGGER.info("Removing outliers from timeseries.")
+        ts = remove_outliers(ts, self.timeseries_description)
+
+        self.LOGGER.info("Dropping completely missing rows.")
+        ts = ts.dropna(how="all", axis="index")
 
         return ts
 
@@ -218,14 +223,8 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
         match key:
             case "timeseries":
-                self.LOGGER.info("Removing outliers from timeseries.")
-                ts = remove_outliers(self.raw_timeseries, self.timeseries_description)
-                self.LOGGER.info("Dropping completely missing rows.")
-                ts = ts.dropna(how="all", axis="index")
-                return ts
+                return self._clean_timeseries()
             case "timeseries_description":
                 return make_dataframe(**TIMESERIES_DESCRIPTION)
-            case "raw_timeseries":
-                return self._clean_timeseries()
             case _:
                 raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")

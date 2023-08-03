@@ -382,7 +382,6 @@ def remove_outliers_dataframe(
 
     # replace outliers with NaN
     for col in df:
-        __logger__.info("Masking outliers in %r.", col)
         df.loc[mask[col], col] = pd.NA
 
     # drop rows where all columns are outliers

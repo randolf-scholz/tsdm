@@ -170,16 +170,6 @@ from tqdm.autonotebook import tqdm
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
-KEY: TypeAlias = Literal[
-    "timeseries",
-    "timeseries_description",
-    "metadata",
-    "metadata_description",
-    "raw_timeseries",
-    "raw_metadata",
-]
-
-
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
         # fmt: off
@@ -242,11 +232,11 @@ METADATA_DESCRIPTION: InlineTable = {
     "data": [
         # fmt: off
         # Demographics (columns 35-40)
-        ("Age"        , 0   , 100, False, True  , "years", "Years (100 for patients 90 or above)"      ),
-        ("Gender"     , 0   , 1  , True , True  , "bool" , "Female (0) or Male (1)"                    ),
-        ("Unit1"      , 0   , 1  , True , True  , "MICU" , "Administrative identifier for ICU unit"    ),
-        ("Unit2"      , 0   , 1  , True , True  , "SICU" , "Administrative identifier for ICU unit"    ),
-        ("HospAdmTime", None, 0  , True , False , "h"    , "Hours between hospital admit and ICU admit"),
+        ("Age"        ,    0,  100, False, True  , "years", "Years (100 for patients 90 or above)"      ),
+        ("Gender"     , None, None, True , True  , "bool" , "Female (0) or Male (1)"                    ),
+        ("Unit1"      ,    0,    1, True , True  , "MICU" , "Administrative identifier for ICU unit"    ),
+        ("Unit2"      ,    0,    1, True , True  , "SICU" , "Administrative identifier for ICU unit"    ),
+        ("HospAdmTime", None, None, True , False , "h"    , "Hours between hospital admit and ICU admit"),
         # fmt: on
     ],
     "schema": {
@@ -262,6 +252,15 @@ METADATA_DESCRIPTION: InlineTable = {
     },
     "index": ["variable"],
 }
+
+KEY: TypeAlias = Literal[
+    "timeseries",
+    "timeseries_description",
+    "metadata",
+    "metadata_description",
+    "raw_timeseries",
+    "raw_metadata",
+]
 
 
 class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
@@ -307,6 +306,8 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         "timeseries_description": DataFrame,
         "metadata": DataFrame,
         "metadata_description": DataFrame,
+        "raw_timeseries": DataFrame,
+        "raw_metadata": DataFrame,
     }
     table_schemas = {
         "timeseries": {
@@ -345,13 +346,13 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
             "WBC"              : "float32[pyarrow]",
             "Fibrinogen"       : "float32[pyarrow]",
             "Platelets"        : "float32[pyarrow]",
-            "SepsisLabel"      : "bool[pyarrow]",
+            "SepsisLabel"      : "boolean[pyarrow]",
             # fmt: on
         },
         "metadata": {
             # fmt: off
             "Age"         : "float32[pyarrow]",
-            "Gender"      : "category",
+            "Gender"      : "string[pyarrow]",
             "Unit1"       : "bool[pyarrow]",
             "Unit2"       : "bool[pyarrow]",
             "HospAdmTime" : "timedelta64[ns]",
@@ -398,12 +399,12 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         "Fibrinogen"       : "float32[pyarrow]",
         "Platelets"        : "float32[pyarrow]",
         "Age"              : "float32[pyarrow]",
-        "Gender"           : "boolean",  # FIXME: TypeError: ArrowExtensionArray._from_sequence_of_strings()
-        "Unit1"            : "boolean",  # got an unexpected keyword argument 'true_values'
-        "Unit2"            : "boolean",
+        "Gender"           : "boolean[pyarrow]",  # FIXME: TypeError: ArrowExtensionArray._from_sequence_of_strings()
+        "Unit1"            : "boolean[pyarrow]",  # got an unexpected keyword argument 'true_values'
+        "Unit2"            : "boolean[pyarrow]",
         "HospAdmTime"      : "float32[pyarrow]",
         "ICULOS"           : "int32[pyarrow]",
-        "SepsisLabel"      : "boolean",
+        "SepsisLabel"      : "boolean[pyarrow]",
         # fmt: on
     }
 
@@ -487,8 +488,8 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
             .sort_index()
         )
 
-        self.serialize(ts, self.dataset_paths["timeseries"])
-        self.serialize(md, self.dataset_paths["metadata"])
+        self.serialize(ts, self.dataset_paths["raw_timeseries"])
+        self.serialize(md, self.dataset_paths["raw_metadata"])
         return None
 
     def clean_table(self, key: KEY) -> DataFrame | None:
