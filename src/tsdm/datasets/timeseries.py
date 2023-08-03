@@ -14,11 +14,23 @@ class KIWI(TimeSeriesCollection):
     r"""The KIWI dataset wrapped as TimeSeriesCollection."""
 
     def __init__(self) -> None:
-        super().__init__(**KIWI_Dataset())
+        ds = KIWI_Dataset()
+        super().__init__(
+            timeseries=ds.timeseries,
+            metadata=ds.metadata,
+            timeseries_description=ds.timeseries_description,
+            metadata_description=ds.metadata_description,
+        )
 
 
 class USHCN(TimeSeriesCollection):
     r"""The USHCN dataset wrapped as TimeSeriesCollection."""
 
     def __init__(self) -> None:
-        super().__init__(**USHCN_Dataset())  # type: ignore[misc]
+        ds = USHCN_Dataset()
+        super().__init__(
+            timeseries=ds.timeseries,
+            metadata=ds.metadata,
+            timeseries_description=ds.timeseries_description,
+            metadata_description=ds.metadata_description,
+        )

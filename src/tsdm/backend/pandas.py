@@ -72,11 +72,11 @@ def pandas_nanstd(x: P, axis: Axes = None) -> P:
     return x.std(axis=pandas_axes(x.shape, axis), skipna=True, ddof=0)
 
 
-def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray) -> NDArray:
+def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray) -> P:
     """Analogue to `numpy.where`."""
     if isinstance(a, Series | DataFrame):
         return a.where(cond, b)
-    return a if cond else b  # scalar fallback
+    return a if cond else pandas_like(b, a)  # scalar fallback
 
 
 def pandas_like(x: ArrayLike, ref: P) -> P:

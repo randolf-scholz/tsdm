@@ -225,8 +225,9 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         "timeseries_description",
         "metadata",
         "metadata_description",
-        "state_codes",
+        # extra tables
         "timeseries_complete",
+        "state_codes",
     ]
     rawdata_files = [
         "data_format.txt",

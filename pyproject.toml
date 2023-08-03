@@ -27,7 +27,7 @@ classifiers = [
 
 dependencies = [
     "matplotlib>=3.7.2",
-    "numpy>=1.25.1",
+    "numpy>=1.25.2",
     "pandas>=2.0.3",
     "pillow>=10.0.0",
     "pyarrow>=12.0.1",
@@ -410,7 +410,9 @@ exclude = [
 executionEnvironments = [
     {root = "src/", pythonVersion = "3.10", pythonPlatform = "Linux", extraPaths = [""]}
 ]
+useLibraryCodeForTypes = false   # otherwise hundreds of pandas false-positives.
 # Type Check Diagnostics Settings
+# https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
 reportMissingImports = false
 reportMissingTypeStubs = false
 reportUnsupportedDunderAll = false
@@ -507,7 +509,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 matplotlib = ">=3.7.2"
-numpy = ">=1.25.1"
+numpy = ">=1.25.2"
 pandas = ">=2.0.3"
 pillow = ">=10.0.0"
 pyarrow = ">=12.0.1"
@@ -547,7 +549,7 @@ flake8-pyproject = ">=1.2.3"
 flake8-rst = ">=0.8.0"
 flake8-rst-docstrings = ">=0.3.0"
 ipympl = ">=0.9.3"
-ipywidgets = ">=8.0.7"
+ipywidgets = ">=8.1.0"
 isort = ">=5.12.0"
 jupyterlab = ">=4.0.3"
 mypy = ">=1.4.1"
@@ -566,11 +568,11 @@ pyflakes = ">=3.1.0"
 pygments = ">=2.15.1"
 pylint = ">=2.17.5"
 pylint-gitlab = ">=1.2.0"
-pyright = ">=1.1.318"
-ruff = ">=0.0.280"
+pyright = ">=1.1.320"
+ruff = ">=0.0.282"
 setuptools = ">=68.0.0"
-slotscheck = ">=0.16.5"
-sphinx = ">=7.1.1"
+slotscheck = ">=0.17.0"
+sphinx = ">=7.1.2"
 sphinx-autoapi = ">=2.1.1"
 sphinx-automodapi = ">=0.15.0"
 sphinx-copybutton = ">=0.5.2"
