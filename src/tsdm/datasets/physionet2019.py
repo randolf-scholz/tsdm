@@ -168,11 +168,95 @@ from pandas import DataFrame
 from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import remove_outliers
+from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 KEY: TypeAlias = Literal[
     "timeseries", "timeseries_description", "metadata", "metadata_description"
 ]
+
+
+TIMESERIES_DESCRIPTION: InlineTable = {
+    "data": [
+        # fmt: off
+        ("HR",               0,    None, True, True, "bpm",     "Heart rate"                                 ),
+        ("O2Sat",            0,    100,  True, True, "%",       "Pulse oximetry"                             ),
+        ("Temp",             0,    None, True, True, "°C",      "Temperature"                                ),
+        ("SBP",              0,    None, True, True, "mm Hg",   "Systolic BP"                                ),
+        ("MAP",              0,    None, True, True, "mm Hg",   "Mean arterial pressure"                     ),
+        ("DBP",              0,    None, True, True, "mm Hg",   "Diastolic BP"                               ),
+        ("Resp",             0,    None, True, True, "bpm",     "Respiration rate"                           ),
+        ("EtCO2",            0,    None, True, True, "mm Hg",   "End tidal carbon dioxide"                   ),
+        # Laboratory values (columns 9-34)
+        ("BaseExcess",       None, None, True, True, "mmol/L",  "Measure of excess bicarbonate"              ),
+        ("HCO3",             0,    None, True, True, "mmol/L",  "Bicarbonate"                                ),
+        ("FiO2",             0,    100,  True, True, "%",       "Fraction of inspired oxygen"                ),
+        ("pH",               0,    14,   True, True, "pH",      None                                         ),
+        ("PaCO2",            0,    None, True, True, "mm Hg",   "Partial pressure of CO₂ from arterial blood"),
+        ("SaO2",             0,    100,  True, True, "%",       "Oxygen saturation from arterial blood"      ),
+        ("AST",              0,    None, True, True, "IU/L",    "Aspartate transaminase"                     ),
+        ("BUN",              0,    None, True, True, "mg/dL",   "Blood urea nitrogen"                        ),
+        ("Alkalinephos",     0,    None, True, True, "IU/L",    "Alkaline phosphatase"                       ),
+        ("Calcium",          0,    None, True, True, "mg/dL",   None                                         ),
+        ("Chloride",         0,    None, True, True, "mmol/L",  None                                         ),
+        ("Creatinine",       0,    None, True, True, "mg/dL",   None                                         ),
+        ("Bilirubin_direct", 0,    None, True, True, "mg/dL",   "Bilirubin direct"                           ),
+        ("Glucose",          0,    None, True, True, "mg/dL",   "Serum glucose"                              ),
+        ("Lactate",          0,    None, True, True, "mg/dL",   "Lactic acid"                                ),
+        ("Magnesium",        0,    None, True, True, "mmol/dL", None                                         ),
+        ("Phosphate",        0,    None, True, True, "mg/dL",   None                                         ),
+        ("Potassium",        0,    None, True, True, "mmol/L",  None                                         ),
+        ("Bilirubin_total",  0,    None, True, True, "mg/dL",   "Total bilirubin"                            ),
+        ("TroponinI",        0,    None, True, True, "ng/mL",   "Troponin I"                                 ),
+        ("Hct",              0,    100,  True, True, "%",       "Hematocrit"                                 ),
+        ("Hgb",              0,    None, True, True, "g/dL",    "Hemoglobin"                                 ),
+        ("PTT",              0,    None, True, True, "seconds", "partial thromboplastin time"                ),
+        ("WBC",              0,    None, True, True, "10³/µL",  "Leukocyte count"                            ),
+        ("Fibrinogen",       0,    None, True, True, "mg/dL",   None                                         ),
+        ("Platelets",        0,    None, True, True, "10³/µL",  "Platelet count"                             ),
+        # Outcome (column 41)
+        ("SepsisLabel",      None, None, True, True, "bool",
+            "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and 0 if t<tsepsis−6."
+            " For non-sepsis patients, SepsisLabel is 0.",
+        ),  # noqa: E124 closing bracket does not match visual indentation
+    ],
+    "schema": {
+        # fmt: off
+        "variable"        : "string[pyarrow]",
+        "lower_bound"     : "float32[pyarrow]",
+        "upper_bound"     : "float32[pyarrow]",
+        "lower_inclusive" : "bool[pyarrow]",
+        "upper_inclusive" : "bool[pyarrow]",
+        "unit"            : "string[pyarrow]",
+        "description"     : "string[pyarrow]",
+        # fmt: on
+    },
+    "index": ["variable"],
+}
+
+METADATA_DESCRIPTION: InlineTable = {
+    "data": [
+        # fmt: off
+        # Demographics (columns 35-40)
+        ("Age"        , 0   , 100, False, True  , "years", "Years (100 for patients 90 or above)"      ),
+        ("Gender"     , 0   , 1  , True , True  , "bool" , "Female (0) or Male (1)"                    ),
+        ("Unit1"      , 0   , 1  , True , True  , "MICU" , "Administrative identifier for ICU unit"    ),
+        ("Unit2"      , 0   , 1  , True , True  , "SICU" , "Administrative identifier for ICU unit"    ),
+        ("HospAdmTime", None, 0  , True , False , "h"    , "Hours between hospital admit and ICU admit"),
+        # fmt: on
+    ],
+    "schema": {
+        # fmt: off
+        "variable"       : "string[pyarrow]",
+        "lower_bound"    : "float32[pyarrow]",
+        "upper_bound"    : "float32[pyarrow]",
+        "lower_inclusive": "bool[pyarrow]",
+        "upper_inclusive": "bool[pyarrow]",
+        "unit"           : "string[pyarrow]",
+        "description"    : "string[pyarrow]",
+        # fmt: on
+    },
+    "index": ["variable"],
+}
 
 
 class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
@@ -268,28 +352,8 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
             "HospAdmTime" : "timedelta64[ns]",
             # fmt: on
         },
-        "timeseries_description": {
-            # fmt: off
-            "variable"       : "string[pyarrow]",
-            "lower"          : "float32[pyarrow]",
-            "upper"          : "float32[pyarrow]",
-            "lower_included" : "bool[pyarrow]",
-            "upper_included" : "bool[pyarrow]",
-            "unit"           : "string[pyarrow]",
-            "description"    : "string[pyarrow]",
-            # fmt: on
-        },
-        "metadata_description": {
-            # fmt: off
-            "variable"       : "string[pyarrow]",
-            "lower"          : "float32[pyarrow]",
-            "upper"          : "float32[pyarrow]",
-            "lower_included" : "bool[pyarrow]",
-            "upper_included" : "bool[pyarrow]",
-            "unit"           : "string[pyarrow]",
-            "description"    : "string[pyarrow]",
-            # fmt: on
-        },
+        "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
+        "metadata_description": METADATA_DESCRIPTION["schema"],
     }
 
     rawdata_schema = {
@@ -338,74 +402,6 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         # fmt: on
     }
 
-    def _timeseries_description(self) -> DataFrame:
-        r"""Metadata for each unit."""
-        data = [
-            # fmt: off
-            ("HR",               0,    None, True, True, "bpm",     "Heart rate"                                 ),
-            ("O2Sat",            0,    100,  True, True, "%",       "Pulse oximetry"                             ),
-            ("Temp",             0,    None, True, True, "°C",      "Temperature"                                ),
-            ("SBP",              0,    None, True, True, "mm Hg",   "Systolic BP"                                ),
-            ("MAP",              0,    None, True, True, "mm Hg",   "Mean arterial pressure"                     ),
-            ("DBP",              0,    None, True, True, "mm Hg",   "Diastolic BP"                               ),
-            ("Resp",             0,    None, True, True, "bpm",     "Respiration rate"                           ),
-            ("EtCO2",            0,    None, True, True, "mm Hg",   "End tidal carbon dioxide"                   ),
-            # Laboratory values (columns 9-34)
-            ("BaseExcess",       None, None, True, True, "mmol/L",  "Measure of excess bicarbonate"              ),
-            ("HCO3",             0,    None, True, True, "mmol/L",  "Bicarbonate"                                ),
-            ("FiO2",             0,    100,  True, True, "%",       "Fraction of inspired oxygen"                ),
-            ("pH",               0,    14,   True, True, "pH",      None                                         ),
-            ("PaCO2",            0,    None, True, True, "mm Hg",   "Partial pressure of CO₂ from arterial blood"),
-            ("SaO2",             0,    100,  True, True, "%",       "Oxygen saturation from arterial blood"      ),
-            ("AST",              0,    None, True, True, "IU/L",    "Aspartate transaminase"                     ),
-            ("BUN",              0,    None, True, True, "mg/dL",   "Blood urea nitrogen"                        ),
-            ("Alkalinephos",     0,    None, True, True, "IU/L",    "Alkaline phosphatase"                       ),
-            ("Calcium",          0,    None, True, True, "mg/dL",   None                                         ),
-            ("Chloride",         0,    None, True, True, "mmol/L",  None                                         ),
-            ("Creatinine",       0,    None, True, True, "mg/dL",   None                                         ),
-            ("Bilirubin_direct", 0,    None, True, True, "mg/dL",   "Bilirubin direct"                           ),
-            ("Glucose",          0,    None, True, True, "mg/dL",   "Serum glucose"                              ),
-            ("Lactate",          0,    None, True, True, "mg/dL",   "Lactic acid"                                ),
-            ("Magnesium",        0,    None, True, True, "mmol/dL", None                                         ),
-            ("Phosphate",        0,    None, True, True, "mg/dL",   None                                         ),
-            ("Potassium",        0,    None, True, True, "mmol/L",  None                                         ),
-            ("Bilirubin_total",  0,    None, True, True, "mg/dL",   "Total bilirubin"                            ),
-            ("TroponinI",        0,    None, True, True, "ng/mL",   "Troponin I"                                 ),
-            ("Hct",              0,    100,  True, True, "%",       "Hematocrit"                                 ),
-            ("Hgb",              0,    None, True, True, "g/dL",    "Hemoglobin"                                 ),
-            ("PTT",              0,    None, True, True, "seconds", "partial thromboplastin time"                ),
-            ("WBC",              0,    None, True, True, "10³/µL",  "Leukocyte count"                            ),
-            ("Fibrinogen",       0,    None, True, True, "mg/dL",   None                                         ),
-            ("Platelets",        0,    None, True, True, "10³/µL",  "Platelet count"                             ),
-            # Outcome (column 41)
-            ("SepsisLabel",      None, None, True, True, "bool",
-                "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and 0 if t<tsepsis−6."
-                " For non-sepsis patients, SepsisLabel is 0.",
-            ),  # noqa: E124 closing bracket does not match visual indentation
-        ]
-        return (
-            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
-            .astype(self.table_schemas["timeseries_description"])
-            .set_index("variable")
-        )
-
-    def _metadata_description(self) -> DataFrame:
-        data = [
-            # fmt: off
-            # Demographics (columns 35-40)
-            ("Age",              0,    100, False, True,  "years", "Years (100 for patients 90 or above)"),
-            ("Gender",           0,    1,   True,  True,  "bool",  "Female (0) or Male (1)"),
-            ("Unit1",            0,    1,   True,  True,  "MICU",  "Administrative identifier for ICU unit"),
-            ("Unit2",            0,    1,   True,  True,  "SICU",  "Administrative identifier for ICU unit"),
-            ("HospAdmTime",      None, 0,   True,  False, "h",     "Hours between hospital admit and ICU admit"),
-            # fmt: on
-        ]
-        return (
-            DataFrame(data, columns=list(self.table_schemas["metadata_description"]))
-            .astype(self.table_schemas["metadata_description"])
-            .set_index("variable")
-        )
-
     def read_patient_file(self, archive: ZipFile, compressed_file: str) -> DataFrame:
         """Read a single patient file from the archive."""
         with archive.open(compressed_file) as file:
@@ -451,9 +447,9 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
 
     def clean_table(self, key: KEY) -> DataFrame | None:
         if key == "timeseries_description":
-            return self._timeseries_description()
+            return make_dataframe(**TIMESERIES_DESCRIPTION)
         if key == "metadata_description":
-            return self._metadata_description()
+            return make_dataframe(**METADATA_DESCRIPTION)
         if key not in ["timeseries", "metadata"]:
             raise KeyError(f"Unknown table {key}")
 

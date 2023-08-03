@@ -154,11 +154,95 @@ from pandas import DataFrame
 from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import remove_outliers
+from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 KEY: TypeAlias = Literal[
     "timeseries", "timeseries_description", "metadata", "metadata_description"
 ]
+
+
+TIMESERIES_DESCRIPTION: InlineTable = {
+    "data": [
+        # fmt: off
+        # variable, lower, upper, lower_included, upper_included, unit, description
+        ("Albumin"    , 0,    None, False, True, "g/dL",     None                                            ),
+        ("ALP"        , 0,    None, False, True, "IU/L",     "Alkaline phosphatase"                          ),
+        ("ALT"        , 0,    None, False, True, "IU/L",     "Alanine transaminase"                          ),
+        ("AST"        , 0,    None, False, True, "IU/L",     "Aspartate transaminase"                        ),
+        ("Bilirubin"  , 0,    None, False, True, "mg/dL",    "Bilirubin"                                     ),
+        ("BUN"        , 0,    None, False, True, "mg/dL",    "BUN"                                           ),
+        ("Cholesterol", 0,    None, False, True, "mg/dL",    None                                            ),
+        ("Creatinine" , 0,    None, False, True, "mg/dL",    "Serum creatinine"                              ),
+        ("DiasABP"    , 0,    None, False, True, "mmHg",     "Invasive diastolic arterial blood pressure"    ),
+        ("FiO2"       , 0,    1,    True,  True, "0-1",      "Fractional inspired O2"                        ),
+        ("GCS"        , 3,    15,   True,  True, "3-15",     "Glasgow Coma Score "                           ),
+        ("Glucose"    , 0,    None, False, True, "mg/dL",    "Serum glucose"                                 ),
+        ("HCO3"       , 0,    None, False, True, "mmol/L",   "Serum bicarbonate"                             ),
+        ("HCT"        , 0,    100,  True,  True, "%",        "Hematocrit"                                    ),
+        ("HR"         , 0,    None, True,  True, "bpm",      "Heart rate"                                    ),
+        ("K"          , 0,    None, False, True, "mEq/L",    "Serum potassium"                               ),
+        ("Lactate"    , 0,    None, False, True, "mmol/L",   None                                            ),
+        ("Mg"         , 0,    None, False, True, "mmol/L",   "Serum magnesium"                               ),
+        ("MAP"        , 0,    None, False, True, "mmHg",     "Invasive mean arterial blood pressure"         ),
+        ("MechVent"   , None, None, True,  True, "bool",     "Mechanical ventilation respiration"            ),
+        ("Na"         , 0,    None, False, True, "mEq/L",    "Serum sodium"                                  ),
+        ("NIDiasABP"  , 0,    None, False, True, "mmHg",     "Non-invasive diastolic arterial blood pressure"),
+        ("NIMAP"      , 0,    None, False, True, "mmHg",     "Non-invasive mean arterial blood pressure"     ),
+        ("NISysABP"   , 0,    None, False, True, "mmHg",     "Non-invasive systolic arterial blood pressure" ),
+        ("PaCO2"      , 0,    None, False, True, "mmHg",     "partial pressure of arterial CO2"              ),
+        ("PaO2"       , 0,    None, False, True, "mmHg",     "Partial pressure of arterial O2"               ),
+        ("pH"         , 0,    14,   False, True, "0-14",     "Arterial pH"                                   ),
+        ("Platelets"  , 0,    None, False, True, "cells/nL", None                                            ),
+        ("RespRate"   , 0,    None, True, True,  "bpm",      "Respiration rate"                              ),
+        ("SaO2"       , 0,    100,  True,  True, "%", "      O2 saturation in hemoglobin"                    ),
+        ("SysABP"     , 0,    None, False, True, "mmHg",     "Invasive systolic arterial blood pressure"     ),
+        ("Temp"       , 0,    None, False, True, "°C",       "Temperature"                                   ),
+        ("TroponinI"  , 0,    None, False, True, "μg/L",     "Troponin-I"                                    ),
+        ("TroponinT"  , 0,    None, False, True, "μg/L",     "Troponin-T"                                    ),
+        ("Urine"      , 0,    None, True,  True, "mL",       "Urine output"                                  ),
+        ("WBC"        , 0,    1000, False, True, "cells/nL", "White blood cell count"                        ),
+        ("Weight"     , 20,   None, True,  True, "kg",       None                                            ),
+        # fmt: on
+    ],
+    "schema": {
+        # fmt: off
+        "name"            : "string[pyarrow]",
+        "lower_bound"     : "float32[pyarrow]",
+        "upper_bound"     : "float32[pyarrow]",
+        "lower_inclusive" : "bool[pyarrow]",
+        "upper_inclusive" : "bool[pyarrow]",
+        "unit"            : "string[pyarrow]",
+        "description"     : "string[pyarrow]",
+        # fmt: on
+    },
+    "index": ["name"],
+}
+
+METADATA_DESCRIPTION: InlineTable = {
+    "data": [
+        # fmt: off
+        ("Age"    , "uint8[pyarrow]"  , 0   , 100 , True, True, "years"   , None                ),
+        ("Gender" , "int8[pyarrow]"   , None, None, True, True, "category", "0: female, 1: male"),
+        ("Height" , "float32[pyarrow]", 20  , 270 , True, True, "cm"      , None                ),
+        ("Weight" , "float32[pyarrow]", 20  , None, True, True, "kg"      , None                ),
+        ("ICUType", "uint8[pyarrow]"  , 1   , 4   , True, True, "category",
+            "1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU"),
+        # fmt: on
+    ],
+    "schema": {
+        # fmt: off
+        "name"            : "string[pyarrow]",
+        "dtype"           : "string[pyarrow]",
+        "lower_bound"     : "float32[pyarrow]",
+        "upper_bound"     : "float32[pyarrow]",
+        "lower_inclusive" : "bool[pyarrow]",
+        "upper_inclusive" : "bool[pyarrow]",
+        "unit"            : "string[pyarrow]",
+        "description"     : "string[pyarrow]",
+        # fmt: on
+    },
+    "index": ["name"],
+}
 
 
 class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
@@ -293,17 +377,6 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             "Weight"      : "float32[pyarrow]",
             # fmt: on
         },
-        "timeseries_description": {
-            # fmt: off
-            "variable"       : "string[pyarrow]",
-            "lower"          : "float32[pyarrow]",
-            "upper"          : "float32[pyarrow]",
-            "lower_included" : "bool[pyarrow]",
-            "upper_included" : "bool[pyarrow]",
-            "unit"           : "string[pyarrow]",
-            "description"    : "string[pyarrow]",
-            # fmt: on
-        },
         "metadata": {
             # fmt: off
             "Age"     : "uint8[pyarrow]",
@@ -313,86 +386,9 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             "Weight"  : "float32[pyarrow]",
             # fmt:on
         },
-        "metadata_description": {
-            # fmt: off
-            "variable"       : "string[pyarrow]",
-            "lower"          : "float32[pyarrow]",
-            "upper"          : "float32[pyarrow]",
-            "lower_included" : "bool[pyarrow]",
-            "upper_included" : "bool[pyarrow]",
-            "unit"           : "string[pyarrow]",
-            "description"    : "string[pyarrow]",
-            # fmt: on
-        },
+        "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
+        "metadata_description": METADATA_DESCRIPTION["schema"],
     }
-
-    def _timeseries_description(self) -> DataFrame:
-        data = [
-            # fmt: off
-            # variable, lower, upper, lower_included, upper_included, unit, description
-            ("Albumin"    , 0,    None, False, True, "g/dL",     None                                            ),
-            ("ALP"        , 0,    None, False, True, "IU/L",     "Alkaline phosphatase"                          ),
-            ("ALT"        , 0,    None, False, True, "IU/L",     "Alanine transaminase"                          ),
-            ("AST"        , 0,    None, False, True, "IU/L",     "Aspartate transaminase"                        ),
-            ("Bilirubin"  , 0,    None, False, True, "mg/dL",    "Bilirubin"                                     ),
-            ("BUN"        , 0,    None, False, True, "mg/dL",    "BUN"                                           ),
-            ("Cholesterol", 0,    None, False, True, "mg/dL",    None                                            ),
-            ("Creatinine" , 0,    None, False, True, "mg/dL",    "Serum creatinine"                              ),
-            ("DiasABP"    , 0,    None, False, True, "mmHg",     "Invasive diastolic arterial blood pressure"    ),
-            ("FiO2"       , 0,    1,    True,  True, "0-1",      "Fractional inspired O2"                        ),
-            ("GCS"        , 3,    15,   True,  True, "3-15",     "Glasgow Coma Score "                           ),
-            ("Glucose"    , 0,    None, False, True, "mg/dL",    "Serum glucose"                                 ),
-            ("HCO3"       , 0,    None, False, True, "mmol/L",   "Serum bicarbonate"                             ),
-            ("HCT"        , 0,    100,  True,  True, "%",        "Hematocrit"                                    ),
-            ("HR"         , 0,    None, True,  True, "bpm",      "Heart rate"                                    ),
-            ("K"          , 0,    None, False, True, "mEq/L",    "Serum potassium"                               ),
-            ("Lactate"    , 0,    None, False, True, "mmol/L",   None                                            ),
-            ("Mg"         , 0,    None, False, True, "mmol/L",   "Serum magnesium"                               ),
-            ("MAP"        , 0,    None, False, True, "mmHg",     "Invasive mean arterial blood pressure"         ),
-            ("MechVent"   , None, None, True,  True, "bool",     "Mechanical ventilation respiration"            ),
-            ("Na"         , 0,    None, False, True, "mEq/L",    "Serum sodium"                                  ),
-            ("NIDiasABP"  , 0,    None, False, True, "mmHg",     "Non-invasive diastolic arterial blood pressure"),
-            ("NIMAP"      , 0,    None, False, True, "mmHg",     "Non-invasive mean arterial blood pressure"     ),
-            ("NISysABP"   , 0,    None, False, True, "mmHg",     "Non-invasive systolic arterial blood pressure" ),
-            ("PaCO2"      , 0,    None, False, True, "mmHg",     "partial pressure of arterial CO2"              ),
-            ("PaO2"       , 0,    None, False, True, "mmHg",     "Partial pressure of arterial O2"               ),
-            ("pH"         , 0,    14,   False, True, "0-14",     "Arterial pH"                                   ),
-            ("Platelets"  , 0,    None, False, True, "cells/nL", None                                            ),
-            ("RespRate"   , 0,    None, True, True,  "bpm",      "Respiration rate"                              ),
-            ("SaO2"       , 0,    100,  True,  True, "%", "      O2 saturation in hemoglobin"                    ),
-            ("SysABP"     , 0,    None, False, True, "mmHg",     "Invasive systolic arterial blood pressure"     ),
-            ("Temp"       , 0,    None, False, True, "°C",       "Temperature"                                   ),
-            ("TroponinI"  , 0,    None, False, True, "μg/L",     "Troponin-I"                                    ),
-            ("TroponinT"  , 0,    None, False, True, "μg/L",     "Troponin-T"                                    ),
-            ("Urine"      , 0,    None, True,  True, "mL",       "Urine output"                                  ),
-            ("WBC"        , 0,    1000, False, True, "cells/nL", "White blood cell count"                        ),
-            ("Weight"     , 20,   None, True,  True, "kg",       None                                            ),
-            # fmt: on
-        ]
-
-        return (
-            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
-            .astype(self.table_schemas["timeseries_description"])
-            .set_index("variable")
-        )
-
-    def _metadata_description(self) -> DataFrame:
-        data = [
-            # fmt: off
-            ("Age",     0,    100,  True, True, "years", None),
-            ("Gender",  None, None, True, True, "bool",  "0: female, 1: male"),
-            ("Height",  20,   270,  True, True, "cm",    None),
-            ("Weight",  20,   None, True, True, "kg",    None),
-            ("ICUType", 1,    4,    True, True, "1-4",
-                "1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU"),
-            # fmt: on
-        ]
-
-        return (
-            DataFrame(data, columns=list(self.table_schemas["metadata_description"]))
-            .astype(self.table_schemas["metadata_description"])
-            .set_index("variable")
-        )
 
     def _clean_data(self, fname: str) -> tuple[DataFrame, DataFrame]:
         with (
@@ -478,9 +474,9 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
 
     def clean_table(self, key: KEY) -> None | DataFrame:
         if key == "timeseries_description":
-            return self._timeseries_description()
+            return make_dataframe(**TIMESERIES_DESCRIPTION)
         if key == "metadata_description":
-            return self._metadata_description()
+            return make_dataframe(**METADATA_DESCRIPTION)
         if key not in ("timeseries", "metadata"):
             raise KeyError(f"Unknown table: {key}")
 

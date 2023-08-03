@@ -7,6 +7,7 @@ __all__ = [
     "aggregate_nondestructive",
     "compute_entropy",
     "float_is_int",
+    "joint_keys",
     "get_integer_cols",
     "make_dataframe",
     "detect_outliers_series",
@@ -34,7 +35,7 @@ from typing_extensions import NotRequired, Required, TypedDict
 from tsdm.backend.pandas import strip_whitespace_dataframe, strip_whitespace_series
 from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
 from tsdm.backend.universal import false_like
-from tsdm.types.variables import pandas_var, tuple_co
+from tsdm.types.variables import any_var as T, pandas_var, tuple_co
 
 __logger__ = logging.getLogger(__package__)
 
@@ -78,6 +79,12 @@ class BoundaryTable(TypedDict):
     lower_inclusive: Mapping[str, bool]
     upper_inclusive: Mapping[str, bool]
     dtype: NotRequired[Mapping[str, str]]
+
+
+def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
+    """Find joint keys in collection of Mappings."""
+    # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
+    return set.intersection(*map(set, (d.keys() for d in mappings)))  # type: ignore[arg-type]
 
 
 def make_dataframe(
@@ -180,23 +187,41 @@ def detect_outliers_series(
     upper_inclusive: bool = True,
 ) -> Series:
     """Detect outliers in a Series, given boundary values."""
-    mask = false_like(s)
-    if lower_bound is not None:
-        if lower_inclusive:
-            mask |= s < lower_bound
-        else:
-            mask |= s <= lower_bound
+    # detect lower bound violations
+    match lower_bound, lower_inclusive:
+        case None, _:
+            mask_lower = false_like(s)
+        case _, True:
+            mask_lower = s < lower_bound
+        case _, False:
+            mask_lower = s <= lower_bound
+        case _:
+            raise ValueError("Invalid combination of lower_bound and lower_inclusive.")
 
-    if upper_bound is not None:
-        if upper_inclusive:
-            mask |= s > upper_bound
-        else:
-            mask |= s >= upper_bound
-    return mask
+    # detect upper bound violations
+    match upper_bound, upper_inclusive:
+        case None, _:
+            mask_upper = false_like(s)
+        case _, True:
+            mask_upper = s > upper_bound
+        case _, False:
+            mask_upper = s >= upper_bound
+        case _:
+            raise ValueError("Invalid combination of upper_bound and upper_inclusive.")
+
+    if __logger__.level >= logging.INFO:
+        lower_rate = f"{mask_lower.mean():8.3%}" if mask_lower.any() else "--none--"
+        upper_rate = f"{mask_upper.mean():8.3%}" if mask_upper.any() else "--none--"
+        __logger__.info(
+            "%s/%s lower/upper bound violations in %s", lower_rate, upper_rate, s.name
+        )
+
+    return mask_lower | mask_upper
 
 
 def remove_outlieres_series(
     s: Series,
+    /,
     *,
     drop: bool = True,
     lower_bound: float | None = None,
@@ -229,6 +254,7 @@ def remove_outlieres_series(
         lower_inclusive=lower_inclusive,
         upper_inclusive=upper_inclusive,
     )
+
     if drop:
         s = s.loc[~mask]
     else:
@@ -239,6 +265,7 @@ def remove_outlieres_series(
 
 def remove_outliers_dataframe(
     df: DataFrame,
+    /,
     *,
     drop: bool = True,
     lower_bound: Mapping[str, float | None],
@@ -247,6 +274,15 @@ def remove_outliers_dataframe(
     upper_inclusive: Mapping[str, bool],
 ) -> DataFrame:
     """Remove outliers from a DataFrame, given boundary values."""
+    given_bounds = joint_keys(
+        lower_bound, upper_bound, lower_inclusive, upper_inclusive
+    )
+
+    if missing_bounds := set(df.columns) - given_bounds:
+        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
+    # if extra_bounds := given_bounds - set(df.columns):
+    #     raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
+
     masks_per_col = []
     for col in df:
         mask = detect_outliers_series(
@@ -268,50 +304,93 @@ def remove_outliers_dataframe(
     return df
 
 
+@overload
+def remove_outliers(
+    s: Series, /, description: BoundaryInformation, *, drop: bool = True
+) -> Series:
+    ...
+
+
+@overload
+def remove_outliers(
+    s: Series,
+    /,
+    *,
+    drop: bool = True,
+    lower_bound: float | None = None,
+    upper_bound: float | None = None,
+    lower_inclusive: bool = True,
+    upper_inclusive: bool = True,
+) -> Series:
+    ...
+
+
+@overload
+def remove_outliers(
+    df: DataFrame, /, description: BoundaryInformation | DataFrame, *, drop: bool = True
+) -> DataFrame:
+    ...
+
+
+@overload
 def remove_outliers(
     df: DataFrame,
     /,
-    description: DataFrame,
     *,
-    dropna: bool = True,
+    drop: bool = True,
+    lower_bound: Mapping[str, float | None],
+    upper_bound: Mapping[str, float | None],
+    lower_inclusive: Mapping[str, bool],
+    upper_inclusive: Mapping[str, bool],
 ) -> DataFrame:
+    ...
+
+
+def remove_outliers(
+    obj,
+    /,
+    description=None,
+    *,
+    drop=True,
+    lower_bound=None,
+    upper_bound=None,
+    lower_inclusive=None,
+    upper_inclusive=None,
+):
     """Remove outliers from a DataFrame, given boundary values."""
-    boundary_cols = ["lower_bound", "upper_bound", "lower_included", "upper_included"]
-
-    if mismatch := set(df.columns) ^ set(description.index):
-        raise ValueError(f"Columns of data and description do not match {mismatch}.")
-
-    if missing_columns := set(boundary_cols) - set(description.columns):
-        raise ValueError(f"Description table is missing columns {missing_columns}!")
-
-    __logger__.info("Removing outliers from table.")
-    M = max(map(len, df.columns)) + 1
-
-    for col in df:
-        s = df[col]
-        if s.dtype == "category":
-            __logger__.info(f"%-{M}s: Skipping categorical column.", col)
-            continue
-
-        lower, upper, lbi, ubi = description.loc[col, boundary_cols]
-        if lbi:
-            mask = (s < lower).fillna(False)
-        else:
-            mask = (s <= lower).fillna(False)
-        if ubi:
-            mask |= (s > upper).fillna(False)
-        else:
-            mask |= (s >= upper).fillna(False)
-        if mask.any():
-            __logger__.info(
-                f"%-{M}s: Dropping %8.4f%% outliers.", col, mask.mean() * 100
-            )
-        else:
-            __logger__.info(f"%-{M}s: No outliers detected.", col)
-        df.loc[mask, col] = None
-    if dropna:
-        df = df.dropna(how="all", axis="index")
-    return df
+    if description is not None:
+        if not all(
+            [
+                lower_bound is None,
+                upper_bound is None,
+                lower_inclusive is None,
+                upper_inclusive is None,
+            ]
+        ):
+            raise ValueError("Either description or bounds should be given, not both.")
+        lower_bound = description["lower_bound"]
+        upper_bound = description["upper_bound"]
+        lower_inclusive = description["lower_inclusive"]
+        upper_inclusive = description["upper_inclusive"]
+    if isinstance(obj, Series):
+        return remove_outlieres_series(
+            obj,
+            drop=drop,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+    if isinstance(obj, DataFrame):
+        return remove_outliers_dataframe(
+            obj,
+            drop=drop,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+    raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 
 
 def float_is_int(series: Series) -> bool:

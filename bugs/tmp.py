@@ -1,15 +1,14 @@
-#!use/bin/env python
+#!/usr/bin/env python3
 
-# pubcls = main._all["publication"]
-#
-# pub_unit_types = {
-#     unit: pubcls._type_classes[unit["unitType"]]
-#     for unit in units
-#     if unit in pubcls._type_classes
-# }
-#
-# res = [
-#     main._all[pub_unit_types[unit]](unit)
-#     for unit in units
-#     if pubcls._type_classes[unit] in mail._all
-# ]
+from typing import Any, Mapping
+
+
+def joint_keys(*dicts: Mapping[str, Any]) -> set[str]:
+    """Find joint keys in collection of dictionaries."""
+    return set.intersection(*map(set, dicts))
+
+
+def joint_keys2(*dicts: Mapping[str, Any]) -> set[str]:
+    """Find joint keys in collection of dictionaries."""
+    dicts_keys: map[set[str]] = map(set, dicts)
+    return set.intersection(*dicts_keys)
