@@ -157,9 +157,13 @@ from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 KEY: TypeAlias = Literal[
-    "timeseries", "timeseries_description", "metadata", "metadata_description"
+    "timeseries",
+    "timeseries_description",
+    "metadata",
+    "metadata_description",
+    "raw_timeseries",
+    "raw_metadata",
 ]
-
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
@@ -221,10 +225,10 @@ TIMESERIES_DESCRIPTION: InlineTable = {
 METADATA_DESCRIPTION: InlineTable = {
     "data": [
         # fmt: off
-        ("Age"    , "uint8[pyarrow]"  , 0   , 100 , True, True, "years"   , None                ),
-        ("Gender" , "int8[pyarrow]"   , None, None, True, True, "category", "0: female, 1: male"),
-        ("Height" , "float32[pyarrow]", 20  , 270 , True, True, "cm"      , None                ),
-        ("Weight" , "float32[pyarrow]", 20  , None, True, True, "kg"      , None                ),
+        ("Age"    , "uint8[pyarrow]"  , 0   , 100 , True, True, "years"   , None                           ),
+        ("Gender" , "int8[pyarrow]"   , None, None, True, True, "category", "0: female, 1: male, -1: other"),
+        ("Height" , "float32[pyarrow]", 20  , 270 , True, True, "cm"      , None                           ),
+        ("Weight" , "float32[pyarrow]", 20  , None, True, True, "kg"      , None                           ),
         ("ICUType", "uint8[pyarrow]"  , 1   , 4   , True, True, "category",
             "1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU"),
         # fmt: on
@@ -334,6 +338,8 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "metadata": DataFrame,
         "timeseries_description": DataFrame,
         "metadata_description": DataFrame,
+        "raw_timeseries": DataFrame,
+        "raw_metadata": DataFrame,
     }
     table_schemas = {
         "timeseries": {
@@ -390,7 +396,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "metadata_description": METADATA_DESCRIPTION["schema"],
     }
 
-    def _clean_data(self, fname: str) -> tuple[DataFrame, DataFrame]:
+    def _clean_single_rawdataset(self, fname: str) -> tuple[DataFrame, DataFrame]:
         with (
             tarfile.open(self.rawdata_paths[fname], "r") as archive,
             tqdm(archive.getmembers()) as progress_bar,
@@ -408,7 +414,9 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
                 progress_bar.set_postfix(record_id=record_id)
                 with archive.extractfile(member) as file:  # type: ignore[union-attr]
                     df = pd.read_csv(
-                        file, dtype=self.rawdata_schema, dtype_backend="pyarrow"
+                        file,
+                        dtype=self.rawdata_schema,
+                        dtype_backend="pyarrow",
                     )
                     assert record_id == int(df.iloc[0, -1]), "RecordID mismatch!"
                     df = df.iloc[1:]
@@ -472,32 +480,42 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         )
         return ts, md
 
-    def clean_table(self, key: KEY) -> None | DataFrame:
-        if key == "timeseries_description":
-            return make_dataframe(**TIMESERIES_DESCRIPTION)
-        if key == "metadata_description":
-            return make_dataframe(**METADATA_DESCRIPTION)
-        if key not in ("timeseries", "metadata"):
-            raise KeyError(f"Unknown table: {key}")
-
+    def _clean_all_rawdatasets(self) -> None:
         ts_list = []
         md_list = []
-        for fname in "set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz":
-            ts, md = self._clean_data(fname)
+        for fname in self.rawdata_files:
+            ts, md = self._clean_single_rawdataset(fname)
             ts_list.append(ts)
             md_list.append(md)
         ts = pd.concat(ts_list)
         md = pd.concat(md_list)
-
-        self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.timeseries_description)
-
-        self.LOGGER.info("Removing outliers from metadata.")
-        md = remove_outliers(md, self.metadata_description)
-
         # NOTE: TS is missing a few records, since no time series data was available
         # For tasks, it is recommended to drop records with less than 24 observations
         # assert md.index == ts.index.get_level_values("RecordID").unique()
-        self.serialize(md, self.dataset_paths["metadata"])
-        self.serialize(ts, self.dataset_paths["timeseries"])
+        self.serialize(md, self.dataset_paths["raw_metadata"])
+        self.serialize(ts, self.dataset_paths["raw_timeseries"])
         return None
+
+    def clean_table(self, key: KEY) -> None | DataFrame:
+        match key:
+            case "timeseries_description":
+                return make_dataframe(**TIMESERIES_DESCRIPTION)
+            case "metadata_description":
+                return make_dataframe(**METADATA_DESCRIPTION)
+            case "timeseries":
+                self.LOGGER.info("Removing outliers from timeseries.")
+                ts = remove_outliers(self.raw_timeseries, self.timeseries_description)
+                self.LOGGER.info("Dropping completely missing rows.")
+                ts = ts.dropna(how="all", axis="index")
+                return ts
+            case "metadata":
+                self.LOGGER.info("Removing outliers from metadata.")
+                return remove_outliers(self.raw_metadata, self.metadata_description)
+                # md = remove_outliers(self.raw_metadata, self.metadata_description)
+                # self.LOGGER.info("Dropping completely missing rows.")
+                # md = md.dropna(how="all", axis="index")
+                # return md
+            case "raw_timeseries" | "raw_metadata":
+                return self._clean_all_rawdatasets()
+            case _:
+                raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")

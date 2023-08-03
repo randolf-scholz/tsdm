@@ -23,6 +23,8 @@ A = TypeVar("A", bound=NumericalArray)
 
 def false_like(x: A, /) -> A:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
+    # NOTE: (NAN == NAN) == False and (NAN != NAN) == True
+    # NOTE: does not work for pandas/arrow/numpy nullable types
     z = x == x
     return z ^ z
 
@@ -30,6 +32,7 @@ def false_like(x: A, /) -> A:
 def true_like(x: A, /) -> A:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: (NAN == NAN) == False and (NAN != NAN) == True
+    # NOTE: does not work for pandas/arrow/numpy nullable types
     z = x == x
     return z ^ (~z)
 

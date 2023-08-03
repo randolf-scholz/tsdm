@@ -46,7 +46,7 @@ __all__ = [
     "PhysioNet2019",
     "PhysioNet2012",
     "Traffic",
-    "USHCN_Dataset",
+    "USHCN",
     "USHCN_DeBrouwer2019",
 ]
 
@@ -73,7 +73,7 @@ from tsdm.datasets.physionet2012 import PhysioNet2012
 from tsdm.datasets.physionet2019 import PhysioNet2019
 from tsdm.datasets.timeseries import KIWI
 from tsdm.datasets.traffic import Traffic
-from tsdm.datasets.ushcn import USHCN_Dataset
+from tsdm.datasets.ushcn import USHCN
 from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
 
 TSC: dict[str, type[TimeSeriesCollection]] = {
@@ -96,7 +96,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "Physionet2012": PhysioNet2012,
     "Physionet2019": PhysioNet2019,
     "Traffic": Traffic,
-    "USHCN": USHCN_Dataset,
+    "USHCN": USHCN,
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available dataset."""

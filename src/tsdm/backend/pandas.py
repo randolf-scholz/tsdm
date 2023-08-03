@@ -4,13 +4,15 @@ __all__ = [
     # Functions
     "pandas_axes",
     "pandas_clip",
+    "pandas_false_like",
+    "pandas_like",
     "pandas_nanmax",
     "pandas_nanmean",
     "pandas_nanmin",
     "pandas_nanstd",
-    "pandas_where",
-    "pandas_like",
     "pandas_strip_whitespace",
+    "pandas_true_like",
+    "pandas_where",
     # auxiliary functions
     "strip_whitespace_series",
     "strip_whitespace_dataframe",
@@ -26,6 +28,18 @@ from tsdm.types.aliases import Axes
 
 P = TypeVar("P", Series, DataFrame)
 """A type variable for pandas objects."""
+
+
+def pandas_false_like(x: P) -> P:
+    """Returns a constant boolean tensor with the same shape/device as `x`."""
+    m = x.isna()
+    return m ^ m
+
+
+def pandas_true_like(x: P) -> P:
+    """Returns a constant boolean tensor with the same shape/device as `x`."""
+    m = x.isna()
+    return m ^ (~m)
 
 
 def pandas_axes(

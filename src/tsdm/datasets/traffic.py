@@ -192,16 +192,17 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         return dates
 
     def clean_table(self, key: KEY) -> DataFrame:
-        if key == "timeseries":
-            return self._clean_timeseries()
-        if key == "labels":
-            return self._clean_labels()
-        if key == "randperm":
-            return self._clean_randperm()
-        if key == "invperm":
-            return self._clean_randperm()
-
-        raise KeyError(f"{key} is not a valid key")
+        match key:
+            case "timeseries":
+                return self._clean_timeseries()
+            case "labels":
+                return self._clean_labels()
+            case "randperm":
+                return self._clean_randperm()
+            case "invperm":
+                return self._clean_randperm()
+            case _:
+                raise KeyError(f"{key} is not a valid key")
 
     def _clean_timeseries(self) -> DataFrame:
         r"""Create DataFrame from raw data.

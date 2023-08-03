@@ -75,9 +75,41 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import remove_outliers
+from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
-KEY: TypeAlias = Literal["timeseries", "timeseries_description"]
+KEY: TypeAlias = Literal["timeseries", "timeseries_description", "raw_timeseries"]
+
+
+TIMESERIES_DESCRIPTION: InlineTable = {
+    "data": [
+        # fmt: off
+        ("PM2.5",    0, None, True, True, "μg/m³", "PM2.5 concentration"),
+        ("PM10" ,    0, None, True, True, "μg/m³", "PM10 concentration" ),
+        ("SO2"  ,    0, None, True, True, "μg/m³", "SO2 concentration"  ),
+        ("NO2"  ,    0, None, True, True, "μg/m³", "NO2 concentration"  ),
+        ("CO"   ,    0, None, True, True, "μg/m³", "CO concentration"   ),
+        ("O3"   ,    0, None, True, True, "μg/m³", "O3 concentration"   ),
+        ("TEMP" , None, None, True, True, "°C"   , "temperature"        ),
+        ("PRES" ,    0, None, True, True, "hPa"  , "pressure"           ),
+        ("DEWP" , None, None, True, True, "°C"   , "dew point"          ),
+        ("RAIN" ,    0, None, True, True, "mm"   , "precipitation"      ),
+        ("wd"   , None, None, True, True, None   , "wind direction"     ),
+        ("WSPM" ,    0, None, True, True, "m/s"  , "wind speed"         ),
+        # fmt: on
+    ],
+    "schema": {
+        # fmt: off
+        "variable"        : "string[pyarrow]",
+        "lower_bound"     : "float32[pyarrow]",
+        "upper_bound"     : "float32[pyarrow]",
+        "lower_inclusive" : "bool[pyarrow]",
+        "upper_inclusive" : "bool[pyarrow]",
+        "unit"            : "string[pyarrow]",
+        "description"     : "string[pyarrow]",
+        # fmt: on
+    },
+    "index": ["variable"],
+}
 
 
 class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
@@ -145,42 +177,8 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
             "WSPM"  : "float[pyarrow]",
             # fmt: on
         },
-        "timeseries_description": {
-            # fmt: off
-            "variable"       : "string[pyarrow]",
-            "lower_bound"    : "float32[pyarrow]",
-            "upper_bound"    : "float32[pyarrow]",
-            "lower_included" : "bool[pyarrow]",
-            "upper_included" : "bool[pyarrow]",
-            "unit"           : "string[pyarrow]",
-            "description"    : "string[pyarrow]",
-            # fmt: on
-        },
+        "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
     }
-
-    def _timeseries_description(self) -> DataFrame:
-        data = [
-            # fmt: off
-            ("PM2.5", 0,    None, True, True, "μg/m³", "PM2.5 concentration"),
-            ("PM10",  0,    None, True, True, "μg/m³", "PM10 concentration" ),
-            ("SO2",   0,    None, True, True, "μg/m³", "SO2 concentration"  ),
-            ("NO2",   0,    None, True, True, "μg/m³", "NO2 concentration"  ),
-            ("CO",    0,    None, True, True, "μg/m³", "CO concentration"   ),
-            ("O3",    0,    None, True, True, "μg/m³", "O3 concentration"   ),
-            ("TEMP",  None, None, True, True, "°C",    "temperature"        ),
-            ("PRES",  0,    None, True, True, "hPa",   "pressure"           ),
-            ("DEWP",  None, None, True, True, "°C",    "dew point"          ),
-            ("RAIN",  0,    None, True, True, "mm",    "precipitation"      ),
-            ("wd",    None, None, True, True, None,    "wind direction"     ),
-            ("WSPM",  0,    None, True, True, "m/s",   "wind speed"         ),
-            # fmt: on
-        ]
-
-        return (
-            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
-            .astype(self.table_schemas["timeseries_description"])
-            .set_index("variable")
-        )
 
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading Data.")
@@ -214,17 +212,20 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
             .sort_index()
         )
 
-        self.LOGGER.info("Removing outliers from timeseries.")
-        ts = remove_outliers(ts, self.timeseries_description)
-
         return ts
 
     def clean_table(self, key: KEY) -> DataFrame:
         r"""Create DataFrame with all 12 stations and `pandas.DatetimeIndex`."""
         match key:
             case "timeseries":
-                return self._clean_timeseries()
+                self.LOGGER.info("Removing outliers from timeseries.")
+                ts = remove_outliers(self.raw_timeseries, self.timeseries_description)
+                self.LOGGER.info("Dropping completely missing rows.")
+                ts = ts.dropna(how="all", axis="index")
+                return ts
             case "timeseries_description":
-                return self._timeseries_description()
+                return make_dataframe(**TIMESERIES_DESCRIPTION)
+            case "raw_timeseries":
+                return self._clean_timeseries()
             case _:
-                raise KeyError(f"Unknown table: '{key}'")
+                raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")

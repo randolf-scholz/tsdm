@@ -10,9 +10,11 @@ __all__ = [
     "joint_keys",
     "get_integer_cols",
     "make_dataframe",
+    "detect_outliers",
     "detect_outliers_series",
+    "detect_outliers_dataframe",
     "remove_outliers",
-    "remove_outlieres_series",
+    "remove_outliers_series",
     "remove_outliers_dataframe",
     "strip_whitespace",
     "table_info",
@@ -32,9 +34,12 @@ from scipy import stats
 from tqdm.autonotebook import tqdm
 from typing_extensions import NotRequired, Required, TypedDict
 
-from tsdm.backend.pandas import strip_whitespace_dataframe, strip_whitespace_series
+from tsdm.backend.pandas import (
+    pandas_false_like,
+    strip_whitespace_dataframe,
+    strip_whitespace_series,
+)
 from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
-from tsdm.backend.universal import false_like
 from tsdm.types.variables import any_var as T, pandas_var, tuple_co
 
 __logger__ = logging.getLogger(__package__)
@@ -180,54 +185,130 @@ def compute_entropy(value_counts: pa.Array) -> float:
 
 def detect_outliers_series(
     s: Series,
+    /,
     *,
-    lower_bound: float | None = None,
-    upper_bound: float | None = None,
-    lower_inclusive: bool = True,
-    upper_inclusive: bool = True,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool,
+    upper_inclusive: bool,
 ) -> Series:
     """Detect outliers in a Series, given boundary values."""
     # detect lower bound violations
     match lower_bound, lower_inclusive:
         case None, _:
-            mask_lower = false_like(s)
+            mask_lower = pandas_false_like(s)
         case _, True:
-            mask_lower = s < lower_bound
+            mask_lower = (s < lower_bound).fillna(False)
         case _, False:
-            mask_lower = s <= lower_bound
+            mask_lower = (s <= lower_bound).fillna(False)
         case _:
             raise ValueError("Invalid combination of lower_bound and lower_inclusive.")
 
     # detect upper bound violations
     match upper_bound, upper_inclusive:
         case None, _:
-            mask_upper = false_like(s)
+            mask_upper = pandas_false_like(s)
         case _, True:
-            mask_upper = s > upper_bound
+            mask_upper = (s > upper_bound).fillna(False)
         case _, False:
-            mask_upper = s >= upper_bound
+            mask_upper = (s >= upper_bound).fillna(False)
         case _:
             raise ValueError("Invalid combination of upper_bound and upper_inclusive.")
 
-    if __logger__.level >= logging.INFO:
-        lower_rate = f"{mask_lower.mean():8.3%}" if mask_lower.any() else "--none--"
-        upper_rate = f"{mask_upper.mean():8.3%}" if mask_upper.any() else "--none--"
+    if __logger__.getEffectiveLevel() >= logging.INFO:
+        lower_rate = f"{mask_lower.mean():8.3%}" if mask_lower.any() else " ------%"
+        upper_rate = f"{mask_upper.mean():8.3%}" if mask_upper.any() else " ------%"
         __logger__.info(
-            "%s/%s lower/upper bound violations in %s", lower_rate, upper_rate, s.name
+            "%s/%s lower/upper bound violations in %r", lower_rate, upper_rate, s.name
         )
 
     return mask_lower | mask_upper
 
 
-def remove_outlieres_series(
+def detect_outliers_dataframe(
+    df: DataFrame,
+    /,
+    *,
+    lower_bound: Mapping[T, float | None],
+    upper_bound: Mapping[T, float | None],
+    lower_inclusive: Mapping[T, bool],
+    upper_inclusive: Mapping[T, bool],
+) -> DataFrame:
+    """Detect outliers in a DataFrame, given boundary values."""
+    given_bounds = joint_keys(
+        lower_bound, upper_bound, lower_inclusive, upper_inclusive
+    )
+    if missing_bounds := set(df.columns) - given_bounds:
+        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
+
+    mask = pandas_false_like(df)
+    for col in df.columns:
+        mask[col] = detect_outliers_series(
+            df[col],
+            lower_bound=lower_bound[col],
+            upper_bound=upper_bound[col],
+            lower_inclusive=lower_inclusive[col],
+            upper_inclusive=upper_inclusive[col],
+        )
+
+    return mask
+
+
+def detect_outliers(
+    obj,
+    /,
+    description=None,
+    *,
+    lower_bound=None,
+    upper_bound=None,
+    lower_inclusive=None,
+    upper_inclusive=None,
+):
+    """Detect outliers in a Series or DataFrame, given boundary values."""
+    if description is not None:
+        if not all(
+            [
+                lower_bound is None,
+                upper_bound is None,
+                lower_inclusive is None,
+                upper_inclusive is None,
+            ]
+        ):
+            raise ValueError("Either description or bounds should be given, not both.")
+        lower_bound = description["lower_bound"]
+        upper_bound = description["upper_bound"]
+        lower_inclusive = description["lower_inclusive"]
+        upper_inclusive = description["upper_inclusive"]
+    if isinstance(obj, Series):
+        return detect_outliers_series(
+            obj,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+    elif isinstance(obj, DataFrame):
+        return detect_outliers_dataframe(
+            obj,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+    else:
+        raise TypeError(f"Unsupported type: {type(obj)}")
+
+
+def remove_outliers_series(
     s: Series,
     /,
     *,
     drop: bool = True,
-    lower_bound: float | None = None,
-    upper_bound: float | None = None,
-    lower_inclusive: bool = True,
-    upper_inclusive: bool = True,
+    inplace: bool = False,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool,
+    upper_inclusive: bool,
 ) -> Series:
     """Remove outliers from a Series, given boundary values."""
     if s.dtype == "category":
@@ -244,9 +325,10 @@ def remove_outlieres_series(
                 f"Lower bound {lower_bound} is greater than upper bound {upper_bound}."
             )
 
-    __logger__.info("Removing outliers from column.")
+    __logger__.info("Removing outliers from %r.", s.name)
+    s = s.copy() if inplace else s
 
-    # mask for values that are considered outliers
+    # compute mask for values that are considered outliers
     mask = detect_outliers_series(
         s,
         lower_bound=lower_bound,
@@ -255,10 +337,12 @@ def remove_outlieres_series(
         upper_inclusive=upper_inclusive,
     )
 
+    # replace outliers with NaN
+    s.loc[mask] = pd.NA
+
     if drop:
+        __logger__.info("Dropping rows which are outliers.")
         s = s.loc[~mask]
-    else:
-        s.loc[mask] = None
 
     return s
 
@@ -268,12 +352,16 @@ def remove_outliers_dataframe(
     /,
     *,
     drop: bool = True,
-    lower_bound: Mapping[str, float | None],
-    upper_bound: Mapping[str, float | None],
-    lower_inclusive: Mapping[str, bool],
-    upper_inclusive: Mapping[str, bool],
+    inplace: bool = False,
+    lower_bound: Mapping[T, float | None],
+    upper_bound: Mapping[T, float | None],
+    lower_inclusive: Mapping[T, bool],
+    upper_inclusive: Mapping[T, bool],
 ) -> DataFrame:
     """Remove outliers from a DataFrame, given boundary values."""
+    __logger__.info("Removing outliers from DataFrame.")
+    df = df.copy() if not inplace else df
+
     given_bounds = joint_keys(
         lower_bound, upper_bound, lower_inclusive, upper_inclusive
     )
@@ -283,30 +371,38 @@ def remove_outliers_dataframe(
     # if extra_bounds := given_bounds - set(df.columns):
     #     raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
 
-    masks_per_col = []
+    # compute mask for values that are considered outliers
+    mask = detect_outliers_dataframe(
+        df,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
+
+    # replace outliers with NaN
     for col in df:
-        mask = detect_outliers_series(
-            df[col],
-            lower_bound=lower_bound[col],
-            upper_bound=upper_bound[col],
-            lower_inclusive=lower_inclusive[col],
-            upper_inclusive=upper_inclusive[col],
-        )
-        masks_per_col.append(mask)
+        __logger__.info("Masking outliers in %r.", col)
+        df.loc[mask[col], col] = pd.NA
 
-        df.loc[mask, col] = None
-
+    # drop rows where all columns are outliers
     if drop:
-        # union of all masks
-        mask = reduce(operator.__or__, masks_per_col)
-        df = df.loc[~mask]
+        __logger__.info("Dropping rows where all columns are outliers.")
+        # FIXME: https://github.com/pandas-dev/pandas/issues/54389
+        m = reduce(operator.__and__, (s for _, s in mask.items()))
+        df = df.loc[~m]
 
     return df
 
 
 @overload
 def remove_outliers(
-    s: Series, /, description: BoundaryInformation, *, drop: bool = True
+    s: Series,
+    /,
+    description: BoundaryInformation,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
 ) -> Series:
     ...
 
@@ -317,6 +413,7 @@ def remove_outliers(
     /,
     *,
     drop: bool = True,
+    inplace: bool = False,
     lower_bound: float | None = None,
     upper_bound: float | None = None,
     lower_inclusive: bool = True,
@@ -327,7 +424,12 @@ def remove_outliers(
 
 @overload
 def remove_outliers(
-    df: DataFrame, /, description: BoundaryInformation | DataFrame, *, drop: bool = True
+    df: DataFrame,
+    /,
+    description: BoundaryInformation | DataFrame,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
 ) -> DataFrame:
     ...
 
@@ -338,10 +440,11 @@ def remove_outliers(
     /,
     *,
     drop: bool = True,
-    lower_bound: Mapping[str, float | None],
-    upper_bound: Mapping[str, float | None],
-    lower_inclusive: Mapping[str, bool],
-    upper_inclusive: Mapping[str, bool],
+    inplace: bool = False,
+    lower_bound: Mapping[T, float | None],
+    upper_bound: Mapping[T, float | None],
+    lower_inclusive: Mapping[T, bool],
+    upper_inclusive: Mapping[T, bool],
 ) -> DataFrame:
     ...
 
@@ -352,6 +455,7 @@ def remove_outliers(
     description=None,
     *,
     drop=True,
+    inplace=False,
     lower_bound=None,
     upper_bound=None,
     lower_inclusive=None,
@@ -373,9 +477,10 @@ def remove_outliers(
         lower_inclusive = description["lower_inclusive"]
         upper_inclusive = description["upper_inclusive"]
     if isinstance(obj, Series):
-        return remove_outlieres_series(
+        return remove_outliers_series(
             obj,
             drop=drop,
+            inplace=inplace,
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             lower_inclusive=lower_inclusive,
@@ -385,6 +490,7 @@ def remove_outliers(
         return remove_outliers_dataframe(
             obj,
             drop=drop,
+            inplace=inplace,
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             lower_inclusive=lower_inclusive,

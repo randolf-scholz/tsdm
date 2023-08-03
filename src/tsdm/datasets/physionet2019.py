@@ -171,7 +171,12 @@ from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 KEY: TypeAlias = Literal[
-    "timeseries", "timeseries_description", "metadata", "metadata_description"
+    "timeseries",
+    "timeseries_description",
+    "metadata",
+    "metadata_description",
+    "raw_timeseries",
+    "raw_metadata",
 ]
 
 
@@ -445,14 +450,7 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         )
         return table
 
-    def clean_table(self, key: KEY) -> DataFrame | None:
-        if key == "timeseries_description":
-            return make_dataframe(**TIMESERIES_DESCRIPTION)
-        if key == "metadata_description":
-            return make_dataframe(**METADATA_DESCRIPTION)
-        if key not in ["timeseries", "metadata"]:
-            raise KeyError(f"Unknown table {key}")
-
+    def _clean_all_rawdatasets(self) -> None:
         table = pd.concat([self._get_frame(str(fname)) for fname in self.rawdata_files])
 
         self.LOGGER.info("Creating Timeseries Table.")
@@ -492,3 +490,27 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         self.serialize(ts, self.dataset_paths["timeseries"])
         self.serialize(md, self.dataset_paths["metadata"])
         return None
+
+    def clean_table(self, key: KEY) -> DataFrame | None:
+        match key:
+            case "timeseries_description":
+                return make_dataframe(**TIMESERIES_DESCRIPTION)
+            case "metadata_description":
+                return make_dataframe(**METADATA_DESCRIPTION)
+            case "timeseries":
+                self.LOGGER.info("Removing outliers from timeseries.")
+                ts = remove_outliers(self.raw_timeseries, self.timeseries_description)
+                self.LOGGER.info("Dropping completely missing rows.")
+                ts = ts.dropna(how="all", axis="index")
+                return ts
+            case "metadata":
+                self.LOGGER.info("Removing outliers from metadata.")
+                return remove_outliers(self.raw_metadata, self.metadata_description)
+                # md = remove_outliers(self.raw_metadata, self.metadata_description)
+                # self.LOGGER.info("Dropping completely missing rows.")
+                # md = md.dropna(how="all", axis="index")
+                # return md
+            case "raw_timeseries" | "raw_metadata":
+                return self._clean_all_rawdatasets()
+            case _:
+                raise KeyError(f"Unknown table: {key!r} not in {self.table_names}")

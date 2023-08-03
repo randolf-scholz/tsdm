@@ -1,6 +1,6 @@
 r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 
-__all__ = ["USHCN_Dataset"]
+__all__ = ["USHCN"]
 
 import warnings
 from typing import Literal, TypeAlias
@@ -9,7 +9,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import InlineTable, make_dataframe
+from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 KEY: TypeAlias = Literal[
     "timeseries",
@@ -17,7 +17,7 @@ KEY: TypeAlias = Literal[
     "metadata",
     "metadata_description",
     "state_codes",
-    "timeseries_complete",
+    "raw_timeseries",
 ]
 
 TIMESERIES_DESCRIPTION: InlineTable = {
@@ -32,7 +32,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
     ],
     "schema": {
         # fmt: off
-        "name"            : "string[pyarrow]",
+        "variable"        : "string[pyarrow]",
         "dtype"           : "string[pyarrow]",
         "lower_bound"     : "float32[pyarrow]",
         "upper_bound"     : "float32[pyarrow]",
@@ -42,7 +42,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "description"     : "string[pyarrow]",
         # fmt: on
     },
-    "index": ["name"],
+    "index": ["variable"],
 }
 
 METADATA_DESCRIPTION: InlineTable = {
@@ -61,7 +61,7 @@ METADATA_DESCRIPTION: InlineTable = {
     ],
     "schema": {
         # fmt: off
-        "name"            : "string[pyarrow]",
+        "variable"        : "string[pyarrow]",
         "dtype"           : "string[pyarrow]",
         "lower_bound"     : "float32[pyarrow]",
         "upper_bound"     : "float32[pyarrow]",
@@ -71,11 +71,69 @@ METADATA_DESCRIPTION: InlineTable = {
         "description"     : "string[pyarrow]",
         # fmt: on
     },
-    "index": ["name"],
+    "index": ["variable"],
+}
+
+STATE_CODES: InlineTable = {
+    "data": [
+        ("01", "AL", "Alabama"),
+        ("02", "AZ", "Arizona"),
+        ("03", "AR", "Arkansas"),
+        ("04", "CA", "California"),
+        ("05", "CO", "Colorado"),
+        ("06", "CT", "Connecticut"),
+        ("07", "DE", "Delaware"),
+        ("08", "FL", "Florida"),
+        ("09", "GA", "Georgia"),
+        ("10", "ID", "Idaho"),
+        ("11", "IL", "Idaho"),
+        ("12", "IN", "Indiana"),
+        ("13", "IA", "Iowa"),
+        ("14", "KS", "Kansas"),
+        ("15", "KY", "Kentucky"),
+        ("16", "LA", "Louisiana"),
+        ("17", "ME", "Maine"),
+        ("18", "MD", "Maryland"),
+        ("19", "MA", "Massachusetts"),
+        ("20", "MI", "Michigan"),
+        ("21", "MN", "Minnesota"),
+        ("22", "MS", "Mississippi"),
+        ("23", "MO", "Missouri"),
+        ("24", "MT", "Montana"),
+        ("25", "NE", "Nebraska"),
+        ("26", "NV", "Nevada"),
+        ("27", "NH", "NewHampshire"),
+        ("28", "NJ", "NewJersey"),
+        ("29", "NM", "NewMexico"),
+        ("30", "NY", "NewYork"),
+        ("31", "NC", "NorthCarolina"),
+        ("32", "ND", "NorthDakota"),
+        ("33", "OH", "Ohio"),
+        ("34", "OK", "Oklahoma"),
+        ("35", "OR", "Oregon"),
+        ("36", "PA", "Pennsylvania"),
+        ("37", "RI", "RhodeIsland"),
+        ("38", "SC", "SouthCarolina"),
+        ("39", "SD", "SouthDakota"),
+        ("40", "TN", "Tennessee"),
+        ("41", "TX", "Texas"),
+        ("42", "UT", "Utah"),
+        ("43", "VT", "Vermont"),
+        ("44", "VA", "Virginia"),
+        ("45", "WA", "Washington"),
+        ("46", "WV", "WestVirginia"),
+        ("47", "WI", "Wisconsin"),
+        ("48", "WY", "Wyoming"),
+    ],
+    "schema": {
+        "ID": "string[pyarrow]",
+        "Abbr.": "string[pyarrow]",
+        "State": "string[pyarrow]",
+    },
 }
 
 
-class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
+class USHCN(MultiTableDataset[KEY, DataFrame]):
     r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset.
 
     U.S. Historical Climatology Network (USHCN) data are used to quantify national and
@@ -226,7 +284,7 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         "metadata",
         "metadata_description",
         # extra tables
-        "timeseries_complete",
+        "raw_timeseries",
         "state_codes",
     ]
     rawdata_files = [
@@ -327,28 +385,18 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         match key:
             case "timeseries":
                 return self._clean_timeseries()
-            case "timeseries_complete":
-                return self._clean_timeseries_complete()
+            case "raw_timeseries":
+                return self._clean_raw_timeseries()
             case "metadata":
                 return self._clean_metadata()
             case "state_codes":
-                return self._state_codes()
+                return make_dataframe(**STATE_CODES)
             case "timeseries_description":
-                return self._timeseries_description()
+                return make_dataframe(**TIMESERIES_DESCRIPTION)
             case "metadata_description":
-                return self._metadata_description()
+                return make_dataframe(**METADATA_DESCRIPTION)
             case _:
                 raise KeyError(f"Unknown key: {key}")
-
-    @staticmethod
-    def _timeseries_description() -> DataFrame:
-        r"""Metadata for each unit."""
-        return make_dataframe(**TIMESERIES_DESCRIPTION)
-
-    @staticmethod
-    def _metadata_description() -> DataFrame:
-        r"""Metadata for each unit."""
-        return make_dataframe(**METADATA_DESCRIPTION)
 
     def _clean_metadata(self) -> DataFrame:
         stations_colspecs = {
@@ -385,13 +433,16 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         ).set_index("COOP_ID")
 
         self.LOGGER.info("Removing outliers from metadata.")
-        # metadata = remove_outliers(metadata, self.metadata_description)
+        metadata = remove_outliers(metadata, self.metadata_description)
+
+        self.LOGGER.info("Dropping completely missing rows.")
+        metadata = metadata.dropna(how="all", axis="index")
 
         return metadata
 
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Creating simplified timeseries table.")
-        table = self.tables["timeseries_complete"]
+        table = self.tables["raw_timeseries"]
 
         self.LOGGER.info("dropping all data with raised quality flags.")
         table = table.loc[table["QFLAG"].isna()]
@@ -401,11 +452,14 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         ts.columns = ts.columns.astype("string[pyarrow]")
 
         self.LOGGER.info("Removing outliers from timeseries.")
-        # ts = remove_outliers(ts, self.timeseries_description)
+        ts = remove_outliers(ts, self.timeseries_description)
+
+        self.LOGGER.info("Dropping completely missing rows.")
+        ts = ts.dropna(how="all", axis="index")
 
         return ts
 
-    def _clean_timeseries_complete(self) -> DataFrame:
+    def _clean_raw_timeseries(self) -> DataFrame:
         warnings.warn(
             "This can take a while to run. Consider using the Modin backend."
             "Refactor if read_fwf becomes available in polars or pyarrow.",
@@ -522,60 +576,3 @@ class USHCN_Dataset(MultiTableDataset[KEY, DataFrame]):
         )
 
         return data
-
-    @staticmethod
-    def _state_codes() -> DataFrame:
-        return pd.DataFrame(
-            [
-                ("01", "AL", "Alabama"),
-                ("02", "AZ", "Arizona"),
-                ("03", "AR", "Arkansas"),
-                ("04", "CA", "California"),
-                ("05", "CO", "Colorado"),
-                ("06", "CT", "Connecticut"),
-                ("07", "DE", "Delaware"),
-                ("08", "FL", "Florida"),
-                ("09", "GA", "Georgia"),
-                ("10", "ID", "Idaho"),
-                ("11", "IL", "Idaho"),
-                ("12", "IN", "Indiana"),
-                ("13", "IA", "Iowa"),
-                ("14", "KS", "Kansas"),
-                ("15", "KY", "Kentucky"),
-                ("16", "LA", "Louisiana"),
-                ("17", "ME", "Maine"),
-                ("18", "MD", "Maryland"),
-                ("19", "MA", "Massachusetts"),
-                ("20", "MI", "Michigan"),
-                ("21", "MN", "Minnesota"),
-                ("22", "MS", "Mississippi"),
-                ("23", "MO", "Missouri"),
-                ("24", "MT", "Montana"),
-                ("25", "NE", "Nebraska"),
-                ("26", "NV", "Nevada"),
-                ("27", "NH", "NewHampshire"),
-                ("28", "NJ", "NewJersey"),
-                ("29", "NM", "NewMexico"),
-                ("30", "NY", "NewYork"),
-                ("31", "NC", "NorthCarolina"),
-                ("32", "ND", "NorthDakota"),
-                ("33", "OH", "Ohio"),
-                ("34", "OK", "Oklahoma"),
-                ("35", "OR", "Oregon"),
-                ("36", "PA", "Pennsylvania"),
-                ("37", "RI", "RhodeIsland"),
-                ("38", "SC", "SouthCarolina"),
-                ("39", "SD", "SouthDakota"),
-                ("40", "TN", "Tennessee"),
-                ("41", "TX", "Texas"),
-                ("42", "UT", "Utah"),
-                ("43", "VT", "Vermont"),
-                ("44", "VA", "Virginia"),
-                ("45", "WA", "Washington"),
-                ("46", "WV", "WestVirginia"),
-                ("47", "WI", "Wisconsin"),
-                ("48", "WY", "Wyoming"),
-            ],
-            columns=["ID", "Abbr.", "State"],
-            dtype="string[pyarrow]",
-        )

@@ -25,12 +25,14 @@ from typing_extensions import get_args
 from tsdm.backend.numpy import numpy_like
 from tsdm.backend.pandas import (
     pandas_clip,
+    pandas_false_like,
     pandas_like,
     pandas_nanmax,
     pandas_nanmean,
     pandas_nanmin,
     pandas_nanstd,
     pandas_strip_whitespace,
+    pandas_true_like,
     pandas_where,
 )
 from tsdm.backend.protocols import (
@@ -138,13 +140,13 @@ class Kernels:
 
     false_like: Mapping[BackendID, SelfMapProto] = {
         "numpy": universal_false_like,
-        "pandas": universal_false_like,
+        "pandas": pandas_false_like,
         "torch": universal_false_like,
     }
 
     true_like: Mapping[BackendID, SelfMapProto] = {
         "numpy": universal_true_like,
-        "pandas": universal_true_like,
+        "pandas": pandas_true_like,
         "torch": universal_true_like,
     }
 
