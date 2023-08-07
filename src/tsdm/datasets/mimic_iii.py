@@ -18,14 +18,45 @@ vital signs, laboratory results, and medications.
 
 __all__ = ["MIMIC_III"]
 
-import os
-import subprocess
+from collections.abc import Mapping
 from getpass import getpass
+from typing import Literal, TypeAlias, get_args
+
+from pandas import DataFrame
 
 from tsdm.datasets.base import MultiTableDataset
 
+KEYS: TypeAlias = Literal[
+    "ADMISSIONS",
+    "CALLOUT",
+    "CAREGIVERS",
+    "CHARTEVENTS",
+    "CPTEVENTS",
+    "DATETIMEEVENTS",
+    "D_CPT",
+    "DIAGNOSES_ICD",
+    "D_ICD_DIAGNOSES",
+    "D_ICD_PROCEDURES",
+    "D_ITEMS",
+    "D_LABITEMS",
+    "DRGCODES",
+    "ICUSTAYS",
+    "INPUTEVENTS_CV",
+    "INPUTEVENTS_MV",
+    "LABEVENTS",
+    "MICROBIOLOGYEVENTS",
+    "NOTEEVENTS",
+    "OUTPUTEVENTS",
+    "PATIENTS",
+    "PRESCRIPTIONS",
+    "PROCEDUREEVENTS_MV",
+    "PROCEDURES_ICD",
+    "SERVICES",
+    "TRANSFERS",
+]
 
-class MIMIC_III(MultiTableDataset):
+
+class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
     r"""MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
@@ -50,67 +81,47 @@ class MIMIC_III(MultiTableDataset):
     so e.g. the last patient was roughly 250 hours, 10½ days.
     """
 
-    BASE_URL = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
-    INFO_URL = r"https://physionet.org/content/mimiciii/1.4/"
-    HOME_URL = r"https://mimic.mit.edu/"
-    GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
-    VERSION = r"1.0"
-    RAWDATA_HASH = r"f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
+    __version__ = "1.4"
 
-    rawdata_files = ["mimic-iv-1.0.zip"]
+    BASE_URL = r"https://physionet.org/content/mimiciii/get-zip/"
+    INFO_URL = r"https://physionet.org/content/mimiciii/"
+    HOME_URL = r"https://mimic.mit.edu/"
+
     rawdata_hashes = {
-        "mimic-iv-1.0.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd",
+        "mimic-iii-clinical-database-1.4.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd",  # noqa: E501
     }
-    # fmt: off
-    dataset_files = {
-        "ADMISSIONS"         : "mimic-iii-clinical-database-1.4/ADMISSIONS.csv.gz",
-        "CALLOUT"            : "mimic-iii-clinical-database-1.4/CALLOUT.csv.gz",
-        "CAREGIVERS"         : "mimic-iii-clinical-database-1.4/CAREGIVERS.csv.gz",
-        "CHARTEVENTS"        : "mimic-iii-clinical-database-1.4/CHARTEVENTS.csv.gz",
-        "CPTEVENTS"          : "mimic-iii-clinical-database-1.4/CPTEVENTS.csv.gz",
-        "DATETIMEEVENTS"     : "mimic-iii-clinical-database-1.4/DATETIMEEVENTS.csv.gz",
-        "D_CPT"              : "mimic-iii-clinical-database-1.4/D_CPT.csv.gz",
-        "DIAGNOSES_ICD"      : "mimic-iii-clinical-database-1.4/DIAGNOSES_ICD.csv.gz",
-        "D_ICD_DIAGNOSES"    : "mimic-iii-clinical-database-1.4/D_ICD_DIAGNOSES.csv.gz",
-        "D_ICD_PROCEDURES"   : "mimic-iii-clinical-database-1.4/D_ICD_PROCEDURES.csv.gz",
-        "D_ITEMS"            : "mimic-iii-clinical-database-1.4/D_ITEMS.csv.gz",
-        "D_LABITEMS"         : "mimic-iii-clinical-database-1.4/D_LABITEMS.csv.gz",
-        "DRGCODES"           : "mimic-iii-clinical-database-1.4/DRGCODES.csv.gz",
-        "ICUSTAYS"           : "mimic-iii-clinical-database-1.4/ICUSTAYS.csv.gz",
-        "INPUTEVENTS_CV"     : "mimic-iii-clinical-database-1.4/INPUTEVENTS_CV.csv.gz",
-        "INPUTEVENTS_MV"     : "mimic-iii-clinical-database-1.4/INPUTEVENTS_MV.csv.gz",
-        "LABEVENTS"          : "mimic-iii-clinical-database-1.4/LABEVENTS.csv.gz",
-        "MICROBIOLOGYEVENTS" : "mimic-iii-clinical-database-1.4/MICROBIOLOGYEVENTS.csv.gz",
-        "NOTEEVENTS"         : "mimic-iii-clinical-database-1.4/NOTEEVENTS.csv.gz",
-        "OUTPUTEVENTS"       : "mimic-iii-clinical-database-1.4/OUTPUTEVENTS.csv.gz",
-        "PATIENTS"           : "mimic-iii-clinical-database-1.4/PATIENTS.csv.gz",
-        "PRESCRIPTIONS"      : "mimic-iii-clinical-database-1.4/PRESCRIPTIONS.csv.gz",
-        "PROCEDUREEVENTS_MV" : "mimic-iii-clinical-database-1.4/PROCEDUREEVENTS_MV.csv.gz",
-        "PROCEDURES_ICD"     : "mimic-iii-clinical-database-1.4/PROCEDURES_ICD.csv.gz",
-        "SERVICES"           : "mimic-iii-clinical-database-1.4/SERVICES.csv.gz",
-        "TRANSFERS"          : "mimic-iii-clinical-database-1.4/TRANSFERS.csv.gz",
-    }
-    # fmt: on
-    table_names = list(dataset_files.keys())
+
+    table_names: tuple[KEYS, ...] = get_args(KEYS)
+
+    @property
+    def rawdata_files(self):
+        return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
+
+    @property
+    def filelist(self) -> Mapping[KEYS, str]:
+        """Mapping between table_names and contents of the zip file."""
+        return {
+            key: f"mimic-iii-clinical-database-{self.__version__}/{key}.csv.gz"
+            for key in self.table_names
+        }
 
     def clean_table(self, key: str) -> None:
         raise NotImplementedError
 
     def download_file(self, fname: str) -> None:
-        path = self.rawdata_paths[fname]
+        """Download a file from the MIMIC-III website."""
+        if tuple(map(int, self.__version__.split("."))) < (1, 4):
+            raise ValueError(
+                "MIMIC-III v1.4+ is required. At the time of writing, the website"
+                " does not provide legacy versions of the MIMIC-III dataset."
+            )
 
-        cut_dirs = self.BASE_URL.count("/") - 3
-        user = input("MIMIC-III username: ")
-        password = getpass(prompt="MIMIC-III password: ", stream=None)
-
-        os.environ["PASSWORD"] = password
-
-        subprocess.run(
-            f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
-            shell=True,
-            check=True,
+        self.download_from_url(
+            self.BASE_URL + f"{self.__version__}/",
+            self.rawdata_paths[fname],
+            username=input("MIMIC-III username: "),
+            password=getpass(prompt="MIMIC-III password: ", stream=None),
+            headers={
+                "User-Agent": "Wget/1.21.2"
+            },  # NOTE: MIMIC only allows wget for some reason...
         )
-
-        file = self.RAWDATA_DIR / "index.html"
-        os.rename(file, fname)

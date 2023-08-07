@@ -494,7 +494,6 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         # assert md.index == ts.index.get_level_values("RecordID").unique()
         self.serialize(md, self.dataset_paths["raw_metadata"])
         self.serialize(ts, self.dataset_paths["raw_timeseries"])
-        return None
 
     def clean_table(self, key: KEY) -> None | DataFrame:
         match key:

@@ -490,7 +490,6 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
 
         self.serialize(ts, self.dataset_paths["raw_timeseries"])
         self.serialize(md, self.dataset_paths["raw_metadata"])
-        return None
 
     def clean_table(self, key: KEY) -> DataFrame | None:
         match key:

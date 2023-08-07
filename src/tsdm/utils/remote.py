@@ -8,7 +8,7 @@ __all__ = [
 import logging
 import subprocess
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -22,21 +22,29 @@ def download(
     url: str,
     fname: Optional[PathLike] = None,
     *,
+    headers: Optional[Mapping[str, str]] = None,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    request_options: Optional[Mapping[str, Any]] = None,
+    # download validation
     chunk_size: int = 1024,
     skip_existing: bool = False,
     hash_value: Optional[str] = None,
-    hash_algorithm: str = "sha256",
-    hash_kwargs: Optional[dict[str, Any]] = None,
+    hash_algorithm: Optional[str] = None,
+    hash_kwargs: Optional[Mapping[str, Any]] = None,
 ) -> None:
-    r"""Download a file from a URL."""
-    hash_kwargs = {} if hash_kwargs is None else hash_kwargs
-    response = requests.get(url, stream=True, timeout=10)
-    total = int(response.headers.get("content-length", 0))
-    path = Path(url.split("/")[-1] if fname is None else fname)
+    r"""Download a file from a URL.
 
+    This is essentially a wrapper around `requests.get` with a progress bar.
+    """
+    hash_kwargs = {} if hash_kwargs is None else hash_kwargs
+
+    # construct the path
+    path = Path(url.split("/")[-1] if fname is None else fname)
     if not path.parent.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
 
+    # check if the file already exists
     if skip_existing and path.exists():
         if hash_value is not None:
             validate_file_hash(
@@ -44,10 +52,20 @@ def download(
             )
         return
 
+    # construct the request
+    request_options = {
+        "headers": {} if headers is None else headers,
+        "auth": None if username is None else (username, password),
+        "stream": True,
+        "timeout": 10,
+    } | ({} if request_options is None else request_options)
+    response = requests.get(url, **request_options)  # type: ignore[arg-type]
+
+    # attempt to download the file
     try:
         with open(path, "wb") as file, tqdm(
             desc=str(path),
-            total=total,
+            total=int(response.headers.get("content-length", 0)),
             unit="iB",
             unit_scale=True,
             unit_divisor=1024,
@@ -61,11 +79,12 @@ def download(
         raise RuntimeError(
             f"Error {e!r} occurred while downloading {fname}, deleting partial files."
         ) from e
-
-    if hash_value is not None:
-        validate_file_hash(
-            path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
-        )
+    else:
+        # validate the file hash
+        if hash_value is not None:
+            validate_file_hash(
+                path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
+            )
 
 
 def import_from_url(

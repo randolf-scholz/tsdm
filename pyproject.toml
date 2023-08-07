@@ -278,7 +278,11 @@ plugins = ["numpy.typing.mypy_plugin"]
 
 # platform configuration
 python_version = "3.10"
-#platform
+#platform = "linux"
+
+disable_error_code = [
+    "func-returns-value",  # checks style, not type https://github.com/python/mypy/issues/6549
+]
 
 # warnings
 warn_no_return = true
@@ -398,7 +402,7 @@ add-ignore = [
 root = ""
 venv = ".venv"
 venvPath = "."
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 pythonPlatform = "Linux"
 stubPath = ""
 include = ["src/", "tests/"]

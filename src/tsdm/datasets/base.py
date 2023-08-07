@@ -137,8 +137,12 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
     - dataset_hashes: Used to verify cleaned dataset files after `clean` and before `load`.
     - table_hashes: Used to verify in-memory tables after `load`.
     - table_schemas: Used to verify in-memory tables after `load`.
-
     """
+
+    LOGGER: ClassVar[logging.Logger]
+    r"""Logger for the dataset."""
+    DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
+    r"""Default format for the dataset."""
 
     BASE_URL: ClassVar[Optional[str]] = None
     r"""HTTP address from where the dataset can be downloaded."""
@@ -148,13 +152,9 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
     r"""Location where the raw data is stored."""
     DATASET_DIR: ClassVar[Path]
     r"""Location where the pre-processed data is stored."""
-    LOGGER: ClassVar[logging.Logger]
-    r"""Logger for the dataset."""
-    DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
-    r"""Default format for the dataset."""
 
     # instance attribute
-    __version__: str
+    __version__: str = NotImplemented
     r"""Version of the dataset, keep empty for unversioned dataset."""
     rawdata_hashes: Mapping[str, str | None] = NotImplemented
     r"""Hashes of the raw dataset file(s)."""
@@ -168,12 +168,14 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
         *,
         initialize: bool = True,
         reset: bool = False,
-        version: str = "",
+        version: str = NotImplemented,
     ) -> None:
         r"""Initialize the dataset."""
-        self.__version__ = version
-        self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
-        self.DATASET_DIR /= self.__version__  # type: ignore[misc]
+        if version is not NotImplemented:
+            self.__version__ = version
+        if self.__version__ is not NotImplemented:
+            self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
+            self.DATASET_DIR /= self.__version__  # type: ignore[misc]
 
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -238,8 +240,8 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
 
     @property
     @abstractmethod
-    def rawdata_files(self) -> Sequence[PathLike]:
-        r"""Relative paths to the raw dataset file(s)."""
+    def rawdata_files(self) -> Sequence[str]:
+        r"""File names of the raw dataset files."""
 
     @cached_property
     def rawdata_paths(self) -> Mapping[str, Path]:
@@ -269,38 +271,52 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
         r"""Load the pre-processed dataset."""
 
     @classmethod
-    def download_from_url(cls, url: str) -> None:
+    def download_from_url(cls, url: str, path: PathLike, **options: Any) -> None:
         r"""Download files from a URL."""
         cls.LOGGER.debug("Downloading from %s", url)
         parsed_url = urlparse(url)
 
-        if parsed_url.netloc == "www.kaggle.com":
-            kaggle_name = Path(parsed_url.path).name
-            subprocess.run(
-                f"kaggle competitions download -p {cls.RAWDATA_DIR} -c {kaggle_name}",
-                shell=True,
-                check=True,
-            )
-        elif parsed_url.netloc == "github.com":
-            subprocess.run(
-                f"svn export --force {url.replace('tree/main', 'trunk')} {cls.RAWDATA_DIR}",
-                shell=True,
-                check=True,
-            )
-        else:  # default parsing, including for UCI dataset
-            fname = url.split("/")[-1]
-            download(url, cls.RAWDATA_DIR / fname)
+        match parsed_url.netloc:
+            case "www.kaggle.com":
+                # change options to kaggle cli options
+                opts = " ".join(f"--{k} {v}" for k, v in options.items())
+                kaggle_name = Path(parsed_url.path).name
+                subprocess.run(
+                    f"kaggle competitions download"
+                    f" -p {cls.RAWDATA_DIR} -c {kaggle_name} {opts}",
+                    shell=True,
+                    check=True,
+                )
+            case "github.com":
+                opts = " ".join(f"--{k} {v}" for k, v in options.items())
+                svn_url = url.replace("tree/main", "trunk")
+                subprocess.run(
+                    f"svn export --force {svn_url} {cls.RAWDATA_DIR} {opts}",
+                    shell=True,
+                    check=True,
+                )
+            case _:  # default parsing, including for UCI dataset
+                download(url, path, **options)
 
-    def download_file(self, fname: str) -> None:
-        r"""Download a single file."""
+    def download_file(self, fname: str, /) -> None:
+        r"""Download a single rawdata file.
+
+        Override this method for custom download logic.
+        """
         if self.BASE_URL is None:
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 
-        self.download_from_url(self.BASE_URL + fname)
+        url = self.BASE_URL + fname
+        path = self.RAWDATA_DIR / fname
+        self.download_from_url(url, path)
 
     def download(
-        self, *, key: Optional[str] = None, force: bool = True, validate: bool = True
+        self,
+        *,
+        key: Optional[str] = None,
+        force: bool = True,
+        validate: bool = True,
     ) -> None:
         r"""Download the dataset."""
         # Recurse if key is None.
@@ -349,7 +365,6 @@ class SingleTableDataset(BaseDataset[T_co]):
     """INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
-
     dataset_hash: str = NotImplemented
     r"""Hashes of the cleaned dataset file(s)."""
     table_hash: str = NotImplemented
@@ -492,7 +507,13 @@ class MultiTableDataset(
     table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
     r"""Shapes of the in-memory cleaned dataset table(s)."""
 
-    def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        initialize: bool = True,
+        reset: bool = False,
+        version: str = NotImplemented,
+    ) -> None:
         r"""Initialize the Dataset."""
         self.LOGGER.debug("Calling Mapping.__init__")
         Mapping.__init__(self)
@@ -517,7 +538,7 @@ class MultiTableDataset(
             self._key_attributes = True
 
         self.LOGGER.debug("Calling super().__init__")
-        super().__init__(initialize=initialize, reset=reset)
+        super().__init__(initialize=initialize, reset=reset, version=version)
 
     def __dir__(self) -> list[str]:
         if self._key_attributes:

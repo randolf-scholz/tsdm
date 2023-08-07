@@ -892,3 +892,47 @@ def recurse_on_builtin_container(
                 raise TypeError(f"Unsupported type: {type(x)}")
 
     return recurse
+
+
+# def extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable]:
+#     """Decorator to extend a parent function.
+#
+#     For example, when one wants to extend the __init__ of a parent class
+#     with an extra argument.
+#
+#     This will synthesize a new function that combines the extra arguments with
+#     the ones of the parent function. The new arguments passed to the synthesized
+#     function are available within the function body.
+#
+#     Example:
+#
+#     class Parent:
+#         def foo(self, a, b, /, *, key):
+#             ...
+#
+#     class Child(Parent):
+#
+#         @extends(Parent.foo)
+#         def foo(self, c, *parent_args, *, bar, **parent_kwargs):
+#             super().foo(*parent_args, **parent_kwargs)
+#             ...
+#
+#     the synethesized function will roughly look like this:
+#
+#         def __sythntetic__init__(self, a, b, c, /, *, foo, bar):
+#             parent_args = (a, b)
+#             parent_kwargs = dict(key=key)
+#             func_args = (c,)
+#             func_kwargs = dict(bar=bar)
+#             wrapped_func(*parent_args, *func_args, **parent_kwargs, **func_kwargs)
+#
+#     Note:
+#
+#         - neither parent nor child func may have varargs.
+#         -
+#         - The child func may reuse keyword arguments from the parent func and give them different keywords.
+#           - if keyword args are reused, they won't be included in parent_kwargs.
+#         - additional positional only args must have defaults values (LSP!)
+#         - additional positional only arguments are always added after positional-only arguments of the parent.
+#     """
+#     ...
