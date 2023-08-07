@@ -18,42 +18,23 @@ vital signs, laboratory results, and medications.
 
 __all__ = ["MIMIC_III"]
 
-from collections.abc import Mapping
+import gzip
 from getpass import getpass
-from typing import Literal, TypeAlias, get_args
+from typing import get_args
+from zipfile import ZipFile
 
 from pandas import DataFrame
+from pyarrow import csv
 
 from tsdm.datasets.base import MultiTableDataset
-
-KEYS: TypeAlias = Literal[
-    "ADMISSIONS",
-    "CALLOUT",
-    "CAREGIVERS",
-    "CHARTEVENTS",
-    "CPTEVENTS",
-    "DATETIMEEVENTS",
-    "D_CPT",
-    "DIAGNOSES_ICD",
-    "D_ICD_DIAGNOSES",
-    "D_ICD_PROCEDURES",
-    "D_ITEMS",
-    "D_LABITEMS",
-    "DRGCODES",
-    "ICUSTAYS",
-    "INPUTEVENTS_CV",
-    "INPUTEVENTS_MV",
-    "LABEVENTS",
-    "MICROBIOLOGYEVENTS",
-    "NOTEEVENTS",
-    "OUTPUTEVENTS",
-    "PATIENTS",
-    "PRESCRIPTIONS",
-    "PROCEDUREEVENTS_MV",
-    "PROCEDURES_ICD",
-    "SERVICES",
-    "TRANSFERS",
-]
+from tsdm.datasets.schema.mimic_iii import (
+    FALSE_VALUES,
+    KEYS,
+    NULL_VALUES,
+    SCHEMAS,
+    TRUE_VALUES,
+)
+from tsdm.utils.data import cast_columns, filter_nulls
 
 
 class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
@@ -94,19 +75,102 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
     table_names: tuple[KEYS, ...] = get_args(KEYS)
 
     @property
-    def rawdata_files(self):
+    def rawdata_files(self) -> list[str]:
         return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
 
     @property
-    def filelist(self) -> Mapping[KEYS, str]:
+    def filelist(self) -> dict[KEYS, str]:
         """Mapping between table_names and contents of the zip file."""
         return {
             key: f"mimic-iii-clinical-database-{self.__version__}/{key}.csv.gz"
             for key in self.table_names
         }
 
-    def clean_table(self, key: str) -> None:
-        raise NotImplementedError
+    def clean_table(self, key: KEYS) -> None:
+        # Read the table
+        with ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive:
+            with archive.open(self.filelist[key], "r") as compressed_file:
+                with gzip.open(compressed_file, "r") as file:
+                    table = csv.read_csv(
+                        file,
+                        convert_options=csv.ConvertOptions(
+                            column_types=SCHEMAS[key],
+                            strings_can_be_null=True,
+                            null_values=NULL_VALUES,
+                            true_values=TRUE_VALUES,
+                            false_values=FALSE_VALUES,
+                        ),
+                        parse_options=csv.ParseOptions(
+                            newlines_in_values=(key == "NOTEEVENTS"),
+                        ),
+                    )
+
+        # Post-processing
+        match key:
+            case "ADMISSIONS":
+                pass
+            case "CALLOUT":
+                pass
+            case "CAREGIVERS":
+                pass
+            case "CHARTEVENTS":
+                table = filter_nulls(
+                    table, ["ICUSTAY_ID", "VALUE", "VALUENUM", "VALUEUOM"]
+                )
+            case "CPTEVENTS":
+                table = cast_columns(table, CHARTDATE="date32")
+            case "DATETIMEEVENTS":
+                pass
+            case "DIAGNOSES_ICD":
+                pass
+            case "DRGCODES":
+                pass
+            case "D_CPT":
+                pass
+            case "D_ICD_DIAGNOSES":
+                pass
+            case "D_ICD_PROCEDURES":
+                pass
+            case "D_ITEMS":
+                pass
+            case "D_LABITEMS":
+                pass
+            case "ICUSTAYS":
+                pass
+            case "INPUTEVENTS_CV":
+                pass
+            case "INPUTEVENTS_MV":
+                pass
+            case "LABEVENTS":
+                table = filter_nulls(table, ["VALUE", "VALUENUM", "VALUEUOM"])
+            case "MICROBIOLOGYEVENTS":
+                table = cast_columns(table, CHARTDATE="date32")
+            case "NOTEEVENTS":
+                pass
+            case "OUTPUTEVENTS":
+                table = filter_nulls(table, ["VALUE", "VALUEUOM"])
+            case "PATIENTS":
+                table = cast_columns(
+                    table,
+                    DOB="date32",
+                    DOD="date32",
+                    DOD_HOSP="date32",
+                    DOD_SSN="date32",
+                )
+            case "PRESCRIPTIONS":
+                table = cast_columns(table, STARTDATE="date32", ENDDATE="date32")
+            case "PROCEDUREEVENTS_MV":
+                pass
+            case "PROCEDURES_ICD":
+                pass
+            case "SERVICES":
+                pass
+            case "TRANSFERS":
+                pass
+            case _:
+                raise ValueError(f"Unknown table name: {key}")
+
+        return table
 
     def download_file(self, fname: str) -> None:
         """Download a file from the MIMIC-III website."""

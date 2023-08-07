@@ -5,17 +5,19 @@ __all__ = [
     "InlineTable",
     # Functions
     "aggregate_nondestructive",
+    "cast_columns",
     "compute_entropy",
-    "float_is_int",
-    "joint_keys",
-    "get_integer_cols",
-    "make_dataframe",
     "detect_outliers",
-    "detect_outliers_series",
     "detect_outliers_dataframe",
+    "detect_outliers_series",
+    "filter_nulls",
+    "float_is_int",
+    "get_integer_cols",
+    "joint_keys",
+    "make_dataframe",
     "remove_outliers",
-    "remove_outliers_series",
     "remove_outliers_dataframe",
+    "remove_outliers_series",
     "strip_whitespace",
     "table_info",
     "vlookup_uniques",
@@ -25,7 +27,7 @@ import logging
 import operator
 from collections.abc import Mapping, Sequence
 from functools import reduce
-from typing import Any, Generic, overload
+from typing import Any, Generic, Literal, overload
 
 import pandas as pd
 import pyarrow as pa
@@ -723,3 +725,45 @@ def table_info(table: pa.Table) -> None:
             f"{name:{M}s}  {nulls=:s}  {num_uniques=:9d} ({uniques:7.2%})"
             f"  {entropy=:7.2%}  {dtype=:s}"
         )
+
+
+def filter_nulls(
+    table: pa.Table, cols: list[str], *, aggregation: Literal["or", "and"] = "or"
+) -> pa.Table:
+    """Filter rows with null values in the given columns."""
+
+    def or_(variables):
+        n = len(variables)
+        if n == 0:
+            return False
+        if n == 1:
+            return variables[0]
+        return pa.compute.or_(
+            or_(variables[: n // 2]),
+            or_(variables[n // 2 :]),
+        )
+
+    def and_(variables):
+        n = len(variables)
+        if n == 0:
+            return True
+        if n == 1:
+            return variables[0]
+        return pa.compute.and_(
+            or_(variables[: n // 2]),
+            or_(variables[n // 2 :]),
+        )
+
+    agg = {"or": or_, "and": and_}[aggregation]
+
+    masks = [table[col].is_null() for col in cols]
+    mask = pa.compute.invert(agg(masks))
+    return table.filter(mask)
+
+
+def cast_columns(table: pa.Table, **dtypes: pa.DataType) -> pa.Table:
+    """Cast columns to the given data types."""
+    schema: pa.Schema = table.schema
+    current_dtypes = dict(zip(schema.names, schema.types))
+    new_schema = pa.schema(current_dtypes | dtypes)
+    return table.cast(new_schema)

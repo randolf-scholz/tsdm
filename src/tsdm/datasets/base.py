@@ -40,6 +40,7 @@ from urllib.parse import urlparse
 
 import pandas
 from pandas import DataFrame, Index, MultiIndex, Series
+from pyarrow import Table, parquet
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Self
 
@@ -197,6 +198,9 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
         file_type = file_type[1:]
+
+        if isinstance(table, Table) and file_type == "parquet":
+            parquet.write_table(table, path, **kwargs)
 
         # check if table has a custom writer.
         if hasattr(table, f"to_{file_type}"):

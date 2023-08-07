@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 
-from typing import Any, Mapping
+
+class A:
+    def foo(self) -> int:
+        return 0
 
 
-def joint_keys(*dicts: Mapping[str, Any]) -> set[str]:
-    """Find joint keys in collection of dictionaries."""
-    return set.intersection(*map(set, dicts))
+class B(A):
+    def foo(self) -> str:
+        return "cheat"  # type: ignore[override]
 
 
-def joint_keys2(*dicts: Mapping[str, Any]) -> set[str]:
-    """Find joint keys in collection of dictionaries."""
-    dicts_keys: map[set[str]] = map(set, dicts)
-    return set.intersection(*dicts_keys)
+def show(obj: A) -> int:
+    return obj.foo()
+
+
+x: A = B()  # no error
+reveal_type(A().foo())  # int
+reveal_type(B().foo())  # str
+reveal_type(show(B()))  # int, no error since B ≤ₙₒₘ A ⟹ B<:A

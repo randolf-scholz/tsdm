@@ -24,8 +24,8 @@ from getpass import getpass
 
 import numpy as np
 import pyarrow as pa
-import pyarrow.csv
 from pandas import DataFrame
+from pyarrow import csv
 
 from tsdm.datasets.base import SingleTableDataset
 
@@ -81,7 +81,7 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
             )
 
         self.LOGGER.info("Loading main file.")
-        table: pa.Table = pyarrow.csv.read_csv(self.rawdata_paths["full_dataset.csv"])
+        table: pa.Table = csv.read_csv(self.rawdata_paths["full_dataset.csv"])
 
         if table.shape != self.rawdata_shape:
             raise ValueError(f"The {table.shape=} is not correct.")
