@@ -2,6 +2,7 @@
 
 __all__ = [
     # Functions
+    "is_string_array",
     "arrow_strip_whitespace",
     # auxiliary Functions
     "strip_whitespace_table",
