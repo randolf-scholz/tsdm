@@ -36,9 +36,9 @@ def is_string_array(arr: pa.Array) -> bool:
     return False
 
 
-def strip_whitespace_table(table: pa.Table) -> pa.Table:
+def strip_whitespace_table(table: pa.Table, *cols: str) -> pa.Table:
     """Strip whitespace from all string columns in a table."""
-    for col in table.column_names:
+    for col in cols or table.column_names:
         if is_string_array(table[col]):
             __logger__.debug("Trimming the string column %r", col)
             table = table.set_column(
