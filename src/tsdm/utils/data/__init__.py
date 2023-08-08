@@ -18,13 +18,16 @@ __all__ = [
     "unpad_sequence",
     "unpack_sequence",
     # Functions
-    "aggregate_nondestructive",
+    # data
     "cast_columns",
     "compute_entropy",
+    "filter_nulls",
+    "table_info",
+    # data
+    "aggregate_nondestructive",
     "detect_outliers",
     "detect_outliers_dataframe",
     "detect_outliers_series",
-    "filter_nulls",
     "float_is_int",
     "get_integer_cols",
     "joint_keys",
@@ -33,20 +36,22 @@ __all__ = [
     "remove_outliers_dataframe",
     "remove_outliers_series",
     "strip_whitespace",
-    "table_info",
     "vlookup_uniques",
 ]
 
 from tsdm.utils.data import timeseries
+from tsdm.utils.data._arrow import (
+    cast_columns,
+    compute_entropy,
+    filter_nulls,
+    table_info,
+)
 from tsdm.utils.data._data import (
     InlineTable,
     aggregate_nondestructive,
-    cast_columns,
-    compute_entropy,
     detect_outliers,
     detect_outliers_dataframe,
     detect_outliers_series,
-    filter_nulls,
     float_is_int,
     get_integer_cols,
     joint_keys,
@@ -55,7 +60,6 @@ from tsdm.utils.data._data import (
     remove_outliers_dataframe,
     remove_outliers_series,
     strip_whitespace,
-    table_info,
     vlookup_uniques,
 )
 from tsdm.utils.data.dataloaders import (

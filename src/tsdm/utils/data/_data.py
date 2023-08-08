@@ -5,12 +5,9 @@ __all__ = [
     "InlineTable",
     # Functions
     "aggregate_nondestructive",
-    "cast_columns",
-    "compute_entropy",
     "detect_outliers",
     "detect_outliers_dataframe",
     "detect_outliers_series",
-    "filter_nulls",
     "float_is_int",
     "get_integer_cols",
     "joint_keys",
@@ -19,7 +16,6 @@ __all__ = [
     "remove_outliers_dataframe",
     "remove_outliers_series",
     "strip_whitespace",
-    "table_info",
     "vlookup_uniques",
 ]
 
@@ -27,13 +23,12 @@ import logging
 import operator
 from collections.abc import Mapping, Sequence
 from functools import reduce
-from typing import Any, Generic, Literal, overload
+from typing import Any, Generic, overload
 
 import pandas as pd
 import pyarrow as pa
 from pandas import DataFrame, Index, Series
 from scipy import stats
-from tqdm.autonotebook import tqdm
 from typing_extensions import NotRequired, Required, TypedDict
 
 from tsdm.backend.pandas import (
@@ -159,30 +154,6 @@ def strip_whitespace(table, /):
             return strip_whitespace_dataframe(frame)  # type: ignore[unreachable]
         case _:
             raise TypeError(f"Unsupported type: {type(table)}")
-
-
-def compute_entropy(value_counts: pa.Array) -> float:
-    r"""Compute the normalized entropy using a value_counts array.
-
-    .. math:: ∑_{i=1}^n -pᵢ \log₂(pᵢ)/\log₂(n)
-
-    Note:
-        Since entropy is maximized for a uniform distribution, and the entropy
-        of a uniform distribution of n choices is log₂(n), the normalization
-        ensures that the entropy is in the range [0, 1].
-    """
-    counts = pa.compute.struct_field(value_counts, 1)
-    n = len(counts)
-    freqs = pa.compute.divide(
-        pa.compute.cast(counts, pa.float64()),
-        pa.compute.sum(counts),
-    )
-
-    H = pa.compute.divide(
-        pa.compute.sum(pa.compute.multiply(freqs, pa.compute.log2(freqs))),
-        pa.compute.log2(n),
-    )
-    return -H.as_py()
 
 
 def detect_outliers_series(
@@ -701,69 +672,3 @@ def describe(
         },
         index=[s.name],
     )
-
-
-def table_info(table: pa.Table) -> None:
-    """Print information about a table."""
-    size = table.nbytes / (1024 * 1024 * 1024)
-    print(f"shape={table.shape}  {size=:.3f} GiB")
-    M = max(map(len, table.column_names)) + 1
-    for name, col in tqdm(zip(table.column_names, table.columns)):
-        num_total = len(col)
-        num_null = pa.compute.sum(pa.compute.is_null(col)).as_py()
-        value_counts = col.value_counts()
-        num_uniques = len(value_counts) - bool(num_null)
-        nulls = f"{num_null / num_total:7.2%}" if num_null else f"{'None':7s}"
-        uniques = (
-            num_uniques / (num_total - num_null)
-            if num_total > num_null
-            else num_uniques / num_total
-        )
-        entropy = compute_entropy(value_counts)
-        dtype = str(col.type)[:10]
-        print(
-            f"{name:{M}s}  {nulls=:s}  {num_uniques=:9d} ({uniques:7.2%})"
-            f"  {entropy=:7.2%}  {dtype=:s}"
-        )
-
-
-def filter_nulls(
-    table: pa.Table, cols: list[str], *, aggregation: Literal["or", "and"] = "or"
-) -> pa.Table:
-    """Filter rows with null values in the given columns."""
-
-    def or_(variables):
-        n = len(variables)
-        if n == 0:
-            return False
-        if n == 1:
-            return variables[0]
-        return pa.compute.or_(
-            or_(variables[: n // 2]),
-            or_(variables[n // 2 :]),
-        )
-
-    def and_(variables):
-        n = len(variables)
-        if n == 0:
-            return True
-        if n == 1:
-            return variables[0]
-        return pa.compute.and_(
-            or_(variables[: n // 2]),
-            or_(variables[n // 2 :]),
-        )
-
-    agg = {"or": or_, "and": and_}[aggregation]
-
-    masks = [table[col].is_null() for col in cols]
-    mask = pa.compute.invert(agg(masks))
-    return table.filter(mask)
-
-
-def cast_columns(table: pa.Table, **dtypes: pa.DataType) -> pa.Table:
-    """Cast columns to the given data types."""
-    schema: pa.Schema = table.schema
-    current_dtypes = dict(zip(schema.names, schema.types))
-    new_schema = pa.schema(current_dtypes | dtypes)
-    return table.cast(new_schema)

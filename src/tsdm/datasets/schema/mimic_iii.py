@@ -147,8 +147,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "CHARTTIME"    : TIME_TYPE,
         "STORETIME"    : TIME_TYPE,
         "CGID"         : ID_TYPE,
-        "VALUE"        : STRING_TYPE,  # FIXME: FILTER NULLS
-        "VALUENUM"     : VALUE_TYPE,
+        "VALUE"        : DICT_TYPE,  # FIXME: CAST FLOAT32
+        "VALUENUM"     : VALUE_TYPE,  # FIXME: FILTER NULLS
         "VALUEUOM"     : DICT_TYPE,
         "WARNING"      : BOOL_TYPE,
         "ERROR"        : BOOL_TYPE,
@@ -348,8 +348,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "HADM_ID"    : ID_TYPE,
         "ITEMID"     : ID_TYPE,
         "CHARTTIME"  : TIME_TYPE,
-        "VALUE"      : DICT_TYPE,  # FIXME: FILTER NULLS
-        "VALUENUM"   : VALUE_TYPE,
+        "VALUE"      : DICT_TYPE,  # FIXME: CAST FLOAT32
+        "VALUENUM"   : VALUE_TYPE,  # FIXME: FILTER NULLS
         "VALUEUOM"   : DICT_TYPE,
         "FLAG"       : DICT_TYPE,
         # fmt: on
@@ -398,7 +398,7 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "CHARTTIME"  : TIME_TYPE,
         "ITEMID"     : ID_TYPE,
         "VALUE"      : VALUE_TYPE,  # FIXME: FILTER NULLS
-        "VALUEUOM"   : DICT_TYPE,
+        "VALUEUOM"   : DICT_TYPE,  # FIXME: FILTER NULLS
         "STORETIME"  : TIME_TYPE,
         "CGID"       : ID_TYPE,
         "STOPPED"    : NULL_TYPE,

@@ -201,6 +201,7 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
 
         if isinstance(table, Table) and file_type == "parquet":
             parquet.write_table(table, path, **kwargs)
+            return
 
         # check if table has a custom writer.
         if hasattr(table, f"to_{file_type}"):
@@ -733,7 +734,7 @@ class MultiTableDataset(
 
         # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_files_exist(key=key):
-            self.clean(key=key, force=force)
+            self.clean(key=key, force=force, validate=validate)
 
         # Validate file if hash is provided.
         if validate and self.dataset_hashes is not NotImplemented:

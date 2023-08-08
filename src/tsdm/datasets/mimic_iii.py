@@ -24,7 +24,7 @@ from typing import get_args
 from zipfile import ZipFile
 
 from pandas import DataFrame
-from pyarrow import csv
+from pyarrow import Table, csv
 
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.datasets.schema.mimic_iii import (
@@ -34,7 +34,7 @@ from tsdm.datasets.schema.mimic_iii import (
     SCHEMAS,
     TRUE_VALUES,
 )
-from tsdm.utils.data import cast_columns, filter_nulls
+from tsdm.utils.data import cast_columns, filter_nulls, strip_whitespace
 
 
 class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
@@ -86,7 +86,7 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
             for key in self.table_names
         }
 
-    def clean_table(self, key: KEYS) -> None:
+    def clean_table(self, key: KEYS) -> Table:
         # Read the table
         with ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive:
             with archive.open(self.filelist[key], "r") as compressed_file:
@@ -103,7 +103,8 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
                         parse_options=csv.ParseOptions(
                             newlines_in_values=(key == "NOTEEVENTS"),
                         ),
-                    )
+                    ).combine_chunks()  # <- reduces size and avoids some bugs
+                    # FIXME: https://github.com/apache/arrow/issues/37055
 
         # Post-processing
         match key:
@@ -117,6 +118,7 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
                 table = filter_nulls(
                     table, ["ICUSTAY_ID", "VALUE", "VALUENUM", "VALUEUOM"]
                 )
+                table = cast_columns(table, VALUE="float32")
             case "CPTEVENTS":
                 table = cast_columns(table, CHARTDATE="date32")
             case "DATETIMEEVENTS":
@@ -143,12 +145,15 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
                 pass
             case "LABEVENTS":
                 table = filter_nulls(table, ["VALUE", "VALUENUM", "VALUEUOM"])
+                table = strip_whitespace(table)
+                table = cast_columns(table, VALUE="float32")
             case "MICROBIOLOGYEVENTS":
                 table = cast_columns(table, CHARTDATE="date32")
             case "NOTEEVENTS":
                 pass
             case "OUTPUTEVENTS":
                 table = filter_nulls(table, ["VALUE", "VALUEUOM"])
+                table = cast_columns(table, VALUE="float32")
             case "PATIENTS":
                 table = cast_columns(
                     table,
