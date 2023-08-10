@@ -164,7 +164,6 @@ from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
 
 from tsdm.encoders import base, functional, numerical, pytorch, time
-from tsdm.encoders._deprecated import DataFrameEncoder
 from tsdm.encoders.base import (
     BaseEncoder,
     ChainedEncoder,
@@ -240,12 +239,11 @@ SKLEARN_MODULAR_ENCODERS: dict[str, type[BaseEstimator]] = {
 r"""Dictionary of all available sklearn encoders."""
 
 MODULAR_ENCODERS: dict[str, type[Encoder]] = {
-    "BaseEncoder": BaseEncoder,
+    # "BaseEncoder": BaseEncoder,  # Only concrete classes!
     "BoundaryEncoder": BoundaryEncoder,
     "BoxCoxEncoder": BoxCoxEncoder,
     "ChainedEncoder": ChainedEncoder,
     "CloneEncoder": CloneEncoder,
-    "DataFrameEncoder": DataFrameEncoder,
     "DateTimeEncoder": DateTimeEncoder,
     "DuplicateEncoder": DuplicateEncoder,
     "FloatEncoder": FloatEncoder,
