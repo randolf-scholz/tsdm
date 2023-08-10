@@ -538,7 +538,7 @@ pytest-xdist = ">=3.3.1"
 
 [tool.poetry.group.dev.dependencies]
 bandit = ">=1.7.5"
-black = {version = ">=23.1", extras = ["d", "jupyter"]}
+black = {version = ">=23.7.0", extras = ["d", "jupyter"]}
 blacken-docs = ">=1.15.0"
 coverage = ">=7.2.7"
 docutils = ">=0.20.1"
