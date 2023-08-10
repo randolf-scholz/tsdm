@@ -32,7 +32,7 @@ Scalar: TypeAlias = bool | int | float | complex
 class Clip(Protocol):
     """Callback-Protocol for `clip`-function."""
 
-    def __call__(self, x: T, lower: T | None, upper: T | None, /) -> T:
+    def __call__(self, x: T, /, *, lower: T | None, upper: T | None) -> T:
         ...
 
 

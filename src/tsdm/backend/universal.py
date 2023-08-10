@@ -23,21 +23,19 @@ A = TypeVar("A", bound=NumericalArray)
 
 def false_like(x: A, /) -> A:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
-    # NOTE: (NAN == NAN) == False and (NAN != NAN) == True
-    # NOTE: does not work for pandas/arrow/numpy nullable types
     z = x == x  # pylint: disable=comparison-with-itself
     return z ^ z
 
 
 def true_like(x: A, /) -> A:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
-    # NOTE: (NAN == NAN) == False and (NAN != NAN) == True
-    # NOTE: does not work for pandas/arrow/numpy nullable types
+    # NOTE: cannot use ~false_like(x) because for float types:
+    # (𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True
     z = x == x  # pylint: disable=comparison-with-itself
     return z ^ (~z)
 
 
-def is_singleton(x: SupportsShape) -> bool:
+def is_singleton(x: SupportsShape, /) -> bool:
     """Determines whether a tensor like object has a single element."""
     return prod(x.shape) == 1
     # numpy: size, len  / shape + prod
@@ -49,7 +47,7 @@ def is_singleton(x: SupportsShape) -> bool:
     # pyarrow array: ????
 
 
-def is_scalar(x: Any) -> bool:
+def is_scalar(x: Any, /) -> bool:
     """Determines whether an object is a scalar."""
     return (
         isinstance(x, (int, float, str, bool))

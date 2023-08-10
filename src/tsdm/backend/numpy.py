@@ -9,6 +9,6 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 
-def numpy_like(x: ArrayLike, ref: NDArray, /) -> NDArray:
+def numpy_like(x: ArrayLike, /, ref: NDArray) -> NDArray:
     """Create an array of the same shape as `x`."""
     return np.array(x, dtype=ref.dtype, copy=False)

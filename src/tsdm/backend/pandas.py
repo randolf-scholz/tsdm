@@ -30,13 +30,13 @@ P = TypeVar("P", Series, DataFrame)
 """A type variable for pandas objects."""
 
 
-def pandas_false_like(x: P) -> P:
+def pandas_false_like(x: P, /) -> P:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
     m = x.isna()
     return m ^ m
 
 
-def pandas_true_like(x: P) -> P:
+def pandas_true_like(x: P, /) -> P:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
     m = x.isna()
     return m ^ (~m)
@@ -66,22 +66,22 @@ def pandas_clip(x: P, lower: None | NDArray = None, upper: None | NDArray = None
     return x.clip(lower, upper, axis=axis)
 
 
-def pandas_nanmax(x: P, axis: Axes = None) -> P:
+def pandas_nanmax(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmax`."""
     return x.max(axis=pandas_axes(x.shape, axis), skipna=True)
 
 
-def pandas_nanmin(x: P, axis: Axes = None) -> P:
+def pandas_nanmin(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmin`."""
     return x.min(axis=pandas_axes(x.shape, axis), skipna=True)
 
 
-def pandas_nanmean(x: P, axis: Axes = None) -> P:
+def pandas_nanmean(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmean`."""
     return x.mean(axis=pandas_axes(x.shape, axis), skipna=True)
 
 
-def pandas_nanstd(x: P, axis: Axes = None) -> P:
+def pandas_nanstd(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanstd`."""
     return x.std(axis=pandas_axes(x.shape, axis), skipna=True, ddof=0)
 
@@ -93,7 +93,7 @@ def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray) -> P:
     return a if cond else pandas_like(b, a)  # scalar fallback
 
 
-def pandas_like(x: ArrayLike, ref: P) -> P:
+def pandas_like(x: ArrayLike, /, ref: P) -> P:
     """Create a Series/DataFrame with the same modality as a reference."""
     if isinstance(ref, Series):
         return Series(x, dtype=ref.dtype, index=ref.index)
@@ -102,19 +102,19 @@ def pandas_like(x: ArrayLike, ref: P) -> P:
     raise TypeError(f"Expected Series or DataFrame, got {type(ref)}.")
 
 
-def strip_whitespace_dataframe(frame: DataFrame) -> DataFrame:
+def strip_whitespace_dataframe(frame: DataFrame, /) -> DataFrame:
     """Strip whitespace from all string columns in a DataFrame."""
     return frame.apply(strip_whitespace_series)
 
 
-def strip_whitespace_series(series: Series) -> Series:
+def strip_whitespace_series(series: Series, /) -> Series:
     """Strip whitespace from all string elements in a Series."""
     if series.dtype == "string":
         return series.str.strip()
     return series
 
 
-def pandas_strip_whitespace(obj: P) -> P:
+def pandas_strip_whitespace(obj: P, /) -> P:
     """Strip whitespace from all string elements in a pandas object."""
     if isinstance(obj, DataFrame):
         return strip_whitespace_dataframe(obj)

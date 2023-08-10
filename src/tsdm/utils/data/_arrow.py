@@ -49,26 +49,26 @@ def is_numeric(array: pa.Array, /) -> pa.Array:
     )
 
 
-def force_cast_array(array: pa.Array, /, *, dtype: pa.DataType) -> pa.Array:
-    """Cast an array to the given data type, repalacing non-castable elements with null."""
-    # FIXME: https://github.com/apache/arrow/issues/20486
-    # FIXME: https://github.com/apache/arrow/issues/34976
-    return array.filter(is_numeric(array, dtype=dtype))
-
-
-def force_cast_table(table: pa.Table, /, **dtypes: pa.DataType) -> pa.Table:
-    """Cast a Table to the given data types, repalacing non-castable elements with null."""
-    for index, column in enumerate(table.column_names):
-        if column in dtypes:
-            array = table[column]
-            mask = is_numeric(array, dtype=dtypes[column])
-            dropped = 1 - pa.compute.mean(mask).as_py()
-            __logger__.info(
-                "Masking %8.3%% of non-castable values in %s", dropped, column
-            )
-            values = array.filter(mask)
-            table = table.set_column(index, column, values)
-    return table
+# def force_cast_array(array: pa.Array, /, *, dtype: pa.DataType) -> pa.Array:
+#     """Cast an array to the given data type, repalacing non-castable elements with null."""
+#     # FIXME: https://github.com/apache/arrow/issues/20486
+#     # FIXME: https://github.com/apache/arrow/issues/34976
+#     return array.filter(is_numeric(array, dtype=dtype))
+#
+#
+# def force_cast_table(table: pa.Table, /, **dtypes: pa.DataType) -> pa.Table:
+#     """Cast a Table to the given data types, repalacing non-castable elements with null."""
+#     for index, column in enumerate(table.column_names):
+#         if column in dtypes:
+#             array = table[column]
+#             mask = is_numeric(array)
+#             dropped = 1 - pa.compute.mean(mask).as_py()
+#             __logger__.info(
+#                 "Masking %8.3%% of non-castable values in %s", dropped, column
+#             )
+#             values = array.filter(mask)
+#             table = table.set_column(index, column, values)
+#     return table
 
 
 def compute_entropy(value_counts: pa.Array) -> float:
