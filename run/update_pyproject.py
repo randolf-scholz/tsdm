@@ -45,18 +45,16 @@ with open("pyproject.toml", "r", encoding="utf8") as file:
     pyproject = file.read()
 
 # update pyproject.dependencies
-pyproject_pattern = re.compile(r'"(([a-zA-Z0-9_-]*)\s*>=\s*([0-9.]*)")')
+pyproject_pattern = re.compile(r'"(([a-zA-Z0-9_-]*)>=([0-9.]*)")')
 pyproject = update_versions(pyproject, pyproject_pattern)
 
 # update tool.poetry.dependencies
-poetry_pattern = re.compile(r'(([a-zA-Z0-9_-]*)\s*=\s*">=([0-9.]*)")')
+poetry_pattern = re.compile(r'(([a-zA-Z0-9_-]*) = ">=([0-9.]*)")')
 pyproject = update_versions(pyproject, poetry_pattern)
 
 # needed for things like `black = {version = ">=23.7.0", extras = ["d", "jupyter"]}`
-poetry_extended_pattern = re.compile(
-    r'(([a-zA-Z0-9_-]*)\s*=\s*\{\s*version\s*=\s*">=([0-9.]*)")'
-)
-pyproject = update_versions(pyproject, poetry_extended_pattern)
+version_pattern = re.compile(r'(([a-zA-Z0-9_-]*) = \{\s?version = ">=([0-9.]*)")')
+pyproject = update_versions(pyproject, version_pattern)
 
 with open("pyproject.toml", "w", encoding="utf8") as file:
     # update the file
