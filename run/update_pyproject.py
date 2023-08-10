@@ -22,22 +22,36 @@ def strip(version: str) -> str:
     return version
 
 
-# regex to match the dependencies in pyproject.toml
-regex = r'([a-zA-Z0-9_-]*) = ">=([0-9.]*)"'
-regex = re.compile(regex)
+def update_versions(raw_file: str, version_pattern: re.Pattern) -> str:
+    """Update the dependencies in pyproject.toml according to version_pattern."""
+    if version_pattern.groups != 3:
+        raise ValueError(
+            "version_pattern must have 3 groups (whole match, package name, version))"
+        )
+
+    # match all dependencies in the file
+    for match, pkg, old_version in version_pattern.findall(raw_file):
+        # get the new version from the pip list
+        new_version = strip(pkg_dict.get(pkg, old_version))
+        # if the version changed, replace the old version with the new one
+        if old_version != new_version:
+            new = match.replace(old_version, new_version)
+            print(f"replacing: {match!r:36}  {new!r}")
+            raw_file = raw_file.replace(match, new)
+    return raw_file
+
 
 with open("pyproject.toml", "r", encoding="utf8") as file:
     pyproject = file.read()
 
-matches = regex.findall(pyproject)
-for match in matches:
-    pkg, old_version = match
-    new_version = strip(pkg_dict.get(pkg, old_version))
-    if old_version != new_version:
-        old = f'{pkg} = ">={old_version}"'
-        new = f'{pkg} = ">={new_version}"'
-        print(f"replacing: {old!r:36}  {new!r}")
-        pyproject = pyproject.replace(old, new)
+# update pyproject.dependencies
+pyproject_pattern = re.compile(r'"(([a-zA-Z0-9_-]*)>=([0-9.]*))"')
+pyproject = update_versions(pyproject, pyproject_pattern)
+
+# update tool.poetry.dependencies
+poetry_pattern = re.compile(r'(([a-zA-Z0-9_-]*) = ">=([0-9.]*))"')
+pyproject = update_versions(pyproject, poetry_pattern)
 
 with open("pyproject.toml", "w", encoding="utf8") as file:
+    # update the file
     file.write(pyproject)

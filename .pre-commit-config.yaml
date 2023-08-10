@@ -63,7 +63,7 @@ repos:
         description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.0-alpha.9-for-vscode" # Use the sha or tag you want to point at
+    rev: "v3.0.1" # Use the sha or tag you want to point at
     hooks:
       - id: prettier
   # absolufy-imports
@@ -79,13 +79,13 @@ repos:
       - id: isort
   # black
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 23.7.0
     hooks:
       - id: black
       - id: black-jupyter
   # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.14.0
+    rev: 1.15.0
     hooks:
       - id: blacken-docs
         files: (^src/|^tests/)
@@ -93,13 +93,13 @@ repos:
         description: " Run `black` on python code blocks in documentation files "
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.275
+    rev: v0.0.284
     hooks:
       - id: ruff
         files: (^src/|^tests/)
   # flake8
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: 6.1.0
     hooks:
       - id: flake8
         files: (^src/|^tests/)
@@ -132,7 +132,7 @@ repos:
         description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
-    rev: v0.16.5
+    rev: v0.17.0
     hooks:
       - id: slotscheck
         files: ^src/
