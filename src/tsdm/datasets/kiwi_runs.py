@@ -406,7 +406,7 @@ class KIWI_RUNS(MultiTableDataset):
             mask = (lower > value) | (value > upper)
             if mask.any():
                 print(
-                    f"Removing {mask.mean():.2%} of data that does not match {col} bounds"
+                    f"Removing {mask.mean():8.3%} of data that does not match {col} bounds"
                 )
                 metadata.loc[mask, col] = pd.NA
         metadata = metadata.dropna(how="all")
@@ -495,7 +495,7 @@ class KIWI_RUNS(MultiTableDataset):
             mask = (lower > value) | (value > upper)
             if mask.any():
                 print(
-                    f"Removing {mask.mean():.2%} of data that does not match {col} bounds"
+                    f"Removing {mask.mean():8.3%} of data that does not match {col} bounds"
                 )
                 timeseries.loc[mask, col] = pd.NA
 
@@ -504,7 +504,7 @@ class KIWI_RUNS(MultiTableDataset):
         ts = ts.join(self.timeindex_description[["start_time", "end_time"]])
         time = ts["measurement_time"]
         mask = (ts["start_time"] <= time) & (time <= ts["end_time"])
-        print(f"Removing {(~mask).mean():.2%} of data that does not match tmin/tmax")
+        print(f"Removing {(~mask).mean():8.3%} of data that does not match tmin/tmax")
         ts = ts[mask]
         ts["measurement_time"] = ts["measurement_time"] - ts["start_time"]
         ts = ts.set_index("measurement_time", append=True)

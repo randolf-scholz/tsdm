@@ -7,19 +7,67 @@ __all__ = [
     "table_info",
 ]
 
+import logging
 from collections.abc import Sequence
 from typing import Literal
 
+import pandas as pd
 import pyarrow as pa
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
+
+__logger__ = logging.getLogger(__name__)
 
 
-def cast_columns(table: pa.Table, **dtypes: pa.DataType) -> pa.Table:
+def cast_columns(
+    table: pa.Table, force: bool = False, /, **dtypes: pa.DataType
+) -> pa.Table:
     """Cast columns to the given data types."""
     schema: pa.Schema = table.schema
     current_dtypes = dict(zip(schema.names, schema.types))
     new_schema = pa.schema(current_dtypes | dtypes)
     return table.cast(new_schema)
+
+
+def is_castable(array: pa.Array, /, *, dtype: pa.DataType) -> pa.Array:
+    """Return mask determining if each element can be cast to the given data type."""
+    prior_null = pa.compute.is_null(array)
+    post_null = pa.compute.is_null(
+        pa.Array.from_pandas(
+            pd.to_numeric(
+                pd.Series(array, dtype=pd.ArrowDtype(array.type)),
+                errors="coerce",
+                dtype_backend="pyarrow",
+                downcast=pd.ArrowDtype(dtype),
+            )
+        )
+    )
+
+    return pa.compute.or_(
+        prior_null,
+        pa.compute.invert(post_null),
+    )
+
+
+def force_cast_array(array: pa.Array, /, *, dtype: pa.DataType) -> pa.Array:
+    """Cast an array to the given data type, repalacing non-castable elements with null."""
+    # FIXME: https://github.com/apache/arrow/issues/20486
+    # FIXME: https://github.com/apache/arrow/issues/34976
+    return array.filter(is_castable(array, dtype=dtype))
+
+
+def force_cast_table(table: pa.Table, /, **dtypes: pa.DataType) -> pa.Table:
+    """Cast a Table to the given data types, repalacing non-castable elements with null."""
+    for index, column in enumerate(table.column_names):
+        if column in dtypes:
+            array = table[column]
+            mask = is_castable(array, dtype=dtypes[column])
+            dropped = 1 - pa.compute.mean(mask).as_py()
+            __logger__.info(
+                "Masking %8.3%% of non-castable values in %s", dropped, column
+            )
+            values = array.filter(mask)
+            table = table.set_column(index, column, values)
+    return table
 
 
 def compute_entropy(value_counts: pa.Array) -> float:
@@ -88,7 +136,7 @@ def table_info(table: pa.Table) -> None:
         num_null = pa.compute.sum(pa.compute.is_null(col)).as_py()
         value_counts = col.value_counts()
         num_uniques = len(value_counts) - bool(num_null)
-        nulls = f"{num_null / num_total:7.2%}" if num_null else f"{'None':7s}"
+        nulls = f"{num_null / num_total:8.3%}" if num_null else f"{'None':8s}"
         uniques = (
             num_uniques / (num_total - num_null)
             if num_total > num_null
@@ -97,8 +145,8 @@ def table_info(table: pa.Table) -> None:
         entropy = compute_entropy(value_counts)
         dtype = str(col.type)[:10]
         print(
-            f"{name:{M}s}  {nulls=:s}  {num_uniques=:9d} ({uniques:7.2%})"
-            f"  {entropy=:7.2%}  {dtype=:s}"
+            f"{name:{M}s}  {nulls=:s}  {num_uniques=:9d} ({uniques:8.3%})"
+            f"  {entropy=:8.3%}  {dtype=:s}"
         )
 
 
