@@ -24,12 +24,12 @@ def is_string_array(arr: pa.Array) -> bool:
     """Check if an array is a string array."""
     if arr.type in (pa.string(), pa.large_string()):
         return True
-    if type(arr.type) == pa.ListType and arr.type.value_type in (
+    if isinstance(arr.type, pa.ListType) and arr.type.value_type in (
         pa.string(),
         pa.large_string(),
     ):
         return True
-    if type(arr.type) == pa.DictionaryType and arr.type.value_type in (
+    if isinstance(arr.type, pa.DictionaryType) and arr.type.value_type in (
         pa.string(),
         pa.large_string(),
     ):

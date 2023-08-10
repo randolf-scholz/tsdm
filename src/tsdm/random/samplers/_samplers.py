@@ -283,8 +283,10 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
             # value = yield from activate_iterators[key]
             try:
                 value = next(activate_iterators[key])
-            except StopIteration as E:
-                raise RuntimeError(f"Iterator of {key=} exhausted prematurely.") from E
+            except StopIteration as exc:
+                raise RuntimeError(
+                    f"Iterator of {key=} exhausted prematurely."
+                ) from exc
             yield key, value
 
     def __getitem__(self, key: K) -> BaseSampler[T_co]:
@@ -358,8 +360,10 @@ class HierarchicalSampler(Sampler[tuple[K, T_co]]):
             # This won't raise StopIteration, because the length is matched.
             try:
                 value = next(activate_iterators[key])
-            except StopIteration as E:
-                raise RuntimeError(f"Iterator of {key=} exhausted prematurely.") from E
+            except StopIteration as exc:
+                raise RuntimeError(
+                    f"Iterator of {key=} exhausted prematurely."
+                ) from exc
             yield key, value
 
     def __getitem__(self, key: K) -> Sampler[T_co]:

@@ -3,10 +3,9 @@ r"""Base Classes for Encoders."""
 from __future__ import annotations
 
 __all__ = [
-    # TypeVars
-    "E",
-    # Types
+    # Types / TypeVars
     "Encoder",
+    "encoder_var",
     # Classes
     "BaseEncoder",
     "ChainedEncoder",
@@ -46,6 +45,12 @@ from typing_extensions import Self
 
 from tsdm.types.variables import any2_var as S, any_var as T, key_var as K
 from tsdm.utils.strings import repr_object, repr_type
+
+encoder_var = TypeVar("encoder_var", bound="BaseEncoder")
+"""Type variable for encoders."""
+
+E = TypeVar("E", bound="BaseEncoder")
+"""Type alias for encoder_var."""
 
 
 @runtime_checkable
@@ -231,10 +236,6 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
             raise RuntimeError("Encoder has not been fitted.")
 
 
-E = TypeVar("E", bound=BaseEncoder)
-"""Type variable for encoders."""
-
-
 class IdentityEncoder(BaseEncoder[T, T]):
     r"""Dummy class that performs identity function."""
 
@@ -356,8 +357,8 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
         for encoder in reversed(self.encoders):
             try:
                 encoder.fit(data)
-            except Exception as E:
-                raise RuntimeError(f"Failed to fit {type(encoder)}") from E
+            except Exception as exc:
+                raise RuntimeError(f"Failed to fit {type(encoder)}") from exc
             data = encoder.encode(data)
 
     def encode(self, data: Any, /) -> Any:
@@ -393,7 +394,11 @@ def chain_encoders(e: E, /, *, simplify: Literal[True] = True) -> E:
 
 @overload
 def chain_encoders(
-    e1: E, e2: E, /, *encoders: E, simplify: Literal[True] = True
+    e1: E,
+    e2: E,
+    /,
+    *encoders: E,
+    simplify: Literal[True] = True,
 ) -> ChainedEncoder[E]:
     ...
 
@@ -416,14 +421,24 @@ def chain_encoders(  # type: ignore[misc]
 
 @overload
 def pow_encoder(
-    e: E, n: Literal[0], /, *, simplify: Literal[True] = True, copy: bool = True
+    e: E,
+    n: Literal[0],
+    /,
+    *,
+    simplify: Literal[True] = True,
+    copy: bool = True,
 ) -> IdentityEncoder:
     ...
 
 
 @overload
 def pow_encoder(
-    e: E, n: Literal[1], /, *, simplify: Literal[True] = True, copy: bool = True
+    e: E,
+    n: Literal[1],
+    /,
+    *,
+    simplify: Literal[True] = True,
+    copy: bool = True,
 ) -> E:
     ...
 
@@ -554,7 +569,11 @@ def direct_sum_encoders(e: E, /, *, simplify: Literal[True] = True) -> E:
 
 @overload
 def direct_sum_encoders(
-    e1: E, e2: E, /, *encoders: E, simplify: Literal[False]
+    e1: E,
+    e2: E,
+    /,
+    *encoders: E,
+    simplify: Literal[False],
 ) -> ProductEncoder[E]:
     ...
 
@@ -575,14 +594,24 @@ def direct_sum_encoders(  # type: ignore[misc]
 
 @overload
 def duplicate_encoder(
-    e: E, n: Literal[0], /, *, simplify: Literal[True] = True, copy: bool = True
+    e: E,
+    n: Literal[0],
+    /,
+    *,
+    simplify: Literal[True] = True,
+    copy: bool = True,
 ) -> IdentityEncoder:
     ...
 
 
 @overload
 def duplicate_encoder(
-    e: E, n: Literal[1], /, *, simplify: Literal[True] = True, copy: bool = True
+    e: E,
+    n: Literal[1],
+    /,
+    *,
+    simplify: Literal[True] = True,
+    copy: bool = True,
 ) -> E:
     ...
 

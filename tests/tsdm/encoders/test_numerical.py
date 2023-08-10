@@ -215,6 +215,7 @@ def test_scaler(Encoder, tensor_type):
 
 @mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
 def test_scaler_dataframe(Encoder):
+    """Check whether the scaler-encoders works as expected on DataFrame."""
     LOGGER = __logger__.getChild(Encoder.__name__)
     LOGGER.info("Testing Encoder applied to pandas.DataFrame.")
 
@@ -249,6 +250,7 @@ def test_scaler_dataframe(Encoder):
 
 @mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
 def test_scaler_series(Encoder):
+    """Check whether the scaler-encoders works as expected on Series."""
     LOGGER = __logger__.getChild(Encoder.__name__)
     LOGGER.info("Testing Encoder applied to pandas.Series.")
 

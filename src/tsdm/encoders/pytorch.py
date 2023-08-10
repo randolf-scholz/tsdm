@@ -46,8 +46,8 @@ class TensorEncoder(BaseEncoder):
             case _:
                 try:
                     return torch.tensor(data)
-                except Exception as e:
-                    raise TypeError(f"Cannot encode data of type {type(data)}") from e
+                except Exception as exc:
+                    raise TypeError(f"Cannot encode data of type {type(data)}") from exc
 
     def decode(self, data):
         return data.numpy()

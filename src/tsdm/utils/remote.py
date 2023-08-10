@@ -74,17 +74,16 @@ def download(
                 if data:  # filter out keep-alive new chunks
                     size = file.write(data)
                     progress_bar.update(size)
-    except Exception as e:
+    except Exception as exc:
         path.unlink()
         raise RuntimeError(
-            f"Error {e!r} occurred while downloading {fname}, deleting partial files."
-        ) from e
-    else:
+            f"Error {exc!r} occurred while downloading {fname}, deleting partial files."
+        ) from exc
         # validate the file hash
-        if hash_value is not None:
-            validate_file_hash(
-                path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
-            )
+    if hash_value is not None:
+        validate_file_hash(
+            path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
+        )
 
 
 def import_from_url(

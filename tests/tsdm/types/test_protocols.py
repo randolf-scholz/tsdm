@@ -18,8 +18,11 @@ __logger__ = logging.getLogger(__name__)
 
 
 def test_ntuple() -> None:
-    # test sample NamedTuple class
+    """Test the NTuple protocol."""
+
     class Point(NamedTuple):
+        """A point in 2D space."""
+
         x: float
         y: float
 

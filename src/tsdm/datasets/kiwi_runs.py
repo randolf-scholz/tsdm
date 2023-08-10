@@ -15,8 +15,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
 
-from tsdm.datasets import TimeSeriesCollection
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
 from tsdm.utils.constants import NULL_VALUES
 
 # fmt: off

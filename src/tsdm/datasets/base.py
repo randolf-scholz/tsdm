@@ -723,8 +723,8 @@ class MultiTableDataset(
         # key=None: Recursively load all tables.
         if key is None:
             self.LOGGER.debug("Starting to load dataset.")
-            for key in self.table_names:
-                self.load(key=key, force=force, validate=validate, **kwargs)
+            for name in self.table_names:
+                self.load(key=name, force=force, validate=validate, **kwargs)
             self.LOGGER.debug("Finished loading dataset.")
             return self.tables
 

@@ -430,11 +430,11 @@ def timefun(
             timefun_logger.log(
                 loglevel, "%s executed in %.4f s", func.__qualname__, elapsed
             )
-        except Exception as E:
+        except Exception as exc:
             timefun_logger.error(
-                loglevel, "%s failed with Exception %s", func.__qualname__, E
+                loglevel, "%s failed with Exception %s", func.__qualname__, exc
             )
-            raise RuntimeError("Function execution failed") from E
+            raise RuntimeError("Function execution failed") from exc
         finally:
             gc.enable()
 
@@ -473,11 +473,11 @@ def trace(func: Callable[P, R]) -> Callable[P, R]:
         try:
             logger.info("%s: EXECUTING", func.__qualname__)
             result = func(*args, **kwargs)
-        except (KeyboardInterrupt, SystemExit) as E:
-            raise E
-        except Exception as E:
-            logger.error("%s: FAILURE with Exception %s", func.__qualname__, E)
-            raise RuntimeError(f"Function execution failed with Exception {E}") from E
+        except Exception as exc:
+            logger.error("%s: FAILURE with Exception %s", func.__qualname__, exc)
+            raise RuntimeError(
+                f"Function execution failed with Exception {exc}"
+            ) from exc
         logger.info(
             "%s: SUCCESS with result=%s", func.__qualname__, type(result).__name__
         )

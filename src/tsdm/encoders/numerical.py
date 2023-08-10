@@ -401,10 +401,12 @@ class BoundaryEncoder(BaseEncoder[T, T]):
 
     @property
     def lower_mode(self) -> CLIPPING_MODE:
+        """The mode for the lower boundary."""
         return self.mode[0] if isinstance(self.mode, tuple) else self.mode
 
     @property
     def upper_mode(self) -> CLIPPING_MODE:
+        """The mode for the upper boundary."""
         return self.mode[1] if isinstance(self.mode, tuple) else self.mode
 
     def fit(self, data: T) -> None:

@@ -122,9 +122,10 @@ def query_bool(question: str, default: Optional[bool] = True) -> bool:
         try:
             print(question)
             choice = input(prompt).lower()
-        except KeyboardInterrupt as E:
-            print("Operation aborted. Exiting.")
-            raise E
+        except KeyboardInterrupt:
+            # TODO: use exception notes
+            print("Operation aborted.")
+            sys.exit(0)
 
         if not choice and default is not None:
             return default
@@ -159,7 +160,8 @@ def query_choice(
             print(options)
             choice = input("Your choice (int or name)")
         except KeyboardInterrupt:
-            print("Operation aborted. Exiting.")
+            # TODO: use exception notes
+            print("Operation aborted.")
             sys.exit(0)
 
         if choice in choices:
@@ -193,8 +195,8 @@ def install_package(
         ):
             try:
                 subprocess.run(install_call + options, check=True)
-            except subprocess.CalledProcessError as E:
-                raise RuntimeError("Execution failed with error") from E
+            except subprocess.CalledProcessError as exc:
+                raise RuntimeError("Execution failed with error") from exc
     else:
         __logger__.info("Package '%s' already installed.", package_name)
 

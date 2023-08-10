@@ -260,7 +260,7 @@ def detect_outliers(
             lower_inclusive=lower_inclusive,
             upper_inclusive=upper_inclusive,
         )
-    elif isinstance(obj, DataFrame):
+    if isinstance(obj, DataFrame):
         return detect_outliers_dataframe(
             obj,
             lower_bound=lower_bound,
@@ -268,8 +268,7 @@ def detect_outliers(
             lower_inclusive=lower_inclusive,
             upper_inclusive=upper_inclusive,
         )
-    else:
-        raise TypeError(f"Unsupported type: {type(obj)}")
+    raise TypeError(f"Unsupported type: {type(obj)}")
 
 
 def remove_outliers_series(

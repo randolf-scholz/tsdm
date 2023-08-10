@@ -358,8 +358,10 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
         for group, encoder in self.encoders.items():
             try:
                 encoder.fit(data[group])
-            except Exception as E:
-                raise RuntimeError(f"Failed to fit {type(encoder)} on {group=}") from E
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Failed to fit {type(encoder)} on {group=}"
+                ) from exc
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()
