@@ -80,3 +80,6 @@ def arrow_strip_whitespace(obj: P) -> P:
     if isinstance(obj, pa.Array):
         return strip_whitespace_array(obj)
     raise TypeError(f"Expected pa.Array or pa.Table, got {type(obj)}.")
+
+
+# TODO: implement a where function for pyarrow

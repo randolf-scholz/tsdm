@@ -333,14 +333,14 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "administration_type"                  : DICT_TYPE,
         "pharmacy_id"                          : ID_TYPE,
         "barcode_type"                         : DICT_TYPE,
-        "reason_for_no_barcode"                : DICT_TYPE,
+        "reason_for_no_barcode"                : STRING_TYPE,
         "complete_dose_not_given"              : BOOL_TYPE,
         "dose_due"                             : STRING_TYPE,  # FIXME: cast float
         "dose_due_unit"                        : DICT_TYPE,
         "dose_given"                           : STRING_TYPE,  # FIXME: cast float
         "dose_given_unit"                      : DICT_TYPE,
         "will_remainder_of_dose_be_given"      : BOOL_TYPE,
-        "product_amount_given"                 : STRING_TYPE,  # FIXME: cast float
+        "product_amount_given"                 : STRING_TYPE,  # FIXME: cast float (easy)
         "product_unit"                         : DICT_TYPE,
         "product_code"                         : DICT_TYPE,
         "product_description"                  : DICT_TYPE,
@@ -348,7 +348,7 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "prior_infusion_rate"                  : STRING_TYPE,  # FIXME: cast float
         "infusion_rate"                        : STRING_TYPE,  # FIXME: cast float
         "infusion_rate_adjustment"             : DICT_TYPE,
-        "infusion_rate_adjustment_amount"      : STRING_TYPE,  # FIXME: cast float
+        "infusion_rate_adjustment_amount"      : STRING_TYPE,  # FIXME: cast float (easy)
         "infusion_rate_unit"                   : DICT_TYPE,
         "route"                                : DICT_TYPE,
         "infusion_complete"                    : BOOL_TYPE,

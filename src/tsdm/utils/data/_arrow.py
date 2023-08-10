@@ -28,16 +28,17 @@ def cast_columns(
     return table.cast(new_schema)
 
 
-def is_castable(array: pa.Array, /, *, dtype: pa.DataType) -> pa.Array:
+def is_numeric(array: pa.Array, /) -> pa.Array:
     """Return mask determining if each element can be cast to the given data type."""
     prior_null = pa.compute.is_null(array)
     post_null = pa.compute.is_null(
         pa.Array.from_pandas(
             pd.to_numeric(
-                pd.Series(array, dtype=pd.ArrowDtype(array.type)),
+                pd.Series(array, dtype="string[pyarrow]"),
+                # NOTE: string[pyarrow] actually StringDtype, needed so we don't use to_pandas()
                 errors="coerce",
                 dtype_backend="pyarrow",
-                downcast=pd.ArrowDtype(dtype),
+                downcast="float",
             )
         )
     )
@@ -52,7 +53,7 @@ def force_cast_array(array: pa.Array, /, *, dtype: pa.DataType) -> pa.Array:
     """Cast an array to the given data type, repalacing non-castable elements with null."""
     # FIXME: https://github.com/apache/arrow/issues/20486
     # FIXME: https://github.com/apache/arrow/issues/34976
-    return array.filter(is_castable(array, dtype=dtype))
+    return array.filter(is_numeric(array, dtype=dtype))
 
 
 def force_cast_table(table: pa.Table, /, **dtypes: pa.DataType) -> pa.Table:
@@ -60,7 +61,7 @@ def force_cast_table(table: pa.Table, /, **dtypes: pa.DataType) -> pa.Table:
     for index, column in enumerate(table.column_names):
         if column in dtypes:
             array = table[column]
-            mask = is_castable(array, dtype=dtypes[column])
+            mask = is_numeric(array, dtype=dtypes[column])
             dropped = 1 - pa.compute.mean(mask).as_py()
             __logger__.info(
                 "Masking %8.3%% of non-castable values in %s", dropped, column
@@ -136,7 +137,7 @@ def table_info(table: pa.Table) -> None:
         num_null = pa.compute.sum(pa.compute.is_null(col)).as_py()
         value_counts = col.value_counts()
         num_uniques = len(value_counts) - bool(num_null)
-        nulls = f"{num_null / num_total:8.3%}" if num_null else f"{'None':8s}"
+        nulls = f"{num_null / num_total:8.3%}" if num_null else "--------"
         uniques = (
             num_uniques / (num_total - num_null)
             if num_total > num_null
