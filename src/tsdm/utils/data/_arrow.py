@@ -13,14 +13,13 @@ from typing import Literal
 
 import pandas as pd
 import pyarrow as pa
+from pyarrow import Array, DataType, Table
 from tqdm.autonotebook import tqdm
 
 __logger__ = logging.getLogger(__name__)
 
 
-def cast_columns(
-    table: pa.Table, force: bool = False, /, **dtypes: pa.DataType
-) -> pa.Table:
+def cast_columns(table: Table, force: bool = False, /, **dtypes: DataType) -> Table:
     """Cast columns to the given data types."""
     schema: pa.Schema = table.schema
     current_dtypes = dict(zip(schema.names, schema.types))
@@ -28,11 +27,11 @@ def cast_columns(
     return table.cast(new_schema)
 
 
-def is_numeric(array: pa.Array, /) -> pa.Array:
+def is_numeric(array: Array, /) -> Array:
     """Return mask determining if each element can be cast to the given data type."""
     prior_null = pa.compute.is_null(array)
     post_null = pa.compute.is_null(
-        pa.Array.from_pandas(
+        Array.from_pandas(
             pd.to_numeric(
                 pd.Series(array, dtype="string[pyarrow]"),
                 # NOTE: string[pyarrow] actually StringDtype, needed so we don't use to_pandas()
@@ -49,15 +48,15 @@ def is_numeric(array: pa.Array, /) -> pa.Array:
     )
 
 
-# def force_cast_array(array: pa.Array, /, *, dtype: pa.DataType) -> pa.Array:
-#     """Cast an array to the given data type, repalacing non-castable elements with null."""
+# def force_cast_array(array: Array, /, *, dtype: DataType) -> Array:
+#     """Cast an array to the given data type, replacing non-castable elements with null."""
 #     # FIXME: https://github.com/apache/arrow/issues/20486
 #     # FIXME: https://github.com/apache/arrow/issues/34976
 #     return array.filter(is_numeric(array, dtype=dtype))
 #
 #
-# def force_cast_table(table: pa.Table, /, **dtypes: pa.DataType) -> pa.Table:
-#     """Cast a Table to the given data types, repalacing non-castable elements with null."""
+# def force_cast_table(table: Table, /, **dtypes: DataType) -> Table:
+#     """Cast a Table to the given data types, replacing non-castable elements with null."""
 #     for index, column in enumerate(table.column_names):
 #         if column in dtypes:
 #             array = table[column]
@@ -71,7 +70,7 @@ def is_numeric(array: pa.Array, /) -> pa.Array:
 #     return table
 
 
-def compute_entropy(value_counts: pa.Array) -> float:
+def compute_entropy(value_counts: Array) -> float:
     r"""Compute the normalized entropy using a value_counts array.
 
     .. math:: ∑_{i=1}^n -pᵢ \log₂(pᵢ)/\log₂(n)
@@ -95,7 +94,7 @@ def compute_entropy(value_counts: pa.Array) -> float:
     return -H.as_py()
 
 
-def or_(masks: Sequence[pa.Array]) -> pa.Array:
+def or_(masks: Sequence[Array]) -> Array:
     """Compute the logical OR of a sequence of boolean arrays."""
     match n := len(masks):
         case 0:
@@ -106,7 +105,7 @@ def or_(masks: Sequence[pa.Array]) -> pa.Array:
             return pa.compute.or_(or_(masks[: n // 2]), or_(masks[n // 2 :]))
 
 
-def and_(masks: Sequence[pa.Array]) -> pa.Array:
+def and_(masks: Sequence[Array]) -> Array:
     """Compute the logical AND of a sequence of boolean arrays."""
     match n := len(masks):
         case 0:
@@ -118,8 +117,8 @@ def and_(masks: Sequence[pa.Array]) -> pa.Array:
 
 
 def filter_nulls(
-    table: pa.Table, cols: list[str], *, aggregation: Literal["or", "and"] = "or"
-) -> pa.Table:
+    table: Table, cols: list[str], *, aggregation: Literal["or", "and"] = "or"
+) -> Table:
     """Filter rows with null values in the given columns."""
     agg = {"or": or_, "and": and_}[aggregation]
     masks = [table[col].is_null() for col in cols]
@@ -127,7 +126,7 @@ def filter_nulls(
     return table.filter(mask)
 
 
-def table_info(table: pa.Table) -> None:
+def table_info(table: Table) -> None:
     """Print information about a table."""
     size = table.nbytes / (1024 * 1024 * 1024)
     print(f"shape={table.shape}  {size=:.3f} GiB")
@@ -151,7 +150,7 @@ def table_info(table: pa.Table) -> None:
         )
 
 
-# def trim_whitespace(table: pa.Table) -> pa.Table:
+# def trim_whitespace(table: Table) -> Table:
 #     for column in table.column_names:
 #         array = table[column]
 #         index = table.column_names.index(column)

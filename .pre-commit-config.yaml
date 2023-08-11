@@ -150,6 +150,19 @@ repos:
         types: [jupyter]
         language: system
         entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
+  # shadowed attributes
+  - repo: local
+    hooks:
+      - id: "imported-attributes"
+        name: "imported-attributes"
+        description: "Check for directly imported attributes."
+        files: (^src/|^tests/)
+        stages: [commit]
+        types: [python]
+        language: system
+        entry: run/imported_attributes.py
+        #        require_serial: true
+        pass_filenames: true
   # mypy
   #-   repo: https://github.com/pre-commit/mirrors-mypy
   #    rev: v0.941

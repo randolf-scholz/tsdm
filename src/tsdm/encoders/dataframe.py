@@ -938,7 +938,7 @@ class FrameAsDict(Mapping[str, list[str]], BaseEncoder):
 
         >>> from pandas import DataFrame
         >>> from tsdm.encoders import FrameAsDict
-        >>> df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+        >>> df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
         >>> encoder = FrameAsDict(groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False)
         >>> encoder.fit(df)
         >>> encoded = encoder.encode(df)

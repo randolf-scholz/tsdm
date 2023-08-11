@@ -9,7 +9,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 
-def extract_imports(node: ast.Import) -> set[str]:
+def extract_imports(node: ast.Import, /) -> set[str]:
     """Extract third-party dependencies from an `import` statement node."""
     dependencies = set()
     for alias in node.names:
@@ -19,23 +19,24 @@ def extract_imports(node: ast.Import) -> set[str]:
     return dependencies
 
 
-def extract_import_from(node: ast.ImportFrom) -> set[str]:
+def extract_import_from(node: ast.ImportFrom, /) -> set[str]:
     """Extract third-party dependencies from an `import from` statement node."""
     dependencies = set()
+    assert node.module is not None
     module = node.module.split(".")[0]
     if not module.startswith("_"):
         dependencies.add(module)
     return dependencies
 
 
-def is_submodule(submodule_name: str, module_name: str) -> bool:
+def is_submodule(submodule_name: str, module_name: str, /) -> bool:
     """True if submodule_name is a submodule of module_name."""
     return submodule_name.startswith(module_name + ".")
 
 
-def get_file_dependencies(file_path: Path) -> set[str]:
+def get_file_dependencies(file_path: Path, /) -> set[str]:
     """Retrieve the list of third-party dependencies imported by a file."""
-    dependencies = set()
+    dependencies: set[str] = set()
     path = Path(file_path)
 
     if path.suffix != ".py":
@@ -51,12 +52,13 @@ def get_file_dependencies(file_path: Path) -> set[str]:
     return dependencies
 
 
-def get_module_dependencies(module_name: str, recursive: bool = True) -> set[str]:
+def get_module_dependencies(module_name: str, /, *, recursive: bool = True) -> set[str]:
     """Retrieve the list of third-party dependencies imported by a module."""
     module = importlib.import_module(module_name)
     dependencies = set()
 
     # Visit the current module
+    assert module.__file__ is not None
     with open(module.__file__, "r", encoding="utf8") as file:
         tree = ast.parse(file.read())
         for node in ast.walk(tree):
@@ -83,7 +85,7 @@ def get_module_dependencies(module_name: str, recursive: bool = True) -> set[str
     return dependencies
 
 
-def group_dependencies(dependencies: set[str]) -> tuple[list[str], list[str]]:
+def group_dependencies(dependencies: set[str], /) -> tuple[list[str], list[str]]:
     """Splits the dependencies into first-party and third-party."""
     stdlib_dependencies = set()
     third_party_dependencies = set()
@@ -97,13 +99,13 @@ def group_dependencies(dependencies: set[str]) -> tuple[list[str], list[str]]:
     return sorted(stdlib_dependencies), sorted(third_party_dependencies)
 
 
-def collect_dependencies(name: str | Path) -> set[str]:
+def collect_dependencies(fname: str | Path, /) -> set[str]:
     """Collect the third-party dependencies from files in the given path."""
     dependencies = set()
-    path = Path(name)
+    path = Path(fname)
 
     if not path.exists():  # assume module
-        dependencies = get_module_dependencies(name)
+        dependencies = get_module_dependencies(str(fname))
     elif path.is_file():  # Single file
         dependencies |= get_file_dependencies(path)
     elif path.is_dir():  # Directory

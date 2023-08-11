@@ -12,6 +12,7 @@ __all__ = [
     "pandas_nanstd",
     "pandas_strip_whitespace",
     "pandas_true_like",
+    "pandas_null_like",
     "pandas_where",
     # auxiliary functions
     "strip_whitespace_series",
@@ -21,7 +22,7 @@ __all__ = [
 from typing import Literal, TypeVar
 
 from numpy.typing import ArrayLike, NDArray
-from pandas import DataFrame, Series
+from pandas import NA, DataFrame, Series
 
 from tsdm.backend.protocols import Scalar
 from tsdm.types.aliases import Axes
@@ -93,6 +94,11 @@ def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray) -> P:
     return a if cond else pandas_like(b, a)  # scalar fallback
 
 
+def pandas_null_like(x: P, /) -> P:
+    """Returns a copy of the input filled with nulls."""
+    return pandas_where(pandas_true_like(x), x, NA)
+
+
 def pandas_like(x: ArrayLike, /, ref: P) -> P:
     """Create a Series/DataFrame with the same modality as a reference."""
     if isinstance(ref, Series):
@@ -114,10 +120,10 @@ def strip_whitespace_series(series: Series, /) -> Series:
     return series
 
 
-def pandas_strip_whitespace(obj: P, /) -> P:
+def pandas_strip_whitespace(x: P, /) -> P:
     """Strip whitespace from all string elements in a pandas object."""
-    if isinstance(obj, DataFrame):
-        return strip_whitespace_dataframe(obj)
-    if isinstance(obj, Series):
-        return strip_whitespace_series(obj)
-    raise TypeError(f"Expected Series or DataFrame, got {type(obj)}.")
+    if isinstance(x, DataFrame):
+        return strip_whitespace_dataframe(x)
+    if isinstance(x, Series):
+        return strip_whitespace_series(x)
+    raise TypeError(f"Expected Series or DataFrame, got {type(x)}.")

@@ -374,7 +374,7 @@ def validate_table_hash(
         case None, None:
             # Try to determine the hash algorithm from the array type
             match table:
-                case pd.DataFrame() | pd.Series() | pd.Index():
+                case DataFrame() | Series() | Index():
                     hash_algorithm = "pandas"
                 case np.ndarray():
                     hash_algorithm = "numpy"
@@ -544,15 +544,15 @@ def validate_table_schema(
     """
     # get shape, columns and dtypes from table
     match table:
-        case pd.MultiIndex() as multiindex:
+        case MultiIndex() as multiindex:
             shape = multiindex.shape
             columns = multiindex.names
             dtypes = multiindex.dtypes
-        case pd.Index() as index:
+        case Index() as index:
             shape = index.shape
             columns = index.name
             dtypes = index.dtype
-        case pd.Series() as series:
+        case Series() as series:
             shape = series.shape
             columns = series.name
             dtypes = series.dtype

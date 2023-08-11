@@ -294,10 +294,6 @@ class GroupedSetFuncTS(nn.Module):
             X.append(x)
             Y.append(y)
 
-        x = torch.nn.utils.rnn.pad_sequence(
-            X, batch_first=True, padding_value=float("nan")
-        )
-        y = torch.nn.utils.rnn.pad_sequence(
-            Y, batch_first=True, padding_value=float("nan")
-        )
+        x = nn.utils.rnn.pad_sequence(X, batch_first=True, padding_value=float("nan"))
+        y = nn.utils.rnn.pad_sequence(Y, batch_first=True, padding_value=float("nan"))
         return self.forward(x, y)

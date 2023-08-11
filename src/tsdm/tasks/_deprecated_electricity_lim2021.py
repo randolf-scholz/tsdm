@@ -148,7 +148,7 @@ class ElectricityLim2021(OldBaseTask):
         raise NotImplementedError
 
     @cached_property
-    def dataset(self) -> pd.DataFrame:
+    def dataset(self) -> DataFrame:
         r"""Return the cached dataset."""
         ds = Electricity().table
         ds = ds.resample("1h").mean()

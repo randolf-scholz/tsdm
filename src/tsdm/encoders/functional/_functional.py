@@ -138,7 +138,7 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     """
     m = df.notna().astype(np.uint8)
     # note: s here is not the same s as in the GRU-D paper, but s(t) - s(t-1)
-    _s = pd.Series(df.index).diff()
+    _s = Series(df.index).diff()
     _s[0] = 0 * _s[1]
     s = pd.Index(_s)
 

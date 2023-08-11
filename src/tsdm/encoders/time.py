@@ -385,7 +385,7 @@ class TimeSlicer(BaseEncoder):
     def is_tensor_pair(data: Any) -> bool:
         r"""Check if the data is a pair of tensors."""
         if isinstance(data, Sequence) and len(data) == 2:
-            if isinstance(data[0], torch.Tensor) and isinstance(data[1], torch.Tensor):
+            if isinstance(data[0], Tensor) and isinstance(data[1], Tensor):
                 return True
         return False
 

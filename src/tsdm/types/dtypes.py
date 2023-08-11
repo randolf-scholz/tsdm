@@ -192,7 +192,7 @@ r"""Dictionary of all `numpy` data type typecodes."""
 # endregion numpy typecodes --------------------------------------------------------------------------------------------
 
 
-# region numpy typestrings ---------------------------------------------------------------------------------------------
+# region numpy dtypes -------------------------------------------------------------------------------------------------
 NUMPY_INT_TYPESTRINGS: Final[dict[type[np.signedinteger], str]] = {
     np.int8: "int8",
     np.int16: "int16",
@@ -286,10 +286,10 @@ NUMPY_TYPESTRINGS: Final[dict[type[np.generic], str]] = (
     | NUMPY_OBJECT_TYPESTRINGS
 )
 r"""Dictionary of all `numpy` data type typestrings."""
-# endregion numpy typestrings ------------------------------------------------------------------------------------------
+# endregion numpy typestrings -----------------------------------------------------------------------------------------
 
 
-# region pandas typestrings --------------------------------------------------------------------------------------------
+# region pandas dtypes ------------------------------------------------------------------------------------------------
 PANDAS_TYPESTRINGS: Final[dict[type[ExtensionDtype], str]] = {
     pandas.BooleanDtype: "boolean",
     pandas.CategoricalDtype: "category",
@@ -331,7 +331,7 @@ PANDAS_NULLABLE_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
     "UInt8": pandas.UInt8Dtype,
 }
 r"""Dictionary of all `pandas` data types."""
-# endregion pandas typestrings -----------------------------------------------------------------------------------------
+# endregion pandas dtypes ---------------------------------------------------------------------------------------------
 
 
 # region torch dtypes --------------------------------------------------------------------------------------------------

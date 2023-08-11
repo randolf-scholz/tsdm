@@ -638,7 +638,7 @@ def describe(
     except Exception:
         quantile_values = Series([float("nan")] * len(quantiles))
 
-    return pd.DataFrame(
+    return DataFrame(
         {
             # stats
             ("stats", "entropy"): entropy,
