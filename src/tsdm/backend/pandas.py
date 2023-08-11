@@ -61,7 +61,7 @@ def pandas_axes(
     return "columns" if axes % len(shape) else "index"
 
 
-def pandas_clip(x: P, lower: None | NDArray = None, upper: None | NDArray = None) -> P:
+def pandas_clip(x: P, lower: NDArray | None = None, upper: NDArray | None = None) -> P:
     """Analogue to `numpy.clip`."""
     axis = "columns" if isinstance(x, DataFrame) else "index"
     return x.clip(lower, upper, axis=axis)

@@ -174,7 +174,7 @@ def hash_file(
 def hash_array(
     array: Any, *, hash_algorithm: str = "pandas", **hash_kwargs: Any
 ) -> str:
-    """Hash an array like object (pandas/numpy/pyarrow/etc)."""
+    """Hash an array like object (pandas/numpy/pyarrow/etc.)."""
     match hash_algorithm:
         case "pandas":
             hash_value = hash_pandas(array, **hash_kwargs)

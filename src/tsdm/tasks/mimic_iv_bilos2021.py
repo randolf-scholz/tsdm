@@ -163,8 +163,8 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         MIMIC-IV [25, 36] to obtain 17874 patients. The details are in Appendix D.2. The goal is to predict
         the next three measurements in the 12-hour interval after the observation window of 36 hours.
 
-        Table 2 shows that our GRU flow model (Equation 5) mostly outperforms GRU-ODE [16]. Addition-
-        ally, we show that the ordinary ResNet flow with 4 stacked transformations (Equation 2) performs
+        Table 2 shows that our GRU flow model (Equation 5) mostly outperforms GRU-ODE [16]. Additionally,
+        we show that the ordinary ResNet flow with 4 stacked transformations (Equation 2) performs
         worse. The reason might be because it is missing GRU flow properties, such as boundedness. Similarly,
         an ODE with a regular neural network does not outperform GRU-ODE [16]. Finally, we report
         that the model with GRU flow requires 60% less time to run one training epoch.

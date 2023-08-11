@@ -161,10 +161,6 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
         cls.encode = encode  # type: ignore[method-assign]
         cls.decode = decode  # type: ignore[method-assign]
 
-        # cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[method-assign]
-        # cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[method-assign]
-        # cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[method-assign]
-
     def __invert__(self) -> BaseEncoder[S, T]:
         r"""Return the inverse encoder (i.e. decoder)."""
         return InverseEncoder(self)

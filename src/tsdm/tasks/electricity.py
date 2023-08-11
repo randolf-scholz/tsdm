@@ -57,7 +57,7 @@ class ElectricityDeepAR:
 
     .. epigraph::
 
-        For electricity we train with data between 2014-01-01 and 2014-09-01, for traffic we train
+        For electricity, we train with data between 2014-01-01 and 2014-09-01, for traffic we train
         all the data available before 2008-06-15. The results for electricity and traffic are
         computed using rolling window predictions done after the last point seen in training as
         described in [23]. We do not retrain our model for each window, but use a single model

@@ -106,7 +106,7 @@ class ElectricityLim2021(TimeSeriesTask):
     r"""Type Hint for index."""
     preprocessor: BaseEncoder
 
-    # FIXME: neeed a different base class for this task!
+    # FIXME: need a different base class for this task!
     dataset: TimeSeriesDataset  # type: ignore[assignment]
 
     def __init__(self) -> None:

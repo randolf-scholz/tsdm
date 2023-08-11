@@ -357,7 +357,7 @@ class PositionalEncoder(BaseEncoder):
     def encode(self, data: np.ndarray, /) -> np.ndarray:
         r""".. Signature: ``... -> (..., 2d)``.
 
-        Note: we simple concatenate the sin and cosine terms without interleaving them.
+        Note: we simply concatenate the sin and cosine terms without interleaving them.
         """
         z = np.einsum("..., d -> ...d", data, self.scales)
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)

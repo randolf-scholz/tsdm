@@ -52,7 +52,6 @@ __all__ = [
     "nested_key_var",
     "nested_key_co",
     "nested_key_contra",
-    "parameter_spec",
     "return_var_co",
     "value_var",
     "value_co",
@@ -62,7 +61,7 @@ __all__ = [
 from collections.abc import Hashable
 from pathlib import Path
 from types import GenericAlias, ModuleType
-from typing import ParamSpec, TypeVar
+from typing import TypeVar
 
 from numpy import ndarray
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -189,9 +188,6 @@ nested_key_co = TypeVar("nested_key_co", bound=Hashable, covariant=True)
 r"""Covariant type variable for `Mapping` keys."""
 nested_key_contra = TypeVar("nested_key_contra", bound=Hashable, contravariant=True)
 r"""Contravariant type variable for `Mapping` keys."""
-
-parameter_spec = ParamSpec("parameter_spec")
-r"""TypeVar for decorated function inputs values."""
 
 # outputs/returns are always covariant!
 return_var_co = TypeVar("return_var_co", covariant=True)

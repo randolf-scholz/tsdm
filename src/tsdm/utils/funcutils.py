@@ -20,10 +20,10 @@ import inspect
 from dataclasses import is_dataclass
 from functools import wraps
 from inspect import Parameter
-from typing import Any, Callable, Optional, Sequence, cast
+from typing import Any, Callable, Optional, ParamSpec, Sequence, cast
 
 from tsdm.types.protocols import Dataclass
-from tsdm.types.variables import parameter_spec as P, return_var_co as R
+from tsdm.types.variables import return_var_co as R
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
@@ -31,6 +31,8 @@ POSITIONAL_OR_KEYWORD = Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD = Parameter.VAR_KEYWORD
 VAR_POSITIONAL = Parameter.VAR_POSITIONAL
 Kind = inspect._ParameterKind  # pylint: disable=protected-access
+
+P = ParamSpec("P")
 
 
 def accepts_varkwargs(f: Callable[..., Any]) -> bool:

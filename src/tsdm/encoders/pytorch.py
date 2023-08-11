@@ -162,7 +162,7 @@ class PositionalEncoding(nn.Module):
     def forward(self, t: Tensor) -> Tensor:
         r""".. Signature:: ``... -> (..., 2d)``.
 
-        Note: we simple concatenate the sin and cosine terms without interleaving them.
+        Note: we simply concatenate the sin and cosine terms without interleaving them.
         """
         return self.encode(t)
 

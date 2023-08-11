@@ -203,7 +203,7 @@ class ND(TimeSeriesBaseLoss):
 
 @autojit
 class NRMSE(TimeSeriesBaseLoss):
-    r"""Compute the normalized root mean square error.
+    r"""Compute the normalized root mean squared error.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑_{tk} |x̂_{tk} - x_{tk}|^2 }}{∑_{tk} |x_{tk}|}
 

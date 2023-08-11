@@ -826,6 +826,7 @@ def return_namedtuple(
     """Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
 
+    # noinspection PyUnresolvedReferences
     return_type: GenericAlias = func.__annotations__.get("return", NotImplemented)
     if return_type is NotImplemented:
         raise DecoratorError(func, "No return type hint found.")
@@ -853,6 +854,7 @@ def return_namedtuple(
 
     @wraps(func)
     def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> NTuple:
+        # noinspection PyCallingNonCallable
         return tuple_type(*func(*func_args, **func_kwargs))
 
     return _wrapper
@@ -917,9 +919,9 @@ def recurse_on_builtin_container(
 #             super().foo(*parent_args, **parent_kwargs)
 #             ...
 #
-#     the synethesized function will roughly look like this:
+#     the synthesized function will roughly look like this:
 #
-#         def __sythntetic__init__(self, a, b, c, /, *, foo, bar):
+#         def __synthetic__init__(self, a, b, c, /, *, foo, bar):
 #             parent_args = (a, b)
 #             parent_kwargs = dict(key=key)
 #             func_args = (c,)

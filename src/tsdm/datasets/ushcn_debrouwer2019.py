@@ -1,4 +1,4 @@
-r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al."""
+r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al."""
 
 __all__ = ["USHCN_DeBrouwer2019"]
 
@@ -9,7 +9,7 @@ from tsdm.datasets.base import SingleTableDataset
 
 
 class USHCN_DeBrouwer2019(SingleTableDataset):
-    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et. al.
+    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     References:
         - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
