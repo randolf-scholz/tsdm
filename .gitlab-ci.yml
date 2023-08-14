@@ -94,7 +94,7 @@ setup:
     # build the package.
     - poetry build
     # install package
-    #- poetry install
+    # - poetry install
     - pip install --prefer-binary --upgrade $(ls dist/*.whl)
     # install dev dependencies.
     # update the requirements.txt files.
@@ -164,7 +164,7 @@ pylint:
       --right-text="$SCORE"
       --right-color=$COLOR
       --whole-link="https://github.com/PyCQA/pylint"
-      --logo="https://raw.githubusercontent.com/PyCQA/pylint/69404bbf1a513381fd90e8f0c777d64b7923e429/doc/logo.svg"
+      --logo="https://www.pylint.org/css/pylint.svg"
       --embed-logo
       > $BADGE_DIR/pylint.svg
   artifacts:

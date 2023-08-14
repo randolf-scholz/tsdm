@@ -1,12 +1,9 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
-minimum_pre_commit_version: 3.0.1
+minimum_pre_commit_version: 3.3.3
 default_language_version:
-  python: python3.10
+  python: python3.11
   node: "18.12.1"
 repos:
-  #  - repo: meta
-  #    hooks:
-  #      - id: identity
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
     rev: v4.4.0
@@ -47,7 +44,7 @@ repos:
       - id: trailing-whitespace
         description: "trims trailing whitespace."
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: "v1.10.0"
+    rev: v1.10.0
     hooks:
       - id: python-check-blanket-noqa
         description: "Enforce that `noqa` annotations always occur with specific codes. Sample annotations: `# noqa: F401`, `# noqa: F401,W203`"
@@ -63,7 +60,7 @@ repos:
         description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.1" # Use the sha or tag you want to point at
+    rev: v3.0.1
     hooks:
       - id: prettier
   # absolufy-imports
@@ -71,7 +68,6 @@ repos:
     rev: v0.3.1
     hooks:
       - id: absolufy-imports
-        description: Automatically convert relative imports to absolute
   # isort
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -90,7 +86,6 @@ repos:
       - id: blacken-docs
         files: (^src/|^tests/)
         types: [python]
-        description: " Run `black` on python code blocks in documentation files "
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.0.284
@@ -108,14 +103,12 @@ repos:
           - flake8-black
           - flake8-bugbear
           - flake8-comprehensions
-          - flake8-docstrings # wraps pydocstyle
-          - flake8-nb
+          - flake8-docstrings
           - flake8-pyi
           - flake8-pyproject
           - flake8-rst
           - flake8-rst-docstrings
   # yesqa
-  # TODO: remove if https://github.com/PyCQA/flake8/issues/603 is fixed
   - repo: https://github.com/asottile/yesqa
     rev: v1.5.0
     hooks:
@@ -127,57 +120,27 @@ repos:
     hooks:
       - id: pydocstyle
         files: (^src/|^tests/)
-        additional_dependencies:
-          - tomli
-        description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
   # slotscheck
   - repo: https://github.com/ariebovenberg/slotscheck
     rev: v0.17.0
     hooks:
       - id: slotscheck
+        language: system
         files: ^src/
-        types: [python]
-        language: system
-        description: "Slotscheck: Ensure your __slots__ are working properly."
-  # clear jupyter notebooks in dev-folder
-  - repo: local
+  - repo: https://github.com/randolf-scholz/assorted-hooks.git
+    rev: v0.1.8
     hooks:
-      - id: jupyter-nb-clear-output
-        name: jupyter-nb-clear-output
-        description: Clear output cells in Jupyter notebooks
-        files: (^dev/|^experiments/)
-        stages: [commit]
-        types: [jupyter]
-        language: system
-        entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
-  # shadowed attributes
-  - repo: local
-    hooks:
-      - id: "imported-attributes"
-        name: "imported-attributes"
-        description: "Check for directly imported attributes."
+      - id: check-imported-attributes
         files: (^src/|^tests/)
-        stages: [commit]
-        types: [python]
-        language: system
-        entry: run/imported_attributes.py
-        #        require_serial: true
-        pass_filenames: true
-  # mypy
-  #-   repo: https://github.com/pre-commit/mirrors-mypy
-  #    rev: v0.941
-  #    hooks:
-  #    - id: mypy
-  #      files: (^src/|^tests/)
-  #      args:
-  #      -   --warn-unused-configs
-  #      -   --ignore-missing-imports
-  #      additional_dependencies:
-  #      -   numpy==1.21.5
-  #      -   types-all
-  # flake8-nb
-  #- repo: https://github.com/s-weigand/flake8-nb
-  #  rev: v0.4.0
-  #  hooks:
-  #  - id: flake8-nb
-  #    files: (^examples/.*.ipynb$|^bugs/.*.ipynb$)
+      - id: jupyter-clear-output
+        files: (^dev/|^experiments/)
+      - id: pyproject-validate-version
+      - id: pyproject-update-deps
+      - id: pyproject-check-deps
+#  # mypy
+#  - repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: v1.5.0
+#    hooks:
+#      - id: mypy
+#        files: (^src/|^tests/)
+#        additional_dependencies: [types-all]
