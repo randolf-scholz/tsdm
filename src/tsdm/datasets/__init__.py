@@ -18,6 +18,9 @@ Some design decisions:
 """
 
 __all__ = [
+    # Sub-Packages
+    "schema",
+    "examples",
     # Sub-Modules
     "base",
     "timeseries",
@@ -50,7 +53,7 @@ __all__ = [
     "USHCN_DeBrouwer2019",
 ]
 
-from tsdm.datasets import base
+from tsdm.datasets import base, examples, schema
 from tsdm.datasets.base import (
     BaseDataset,
     Dataset,

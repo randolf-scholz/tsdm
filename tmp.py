@@ -11,8 +11,9 @@ __all__ = [
     "get_deps_module",
     "get_deps_pyproject",
     "get_deps_pyproject_section",
-    "get_deps_pyproject_test",
+    "get_deps_test_pyproject",
     "get_deps_tree",
+    "get_name_pyproject",
     "group_dependencies",
     "main",
     "normalize_dep_name",
@@ -29,8 +30,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, NamedTuple
 
-if sys.version_info >= (3, 10):
+if sys.version_info >= (3, 11):
+    # NOTE: importlib.metadata is bugged in 3.10: https://github.com/python/cpython/issues/94113
     import importlib.metadata as metadata
+
+    import tomllib
 else:
     try:
         metadata = importlib.import_module("importlib_metadata")
@@ -39,10 +43,6 @@ else:
             "This pre-commit hook runs in the local interpreter and requires"
             " the `importlib_metadata` package for python versions < 3.10."
         ) from E
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
     try:
         tomllib = importlib.import_module("tomlkit")
     except ImportError as E:
@@ -68,13 +68,12 @@ def normalize_dep_name(dep: str, /) -> str:
 
 def get_deps_import(node: ast.Import, /) -> set[str]:
     """Extract dependencies from an `import ...` statement."""
-    return {alias.name.split(".")[0] for alias in node.names}
-    # dependencies = set()
-    # for alias in node.names:
-    #     module = alias.name.split(".")[0]
-    #     if not module.startswith("_"):
-    #         dependencies.add(module)
-    # return dependencies
+    dependencies = set()
+    for alias in node.names:
+        module = alias.name.split(".")[0]
+        if not module.startswith("_"):
+            dependencies.add(module)
+    return dependencies
 
 
 def get_deps_importfrom(node: ast.ImportFrom, /) -> set[str]:
@@ -164,6 +163,37 @@ def get_deps_pyproject_section(config: dict[str, Any], /, *, section: str) -> se
             raise TypeError(f"Unexpected type: {type(config)}")
 
 
+def get_name_pyproject(fname: str | Path = "pyproject.toml", /) -> str:
+    """Get the name of the project from pyproject.toml."""
+    with open(fname, "rb") as file:
+        config = tomllib.load(file)
+
+    try:
+        project_name = config["project"]["name"]
+    except KeyError:
+        project_name = NotImplemented
+    try:
+        poetry_name = config["tool"]["poetry"]["name"]
+    except KeyError:
+        poetry_name = NotImplemented
+
+    match project_name, poetry_name:
+        case str() as a, str() as b:
+            if a != b:
+                raise ValueError(
+                    "Found different project names in [project] and [tool.poetry]."
+                    f"\n [project]     is missing: {a}, "
+                    f"\n [tool.poetry] is missing: {b}."
+                )
+            return a
+        case str() as a, _:
+            return a
+        case _, str() as b:
+            return b
+        case _:
+            raise ValueError("No project name found in [project] or [tool.poetry].")
+
+
 def get_deps_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
     """Extract the dependencies from a pyproject.toml file.
 
@@ -195,8 +225,8 @@ def get_deps_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
             if (left := a - b) | (right := b - a):
                 raise ValueError(
                     "Found different dependencies in [project] and [tool.poetry]."
-                    f"\n [project]     is missing: {left}, "
-                    f"\n [tool.poetry] is missing: {right}."
+                    f"\n [project]     is missing: {right}, "
+                    f"\n [tool.poetry] is missing: {left}."
                 )
             project_dependencies = a
         case set() as a, _:
@@ -209,7 +239,7 @@ def get_deps_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
     return project_dependencies
 
 
-def get_deps_pyproject_test(fname: str | Path = "pyproject.toml", /) -> set[str]:
+def get_deps_test_pyproject(fname: str | Path = "pyproject.toml", /) -> set[str]:
     """Extract the test dependencies from a pyproject.toml file."""
     with open(fname, "rb") as file:
         pyproject = tomllib.load(file)
@@ -264,8 +294,8 @@ def get_deps_pyproject_test(fname: str | Path = "pyproject.toml", /) -> set[str]
             if (left := a - b) | (right := b - a):
                 raise ValueError(
                     "Found different test dependencies in [project] and [tool.poetry]."
-                    f"\n [project]     is missing: {left}, "
-                    f"\n [tool.poetry] is missing: {right}."
+                    f"\n [project]     is missing: {right}, "
+                    f"\n [tool.poetry] is missing: {left}."
                 )
             test_dependencies = a
         case set() as a, _:
@@ -333,12 +363,14 @@ def validate_dependencies(
 ) -> None:
     """Validate the dependencies."""
     # extract 3rd party dependencies.
-    used_deps = group_dependencies(imported_dependencies).imported_dependencies
+    imported_dependencies = group_dependencies(
+        imported_dependencies
+    ).imported_dependencies
 
     # map the dependencies to their pip-package names
     imported_deps: set[str] = set()
     unknown_deps: set[str] = set()
-    for dep in used_deps:
+    for dep in imported_dependencies:
         if dep not in PACKAGES:
             unknown_deps.add(dep)
             continue
@@ -353,6 +385,9 @@ def validate_dependencies(
     pyproject_deps = {normalize_dep_name(dep) for dep in pyproject_dependencies}
     imported_deps = {normalize_dep_name(dep) for dep in imported_deps}
 
+    print("pyproject_deps:", pyproject_deps)
+    print("imported_deps:", imported_deps)
+
     # check if all imported dependencies are listed in pyproject.toml
     missing_deps = imported_deps - pyproject_deps
     unused_deps = pyproject_deps - imported_deps
@@ -364,8 +399,8 @@ def validate_dependencies(
             f"\nUnused dependencies listed in pyproject.toml: {unused_deps}."
             f"\nUnknown dependencies: {unknown_deps}."
             f"\n"
-            f"\nOptional dependencies are currently not supported (PR welcome)."
-            f"\nWorkaround: use `importlib.import_module('optional_dependency')`."
+            f"\nNOTE: Optional dependencies are currently not supported (PR welcome)."
+            f"\nNOTE: Workaround: use `importlib.import_module('optional_dependency')`."
         )
 
 
@@ -424,6 +459,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # get the project name
+    project_name = get_name_pyproject(args.pyproject_file)
+
     # compute the dependencies from the source files
     modules_given = args.modules is not modules_default
     imported_dependencies = set().union(
@@ -432,14 +470,26 @@ def main() -> None:
             for fname in args.modules
         )
     )
+    print(
+        "imported_dependencies:",
+        sorted(group_dependencies(imported_dependencies).imported_dependencies),
+        sep="\n",
+    )
+    # ignore the project name
+    imported_dependencies -= {normalize_dep_name(project_name)}
+    print(
+        "imported_dependencies:",
+        sorted(group_dependencies(imported_dependencies).imported_dependencies),
+        sep="\n",
+    )
     # get dependencies from pyproject.toml
     pyproject_dependencies = get_deps_pyproject(args.pyproject_file)
+    print("pyproject_dependencies:", sorted(pyproject_dependencies), sep="\n")
     # validate the dependencies
     validate_dependencies(
         pyproject_dependencies=pyproject_dependencies,
         imported_dependencies=imported_dependencies,
     )
-
     # compute the test dependencies from the test files
     tests_given = args.tests is not tests_default
     imported_test_dependencies = set().union(
@@ -448,6 +498,8 @@ def main() -> None:
             for fname in args.tests
         )
     )
+    # ignore direct dependencies
+    imported_test_dependencies -= imported_dependencies
     # get dependencies from pyproject.toml
     pyproject_test_dependencies = get_deps_pyproject(args.pyproject_file)
     # validate the dependencies
