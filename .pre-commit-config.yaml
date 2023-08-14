@@ -138,10 +138,11 @@ repos:
       - id: pyproject-update-deps
       - id: pyproject-check-deps
         args: ["--ignore-listed", "tensorboard"] # torch does not list this...
-# mypy
-#  - repo: https://github.com/pre-commit/mirrors-mypy
-#    rev: v1.5.0
-#    hooks:
-#      - id: mypy
-#        files: (^src/|^tests/)
-#        additional_dependencies: [types-all]
+  # mypy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.0
+    hooks:
+      - id: mypy
+        files: (^src/|^tests/)
+        additional_dependencies: [types-all]
+        stages: [push]
