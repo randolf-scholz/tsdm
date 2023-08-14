@@ -145,4 +145,4 @@ repos:
       - id: mypy
         files: (^src/|^tests/)
         additional_dependencies: [types-all]
-        stages: [push]
+        stages: [pre-push]
