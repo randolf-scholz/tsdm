@@ -22,7 +22,8 @@ __all__ = [
 ]
 
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Final, Optional, Protocol, runtime_checkable
+from collections.abc import Callable
+from typing import Final, Optional, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, jit, nn

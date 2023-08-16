@@ -26,14 +26,13 @@ __all__ = [
 
 import logging
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from copy import deepcopy
 from functools import wraps
 from typing import (
     Any,
     ClassVar,
     Generic,
-    Iterator,
     Literal,
     Protocol,
     TypeVar,

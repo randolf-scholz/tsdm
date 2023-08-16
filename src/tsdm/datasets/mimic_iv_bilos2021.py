@@ -112,7 +112,7 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
 
         return ts
 
-    def download_file(self, fname: str) -> None:
+    def download_file(self, fname: str, /) -> None:
         path = self.rawdata_paths[fname]
 
         cut_dirs = self.BASE_URL.count("/") - 3

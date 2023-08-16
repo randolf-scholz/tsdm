@@ -99,7 +99,7 @@ def pandas_null_like(x: P, /) -> P:
     return pandas_where(pandas_true_like(x), x, NA)
 
 
-def pandas_like(x: ArrayLike, /, ref: P) -> P:
+def pandas_like(x: ArrayLike, ref: P, /) -> P:
     """Create a Series/DataFrame with the same modality as a reference."""
     if isinstance(ref, Series):
         return Series(x, dtype=ref.dtype, index=ref.index)

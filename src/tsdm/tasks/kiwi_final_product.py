@@ -60,7 +60,7 @@ def get_induction_time(s: Series) -> Timestamp | NAType:
     return inductions.first_valid_index()
 
 
-def get_final_product(s: Series, target: str) -> Timestamp:
+def get_final_product(s: Series, /, *, target: str) -> Timestamp:
     r"""Compute the final product time."""
     # Final and target times
     targets = s[target]
@@ -71,7 +71,7 @@ def get_final_product(s: Series, target: str) -> Timestamp:
 
 
 def get_time_table(
-    ts: DataFrame, target: str = "Fluo_GFP", t_min: str | Timedelta = "0.6h"
+    ts: DataFrame, /, *, target: str = "Fluo_GFP", t_min: str | Timedelta = "0.6h"
 ) -> DataFrame:
     r"""Compute the induction time and final product time for each run and experiment."""
     columns = [

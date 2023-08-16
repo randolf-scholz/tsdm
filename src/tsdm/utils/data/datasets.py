@@ -120,7 +120,9 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
             return self.datasets[key]  # type: ignore[index]
 
     @classmethod
-    def from_dataframe(cls, df: DataFrame, levels: Optional[list[str]] = None) -> Self:
+    def from_dataframe(
+        cls, df: DataFrame, /, *, levels: Optional[list[str]] = None
+    ) -> Self:
         r"""Create a `MappingDataset` from a `DataFrame`.
 
         If ``levels`` is given, the selected levels from the `DataFrame`'s `MultiIndex` are used as keys.

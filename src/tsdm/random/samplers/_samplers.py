@@ -62,6 +62,7 @@ def compute_grid(
     tmin: str | DTVar,
     tmax: str | DTVar,
     timedelta: str | TDVar,
+    /,
     *,
     offset: Optional[str | DTVar] = None,
 ) -> Sequence[int]:
@@ -241,8 +242,8 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
     def __init__(
         self,
         data_source: DatasetCollection,
-        /,
         subsamplers: Mapping[K, BaseSampler[T_co]],
+        /,
         *,
         shuffle: bool = True,
         early_stop: bool = False,
@@ -316,8 +317,8 @@ class HierarchicalSampler(Sampler[tuple[K, T_co]]):
     def __init__(
         self,
         data_source: Mapping[K, T],
-        /,
         subsamplers: Mapping[K, Sampler[T_co]],
+        /,
         *,
         shuffle: bool = True,
         early_stop: bool = False,
@@ -396,7 +397,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
     @staticmethod
     def _get_value(
-        obj: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar], k: int
+        obj: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar], k: int, /
     ) -> TDVar:
         if callable(obj):
             return obj(k)

@@ -201,7 +201,7 @@ class KiwiTask(TimeSeriesTask):
         r"""Create the collate function for the given split."""
         encoder = self.encoders[key]
 
-        def collate_fn(samples: list[Sample]) -> Batch:
+        def collate_fn(samples: list[Sample], /) -> Batch:
             x_vals: list[Tensor] = []
             y_vals: list[Tensor] = []
             x_time: list[Tensor] = []

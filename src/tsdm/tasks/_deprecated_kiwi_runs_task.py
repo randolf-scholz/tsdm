@@ -298,7 +298,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
         }
 
     def make_dataloader(
-        self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
+        self, key: KeyType, /, *, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return a dataloader for the given split."""
         # Construct the dataset object

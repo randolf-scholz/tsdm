@@ -5,17 +5,9 @@ __all__ = ["BaseTask", "OldBaseTask"]
 import logging
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Generic,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-)
+from typing import Any, ClassVar, Generic, Literal, Optional
 
 from pandas import DataFrame
 from torch import Tensor

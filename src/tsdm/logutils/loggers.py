@@ -56,18 +56,9 @@ __all__ = [
 import logging
 from abc import ABCMeta
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Protocol,
-    runtime_checkable,
-)
+from typing import Any, ClassVar, NamedTuple, Optional, Protocol, runtime_checkable
 
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
@@ -140,7 +131,9 @@ class BaseLogger(metaclass=LoggerMetaclass):
         """Callbacks to be called at the end of a batch/epoch."""
         return {k: [cb for cb, _, _ in v] for k, v in self._callbacks.items()}
 
-    def add_callback(self, key: str, callback: Callback, *, frequency: int = 1) -> None:
+    def add_callback(
+        self, key: str, callback: Callback, /, *, frequency: int = 1
+    ) -> None:
         """Add a callback to the logger."""
         required_kwargs = set(
             callback.required_kwargs

@@ -30,7 +30,9 @@ from tsdm.utils.strings import repr_mapping
 __logger__ = logging.getLogger(__name__)
 
 
-def get_requirements(package: str, version: Optional[str] = None) -> dict[str, str]:
+def get_requirements(
+    package: str, /, *, version: Optional[str] = None
+) -> dict[str, str]:
     r"""Return dictionary containing requirements with version numbers.
 
     If `version=None`, then the latest version is used.
@@ -113,7 +115,7 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
     return d
 
 
-def query_bool(question: str, default: Optional[bool] = True) -> bool:
+def query_bool(question: str, /, *, default: Optional[bool] = True) -> bool:
     r"""Ask a yes/no question and returns answer as bool."""
     responses = {"y": True, "yes": True, "n": False, "no": False}
     prompt = "([y]/n)" if default else "([n]/y)"
@@ -136,6 +138,8 @@ def query_bool(question: str, default: Optional[bool] = True) -> bool:
 
 def query_choice(
     question: str,
+    /,
+    *,
     choices: set[str],
     default: Optional[str] = None,
     pick_by_number: bool = True,
@@ -202,13 +206,17 @@ def install_package(
 
 
 def write_requirements(
-    package: str, version: Optional[str] = None, path: Optional[Path] = None
+    path: Optional[Path] = None,
+    /,
+    *,
+    package: str,
+    version: Optional[str] = None,
 ) -> None:
     r"""Write a requirements dictionary to a requirements.txt file.
 
     If `version=None`, then the latest version is used.
     """
-    requirements: dict[str, str] = get_requirements(package, version)
+    requirements: dict[str, str] = get_requirements(package, version=version)
     # Note: the first entry is the package itself!
     fname = f"requirements-{package}=={requirements.pop(package)}.txt"
     path = Path("requirements") if path is None else Path(path)

@@ -408,7 +408,9 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         # fmt: on
     }
 
-    def read_patient_file(self, archive: ZipFile, compressed_file: str) -> DataFrame:
+    def read_patient_file(
+        self, archive: ZipFile, /, *, compressed_file: str
+    ) -> DataFrame:
         """Read a single patient file from the archive."""
         with archive.open(compressed_file) as file:
             return pd.read_csv(

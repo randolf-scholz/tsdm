@@ -193,10 +193,7 @@ class LazyDict(dict[K, V]):
         return {k: self[k] for k in self}
 
     @staticmethod
-    def _make_lazy_function(
-        key: K,
-        value: FuncSpec | V,
-    ) -> LazyValue:
+    def _make_lazy_function(key: K, value: FuncSpec | V, /) -> LazyValue:
         match value:
             case LazyValue():
                 return value

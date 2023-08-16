@@ -7,8 +7,9 @@ __all__ = [
 
 import logging
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -48,7 +49,7 @@ def download(
     if skip_existing and path.exists():
         if hash_value is not None:
             validate_file_hash(
-                path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
+                path, reference=hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
             )
         return
 
@@ -82,7 +83,7 @@ def download(
         # validate the file hash
     if hash_value is not None:
         validate_file_hash(
-            path, hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
+            path, reference=hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
         )
 
 

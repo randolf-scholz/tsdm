@@ -145,7 +145,7 @@ class LinODEnet(PreTrainedBase):
 
     @staticmethod
     def make_dataframes_from_pickle(
-        filename: str,
+        filename: str, /
     ) -> tuple[DataFrame, DataFrame, DataFrame]:
         r"""Return DataFrames from pickle.
 

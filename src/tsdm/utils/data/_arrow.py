@@ -19,7 +19,7 @@ from tqdm.autonotebook import tqdm
 __logger__ = logging.getLogger(__name__)
 
 
-def cast_columns(table: Table, force: bool = False, /, **dtypes: DataType) -> Table:
+def cast_columns(table: Table, /, **dtypes: DataType) -> Table:
     """Cast columns to the given data types."""
     schema: pa.Schema = table.schema
     current_dtypes = dict(zip(schema.names, schema.types))
@@ -70,7 +70,7 @@ def is_numeric(array: Array, /) -> Array:
 #     return table
 
 
-def compute_entropy(value_counts: Array) -> float:
+def compute_entropy(value_counts: Array, /) -> float:
     r"""Compute the normalized entropy using a value_counts array.
 
     .. math:: ∑_{i=1}^n -pᵢ \log₂(pᵢ)/\log₂(n)
@@ -94,7 +94,7 @@ def compute_entropy(value_counts: Array) -> float:
     return -H.as_py()
 
 
-def or_(masks: Sequence[Array]) -> Array:
+def or_(masks: Sequence[Array], /) -> Array:
     """Compute the logical OR of a sequence of boolean arrays."""
     match n := len(masks):
         case 0:
@@ -105,7 +105,7 @@ def or_(masks: Sequence[Array]) -> Array:
             return pa.compute.or_(or_(masks[: n // 2]), or_(masks[n // 2 :]))
 
 
-def and_(masks: Sequence[Array]) -> Array:
+def and_(masks: Sequence[Array], /) -> Array:
     """Compute the logical AND of a sequence of boolean arrays."""
     match n := len(masks):
         case 0:
@@ -117,7 +117,7 @@ def and_(masks: Sequence[Array]) -> Array:
 
 
 def filter_nulls(
-    table: Table, cols: list[str], *, aggregation: Literal["or", "and"] = "or"
+    table: Table, cols: list[str], /, *, aggregation: Literal["or", "and"] = "or"
 ) -> Table:
     """Filter rows with null values in the given columns."""
     agg = {"or": or_, "and": and_}[aggregation]
@@ -126,7 +126,7 @@ def filter_nulls(
     return table.filter(mask)
 
 
-def table_info(table: Table) -> None:
+def table_info(table: Table, /) -> None:
     """Print information about a table."""
     size = table.nbytes / (1024 * 1024 * 1024)
     print(f"shape={table.shape}  {size=:.3f} GiB")

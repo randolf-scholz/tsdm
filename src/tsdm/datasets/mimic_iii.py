@@ -177,7 +177,7 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
 
         return table
 
-    def download_file(self, fname: str) -> None:
+    def download_file(self, fname: str, /) -> None:
         """Download a file from the MIMIC-III website."""
         if tuple(map(int, self.__version__.split("."))) < (1, 4):
             raise ValueError(

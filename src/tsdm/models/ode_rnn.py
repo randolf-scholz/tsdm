@@ -38,7 +38,9 @@ def add_to_path(p: Path) -> Iterator:
         sys.path = old_path
 
 
-def path_import(module_path: Path, module_name: Optional[str] = None) -> ModuleType:
+def path_import(
+    module_path: Path, /, *, module_name: Optional[str] = None
+) -> ModuleType:
     r"""Return python module imported from path.
 
     References:

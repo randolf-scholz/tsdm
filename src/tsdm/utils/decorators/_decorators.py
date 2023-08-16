@@ -26,7 +26,7 @@ __all__ = [
 import ast
 import gc
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import wraps
@@ -35,7 +35,6 @@ from time import perf_counter_ns
 from types import GenericAlias
 from typing import (
     Any,
-    Callable,
     Concatenate,
     NamedTuple,
     Optional,

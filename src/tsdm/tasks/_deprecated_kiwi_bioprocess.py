@@ -207,7 +207,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
         }
 
     def make_dataloader(
-        self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
+        self, key: KeyType, /, *, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
         # Construct the dataset object
         ts, md = self.splits[key]

@@ -172,7 +172,9 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
 #     return identifier
 
 
-def repr_object(obj: Any, /, fallback: Callable[..., str] = repr, **kwargs: Any) -> str:
+def repr_object(
+    obj: Any, /, *, fallback: Callable[..., str] = repr, **kwargs: Any
+) -> str:
     r"""Return a string representation of an object.
 
     Special casing for a bunch of cases.
@@ -681,6 +683,7 @@ def repr_namedtuple(
 def repr_type(
     obj: Any,
     /,
+    *,
     identifier: Optional[str] = None,
     recursive: bool | int = False,
     **_: Any,

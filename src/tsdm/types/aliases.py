@@ -32,10 +32,17 @@ __all__ = [
 
 
 import os
-from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Callable,
+    Collection,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Optional, TypeAlias
+from typing import Any, NamedTuple, Optional, TypeAlias
 
 import numpy as np
 import torch

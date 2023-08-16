@@ -40,7 +40,7 @@ r"""Type hint for a size-like object."""
 
 @singledispatch
 def relative_error(
-    xhat: ArrayLike | Tensor, x_true: ArrayLike | Tensor
+    xhat: ArrayLike | Tensor, x_true: ArrayLike | Tensor, /
 ) -> NDArray | Tensor:
     r"""Relative error, works with both `Tensor` and `ndarray`.
 
@@ -54,7 +54,7 @@ def relative_error(
 
 
 @relative_error.register
-def _numpy_relative_error(xhat: np.ndarray, x_true: np.ndarray) -> np.ndarray:
+def _numpy_relative_error(xhat: np.ndarray, x_true: np.ndarray, /) -> np.ndarray:
     if xhat.dtype in (np.float16, np.int16):
         eps = 2**-11
     elif xhat.dtype in (np.float32, np.int32):
@@ -68,7 +68,7 @@ def _numpy_relative_error(xhat: np.ndarray, x_true: np.ndarray) -> np.ndarray:
 
 
 @relative_error.register
-def _torch_relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
+def _torch_relative_error(xhat: Tensor, x_true: Tensor, /) -> Tensor:
     if xhat.dtype in (torch.bfloat16,):
         eps = 2**-8
     elif xhat.dtype in (torch.float16, torch.int16):

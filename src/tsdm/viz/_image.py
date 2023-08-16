@@ -17,6 +17,8 @@ from torch import Tensor
 @torch.no_grad()
 def kernel_heatmap(
     kernel: NDArray | Tensor,
+    /,
+    *,
     fmt: Literal["HWC", "CHW"] = "HWC",
     cmap: colors.Colormap = "seismic",
 ) -> NDArray:

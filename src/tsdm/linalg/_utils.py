@@ -5,7 +5,7 @@ __all__ = [
     "apply_along_axes",
 ]
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 import torch

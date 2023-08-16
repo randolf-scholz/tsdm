@@ -24,17 +24,15 @@ __all__ = [
 
 import logging
 from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping, MutableSequence, Sequence
+from collections.abc import Callable, Iterable, Mapping, MutableSequence, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from functools import wraps
 from itertools import chain
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Generic,
-    Iterable,
     Literal,
     Optional,
     ParamSpec,
@@ -161,7 +159,7 @@ class CallbackList(BaseCallback, MutableSequence[Callback]):
     callbacks: list[Callback]
     """The callbacks to log."""
 
-    def insert(self, index: int, value: Callback) -> None:
+    def insert(self, index: int, value: Callback, /) -> None:
         self.callbacks.insert(index, value)
 
     @overload

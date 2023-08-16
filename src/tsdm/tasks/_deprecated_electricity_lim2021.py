@@ -215,7 +215,7 @@ class ElectricityLim2021(OldBaseTask):
     #     }
 
     def make_dataloader(
-        self, key: KeyType, /, shuffle: bool = False, **dataloader_kwargs: Any
+        self, key: KeyType, /, *, shuffle: bool = False, **dataloader_kwargs: Any
     ) -> DataLoader:
         r"""Return the dataloader for the given key."""
         ds = self.splits[key]

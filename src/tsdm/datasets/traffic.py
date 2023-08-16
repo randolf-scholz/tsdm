@@ -62,7 +62,7 @@ from pandas import DataFrame
 from tsdm.datasets.base import MultiTableDataset
 
 
-def _reformat(s: str, replacements: dict) -> str:
+def _reformat(s: str, replacements: dict, /) -> str:
     r"""Replace multiple substrings via dict.
 
     References:

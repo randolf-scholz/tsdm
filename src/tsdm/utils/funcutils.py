@@ -17,10 +17,11 @@ __all__ = [
 ]
 
 import inspect
+from collections.abc import Callable, Sequence
 from dataclasses import is_dataclass
 from functools import wraps
 from inspect import Parameter
-from typing import Any, Callable, Optional, ParamSpec, Sequence, cast
+from typing import Any, Optional, ParamSpec, cast
 
 from tsdm.types.protocols import Dataclass
 from tsdm.types.variables import return_var_co as R
@@ -71,7 +72,7 @@ def dataclass_args_kwargs(
     return args, kwargs
 
 
-def get_parameter_kind(s: str | Kind) -> set[Kind]:
+def get_parameter_kind(s: str | Kind, /) -> set[Kind]:
     r"""Get parameter kind from string."""
     if isinstance(s, Kind):
         return {s}
@@ -98,6 +99,8 @@ def get_parameter_kind(s: str | Kind) -> set[Kind]:
 
 def get_function_args(
     f: Callable[..., Any],
+    /,
+    *,
     mandatory: Optional[bool] = None,
     kinds: Optional[str | Kind | list[Kind]] = None,
 ) -> list[Parameter]:
@@ -169,7 +172,9 @@ def is_mandatory_arg(p: Parameter, /) -> bool:
     )
 
 
-def is_positional_arg(p: Parameter | str, /, func: Optional[Callable] = None) -> bool:
+def is_positional_arg(
+    p: Parameter | str, /, *, func: Optional[Callable] = None
+) -> bool:
     r"""Check if parameter is positional argument."""
     match p, func:
         case Parameter(), None:

@@ -53,7 +53,7 @@ test = [
 dev = [
     "bandit>=1.7.5",
     "black[d,jupyter]>=23.1.0",
-    "blacken-docs>=1.15.0",
+    "blacken-docs>=1.16.0",
     "coverage>=7.3.0",
     "docutils>=0.20.1",
     "flake8>=6.1.0",
@@ -70,7 +70,7 @@ dev = [
     "isort>=5.12.0",
     "jupyterlab>=4.0.5",
     "matplotlib>=3.7.2",
-    "mypy>=1.5.0",
+    "mypy>=1.5.1",
     "nbsphinx>=0.9.2",
     "openml>=0.14.1",
     "openpyxl>=3.1.2",
@@ -89,9 +89,9 @@ dev = [
     "pygments>=2.16.1",
     "pylint>=2.17.5",
     "pylint-gitlab>=1.2.0",
-    "pyright>=1.1.322",
+    "pyright>=1.1.323",
     "ruff>=0.0.284",
-    "setuptools>=68.0.0",
+    "setuptools>=68.1.0",
     "slotscheck>=0.17.0",
     "sphinx>=7.1.2",
     "sphinx-autoapi>=2.1.1",
@@ -109,7 +109,7 @@ dev = [
     "types-pygments>=2.16.0",
     "types-pyyaml>=6.0.12",
     "types-requests>=2.31.0",
-    "types-setuptools>=68.0.0",
+    "types-setuptools>=68.1.0",
     "types-six>=1.16.21",
     "types-urllib3>=1.26.25",
     "wheel>=0.41.1",
@@ -168,6 +168,7 @@ ignore = [
     "E704",   # E704 multiple statements on one line (def)
     "E741",   # E741 ambiguous variable nam
     "W503",   # W503 line break before binary operator
+    "W504",   # W504 line break after binary operator
 ]
 per-file-ignores = ["tests/*:D103"]
 
@@ -539,7 +540,7 @@ pytest-xdist = ">=3.3.1"
 [tool.poetry.group.dev.dependencies]
 bandit = ">=1.7.5"
 black = {version = ">=23.7.0", extras = ["d", "jupyter"]}
-blacken-docs = ">=1.15.0"
+blacken-docs = ">=1.16.0"
 coverage = ">=7.3.0"
 docutils = ">=0.20.1"
 flake8 = ">=6.1.0"
@@ -556,7 +557,7 @@ ipympl = ">=0.9.3"
 ipywidgets = ">=8.1.0"
 isort = ">=5.12.0"
 jupyterlab = ">=4.0.5"
-mypy = ">=1.5.0"
+mypy = ">=1.5.1"
 nbsphinx = ">=0.9.2"
 openml = ">=0.14.1"  # extra
 openpyxl = ">=3.1.2"  # extra
@@ -575,9 +576,9 @@ pyflakes = ">=3.1.0"
 pygments = ">=2.16.1"
 pylint = ">=2.17.5"
 pylint-gitlab = ">=1.2.0"
-pyright = ">=1.1.322"
+pyright = ">=1.1.323"
 ruff = ">=0.0.284"
-setuptools = ">=68.0.0"
+setuptools = ">=68.1.0"
 slotscheck = ">=0.17.0"
 sphinx = ">=7.1.2"
 sphinx-autoapi = ">=2.1.1"
@@ -595,7 +596,7 @@ types-psutil = ">=5.9.5"
 types-pygments = ">=2.16.0"
 types-pyyaml = ">=6.0.12"
 types-requests = ">=2.31.0"
-types-setuptools = ">=68.0.0"
+types-setuptools = ">=68.1.0"
 types-six = ">=1.16.21"
 types-urllib3 = ">=1.26.25"
 wheel = ">=0.41.1"

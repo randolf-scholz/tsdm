@@ -229,8 +229,8 @@ def detect_outliers_dataframe(
 
 def detect_outliers(
     obj,
-    /,
     description=None,
+    /,
     *,
     lower_bound=None,
     upper_bound=None,
@@ -422,8 +422,8 @@ def remove_outliers(
 
 def remove_outliers(
     obj,
-    /,
     description=None,
+    /,
     *,
     drop=True,
     inplace=False,
@@ -494,12 +494,12 @@ def contains_no_information(df: DataFrame) -> Series:
     return df.nunique() <= 1
 
 
-def vlookup_uniques(df: DataFrame, /, values: Series) -> dict[str, list]:
+def vlookup_uniques(df: DataFrame, /, *, lookup_values: Series) -> dict[str, list]:
     r"""Vlookup unique values for each column in a dataframe."""
     uniques: dict[str, list] = {}
     for col in df.columns:
         mask = df[col].notna()
-        uniques[col] = list(values.loc[mask].unique())
+        uniques[col] = list(lookup_values.loc[mask].unique())
     return uniques
 
 

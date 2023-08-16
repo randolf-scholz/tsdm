@@ -22,7 +22,8 @@ __all__ = [
 
 
 import warnings
-from typing import Callable, TypeAlias, TypeVar
+from collections.abc import Callable
+from typing import TypeAlias, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -143,7 +144,7 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     s = pd.Index(_s)
 
     # @numba.njit
-    def get_deltas(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def get_deltas(a: np.ndarray, b: np.ndarray, /) -> np.ndarray:
         # using numba jit compiled for speed - pandas was too slow!
         c = np.zeros((*a.shape, b.shape[-1]), dtype=a.dtype)
 

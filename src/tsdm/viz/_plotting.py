@@ -43,6 +43,7 @@ Location: TypeAlias = Literal[
 @torch.no_grad()
 def visualize_distribution(
     data: ArrayLike,
+    /,
     *,
     ax: Axes,
     num_bins: int = 50,
@@ -120,6 +121,7 @@ def visualize_distribution(
 @torch.no_grad()
 def shared_grid_plot(
     data: ArrayLike,
+    /,
     *,
     plot_func: Callable[..., None],
     plot_kwargs: Optional[dict] = None,
@@ -214,7 +216,7 @@ def shared_grid_plot(
 
 
 def rasterize(
-    fig: Figure, w: int = 3, h: int = 3, px: int = 512, py: int = 512
+    fig: Figure, /, *, w: int = 3, h: int = 3, px: int = 512, py: int = 512
 ) -> np.ndarray:
     r"""Convert figure to image with specific pixel size."""
     dpi = (px / w + py / h) // 2  # compromise

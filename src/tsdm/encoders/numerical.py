@@ -46,12 +46,11 @@ __all__ = [
 ]
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import KW_ONLY, dataclass
 from types import EllipsisType
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Literal,
     NamedTuple,
@@ -203,16 +202,16 @@ def slice_size(slc: slice) -> int | None:
 
 
 @overload
-def get_reduced_axes(item: INDEXER, axes: None) -> None:
+def get_reduced_axes(item: INDEXER, /, axes: None) -> None:
     ...
 
 
 @overload
-def get_reduced_axes(item: INDEXER, axes: int | tuple[int, ...]) -> tuple[int, ...]:
+def get_reduced_axes(item: INDEXER, /, axes: int | tuple[int, ...]) -> tuple[int, ...]:
     ...
 
 
-def get_reduced_axes(item: INDEXER, axes: Axes) -> Axes:
+def get_reduced_axes(item: INDEXER, /, axes: Axes) -> Axes:
     """Determine if a slice would remove some axes."""
     if axes is None:
         return None
@@ -620,7 +619,6 @@ class StandardScaler(BaseEncoder[T, T]):
 
     def __init__(
         self,
-        /,
         mean: float | T = NotImplemented,
         stdv: float | T = NotImplemented,
         *,

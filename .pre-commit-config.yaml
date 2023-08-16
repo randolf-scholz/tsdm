@@ -60,7 +60,7 @@ repos:
         description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.1
+    rev: v3.0.2
     hooks:
       - id: prettier
   # absolufy-imports
@@ -81,7 +81,7 @@ repos:
       - id: black-jupyter
   # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.15.0
+    rev: 1.16.0
     hooks:
       - id: blacken-docs
         files: (^src/|^tests/)
@@ -128,16 +128,34 @@ repos:
         language: system
         files: ^src/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.5
+    rev: v0.1.18
     hooks:
-      - id: check-imported-attributes
-        files: (^src/|^tests/)
       - id: jupyter-clear-output
         files: (^dev/|^experiments/)
       - id: pyproject-validate-version
       - id: pyproject-update-deps
       - id: pyproject-check-deps
         args: ["--ignore-listed", "tensorboard"] # torch does not list this...
+      - id: python-no-blanket-type-ignore
+        files: (^src/|^tests/)
+      - id: python-no-builtin-eval
+        files: (^src/|^tests/)
+      - id: python-use-imported-attributes
+        files: (^src/|^tests/)
+      - id: python-no-mixed-args
+        files: ^src/
+        args:
+          [
+            "--ignore-names",
+            "forward",
+            "predict",
+            "--ignore-decorators",
+            "jit.script",
+            "--ignore-dunder",
+            "--allow-one",
+          ]
+      - id: python-prefer-abc-typing
+        files: (^src/|^tests/)
   # mypy
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.5.0

@@ -74,19 +74,19 @@ class Time2Vec(nn.Module):
     phase: Tensor
     r"""Phase of the time encoding."""
 
-    def __init__(self, num_dim: int, act: str = "sin") -> None:
+    def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
         super().__init__()
 
         self.num_dim = num_dim
         self.freq = nn.Parameter(torch.randn(num_dim - 1))
         self.phase = nn.Parameter(torch.randn(num_dim - 1))
 
-        if act == "sin":
+        if activation == "sin":
             self.act = torch.sin
-        elif act == "cos":
+        elif activation == "cos":
             self.act = torch.cos
         else:
-            raise ValueError(f"Unknown activation function: {act}")
+            raise ValueError(f"Unknown activation function: {activation}")
 
     @jit.export
     def encode(self, t: Tensor) -> Tensor:
@@ -138,7 +138,7 @@ class PositionalEncoding(nn.Module):
     scales: Tensor
     r"""Scale factors for positional encoding."""
 
-    def __init__(self, num_dim: int, *, scale: float) -> None:
+    def __init__(self, *, num_dim: int, scale: float) -> None:
         super().__init__()
         assert num_dim % 2 == 0, "num_dim must be even"
         self.num_dim = num_dim
@@ -177,9 +177,9 @@ class Time2VecEncoder(BaseEncoder):
 
     requires_fit: ClassVar[bool] = False
 
-    def __init__(self, num_dim: int, act: str = "sin") -> None:
+    def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
         super().__init__()
-        self.encoder = Time2Vec(num_dim, act)
+        self.encoder = Time2Vec(num_dim=num_dim, activation=activation)
 
     def encode(self, data: Tensor, /) -> Tensor:
         return self.encoder.encode(data)
@@ -193,9 +193,9 @@ class PositionalEncoder(BaseEncoder):
 
     requires_fit: ClassVar[bool] = False
 
-    def __init__(self, num_dim: int, scale: float) -> None:
+    def __init__(self, *, num_dim: int, scale: float) -> None:
         super().__init__()
-        self.encoder = PositionalEncoding(num_dim, scale=scale)
+        self.encoder = PositionalEncoding(num_dim=num_dim, scale=scale)
 
     def encode(self, data: Tensor, /) -> Tensor:
         return self.encoder.encode(data)

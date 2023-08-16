@@ -114,7 +114,7 @@ class FrameEncoder(BaseEncoder, Generic[ColEncVar, IndEncVar]):
     r"""Reverse Dictionary from encoded index name -> encoder"""
 
     @staticmethod
-    def _names(obj: Index | Series | DataFrame) -> Hashable | FrozenList[Hashable]:
+    def _names(obj: Index | Series | DataFrame, /) -> Hashable | FrozenList[Hashable]:
         if isinstance(obj, MultiIndex):
             return FrozenList(obj.names)
         if isinstance(obj, Series | Index):
@@ -477,6 +477,7 @@ class FrameSplitter(BaseEncoder, Mapping):
         self,
         groups: Iterable[Hashable] | Mapping[Any, Hashable],
         /,
+        *,
         dropna: bool = False,
         fillna: bool = True,
     ) -> None:

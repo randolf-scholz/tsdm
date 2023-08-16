@@ -276,7 +276,7 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
         r"""Load the pre-processed dataset."""
 
     @classmethod
-    def download_from_url(cls, url: str, path: PathLike, **options: Any) -> None:
+    def download_from_url(cls, url: str, path: PathLike, /, **options: Any) -> None:
         r"""Download files from a URL."""
         cls.LOGGER.debug("Downloading from %s", url)
         parsed_url = urlparse(url)
@@ -795,14 +795,14 @@ class TimeSeriesDataset(TorchDataset[Series]):
         return len(self.timeindex)
 
     @overload
-    def __getitem__(self, key: K) -> Series:
+    def __getitem__(self, key: K, /) -> Series:
         ...
 
     @overload
-    def __getitem__(self, key: Index | slice | list[K]) -> DataFrame:
+    def __getitem__(self, key: Index | slice | list[K], /) -> DataFrame:
         ...
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, /):
         r"""Get item from timeseries."""
         # we might get an index object, or a slice, or boolean mask...
         return self.timeseries.loc[key]
@@ -879,14 +879,14 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.metaindex = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: K) -> TimeSeriesDataset:
+    def __getitem__(self, key: K, /) -> TimeSeriesDataset:
         ...
 
     @overload
-    def __getitem__(self, key: slice) -> Self:
+    def __getitem__(self, key: slice, /) -> Self:
         ...
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, /):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
         if isinstance(key, Series):

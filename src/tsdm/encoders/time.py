@@ -12,17 +12,8 @@ __all__ = [
     "TimeSlicer",
 ]
 
-from typing import (
-    Any,
-    ClassVar,
-    Final,
-    Hashable,
-    Literal,
-    Optional,
-    Sequence,
-    cast,
-    overload,
-)
+from collections.abc import Hashable, Sequence
+from typing import Any, ClassVar, Final, Literal, Optional, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -382,7 +373,7 @@ class TimeSlicer(BaseEncoder):
         self.horizon = horizon
 
     @staticmethod
-    def is_tensor_pair(data: Any) -> bool:
+    def is_tensor_pair(data: Any, /) -> bool:
         r"""Check if the data is a pair of tensors."""
         if isinstance(data, Sequence) and len(data) == 2:
             if isinstance(data[0], Tensor) and isinstance(data[1], Tensor):

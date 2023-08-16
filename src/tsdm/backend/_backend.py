@@ -86,7 +86,7 @@ def gather_types(obj: object) -> set[BackendID]:
     return types
 
 
-def get_backend(obj: object, fallback: BackendID = "numpy") -> BackendID:
+def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
     """Get the backend of a set of objects."""
     types: set[BackendID] = gather_types(obj)
 

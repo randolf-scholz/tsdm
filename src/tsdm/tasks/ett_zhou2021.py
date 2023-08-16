@@ -172,13 +172,16 @@ class ETT_Zhou2021(OldBaseTask):
         self,
         key: KeyType,
         /,
+        *,
         shuffle: bool = True,
-        **kwargs: Any,
+        **dataloader_kwargs: Any,
     ) -> DataLoader:
         if key == "test":
             assert not shuffle, "Don't shuffle when evaluating test-dataset!"
-        if key == "test" and "drop_last" in kwargs:
-            assert not kwargs["drop_last"], "Don't drop when evaluating test-dataset!"
+        if key == "test" and "drop_last" in dataloader_kwargs:
+            assert not dataloader_kwargs[
+                "drop_last"
+            ], "Don't drop when evaluating test-dataset!"
 
         ds = self.splits[key]
         tensors = self.preprocessor.encode(ds)
@@ -188,4 +191,4 @@ class ETT_Zhou2021(OldBaseTask):
             dataset, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
         )
 
-        return DataLoader(dataset, sampler=sampler, **kwargs)
+        return DataLoader(dataset, sampler=sampler, **dataloader_kwargs)

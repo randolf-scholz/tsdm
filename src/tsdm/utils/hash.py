@@ -24,9 +24,9 @@ import logging
 import string
 import warnings
 from collections import Counter
-from collections.abc import Hashable, Iterable, Mapping
+from collections.abc import Hashable, Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, Optional, Sequence
+from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -43,7 +43,7 @@ DEFAULT_HASH_METHOD = "sha256"
 """The default hash method to use."""
 
 
-def to_base(n: int, b: int) -> list[int]:
+def to_base(n: int, base: int, /) -> list[int]:
     r"""Convert non-negative integer to any basis.
 
     The result satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
@@ -54,7 +54,7 @@ def to_base(n: int, b: int) -> list[int]:
     assert n >= 0, "n must be non-negative!"
     digits = []
     while n:
-        n, d = divmod(n, b)
+        n, d = divmod(n, base)
         digits.append(d)
     return digits[::-1] or [0]
 
@@ -191,12 +191,12 @@ def hash_array(
 
 def validate_file_hash(
     file: PathLike | Sequence[PathLike] | Mapping[str, PathLike],
-    /,
     reference: None | str | Mapping[str, str | None] = None,
+    /,
     *,
-    hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,
     errors: Literal["warn", "raise", "ignore"] = "warn",
+    hash_algorithm: Optional[str] = None,
     **hash_kwargs: Any,
 ) -> None:
     """Validate file(s), given reference hash value(s).
@@ -345,8 +345,8 @@ def validate_file_hash(
 
 def validate_table_hash(
     table: Any,
+    reference: str | None = None,
     /,
-    reference: str | None,
     *,
     hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,
@@ -374,8 +374,8 @@ def validate_table_hash(
         case None, None:
             # Try to determine the hash algorithm from the array type
             match table:
-                case DataFrame() | Series() | Index():
-                    hash_algorithm = "pandas"
+                case DataFrame() | Series() | Index():  # type: ignore[misc]
+                    hash_algorithm = "pandas"  # type: ignore[unreachable]
                 case np.ndarray():
                     hash_algorithm = "numpy"
                 case _:
@@ -424,8 +424,8 @@ def validate_table_hash(
 
 def validate_object_hash(
     obj: Any,
+    reference: Any = None,
     /,
-    reference: Any,
     *,
     hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,
@@ -534,6 +534,7 @@ def validate_object_hash(
 def validate_table_schema(
     table: SupportsShape,
     /,
+    *,
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,
 ) -> None:
@@ -544,16 +545,16 @@ def validate_table_schema(
     """
     # get shape, columns and dtypes from table
     match table:
-        case MultiIndex() as multiindex:
-            shape = multiindex.shape
+        case MultiIndex() as multiindex:  # type: ignore[misc]
+            shape = multiindex.shape  # type: ignore[unreachable]
             columns = multiindex.names
             dtypes = multiindex.dtypes
-        case Index() as index:
-            shape = index.shape
+        case Index() as index:  # type: ignore[misc]
+            shape = index.shape  # type: ignore[unreachable]
             columns = index.name
             dtypes = index.dtype
-        case Series() as series:
-            shape = series.shape
+        case Series() as series:  # type: ignore[misc]
+            shape = series.shape  # type: ignore[unreachable]
             columns = series.name
             dtypes = series.dtype
         case DataFrame() as df:  # type: ignore[misc]

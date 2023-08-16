@@ -76,6 +76,7 @@ def sample_timedeltas(
     low: str | TDVar = "0s",
     high: str | TDVar = "1h",
     size: Optional[int] = None,
+    *,
     freq: str | TDVar = "1s",
 ) -> NDArray:
     r"""Create randomly sampled timedeltas."""
@@ -99,7 +100,7 @@ def sample_timedeltas(
 
 
 def random_data(
-    size: tuple[int], dtype: DTypeLike = float, missing: float = 0.5
+    size: tuple[int], *, dtype: DTypeLike = float, missing: float = 0.5
 ) -> NDArray:
     r"""Create random data of given size and dtype."""
     dtype = np.dtype(dtype)

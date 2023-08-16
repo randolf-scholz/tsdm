@@ -344,11 +344,11 @@ class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
             case _, ".pickle":
                 return pickle.load(file)
             case _, _:
-                return self.__load_torch_component(component, file)
+                return self.__load_torch_component(file, component=component)
         raise ValueError(f"{component=} is not supported!")
 
     def __load_torch_component(
-        self, component: str, /, file: str | Path | IO[bytes], **kwargs: Any
+        self, file: str | Path | IO[bytes], /, *, component: str, **kwargs: Any
     ) -> TorchModule:
         r"""Load a torch component."""
         logger = self.LOGGER.getChild(component)
@@ -409,14 +409,14 @@ class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
 
     def __load_torch_model(self, file: str | Path | IO[bytes], /) -> TorchModule:
         r"""Load a torch model."""
-        return self.__load_torch_component("model", file)
+        return self.__load_torch_component(file, component="model")
 
     def __load_torch_optimizer(self, file: str | Path | IO[bytes], /) -> TorchOptimizer:
         r"""Load a torch optimizer."""
         return cast(
             TorchOptimizer,
             self.__load_torch_component(
-                "optimizer", file, params=self.model.parameters()
+                file, component="optimizer", params=self.model.parameters()
             ),
         )
 
@@ -426,7 +426,10 @@ class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
         /,  # FIXME: https://github.com/PyCQA/pycodestyle/issues/951
     ) -> TorchLRScheduler:
         r"""Load a torch learning rate scheduler."""
-        return cast(TorchLRScheduler, self.__load_torch_component("lr_scheduler", file))
+        return cast(
+            TorchLRScheduler,
+            self.__load_torch_component(file, component="lr_scheduler"),
+        )
 
     # def load(self, *, force: bool = False, validate: bool = True) -> torch.nn.Module:
     #     r"""Load the selected DATASET_OBJECT."""

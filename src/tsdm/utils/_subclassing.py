@@ -7,7 +7,8 @@ __all__ = [
 ]
 
 from abc import ABCMeta
-from typing import Any, Callable, Generic, Optional, TypeVar, cast
+from collections.abc import Callable
+from typing import Any, Generic, Optional, TypeVar, cast
 
 T = TypeVar("T")
 R = TypeVar("R")

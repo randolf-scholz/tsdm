@@ -43,6 +43,6 @@ def torch_nanstd(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> 
     )
 
 
-def torch_like(x: ArrayLike, /, ref: Tensor) -> Tensor:
+def torch_like(x: ArrayLike, ref: Tensor, /) -> Tensor:
     """Return a tensor of the same dtype and other options as `ref`."""
     return torch.tensor(x, dtype=ref.dtype, device=ref.device)
