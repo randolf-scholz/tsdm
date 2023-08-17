@@ -27,17 +27,6 @@ SizeLike: TypeAlias = int | tuple[int, ...]
 r"""Type hint for a size-like object."""
 
 
-# def _torch_is_float_dtype(x: Tensor) -> bool:
-#     return x.dtype in (
-#         torch.half,        # identical with torch.float16
-#         torch.float,       # identical with torch.float32
-#         torch.double,      # identical with torch.float64
-#         torch.bfloat16,
-#         torch.complex64,
-#         torch.complex128,
-#     )
-
-
 @singledispatch
 def relative_error(
     xhat: ArrayLike | Tensor, x_true: ArrayLike | Tensor, /
@@ -348,11 +337,3 @@ def multi_norm(
     for x in tensors:
         s += torch.sum(x**p) ** (q / p)
     return s ** (1 / q)
-
-
-# How would you call tuples of tensors?
-# hil-bor hil-tor hil-ber
-# tup-lor
-# poly-tor poly-sor
-# mul-tor mul-sor
-# n-dor en-dor
