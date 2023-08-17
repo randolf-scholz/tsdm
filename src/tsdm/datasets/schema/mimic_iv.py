@@ -1,6 +1,6 @@
 """Schema for the KIWI-dataset.
 
-SOme parts of the data are rather dirty, for example:
+Some parts of the data are rather dirty, for example.::
 
     emar_detail["reason_for_no_barcode"].unique().sort()
     <pyarrow.lib.StringArray object at 0x7f266c1b3b80>

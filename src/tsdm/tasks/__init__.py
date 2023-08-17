@@ -44,6 +44,7 @@ __all__ = [
     "KIWI_FINAL_PRODUCT",
     "ElectricityLim2021",
     "MIMIC_III_DeBrouwer2019",
+    "MIMIC_III_Bilos2021",
     "MIMIC_IV_Bilos2021",
     "USHCN_DeBrouwer2019",
     "Kiwi_BioProcessTask",
@@ -66,6 +67,7 @@ from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.insilico import InSilicoSampleGenerator, InSilicoTask
 from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
 from tsdm.tasks.kiwi_task import KiwiTask
+from tsdm.tasks.mimic_iii_bilos2021 import MIMIC_III_Bilos2021
 from tsdm.tasks.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
 from tsdm.tasks.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.tasks.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
@@ -80,8 +82,9 @@ TASKS: Final[dict[str, type[Task]]] = {
     "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
     "ElectricityLim2021": ElectricityLim2021,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
-    "MIMIC_IV_Bilos": MIMIC_IV_Bilos2021,
-    "USHCN_DeBrouwer": USHCN_DeBrouwer2019,
+    "MIMIC_III_Bilos2021": MIMIC_III_DeBrouwer2019,
+    "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
+    "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available tasks."""
 

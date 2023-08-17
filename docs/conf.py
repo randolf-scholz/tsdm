@@ -83,6 +83,7 @@ extensions = [
     "signatures",
     # 3rd party extensions
     # "autoapi.extension",
+    "myst_parser",
     "sphinx_copybutton",
     "sphinx_math_dollar",
     # "sphinx_autodoc_typehints",
@@ -181,13 +182,13 @@ python_use_unqualified_type_names = True
 html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
-html_theme_options = {
-    # # FIXME: https://github.com/pydata/pydata-sphinx-theme/issues/1094
-    "logo": {
-        "image_light": "logo-light.png",
-        "image_dark": "logo-dark.png",
-    }
-}
+# html_theme_options = {
+#     # # FIXME: https://github.com/pydata/pydata-sphinx-theme/issues/1094
+#     "logo": {
+#         "image_light": "logo-light.png",
+#         "image_dark": "logo-dark.png",
+#     }
+# }
 #     # TOCTREE OPTIONS
 #     "collapse_navigation": False,
 #     # With this enabled, navigation entries are not expandable – the [+] icons next to each entry are removed.

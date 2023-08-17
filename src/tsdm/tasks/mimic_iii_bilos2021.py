@@ -38,15 +38,15 @@ References
 ----------
 .. [1] | `Neural Flows: Efficient Alternative to Neural ODEs <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
        | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann.
-         `Advances in Neural Information Processing Systems 2021 <https://proceedings.neurips.cc/paper/2021>`_
+        `Advances in Neural Information Processing Systems 2021 <https://proceedings.neurips.cc/paper/2021>`_
 .. [2] https://github.com/mbilos/neural-flows-experiments/
 .. [3] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
 .. [4] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L55-L63
 """
 
 __all__ = [
-    "MIMIC_IV_Bilos2021",
-    "mimic_collate",
+    "MIMIC_III_Bilos2021",
+    "mimic_iii_collate",
     "Sample",
     "Batch",
     "TaskDataset",
@@ -64,8 +64,7 @@ from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
-from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
-from tsdm.encoders import FrameEncoder, MinMaxScaler, StandardScaler
+from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils import is_partition
 from tsdm.utils.strings import repr_namedtuple
@@ -145,7 +144,7 @@ class TaskDataset(Dataset):
 
 
 # @torch.jit.script  # seems to break things
-def mimic_collate(batch: list[Sample]) -> Batch:
+def mimic_iii_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 
     Transform the data slightly: t, x, t_target → T, X where X[t_target:] = NAN
@@ -194,45 +193,35 @@ def mimic_collate(batch: list[Sample]) -> Batch:
     )
 
 
-class MIMIC_IV_Bilos2021(OldBaseTask):
-    r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
+class MIMIC_III_Bilos2021(OldBaseTask):
+    r"""MIMIC-III Forecasting Task as described by Bilos et al. (2021)."""
 
-    observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)
+    observation_time = 75  # corresponds to 36 hours after admission (freq=30min)
     prediction_steps = 3
     num_folds = 5
+    seed = 432
     RANDOM_STATE = 0
     train_size = 0.70
     valid_size = 0.15
     test_size = 0.15
 
-    preprocessor: FrameEncoder[StandardScaler, dict[Any, MinMaxScaler]]
-
     def __init__(self, *, normalize_time: bool = True) -> None:
+        assert self.train_size + self.test_size + self.valid_size == 1
         super().__init__()
-        self.preprocessor = FrameEncoder(
-            column_encoders=StandardScaler(),
-            index_encoders={"time_stamp": MinMaxScaler()},
-        )
         self.normalize_time = normalize_time
-        self.IDs = self.dataset.reset_index()["hadm_id"].unique()
+        self.IDs = self.dataset.reset_index()["UNIQUE_ID"].unique()
 
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ds = MIMIC_IV_Dataset()
-
-        # Standardization is performed over full data slice, including test!
-        # https://github.com/mbilos/neural-flows-experiments/blob/d19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
-
-        # Standardize the x-values, min-max scale the t values.
-        ts = ds.table
-        self.preprocessor.fit(ts)
-        ts = self.preprocessor.encode(ts)
-        index_encoder = self.preprocessor.index_encoders["time_stamp"]
-        self.observation_time /= index_encoder.params.xmax  # type: ignore[assignment]
-
-        # drop values outside 5 sigma range
-        ts = ts[(-5 < ts) & (ts < 5)]
+        ts = MIMIC_III_Dataset().timeseries
+        # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
+        if self.normalize_time:
+            ts = ts.reset_index()
+            t_max = ts["TIME_STAMP"].max()
+            self.observation_time /= t_max
+            ts["TIME_STAMP"] /= t_max
+            ts = ts.set_index(["UNIQUE_ID", "TIME_STAMP"])
         ts = ts.dropna(axis=1, how="all").copy()
         return ts
 
@@ -361,18 +350,3 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         )
         kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)
-
-
-# Remark: The following code is found in the repo:
-#
-# t_val = 2.16, and time is divided by 1000
-# if self.validation:
-#     assert val_options is not None, 'Validation set options should be fed'
-#     self.df_before = self.df.loc[self.df['Time'] <= val_options['T_val']].copy()
-#     self.df_after = self.df.loc[self.df['Time'] > val_options['T_val']].sort_values('Time').copy()
-#     if val_options.get("T_stop"):
-#         self.df_after = self.df_after.loc[self.df_after['Time'] < val_options['T_stop']].sort_values('Time').copy()
-#     self.df_after = self.df_after.groupby('ID').head(val_options['max_val_samples']).copy()
-#     self.df = self.df_before  # We remove observations after T_val
-#     self.df_after.ID = self.df_after.ID.astype(np.int)
-#     self.df_after.sort_values('Time', inplace=True)

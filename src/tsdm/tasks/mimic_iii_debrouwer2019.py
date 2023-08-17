@@ -1,8 +1,53 @@
-r"""MIMIC-II clinical dataset."""
+r"""MIMIC-III Forecasting Task as described by De Brouwer et al. (2019) [1]_.
+
+Evaluation Protocol
+-------------------
+
+.. epigraph::
+
+    We use the publicly available MIMIC-III clinical database (Johnson et al., 2016), which contains
+    EHR for more than 60,000 critical care patients. We select a subset of 21,250 patients with sufficient
+    observations and extract 96 different longitudinal real-valued measurements over a period of 48 hours
+    after patient admission. We refer the reader to Appendix K for further details on the cohort selection.
+    We focus on the predictions of the next 3 measurements after a 36-hour observation window.
+
+    The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
+    harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
+    measurements outside the 5 standard deviation interval. For models requiring binning of the time
+    series, we map the measurements in 30-minute time bins, which gives 97 bins for 48 hours. When
+    two observations fall in the same bin, they are either averaged or summed depending on the nature
+    of the observation. Using the same taxonomy as in Table 5, lab measurements are averaged, while
+    inputs, outputs, and prescriptions are summed.
+    This gives a total of 3,082,224 unique measurements across all patients, or an average of 145
+    measurements per patient over 48 hours.
+
+Notes:
+    - Authors code is available at [2]_.
+    - The authors code is missing the pre-processing script to create the folds for MIMIC-III. There is an open issue:
+      <https://github.com/edebrouwer/gru_ode_bayes/issues/15>, but the authors are not responding.
+      We assume the MIMIC-III pre-processing script is similar/the same as the one for the Climate dataset.
+
+    - The train/valid/test split is 62/18/10. The authors write:
+
+        We report the performance using 5-fold cross-validation. Hyperparameters (dropout and weight decay) are chosen
+        using an inner holdout validation set (20%) and performance are assessed on a left-out test set (10%).
+
+      Here, 20% validation refers to 20% of the non-test data, i.e. 20% of 90% = 18% of the total data. [3]_
+    - The random seed is fixed to 432 at the start of the splitting process. [4]_
+
+References
+----------
+.. [1] | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+       | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves.
+         `Advances in Neural Information Processing Systems 2019 <https://proceedings.neurips.cc/paper/2019>`_
+.. [2] https://github.com/edebrouwer/gru_ode_bayes
+.. [3] https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
+.. [4] https://github.com/edebrouwer/gru_ode_bayes/blob/ddd0b34e884dbee1c09b6a3927d1e9ab10443af8/data_preproc/Climate/generate_folds.py
+"""
 
 __all__ = [
     "MIMIC_III_DeBrouwer2019",
-    "mimic_collate",
+    "mimic_iii_collate",
     "Sample",
     "Batch",
     "TaskDataset",
@@ -101,7 +146,7 @@ class TaskDataset(Dataset):
 
 
 # @torch.jit.script  # seems to break things
-def mimic_collate(batch: list[Sample]) -> Batch:
+def mimic_iii_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 
     Transform the data slightly: t, x, t_target → T, X where X[t_target:] = NAN
@@ -151,36 +196,7 @@ def mimic_collate(batch: list[Sample]) -> Batch:
 
 
 class MIMIC_III_DeBrouwer2019(OldBaseTask):
-    r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al.
-
-    Evaluation Protocol
-    -------------------
-
-    .. epigraph::
-
-        We use the publicly available MIMIC-III clinical database (Johnson et al., 2016), which contains
-        EHR for more than 60,000 critical care patients. We select a subset of 21,250 patients with sufficient
-        observations and extract 96 different longitudinal real-valued measurements over a period of 48 hours
-        after patient admission. We refer the reader to Appendix K for further details on the cohort selection.
-        We focus on the predictions of the next 3 measurements after a 36-hour observation window.
-
-        The subset of 96 variables that we use in our study are shown in Table 5. For each of those, we
-        harmonize the units and drop the uncertain occurrences. We also remove outliers by discarding the
-        measurements outside the 5 standard deviation interval. For models requiring binning of the time
-        series, we map the measurements in 30-minute time bins, which gives 97 bins for 48 hours. When
-        two observations fall in the same bin, they are either averaged or summed depending on the nature
-        of the observation. Using the same taxonomy as in Table 5, lab measurements are averaged, while
-        inputs, outputs, and prescriptions are summed.
-        This gives a total of 3,082,224 unique measurements across all patients, or an average of 145
-        measurements per patient over 48 hours.
-
-    References:
-        - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
-            <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
-          | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
-          | `Advances in Neural Information Processing Systems 2019
-            <https://proceedings.neurips.cc/paper/2019>`_
-    """
+    r"""MIMIC-III Forecasting Task as described by De Brouwer et al. (2019)."""
 
     observation_time = 75  # corresponds to 36 hours after admission (freq=30min)
     prediction_steps = 3

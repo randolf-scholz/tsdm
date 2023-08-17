@@ -10,13 +10,12 @@ Numerical Encoders should be able to be applied with different backends such as
 
 To ensure performance during encoding/decoding, the backend should be fixed.
 
-Notes
------
-Golden Rule for implementation: init/fit can be slow, but transform should be fast.
-Use specialization/dispatch to ensure fast transforms.
+Note:
+    Golden Rule for implementation: init/fit can be slow, but transform should be fast.
+    Use specialization/dispatch to ensure fast transforms.
 
 Goals
------
+=====
 - numerical encoders should allow for different backends: numpy, pandas, torch, etc.
 - numerical encoders should be vectorized and fast
 - we should be able to "slice" vectorized encoders just like we slice numpy arrays

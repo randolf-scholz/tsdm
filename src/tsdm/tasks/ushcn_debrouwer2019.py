@@ -1,4 +1,53 @@
-r"""USHCN climate dataset."""
+r"""USHCN Forecasting Task as described by De Brouwer et al. (2019) [1]_.
+
+Evaluation Protocol
+-------------------
+
+.. epigraph::
+
+    5.3 Climate forecast
+
+    From short-term weather forecast to long-range prediction or assessment of systemic
+    changes, such as global warming, climatic data has always been a popular application for
+    time-series analysis. This data is often considered to be regularly sampled over long
+    periods of time, which facilitates their statistical analysis. Yet, this assumption does
+    not usually hold in practice. Missing data are a problem that is repeatedly encountered in
+    climate research because of, among others, measurement errors, sensor failure, or faulty
+    data acquisition. The actual data is then sporadic and researchers usually resort to
+    imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
+
+    We use the publicly available United States Historical Climatology Network (USHCN) daily
+    data set (Menne et al.), which contains measurements of 5 climate variables
+    (daily temperatures, precipitation, and snow) over 150 years for 1,218 meteorological
+    stations scattered over the United States. We selected a subset of 1,114 stations and an
+    observation window of 4 years (between 1996 and 2000). To make the time series sporadic, we
+    subsample the data such that each station has an average of around 60 observations over
+    those 4 years. Appendix L contains additional details regarding this procedure.
+    The task is then to predict the next 3 measurements after the first 3 years of observation.
+
+Notes:
+    - Authors code is available at [2]_.
+    - The authors code is missing the pre-processing script to create the folds for MIMIC-III. There is an open issue:
+      https://github.com/edebrouwer/gru_ode_bayes/issues/15, but the authors are not responding.
+      We assume the MIMIC-III pre-processing script is similar/the same as the one for the Climate dataset.
+
+    - The train/valid/test split is 62/18/10. The authors write:
+
+        We report the performance using 5-fold cross-validation. Hyperparameters (dropout and weight decay) are chosen
+        using an inner holdout validation set (20%) and performance are assessed on a left-out test set (10%).
+
+      Here, 20% validation refers to 20% of the non-test data, i.e. 20% of 90% = 18% of the total data. [3]_
+    - The random seed is fixed to 432 at the start of the splitting process. [4]_
+
+References
+----------
+.. [1] | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+       | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves.
+         `Advances in Neural Information Processing Systems 2019 <https://proceedings.neurips.cc/paper/2019>`_
+.. [2] https://github.com/edebrouwer/gru_ode_bayes
+.. [3] https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
+.. [4] https://github.com/edebrouwer/gru_ode_bayes/blob/ddd0b34e884dbee1c09b6a3927d1e9ab10443af8/data_preproc/Climate/generate_folds.py
+"""
 
 __all__ = [
     "USHCN_DeBrouwer2019",
@@ -151,40 +200,7 @@ def ushcn_collate(batch: list[Sample]) -> Batch:
 
 
 class USHCN_DeBrouwer2019(OldBaseTask):
-    r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
-
-    Evaluation Protocol
-    -------------------
-
-    .. epigraph::
-
-        5.3 Climate forecast
-
-        From short-term weather forecast to long-range prediction or assessment of systemic
-        changes, such as global warming, climatic data has always been a popular application for
-        time-series analysis. This data is often considered to be regularly sampled over long
-        periods of time, which facilitates their statistical analysis. Yet, this assumption does
-        not usually hold in practice. Missing data are a problem that is repeatedly encountered in
-        climate research because of, among others, measurement errors, sensor failure, or faulty
-        data acquisition. The actual data is then sporadic and researchers usually resort to
-        imputation before statistical analysis (Junninen et al., 2004; Schneider, 2001).
-
-        We use the publicly available United States Historical Climatology Network (USHCN) daily
-        data set (Menne et al.), which contains measurements of 5 climate variables
-        (daily temperatures, precipitation, and snow) over 150 years for 1,218 meteorological
-        stations scattered over the United States. We selected a subset of 1,114 stations and an
-        observation window of 4 years (between 1996 and 2000). To make the time series sporadic, we
-        subsample the data such that each station has an average of around 60 observations over
-        those 4 years. Appendix L contains additional details regarding this procedure.
-        The task is then to predict the next 3 measurements after the first 3 years of observation.
-
-    References:
-        - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
-            <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
-          | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
-          | `Advances in Neural Information Processing Systems 2019
-            <https://proceedings.neurips.cc/paper/2019>`_
-    """
+    r"""USHCN Forecasting Task as described by De Brouwer et al. (2019)."""
 
     observation_time = 150
     prediction_steps = 3

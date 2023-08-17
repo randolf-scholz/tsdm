@@ -1,48 +1,4 @@
-r"""MIMIC-III Forecasting Task as described by Bilos et al. (2021) [1]_.
-
-Evaluation Protocol
--------------------
-
-.. epigraph::
-
-    Filtering approach. Following De Brouwer et al. [16], we use clinical database MIMIC-III [35],
-    pre-processed to contain 21250 patients’ time series, with 96 features. We also process newly released
-    MIMIC-IV [25, 36] to obtain 17874 patients. The details are in Appendix D.2. The goal is to predict
-    the next three measurements in the 12-hour interval after the observation window of 36 hours.
-
-    Table 2 shows that our GRU flow model (Equation 5) mostly outperforms GRU-ODE [16]. Additionally,
-    we show that the ordinary ResNet flow with 4 stacked transformations (Equation 2) performs
-    worse. The reason might be because it is missing GRU flow properties, such as boundedness. Similarly,
-    an ODE with a regular neural network does not outperform GRU-ODE [16]. Finally, we report
-    that the model with GRU flow requires 60% less time to run one training epoch.
-
-Notes:
-    - Authors code is available at [2]_.
-    - The authors use a 70/15/15 split for train/valid/test. This is not mentioned in the paper but can
-      be seen in the code. Moreover, the authors (accidentally?) use the same random seed (0) for each fold [3]_.
-      This explains the low reported stds.::
-
-            train_idx, eval_idx = train_test_split(
-                full_data.index.unique(),
-                test_size=0.3,
-                random_state=0
-            )
-            val_idx, test_idx = train_test_split(
-                full_data.loc[eval_idx].index.unique(),
-                test_size=0.5,
-                random_state=0
-            )
-    - on MIMIC-IV, the authors remove 5-sigma outliers, cf. [4]_
-
-References
-----------
-.. [1] | `Neural Flows: Efficient Alternative to Neural ODEs <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
-       | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann.
-         `Advances in Neural Information Processing Systems 2021 <https://proceedings.neurips.cc/paper/2021>`_
-.. [2] https://github.com/mbilos/neural-flows-experiments/
-.. [3] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-.. [4] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L55-L63
-"""
+r"""MIMIC-II clinical dataset."""
 
 __all__ = [
     "MIMIC_IV_Bilos2021",
@@ -195,15 +151,38 @@ def mimic_collate(batch: list[Sample]) -> Batch:
 
 
 class MIMIC_IV_Bilos2021(OldBaseTask):
-    r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al."""
+    r"""Preprocessed subset of the MIMIC-III clinical dataset used by De Brouwer et al.
+
+    Evaluation Protocol
+    -------------------
+
+    .. epigraph::
+
+        Filtering approach. Following De Brouwer et al. [16], we use clinical database MIMIC-III [35],
+        pre-processed to contain 21250 patients’ time series, with 96 features. We also process newly released
+        MIMIC-IV [25, 36] to obtain 17874 patients. The details are in Appendix D.2. The goal is to predict
+        the next three measurements in the 12-hour interval after the observation window of 36 hours.
+
+        Table 2 shows that our GRU flow model (Equation 5) mostly outperforms GRU-ODE [16]. Additionally,
+        we show that the ordinary ResNet flow with 4 stacked transformations (Equation 2) performs
+        worse. The reason might be because it is missing GRU flow properties, such as boundedness. Similarly,
+        an ODE with a regular neural network does not outperform GRU-ODE [16]. Finally, we report
+        that the model with GRU flow requires 60% less time to run one training epoch.
+
+    References:
+        - | `Neural Flows: Efficient Alternative to Neural ODEs
+            <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
+          | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann
+          | `Advances in Neural Information Processing Systems 2021
+            <https://proceedings.neurips.cc/paper/2021>`_
+    """
 
     observation_time = 2160  # corresponds to 36 hours after admission (freq=1min)
     prediction_steps = 3
     num_folds = 5
     RANDOM_STATE = 0
-    train_size = 0.70
-    valid_size = 0.15
-    test_size = 0.15
+    test_size = 0.15  # of total
+    valid_size = 0.2  # of train split size, i.e. 0.85*0.2=0.17
 
     preprocessor: FrameEncoder[StandardScaler, dict[Any, MinMaxScaler]]
 
@@ -222,7 +201,8 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         ds = MIMIC_IV_Dataset()
 
         # Standardization is performed over full data slice, including test!
-        # https://github.com/mbilos/neural-flows-experiments/blob/d19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
+        # https://github.com/mbilos/neural-flows-experiments/blob/
+        # bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
 
         # Standardize the x-values, min-max scale the t values.
         ts = ds.table
@@ -241,19 +221,15 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         r"""Create the folds."""
         num_folds = 5
         folds = []
-        # NOTE: all folds are the same due to fixed random state.
-        # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
+        # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         for _ in range(num_folds):
             train_idx, test_idx = train_test_split(
                 self.IDs,
-                test_size=self.test_size
-                / (self.train_size + self.valid_size + self.test_size),
-                random_state=self.RANDOM_STATE,
+                test_size=self.test_size,
+                random_state=self.RANDOM_STATE,  # TODO: FOLDS are not different!!!!
             )
             train_idx, valid_idx = train_test_split(
-                train_idx,
-                test_size=self.valid_size / (self.train_size + self.valid_size),
-                random_state=self.RANDOM_STATE,
+                train_idx, test_size=self.valid_size, random_state=self.RANDOM_STATE
             )
             fold = {
                 "train": train_idx,
