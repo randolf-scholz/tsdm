@@ -139,7 +139,7 @@ repos:
         language: system
         files: ^src/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.21
+    rev: v0.1.23
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
