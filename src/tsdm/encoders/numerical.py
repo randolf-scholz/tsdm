@@ -103,7 +103,7 @@ PARAMETERS: TypeAlias = tuple[
 """Type Hint for parameters tuple."""
 
 
-def invert_axes(ndim: int, axis: Axes) -> tuple[int, ...]:
+def invert_axes_selection(axis: Axes, /, *, ndim: int) -> tuple[int, ...]:
     r"""Invert axes-selection for a rank `ndim` tensor.
 
     Example:
@@ -649,7 +649,7 @@ class StandardScaler(BaseEncoder[T, T]):
         self.backend: Backend[T] = Backend(self.selected_backend)
 
         # universal fitting procedure
-        axes = invert_axes(len(data.shape), self.axis)
+        axes = invert_axes_selection(self.axis, ndim=len(data.shape))
 
         if self.mean_learnable:
             self.mean = self.backend.nanmean(data, axis=axes)
@@ -843,7 +843,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
             return
 
         # universal fitting procedure
-        axes = invert_axes(len(data.shape), self.axis)
+        axes = invert_axes_selection(self.axis, ndim=len(data.shape))
 
         if self.xmin_learnable:
             self.xmin = self.backend.nanmin(data, axis=axes)

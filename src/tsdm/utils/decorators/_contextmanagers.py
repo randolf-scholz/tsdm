@@ -2,7 +2,7 @@
 
 __all__ = [
     # Protocol
-    "ContextManager",
+    # use contextlib.AbstractContextManager instead
     # Classes
     "ray_cluster",
     "timer",
@@ -16,7 +16,7 @@ import sys
 from contextlib import ContextDecorator
 from time import perf_counter_ns
 from types import ModuleType, TracebackType
-from typing import ClassVar, ContextManager, Literal, Optional
+from typing import ClassVar, Literal, Optional
 
 from typing_extensions import Self
 

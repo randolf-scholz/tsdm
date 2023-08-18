@@ -24,6 +24,7 @@ __logger__ = logging.getLogger(__name__)
 def sample_timestamps(
     start: str | DTVar = "today",
     final: Optional[DTVar] = None,
+    /,
     *,
     size: int,
     freq: str | TDVar = "1s",
@@ -76,6 +77,7 @@ def sample_timedeltas(
     low: str | TDVar = "0s",
     high: str | TDVar = "1h",
     size: Optional[int] = None,
+    /,
     *,
     freq: str | TDVar = "1s",
 ) -> NDArray:

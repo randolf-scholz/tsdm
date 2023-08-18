@@ -329,7 +329,7 @@ class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
 
         raise ValueError(f"{self.rawdata_path=} is not a zipfile or directory!")
 
-    def __load_component(self, file: IO, component: str, extension: str) -> Any:
+    def __load_component(self, file: IO, component: str, extension: str, /) -> Any:
         match component, extension:
             case "model", _:
                 return self.__load_torch_model(file)

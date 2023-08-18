@@ -9,7 +9,7 @@ __all__ = [
     "get_backend",
 ]
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
 from typing import Generic, Literal, ParamSpec, TypeAlias, cast
@@ -22,7 +22,7 @@ from pandas import DataFrame, Series
 from torch import Tensor
 from typing_extensions import get_args
 
-from tsdm.backend.numpy import numpy_like
+from tsdm.backend.numpy import numpy_apply_along_axes, numpy_like
 from tsdm.backend.pandas import (
     pandas_clip,
     pandas_false_like,
@@ -36,7 +36,13 @@ from tsdm.backend.pandas import (
     pandas_where,
 )
 from tsdm.backend.pyarrow import arrow_strip_whitespace
-from tsdm.backend.torch import torch_like, torch_nanmax, torch_nanmin, torch_nanstd
+from tsdm.backend.torch import (
+    torch_apply_along_axes,
+    torch_like,
+    torch_nanmax,
+    torch_nanmin,
+    torch_nanstd,
+)
 from tsdm.backend.universal import (
     false_like as universal_false_like,
     true_like as universal_true_like,
@@ -49,7 +55,7 @@ from tsdm.types.callback_protocols import (
     ToTensorProto,
     WhereProto,
 )
-from tsdm.types.variables import any_var as T
+from tsdm.types.variables import any_var as T, tensor_var
 
 P = ParamSpec("P")
 
@@ -224,3 +230,18 @@ class Backend(Generic[T]):
         self.strip_whitespace = Kernels.strip_whitespace.get(
             self.selected_backend, NotImplemented
         )
+
+
+def apply_along_axes(
+    op: Callable[..., tensor_var],
+    /,
+    *operands: tensor_var,
+    axes: tuple[int, ...],
+) -> tensor_var:
+    r"""Apply a binary function to multiple axes of a tensor."""
+    assert len(operands) >= 1, "at least one operand is required"
+    if isinstance(operands[0], Tensor):
+        return torch_apply_along_axes(op, *operands, axes=axes)
+    if isinstance(operands[0], ndarray):
+        return numpy_apply_along_axes(op, *operands, axes=axes)
+    raise TypeError(f"Unsupported type: {type(operands[0])}.")

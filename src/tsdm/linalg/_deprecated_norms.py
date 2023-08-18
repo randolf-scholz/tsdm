@@ -9,9 +9,7 @@ __all__ = [
     # Functions
     "relative_error",
     "scaled_norm",
-    "grad_norm",
     "multi_scaled_norm",
-    "multi_norm",
 ]
 
 from collections.abc import Iterable, Sequence
@@ -21,7 +19,7 @@ from typing import Optional, TypeAlias, cast, overload
 import numpy as np
 import torch
 from numpy.typing import ArrayLike, NDArray
-from torch import Tensor, jit
+from torch import Tensor
 
 SizeLike: TypeAlias = int | tuple[int, ...]
 r"""Type hint for a size-like object."""
@@ -272,68 +270,3 @@ def _numpy_multi_scaled_norm(
     z = np.stack([_numpy_scaled_norm(z, p=p) ** q for z in x])
     w = np.array([z.size for z in x])
     return (np.dot(w, z) / np.sum(w)) ** (1 / q)
-
-
-@jit.script
-def grad_norm(
-    tensors: list[Tensor], p: float = 2, q: float = 2, normalize: bool = True
-) -> Tensor:
-    r"""Return the (scaled) p-q norm of the gradients.
-
-    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
-
-    If `normalize=True`, the sums are replaced with averages.
-    """
-    if len(tensors) == 0:
-        return torch.tensor(0.0)
-
-    if normalize:
-        # Initializing s this way automatically gets the dtype and device correct
-        x = tensors.pop()
-        assert x.grad is not None
-        s = torch.mean(x.grad**p) ** (q / p)
-        for x in tensors:
-            assert x.grad is not None
-            s += torch.mean(x.grad**p) ** (q / p)
-        return (s / (1 + len(tensors))) ** (1 / q)
-    # else
-    x = tensors.pop()
-    assert x.grad is not None
-    s = torch.sum(x.grad**p) ** (q / p)
-    for x in tensors:
-        assert x.grad is not None
-        s += torch.sum(x.grad**p) ** (q / p)
-    return s ** (1 / q)
-
-
-@jit.script
-def multi_norm(
-    tensors: list[Tensor], p: float = 2, q: float = 2, normalize: bool = True
-) -> Tensor:
-    r"""Return the (scaled) p-q norm of the gradients.
-
-    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
-
-    If `normalize=True`, the sums are replaced with averages.
-    """
-    _tensors: list[Tensor] = []
-    for tensor in tensors:
-        if tensor.numel() > 0:
-            _tensors.append(tensor)
-    tensors = _tensors
-
-    if len(tensors) == 0:
-        return torch.tensor(0.0)
-
-    if normalize:
-        # Initializing s this way automatically gets the dtype and device correct
-        s = torch.mean(tensors.pop() ** p) ** (q / p)
-        for x in tensors:
-            s += torch.mean(x**p) ** (q / p)
-        return (s / (1 + len(tensors))) ** (1 / q)
-
-    # else
-    s = torch.sum(tensors.pop() ** p) ** (q / p)
-    for x in tensors:
-        s += torch.sum(x**p) ** (q / p)
-    return s ** (1 / q)

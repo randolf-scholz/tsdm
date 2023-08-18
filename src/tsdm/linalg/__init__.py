@@ -1,26 +1,21 @@
 r"""Linear Algebra Subroutines."""
 
 __all__ = [
-    # Functions
+    # Logical Operators
     "aggregate_and",
     "aggregate_or",
-    "apply_along_axes",
+    "cumulative_and",
+    "cumulative_or",
+    # Matrix Functions
     "closest_diag",
     "closest_orth",
     "closest_skew",
     "closest_symm",
     "col_corr",
-    "cumulative_and",
-    "cumulative_or",
     "erank",
-    "geometric_mean",
-    "grad_norm",
     "logarithmic_norm",
     "matrix_norm",
-    "multi_norm",
-    "multi_scaled_norm",
     "operator_norm",
-    "relative_error",
     "reldist",
     "reldist_diag",
     "reldist_orth",
@@ -28,13 +23,15 @@ __all__ = [
     "reldist_symm",
     "relerank",
     "row_corr",
-    "scaled_norm",
     "schatten_norm",
     "spectral_abscissa",
     "spectral_radius",
     "stiffness_ratio",
+    # Tensor Functions
+    "geometric_mean",
+    "grad_norm",
+    "multi_norm",
     "tensor_norm",
-    "vector_norm",
 ]
 
 from tsdm.linalg._logical_operators import (
@@ -50,7 +47,6 @@ from tsdm.linalg._matrix_functions import (
     closest_symm,
     col_corr,
     erank,
-    geometric_mean,
     logarithmic_norm,
     matrix_norm,
     operator_norm,
@@ -65,14 +61,10 @@ from tsdm.linalg._matrix_functions import (
     spectral_abscissa,
     spectral_radius,
     stiffness_ratio,
-    tensor_norm,
-    vector_norm,
 )
-from tsdm.linalg._norms import (
+from tsdm.linalg._tensor_functions import (
+    geometric_mean,
     grad_norm,
     multi_norm,
-    multi_scaled_norm,
-    relative_error,
-    scaled_norm,
+    tensor_norm,
 )
-from tsdm.linalg._utils import apply_along_axes

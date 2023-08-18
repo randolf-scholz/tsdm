@@ -7,7 +7,6 @@ __all__ = [
     # Protocols
     "Decorator",
     "ClassDecorator",
-    "ContextManager",
     # Constants
     "DECORATORS",
     "CONTEXT_MANAGERS",
@@ -30,7 +29,9 @@ __all__ = [
     "timer",
 ]
 
-from tsdm.utils.decorators._contextmanagers import ContextManager, ray_cluster, timer
+from contextlib import AbstractContextManager
+
+from tsdm.utils.decorators._contextmanagers import ray_cluster, timer
 from tsdm.utils.decorators._decorators import (
     ClassDecorator,
     Decorator,
@@ -47,7 +48,7 @@ from tsdm.utils.decorators._decorators import (
     wrap_method,
 )
 
-CONTEXT_MANAGERS: dict[str, type[ContextManager]] = {
+CONTEXT_MANAGERS: dict[str, type[AbstractContextManager]] = {
     "ray_cluster": ray_cluster,
     "timer": timer,
 }
@@ -74,4 +75,4 @@ CLASS_DECORATORS: dict[str, ClassDecorator] = {
 }
 r"""Dictionary of all available class decorators."""
 
-del ContextManager
+del AbstractContextManager

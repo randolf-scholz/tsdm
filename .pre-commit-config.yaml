@@ -4,6 +4,16 @@ default_language_version:
   python: python3.11
   node: "18.12.1"
 repos:
+  # local hooks
+  - repo: local
+    hooks:
+      - id: nbstripout-fast
+        name: nbstripout-fast
+        entry: nbstripout-fast
+        types: [jupyter]
+        files: ^dev/
+        language: system
+        description: "strip output from jupyter notebooks"
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
     rev: v4.4.0
@@ -35,6 +45,7 @@ repos:
         description: "checks for debugger imports and py37+ `breakpoint()` calls in python source."
       - id: end-of-file-fixer
         description: "ensures that a file is either empty, or ends with one newline."
+        exclude: ^.*.ipynb$ # https://github.com/deshaw/nbstripout-fast/issues/8
       - id: pretty-format-json
         description: "sets a standard for formatting json files."
         # exclude any jupyter notebooks
@@ -128,10 +139,8 @@ repos:
         language: system
         files: ^src/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.19
+    rev: v0.1.21
     hooks:
-      - id: jupyter-clear-output
-        files: (^dev/|^experiments/)
       - id: pyproject-validate-version
       - id: pyproject-update-deps
       - id: pyproject-check-deps
@@ -142,19 +151,17 @@ repos:
         files: (^src/|^tests/)
       - id: python-use-imported-attributes
         files: (^src/|^tests/)
-      - id: python-no-mixed-args
+      - id: python-check-no-mixed-args
         files: ^src/
         args:
-          [
-            "--ignore-names",
-            "forward",
-            "predict",
-            "--ignore-decorators",
-            "jit.script",
-            "--ignore-dunder",
-            "--allow-one",
-          ]
-      - id: python-prefer-abc-typing
+          - "--ignore-names"
+          - "forward"
+          - "predict"
+          - "--ignore-decorators"
+          - "jit.script"
+          - "--ignore-dunder"
+          - "--allow-one"
+      - id: python-check-standard-generics
         files: (^src/|^tests/)
       - id: check-separator-length
         files: (^src/|^tests/)
