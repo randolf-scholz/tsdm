@@ -73,7 +73,7 @@ import pyarrow
 import torch
 from pandas.api.extensions import ExtensionDtype
 
-# region numpy typecodes -----------------------------------------------------------------------------------------------
+# region numpy typecodes ---------------------------------------------------------------
 NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {
     "int8": np.int8,
     "int16": np.int16,
@@ -195,10 +195,10 @@ NUMPY_TYPECODES: Final[dict[type[np.generic], str]] = (
     | NUMPY_OBJECT_TYPECODES
 )
 r"""Dictionary of all `numpy` data type typecodes."""
-# endregion numpy typecodes --------------------------------------------------------------------------------------------
+# endregion numpy typecodes ------------------------------------------------------------
 
 
-# region numpy dtypes -------------------------------------------------------------------------------------------------
+# region numpy dtypes ------------------------------------------------------------------
 NUMPY_INT_TYPESTRINGS: Final[dict[type[np.signedinteger], str]] = {
     np.int8: "int8",
     np.int16: "int16",
@@ -292,10 +292,10 @@ NUMPY_TYPESTRINGS: Final[dict[type[np.generic], str]] = (
     | NUMPY_OBJECT_TYPESTRINGS
 )
 r"""Dictionary of all `numpy` data type typestrings."""
-# endregion numpy typestrings -----------------------------------------------------------------------------------------
+# endregion numpy typestrings ----------------------------------------------------------
 
 
-# region pandas dtypes ------------------------------------------------------------------------------------------------
+# region pandas dtypes -----------------------------------------------------------------
 PANDAS_TYPESTRINGS: Final[dict[type[ExtensionDtype], str]] = {
     pandas.BooleanDtype: "boolean",
     pandas.CategoricalDtype: "category",
@@ -337,10 +337,10 @@ PANDAS_NULLABLE_DTYPES: Final[dict[str, type[ExtensionDtype]]] = {
     "UInt8": pandas.UInt8Dtype,
 }
 r"""Dictionary of all `pandas` data types."""
-# endregion pandas dtypes ---------------------------------------------------------------------------------------------
+# endregion pandas dtypes --------------------------------------------------------------
 
 
-# region polars dtypes ------------------------------------------------------------------------------------------------
+# region polars dtypes -----------------------------------------------------------------
 PYARROW_DTYPES: Final[dict[str, pyarrow.DataType]] = {
     # fmt: off
     # numeric
@@ -376,10 +376,10 @@ PYARROW_DTYPES: Final[dict[str, pyarrow.DataType]] = {
     "string"  : pyarrow.string(),
 }
 r"""Dictionary of all `pyarrow` data types."""
-# endregion polars dtypes ---------------------------------------------------------------------------------------------
+# endregion polars dtypes --------------------------------------------------------------
 
 
-# region polars dtypes ------------------------------------------------------------------------------------------------
+# region polars dtypes -----------------------------------------------------------------
 POLARS_DTYPES: Final[dict[str, polars.DataType]] = {
     # fmt: off
     # numeric
@@ -408,10 +408,10 @@ POLARS_DTYPES: Final[dict[str, polars.DataType]] = {
     # fmt: on
 }
 r"""Dictionary of all elementary `polars` data types."""
-# endregion polars dtypes ---------------------------------------------------------------------------------------------
+# endregion polars dtypes --------------------------------------------------------------
 
 
-# region torch dtypes --------------------------------------------------------------------------------------------------
+# region torch dtypes ------------------------------------------------------------------
 TORCH_INT_TYPESTRINGS: Final[dict[torch.dtype, str]] = {
     torch.int8: "int8",
     torch.int16: "int16",
@@ -481,10 +481,10 @@ TORCH_DTYPES: Final[dict[str, torch.dtype]] = {
     "bool": torch.bool,
 }
 r"""Dictionary of all `torch` data types."""
-# endregion torch dtypes -----------------------------------------------------------------------------------------------
+# endregion torch dtypes ---------------------------------------------------------------
 
 
-# region python dtypes -------------------------------------------------------------------------------------------------
+# region python dtypes -----------------------------------------------------------------
 PYTHON_DTYPES: Final[dict[str, type]] = {
     "bool": bool,
     "int": int,
@@ -510,10 +510,10 @@ PYTHON_TYPESTRINGS: Final[dict[type, str]] = {
     object: "object",
 }
 r"""Dictionary of all `python` data types."""
-# endregion python dtypes ----------------------------------------------------------------------------------------------
+# endregion python dtypes --------------------------------------------------------------
 
 
-# region dtype conversion ----------------------------------------------------------------------------------------------
+# region dtype conversion --------------------------------------------------------------
 PYARROW_TO_POLARS: Final[dict[pyarrow.DataType, polars.DataType]] = {
     # fmt: off
     pyarrow.null()          : polars.Null(),
@@ -548,7 +548,7 @@ PYARROW_TO_POLARS: Final[dict[pyarrow.DataType, polars.DataType]] = {
     # fmt: on
 }
 r"""Dictionary of converting pyarrow to polars."""
-# endregion dtype conversion -------------------------------------------------------------------------------------------
+# endregion dtype conversion -----------------------------------------------------------
 
 
 TYPESTRINGS: Final[dict[type[np.generic] | torch.dtype | type[ExtensionDtype], str]] = (

@@ -10,6 +10,7 @@ __all__ = [
     "PandasObject",
     "PathLike",
     "ScalarDType",
+    "MaybeCallable",
     # Configuration
     "JSON",
     "TOML",
@@ -51,19 +52,18 @@ from pandas.core.dtypes.base import ExtensionDtype
 
 from tsdm.types.protocols import Lookup
 from tsdm.types.variables import (
-    any_var as T,
+    any_co as T_co,
     key_contra,
     key_var as K,
     value_co,
     value_var as V,
 )
 
-# region Numeric Types ------------------------------------------------------------------
+# region Numeric Types -----------------------------------------------------------------
 PythonScalar: TypeAlias = (
-    None | bool | int | float | complex | bool | str | datetime | timedelta
+    None | bool | int | float | complex | str | datetime | timedelta
 )
 r"""Type Alias for Python scalars."""
-
 
 Axes: TypeAlias = None | int | tuple[int, ...]
 r"""Type Alias for axes."""
@@ -80,13 +80,13 @@ class schema(NamedTuple):
     """Data types of the columns."""
 
 
-# endregion Numeric Types ---------------------------------------------------------------
+# endregion Numeric Types --------------------------------------------------------------
 
 
 # region Custom Type Aliases -----------------------------------------------------------
 Map: TypeAlias = Lookup[key_contra, value_co] | Callable[[key_contra], value_co]
 r"""Type Alias for `Map`."""
-Nested: TypeAlias = T | Collection["Nested[T]"] | Mapping[Any, "Nested[T]"]
+Nested: TypeAlias = T_co | Collection["Nested[T_co]"] | Mapping[Any, "Nested[T_co]"]
 r"""Type Alias for nested types (JSON-Like)."""
 PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
@@ -94,8 +94,10 @@ PathLike: TypeAlias = str | Path | os.PathLike[str]
 r"""Type Alias for path-like objects."""
 ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]
 r"""TypeAlias for scalar types."""
-ContainerLike: TypeAlias = T | Lookup[int, T] | Callable[[int], T]
+ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]
 r"""Type Alias for container-like objects."""
+MaybeCallable: TypeAlias = T_co | Callable[[], T_co]
+r"""Type Alias for objects that maybe needs to be created first."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
 
@@ -138,13 +140,15 @@ NestedBuiltin: TypeAlias = (
 # endregion Nested Builtins ------------------------------------------------------------
 
 
-# region Nested Configuration -------------------------------------------------
-JSON: TypeAlias = None | str | int | float | bool | list["JSON"] | dict[str, "JSON"]
-r"""Type Alias for JSON-Like objects."""
-TOML: TypeAlias = None | str | int | float | bool | list["TOML"] | dict[str, "TOML"]
-r"""Type Alias for JSON-Like objects."""
-YAML: TypeAlias = None | str | int | float | bool | list["YAML"] | dict[str, "YAML"]
-r"""Type Alias for JSON-Like objects."""
+# region Nested Configuration ----------------------------------------------------------
+JSON_LeafType: TypeAlias = None | bool | int | float | str
+TOML_LeafType: TypeAlias = None | bool | int | float | str | datetime
+YAML_LeafType: TypeAlias = None | bool | int | float | str | datetime
 
-
-# endregion Nested Configuration ----------------------------------------------
+JSON: TypeAlias = JSON_LeafType | list["JSON"] | dict[str, "JSON"]
+r"""Type Alias for JSON-Like objects."""
+TOML: TypeAlias = TOML_LeafType | list["TOML"] | dict[str, "TOML"]
+r"""Type Alias for JSON-Like objects."""
+YAML: TypeAlias = YAML_LeafType | list["YAML"] | dict[str, "YAML"]
+r"""Type Alias for JSON-Like objects."""
+# endregion Nested Configuration -------------------------------------------------------

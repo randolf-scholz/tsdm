@@ -35,20 +35,20 @@ from tsdm.backend.pandas import (
     pandas_true_like,
     pandas_where,
 )
-from tsdm.backend.protocols import (
-    ClipProto,
-    ContractionProto,
-    TensorLikeProto,
-    ToTensorProto,
-    WhereProto,
-)
 from tsdm.backend.pyarrow import arrow_strip_whitespace
 from tsdm.backend.torch import torch_like, torch_nanmax, torch_nanmin, torch_nanstd
 from tsdm.backend.universal import (
     false_like as universal_false_like,
     true_like as universal_true_like,
 )
-from tsdm.types.protocols import SelfMapProto
+from tsdm.types.callback_protocols import (
+    ClipProto,
+    ContractionProto,
+    SelfMapProto,
+    TensorLikeProto,
+    ToTensorProto,
+    WhereProto,
+)
 from tsdm.types.variables import any_var as T
 
 P = ParamSpec("P")

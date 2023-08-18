@@ -19,7 +19,7 @@ import torch
 from pytest import mark
 
 from tsdm.backend.universal import false_like, true_like
-from tsdm.types.protocols import SelfMapProto
+from tsdm.types.callback_protocols import SelfMapProto
 
 T = TypeVar("T", pandas.Series, numpy.ndarray, torch.Tensor)
 

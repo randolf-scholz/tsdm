@@ -20,9 +20,9 @@ __all__ = [
 
 import json
 import pickle
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Optional, Protocol
+from typing import Any, Literal, NamedTuple, Optional, Protocol, TypeAlias
 
 import torch
 import yaml
@@ -51,7 +51,26 @@ from tsdm.metrics import LOSSES, Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
+from tsdm.types.variables import any_var as T
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
+
+MaybeWrapped: TypeAlias = T | Callable[[], T] | Callable[[int], T]
+
+
+def unpack_wrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
+    r"""Unpack wrapped values."""
+    if callable(x):
+        try:
+            return x(step)
+        except TypeError:
+            pass
+
+        try:
+            return x()
+        except TypeError:
+            pass
+
+    return x
 
 
 class LogFunction(Protocol):
@@ -471,3 +490,22 @@ def log_table(
             table.to_pickle(f"{path}.pickle", **options)
         case _:
             raise ValueError(f"Unknown {filetype=!r}!")
+
+
+def log_plot(
+    step: int,
+    plot: Figure | Callable[[], Figure] | Callable[[int], Figure],
+    writer: SummaryWriter,
+    *,
+    name: str = "forecastplot",
+    prefix: str = "",
+    postfix: str = "",
+    rasterization_options: Optional[Mapping[str, Any]] = None,
+) -> None:
+    r"""Make a forecast plot."""
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
+    fig = plot()
+
+    image = rasterize(fig, **rasterization_options)
+
+    writer.add_image(f"{identifier}", image, step, dataformats="HWC")

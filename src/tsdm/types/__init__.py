@@ -4,10 +4,19 @@ __all__ = [
     # Submodules
     "abc",
     "aliases",
+    "callback_protocols",
     "dtypes",
     "protocols",
     "time",
     "variables",
 ]
 
-from tsdm.types import abc, aliases, dtypes, protocols, time, variables
+from tsdm.types import (
+    abc,
+    aliases,
+    callback_protocols,
+    dtypes,
+    protocols,
+    time,
+    variables,
+)

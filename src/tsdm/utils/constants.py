@@ -154,7 +154,7 @@ PRECISION: Final[dict] = {
 r"""Maps precision to the corresponding precision factor."""
 
 
-# region example collections--------------------------------------------------------------------------------------------
+# region example collections------------------------------------------------------------
 
 EXAMPLE_BOOLS: Final[list[bool]] = [True, False]
 r"""List of example bool objects."""
@@ -210,4 +210,4 @@ EXAMPLE_CATEGORIES: Final[list[tuple[str, str]]] = [
 ]
 r"""List of example categorical objects."""
 
-# endregion example collections-----------------------------------------------------------------------------------------
+# endregion example collections---------------------------------------------------------

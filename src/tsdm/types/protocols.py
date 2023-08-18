@@ -16,8 +16,6 @@ __all__ = [
     "Hash",
     "Lookup",
     "NTuple",
-    "SelfMap",
-    "SelfMapProto",
 ]
 
 from collections.abc import Iterator, Mapping, Sequence
@@ -28,33 +26,16 @@ from typing_extensions import Self, SupportsIndex, get_original_bases
 
 from tsdm.types.variables import (
     any_co as T_co,
-    any_var as T,
     key_contra,
     key_var,
+    scalar_co,
     value_co,
 )
 
-scalar_co = TypeVar("scalar_co", covariant=True)
-# Either: TypeAlias = Union[T, "Array[T]"]
 A = TypeVar("A", bound="Array")
 
 
-class SelfMap(Protocol):
-    r"""A callback for endofunctions."""
-
-    def __call__(self, __x: T) -> T:
-        r"""Returns the result of the endofunction."""
-        ...
-
-
-class SelfMapProto(Protocol[T]):
-    r"""A generic protocol for endofunctions."""
-
-    def __call__(self, __x: T) -> T:
-        r"""Returns the result of the endofunction."""
-        ...
-
-
+# region generic factory-protocols -----------------------------------------------------
 @runtime_checkable
 class Dataclass(Protocol):
     r"""Protocol for anonymous dataclasses."""
@@ -107,6 +88,10 @@ class NTuple(Protocol[T_co]):
     # fmt: on
 
 
+# endregion generic factory-protocols --------------------------------------------------
+
+
+# region container protocols -----------------------------------------------------------
 @runtime_checkable
 class SupportsShape(Protocol[scalar_co]):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
@@ -278,6 +263,10 @@ class Lookup(Protocol[key_contra, value_co]):
         ...
 
 
+# endregion container protocols --------------------------------------------------------
+
+
+# region misc protocols ----------------------------------------------------------------
 @runtime_checkable
 class Hash(Protocol):
     """Protocol for hash-functions."""
@@ -307,3 +296,6 @@ class Hash(Protocol):
     def copy(self) -> Self:
         """Return a clone of the hash object."""
         ...
+
+
+# endregion misc protocols -------------------------------------------------------------

@@ -104,7 +104,7 @@ del sys, metadata
 # def custom_level(message, *args, **kws):
 #     logging.Logger._log(logging.root,DEBUG_LEVEL_NUM, message, args, **kws)
 # logging.custom_level = custom_level
-# # --- --- --- ---
+#
 # logging.custom_level("demo")
 
 # #!/usr/bin/env python
@@ -324,6 +324,8 @@ del sys, metadata
 
 
 # region cleanup -----------------------------------------------------------------------
+# region cleanup -----------------------------------------------------------------------
+
 
 # import logging
 # from types import ModuleType

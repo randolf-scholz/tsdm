@@ -15,11 +15,6 @@ r"""Unused code."""
 #     def __init__(self, data_source: Sized, /, *, seq_len: int, shuffle: bool = True) -> None:
 #         r"""Initialize the Sampler.
 #
-#         Parameters
-#         ----------
-#         data_source: Sized
-#         seq_len: int
-#         shuffle: bool = True
 #         """
 #         super().__init__(data_source)
 #         self.data = data_source

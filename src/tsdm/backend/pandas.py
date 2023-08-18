@@ -2,7 +2,7 @@
 
 __all__ = [
     # Functions
-    "pandas_axes",
+    "pandas_infer_axes",
     "pandas_clip",
     "pandas_false_like",
     "pandas_like",
@@ -24,8 +24,8 @@ from typing import Literal, TypeVar
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Series
 
-from tsdm.backend.protocols import Scalar
 from tsdm.types.aliases import Axes
+from tsdm.types.variables import scalar_co as Scalar_co
 
 P = TypeVar("P", Series, DataFrame)
 """A type variable for pandas objects."""
@@ -43,10 +43,14 @@ def pandas_true_like(x: P, /) -> P:
     return m ^ (~m)
 
 
-def pandas_axes(
-    shape: tuple[int, ...], axes: Axes = None
+def pandas_infer_axes(
+    x: P, /, *, axes: Axes = None
 ) -> Literal[None, "index", "columns"]:
-    """Get the axis of a pandas object."""
+    """Convert axes specification to pandas-compatible axes specification.
+
+    - Series: -1 → 0, -2 → Error
+    - DataFrame: -1 → 1, -2 → 0
+    """
     match axes:
         case None:
             return None
@@ -58,10 +62,10 @@ def pandas_axes(
             axes = axes[0]
         case _:
             raise TypeError(f"Expected int or Iterable[int], got {type(axes)}.")
-    return "columns" if axes % len(shape) else "index"
+    return "columns" if axes % len(x.shape) else "index"
 
 
-def pandas_clip(x: P, lower: NDArray | None = None, upper: NDArray | None = None) -> P:
+def pandas_clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
     """Analogue to `numpy.clip`."""
     axis = "columns" if isinstance(x, DataFrame) else "index"
     return x.clip(lower, upper, axis=axis)
@@ -69,25 +73,25 @@ def pandas_clip(x: P, lower: NDArray | None = None, upper: NDArray | None = None
 
 def pandas_nanmax(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmax`."""
-    return x.max(axis=pandas_axes(x.shape, axis), skipna=True)
+    return x.max(axis=pandas_infer_axes(x, axes=axis), skipna=True)
 
 
 def pandas_nanmin(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmin`."""
-    return x.min(axis=pandas_axes(x.shape, axis), skipna=True)
+    return x.min(axis=pandas_infer_axes(x, axes=axis), skipna=True)
 
 
 def pandas_nanmean(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmean`."""
-    return x.mean(axis=pandas_axes(x.shape, axis), skipna=True)
+    return x.mean(axis=pandas_infer_axes(x, axes=axis), skipna=True)
 
 
 def pandas_nanstd(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanstd`."""
-    return x.std(axis=pandas_axes(x.shape, axis), skipna=True, ddof=0)
+    return x.std(axis=pandas_infer_axes(x, axes=axis), skipna=True, ddof=0)
 
 
-def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray) -> P:
+def pandas_where(cond: NDArray, a: P, b: Scalar_co | NDArray, /) -> P:
     """Analogue to `numpy.where`."""
     if isinstance(a, Series | DataFrame):
         return a.where(cond, b)

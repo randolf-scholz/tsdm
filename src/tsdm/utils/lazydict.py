@@ -3,18 +3,17 @@ r"""A Lazy Dictionary implementation.
 The LazyDict is a dictionary that is initialized with functions as the values.
 Once the value is accessed, the function is called and the result is stored.
 """
-# from __future__ import annotations
 
 __all__ = [
+    # Type Alias
+    "FuncSpec",
     # Classes
     "LazyDict",
     "LazyValue",
 ]
 
-
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from itertools import chain
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, Union, overload
 
 from typing_extensions import Self
@@ -40,6 +39,9 @@ if TYPE_CHECKING:
 class LazyValue(Generic[R]):
     r"""A placeholder for uninitialized values."""
 
+    __slots__ = ("func", "args", "kwargs", "type_hint")
+    # we use slots since lots of instances of lazy-value might be created.
+
     func: Callable[..., R]
     args: Iterable[Any]
     kwargs: Mapping[str, Any]
@@ -60,9 +62,9 @@ class LazyValue(Generic[R]):
             get_return_typehint(self.func) if type_hint is None else type_hint
         )
 
-    def __call__(self, *args: Any, **kwargs: Any) -> R:
+    def __call__(self) -> R:
         r"""Execute the function and return the result."""
-        return self.func(*chain(self.args, args), **(self.kwargs | kwargs))
+        return self.func(*self.args, **self.kwargs)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the function."""
@@ -70,10 +72,8 @@ class LazyValue(Generic[R]):
 
 
 FuncSpec: TypeAlias = Union[
-    LazyValue,
     Callable[[], R],
     Callable[[V], R],
-    tuple[LazyValue],
     tuple[Callable[[], R]],  # no args
     tuple[Callable[[V], R]],  # key arg
     tuple[Callable[..., R], tuple],  # args

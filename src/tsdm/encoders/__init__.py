@@ -83,7 +83,7 @@ See Also:
 """
 #  TODO: Add more encoders
 # - Target Encoding: enc(x) = mean(enc(y|x))
-# - Binary Encoding: enx(x) =
+# - Binary Encoding: enx(x) = ...
 # - Hash Encoder: enc(x) = binary(hash(x))
 # - Effect/Sum/Deviation Encoding:
 # - Sum Encoding

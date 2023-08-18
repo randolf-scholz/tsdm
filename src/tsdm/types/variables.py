@@ -7,6 +7,9 @@ __all__ = [
     "pandas_var",
     "tensor_var",
     "torch_module_var",
+    "scalar_var",
+    "scalar_co",
+    "scalar_contra",
     # Builtin Type Variables
     "class_var",
     "class_co",
@@ -78,8 +81,14 @@ tensor_var = TypeVar("tensor_var", Tensor, ndarray)
 r"""Type Variable for `torch.Tensor` or `numpy.ndarray` objects."""
 torch_module_var = TypeVar("torch_module_var", bound=nn.Module)
 r"""Type Variable for `torch.nn.Modules`."""
+_scalar = bool | int | float | complex | str | bytes
+scalar_var = TypeVar("scalar_var", bound=_scalar)
+r"""Type Variable for scalar types."""
+scalar_co = TypeVar("scalar_co", bound=_scalar, covariant=True)
+r"""Covariant type variable for scalar types."""
+scalar_contra = TypeVar("scalar_contra", bound=_scalar, contravariant=True)
+r"""Contravariant type variable for scalar types."""
 # endregion Custom Type Variables ------------------------------------------------------
-
 
 # Type variables of Built-in Types
 # region Builtins ----------------------------------------------------------------------

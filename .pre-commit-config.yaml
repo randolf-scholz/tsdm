@@ -88,7 +88,7 @@ repos:
         types: [python]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.284
+    rev: v0.0.285
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -128,7 +128,7 @@ repos:
         language: system
         files: ^src/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.18
+    rev: v0.1.19
     hooks:
       - id: jupyter-clear-output
         files: (^dev/|^experiments/)
@@ -155,6 +155,8 @@ repos:
             "--allow-one",
           ]
       - id: python-prefer-abc-typing
+        files: (^src/|^tests/)
+      - id: check-separator-length
         files: (^src/|^tests/)
   # mypy
   - repo: https://github.com/pre-commit/mirrors-mypy
