@@ -4,27 +4,92 @@ __all__ = [
     "cast_columns",
     "compute_entropy",
     "filter_nulls",
+    "force_cast",
     "table_info",
 ]
 
 import logging
 from collections.abc import Sequence
-from typing import Literal
+from typing import Literal, Optional, overload
 
 import pandas as pd
+import polars as pl
 import pyarrow as pa
 from pyarrow import Array, DataType, Table
 from tqdm.autonotebook import tqdm
 
+from tsdm.types.dtypes import PYARROW_TO_POLARS
+
 __logger__ = logging.getLogger(__name__)
 
 
-def cast_columns(table: Table, /, **dtypes: DataType) -> Table:
+@overload
+def force_cast(x: Array, dtype: DataType, /) -> Array:
+    ...
+
+
+@overload
+def force_cast(x: Table, dtype: DataType, /) -> Table:
+    ...
+
+
+@overload
+def force_cast(x: Table, /, **dtypes: DataType) -> Table:
+    ...
+
+
+def force_cast(x, dtype: Optional[DataType] = None, /, **dtypes: DataType):
+    """Cast an array or table to the given data type, replacing non-castable elements with null."""
+    x = x.combine_chunks()  # deals with chunked arrays
+
+    if isinstance(x, Array):
+        assert dtype is not None and not dtypes
+        return (
+            pl.from_arrow(x)
+            .cast(PYARROW_TO_POLARS[dtype], strict=False)
+            .to_arrow()
+            .cast(dtype)
+        )
+
+    if unknown_keys := set(dtypes.keys()) - set(x.column_names):
+        raise ValueError(f"Keys: {unknown_keys} not in table columns.")
+
+    schema: pa.Schema = x.schema
+    current_dtypes = dict(zip(schema.names, schema.types))
+    new_schema = pa.schema(current_dtypes | dtypes)
+
+    return pa.table(
+        {
+            name: force_cast(x[name], dtypes.get(name) or current_dtypes[name])
+            for name in x.column_names
+        },
+    ).cast(new_schema)
+
+
+def cast_columns(table: Table, safe: bool = True, /, **dtypes: DataType) -> Table:
     """Cast columns to the given data types."""
     schema: pa.Schema = table.schema
     current_dtypes = dict(zip(schema.names, schema.types))
-    new_schema = pa.schema(current_dtypes | dtypes)
-    return table.cast(new_schema)
+    if unknown_keys := set(dtypes.keys()) - set(current_dtypes.keys()):
+        raise ValueError(f"Keys: {unknown_keys} not in table columns.")
+
+    new_dtypes = current_dtypes | dtypes
+
+    for col, dtype in new_dtypes.items():
+        if isinstance(dtype, pa.DictionaryType):
+            arr = table[col].combine_chunks()
+            table = table.set_column(
+                table.column_names.index(col),
+                col,
+                arr.dictionary_encode(),
+            )
+        else:
+            table = table.set_column(
+                table.column_names.index(col),
+                col,
+                table[col].cast(dtype, safe=safe),
+            )
+    return table
 
 
 def is_numeric(array: Array, /) -> Array:
@@ -117,7 +182,7 @@ def and_(masks: Sequence[Array], /) -> Array:
 
 
 def filter_nulls(
-    table: Table, cols: list[str], /, *, aggregation: Literal["or", "and"] = "or"
+    table: Table, /, *cols: str, aggregation: Literal["or", "and"] = "or"
 ) -> Table:
     """Filter rows with null values in the given columns."""
     agg = {"or": or_, "and": and_}[aggregation]

@@ -16,7 +16,7 @@ very large population of ICU patients; and it contains highly granular data, inc
 vital signs, laboratory results, and medications.
 """
 
-__all__ = ["MIMIC_III"]
+__all__ = ["MIMIC_III_RAW", "MIMIC_III"]
 
 import gzip
 from getpass import getpass
@@ -37,8 +37,8 @@ from tsdm.datasets.schema.mimic_iii import (
 from tsdm.utils.data import cast_columns, filter_nulls, strip_whitespace
 
 
-class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
-    r"""MIMIC-III Clinical Database.
+class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
+    r"""Raw version of the MIMIC-III Clinical Database.
 
     MIMIC-III is a large, freely-available database comprising de-identified health-related data
     associated with over forty thousand patients who stayed in critical care units of the Beth
@@ -106,6 +106,33 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
                     ).combine_chunks()  # <- reduces size and avoids some bugs
                     # FIXME: https://github.com/apache/arrow/issues/37055
 
+        return table
+
+    def download_file(self, fname: str, /) -> None:
+        """Download a file from the MIMIC-III website."""
+        if tuple(map(int, self.__version__.split("."))) < (1, 4):
+            raise ValueError(
+                "MIMIC-III v1.4+ is required. At the time of writing, the website"
+                " does not provide legacy versions of the MIMIC-III dataset."
+            )
+
+        self.download_from_url(
+            self.BASE_URL + f"{self.__version__}/",
+            self.rawdata_paths[fname],
+            username=input("MIMIC-III username: "),
+            password=getpass(prompt="MIMIC-III password: ", stream=None),
+            headers={
+                "User-Agent": "Wget/1.21.2"
+            },  # NOTE: MIMIC only allows wget for some reason...
+        )
+
+
+class MIMIC_III(MIMIC_III_RAW):
+    """Lightly preprocessed version of the MIMIC-III dataset."""
+
+    def clean_table(self, key: KEYS) -> Table:
+        table: Table = super().clean_table(key)
+
         # Post-processing
         match key:
             case "ADMISSIONS":
@@ -116,7 +143,7 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
                 pass
             case "CHARTEVENTS":
                 table = filter_nulls(
-                    table, ["ICUSTAY_ID", "VALUE", "VALUENUM", "VALUEUOM"]
+                    table, "ICUSTAY_ID", "VALUE", "VALUENUM", "VALUEUOM"
                 )
                 table = cast_columns(table, VALUE="float32")
             case "CPTEVENTS":
@@ -144,7 +171,7 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
             case "INPUTEVENTS_MV":
                 pass
             case "LABEVENTS":
-                table = filter_nulls(table, ["VALUE", "VALUENUM", "VALUEUOM"])
+                table = filter_nulls(table, "VALUE", "VALUENUM", "VALUEUOM")
                 table = strip_whitespace(table)
                 table = cast_columns(table, VALUE="float32")
             case "MICROBIOLOGYEVENTS":
@@ -152,7 +179,7 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
             case "NOTEEVENTS":
                 pass
             case "OUTPUTEVENTS":
-                table = filter_nulls(table, ["VALUE", "VALUEUOM"])
+                table = filter_nulls(table, "VALUE", "VALUEUOM")
                 table = cast_columns(table, VALUE="float32")
             case "PATIENTS":
                 table = cast_columns(
@@ -176,21 +203,3 @@ class MIMIC_III(MultiTableDataset[KEYS, DataFrame]):
                 raise ValueError(f"Unknown table name: {key}")
 
         return table
-
-    def download_file(self, fname: str, /) -> None:
-        """Download a file from the MIMIC-III website."""
-        if tuple(map(int, self.__version__.split("."))) < (1, 4):
-            raise ValueError(
-                "MIMIC-III v1.4+ is required. At the time of writing, the website"
-                " does not provide legacy versions of the MIMIC-III dataset."
-            )
-
-        self.download_from_url(
-            self.BASE_URL + f"{self.__version__}/",
-            self.rawdata_paths[fname],
-            username=input("MIMIC-III username: "),
-            password=getpass(prompt="MIMIC-III password: ", stream=None),
-            headers={
-                "User-Agent": "Wget/1.21.2"
-            },  # NOTE: MIMIC only allows wget for some reason...
-        )

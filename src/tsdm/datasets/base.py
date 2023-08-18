@@ -256,6 +256,13 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
             for fname in self.rawdata_files
         }
 
+    @cached_property
+    def rawdata_valid(self) -> bool:
+        r"""Check if raw data files exist."""
+        self.LOGGER.debug("Validating raw data files.")
+        validate_file_hash(self.rawdata_paths, self.rawdata_hashes)
+        return True
+
     def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
         r"""Check if raw data files exist."""
         if key is None:
@@ -344,7 +351,7 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
 
         # Validate file.
         if validate and self.rawdata_hashes is not NotImplemented:
-            validate_file_hash(self.rawdata_paths[key], reference=self.rawdata_hashes)
+            validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes)
 
     def remove_rawdata_files(self) -> None:
         r"""Recreate the rawdata directory."""
@@ -447,7 +454,7 @@ class SingleTableDataset(BaseDataset[T_co]):
 
         # Validate file if hash is provided.
         if validate and self.dataset_hash is not NotImplemented:
-            validate_file_hash(self.dataset_path, reference=self.dataset_hash)
+            validate_file_hash(self.dataset_path, self.dataset_hash)
 
         # Load table.
         self.LOGGER.debug("Starting to load dataset.")
@@ -456,7 +463,7 @@ class SingleTableDataset(BaseDataset[T_co]):
 
         # Validate table if hash/schema is provided.
         if validate and self.table_hash is not NotImplemented:
-            validate_table_hash(table, reference=self.table_hash)
+            validate_table_hash(table, self.table_hash)
 
         return table
 
@@ -473,7 +480,7 @@ class SingleTableDataset(BaseDataset[T_co]):
 
         # Validate raw data.
         if validate and self.rawdata_hashes is not NotImplemented:
-            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
+            assert self.rawdata_valid
 
         # Clean dataset.
         self.LOGGER.debug("Starting to clean dataset.")
@@ -485,7 +492,7 @@ class SingleTableDataset(BaseDataset[T_co]):
 
         # Validate pre-processed file.
         if validate and self.dataset_hash is not NotImplemented:
-            validate_file_hash(self.dataset_path, reference=self.dataset_hash)
+            validate_file_hash(self.dataset_path, self.dataset_hash)
 
 
 class MultiTableDataset(
@@ -652,8 +659,7 @@ class MultiTableDataset(
 
         # validate the raw data files
         if validate_rawdata and self.rawdata_hashes is not NotImplemented:
-            self.LOGGER.debug("Validating raw data files.")
-            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
+            assert self.rawdata_valid
 
         # key=None: Recursively clean all tables
         if key is None:
@@ -680,9 +686,7 @@ class MultiTableDataset(
 
         # Validate the cleaned table
         if validate and self.dataset_hashes is not NotImplemented:
-            validate_file_hash(
-                self.dataset_paths[key], reference=self.dataset_hashes[key]
-            )
+            validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
 
     def load_table(self, key: Key) -> T_co:
         r"""Load the selected DATASET_OBJECT.
@@ -738,9 +742,7 @@ class MultiTableDataset(
 
         # Validate file if hash is provided.
         if validate and self.dataset_hashes is not NotImplemented:
-            validate_file_hash(
-                self.dataset_paths[key], reference=self.dataset_hashes[key]
-            )
+            validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
 
         # Load the table, make sure to use the cached version if it exists.
         self.LOGGER.debug("Starting to load dataset <%s>", key)
@@ -749,7 +751,7 @@ class MultiTableDataset(
 
         # Validate the loaded table.
         if validate and self.table_hashes is not NotImplemented:
-            validate_table_hash(table, reference=self.table_hashes[key])
+            validate_table_hash(table, self.table_hashes[key])
 
         return table
 

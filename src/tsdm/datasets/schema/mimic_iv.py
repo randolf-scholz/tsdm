@@ -82,9 +82,9 @@ NULL_VALUES = [
 extra_null_values = ["none", "None", "NONE"]
 
 KEYS: TypeAlias = Literal[
-    "CHANGELOG",
-    "LICENSE",
-    "SHA256SUMS",
+    # "CHANGELOG",
+    # "LICENSE",
+    # "SHA256SUMS",
     "admissions",
     "d_hcpcs",
     "d_icd_diagnoses",
@@ -120,156 +120,6 @@ KEYS: TypeAlias = Literal[
 
 
 SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
-    # NOTE: /ICU/ tables
-    "caregiver": {
-        # fmt: off
-        "caregiver_id": ID_TYPE,
-        # fmt: on
-    },
-    "chartevents": {
-        # fmt: off
-        "subject_id"   : ID_TYPE,
-        "hadm_id"      : ID_TYPE,
-        "stay_id"      : ID_TYPE,
-        "caregiver_id" : ID_TYPE,
-        "itemid"       : ID_TYPE,
-        "charttime"    : TIME_TYPE,
-        "storetime"    : TIME_TYPE,
-        "value"        : STRING_TYPE,  # NOTE: cast float
-        "valuenum"     : VALUE_TYPE,
-        "valueuom"     : DICT_TYPE,
-        "warning"      : BOOL_TYPE,
-        # fmt: on
-    },
-    "d_items": {
-        # fmt: off
-        "itemid"          : ID_TYPE,
-        "label"           : STRING_TYPE,
-        "abbreviation"    : STRING_TYPE,
-        "linksto"         : DICT_TYPE,
-        "category"        : DICT_TYPE,
-        "unitname"        : DICT_TYPE,
-        "param_type"      : DICT_TYPE,
-        "lownormalvalue"  : VALUE_TYPE,
-        "highnormalvalue" : VALUE_TYPE,
-        # fmt: on
-    },
-    "datetimeevents": {
-        # fmt: off
-        "subject_id"   : ID_TYPE,
-        "hadm_id"      : ID_TYPE,
-        "stay_id"      : ID_TYPE,
-        "caregiver_id" : ID_TYPE,
-        "charttime"    : TIME_TYPE,
-        "storetime"    : TIME_TYPE,
-        "itemid"       : ID_TYPE,
-        "value"        : TIME_TYPE,
-        "valueuom"     : DICT_TYPE,
-        "warning"      : BOOL_TYPE,
-        # fmt: on
-    },
-    "icustays": {
-        # fmt: off
-        "subject_id"     : ID_TYPE,
-        "hadm_id"        : ID_TYPE,
-        "stay_id"        : ID_TYPE,
-        "first_careunit" : DICT_TYPE,
-        "last_careunit"  : DICT_TYPE,
-        "intime"         : TIME_TYPE,
-        "outtime"        : TIME_TYPE,
-        "los"            : VALUE_TYPE,
-        # fmt: on
-    },
-    "ingredientevents": {
-        # fmt: off
-        "subject_id"        : ID_TYPE,
-        "hadm_id"           : ID_TYPE,
-        "stay_id"           : ID_TYPE,
-        "caregiver_id"      : ID_TYPE,
-        "starttime"         : TIME_TYPE,
-        "endtime"           : TIME_TYPE,
-        "storetime"         : TIME_TYPE,
-        "itemid"            : ID_TYPE,
-        "amount"            : VALUE_TYPE,
-        "amountuom"         : DICT_TYPE,
-        "rate"              : VALUE_TYPE,
-        "rateuom"           : DICT_TYPE,
-        "orderid"           : ID_TYPE,
-        "linkorderid"       : ID_TYPE,
-        "statusdescription" : DICT_TYPE,
-        "originalamount"    : VALUE_TYPE,
-        "originalrate"      : VALUE_TYPE,
-        # fmt: on
-    },
-    "inputevents": {
-        # fmt: off
-        "subject_id"                    : ID_TYPE,
-        "hadm_id"                       : ID_TYPE,
-        "stay_id"                       : ID_TYPE,
-        "caregiver_id"                  : ID_TYPE,
-        "starttime"                     : TIME_TYPE,
-        "endtime"                       : TIME_TYPE,
-        "storetime"                     : TIME_TYPE,
-        "itemid"                        : ID_TYPE,  # NOTE: unstack, but high dim
-        "amount"                        : VALUE_TYPE,
-        "amountuom"                     : DICT_TYPE,
-        "rate"                          : VALUE_TYPE,
-        "rateuom"                       : DICT_TYPE,
-        "orderid"                       : ID_TYPE,
-        "linkorderid"                   : ID_TYPE,
-        "ordercategoryname"             : DICT_TYPE,
-        "secondaryordercategoryname"    : DICT_TYPE,
-        "ordercomponenttypedescription" : DICT_TYPE,
-        "ordercategorydescription"      : DICT_TYPE,
-        "patientweight"                 : VALUE_TYPE,
-        "totalamount"                   : VALUE_TYPE,
-        "totalamountuom"                : DICT_TYPE,
-        "isopenbag"                     : BOOL_TYPE,
-        "continueinnextdept"            : BOOL_TYPE,
-        "statusdescription"             : DICT_TYPE,
-        "originalamount"                : VALUE_TYPE,
-        "originalrate"                  : VALUE_TYPE,
-        # fmt: on
-    },
-    "outputevents": {
-        # fmt: off
-        "subject_id"   : ID_TYPE,
-        "hadm_id"      : ID_TYPE,
-        "stay_id"      : ID_TYPE,
-        "caregiver_id" : ID_TYPE,
-        "charttime"    : TIME_TYPE,
-        "storetime"    : TIME_TYPE,
-        "itemid"       : ID_TYPE,
-        "value"        : VALUE_TYPE,
-        "valueuom"     : DICT_TYPE,
-        # fmt: on
-    },
-    "procedureevents": {
-        # fmt: off
-        "subject_id"               : ID_TYPE,
-        "hadm_id"                  : ID_TYPE,
-        "stay_id"                  : ID_TYPE,
-        "caregiver_id"             : ID_TYPE,
-        "starttime"                : TIME_TYPE,
-        "endtime"                  : TIME_TYPE,
-        "storetime"                : pa.timestamp("ms"),  # NOTE: cast to seconds
-        "itemid"                   : ID_TYPE,
-        "value"                    : VALUE_TYPE,  # NOTE: duration of procedure
-        "valueuom"                 : DICT_TYPE,  # NOTE: unstack
-        "location"                 : DICT_TYPE,
-        "locationcategory"         : DICT_TYPE,
-        "orderid"                  : ID_TYPE,
-        "linkorderid"              : ID_TYPE,
-        "ordercategoryname"        : DICT_TYPE,
-        "ordercategorydescription" : DICT_TYPE,
-        "patientweight"            : VALUE_TYPE,
-        "isopenbag"                : BOOL_TYPE,
-        "continueinnextdept"       : BOOL_TYPE,
-        "statusdescription"        : DICT_TYPE,
-        "originalamount"           : VALUE_TYPE,
-        "originalrate"             : BOOL_TYPE,
-        # fmt: on
-    },
     # NOTE: /HOSP/ tables
     "admissions": {
         # fmt: off
@@ -366,7 +216,7 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "administration_type"                  : DICT_TYPE,
         "pharmacy_id"                          : ID_TYPE,
         "barcode_type"                         : DICT_TYPE,
-        "reason_for_no_barcode"                : STRING_TYPE,
+        "reason_for_no_barcode"                : TEXT_TYPE,
         "complete_dose_not_given"              : BOOL_TYPE,
         "dose_due"                             : STRING_TYPE,  # NOTE: cast float (range)
         "dose_due_unit"                        : DICT_TYPE,
@@ -589,28 +439,160 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "outtime"     : TIME_TYPE,
         # fmt: on
     },
+    # NOTE: /ICU/ tables
+    "caregiver": {
+        # fmt: off
+        "caregiver_id": ID_TYPE,
+        # fmt: on
+    },
+    "chartevents": {
+        # fmt: off
+        "subject_id"   : ID_TYPE,
+        "hadm_id"      : ID_TYPE,
+        "stay_id"      : ID_TYPE,
+        "caregiver_id" : ID_TYPE,
+        "itemid"       : ID_TYPE,
+        "charttime"    : TIME_TYPE,
+        "storetime"    : TIME_TYPE,
+        "value"        : STRING_TYPE,  # NOTE: cast float
+        "valuenum"     : VALUE_TYPE,
+        "valueuom"     : DICT_TYPE,
+        "warning"      : BOOL_TYPE,
+        # fmt: on
+    },
+    "d_items": {
+        # fmt: off
+        "itemid"          : ID_TYPE,
+        "label"           : STRING_TYPE,
+        "abbreviation"    : STRING_TYPE,
+        "linksto"         : DICT_TYPE,
+        "category"        : DICT_TYPE,
+        "unitname"        : DICT_TYPE,
+        "param_type"      : DICT_TYPE,
+        "lownormalvalue"  : VALUE_TYPE,
+        "highnormalvalue" : VALUE_TYPE,
+        # fmt: on
+    },
+    "datetimeevents": {
+        # fmt: off
+        "subject_id"   : ID_TYPE,
+        "hadm_id"      : ID_TYPE,
+        "stay_id"      : ID_TYPE,
+        "caregiver_id" : ID_TYPE,
+        "charttime"    : TIME_TYPE,
+        "storetime"    : TIME_TYPE,
+        "itemid"       : ID_TYPE,
+        "value"        : TIME_TYPE,
+        "valueuom"     : DICT_TYPE,  # NOTE: unstack?
+        "warning"      : BOOL_TYPE,
+        # fmt: on
+    },
+    "icustays": {
+        # fmt: off
+        "subject_id"     : ID_TYPE,
+        "hadm_id"        : ID_TYPE,
+        "stay_id"        : ID_TYPE,
+        "first_careunit" : DICT_TYPE,
+        "last_careunit"  : DICT_TYPE,
+        "intime"         : TIME_TYPE,
+        "outtime"        : TIME_TYPE,
+        "los"            : VALUE_TYPE,
+        # fmt: on
+    },
+    "ingredientevents": {
+        # fmt: off
+        "subject_id"        : ID_TYPE,
+        "hadm_id"           : ID_TYPE,
+        "stay_id"           : ID_TYPE,
+        "caregiver_id"      : ID_TYPE,
+        "starttime"         : TIME_TYPE,
+        "endtime"           : TIME_TYPE,
+        "storetime"         : TIME_TYPE,
+        "itemid"            : ID_TYPE,
+        "amount"            : VALUE_TYPE,
+        "amountuom"         : DICT_TYPE,
+        "rate"              : VALUE_TYPE,
+        "rateuom"           : DICT_TYPE,
+        "orderid"           : ID_TYPE,
+        "linkorderid"       : ID_TYPE,
+        "statusdescription" : DICT_TYPE,
+        "originalamount"    : VALUE_TYPE,
+        "originalrate"      : VALUE_TYPE,
+        # fmt: on
+    },
+    "inputevents": {
+        # fmt: off
+        "subject_id"                    : ID_TYPE,
+        "hadm_id"                       : ID_TYPE,
+        "stay_id"                       : ID_TYPE,
+        "caregiver_id"                  : ID_TYPE,
+        "starttime"                     : TIME_TYPE,
+        "endtime"                       : TIME_TYPE,
+        "storetime"                     : TIME_TYPE,
+        "itemid"                        : ID_TYPE,  # NOTE: unstack, but high dim
+        "amount"                        : VALUE_TYPE,
+        "amountuom"                     : DICT_TYPE,
+        "rate"                          : VALUE_TYPE,
+        "rateuom"                       : DICT_TYPE,
+        "orderid"                       : ID_TYPE,
+        "linkorderid"                   : ID_TYPE,
+        "ordercategoryname"             : DICT_TYPE,
+        "secondaryordercategoryname"    : DICT_TYPE,
+        "ordercomponenttypedescription" : DICT_TYPE,
+        "ordercategorydescription"      : DICT_TYPE,
+        "patientweight"                 : VALUE_TYPE,
+        "totalamount"                   : VALUE_TYPE,
+        "totalamountuom"                : DICT_TYPE,
+        "isopenbag"                     : BOOL_TYPE,
+        "continueinnextdept"            : BOOL_TYPE,
+        "statusdescription"             : DICT_TYPE,
+        "originalamount"                : VALUE_TYPE,
+        "originalrate"                  : VALUE_TYPE,
+        # fmt: on
+    },
+    "outputevents": {
+        # fmt: off
+        "subject_id"   : ID_TYPE,
+        "hadm_id"      : ID_TYPE,
+        "stay_id"      : ID_TYPE,
+        "caregiver_id" : ID_TYPE,
+        "charttime"    : TIME_TYPE,
+        "storetime"    : TIME_TYPE,
+        "itemid"       : ID_TYPE,
+        "value"        : VALUE_TYPE,
+        "valueuom"     : DICT_TYPE,
+        # fmt: on
+    },
+    "procedureevents": {
+        # fmt: off
+        "subject_id"               : ID_TYPE,
+        "hadm_id"                  : ID_TYPE,
+        "stay_id"                  : ID_TYPE,
+        "caregiver_id"             : ID_TYPE,
+        "starttime"                : TIME_TYPE,
+        "endtime"                  : TIME_TYPE,
+        "storetime"                : pa.timestamp("ms"),  # NOTE: cast to seconds
+        "itemid"                   : ID_TYPE,
+        "value"                    : VALUE_TYPE,  # NOTE: duration of procedure
+        "valueuom"                 : DICT_TYPE,  # NOTE: unstack
+        "location"                 : DICT_TYPE,
+        "locationcategory"         : DICT_TYPE,
+        "orderid"                  : ID_TYPE,
+        "linkorderid"              : ID_TYPE,
+        "ordercategoryname"        : DICT_TYPE,
+        "ordercategorydescription" : DICT_TYPE,
+        "patientweight"            : VALUE_TYPE,
+        "isopenbag"                : BOOL_TYPE,
+        "continueinnextdept"       : BOOL_TYPE,
+        "statusdescription"        : DICT_TYPE,
+        "originalamount"           : VALUE_TYPE,
+        "originalrate"             : BOOL_TYPE,
+        # fmt: on
+    },
 }
 
 
 UNSTACKED_SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
-    "poe_detail": {
-        # fmt: off
-        "poe_id"              : STRING_TYPE,
-        "poe_seq"             : ID_TYPE,
-        "subject_id"          : ID_TYPE,
-        "Admit category"      : DICT_TYPE,
-        "Admit to"            : DICT_TYPE,
-        "Code status"         : DICT_TYPE,
-        "Consult Status"      : DICT_TYPE,
-        "Consult Status Time" : TIME_TYPE,
-        "Discharge Planning"  : DICT_TYPE,
-        "Discharge When"      : DICT_TYPE,
-        "Indication"          : DICT_TYPE,
-        "Level of Urgency"    : DICT_TYPE,
-        "Transfer to"         : DICT_TYPE,
-        "Tubes & Drains type" : DICT_TYPE,
-        # fmt: on
-    },
     "omr": {
         # fmt: off
         "subject_id"                                   : ID_TYPE,
@@ -633,8 +615,26 @@ UNSTACKED_SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "Weight"                                       : VALUE_TYPE,
         "Blood Pressure Standing (systolic)"           : VALUE_TYPE,
         "Blood Pressure Standing (diastolic)"          : VALUE_TYPE,
-        "eGFR"                                         : VALUE_TYPE,
+        "eGFR"                                         : DICT_TYPE,
         "Height"                                       : VALUE_TYPE,
+        # fmt: on
+    },
+    "poe_detail": {
+        # fmt: off
+        "poe_id"              : STRING_TYPE,
+        "poe_seq"             : ID_TYPE,
+        "subject_id"          : ID_TYPE,
+        "Admit category"      : DICT_TYPE,
+        "Admit to"            : DICT_TYPE,
+        "Code status"         : DICT_TYPE,
+        "Consult Status"      : DICT_TYPE,
+        "Consult Status Time" : TIME_TYPE,
+        "Discharge Planning"  : DICT_TYPE,
+        "Discharge When"      : DICT_TYPE,
+        "Indication"          : DICT_TYPE,
+        "Level of Urgency"    : DICT_TYPE,
+        "Transfer to"         : DICT_TYPE,
+        "Tubes & Drains type" : DICT_TYPE,
         # fmt: on
     },
 }

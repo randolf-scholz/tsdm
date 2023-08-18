@@ -49,7 +49,7 @@ def download(
     if skip_existing and path.exists():
         if hash_value is not None:
             validate_file_hash(
-                path, reference=hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
+                path, hash_value, hash_algorithm=hash_algorithm, hash_kwargs=hash_kwargs
             )
         return
 
@@ -83,7 +83,7 @@ def download(
         # validate the file hash
     if hash_value is not None:
         validate_file_hash(
-            path, reference=hash_value, hash_algorithm=hash_algorithm, **hash_kwargs
+            path, hash_value, hash_algorithm=hash_algorithm, hash_kwargs=hash_kwargs
         )
 
 

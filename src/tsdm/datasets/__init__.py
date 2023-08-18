@@ -43,8 +43,10 @@ __all__ = [
     "KiwiDataset",
     "KIWI_RUNS",
     "MIMIC_III",
+    "MIMIC_III_RAW",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV",
+    "MIMIC_IV_RAW",
     "MIMIC_IV_Bilos2021",
     "PhysioNet2019",
     "PhysioNet2012",
@@ -68,9 +70,9 @@ from tsdm.datasets.ett import ETT
 from tsdm.datasets.in_silico_data import InSilicoData
 from tsdm.datasets.kiwi_benchmark import KIWI_Dataset
 from tsdm.datasets.kiwi_runs import KIWI_RUNS, KiwiDataset
-from tsdm.datasets.mimic_iii import MIMIC_III
+from tsdm.datasets.mimic_iii import MIMIC_III, MIMIC_III_RAW
 from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
-from tsdm.datasets.mimic_iv import MIMIC_IV
+from tsdm.datasets.mimic_iv import MIMIC_IV, MIMIC_IV_RAW
 from tsdm.datasets.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
 from tsdm.datasets.physionet2012 import PhysioNet2012
 from tsdm.datasets.physionet2019 import PhysioNet2019
@@ -92,9 +94,9 @@ DATASETS: dict[str, type[Dataset]] = {
     "KIWI_RUNS": KIWI_RUNS,
     "KIWI_Dataset": KIWI_Dataset,
     # "KIWI_RUNS_OLD": KIWI_RUNS_OLD,
-    "MIMIC_III": MIMIC_III,
+    "MIMIC_III": MIMIC_III_RAW,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
-    "MIMIC_IV": MIMIC_IV,
+    "MIMIC_IV": MIMIC_IV_RAW,
     "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
     "Physionet2012": PhysioNet2012,
     "Physionet2019": PhysioNet2019,

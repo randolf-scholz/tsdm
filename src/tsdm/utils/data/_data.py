@@ -127,7 +127,7 @@ def strip_whitespace(table: pa.Array, /) -> pa.Array:
 
 
 @overload
-def strip_whitespace(table: pa.Table, /) -> pa.Table:  # type: ignore[misc]
+def strip_whitespace(table: pa.Table, /, *cols: str) -> pa.Table:  # type: ignore[misc]
     ...
 
 
@@ -137,21 +137,23 @@ def strip_whitespace(frame: Series, /) -> Series:  # type: ignore[misc]
 
 
 @overload
-def strip_whitespace(frame: DataFrame, /) -> DataFrame:  # type: ignore[misc]
+def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame:  # type: ignore[misc]
     ...
 
 
-def strip_whitespace(table, /):
+def strip_whitespace(table, /, *cols: str):
     """Strip whitespace from all string columns in a table or frame."""
     match table:
         case pa.Table() as table:
-            return strip_whitespace_table(table)
+            return strip_whitespace_table(table, *cols)
         case pa.Array() as array:
+            assert not cols
             return strip_whitespace_array(array)
         case Series() as series:  # type: ignore[misc]
+            assert not cols
             return strip_whitespace_series(series)  # type: ignore[unreachable]
         case DataFrame() as frame:  # type: ignore[misc]
-            return strip_whitespace_dataframe(frame)  # type: ignore[unreachable]
+            return strip_whitespace_dataframe(frame, *cols)  # type: ignore[unreachable]
         case _:
             raise TypeError(f"Unsupported type: {type(table)}")
 

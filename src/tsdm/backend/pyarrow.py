@@ -54,7 +54,7 @@ def is_string_array(arr: Array, /) -> bool:
 
 
 def strip_whitespace_table(table: Table, /, *cols: str) -> Table:
-    """Strip whitespace from all string columns in a table."""
+    """Strip whitespace from selected columns in table."""
     for col in cols or table.column_names:
         if is_string_array(table[col]):
             __logger__.debug("Trimming the string column %r", col)
@@ -89,11 +89,13 @@ def strip_whitespace_array(arr: Array, /) -> Array:
     raise ValueError(f"Expected string array, got {arr.type}.")
 
 
-def arrow_strip_whitespace(obj: P, /) -> P:
+def arrow_strip_whitespace(obj: P, /, *cols: str) -> P:
     """Strip whitespace from all string elements in an arrow object."""
     if isinstance(obj, Table):
-        return strip_whitespace_table(obj)
+        return strip_whitespace_table(obj, *cols)
     if isinstance(obj, Array):
+        if cols:
+            raise ValueError("Cannot specify columns for an Array.")
         return strip_whitespace_array(obj)
     raise TypeError(f"Expected Array or Table, got {type(obj)}.")
 

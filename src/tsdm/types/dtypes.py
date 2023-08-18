@@ -25,6 +25,10 @@ __all__ = [
     "TORCH_DTYPES",
     "PANDAS_NULLABLE_DTYPES",
     "PYTHON_DTYPES",
+    "POLARS_DTYPES",
+    "PYARROW_DTYPES",
+    # CONVERSIONS
+    "PYARROW_TO_POLARS",
     # TYPESTRINGS
     "NUMPY_TYPESTRINGS",
     "NUMPY_TYPECODES",
@@ -64,6 +68,8 @@ from typing import Final
 
 import numpy as np
 import pandas
+import polars
+import pyarrow
 import torch
 from pandas.api.extensions import ExtensionDtype
 
@@ -334,6 +340,77 @@ r"""Dictionary of all `pandas` data types."""
 # endregion pandas dtypes ---------------------------------------------------------------------------------------------
 
 
+# region polars dtypes ------------------------------------------------------------------------------------------------
+PYARROW_DTYPES: Final[dict[str, pyarrow.DataType]] = {
+    # fmt: off
+    # numeric
+    "null"    : pyarrow.null(),
+    "bool"    : pyarrow.bool_(),
+    "int8"    : pyarrow.int8(),
+    "int16"   : pyarrow.int16(),
+    "int32"   : pyarrow.int32(),
+    "int64"   : pyarrow.int64(),
+    "uint8"   : pyarrow.uint8(),
+    "uint16"  : pyarrow.uint16(),
+    "uint32"  : pyarrow.uint32(),
+    "uint64"  : pyarrow.uint64(),
+    "float16" : pyarrow.float16(),
+    "float32" : pyarrow.float32(),
+    "float64" : pyarrow.float64(),
+    # temporal
+    "date32"  : pyarrow.date32(),
+    "date64"  : pyarrow.date64(),
+    "time32"  : pyarrow.time32("s"),
+    "time64"  : pyarrow.time64("ns"),
+    "timestamp[ns]" : pyarrow.timestamp("ns"),
+    "timestamp[us]" : pyarrow.timestamp("us"),
+    "timestamp[ms]" : pyarrow.timestamp("ms"),
+    "timestamp[s]"  : pyarrow.timestamp("s"),
+    "duration[ns]"  : pyarrow.duration("ns"),
+    "duration[us]"  : pyarrow.duration("us"),
+    "duration[ms]"  : pyarrow.duration("ms"),
+    "duration[s]"   : pyarrow.duration("s"),
+    # string/binary
+    "binary"  : pyarrow.binary(),
+    "large_string"  : pyarrow.large_string(),
+    "string"  : pyarrow.string(),
+}
+r"""Dictionary of all `pyarrow` data types."""
+# endregion polars dtypes ---------------------------------------------------------------------------------------------
+
+
+# region polars dtypes ------------------------------------------------------------------------------------------------
+POLARS_DTYPES: Final[dict[str, polars.DataType]] = {
+    # fmt: off
+    # numeric
+    "Float32"    : polars.Float32(),
+    "Float64"    : polars.Float64(),
+    "Int8"       : polars.Int8(),
+    "Int16"      : polars.Int16(),
+    "Int32"      : polars.Int32(),
+    "Int64"      : polars.Int64(),
+    "UInt8"      : polars.UInt8(),
+    "UInt16"     : polars.UInt16(),
+    "UInt32"     : polars.UInt32(),
+    "UInt64"     : polars.UInt64(),
+    # temporal
+    "Date"       : polars.Date(),
+    "Datetime"   : polars.Datetime(),
+    "Duration"   : polars.Duration(),
+    "Time"       : polars.Time(),
+    # other
+    "Binary"     : polars.Binary(),
+    "Boolean"    : polars.Boolean(),
+    "Categorical": polars.Categorical(),
+    "Null"       : polars.Null(),
+    "Object"     : polars.Object(),
+    "Utf8"       : polars.Utf8(),
+    # fmt: on
+}
+r"""Dictionary of all elementary `polars` data types."""
+# endregion polars dtypes ---------------------------------------------------------------------------------------------
+
+
 # region torch dtypes --------------------------------------------------------------------------------------------------
 TORCH_INT_TYPESTRINGS: Final[dict[torch.dtype, str]] = {
     torch.int8: "int8",
@@ -434,6 +511,44 @@ PYTHON_TYPESTRINGS: Final[dict[type, str]] = {
 }
 r"""Dictionary of all `python` data types."""
 # endregion python dtypes ----------------------------------------------------------------------------------------------
+
+
+# region dtype conversion ----------------------------------------------------------------------------------------------
+PYARROW_TO_POLARS: Final[dict[pyarrow.DataType, polars.DataType]] = {
+    # fmt: off
+    pyarrow.null()          : polars.Null(),
+    pyarrow.bool_()         : polars.Boolean(),
+    pyarrow.int8()          : polars.Int8(),
+    pyarrow.int16()         : polars.Int16(),
+    pyarrow.int32()         : polars.Int32(),
+    pyarrow.int64()         : polars.Int64(),
+    pyarrow.uint8()         : polars.UInt8(),
+    pyarrow.uint16()        : polars.UInt16(),
+    pyarrow.uint32()        : polars.UInt32(),
+    pyarrow.uint64()        : polars.UInt64(),
+    pyarrow.float16()       : polars.Float32(),
+    pyarrow.float32()       : polars.Float32(),
+    pyarrow.float64()       : polars.Float64(),
+    pyarrow.date32()        : polars.Date(),
+    pyarrow.date64()        : polars.Date(),
+    pyarrow.time32("s")     : polars.Time(),
+    pyarrow.time64("ns")    : polars.Time(),
+    pyarrow.timestamp("ns") : polars.Datetime(),
+    pyarrow.timestamp("us") : polars.Datetime(),
+    pyarrow.timestamp("ms") : polars.Datetime(),
+    pyarrow.timestamp("s")  : polars.Datetime(),
+    pyarrow.duration("ns")  : polars.Duration(),
+    pyarrow.duration("us")  : polars.Duration(),
+    pyarrow.duration("ms")  : polars.Duration(),
+    pyarrow.duration("s")   : polars.Duration(),
+    pyarrow.binary()        : polars.Binary(),
+    pyarrow.large_string()  : polars.Utf8(),
+    pyarrow.string()        : polars.Utf8(),
+    pyarrow.dictionary(pyarrow.int32(), pyarrow.string())   : polars.Categorical(),
+    # fmt: on
+}
+r"""Dictionary of converting pyarrow to polars."""
+# endregion dtype conversion -------------------------------------------------------------------------------------------
 
 
 TYPESTRINGS: Final[dict[type[np.generic] | torch.dtype | type[ExtensionDtype], str]] = (

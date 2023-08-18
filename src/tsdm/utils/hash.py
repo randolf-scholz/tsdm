@@ -26,6 +26,7 @@ import warnings
 from collections import Counter
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from pathlib import Path
+from types import NotImplementedType
 from typing import Any, Literal, Optional
 
 import numpy as np
@@ -197,7 +198,7 @@ def validate_file_hash(
     logger: logging.Logger = __logger__,
     errors: Literal["warn", "raise", "ignore"] = "warn",
     hash_algorithm: Optional[str] = None,
-    **hash_kwargs: Any,
+    hash_kwargs: Mapping[str, Any] = NotImplemented,
 ) -> None:
     """Validate file(s), given reference hash value(s).
 
@@ -214,6 +215,8 @@ def validate_file_hash(
         ValueError: If the file hash does not match the reference hash.
         LookupError: If the file is not found in the reference hash table.
     """
+    hash_kwargs = {} if hash_kwargs is NotImplemented else hash_kwargs
+
     if errors not in {"warn", "raise", "ignore"}:
         raise ValueError(
             f"Invalid value for errors: {errors!r}. "
@@ -229,20 +232,20 @@ def validate_file_hash(
                 if isinstance(reference, Mapping):
                     validate_file_hash(
                         value,
-                        reference=reference.get(key, None),
+                        reference.get(key, None),
                         hash_algorithm=hash_algorithm,
                         logger=logger,
                         errors=errors,
-                        **hash_kwargs,
+                        hash_kwargs=hash_kwargs,
                     )
                 elif reference is None:
                     validate_file_hash(
                         value,
-                        reference=reference,
+                        reference,
                         hash_algorithm=hash_algorithm,
                         logger=logger,
                         errors=errors,
-                        **hash_kwargs,
+                        hash_kwargs=hash_kwargs,
                     )
                 else:
                     raise ValueError(
@@ -253,11 +256,11 @@ def validate_file_hash(
             for f in file:
                 validate_file_hash(
                     f,
-                    reference=reference,
+                    reference,
                     hash_algorithm=hash_algorithm,
                     logger=logger,
                     errors=errors,
-                    **hash_kwargs,
+                    hash_kwargs=hash_kwargs,
                 )
             return
 
@@ -272,7 +275,7 @@ def validate_file_hash(
 
     # Determine the reference hash value.
     match reference:
-        case None:
+        case None | NotImplementedType():
             reference_alg, reference_hash = None, None
         case str():
             # split hashes of the form "sha256:hash_value"

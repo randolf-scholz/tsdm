@@ -18,10 +18,11 @@ __all__ = [
     "unpad_sequence",
     "unpack_sequence",
     # Functions
-    # data
+    # data - arrow
     "cast_columns",
     "compute_entropy",
     "filter_nulls",
+    "force_cast",
     "table_info",
     # data
     "aggregate_nondestructive",
@@ -44,6 +45,7 @@ from tsdm.utils.data._arrow import (
     cast_columns,
     compute_entropy,
     filter_nulls,
+    force_cast,
     table_info,
 )
 from tsdm.utils.data._data import (

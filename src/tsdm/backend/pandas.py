@@ -108,9 +108,11 @@ def pandas_like(x: ArrayLike, ref: P, /) -> P:
     raise TypeError(f"Expected Series or DataFrame, got {type(ref)}.")
 
 
-def strip_whitespace_dataframe(frame: DataFrame, /) -> DataFrame:
-    """Strip whitespace from all string columns in a DataFrame."""
-    return frame.apply(strip_whitespace_series)
+def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
+    """Strip whitespace from selected columns in a DataFrame."""
+    return frame.assign(
+        **{col: strip_whitespace_series(frame[col]) for col in (cols or frame)}
+    )
 
 
 def strip_whitespace_series(series: Series, /) -> Series:
