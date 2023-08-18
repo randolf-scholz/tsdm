@@ -33,8 +33,6 @@ __logger__ = logging.getLogger(__name__)
 P = TypeVar("P", Array, Table)
 """A type variable for pyarrow objects."""
 
-x: int
-
 
 def is_string_array(arr: Array, /) -> bool:
     """Check if an array is a string array."""
@@ -134,7 +132,7 @@ def arrow_where(mask: BooleanScalar, x: Scalar, y: Scalar = NA, /) -> Scalar:
 
 
 @overload
-def arrow_where(
+def arrow_where(  # type: ignore[misc]
     mask: BooleanArray | BooleanScalar,
     x: Array | Scalar,
     y: Array | Scalar = NA,

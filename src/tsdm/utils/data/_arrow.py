@@ -10,7 +10,7 @@ __all__ = [
 
 import logging
 from collections.abc import Sequence
-from typing import Literal, Optional, overload
+from typing import Literal, Optional, TypeVar, overload
 
 import pandas as pd
 import polars as pl
@@ -23,13 +23,11 @@ from tsdm.types.dtypes import PYARROW_TO_POLARS
 __logger__ = logging.getLogger(__name__)
 
 
-@overload
-def force_cast(x: Array, dtype: DataType, /) -> Array:
-    ...
+P = TypeVar("P", Array, Table)
 
 
 @overload
-def force_cast(x: Table, dtype: DataType, /) -> Table:
+def force_cast(x: P, dtype: DataType, /) -> P:
     ...
 
 
@@ -38,7 +36,7 @@ def force_cast(x: Table, /, **dtypes: DataType) -> Table:
     ...
 
 
-def force_cast(x, dtype: Optional[DataType] = None, /, **dtypes: DataType):
+def force_cast(x: P, dtype: Optional[DataType] = None, /, **dtypes: DataType) -> P:
     """Cast an array or table to the given data type, replacing non-castable elements with null."""
     x = x.combine_chunks()  # deals with chunked arrays
 
@@ -46,7 +44,7 @@ def force_cast(x, dtype: Optional[DataType] = None, /, **dtypes: DataType):
         assert dtype is not None and not dtypes
         return (
             pl.from_arrow(x)
-            .cast(PYARROW_TO_POLARS[dtype], strict=False)
+            .cast(PYARROW_TO_POLARS[dtype], strict=False)  # type: ignore[union-attr]
             .to_arrow()
             .cast(dtype)
         )

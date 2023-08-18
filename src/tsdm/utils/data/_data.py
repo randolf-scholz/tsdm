@@ -26,8 +26,8 @@ from functools import reduce
 from typing import Any, Generic, overload
 
 import pandas as pd
-import pyarrow as pa
 from pandas import DataFrame, Index, Series
+from pyarrow import Array, Table
 from scipy import stats
 from typing_extensions import NotRequired, Required, TypedDict
 
@@ -122,12 +122,12 @@ def make_dataframe(
 
 
 @overload
-def strip_whitespace(table: pa.Array, /) -> pa.Array:
+def strip_whitespace(table: Array, /) -> Array:
     ...
 
 
 @overload
-def strip_whitespace(table: pa.Table, /, *cols: str) -> pa.Table:  # type: ignore[misc]
+def strip_whitespace(table: Table, /, *cols: str) -> Table:
     ...
 
 
@@ -141,17 +141,18 @@ def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame:  # type: ign
     ...
 
 
-def strip_whitespace(table, /, *cols: str):
+def strip_whitespace(table, /, *cols):
     """Strip whitespace from all string columns in a table or frame."""
     match table:
-        case pa.Table() as table:
-            return strip_whitespace_table(table, *cols)
-        case pa.Array() as array:
-            assert not cols
+        case Table() as table:  # type: ignore[misc]
+            return strip_whitespace_table(table, *cols)  # type: ignore[unreachable]
+        case Array() as array:  # type: ignore[misc]
+            if cols:  # type: ignore[unreachable]
+                raise ValueError("Cannot specify columns for an Array.")
             return strip_whitespace_array(array)
         case Series() as series:  # type: ignore[misc]
-            assert not cols
-            return strip_whitespace_series(series)  # type: ignore[unreachable]
+            assert not cols  # type: ignore[unreachable]
+            return strip_whitespace_series(series)
         case DataFrame() as frame:  # type: ignore[misc]
             return strip_whitespace_dataframe(frame, *cols)  # type: ignore[unreachable]
         case _:
