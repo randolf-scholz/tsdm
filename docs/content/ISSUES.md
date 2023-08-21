@@ -19,5 +19,5 @@ This however has the side effect that for `imported-members`, types are no longe
   ```
 
 - We use the implementer folder structure, because it prevents pollution of namespaces
-  - https://stackoverflow.com/questions/57728884/avoiding-module-namespace-pollution-in-python
+  - <https://stackoverflow.com/questions/57728884/avoiding-module-namespace-pollution-in-python>
   - We can fix pollution in `dir(module)` by setting `module.__dir__()` equal to `__all__`.

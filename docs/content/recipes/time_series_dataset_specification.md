@@ -2,16 +2,16 @@
 
 After working with several Time Series Datasets, we identified 3 main types of Time Series Datasets (2 fundamental ones and 1 subtype).
 
-# Definition (Mathematical)
+## Definition (Mathematical)
 
-## Definition: Time Series Dataset (TSD)
+### Definition: Time Series Dataset (TSD)
 
 A **time series dataset** $D$ is tuple $D=(S, M)$, consiting of
 
 - Time Indexed Data $S = \{(t_i, v_i) ∣ i= 1:n\}$ is a set of tuples of **timestamps** $t∈𝓣$ and **values** $v∈𝓥$.
 - Time independent **metadata** $M∈𝓜$.
 
-## Definition: Time Series Collection (TSC)
+### Definition: Time Series Collection (TSC)
 
 A **time series collection** $C$ is triplet $C=(I, 𝓓, G)$ consiting of
 
@@ -21,13 +21,13 @@ A **time series collection** $C$ is triplet $C=(I, 𝓓, G)$ consiting of
 
 Note that here, each time series might be specified over a different space with different observed values and metadata, i.e. $S_i = \{ (t_j^{(i)}), v_{j}^{(i)}  ∣ j = 1…n_i\}$ with $t_j^{(i)}∈𝓣_i$ and $v_j^{(i)}∈𝓥_i$ and $M_i∈𝓜_i$. So for example $D_1$ might contain an audio recording whereas $D_2$ contains price data of a specific stock.
 
-### Variant: _equimodal_ Time Series Collection
+#### Variant: _equimodal_ Time Series Collection
 
 If all time series in a TSC have the same data modality, i.e. they share the same kind of time index, metadata types and value types: $𝓜_i=𝓜$, $𝓣_i=𝓣$ and $𝓥_i=𝓥$ for all $i∈I$, then we say that the TSC is **equimodal**.
 
 For the purpose of the KIWI project, it seems appropriate to only work with equimodal TSCs. Applying meta-learning / multi-task-learning Machine Learning over non-equimodal TSCs is in principle possible, but much more complicated.
 
-### Variant: _multi-table_ Time Series
+#### Variant: _multi-table_ Time Series
 
 In some cases, it might not be sensible to encode the time series data in a single tensor.
 For example, for video data, one might have time-indexed image and audio data, the former being naturally 2-dimensional (or even 3 dimensional when considering color channels) and the latter being 1-dimensional.
@@ -38,11 +38,11 @@ So, we say that a time series dataset is **single-table** if the data is express
 
 The same applies for the metadata.
 
-# Implementation Details
+## Implementation Details
 
 For simplicity, we will only consider **single-table** time series datasets (i.e. all observations at timestamp $t$ can be naturally stored in a single n-dimensional tensor. This would not include cases like video data, where one might have a 2-dimensional image and a 1-dimensional audio signal at each timestamp that need to be stored in separate tables if one wishes to avoid having to flatten the image data).
 
-## Implementation: Time Series Dataset (TSD)
+### Implementation: Time Series Dataset (TSD)
 
 Following the mathematical definition, we require the following data to specifiy a time-series dataset:
 
@@ -90,7 +90,7 @@ timeseries:
   subtitles: Array[Sample, Language, dtype=string]
 ```
 
-## Implementation: Time Series Collection (TSC)
+### Implementation: Time Series Collection (TSC)
 
 There are 2 main differences:
 
@@ -129,9 +129,9 @@ TimeSeriesCollection: # equimodal
   global_features: Optional[Array[unit, scale, dtype, lower, upper, ...]]
 ```
 
-# Examples
+## Examples
 
-## Example: Clinical Patient Records (MIMIC-III / MIMIC-IV datasets)
+### Example: Clinical Patient Records (MIMIC-III / MIMIC-IV datasets)
 
 These records contain clinical patient data. For each patient admitted to the hospital/ICU, several time series are recorded such as blood pressure, heart rate, etc.
 
@@ -142,7 +142,7 @@ These records contain clinical patient data. For each patient admitted to the ho
 - timeseries_features: unit of measurement (e.g. heart-rate: bpm, blood pressure: mmHg),
 - metadata_features: unit of measurement, e.g. height: inches, weight: pounds, etc.
 
-## Example: BioProcess Data (iLab TU Berlin)
+### Example: BioProcess Data (iLab TU Berlin)
 
 - Index: tuple (run_id, experiment_id)
 - Time Series: time-dependent measurements of sensors: DOT, acetate, glucose, etc., as well as _covariates_ (controls): stirring speed, temperature, etc.
@@ -151,18 +151,18 @@ These records contain clinical patient data. For each patient admitted to the ho
 - timeseries_features: unit of measurement, measurement error (device specific), biologically plausible ranges for values, etc.
 - metadata_features: unit of measurement (e.g. reactor volume: mL), etc.
 
-## Complicated Example: Video Data
+### Complicated Example: Video Data
 
 A video contains several kinds of time-indexed data: images, sound and possibly subtitles.
 E.g. in this case: $$𝓥 = \underbrace{ℝ^{m×n}}_{\text{image}} ⊕ \underbrace{ℝ^{k}}_{\text{audio}} ⊕ \underbrace{\operatorname{Seq}(\text{ASCII})}_{\text{text}}$$
 
-# Remarks on DataTypes
+## Remarks on DataTypes
 
-## Nullable DataTypes
+### Nullable DataTypes
 
 Time Series often contain missing values. We **STRONGLY** suggest to make use of the nullable DataTypes, such as `pandas.BooleanDType`, `pandas.Int64DType` and `pandas.Float64DType` or `pyarrow` Datatypes.
 
-## Categorical Columns
+### Categorical Columns
 
 Columns that don't contain numerical values often are simply encoded as strings. However, often it is appropriate to make use of **categorical datatypes** instead (such as `pandas.CategoricalDtype` or `pyarrow.DictionaryType`). This has the following crucial advantages:
 
@@ -173,7 +173,7 @@ Columns that don't contain numerical values often are simply encoded as strings.
 
 Only when string data is appropriate should it really be stored as strings, such as in `comments` or `descriptions` fields, but not in principally categorical fields such as `organism_name`, `reactor_name`, etc.
 
-## Time-Like DataTypes
+### Time-Like DataTypes
 
 Multiple datatypes are useful for encoding timestamps. However, crucially a distinction needs to be made between
 timestamp datatypes, which only store a point in time, and timedelta datatypes, which encode a time duration.
@@ -215,7 +215,7 @@ DiscreteTimeDeltaLike: TypeAlias = int
 DiscreteTimeLike: TypeAlias = ContinuousTimeStampLike | ContinuousTimeDeltaLike
 ```
 
-# Data Export
+## Data Export
 
 We suggest export / storage as `parquet` files using `pyarrow`. It is very fast and supports nullable data types.
 See <https://arrow.apache.org/docs/python/index.html>. It has one major downside: The format is not binary stable due to batched storage. Thus, `sha256` hashes may differ when the same data is stored on different machines.

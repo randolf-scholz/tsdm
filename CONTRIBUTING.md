@@ -2,14 +2,14 @@
 
 These are the 10 steps to contributing to the project.
 
-## 1. Fork the GitLab project from <https://github.com/randolf-scholz/tsdm>.
+## 1. Fork the GitLab project from <https://github.com/randolf-scholz/tsdm>
 
-Use your personal namespace, e.g. https://software.ismll.uni-hildesheim.de/rscholz/tsdm-dev
+Use your personal namespace, e.g. <https://github.com/$USER/tsdm>.
 
-## 2. Clone the forked project locally to your machine.
+## 2. Clone the forked project locally to your machine
 
 ```bash
-git clone https://software.ismll.uni-hildesheim.de/rscholz/tsdm
+git clone https://github.com/randolf-scholz/tsdm
 cd tsdm
 ```
 
@@ -40,26 +40,26 @@ python3.10 -m virtualenv .venv
 pip install -e .
 ```
 
-### 4. Verify that the installation was successful.
+### 4. Verify that the installation was successful
 
 ```bash
 python -c "import tsdm"
 ```
 
-### 5. Setup remote repositories and pre-commit hooks.
+### 5. Setup remote repositories and pre-commit hooks
 
 ```bash
 ./run/setup_remote.sh
 ./run/setup_precommit.sh
 ```
 
-### 6. Create a new working branch. Choose a descriptive name for what you are trying to achieve.
+### 6. Create a new working branch. Choose a descriptive name for what you are trying to achieve
 
 ```bash
 git checkout -b feature-xyz
 ```
 
-### 7. Write your code, bonus points for also adding unit tests.
+### 7. Write your code, bonus points for also adding unit tests
 
 - Write your code in the `src` directory.
 
@@ -73,7 +73,7 @@ git checkout -b feature-xyz
 
 - Check for code quality via `pylint`.
 
-### 8. Write descriptive commit messages.
+### 8. Write descriptive commit messages
 
 Try to keep individual commits easy to understand (changing dozens of files, writing 100's of lines of code is not!).
 
@@ -81,7 +81,7 @@ Try to keep individual commits easy to understand (changing dozens of files, wri
 git commit -m '#42: Add useful new feature that does this.'
 ```
 
-### 9. Push changes in the branch to your forked repository on GitHub.
+### 9. Push changes in the branch to your forked repository on GitHub
 
 ```bash
 git push origin feature-xyz

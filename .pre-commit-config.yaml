@@ -143,12 +143,24 @@ repos:
         files: (^src/|^tests/)
         additional_dependencies: [types-all]
         stages: [pre-push]
+  # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.323
     hooks:
       - id: pyright
         files: (^src/|^tests/)
         stages: [pre-push]
+  # markdownlint
+  - repo: https://github.com/markdownlint/markdownlint.git
+    rev: v0.12.0
+    hooks:
+      - id: markdownlint
+        files: \.(md|mdown|markdown)$
+        args:
+          ["-r", "~MD007,~MD013,~MD029"]
+          # MD007: Unordered list indentation (false positives)
+          # MD013: Line length (unused)
+          # MD029: Ordered list item prefix (false positives)
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.1.27
     hooks:
