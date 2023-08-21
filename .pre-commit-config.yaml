@@ -4,7 +4,9 @@ default_language_version:
   python: python3.11
   node: "18.12.1"
 repos:
-  # local hooks
+  #  - repo: meta
+  #    hooks:
+  #      - id: identity
   - repo: local
     hooks:
       - id: nbstripout-fast
@@ -32,7 +34,6 @@ repos:
         description: "ensures that (non-binary) executables have a shebang."
       - id: check-shebang-scripts-are-executable
         description: "ensures that (non-binary) files with a shebang are executable."
-        stages: [commit]
       - id: check-symlinks
         description: "checks for symlinks which do not point to anything."
       - id: check-toml
@@ -45,11 +46,11 @@ repos:
         description: "checks for debugger imports and py37+ `breakpoint()` calls in python source."
       - id: end-of-file-fixer
         description: "ensures that a file is either empty, or ends with one newline."
-        exclude: ^.*.ipynb$ # https://github.com/deshaw/nbstripout-fast/issues/8
+        exclude: ^.*.ipynb$ # FIXME: https://github.com/deshaw/nbstripout-fast/issues/8
       - id: pretty-format-json
+        args: ["--autofix"]
+        exclude: ^.*.ipynb$ # FIXME: https://github.com/deshaw/nbstripout-fast/issues/8
         description: "sets a standard for formatting json files."
-        # exclude any jupyter notebooks
-        exclude: ^.*.ipynb$
       - id: requirements-txt-fixer
         description: "sorts entries in requirements.txt"
       - id: trailing-whitespace
@@ -59,10 +60,6 @@ repos:
     hooks:
       - id: python-check-blanket-noqa
         description: "Enforce that `noqa` annotations always occur with specific codes. Sample annotations: `# noqa: F401`, `# noqa: F401,W203`"
-      - id: python-check-blanket-type-ignore
-        description: "Enforce that `type: ignore` annotations always occur with specific codes. Sample annotations: `# type: ignore`, `# type: ignore,W203`"
-      - id: python-no-eval
-        description: "Enforce that `eval` is not used."
       - id: python-no-log-warn
         description: "Enforce that `logging.warn` is not used."
       - id: rst-directive-colons
@@ -138,8 +135,22 @@ repos:
       - id: slotscheck
         language: system
         files: ^src/
+  # mypy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1
+    hooks:
+      - id: mypy
+        files: (^src/|^tests/)
+        additional_dependencies: [types-all]
+        stages: [pre-push]
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.323
+    hooks:
+      - id: pyright
+        files: (^src/|^tests/)
+        stages: [pre-push]
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.26
+    rev: v0.1.27
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
@@ -167,11 +178,3 @@ repos:
         files: (^src/|^tests/)
       - id: python-check-__all__-exists
         files: ^src/
-  # mypy
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
-    hooks:
-      - id: mypy
-        files: (^src/|^tests/)
-        additional_dependencies: [types-all]
-        stages: [pre-push]
