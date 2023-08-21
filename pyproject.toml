@@ -11,10 +11,10 @@ version = "0.4.8"
 
 authors = [{name="Randolf Scholz", email="randolf.scholz@gmail.com"},]
 description = "Time-Series Datasets and Models"
-keywords = ["time series", "machine learning"]
-license = { file="LICENSE.rst" }
-readme = "README.rst"
+license = { file="LICENSE" }
+readme = "README.md"
 
+keywords = ["time series", "machine learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: GPU :: NVIDIA CUDA :: 11.7",
@@ -495,27 +495,31 @@ line-length = 120
 [tool.poetry]
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
 description = "Time-Series Datasets and Models"
-documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
-homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-include = ["README", "LICENSE", "CONTRIBUTING", "CHANGELOG"]
-keywords = ["time series", "machine learning"]
-license = "MIT"
 name = "tsdm"
-packages = [{include = "tsdm", from="src"}]
-readme = "README"
-repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi"
 version = "0.4.8"
 
+# package-content
+readme = "README"
+license = "MIT"
+include = ["README", "LICENSE", "CONTRIBUTING", "CHANGELOG"]
+packages = [{include = "tsdm", from="src"}]
+
+# urls
+documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
+homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
+repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi"
+
+# meta-information
+keywords = ["time series", "machine learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Environment :: GPU :: NVIDIA CUDA :: 11.6",
+    "Environment :: GPU :: NVIDIA CUDA :: 11.7",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3.10",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
     "Operating System :: POSIX :: Linux",
 ]
-
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
@@ -535,6 +539,16 @@ tqdm = ">=4.66.1"
 typing-extensions = ">=4.7.1"
 
 
+[tool.poetry.group.extra.dependencies]
+ipympl = ">=0.9.3"
+ipywidgets = ">=8.1.0"
+jupyterlab = ">=4.0.5"
+openml = ">=0.14.1"
+openpyxl = ">=3.1.2"
+psutil = ">=5.9.5"
+torchinfo = ">=1.8.0"
+
+
 [tool.poetry.group.test.dependencies]
 coverage = ">=7.3.0"
 pytest = ">=7.4.0"
@@ -543,24 +557,45 @@ pytest-cov = ">=4.1.0"
 pytest-rerunfailures = ">=12.0"
 pytest-xdist = ">=3.3.1"
 
+
 [tool.poetry.group.docs.dependencies]
-myst_parser          =   ">=2.0.0"
-nbsphinx             =   ">=0.9.2"
-piccolo-theme        =   ">=0.16.1"
-pydata-sphinx-theme  =   ">=0.13.3"
-sphinx               =   ">=7.2.2"
-sphinx-autoapi       =   ">=2.1.1"
-sphinx-automodapi    =   ">=0.15.0"
-sphinx-copybutton    =   ">=0.5.2"
-sphinx-math-dollar   =   ">=1.2.1"
-sphinx-typo3-theme   =   ">=4.9.0"
-
-
-[tool.poetry.group.dev.dependencies]
-bandit = ">=1.7.5"
-black = {version = ">=23.7.0", extras = ["d", "jupyter"]}
-blacken-docs = ">=1.16.0"
 docutils = ">=0.20.1"
+#karma_sphinx_theme = ">=0.0.0"
+myst_parser = ">=2.0.0"
+nbsphinx = ">=0.9.2"
+#numpydoc = ">=1.5.0"
+#pandoc = ">=2.3"
+piccolo-theme = ">=0.16.1"
+pydata-sphinx-theme = ">=0.13.3"
+sphinx = ">=7.2.2"
+sphinx-autoapi = ">=2.1.1"
+sphinx-autodoc-typehints = ">=1.24.0"
+sphinx-automodapi = ">=0.15.0"
+sphinx-copybutton = ">=0.5.2"
+sphinx-math-dollar = ">=1.2.1"
+#sphinx-pdj-theme = ">=0.4.0"
+sphinx-typo3-theme = ">=4.9.0"
+#sphinxawesome-theme = ">=4.1.0"
+
+
+[tool.poetry.group.devtools.dependencies]
+cmake = ">=3.27.1"
+devtools = ">=0.11.0"
+johnnydep = ">=1.20.2"
+ninja = ">=1.11.1"
+pip = ">=23.2.1"
+pip-tools = ">=7.3.0"
+pipdeptree = ">=2.12.0"
+pipreqs = ">=0.4.13"
+pre-commit = ">=3.3.3"
+pybadges = ">=3.0.0"
+pydeps = ">=1.12.13"
+setuptools = ">=68.1.2"
+twine = ">=4.0.2"
+wheel = ">=0.41.1"
+
+
+[tool.poetry.group.flake8.dependencies]
 flake8 = ">=6.1.0"
 flake8-annotations = ">=3.0.1"
 flake8-black = ">=0.3.6"
@@ -571,30 +606,35 @@ flake8-pyi = ">=23.6.0"
 flake8-pyproject = ">=1.2.3"
 flake8-rst = ">=0.8.0"
 flake8-rst-docstrings = ">=0.3.0"
-ipympl = ">=0.9.3"
-ipywidgets = ">=8.1.0"
+yesqa = ">=1.5.0"
+
+
+[tool.poetry.group.formatters.dependencies]
+black = { version = ">=23.7.0", extras = ["d", "jupyter"] }
+blacken-docs = ">=1.15.0"
 isort = ">=5.12.0"
-jupyterlab = ">=4.0.5"
-mypy = ">=1.5.1"
 nbstripout-fast = ">=1.0.1"
+pyment = ">=0.3.3"
+ssort = ">=0.11.6"
+
+
+[tool.poetry.group.linters.dependencies]
+bandit = ">=1.7.5"
+mccabe = ">=0.7.0"
 perflint = ">=0.7.3"
-pip = ">=23.2.1"
-pre-commit = ">=3.3.3"
-pyall = ">=0.3.5"
-pybadges = ">=3.0.0"
 pycodestyle = ">=2.11.0"
-pydeps = ">=1.12.13"
 pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
-pygments = ">=2.16.1"
 pylint = ">=2.17.5"
 pylint-gitlab = ">=1.2.0"
-pyright = ">=1.1.323"
-ruff = ">=0.0.285"
-setuptools = ">=68.1.2"
+ruff = ">= 0.0.272"
+ruff-lsp = ">= 0.0.33"
 slotscheck = ">=0.17.0"
-torchinfo = ">=1.8.0"
-twine = ">=4.0.2"
+
+
+[tool.poetry.group.typing.dependencies]
+mypy = ">=1.5.1"
+pyright = ">=1.1.323"
 types-colorama = ">=0.4.15"
 types-docutils = ">=0.20.0"
 types-pillow = ">=10.0.0"
@@ -606,13 +646,9 @@ types-requests = ">=2.31.0"
 types-setuptools = ">=68.1.0"
 types-six = ">=1.16.21"
 types-urllib3 = ">=1.26.25"
-wheel = ">=0.41.1"
-yesqa = ">=1.5.0"
-
-[tool.poetry.group.extra.dependencies]
-openml = ">=0.14.1"
-openpyxl = ">=3.1.2"
-psutil = ">=5.9.5"
+typing-extensions = ">=4.4.0"
 
 
+[tool.poetry.group.unsorted.dependencies]
+pygments = ">=2.16.1"
 # endregion poetry configuration -------------------------------------------------------

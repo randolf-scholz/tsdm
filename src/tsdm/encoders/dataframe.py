@@ -1,7 +1,5 @@
 r"""Implementation of encoders."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "FrameAsDict",

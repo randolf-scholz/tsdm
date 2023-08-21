@@ -104,7 +104,7 @@ class InSilicoData(MultiTableDataset[str, DataFrame]):
             return self._timeseries_description()
         raise KeyError(f"Unknown table {key}.")
 
-    def download_file(self, fname: str) -> None:
+    def download_file(self, fname: str, /) -> None:
         r"""Download the dataset."""
         self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
         with resources.path(examples, fname) as path:

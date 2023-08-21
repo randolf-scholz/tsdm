@@ -103,11 +103,7 @@ class ClassDecorator(Protocol):
 def collect_exit_points(func: Callable) -> list[ast.Return]:
     """Collect all exit points of a function as ast nodes."""
     tree = ast.parse(getsource(func))
-    exit_points = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Return):
-            exit_points.append(node)
-    return exit_points
+    return [node for node in ast.walk(tree) if isinstance(node, ast.Return)]
 
 
 def exit_point_names(func: Callable) -> list[tuple[str, ...]]:

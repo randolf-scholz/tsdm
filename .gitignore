@@ -3,11 +3,11 @@
 **/_*/
 !docs/_static/
 
-# jupyterlab_lsp
-.virtual_documents
+# hidden directories
+.*/
 
-# ruff_cache
-.ruff_cache
+# libtorch
+libtorch/
 
 # zip files
 *.zip
@@ -28,6 +28,7 @@ reports/
 
 # pytorch model files
 *.pt
+*.torch
 
 # Pytorch profiling
 *.pt.trace.json

@@ -93,7 +93,7 @@ class MIMIC_IV(MultiTableDataset):
     def load_table(self, key: str) -> pd.DataFrame:
         return pd.read_parquet(self.dataset_paths[key])
 
-    def download_file(self, fname: str) -> None:
+    def download_file(self, fname: str, /) -> None:
         path = self.rawdata_paths[fname]
 
         cut_dirs = self.BASE_URL.count("/") - 3

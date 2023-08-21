@@ -139,7 +139,7 @@ repos:
         language: system
         files: ^src/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.23
+    rev: v0.1.26
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
@@ -165,6 +165,8 @@ repos:
         files: (^src/|^tests/)
       - id: check-separator-length
         files: (^src/|^tests/)
+      - id: python-check-__all__-exists
+        files: ^src/
   # mypy
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.5.1

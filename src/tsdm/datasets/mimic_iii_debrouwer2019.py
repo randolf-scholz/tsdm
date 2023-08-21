@@ -133,7 +133,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         ts.columns = ts.columns.astype("string")
         return ts
 
-    def download_file(self, fname: str) -> None:
+    def download_file(self, fname: str, /) -> None:
         path = self.rawdata_paths[fname]
 
         cut_dirs = self.BASE_URL.count("/") - 3

@@ -6,12 +6,10 @@ __all__ = [
     # Functions
     "is_allcaps",
     "is_dunder",
-    "flatten_dict",
-    "unflatten_dict",
 ]
 
 from abc import ABCMeta
-from collections.abc import Callable, Iterable, Iterator, MutableMapping, Sequence
+from collections.abc import Iterator, MutableMapping
 from dataclasses import KW_ONLY, dataclass, field
 from typing import Any
 
@@ -136,38 +134,3 @@ class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):
 
     def __delitem__(self, key):
         self.__dict__.__delitem__(key)
-
-
-def flatten_dict(
-    d: dict[str, Any],
-    /,
-    *,
-    recursive: bool = True,
-    how: Callable[[Iterable[str]], str] = ".".join,
-) -> dict[str, Any]:
-    r"""Flatten a dictionary containing iterables to a list of tuples."""
-    result = {}
-    for key, item in d.items():
-        if isinstance(item, dict) and recursive:
-            subdict = flatten_dict(item, recursive=True, how=how)
-            for subkey, subitem in subdict.items():
-                result[how((key, subkey))] = subitem
-        else:
-            result[key] = item
-    return result
-
-
-def unflatten_dict(
-    d: dict[str, Any],
-    /,
-    *,
-    recursive: bool = True,
-    how: Callable[[str], Sequence[str]] = str.split,
-) -> dict[str, Any]:
-    r"""Flatten a dictionary containing iterables to a list of tuples."""
-    result = {}
-    for key, item in d.items():
-        if len(how(key)) > 1 and recursive:
-            subdict = unflatten_dict({how(key)[-1]: item}, recursive=True, how=how)
-            result[how(key)[0]] = subdict
-    return result

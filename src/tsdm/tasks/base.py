@@ -360,8 +360,10 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
 
         # NOTE: Currently there is a bug with pandas indexing using [pyarrow] timestamps.
         # This means only boolean masks are supported.
-        # https://github.com/pandas-dev/pandas/issues/53644
-        # https://github.com/pandas-dev/pandas/issues/53645
+        # https://github.com/pandas-dev/pandas/issues/53644 (fixed)
+        # https://github.com/pandas-dev/pandas/issues/53645 (closed)
+        # https://github.com/pandas-dev/pandas/issues/53154
+        # https://github.com/apache/arrow/issues/36047 (closed)
 
         # timeseries
         ts_observed: DataFrame = tsd[observation_horizon]

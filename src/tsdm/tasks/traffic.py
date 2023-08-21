@@ -1,6 +1,9 @@
 r"""Tasks associated with the Traffic dataset."""
 
 
+__all__ = ["TrafficTFT", "TrafficTRMF"]
+
+
 class TrafficTFT:
     r"""Experiments as performed by the "TFT" paper.
 

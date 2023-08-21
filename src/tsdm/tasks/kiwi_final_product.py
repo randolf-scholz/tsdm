@@ -172,14 +172,15 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         self.metadata = self.metadata.rename(columns={self.target: "target_value"})
 
         # Construct the dataset object
-        TSDs = {}
-        for key in self.metadata.index:
-            TSDs[key] = TimeSeriesDataset(
-                self.timeseries.loc[key],
-                metadata=self.metadata.loc[key],
-            )
-        DS = MappingDataset(TSDs)
-        self.DS = DS
+        self.DS = MappingDataset(
+            {
+                key: TimeSeriesDataset(
+                    self.timeseries.loc[key],
+                    metadata=self.metadata.loc[key],
+                )
+                for key in self.metadata.index
+            }
+        )
 
         self.controls = controls = Series(
             [
@@ -302,13 +303,15 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         ts, md = self.splits[key]
         dataset = _Dataset(ts, md, self.observables)
 
-        TSDs = {}
-        for idx in md.index:
-            TSDs[idx] = TimeSeriesDataset(
-                ts.loc[idx],
-                metadata=(md.loc[idx], self.final_value.loc[idx]),
-            )
-        DS = MappingDataset(TSDs)
+        DS = MappingDataset(
+            {
+                idx: TimeSeriesDataset(
+                    ts.loc[idx],
+                    metadata=(md.loc[idx], self.final_value.loc[idx]),
+                )
+                for idx in md.index
+            }
+        )
 
         # construct the sampler
         subsamplers = {}

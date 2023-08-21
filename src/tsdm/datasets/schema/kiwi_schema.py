@@ -1,6 +1,8 @@
 """Schema for the KIWI-dataset."""
 # NOTE: THis should only contain static data
 
+__all__ = ["timeseries_description", "metadata_description"]
+
 # fmt: off
 timeseries_description = {
     # Name                          : [Unit,     Type,  Dtype, Lower, Upper, Lower included, Upper included]

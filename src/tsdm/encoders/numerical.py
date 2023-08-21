@@ -27,8 +27,6 @@ Goals
     - fitting changes the encoder parameter values, switching backends changes their types.
 """
 
-from __future__ import annotations
-
 __all__ = [
     # functions
     "get_broadcast",

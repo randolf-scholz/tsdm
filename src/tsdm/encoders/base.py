@@ -293,8 +293,7 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
         self.encoders = []
         for encoder in encoders:
             if simplify and isinstance(encoder, ChainedEncoder):
-                for enc in encoder:
-                    self.encoders.append(enc)
+                self.encoders.extend(encoder)
             else:
                 self.encoders.append(encoder)
 
@@ -499,8 +498,7 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
 
         for encoder in encoders:
             if simplify and isinstance(encoder, ProductEncoder):
-                for enc in encoder:
-                    self.encoders.append(enc)
+                self.encoders.extend(encoder)
             else:
                 self.encoders.append(encoder)
 
@@ -622,9 +620,8 @@ def duplicate_encoder(
     encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
 ) -> Encoder:
     r"""Duplicate an encoder."""
-    clone = lambda x: deepcopy(x) if copy else x  # noqa: E731
     encoder = encoder.simplify() if simplify else encoder
-    encoders = [clone(encoder) for _ in range(n)]
+    encoders = [deepcopy(encoder) if copy else encoder for _ in range(n)]
 
     if n == -1 and simplify:
         return ~encoders[0]

@@ -219,13 +219,15 @@ class Kiwi_BioProcessTask(OldBaseTask):
             targets=self.targets.index,
         )
 
-        TSDs = {}
-        for idx in md.index:
-            TSDs[idx] = TimeSeriesDataset(
-                ts.loc[idx],
-                metadata=md.loc[idx],
-            )
-        DS = MappingDataset(TSDs)
+        DS = MappingDataset(
+            {
+                idx: TimeSeriesDataset(
+                    ts.loc[idx],
+                    metadata=md.loc[idx],
+                )
+                for idx in md.index
+            }
+        )
 
         # construct the sampler
         subsamplers = {

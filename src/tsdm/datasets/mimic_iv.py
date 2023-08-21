@@ -222,7 +222,7 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
 
         return table
 
-    def download_file(self, fname: str) -> None:
+    def download_file(self, fname: str, /) -> None:
         self.download_from_url(
             self.BASE_URL + f"{self.__version__}/",
             self.rawdata_paths[fname],
