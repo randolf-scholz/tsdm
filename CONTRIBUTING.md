@@ -26,8 +26,8 @@ poetry install
 Via `conda` (You may have to rename `tables` ⟶ `pytables` and `torch` ⟶ `pytorch`).
 
 ```bash
-conda create --name tsdm-dev --file requirements.txt
-conda activate tsdm-dev
+conda create --name tsdm --file requirements.txt
+conda activate tsdm
 conda install --file requirements-dev.txt
 ```
 
@@ -36,7 +36,7 @@ Via `pip`.
 ```bash
 sudo apt install python3.10
 python3.10 -m virtualenv .venv
-. venv/bin/activate
+source .venv/bin/activate
 pip install -e .
 ```
 
@@ -62,15 +62,10 @@ git checkout -b feature-xyz
 ### 7. Write your code, bonus points for also adding unit tests
 
 - Write your code in the `src` directory.
-
 - Write your unit tests in the `tests` directory.
-
 - Check if tests are working via `pytest`.
-
 - Check for type errors via `mypy`.
-
 - Check for style errors via `flake8`.
-
 - Check for code quality via `pylint`.
 
 ### 8. Write descriptive commit messages

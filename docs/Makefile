@@ -23,5 +23,6 @@ help:
 	rm -rf autoapi
 	rm -rf apidoc
 	rm -rf api
+
 	sphinx-apidoc  --separate  --implicit-namespaces  -o apidoc/  ../src/tsdm
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

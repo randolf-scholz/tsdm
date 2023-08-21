@@ -14,41 +14,29 @@ and improves on numerous aspects of MIMIC-III. MIMIC-IV adopts a modular approac
 highlighting data provenance and facilitating both individual and combined use of disparate data sources.
 MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
 
-
 Preprocessing Details
 ---------------------
-emar_detail
-    1. cast/drop the following columns to float:
-        - dose_due
-        - dose_given
-        - product_amount_given
-        - prior_infusion_rate
-        - infusion_rate
-        - infusion_rate_adjustment_amount
-
-labevents:
-    1. drop data without hadm_id
-    2. cast value to float
-
-omr:
-    1. convert from tall to wide by unstacking result_name/result_value
-    2. split columns containing blood pressure into systolic and diastolic
-    3. cast all generated columns to float
-
-poe_detail
-    1. Unstack on field_name/field_value
-
-prescriptions:
-    1. drop rows whose dose_val_rx/form_val_disp is not float.
-
-procedureevents:
-    1. convert storetime to second resolution
-
-chartevents:
-    1. Drop rows with missing valueuom
-    2. cast value to float
-    3. unstack value/valueuom??
-
+1. emar_detail: cast/drop the following columns to float:
+    - dose_due
+    - dose_given
+    - product_amount_given
+    - prior_infusion_rate
+    - infusion_rate
+    - infusion_rate_adjustment_amount
+2. labevents:
+    - drop data without hadm_id
+    - cast value to float
+3. omr:
+    - convert from tall to wide by unstacking result_name/result_value
+    - split columns containing blood pressure into systolic and diastolic
+    - cast all generated columns to float
+4. poe_detail:  Unstack on field_name/field_value
+5. prescriptions: drop rows whose dose_val_rx/form_val_disp is not float.
+6. procedureevents: convert storetime to second resolution
+7. chartevents:
+    - Drop rows with missing valueuom
+    - cast value to float
+    - unstack value/valueuom??
 
 Tables that may require unstacking
 ----------------------------------
@@ -240,10 +228,9 @@ class MIMIC_IV(MIMIC_IV_RAW):
     The following preprocessing steps are applied:
 
     - data entries with missing hadm_id are dropped. affects:
-      - hosp/(admissions, diagnoses_icd, drgcodes, emar, hcpcsevents, labevents,
-        microbiologyevents, pharmacy, poe, prescriptions, procedures_icd, services, transfers
-      - icu/chartevents, datetimeevents, icustays, ingredientevents, inputevents, outputevents, procedureevents
-
+        - hosp/(admissions, diagnoses_icd, drgcodes, emar, hcpcsevents, labevents,
+          microbiologyevents, pharmacy, poe, prescriptions, procedures_icd, services, transfers
+        - icu/chartevents, datetimeevents, icustays, ingredientevents, inputevents, outputevents, procedureevents
     - hosp/emar_detail:
         - trim whitespaces and cast the following columns to float, dropping incompatible values.
           dose_due, dose_given, product_amount_given, prior_infusion_rate,
