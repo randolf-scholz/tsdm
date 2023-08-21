@@ -10,13 +10,13 @@ The documentation is hosted at https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/t
 
 Install via poetry (https://python-poetry.org/):
 
-.. code-block:: bash
-
-    poetry shell
-    poetry install
+```bash
+poetry shell
+poetry install
+```
 
 Install via pip:
 
-.. code-block:: bash
-
-    pip install -e .
+```bash
+pip install -e .
+```

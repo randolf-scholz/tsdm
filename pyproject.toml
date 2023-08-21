@@ -1,18 +1,18 @@
 [build-system]
-requires = ["poetry-core>=1.5.1"]
+requires = ["poetry-core>=1.6.0"]
 build-backend = "poetry.core.masonry.api"
 
 
 # region project configuration ------------------------------------------------------
 [project]
-requires-python = ">=3.10,<3.12"
 name = "tsdm"
 version = "0.4.8"
 
 authors = [{name="Randolf Scholz", email="randolf.scholz@gmail.com"},]
 description = "Time-Series Datasets and Models"
-license = { file="LICENSE" }
+license = {file = "LICENSE"}
 readme = "README.md"
+
 
 keywords = ["time series", "machine learning"]
 classifiers = [
@@ -25,6 +25,8 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 
+
+requires-python = ">=3.10,<3.12"
 dependencies = [
     "matplotlib>=3.7.2",
     "numpy>=1.25.2",
@@ -41,6 +43,7 @@ dependencies = [
     "tqdm>=4.66.1",
     "typing-extensions>=4.7.1",
 ]
+
 
 [project.optional-dependencies]
 test = [
@@ -126,7 +129,6 @@ homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
 documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
 repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi"
 # endregion project configuration ------------------------------------------------------
-
 
 
 # region flake8 configuration ----------------------------------------------------------
@@ -501,7 +503,12 @@ version = "0.4.8"
 # package-content
 readme = "README"
 license = "MIT"
-include = ["README", "LICENSE", "CONTRIBUTING", "CHANGELOG"]
+include = [
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "README.md",
+]
 packages = [{include = "tsdm", from="src"}]
 
 # urls

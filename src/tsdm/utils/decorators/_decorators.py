@@ -438,17 +438,6 @@ def timefun(
     return _timed_fun
 
 
-# @decorator
-# def sphinx_value(func: Callable, value: Any, /) -> Callable:
-#     r"""Use alternative attribute value during sphinx compilation - useful for attributes."""
-#
-#     @wraps(func)
-#     def _wrapper(*func_args, **func_kwargs):
-#         return value
-#
-#     return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
-
-
 def trace(func: Callable[P, R]) -> Callable[P, R]:
     r"""Log entering and exiting of function."""
     logger = logging.getLogger("trace")

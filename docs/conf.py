@@ -182,13 +182,47 @@ python_use_unqualified_type_names = True
 html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
-# html_theme_options = {
-#     # # FIXME: https://github.com/pydata/pydata-sphinx-theme/issues/1094
-#     "logo": {
-#         "image_light": "logo-light.png",
-#         "image_dark": "logo-dark.png",
-#     }
-# }
+html_theme_options = {
+    "header_links_before_dropdown": 7,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/randolf-scholz/tsdm",
+            "icon": "fa-brands fa-github",
+        },
+        # {
+        #     "name": "Twitter",
+        #     "url": "https://twitter.com/PyData",
+        #     "icon": "fa-brands fa-twitter",
+        # },
+        # {
+        #     "name": "PyPI",
+        #     "url": "https://pypi.org/project/pydata-sphinx-theme",
+        #     "icon": "fa-custom fa-pypi",
+        # },
+        # {
+        #     "name": "PyData",
+        #     "url": "https://pydata.org",
+        #     "icon": "_static/pydata-logo.png",
+        #     "type": "local",
+        #     "attributes": {"target": "_blank"},
+        # },
+    ],
+    # "external_links": [
+    #     {
+    #         "url": "https://pydata.org",
+    #         "name": "PyData",
+    #     },
+    #     {
+    #         "url": "https://numfocus.org/",
+    #         "name": "NumFocus",
+    #     },
+    #     {
+    #         "url": "https://numfocus.org/donate",
+    #         "name": "Donate to NumFocus",
+    #     },
+    # ],
+}
 #     # TOCTREE OPTIONS
 #     "collapse_navigation": False,
 #     # With this enabled, navigation entries are not expandable – the [+] icons next to each entry are removed.
