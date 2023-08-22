@@ -16,6 +16,19 @@ repos:
         files: ^dev/
         language: system
         description: "strip output from jupyter notebooks"
+      - id: markdownlint
+        name: markdownlint
+        types: [markdown]
+        language: system
+        stages: [manual]
+        verbose: true
+        entry: mdl
+        args:
+          ["-r", "~MD007,~MD013,~MD029,~MD033"]
+          # MD007: Unordered list indentation (false positives)
+          # MD013: Line length (unused)
+        # MD029: Ordered list item prefix (false positives)
+        # MD033: Inline HTML (unused)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
     rev: v4.4.0
@@ -150,17 +163,6 @@ repos:
       - id: pyright
         files: (^src/|^tests/)
         stages: [pre-push]
-  # markdownlint
-  - repo: https://github.com/markdownlint/markdownlint.git
-    rev: v0.12.0
-    hooks:
-      - id: markdownlint
-        files: \.(md|mdown|markdown)$
-        args:
-          ["-r", "~MD007,~MD013,~MD029"]
-          # MD007: Unordered list indentation (false positives)
-          # MD013: Line length (unused)
-          # MD029: Ordered list item prefix (false positives)
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.1.27
     hooks:
