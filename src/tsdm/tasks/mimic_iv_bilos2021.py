@@ -52,6 +52,7 @@ __all__ = [
     "TaskDataset",
 ]
 
+import warnings
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
@@ -208,6 +209,10 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
     preprocessor: FrameEncoder[StandardScaler, dict[Any, MinMaxScaler]]
 
     def __init__(self, *, normalize_time: bool = True) -> None:
+        warnings.warn(
+            "This task is included for historical reasons, but it has several defects:"
+        )
+
         super().__init__()
         self.preprocessor = FrameEncoder(
             column_encoders=StandardScaler(),

@@ -1,10 +1,11 @@
 # region custom ########################################################################
 # top level folders starting with underscore
-**/_*/
-!docs/_static/
 
 # hidden directories
 .*/
+!.idea/
+# private directories
+_*/
 
 # libtorch
 libtorch/
@@ -24,6 +25,9 @@ docs/apidoc/
 docs/autoapi/
 docs/_autosummary
 docs/_build
+!docs/_static/
+!docs/_ext/
+!docs/_templates/
 reports/
 
 # pytorch model files

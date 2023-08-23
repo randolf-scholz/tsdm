@@ -9,13 +9,6 @@ repos:
   #      - id: identity
   - repo: local
     hooks:
-      - id: nbstripout-fast
-        name: nbstripout-fast
-        entry: nbstripout-fast
-        types: [jupyter]
-        files: ^dev/
-        language: system
-        description: "strip output from jupyter notebooks"
       - id: markdownlint
         name: markdownlint
         types: [markdown]
@@ -59,7 +52,6 @@ repos:
         description: "checks for debugger imports and py37+ `breakpoint()` calls in python source."
       - id: end-of-file-fixer
         description: "ensures that a file is either empty, or ends with one newline."
-        exclude: ^.*.ipynb$ # FIXME: https://github.com/deshaw/nbstripout-fast/issues/8
       - id: pretty-format-json
         args: ["--autofix"]
         exclude: ^.*.ipynb$ # FIXME: https://github.com/deshaw/nbstripout-fast/issues/8
@@ -158,11 +150,17 @@ repos:
         stages: [pre-push]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.323
+    rev: v1.1.324
     hooks:
       - id: pyright
         files: (^src/|^tests/)
         stages: [pre-push]
+  # nbstripout-fast
+  - repo: https://github.com/randolf-scholz/nbstripout-fast.git
+    rev: v1.0.3
+    hooks:
+      - id: nbstripout-fast
+        files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.1.27
     hooks:
