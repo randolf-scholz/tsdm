@@ -11,8 +11,6 @@ Forecasting Model
 -----------------
 
 
-
-
 Decomposable METRICS
 --------------------
 
@@ -85,7 +83,7 @@ create a `Sample` from the `TimeSeriesCollection`.
 
 **`Flowchart Sketch <image_link_>`_**
 
-.. literalinclude:: ../flowchart.txt
+.. literalinclude:: ../content/diagrams/flowchart.txt
 .. _image_link:
     https://asciiflow.com/#/share/eJzdWLtu2zAU%2FRWBUwtkcbu0XjwEqLcgQJJNQKDKTEtUL0gMEDcIYBgdO3AQXA0dM2bqWOhr9CWVKZEixYeo
     eKsgxBLJe3nv4bmHYh5BEsQQLJP7KDoDUbCFOViCRx88%2BGD58f3izAfb9undh%2BMThg%2B4ffGBZ7ua8mdT7txuYjYhvp84TXH425T7T2m0WcME5g

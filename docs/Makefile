@@ -18,9 +18,15 @@ help:
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
+	# create build directory if not exists
+	mkdir -p _build
+
 	# backup previous build
-	rm -rf _build_previous
-	mv _build _build_previous
+	mkdir -p _previous_build
+	rm -rf _previous_build
+	mv _build _previous_build
+
+	# remove previous build
 	rm -rf _build
 	rm -rf _autosummary
 	rm -rf autoapi

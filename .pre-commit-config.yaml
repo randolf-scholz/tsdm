@@ -162,12 +162,12 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.27
+    rev: v0.1.32
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
       - id: pyproject-check-deps
-        args: ["--ignore-listed", "tensorboard"] # torch does not list this...
+        args: ["--ignore-project-deps", "tensorboard"] # torch does not list this...
       - id: python-no-blanket-type-ignore
         files: (^src/|^tests/)
       - id: python-no-builtin-eval
