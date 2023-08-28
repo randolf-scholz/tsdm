@@ -32,60 +32,79 @@ Must return a `NamedTuple` that agrees with the original column names!
 __all__ = [
     # Sub- Modules
     "base",
-    # Constants
+    "kiwi",
+    "mimic",
+    "uci",
+    # Protocol
     "Task",
+    # Constants
     "TASKS",
     # Classes
+    "OldBaseTask",
     "TimeSeriesTask",
     "TimeSeriesSampleGenerator",
     # Tasks
     "ETT_Zhou2021",
-    "KIWI_RUNS_TASK",
-    "KIWI_FINAL_PRODUCT",
+    "ElectricityDeepAR",
+    "ElectricityDeepState",
+    "ElectricityELBMBTTF",
     "ElectricityLim2021",
-    "MIMIC_III_DeBrouwer2019",
-    "MIMIC_III_Bilos2021",
-    "MIMIC_IV_Bilos2021",
-    "USHCN_DeBrouwer2019",
+    "ElectricityTRMF",
+    "InSilicoSampleGenerator",
+    "InSilicoTask",
+    "KIWI_FINAL_PRODUCT",
+    "KiwiForecastingTask",
+    "KiwiTask",
     "Kiwi_BioProcessTask",
+    "MIMIC_III_Bilos2021",
+    "MIMIC_III_DeBrouwer2019",
+    "MIMIC_IV_Bilos2021",
+    "TrafficTFT",
+    "TrafficTRMF",
+    "USHCN_DeBrouwer2019",
     # Task Datasets
     "KiwiTask",
     "InSilicoSampleGenerator",
     "InSilicoTask",
 ]
 
-
-from typing import Final, TypeAlias
-
-from tsdm.tasks import base
+from tsdm.tasks import base, kiwi, mimic, uci
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.tasks._deprecated_electricity_lim2021 import ElectricityLim2021
-from tsdm.tasks._deprecated_kiwi_bioprocess import Kiwi_BioProcessTask
-from tsdm.tasks._deprecated_kiwi_runs_task import KIWI_RUNS_TASK
-from tsdm.tasks.base import TimeSeriesSampleGenerator, TimeSeriesTask
+from tsdm.tasks.base import Task, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
-from tsdm.tasks.insilico import InSilicoSampleGenerator, InSilicoTask
-from tsdm.tasks.kiwi_final_product import KIWI_FINAL_PRODUCT
-from tsdm.tasks.kiwi_task import KiwiTask
-from tsdm.tasks.mimic_iii_bilos2021 import MIMIC_III_Bilos2021
-from tsdm.tasks.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
-from tsdm.tasks.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
-from tsdm.tasks.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
+from tsdm.tasks.kiwi import (
+    KIWI_FINAL_PRODUCT,
+    InSilicoSampleGenerator,
+    InSilicoTask,
+    Kiwi_BioProcessTask,
+    KiwiForecastingTask,
+    KiwiTask,
+)
+from tsdm.tasks.mimic import (
+    MIMIC_III_Bilos2021,
+    MIMIC_III_DeBrouwer2019,
+    MIMIC_IV_Bilos2021,
+)
+from tsdm.tasks.uci import (
+    ElectricityDeepAR,
+    ElectricityDeepState,
+    ElectricityELBMBTTF,
+    ElectricityLim2021,
+    ElectricityTRMF,
+    TrafficTFT,
+    TrafficTRMF,
+)
+from tsdm.tasks.ushcn import USHCN_DeBrouwer2019
 
-Task: TypeAlias = OldBaseTask
-r"""Type hint for tasks."""
-
-TASKS: Final[dict[str, type[Task]]] = {
+TASKS: dict[str, type[Task]] = {
     "ETT_Zhou2021": ETT_Zhou2021,
-    "KIWI_RUNS_TASK": KIWI_RUNS_TASK,
-    "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
-    "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
     "ElectricityLim2021": ElectricityLim2021,
-    "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
+    "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
+    "KiwiTask": KiwiTask,
+    "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
     "MIMIC_III_Bilos2021": MIMIC_III_DeBrouwer2019,
+    "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available tasks."""
-
-del Final, TypeAlias

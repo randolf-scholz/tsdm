@@ -25,7 +25,7 @@ __all__ = [
     "mimic",
     "physionet",
     "kiwi",
-    "cdiac",
+    "ushcn",
     # Types
     "Dataset",
     # Constants
@@ -59,7 +59,7 @@ __all__ = [
 ]
 
 # submodules
-from tsdm.datasets import base, cdiac, kiwi, mimic, physionet, timeseries, uci
+from tsdm.datasets import base, kiwi, mimic, physionet, timeseries, uci, ushcn
 from tsdm.datasets.base import (
     BaseDataset,
     Dataset,
@@ -68,7 +68,6 @@ from tsdm.datasets.base import (
     TimeSeriesCollection,
     TimeSeriesDataset,
 )
-from tsdm.datasets.cdiac import USHCN, USHCN_DeBrouwer2019
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.kiwi import KIWI_RUNS, InSilicoData, KIWI_Dataset, KiwiDataset
 from tsdm.datasets.mimic import (
@@ -83,6 +82,7 @@ from tsdm.datasets.mimic import (
 from tsdm.datasets.physionet import PhysioNet2012, PhysioNet2019
 from tsdm.datasets.timeseries import KIWI
 from tsdm.datasets.uci import BeijingAirQuality, Electricity, Traffic
+from tsdm.datasets.ushcn import USHCN, USHCN_DeBrouwer2019
 
 TSC: dict[str, type[TimeSeriesCollection]] = {
     "KiwiDataset": KiwiDataset,

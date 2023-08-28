@@ -15,10 +15,6 @@ __all__ = [
 ]
 
 from tsdm.datasets.base import TimeSeriesCollection
-from tsdm.datasets.cdiac.ushcn import USHCN as _USHCN
-from tsdm.datasets.cdiac.ushcn_debrouwer2019 import (
-    USHCN_DeBrouwer2019 as _USHCN_DeBrouwer2019,
-)
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.kiwi.kiwi_benchmark import KIWI_Dataset
 from tsdm.datasets.mimic.mimic_iii_debrouwer2019 import (
@@ -31,6 +27,10 @@ from tsdm.datasets.physionet.physionet2012 import PhysioNet2012 as _PhysioNet201
 from tsdm.datasets.physionet.physionet2019 import PhysioNet2019 as _PhysioNet2019
 from tsdm.datasets.uci.electricity import Electricity as _Electricity
 from tsdm.datasets.uci.traffic import Traffic as _Traffic
+from tsdm.datasets.ushcn.ushcn import USHCN as _USHCN
+from tsdm.datasets.ushcn.ushcn_debrouwer2019 import (
+    USHCN_DeBrouwer2019 as _USHCN_DeBrouwer2019,
+)
 
 
 class KIWI(TimeSeriesCollection):

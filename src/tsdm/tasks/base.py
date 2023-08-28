@@ -98,6 +98,8 @@ create a `Sample` from the `TimeSeriesCollection`.
 """
 
 __all__ = [
+    # Protocol
+    "Task",
     # Classes
     "Sample",
     "Inputs",
@@ -120,6 +122,7 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
+    Protocol,
     TypeAlias,
     TypeVar,
 )
@@ -139,6 +142,13 @@ from tsdm.encoders import Encoder
 from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
+
+
+class Task(Protocol):
+    """Protocol for tasks."""
+
+    # FIXME: Implement Protocol for Tasks
+
 
 Sample_co = TypeVar("Sample_co", covariant=True)
 """Covariant type variable for `Sample`."""
