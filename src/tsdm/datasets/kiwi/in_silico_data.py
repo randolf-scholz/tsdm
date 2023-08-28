@@ -4,17 +4,48 @@ __all__ = ["InSilicoData"]
 
 import shutil
 from importlib import resources
+from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import pandas as pd
 from pandas import DataFrame
 
-from tsdm.datasets import examples
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import remove_outliers
+from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
+
+TIMESERIES_DESCRIPTION: InlineTable = {
+    "data": [
+        # fmt: off
+        ("Biomass"  , 0, None, True, True, "g/L", None),
+        ("Substrate", 0, None, True, True, "g/L", None),
+        ("Acetate"  , 0, None, True, True, "g/L", None),
+        ("DOTm"     , 0, 100,  True, True, "%",   None),
+        ("Product"  , 0, None, True, True, "g/L", None),
+        ("Volume"   , 0, None, True, True, "L",   None),
+        ("Feed"     , 0, None, True, True, "μL",  None),
+        # fmt: on
+    ],
+    "schema": {
+        # fmt: off
+        "variable"       : "string[pyarrow]",
+        "lower_bound"    : "float32[pyarrow]",
+        "upper_bound"    : "float32[pyarrow]",
+        "lower_inclusive": "bool[pyarrow]",
+        "upper_inclusive": "bool[pyarrow]",
+        "unit"           : "string[pyarrow]",
+        "description"    : "string[pyarrow]",
+        # fmt: on
+    },
+    "index": "variable",
+}
+
+KEY: TypeAlias = Literal[
+    "timeseries",
+    "timeseries_description",
+]
 
 
-class InSilicoData(MultiTableDataset[str, DataFrame]):
+class InSilicoData(MultiTableDataset[KEY, DataFrame]):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -34,48 +65,6 @@ class InSilicoData(MultiTableDataset[str, DataFrame]):
     }
     table_names = ["timeseries", "timeseries_description"]
     table_shapes = {"timeseries": (5206, 7)}
-    table_schemas = {
-        "timeseries": {
-            # fmt: off
-            "Biomass"   : "float[pyarrow]",
-            "Substrate" : "float[pyarrow]",
-            "Acetate"   : "float[pyarrow]",
-            "DOTm"      : "float[pyarrow]",
-            "Product"   : "float[pyarrow]",
-            "Volume"    : "float[pyarrow]",
-            "Feed"      : "float[pyarrow]",
-            # fmt: on
-        },
-        "timeseries_description": {
-            # fmt: off
-            "variable"       : "string[pyarrow]",
-            "lower"          : "float32[pyarrow]",
-            "upper"          : "float32[pyarrow]",
-            "lower_included" : "bool[pyarrow]",
-            "upper_included" : "bool[pyarrow]",
-            "unit"           : "string[pyarrow]",
-            "description"    : "string[pyarrow]",
-            # fmt: on
-        },
-    }
-
-    def _timeseries_description(self) -> DataFrame:
-        data = [
-            # fmt: off
-            ("Biomass"  , 0, None, True, True, "g/L", None),
-            ("Substrate", 0, None, True, True, "g/L", None),
-            ("Acetate"  , 0, None, True, True, "g/L", None),
-            ("DOTm"     , 0, 100,  True, True, "%",   None),
-            ("Product"  , 0, None, True, True, "g/L", None),
-            ("Volume"   , 0, None, True, True, "L",   None),
-            ("Feed"     , 0, None, True, True, "μL",  None),
-            # fmt: on
-        ]
-        return (
-            DataFrame(data, columns=list(self.table_schemas["timeseries_description"]))
-            .astype(self.table_schemas["timeseries_description"])
-            .set_index("variable")
-        )
 
     def _timeseries(self) -> DataFrame:
         with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:
@@ -83,7 +72,7 @@ class InSilicoData(MultiTableDataset[str, DataFrame]):
             for fname in files.namelist():
                 key = int(fname.split(".csv")[0])
                 with files.open(fname) as file:
-                    df = pd.read_csv(file, index_col=0, parse_dates=[0])
+                    df = pd.read_csv(file, index_col=0, parse_dates=[0], dayfirst=True)
                     dfs[key] = df.rename_axis(index="time")
 
         # Set index, dtype and sort.
@@ -94,18 +83,18 @@ class InSilicoData(MultiTableDataset[str, DataFrame]):
             .sort_index()
             .astype("float32[pyarrow]")
         )
-        ts = remove_outliers(ts, self._timeseries_description())
+        ts = remove_outliers(ts, self.timeseries_description)
         return ts
 
-    def clean_table(self, key: str) -> DataFrame:
+    def clean_table(self, key: KEY) -> DataFrame:
         if key == "timeseries":
             return self._timeseries()
         if key == "timeseries_description":
-            return self._timeseries_description()
+            return make_dataframe(**TIMESERIES_DESCRIPTION)
         raise KeyError(f"Unknown table {key}.")
 
     def download_file(self, fname: str, /) -> None:
         r"""Download the dataset."""
         self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
-        with resources.path(examples, fname) as path:
+        with resources.path(__package__, fname) as path:
             shutil.copy(path, self.rawdata_paths[fname])

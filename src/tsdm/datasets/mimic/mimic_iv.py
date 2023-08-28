@@ -68,7 +68,7 @@ from pyarrow import Array, Table, csv
 from tqdm.autonotebook import tqdm
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.datasets.schema.mimic_iv import (
+from tsdm.datasets.mimic.mimic_iv_schema import (
     FALSE_VALUES,
     KEYS,
     NULL_VALUES,

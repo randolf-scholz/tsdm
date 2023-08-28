@@ -18,12 +18,14 @@ Some design decisions:
 """
 
 __all__ = [
-    # Sub-Packages
-    "schema",
-    "examples",
     # Sub-Modules
     "base",
     "timeseries",
+    "uci",
+    "mimic",
+    "physionet",
+    "kiwi",
+    "cdiac",
     # Types
     "Dataset",
     # Constants
@@ -44,6 +46,7 @@ __all__ = [
     "KIWI_RUNS",
     "MIMIC_III",
     "MIMIC_III_RAW",
+    "MIMIC_III_Bilos2021",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV",
     "MIMIC_IV_RAW",
@@ -55,7 +58,8 @@ __all__ = [
     "USHCN_DeBrouwer2019",
 ]
 
-from tsdm.datasets import base, examples, schema
+# submodules
+from tsdm.datasets import base, cdiac, kiwi, mimic, physionet, timeseries, uci
 from tsdm.datasets.base import (
     BaseDataset,
     Dataset,
@@ -64,22 +68,21 @@ from tsdm.datasets.base import (
     TimeSeriesCollection,
     TimeSeriesDataset,
 )
-from tsdm.datasets.beijing_air_quality import BeijingAirQuality
-from tsdm.datasets.electricity import Electricity
+from tsdm.datasets.cdiac import USHCN, USHCN_DeBrouwer2019
 from tsdm.datasets.ett import ETT
-from tsdm.datasets.in_silico_data import InSilicoData
-from tsdm.datasets.kiwi_benchmark import KIWI_Dataset
-from tsdm.datasets.kiwi_runs import KIWI_RUNS, KiwiDataset
-from tsdm.datasets.mimic_iii import MIMIC_III, MIMIC_III_RAW
-from tsdm.datasets.mimic_iii_debrouwer2019 import MIMIC_III_DeBrouwer2019
-from tsdm.datasets.mimic_iv import MIMIC_IV, MIMIC_IV_RAW
-from tsdm.datasets.mimic_iv_bilos2021 import MIMIC_IV_Bilos2021
-from tsdm.datasets.physionet2012 import PhysioNet2012
-from tsdm.datasets.physionet2019 import PhysioNet2019
+from tsdm.datasets.kiwi import KIWI_RUNS, InSilicoData, KIWI_Dataset, KiwiDataset
+from tsdm.datasets.mimic import (
+    MIMIC_III,
+    MIMIC_III_RAW,
+    MIMIC_IV,
+    MIMIC_IV_RAW,
+    MIMIC_III_Bilos2021,
+    MIMIC_III_DeBrouwer2019,
+    MIMIC_IV_Bilos2021,
+)
+from tsdm.datasets.physionet import PhysioNet2012, PhysioNet2019
 from tsdm.datasets.timeseries import KIWI
-from tsdm.datasets.traffic import Traffic
-from tsdm.datasets.ushcn import USHCN
-from tsdm.datasets.ushcn_debrouwer2019 import USHCN_DeBrouwer2019
+from tsdm.datasets.uci import BeijingAirQuality, Electricity, Traffic
 
 TSC: dict[str, type[TimeSeriesCollection]] = {
     "KiwiDataset": KiwiDataset,

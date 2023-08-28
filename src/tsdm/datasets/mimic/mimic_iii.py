@@ -27,7 +27,7 @@ from pandas import DataFrame
 from pyarrow import Table, csv
 
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.datasets.schema.mimic_iii import (
+from tsdm.datasets.mimic.mimic_iii_schema import (
     FALSE_VALUES,
     KEYS,
     NULL_VALUES,
