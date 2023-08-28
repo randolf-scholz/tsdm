@@ -440,7 +440,7 @@ reportPrivateImportUsage = false
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-testpaths = [ "src/", "tests/"]
+testpaths = ["src/", "tests/"]
 addopts = [
     "--doctest-modules",
     "--junit-xml=reports/pytest.xml",
