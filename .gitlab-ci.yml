@@ -1,7 +1,7 @@
-#
-# https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
-#
+# GitLab CI/CD Pipeline Configuration Reference: https://docs.gitlab.com/ee/ci/yaml/
+# Template: https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
 
+# region global --------------------------------------------------------------------------------------------------------
 image: python:3.10-bullseye
 
 stages:
@@ -36,11 +36,9 @@ variables:
 before_script:
   - mkdir -p $MAIN_CACHE $PUBLIC_DIR $REPORT_DIR $BADGE_DIR
   - source ${VENVNAME}/bin/activate
+# endregion global -----------------------------------------------------------------------------------------------------
 
-################
-# STAGE: SETUP #
-################
-
+# region setup ---------------------------------------------------------------------------------------------------------
 setup:
   stage: build
   cache:
@@ -128,11 +126,9 @@ setup:
     paths:
       - dist/
       - $BADGE_DIR/
+# endregion setup ------------------------------------------------------------------------------------------------------
 
-###################
-# STAGE: ANALYSIS #
-###################
-
+# region analysis ------------------------------------------------------------------------------------------------------
 pylint:
   # see .pylintrc for configuration
   stage: analysis
@@ -243,11 +239,9 @@ mypy:
       junit: $REPORT_DIR/mypy*.xml
     paths:
       - $BADGE_DIR/
+# endregion analysis ---------------------------------------------------------------------------------------------------
 
-###############
-# STAGE: TEST #
-###############
-
+# region tests ---------------------------------------------------------------------------------------------------------
 pytest:
   stage: test
   cache:
@@ -288,11 +282,9 @@ pytest:
       junit: $REPORT_DIR/pytest.xml
     paths:
       - $BADGE_DIR/
+# endregion tests ------------------------------------------------------------------------------------------------------
 
-#################
-# STAGE: DEPLOY #
-#################
-
+# region deploy --------------------------------------------------------------------------------------------------------
 pypi:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
@@ -359,3 +351,4 @@ pages:
     paths:
       - $PUBLIC_DIR/
       - $BADGE_DIR/
+# endregion deploy -----------------------------------------------------------------------------------------------------

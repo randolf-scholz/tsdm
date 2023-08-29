@@ -57,7 +57,7 @@ test = [
 ]
 docs = [
     "myst_parser>=2.0",
-    "nbsphinx>=0.9.2",
+    "nbsphinx>=0.9.3",
     "piccolo-theme>=0.17.0",
     "pydata-sphinx-theme>=0.13.3",
     "sphinx-autoapi>=2.1.1",
@@ -65,7 +65,7 @@ docs = [
     "sphinx-copybutton>=0.5.2",
     "sphinx-math-dollar>=1.2.1",
     "sphinx-typo3-theme>=4.9.0",
-    "sphinx>=7.2.3",
+    "sphinx>=7.2.4",
 ]
 dev = [
     "bandit>=1.7.5",
@@ -87,6 +87,7 @@ dev = [
     "jupyterlab>=4.0.5",
     "matplotlib>=3.7.2",
     "mypy>=1.5.1",
+    "notebook>=7.0.2",
     "openml>=0.14.1",
     "openpyxl>=3.1.2",
     "perflint>=0.7.3",
@@ -103,7 +104,7 @@ dev = [
     "pylint>=2.17.5",
     "pylint-gitlab>=1.2.0",
     "pyright>=1.1.324",
-    "ruff>=0.0.285",
+    "ruff>=0.0.286",
     "setuptools>=68.1.2",
     "slotscheck>=0.17.0",
     "tqdm>=4.66.1",
@@ -546,6 +547,7 @@ typing-extensions = ">=4.7.1"
 ipympl = ">=0.9.3"
 ipywidgets = ">=8.1.0"
 jupyterlab = ">=4.0.5"
+notebook = ">=7.0.2"
 openml = ">=0.14.1"
 openpyxl = ">=3.1.2"
 psutil = ">=5.9.5"
@@ -565,12 +567,12 @@ pytest-xdist = ">=3.3.1"
 docutils = ">=0.20.1"
 #karma_sphinx_theme = ">=0.0.0"
 myst_parser = ">=2.0.0"
-nbsphinx = ">=0.9.2"
+nbsphinx = ">=0.9.3"
 #numpydoc = ">=1.5.0"
 #pandoc = ">=2.3"
 piccolo-theme = ">=0.17.0"
 pydata-sphinx-theme = ">=0.13.3"
-sphinx = ">=7.2.3"
+sphinx = ">=7.2.4"
 sphinx-autoapi = ">=2.1.1"
 sphinx-autodoc-typehints = ">=1.24.0"
 sphinx-automodapi = ">=0.16.0"
@@ -630,7 +632,7 @@ pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
 pylint = ">=2.17.5"
 pylint-gitlab = ">=1.2.0"
-ruff = ">=0.0.285"
+ruff = ">=0.0.286"
 ruff-lsp = ">=0.0.37"
 slotscheck = ">=0.17.0"
 
