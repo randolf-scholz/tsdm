@@ -9,5 +9,8 @@
         <option name="TAB_SIZE" value="3" />
       </indentOptions>
     </codeStyleSettings>
+    <codeStyleSettings language="Python">
+      <option name="SOFT_MARGINS" value="79,87,100" />
+    </codeStyleSettings>
   </code_scheme>
 </component>

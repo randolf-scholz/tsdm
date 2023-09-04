@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 
+from typing_extensions import Never, Protocol
 
-import scipy.stats as stats
-from scipy.optimize import minimize as minz, root as rt
+
+class A(Protocol):
+    def foo(self, x: int) -> None:
+        ...
+
+
+class B(A):
+    foo: Never
+    bar: float
+
+
+x: A = B()  # type checks
+reveal_type(B.foo)

@@ -10,6 +10,7 @@ __all__ = [
     "BUILTIN_CONSTANTS",
     "BUILTIN_TYPES",
     "EMPTY_PATH",
+    "EMPTY_MAP",
     "NULL_VALUES",
     "PRECISION",
     "BOOLEAN_PAIRS",
@@ -21,12 +22,20 @@ __all__ = [
     "EXAMPLE_CATEGORIES",
 ]
 
+from collections.abc import Mapping
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Final, Literal
 
 import numpy as np
 import pandas
 import torch
+
+EMPTY_PATH: Final[Path] = Path()
+r"""Constant: Blank path."""
+
+EMPTY_MAP: Final[Mapping] = MappingProxyType({})
+r"""Constant: Immutable Empty dictionary."""
 
 
 def CONST_TRUE_FN(*_: Any, **__: Any) -> Literal[True]:
@@ -71,8 +80,6 @@ BUILTIN_TYPES: Final[list[type]] = [
 ]
 """Builtin types https://docs.python.org/3/library/stdtypes.html."""
 
-EMPTY_PATH: Final[Path] = Path()
-r"""Constant: Blank path."""
 
 NA_STRINGS: Final[set[str]] = {
     r"",
@@ -128,28 +135,32 @@ r"""A list of common null value string represenations."""
 # fmt: on
 
 BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
-    {"f": False, "t": True},
-    {"false": False, "true": True},
-    {"n": False, "y": True},
-    {"no": False, "yes": True},
-    {"-": False, "+": True},
-    {0: False, 1: True},
-    {-1: False, +1: True},
-    {0.0: False, 1.0: True},
-    {-1.0: False, +1.0: True},
+    # fmt: off
+    {"f"     : False, "t"    : True},
+    {"false" : False, "true" : True},
+    {"n"     : False, "y"    : True},
+    {"no"    : False, "yes"  : True},
+    {"-"     : False, "+"    : True},
+    {0       : False, 1      : True},
+    {-1      : False, +1     : True},
+    {0.0     : False, 1.0    : True},
+    {-1.0    : False, +1.0   : True},
+    # fmt: on
 ]
 r"""Matched pairs of values that correspond to booleans."""
 
 PRECISION: Final[dict] = {
-    16: 2**-11,
-    32: 2**-24,
-    64: 2**-53,
-    torch.float16: 2**-11,
-    torch.float32: 2**-24,
-    torch.float64: 2**-53,
-    np.float16: 2**-11,
-    np.float32: 2**-24,
-    np.float64: 2**-53,
+    # fmt: off
+    16            : 2**-11,
+    32            : 2**-24,
+    64            : 2**-53,
+    torch.float16 : 2**-11,
+    torch.float32 : 2**-24,
+    torch.float64 : 2**-53,
+    np.float16    : 2**-11,
+    np.float32    : 2**-24,
+    np.float64    : 2**-53,
+    # fmt: on
 }
 r"""Maps precision to the corresponding precision factor."""
 
