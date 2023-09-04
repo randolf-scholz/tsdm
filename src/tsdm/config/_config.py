@@ -48,7 +48,7 @@ def generate_folders(d: dict, /, *, current_path: Path) -> None:
     for directory in d:
         path = current_path.joinpath(directory)
         if d[directory] is None:
-            print(f"Creating folder {path!r}.")
+            # print(f"Creating folder {path!r}.")
             path.mkdir(parents=True, exist_ok=True)
         else:
             generate_folders(d[directory], current_path=path)

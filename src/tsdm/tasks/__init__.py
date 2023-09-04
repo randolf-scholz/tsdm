@@ -50,11 +50,8 @@ __all__ = [
     "ElectricityELBMBTTF",
     "ElectricityLim2021",
     "ElectricityTRMF",
-    "InSilicoSampleGenerator",
-    "InSilicoTask",
     "KIWI_FINAL_PRODUCT",
     "KiwiForecastingTask",
-    "KiwiTask",
     "Kiwi_BioProcessTask",
     "MIMIC_III_Bilos2021",
     "MIMIC_III_DeBrouwer2019",
@@ -63,9 +60,9 @@ __all__ = [
     "TrafficTRMF",
     "USHCN_DeBrouwer2019",
     # Task Datasets
-    "KiwiTask",
     "InSilicoSampleGenerator",
     "InSilicoTask",
+    "KiwiTask",
 ]
 
 from tsdm.tasks import base, kiwi, mimic, uci

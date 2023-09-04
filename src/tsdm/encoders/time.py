@@ -2,13 +2,12 @@ r"""Encoders for timedelta and datetime types."""
 
 __all__ = [
     # Classes
-    "Time2Float",
     "DateTimeEncoder",
-    "TimeDeltaEncoder",
-    "PeriodicEncoder",
-    "SocialTimeEncoder",
     "PeriodicEncoder",
     "PositionalEncoder",
+    "SocialTimeEncoder",
+    "Time2Float",
+    "TimeDeltaEncoder",
     "TimeSlicer",
 ]
 

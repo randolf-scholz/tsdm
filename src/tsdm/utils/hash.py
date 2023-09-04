@@ -9,7 +9,6 @@ __all__ = [
     "hash_numpy",
     "hash_object",
     "hash_pandas",
-    "hash_pandas",
     "hash_set",
     "to_alphanumeric",
     "to_base",

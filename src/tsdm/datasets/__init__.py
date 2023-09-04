@@ -29,6 +29,7 @@ __all__ = [
     # Types
     "Dataset",
     # Constants
+    "TSC",
     "DATASETS",
     # ABCs
     "BaseDataset",
@@ -43,6 +44,8 @@ __all__ = [
     "Electricity",
     "InSilicoData",
     "KiwiDataset",
+    "KIWI_Dataset",
+    "KIWI",
     "KIWI_RUNS",
     "MIMIC_III",
     "MIMIC_III_RAW",

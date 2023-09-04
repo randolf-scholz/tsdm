@@ -10,12 +10,14 @@ __all__ = [
     "FunctionalLoss",
     # Constants
     "FUNCTIONAL_LOSSES",
+    "TORCH_ALIASES",
+    "TORCH_FUNCTIONAL_LOSSES",
     # Functions
     "nd",
     "nrmse",
-    "rmse",
     "q_quantile",
     "q_quantile_loss",
+    "rmse",
 ]
 
 from collections.abc import Callable
