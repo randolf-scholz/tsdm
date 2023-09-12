@@ -10,6 +10,7 @@ __all__ = [
     "PandasObject",
     "PathLike",
     "ScalarDType",
+    "SizeLike",
     "MaybeCallable",
     # Configuration
     "JSON",
@@ -67,6 +68,8 @@ r"""Type Alias for Python scalars."""
 
 Axes: TypeAlias = None | int | tuple[int, ...]
 r"""Type Alias for axes."""
+SizeLike: TypeAlias = int | tuple[int, ...]
+r"""Type Alias for shape-like objects."""
 
 
 class schema(NamedTuple):
