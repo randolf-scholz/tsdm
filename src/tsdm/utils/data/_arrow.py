@@ -44,7 +44,7 @@ def force_cast(x: P, dtype: Optional[DataType] = None, /, **dtypes: DataType) ->
         assert dtype is not None and not dtypes
         return (
             pl.from_arrow(x)
-            .cast(PYARROW_TO_POLARS[dtype], strict=False)  # type: ignore[union-attr]
+            .cast(PYARROW_TO_POLARS[dtype], strict=False)
             .to_arrow()
             .cast(dtype)
         )

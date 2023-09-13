@@ -31,34 +31,3 @@ class KIWI_Dataset(MultiTableDataset):
     def clean_table(self, key: str) -> None:
         with ZipFile(self.rawdata_paths["kiwi-benchmark.zip"], "r") as archive:
             archive.extract(f"{key}.parquet", self.DATASET_DIR)
-
-
-def deprecated(
-    func=None, msg=None, /, *, category=DeprecationWarning, stacklevel: int = 1
-):
-    """Indicate that a class, function or overload is deprecated."""
-    if isinstance(func, str):
-        # used as deprecated("message") -> shift arguments
-        assert msg is None
-        msg = func
-        func = None
-
-    if func is None:
-        # used with brackets -> decorator factory
-        def decorator(decorated):
-            msg = make_default_message(decorated) if msg is None else msg
-
-            def wrapped(*args, **kwargs):
-                ...
-
-            return wrapped
-
-        return decorator
-
-    # used without brackets -> wrap func
-    msg = make_default_message(func)
-
-    def wrapped(*args, **kwargs):
-        ...
-
-    return wrapped
