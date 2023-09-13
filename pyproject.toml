@@ -81,7 +81,7 @@ dev = [
     "flake8-pyproject>=1.2.3",
     "flake8-rst>=0.8.0",
     "flake8-rst-docstrings>=0.3.0",
-    "ipywidgets>=8.1.0",
+    "ipywidgets>=8.1.1",
     "isort>=5.12.0",
     "jupyterlab>=4.0.5",
     "matplotlib>=3.7.3",
@@ -547,7 +547,7 @@ typing-extensions = ">=4.7.1"
 
 [tool.poetry.group.extra.dependencies]
 ipympl = ">=0.9.3"
-ipywidgets = ">=8.1.0"
+ipywidgets = ">=8.1.1"
 jupyterlab = ">=4.0.5"
 notebook = ">=7.0.3"
 openml = ">=0.14.1"

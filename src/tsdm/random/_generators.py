@@ -103,8 +103,7 @@ class IVP_Solver(Protocol[T]):
 
     Note:
         - `scipy.integrate.solve_ivp` has y0 before t, therefore, we require that
-        y0 is passed as a keyword argument.
-
+          y0 is passed as a keyword argument.
     """
 
     def __call__(self, system: Any, t: T, *, y0: T) -> T:
