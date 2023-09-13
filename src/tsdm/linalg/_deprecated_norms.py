@@ -80,8 +80,6 @@ def scaled_norm(
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
 ) -> Tensor: ...
-
-
 @overload
 def scaled_norm(
     x: NDArray,
@@ -91,8 +89,6 @@ def scaled_norm(
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
 ) -> NDArray: ...
-
-
 @overload
 def scaled_norm(
     x: Sequence[Tensor],
@@ -102,8 +98,6 @@ def scaled_norm(
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
 ) -> Tensor: ...
-
-
 @overload
 def scaled_norm(
     x: Sequence[NDArray],
@@ -113,8 +107,6 @@ def scaled_norm(
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
 ) -> NDArray: ...
-
-
 def scaled_norm(
     x: Tensor | NDArray | Sequence[Tensor] | Sequence[NDArray],
     /,
@@ -206,8 +198,6 @@ def multi_scaled_norm(
     *,
     p: float = 2,
 ) -> Tensor: ...
-
-
 @overload
 def multi_scaled_norm(
     x: Sequence[NDArray],
@@ -215,8 +205,6 @@ def multi_scaled_norm(
     *,
     p: float = 2,
 ) -> NDArray: ...
-
-
 def multi_scaled_norm(
     x: Sequence[Tensor] | Sequence[NDArray],
     /,

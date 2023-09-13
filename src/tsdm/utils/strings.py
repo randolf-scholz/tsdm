@@ -57,16 +57,10 @@ def __dir__() -> list[str]:
 
 @overload
 def snake2camel(s: str) -> str: ...
-
-
 @overload
 def snake2camel(s: list[str]) -> list[str]: ...
-
-
 @overload
 def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]: ...
-
-
 def snake2camel(s):
     r"""Convert ``snake_case`` to ``CamelCase``."""
     if isinstance(s, tuple):

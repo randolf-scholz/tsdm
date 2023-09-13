@@ -560,12 +560,8 @@ def vectorize(
 
 @overload
 def IterItems(obj: Class) -> Class: ...
-
-
 @overload
 def IterItems(obj: O) -> O: ...
-
-
 def IterItems(obj: T) -> T:
     r"""Wrap a class such that `__getitem__` returns (key, value) pairs."""
     base_class = obj if isinstance(obj, type) else type(obj)
@@ -591,12 +587,8 @@ def IterItems(obj: T) -> T:
 
 @overload
 def IterKeys(obj: Class) -> Class: ...
-
-
 @overload
 def IterKeys(obj: O) -> O: ...
-
-
 def IterKeys(obj: T) -> T:
     r"""Wrap a class such that `__getitem__` returns key instead."""
     base_class = obj if isinstance(obj, type) else type(obj)

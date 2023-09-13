@@ -833,12 +833,9 @@ class TensorEncoder(BaseEncoder):
         pass
 
     @overload
-    def encode(self, data: PandasObject, /) -> Tensor:  # type: ignore[misc]
-        ...
-
+    def encode(self, data: PandasObject, /) -> Tensor: ...  # type: ignore[misc]
     @overload
     def encode(self, data: tuple[PandasObject, ...], /) -> tuple[Tensor, ...]: ...
-
     def encode(self, data, /):
         if isinstance(data, tuple):
             return tuple(self.encode(x) for x in data)
@@ -850,10 +847,8 @@ class TensorEncoder(BaseEncoder):
 
     @overload
     def decode(self, data: Tensor, /) -> PandasObject: ...
-
     @overload
     def decode(self, data: tuple[Tensor, ...], /) -> tuple[PandasObject, ...]: ...
-
     def decode(self, data, /):
         if isinstance(data, tuple):
             return tuple(self.decode(x) for x in data)

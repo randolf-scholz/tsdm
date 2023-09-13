@@ -312,10 +312,8 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
 
     @overload
     def __getitem__(self, index: int) -> E: ...
-
     @overload
     def __getitem__(self, index: slice) -> ChainedEncoder[E]: ...
-
     def __getitem__(self, index):
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
@@ -376,12 +374,8 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
 
 @overload
 def chain_encoders(*, simplify: Literal[True] = True) -> IdentityEncoder: ...
-
-
 @overload
 def chain_encoders(e: E, /, *, simplify: Literal[True] = True) -> E: ...
-
-
 @overload
 def chain_encoders(
     e1: E,
@@ -390,12 +384,8 @@ def chain_encoders(
     *encoders: E,
     simplify: Literal[True] = True,
 ) -> ChainedEncoder[E]: ...
-
-
 @overload
 def chain_encoders(*encoders: E, simplify: Literal[False]) -> ChainedEncoder[E]: ...
-
-
 def chain_encoders(  # type: ignore[misc]
     *encoders: E, simplify: bool = True
 ) -> Encoder:
@@ -416,8 +406,6 @@ def pow_encoder(
     simplify: Literal[True] = True,
     copy: bool = True,
 ) -> IdentityEncoder: ...
-
-
 @overload
 def pow_encoder(
     e: E,
@@ -427,14 +415,10 @@ def pow_encoder(
     simplify: Literal[True] = True,
     copy: bool = True,
 ) -> E: ...
-
-
 @overload
 def pow_encoder(
     e: E, n: int, /, *, simplify: Literal[False], copy: bool = True
 ) -> ChainedEncoder[E]: ...
-
-
 def pow_encoder(
     encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
 ) -> Encoder:
@@ -504,10 +488,8 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
 
     @overload
     def __getitem__(self, index: int) -> E: ...
-
     @overload
     def __getitem__(self, index: slice) -> ProductEncoder[E]: ...
-
     def __getitem__(self, index: int | slice) -> E | ProductEncoder[E]:
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
@@ -541,12 +523,8 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
 
 @overload
 def direct_sum_encoders(*, simplify: Literal[True] = True) -> IdentityEncoder: ...
-
-
 @overload
 def direct_sum_encoders(e: E, /, *, simplify: Literal[True] = True) -> E: ...
-
-
 @overload
 def direct_sum_encoders(
     e1: E,
@@ -555,8 +533,6 @@ def direct_sum_encoders(
     *encoders: E,
     simplify: Literal[False],
 ) -> ProductEncoder[E]: ...
-
-
 def direct_sum_encoders(  # type: ignore[misc]
     *encoders: E, simplify: bool = True, copy: bool = True
 ) -> Encoder:
@@ -580,8 +556,6 @@ def duplicate_encoder(
     simplify: Literal[True] = True,
     copy: bool = True,
 ) -> IdentityEncoder: ...
-
-
 @overload
 def duplicate_encoder(
     e: E,
@@ -591,14 +565,10 @@ def duplicate_encoder(
     simplify: Literal[True] = True,
     copy: bool = True,
 ) -> E: ...
-
-
 @overload
 def duplicate_encoder(
     e: E, n: int, /, *, simplify: Literal[False], copy: bool = True
 ) -> ProductEncoder[E]: ...
-
-
 def duplicate_encoder(
     encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
 ) -> Encoder:
@@ -638,10 +608,8 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
 
     @overload
     def __getitem__(self, key: K) -> E: ...
-
     @overload
     def __getitem__(self, key: list[K]) -> MappingEncoder[K, E]: ...
-
     def __getitem__(self, key: K | list[K]) -> E | MappingEncoder[K, E]:
         r"""Get the encoder for the given key."""
         if isinstance(key, list):

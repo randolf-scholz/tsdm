@@ -123,22 +123,12 @@ def make_dataframe(
 
 @overload
 def strip_whitespace(table: Array, /) -> Array: ...
-
-
 @overload
 def strip_whitespace(table: Table, /, *cols: str) -> Table: ...
-
-
 @overload
-def strip_whitespace(frame: Series, /) -> Series:  # type: ignore[misc]
-    ...
-
-
+def strip_whitespace(frame: Series, /) -> Series: ...  # type: ignore[misc]
 @overload
-def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame:  # type: ignore[misc]
-    ...
-
-
+def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type: ignore[misc]
 def strip_whitespace(table, /, *cols):
     """Strip whitespace from all string columns in a table or frame."""
     match table:
@@ -376,8 +366,6 @@ def remove_outliers(
     drop: bool = True,
     inplace: bool = False,
 ) -> Series: ...
-
-
 @overload
 def remove_outliers(
     s: Series,
@@ -390,8 +378,6 @@ def remove_outliers(
     lower_inclusive: bool = True,
     upper_inclusive: bool = True,
 ) -> Series: ...
-
-
 @overload
 def remove_outliers(
     df: DataFrame,
@@ -401,8 +387,6 @@ def remove_outliers(
     drop: bool = True,
     inplace: bool = False,
 ) -> DataFrame: ...
-
-
 @overload
 def remove_outliers(
     df: DataFrame,
@@ -415,8 +399,6 @@ def remove_outliers(
     lower_inclusive: Mapping[T, bool],
     upper_inclusive: Mapping[T, bool],
 ) -> DataFrame: ...
-
-
 def remove_outliers(
     obj,
     description=None,

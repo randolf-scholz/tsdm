@@ -697,12 +697,9 @@ class MultiTableDataset(
         return self.deserialize(self.dataset_paths[key])
 
     @overload
-    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T_co]:  # type: ignore[misc]
-        ...
-
+    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T_co]: ...  # type: ignore[misc]
     @overload
     def load(self, key: Key = ..., **kwargs: Any) -> T_co: ...
-
     def load(
         self,
         key: Optional[Key] = None,
@@ -797,10 +794,8 @@ class TimeSeriesDataset(TorchDataset[Series]):
 
     @overload
     def __getitem__(self, key: K, /) -> Series: ...
-
     @overload
     def __getitem__(self, key: Index | slice | list[K], /) -> DataFrame: ...
-
     def __getitem__(self, key, /):
         r"""Get item from timeseries."""
         # we might get an index object, or a slice, or boolean mask...
@@ -879,10 +874,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
 
     @overload
     def __getitem__(self, key: K, /) -> TimeSeriesDataset: ...
-
     @overload
     def __getitem__(self, key: slice, /) -> Self: ...
-
     def __getitem__(self, key, /):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this

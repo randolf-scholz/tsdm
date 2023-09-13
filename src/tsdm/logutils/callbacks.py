@@ -164,28 +164,22 @@ class CallbackList(BaseCallback, MutableSequence[Callback]):
 
     @overload
     def __getitem__(self, index: int) -> Callback: ...
-
     @overload
     def __getitem__(self, index: slice) -> MutableSequence[Callback]: ...
-
     def __getitem__(self, index: int) -> Callback:
         return self.callbacks[index]
 
     @overload
     def __setitem__(self, index: int, value: Callback) -> None: ...
-
     @overload
     def __setitem__(self, index: slice, value: Iterable[Callback]) -> None: ...
-
     def __setitem__(self, index: int, value: Callback) -> None:
         self.callbacks[index] = value
 
     @overload
     def __delitem__(self, index: int) -> None: ...
-
     @overload
     def __delitem__(self, index: slice) -> None: ...
-
     def __delitem__(self, index: int) -> None:
         del self.callbacks[index]
 

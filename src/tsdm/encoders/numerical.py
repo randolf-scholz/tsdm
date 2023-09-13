@@ -200,14 +200,10 @@ def slice_size(slc: slice) -> int | None:
 
 @overload
 def get_reduced_axes(item: INDEXER, /, axes: None) -> None: ...
-
-
 @overload
 def get_reduced_axes(
     item: INDEXER, /, axes: int | tuple[int, ...]
 ) -> tuple[int, ...]: ...
-
-
 def get_reduced_axes(item: INDEXER, /, axes: Axes) -> Axes:
     """Determine if a slice would remove some axes."""
     if axes is None:
@@ -1023,10 +1019,8 @@ class TensorSplitter(BaseEncoder):
 
     @overload
     def encode(self, data: Tensor, /) -> list[Tensor]: ...
-
     @overload
     def encode(self, data: NDArray, /) -> list[NDArray]: ...
-
     def encode(self, data, /):
         if isinstance(data, Tensor):
             return torch.tensor_split(data, self.indices_or_sections, dim=self.axis)
@@ -1034,10 +1028,8 @@ class TensorSplitter(BaseEncoder):
 
     @overload
     def decode(self, data: list[Tensor], /) -> Tensor: ...
-
     @overload
     def decode(self, data: list[NDArray], /) -> NDArray: ...
-
     def decode(self, data, /):
         if isinstance(data[0], Tensor):
             return torch.cat(data, dim=self.axis)

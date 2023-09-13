@@ -122,7 +122,6 @@ class LazyDict(dict[K, V]):
 
     @overload
     def __init__(self, /, **kwargs: FuncSpec | V) -> None: ...
-
     @overload
     def __init__(
         self,
@@ -130,7 +129,6 @@ class LazyDict(dict[K, V]):
         /,
         **kwargs: FuncSpec | V,
     ) -> None: ...
-
     @overload
     def __init__(
         self,
@@ -138,7 +136,6 @@ class LazyDict(dict[K, V]):
         /,
         **kwargs: FuncSpec | V,
     ) -> None: ...
-
     def __init__(self, /, *args: Any, **kwargs: Any) -> None:
         r"""Initialize the dictionary."""
         super().__init__()

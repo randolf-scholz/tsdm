@@ -128,8 +128,6 @@ def arrow_null_like(arr: Array, /) -> Array:
 
 @overload
 def arrow_where(mask: BooleanScalar, x: Scalar, y: Scalar = NA, /) -> Scalar: ...
-
-
 @overload
 def arrow_where(  # type: ignore[misc]
     mask: BooleanArray | BooleanScalar,
@@ -137,8 +135,6 @@ def arrow_where(  # type: ignore[misc]
     y: Array | Scalar = NA,
     /,
 ) -> Array: ...
-
-
 def arrow_where(mask, x, y=NA, /):
     """Select elements from x or y depending on mask.
 

@@ -198,8 +198,6 @@ def prepend_path(
     *,
     keep_none: bool = False,
 ) -> dict[K, Path]: ...
-
-
 @overload
 def prepend_path(
     files: list[PathLike],
@@ -208,8 +206,6 @@ def prepend_path(
     *,
     keep_none: bool = False,
 ) -> list[Path]: ...
-
-
 @overload
 def prepend_path(
     files: PathLike,
@@ -218,8 +214,6 @@ def prepend_path(
     *,
     keep_none: bool = False,
 ) -> Path: ...
-
-
 @overload
 def prepend_path(
     files: Nested[PathLike],
@@ -228,8 +222,6 @@ def prepend_path(
     *,
     keep_none: bool = False,
 ) -> Nested[Path]: ...
-
-
 @overload
 def prepend_path(
     files: Nested[Optional[PathLike]],
@@ -238,8 +230,6 @@ def prepend_path(
     *,
     keep_none: Literal[False] = False,
 ) -> Nested[Path]: ...
-
-
 @overload
 def prepend_path(
     files: Nested[Optional[PathLike]],
@@ -248,8 +238,6 @@ def prepend_path(
     *,
     keep_none: Literal[True] = True,
 ) -> Nested[Optional[Path]]: ...
-
-
 def prepend_path(
     files: Nested[Optional[PathLike]],
     parent: Path,
