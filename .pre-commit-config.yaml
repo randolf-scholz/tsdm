@@ -88,7 +88,7 @@ repos:
       - id: isort
   # black
   - repo: https://github.com/psf/black
-    rev: 23.7.0
+    rev: 23.9.1
     hooks:
       - id: black
       - id: black-jupyter
@@ -101,7 +101,7 @@ repos:
         types: [python]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.287
+    rev: v0.0.289
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -150,7 +150,7 @@ repos:
         stages: [pre-push]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.325
+    rev: v1.1.326
     hooks:
       - id: pyright
         files: (^src/|^tests/)
