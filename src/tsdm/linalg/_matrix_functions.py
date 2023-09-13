@@ -290,11 +290,11 @@ def logarithmic_norm(
     - p=-∞: minimum rowsum, using real value for diagonal
 
     References:
+        - Logarithmic Norm <https://en.wikipedia.org/wiki/Logarithmic_norm>
         - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
         - | The logarithmic norm. History and modern theory
           | Gustaf Söderlind, BIT Numerical Mathematics, 2006
           | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
-        - https://en.wikipedia.org/wiki/Logarithmic_norm
     """
     rowdim, coldim = dim
     rowdim = rowdim % x.ndim
@@ -378,7 +378,8 @@ def schatten_norm(
     .. Signature:: ``(..., n, n) -> ...``
 
     References:
-        - Schatten Norms <https://en.wikipedia.org/wiki/Schatten_norms>_
+        - Matrix Norms (schatten) <https://en.wikipedia.org/wiki/Matrix_norm#Schatten_norms>
+        - Schatten Norms <https://en.wikipedia.org/wiki/Schatten_norms>
     """
     if not torch.is_floating_point(x):
         x = x.to(dtype=torch.float)
@@ -425,8 +426,8 @@ def matrix_norm(
     dim: tuple[int, int] = (-2, -1),
     p: float = 2.0,
     q: float = 2.0,
-    keepdim: tuple[bool, bool] = (True, True),
-    scaled: tuple[bool, bool] = (False, False),
+    keepdim: bool = False,
+    scaled: bool = False,
 ) -> Tensor:
     r"""Entry-Wise Matrix norm of $p,q$-th order.
 
@@ -439,18 +440,18 @@ def matrix_norm(
     where $𝐄$ is the averaging operator, which estimates the expected value $𝔼$.
 
     References:
-        - [1] https://en.wikipedia.org/wiki/Matrix_norm
+        - Matrix Norms (entry-wise) <https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms>
     """
     # convert to tuple
     dim = (dim[0] % x.ndim, dim[1] % x.ndim)  # absolufy dim
     # if keepdim[0] is False then we need to adjust dim[1] accordingly:
     # this only happens if dim[0] < dim[1], otherwise dim[1] is already correct
     # 1 if dim[1] needs to change, 0 otherwise
-    m = int(dim[0] < dim[1]) * (1 - int(keepdim[0]))
+    m = int(dim[0] < dim[1]) * (1 - int(keepdim))
     axes = [dim[0], dim[1] - m]
 
-    x = tensor_norm(x, p=p, axes=axes[:1], keepdim=keepdim[0], scaled=scaled[0])
-    x = tensor_norm(x, p=q, axes=axes[1:], keepdim=keepdim[1], scaled=scaled[1])
+    x = tensor_norm(x, p=p, axes=axes[:1], keepdim=keepdim, scaled=scaled)
+    x = tensor_norm(x, p=q, axes=axes[1:], keepdim=keepdim, scaled=scaled)
     return x
 
 
@@ -464,28 +465,40 @@ def operator_norm(
 ) -> Tensor:
     r"""Operator norm of $p$-th order.
 
-    +--------+-----------------------------------+------------------------------------+
-    |        | standard                          | size normalized                    |
-    +========+===================================+====================================+
-    | $p=+∞$ | maximum value                     | maximum value                      |
-    +--------+-----------------------------------+------------------------------------+
-    | $p=+2$ | sum of squared values             | mean of squared values             |
-    +--------+-----------------------------------+------------------------------------+
-    | $p=+1$ | sum of squared values             | mean of squared values             |
-    +--------+-----------------------------------+------------------------------------+
-    | $p=±0$ | ∞ or sum of non-zero values       | geometric mean of values           |
-    +--------+-----------------------------------+------------------------------------+
-    | $p=-1$ | reciprocal sum of absolute values | reciprocal mean of absolute values |
-    +--------+-----------------------------------+------------------------------------+
-    | $p=-2$ | reciprocal sum of squared values  | reciprocal mean of squared values  |
-    +--------+-----------------------------------+------------------------------------+
-    | $p=-∞$ | minimum value                     | minimum value                      |
-    +--------+-----------------------------------+------------------------------------+
-
     .. Signature:: ``(..., n) -> ...``
+
+    .. math::
+        ‖x‖ₚ ≔ (   ∑_{k=0}^n |xₖ|ᵖ)^{1/p}  \text{scaled=False}
+        ‖x‖ₚ ≔ (⅟ₙ ∑_{k=0}^n |xₖ|ᵖ)^{1/p}  \text{scaled=True}
+        ‖A‖ₚ ≔ \sup_{x≠0} \frac{‖Ax‖ₚ}{‖x‖ₚ}
+
+    +--------+--------------------------+--------+
+    |        | regular                  | scaled |
+    +========+==========================+========+
+    | $p=+∞$ | maximum absolute row sum | ?      |
+    +--------+--------------------------+--------+
+    | $p=+2$ | maximum singular value   | ?      |
+    +--------+--------------------------+--------+
+    | $p=+1$ | maximum absolute col sum | ?      |
+    +--------+--------------------------+--------+
+    | $p=±0$ | ∞                        | ?      |
+    +--------+--------------------------+--------+
+    | $p=-1$ | minimum absolute col sum | ?      |
+    +--------+--------------------------+--------+
+    | $p=-2$ | minimum singular value   | ?      |
+    +--------+--------------------------+--------+
+    | $p=-∞$ | minimum absolute row sum | ?      |
+    +--------+--------------------------+--------+
+
+    References:
+        - Matrix Norms (induced) <https://en.wikipedia.org/wiki/Matrix_norm#Matrix_norms_induced_by_vector_norms>
+        - Operator Norm <https://en.wikipedia.org/wiki/Operator_norm>
     """
     rowdim, coldim = dim
     assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."
+
+    if scaled:
+        raise NotImplementedError("Scaled operator norm is not implemented.")
 
     if p == 2:
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
@@ -500,20 +513,6 @@ def operator_norm(
 
     x = x.abs()
     shift = int(coldim < rowdim) * int(keepdim)
-
-    if scaled:
-        if p == 1:
-            x = x.mean(dim=coldim, keepdim=keepdim)
-            return x.amax(dim=rowdim - shift, keepdim=keepdim)
-        if p == -1:
-            x = x.mean(dim=coldim, keepdim=keepdim)
-            return x.amin(dim=rowdim - shift, keepdim=keepdim)
-        if p == float("inf"):
-            x = x.mean(dim=rowdim, keepdim=keepdim)
-            return x.amax(dim=coldim + shift, keepdim=keepdim)
-        if p == -float("inf"):
-            x = x.mean(dim=rowdim, keepdim=keepdim)
-            return x.amin(dim=coldim + shift, keepdim=keepdim)
 
     if p == 1:
         x = x.sum(dim=coldim, keepdim=keepdim)

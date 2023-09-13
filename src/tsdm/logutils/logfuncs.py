@@ -61,14 +61,9 @@ def unpack_wrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
     r"""Unpack wrapped values."""
     if callable(x):
         try:
-            return x(step)
+            return x(step)  # type: ignore[call-arg]
         except TypeError:
-            pass
-
-        try:
-            return x()
-        except TypeError:
-            pass
+            return x()  # type: ignore[call-arg]
 
     return x
 
