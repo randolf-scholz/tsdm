@@ -166,20 +166,21 @@ class ElectricityLim2021(OldBaseTask):
     def masks(self) -> dict[KeyType, np.ndarray]:
         r"""Masks for the training, validation and test sets."""
         return {
-            "train": (self.boundaries["start"] <= self.dataset.index)
-            & (self.dataset.index < self.boundaries["train"]),
+            "train": (self.boundaries["start"] <= self.dataset.index) & (
+                self.dataset.index < self.boundaries["train"]
+            ),
             "valid": (
                 self.boundaries["train"] - self.observation_period <= self.dataset.index
-            )
-            & (self.dataset.index < self.boundaries["valid"]),
+            ) & (self.dataset.index < self.boundaries["valid"]),
             "test": (
                 self.boundaries["valid"] - self.observation_period <= self.dataset.index
-            )
-            & (self.dataset.index < self.boundaries["final"]),
-            "whole": (self.boundaries["start"] <= self.dataset.index)
-            & (self.dataset.index < self.boundaries["final"]),
-            "joint": (self.boundaries["start"] <= self.dataset.index)
-            & (self.dataset.index < self.boundaries["valid"]),
+            ) & (self.dataset.index < self.boundaries["final"]),
+            "whole": (self.boundaries["start"] <= self.dataset.index) & (
+                self.dataset.index < self.boundaries["final"]
+            ),
+            "joint": (self.boundaries["start"] <= self.dataset.index) & (
+                self.dataset.index < self.boundaries["valid"]
+            ),
         }
 
     @cached_property

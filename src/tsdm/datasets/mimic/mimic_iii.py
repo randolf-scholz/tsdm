@@ -69,7 +69,9 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
     HOME_URL = r"https://mimic.mit.edu/"
 
     rawdata_hashes = {
-        "mimic-iii-clinical-database-1.4.zip": "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd",  # noqa: E501
+        "mimic-iii-clinical-database-1.4.zip": (
+            "sha256:f9917f0f77f29d9abeb4149c96724618923a4725310c62fb75529a2c3e483abd"
+        ),
     }
 
     table_names: tuple[KEYS, ...] = get_args(KEYS)

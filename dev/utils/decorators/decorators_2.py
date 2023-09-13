@@ -192,9 +192,10 @@ def parametrized_decorator(decorator):
     )
     print(f"{num_positionals=}")
 
-    assert (
-        num_positionals >= 1
-    ), "The decorator needs to have at least 1 positional only argument __func__ in the the first position"
+    assert num_positionals >= 1, (
+        "The decorator needs to have at least 1 positional only argument __func__ in"
+        " the the first position"
+    )
 
     if not is_strict(decorator):
         raise ValueError("Decorator is not strict!")

@@ -197,8 +197,7 @@ def prepend_path(
     /,
     *,
     keep_none: bool = False,
-) -> dict[K, Path]:
-    ...
+) -> dict[K, Path]: ...
 
 
 @overload
@@ -208,8 +207,7 @@ def prepend_path(
     /,
     *,
     keep_none: bool = False,
-) -> list[Path]:
-    ...
+) -> list[Path]: ...
 
 
 @overload
@@ -219,8 +217,7 @@ def prepend_path(
     /,
     *,
     keep_none: bool = False,
-) -> Path:
-    ...
+) -> Path: ...
 
 
 @overload
@@ -230,8 +227,7 @@ def prepend_path(
     /,
     *,
     keep_none: bool = False,
-) -> Nested[Path]:
-    ...
+) -> Nested[Path]: ...
 
 
 @overload
@@ -241,8 +237,7 @@ def prepend_path(
     /,
     *,
     keep_none: Literal[False] = False,
-) -> Nested[Path]:
-    ...
+) -> Nested[Path]: ...
 
 
 @overload
@@ -252,8 +247,7 @@ def prepend_path(
     /,
     *,
     keep_none: Literal[True] = True,
-) -> Nested[Optional[Path]]:
-    ...
+) -> Nested[Optional[Path]]: ...
 
 
 def prepend_path(

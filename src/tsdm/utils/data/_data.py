@@ -122,13 +122,11 @@ def make_dataframe(
 
 
 @overload
-def strip_whitespace(table: Array, /) -> Array:
-    ...
+def strip_whitespace(table: Array, /) -> Array: ...
 
 
 @overload
-def strip_whitespace(table: Table, /, *cols: str) -> Table:
-    ...
+def strip_whitespace(table: Table, /, *cols: str) -> Table: ...
 
 
 @overload
@@ -377,8 +375,7 @@ def remove_outliers(
     *,
     drop: bool = True,
     inplace: bool = False,
-) -> Series:
-    ...
+) -> Series: ...
 
 
 @overload
@@ -392,8 +389,7 @@ def remove_outliers(
     upper_bound: float | None = None,
     lower_inclusive: bool = True,
     upper_inclusive: bool = True,
-) -> Series:
-    ...
+) -> Series: ...
 
 
 @overload
@@ -404,8 +400,7 @@ def remove_outliers(
     *,
     drop: bool = True,
     inplace: bool = False,
-) -> DataFrame:
-    ...
+) -> DataFrame: ...
 
 
 @overload
@@ -419,8 +414,7 @@ def remove_outliers(
     upper_bound: Mapping[T, float | None],
     lower_inclusive: Mapping[T, bool],
     upper_inclusive: Mapping[T, bool],
-) -> DataFrame:
-    ...
+) -> DataFrame: ...
 
 
 def remove_outliers(

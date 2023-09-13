@@ -24,8 +24,7 @@ class MethodType:
 def issubclassable(cls):
     try:
 
-        class _(cls):
-            ...
+        class _(cls): ...
 
     except:
         return False

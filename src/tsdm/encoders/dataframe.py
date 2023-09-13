@@ -746,8 +746,8 @@ class TripletDecoder(BaseEncoder):
 
         if pd.api.types.is_float_dtype(categories):
             raise ValueError(
-                f"channel_ids found in {self.var_name!r} does no look like a categoricals!"
-                "\n Please specify `value_name` and/or `var_name`!"
+                f"channel_ids found in {self.var_name!r} does no look like a"
+                " categorical!\n Please specify `value_name` and/or `var_name`!"
             )
 
         self.categories = pd.CategoricalDtype(np.sort(categories))
@@ -830,15 +830,14 @@ class TensorEncoder(BaseEncoder):
         self.is_fitted = True
 
     def fit(self, data: PandasObject, /) -> None:
-        ...
+        pass
 
     @overload
     def encode(self, data: PandasObject, /) -> Tensor:  # type: ignore[misc]
         ...
 
     @overload
-    def encode(self, data: tuple[PandasObject, ...], /) -> tuple[Tensor, ...]:
-        ...
+    def encode(self, data: tuple[PandasObject, ...], /) -> tuple[Tensor, ...]: ...
 
     def encode(self, data, /):
         if isinstance(data, tuple):
@@ -850,12 +849,10 @@ class TensorEncoder(BaseEncoder):
         return torch.tensor(data, device=self.device, dtype=self.dtype)
 
     @overload
-    def decode(self, data: Tensor, /) -> PandasObject:
-        ...
+    def decode(self, data: Tensor, /) -> PandasObject: ...
 
     @overload
-    def decode(self, data: tuple[Tensor, ...], /) -> tuple[PandasObject, ...]:
-        ...
+    def decode(self, data: tuple[Tensor, ...], /) -> tuple[PandasObject, ...]: ...
 
     def decode(self, data, /):
         if isinstance(data, tuple):
@@ -1035,7 +1032,7 @@ class FrameAsDict(Mapping[str, list[str]], BaseEncoder):
         if cols:
             raise ValueError(
                 f"Columns {cols} are not assigned to a group! "
-                f"Try setting encode_index=False to skip encoding the index."
+                "Try setting encode_index=False to skip encoding the index."
             )
 
         # data type validation

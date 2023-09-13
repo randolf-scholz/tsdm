@@ -161,8 +161,7 @@ def decorator_with_positionals(__fun__: Callable, a, b, /, c, d, *args, e, f, **
     def _decorator(func):
         @functools.wraps(func)
         def wrapper(*func_args, **func_kwargs):
-            print(
-                f"""
+            print(f"""
                 {a=} reporting in
                 {b=} reporting in
                 {c=} reporting in
@@ -171,8 +170,7 @@ def decorator_with_positionals(__fun__: Callable, a, b, /, c, d, *args, e, f, **
                 {f=} reporting in
                 {args=} reporting in
                 {kwargs=} reporting in
-                """
-            )
+                """)
             return func(*func_args, **func_kwargs)
 
         return wrapper

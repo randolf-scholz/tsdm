@@ -41,12 +41,10 @@ class DatasetCollection(TorchDataset[TorchDataset[O]], Mapping[K, TorchDataset[O
         return len(self.dataset)
 
     @overload
-    def __getitem__(self, key: Sequence[K] | slice) -> O:
-        ...
+    def __getitem__(self, key: Sequence[K] | slice) -> O: ...
 
     @overload
-    def __getitem__(self, key: K) -> TorchDataset[O]:
-        ...
+    def __getitem__(self, key: K) -> TorchDataset[O]: ...
 
     def __getitem__(self, key):
         r"""Hierarchical lookup."""
@@ -97,12 +95,10 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: K) -> TorchDatasetVar:
-        ...
+    def __getitem__(self, key: K) -> TorchDatasetVar: ...
 
     @overload
-    def __getitem__(self, key: tuple[K, K2]) -> Any:
-        ...
+    def __getitem__(self, key: tuple[K, K2]) -> Any: ...
 
     def __getitem__(self, key):
         r"""Get the dataset for the given key.

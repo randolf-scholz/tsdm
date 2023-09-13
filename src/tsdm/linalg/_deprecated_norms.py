@@ -79,8 +79,7 @@ def scaled_norm(
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
-) -> Tensor:
-    ...
+) -> Tensor: ...
 
 
 @overload
@@ -91,8 +90,7 @@ def scaled_norm(
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
-) -> NDArray:
-    ...
+) -> NDArray: ...
 
 
 @overload
@@ -103,8 +101,7 @@ def scaled_norm(
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
-) -> Tensor:
-    ...
+) -> Tensor: ...
 
 
 @overload
@@ -115,8 +112,7 @@ def scaled_norm(
     p: float = 2,
     axis: Optional[SizeLike] = None,
     keepdims: bool = False,
-) -> NDArray:
-    ...
+) -> NDArray: ...
 
 
 def scaled_norm(
@@ -209,8 +205,7 @@ def multi_scaled_norm(
     /,
     *,
     p: float = 2,
-) -> Tensor:
-    ...
+) -> Tensor: ...
 
 
 @overload
@@ -219,8 +214,7 @@ def multi_scaled_norm(
     /,
     *,
     p: float = 2,
-) -> NDArray:
-    ...
+) -> NDArray: ...
 
 
 def multi_scaled_norm(

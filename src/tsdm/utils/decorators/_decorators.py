@@ -314,8 +314,8 @@ def decorator(deco: Callable) -> Callable:
         )
     if not len(BUCKETS[POSITIONAL_ONLY, True]) == 1:
         raise ErrorHandler(
-            "Decorator must have exactly 1 POSITIONAL_ONLY argument: the function to be decorated."
-            ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
+            "Decorator must have exactly 1 POSITIONAL_ONLY argument: the function to be"
+            " decorated.>>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
             error_msg,
         )
     if BUCKETS[VAR_POSITIONAL, True]:
@@ -559,13 +559,11 @@ def vectorize(
 
 
 @overload
-def IterItems(obj: Class) -> Class:
-    ...
+def IterItems(obj: Class) -> Class: ...
 
 
 @overload
-def IterItems(obj: O) -> O:
-    ...
+def IterItems(obj: O) -> O: ...
 
 
 def IterItems(obj: T) -> T:
@@ -592,13 +590,11 @@ def IterItems(obj: T) -> T:
 
 
 @overload
-def IterKeys(obj: Class) -> Class:
-    ...
+def IterKeys(obj: Class) -> Class: ...
 
 
 @overload
-def IterKeys(obj: O) -> O:
-    ...
+def IterKeys(obj: O) -> O: ...
 
 
 def IterKeys(obj: T) -> T:

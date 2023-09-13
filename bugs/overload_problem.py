@@ -12,12 +12,10 @@ class TensorEncoder:
         super().__init__()
 
     @overload
-    def encode(self, x: DataFrame) -> Tensor:
-        ...
+    def encode(self, x: DataFrame) -> Tensor: ...
 
     @overload
-    def encode(self, x: tuple[DataFrame, ...]) -> tuple[Tensor, ...]:
-        ...
+    def encode(self, x: tuple[DataFrame, ...]) -> tuple[Tensor, ...]: ...
 
     def encode(self, x):
         if isinstance(x, Tensor):
@@ -26,10 +24,8 @@ class TensorEncoder:
 
 
 @overload
-def foo(x: Tensor) -> Tensor:
-    ...
+def foo(x: Tensor) -> Tensor: ...
 
 
 @overload
-def foo(x: tuple[Tensor, ...]) -> tuple[Tensor, ...]:
-    ...
+def foo(x: tuple[Tensor, ...]) -> tuple[Tensor, ...]: ...

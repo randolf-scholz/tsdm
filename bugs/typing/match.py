@@ -7,5 +7,4 @@ match x:
         print("common case")
     case ("a", "b"):
         print("mixed case")
-    case _:
-        ...
+    case _: ...

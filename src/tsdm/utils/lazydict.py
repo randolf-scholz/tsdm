@@ -121,8 +121,7 @@ class LazyDict(dict[K, V]):
     update = MutableMapping.update
 
     @overload
-    def __init__(self, /, **kwargs: FuncSpec | V) -> None:
-        ...
+    def __init__(self, /, **kwargs: FuncSpec | V) -> None: ...
 
     @overload
     def __init__(
@@ -130,8 +129,7 @@ class LazyDict(dict[K, V]):
         mapping: Mapping[K, FuncSpec | V],
         /,
         **kwargs: FuncSpec | V,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -139,8 +137,7 @@ class LazyDict(dict[K, V]):
         iterable: Iterable[tuple[K, FuncSpec | V]],
         /,
         **kwargs: FuncSpec | V,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(self, /, *args: Any, **kwargs: Any) -> None:
         r"""Initialize the dictionary."""
@@ -218,9 +215,9 @@ class LazyDict(dict[K, V]):
             case _:
                 warnings.warn(
                     f"Value {value} for key {key!r} is not a callable."
-                    f" Provide a tuple (func, args, kwargs) to create Lazy Entry."
-                    f" Wrapping the value in LazyValue instead."
-                    f" To set values directly, use the `set` method.",
+                    " Provide a tuple (func, args, kwargs) to create Lazy Entry."
+                    " Wrapping the value in LazyValue instead."
+                    " To set values directly, use the `set` method.",
                     category=RuntimeWarning,
                     source=LazyDict,
                     stacklevel=3,

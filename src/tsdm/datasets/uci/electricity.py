@@ -97,7 +97,9 @@ class Electricity(SingleTableDataset):
 
     rawdata_files = ["LD2011_2014.txt.zip"]
     rawdata_hashes = {
-        "LD2011_2014.txt.zip": "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1",
+        "LD2011_2014.txt.zip": (
+            "sha256:f6c4d0e0df12ecdb9ea008dd6eef3518adb52c559d04a9bac2e1b81dcfc8d4e1"
+        ),
     }
     table_shape = (140256, 370)
     table_hash = "pandas:7114453877232760046"

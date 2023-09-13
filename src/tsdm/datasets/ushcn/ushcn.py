@@ -294,10 +294,18 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         "us.txt.gz",
     ]
     rawdata_hashes = {
-        "data_format.txt": "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca",
-        "ushcn-stations.txt": "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024",
-        "station_file_format.txt": "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b",
-        "us.txt.gz": "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192",
+        "data_format.txt": (
+            "sha256:0fecc3670ea4c00d28385b664a9320d45169dbaea6d7ea962b41274ae77b07ca"
+        ),
+        "ushcn-stations.txt": (
+            "sha256:002a25791b8c48dd39aa63e438c33a4f398b57cfa8bac28e0cde911d0c10e024"
+        ),
+        "station_file_format.txt": (
+            "sha256:4acc15ec28aed24f25b75405f611bd719c5f36d6a05c36392d95f5b08a3b798b"
+        ),
+        "us.txt.gz": (
+            "sha256:4cc2223f92e4c8e3bcb00bd4b13528c017594a2385847a611b96ec94be3b8192"
+        ),
     }
     rawdata_schemas = {
         "timeseries": {
@@ -509,7 +517,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         # dtypes but with same index as colspec.
         base_dtypes = self.rawdata_schemas["timeseries"]
         column_dtypes = {
-            key: (base_dtypes[key[0]] if isinstance(key, tuple) else base_dtypes[key])
+            key: base_dtypes[key[0]] if isinstance(key, tuple) else base_dtypes[key]
             for key in colspecs
         }
 

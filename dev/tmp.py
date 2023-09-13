@@ -4,8 +4,7 @@ from typing_extensions import Never, Protocol
 
 
 class A(Protocol):
-    def foo(self, x: int) -> None:
-        ...
+    def foo(self, x: int) -> None: ...
 
 
 class B(A):

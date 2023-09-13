@@ -199,13 +199,13 @@ def slice_size(slc: slice) -> int | None:
 
 
 @overload
-def get_reduced_axes(item: INDEXER, /, axes: None) -> None:
-    ...
+def get_reduced_axes(item: INDEXER, /, axes: None) -> None: ...
 
 
 @overload
-def get_reduced_axes(item: INDEXER, /, axes: int | tuple[int, ...]) -> tuple[int, ...]:
-    ...
+def get_reduced_axes(
+    item: INDEXER, /, axes: int | tuple[int, ...]
+) -> tuple[int, ...]: ...
 
 
 def get_reduced_axes(item: INDEXER, /, axes: Axes) -> Axes:
@@ -419,39 +419,35 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         self.lower_value: float | T = (
             self.backend.to_tensor(float("-inf"))
             if self.lower_bound is None
-            else self.backend.to_tensor(float("nan"))
-            if self.lower_mode == "mask"
-            else self.lower_bound
-            if self.lower_mode == "clip"
-            else NotImplemented
+            else (
+                self.backend.to_tensor(float("nan"))
+                if self.lower_mode == "mask"
+                else self.lower_bound if self.lower_mode == "clip" else NotImplemented
+            )
         )
 
         self.upper_value: float | T = (
             self.backend.to_tensor(float("+inf"))
             if self.upper_bound is None
-            else self.backend.to_tensor(float("nan"))
-            if self.upper_mode == "mask"
-            else self.upper_bound
-            if self.upper_mode == "clip"
-            else NotImplemented
+            else (
+                self.backend.to_tensor(float("nan"))
+                if self.upper_mode == "mask"
+                else self.upper_bound if self.upper_mode == "clip" else NotImplemented
+            )
         )
 
         # Create lower comparison function
         self.lower_satisfied: Callable[[T], T] = (
             self.backend.true_like
             if self.lower_bound is None
-            else self._ge
-            if self.lower_included
-            else self._gt
+            else self._ge if self.lower_included else self._gt
         )
 
         # Create upper comparison function
         self.upper_satisfied: Callable[[T], T] = (
             self.backend.true_like
             if self.upper_bound is None
-            else self._le
-            if self.upper_included
-            else self._lt
+            else self._le if self.upper_included else self._lt
         )
 
     def _ge(self, x: T) -> T:
@@ -1026,12 +1022,10 @@ class TensorSplitter(BaseEncoder):
         self.indices_or_sections = indices_or_sections
 
     @overload
-    def encode(self, data: Tensor, /) -> list[Tensor]:
-        ...
+    def encode(self, data: Tensor, /) -> list[Tensor]: ...
 
     @overload
-    def encode(self, data: NDArray, /) -> list[NDArray]:
-        ...
+    def encode(self, data: NDArray, /) -> list[NDArray]: ...
 
     def encode(self, data, /):
         if isinstance(data, Tensor):
@@ -1039,12 +1033,10 @@ class TensorSplitter(BaseEncoder):
         return np.array_split(data, self.indices_or_sections, dim=self.axis)  # type: ignore[call-overload]
 
     @overload
-    def decode(self, data: list[Tensor], /) -> Tensor:
-        ...
+    def decode(self, data: list[Tensor], /) -> Tensor: ...
 
     @overload
-    def decode(self, data: list[NDArray], /) -> NDArray:
-        ...
+    def decode(self, data: list[NDArray], /) -> NDArray: ...
 
     def decode(self, data, /):
         if isinstance(data[0], Tensor):

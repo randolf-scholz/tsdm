@@ -134,7 +134,9 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
 
     rawdata_files = ["PRSA2017_Data_20130301-20170228.zip"]
     rawdata_hashes = {
-        "PRSA2017_Data_20130301-20170228.zip": "sha256:d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
+        "PRSA2017_Data_20130301-20170228.zip": (
+            "sha256:d1b9261c54132f04c374f762f1e5e512af19f95c95fd6bfa1e8ac7e927e3b0b8"
+        )
     }
 
     rawdata_schema = {

@@ -69,43 +69,37 @@ class WrappedValueProto(Protocol[T_co]):
 class ClipProto(Protocol[T]):
     """Bound-Protocol for `clip`-function."""
 
-    def __call__(self, x: T, lower: T | None, upper: T | None, /) -> T:
-        ...
+    def __call__(self, x: T, lower: T | None, upper: T | None, /) -> T: ...
 
 
 class ContractionProto(Protocol[T]):
     """Bound Protocol for contractions (support `axes` keyword argument)."""
 
-    def __call__(self, __x: T, *, axis: Axes = None) -> T:
-        ...
+    def __call__(self, __x: T, *, axis: Axes = None) -> T: ...
 
 
 class IsScalarProto(Protocol[T_contra]):
     """Bound-Protocol for `is_scalar`-function."""
 
-    def __call__(self, x: T_contra, /) -> bool:
-        ...
+    def __call__(self, x: T_contra, /) -> bool: ...
 
 
 class TensorLikeProto(Protocol[T]):
     """Bound-Protocol for `tensor_like`-function."""
 
-    def __call__(self, x: ArrayLike, ref: T, /) -> T:
-        ...
+    def __call__(self, x: ArrayLike, ref: T, /) -> T: ...
 
 
 class ToTensorProto(Protocol[T_co]):
     """Callback-Protocol for `to_tensor`-function."""
 
-    def __call__(self, x: ArrayLike, /) -> T_co:
-        ...
+    def __call__(self, x: ArrayLike, /) -> T_co: ...
 
 
 class WhereProto(Protocol[T]):
     """Bound-Protocol for `where`-function."""
 
-    def __call__(self, cond: T, x: T, y: scalar_contra | T, /) -> T:
-        ...
+    def __call__(self, cond: T, x: T, y: scalar_contra | T, /) -> T: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

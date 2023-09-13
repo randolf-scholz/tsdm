@@ -273,8 +273,7 @@ class KiwiTask(TimeSeriesTask):
             index_encoders={
                 # "run_id": IdentityEncoder(),
                 # "experiment_id": IdentityEncoder(),
-                "measurement_time": MinMaxScaler()
-                @ TimeDeltaEncoder(),
+                "measurement_time": MinMaxScaler() @ TimeDeltaEncoder(),
             },
         )
 

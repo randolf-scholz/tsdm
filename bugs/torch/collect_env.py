@@ -553,7 +553,8 @@ def main():
                 "\n*** Detected a minidump at {} created on {}, ".format(
                     latest, creation_time
                 )
-                + "if this is related to your bug please include it when you file a report ***"
+                + "if this is related to your bug please include it when you file a"
+                " report ***"
             )
             print(msg, file=sys.stderr)
 

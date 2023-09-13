@@ -294,7 +294,7 @@ class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
                 opts = " ".join(f"--{k} {v}" for k, v in options.items())
                 kaggle_name = Path(parsed_url.path).name
                 subprocess.run(
-                    f"kaggle competitions download"
+                    "kaggle competitions download"
                     f" -p {cls.RAWDATA_DIR} -c {kaggle_name} {opts}",
                     shell=True,
                     check=True,
@@ -534,7 +534,7 @@ class MultiTableDataset(
         self._key_attributes = False
         if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
             warnings.warn(
-                f"Not adding keys as attributes!"
+                "Not adding keys as attributes!"
                 f" Keys {invalid_keys} are not valid identifiers!",
                 RuntimeWarning,
                 stacklevel=2,
@@ -701,8 +701,7 @@ class MultiTableDataset(
         ...
 
     @overload
-    def load(self, key: Key = ..., **kwargs: Any) -> T_co:
-        ...
+    def load(self, key: Key = ..., **kwargs: Any) -> T_co: ...
 
     def load(
         self,
@@ -797,12 +796,10 @@ class TimeSeriesDataset(TorchDataset[Series]):
         return len(self.timeindex)
 
     @overload
-    def __getitem__(self, key: K, /) -> Series:
-        ...
+    def __getitem__(self, key: K, /) -> Series: ...
 
     @overload
-    def __getitem__(self, key: Index | slice | list[K], /) -> DataFrame:
-        ...
+    def __getitem__(self, key: Index | slice | list[K], /) -> DataFrame: ...
 
     def __getitem__(self, key, /):
         r"""Get item from timeseries."""
@@ -881,12 +878,10 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.metaindex = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: K, /) -> TimeSeriesDataset:
-        ...
+    def __getitem__(self, key: K, /) -> TimeSeriesDataset: ...
 
     @overload
-    def __getitem__(self, key: slice, /) -> Self:
-        ...
+    def __getitem__(self, key: slice, /) -> Self: ...
 
     def __getitem__(self, key, /):
         r"""Get the timeseries and metadata of the dataset at index `key`."""

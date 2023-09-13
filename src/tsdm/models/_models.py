@@ -176,7 +176,8 @@ class BaseModel(ABC):
                 check=True,
             )
             subprocess.run(
-                f"grep -qxF {self.model_path!r} .gitignore || echo {self.model_path!r} >> .gitignore",
+                f"grep -qxF {self.model_path!r} .gitignore || echo"
+                f" {self.model_path!r} >> .gitignore",
                 shell=True,
                 check=True,
             )

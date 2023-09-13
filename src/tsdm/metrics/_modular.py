@@ -104,7 +104,7 @@ class WeightedLoss(BaseLoss, metaclass=ABCMeta):
         # Validate the axes.
         if len(self.axes) != self.weight.ndim:
             raise ValueError(
-                f"Number of axes does not match weight shape:"
+                "Number of axes does not match weight shape:"
                 f" {len(self.axes)} != {self.weight.ndim=}"
             )
 

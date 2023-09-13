@@ -11,8 +11,7 @@ class Foo(metaclass=PatchedABCMeta):
 
     @abstractmethod
     @abstractattribute
-    def b(self) -> int:
-        ...
+    def b(self) -> int: ...
 
 
 class Bar(Foo):

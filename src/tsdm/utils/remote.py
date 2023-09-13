@@ -64,13 +64,16 @@ def download(
 
     # attempt to download the file
     try:
-        with open(path, "wb") as file, tqdm(
-            desc=str(path),
-            total=int(response.headers.get("content-length", 0)),
-            unit="iB",
-            unit_scale=True,
-            unit_divisor=1024,
-        ) as progress_bar:
+        with (
+            open(path, "wb") as file,
+            tqdm(
+                desc=str(path),
+                total=int(response.headers.get("content-length", 0)),
+                unit="iB",
+                unit_scale=True,
+                unit_divisor=1024,
+            ) as progress_bar,
+        ):
             for data in response.iter_content(chunk_size=chunk_size):
                 if data:  # filter out keep-alive new chunks
                     size = file.write(data)

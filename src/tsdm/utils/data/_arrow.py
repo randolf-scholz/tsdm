@@ -27,13 +27,11 @@ P = TypeVar("P", Array, Table)
 
 
 @overload
-def force_cast(x: P, dtype: DataType, /) -> P:
-    ...
+def force_cast(x: P, dtype: DataType, /) -> P: ...
 
 
 @overload
-def force_cast(x: Table, /, **dtypes: DataType) -> Table:
-    ...
+def force_cast(x: Table, /, **dtypes: DataType) -> Table: ...
 
 
 def force_cast(x: P, dtype: Optional[DataType] = None, /, **dtypes: DataType) -> P:

@@ -51,9 +51,9 @@ else:
             " the `tomlkit` package for python versions < 3.11."
         ) from E
 
-PACKAGES: dict[
-    str, list[str]
-] = metadata.packages_distributions()  # type:ignore[assignment]
+PACKAGES: dict[str, list[str]] = (
+    metadata.packages_distributions()
+)  # type:ignore[assignment]
 """A dictionary that maps module names to their pip-package names."""
 
 # NOTE: illogical type hint in stdlib, maybe open issue.
@@ -394,13 +394,13 @@ def validate_dependencies(
 
     if missing_deps or unknown_deps or (unused_deps and raise_unused_dependencies):
         raise ValueError(
-            f"Found discrepancy between imported dependencies and pyproject.toml!"
+            "Found discrepancy between imported dependencies and pyproject.toml!"
             f"\nImported dependencies not listed in pyproject.toml: {missing_deps}."
             f"\nUnused dependencies listed in pyproject.toml: {unused_deps}."
             f"\nUnknown dependencies: {unknown_deps}."
-            f"\n"
-            f"\nNOTE: Optional dependencies are currently not supported (PR welcome)."
-            f"\nNOTE: Workaround: use `importlib.import_module('optional_dependency')`."
+            "\n"
+            "\nNOTE: Optional dependencies are currently not supported (PR welcome)."
+            "\nNOTE: Workaround: use `importlib.import_module('optional_dependency')`."
         )
 
 

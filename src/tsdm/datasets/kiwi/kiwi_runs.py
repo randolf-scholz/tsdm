@@ -300,7 +300,9 @@ class KIWI_RUNS(MultiTableDataset):
 
     rawdata_files = ["kiwi_experiments.pk"]
     rawdata_hashes = {
-        "kiwi_experiments.pk": "sha256:dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181",
+        "kiwi_experiments.pk": (
+            "sha256:dfed46bdcaa325434031fbd9f5d677d3679284246a81a9102671300db2d7f181"
+        ),
     }
 
     timeseries: DataFrame
@@ -405,7 +407,8 @@ class KIWI_RUNS(MultiTableDataset):
             mask = (lower > value) | (value > upper)
             if mask.any():
                 print(
-                    f"Removing {mask.mean():8.3%} of data that does not match {col} bounds"
+                    f"Removing {mask.mean():8.3%} of data that does not match"
+                    f" {col} bounds"
                 )
                 metadata.loc[mask, col] = pd.NA
         metadata = metadata.dropna(how="all")
@@ -494,7 +497,8 @@ class KIWI_RUNS(MultiTableDataset):
             mask = (lower > value) | (value > upper)
             if mask.any():
                 print(
-                    f"Removing {mask.mean():8.3%} of data that does not match {col} bounds"
+                    f"Removing {mask.mean():8.3%} of data that does not match"
+                    f" {col} bounds"
                 )
                 timeseries.loc[mask, col] = pd.NA
 

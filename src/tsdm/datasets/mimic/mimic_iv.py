@@ -137,8 +137,12 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
 
     __version__ = "2.2"
     rawdata_hashes = {
-        "mimic-iv-1.0.zip": "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d",
-        "mimic-iv-2.2.zip": "sha256:ddcedf49da4ff9a29ee25780b6ffc654d08af080fc1130dd0128a29514f21a74",
+        "mimic-iv-1.0.zip": (
+            "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+        ),
+        "mimic-iv-2.2.zip": (
+            "sha256:ddcedf49da4ff9a29ee25780b6ffc654d08af080fc1130dd0128a29514f21a74"
+        ),
     }
 
     table_names: tuple[KEYS, ...] = get_args(KEYS)

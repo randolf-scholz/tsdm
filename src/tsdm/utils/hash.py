@@ -248,7 +248,8 @@ def validate_file_hash(
                     )
                 else:
                     raise ValueError(
-                        "If a mapping of files is provided, reference_hash must be a mapping as well!"
+                        "If a mapping of files is provided, reference_hash must be a"
+                        " mapping as well!"
                     )
             return
         case Iterable():
@@ -308,8 +309,8 @@ def validate_file_hash(
     # Finally, compare the hashes.
     if file.suffix == ".parquet":
         warnings.warn(
-            f"Parquet file {file.name!r} not validated since the format is not binary stable!"
-            f" The {hash_algorithm!r}-hash is {hash_value!r}.",
+            f"Parquet file {file.name!r} not validated since the format is not binary"
+            f" stable! The {hash_algorithm!r}-hash is {hash_value!r}.",
             UserWarning,
             stacklevel=2,
         )
@@ -411,7 +412,7 @@ def validate_table_hash(
         warnings.warn(
             f"Array-Like object {name!r} failed to validate! {reference_alg!r}-hash-"
             f"value {hash_value!r} does not match reference {reference!r}."
-            f"Ignore this warning if the format is parquet.",
+            "Ignore this warning if the format is parquet.",
             RuntimeWarning,
             stacklevel=2,
         )
@@ -455,7 +456,8 @@ def validate_object_hash(
         case Mapping():  # apply recursively to all values
             if not isinstance(reference, None | Mapping):
                 raise ValueError(
-                    "If a mapping of objects is provided, reference_hash must be a mapping as well!"
+                    "If a mapping of objects is provided, reference_hash must be a"
+                    " mapping as well!"
                 )
             for key, value in obj.items():
                 validate_object_hash(
@@ -520,7 +522,7 @@ def validate_object_hash(
                 warnings.warn(
                     f"Object {name!r} failed to validate! {reference_alg!r}-hash-"
                     f"value {hash_value!r} does not match reference {reference_hash!r}."
-                    f"Ignore this warning if the format is parquet.",
+                    "Ignore this warning if the format is parquet.",
                     RuntimeWarning,
                     stacklevel=2,
                 )

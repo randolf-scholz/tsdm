@@ -210,7 +210,9 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
 
     def __init__(self, *, normalize_time: bool = True) -> None:
         warnings.warn(
-            "This task is included for historical reasons, but it has several defects:"
+            "This task is included for historical reasons, but it has several defects:",
+            UserWarning,
+            stacklevel=2,
         )
 
         super().__init__()

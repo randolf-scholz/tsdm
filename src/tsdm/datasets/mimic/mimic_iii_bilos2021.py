@@ -52,7 +52,9 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
 
     rawdata_files = ["full_dataset.csv"]
     rawdata_hashes = {
-        "full_dataset.csv": "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
+        "full_dataset.csv": (
+            "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
+        )
     }
     rawdata_schemas = {
         "full_dataset.csv": {
@@ -73,10 +75,11 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
     def clean_table(self) -> DataFrame:
         if not self.rawdata_files_exist():
             raise RuntimeError(
-                f"Please manually apply the preprocessing code found at {self.GITHUB_URL}."
-                f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
-                f"\nThe cleaning code is not included in this package because the original."
-                f"\nauthors did not provide a license for it."
+                "Please manually apply the preprocessing code found at"
+                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
+                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
+                " package because the original.\nauthors did not provide a license"
+                " for it."
             )
 
         self.LOGGER.info("Loading main file.")
@@ -122,7 +125,8 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O"
+            f" {path}",
             shell=True,
             check=True,
         )

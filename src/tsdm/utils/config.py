@@ -70,16 +70,12 @@ class ConfigMetaclass(ABCMeta):
         # check for dunder fields
         DUNDER_FIELDS = {key for key in FIELDS if is_dunder(key)}
         if DUNDER_FIELDS:
-            raise ValueError(
-                f"Dunder fields are not allowed!" f"Found {DUNDER_FIELDS!r}."
-            )
+            raise ValueError(f"Dunder fields are not allowed!Found {DUNDER_FIELDS!r}.")
 
         # check all caps fields
         ALLCAPS_FIELDS = {key for key in FIELDS if is_allcaps(key)}
         if ALLCAPS_FIELDS:
-            raise ValueError(
-                f"ALLCAPS fields are reserved!" f"Found {ALLCAPS_FIELDS!r}."
-            )
+            raise ValueError(f"ALLCAPS fields are reserved!Found {ALLCAPS_FIELDS!r}.")
 
         NAME = config_type.__qualname__.rsplit(".", maxsplit=1)[0]
         patched_fields = [

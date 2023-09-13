@@ -380,20 +380,19 @@ class TimeSlicer(BaseEncoder):
         return False
 
     @overload
-    def encode(self, data: TimeTensor, /) -> Sequence[TimeTensor]:
-        ...
+    def encode(self, data: TimeTensor, /) -> Sequence[TimeTensor]: ...
 
     @overload
-    def encode(self, data: Sequence[TimeTensor], /) -> Sequence[Sequence[TimeTensor]]:
-        ...
+    def encode(
+        self, data: Sequence[TimeTensor], /
+    ) -> Sequence[Sequence[TimeTensor]]: ...
 
     @overload
     def encode(
         self,
         data: Sequence[tuple[Tensor, Tensor]],
         /,
-    ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]:
-        ...
+    ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]: ...
 
     def encode(self, data, /):
         r"""Slice the data.
@@ -409,20 +408,19 @@ class TimeSlicer(BaseEncoder):
         return tuple(self.encode(item) for item in data)
 
     @overload
-    def decode(self, data: Sequence[TimeTensor], /) -> TimeTensor:
-        ...
+    def decode(self, data: Sequence[TimeTensor], /) -> TimeTensor: ...
 
     @overload
-    def decode(self, data: Sequence[Sequence[TimeTensor]], /) -> Sequence[TimeTensor]:
-        ...
+    def decode(
+        self, data: Sequence[Sequence[TimeTensor]], /
+    ) -> Sequence[TimeTensor]: ...
 
     @overload
     def decode(
         self,
         data: Sequence[Sequence[tuple[Tensor, Tensor]]],
         /,
-    ) -> Sequence[tuple[Tensor, Tensor]]:
-        ...
+    ) -> Sequence[tuple[Tensor, Tensor]]: ...
 
     def decode(self, data, /):
         r"""Restores the original data."""

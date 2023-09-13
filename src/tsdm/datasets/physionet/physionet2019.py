@@ -298,8 +298,12 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
 
     rawdata_files = ["training_setA.zip", "training_setB.zip"]
     rawdata_hashes = {
-        "training_setA.zip": "sha256:c0def317798312e4facc0f33ac0202b3a34f412052d9096e8b122b4d3ecb7935",
-        "training_setB.zip": "sha256:8a88d69a5f64bc9a87d869f527fcc2741c0712cb9a7cb1f5cdcb725336b4c8cc",
+        "training_setA.zip": (
+            "sha256:c0def317798312e4facc0f33ac0202b3a34f412052d9096e8b122b4d3ecb7935"
+        ),
+        "training_setB.zip": (
+            "sha256:8a88d69a5f64bc9a87d869f527fcc2741c0712cb9a7cb1f5cdcb725336b4c8cc"
+        ),
     }
     table_names = {
         "timeseries": DataFrame,

@@ -168,7 +168,7 @@ class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
         if self.rawdata_path is NotImplemented:
             raise NotImplementedError(
                 f"\n{self.__class__.__name__} does not implement a default model!"
-                f"\nPlease use one of the constructor methods to specify the model."
+                "\nPlease use one of the constructor methods to specify the model."
                 f"\nAvailable models are listed in {self.available_checkpoints}."
             )
 

@@ -105,13 +105,23 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     table_names = ["timeseries", "labels", "randperm", "invperm"]
     rawdata_files = ["PEMS-SF.zip"]
     rawdata_hashes = {
-        "PEMS-SF.zip": "sha256:371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e",
+        "PEMS-SF.zip": (
+            "sha256:371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
+        ),
     }
     dataset_hashes = {
-        "timeseries": "sha256:acb7f2a37e14691d67a325e18eecf88c22bc4c175f1a11b5566a07fdf2cd8f62",
-        "labels": "sha256:c26dc7683548344c5b71ef30d551b6e3f0e726e0d505f45162fde167de7b51cf",
-        "randperm": "sha256:4d8fa113fd20e397b2802bcc851a8dca861d3e8b806be490a6dff3e0c112f613",
-        "invperm": "sha256:2838f7df33a292830acf09a3870b495ca0e5524f085aea0b66452248012c9817",
+        "timeseries": (
+            "sha256:acb7f2a37e14691d67a325e18eecf88c22bc4c175f1a11b5566a07fdf2cd8f62"
+        ),
+        "labels": (
+            "sha256:c26dc7683548344c5b71ef30d551b6e3f0e726e0d505f45162fde167de7b51cf"
+        ),
+        "randperm": (
+            "sha256:4d8fa113fd20e397b2802bcc851a8dca861d3e8b806be490a6dff3e0c112f613"
+        ),
+        "invperm": (
+            "sha256:2838f7df33a292830acf09a3870b495ca0e5524f085aea0b66452248012c9817"
+        ),
     }
 
     timeseries: DataFrame
@@ -358,7 +368,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
             self.LOGGER.info("All encoded labels match with the day name!")
         else:
             warnings.warn(
-                "Mismatches detected!" f"{labels[~matches]}",
+                f"Mismatches detected!{labels[~matches]}",
                 UserWarning,
                 stacklevel=2,
             )

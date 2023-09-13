@@ -128,8 +128,7 @@ def test_combined_encoder(SplitID=(0, "train")):
     assert isinstance(loaded_encoder, BaseEncoder)
 
 
-def _main() -> None:
-    ...
+def _main() -> None: ...
 
 
 if __name__ == "__main__":

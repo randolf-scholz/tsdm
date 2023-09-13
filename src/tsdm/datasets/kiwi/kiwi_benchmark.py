@@ -19,7 +19,9 @@ class KIWI_Dataset(MultiTableDataset):
 
     rawdata_files = ["kiwi-benchmark.zip"]
     rawdata_hashes = {
-        "kiwi-benchmark.zip": "sha256:dd5eb62dccd5fb7774e7600145fd838f92d55eb07d6b89510c3fddbfd295f928"
+        "kiwi-benchmark.zip": (
+            "sha256:dd5eb62dccd5fb7774e7600145fd838f92d55eb07d6b89510c3fddbfd295f928"
+        )
     }
     table_names = [
         "timeseries",

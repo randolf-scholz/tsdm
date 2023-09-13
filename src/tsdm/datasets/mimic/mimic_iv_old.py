@@ -50,7 +50,9 @@ class MIMIC_IV(MultiTableDataset):
     __version__ = "1.0"
     rawdata_files = ["mimic-iv-1.0.zip"]
     rawdata_hashes = {
-        "mimic-iv-1.0.zip": "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+        "mimic-iv-1.0.zip": (
+            "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+        )
     }
 
     # fmt: off
@@ -87,8 +89,7 @@ class MIMIC_IV(MultiTableDataset):
 
     table_names = list(internal_files.keys())
 
-    def clean_table(self, key: str) -> None:
-        ...
+    def clean_table(self, key: str) -> None: ...
 
     def load_table(self, key: str) -> pd.DataFrame:
         return pd.read_parquet(self.dataset_paths[key])
@@ -104,7 +105,8 @@ class MIMIC_IV(MultiTableDataset):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O"
+            f" {path}",
             shell=True,
             check=True,
         )

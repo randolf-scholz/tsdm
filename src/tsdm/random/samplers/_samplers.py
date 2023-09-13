@@ -51,11 +51,9 @@ from tsdm.utils.strings import repr_mapping
 class Sampler(Protocol[T_co]):
     r"""Protocol for `Sampler`."""
 
-    def __iter__(self) -> Iterator[T_co]:
-        ...
+    def __iter__(self) -> Iterator[T_co]: ...
 
-    def __len__(self) -> int:
-        ...
+    def __len__(self) -> int: ...
 
 
 def compute_grid(
@@ -78,11 +76,11 @@ def compute_grid(
 
     offset = cast(
         DTVar,
-        tmin
-        if offset is None
-        else Timestamp(offset)
-        if isinstance(offset, str)
-        else offset,
+        (
+            tmin
+            if offset is None
+            else Timestamp(offset) if isinstance(offset, str) else offset
+        ),
     )
 
     # generates zero variable of correct type
@@ -559,9 +557,11 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
         self.samples = np.array(
             [
-                (x <= self.data_source) & (self.data_source < y)  # type: ignore[operator]
-                if self.return_mask
-                else [x, y]
+                (
+                    (x <= self.data_source) & (self.data_source < y)  # type: ignore[operator]
+                    if self.return_mask
+                    else [x, y]
+                )
                 for x, y in self._iter_tuples()
             ]
         )

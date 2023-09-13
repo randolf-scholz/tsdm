@@ -56,18 +56,15 @@ def __dir__() -> list[str]:
 
 
 @overload
-def snake2camel(s: str) -> str:
-    ...
+def snake2camel(s: str) -> str: ...
 
 
 @overload
-def snake2camel(s: list[str]) -> list[str]:
-    ...
+def snake2camel(s: list[str]) -> list[str]: ...
 
 
 @overload
-def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]:
-    ...
+def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]: ...
 
 
 def snake2camel(s):
@@ -122,8 +119,7 @@ class ReprProtocol(Protocol):
         repr_fun: Callable[..., str] = NotImplemented,
         title: Optional[str] = None,
         wrapped: Optional[object] = None,
-    ) -> str:
-        ...
+    ) -> str: ...
 
 
 def get_identifier(obj: Any, /, **_: Any) -> str:

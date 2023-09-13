@@ -31,8 +31,7 @@ class A(ABC):
         cls.foo = add_hook(cls.foo, cls.execution_counter)
 
     @abstractmethod
-    def foo(self, x):
-        ...
+    def foo(self, x): ...
 
     def execution_counter(self, *args, **kwargs):
         self.counter += 1

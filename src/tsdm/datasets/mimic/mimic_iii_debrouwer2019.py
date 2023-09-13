@@ -66,7 +66,9 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
     table_names = ["timeseries", "metadata"]
     rawdata_files = ["complete_tensor.csv"]
     rawdata_hashes = {
-        "complete_tensor.csv": "sha256:8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2",
+        "complete_tensor.csv": (
+            "sha256:8e884a916d28fd546b898b54e20055d4ad18d9a7abe262e15137080e9feb4fc2"
+        ),
     }
     rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
     rawdata_schemas = {
@@ -80,8 +82,12 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         }
     }
     dataset_hashes = {
-        "timeseries": "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b",
-        "metadata": "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4",
+        "timeseries": (
+            "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b"
+        ),
+        "metadata": (
+            "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4"
+        ),
     }
     table_shapes = {
         "timeseries": (552327, 96),
@@ -97,10 +103,11 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
     def clean_table(self, key: KEY) -> DataFrame:
         if not self.rawdata_files_exist():
             raise RuntimeError(
-                f"Please manually apply the preprocessing code found at {self.GITHUB_URL}."
-                f"\nPut the resulting file 'complete_tensor.csv' in {self.RAWDATA_DIR}."
-                f"\nThe cleaning code is not included in this package because the original."
-                f"\nauthors did not provide a license for it."
+                "Please manually apply the preprocessing code found at"
+                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
+                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
+                " package because the original.\nauthors did not provide a license"
+                " for it."
             )
         if key == "metadata":
             return self.timeseries.describe().T.astype("float32")
@@ -114,9 +121,9 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         # Check shape.
         if ts.shape != self.rawdata_shapes["complete_tensor.csv"]:
             raise ValueError(
-                f"The {ts.shape=} is not correct."
-                "Please apply the modified preprocessing using bin_k=2, as outlined in"
-                "the appendix. The resulting tensor should have 3082224 rows and 7 columns."
+                f"The {ts.shape=} is not correct.Please apply the modified"
+                " preprocessing using bin_k=2, as outlined inthe appendix. The"
+                " resulting tensor should have 3082224 rows and 7 columns."
             )
 
         # Extract Original Data Table.
@@ -144,7 +151,8 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
+            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O"
+            f" {path}",
             shell=True,
             check=True,
         )

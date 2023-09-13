@@ -31,7 +31,9 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
     # rawdata_files = ["small_chunked_sporadic.csv"]
     rawdata_files = ["small_chunked_sporadic.csv"]
     rawdata_hashes = {
-        "small_chunked_sporadic.csv": "sha256:671eb8d121522e98891c84197742a6c9e9bb5015e42b328a93ebdf2cfd393ecf",
+        "small_chunked_sporadic.csv": (
+            "sha256:671eb8d121522e98891c84197742a6c9e9bb5015e42b328a93ebdf2cfd393ecf"
+        ),
     }
     rawdata_schemas = {
         "small_chunked_sporadic.csv": {
