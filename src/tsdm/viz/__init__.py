@@ -11,11 +11,10 @@ __all__ = [
     "visualize_distribution",
 ]
 
-from tsdm.viz._image import kernel_heatmap
+from tsdm.viz._image import kernel_heatmap, rasterize
 from tsdm.viz._plotting import (
     center_axes,
     plot_spectrum,
-    rasterize,
     shared_grid_plot,
     visualize_distribution,
 )
