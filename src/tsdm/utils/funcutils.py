@@ -18,12 +18,11 @@ __all__ = [
 
 import inspect
 from collections.abc import Callable, Sequence
-from dataclasses import is_dataclass
 from functools import wraps
 from inspect import Parameter
-from typing import Any, Optional, ParamSpec, cast
+from typing import Any, Optional, ParamSpec, cast, overload
 
-from tsdm.types.protocols import Dataclass
+from tsdm.types.protocols import Dataclass, is_dataclass
 from tsdm.types.variables import return_var_co as R
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
@@ -53,10 +52,7 @@ def dataclass_args_kwargs(
     if ignore_parent_fields:
         for parent in obj.__class__.__mro__[1:]:
             if is_dataclass(parent):
-                cls = cast(
-                    Dataclass, parent
-                )  # FIXME: https://github.com/python/cpython/issues/102395
-                forbidden_keys.update(cls.__dataclass_fields__)
+                forbidden_keys.update(parent.__dataclass_fields__)
 
     args = tuple(
         getattr(obj, key)
@@ -172,24 +168,30 @@ def is_mandatory_arg(p: Parameter, /) -> bool:
     )
 
 
-def is_positional_arg(
-    p: Parameter | str, /, *, func: Optional[Callable] = None
-) -> bool:
+@overload
+def is_positional_arg(p: Parameter, /) -> bool: ...
+@overload
+def is_positional_arg(p: str, /, *, func: Callable) -> bool: ...
+def is_positional_arg(p, /, *, func=None):
     r"""Check if parameter is positional argument."""
     match p, func:
-        case Parameter(), None:
-            p = cast(Parameter, p)  # FIXME: https://github.com/python/mypy/issues/14014
-            return p.kind in (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL)
-        case str() as name, Callable():  # type: ignore[misc]
-            func = cast(Callable, func)  # type: ignore[unreachable]
-            sig = inspect.signature(func)
+        case Parameter() as param, None:
+            return param.kind in (
+                POSITIONAL_ONLY,
+                POSITIONAL_OR_KEYWORD,
+                VAR_POSITIONAL,
+            )
+        case str() as name, Callable() as function:  # type: ignore[misc]
+            # FIXME: https://github.com/python/cpython/issues/102395
+            function = cast(Callable, function)  # type: ignore[has-type]
+            sig = inspect.signature(function)
             if name not in sig.parameters:
-                raise ValueError(f"Function {func} takes np argument named {name!r}.")
+                raise ValueError(
+                    f"Function {function} takes np argument named {name!r}."
+                )
             return is_positional_arg(sig.parameters[name])
-        case Parameter(), _:
-            raise TypeError("If the first argument is a Parameter, func must be None.")
-
-    raise TypeError("Unsupported input types.")
+        case _:
+            raise TypeError("Unsupported input types.")
 
 
 def is_positional_only_arg(p: Parameter, /) -> bool:
@@ -215,10 +217,15 @@ def is_variadic_arg(p: Parameter, /) -> bool:
 def rpartial(
     func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
 ) -> Callable[..., R]:
-    r"""Apply positional arguments from the right."""
+    r"""Apply positional arguments from the right.
+
+    References:
+        - <https://docs.python.org/3/library/functools.html#functools.partial>
+        - <https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129>
+    """
 
     @wraps(func)
-    def _wrapper(*func_args, **func_kwargs):
+    def _wrapper(*func_args: Any, **func_kwargs: Any) -> R:
         # TODO: https://github.com/python/typeshed/issues/8703
         return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
 

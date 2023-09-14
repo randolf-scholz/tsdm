@@ -5,6 +5,8 @@ __all__ = [
     # Classes
     # Protocols
     "Callback",
+    # functions
+    "is_callback",
     # Base Classes
     "BaseCallback",
     "CallbackList",
@@ -22,6 +24,7 @@ __all__ = [
     "TableCallback",
 ]
 
+import inspect
 import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable, Mapping, MutableSequence, Sequence
@@ -37,6 +40,8 @@ from typing import (
     Optional,
     ParamSpec,
     Protocol,
+    TypeGuard,
+    TypeVar,
     overload,
     runtime_checkable,
 )
@@ -95,6 +100,17 @@ class Callback(Protocol[P]):
         ...
 
 
+def is_callback(func: Callable, /) -> TypeGuard[Callback]:
+    """Check if the function is a callback."""
+    sig = inspect.signature(func)
+    params = list(sig.parameters.values())
+    return (
+        len(params) >= 1
+        and params[0].kind is inspect.Parameter.POSITIONAL_ONLY
+        and all(p.kind in (p.KEYWORD_ONLY, p.VAR_KEYWORD) for p in params[1:])
+    )
+
+
 class CallbackMetaclass(ABCMeta):
     """Metaclass for callbacks."""
 
@@ -141,11 +157,11 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
         cls.__call__ = __call__  # type: ignore[method-assign]
         super().__init_subclass__()
 
-    def __call__(self, i: int, /, **state_dict: Any) -> None:
-        """Log something at the end of a batch/epoch."""
-
     @abstractmethod
     def callback(self, i: int, /, **state_dict: P.kwargs) -> None:
+        """Log something at the end of a batch/epoch."""
+
+    def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:
         """Log something at the end of a batch/epoch."""
 
     def __repr__(self) -> str:
@@ -153,34 +169,39 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
         return repr_object(self)
 
 
-class CallbackList(BaseCallback, MutableSequence[Callback]):
+# NOTE: overloads from MutableSequence.
+# NOTE: Use PEP 695: Type Parameter Syntax in 3.9
+CB = TypeVar("CB", bound=Callback)
+
+
+class CallbackList(BaseCallback, MutableSequence[CB]):
     """Callback to log multiple callbacks."""
 
-    callbacks: list[Callback]
+    callbacks: list[CB]
     """The callbacks to log."""
 
-    def insert(self, index: int, value: Callback, /) -> None:
+    def insert(self, index: int, value: CB, /) -> None:
         self.callbacks.insert(index, value)
 
     @overload
-    def __getitem__(self, index: int) -> Callback: ...
+    def __getitem__(self, index: int) -> CB: ...
     @overload
-    def __getitem__(self, index: slice) -> MutableSequence[Callback]: ...
-    def __getitem__(self, index: int) -> Callback:
+    def __getitem__(self, index: slice) -> MutableSequence[CB]: ...
+    def __getitem__(self, index):
         return self.callbacks[index]
 
     @overload
-    def __setitem__(self, index: int, value: Callback) -> None: ...
+    def __setitem__(self, index: int, value: CB) -> None: ...
     @overload
-    def __setitem__(self, index: slice, value: Iterable[Callback]) -> None: ...
-    def __setitem__(self, index: int, value: Callback) -> None:
+    def __setitem__(self, index: slice, value: Iterable[CB]) -> None: ...
+    def __setitem__(self, index, value):
         self.callbacks[index] = value
 
     @overload
     def __delitem__(self, index: int) -> None: ...
     @overload
     def __delitem__(self, index: slice) -> None: ...
-    def __delitem__(self, index: int) -> None:
+    def __delitem__(self, index):
         del self.callbacks[index]
 
     def __len__(self) -> int:

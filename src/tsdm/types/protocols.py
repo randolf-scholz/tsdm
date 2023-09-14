@@ -16,11 +16,21 @@ __all__ = [
     "Hash",
     "Lookup",
     "NTuple",
+    # Functions
+    "is_dataclass",
 ]
 
+import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import Field
-from typing import Any, NamedTuple, Protocol, TypeVar, overload, runtime_checkable
+from typing import (
+    Any,
+    NamedTuple,
+    Protocol,
+    TypeGuard,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
 
 from typing_extensions import Self, SupportsIndex, get_original_bases
 
@@ -41,9 +51,14 @@ class Dataclass(Protocol):
     r"""Protocol for anonymous dataclasses."""
 
     @property
-    def __dataclass_fields__(self) -> Mapping[str, Field]:
+    def __dataclass_fields__(self) -> Mapping[str, dataclasses.Field]:
         r"""Return the fields of the dataclass."""
         ...
+
+
+def is_dataclass(obj: Any) -> TypeGuard[Dataclass]:
+    r"""Check if object is a dataclass."""
+    return dataclasses.is_dataclass(obj)
 
 
 @runtime_checkable

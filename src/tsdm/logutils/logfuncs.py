@@ -18,11 +18,21 @@ __all__ = [
     "log_table",
 ]
 
+import inspect
 import json
 import pickle
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, Optional, Protocol, TypeAlias
+from typing import (
+    Any,
+    Literal,
+    NamedTuple,
+    Optional,
+    Protocol,
+    TypeAlias,
+    TypeGuard,
+    runtime_checkable,
+)
 
 import torch
 import yaml
@@ -69,6 +79,7 @@ def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
     return x
 
 
+@runtime_checkable
 class LogFunction(Protocol):
     """Protocol for logging functions."""
 
@@ -85,6 +96,16 @@ class LogFunction(Protocol):
     ) -> None:
         """Log to tensorboard."""
         ...
+
+
+def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
+    """Check if the function is a callback."""
+    sig = inspect.signature(func)
+    params = list(sig.parameters.values())
+    P = inspect.Parameter
+    return len(params) >= 6 and all(
+        p.kind in (P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD) for p in params[:3]
+    )
 
 
 class TargetsAndPredics(NamedTuple):
