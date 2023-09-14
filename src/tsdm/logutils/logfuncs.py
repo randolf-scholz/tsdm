@@ -33,6 +33,7 @@ from torch import Tensor
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard import SummaryWriter
 
+from tsdm.constants import EMPTY_MAP
 from tsdm.linalg import (
     col_corr,
     erank,
@@ -57,7 +58,7 @@ from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 MaybeWrapped: TypeAlias = T | Callable[[], T] | Callable[[int], T]
 
 
-def unpack_wrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
+def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
     r"""Unpack wrapped values."""
     if callable(x):
         try:
@@ -489,18 +490,31 @@ def log_table(
 
 def log_plot(
     step: int,
-    plot: Figure | Callable[[], Figure] | Callable[[int], Figure],
+    plot: MaybeWrapped[Figure],
     writer: SummaryWriter,
     *,
     name: str = "forecastplot",
     prefix: str = "",
     postfix: str = "",
-    rasterization_options: Optional[Mapping[str, Any]] = None,
+    rasterization_options: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
-    r"""Make a forecast plot."""
-    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
-    fig = plot()
+    r"""Make a forecast plot.
 
+    Args:
+        step: The current step.
+        plot: The plot to log, can be a figure, or a callable returning a figure.
+        writer: The writer to log to.
+        name: The name of the plot.
+        prefix: The prefix of the plot.
+        postfix: The postfix of the plot.
+        rasterization_options: Options to pass to `tsdm.viz.rasterize`.
+    """
+    identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
+
+    # generate the figure
+    fig = unpack_maybewrapped(plot, step=step)
+
+    # rasterize the figure
     image = rasterize(fig, **rasterization_options)
 
     writer.add_image(f"{identifier}", image, step, dataformats="HWC")

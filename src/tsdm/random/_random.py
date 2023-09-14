@@ -15,8 +15,8 @@ import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
+from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS
 from tsdm.types.time import DTVar, TDVar
-from tsdm.utils.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS
 
 __logger__ = logging.getLogger(__name__)
 

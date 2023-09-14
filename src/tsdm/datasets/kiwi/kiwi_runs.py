@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
 
+from tsdm.constants import NULL_VALUES
 from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
-from tsdm.utils.constants import NULL_VALUES
 
 # fmt: off
 column_dtypes = {

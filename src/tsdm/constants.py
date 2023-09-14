@@ -34,8 +34,9 @@ import torch
 EMPTY_PATH: Final[Path] = Path()
 r"""Constant: Blank path."""
 
+# NOTE: Use frozenmap() if PEP 603 is accepted.
 EMPTY_MAP: Final[Mapping] = MappingProxyType({})
-r"""Constant: Immutable Empty dictionary."""
+r"""Constant: Immutable Empty `Mapping`."""
 
 
 def CONST_TRUE_FN(*_: Any, **__: Any) -> Literal[True]:
