@@ -90,7 +90,12 @@ class Callback(Protocol[P]):
 
     # required_kwargs: ClassVar[set[str]]
     # """The required kwargs for the callback."""
-    #
+
+    @property
+    def required_kwargs(self) -> set[str]:
+        """The required kwargs for the callback."""
+        ...
+
     # @property
     # def frequency(self) -> int:
     #     """The frequency at which the callback is called."""
@@ -129,8 +134,8 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
 
     LOGGER: ClassVar[logging.Logger]
     """The debug-logger for the callback."""
-    required_kwargs: ClassVar[set[str]]
-    """The required kwargs for the callback."""
+    # required_kwargs: ClassVar[set[str]]
+    # """The required kwargs for the callback."""
 
     _: KW_ONLY
 
@@ -142,9 +147,13 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
     #     """The required kwargs for the callback."""
     #     return get_mandatory_kwargs(self.callback)
 
+    @property
+    def required_kwargs(self) -> set[str]:
+        """The required kwargs for the callback."""
+        return get_mandatory_kwargs(self.callback)
+
     def __init_subclass__(cls) -> None:
         """Automatically set the required kwargs for the callback."""
-        cls.required_kwargs = get_mandatory_kwargs(cls.callback)
 
         @wraps(cls.callback)
         def __call__(self: Self, i: int, /, **state_dict: P.kwargs) -> None:
@@ -210,13 +219,16 @@ class CallbackList(BaseCallback, MutableSequence[CB]):
     @property
     def required_kwargs(self) -> set[str]:
         """The required kwargs for the callback."""
+        # result: set[str] = set()
         return set().union(
-            set(
-                callback.required_kwargs
-                if hasattr(callback, "required_kwargs")
-                else get_mandatory_kwargs(callback)
+            *(
+                (
+                    callback.required_kwargs
+                    if hasattr(callback, "required_kwargs")
+                    else get_mandatory_kwargs(callback)
+                )
+                for callback in self.callbacks
             )
-            for callback in self.callbacks
         )
 
     def callback(self, i: int, /, **state_dict: Any) -> None:

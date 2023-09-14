@@ -132,7 +132,7 @@ class BaseLogger(metaclass=LoggerMetaclass):
         return {k: [cb for cb, _, _ in v] for k, v in self._callbacks.items()}
 
     def add_callback(
-        self, key: str, callback: Callback, /, *, frequency: int = 1
+        self, key: str, callback: Callback, /, *, frequency: Optional[int] = None
     ) -> None:
         """Add a callback to the logger."""
         required_kwargs = set(
@@ -140,7 +140,13 @@ class BaseLogger(metaclass=LoggerMetaclass):
             if hasattr(callback, "required_kwargs")
             else get_mandatory_kwargs(callback)
         )
-        frequency = callback.frequency if hasattr(callback, "frequency") else frequency
+
+        # set the frequency
+        if frequency is None:
+            if hasattr(callback, "frequency"):
+                frequency = callback.frequency
+            else:
+                frequency = 1
 
         self._callbacks[key].append((callback, frequency, required_kwargs))
 
