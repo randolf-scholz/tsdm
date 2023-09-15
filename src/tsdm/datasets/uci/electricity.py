@@ -121,4 +121,9 @@ class Electricity(SingleTableDataset):
 
     def make_zero_plot(self) -> plt.Axes:
         """Plot number of zero values per timestamp."""
-        self.table.where(self.table > 0).isna().sum(axis=1).plot(ylabel="zero-values")
+        return (
+            self.table.where(self.table > 0)
+            .isna()
+            .sum(axis=1)
+            .plot(ylabel="zero-values")
+        )

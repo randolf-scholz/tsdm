@@ -11,7 +11,7 @@ from typing import Literal
 
 import numpy as np
 import torch
-from matplotlib import cm, colors
+from matplotlib import colormaps, colors
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from PIL import Image
@@ -24,7 +24,7 @@ def kernel_heatmap(
     /,
     *,
     fmt: Literal["HWC", "CHW"] = "HWC",
-    cmap: colors.Colormap = "seismic",
+    cmap: str | colors.Colormap = "seismic",
 ) -> NDArray:
     r"""Create heatmap of given matrix.
 
@@ -43,8 +43,12 @@ def kernel_heatmap(
     if isinstance(kernel, Tensor):
         kernel = kernel.cpu().numpy()
 
-    colormap = cm.get_cmap(cmap)
-    RGBA = colormap(kernel)
+    if isinstance(cmap, str):
+        colormap = colormaps[cmap]
+    else:
+        colormap = cmap
+
+    RGBA: NDArray = colormap(kernel)  # type: ignore[assignment]
     RGB = RGBA[..., :-1]
 
     if fmt == "HWC":

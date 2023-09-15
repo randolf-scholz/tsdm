@@ -34,13 +34,7 @@ from typing import (
 
 from typing_extensions import Self, SupportsIndex, get_original_bases
 
-from tsdm.types.variables import (
-    any_co as T_co,
-    key_contra,
-    key_var,
-    scalar_co,
-    value_co,
-)
+from tsdm.types.variables import any_co as T_co, key_contra, scalar_co, value_co
 
 A = TypeVar("A", bound="Array")
 
@@ -70,7 +64,7 @@ class NTuple(Protocol[T_co]):
     """
 
     @classmethod
-    def __subclasshook__(cls, other: type) -> bool:
+    def __subclasshook__(cls, other: type, /) -> bool:
         """Cf https://github.com/python/cpython/issues/106363."""
         if NamedTuple in get_original_bases(other):
             return True
@@ -264,7 +258,7 @@ class NumericalArray(Protocol[scalar_co]):
 class Lookup(Protocol[key_contra, value_co]):
     """Mapping/Sequence like generic that is contravariant in Keys."""
 
-    def __contains__(self, key: key_var) -> bool:
+    def __contains__(self, key: key_contra) -> bool:
         # Here, any Hashable input is accepted.
         """Return True if the map contains the given key."""
         ...

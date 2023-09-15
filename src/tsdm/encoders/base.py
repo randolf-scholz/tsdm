@@ -56,8 +56,10 @@ E = TypeVar("E", bound="BaseEncoder")
 class Encoder(Protocol[T, S]):
     """Protocol for Encoders."""
 
-    is_fitted: bool
-    r"""Whether the encoder has been fitted."""
+    @property
+    def is_fitted(self) -> bool:
+        """Whether the encoder has been fitted."""
+        ...
 
     @property
     def requires_fit(self) -> bool:
@@ -67,11 +69,11 @@ class Encoder(Protocol[T, S]):
     # def __invert__(self) -> Encoder:
     #     r"""Return the inverse encoder (i.e. decoder)."""
 
-    def __matmul__(self, other: Encoder) -> Encoder:
+    def __matmul__(self, other: Encoder, /) -> Encoder:
         r"""Return chained encoders."""
         ...
 
-    def __or__(self, other: Encoder) -> Encoder:
+    def __or__(self, other: Encoder, /) -> Encoder:
         r"""Return product encoders."""
         ...
 
@@ -164,11 +166,11 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
         r"""Return the inverse encoder (i.e. decoder)."""
         return InverseEncoder(self)
 
-    def __matmul__(self, other: Encoder) -> ChainedEncoder:
+    def __matmul__(self, other: Encoder, /) -> ChainedEncoder:
         r"""Return chained encoders."""
         return ChainedEncoder(self, other)
 
-    def __or__(self, other: Encoder) -> ProductEncoder:
+    def __or__(self, other: Encoder, /) -> ProductEncoder:
         r"""Return product encoders."""
         return ProductEncoder(self, other)
 
@@ -386,9 +388,7 @@ def chain_encoders(
 ) -> ChainedEncoder[E]: ...
 @overload
 def chain_encoders(*encoders: E, simplify: Literal[False]) -> ChainedEncoder[E]: ...
-def chain_encoders(  # type: ignore[misc]
-    *encoders: E, simplify: bool = True
-) -> Encoder:
+def chain_encoders(*encoders, simplify=True):
     r"""Chain encoders."""
     if len(encoders) == 0 and simplify:
         return IdentityEncoder()

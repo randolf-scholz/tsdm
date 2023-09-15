@@ -416,7 +416,6 @@ class TimeSlicer(BaseEncoder):
         data: Sequence[Sequence[tuple[Tensor, Tensor]]],
         /,
     ) -> Sequence[tuple[Tensor, Tensor]]: ...
-
     def decode(self, data, /):
         r"""Restores the original data."""
         if isinstance(data[0], TimeTensor) or self.is_tensor_pair(data[0]):

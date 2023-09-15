@@ -34,7 +34,6 @@ import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
-import tsdm.utils.data._data
 from tsdm.types.aliases import PathLike
 from tsdm.types.protocols import SupportsShape
 
@@ -569,7 +568,7 @@ def validate_table_schema(
         case pa.Table() as arrow_table:
             shape = arrow_table.shape
             columns = arrow_table.column_names
-            dtypes = tsdm.utils.data._data.schema.types
+            dtypes = arrow_table.schema.types
         case np.ndarray() as arr:
             shape = arr.shape
             columns = None

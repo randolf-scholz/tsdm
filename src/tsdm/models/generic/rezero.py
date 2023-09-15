@@ -178,6 +178,13 @@ class ConcatEmbedding(nn.Module):
 class ReZeroMLP(nn.Sequential):
     r"""A ReZero based on MLP and Encoder + Decoder."""
 
+    latent_size: Final[int]
+    r"""CONST: The dimensionality of the latent space."""
+    input_size: Final[int]
+    r"""CONST: The dimensionality of the inputs."""
+    output_size: Final[int]
+    r"""CONST: The dimensionality of the outputs."""
+
     def __init__(
         self,
         input_size: int,
@@ -188,22 +195,26 @@ class ReZeroMLP(nn.Sequential):
     ) -> None:
         super().__init__()
 
-        latent_size = (
+        self.input_size = input_size
+        self.output_size = output_size
+        self.latent_size = (
             2 ** ceil(log2(input_size)) if latent_size is None else latent_size
         )
 
-        self.encoder = ConcatEmbedding(input_size, latent_size)
+        self.encoder = ConcatEmbedding(self.input_size, self.latent_size)
 
         blocks = [
             nn.Sequential(
-                ReverseDense(latent_size, latent_size // 2),
-                ReverseDense(latent_size // 2, latent_size),
+                ReverseDense(self.latent_size, self.latent_size // 2),
+                ReverseDense(self.latent_size // 2, self.latent_size),
             )
             for _ in range(num_blocks)
         ]
 
         # self.encoder = ReverseDense(input_size=input_size, output_size=latent_size)
         self.blocks = ReZero(*blocks)
-        self.decoder = ReverseDense(input_size=latent_size, output_size=output_size)
+        self.decoder = ReverseDense(
+            input_size=self.latent_size, output_size=self.output_size
+        )
 
         super().__init__(*[self.encoder, self.blocks, self.decoder])

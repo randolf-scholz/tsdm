@@ -10,6 +10,13 @@ __all__ = [
     "PathLike",
     "ScalarDType",
     "SizeLike",
+    # Scalar Type Aliases
+    "Scalar",
+    "StringScalar",
+    "NumericalScalar",
+    "TorchScalar",
+    "TimeScalar",
+    "PythonScalar",
     # Maybe Type Aliases
     "MaybeCallable",
     "MaybeFrozenset",
@@ -67,11 +74,6 @@ from tsdm.types.variables import (
 )
 
 # region Custom Type Aliases -----------------------------------------------------------
-PythonScalar: TypeAlias = (
-    None | bool | int | float | complex | str | datetime | timedelta
-)
-r"""Type Alias for Python scalars."""
-
 Axes: TypeAlias = None | int | tuple[int, ...]
 r"""Type Alias for axes."""
 SizeLike: TypeAlias = int | tuple[int, ...]
@@ -90,6 +92,22 @@ r"""TypeAlias for scalar types."""
 ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]
 r"""Type Alias for container-like objects."""
 # endregion Custom Type Aliases --------------------------------------------------------
+
+
+# region Scalar Type Aliases -----------------------------------------------------------
+Scalar: TypeAlias = None | bool | int | float | complex | str | bytes
+"""Type Alias for scalars."""
+StringScalar: TypeAlias = str | bytes
+"""Type Alias for string scalars."""
+NumericalScalar: TypeAlias = bool | int | float | complex
+"""Type Alias for numerical scalars."""
+TorchScalar: TypeAlias = None | bool | int | float | str
+r"""Type Alias for scalars allowed by torchscript."""
+TimeScalar: TypeAlias = datetime | timedelta
+r"""Type Alias for time scalars."""
+PythonScalar: TypeAlias = None | NumericalScalar | StringScalar | TimeScalar
+r"""Type Alias for Python scalars."""
+# endregion Scalar Type Aliases --------------------------------------------------------
 
 
 # region Maybe Type Aliases ------------------------------------------------------------

@@ -233,6 +233,7 @@ def detect_outliers_dataframe(
     return mask
 
 
+# TODO: add @overloads
 def detect_outliers(
     obj,
     description=None,

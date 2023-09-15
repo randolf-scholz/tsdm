@@ -115,11 +115,11 @@ class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
     # Class Variables
     LOGGER: ClassVar[logging.Logger]
     """Logger for the class."""
-    CHECKPOINT_URL: ClassVar[Optional[str]] = None
+    CHECKPOINT_URL: ClassVar[str] = NotImplemented
     """URL with overview of available model checkpoints."""
-    DOWNLOAD_URL: ClassVar[Optional[str]] = None
+    DOWNLOAD_URL: ClassVar[str] = NotImplemented
     """URL from which model checkpoints can be downloaded."""
-    DOCUMENTATION_URL: ClassVar[Optional[str]] = None
+    DOCUMENTATION_URL: ClassVar[str] = NotImplemented
     """URL of online documentation for the model."""
     RAWDATA_DIR: ClassVar[Path]
     """Default directory where the raw data is stored."""

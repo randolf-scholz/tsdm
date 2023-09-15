@@ -19,13 +19,8 @@ from typing import Protocol
 
 from numpy.typing import ArrayLike
 
-from tsdm.types.aliases import Axes
-from tsdm.types.variables import (
-    any_co as T_co,
-    any_contra as T_contra,
-    any_var as T,
-    scalar_contra,
-)
+from tsdm.types.aliases import Axes, Scalar
+from tsdm.types.variables import any_co as T_co, any_contra as T_contra, any_var as T
 
 # region generic callback-protocols ----------------------------------------------------
 
@@ -99,7 +94,7 @@ class ToTensorProto(Protocol[T_co]):
 class WhereProto(Protocol[T]):
     """Bound-Protocol for `where`-function."""
 
-    def __call__(self, cond: T, x: T, y: scalar_contra | T, /) -> T: ...
+    def __call__(self, cond: T, x: T, y: Scalar | T, /) -> T: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

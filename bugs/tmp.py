@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from typing import Callable, Concatenate, ParamSpec, TypeAlias
+from types import EllipsisType
 
-P = ParamSpec("P")
-
-intfun: TypeAlias = Callable[Concatenate[int, ..., P], None]  # ✘
+x = ...
+match x:
+    case EllipsisType():
+        print(0)
