@@ -2,7 +2,11 @@ r"""Utility function that act on tabular data."""
 
 __all__ = [
     # classes
+    "BoundaryInformation",
+    "BoundaryTable",
     "InlineTable",
+    "MultipleBoundaryInformation",
+    "Schema",
     # Functions
     "aggregate_nondestructive",
     "detect_outliers",
@@ -23,7 +27,7 @@ import logging
 import operator
 from collections.abc import Mapping, Sequence
 from functools import reduce
-from typing import Any, Generic, overload
+from typing import Any, Generic, NamedTuple, Optional, overload
 
 import pandas as pd
 from pandas import DataFrame, Index, Series
@@ -40,6 +44,17 @@ from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
 from tsdm.types.variables import any_var as T, pandas_var, tuple_co
 
 __logger__ = logging.getLogger(__package__)
+
+
+class Schema(NamedTuple):
+    """Table schema."""
+
+    shape: Optional[tuple[int, int]] = None
+    """Shape of the table."""
+    columns: Optional[Sequence[str]] = None
+    """Column names of the table."""
+    dtypes: Optional[Sequence[str]] = None
+    """Data types of the columns."""
 
 
 class InlineTable(TypedDict, Generic[tuple_co]):

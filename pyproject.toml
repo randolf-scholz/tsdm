@@ -29,11 +29,11 @@ classifiers = [
 # dependencies
 requires-python = ">=3.10,<3.12"
 dependencies = [
-    "matplotlib>=3.7.3",
+    "matplotlib>=3.8.0",
     "numpy>=1.25.2",
     "pandas>=2.1.0",
-    "pillow>=10.0.0",
-    "polars>=0.19.2",
+    "pillow>=10.0.1",
+    "polars>=0.19.3",
     "pyarrow>=13.0.0",
     "pyyaml>=6.0.1",
     "requests>=2.31.0",
@@ -59,13 +59,13 @@ docs = [
     "myst_parser>=2.0",
     "nbsphinx>=0.9.3",
     "piccolo-theme>=0.17.0",
-    "pydata-sphinx-theme>=0.13.3",
+    "pydata-sphinx-theme>=0.14.0",
     "sphinx-autoapi>=2.1.1",
     "sphinx-automodapi>=0.16.0",
     "sphinx-copybutton>=0.5.2",
     "sphinx-math-dollar>=1.2.1",
     "sphinx-typo3-theme>=4.9.0",
-    "sphinx>=7.2.5",
+    "sphinx>=7.2.6",
 ]
 dev = [
     "bandit>=1.7.5",
@@ -83,8 +83,8 @@ dev = [
     "flake8-rst-docstrings>=0.3.0",
     "ipywidgets>=8.1.1",
     "isort>=5.12.0",
-    "jupyterlab>=4.0.5",
-    "matplotlib>=3.7.3",
+    "jupyterlab>=4.0.6",
+    "matplotlib>=3.8.0",
     "mypy>=1.5.1",
     "notebook>=7.0.3",
     "openml>=0.14.1",
@@ -102,7 +102,7 @@ dev = [
     "pygments>=2.16.1",
     "pylint>=2.17.5",
     "pylint-gitlab>=1.2.0",
-    "pyright>=1.1.326",
+    "pyright>=1.1.327",
     "ruff>=0.0.289",
     "setuptools>=68.2.2",
     "slotscheck>=0.17.0",
@@ -529,11 +529,11 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
-matplotlib = ">=3.7.3"
+matplotlib = ">=3.8.0"
 numpy = ">=1.25.2"
 pandas = ">=2.1.0"
-pillow = ">=10.0.0"
-polars = ">=0.19.2"
+pillow = ">=10.0.1"
+polars = ">=0.19.3"
 pyarrow = ">=13.0.0"
 pyyaml = ">=6.0.1"
 requests = ">=2.31.0"
@@ -548,7 +548,7 @@ typing-extensions = ">=4.7.1"
 [tool.poetry.group.extra.dependencies]
 ipympl = ">=0.9.3"
 ipywidgets = ">=8.1.1"
-jupyterlab = ">=4.0.5"
+jupyterlab = ">=4.0.6"
 notebook = ">=7.0.3"
 openml = ">=0.14.1"
 openpyxl = ">=3.1.2"
@@ -573,8 +573,8 @@ nbsphinx = ">=0.9.3"
 #numpydoc = ">=1.5.0"
 #pandoc = ">=2.3"
 piccolo-theme = ">=0.17.0"
-pydata-sphinx-theme = ">=0.13.3"
-sphinx = ">=7.2.5"
+pydata-sphinx-theme = ">=0.14.0"
+sphinx = ">=7.2.6"
 sphinx-autoapi = ">=2.1.1"
 sphinx-autodoc-typehints = ">=1.24.0"
 sphinx-automodapi = ">=0.16.0"
@@ -640,7 +640,7 @@ slotscheck = ">=0.17.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.5.1"
-pyright = ">=1.1.326"
+pyright = ">=1.1.327"
 types-colorama = ">=0.4.15"
 types-docutils = ">=0.20.0"
 types-pillow = ">=10.0.0"

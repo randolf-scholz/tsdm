@@ -2,7 +2,6 @@
 
 __all__ = [
     # namedtuple
-    "schema",
     # Custom Type Aliases
     "Axes",
     "Nested",
@@ -11,7 +10,13 @@ __all__ = [
     "PathLike",
     "ScalarDType",
     "SizeLike",
+    # Maybe Type Aliases
     "MaybeCallable",
+    "MaybeFrozenset",
+    "MaybeIterable",
+    "MaybeList",
+    "MaybeSet",
+    "MaybeTuple",
     # Configuration
     "JSON",
     "TOML",
@@ -44,7 +49,7 @@ from collections.abc import (
 )
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, TypeAlias
+from typing import Any, TypeAlias
 
 import numpy as np
 import torch
@@ -54,13 +59,14 @@ from pandas.core.dtypes.base import ExtensionDtype
 from tsdm.types.protocols import Lookup
 from tsdm.types.variables import (
     any_co as T_co,
+    any_var as T,
     key_contra,
     key_var as K,
     value_co,
     value_var as V,
 )
 
-# region Numeric Types -----------------------------------------------------------------
+# region Custom Type Aliases -----------------------------------------------------------
 PythonScalar: TypeAlias = (
     None | bool | int | float | complex | str | datetime | timedelta
 )
@@ -71,22 +77,6 @@ r"""Type Alias for axes."""
 SizeLike: TypeAlias = int | tuple[int, ...]
 r"""Type Alias for shape-like objects."""
 
-
-class schema(NamedTuple):
-    """Table schema."""
-
-    shape: Optional[tuple[int, int]] = None
-    """Shape of the table."""
-    columns: Optional[Sequence[str]] = None
-    """Column names of the table."""
-    dtypes: Optional[Sequence[str]] = None
-    """Data types of the columns."""
-
-
-# endregion Numeric Types --------------------------------------------------------------
-
-
-# region Custom Type Aliases -----------------------------------------------------------
 Map: TypeAlias = Lookup[key_contra, value_co] | Callable[[key_contra], value_co]
 r"""Type Alias for `Map`."""
 Nested: TypeAlias = T_co | Collection["Nested[T_co]"] | Mapping[Any, "Nested[T_co]"]
@@ -99,9 +89,24 @@ ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]
 r"""TypeAlias for scalar types."""
 ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]
 r"""Type Alias for container-like objects."""
-MaybeCallable: TypeAlias = T_co | Callable[[], T_co]
-r"""Type Alias for objects that maybe needs to be created first."""
 # endregion Custom Type Aliases --------------------------------------------------------
+
+
+# region Maybe Type Aliases ------------------------------------------------------------
+# NOTE: Maybe refers to types of the kind Union[T, Container[T]]
+MaybeList: TypeAlias = T | list[T]
+r"""Type Alias for T | list[T]."""
+MaybeTuple: TypeAlias = T | tuple[T, ...]
+r"""Type Alias for T | tuple[T, ...]."""
+MaybeFrozenset: TypeAlias = T | frozenset[T]
+r"""Type Alias for T | frozenset[T]."""
+MaybeSet: TypeAlias = T | set[T]
+r"""Type Alias for T | set[T]."""
+MaybeIterable: TypeAlias = T | Iterable[T]
+r"""Type Alias for T | Iterable[T]."""
+MaybeCallable: TypeAlias = T | Callable[[], T]
+r"""Type Alias for objects that maybe needs to be created first."""
+# endregion Maybe Type Aliases ---------------------------------------------------------
 
 
 # region Nested collections.abc --------------------------------------------------------

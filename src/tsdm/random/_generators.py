@@ -191,7 +191,7 @@ class DampenedPendulum(BaseODEGenerator):
         values += self.observation_noise.rvs(size=values.shape)
         return values
 
-    def vector_field(self, state, t=None):
+    def vector_field(self, state, *, t=None):
         """Vector field of the pendulum.
 
         .. Signature:: ``[(...,), (..., 2) -> (..., 2)``

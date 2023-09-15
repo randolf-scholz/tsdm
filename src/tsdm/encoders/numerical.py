@@ -62,13 +62,13 @@ import numpy as np
 import pandas as pd
 import torch
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Series
 from torch import Tensor
 from typing_extensions import Self
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.aliases import Axes, Nested, PandasObject
+from tsdm.types.aliases import Axes, Nested, PandasObject, SizeLike
 from tsdm.types.protocols import NTuple
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 
@@ -76,12 +76,10 @@ TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
 r"""Type Hint for tensor-like objects."""
 T = TypeVar("T", Tensor, np.ndarray, DataFrame, Series)
 r"""TypeVar for tensor-like objects."""
-CLIPPING_MODE: TypeAlias = Literal["mask", "clip"]
+ClippingMode: TypeAlias = Literal["mask", "clip"]
 r"""Type Hint for clipping mode."""
-SINGLE_INDEXER: TypeAlias = None | int | list[int] | slice | EllipsisType
+Index: TypeAlias = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
-INDEXER: TypeAlias = SINGLE_INDEXER | tuple[SINGLE_INDEXER, ...]
-r"""Type Hint for indexer objects."""
 
 scalars: TypeAlias = None | bool | int | float | complex | str
 """Type Hint for scalar objects."""
@@ -156,7 +154,7 @@ def get_broadcast(
 
     If `keep_axis` is True, then the broadcast is the complement of the contraction,
     i.e. ``x[broadcast]`` is roughly equivalent to ``contraction(data, kept_axis, keepdims=True)``,
-    where ``kept_axis = set(range(data.ndim)) - set(a%data.ndim for a in axis)``.
+    where ``kept_axis = set(range(data.ndim)) - set(ax%data.ndim for ax in axis)``.
 
     Args:
         original_shape: The tensor to be contracted.
@@ -199,12 +197,14 @@ def slice_size(slc: slice) -> int | None:
 
 
 @overload
-def get_reduced_axes(item: INDEXER, /, axes: None) -> None: ...
+def get_reduced_axes(item: Index | tuple[Index, ...], /, axes: None) -> None: ...
 @overload
 def get_reduced_axes(
-    item: INDEXER, /, axes: int | tuple[int, ...]
+    item: Index | tuple[Index, ...], /, axes: SizeLike
 ) -> tuple[int, ...]: ...
-def get_reduced_axes(item: INDEXER, /, axes: Axes) -> Axes:
+@overload
+def get_reduced_axes(item: Index | tuple[Index, ...], /, axes: Axes) -> Axes: ...
+def get_reduced_axes(item, axes):
     """Determine if a slice would remove some axes."""
     if axes is None:
         return None
@@ -334,7 +334,7 @@ class BoundaryEncoder(BaseEncoder[T, T]):
     lower_included: bool = True
     upper_included: bool = True
 
-    mode: CLIPPING_MODE | tuple[CLIPPING_MODE, CLIPPING_MODE] = "mask"
+    mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask"
     axis: Axes = None
 
     def __post_init__(self) -> None:
@@ -392,12 +392,12 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         return True
 
     @property
-    def lower_mode(self) -> CLIPPING_MODE:
+    def lower_mode(self) -> ClippingMode:
         """The mode for the lower boundary."""
         return self.mode[0] if isinstance(self.mode, tuple) else self.mode
 
     @property
-    def upper_mode(self) -> CLIPPING_MODE:
+    def upper_mode(self) -> ClippingMode:
         """The mode for the upper boundary."""
         return self.mode[1] if isinstance(self.mode, tuple) else self.mode
 
@@ -964,7 +964,7 @@ class FloatEncoder(BaseEncoder[NDArray, NDArray]):
     def fit(self, data: PandasObject, /) -> None:
         if isinstance(data, DataFrame):
             self.dtypes = data.dtypes
-        elif isinstance(data, (Series, Index)):
+        elif isinstance(data, (Series, pd.Index)):
             self.dtypes = data.dtype
         # elif hasattr(data, "dtype"):
         #     self.dtypes = data.dtype

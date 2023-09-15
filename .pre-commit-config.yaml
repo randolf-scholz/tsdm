@@ -149,7 +149,7 @@ repos:
         stages: [pre-push]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.326
+    rev: v1.1.327
     hooks:
       - id: pyright
         files: (^src/|^tests/)
@@ -161,7 +161,7 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.35
+    rev: v0.1.36
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
@@ -182,7 +182,8 @@ repos:
           - "--ignore-decorators"
           - "jit.script"
           - "--ignore-dunder"
-          - "--allow-one"
+          # - "--allow-one"
+          - "--ignore-without-positional-only"
       - id: python-check-standard-generics
         files: (^src/|^tests/)
       - id: check-separator-length
