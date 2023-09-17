@@ -59,7 +59,7 @@ from tsdm.types.variables import any_var as T, tensor_var
 
 P = ParamSpec("P")
 
-BackendID: TypeAlias = Literal["torch", "numpy", "pandas", "arrow"]
+BackendID: TypeAlias = Literal["arrow", "numpy", "pandas", "torch"]
 """A type alias for the supported backends."""
 
 

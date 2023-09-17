@@ -24,8 +24,7 @@ from typing import Literal, TypeVar
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Series
 
-from tsdm.types.aliases import Axes
-from tsdm.types.variables import scalar_co as Scalar_co
+from tsdm.types.aliases import Axes, Scalar
 
 P = TypeVar("P", Series, DataFrame)
 """A type variable for pandas objects."""
@@ -91,7 +90,7 @@ def pandas_nanstd(x: P, /, *, axis: Axes = None) -> P:
     return x.std(axis=pandas_infer_axes(x, axes=axis), skipna=True, ddof=0)
 
 
-def pandas_where(cond: NDArray, a: P, b: Scalar_co | NDArray, /) -> P:
+def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
     """Analogue to `numpy.where`."""
     if isinstance(a, Series | DataFrame):
         return a.where(cond, b)

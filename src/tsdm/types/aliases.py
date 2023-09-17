@@ -95,17 +95,17 @@ r"""Type Alias for container-like objects."""
 
 
 # region Scalar Type Aliases -----------------------------------------------------------
-Scalar: TypeAlias = None | bool | int | float | complex | str | bytes
+Scalar: TypeAlias = bool | int | float | complex | str | bytes
 """Type Alias for scalars."""
 StringScalar: TypeAlias = str | bytes
 """Type Alias for string scalars."""
 NumericalScalar: TypeAlias = bool | int | float | complex
 """Type Alias for numerical scalars."""
-TorchScalar: TypeAlias = None | bool | int | float | str
+TorchScalar: TypeAlias = bool | int | float | str
 r"""Type Alias for scalars allowed by torchscript."""
 TimeScalar: TypeAlias = datetime | timedelta
 r"""Type Alias for time scalars."""
-PythonScalar: TypeAlias = None | NumericalScalar | StringScalar | TimeScalar
+PythonScalar: TypeAlias = NumericalScalar | StringScalar | TimeScalar
 r"""Type Alias for Python scalars."""
 # endregion Scalar Type Aliases --------------------------------------------------------
 
