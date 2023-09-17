@@ -40,9 +40,15 @@ from tsdm import (
     viz,
 )
 
-__version__ = metadata.version(__package__)
-r"""The version number of the `tsdm` package."""
-del metadata
+# single-source version
+try:
+    __version__ = metadata.version(__package__ or __name__)
+    r"""The version number of the `tsdm` package."""
+except metadata.PackageNotFoundError:
+    __version__ = "unknown"
+    r"""The version number of the `tsdm` package."""
+finally:
+    del metadata
 
 
 def info(obj: object | None = None) -> None:

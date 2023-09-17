@@ -192,3 +192,4 @@ repos:
         files: ^src/
       - id: python-check-clean-interface
         files: ^src/
+        args: ["--no-load-silent"]
