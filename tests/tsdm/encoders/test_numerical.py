@@ -36,7 +36,7 @@ def test_get_broadcast(
     ):
         skip(f"{shape=} {axis=}")
 
-    arr = np.random.randn(*shape)
+    arr: np.ndarray = np.random.randn(*shape)
 
     broadcast = get_broadcast(arr.shape, axis=axis)
     m = np.mean(arr, axis=axis)
@@ -97,17 +97,20 @@ def test_boundary_encoder(data: T) -> None:
     assert (encoded == -1).sum() == (data <= -1).sum()
     assert (encoded == +1).sum() == (data >= +1).sum()
 
-    if isinstance(data, pd.Series):
-        assert (
-            isinstance(encoded, pd.Series)
-            and encoded.shape == data.shape
-            and encoded.name == data.name
-            and encoded.index.equals(data.index)
-        )
-    if isinstance(data, torch.Tensor):
-        assert isinstance(encoded, torch.Tensor) and encoded.shape == data.shape
-    if isinstance(data, np.ndarray):
-        assert isinstance(encoded, np.ndarray) and encoded.shape == data.shape
+    match data:
+        case pd.Series() as series:
+            assert (
+                isinstance(encoded, pd.Series)
+                and encoded.shape == series.shape
+                and encoded.name == series.name
+                and encoded.index.equals(series.index)
+            )
+        case torch.Tensor() as tensor:
+            assert isinstance(encoded, torch.Tensor) and encoded.shape == tensor.shape
+        case np.ndarray() as array:
+            assert isinstance(encoded, np.ndarray) and encoded.shape == array.shape
+        case _:
+            raise TypeError(f"Unexpected type: {type(data)}")
 
     # test numpy + mask
     encoder = BoundaryEncoder(-1, +1, mode="mask")

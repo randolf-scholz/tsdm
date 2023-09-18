@@ -25,14 +25,12 @@ __all__ = [
 
 import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
-from types import EllipsisType
 from typing import (
     Any,
     NamedTuple,
     Protocol,
     TypeGuard,
     TypeVar,
-    get_type_hints,
     overload,
     runtime_checkable,
 )
@@ -43,7 +41,6 @@ from typing_extensions import Self, SupportsIndex, get_original_bases
 
 from tsdm.types.variables import (
     any_co as T_co,
-    int_var,
     key_contra,
     scalar_co,
     scalar_var as Scalar,
@@ -193,8 +190,8 @@ class Shape(Protocol):
     def __add__(self, other: Self | tuple, /) -> "Shape": ...
     def __eq__(self, other: object, /) -> bool: ...
     def __ne__(self, other: object, /) -> bool: ...
-    def __lt__(self, other: object, /) -> bool: ...
-    def __le__(self, other: object, /) -> bool: ...
+    def __lt__(self, other: Self | tuple, /) -> bool: ...
+    def __le__(self, other: Self | tuple, /) -> bool: ...
 
 
 @runtime_checkable
