@@ -42,7 +42,7 @@ def test_jit_optimization() -> None:
     assert "tanh" in scripted.code
 
     model = Foo(use_relu=True)
-    scripted: torch.ScriptModule = jit.script(model)
+    scripted = jit.script(model)
     print(scripted.code)
     assert "relu" in scripted.code
     assert "tanh" not in scripted.code

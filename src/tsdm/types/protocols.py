@@ -35,7 +35,6 @@ from typing import (
     runtime_checkable,
 )
 
-import numpy
 from numpy.typing import NDArray
 from typing_extensions import Self, SupportsIndex, get_original_bases
 
@@ -246,7 +245,7 @@ class Array(Protocol[scalar_co]):
         ...
 
     @property
-    def dtype(self) -> scalar_co | type[scalar_co] | numpy.dtype:
+    def dtype(self) -> scalar_co | type:
         r"""Yield the data type of the array."""
         ...
 

@@ -98,6 +98,10 @@ def test_boundary_encoder(data: T) -> None:
     assert (encoded == +1).sum() == (data >= +1).sum()
 
     match data:
+        case torch.Tensor() as tensor:
+            assert isinstance(encoded, torch.Tensor) and encoded.shape == tensor.shape
+        case np.ndarray() as array:
+            assert isinstance(encoded, np.ndarray) and encoded.shape == array.shape
         case pd.Series() as series:
             assert (
                 isinstance(encoded, pd.Series)
@@ -105,10 +109,6 @@ def test_boundary_encoder(data: T) -> None:
                 and encoded.name == series.name
                 and encoded.index.equals(series.index)
             )
-        case torch.Tensor() as tensor:
-            assert isinstance(encoded, torch.Tensor) and encoded.shape == tensor.shape
-        case np.ndarray() as array:
-            assert isinstance(encoded, np.ndarray) and encoded.shape == array.shape
         case _:
             raise TypeError(f"Unexpected type: {type(data)}")
 
