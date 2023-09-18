@@ -17,13 +17,13 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import KW_ONLY, dataclass
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Optional, Protocol, runtime_checkable
 
 import numpy as np
+import scipy.stats
 from numpy.typing import ArrayLike, NDArray
-from scipy import stats
 from scipy.integrate import solve_ivp
-from scipy.stats import rv_continuous
+from scipy.stats import norm as univariate_normal
 
 from tsdm.types.aliases import SizeLike
 from tsdm.types.protocols import Array
@@ -31,64 +31,73 @@ from tsdm.types.variables import any_var as T
 
 
 @runtime_checkable
-class Generator(Protocol):
+class Generator(Protocol[T]):
     r"""Protocol for generators."""
 
     @abstractmethod
-    def rvs(self, size: SizeLike, *, random_state: Optional = None):
+    def rvs(self, size: SizeLike, *, random_state: Optional = None) -> T:
         """Random variates of given type."""
         ...
 
 
 @runtime_checkable
-class Distribution(Generator):
+class Distribution(Generator[T]):
     """Protocol for distributions.
 
     We follow the design of `scipy.stats.rv_continuous` and `scipy.stats.rv_discrete`.
     """
 
+    @abstractmethod
+    def rvs(self, size: SizeLike, *, random_state: Optional = None) -> T:
+        """Random variates of given type."""
+        ...
+
     def stats(self, *, loc: ArrayLike = 0, scale: ArrayLike = 1, moments: str = "mvsk"):
         """Some statistics of the given RV."""
 
-    def entropy(self, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def entropy(self, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Differential entropy of the RV."""
         ...
 
-    def moment(self, order: int, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def moment(self, order: int, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Non-central moment of order n."""
         ...
 
-    def pdf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def pdf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Probability density function at x of the given RV."""
         ...
 
-    def cdf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def cdf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Cumulative distribution function of the given RV."""
         ...
 
-    def ppf(self, q: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def ppf(self, q: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Percent point function (inverse of `cdf`) at q of the given RV."""
         ...
 
-    def sf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def sf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Survival function (1 - `cdf`) at x of the given RV."""
         ...
 
-    def isf(self, q: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def isf(self, q: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Inverse survival function at q of the given RV."""
         ...
 
-    def logpdf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def logpdf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Log of the probability density function at x of the given RV."""
         ...
 
-    def logcdf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def logcdf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Log of the cumulative distribution function at x of the given RV."""
         ...
 
-    def logsf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1):
+    def logsf(self, x: ArrayLike, /, *, loc: ArrayLike = 0, scale: ArrayLike = 1) -> T:
         """Log of the survival function of the given RV."""
         ...
+
+
+if TYPE_CHECKING:
+    scipy.stats.rv_continuous: type[Distribution]
 
 
 class IVP_Solver(Protocol[T]):
@@ -112,11 +121,21 @@ class IVP_Solver(Protocol[T]):
 
 
 class DiffEqGenerator(Generator[T]):
-    """Protocol for Differential Equation Generators."""
+    """Protocol for Differential Equation Generators.
+
+    Subsumes ODE-Generators and SDE-Generators.
+    """
 
     @property
+    @abstractmethod
     def ivp_solver(self) -> IVP_Solver:
         """Initial value problem solver."""
+        ...
+
+    @property
+    @abstractmethod
+    def system(self) -> Callable:
+        """System of differential equations."""
         ...
 
     @abstractmethod
@@ -129,27 +148,13 @@ class DiffEqGenerator(Generator[T]):
         """Create observations from the solution."""
         ...
 
-    def __call__(self, t: T, x: T) -> T:
-        """Vector field f(t, x(t))."""
-        ...
-
-    def rvs(self, t: T, *, random_state=None):
-        """Random variates of given type."""
-        ...
-
-
-class BaseODEGenerator(DiffEqGenerator):
-    """Base class for ODE-Generators."""
-
-    ivp_solver: IVP_Solver = solve_ivp
-
     def rvs(self, t, *, random_state=None):
         """Random variates of given type."""
         # get the initial state
-        x0 = self.get_initial_state()
+        y0 = self.get_initial_state()
 
         # solve the initial value problem
-        sol = self.ivp_solver(t, x0)
+        sol = self.ivp_solver(self.system, t, y0=y0)
 
         # add observation noise
         observations = self.make_observations(sol)
@@ -157,11 +162,37 @@ class BaseODEGenerator(DiffEqGenerator):
         return observations
 
 
+class BaseODEGenerator(DiffEqGenerator):
+    """Base class for ODE-Generators."""
+
+    ivp_solver: IVP_Solver = solve_ivp
+
+    @abstractmethod
+    def get_initial_state(self) -> T:
+        """Create initial state y₀."""
+        ...
+
+    @abstractmethod
+    def make_observations(self, sol: Any) -> T:
+        """Create observations from the solution."""
+        ...
+
+
 @dataclass
-class DampenedPendulum(BaseODEGenerator):
+class DampedPendulum(BaseODEGenerator):
     """Dampened Pendulum Simulation.
 
     The dampended pendulum is an autonomous system with two degrees of freedom.
+
+    References:
+        - Neural Continuous-Discrete State Space Models
+          Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh
+          Proceedings of the 40th International Conference on Machine Learning
+          https://proceedings.mlr.press/v202/ansari23a.html
+        - Deep Variational Bayes Filters: Unsupervised Learning of State Space Models from Raw Data
+          Maximilian Karl, Maximilian Soelch, Justin Bayer, Patrick van der Smagt
+          ICLR 2017
+          https://openreview.net/forum?id=HyTqHL5xg
     """
 
     _: KW_ONLY
@@ -173,9 +204,9 @@ class DampenedPendulum(BaseODEGenerator):
     """Mass of the pendulum."""
     gamma: float = 0.25
     """Damping coefficient."""
-    observation_noise: Distribution = stats.norm(loc=0, scale=0.05)
+    observation_noise: Distribution = univariate_normal(loc=0, scale=0.05)
     """Noise distribution."""
-    parameter_noise: Distribution = stats.norm(loc=0, scale=1)
+    parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
     """Noise distribution."""
 
     def rvs(self, t, *, theta0: float = np.pi, omega0: float = 4.0, random_state=None):

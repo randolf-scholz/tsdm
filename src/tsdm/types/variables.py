@@ -17,6 +17,12 @@ __all__ = [
     "dict_var",
     "dict_co",
     "dict_contra",
+    "float_var",
+    "float_co",
+    "float_contra",
+    "int_var",
+    "int_co",
+    "int_contra",
     "module_var",
     "module_co",
     "module_contra",
@@ -81,12 +87,11 @@ tensor_var = TypeVar("tensor_var", Tensor, ndarray)
 r"""Type Variable for `torch.Tensor` or `numpy.ndarray` objects."""
 torch_module_var = TypeVar("torch_module_var", bound=nn.Module)
 r"""Type Variable for `torch.nn.Modules`."""
-_scalar = bool | int | float | complex | str | bytes
-scalar_var = TypeVar("scalar_var", bound=_scalar)
+scalar_var = TypeVar("scalar_var")
 r"""Type Variable for scalar types."""
-scalar_co = TypeVar("scalar_co", bound=_scalar, covariant=True)
+scalar_co = TypeVar("scalar_co", covariant=True)
 r"""Covariant type variable for scalar types."""
-scalar_contra = TypeVar("scalar_contra", bound=_scalar, contravariant=True)
+scalar_contra = TypeVar("scalar_contra", contravariant=True)
 r"""Contravariant type variable for scalar types."""
 # endregion Custom Type Variables ------------------------------------------------------
 
@@ -105,6 +110,20 @@ dict_co = TypeVar("dict_co", bound=dict, covariant=True)
 r"""Covariant type variable for `dict`."""
 dict_contra = TypeVar("dict_contra", bound=dict, contravariant=True)
 r"""Contravariant type variable for `dict`."""
+
+float_var = TypeVar("float_var", bound=float)
+r"""Type Variable for `float`."""
+float_co = TypeVar("float_co", bound=float, covariant=True)
+r"""Covariant type variable for `float`."""
+float_contra = TypeVar("float_contra", bound=float, contravariant=True)
+r"""Contravariant type variable for `float`."""
+
+int_var = TypeVar("int_var", bound=int)
+r"""Type Variable for `int`."""
+int_co = TypeVar("int_co", bound=int, covariant=True)
+r"""Covariant type variable for `int`."""
+int_contra = TypeVar("int_contra", bound=int, contravariant=True)
+r"""Contravariant type variable for `int`."""
 
 module_var = TypeVar("module_var", bound=ModuleType)
 r"""Type Variable for `ModuleType`."""

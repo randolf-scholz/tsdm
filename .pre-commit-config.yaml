@@ -161,7 +161,7 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.36
+    rev: v0.1.37
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps

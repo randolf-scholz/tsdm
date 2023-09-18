@@ -28,7 +28,7 @@ from tsdm.types.variables import any_co as T_co, any_contra as T_contra, any_var
 class SelfMapProto(Protocol[T]):
     r"""A generic protocol for endofunctions."""
 
-    def __call__(self, __x: T) -> T:
+    def __call__(self, x: T, /) -> T:
         r"""Returns the result of the endofunction."""
         ...
 
@@ -36,7 +36,7 @@ class SelfMapProto(Protocol[T]):
 class IndexedValueProto(Protocol[T_co]):
     r"""A generic protocol for indexed values."""
 
-    def __call__(self, __key: int) -> T_co:
+    def __call__(self, key: int, /) -> T_co:
         r"""Returns the value at the given index."""
         ...
 
@@ -70,7 +70,7 @@ class ClipProto(Protocol[T]):
 class ContractionProto(Protocol[T]):
     """Bound Protocol for contractions (support `axes` keyword argument)."""
 
-    def __call__(self, __x: T, *, axis: Axes = None) -> T: ...
+    def __call__(self, x: T, /, *, axis: Axes = None) -> T: ...
 
 
 class IsScalarProto(Protocol[T_contra]):

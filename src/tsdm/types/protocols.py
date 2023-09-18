@@ -16,25 +16,36 @@ __all__ = [
     "Hash",
     "Lookup",
     "NTuple",
+    "Shape",
     # Functions
     "is_dataclass",
 ]
 
 import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
+from types import EllipsisType
 from typing import (
     Any,
     NamedTuple,
     Protocol,
     TypeGuard,
     TypeVar,
+    get_type_hints,
     overload,
     runtime_checkable,
 )
 
+import numpy
+from numpy.typing import NDArray
 from typing_extensions import Self, SupportsIndex, get_original_bases
 
-from tsdm.types.variables import any_co as T_co, key_contra, scalar_co, value_co
+from tsdm.types.variables import (
+    any_co as T_co,
+    int_var,
+    key_contra,
+    scalar_co,
+    value_co,
+)
 
 A = TypeVar("A", bound="Array")
 
@@ -76,11 +87,11 @@ class NTuple(Protocol[T_co]):
     def _asdict(self) -> Mapping[str, T_co]: ...
     # def __new__(cls, __iterable: Iterable[T_co] = ...) -> Self: ...
     def __len__(self) -> int: ...
-    def __contains__(self, __key: object) -> bool: ...
+    def __contains__(self, key: object, /) -> bool: ...
     @overload
-    def __getitem__(self, __key: SupportsIndex) -> T_co: ...
+    def __getitem__(self, key: SupportsIndex, /) -> T_co: ...
     @overload
-    def __getitem__(self, __key: slice) -> tuple[T_co, ...]: ...
+    def __getitem__(self, key: slice, /) -> tuple[T_co, ...]: ...
     def __iter__(self) -> Iterator[T_co]: ...
     # def __lt__(self, __value: tuple[T_co, ...]) -> bool: ...
     # def __le__(self, __value: tuple[T_co, ...]) -> bool: ...
@@ -102,6 +113,35 @@ class NTuple(Protocol[T_co]):
 
 # region container protocols -----------------------------------------------------------
 @runtime_checkable
+class Shape(Protocol):
+    """Protocol for shapes, very similar to tuple, but without `__contains__`.
+
+    Note:
+        - tensorflow.TensorShape is not a tuple, but has a similar API.
+        - pytorch.Size is a tuple.
+        - numpy.ndarray.shape is a tuple.
+        - pandas.Series.shape is a tuple.
+
+    References:
+        - https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi
+    """
+
+    # unary operations
+    def __hash__(self) -> int: ...
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[int]: ...
+    def __getitem__(self, item: int, /) -> int: ...  # int <: SupportsIndex
+
+    # binary operations
+    # NOTE: Not returning self, cf. https://github.com/python/typeshed/issues/10727
+    def __add__(self, other: Self | tuple, /) -> "Shape": ...
+    def __eq__(self, other: Self | tuple, /) -> bool: ...
+    def __ne__(self, other: Self | tuple, /) -> bool: ...
+    def __lt__(self, other: Self | tuple, /) -> bool: ...
+    def __le__(self, other: Self | tuple, /) -> bool: ...
+
+
+@runtime_checkable
 class SupportsShape(Protocol[scalar_co]):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
@@ -114,17 +154,38 @@ class SupportsShape(Protocol[scalar_co]):
         """Number of elements along first axis."""
         ...
 
-    def __getitem__(self, key: Any) -> Self | scalar_co:
+    # binary operations
+    def __getitem__(self, key: Any, /) -> Self | scalar_co:
         """Return an element/slice of the table."""
         ...
 
 
 @runtime_checkable
 class Array(Protocol[scalar_co]):
-    r"""Protocol for array-like objects.
+    r"""Protocol for array-like objects (tensors with single data type).
 
-    Compared to a Table (e.g. `pandas.DataFrame` / `pyarrow.Table`), an Array has a single dtype.
+    Matches with
+
+    - `numpy.ndarray`
+    - `torch.Tensor`
+    - `tensorflow.Tensor`
+    - `jax.numpy.ndarray`
+    - `pandas.Series`
+
+    Does not match with
+
+    - `pandas.DataFrame`
+    - `pyarrow.Table`
+    - `pyarrow.Array`
     """
+
+    def __array__(self) -> NDArray[scalar_co]:
+        """Return a numpy array.
+
+        References
+            - https://numpy.org/devdocs/user/basics.interoperability.html
+        """
+        ...
 
     @property
     def ndim(self) -> int:
@@ -132,12 +193,12 @@ class Array(Protocol[scalar_co]):
         ...
 
     @property
-    def dtype(self) -> scalar_co:
+    def dtype(self) -> scalar_co | type[scalar_co] | numpy.dtype[scalar_co]:
         r"""Yield the data type of the array."""
         ...
 
     @property
-    def shape(self) -> Sequence[int]:
+    def shape(self) -> tuple[int, ...]:
         """Yield the shape of the array."""
         ...
 
@@ -145,43 +206,97 @@ class Array(Protocol[scalar_co]):
         """Number of elements along first axis."""
         ...
 
-    def __getitem__(self, key: Any) -> Self:
-        """Return an element/slice of the table."""
+    def __iter__(self) -> Iterator[Self]:
+        """Iterate over the first dimension."""
         ...
 
-    # # fmt: off
-    # def __len__(self) -> int: ...
-    # # @overload
-    # # def __getitem__(self: A, key: int) -> Any: ...
-    # # @overload
-    # # def __getitem__(self: A, key: Sequence[bool]) -> A: ...
-    # # @overload
-    # # def __getitem__(self: A, key: Sequence[int]) -> A: ...
-    # def __getitem__(self: A, key: Any) -> A: ...
-    # def __eq__(self: A, other: Any) -> A: ...  # type: ignore[override]
-    # def __le__(self: A, other: Any) -> A: ...
-    # def __ge__(self: A, other: Any) -> A: ...
-    # def __lt__(self: A, other: Any) -> A: ...
-    # def __gt__(self: A, other: Any) -> A: ...
-    # def __ne__(self: A, other: Any) -> A: ...  # type: ignore[override]
-    # def __neg__(self: A) -> A: ...
-    # def __invert__(self: A) -> A: ...
-    # def __add__(self: A, other: Any) -> A: ...
-    # def __radd__(self: A, other: Any) -> A: ...
-    # def __iadd__(self: A, other: Any) -> A: ...
-    # def __sub__(self: A, other: Any) -> A: ...
-    # def __rsub__(self: A, other: Any) -> A: ...
-    # def __isub__(self: A, other: Any) -> A: ...
-    # def __mul__(self: A, other: Any) -> A: ...
-    # def __rmul__(self: A, other: Any) -> A: ...
-    # def __imul__(self: A, other: Any) -> A: ...
-    # def __truediv__(self: A, other: Any) -> A: ...
-    # def __rtruediv__(self: A, other: Any) -> A: ...
-    # def __itruediv__(self: A, other: Any) -> A: ...
-    # # fmt: on
+    # binary operations
+    @overload
+    def __getitem__(self, key: None | slice | list | tuple | Self, /) -> Self: ...
+    def __getitem__(self, key, /):
+        """Return an element/slice of the array."""
+        ...
 
 
-class NumericalArray(Protocol[scalar_co]):
+print(get_type_hints(Array))
+
+# # fmt: off
+# def __len__(self) -> int: ...
+# # @overload
+# # def __getitem__(self: A, key: int) -> Any: ...
+# # @overload
+# # def __getitem__(self: A, key: Sequence[bool]) -> A: ...
+# # @overload
+# # def __getitem__(self: A, key: Sequence[int]) -> A: ...
+# def __getitem__(self: A, key: Any) -> A: ...
+# def __eq__(self: A, other: Any) -> A: ...  # type: ignore[override]
+# def __le__(self: A, other: Any) -> A: ...
+# def __ge__(self: A, other: Any) -> A: ...
+# def __lt__(self: A, other: Any) -> A: ...
+# def __gt__(self: A, other: Any) -> A: ...
+# def __ne__(self: A, other: Any) -> A: ...  # type: ignore[override]
+# def __neg__(self: A) -> A: ...
+# def __invert__(self: A) -> A: ...
+# def __add__(self: A, other: Any) -> A: ...
+# def __radd__(self: A, other: Any) -> A: ...
+# def __iadd__(self: A, other: Any) -> A: ...
+# def __sub__(self: A, other: Any) -> A: ...
+# def __rsub__(self: A, other: Any) -> A: ...
+# def __isub__(self: A, other: Any) -> A: ...
+# def __mul__(self: A, other: Any) -> A: ...
+# def __rmul__(self: A, other: Any) -> A: ...
+# def __imul__(self: A, other: Any) -> A: ...
+# def __truediv__(self: A, other: Any) -> A: ...
+# def __rtruediv__(self: A, other: Any) -> A: ...
+# def __itruediv__(self: A, other: Any) -> A: ...
+# # fmt: on
+
+# [
+#     "__abs__",
+#     "__add__",
+#     "__and__",
+#     "__bool__",
+#     "__dir__",
+#     "__eq__",
+#     "__float__",
+#     "__floordiv__",
+#     "__ge__",
+#     "__gt__",
+#     "__hash__",
+#     "__int__",
+#     "__invert__",
+#     "__le__",
+#     "__lt__",
+#     "__matmul__",
+#     "__mod__",
+#     "__mul__",
+#     "__ne__",
+#     "__neg__",
+#     "__or__",
+#     "__pow__",
+#     "__radd__",
+#     "__rand__",
+#     "__reduce__",
+#     "__reduce_ex__",
+#     "__repr__",
+#     "__rfloordiv__",
+#     "__rmatmul__",
+#     "__rmod__",
+#     "__rmul__",
+#     "__ror__",
+#     "__rpow__",
+#     "__rsub__",
+#     "__rtruediv__",
+#     "__rxor__",
+#     "__sizeof__",
+#     "__str__",
+#     "__sub__",
+#     "__truediv__",
+#     "__xor__",
+# ]
+
+
+class NumericalArray(Array[scalar_co]):
     r"""Protocol for array-like objects.
 
     Compared to a Table (e.g. `pandas.DataFrame` / `pyarrow.Table`), an Array has a single dtype.

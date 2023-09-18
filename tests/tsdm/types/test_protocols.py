@@ -2,7 +2,7 @@
 """Test the Array protocol."""
 
 import logging
-from typing import NamedTuple
+from typing import NamedTuple, Protocol
 
 import numpy
 import pyarrow as pa
@@ -11,10 +11,23 @@ from numpy import ndarray
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series
 from torch import Tensor
+from typing_extensions import get_protocol_members
 
-from tsdm.types.protocols import Array, NTuple, SupportsShape
+from tsdm.types.protocols import Array, NTuple, Shape, SupportsShape
 
 __logger__ = logging.getLogger(__name__)
+
+
+def test_shape() -> None:
+    data = [1, 2, 3]
+    torch_tensor: Tensor = torch.tensor(data)
+    numpy_ndarray: NDArray = ndarray(data)
+    pandas_series: Series = Series(data)
+
+    x: Shape = tuple([1, 2, 3])
+    y: Shape = torch_tensor.shape
+    z: Shape = numpy_ndarray.shape
+    w: Shape = pandas_series.shape
 
 
 def test_ntuple() -> None:
@@ -106,26 +119,51 @@ def test_table() -> None:
     __logger__.info("Shared attributes/methods of Tables: %s", shared_attrs)
 
 
+def test_shared_attrs() -> None:
+    data = [1, 2, 3]
+    arrays = {
+        "torch_tensor": torch.tensor(data),
+        "numpy_ndarray": ndarray(data),
+        "pandas_series": Series(data),
+        # "pyarrow_array": pa.array(data),
+    }
+    shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays.values()))
+    excluded_attrs = {"__dict__", "__weakref__", "__orig_bases__"}
+    array_attrs = (set(dir(Array)) - set(dir(Protocol))) - excluded_attrs
+
+    # check that all attributes of Array are present
+    missing_attrs = array_attrs - shared_attrs
+    assert not missing_attrs, f"Missing Attributes: {missing_attrs}"
+
+    # check that all arrays have the same attributes
+    superfuous_attrs = shared_attrs - array_attrs
+    assert not superfuous_attrs, f"Superfuous Attributes: {superfuous_attrs}"
+
+
 def test_array() -> None:
     """Test the Array protocol (singular dtype and ndim)."""
+    # test torch
     torch_tensor: Tensor = torch.tensor([1, 2, 3])
     torch_array: Array = torch_tensor
     assert isinstance(
         torch_array, Array
     ), f"Missing Attributes: {set(dir(Array)) - set(dir(torch_array))}"
 
-    numpy_ndarray: NDArray = ndarray([1, 2, 3])
-    numpy_array: Array = numpy_ndarray
+    # test numpy
+    numpy_ndarray: NDArray[numpy.int_] = ndarray([1, 2, 3])
+    numpy_array: Array[numpy.int_] = numpy_ndarray
     assert isinstance(
         numpy_array, Array
     ), f"Missing Attributes: {set(dir(Array)) - set(dir(numpy_array))}"
 
+    # test pandas
     pandas_series: Series = Series([1, 2, 3])
     pandas_array2: Array = pandas_series
     assert isinstance(
         pandas_array2, Array
     ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array2))}"
 
+    # test combined
     arrays = [torch_array, numpy_array, pandas_array2]
     shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
     __logger__.info("Shared attributes/methods of Arrays: %s", shared_attrs)
@@ -133,6 +171,7 @@ def test_array() -> None:
 
 def _main() -> None:
     logging.basicConfig(level=logging.INFO)
+    test_shared_attrs()
     test_table()
     test_array()
 
