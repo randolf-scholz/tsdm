@@ -160,6 +160,33 @@ repos:
     hooks:
       - id: nbstripout-fast
         files: ^dev/
+  # pyright
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.327
+    hooks:
+      - id: pyright
+        # not everything works with pyright yet
+        # verbose regex
+        files: |
+          (?x)^(
+            (?!)  # intentionally matches nothing
+            #|tests/
+            |src/tsdm/constants.py
+            #|src/tsdm/backend
+            |src/tsdm/config
+            #|src/tsdm/datasets
+            #|src/tsdm/encoders
+            |src/tsdm/linalg
+            #|src/tsdm/logutils
+            |src/tsdm/metrics
+            |src/tsdm/models
+            |src/tsdm/optimizers
+            #|src/tsdm/random
+            #|src/tsdm/tasks
+            |src/tsdm/types
+            #|src/tsdm/utils
+            |src/tsdm/viz
+          )
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.1.37
     hooks:

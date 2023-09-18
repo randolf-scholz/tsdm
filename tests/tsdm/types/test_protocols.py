@@ -23,11 +23,13 @@ def test_shape() -> None:
     torch_tensor: Tensor = torch.tensor(data)
     numpy_ndarray: NDArray = ndarray(data)
     pandas_series: Series = Series(data)
+    pandas_index: Index = Index(data)
 
     x: Shape = tuple([1, 2, 3])
     y: Shape = torch_tensor.shape
     z: Shape = numpy_ndarray.shape
     w: Shape = pandas_series.shape
+    v: Shape = pandas_index.shape
 
 
 def test_ntuple() -> None:
@@ -156,15 +158,19 @@ def test_array() -> None:
         numpy_array, Array
     ), f"Missing Attributes: {set(dir(Array)) - set(dir(numpy_array))}"
 
-    # test pandas
+    # test pandas Series
     pandas_series: Series = Series([1, 2, 3])
-    pandas_array2: Array = pandas_series
+    pandas_array: Array = pandas_series
     assert isinstance(
-        pandas_array2, Array
-    ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array2))}"
+        pandas_array, Array
+    ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array))}"
+
+    # test pandas Index
+    pandas_index: Index = Index([1, 2, 3])
+    pandas_array2: Array = pandas_index
 
     # test combined
-    arrays = [torch_array, numpy_array, pandas_array2]
+    arrays = [torch_array, numpy_array, pandas_array, pandas_array2]
     shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
     __logger__.info("Shared attributes/methods of Arrays: %s", shared_attrs)
 

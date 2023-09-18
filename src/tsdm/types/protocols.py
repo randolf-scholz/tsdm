@@ -9,14 +9,16 @@ References
 
 __all__ = [
     # Classes
-    "Array",
-    "NumericalArray",
     "SupportsShape",
     "Dataclass",
     "Hash",
     "Lookup",
     "NTuple",
     "Shape",
+    # Arrays
+    "Array",
+    "NumericalArray",
+    "MutableArray",
     # Functions
     "is_dataclass",
 ]
@@ -44,6 +46,7 @@ from tsdm.types.variables import (
     int_var,
     key_contra,
     scalar_co,
+    scalar_var as Scalar,
     value_co,
 )
 
@@ -111,6 +114,59 @@ class NTuple(Protocol[T_co]):
 # endregion generic factory-protocols --------------------------------------------------
 
 
+# region misc protocols ----------------------------------------------------------------
+@runtime_checkable
+class Lookup(Protocol[key_contra, value_co]):
+    """Mapping/Sequence like generic that is contravariant in Keys."""
+
+    def __contains__(self, key: key_contra) -> bool:
+        # Here, any Hashable input is accepted.
+        """Return True if the map contains the given key."""
+        ...
+
+    def __getitem__(self, key: key_contra) -> value_co:
+        """Return the value associated with the given key."""
+        ...
+
+    def __len__(self) -> int:
+        """Return the number of items in the map."""
+        ...
+
+
+@runtime_checkable
+class Hash(Protocol):
+    """Protocol for hash-functions."""
+
+    name: str
+
+    def digest_size(self) -> int:
+        """Return the size of the hash in bytes."""
+        ...
+
+    def block_size(self) -> int:
+        """Return the internal block size of the hash in bytes."""
+        ...
+
+    def update(self, data: bytes) -> None:
+        """Update this hash object's state with the provided string."""
+        ...
+
+    def digest(self) -> bytes:
+        """Return the digest value as a string of binary data."""
+        ...
+
+    def hexdigest(self) -> str:
+        """Return the digest value as a string of hexadecimal digits."""
+        ...
+
+    def copy(self) -> Self:
+        """Return a clone of the hash object."""
+        ...
+
+
+# endregion misc protocols -------------------------------------------------------------
+
+
 # region container protocols -----------------------------------------------------------
 @runtime_checkable
 class Shape(Protocol):
@@ -135,10 +191,10 @@ class Shape(Protocol):
     # binary operations
     # NOTE: Not returning self, cf. https://github.com/python/typeshed/issues/10727
     def __add__(self, other: Self | tuple, /) -> "Shape": ...
-    def __eq__(self, other: Self | tuple, /) -> bool: ...
-    def __ne__(self, other: Self | tuple, /) -> bool: ...
-    def __lt__(self, other: Self | tuple, /) -> bool: ...
-    def __le__(self, other: Self | tuple, /) -> bool: ...
+    def __eq__(self, other: object, /) -> bool: ...
+    def __ne__(self, other: object, /) -> bool: ...
+    def __lt__(self, other: object, /) -> bool: ...
+    def __le__(self, other: object, /) -> bool: ...
 
 
 @runtime_checkable
@@ -179,7 +235,7 @@ class Array(Protocol[scalar_co]):
     - `pyarrow.Array`
     """
 
-    def __array__(self) -> NDArray[scalar_co]:
+    def __array__(self) -> NDArray:
         """Return a numpy array.
 
         References
@@ -193,7 +249,7 @@ class Array(Protocol[scalar_co]):
         ...
 
     @property
-    def dtype(self) -> scalar_co | type[scalar_co] | numpy.dtype[scalar_co]:
+    def dtype(self) -> scalar_co | type[scalar_co] | numpy.dtype:
         r"""Yield the data type of the array."""
         ...
 
@@ -211,215 +267,153 @@ class Array(Protocol[scalar_co]):
         ...
 
     # binary operations
-    @overload
-    def __getitem__(self, key: None | slice | list | tuple | Self, /) -> Self: ...
-    def __getitem__(self, key, /):
+    # @overload
+    # def __getitem__(self, key, /):
+    def __getitem__(self, key: None | slice | list | tuple | Self, /) -> Self:
         """Return an element/slice of the array."""
         ...
 
 
-print(get_type_hints(Array))
+class NumericalArray(Array[Scalar], Protocol[Scalar]):
+    r"""Subclass of `Array` that supports numerical operations.
 
-# # fmt: off
-# def __len__(self) -> int: ...
-# # @overload
-# # def __getitem__(self: A, key: int) -> Any: ...
-# # @overload
-# # def __getitem__(self: A, key: Sequence[bool]) -> A: ...
-# # @overload
-# # def __getitem__(self: A, key: Sequence[int]) -> A: ...
-# def __getitem__(self: A, key: Any) -> A: ...
-# def __eq__(self: A, other: Any) -> A: ...  # type: ignore[override]
-# def __le__(self: A, other: Any) -> A: ...
-# def __ge__(self: A, other: Any) -> A: ...
-# def __lt__(self: A, other: Any) -> A: ...
-# def __gt__(self: A, other: Any) -> A: ...
-# def __ne__(self: A, other: Any) -> A: ...  # type: ignore[override]
-# def __neg__(self: A) -> A: ...
-# def __invert__(self: A) -> A: ...
-# def __add__(self: A, other: Any) -> A: ...
-# def __radd__(self: A, other: Any) -> A: ...
-# def __iadd__(self: A, other: Any) -> A: ...
-# def __sub__(self: A, other: Any) -> A: ...
-# def __rsub__(self: A, other: Any) -> A: ...
-# def __isub__(self: A, other: Any) -> A: ...
-# def __mul__(self: A, other: Any) -> A: ...
-# def __rmul__(self: A, other: Any) -> A: ...
-# def __imul__(self: A, other: Any) -> A: ...
-# def __truediv__(self: A, other: Any) -> A: ...
-# def __rtruediv__(self: A, other: Any) -> A: ...
-# def __itruediv__(self: A, other: Any) -> A: ...
-# # fmt: on
-
-# [
-#     "__abs__",
-#     "__add__",
-#     "__and__",
-#     "__bool__",
-#     "__dir__",
-#     "__eq__",
-#     "__float__",
-#     "__floordiv__",
-#     "__ge__",
-#     "__gt__",
-#     "__hash__",
-#     "__int__",
-#     "__invert__",
-#     "__le__",
-#     "__lt__",
-#     "__matmul__",
-#     "__mod__",
-#     "__mul__",
-#     "__ne__",
-#     "__neg__",
-#     "__or__",
-#     "__pow__",
-#     "__radd__",
-#     "__rand__",
-#     "__reduce__",
-#     "__reduce_ex__",
-#     "__repr__",
-#     "__rfloordiv__",
-#     "__rmatmul__",
-#     "__rmod__",
-#     "__rmul__",
-#     "__ror__",
-#     "__rpow__",
-#     "__rsub__",
-#     "__rtruediv__",
-#     "__rxor__",
-#     "__sizeof__",
-#     "__str__",
-#     "__sub__",
-#     "__truediv__",
-#     "__xor__",
-# ]
-
-
-class NumericalArray(Array[scalar_co]):
-    r"""Protocol for array-like objects.
-
-    Compared to a Table (e.g. `pandas.DataFrame` / `pyarrow.Table`), an Array has a single dtype.
+    Note:
+        - incplace operations are excluded since certain libraries make tensors immutable.
     """
 
-    @property
-    def ndim(self) -> int:
-        r"""Number of dimensions."""
-        ...
-
-    @property
-    def dtype(self) -> scalar_co:
-        r"""Yield the data type of the array."""
-        ...
-
-    @property
-    def shape(self) -> Sequence[int]:
-        """Yield the shape of the array."""
-        ...
-
-    def __len__(self) -> int:
-        """Number of elements along first axis."""
-        ...
-
-    def __getitem__(self, key: Any) -> Self:
-        """Return an element/slice of the table."""
-        ...
-
-    # Numerical Operations
-    # fmt: off
+    # unary operations
+    # negation -
     def __neg__(self) -> Self: ...
+
+    # bitwise NOT ~
     def __invert__(self) -> Self: ...
+
+    # absolute value abs()
+    def __abs__(self) -> Self: ...
+
     # comparisons
-    def __eq__(self, other: Self, /) -> Self: ...  # type: ignore[override]
-    def __le__(self, other: Self, /) -> Self: ...
-    def __ge__(self, other: Self, /) -> Self: ...
-    def __lt__(self, other: Self, /) -> Self: ...
-    def __gt__(self, other: Self, /) -> Self: ...
-    def __ne__(self, other: Self, /) -> Self: ...  # type: ignore[override]
+    # equality ==
+    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+
+    # inequality !=
+    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+
+    # greater than or equal >=
+    def __le__(self, other: Self | Scalar, /) -> Self: ...
+
+    # less than or equal <=
+    def __ge__(self, other: Self | Scalar, /) -> Self: ...
+
+    # less than <
+    def __lt__(self, other: Self | Scalar, /) -> Self: ...
+
+    # greater than >
+    def __gt__(self, other: Self | Scalar, /) -> Self: ...
+
+    # matrix operations
+    # matmul @
+    def __matmul__(self, other: Self, /) -> Self: ...
+    def __rmatmul__(self, other: Self, /) -> Self: ...
+
     # arithmetic
-    def __add__(self, other: Self, /) -> Self: ...
-    def __radd__(self, other: Self, /) -> Self: ...
-    def __iadd__(self, other: Self, /) -> Self: ...
-    def __sub__(self, other: Self, /) -> Self: ...
-    def __rsub__(self, other: Self, /) -> Self: ...
-    def __isub__(self, other: Self, /) -> Self: ...
-    def __mul__(self, other: Self, /) -> Self: ...
-    def __rmul__(self, other: Self, /) -> Self: ...
-    def __imul__(self, other: Self, /) -> Self: ...
-    def __truediv__(self, other: Self, /) -> Self: ...
-    def __rtruediv__(self, other: Self, /) -> Self: ...
-    def __itruediv__(self, other: Self, /) -> Self: ...
-    def __pow__(self, power: Self, modulo: None | int = None, /) -> Self: ...
-    # boolean
-    def __lshift__(self, other: Self, /) -> Self: ...
-    def __rlshift__(self, other: Self, /) -> Self: ...
-    def __ilshift__(self, other: Self, /) -> Self: ...
-    def __rshift__(self, other: Self, /) -> Self: ...
-    def __rrshift__(self, other: Self, /) -> Self: ...
-    def __irshift__(self, other: Self, /) -> Self: ...
-    def __and__(self, other: Self, /) -> Self: ...
-    def __rand__(self, other: Self, /) -> Self: ...
-    def __iand__(self, other: Self, /) -> Self: ...
-    def __or__(self, other: Self, /) -> Self: ...
-    def __ror__(self, other: Self, /) -> Self: ...
-    def __ior__(self, other: Self, /) -> Self: ...
-    def __xor__(self, other: Self, /) -> Self: ...
-    def __rxor__(self, other: Self, /) -> Self: ...
-    def __ixor__(self, other: Self, /) -> Self: ...
-    # fmt: on
+    # addition +
+    def __add__(self, other: Self | Scalar, /) -> Self: ...
+    def __radd__(self, other: Self | Scalar, /) -> Self: ...
+
+    # subtraction -
+    def __sub__(self, other: Self | Scalar, /) -> Self: ...
+    def __rsub__(self, other: Self | Scalar, /) -> Self: ...
+
+    # multiplication *
+    def __mul__(self, other: Self | Scalar, /) -> Self: ...
+    def __rmul__(self, other: Self | Scalar, /) -> Self: ...
+
+    # true division /
+    def __truediv__(self, other: Self | Scalar, /) -> Self: ...
+    def __rtruediv__(self, other: Self | Scalar, /) -> Self: ...
+
+    # floor division //
+    def __floordiv__(self, other: Self | Scalar, /) -> Self: ...
+    def __rfloordiv__(self, other: Self | Scalar, /) -> Self: ...
+
+    # power **
+    def __pow__(
+        self, exponent: Self | Scalar, modulo: None | int = None, /
+    ) -> Self: ...
+    def __rpow__(self, base: Self | Scalar, modulo: None | int = None, /) -> Self: ...
+
+    # modulo %
+    def __mod__(self, other: Self | Scalar, /) -> Self: ...
+    def __rmod__(self, other: Self | Scalar, /) -> Self: ...
+
+    # boolean operations
+    # AND &
+    def __and__(self, other: Self | Scalar, /) -> Self: ...
+    def __rand__(self, other: Self | Scalar, /) -> Self: ...
+
+    # OR |
+    def __or__(self, other: Self | Scalar, /) -> Self: ...
+    def __ror__(self, other: Self | Scalar, /) -> Self: ...
+
+    # XOR ^
+    def __xor__(self, other: Self | Scalar, /) -> Self: ...
+    def __rxor__(self, other: Self | Scalar, /) -> Self: ...
+
+    # bitwise operators
+    # left shift <<
+    def __lshift__(self, other: Self | Scalar, /) -> Self: ...
+    def __rlshift__(self, other: Self | Scalar, /) -> Self: ...
+
+    # right shift >>
+    def __rshift__(self, other: Self | Scalar, /) -> Self: ...
+    def __rrshift__(self, other: Self | Scalar, /) -> Self: ...
 
 
-@runtime_checkable
-class Lookup(Protocol[key_contra, value_co]):
-    """Mapping/Sequence like generic that is contravariant in Keys."""
+class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
+    r"""Subclass of `Array` that supports inplace operations."""
 
-    def __contains__(self, key: key_contra) -> bool:
-        # Here, any Hashable input is accepted.
-        """Return True if the map contains the given key."""
-        ...
+    # inplace matrix operations
+    # matmul @=
+    def __imatmul__(self, other: Self | Scalar, /) -> Self: ...
 
-    def __getitem__(self, key: key_contra) -> value_co:
-        """Return the value associated with the given key."""
-        ...
+    # inplace arithmetic operations
+    # addition +=
+    def __iadd__(self, other: Self | Scalar, /) -> Self: ...
 
-    def __len__(self) -> int:
-        """Return the number of items in the map."""
-        ...
+    # floor division //=
+    def __ifloordiv__(self, other: Self | Scalar, /) -> Self: ...
+
+    # modulo %=
+    def __imod__(self, other: Self | Scalar, /) -> Self: ...
+
+    # multiplication *=
+    def __imul__(self, other: Self | Scalar, /) -> Self: ...
+
+    # power **=
+    def __ipow__(self, power: Self | Scalar, modulo: None | int = None, /) -> Self: ...
+
+    # subtraction -=
+    def __isub__(self, other: Self | Scalar, /) -> Self: ...
+
+    # true division /=
+    def __itruediv__(self, other: Self | Scalar, /) -> Self: ...
+
+    # inplace boolean operations
+    # AND &=
+    def __iand__(self, other: Self | Scalar, /) -> Self: ...
+
+    # OR |=
+    def __ior__(self, other: Self | Scalar, /) -> Self: ...
+
+    # XOR ^=
+    def __ixor__(self, other: Self | Scalar, /) -> Self: ...
+
+    # inplace bitwise operations
+    # left shift =<<
+    def __ilshift__(self, other: Self | Scalar, /) -> Self: ...
+
+    # right shift =>>
+    def __irshift__(self, other: Self | Scalar, /) -> Self: ...
 
 
 # endregion container protocols --------------------------------------------------------
-
-
-# region misc protocols ----------------------------------------------------------------
-@runtime_checkable
-class Hash(Protocol):
-    """Protocol for hash-functions."""
-
-    name: str
-
-    def digest_size(self) -> int:
-        """Return the size of the hash in bytes."""
-        ...
-
-    def block_size(self) -> int:
-        """Return the internal block size of the hash in bytes."""
-        ...
-
-    def update(self, data: bytes) -> None:
-        """Update this hash object's state with the provided string."""
-        ...
-
-    def digest(self) -> bytes:
-        """Return the digest value as a string of binary data."""
-        ...
-
-    def hexdigest(self) -> str:
-        """Return the digest value as a string of hexadecimal digits."""
-        ...
-
-    def copy(self) -> Self:
-        """Return a clone of the hash object."""
-        ...
-
-
-# endregion misc protocols -------------------------------------------------------------

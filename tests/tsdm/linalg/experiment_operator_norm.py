@@ -3,6 +3,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colormaps
 
 
 def f(x, p):
@@ -85,14 +86,14 @@ def unit_circle_lp_scaled():
     unit_circle_scaled = np.einsum("...n, ...p -> pn...", circle, radius_scaled)
 
     # use a nicer colormap
-    cmap = plt.get_cmap("bwr")
-    cmap = cmap(np.linspace(1, 0, len(p_values)))
+    cmap = colormaps["bwr"]
+    colors = cmap(np.linspace(1, 0, len(p_values)))
 
     fig, axes = plt.subplots(ncols=2, figsize=(16, 9), constrained_layout=True)
 
     for k, p in enumerate(p_values):
-        axes[0].plot(*unit_circle_normal[k], lw=2, label=f"p={p:+g}", color=cmap[k])
-        axes[1].plot(*unit_circle_scaled[k], lw=2, label=f"p={p:+g}", color=cmap[k])
+        axes[0].plot(*unit_circle_normal[k], lw=2, label=f"p={p:+g}", color=colors[k])
+        axes[1].plot(*unit_circle_scaled[k], lw=2, label=f"p={p:+g}", color=colors[k])
         axes[0].set_title("unit circles regular Lᴾ-norm", fontsize=20)
         axes[1].set_title("unit circles scaled  Lᴾ-norm", fontsize=20)
         axes[0].set_aspect("equal")

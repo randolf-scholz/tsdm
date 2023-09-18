@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any, Literal, Optional, TypeAlias
 
 import numpy as np
@@ -151,7 +151,7 @@ def shared_grid_plot(
         "tight_layout": True,
     } | subplots_kwargs
 
-    axes: np.ndarray[Axes]  # type: ignore[type-arg]
+    axes: NDArray[Axes]  # type: ignore[type-var]
     fig: Figure
     fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **subplots_kwargs)  # type: ignore[arg-type]
 
@@ -163,19 +163,19 @@ def shared_grid_plot(
     if titles is not None:
         # for ax, title in np.nditer([axes, titles]):
         for ax, title in zip(axes.flat, np.asarray(titles).flat):
-            ax.set_title(title)
+            ax.set_title(title)  # pyright: ignore[reportGeneralTypeIssues]
 
     # set axes x-labels
     if xlabels is not None:
         # for ax, xlabel in np.nditer([axes[-1], xlabels], flags=["refs_ok"]):
         for ax, xlabel in zip(axes[-1], np.asarray(xlabels).flat):
-            ax.item().set_xlabel(xlabel)
+            ax.set_xlabel(xlabel)
 
     # set axes y-labels
     if ylabels is not None:
         # for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=["refs_ok"]):
         for ax, ylabel in zip(axes[:, 0], np.asarray(ylabels).flat):
-            ax.item().set_ylabel(ylabel)
+            ax.set_ylabel(ylabel)
 
     pad = 5  # in points
 
