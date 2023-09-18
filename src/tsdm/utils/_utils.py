@@ -44,9 +44,8 @@ from torch import nn
 from tqdm.autonotebook import tqdm
 
 from tsdm.constants import BOOLEAN_PAIRS
-from tsdm.types.abc import HashableType
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import key_var as K
+from tsdm.types.variables import HashableType, key_var as K
 
 __logger__ = logging.getLogger(__name__)
 

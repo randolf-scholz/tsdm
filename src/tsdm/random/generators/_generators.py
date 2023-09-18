@@ -21,12 +21,11 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol, runtime_checkable
 
 import numpy as np
 import scipy.stats
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import ArrayLike
 from scipy.integrate import solve_ivp
 from scipy.stats import norm as univariate_normal
 
 from tsdm.types.aliases import SizeLike
-from tsdm.types.protocols import Array
 from tsdm.types.variables import any_var as T
 
 

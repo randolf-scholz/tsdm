@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 import logging
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Mapping
 from typing import Any, Literal, Optional, TypeAlias
 
 import numpy as np

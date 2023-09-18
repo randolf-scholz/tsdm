@@ -14,6 +14,7 @@ __all__ = [
     # Functions
     "IterItems",
     "IterKeys",
+    "IterValues",
     "debug",
     "autojit",
     "decorator",
@@ -37,6 +38,7 @@ from tsdm.utils.decorators._decorators import (
     Decorator,
     IterItems,
     IterKeys,
+    IterValues,
     autojit,
     debug,
     decorator,
@@ -57,6 +59,7 @@ r"""Dictionary of all available context managers."""
 DECORATORS: dict[str, Decorator] = {
     "IterItems": IterItems,
     "IterKeys": IterKeys,
+    "IterValues": IterValues,
     "decorator": decorator,
     "debug": debug,
     "named_return": return_namedtuple,

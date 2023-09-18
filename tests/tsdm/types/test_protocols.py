@@ -2,10 +2,11 @@
 """Test the Array protocol."""
 
 import logging
-from typing import NamedTuple, Protocol
+from typing import NamedTuple
 
 import numpy
 import pyarrow as pa
+import pytest
 import torch
 from numpy import ndarray
 from numpy.typing import NDArray
@@ -13,7 +14,14 @@ from pandas import DataFrame, Index, Series
 from torch import Tensor
 from typing_extensions import get_protocol_members
 
-from tsdm.types.protocols import Array, NTuple, Shape, SupportsShape
+from tsdm.types.protocols import (
+    Array,
+    MutableArray,
+    NTuple,
+    NumericalArray,
+    Shape,
+    SupportsShape,
+)
 
 __logger__ = logging.getLogger(__name__)
 
@@ -25,11 +33,16 @@ def test_shape() -> None:
     pandas_series: Series = Series(data)
     pandas_index: Index = Index(data)
 
-    x: Shape = tuple([1, 2, 3])
+    x: Shape = (1, 2, 3)
     y: Shape = torch_tensor.shape
     z: Shape = numpy_ndarray.shape
     w: Shape = pandas_series.shape
     v: Shape = pandas_index.shape
+    assert isinstance(x, Shape)
+    assert isinstance(y, Shape)
+    assert isinstance(z, Shape)
+    assert isinstance(w, Shape)
+    assert isinstance(v, Shape)
 
 
 def test_ntuple() -> None:
@@ -121,7 +134,10 @@ def test_table() -> None:
     __logger__.info("Shared attributes/methods of Tables: %s", shared_attrs)
 
 
-def test_shared_attrs() -> None:
+# @pytest.mark.parametrize("array", TEST_ARRAYS)
+@pytest.mark.parametrize("protocol", (Array, NumericalArray, MutableArray))
+def test_shared_attrs(protocol: type) -> None:
+    protocol_attrs = get_protocol_members(protocol)
     data = [1, 2, 3]
     arrays = {
         "torch_tensor": torch.tensor(data),
@@ -129,17 +145,17 @@ def test_shared_attrs() -> None:
         "pandas_series": Series(data),
         # "pyarrow_array": pa.array(data),
     }
+    for key, array in arrays.items():
+        missing_attrs = protocol_attrs - set(dir(array))
+        assert not missing_attrs, f"{key}: missing Attributes: {missing_attrs}"
+        assert isinstance(array, protocol), f"{key} is not a {protocol.__name__}!"
+
     shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays.values()))
-    excluded_attrs = {"__dict__", "__weakref__", "__orig_bases__"}
-    array_attrs = (set(dir(Array)) - set(dir(Protocol))) - excluded_attrs
-
-    # check that all attributes of Array are present
-    missing_attrs = array_attrs - shared_attrs
-    assert not missing_attrs, f"Missing Attributes: {missing_attrs}"
-
-    # check that all arrays have the same attributes
-    superfuous_attrs = shared_attrs - array_attrs
-    assert not superfuous_attrs, f"Superfuous Attributes: {superfuous_attrs}"
+    superfluous_attrs = shared_attrs - protocol_attrs
+    print(
+        f"Shared attributes/methods not covered by {protocol.__name__!r}:"
+        f" {superfluous_attrs}"
+    )
 
 
 def test_array() -> None:

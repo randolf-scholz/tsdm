@@ -2,7 +2,6 @@ r"""Generic types for type hints etc."""
 
 __all__ = [
     # Submodules
-    "abc",
     "aliases",
     "callback_protocols",
     "dtypes",
@@ -11,12 +10,4 @@ __all__ = [
     "variables",
 ]
 
-from tsdm.types import (
-    abc,
-    aliases,
-    callback_protocols,
-    dtypes,
-    protocols,
-    time,
-    variables,
-)
+from tsdm.types import aliases, callback_protocols, dtypes, protocols, time, variables

@@ -42,3 +42,31 @@ z: _NestedSequence = [[[[1]]]]
 # def __getitem__(
 #     self: NDArray[void], key: list[str]
 # ) -> ndarray[_ShapeType, _dtype[void]]: ...
+
+# indices: Union[
+#     Union[
+#         None,
+#         _bool,
+#         _int,
+#         SupportsIndex,
+#         slice,
+#         ellipsis,
+#         Tensor,
+#         _NestedSequence[Union[_bool, _int]],
+#         _NestedSequence[Tensor],
+#     ],
+#     tuple[
+#         Union[
+#             None,
+#             _bool,
+#             _int,
+#             SupportsIndex,
+#             slice,
+#             ellipsis,
+#             Tensor,
+#             _NestedSequence[Union[_bool, _int]],
+#             _NestedSequence[Tensor],
+#         ],
+#         ...,
+#     ],
+# ]

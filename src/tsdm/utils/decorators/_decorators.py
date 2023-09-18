@@ -19,6 +19,7 @@ __all__ = [
     "autojit",
     "IterItems",
     "IterKeys",
+    "IterValues",
     # Exceptions
     "DecoratorError",
 ]
@@ -27,7 +28,6 @@ import ast
 import gc
 import logging
 from collections.abc import Callable, Sequence
-from copy import deepcopy
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, getsource, signature
@@ -48,10 +48,10 @@ from torch import jit, nn
 from typing_extensions import Self
 
 from tsdm.config import CONFIG
-from tsdm.types.abc import CollectionType
 from tsdm.types.aliases import Nested
 from tsdm.types.protocols import NTuple
 from tsdm.types.variables import (
+    CollectionType,
     any_var as T,
     class_var as Class,
     object_var as O,
@@ -563,16 +563,15 @@ def IterItems(obj: Class) -> Class: ...
 @overload
 def IterItems(obj: O) -> O: ...
 def IterItems(obj: T) -> T:
-    r"""Wrap a class such that `__getitem__` returns (key, value) pairs."""
+    r"""Redirects __iter__ to items()."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type:ignore[valid-type, misc]
         r"""A simple Wrapper."""
 
-        def __getitem__(self, key: Any) -> tuple[Any, Any]:
-            r"""Get the item from the dataset."""
-            return key, super().__getitem__(key)
+        def __iter__(self):
+            return iter(self.items())
 
         def __repr__(self) -> str:
             r"""Representation of the dataset."""
@@ -580,9 +579,12 @@ def IterItems(obj: T) -> T:
 
     if isinstance(obj, type):
         return WrappedClass  # type: ignore[return-value]
-    obj = deepcopy(obj)
-    obj.__class__ = WrappedClass
-    return obj
+
+    try:
+        new_obj = WrappedClass(obj)
+    except Exception as exc:
+        raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
+    return new_obj
 
 
 @overload
@@ -590,16 +592,15 @@ def IterKeys(obj: Class) -> Class: ...
 @overload
 def IterKeys(obj: O) -> O: ...
 def IterKeys(obj: T) -> T:
-    r"""Wrap a class such that `__getitem__` returns key instead."""
+    r"""Redirects __iter__ to keys()."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type:ignore[valid-type, misc]
         r"""A simple Wrapper."""
 
-        def __getitem__(self, key: Any) -> tuple[Any, Any]:
-            r"""Return the key as is."""
-            return key
+        def __iter__(self):
+            return iter(self.keys())
 
         def __repr__(self) -> str:
             r"""Representation of the new object."""
@@ -607,9 +608,41 @@ def IterKeys(obj: T) -> T:
 
     if isinstance(obj, type):
         return WrappedClass  # type: ignore[return-value]
-    obj = deepcopy(obj)
-    obj.__class__ = WrappedClass
-    return obj
+
+    try:
+        new_obj = WrappedClass(obj)
+    except Exception as exc:
+        raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
+    return new_obj
+
+
+@overload
+def IterValues(obj: Class) -> Class: ...
+@overload
+def IterValues(obj: O) -> O: ...
+def IterValues(obj: T) -> T:
+    r"""Redirects __iter__ to values()."""
+    base_class = obj if isinstance(obj, type) else type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
+        r"""A simple Wrapper."""
+
+        def __iter__(self):
+            return iter(self.values())
+
+        def __repr__(self) -> str:
+            r"""Representation of the new object."""
+            return r"IterValues@" + super().__repr__()
+
+    if isinstance(obj, type):
+        return WrappedClass  # type: ignore[return-value]
+
+    try:
+        new_obj = WrappedClass(obj)
+    except Exception as exc:
+        raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
+    return new_obj
 
 
 @decorator
