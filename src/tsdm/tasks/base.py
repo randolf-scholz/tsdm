@@ -588,7 +588,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
             self.test_metrics = LazyDict({key: self.make_test_metric for key in self})
 
     def __iter__(self) -> Iterator[SplitID]:
-        r"""Iterate over the keys."""
+        r"""Iterate over the split keys."""
         return iter(self.folds)
 
     def __len__(self) -> int:
@@ -596,8 +596,8 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         return len(self.folds)
 
     def __getitem__(self, key: SplitID) -> Any:
-        r"""Return the dataloader associated with the key."""
-        return self.folds[key]
+        r"""Return the objects associated with the splitID."""
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         return repr_dataclass(self)
@@ -765,3 +765,28 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
                 raise ValueError("Each fold must have a unique train partition.")
         else:
             raise RuntimeError("Supposed to be unreachable")
+
+
+@dataclass
+class Split(Generic[Sample_co]):
+    """Represents a split of a dataset."""
+
+    name: SplitID = NotImplemented
+    r"""List of index."""
+    fold: Series = NotImplemented
+    r"""Dictionary holding `Fold` associated with each key (index for split)."""
+
+    collate_fn: Callable[[list[Sample_co]], Batch] = NotImplemented
+    r"""Collate function used to create batches from samples."""
+    dataloader: DataLoader[Sample_co] = NotImplemented
+    r"""Dictionary holding `DataLoader` associated with each key."""
+    encoders: Encoder = NotImplemented
+    r"""Dictionary holding `Encoder` associated with each key."""
+    generator: TimeSeriesSampleGenerator = NotImplemented
+    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
+    sampler: TorchSampler = NotImplemented
+    r"""Dictionary holding `Sampler` associated with each key."""
+    split: TimeSeriesCollection = NotImplemented
+    r"""Dictionary holding sampler associated with each key."""
+    test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
+    r"""Metric used for evaluation."""
