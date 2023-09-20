@@ -54,7 +54,7 @@ repos:
         description: "ensures that a file is either empty, or ends with one newline."
       - id: pretty-format-json
         args: ["--autofix"]
-        exclude: ^.*.ipynb$ # FIXME: https://github.com/deshaw/nbstripout-fast/issues/8
+        exclude: ^.*.ipynb$
         description: "sets a standard for formatting json files."
       - id: requirements-txt-fixer
         description: "sorts entries in requirements.txt"
@@ -155,8 +155,8 @@ repos:
         files: (^src/|^tests/)
         stages: [pre-push]
   # nbstripout-fast
-  - repo: https://github.com/randolf-scholz/nbstripout-fast.git
-    rev: v1.0.3
+  - repo: https://github.com/deshaw/nbstripout-fast.git
+    rev: v1.0.2
     hooks:
       - id: nbstripout-fast
         files: ^dev/
