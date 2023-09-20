@@ -19,11 +19,11 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, Union, over
 from typing_extensions import Self
 
 from tsdm.types.variables import (
-    any2_var as T,
-    any_var as V,
-    key2_var as K2,
+    any_var as T,
+    key_other_var as K_other,
     key_var as K,
     return_var_co as R,
+    value_var as V,
 )
 from tsdm.utils.funcutils import (
     get_function_args,
@@ -158,12 +158,12 @@ class LazyDict(dict[K, V]):
         r"""Return the representation of the dictionary."""
         return repr_mapping(self)
 
-    def __or__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":
+    def __or__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
         new = self.copy()
         new.update(other)  # type: ignore[arg-type]
         return new  # type: ignore[return-value]
 
-    def __ror__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":
+    def __ror__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
         if isinstance(other, self.__class__):
             return other | self
         warnings.warn(

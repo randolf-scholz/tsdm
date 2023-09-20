@@ -48,16 +48,16 @@ __all__ = [
     "any_var",
     "any_co",
     "any_contra",
-    "any2_var",
-    "any2_co",
-    "any2_contra",
+    "any_other_var",
+    "any_other_co",
+    "any_other_contra",
     "input_var_contra",
     "key_var",
     "key_co",
     "key_contra",
-    "key2_var",
-    "key2_co",
-    "key2_contra",
+    "key_other_var",
+    "key_other_co",
+    "key_other_contra",
     "nested_key_var",
     "nested_key_co",
     "nested_key_contra",
@@ -119,7 +119,7 @@ __all__ = [
 from collections import abc
 from pathlib import Path
 from types import GenericAlias, ModuleType
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from numpy import ndarray
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -227,18 +227,18 @@ r"""Contravariant type variable for `tuple`."""
 
 # Generic purpose type variables
 # region Generic Type Variables --------------------------------------------------------
-any_var = TypeVar("any_var")
+any_var = TypeVar("any_var", bound=Any)
 r"""Generic type variable."""
-any_co = TypeVar("any_co", covariant=True)
+any_co = TypeVar("any_co", bound=Any, covariant=True)
 r"""Generic covariant type variable."""
-any_contra = TypeVar("any_contra", contravariant=True)
+any_contra = TypeVar("any_contra", bound=Any, contravariant=True)
 r"""Generic contravariant type variable."""
 
-any2_var = TypeVar("any2_var")
+any_other_var = TypeVar("any_other_var", bound=Any)
 r"""Generic type variable."""
-any2_co = TypeVar("any2_co", covariant=True)
+any_other_co = TypeVar("any_other_co", bound=Any, covariant=True)
 r"""Generic covariant type variable."""
-any2_contra = TypeVar("any2_contra", contravariant=True)
+any_other_contra = TypeVar("any_other_contra", bound=Any, contravariant=True)
 r"""Generic contravariant type variable."""
 
 # inputs are always contravariant!
@@ -252,11 +252,11 @@ r"""Covariant type Variable for `Mapping` keys."""
 key_contra = TypeVar("key_contra", bound=abc.Hashable, contravariant=True)
 r""" Contravariant type Variable for `Mapping` keys."""
 
-key2_var = TypeVar("key2_var", bound=abc.Hashable)
+key_other_var = TypeVar("key_other_var", bound=abc.Hashable)
 r"""Type Variable for `Mapping` keys."""
-key2_co = TypeVar("key2_co", bound=abc.Hashable, covariant=True)
+key_other_co = TypeVar("key_other_co", bound=abc.Hashable, covariant=True)
 r"""Covariant type Variable for `Mapping` keys."""
-key2_contra = TypeVar("key2_contra", bound=abc.Hashable, contravariant=True)
+key_other_contra = TypeVar("key_other_contra", bound=abc.Hashable, contravariant=True)
 r""" Contravariant type Variable for `Mapping` keys."""
 
 nested_key_var = TypeVar("nested_key_var", bound=abc.Hashable)

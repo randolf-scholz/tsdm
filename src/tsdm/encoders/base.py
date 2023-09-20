@@ -42,7 +42,7 @@ from typing import (
 
 from typing_extensions import Self
 
-from tsdm.types.variables import any2_var as S, any_var as T, key_var as K
+from tsdm.types.variables import any_other_var as S, any_var as T, key_var as K
 from tsdm.utils.strings import repr_object, repr_type
 
 encoder_var = TypeVar("encoder_var", bound="BaseEncoder")
