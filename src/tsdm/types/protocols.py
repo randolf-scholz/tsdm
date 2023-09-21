@@ -19,12 +19,29 @@ __all__ = [
     "Array",
     "NumericalArray",
     "MutableArray",
+    # stdlib
+    "SupportsKeysAndGetItem",
+    "MappingProtocol",
+    "MutableMappingProtocol",
+    "SequenceProtocol",
+    "MutableSequenceProtocol",
     # Functions
     "is_dataclass",
 ]
 
 import dataclasses
-from collections.abc import Iterator, Mapping, Sequence
+from abc import abstractmethod
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    Reversible,
+    Sequence,
+    ValuesView,
+)
 from typing import (
     Any,
     NamedTuple,
@@ -35,15 +52,19 @@ from typing import (
     runtime_checkable,
 )
 
+import numpy as np
 from numpy.typing import NDArray
 from typing_extensions import Self, SupportsIndex, get_original_bases
 
 from tsdm.types.variables import (
     any_co as T_co,
+    any_var as T,
     key_contra,
+    key_var as K,
     scalar_co,
     scalar_var as Scalar,
-    value_co,
+    value_co as V_co,
+    value_var as V,
 )
 
 A = TypeVar("A", bound="Array")
@@ -112,7 +133,7 @@ class NTuple(Protocol[T_co]):
 
 # region misc protocols ----------------------------------------------------------------
 @runtime_checkable
-class Lookup(Protocol[key_contra, value_co]):
+class Lookup(Protocol[key_contra, V_co]):
     """Mapping/Sequence like generic that is contravariant in Keys."""
 
     def __contains__(self, key: key_contra) -> bool:
@@ -120,7 +141,7 @@ class Lookup(Protocol[key_contra, value_co]):
         """Return True if the map contains the given key."""
         ...
 
-    def __getitem__(self, key: key_contra) -> value_co:
+    def __getitem__(self, key: key_contra) -> V_co:
         """Return the value associated with the given key."""
         ...
 
@@ -245,7 +266,7 @@ class Array(Protocol[scalar_co]):
         ...
 
     @property
-    def dtype(self) -> scalar_co | type:
+    def dtype(self) -> scalar_co | np.dtype | type:
         r"""Yield the data type of the array."""
         ...
 
@@ -414,3 +435,132 @@ class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
 
 
 # endregion container protocols --------------------------------------------------------
+
+
+# region stdlib protocols --------------------------------------------------------------
+
+# NOTE: These are added here because the standard library does not provide these as Protocols...
+# Reference: https://peps.python.org/pep-0544/#changes-in-the-typing-module
+# Only the following are Protocols.
+# - Callable
+# - Awaitable
+# - Iterable, Iterator
+# - AsyncIterable, AsyncIterator
+# - Hashable
+# - Sized
+# - Container
+# - Collection
+# - Reversible
+# - ContextManager, AsyncContextManager
+# - SupportsAbs (and other Supports* classes)
+
+
+class SupportsKeysAndGetItem(Protocol[K, V_co]):
+    """Protocol for objects that support `__getitem__` and `keys`."""
+
+    def keys(self) -> Iterable[K]: ...
+    def __getitem__(self, __key: K) -> V_co: ...
+
+
+class SequenceProtocol(Collection[T_co], Reversible[T_co], Protocol[T_co]):
+    """Protocol version of `collections.abc.Sequence`."""
+
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: int) -> T_co: ...
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: slice) -> "SequenceProtocol[T_co]": ...
+
+    # Mixin methods
+    def index(self, value: Any, start: int = 0, stop: int = ...) -> int: ...
+    def count(self, value: Any) -> int: ...
+    def __contains__(self, value: object) -> bool: ...
+    def __iter__(self) -> Iterator[T_co]: ...
+    def __reversed__(self) -> Iterator[T_co]: ...
+
+
+class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
+    """Protocol version of `collections.abc.MutableSequence`."""
+
+    @abstractmethod
+    def insert(self, index: int, value: T) -> None: ...
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: int) -> T: ...
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: slice) -> "MutableSequenceProtocol[T]": ...
+    @overload
+    @abstractmethod
+    def __setitem__(self, index: int, value: T) -> None: ...
+    @overload
+    @abstractmethod
+    def __setitem__(self, index: slice, value: Iterable[T]) -> None: ...
+    @overload
+    @abstractmethod
+    def __delitem__(self, index: int) -> None: ...
+    @overload
+    @abstractmethod
+    def __delitem__(self, index: slice) -> None: ...
+
+    # Mixin methods
+    def append(self, value: T) -> None: ...
+    def clear(self) -> None: ...
+    def extend(self, values: Iterable[T]) -> None: ...
+    def reverse(self) -> None: ...
+    def pop(self, index: int = -1) -> T: ...
+    def remove(self, value: T) -> None: ...
+    def __iadd__(self, values: Iterable[T]) -> Self: ...
+
+
+class MappingProtocol(Collection[K], Protocol[K, V_co]):
+    """Protocol version of `collections.abc.Mapping`."""
+
+    @abstractmethod
+    def __getitem__(self, __key: K) -> V_co: ...
+
+    # Mixin methods
+    @overload
+    def get(self, __key: K) -> V_co | None: ...
+    @overload
+    def get(self, __key: K, default: V_co | T) -> V_co | T: ...
+    def items(self) -> ItemsView[K, V_co]: ...
+    def keys(self) -> KeysView[K]: ...
+    def values(self) -> ValuesView[V_co]: ...
+    def __contains__(self, __key: object) -> bool: ...
+    def __eq__(self, __other: object) -> bool: ...
+
+
+class MutableMappingProtocol(MappingProtocol[K, V], Protocol[K, V]):
+    """Protocol version of `collections.abc.MutableMapping`."""
+
+    @abstractmethod
+    def __setitem__(self, __key: K, __value: V) -> None: ...
+    @abstractmethod
+    def __delitem__(self, __key: K) -> None: ...
+
+    # Mixin methods
+    def clear(self) -> None: ...
+    @overload
+    def pop(self, __key: K) -> V: ...
+    @overload
+    def pop(self, __key: K, default: V) -> V: ...
+    @overload
+    def pop(self, __key: K, default: T) -> V | T: ...
+    def popitem(self) -> tuple[K, V]: ...
+    @overload
+    def setdefault(
+        self: "MutableMappingProtocol[K, T | None]", __key: K, __default: None = None
+    ) -> T | None: ...
+    @overload
+    def setdefault(self, __key: K, __default: V) -> V: ...
+    @overload
+    def update(self, __m: SupportsKeysAndGetItem[K, V], **kwargs: V) -> None: ...
+    @overload
+    def update(self, __m: Iterable[tuple[K, V]], **kwargs: V) -> None: ...
+    @overload
+    def update(self, **kwargs: V) -> None: ...
+
+
+# endregion stdlib protocols -----------------------------------------------------------

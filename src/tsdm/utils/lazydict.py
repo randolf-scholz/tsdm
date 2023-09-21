@@ -14,10 +14,11 @@ __all__ = [
 
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias, Union, overload
+from typing import Any, Generic, Optional, TypeAlias, Union, overload
 
 from typing_extensions import Self
 
+from tsdm.types.protocols import SupportsKeysAndGetItem
 from tsdm.types.variables import (
     any_var as T,
     key_other_var as K_other,
@@ -31,9 +32,6 @@ from tsdm.utils.funcutils import (
     is_positional_arg,
 )
 from tsdm.utils.strings import repr_mapping
-
-if TYPE_CHECKING:
-    from _typeshed import SupportsKeysAndGetItem
 
 
 class LazyValue(Generic[R]):

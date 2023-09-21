@@ -3,7 +3,7 @@ r"""TODO: Add Test summary."""
 
 import logging
 
-from tsdm.utils.decorators import IterItems, IterKeys, IterValues
+from tsdm.utils.decorators import iter_items, iter_keys, iter_values
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ __logger__ = logging.getLogger(__name__)
 def test_iteritems() -> None:
     r"""Test `IterItems`."""
     mapping_obj = {"a": 1, "b": 2, "c": 3}
-    iter_obj = IterItems(mapping_obj)
+    iter_obj = iter_items(mapping_obj)
 
     # test __getitem__
     for key in mapping_obj.keys():
@@ -48,7 +48,7 @@ def test_iteritems() -> None:
 def test_iterkeys() -> None:
     r"""Test `IterItems`."""
     mapping_obj = {"a": 1, "b": 2, "c": 3}
-    iter_obj = IterKeys(mapping_obj)
+    iter_obj = iter_keys(mapping_obj)
 
     # test __getitem__
     for key in mapping_obj.keys():
@@ -81,7 +81,7 @@ def test_iterkeys() -> None:
 def test_itervalues() -> None:
     r"""Test `IterItems`."""
     mapping_obj = {"a": 1, "b": 2, "c": 3}
-    iter_obj = IterValues(mapping_obj)
+    iter_obj = iter_values(mapping_obj)
 
     # test __getitem__
     for key in mapping_obj.keys():

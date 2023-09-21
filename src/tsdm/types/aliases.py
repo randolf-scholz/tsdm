@@ -8,7 +8,7 @@ __all__ = [
     "Map",
     "PandasObject",
     "PathLike",
-    "ScalarDType",
+    "DType",
     "SizeLike",
     # Scalar Type Aliases
     "Scalar",
@@ -87,8 +87,8 @@ PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
 r"""Type Alias for `pandas` objects."""
 PathLike: TypeAlias = str | Path | os.PathLike[str]
 r"""Type Alias for path-like objects."""
-ScalarDType: TypeAlias = type[np.generic] | torch.dtype | type[ExtensionDtype]
-r"""TypeAlias for scalar types."""
+DType: TypeAlias = np.dtype | torch.dtype | type[ExtensionDtype]
+r"""TypeAlias for dtypes."""
 ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]
 r"""Type Alias for container-like objects."""
 # endregion Custom Type Aliases --------------------------------------------------------

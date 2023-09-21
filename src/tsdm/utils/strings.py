@@ -31,7 +31,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
-from tsdm.types.aliases import ScalarDType
+from tsdm.types.aliases import DType
 from tsdm.types.dtypes import TYPESTRINGS
 from tsdm.types.protocols import Array, Dataclass, NTuple
 
@@ -744,15 +744,12 @@ def repr_sized(obj: Sized, /, *, title: Optional[str] = None) -> str:
     return string
 
 
-def repr_dtype(
-    obj: str | ScalarDType,
-    /,
-) -> str:
+def repr_dtype(obj: str | type | DType, /) -> str:
     r"""Return a string representation of a dtype object."""
     if isinstance(obj, str):
         return obj
     if obj in TYPESTRINGS:
-        return TYPESTRINGS[obj]
+        return TYPESTRINGS[obj]  # type: ignore[index]
     return str(obj)
 
 

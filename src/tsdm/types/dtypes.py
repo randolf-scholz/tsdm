@@ -551,7 +551,7 @@ r"""Dictionary of converting pyarrow to polars."""
 # endregion dtype conversion -----------------------------------------------------------
 
 
-TYPESTRINGS: Final[dict[type[np.generic] | torch.dtype | type[ExtensionDtype], str]] = (
-    NUMPY_TYPESTRINGS | TORCH_TYPESTRINGS | PANDAS_TYPESTRINGS  # type: ignore[operator]
+TYPESTRINGS: Final[dict[type | torch.dtype, str]] = (
+    PANDAS_TYPESTRINGS | NUMPY_TYPESTRINGS | TORCH_TYPESTRINGS
 )
 r"""Dictionary of all type strings."""

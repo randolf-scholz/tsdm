@@ -26,6 +26,9 @@ from tsdm.types.protocols import (
 __logger__ = logging.getLogger(__name__)
 
 
+ARRAY_PROTOCOLS = (Array, NumericalArray, MutableArray)
+
+
 def test_shape() -> None:
     data = [1, 2, 3]
     torch_tensor: Tensor = torch.tensor(data)
@@ -135,7 +138,7 @@ def test_table() -> None:
 
 
 # @pytest.mark.parametrize("array", TEST_ARRAYS)
-@pytest.mark.parametrize("protocol", (Array, NumericalArray, MutableArray))
+@pytest.mark.parametrize("protocol", ARRAY_PROTOCOLS)
 def test_shared_attrs(protocol: type) -> None:
     protocol_attrs = get_protocol_members(protocol)
     data = [1, 2, 3]
@@ -193,7 +196,6 @@ def test_array() -> None:
 
 def _main() -> None:
     logging.basicConfig(level=logging.INFO)
-    test_shared_attrs()
     test_table()
     test_array()
 

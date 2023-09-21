@@ -23,7 +23,7 @@ from typing_extensions import Self
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.types.aliases import PandasObject, ScalarDType
+from tsdm.types.aliases import DType, PandasObject
 from tsdm.utils.data.timeseries import TimeTensor
 
 
@@ -198,7 +198,7 @@ class PeriodicEncoder(BaseEncoder):
 
     period: float
     freq: float
-    dtype: ScalarDType
+    dtype: DType
     colname: Hashable
 
     def __init__(self, period: Optional[float] = None) -> None:
@@ -249,7 +249,7 @@ class SocialTimeEncoder(BaseEncoder):
         "n": "nanosecond",
     }
     original_name: Hashable
-    original_dtype: ScalarDType
+    original_dtype: DType
     original_type: type
     rev_cols: list[str]
     level_code: str

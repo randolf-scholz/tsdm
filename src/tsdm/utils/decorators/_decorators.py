@@ -4,6 +4,9 @@ __all__ = [
     # Classes
     "Decorator",
     "ClassDecorator",
+    "IterKeys",
+    "IterValues",
+    "IterItems",
     # Functions
     "decorator",
     "debug",
@@ -17,9 +20,9 @@ __all__ = [
     "wrap_method",
     # Class Decorators
     "autojit",
-    "IterItems",
-    "IterKeys",
-    "IterValues",
+    "iter_items",
+    "iter_keys",
+    "iter_values",
     # Exceptions
     "DecoratorError",
 ]
@@ -27,7 +30,7 @@ __all__ = [
 import ast
 import gc
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, getsource, signature
@@ -45,18 +48,19 @@ from typing import (
 )
 
 from torch import jit, nn
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import Nested
-from tsdm.types.protocols import NTuple
+from tsdm.types.protocols import MappingProtocol, NTuple
 from tsdm.types.variables import (
     CollectionType,
     any_var as T,
-    class_var as Class,
+    key_var as K,
     object_var as O,
     return_var_co as R,
     torch_module_var,
+    value_co as V_co,
 )
 from tsdm.utils.funcutils import rpartial
 
@@ -558,40 +562,34 @@ def vectorize(
     return _wrapper
 
 
-@overload
-def IterItems(obj: Class) -> Class: ...
-@overload
-def IterItems(obj: O) -> O: ...
-def IterItems(obj: T) -> T:
-    r"""Redirects __iter__ to items()."""
-    base_class = obj if isinstance(obj, type) else type(obj)
+class IterKeys(MappingProtocol[K, V_co], Protocol[K, V_co]):
+    r"""Protocol for objects with __iter__ and items()."""
 
-    @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
-        r"""A simple Wrapper."""
+    @override
+    def __iter__(self) -> Iterator[K]: ...
 
-        def __iter__(self):
-            return iter(self.items())
 
-        def __repr__(self) -> str:
-            r"""Representation of the dataset."""
-            return r"IterItems@" + super().__repr__()
+class IterValues(MappingProtocol[K, V_co], Protocol[K, V_co]):
+    r"""Protocol for objects with __iter__ and items()."""
 
-    if isinstance(obj, type):
-        return WrappedClass  # type: ignore[return-value]
+    @override
+    def __iter__(self) -> Iterator[V_co]: ...  # type: ignore[override]
 
-    try:
-        new_obj = WrappedClass(obj)
-    except Exception as exc:
-        raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
-    return new_obj
+
+class IterItems(MappingProtocol[K, V_co], Protocol[K, V_co]):
+    r"""Protocol for objects with __iter__ and items()."""
+
+    @override
+    def __iter__(self) -> Iterator[tuple[K, V_co]]: ...  # type: ignore[override]
 
 
 @overload
-def IterKeys(obj: Class) -> Class: ...
+def iter_keys(obj: type[MappingProtocol[K, V_co]], /) -> type[IterKeys[K, V_co]]: ...
 @overload
-def IterKeys(obj: O) -> O: ...
-def IterKeys(obj: T) -> T:
+def iter_keys(obj: MappingProtocol[K, V_co], /) -> IterKeys[K, V_co]: ...
+@overload
+def iter_keys(obj: T, /) -> T: ...
+def iter_keys(obj, /):
     r"""Redirects __iter__ to keys()."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
@@ -607,7 +605,7 @@ def IterKeys(obj: T) -> T:
             return r"IterKeys@" + super().__repr__()
 
     if isinstance(obj, type):
-        return WrappedClass  # type: ignore[return-value]
+        return WrappedClass
 
     try:
         new_obj = WrappedClass(obj)
@@ -617,10 +615,14 @@ def IterKeys(obj: T) -> T:
 
 
 @overload
-def IterValues(obj: Class) -> Class: ...
+def iter_values(
+    obj: type[MappingProtocol[K, V_co]], /
+) -> type[IterValues[K, V_co]]: ...
 @overload
-def IterValues(obj: O) -> O: ...
-def IterValues(obj: T) -> T:
+def iter_values(obj: MappingProtocol[K, V_co], /) -> IterValues[K, V_co]: ...
+@overload
+def iter_values(obj: T, /) -> T: ...
+def iter_values(obj, /):
     r"""Redirects __iter__ to values()."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
@@ -636,7 +638,38 @@ def IterValues(obj: T) -> T:
             return r"IterValues@" + super().__repr__()
 
     if isinstance(obj, type):
-        return WrappedClass  # type: ignore[return-value]
+        return WrappedClass
+
+    try:
+        new_obj = WrappedClass(obj)
+    except Exception as exc:
+        raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
+    return new_obj
+
+
+@overload
+def iter_items(obj: type[MappingProtocol[K, V_co]], /) -> type[IterItems[K, V_co]]: ...
+@overload
+def iter_items(obj: MappingProtocol[K, V_co], /) -> IterItems[K, V_co]: ...
+@overload
+def iter_items(obj: T, /) -> T: ...
+def iter_items(obj, /):
+    r"""Redirects __iter__ to items()."""
+    base_class = obj if isinstance(obj, type) else type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
+        r"""A simple Wrapper."""
+
+        def __iter__(self):
+            return iter(self.items())
+
+        def __repr__(self) -> str:
+            r"""Representation of the dataset."""
+            return r"IterItems@" + super().__repr__()
+
+    if isinstance(obj, type):
+        return WrappedClass
 
     try:
         new_obj = WrappedClass(obj)
