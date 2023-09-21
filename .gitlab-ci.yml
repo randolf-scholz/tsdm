@@ -95,9 +95,7 @@ setup:
     # - poetry install
     - pip install --prefer-binary --upgrade $(ls dist/*.whl)
     # install dev dependencies.
-    # update the requirements.txt files.
-    - ./run/generate_requirements.sh
-    - pip install --prefer-binary --upgrade -r requirements-dev.txt
+    - pip install --prefer-binary --upgrade -e .[dev]
     - pip list
   after_script:
     - source ${VENVNAME}/bin/activate
