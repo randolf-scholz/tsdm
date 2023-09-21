@@ -82,6 +82,8 @@ setup:
     # build and install package
     # set version number depending on CI_PIPELINE_ID
     - pip list
+    - echo "validating that package can be imported"
+    - python -c "import $MODULENAME""
     - VERSION=$(poetry version -s)
     - poetry version "$VERSION.post${CI_PIPELINE_IID}"
     # verify version number OK (cf. https://peps.python.org/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
