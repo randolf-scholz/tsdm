@@ -138,6 +138,7 @@ pylint:
   needs:
     - setup
   script:
+    - pylint --version
     # generate reports
     - pylint $MODULEDIR
       --exit-zero
@@ -176,6 +177,7 @@ flake8:
   needs:
     - setup
   script:
+    - flake8 --version
     - flake8 $MODULEDIR
     - flake8 $TESTDIR
     - isort $MODULEDIR --check-only --diff
@@ -217,6 +219,7 @@ mypy:
     - setup
   allow_failure: true
   script:
+    - mypy --version
     - mypy $MODULEDIR --show-error-codes --pretty --junit-xml $REPORT_DIR/mypy.xml
     - mypy $TESTDIR --show-error-codes --pretty --junit-xml $REPORT_DIR/mypy_test.xml
   after_script:
@@ -254,6 +257,7 @@ pytest:
   needs:
     - setup
   script:
+    - pytest --version
     - pytest -k "not slow"
     - coverage xml -o $REPORT_DIR/cobertura-coverage.xml
     - coverage report
@@ -297,6 +301,7 @@ pypi:
   only:
     - main
   script:
+    - twine --version
     - twine upload --verbose  dist/*
   after_script:
     - source ${VENVNAME}/bin/activate
