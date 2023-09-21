@@ -7,7 +7,8 @@ __all__ = ["ResNet", "ResNetBlock"]
 
 
 from collections import OrderedDict
-from typing import Any, Final, Iterable, Optional, TypeVar
+from collections.abc import Iterable
+from typing import Any, Final, Optional, TypeVar
 
 from torch import Tensor, jit, nn
 from typing_extensions import Self

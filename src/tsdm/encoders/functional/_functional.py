@@ -22,7 +22,8 @@ __all__ = [
 
 
 import warnings
-from typing import Callable, TypeAlias, TypeVar
+from collections.abc import Callable
+from typing import TypeAlias, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -92,7 +93,7 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
     r"""Convert DataFrame to sparse triplet format.
 
     Given that `df` has $d$ columns with $n$ rows containing $N ≤ n⋅d$ observations
-    (non-NaN entries), the result is a $N×(d+1)$ array $(t_i, v_i, x_i)_{i=1:N}$
+    (non-NaN entries), the result is an $N×(d+1)$ array $(t_i, v_i, x_i)_{i=1:N}$
 
     - $t_i$ timestamp (index)
     - $v_i$ one-hot encoded indicator variable
@@ -138,14 +139,13 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     """
     m = df.notna().astype(np.uint8)
     # note: s here is not the same s as in the GRU-D paper, but s(t) - s(t-1)
-    _s = pd.Series(df.index).diff()
+    _s = Series(df.index).diff()
     _s[0] = 0 * _s[1]
     s = pd.Index(_s)
 
     # @numba.njit
-    def get_deltas(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def get_deltas(a: np.ndarray, b: np.ndarray, /) -> np.ndarray:
         # using numba jit compiled for speed - pandas was too slow!
-        # c = np.outer(a, np.zeros(b.shape[-1]))
         c = np.zeros((*a.shape, b.shape[-1]), dtype=a.dtype)
 
         for i in range(1, len(a)):

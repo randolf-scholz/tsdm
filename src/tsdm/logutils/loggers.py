@@ -56,18 +56,9 @@ __all__ = [
 import logging
 from abc import ABCMeta
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Protocol,
-    runtime_checkable,
-)
+from typing import Any, ClassVar, NamedTuple, Optional, Protocol, runtime_checkable
 
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
@@ -107,9 +98,11 @@ class Logger(Protocol):
     @property
     def callbacks(self) -> Mapping[str, Sequence[Callback]]:
         """Callbacks to be called at the end of a batch/epoch."""
+        ...
 
     def callback(self, key: str, i: int, /, **kwargs: Any) -> None:
         """Call the logger."""
+        ...
 
 
 class LoggerMetaclass(ABCMeta):
@@ -138,14 +131,22 @@ class BaseLogger(metaclass=LoggerMetaclass):
         """Callbacks to be called at the end of a batch/epoch."""
         return {k: [cb for cb, _, _ in v] for k, v in self._callbacks.items()}
 
-    def add_callback(self, key: str, callback: Callback, *, frequency: int = 1) -> None:
+    def add_callback(
+        self, key: str, callback: Callback, /, *, frequency: Optional[int] = None
+    ) -> None:
         """Add a callback to the logger."""
         required_kwargs = set(
             callback.required_kwargs
             if hasattr(callback, "required_kwargs")
             else get_mandatory_kwargs(callback)
         )
-        frequency = callback.frequency if hasattr(callback, "frequency") else frequency
+
+        # set the frequency
+        if frequency is None:
+            if hasattr(callback, "frequency"):
+                frequency = callback.frequency
+            else:
+                frequency = 1
 
         self._callbacks[key].append((callback, frequency, required_kwargs))
 

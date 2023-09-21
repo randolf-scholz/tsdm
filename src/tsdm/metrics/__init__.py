@@ -50,12 +50,14 @@ __all__ = [
     # Sub-Modules
     "functional",
     # Types
-    "BaseLoss",
+    "Loss",
     "FunctionalLoss",
     # Constants
     "LOSSES",
     "FUNCTIONAL_LOSSES",
     "MODULAR_LOSSES",
+    "TORCH_LOSSES",
+    "TORCH_ALIASES",
     # Base Classes
     "BaseLoss",
     "WeightedLoss",
@@ -66,6 +68,12 @@ __all__ = [
     "WMAE",
     "WMSE",
     "WRMSE",
+    "ND",
+    "NRMSE",
+    "Q_Quantile",
+    "Q_Quantile_Loss",
+    "TimeSeriesMSE",
+    "TimeSeriesWMSE",
     # Functions
     "nd",
     "nrmse",

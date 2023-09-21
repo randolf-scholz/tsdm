@@ -1,4 +1,9 @@
-r"""Random Samplers."""
+r"""Random Samplers.
+
+Note:
+    Samplers are used to randomly select samples from pre-existing data.
+    For methods to randomly generate data, see `tsdm.random.generators`.
+"""
 
 __all__ = [
     # Constants

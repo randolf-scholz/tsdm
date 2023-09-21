@@ -36,7 +36,7 @@ def test_get_broadcast(
     ):
         skip(f"{shape=} {axis=}")
 
-    arr = np.random.randn(*shape)
+    arr: np.ndarray = np.random.randn(*shape)
 
     broadcast = get_broadcast(arr.shape, axis=axis)
     m = np.mean(arr, axis=axis)
@@ -85,6 +85,7 @@ def test_reduce_axes():
         torch.tensor([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
         pd.Series([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
     ),
+    ids=("numpy", "torch", "pandas"),
 )
 def test_boundary_encoder(data: T) -> None:
     """Test the boundary encoder."""
@@ -96,17 +97,20 @@ def test_boundary_encoder(data: T) -> None:
     assert (encoded == -1).sum() == (data <= -1).sum()
     assert (encoded == +1).sum() == (data >= +1).sum()
 
-    if isinstance(data, pd.Series):
-        assert (
-            isinstance(encoded, pd.Series)
-            and encoded.shape == data.shape
-            and encoded.name == data.name
-            and encoded.index.equals(data.index)
-        )
-    if isinstance(data, torch.Tensor):
-        assert isinstance(encoded, torch.Tensor) and encoded.shape == data.shape
-    if isinstance(data, np.ndarray):
-        assert isinstance(encoded, np.ndarray) and encoded.shape == data.shape
+    match data:
+        case torch.Tensor() as tensor:
+            assert isinstance(encoded, torch.Tensor) and encoded.shape == tensor.shape
+        case np.ndarray() as array:
+            assert isinstance(encoded, np.ndarray) and encoded.shape == array.shape
+        case pd.Series() as series:
+            assert (
+                isinstance(encoded, pd.Series)
+                and encoded.shape == series.shape
+                and encoded.name == series.name
+                and encoded.index.equals(series.index)
+            )
+        case _:
+            raise TypeError(f"Unexpected type: {type(data)}")
 
     # test numpy + mask
     encoder = BoundaryEncoder(-1, +1, mode="mask")
@@ -214,6 +218,7 @@ def test_scaler(Encoder, tensor_type):
 
 @mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
 def test_scaler_dataframe(Encoder):
+    """Check whether the scaler-encoders works as expected on DataFrame."""
     LOGGER = __logger__.getChild(Encoder.__name__)
     LOGGER.info("Testing Encoder applied to pandas.DataFrame.")
 
@@ -248,6 +253,7 @@ def test_scaler_dataframe(Encoder):
 
 @mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
 def test_scaler_series(Encoder):
+    """Check whether the scaler-encoders works as expected on Series."""
     LOGGER = __logger__.getChild(Encoder.__name__)
     LOGGER.info("Testing Encoder applied to pandas.Series.")
 

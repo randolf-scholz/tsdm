@@ -38,6 +38,7 @@ class Loss(Protocol):
 
     def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
         r"""Compute the loss."""
+        ...
 
 
 class BaseLoss(nn.Module, metaclass=ABCMeta):
@@ -103,7 +104,7 @@ class WeightedLoss(BaseLoss, metaclass=ABCMeta):
         # Validate the axes.
         if len(self.axes) != self.weight.ndim:
             raise ValueError(
-                f"Number of axes does not match weight shape:"
+                "Number of axes does not match weight shape:"
                 f" {len(self.axes)} != {self.weight.ndim=}"
             )
 

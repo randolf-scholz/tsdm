@@ -3,10 +3,9 @@ r"""Base Classes for Encoders."""
 from __future__ import annotations
 
 __all__ = [
-    # TypeVars
-    "E",
-    # Types
+    # Types / TypeVars
     "Encoder",
+    "encoder_var",
     # Classes
     "BaseEncoder",
     "ChainedEncoder",
@@ -27,14 +26,13 @@ __all__ = [
 
 import logging
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from copy import deepcopy
 from functools import wraps
 from typing import (
     Any,
     ClassVar,
     Generic,
-    Iterator,
     Literal,
     Protocol,
     TypeVar,
@@ -44,38 +42,52 @@ from typing import (
 
 from typing_extensions import Self
 
-from tsdm.types.variables import any2_var as S, any_var as T, key_var as K
+from tsdm.types.variables import any_other_var as S, any_var as T, key_var as K
 from tsdm.utils.strings import repr_object, repr_type
+
+encoder_var = TypeVar("encoder_var", bound="BaseEncoder")
+"""Type variable for encoders."""
+
+E = TypeVar("E", bound="BaseEncoder")
+"""Type alias for encoder_var."""
 
 
 @runtime_checkable
 class Encoder(Protocol[T, S]):
     """Protocol for Encoders."""
 
-    is_fitted: bool
-    r"""Whether the encoder has been fitted."""
+    @property
+    def is_fitted(self) -> bool:
+        """Whether the encoder has been fitted."""
+        ...
 
     @property
     def requires_fit(self) -> bool:
         r"""Whether the encoder requires fitting."""
+        ...
 
     # def __invert__(self) -> Encoder:
     #     r"""Return the inverse encoder (i.e. decoder)."""
 
-    def __matmul__(self, other: Encoder) -> Encoder:
+    def __matmul__(self, other: Encoder, /) -> Encoder:
         r"""Return chained encoders."""
+        ...
 
-    def __or__(self, other: Encoder) -> Encoder:
+    def __or__(self, other: Encoder, /) -> Encoder:
         r"""Return product encoders."""
+        ...
 
     def encode(self, data: T, /) -> S:
         """Encode the data by transformation."""
+        ...
 
     def decode(self, data: S, /) -> T:
         """Decode the data by transformation."""
+        ...
 
     def fit(self, data: T, /) -> None:
         r"""Fits the encoder to data."""
+        ...
 
 
 class BaseEncoderMetaClass(ABCMeta):
@@ -150,19 +162,15 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
         cls.encode = encode  # type: ignore[method-assign]
         cls.decode = decode  # type: ignore[method-assign]
 
-        # cls.fit = wrap_method(cls.fit, after=cls._post_fit_hook)  # type: ignore[method-assign]
-        # cls.encode = wrap_method(cls.encode, before=cls._pre_encode_hook)  # type: ignore[method-assign]
-        # cls.decode = wrap_method(cls.decode, before=cls._pre_decode_hook)  # type: ignore[method-assign]
-
     def __invert__(self) -> BaseEncoder[S, T]:
         r"""Return the inverse encoder (i.e. decoder)."""
         return InverseEncoder(self)
 
-    def __matmul__(self, other: Encoder) -> ChainedEncoder:
+    def __matmul__(self, other: Encoder, /) -> ChainedEncoder:
         r"""Return chained encoders."""
         return ChainedEncoder(self, other)
 
-    def __or__(self, other: Encoder) -> ProductEncoder:
+    def __or__(self, other: Encoder, /) -> ProductEncoder:
         r"""Return product encoders."""
         return ProductEncoder(self, other)
 
@@ -223,10 +231,6 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     def _pre_decode_hook(self) -> None:
         if self.requires_fit and not self.is_fitted:
             raise RuntimeError("Encoder has not been fitted.")
-
-
-E = TypeVar("E", bound=BaseEncoder)
-"""Type variable for encoders."""
 
 
 class IdentityEncoder(BaseEncoder[T, T]):
@@ -291,8 +295,7 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
         self.encoders = []
         for encoder in encoders:
             if simplify and isinstance(encoder, ChainedEncoder):
-                for enc in encoder:
-                    self.encoders.append(enc)
+                self.encoders.extend(encoder)
             else:
                 self.encoders.append(encoder)
 
@@ -310,13 +313,9 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> E:
-        ...
-
+    def __getitem__(self, index: int) -> E: ...
     @overload
-    def __getitem__(self, index: slice) -> ChainedEncoder[E]:
-        ...
-
+    def __getitem__(self, index: slice) -> ChainedEncoder[E]: ...
     def __getitem__(self, index):
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
@@ -350,8 +349,8 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
         for encoder in reversed(self.encoders):
             try:
                 encoder.fit(data)
-            except Exception as E:
-                raise RuntimeError(f"Failed to fit {type(encoder)}") from E
+            except Exception as exc:
+                raise RuntimeError(f"Failed to fit {type(encoder)}") from exc
             data = encoder.encode(data)
 
     def encode(self, data: Any, /) -> Any:
@@ -376,30 +375,20 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
 
 
 @overload
-def chain_encoders(*, simplify: Literal[True] = True) -> IdentityEncoder:
-    ...
-
-
+def chain_encoders(*, simplify: Literal[True] = True) -> IdentityEncoder: ...
 @overload
-def chain_encoders(e: E, /, *, simplify: Literal[True] = True) -> E:
-    ...
-
-
+def chain_encoders(e: E, /, *, simplify: Literal[True] = True) -> E: ...
 @overload
 def chain_encoders(
-    e1: E, e2: E, /, *encoders: E, simplify: Literal[True] = True
-) -> ChainedEncoder[E]:
-    ...
-
-
+    e1: E,
+    e2: E,
+    /,
+    *encoders: E,
+    simplify: Literal[True] = True,
+) -> ChainedEncoder[E]: ...
 @overload
-def chain_encoders(*encoders: E, simplify: Literal[False]) -> ChainedEncoder[E]:
-    ...
-
-
-def chain_encoders(  # type: ignore[misc]
-    *encoders: E, simplify: bool = True
-) -> Encoder:
+def chain_encoders(*encoders: E, simplify: Literal[False]) -> ChainedEncoder[E]: ...
+def chain_encoders(*encoders, simplify=True):
     r"""Chain encoders."""
     if len(encoders) == 0 and simplify:
         return IdentityEncoder()
@@ -410,25 +399,26 @@ def chain_encoders(  # type: ignore[misc]
 
 @overload
 def pow_encoder(
-    e: E, n: Literal[0], /, *, simplify: Literal[True] = True, copy: bool = True
-) -> IdentityEncoder:
-    ...
-
-
+    e: E,
+    n: Literal[0],
+    /,
+    *,
+    simplify: Literal[True] = True,
+    copy: bool = True,
+) -> IdentityEncoder: ...
 @overload
 def pow_encoder(
-    e: E, n: Literal[1], /, *, simplify: Literal[True] = True, copy: bool = True
-) -> E:
-    ...
-
-
+    e: E,
+    n: Literal[1],
+    /,
+    *,
+    simplify: Literal[True] = True,
+    copy: bool = True,
+) -> E: ...
 @overload
 def pow_encoder(
     e: E, n: int, /, *, simplify: Literal[False], copy: bool = True
-) -> ChainedEncoder[E]:
-    ...
-
-
+) -> ChainedEncoder[E]: ...
 def pow_encoder(
     encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
 ) -> Encoder:
@@ -483,8 +473,7 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
 
         for encoder in encoders:
             if simplify and isinstance(encoder, ProductEncoder):
-                for enc in encoder:
-                    self.encoders.append(enc)
+                self.encoders.extend(encoder)
             else:
                 self.encoders.append(encoder)
 
@@ -498,13 +487,9 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> E:
-        ...
-
+    def __getitem__(self, index: int) -> E: ...
     @overload
-    def __getitem__(self, index: slice) -> ProductEncoder[E]:
-        ...
-
+    def __getitem__(self, index: slice) -> ProductEncoder[E]: ...
     def __getitem__(self, index: int | slice) -> E | ProductEncoder[E]:
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
@@ -537,22 +522,17 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
 
 
 @overload
-def direct_sum_encoders(*, simplify: Literal[True] = True) -> IdentityEncoder:
-    ...
-
-
+def direct_sum_encoders(*, simplify: Literal[True] = True) -> IdentityEncoder: ...
 @overload
-def direct_sum_encoders(e: E, /, *, simplify: Literal[True] = True) -> E:
-    ...
-
-
+def direct_sum_encoders(e: E, /, *, simplify: Literal[True] = True) -> E: ...
 @overload
 def direct_sum_encoders(
-    e1: E, e2: E, /, *encoders: E, simplify: Literal[False]
-) -> ProductEncoder[E]:
-    ...
-
-
+    e1: E,
+    e2: E,
+    /,
+    *encoders: E,
+    simplify: Literal[False],
+) -> ProductEncoder[E]: ...
 def direct_sum_encoders(  # type: ignore[misc]
     *encoders: E, simplify: bool = True, copy: bool = True
 ) -> Encoder:
@@ -569,32 +549,32 @@ def direct_sum_encoders(  # type: ignore[misc]
 
 @overload
 def duplicate_encoder(
-    e: E, n: Literal[0], /, *, simplify: Literal[True] = True, copy: bool = True
-) -> IdentityEncoder:
-    ...
-
-
+    e: E,
+    n: Literal[0],
+    /,
+    *,
+    simplify: Literal[True] = True,
+    copy: bool = True,
+) -> IdentityEncoder: ...
 @overload
 def duplicate_encoder(
-    e: E, n: Literal[1], /, *, simplify: Literal[True] = True, copy: bool = True
-) -> E:
-    ...
-
-
+    e: E,
+    n: Literal[1],
+    /,
+    *,
+    simplify: Literal[True] = True,
+    copy: bool = True,
+) -> E: ...
 @overload
 def duplicate_encoder(
     e: E, n: int, /, *, simplify: Literal[False], copy: bool = True
-) -> ProductEncoder[E]:
-    ...
-
-
+) -> ProductEncoder[E]: ...
 def duplicate_encoder(
     encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
 ) -> Encoder:
     r"""Duplicate an encoder."""
-    clone = lambda x: deepcopy(x) if copy else x  # noqa: E731
     encoder = encoder.simplify() if simplify else encoder
-    encoders = [clone(encoder) for _ in range(n)]
+    encoders = [deepcopy(encoder) if copy else encoder for _ in range(n)]
 
     if n == -1 and simplify:
         return ~encoders[0]
@@ -627,13 +607,9 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
         return repr_object(self, fallback=repr_type, recursive=2)
 
     @overload
-    def __getitem__(self, key: K) -> E:
-        ...
-
+    def __getitem__(self, key: K) -> E: ...
     @overload
-    def __getitem__(self, key: list[K]) -> MappingEncoder[K, E]:
-        ...
-
+    def __getitem__(self, key: list[K]) -> MappingEncoder[K, E]: ...
     def __getitem__(self, key: K | list[K]) -> E | MappingEncoder[K, E]:
         r"""Get the encoder for the given key."""
         if isinstance(key, list):

@@ -40,6 +40,7 @@ class ForecastingModel(Protocol):
         Returns:
             y(q | (t, x), (t, u), m): Forecast for time t given the system state.
         """
+        ...
 
     def predict(
         self,
@@ -59,6 +60,7 @@ class ForecastingModel(Protocol):
         Returns:
             x(t): Forecast for time t.
         """
+        ...
 
 
 class StateSpaceForecastingModel(ForecastingModel, Protocol):
@@ -86,6 +88,7 @@ class StateSpaceForecastingModel(ForecastingModel, Protocol):
         Returns:
             y(q | (t, x), (t, u), m): Forecast for time t given the system state.
         """
+        ...
 
     def predict(
         self,
@@ -109,6 +112,7 @@ class StateSpaceForecastingModel(ForecastingModel, Protocol):
         Returns:
             x(t): Forecast for time t.
         """
+        ...
 
 
 class BaseModelMetaClass(ABCMeta):
@@ -172,7 +176,8 @@ class BaseModel(ABC):
                 check=True,
             )
             subprocess.run(
-                f"grep -qxF {self.model_path!r} .gitignore || echo {self.model_path!r} >> .gitignore",
+                f"grep -qxF {self.model_path!r} .gitignore || echo"
+                f" {self.model_path!r} >> .gitignore",
                 shell=True,
                 check=True,
             )

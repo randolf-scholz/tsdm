@@ -11,6 +11,8 @@ __all__ = [
     "BaseDatasetMetaClass",
     "SingleTableDataset",
     "MultiTableDataset",
+    "TimeSeriesDataset",
+    "TimeSeriesCollection",
 ]
 
 import html
@@ -22,6 +24,7 @@ import warnings
 import webbrowser
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Collection, Iterator, Mapping, MutableMapping, Sequence
+from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from pathlib import Path
 from typing import (
@@ -36,20 +39,24 @@ from typing import (
 from urllib.parse import urlparse
 
 import pandas
+from pandas import DataFrame, Index, MultiIndex, Series
+from pyarrow import Table, parquet
+from torch.utils.data import Dataset as TorchDataset
+from typing_extensions import Self
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike
-from tsdm.types.variables import any_var as T, str_var as Key
+from tsdm.types.variables import any_co as T_co, key_var as K, str_var as Key
 from tsdm.utils import paths_exists
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.remote import download
-from tsdm.utils.strings import repr_mapping
+from tsdm.utils.strings import repr_dataclass, repr_mapping
 
 
 @runtime_checkable
-class Dataset(Protocol):
+class Dataset(Protocol[T_co]):
     """Protocol for Dataset."""
 
     # TODO: make a bug report. Mypy does not honor the type hint for INFO_URL
@@ -63,19 +70,24 @@ class Dataset(Protocol):
     @classmethod
     def info(cls) -> None:
         """Print information about the dataset."""
+        ...
 
     @property
     def rawdata_paths(self) -> Mapping[str, Path]:
         """Return list of paths to the rawdata files."""
+        ...
 
-    def clean(self) -> None:
+    def clean(self) -> T_co | None:
         """Clean the dataset."""
+        ...
 
     def download(self) -> None:
         """Download the dataset."""
+        ...
 
-    def load(self) -> None:
+    def load(self) -> T_co:
         """Load the dataset."""
+        ...
 
 
 class BaseDatasetMetaClass(ABCMeta):
@@ -113,7 +125,7 @@ class BaseDatasetMetaClass(ABCMeta):
     # return super().__getitem__(parent)
 
 
-class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
+class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
     r"""Abstract base class that all dataset must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -126,8 +138,12 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
     - dataset_hashes: Used to verify cleaned dataset files after `clean` and before `load`.
     - table_hashes: Used to verify in-memory tables after `load`.
     - table_schemas: Used to verify in-memory tables after `load`.
-
     """
+
+    LOGGER: ClassVar[logging.Logger]
+    r"""Logger for the dataset."""
+    DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
+    r"""Default format for the dataset."""
 
     BASE_URL: ClassVar[Optional[str]] = None
     r"""HTTP address from where the dataset can be downloaded."""
@@ -137,13 +153,9 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
     r"""Location where the raw data is stored."""
     DATASET_DIR: ClassVar[Path]
     r"""Location where the pre-processed data is stored."""
-    LOGGER: ClassVar[logging.Logger]
-    r"""Logger for the dataset."""
-    DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
-    r"""Default format for the dataset."""
 
     # instance attribute
-    __version__: str
+    __version__: str = NotImplemented
     r"""Version of the dataset, keep empty for unversioned dataset."""
     rawdata_hashes: Mapping[str, str | None] = NotImplemented
     r"""Hashes of the raw dataset file(s)."""
@@ -157,12 +169,14 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         *,
         initialize: bool = True,
         reset: bool = False,
-        version: str = "",
+        version: str = NotImplemented,
     ) -> None:
         r"""Initialize the dataset."""
-        self.__version__ = version
-        self.RAWDATA_DIR = self.RAWDATA_DIR / self.__version__  # type: ignore[misc]
-        self.DATASET_DIR = self.DATASET_DIR / self.__version__  # type: ignore[misc]
+        if version is not NotImplemented:
+            self.__version__ = version
+        if self.__version__ is not NotImplemented:
+            self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
+            self.DATASET_DIR /= self.__version__  # type: ignore[misc]
 
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -171,18 +185,23 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         if reset:
             self.clean()
         if initialize:
-            self.load()
+            self.load(initializing=True)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the dataset."""
         return f"{self.__class__.__name__}()"
 
     @staticmethod
-    def serialize(table: T, path: Path, /, **kwargs: Any) -> None:
+    def serialize(table: T_co, path: Path, /, **kwargs: Any) -> None:  # type: ignore[misc]
         r"""Serialize the dataset."""
+        # NOTE: This should be type safe even for covariant types.
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
         file_type = file_type[1:]
+
+        if isinstance(table, Table) and file_type == "parquet":
+            parquet.write_table(table, path, **kwargs)
+            return
 
         # check if table has a custom writer.
         if hasattr(table, f"to_{file_type}"):
@@ -193,7 +212,7 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         raise NotImplementedError(f"No loader for {file_type=}")
 
     @staticmethod
-    def deserialize(path: Path, /, **kwargs: Any) -> T:
+    def deserialize(path: Path, /, **kwargs: Any) -> T_co:
         r"""Deserialize the dataset."""
         file_type = path.suffix
         assert file_type.startswith("."), "File must have a suffix!"
@@ -226,8 +245,8 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
 
     @property
     @abstractmethod
-    def rawdata_files(self) -> Sequence[PathLike]:
-        r"""Relative paths to the raw dataset file(s)."""
+    def rawdata_files(self) -> Sequence[str]:
+        r"""File names of the raw dataset files."""
 
     @cached_property
     def rawdata_paths(self) -> Mapping[str, Path]:
@@ -237,13 +256,20 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
             for fname in self.rawdata_files
         }
 
+    @cached_property
+    def rawdata_valid(self) -> bool:
+        r"""Check if raw data files exist."""
+        self.LOGGER.debug("Validating raw data files.")
+        validate_file_hash(self.rawdata_paths, self.rawdata_hashes)
+        return True
+
     def rawdata_files_exist(self, key: Optional[str] = None) -> bool:
         r"""Check if raw data files exist."""
         if key is None:
             return paths_exists(self.rawdata_paths)
         if key not in self.rawdata_paths:
             raise KeyError(f"{key=} not in {self.rawdata_paths=}")
-        return paths_exists(key)
+        return paths_exists(self.rawdata_paths[key])
 
     @abstractmethod
     def clean(self) -> None:
@@ -253,42 +279,56 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
         """
 
     @abstractmethod
-    def load(self):
+    def load(self, *, initializing: bool = False) -> T_co:
         r"""Load the pre-processed dataset."""
 
     @classmethod
-    def download_from_url(cls, url: str) -> None:
+    def download_from_url(cls, url: str, path: PathLike, /, **options: Any) -> None:
         r"""Download files from a URL."""
         cls.LOGGER.debug("Downloading from %s", url)
         parsed_url = urlparse(url)
 
-        if parsed_url.netloc == "www.kaggle.com":
-            kaggle_name = Path(parsed_url.path).name
-            subprocess.run(
-                f"kaggle competitions download -p {cls.RAWDATA_DIR} -c {kaggle_name}",
-                shell=True,
-                check=True,
-            )
-        elif parsed_url.netloc == "github.com":
-            subprocess.run(
-                f"svn export --force {url.replace('tree/main', 'trunk')} {cls.RAWDATA_DIR}",
-                shell=True,
-                check=True,
-            )
-        else:  # default parsing, including for UCI dataset
-            fname = url.split("/")[-1]
-            download(url, cls.RAWDATA_DIR / fname)
+        match parsed_url.netloc:
+            case "www.kaggle.com":
+                # change options to kaggle cli options
+                opts = " ".join(f"--{k} {v}" for k, v in options.items())
+                kaggle_name = Path(parsed_url.path).name
+                subprocess.run(
+                    "kaggle competitions download"
+                    f" -p {cls.RAWDATA_DIR} -c {kaggle_name} {opts}",
+                    shell=True,
+                    check=True,
+                )
+            case "github.com":
+                opts = " ".join(f"--{k} {v}" for k, v in options.items())
+                svn_url = url.replace("tree/main", "trunk")
+                subprocess.run(
+                    f"svn export --force {svn_url} {cls.RAWDATA_DIR} {opts}",
+                    shell=True,
+                    check=True,
+                )
+            case _:  # default parsing, including for UCI dataset
+                download(url, path, **options)
 
-    def download_file(self, fname: str) -> None:
-        r"""Download a single file."""
+    def download_file(self, fname: str, /) -> None:
+        r"""Download a single rawdata file.
+
+        Override this method for custom download logic.
+        """
         if self.BASE_URL is None:
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 
-        self.download_from_url(self.BASE_URL + fname)
+        url = self.BASE_URL + fname
+        path = self.RAWDATA_DIR / fname
+        self.download_from_url(url, path)
 
     def download(
-        self, *, key: Optional[str] = None, force: bool = True, validate: bool = True
+        self,
+        *,
+        key: Optional[str] = None,
+        force: bool = True,
+        validate: bool = True,
     ) -> None:
         r"""Download the dataset."""
         # Recurse if key is None.
@@ -311,21 +351,32 @@ class BaseDataset(Generic[T], ABC, metaclass=BaseDatasetMetaClass):
 
         # Validate file.
         if validate and self.rawdata_hashes is not NotImplemented:
-            validate_file_hash(self.rawdata_paths[key], reference=self.rawdata_hashes)
+            validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes)
+
+    def remove_rawdata_files(self) -> None:
+        r"""Recreate the rawdata directory."""
+        if self.RAWDATA_DIR.exists():
+            self.RAWDATA_DIR.rmdir()
+        self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    def remove_dataset_files(self) -> None:
+        r"""Recreate the dataset directory."""
+        if self.DATASET_DIR.exists():
+            self.DATASET_DIR.rmdir()
+        self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
 
-class SingleTableDataset(BaseDataset[T]):
+class SingleTableDataset(BaseDataset[T_co]):
     r"""Dataset class that consists of a singular DataFrame."""
     RAWDATA_DIR: ClassVar[Path]
     """Path to raw data directory."""
     DATASET_DIR: ClassVar[Path]
     """Path to pre-processed data directory."""
 
-    _table: T = NotImplemented
+    _table: T_co = NotImplemented
     """INTERNAL: the dataset."""
 
     # Validation - Implement on per dataset basis!
-
     dataset_hash: str = NotImplemented
     r"""Hashes of the cleaned dataset file(s)."""
     table_hash: str = NotImplemented
@@ -349,7 +400,7 @@ class SingleTableDataset(BaseDataset[T]):
         raise NotImplementedError
 
     @cached_property
-    def table(self) -> T:
+    def table(self) -> T_co:
         r"""Store cached version of dataset."""
         if self._table is NotImplemented:
             self._table = self.load(initializing=True)
@@ -370,14 +421,14 @@ class SingleTableDataset(BaseDataset[T]):
         return paths_exists(self.dataset_path)
 
     @abstractmethod
-    def clean_table(self) -> T | None:
+    def clean_table(self) -> T_co | None:
         r"""Generate the cleaned dataset table.
 
         If table is returned, the `self.serialize` method is used to write it to disk.
         If manually writing the table to disk, return None.
         """
 
-    def load_table(self) -> T:
+    def load_table(self) -> T_co:
         r"""Load the dataset.
 
         By default, `self.deserialize` is used to load the table from disk.
@@ -391,7 +442,7 @@ class SingleTableDataset(BaseDataset[T]):
         initializing: bool = False,
         force: bool = True,
         validate: bool = True,
-    ) -> T:
+    ) -> T_co:
         r"""Load the selected DATASET_OBJECT."""
         # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_file_exists():
@@ -403,7 +454,7 @@ class SingleTableDataset(BaseDataset[T]):
 
         # Validate file if hash is provided.
         if validate and self.dataset_hash is not NotImplemented:
-            validate_file_hash(self.dataset_path, reference=self.dataset_hash)
+            validate_file_hash(self.dataset_path, self.dataset_hash)
 
         # Load table.
         self.LOGGER.debug("Starting to load dataset.")
@@ -412,7 +463,7 @@ class SingleTableDataset(BaseDataset[T]):
 
         # Validate table if hash/schema is provided.
         if validate and self.table_hash is not NotImplemented:
-            validate_table_hash(table, reference=self.table_hash)
+            validate_table_hash(table, self.table_hash)
 
         return table
 
@@ -429,7 +480,7 @@ class SingleTableDataset(BaseDataset[T]):
 
         # Validate raw data.
         if validate and self.rawdata_hashes is not NotImplemented:
-            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
+            assert self.rawdata_valid
 
         # Clean dataset.
         self.LOGGER.debug("Starting to clean dataset.")
@@ -441,13 +492,13 @@ class SingleTableDataset(BaseDataset[T]):
 
         # Validate pre-processed file.
         if validate and self.dataset_hash is not NotImplemented:
-            validate_file_hash(self.dataset_path, reference=self.dataset_hash)
+            validate_file_hash(self.dataset_path, self.dataset_hash)
 
 
 class MultiTableDataset(
-    Mapping[Key, T],
-    BaseDataset[T],
-    Generic[Key, T],
+    BaseDataset[T_co],
+    Mapping[Key, T_co],
+    Generic[Key, T_co],
 ):
     r"""Dataset class that consists of multiple tables.
 
@@ -468,15 +519,22 @@ class MultiTableDataset(
     table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
     r"""Shapes of the in-memory cleaned dataset table(s)."""
 
-    def __init__(self, *, initialize: bool = True, reset: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        initialize: bool = True,
+        reset: bool = False,
+        version: str = NotImplemented,
+    ) -> None:
         r"""Initialize the Dataset."""
-        self.LOGGER.debug("Adding keys as attributes.")
+        self.LOGGER.debug("Calling Mapping.__init__")
+        Mapping.__init__(self)
 
-        # if possible, add keys as attributes
+        self.LOGGER.debug("Adding keys as attributes.")
         self._key_attributes = False
         if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
             warnings.warn(
-                f"Not adding keys as attributes!"
+                "Not adding keys as attributes!"
                 f" Keys {invalid_keys} are not valid identifiers!",
                 RuntimeWarning,
                 stacklevel=2,
@@ -491,7 +549,8 @@ class MultiTableDataset(
         else:
             self._key_attributes = True
 
-        super().__init__(initialize=initialize, reset=reset)
+        self.LOGGER.debug("Calling super().__init__")
+        super().__init__(initialize=initialize, reset=reset, version=version)
 
     def __dir__(self) -> list[str]:
         if self._key_attributes:
@@ -508,7 +567,7 @@ class MultiTableDataset(
         r"""Return the number of samples in the dataset."""
         return self.tables.__len__()
 
-    def __getitem__(self, key: Key) -> T:
+    def __getitem__(self, key: Key) -> T_co:
         r"""Return the sample at index `idx`."""
         # need to manually raise KeyError otherwise __getitem__ will execute.
         if key not in self.tables:
@@ -531,7 +590,7 @@ class MultiTableDataset(
         # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
 
     @cached_property
-    def tables(self) -> MutableMapping[Key, T]:
+    def tables(self) -> MutableMapping[Key, T_co]:
         r"""Store cached version of dataset."""
         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
 
@@ -570,7 +629,7 @@ class MultiTableDataset(
         return paths_exists(self.dataset_paths)
 
     @abstractmethod
-    def clean_table(self, key: Key) -> T | None:
+    def clean_table(self, key: Key) -> T_co | None:
         r"""Create the cleaned table for the given key.
 
         If table is returned, the `self.serialize` method is used to write it to disk.
@@ -600,8 +659,7 @@ class MultiTableDataset(
 
         # validate the raw data files
         if validate_rawdata and self.rawdata_hashes is not NotImplemented:
-            self.LOGGER.debug("Validating raw data files.")
-            validate_file_hash(self.rawdata_paths, reference=self.rawdata_hashes)
+            assert self.rawdata_valid
 
         # key=None: Recursively clean all tables
         if key is None:
@@ -614,7 +672,7 @@ class MultiTableDataset(
             return
 
         # skip if cleaned files already exist
-        if self.dataset_files_exist(key=key) and not force:
+        if not force and self.dataset_files_exist(key=key):
             self.LOGGER.debug("Cleaned data file already exists, skipping <%s>", key)
             return
 
@@ -628,11 +686,9 @@ class MultiTableDataset(
 
         # Validate the cleaned table
         if validate and self.dataset_hashes is not NotImplemented:
-            validate_file_hash(
-                self.dataset_paths[key], reference=self.dataset_hashes[key]
-            )
+            validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
 
-    def load_table(self, key: Key) -> T:
+    def load_table(self, key: Key) -> T_co:
         r"""Load the selected DATASET_OBJECT.
 
         By default, `self.deserialize` is used to load the table from disk.
@@ -641,13 +697,9 @@ class MultiTableDataset(
         return self.deserialize(self.dataset_paths[key])
 
     @overload
-    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T]:  # type: ignore[misc]
-        ...
-
+    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T_co]: ...  # type: ignore[misc]
     @overload
-    def load(self, key: Key = ..., **kwargs: Any) -> T:
-        ...
-
+    def load(self, key: Key = ..., **kwargs: Any) -> T_co: ...
     def load(
         self,
         key: Optional[Key] = None,
@@ -656,7 +708,7 @@ class MultiTableDataset(
         validate: bool = True,
         initializing: bool = False,
         **kwargs: Any,
-    ) -> Mapping[Key, T] | T:
+    ) -> Mapping[Key, T_co] | T_co:
         r"""Load the selected DATASET_OBJECT.
 
         Args:
@@ -670,33 +722,236 @@ class MultiTableDataset(
         """
         # key=None: Recursively load all tables.
         if key is None:
-            self.LOGGER.debug("Starting to load  dataset.")
-            for key in self.table_names:
-                self.load(key=key, force=force, validate=validate, **kwargs)
-            self.LOGGER.debug("Finished loading  dataset.")
+            self.LOGGER.debug("Starting to load dataset.")
+            for name in self.table_names:
+                self.load(key=name, force=force, validate=validate, **kwargs)
+            self.LOGGER.debug("Finished loading dataset.")
             return self.tables
 
         # Skip if already loaded.
-        if not initializing:
+        if not force and not initializing:
             return self.tables[key]
 
         # Create the pre-processed dataset file if it doesn't exist.
         if not self.dataset_files_exist(key=key):
-            self.clean(key=key, force=force)
+            self.clean(key=key, force=force, validate=validate)
 
         # Validate file if hash is provided.
         if validate and self.dataset_hashes is not NotImplemented:
-            validate_file_hash(
-                self.dataset_paths[key], reference=self.dataset_hashes[key]
-            )
+            validate_file_hash(self.dataset_paths[key], self.dataset_hashes[key])
 
         # Load the table, make sure to use the cached version if it exists.
-        self.LOGGER.debug("Starting to load  dataset <%s>", key)
+        self.LOGGER.debug("Starting to load dataset <%s>", key)
         table = self.load_table(key)
-        self.LOGGER.debug("Finished loading  dataset <%s>", key)
+        self.LOGGER.debug("Finished loading dataset <%s>", key)
 
         # Validate the loaded table.
         if validate and self.table_hashes is not NotImplemented:
-            validate_table_hash(table, reference=self.table_hashes[key])
+            validate_table_hash(table, self.table_hashes[key])
 
         return table
+
+
+@dataclass
+class TimeSeriesDataset(TorchDataset[Series]):
+    r"""Abstract Base Class for TimeSeriesDatasets.
+
+    A TimeSeriesDataset is a dataset that contains time series data and MetaData.
+    More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
+    """
+
+    timeseries: DataFrame
+    r"""The time series data."""
+
+    _: KW_ONLY
+
+    # Main Attributes
+    metadata: Optional[DataFrame] = None
+    r"""The metadata of the dataset."""
+    timeindex: Index = NotImplemented
+    r"""The time-index of the dataset."""
+    name: str = NotImplemented
+    r"""The name of the dataset."""
+
+    # Space Descriptors
+    index_description: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    timeseries_description: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_description: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+
+    def __post_init__(self) -> None:
+        r"""Post init."""
+        if self.name is NotImplemented:
+            self.name = self.__class__.__name__
+        if self.timeindex is NotImplemented:
+            self.timeindex = self.timeseries.index.copy().unqiue()
+
+    def __len__(self) -> int:
+        r"""Return the number of timestamps."""
+        return len(self.timeindex)
+
+    @overload
+    def __getitem__(self, key: K, /) -> Series: ...
+    @overload
+    def __getitem__(self, key: Index | slice | list[K], /) -> DataFrame: ...
+    def __getitem__(self, key, /):
+        r"""Get item from timeseries."""
+        # we might get an index object, or a slice, or boolean mask...
+        return self.timeseries.loc[key]
+
+    def __iter__(self) -> Iterator[Series]:
+        r"""Iterate over the timestamps."""
+        return iter(self.timeindex)
+
+    def __repr__(self) -> str:
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, title=self.name)
+
+
+@dataclass
+class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
+    r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
+
+    A TimeSeriesCollection is a tuple (I, D, G) consiting of
+
+    - index $I$
+    - indexed TimeSeriesDatasets $D = { (TS_i, M_i) ∣ i ∈ I }$
+    - global variables $G∈𝓖$
+    """
+
+    timeseries: DataFrame
+    r"""The time series data."""
+
+    _: KW_ONLY
+
+    # Main attributes
+    metadata: Optional[DataFrame] = None
+    r"""The metadata of the dataset."""
+    timeindex: MultiIndex = NotImplemented
+    r"""The time-index of the collection."""
+    metaindex: Index = NotImplemented
+    r"""The index of the collection."""
+    global_metadata: Optional[DataFrame] = None
+    r"""Metaindex-independent data."""
+
+    # Space descriptors
+    timeseries_description: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_description: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    timeindex_description: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    metaindex_description: Optional[DataFrame] = None
+    r"""Data associated with each index such as measurement device, unit, etc."""
+    global_metadata_description: Optional[DataFrame] = None
+    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    # other
+    name: str = NotImplemented
+    r"""The name of the collection."""
+
+    def __post_init__(self) -> None:
+        r"""Post init."""
+        if self.name is NotImplemented:
+            if hasattr(self.timeseries, "name") and self.timeseries.name is not None:
+                self.name = str(self.timeseries.name)
+            else:
+                self.name = self.__class__.__name__
+
+        if self.timeindex is NotImplemented:
+            self.timeindex = self.timeseries.index.copy()
+
+        if self.metaindex is NotImplemented:
+            if self.metadata is not None:
+                self.metaindex = self.metadata.index.copy().unique()
+            elif isinstance(self.timeseries.index, MultiIndex):
+                self.metaindex = self.timeseries.index.copy().droplevel(-1).unique()
+                # self.timeseries = self.timeseries.droplevel(0)
+            else:
+                self.metaindex = self.timeseries.index.copy().unique()
+
+    @overload
+    def __getitem__(self, key: K, /) -> TimeSeriesDataset: ...
+    @overload
+    def __getitem__(self, key: slice, /) -> Self: ...
+    def __getitem__(self, key, /):
+        r"""Get the timeseries and metadata of the dataset at index `key`."""
+        # TODO: There must be a better way to slice this
+        if isinstance(key, Series):
+            if isinstance(key.index, MultiIndex):
+                ts = self.timeseries.loc[key]
+            else:
+                ts = self.timeseries.loc[key[key].index]
+        else:
+            ts = self.timeseries.loc[key]
+
+        # make sure metadata is always DataFrame.
+        if self.metadata is None:
+            md = None
+        elif isinstance(_md := self.metadata.loc[key], Series):
+            md = self.metadata.loc[[key]]
+        else:
+            md = _md
+
+        # slice the timeindex-descriptions
+        if self.timeindex_description is None:
+            tf = None
+        elif self.timeindex_description.index.equals(self.metaindex):
+            tf = self.timeindex_description.loc[key]
+        else:
+            tf = self.timeindex_description
+
+        # slice the ts-descriptions
+        if self.timeseries_description is None:
+            vf = None
+        elif self.timeseries_description.index.equals(self.metaindex):
+            vf = self.timeseries_description.loc[key]
+        else:
+            vf = self.timeseries_description
+
+        # slice the metadata-descriptions
+        if self.metadata_description is None:
+            mf = None
+        elif self.metadata_description.index.equals(self.metaindex):
+            mf = self.metadata_description.loc[key]
+        else:
+            mf = self.metadata_description
+
+        if isinstance(ts.index, MultiIndex):
+            index = ts.index.droplevel(-1).unique()
+            return TimeSeriesCollection(
+                name=self.name,
+                metaindex=index,
+                timeseries=ts,
+                metadata=md,
+                timeindex_description=tf,
+                timeseries_description=vf,
+                metadata_description=mf,
+                global_metadata=self.global_metadata,
+                global_metadata_description=self.global_metadata_description,
+                metaindex_description=self.metaindex_description,
+            )
+
+        return TimeSeriesDataset(
+            name=self.name,
+            timeindex=ts.index,
+            timeseries=ts,
+            metadata=md,
+            index_description=tf,
+            timeseries_description=vf,
+            metadata_description=mf,
+        )
+
+    def __len__(self) -> int:
+        r"""Get the length of the collection."""
+        return len(self.metaindex)
+
+    def __iter__(self) -> Iterator[K]:
+        r"""Iterate over the collection."""
+        return iter(self.metaindex)
+
+    def __repr__(self) -> str:
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, title=self.name)

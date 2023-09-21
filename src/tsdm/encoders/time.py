@@ -2,27 +2,17 @@ r"""Encoders for timedelta and datetime types."""
 
 __all__ = [
     # Classes
-    "Time2Float",
     "DateTimeEncoder",
-    "TimeDeltaEncoder",
-    "PeriodicEncoder",
-    "SocialTimeEncoder",
     "PeriodicEncoder",
     "PositionalEncoder",
+    "SocialTimeEncoder",
+    "Time2Float",
+    "TimeDeltaEncoder",
     "TimeSlicer",
 ]
 
-from typing import (
-    Any,
-    ClassVar,
-    Final,
-    Hashable,
-    Literal,
-    Optional,
-    Sequence,
-    cast,
-    overload,
-)
+from collections.abc import Hashable, Sequence
+from typing import Any, ClassVar, Final, Literal, Optional, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -33,7 +23,7 @@ from typing_extensions import Self
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
-from tsdm.types.aliases import PandasObject, ScalarDType
+from tsdm.types.aliases import DType, PandasObject
 from tsdm.utils.data.timeseries import TimeTensor
 
 
@@ -208,7 +198,7 @@ class PeriodicEncoder(BaseEncoder):
 
     period: float
     freq: float
-    dtype: ScalarDType
+    dtype: DType
     colname: Hashable
 
     def __init__(self, period: Optional[float] = None) -> None:
@@ -259,7 +249,7 @@ class SocialTimeEncoder(BaseEncoder):
         "n": "nanosecond",
     }
     original_name: Hashable
-    original_dtype: ScalarDType
+    original_dtype: DType
     original_type: type
     rev_cols: list[str]
     level_code: str
@@ -357,7 +347,7 @@ class PositionalEncoder(BaseEncoder):
     def encode(self, data: np.ndarray, /) -> np.ndarray:
         r""".. Signature: ``... -> (..., 2d)``.
 
-        Note: we simple concatenate the sin and cosine terms without interleaving them.
+        Note: we simply concatenate the sin and cosine terms without interleaving them.
         """
         z = np.einsum("..., d -> ...d", data, self.scales)
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
@@ -382,29 +372,25 @@ class TimeSlicer(BaseEncoder):
         self.horizon = horizon
 
     @staticmethod
-    def is_tensor_pair(data: Any) -> bool:
+    def is_tensor_pair(data: Any, /) -> bool:
         r"""Check if the data is a pair of tensors."""
         if isinstance(data, Sequence) and len(data) == 2:
-            if isinstance(data[0], torch.Tensor) and isinstance(data[1], torch.Tensor):
+            if isinstance(data[0], Tensor) and isinstance(data[1], Tensor):
                 return True
         return False
 
     @overload
-    def encode(self, data: TimeTensor, /) -> Sequence[TimeTensor]:
-        ...
-
+    def encode(self, data: TimeTensor, /) -> Sequence[TimeTensor]: ...
     @overload
-    def encode(self, data: Sequence[TimeTensor], /) -> Sequence[Sequence[TimeTensor]]:
-        ...
-
+    def encode(
+        self, data: Sequence[TimeTensor], /
+    ) -> Sequence[Sequence[TimeTensor]]: ...
     @overload
     def encode(
         self,
         data: Sequence[tuple[Tensor, Tensor]],
         /,
-    ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]:
-        ...
-
+    ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]: ...
     def encode(self, data, /):
         r"""Slice the data.
 
@@ -419,21 +405,17 @@ class TimeSlicer(BaseEncoder):
         return tuple(self.encode(item) for item in data)
 
     @overload
-    def decode(self, data: Sequence[TimeTensor], /) -> TimeTensor:
-        ...
-
+    def decode(self, data: Sequence[TimeTensor], /) -> TimeTensor: ...
     @overload
-    def decode(self, data: Sequence[Sequence[TimeTensor]], /) -> Sequence[TimeTensor]:
-        ...
-
+    def decode(
+        self, data: Sequence[Sequence[TimeTensor]], /
+    ) -> Sequence[TimeTensor]: ...
     @overload
     def decode(
         self,
         data: Sequence[Sequence[tuple[Tensor, Tensor]]],
         /,
-    ) -> Sequence[tuple[Tensor, Tensor]]:
-        ...
-
+    ) -> Sequence[tuple[Tensor, Tensor]]: ...
     def decode(self, data, /):
         r"""Restores the original data."""
         if isinstance(data[0], TimeTensor) or self.is_tensor_pair(data[0]):

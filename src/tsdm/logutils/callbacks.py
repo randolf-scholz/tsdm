@@ -5,8 +5,12 @@ __all__ = [
     # Classes
     # Protocols
     "Callback",
-    # Callbacks
+    # functions
+    "is_callback",
+    # Base Classes
     "BaseCallback",
+    "CallbackList",
+    # Callbacks
     "CheckpointCallback",
     "ConfigCallback",
     "EvaluationCallback",
@@ -20,21 +24,25 @@ __all__ = [
     "TableCallback",
 ]
 
+import inspect
 import logging
 from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, MutableSequence, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from functools import wraps
 from itertools import chain
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Generic,
     Literal,
     Optional,
+    ParamSpec,
     Protocol,
+    TypeGuard,
+    TypeVar,
+    overload,
     runtime_checkable,
 )
 
@@ -65,9 +73,10 @@ from tsdm.metrics import Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
-from tsdm.types.variables import parameter_spec as P
 from tsdm.utils.funcutils import get_mandatory_kwargs
 from tsdm.utils.strings import repr_object
+
+P = ParamSpec("P")
 
 
 @runtime_checkable
@@ -81,13 +90,30 @@ class Callback(Protocol[P]):
 
     # required_kwargs: ClassVar[set[str]]
     # """The required kwargs for the callback."""
-    #
+
+    @property
+    def required_kwargs(self) -> set[str]:
+        """The required kwargs for the callback."""
+        ...
+
     # @property
     # def frequency(self) -> int:
     #     """The frequency at which the callback is called."""
 
     def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
         """Log something at time index i."""
+        ...
+
+
+def is_callback(func: Callable, /) -> TypeGuard[Callback]:
+    """Check if the function is a callback."""
+    sig = inspect.signature(func)
+    params = list(sig.parameters.values())
+    return (
+        len(params) >= 1
+        and params[0].kind is inspect.Parameter.POSITIONAL_ONLY
+        and all(p.kind in (p.KEYWORD_ONLY, p.VAR_KEYWORD) for p in params[1:])
+    )
 
 
 class CallbackMetaclass(ABCMeta):
@@ -108,39 +134,107 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
 
     LOGGER: ClassVar[logging.Logger]
     """The debug-logger for the callback."""
-    required_kwargs: ClassVar[set[str]]
-    """The required kwargs for the callback."""
+    # required_kwargs: ClassVar[set[str]]
+    # """The required kwargs for the callback."""
 
     _: KW_ONLY
 
     frequency: int = 1
     """The frequency at which the callback is called."""
 
+    # @property
+    # def required_kwargs(self) -> set[str]:
+    #     """The required kwargs for the callback."""
+    #     return get_mandatory_kwargs(self.callback)
+
+    @property
+    def required_kwargs(self) -> set[str]:
+        """The required kwargs for the callback."""
+        return get_mandatory_kwargs(self.callback)
+
     def __init_subclass__(cls) -> None:
         """Automatically set the required kwargs for the callback."""
-        cls.required_kwargs = get_mandatory_kwargs(cls.callback)
 
         @wraps(cls.callback)
-        def __call__(self: Self, i: int, /, **kwargs: P.kwargs) -> None:
+        def __call__(self: Self, i: int, /, **state_dict: P.kwargs) -> None:
             """Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:
-                self.callback(i, **kwargs)
+                self.callback(i, **state_dict)
             else:
                 self.LOGGER.debug("Skipping callback.")
 
         cls.__call__ = __call__  # type: ignore[method-assign]
         super().__init_subclass__()
 
-    def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
+    @abstractmethod
+    def callback(self, i: int, /, **state_dict: P.kwargs) -> None:
         """Log something at the end of a batch/epoch."""
 
-    @abstractmethod
-    def callback(self, i: int, /, **kwargs: P.kwargs) -> None:
+    def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:
         """Log something at the end of a batch/epoch."""
 
     def __repr__(self) -> str:
         """Return a string representation of the callback."""
         return repr_object(self)
+
+
+# NOTE: overloads from MutableSequence.
+# NOTE: Use PEP 695: Type Parameter Syntax in 3.9
+CB = TypeVar("CB", bound=Callback)
+
+
+class CallbackList(BaseCallback, MutableSequence[CB]):
+    """Callback to log multiple callbacks."""
+
+    callbacks: list[CB]
+    """The callbacks to log."""
+
+    def insert(self, index: int, value: CB, /) -> None:
+        self.callbacks.insert(index, value)
+
+    @overload
+    def __getitem__(self, index: int) -> CB: ...
+    @overload
+    def __getitem__(self, index: slice) -> MutableSequence[CB]: ...
+    def __getitem__(self, index):
+        return self.callbacks[index]
+
+    @overload
+    def __setitem__(self, index: int, value: CB) -> None: ...
+    @overload
+    def __setitem__(self, index: slice, value: Iterable[CB]) -> None: ...
+    def __setitem__(self, index, value):
+        self.callbacks[index] = value
+
+    @overload
+    def __delitem__(self, index: int) -> None: ...
+    @overload
+    def __delitem__(self, index: slice) -> None: ...
+    def __delitem__(self, index):
+        del self.callbacks[index]
+
+    def __len__(self) -> int:
+        return len(self.callbacks)
+
+    @property
+    def required_kwargs(self) -> set[str]:
+        """The required kwargs for the callback."""
+        # result: set[str] = set()
+        return set().union(
+            *(
+                (
+                    callback.required_kwargs
+                    if hasattr(callback, "required_kwargs")
+                    else get_mandatory_kwargs(callback)
+                )
+                for callback in self.callbacks
+            )
+        )
+
+    def callback(self, i: int, /, **state_dict: Any) -> None:
+        """Log something at the end of a batch/epoch."""
+        for callback in self.callbacks:
+            callback(i, **state_dict)
 
 
 @dataclass
@@ -176,8 +270,8 @@ class WrapCallback(BaseCallback):
 
     func: Callable[..., None]
 
-    def callback(self, i: int, /, **kwargs: Any) -> None:
-        self.func(i, **kwargs)
+    def callback(self, i: int, /, **state_dict: Any) -> None:
+        self.func(i, **state_dict)
 
 
 @dataclass
@@ -223,7 +317,7 @@ class EvaluationCallback(BaseCallback):
             raise ValueError("Could not find a validation split!")
         self._val_key = candidate
 
-    def callback(self, i: int, /, **kwargs: Any) -> None:
+    def callback(self, i: int, /, **_: Any) -> None:
         # update the history
         self.compute_results(i)
         self.compute_best_epoch(i)
@@ -338,7 +432,7 @@ class CheckpointCallback(BaseCallback):
 
     _: KW_ONLY
 
-    def callback(self, i: int, /, **objects: Any) -> None:
+    def callback(self, i: int, /, **_: Any) -> None:
         make_checkpoint(i, self.objects, path=self.path)
 
 
@@ -354,7 +448,7 @@ class HParamCallback(BaseCallback):
 
     writer: SummaryWriter
 
-    def callback(self, i: int, /, **objects: Any) -> None:
+    def callback(self, i: int, /, **_: Any) -> None:
         best_epochs = self.history.rolling(5, center=True).mean().idxmin()
 
         scores: dict[str, dict[str, float]] = {
@@ -401,7 +495,7 @@ class KernelCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **_: Any) -> None:
         log_kernel(
             i,
             kernel=self.kernel,
@@ -433,7 +527,7 @@ class LRSchedulerCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, **state_dict: Any) -> None:
+    def callback(self, i: int, /, **_: Any) -> None:
         log_lr_scheduler(
             i,
             lr_scheduler=self.lr_scheduler,
@@ -458,7 +552,7 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, *, targets: Tensor, predics: Tensor) -> None:  # type: ignore[override]
+    def callback(self, i: int, /, *, targets: Tensor, predics: Tensor, **_: Any) -> None:  # type: ignore[override]
         log_metrics(
             i,
             metrics=self.metrics,

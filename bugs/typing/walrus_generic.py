@@ -8,8 +8,7 @@ T = TypeVar("T")
 
 class Foo(ABC, Generic[T]):
     @abstractmethod
-    def f(self, x: T) -> str:
-        ...
+    def f(self, x: T) -> str: ...
 
 
 class Bar(Foo[KEY := Literal["A", "B", "C"]]):  # ✘ raises [misc, valid-type]

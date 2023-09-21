@@ -14,12 +14,10 @@ class BaseClass(ABC, Generic[KEYS]):
 
     @property
     @abstractmethod
-    def keys(self) -> Sequence[KEYS]:
-        ...
+    def keys(self) -> Sequence[KEYS]: ...
 
     @abstractmethod
-    def values(self) -> dict[KEYS, int]:
-        ...
+    def values(self) -> dict[KEYS, int]: ...
 
 
 class ExampleClass(BaseClass):

@@ -30,10 +30,10 @@ from typing import Any, Final, Optional, Protocol, cast, overload
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 
-from tsdm.types.aliases import ScalarDType
+from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
+from tsdm.types.aliases import DType
 from tsdm.types.dtypes import TYPESTRINGS
 from tsdm.types.protocols import Array, Dataclass, NTuple
-from tsdm.utils.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
 
 __logger__ = logging.getLogger(__name__)
 
@@ -56,20 +56,11 @@ def __dir__() -> list[str]:
 
 
 @overload
-def snake2camel(s: str) -> str:
-    ...
-
-
+def snake2camel(s: str) -> str: ...
 @overload
-def snake2camel(s: list[str]) -> list[str]:
-    ...
-
-
+def snake2camel(s: list[str]) -> list[str]: ...
 @overload
-def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]:
-    ...
-
-
+def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]: ...
 def snake2camel(s):
     r"""Convert ``snake_case`` to ``CamelCase``."""
     if isinstance(s, tuple):
@@ -122,8 +113,7 @@ class ReprProtocol(Protocol):
         repr_fun: Callable[..., str] = NotImplemented,
         title: Optional[str] = None,
         wrapped: Optional[object] = None,
-    ) -> str:
-        ...
+    ) -> str: ...
 
 
 def get_identifier(obj: Any, /, **_: Any) -> str:
@@ -172,7 +162,9 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
 #     return identifier
 
 
-def repr_object(obj: Any, /, fallback: Callable[..., str] = repr, **kwargs: Any) -> str:
+def repr_object(
+    obj: Any, /, *, fallback: Callable[..., str] = repr, **kwargs: Any
+) -> str:
     r"""Return a string representation of an object.
 
     Special casing for a bunch of cases.
@@ -681,6 +673,7 @@ def repr_namedtuple(
 def repr_type(
     obj: Any,
     /,
+    *,
     identifier: Optional[str] = None,
     recursive: bool | int = False,
     **_: Any,
@@ -751,15 +744,12 @@ def repr_sized(obj: Sized, /, *, title: Optional[str] = None) -> str:
     return string
 
 
-def repr_dtype(
-    obj: str | ScalarDType,
-    /,
-) -> str:
+def repr_dtype(obj: str | type | DType, /) -> str:
     r"""Return a string representation of a dtype object."""
     if isinstance(obj, str):
         return obj
     if obj in TYPESTRINGS:
-        return TYPESTRINGS[obj]
+        return TYPESTRINGS[obj]  # type: ignore[index]
     return str(obj)
 
 

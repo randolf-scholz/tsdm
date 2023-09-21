@@ -7,6 +7,7 @@ __all__ = [
     "cumulative_and",
     "cumulative_or",
 ]
+
 from typing import Optional, Union
 
 import torch

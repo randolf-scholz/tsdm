@@ -15,6 +15,10 @@ __all__ = [
     "LinODEnet",
     # Encoders
     # "LinODEnetEncoder",
+    # Types
+    "Model",
+    # Constants
+    "MODELS",
 ]
 
 from typing import Final, TypeAlias

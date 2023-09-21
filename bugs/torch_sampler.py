@@ -23,16 +23,13 @@ class MySampler(Generic[T_co]):
     """
 
     @abstractmethod
-    def __init__(self, data_source: Optional[Sized]) -> None:
-        ...
+    def __init__(self, data_source: Optional[Sized]) -> None: ...
 
     @abstractmethod
-    def __iter__(self) -> Iterator[T_co]:
-        ...
+    def __iter__(self) -> Iterator[T_co]: ...
 
     @abstractmethod
-    def __len__(self) -> int:
-        ...
+    def __len__(self) -> int: ...
 
 
 class MySequentialSampler(MySampler[int]):

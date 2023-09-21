@@ -1,179 +1,468 @@
-r"""Data Utilities."""
+r"""Utility function that act on tabular data."""
 
 __all__ = [
+    # classes
+    "BoundaryInformation",
+    "BoundaryTable",
+    "InlineTable",
+    "MultipleBoundaryInformation",
+    "Schema",
     # Functions
     "aggregate_nondestructive",
-    "compute_entropy",
+    "detect_outliers",
+    "detect_outliers_dataframe",
+    "detect_outliers_series",
     "float_is_int",
     "get_integer_cols",
+    "joint_keys",
+    "make_dataframe",
     "remove_outliers",
+    "remove_outliers_dataframe",
+    "remove_outliers_series",
     "strip_whitespace",
-    "table_info",
     "vlookup_uniques",
 ]
 
 import logging
-from typing import overload
+import operator
+from collections.abc import Mapping, Sequence
+from functools import reduce
+from typing import Any, Generic, NamedTuple, Optional, overload
 
 import pandas as pd
-import pyarrow as pa
 from pandas import DataFrame, Index, Series
-from tqdm.autonotebook import tqdm
+from pyarrow import Array, Table
+from scipy import stats
+from typing_extensions import NotRequired, Required, TypedDict
 
-from tsdm.types.variables import pandas_var
+from tsdm.backend.pandas import (
+    pandas_false_like,
+    strip_whitespace_dataframe,
+    strip_whitespace_series,
+)
+from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
+from tsdm.types.variables import any_var as T, pandas_var, tuple_co
 
 __logger__ = logging.getLogger(__package__)
 
 
-@overload
-def strip_whitespace(table: pa.Array) -> pa.Array:
-    ...
+class Schema(NamedTuple):
+    """Table schema."""
+
+    shape: Optional[tuple[int, int]] = None
+    """Shape of the table."""
+    columns: Optional[Sequence[str]] = None
+    """Column names of the table."""
+    dtypes: Optional[Sequence[str]] = None
+    """Data types of the columns."""
+
+
+class InlineTable(TypedDict, Generic[tuple_co]):
+    """A table of data in a dictionary."""
+
+    data: Required[Sequence[tuple_co]]
+    columns: NotRequired[list[str]]
+    dtypes: NotRequired[list[str | type]]
+    schema: NotRequired[Mapping[str, Any]]
+    index: NotRequired[str | list[str]]
+
+
+class BoundaryInformation(TypedDict):
+    """Information about the boundaries of a single variable."""
+
+    lower_bound: float | None
+    upper_bound: float | None
+    lower_inclusive: bool
+    upper_inclusive: bool
+    dtype: NotRequired[str]
+
+
+class MultipleBoundaryInformation(TypedDict):
+    """Information about the boundaries of multiple variables."""
+
+    name: Sequence[str]
+    lower_bound: Sequence[float | None]
+    upper_bound: Sequence[float | None]
+    lower_inclusive: Sequence[bool]
+    upper_inclusive: Sequence[bool]
+    dtype: NotRequired[Sequence[str]]
+
+
+class BoundaryTable(TypedDict):
+    """A table of boundary information, indexed by variable name."""
+
+    lower_bound: Mapping[str, float | None]
+    upper_bound: Mapping[str, float | None]
+    lower_inclusive: Mapping[str, bool]
+    upper_inclusive: Mapping[str, bool]
+    dtype: NotRequired[Mapping[str, str]]
+
+
+def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
+    """Find joint keys in collection of Mappings."""
+    # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
+    return set.intersection(*map(set, (d.keys() for d in mappings)))  # type: ignore[arg-type]
+
+
+def make_dataframe(
+    data: Sequence[tuple[Any, ...]],
+    *,
+    columns: list[str] = NotImplemented,
+    dtypes: list[str | type] = NotImplemented,
+    schema: Mapping[str, Any] = NotImplemented,
+    index: str | list[str] = NotImplemented,
+) -> DataFrame:
+    """Make a DataFrame from a dictionary."""
+    if dtypes is not NotImplemented and schema is not NotImplemented:
+        raise ValueError("Cannot specify both dtypes and schema.")
+
+    if columns is not NotImplemented:
+        cols = list(columns)
+    elif schema is not NotImplemented:
+        cols = list(schema)
+    else:
+        cols = None
+
+    df = DataFrame.from_records(data, columns=cols)
+
+    if dtypes is not NotImplemented:
+        df = df.astype(dict(zip(df.columns, dtypes)))
+    elif schema is not NotImplemented:
+        df = df.astype(schema)
+
+    if index is not NotImplemented:
+        df = df.set_index(index)
+
+    return df
 
 
 @overload
-def strip_whitespace(table: pa.Table) -> pa.Table:  # type: ignore[misc]
-    ...
-
-
+def strip_whitespace(table: Array, /) -> Array: ...
 @overload
-def strip_whitespace(frame: Series) -> Series:
-    ...
-
-
+def strip_whitespace(table: Table, /, *cols: str) -> Table: ...
 @overload
-def strip_whitespace(frame: DataFrame) -> DataFrame:  # type: ignore[misc]
-    ...
-
-
-def strip_whitespace(table):
+def strip_whitespace(frame: Series, /) -> Series: ...  # type: ignore[misc]
+@overload
+def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type: ignore[misc]
+def strip_whitespace(table, /, *cols):
     """Strip whitespace from all string columns in a table or frame."""
-    if isinstance(table, pa.Table):
-        return _strip_whitespace_table(table)
-    if isinstance(table, pa.Array):
-        return _strip_whitespace_array(table)
-    if isinstance(table, DataFrame):
-        return _strip_whitespace_frame(table)
-    if isinstance(table, Series):
-        return _strip_whitespace_series(table)
-    raise TypeError(f"Unsupported type: {type(table)}")
+    match table:
+        case Table() as table:  # type: ignore[misc]
+            return strip_whitespace_table(table, *cols)  # type: ignore[unreachable]
+        case Array() as array:  # type: ignore[misc]
+            if cols:  # type: ignore[unreachable]
+                raise ValueError("Cannot specify columns for an Array.")
+            return strip_whitespace_array(array)
+        case Series() as series:  # type: ignore[misc]
+            assert not cols  # type: ignore[unreachable]
+            return strip_whitespace_series(series)
+        case DataFrame() as frame:  # type: ignore[misc]
+            return strip_whitespace_dataframe(frame, *cols)  # type: ignore[unreachable]
+        case _:
+            raise TypeError(f"Unsupported type: {type(table)}")
 
 
-def _strip_whitespace_array(arr: pa.Array) -> pa.Array:
-    if isinstance(arr, pa.Array) and arr.type == pa.string():
-        return pa.compute.strip(arr)
-    if isinstance(arr, pa.ListArray) and arr.type.value_type == pa.string():
-        return pa.compute.map(
-            pa.compute.strip,
-            arr,
+def detect_outliers_series(
+    s: Series,
+    /,
+    *,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool,
+    upper_inclusive: bool,
+) -> Series:
+    """Detect outliers in a Series, given boundary values."""
+    # detect lower bound violations
+    match lower_bound, lower_inclusive:
+        case None, _:
+            mask_lower = pandas_false_like(s)
+        case _, True:
+            mask_lower = (s < lower_bound).fillna(False)
+        case _, False:
+            mask_lower = (s <= lower_bound).fillna(False)
+        case _:
+            raise ValueError("Invalid combination of lower_bound and lower_inclusive.")
+
+    # detect upper bound violations
+    match upper_bound, upper_inclusive:
+        case None, _:
+            mask_upper = pandas_false_like(s)
+        case _, True:
+            mask_upper = (s > upper_bound).fillna(False)
+        case _, False:
+            mask_upper = (s >= upper_bound).fillna(False)
+        case _:
+            raise ValueError("Invalid combination of upper_bound and upper_inclusive.")
+
+    if __logger__.getEffectiveLevel() >= logging.INFO:
+        lower_rate = f"{mask_lower.mean():8.3%}" if mask_lower.any() else " ------%"
+        upper_rate = f"{mask_upper.mean():8.3%}" if mask_upper.any() else " ------%"
+        __logger__.info(
+            "%s/%s lower/upper bound violations in %r", lower_rate, upper_rate, s.name
         )
-    if isinstance(arr, pa.DictionaryArray) and arr.type.value_type == pa.string():
-        return pa.DictionaryArray.from_arrays(
-            arr.indices,
-            pa.compute.strip(arr.dictionary),
+
+    return mask_lower | mask_upper
+
+
+def detect_outliers_dataframe(
+    df: DataFrame,
+    /,
+    *,
+    lower_bound: Mapping[T, float | None],
+    upper_bound: Mapping[T, float | None],
+    lower_inclusive: Mapping[T, bool],
+    upper_inclusive: Mapping[T, bool],
+) -> DataFrame:
+    """Detect outliers in a DataFrame, given boundary values."""
+    given_bounds = joint_keys(
+        lower_bound, upper_bound, lower_inclusive, upper_inclusive
+    )
+    if missing_bounds := set(df.columns) - given_bounds:
+        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
+
+    mask = pandas_false_like(df)
+    for col in df.columns:
+        mask[col] = detect_outliers_series(
+            df[col],
+            lower_bound=lower_bound[col],
+            upper_bound=upper_bound[col],
+            lower_inclusive=lower_inclusive[col],
+            upper_inclusive=upper_inclusive[col],
         )
-    return arr
+
+    return mask
 
 
-def _strip_whitespace_table(table: pa.Table) -> pa.Table:
-    for col in table.column_names:
-        table = table.set_column(
-            table.column_names.index(col),
-            col,
-            _strip_whitespace_array(table[col]),
+# TODO: add @overloads
+def detect_outliers(
+    obj,
+    description=None,
+    /,
+    *,
+    lower_bound=None,
+    upper_bound=None,
+    lower_inclusive=None,
+    upper_inclusive=None,
+):
+    """Detect outliers in a Series or DataFrame, given boundary values."""
+    if description is not None:
+        if not all(
+            [
+                lower_bound is None,
+                upper_bound is None,
+                lower_inclusive is None,
+                upper_inclusive is None,
+            ]
+        ):
+            raise ValueError("Either description or bounds should be given, not both.")
+        lower_bound = description["lower_bound"]
+        upper_bound = description["upper_bound"]
+        lower_inclusive = description["lower_inclusive"]
+        upper_inclusive = description["upper_inclusive"]
+    if isinstance(obj, Series):
+        return detect_outliers_series(
+            obj,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
         )
-    return table
+    if isinstance(obj, DataFrame):
+        return detect_outliers_dataframe(
+            obj,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+    raise TypeError(f"Unsupported type: {type(obj)}")
 
 
-def _strip_whitespace_frame(frame: DataFrame) -> DataFrame:
-    return frame.apply(_strip_whitespace_series)
+def remove_outliers_series(
+    s: Series,
+    /,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool,
+    upper_inclusive: bool,
+) -> Series:
+    """Remove outliers from a Series, given boundary values."""
+    if s.dtype == "category":
+        __logger__.info("Skipping categorical column.")
+        return s
 
+    if lower_bound is None and upper_bound is None:
+        __logger__.info("Skipping column with no boundaries.")
+        return s
 
-def _strip_whitespace_series(series: Series) -> Series:
-    if series.dtype == "string":
-        return series.str.strip()
-    return series
+    if lower_bound is not None and upper_bound is not None:
+        if lower_bound > upper_bound:
+            raise ValueError(
+                f"Lower bound {lower_bound} is greater than upper bound {upper_bound}."
+            )
 
+    __logger__.info("Removing outliers from %r.", s.name)
+    s = s.copy() if inplace else s
 
-def compute_entropy(value_counts: pa.Array) -> float:
-    """Compute the entropy using a value_counts array."""
-    counts = pa.compute.struct_field(value_counts, 1)
-    n = len(counts)
-    freqs = pa.compute.divide(
-        pa.compute.cast(counts, pa.float64()),
-        pa.compute.sum(counts),
+    # compute mask for values that are considered outliers
+    mask = detect_outliers_series(
+        s,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
     )
 
-    H = pa.compute.divide(
-        pa.compute.sum(pa.compute.multiply(freqs, pa.compute.log2(freqs))),
-        pa.compute.log2(n),
-    )
-    return -H.as_py()
+    # replace outliers with NaN
+    s.loc[mask] = pd.NA
+
+    if drop:
+        __logger__.info("Dropping rows which are outliers.")
+        s = s.loc[~mask]
+
+    return s
 
 
-def table_info(table: pa.Table) -> None:
-    """Print information about a table."""
-    size = table.nbytes / (1024 * 1024 * 1024)
-    print(f"shape={table.shape}  {size=:.3f} GiB")
-    M = max(map(len, table.column_names)) + 1
-    for name, col in tqdm(zip(table.column_names, table.columns)):
-        num_total = len(col)
-        num_null = pa.compute.sum(pa.compute.is_null(col)).as_py()
-        value_counts = col.value_counts()
-        num_uniques = len(value_counts) - bool(num_null)
-        nulls = f"{num_null / num_total:7.2%}" if num_null else f"{'None':7s}"
-        uniques = (
-            num_uniques / (num_total - num_null)
-            if num_total > num_null
-            else num_uniques / num_total
-        )
-        entropy = compute_entropy(value_counts)
-        dtype = str(col.type)[:10]
-        print(
-            f"{name:{M}s}  {nulls=:s}  {num_uniques=:9d} ({uniques:7.2%})"
-            f"  {entropy=:7.2%}  {dtype=:s}"
-        )
-
-
-def remove_outliers(
-    df: DataFrame, /, description: DataFrame, dropna: bool = True
+def remove_outliers_dataframe(
+    df: DataFrame,
+    /,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
+    lower_bound: Mapping[T, float | None],
+    upper_bound: Mapping[T, float | None],
+    lower_inclusive: Mapping[T, bool],
+    upper_inclusive: Mapping[T, bool],
 ) -> DataFrame:
     """Remove outliers from a DataFrame, given boundary values."""
-    if mismatch := set(df.columns) ^ set(description.index):
-        raise ValueError(f"Columns of data and description do not match {mismatch}.")
+    __logger__.info("Removing outliers from DataFrame.")
+    df = df.copy() if not inplace else df
 
-    boundary_cols = ["lower", "upper", "lower_included", "upper_included"]
+    given_bounds = joint_keys(
+        lower_bound, upper_bound, lower_inclusive, upper_inclusive
+    )
 
-    if missing_columns := set(boundary_cols) - set(description.columns):
-        raise ValueError(f"Description table is missing columns {missing_columns}!")
+    if missing_bounds := set(df.columns) - given_bounds:
+        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
+    # if extra_bounds := given_bounds - set(df.columns):
+    #     raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
 
-    __logger__.info("Removing outliers from table.")
-    M = max(map(len, df.columns)) + 1
+    # compute mask for values that are considered outliers
+    mask = detect_outliers_dataframe(
+        df,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        lower_inclusive=lower_inclusive,
+        upper_inclusive=upper_inclusive,
+    )
 
+    # replace outliers with NaN
     for col in df:
-        s = df[col]
-        if s.dtype == "category":
-            __logger__.info(f"%-{M}s: Skipping categorical column.", col)
-            continue
+        df.loc[mask[col], col] = pd.NA
 
-        lower, upper, lbi, ubi = description.loc[col, boundary_cols]
-        if lbi:
-            mask = (s < lower).fillna(False)
-        else:
-            mask = (s <= lower).fillna(False)
-        if ubi:
-            mask |= (s > upper).fillna(False)
-        else:
-            mask |= (s >= upper).fillna(False)
-        if mask.any():
-            __logger__.info(
-                f"%-{M}s: Dropping %8.4f%% outliers.", col, mask.mean() * 100
-            )
-        else:
-            __logger__.info(f"%-{M}s: No outliers detected.", col)
-        df.loc[mask, col] = None
-    if dropna:
-        df = df.dropna(how="all", axis="index")
+    # drop rows where all columns are outliers
+    if drop:
+        __logger__.info("Dropping rows where all columns are outliers.")
+        # FIXME: https://github.com/pandas-dev/pandas/issues/54389
+        m = reduce(operator.__and__, (s for _, s in mask.items()))
+        df = df.loc[~m]
+
     return df
+
+
+@overload
+def remove_outliers(
+    s: Series,
+    /,
+    description: BoundaryInformation,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
+) -> Series: ...
+@overload
+def remove_outliers(
+    s: Series,
+    /,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
+    lower_bound: float | None = None,
+    upper_bound: float | None = None,
+    lower_inclusive: bool = True,
+    upper_inclusive: bool = True,
+) -> Series: ...
+@overload
+def remove_outliers(
+    df: DataFrame,
+    /,
+    description: BoundaryInformation | DataFrame,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
+) -> DataFrame: ...
+@overload
+def remove_outliers(
+    df: DataFrame,
+    /,
+    *,
+    drop: bool = True,
+    inplace: bool = False,
+    lower_bound: Mapping[T, float | None],
+    upper_bound: Mapping[T, float | None],
+    lower_inclusive: Mapping[T, bool],
+    upper_inclusive: Mapping[T, bool],
+) -> DataFrame: ...
+def remove_outliers(
+    obj,
+    description=None,
+    /,
+    *,
+    drop=True,
+    inplace=False,
+    lower_bound=None,
+    upper_bound=None,
+    lower_inclusive=None,
+    upper_inclusive=None,
+):
+    """Remove outliers from a DataFrame, given boundary values."""
+    if description is not None:
+        if not all(
+            [
+                lower_bound is None,
+                upper_bound is None,
+                lower_inclusive is None,
+                upper_inclusive is None,
+            ]
+        ):
+            raise ValueError("Either description or bounds should be given, not both.")
+        lower_bound = description["lower_bound"]
+        upper_bound = description["upper_bound"]
+        lower_inclusive = description["lower_inclusive"]
+        upper_inclusive = description["upper_inclusive"]
+    if isinstance(obj, Series):
+        return remove_outliers_series(
+            obj,
+            drop=drop,
+            inplace=inplace,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+    if isinstance(obj, DataFrame):
+        return remove_outliers_dataframe(
+            obj,
+            drop=drop,
+            inplace=inplace,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+    raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 
 
 def float_is_int(series: Series) -> bool:
@@ -200,12 +489,12 @@ def contains_no_information(df: DataFrame) -> Series:
     return df.nunique() <= 1
 
 
-def vlookup_uniques(df: DataFrame, /, values: Series) -> dict[str, list]:
+def vlookup_uniques(df: DataFrame, /, *, lookup_values: Series) -> dict[str, list]:
     r"""Vlookup unique values for each column in a dataframe."""
     uniques: dict[str, list] = {}
     for col in df.columns:
         mask = df[col].notna()
-        uniques[col] = list(values.loc[mask].unique())
+        uniques[col] = list(lookup_values.loc[mask].unique())
     return uniques
 
 
@@ -248,3 +537,132 @@ def aggregate_nondestructive(df: pandas_var) -> pandas_var:
     for col in result.columns:
         result[col].iloc[: nitems[col]] = df[col].loc[mask[col]]
     return result
+
+
+def describe(
+    s: Series | DataFrame,
+    /,
+    *,
+    # entropy: bool = True,
+    # # special values
+    # max_value: bool = True,
+    # mean_value: bool = True,
+    # median_value: bool = True,
+    # min_value: bool = True,
+    # mode_value: bool = True,
+    # std_value: bool = True,
+    # # counts of special values
+    # max_count: bool = True,
+    # min_count: bool = True,
+    # nan_count: bool = True,
+    # neg_count: bool = True,
+    # pos_count: bool = True,
+    # unique_count: bool = True,
+    # zero_count: bool = True,
+    # # frequencies of special values
+    # max_rate: bool = True,
+    # min_rate: bool = True,
+    # mode_rate: bool = True,
+    # nan_rate: bool = True,
+    # neg_rate: bool = True,
+    # pos_rate: bool = True,
+    # zero_rate: bool = True,
+    # unique_rate: bool = True,
+    # stats
+    quantiles: tuple[float, ...] = (0, 0.01, 0.5, 0.99, 1),
+) -> DataFrame:
+    r"""Describe a DataFrame on a per column basis."""
+    if isinstance(s, DataFrame):
+        df = s
+        return pd.concat([describe(df[col]) for col in df])
+
+    # crete a zero-scalar of the same type as the series
+    N = len(s)
+
+    # compute the special values
+    max_value = s.max()
+    min_value = s.min()
+    mode_value = s.mode().iloc[0]
+
+    try:
+        mean_value = s.mean()
+        median_value = s.median()
+        std_value = s.std()
+    except Exception:
+        mean_value = float("nan")
+        std_value = float("nan")
+        median_value = float("nan")
+
+    # compute counts
+    max_count = (s == max_value).sum()
+    min_count = (s == min_value).sum()
+    mode_count = (s == mode_value).sum()
+    nan_count = s.isna().sum()
+    unique_count = s.nunique()
+
+    try:
+        idx = s.first_valid_index()
+        # NOTE: dropna is necessary for duplicate index
+        _val = s.loc[idx].dropna().iloc[0] if idx is not None else 0
+        ZERO = _val - _val
+        neg_count = (s < ZERO).sum()
+        pos_count = (s > ZERO).sum()
+        zero_count = (s == ZERO).sum()
+    except Exception:
+        neg_count = pd.NA
+        pos_count = pd.NA
+        zero_count = pd.NA
+
+    # compute the rates
+    max_rate = max_count / N
+    min_rate = min_count / N
+    mode_rate = mode_count / N
+    nan_rate = nan_count / N
+    neg_rate = neg_count / N
+    pos_rate = pos_count / N
+    unique_rate = unique_count / N
+    zero_rate = zero_count / N
+
+    # stats
+    try:
+        entropy = stats.entropy(s.value_counts(), base=2)
+    except Exception:
+        entropy = pd.NA
+    try:
+        quantile_values = s.quantile(quantiles)
+    except Exception:
+        quantile_values = Series([float("nan")] * len(quantiles))
+
+    return DataFrame(
+        {
+            # stats
+            ("stats", "entropy"): entropy,
+            **{("quantile", f"{q:.2f}"): v for q, v in zip(quantiles, quantile_values)},
+            # special values
+            ("value", "max"): max_value,
+            ("value", "mean"): mean_value,
+            ("value", "median"): median_value,
+            ("value", "min"): min_value,
+            ("value", "mode"): mode_value,
+            ("value", "std"): std_value,
+            # counts
+            ("count", "max"): max_count,
+            ("count", "min"): min_count,
+            ("count", "mode"): mode_count,
+            ("count", "nan"): nan_count,
+            ("count", "neg"): neg_count,
+            ("count", "pos"): pos_count,
+            ("count", "unique"): unique_count,
+            ("count", "zero"): zero_count,
+            # rates
+            ("rate", "max"): max_rate,
+            ("rate", "min"): min_rate,
+            ("rate", "mode"): mode_rate,
+            ("rate", "nan"): nan_rate,
+            ("rate", "neg"): neg_rate,
+            ("rate", "pos"): pos_rate,
+            ("rate", "unique"): unique_rate,
+            ("rate", "zero"): zero_rate,
+        },
+        index=[s.name],
+    )

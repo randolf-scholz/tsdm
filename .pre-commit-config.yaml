@@ -1,12 +1,27 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
-minimum_pre_commit_version: 3.0.1
+minimum_pre_commit_version: 3.3.3
 default_language_version:
-  python: python3.10
+  python: python3.11
   node: "18.12.1"
 repos:
   #  - repo: meta
   #    hooks:
   #      - id: identity
+  - repo: local
+    hooks:
+      - id: markdownlint
+        name: markdownlint
+        types: [markdown]
+        language: system
+        stages: [manual]
+        verbose: true
+        entry: mdl
+        args:
+          ["-r", "~MD007,~MD013,~MD029,~MD033"]
+          # MD007: Unordered list indentation (false positives)
+          # MD013: Line length (unused)
+        # MD029: Ordered list item prefix (false positives)
+        # MD033: Inline HTML (unused)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
     rev: v4.4.0
@@ -25,7 +40,6 @@ repos:
         description: "ensures that (non-binary) executables have a shebang."
       - id: check-shebang-scripts-are-executable
         description: "ensures that (non-binary) files with a shebang are executable."
-        stages: [commit]
       - id: check-symlinks
         description: "checks for symlinks which do not point to anything."
       - id: check-toml
@@ -39,20 +53,18 @@ repos:
       - id: end-of-file-fixer
         description: "ensures that a file is either empty, or ends with one newline."
       - id: pretty-format-json
+        args: ["--autofix"]
+        exclude: ^.*.ipynb$
         description: "sets a standard for formatting json files."
       - id: requirements-txt-fixer
         description: "sorts entries in requirements.txt"
       - id: trailing-whitespace
         description: "trims trailing whitespace."
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: "v1.10.0"
+    rev: v1.10.0
     hooks:
       - id: python-check-blanket-noqa
         description: "Enforce that `noqa` annotations always occur with specific codes. Sample annotations: `# noqa: F401`, `# noqa: F401,W203`"
-      - id: python-check-blanket-type-ignore
-        description: "Enforce that `type: ignore` annotations always occur with specific codes. Sample annotations: `# type: ignore`, `# type: ignore,W203`"
-      - id: python-no-eval
-        description: "Enforce that `eval` is not used."
       - id: python-no-log-warn
         description: "Enforce that `logging.warn` is not used."
       - id: rst-directive-colons
@@ -61,7 +73,7 @@ repos:
         description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.0-alpha.9-for-vscode" # Use the sha or tag you want to point at
+    rev: v3.0.3
     hooks:
       - id: prettier
   # absolufy-imports
@@ -69,7 +81,6 @@ repos:
     rev: v0.3.1
     hooks:
       - id: absolufy-imports
-        description: Automatically convert relative imports to absolute
   # isort
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -77,43 +88,39 @@ repos:
       - id: isort
   # black
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 23.9.1
     hooks:
       - id: black
       - id: black-jupyter
   # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
-    rev: 1.14.0
+    rev: 1.16.0
     hooks:
       - id: blacken-docs
         files: (^src/|^tests/)
         types: [python]
-        description: " Run `black` on python code blocks in documentation files "
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.275
+    rev: v0.0.290
     hooks:
       - id: ruff
         files: (^src/|^tests/)
   # flake8
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: 6.1.0
     hooks:
       - id: flake8
         files: (^src/|^tests/)
         additional_dependencies:
           - flake8-annotations
-          - flake8-black
           - flake8-bugbear
           - flake8-comprehensions
-          - flake8-docstrings # wraps pydocstyle
-          - flake8-nb
+          - flake8-docstrings
           - flake8-pyi
           - flake8-pyproject
           - flake8-rst
           - flake8-rst-docstrings
   # yesqa
-  # TODO: remove if https://github.com/PyCQA/flake8/issues/603 is fixed
   - repo: https://github.com/asottile/yesqa
     rev: v1.5.0
     hooks:
@@ -125,44 +132,91 @@ repos:
     hooks:
       - id: pydocstyle
         files: (^src/|^tests/)
-        additional_dependencies:
-          - tomli
-        description: pydocstyle is a static analysis tool for checking compliance with Python docstring conventions.
   # slotscheck
-  - repo: https://github.com/ariebovenberg/slotscheck
-    rev: v0.16.5
-    hooks:
-      - id: slotscheck
-        files: ^src/
-        types: [python]
-        language: system
-        description: "Slotscheck: Ensure your __slots__ are working properly."
-  # clear jupyter notebooks in dev-folder
-  - repo: local
-    hooks:
-      - id: jupyter-nb-clear-output
-        name: jupyter-nb-clear-output
-        description: Clear output cells in Jupyter notebooks
-        files: (^dev/|^experiments/)
-        stages: [commit]
-        types: [jupyter]
-        language: system
-        entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
-  # mypy
-  #-   repo: https://github.com/pre-commit/mirrors-mypy
-  #    rev: v0.941
+  #  - repo: https://github.com/ariebovenberg/slotscheck
+  #    rev: v0.17.0
   #    hooks:
-  #    - id: mypy
-  #      files: (^src/|^tests/)
-  #      args:
-  #      -   --warn-unused-configs
-  #      -   --ignore-missing-imports
-  #      additional_dependencies:
-  #      -   numpy==1.21.5
-  #      -   types-all
-  # flake8-nb
-  #- repo: https://github.com/s-weigand/flake8-nb
-  #  rev: v0.4.0
-  #  hooks:
-  #  - id: flake8-nb
-  #    files: (^examples/.*.ipynb$|^bugs/.*.ipynb$)
+  #      - id: slotscheck
+  #        language: system
+  #        files: ^src/
+  # mypy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1
+    hooks:
+      - id: mypy
+        files: (^src/|^tests/)
+        additional_dependencies: [types-all]
+        stages: [pre-push]
+  # pyright
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.327
+    hooks:
+      - id: pyright
+        files: (^src/|^tests/)
+        stages: [pre-push]
+  # nbstripout-fast
+  - repo: https://github.com/deshaw/nbstripout-fast.git
+    rev: v1.0.2
+    hooks:
+      - id: nbstripout-fast
+        files: ^dev/
+  # pyright
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.327
+    hooks:
+      - id: pyright
+        # not everything works with pyright yet
+        # verbose regex
+        files: |
+          (?x)^(
+            (?!)  # intentionally matches nothing
+            #|tests/
+            |src/tsdm/constants.py
+            #|src/tsdm/backend
+            |src/tsdm/config
+            #|src/tsdm/datasets
+            #|src/tsdm/encoders
+            |src/tsdm/linalg
+            #|src/tsdm/logutils
+            |src/tsdm/metrics
+            |src/tsdm/models
+            |src/tsdm/optimizers
+            #|src/tsdm/random
+            #|src/tsdm/tasks
+            |src/tsdm/types
+            #|src/tsdm/utils
+            |src/tsdm/viz
+          )
+  - repo: https://github.com/randolf-scholz/assorted-hooks.git
+    rev: v0.1.37
+    hooks:
+      - id: pyproject-validate-version
+      - id: pyproject-update-deps
+      - id: pyproject-check-deps
+        args: ["--ignore-project-deps", "tensorboard"] # torch does not list this...
+      - id: python-no-blanket-type-ignore
+        files: (^src/|^tests/)
+      - id: python-no-builtin-eval
+        files: (^src/|^tests/)
+      - id: python-use-imported-attributes
+        files: (^src/|^tests/)
+      - id: python-check-no-mixed-args
+        files: ^src/
+        args:
+          - "--ignore-names"
+          - "forward"
+          - "predict"
+          - "--ignore-decorators"
+          - "jit.script"
+          - "--ignore-dunder"
+          # - "--allow-one"
+          - "--ignore-without-positional-only"
+      - id: python-check-standard-generics
+        files: (^src/|^tests/)
+      - id: check-separator-length
+        files: (^src/|^tests/)
+      - id: python-check-__all__-exists
+        files: ^src/
+      - id: python-check-clean-interface
+        files: ^src/
+        args: ["--no-load-silent"]

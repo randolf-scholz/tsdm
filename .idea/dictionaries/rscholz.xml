@@ -51,6 +51,7 @@
       <w>brubaker</w>
       <w>builddir</w>
       <w>bysource</w>
+      <w>castable</w>
       <w>categoricals</w>
       <w>cdmp</w>
       <w>celu</w>
@@ -117,6 +118,7 @@
       <w>ferreira</w>
       <w>ffill</w>
       <w>figsize</w>
+      <w>filespec</w>
       <w>fillna</w>
       <w>finfo</w>
       <w>fluo</w>
@@ -172,6 +174,7 @@
       <w>issubclass</w>
       <w>issubdtype</w>
       <w>iterdir</w>
+      <w>itruediv</w>
       <w>janahan</w>
       <w>januschowski</w>
       <w>jaspreet</w>
@@ -214,6 +217,7 @@
       <w>lufl</w>
       <w>lₘₐₓ</w>
       <w>mant</w>
+      <w>markdownlint</w>
       <w>mastertoc</w>
       <w>mathdefault</w>
       <w>mathtext</w>
@@ -372,6 +376,7 @@
       <w>stdev</w>
       <w>stdv</w>
       <w>stdvs</w>
+      <w>storetime</w>
       <w>subblock</w>
       <w>subblocks</w>
       <w>subitems</w>
@@ -379,6 +384,7 @@
       <w>subsampler</w>
       <w>subsamplers</w>
       <w>sundar</w>
+      <w>suptitle</w>
       <w>surjective</w>
       <w>syama</w>
       <w>symm</w>

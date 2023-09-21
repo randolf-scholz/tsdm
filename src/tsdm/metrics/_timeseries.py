@@ -22,7 +22,8 @@ __all__ = [
 ]
 
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Final, Optional, Protocol, runtime_checkable
+from collections.abc import Callable
+from typing import Final, Optional, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, jit, nn
@@ -50,6 +51,7 @@ class TimeSeriesLoss(Protocol):
         However, for the sake of simplicity, we assume that the tensors are
         padded with missing values, such that they are of equal length.
         """
+        ...
 
 
 class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
@@ -168,7 +170,7 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
         # Validate the axes.
         if len(self.channel_axes) != self.weight.ndim:
             raise ValueError(
-                f"Number of axes does not match weight shape:"
+                "Number of axes does not match weight shape:"
                 f" {len(self.channel_axes)} != {self.weight.ndim=}"
             )
 
@@ -202,7 +204,7 @@ class ND(TimeSeriesBaseLoss):
 
 @autojit
 class NRMSE(TimeSeriesBaseLoss):
-    r"""Compute the normalized root mean square error.
+    r"""Compute the normalized root mean squared error.
 
     .. math:: 𝖭𝖱𝖬𝖲𝖤(x，x̂) ≔ \frac{\sqrt{\frac{1}{T}∑_{tk} |x̂_{tk} - x_{tk}|^2 }}{∑_{tk} |x_{tk}|}
 

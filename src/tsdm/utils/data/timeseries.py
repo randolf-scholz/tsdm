@@ -93,11 +93,6 @@ IndexedArray: TypeAlias = Series | DataFrame | TimeTensor
 r"""Type Hint for IndexedArrays."""
 
 
-def is_indexed_array(x: Any) -> bool:
-    r"""Test if `Union[Series, DataFrame, TimeTensor]`."""
-    return isinstance(x, (DataFrame, Series, TimeTensor))
-
-
 class TimeSeriesTuple(NamedTuple):
     r"""A tuple of Tensors describing a slice of a multivariate timeseries."""
 

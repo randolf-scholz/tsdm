@@ -4,8 +4,9 @@
    :name: mastertoc
 
    API <apidoc/modules>
-   RECIPES <RECIPES>
-   CHANGELOG <CHANGELOG>
-   CONTRIBUTING <CONTRIBUTING>
-   LICENSE <LICENSE>
-   README <README>
+   CHANGELOG <content/CHANGELOG>
+   CONTRIBUTING <content/CONTRIBUTING>
+   ISSUES <content/ISSUES>
+   LICENSE <content/LICENSE>
+   README <content/README>
+   RECIPES <content/RECIPES>

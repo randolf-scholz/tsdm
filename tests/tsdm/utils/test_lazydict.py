@@ -42,7 +42,7 @@ def test_lazydict() -> None:
         5: (keyword_only, {"d": 1, "e": 1, "f": 1, "g": 1}),
         6: (generic, (1, 1, 1, 1), {"d": 1, "e": 1, "f": 1, "g": 1}),
     }
-    ld = LazyDict(example_dict, answer=42)
+    ld = LazyDict(example_dict, fixed_value=3)
 
     assert isinstance(ld, LazyDict)
     assert isinstance(ld, dict)

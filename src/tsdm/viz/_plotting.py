@@ -5,13 +5,11 @@ __all__ = [
     "visualize_distribution",
     "shared_grid_plot",
     "plot_spectrum",
-    "rasterize",
     "center_axes",
 ]
 
 import logging
-from collections.abc import Callable
-from pathlib import Path
+from collections.abc import Callable, Mapping
 from typing import Any, Literal, Optional, TypeAlias
 
 import numpy as np
@@ -20,10 +18,11 @@ from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.pyplot import Axes, Figure
 from numpy.typing import ArrayLike, NDArray
-from PIL import Image
 from scipy.stats import mode
 from torch import Tensor
 from torch.linalg import eigvals
+
+from tsdm.constants import EMPTY_MAP
 
 __logger__ = logging.getLogger(__name__)
 
@@ -43,6 +42,7 @@ Location: TypeAlias = Literal[
 @torch.no_grad()
 def visualize_distribution(
     data: ArrayLike,
+    /,
     *,
     ax: Axes,
     num_bins: int = 50,
@@ -87,7 +87,7 @@ def visualize_distribution(
         high = np.quantile(x, 1 - 0.01)
         bins = np.linspace(low, high, num=num_bins)
 
-    ax.hist(x, bins=bins, density=True)
+    ax.hist(x, bins=bins, density=True)  # type: ignore[arg-type]
 
     if print_stats:
         stats = {
@@ -120,16 +120,17 @@ def visualize_distribution(
 @torch.no_grad()
 def shared_grid_plot(
     data: ArrayLike,
+    /,
     *,
     plot_func: Callable[..., None],
-    plot_kwargs: Optional[dict] = None,
+    plot_kwargs: Mapping[str, Any] = EMPTY_MAP,
     titles: Optional[list[str]] = None,
     row_headers: Optional[list[str]] = None,
     col_headers: Optional[list[str]] = None,
     xlabels: Optional[list[str]] = None,
     ylabels: Optional[list[str]] = None,
-    **subplots_kwargs: Any,
-) -> tuple[Figure, NDArray[Axes]]:
+    subplots_kwargs: Mapping[str, Any] = EMPTY_MAP,
+) -> tuple[Figure, np.ndarray[Axes]]:  # type: ignore[type-arg]
     r"""Create a compute_grid plot with shared axes and row/col headers.
 
     References:
@@ -142,21 +143,17 @@ def shared_grid_plot(
 
     nrows, ncols = array.shape[:2]
 
-    _subplot_kwargs = {
+    subplots_kwargs = {
         "figsize": (5 * ncols, 3 * nrows),
         "sharex": "col",
         "sharey": "row",
         "squeeze": False,
         "tight_layout": True,
-    }
+    } | subplots_kwargs
 
-    _subplot_kwargs.update(subplots_kwargs or {})
-
-    plot_kwargs = {} if plot_kwargs is None else plot_kwargs
-
-    axes: NDArray[Axes]
+    axes: NDArray[Axes]  # type: ignore[type-var]
     fig: Figure
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **_subplot_kwargs)
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **subplots_kwargs)  # type: ignore[arg-type]
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):
@@ -166,19 +163,19 @@ def shared_grid_plot(
     if titles is not None:
         # for ax, title in np.nditer([axes, titles]):
         for ax, title in zip(axes.flat, np.asarray(titles).flat):
-            ax.set_title(title)
+            ax.set_title(title)  # pyright: ignore[reportGeneralTypeIssues]
 
     # set axes x-labels
     if xlabels is not None:
         # for ax, xlabel in np.nditer([axes[-1], xlabels], flags=["refs_ok"]):
         for ax, xlabel in zip(axes[-1], np.asarray(xlabels).flat):
-            ax.item().set_xlabel(xlabel)
+            ax.set_xlabel(xlabel)
 
     # set axes y-labels
     if ylabels is not None:
         # for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=["refs_ok"]):
         for ax, ylabel in zip(axes[:, 0], np.asarray(ylabels).flat):
-            ax.item().set_ylabel(ylabel)
+            ax.set_ylabel(ylabel)
 
     pad = 5  # in points
 
@@ -213,30 +210,15 @@ def shared_grid_plot(
     return fig, axes
 
 
-def rasterize(
-    fig: Figure, w: int = 3, h: int = 3, px: int = 512, py: int = 512
-) -> np.ndarray:
-    r"""Convert figure to image with specific pixel size."""
-    dpi = (px / w + py / h) // 2  # compromise
-    fig.set_dpi(dpi)
-    fig.set_size_inches(w, h)
-    file = Path(f"tmp-{hash(fig)}.png")
-    fig.savefig(file, dpi=dpi)
-    im = Image.open(file)
-    arr = np.array(im)
-    file.unlink()
-    return arr
-
-
 @torch.no_grad()
 def plot_spectrum(
     kernel: Tensor | NDArray,
     /,
     *,
     style: str = "ggplot",
-    axis_kwargs: Optional[dict] = None,
-    figure_kwargs: Optional[dict] = None,
-    scatter_kwargs: Optional[dict] = None,
+    axis_kwargs: Mapping[str, Any] = EMPTY_MAP,
+    figure_kwargs: Mapping[str, Any] = EMPTY_MAP,
+    scatter_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> Figure:
     r"""Create scatter-plot of complex matrix eigenvalues.
 
@@ -253,17 +235,17 @@ def plot_spectrum(
         "aspect": "equal",
         "ylabel": "imag part",
         "xlabel": "real part",
-    } | (axis_kwargs or {})
+    } | axis_kwargs
 
     figure_kwargs = {
         "figsize": (4, 4),
         "constrained_layout": True,
         "dpi": 256,  # default: 1024px×1024px
-    } | (figure_kwargs or {})
+    } | figure_kwargs
 
     scatter_kwargs = {
         "edgecolors": "none",
-    } | (scatter_kwargs or {})
+    } | scatter_kwargs
 
     if not isinstance(kernel, Tensor):
         kernel = torch.tensor(kernel, dtype=torch.float32)
@@ -271,7 +253,7 @@ def plot_spectrum(
     with plt.style.context(style):
         assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
         eigs = eigvals(kernel).detach().cpu()
-        fig, ax = plt.subplots(**figure_kwargs)
+        fig, ax = plt.subplots(**figure_kwargs)  # type: ignore[arg-type]
         ax.set(**axis_kwargs)
         ax.scatter(eigs.real, eigs.imag, **scatter_kwargs)
 

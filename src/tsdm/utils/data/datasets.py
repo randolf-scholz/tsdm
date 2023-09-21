@@ -41,13 +41,9 @@ class DatasetCollection(TorchDataset[TorchDataset[O]], Mapping[K, TorchDataset[O
         return len(self.dataset)
 
     @overload
-    def __getitem__(self, key: Sequence[K] | slice) -> O:
-        ...
-
+    def __getitem__(self, key: Sequence[K] | slice) -> O: ...
     @overload
-    def __getitem__(self, key: K) -> TorchDataset[O]:
-        ...
-
+    def __getitem__(self, key: K) -> TorchDataset[O]: ...
     def __getitem__(self, key):
         r"""Hierarchical lookup."""
         # test for hierarchical indexing
@@ -97,13 +93,9 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: K) -> TorchDatasetVar:
-        ...
-
+    def __getitem__(self, key: K) -> TorchDatasetVar: ...
     @overload
-    def __getitem__(self, key: tuple[K, K2]) -> Any:
-        ...
-
+    def __getitem__(self, key: tuple[K, K2]) -> Any: ...
     def __getitem__(self, key):
         r"""Get the dataset for the given key.
 
@@ -120,7 +112,9 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
             return self.datasets[key]  # type: ignore[index]
 
     @classmethod
-    def from_dataframe(cls, df: DataFrame, levels: Optional[list[str]] = None) -> Self:
+    def from_dataframe(
+        cls, df: DataFrame, /, *, levels: Optional[list[str]] = None
+    ) -> Self:
         r"""Create a `MappingDataset` from a `DataFrame`.
 
         If ``levels`` is given, the selected levels from the `DataFrame`'s `MultiIndex` are used as keys.

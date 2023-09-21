@@ -4,6 +4,9 @@ __all__ = [
     # Classes
     "Decorator",
     "ClassDecorator",
+    "IterKeys",
+    "IterValues",
+    "IterItems",
     # Functions
     "decorator",
     "debug",
@@ -17,8 +20,9 @@ __all__ = [
     "wrap_method",
     # Class Decorators
     "autojit",
-    "IterItems",
-    "IterKeys",
+    "iter_items",
+    "iter_keys",
+    "iter_values",
     # Exceptions
     "DecoratorError",
 ]
@@ -26,8 +30,7 @@ __all__ = [
 import ast
 import gc
 import logging
-from collections.abc import Sequence
-from copy import deepcopy
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import wraps
 from inspect import Parameter, Signature, getsource, signature
@@ -35,7 +38,6 @@ from time import perf_counter_ns
 from types import GenericAlias
 from typing import (
     Any,
-    Callable,
     Concatenate,
     NamedTuple,
     Optional,
@@ -46,18 +48,19 @@ from typing import (
 )
 
 from torch import jit, nn
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from tsdm.config import CONFIG
-from tsdm.types.abc import CollectionType
 from tsdm.types.aliases import Nested
-from tsdm.types.protocols import NTuple
+from tsdm.types.protocols import MappingProtocol, NTuple
 from tsdm.types.variables import (
+    CollectionType,
     any_var as T,
-    class_var as Class,
+    key_var as K,
     object_var as O,
     return_var_co as R,
     torch_module_var,
+    value_co as V_co,
 )
 from tsdm.utils.funcutils import rpartial
 
@@ -90,6 +93,7 @@ class Decorator(Protocol):
 
     def __call__(self, func: Callable, /) -> Callable:
         r"""Decorate a function."""
+        ...
 
 
 class ClassDecorator(Protocol):
@@ -97,16 +101,13 @@ class ClassDecorator(Protocol):
 
     def __call__(self, cls: type, /) -> type:
         r"""Decorate a class."""
+        ...
 
 
 def collect_exit_points(func: Callable) -> list[ast.Return]:
     """Collect all exit points of a function as ast nodes."""
     tree = ast.parse(getsource(func))
-    exit_points = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Return):
-            exit_points.append(node)
-    return exit_points
+    return [node for node in ast.walk(tree) if isinstance(node, ast.Return)]
 
 
 def exit_point_names(func: Callable) -> list[tuple[str, ...]]:
@@ -317,8 +318,8 @@ def decorator(deco: Callable) -> Callable:
         )
     if not len(BUCKETS[POSITIONAL_ONLY, True]) == 1:
         raise ErrorHandler(
-            "Decorator must have exactly 1 POSITIONAL_ONLY argument: the function to be decorated."
-            ">>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
+            "Decorator must have exactly 1 POSITIONAL_ONLY argument: the function to be"
+            " decorated.>>> def deco(func, /, *, ko1, ko2, **kwargs): ...",
             error_msg,
         )
     if BUCKETS[VAR_POSITIONAL, True]:
@@ -428,28 +429,17 @@ def timefun(
             timefun_logger.log(
                 loglevel, "%s executed in %.4f s", func.__qualname__, elapsed
             )
-        except Exception as E:
+        except Exception as exc:
             timefun_logger.error(
-                loglevel, "%s failed with Exception %s", func.__qualname__, E
+                loglevel, "%s failed with Exception %s", func.__qualname__, exc
             )
-            raise RuntimeError("Function execution failed") from E
+            raise RuntimeError("Function execution failed") from exc
         finally:
             gc.enable()
 
         return (result, elapsed) if append else result
 
     return _timed_fun
-
-
-# @decorator
-# def sphinx_value(func: Callable, value: Any, /) -> Callable:
-#     r"""Use alternative attribute value during sphinx compilation - useful for attributes."""
-#
-#     @wraps(func)
-#     def _wrapper(*func_args, **func_kwargs):
-#         return value
-#
-#     return _wrapper if os.environ.get("GENERATING_DOCS", False) else func
 
 
 def trace(func: Callable[P, R]) -> Callable[P, R]:
@@ -471,11 +461,11 @@ def trace(func: Callable[P, R]) -> Callable[P, R]:
         try:
             logger.info("%s: EXECUTING", func.__qualname__)
             result = func(*args, **kwargs)
-        except (KeyboardInterrupt, SystemExit) as E:
-            raise E
-        except Exception as E:
-            logger.error("%s: FAILURE with Exception %s", func.__qualname__, E)
-            raise RuntimeError(f"Function execution failed with Exception {E}") from E
+        except Exception as exc:
+            logger.error("%s: FAILURE with Exception %s", func.__qualname__, exc)
+            raise RuntimeError(
+                f"Function execution failed with Exception {exc}"
+            ) from exc
         logger.info(
             "%s: SUCCESS with result=%s", func.__qualname__, type(result).__name__
         )
@@ -572,70 +562,120 @@ def vectorize(
     return _wrapper
 
 
-@overload
-def IterItems(obj: Class) -> Class:
-    ...
+class IterKeys(MappingProtocol[K, V_co], Protocol[K, V_co]):
+    r"""Protocol for objects with __iter__ and items()."""
+
+    @override
+    def __iter__(self) -> Iterator[K]: ...
+
+
+class IterValues(MappingProtocol[K, V_co], Protocol[K, V_co]):
+    r"""Protocol for objects with __iter__ and items()."""
+
+    @override
+    def __iter__(self) -> Iterator[V_co]: ...  # type: ignore[override]
+
+
+class IterItems(MappingProtocol[K, V_co], Protocol[K, V_co]):
+    r"""Protocol for objects with __iter__ and items()."""
+
+    @override
+    def __iter__(self) -> Iterator[tuple[K, V_co]]: ...  # type: ignore[override]
 
 
 @overload
-def IterItems(obj: O) -> O:
-    ...
-
-
-def IterItems(obj: T) -> T:
-    r"""Wrap a class such that `__getitem__` returns (key, value) pairs."""
+def iter_keys(obj: type[MappingProtocol[K, V_co]], /) -> type[IterKeys[K, V_co]]: ...
+@overload
+def iter_keys(obj: MappingProtocol[K, V_co], /) -> IterKeys[K, V_co]: ...
+@overload
+def iter_keys(obj: T, /) -> T: ...
+def iter_keys(obj, /):
+    r"""Redirects __iter__ to keys()."""
     base_class = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type:ignore[valid-type, misc]
         r"""A simple Wrapper."""
 
-        def __getitem__(self, key: Any) -> tuple[Any, Any]:
-            r"""Get the item from the dataset."""
-            return key, super().__getitem__(key)
-
-        def __repr__(self) -> str:
-            r"""Representation of the dataset."""
-            return r"IterItems@" + super().__repr__()
-
-    if isinstance(obj, type):
-        return WrappedClass  # type: ignore[return-value]
-    obj = deepcopy(obj)
-    obj.__class__ = WrappedClass
-    return obj
-
-
-@overload
-def IterKeys(obj: Class) -> Class:
-    ...
-
-
-@overload
-def IterKeys(obj: O) -> O:
-    ...
-
-
-def IterKeys(obj: T) -> T:
-    r"""Wrap a class such that `__getitem__` returns key instead."""
-    base_class = obj if isinstance(obj, type) else type(obj)
-
-    @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
-        r"""A simple Wrapper."""
-
-        def __getitem__(self, key: Any) -> tuple[Any, Any]:
-            r"""Return the key as is."""
-            return key
+        def __iter__(self):
+            return iter(self.keys())
 
         def __repr__(self) -> str:
             r"""Representation of the new object."""
             return r"IterKeys@" + super().__repr__()
 
     if isinstance(obj, type):
-        return WrappedClass  # type: ignore[return-value]
-    obj = deepcopy(obj)
-    obj.__class__ = WrappedClass
-    return obj
+        return WrappedClass
+
+    try:
+        new_obj = WrappedClass(obj)
+    except Exception as exc:
+        raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
+    return new_obj
+
+
+@overload
+def iter_values(
+    obj: type[MappingProtocol[K, V_co]], /
+) -> type[IterValues[K, V_co]]: ...
+@overload
+def iter_values(obj: MappingProtocol[K, V_co], /) -> IterValues[K, V_co]: ...
+@overload
+def iter_values(obj: T, /) -> T: ...
+def iter_values(obj, /):
+    r"""Redirects __iter__ to values()."""
+    base_class = obj if isinstance(obj, type) else type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
+        r"""A simple Wrapper."""
+
+        def __iter__(self):
+            return iter(self.values())
+
+        def __repr__(self) -> str:
+            r"""Representation of the new object."""
+            return r"IterValues@" + super().__repr__()
+
+    if isinstance(obj, type):
+        return WrappedClass
+
+    try:
+        new_obj = WrappedClass(obj)
+    except Exception as exc:
+        raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
+    return new_obj
+
+
+@overload
+def iter_items(obj: type[MappingProtocol[K, V_co]], /) -> type[IterItems[K, V_co]]: ...
+@overload
+def iter_items(obj: MappingProtocol[K, V_co], /) -> IterItems[K, V_co]: ...
+@overload
+def iter_items(obj: T, /) -> T: ...
+def iter_items(obj, /):
+    r"""Redirects __iter__ to items()."""
+    base_class = obj if isinstance(obj, type) else type(obj)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
+        r"""A simple Wrapper."""
+
+        def __iter__(self):
+            return iter(self.items())
+
+        def __repr__(self) -> str:
+            r"""Representation of the dataset."""
+            return r"IterItems@" + super().__repr__()
+
+    if isinstance(obj, type):
+        return WrappedClass
+
+    try:
+        new_obj = WrappedClass(obj)
+    except Exception as exc:
+        raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
+    return new_obj
 
 
 @decorator
@@ -824,6 +864,7 @@ def return_namedtuple(
     """Convert a function's return type to a namedtuple."""
     name = f"{func.__name__}_tuple" if name is None else name
 
+    # noinspection PyUnresolvedReferences
     return_type: GenericAlias = func.__annotations__.get("return", NotImplemented)
     if return_type is NotImplemented:
         raise DecoratorError(func, "No return type hint found.")
@@ -851,6 +892,7 @@ def return_namedtuple(
 
     @wraps(func)
     def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> NTuple:
+        # noinspection PyCallingNonCallable
         return tuple_type(*func(*func_args, **func_kwargs))
 
     return _wrapper
@@ -890,3 +932,47 @@ def recurse_on_builtin_container(
                 raise TypeError(f"Unsupported type: {type(x)}")
 
     return recurse
+
+
+# def extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable]:
+#     """Decorator to extend a parent function.
+#
+#     For example, when one wants to extend the __init__ of a parent class
+#     with an extra argument.
+#
+#     This will synthesize a new function that combines the extra arguments with
+#     the ones of the parent function. The new arguments passed to the synthesized
+#     function are available within the function body.
+#
+#     Example:
+#
+#     class Parent:
+#         def foo(self, a, b, /, *, key):
+#             ...
+#
+#     class Child(Parent):
+#
+#         @extends(Parent.foo)
+#         def foo(self, c, *parent_args, *, bar, **parent_kwargs):
+#             super().foo(*parent_args, **parent_kwargs)
+#             ...
+#
+#     the synthesized function will roughly look like this:
+#
+#         def __synthetic__init__(self, a, b, c, /, *, foo, bar):
+#             parent_args = (a, b)
+#             parent_kwargs = dict(key=key)
+#             func_args = (c,)
+#             func_kwargs = dict(bar=bar)
+#             wrapped_func(*parent_args, *func_args, **parent_kwargs, **func_kwargs)
+#
+#     Note:
+#
+#         - neither parent nor child func may have varargs.
+#         -
+#         - The child func may reuse keyword arguments from the parent func and give them different keywords.
+#           - if keyword args are reused, they won't be included in parent_kwargs.
+#         - additional positional only args must have defaults values (LSP!)
+#         - additional positional only arguments are always added after positional-only arguments of the parent.
+#     """
+#     ...

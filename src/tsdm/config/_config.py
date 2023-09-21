@@ -39,7 +39,7 @@ def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
     return d
 
 
-def generate_folders(d: dict, current_path: Path) -> None:
+def generate_folders(d: dict, /, *, current_path: Path) -> None:
     r"""Create nested folder structure based on nested dictionary index.
 
     References:
@@ -48,10 +48,10 @@ def generate_folders(d: dict, current_path: Path) -> None:
     for directory in d:
         path = current_path.joinpath(directory)
         if d[directory] is None:
-            print(f"Creating folder {path!r}.")
+            # print(f"Creating folder {path!r}.")
             path.mkdir(parents=True, exist_ok=True)
         else:
-            generate_folders(d[directory], path)
+            generate_folders(d[directory], current_path=path)
 
 
 class ConfigMeta(type):
@@ -104,7 +104,7 @@ class Config(metaclass=ConfigMeta):
         self.LOGGER.info("Available Models: %s", set(self.MODELS))
         self.LOGGER.info("Available Datasets: %s", set(self.DATASETS))
         self.LOGGER.debug("Initializing folder structure")
-        generate_folders(self.CONFIG_FILE["folders"], self.BASEDIR)
+        generate_folders(self.CONFIG_FILE["folders"], current_path=self.BASEDIR)
         self.LOGGER.debug("Created folder structure in %s", self.BASEDIR)
 
     @property

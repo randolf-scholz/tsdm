@@ -1,7 +1,7 @@
-#
-# https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
-#
+# GitLab CI/CD Pipeline Configuration Reference: https://docs.gitlab.com/ee/ci/yaml/
+# Template: https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
 
+# region global --------------------------------------------------------------------------------------------------------
 image: python:3.10-bullseye
 
 stages:
@@ -36,11 +36,9 @@ variables:
 before_script:
   - mkdir -p $MAIN_CACHE $PUBLIC_DIR $REPORT_DIR $BADGE_DIR
   - source ${VENVNAME}/bin/activate
+# endregion global -----------------------------------------------------------------------------------------------------
 
-################
-# STAGE: SETUP #
-################
-
+# region setup ---------------------------------------------------------------------------------------------------------
 setup:
   stage: build
   cache:
@@ -81,9 +79,7 @@ setup:
   script:
     # We first build the package and then install it. Finally, we install the dev dependencies.
     # This makes sure that the package can be built and installed.
-    # build and install package
     # set version number depending on CI_PIPELINE_ID
-    - pip list
     - VERSION=$(poetry version -s)
     - poetry version "$VERSION.post${CI_PIPELINE_IID}"
     # verify version number OK (cf. https://peps.python.org/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions)
@@ -94,13 +90,12 @@ setup:
     # build the package.
     - poetry build
     # install package
-    #- poetry install
-    - pip install --prefer-binary --upgrade $(ls dist/*.whl)
+    - pip install --upgrade $(ls dist/*.whl)
     # install dev dependencies.
-    # update the requirements.txt files.
-    - ./run/generate_requirements.sh
-    - pip install --prefer-binary --upgrade -r requirements-dev.txt
+    - pip install --upgrade -e .[dev]
     - pip list
+    - echo "validating that package can be imported"
+    - python -c "import ${MODULENAME}"
   after_script:
     - source ${VENVNAME}/bin/activate
     - VERSION="$(poetry version -s)"
@@ -128,11 +123,9 @@ setup:
     paths:
       - dist/
       - $BADGE_DIR/
+# endregion setup ------------------------------------------------------------------------------------------------------
 
-###################
-# STAGE: ANALYSIS #
-###################
-
+# region analysis ------------------------------------------------------------------------------------------------------
 pylint:
   # see .pylintrc for configuration
   stage: analysis
@@ -144,6 +137,7 @@ pylint:
   needs:
     - setup
   script:
+    - pylint --version
     # generate reports
     - pylint $MODULEDIR
       --exit-zero
@@ -164,7 +158,7 @@ pylint:
       --right-text="$SCORE"
       --right-color=$COLOR
       --whole-link="https://github.com/PyCQA/pylint"
-      --logo="https://raw.githubusercontent.com/PyCQA/pylint/69404bbf1a513381fd90e8f0c777d64b7923e429/doc/logo.svg"
+      --logo="https://www.pylint.org/css/pylint.svg"
       --embed-logo
       > $BADGE_DIR/pylint.svg
   artifacts:
@@ -182,6 +176,7 @@ flake8:
   needs:
     - setup
   script:
+    - flake8 --version
     - flake8 $MODULEDIR
     - flake8 $TESTDIR
     - isort $MODULEDIR --check-only --diff
@@ -223,6 +218,7 @@ mypy:
     - setup
   allow_failure: true
   script:
+    - mypy --version
     - mypy $MODULEDIR --show-error-codes --pretty --junit-xml $REPORT_DIR/mypy.xml
     - mypy $TESTDIR --show-error-codes --pretty --junit-xml $REPORT_DIR/mypy_test.xml
   after_script:
@@ -243,11 +239,9 @@ mypy:
       junit: $REPORT_DIR/mypy*.xml
     paths:
       - $BADGE_DIR/
+# endregion analysis ---------------------------------------------------------------------------------------------------
 
-###############
-# STAGE: TEST #
-###############
-
+# region tests ---------------------------------------------------------------------------------------------------------
 pytest:
   stage: test
   cache:
@@ -262,6 +256,7 @@ pytest:
   needs:
     - setup
   script:
+    - pytest --version
     - pytest -k "not slow"
     - coverage xml -o $REPORT_DIR/cobertura-coverage.xml
     - coverage report
@@ -288,11 +283,9 @@ pytest:
       junit: $REPORT_DIR/pytest.xml
     paths:
       - $BADGE_DIR/
+# endregion tests ------------------------------------------------------------------------------------------------------
 
-#################
-# STAGE: DEPLOY #
-#################
-
+# region deploy --------------------------------------------------------------------------------------------------------
 pypi:
   # https://docs.gitlab.com/ee/user/packages/pypi_repository/
   stage: deploy
@@ -307,6 +300,7 @@ pypi:
   only:
     - main
   script:
+    - twine --version
     - twine upload --verbose  dist/*
   after_script:
     - source ${VENVNAME}/bin/activate
@@ -359,3 +353,4 @@ pages:
     paths:
       - $PUBLIC_DIR/
       - $BADGE_DIR/
+# endregion deploy -----------------------------------------------------------------------------------------------------

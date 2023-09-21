@@ -28,7 +28,16 @@ def test_jit_optimization() -> None:
 
     model = Foo(use_relu=False)
     scripted = jit.script(model)
-    print(scripted.code)
+
+    for prop in [
+        "code",
+        "code_with_constants",
+        "graph",
+        "inlined_graph",
+        "original_name",
+    ]:
+        attr = getattr(scripted, prop)
+        print(f"\nscripted.{prop}<{type(attr)}> = {attr!r}")
     assert "relu" not in scripted.code
     assert "tanh" in scripted.code
 

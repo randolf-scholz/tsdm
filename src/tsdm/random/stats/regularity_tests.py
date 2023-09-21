@@ -19,7 +19,9 @@ from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 
 
-def approx_float_gcd(x: ArrayLike, rtol: float = 1e-05, atol: float = 1e-08) -> float:
+def approx_float_gcd(
+    x: ArrayLike, /, *, rtol: float = 1e-05, atol: float = 1e-08
+) -> float:
     r"""Compute approximate GCD of multiple floats.
 
     .. math:: 𝗀𝖼𝖽_ϵ(x) = 𝗆𝖺𝗑\{y∣ ∀i : 𝖽𝗂𝗌𝗍(x_i, yℤ)≤ϵ\}
@@ -114,7 +116,7 @@ def is_regular(s: Series | DataFrame) -> bool:
 
 
 def regularity_coefficient(
-    s: Series | DataFrame, ignore_duplicates: bool = True
+    s: Series | DataFrame, /, *, ignore_duplicates: bool = True
 ) -> float:
     r"""Compute the regularity coefficient of a time series.
 

@@ -67,7 +67,7 @@ def test_PositionalEncoder_Torch() -> None:
 
     try:
         LOGGER.info("Initialization")
-        encoder = PositionalEncoder_Torch(num_dim, scale=scale)
+        encoder = PositionalEncoder_Torch(num_dim=num_dim, scale=scale)
     except Exception as E:
         LOGGER.error("Initialization failed")
         raise RuntimeError from E
@@ -102,7 +102,7 @@ def test_Time2Vec() -> None:
 
     try:
         LOGGER.info("Initialization")
-        encoder = Time2Vec(num_dim, "sin")
+        encoder = Time2Vec(num_dim=num_dim, activation="sin")
     except Exception as E:
         LOGGER.error("Initialization failed")
         raise RuntimeError("Failed to initialize Time2Vec") from E

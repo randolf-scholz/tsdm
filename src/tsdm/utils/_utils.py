@@ -43,10 +43,9 @@ from pandas import Series
 from torch import nn
 from tqdm.autonotebook import tqdm
 
-from tsdm.types.abc import HashableType
+from tsdm.constants import BOOLEAN_PAIRS
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import key_var as K
-from tsdm.utils.constants import BOOLEAN_PAIRS, EMPTY_PATH
+from tsdm.types.variables import HashableType, key_var as K
 
 __logger__ = logging.getLogger(__name__)
 
@@ -82,16 +81,20 @@ def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
     return all(sum(masks) == 1)  # type: ignore[arg-type]
 
 
-def flatten_nested(nested: Any, kind: type[HashableType]) -> set[HashableType]:
+def flatten_nested(
+    nested: Any, /, *, leaf_type: type[HashableType]
+) -> set[HashableType]:
     r"""Flatten nested iterables of a given kind."""
     if nested is None:
         return set()
-    if isinstance(nested, kind):
+    if isinstance(nested, leaf_type):
         return {nested}
     if isinstance(nested, Mapping):
-        return set.union(*(flatten_nested(v, kind) for v in nested.values()))
+        return set.union(
+            *(flatten_nested(v, leaf_type=leaf_type) for v in nested.values())
+        )
     if isinstance(nested, Iterable):
-        return set.union(*(flatten_nested(v, kind) for v in nested))
+        return set.union(*(flatten_nested(v, leaf_type=leaf_type) for v in nested))
     raise ValueError(f"{type(nested)} is not understood")
 
 
@@ -137,7 +140,7 @@ def unflatten_dict(
     return result
 
 
-def round_relative(x: np.ndarray, decimals: int = 2) -> np.ndarray:
+def round_relative(x: np.ndarray, /, *, decimals: int = 2) -> np.ndarray:
     r"""Round to relative precision."""
     order = np.where(x == 0, 0, np.floor(np.log10(x)))
     digits = decimals - order
@@ -150,7 +153,7 @@ def now() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
-def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
+def deep_dict_update(d: dict, new_kvals: Mapping, /) -> dict:
     r"""Update nested dictionary recursively in-place with new dictionary.
 
     References:
@@ -168,7 +171,7 @@ def deep_dict_update(d: dict, new_kvals: Mapping) -> dict:
     return d
 
 
-def deep_kval_update(d: dict, **new_kvals: Any) -> dict:
+def deep_kval_update(d: dict, /, **new_kvals: Any) -> dict:
     r"""Update nested dictionary recursively in-place with key-value pairs.
 
     References:
@@ -190,65 +193,54 @@ def deep_kval_update(d: dict, **new_kvals: Any) -> dict:
 def prepend_path(
     files: Mapping[K, PathLike],
     parent: Path,
+    /,
     *,
     keep_none: bool = False,
-) -> dict[K, Path]:
-    ...
-
-
+) -> dict[K, Path]: ...
 @overload
 def prepend_path(
     files: list[PathLike],
     parent: Path,
+    /,
     *,
     keep_none: bool = False,
-) -> list[Path]:
-    ...
-
-
+) -> list[Path]: ...
 @overload
 def prepend_path(
     files: PathLike,
     parent: Path,
+    /,
     *,
     keep_none: bool = False,
-) -> Path:
-    ...
-
-
+) -> Path: ...
 @overload
 def prepend_path(
     files: Nested[PathLike],
     parent: Path,
+    /,
     *,
     keep_none: bool = False,
-) -> Nested[Path]:
-    ...
-
-
+) -> Nested[Path]: ...
 @overload
 def prepend_path(
     files: Nested[Optional[PathLike]],
     parent: Path,
+    /,
     *,
     keep_none: Literal[False] = False,
-) -> Nested[Path]:
-    ...
-
-
+) -> Nested[Path]: ...
 @overload
 def prepend_path(
     files: Nested[Optional[PathLike]],
     parent: Path,
+    /,
     *,
     keep_none: Literal[True] = True,
-) -> Nested[Optional[Path]]:
-    ...
-
-
+) -> Nested[Optional[Path]]: ...
 def prepend_path(
     files: Nested[Optional[PathLike]],
     parent: Path,
+    /,
     *,
     keep_none: bool = True,
 ) -> Nested[Optional[Path]]:
@@ -272,25 +264,22 @@ def prepend_path(
     raise TypeError(f"Unsupported type: {type(files)}")
 
 
-def paths_exists(
-    paths: Nested[Optional[PathLike]],
-    *,
-    parent: Path = EMPTY_PATH,
-) -> bool:
+def paths_exists(paths: Nested[Optional[PathLike]], /) -> bool:
     r"""Check whether the files exist.
 
     The input can be arbitrarily nested data-structure with `Path` in leaves.
     """
-    if isinstance(paths, str):
-        return Path(paths).exists()
-    if paths is None:
-        return True
-    if isinstance(paths, Mapping):
-        return all(paths_exists(f, parent=parent) for f in paths.values())
-    if isinstance(paths, Collection):
-        return all(paths_exists(f, parent=parent) for f in paths)
-    if isinstance(paths, Path):
-        return (parent / paths).exists()
+    match paths:
+        case None:
+            return True
+        case str() as string:
+            return Path(string).exists()
+        case Path() as path:
+            return path.exists()
+        case Mapping() as mapping:
+            return all(paths_exists(f) for f in mapping.values())
+        case Iterable() as iterable:
+            return all(paths_exists(f) for f in iterable)
 
     raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
 
@@ -354,34 +343,32 @@ def series_is_boolean(series: Series, /, *, uniques: Optional[Series] = None) ->
     )
 
 
-def series_to_boolean(series: Series, uniques: Optional[Series] = None) -> Series:
+def series_to_boolean(s: Series, uniques: Optional[Series] = None, /) -> Series:
     r"""Convert Series to nullable boolean."""
-    assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
-    mask = pandas.notna(series)
-    values = get_uniques(series[mask]) if uniques is None else uniques
+    assert pandas.api.types.is_string_dtype(s), "Series must be 'string' dtype!"
+    mask = pandas.notna(s)
+    values = get_uniques(s[mask]) if uniques is None else uniques
     mapping = next(
         set(values.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
     )
-    series = series.copy()
-    series[mask] = series[mask].map(mapping)
-    return series.astype(pandas.BooleanDtype())
+    s = s.copy()
+    s[mask] = s[mask].map(mapping)
+    return s.astype(pandas.BooleanDtype())
 
 
-def series_is_boolean_from_numeric(
-    series: Series, uniques: Optional[Series] = None
-) -> bool:
+def series_numeric_is_boolean(s: Series, uniques: Optional[Series] = None, /) -> bool:
     r"""Test if 'numeric' series could possibly be boolean."""
-    assert pandas.api.types.is_numeric_dtype(series), "Series must be 'numeric' dtype!"
-    values = get_uniques(series) if uniques is None else uniques
+    assert pandas.api.types.is_numeric_dtype(s), "Series must be 'numeric' dtype!"
+    values = get_uniques(s) if uniques is None else uniques
     if len(values) == 0 or len(values) > 2:
         return False
     return any(set(values) <= set(bool_pair) for bool_pair in BOOLEAN_PAIRS)
 
 
-def series_is_int(series: Series, uniques: Optional[Series] = None) -> bool:
+def series_is_int(s: Series, uniques: Optional[Series] = None, /) -> bool:
     r"""Check whether float encoded column holds only integers."""
-    assert pandas.api.types.is_float_dtype(series), "Series must be 'float' dtype!"
-    values = get_uniques(series) if uniques is None else uniques
+    assert pandas.api.types.is_float_dtype(s), "Series must be 'float' dtype!"
+    values = get_uniques(s) if uniques is None else uniques
     return cast(bool, values.apply(float.is_integer).all())
 
 

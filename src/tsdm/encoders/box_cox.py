@@ -7,7 +7,8 @@ __all__ = [
 ]
 
 import warnings
-from typing import Callable, ClassVar, Literal, Optional, TypeAlias
+from collections.abc import Callable
+from typing import ClassVar, Literal, Optional, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -74,7 +75,7 @@ class BoxCoxEncoder(BaseEncoder):
 
     @staticmethod
     def construct_loss_wasserstein_uniform(
-        x: NDArray, a: float = -ROOT_3, b: float = +ROOT_3
+        x: NDArray, /, *, lower: float = -ROOT_3, upper: float = +ROOT_3
     ) -> Callable[[NDArray], NDArray]:
         r"""Construct the loss for the Uniform distribution.
 
@@ -87,8 +88,10 @@ class BoxCoxEncoder(BaseEncoder):
         Also note: (1, 1; -1, 1)(a,b) = (2, 0; 0, √12) (μ, σ)
         Hence: a = μ-√3σ, b = μ+√3σ
         And: μ = ½(a+b), σ² = (a-b)²/12
-
         """
+        a = lower
+        b = upper
+
         if (a, b) == (-np.sqrt(3), +np.sqrt(3)):
             C = 1.0
 
@@ -121,7 +124,7 @@ class BoxCoxEncoder(BaseEncoder):
 
     @staticmethod
     def construct_loss_wasserstein_normal(
-        x: NDArray, μ: float = 0.0, σ: float = 1.0
+        x: NDArray, /, *, loc: float = 0.0, scale: float = 1.0
     ) -> Callable[[NDArray], NDArray]:
         r"""Construct the loss for the Normal distribution.
 
@@ -131,6 +134,9 @@ class BoxCoxEncoder(BaseEncoder):
             β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
             C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
         """
+        μ = loc
+        σ = scale
+
         if (μ, σ) == (0, 1):
             C = 1.0
 
@@ -265,7 +271,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
 
     @staticmethod
     def construct_loss_wasserstein_uniform(
-        x: NDArray, a: float = -ROOT_3, b: float = +ROOT_3
+        x: NDArray, /, *, lower: float = -ROOT_3, upper: float = +ROOT_3
     ) -> Callable[[NDArray], NDArray]:
         r"""Construct the loss for the Uniform distribution.
 
@@ -278,8 +284,10 @@ class LogitBoxCoxEncoder(BaseEncoder):
         Also note: (1, 1; -1, 1)(a,b) = (2, 0; 0, √12) (μ, σ)
         Hence: a = μ-√3σ, b = μ+√3σ
         And: μ = ½(a+b), σ² = (a-b)²/12
-
         """
+        a = lower
+        b = upper
+
         if (a, b) == (-np.sqrt(3), +np.sqrt(3)):
             C = 1.0
 
@@ -312,7 +320,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
 
     @staticmethod
     def construct_loss_wasserstein_normal(
-        x: NDArray, μ: float = 0.0, σ: float = 1.0
+        x: NDArray, /, *, loc: float = 0.0, scale: float = 1.0
     ) -> Callable[[NDArray], NDArray]:
         r"""Construct the loss for the Normal distribution.
 
@@ -322,6 +330,8 @@ class LogitBoxCoxEncoder(BaseEncoder):
             β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
             C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
         """
+        μ = loc
+        σ = scale
         if (μ, σ) == (0, 1):
             C = 1.0
 

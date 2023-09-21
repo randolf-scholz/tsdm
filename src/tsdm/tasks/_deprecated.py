@@ -5,17 +5,9 @@ __all__ = ["BaseTask", "OldBaseTask"]
 import logging
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Generic,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-)
+from typing import Any, ClassVar, Generic, Literal, Optional
 
 from pandas import DataFrame
 from torch import Tensor
@@ -98,7 +90,7 @@ class BaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
     def dataset(self) -> Dataset | DataFrame:
         r"""Return the cached dataset associated with the task."""
 
-    def split_type(self, key: K) -> Literal["train", "infer", "unknown"]:
+    def split_type(self, key: K | Sequence[K]) -> Literal["train", "infer", "unknown"]:
         r"""Return the type of split."""
         train_patterns = ["train", "training"]
         infer_patterns = [
@@ -118,6 +110,7 @@ class BaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
                 return "train"
             if key.lower() in infer_patterns:
                 return "infer"
+            raise ValueError(f"{key=} is neither train nor infer split.")
         if isinstance(key, Sequence):
             patterns = {self.split_type(k) for k in key}
             if patterns <= {"train", "unknown"}:

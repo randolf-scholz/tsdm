@@ -34,7 +34,7 @@ def sparsity(df: DataFrame) -> tuple[float, float]:
 
 
 def data_overview(
-    df: DataFrame, index_col: Optional[Hashable] = None, digits: int = 2
+    df: DataFrame, /, *, index_col: Optional[Hashable] = None, digits: int = 2
 ) -> DataFrame:
     r"""Get a summary of the data."""
     overview = DataFrame(index=df.columns)

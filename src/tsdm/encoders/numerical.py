@@ -10,13 +10,12 @@ Numerical Encoders should be able to be applied with different backends such as
 
 To ensure performance during encoding/decoding, the backend should be fixed.
 
-Notes
------
-Golden Rule for implementation: init/fit can be slow, but transform should be fast.
-Use specialization/dispatch to ensure fast transforms.
+Note:
+    Golden Rule for implementation: init/fit can be slow, but transform should be fast.
+    Use specialization/dispatch to ensure fast transforms.
 
 Goals
------
+=====
 - numerical encoders should allow for different backends: numpy, pandas, torch, etc.
 - numerical encoders should be vectorized and fast
 - we should be able to "slice" vectorized encoders just like we slice numpy arrays
@@ -27,8 +26,6 @@ Goals
     - switching between backends probably not considered a "fit" operation
     - fitting changes the encoder parameter values, switching backends changes their types.
 """
-
-from __future__ import annotations
 
 __all__ = [
     # functions
@@ -46,12 +43,11 @@ __all__ = [
 ]
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import KW_ONLY, dataclass
 from types import EllipsisType
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Literal,
     NamedTuple,
@@ -66,13 +62,13 @@ import numpy as np
 import pandas as pd
 import torch
 from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
+from pandas import DataFrame, Series
 from torch import Tensor
 from typing_extensions import Self
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.aliases import Axes, Nested, PandasObject
+from tsdm.types.aliases import Axes, Nested, PandasObject, SizeLike
 from tsdm.types.protocols import NTuple
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 
@@ -80,12 +76,10 @@ TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
 r"""Type Hint for tensor-like objects."""
 T = TypeVar("T", Tensor, np.ndarray, DataFrame, Series)
 r"""TypeVar for tensor-like objects."""
-CLIPPING_MODE: TypeAlias = Literal["mask", "clip"]
+ClippingMode: TypeAlias = Literal["mask", "clip"]
 r"""Type Hint for clipping mode."""
-SINGLE_INDEXER: TypeAlias = None | int | list[int] | slice | EllipsisType
+Index: TypeAlias = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
-INDEXER: TypeAlias = SINGLE_INDEXER | tuple[SINGLE_INDEXER, ...]
-r"""Type Hint for indexer objects."""
 
 scalars: TypeAlias = None | bool | int | float | complex | str
 """Type Hint for scalar objects."""
@@ -105,7 +99,7 @@ PARAMETERS: TypeAlias = tuple[
 """Type Hint for parameters tuple."""
 
 
-def invert_axes(ndim: int, axis: Axes) -> tuple[int, ...]:
+def invert_axes_selection(axis: Axes, /, *, ndim: int) -> tuple[int, ...]:
     r"""Invert axes-selection for a rank `ndim` tensor.
 
     Example:
@@ -160,7 +154,7 @@ def get_broadcast(
 
     If `keep_axis` is True, then the broadcast is the complement of the contraction,
     i.e. ``x[broadcast]`` is roughly equivalent to ``contraction(data, kept_axis, keepdims=True)``,
-    where ``kept_axis = set(range(data.ndim)) - set(a%data.ndim for a in axis)``.
+    where ``kept_axis = set(range(data.ndim)) - set(ax%data.ndim for ax in axis)``.
 
     Args:
         original_shape: The tensor to be contracted.
@@ -203,16 +197,14 @@ def slice_size(slc: slice) -> int | None:
 
 
 @overload
-def get_reduced_axes(item: INDEXER, axes: None) -> None:
-    ...
-
-
+def get_reduced_axes(item: Index | tuple[Index, ...], /, axes: None) -> None: ...
 @overload
-def get_reduced_axes(item: INDEXER, axes: int | tuple[int, ...]) -> tuple[int, ...]:
-    ...
-
-
-def get_reduced_axes(item: INDEXER, axes: Axes) -> Axes:
+def get_reduced_axes(
+    item: Index | tuple[Index, ...], /, axes: SizeLike
+) -> tuple[int, ...]: ...
+@overload
+def get_reduced_axes(item: Index | tuple[Index, ...], /, axes: Axes) -> Axes: ...
+def get_reduced_axes(item, axes):
     """Determine if a slice would remove some axes."""
     if axes is None:
         return None
@@ -342,8 +334,28 @@ class BoundaryEncoder(BaseEncoder[T, T]):
     lower_included: bool = True
     upper_included: bool = True
 
-    mode: CLIPPING_MODE | tuple[CLIPPING_MODE, CLIPPING_MODE] = "mask"
+    mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask"
     axis: Axes = None
+
+    def __post_init__(self) -> None:
+        """Validate the parameters."""
+        if self.lower_bound is None and not self.lower_included:
+            raise ValueError(
+                "If no lower_bound is provided, then lower_included must be True."
+            )
+        if self.upper_bound is None and not self.upper_included:
+            raise ValueError(
+                "If no upper_bound is provided, then upper_included must be True."
+            )
+
+        if (
+            self.upper_bound is not None
+            and self.upper_bound is not NotImplemented
+            and self.lower_bound is not None
+            and self.lower_bound is not NotImplemented
+            and self.upper_bound <= self.lower_bound
+        ):
+            raise ValueError("lower_bound must be smaller than upper_bound.")
 
     class Parameters(NamedTuple):
         r"""The parameters of the LinearScaler."""
@@ -380,11 +392,13 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         return True
 
     @property
-    def lower_mode(self) -> CLIPPING_MODE:
+    def lower_mode(self) -> ClippingMode:
+        """The mode for the lower boundary."""
         return self.mode[0] if isinstance(self.mode, tuple) else self.mode
 
     @property
-    def upper_mode(self) -> CLIPPING_MODE:
+    def upper_mode(self) -> ClippingMode:
+        """The mode for the upper boundary."""
         return self.mode[1] if isinstance(self.mode, tuple) else self.mode
 
     def fit(self, data: T) -> None:
@@ -401,39 +415,35 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         self.lower_value: float | T = (
             self.backend.to_tensor(float("-inf"))
             if self.lower_bound is None
-            else self.backend.to_tensor(float("nan"))
-            if self.lower_mode == "mask"
-            else self.lower_bound
-            if self.lower_mode == "clip"
-            else NotImplemented
+            else (
+                self.backend.to_tensor(float("nan"))
+                if self.lower_mode == "mask"
+                else self.lower_bound if self.lower_mode == "clip" else NotImplemented
+            )
         )
 
         self.upper_value: float | T = (
             self.backend.to_tensor(float("+inf"))
             if self.upper_bound is None
-            else self.backend.to_tensor(float("nan"))
-            if self.upper_mode == "mask"
-            else self.upper_bound
-            if self.upper_mode == "clip"
-            else NotImplemented
+            else (
+                self.backend.to_tensor(float("nan"))
+                if self.upper_mode == "mask"
+                else self.upper_bound if self.upper_mode == "clip" else NotImplemented
+            )
         )
 
         # Create lower comparison function
         self.lower_satisfied: Callable[[T], T] = (
             self.backend.true_like
             if self.lower_bound is None
-            else self._ge
-            if self.lower_included
-            else self._gt
+            else self._ge if self.lower_included else self._gt
         )
 
         # Create upper comparison function
         self.upper_satisfied: Callable[[T], T] = (
             self.backend.true_like
             if self.upper_bound is None
-            else self._le
-            if self.upper_included
-            else self._lt
+            else self._le if self.upper_included else self._lt
         )
 
     def _ge(self, x: T) -> T:
@@ -598,7 +608,6 @@ class StandardScaler(BaseEncoder[T, T]):
 
     def __init__(
         self,
-        /,
         mean: float | T = NotImplemented,
         stdv: float | T = NotImplemented,
         *,
@@ -630,7 +639,7 @@ class StandardScaler(BaseEncoder[T, T]):
         self.backend: Backend[T] = Backend(self.selected_backend)
 
         # universal fitting procedure
-        axes = invert_axes(len(data.shape), self.axis)
+        axes = invert_axes_selection(self.axis, ndim=len(data.shape))
 
         if self.mean_learnable:
             self.mean = self.backend.nanmean(data, axis=axes)
@@ -824,7 +833,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
             return
 
         # universal fitting procedure
-        axes = invert_axes(len(data.shape), self.axis)
+        axes = invert_axes_selection(self.axis, ndim=len(data.shape))
 
         if self.xmin_learnable:
             self.xmin = self.backend.nanmin(data, axis=axes)
@@ -955,7 +964,7 @@ class FloatEncoder(BaseEncoder[NDArray, NDArray]):
     def fit(self, data: PandasObject, /) -> None:
         if isinstance(data, DataFrame):
             self.dtypes = data.dtypes
-        elif isinstance(data, (Series, Index)):
+        elif isinstance(data, (Series, pd.Index)):
             self.dtypes = data.dtype
         # elif hasattr(data, "dtype"):
         #     self.dtypes = data.dtype
@@ -1009,26 +1018,18 @@ class TensorSplitter(BaseEncoder):
         self.indices_or_sections = indices_or_sections
 
     @overload
-    def encode(self, data: Tensor, /) -> list[Tensor]:
-        ...
-
+    def encode(self, data: Tensor, /) -> list[Tensor]: ...
     @overload
-    def encode(self, data: NDArray, /) -> list[NDArray]:
-        ...
-
+    def encode(self, data: NDArray, /) -> list[NDArray]: ...
     def encode(self, data, /):
         if isinstance(data, Tensor):
             return torch.tensor_split(data, self.indices_or_sections, dim=self.axis)
         return np.array_split(data, self.indices_or_sections, dim=self.axis)  # type: ignore[call-overload]
 
     @overload
-    def decode(self, data: list[Tensor], /) -> Tensor:
-        ...
-
+    def decode(self, data: list[Tensor], /) -> Tensor: ...
     @overload
-    def decode(self, data: list[NDArray], /) -> NDArray:
-        ...
-
+    def decode(self, data: list[NDArray], /) -> NDArray: ...
     def decode(self, data, /):
         if isinstance(data[0], Tensor):
             return torch.cat(data, dim=self.axis)

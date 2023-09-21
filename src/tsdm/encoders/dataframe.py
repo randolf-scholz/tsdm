@@ -1,7 +1,5 @@
 r"""Implementation of encoders."""
 
-from __future__ import annotations
-
 __all__ = [
     # Classes
     "FrameAsDict",
@@ -114,7 +112,7 @@ class FrameEncoder(BaseEncoder, Generic[ColEncVar, IndEncVar]):
     r"""Reverse Dictionary from encoded index name -> encoder"""
 
     @staticmethod
-    def _names(obj: Index | Series | DataFrame) -> Hashable | FrozenList[Hashable]:
+    def _names(obj: Index | Series | DataFrame, /) -> Hashable | FrozenList[Hashable]:
         if isinstance(obj, MultiIndex):
             return FrozenList(obj.names)
         if isinstance(obj, Series | Index):
@@ -358,8 +356,10 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
         for group, encoder in self.encoders.items():
             try:
                 encoder.fit(data[group])
-            except Exception as E:
-                raise RuntimeError(f"Failed to fit {type(encoder)} on {group=}") from E
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Failed to fit {type(encoder)} on {group=}"
+                ) from exc
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         data = data.reset_index()
@@ -475,6 +475,7 @@ class FrameSplitter(BaseEncoder, Mapping):
         self,
         groups: Iterable[Hashable] | Mapping[Any, Hashable],
         /,
+        *,
         dropna: bool = False,
         fillna: bool = True,
     ) -> None:
@@ -745,8 +746,8 @@ class TripletDecoder(BaseEncoder):
 
         if pd.api.types.is_float_dtype(categories):
             raise ValueError(
-                f"channel_ids found in {self.var_name!r} does no look like a categoricals!"
-                "\n Please specify `value_name` and/or `var_name`!"
+                f"channel_ids found in {self.var_name!r} does no look like a"
+                " categorical!\n Please specify `value_name` and/or `var_name`!"
             )
 
         self.categories = pd.CategoricalDtype(np.sort(categories))
@@ -829,16 +830,12 @@ class TensorEncoder(BaseEncoder):
         self.is_fitted = True
 
     def fit(self, data: PandasObject, /) -> None:
-        ...
+        pass
 
     @overload
-    def encode(self, data: PandasObject, /) -> Tensor:  # type: ignore[misc]
-        ...
-
+    def encode(self, data: PandasObject, /) -> Tensor: ...  # type: ignore[misc]
     @overload
-    def encode(self, data: tuple[PandasObject, ...], /) -> tuple[Tensor, ...]:
-        ...
-
+    def encode(self, data: tuple[PandasObject, ...], /) -> tuple[Tensor, ...]: ...
     def encode(self, data, /):
         if isinstance(data, tuple):
             return tuple(self.encode(x) for x in data)
@@ -849,13 +846,9 @@ class TensorEncoder(BaseEncoder):
         return torch.tensor(data, device=self.device, dtype=self.dtype)
 
     @overload
-    def decode(self, data: Tensor, /) -> PandasObject:
-        ...
-
+    def decode(self, data: Tensor, /) -> PandasObject: ...
     @overload
-    def decode(self, data: tuple[Tensor, ...], /) -> tuple[PandasObject, ...]:
-        ...
-
+    def decode(self, data: tuple[Tensor, ...], /) -> tuple[PandasObject, ...]: ...
     def decode(self, data, /):
         if isinstance(data, tuple):
             return tuple(self.decode(x) for x in data)
@@ -936,7 +929,7 @@ class FrameAsDict(Mapping[str, list[str]], BaseEncoder):
 
         >>> from pandas import DataFrame
         >>> from tsdm.encoders import FrameAsDict
-        >>> df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
+        >>> df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]})
         >>> encoder = FrameAsDict(groups={"a": ["a", "b"], "c": ["c"]}, encode_index=False)
         >>> encoder.fit(df)
         >>> encoded = encoder.encode(df)
@@ -1034,7 +1027,7 @@ class FrameAsDict(Mapping[str, list[str]], BaseEncoder):
         if cols:
             raise ValueError(
                 f"Columns {cols} are not assigned to a group! "
-                f"Try setting encode_index=False to skip encoding the index."
+                "Try setting encode_index=False to skip encoding the index."
             )
 
         # data type validation

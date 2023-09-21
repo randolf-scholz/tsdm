@@ -7,7 +7,8 @@ __all__ = [
 ]
 
 from abc import ABCMeta
-from typing import Any, Callable, Generic, Optional, TypeVar, cast
+from collections.abc import Callable
+from typing import Any, Generic, Optional, TypeVar, cast
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -24,11 +25,11 @@ def abstractattribute(obj: Optional[Callable[[T], R]] = None) -> R:
     attr = DummyAttribute() if obj is None else obj
     try:
         attr.__is_abstract_attribute__ = True  # type: ignore[attr-defined]
-    except AttributeError as E:
+    except AttributeError as exc:
         raise AttributeError(
             f"Cannot decorate with abstractattribute decorator because {obj} "
             "does not support setting attributes."
-        ) from E
+        ) from exc
     return cast(R, attr)
 
 

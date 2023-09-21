@@ -1,0 +1,167 @@
+"""Tensor functions."""
+
+__all__ = [
+    "geometric_mean",
+    "grad_norm",
+    "multi_norm",
+    "tensor_norm",
+]
+
+
+from typing import Union
+
+import torch
+from torch import Tensor, jit
+
+
+@jit.script
+def geometric_mean(
+    x: Tensor,
+    axes: Union[None, int, list[int]] = None,
+    keepdim: bool = False,
+) -> Tensor:
+    r"""Geometric mean of a tensor.
+
+    .. Signature:: ``(..., n) -> (...)``
+    """
+    if axes is None:
+        dim = list(range(x.ndim))
+    elif isinstance(axes, int):
+        dim = [axes]
+    else:
+        dim = axes
+
+    return x.log().nanmean(dim=dim, keepdim=keepdim).exp()
+
+
+@jit.script
+def multi_norm(
+    tensors: list[Tensor],
+    p: float = 2,
+    q: float = 2,
+    normalize: bool = True,
+) -> Tensor:
+    r"""Return the (scaled) p-q norm of the gradients.
+
+    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
+
+    If `normalize=True`, the sums are replaced with averages.
+    """
+    _tensors: list[Tensor] = []
+    for tensor in tensors:
+        if tensor.numel() > 0:
+            _tensors.append(tensor)
+    tensors = _tensors
+
+    if len(tensors) == 0:
+        return torch.tensor(0.0)
+
+    if normalize:
+        # Initializing s this way automatically gets the dtype and device correct
+        s = torch.mean(tensors.pop() ** p) ** (q / p)
+        for x in tensors:
+            s += torch.mean(x**p) ** (q / p)
+        return (s / (1 + len(tensors))) ** (1 / q)
+
+    # else
+    s = torch.sum(tensors.pop() ** p) ** (q / p)
+    for x in tensors:
+        s += torch.sum(x**p) ** (q / p)
+    return s ** (1 / q)
+
+
+@jit.script
+def grad_norm(
+    tensors: list[Tensor],
+    p: float = 2,
+    q: float = 2,
+    normalize: bool = True,
+) -> Tensor:
+    r"""Return the (scaled) p-q norm of the gradients.
+
+    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
+
+    If `normalize=True`, the sums are replaced with averages.
+    """
+    if len(tensors) == 0:
+        return torch.tensor(0.0)
+
+    if normalize:
+        # Initializing s this way automatically gets the dtype and device correct
+        x = tensors.pop()
+        assert x.grad is not None
+        s = torch.mean(x.grad**p) ** (q / p)
+        for x in tensors:
+            assert x.grad is not None
+            s += torch.mean(x.grad**p) ** (q / p)
+        return (s / (1 + len(tensors))) ** (1 / q)
+    # else
+    x = tensors.pop()
+    assert x.grad is not None
+    s = torch.sum(x.grad**p) ** (q / p)
+    for x in tensors:
+        assert x.grad is not None
+        s += torch.sum(x.grad**p) ** (q / p)
+    return s ** (1 / q)
+
+
+@jit.script
+def tensor_norm(
+    x: Tensor,
+    p: float = 2.0,
+    axes: Union[None, int, list[int]] = None,
+    keepdim: bool = True,
+    scaled: bool = False,
+) -> Tensor:
+    r"""Entry-wise norm of $p$-th order.
+
+    .. Signature:: ``(..., n) -> ...``
+
+    +--------+-----------------------------------+------------------------------------+
+    |        | standard                          | size normalized                    |
+    +========+===================================+====================================+
+    | $p=+∞$ | maximum value                     | maximum value                      |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=+2$ | sum of squared values             | mean of squared values             |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=+1$ | sum of squared values             | mean of squared values             |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=±0$ | ∞ or sum of non-zero values       | geometric mean of values           |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-1$ | reciprocal sum of absolute values | reciprocal mean of absolute values |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-2$ | reciprocal sum of squared values  | reciprocal mean of squared values  |
+    +--------+-----------------------------------+------------------------------------+
+    | $p=-∞$ | minimum value                     | minimum value                      |
+    +--------+-----------------------------------+------------------------------------+
+    """
+    if axes is None:
+        dim = list(range(x.ndim))
+    elif isinstance(axes, int):
+        dim = [axes]
+    else:
+        dim = axes
+
+    if not torch.is_floating_point(x):
+        x = x.to(dtype=torch.float)
+    x = x.abs()
+
+    # TODO: deal with nan values
+
+    if p == float("inf"):
+        return x.amax(dim=dim, keepdim=keepdim)
+    if p == -float("inf"):
+        return x.amin(dim=dim, keepdim=keepdim)
+    if p == 0:
+        if scaled:
+            return geometric_mean(x, axes=dim, keepdim=keepdim)
+        return (x != 0).sum(dim=dim, keepdim=keepdim)
+
+    x_max = x.amax(dim=dim, keepdim=True)
+    x = x / x_max
+
+    if scaled:
+        r = x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+    else:
+        r = x.pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
+    return x_max * r

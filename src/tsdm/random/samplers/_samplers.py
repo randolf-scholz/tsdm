@@ -51,17 +51,16 @@ from tsdm.utils.strings import repr_mapping
 class Sampler(Protocol[T_co]):
     r"""Protocol for `Sampler`."""
 
-    def __iter__(self) -> Iterator[T_co]:
-        ...
+    def __iter__(self) -> Iterator[T_co]: ...
 
-    def __len__(self) -> int:
-        ...
+    def __len__(self) -> int: ...
 
 
 def compute_grid(
     tmin: str | DTVar,
     tmax: str | DTVar,
     timedelta: str | TDVar,
+    /,
     *,
     offset: Optional[str | DTVar] = None,
 ) -> Sequence[int]:
@@ -77,11 +76,11 @@ def compute_grid(
 
     offset = cast(
         DTVar,
-        tmin
-        if offset is None
-        else Timestamp(offset)
-        if isinstance(offset, str)
-        else offset,
+        (
+            tmin
+            if offset is None
+            else Timestamp(offset) if isinstance(offset, str) else offset
+        ),
     )
 
     # generates zero variable of correct type
@@ -241,8 +240,8 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
     def __init__(
         self,
         data_source: DatasetCollection,
-        /,
         subsamplers: Mapping[K, BaseSampler[T_co]],
+        /,
         *,
         shuffle: bool = True,
         early_stop: bool = False,
@@ -283,8 +282,10 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
             # value = yield from activate_iterators[key]
             try:
                 value = next(activate_iterators[key])
-            except StopIteration as E:
-                raise RuntimeError(f"Iterator of {key=} exhausted prematurely.") from E
+            except StopIteration as exc:
+                raise RuntimeError(
+                    f"Iterator of {key=} exhausted prematurely."
+                ) from exc
             yield key, value
 
     def __getitem__(self, key: K) -> BaseSampler[T_co]:
@@ -314,8 +315,8 @@ class HierarchicalSampler(Sampler[tuple[K, T_co]]):
     def __init__(
         self,
         data_source: Mapping[K, T],
-        /,
         subsamplers: Mapping[K, Sampler[T_co]],
+        /,
         *,
         shuffle: bool = True,
         early_stop: bool = False,
@@ -358,8 +359,10 @@ class HierarchicalSampler(Sampler[tuple[K, T_co]]):
             # This won't raise StopIteration, because the length is matched.
             try:
                 value = next(activate_iterators[key])
-            except StopIteration as E:
-                raise RuntimeError(f"Iterator of {key=} exhausted prematurely.") from E
+            except StopIteration as exc:
+                raise RuntimeError(
+                    f"Iterator of {key=} exhausted prematurely."
+                ) from exc
             yield key, value
 
     def __getitem__(self, key: K) -> Sampler[T_co]:
@@ -392,7 +395,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
     @staticmethod
     def _get_value(
-        obj: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar], k: int
+        obj: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar], k: int, /
     ) -> TDVar:
         if callable(obj):
             return obj(k)
@@ -554,9 +557,11 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
         self.samples = np.array(
             [
-                (x <= self.data_source) & (self.data_source < y)  # type: ignore[operator]
-                if self.return_mask
-                else [x, y]
+                (
+                    (x <= self.data_source) & (self.data_source < y)  # type: ignore[operator]
+                    if self.return_mask
+                    else [x, y]
+                )
                 for x, y in self._iter_tuples()
             ]
         )

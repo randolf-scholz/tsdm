@@ -9,7 +9,6 @@ __all__ = [
     "hash_numpy",
     "hash_object",
     "hash_pandas",
-    "hash_pandas",
     "hash_set",
     "to_alphanumeric",
     "to_base",
@@ -24,9 +23,10 @@ import logging
 import string
 import warnings
 from collections import Counter
-from collections.abc import Hashable, Iterable, Mapping
+from collections.abc import Hashable, Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, Optional, Sequence
+from types import NotImplementedType
+from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -43,7 +43,7 @@ DEFAULT_HASH_METHOD = "sha256"
 """The default hash method to use."""
 
 
-def to_base(n: int, b: int) -> list[int]:
+def to_base(n: int, base: int, /) -> list[int]:
     r"""Convert non-negative integer to any basis.
 
     The result satisfies: ``n = sum(d*b**k for k, d in enumerate(reversed(digits)))``
@@ -54,7 +54,7 @@ def to_base(n: int, b: int) -> list[int]:
     assert n >= 0, "n must be non-negative!"
     digits = []
     while n:
-        n, d = divmod(n, b)
+        n, d = divmod(n, base)
         digits.append(d)
     return digits[::-1] or [0]
 
@@ -174,7 +174,7 @@ def hash_file(
 def hash_array(
     array: Any, *, hash_algorithm: str = "pandas", **hash_kwargs: Any
 ) -> str:
-    """Hash an array like object (pandas/numpy/pyarrow/etc)."""
+    """Hash an array like object (pandas/numpy/pyarrow/etc.)."""
     match hash_algorithm:
         case "pandas":
             hash_value = hash_pandas(array, **hash_kwargs)
@@ -191,13 +191,13 @@ def hash_array(
 
 def validate_file_hash(
     file: PathLike | Sequence[PathLike] | Mapping[str, PathLike],
-    /,
     reference: None | str | Mapping[str, str | None] = None,
+    /,
     *,
-    hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,
     errors: Literal["warn", "raise", "ignore"] = "warn",
-    **hash_kwargs: Any,
+    hash_algorithm: Optional[str] = None,
+    hash_kwargs: Mapping[str, Any] = NotImplemented,
 ) -> None:
     """Validate file(s), given reference hash value(s).
 
@@ -214,6 +214,8 @@ def validate_file_hash(
         ValueError: If the file hash does not match the reference hash.
         LookupError: If the file is not found in the reference hash table.
     """
+    hash_kwargs = {} if hash_kwargs is NotImplemented else hash_kwargs
+
     if errors not in {"warn", "raise", "ignore"}:
         raise ValueError(
             f"Invalid value for errors: {errors!r}. "
@@ -229,35 +231,36 @@ def validate_file_hash(
                 if isinstance(reference, Mapping):
                     validate_file_hash(
                         value,
-                        reference=reference.get(key, None),
+                        reference.get(key, None),
                         hash_algorithm=hash_algorithm,
                         logger=logger,
                         errors=errors,
-                        **hash_kwargs,
+                        hash_kwargs=hash_kwargs,
                     )
                 elif reference is None:
                     validate_file_hash(
                         value,
-                        reference=reference,
+                        reference,
                         hash_algorithm=hash_algorithm,
                         logger=logger,
                         errors=errors,
-                        **hash_kwargs,
+                        hash_kwargs=hash_kwargs,
                     )
                 else:
                     raise ValueError(
-                        "If a mapping of files is provided, reference_hash must be a mapping as well!"
+                        "If a mapping of files is provided, reference_hash must be a"
+                        " mapping as well!"
                     )
             return
         case Iterable():
             for f in file:
                 validate_file_hash(
                     f,
-                    reference=reference,
+                    reference,
                     hash_algorithm=hash_algorithm,
                     logger=logger,
                     errors=errors,
-                    **hash_kwargs,
+                    hash_kwargs=hash_kwargs,
                 )
             return
 
@@ -272,7 +275,7 @@ def validate_file_hash(
 
     # Determine the reference hash value.
     match reference:
-        case None:
+        case None | NotImplementedType():
             reference_alg, reference_hash = None, None
         case str():
             # split hashes of the form "sha256:hash_value"
@@ -306,8 +309,8 @@ def validate_file_hash(
     # Finally, compare the hashes.
     if file.suffix == ".parquet":
         warnings.warn(
-            f"Parquet file {file.name!r} not validated since the format is not binary stable!"
-            f" The {hash_algorithm!r}-hash is {hash_value!r}.",
+            f"Parquet file {file.name!r} not validated since the format is not binary"
+            f" stable! The {hash_algorithm!r}-hash is {hash_value!r}.",
             UserWarning,
             stacklevel=2,
         )
@@ -345,8 +348,8 @@ def validate_file_hash(
 
 def validate_table_hash(
     table: Any,
+    reference: str | None = None,
     /,
-    reference: str | None,
     *,
     hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,
@@ -374,8 +377,8 @@ def validate_table_hash(
         case None, None:
             # Try to determine the hash algorithm from the array type
             match table:
-                case pd.DataFrame() | pd.Series() | pd.Index():
-                    hash_algorithm = "pandas"
+                case DataFrame() | Series() | Index():  # type: ignore[misc]
+                    hash_algorithm = "pandas"  # type: ignore[unreachable]
                 case np.ndarray():
                     hash_algorithm = "numpy"
                 case _:
@@ -409,7 +412,7 @@ def validate_table_hash(
         warnings.warn(
             f"Array-Like object {name!r} failed to validate! {reference_alg!r}-hash-"
             f"value {hash_value!r} does not match reference {reference!r}."
-            f"Ignore this warning if the format is parquet.",
+            "Ignore this warning if the format is parquet.",
             RuntimeWarning,
             stacklevel=2,
         )
@@ -424,8 +427,8 @@ def validate_table_hash(
 
 def validate_object_hash(
     obj: Any,
+    reference: Any = None,
     /,
-    reference: Any,
     *,
     hash_algorithm: Optional[str] = None,
     logger: logging.Logger = __logger__,
@@ -453,7 +456,8 @@ def validate_object_hash(
         case Mapping():  # apply recursively to all values
             if not isinstance(reference, None | Mapping):
                 raise ValueError(
-                    "If a mapping of objects is provided, reference_hash must be a mapping as well!"
+                    "If a mapping of objects is provided, reference_hash must be a"
+                    " mapping as well!"
                 )
             for key, value in obj.items():
                 validate_object_hash(
@@ -518,7 +522,7 @@ def validate_object_hash(
                 warnings.warn(
                     f"Object {name!r} failed to validate! {reference_alg!r}-hash-"
                     f"value {hash_value!r} does not match reference {reference_hash!r}."
-                    f"Ignore this warning if the format is parquet.",
+                    "Ignore this warning if the format is parquet.",
                     RuntimeWarning,
                     stacklevel=2,
                 )
@@ -534,6 +538,7 @@ def validate_object_hash(
 def validate_table_schema(
     table: SupportsShape,
     /,
+    *,
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,
 ) -> None:
@@ -544,16 +549,16 @@ def validate_table_schema(
     """
     # get shape, columns and dtypes from table
     match table:
-        case pd.MultiIndex() as multiindex:
-            shape = multiindex.shape
+        case MultiIndex() as multiindex:  # type: ignore[misc]
+            shape = multiindex.shape  # type: ignore[unreachable]
             columns = multiindex.names
             dtypes = multiindex.dtypes
-        case pd.Index() as index:
-            shape = index.shape
+        case Index() as index:  # type: ignore[misc]
+            shape = index.shape  # type: ignore[unreachable]
             columns = index.name
             dtypes = index.dtype
-        case pd.Series() as series:
-            shape = series.shape
+        case Series() as series:  # type: ignore[misc]
+            shape = series.shape  # type: ignore[unreachable]
             columns = series.name
             dtypes = series.dtype
         case DataFrame() as df:  # type: ignore[misc]
@@ -562,7 +567,7 @@ def validate_table_schema(
             dtypes = df.dtypes.tolist()
         case pa.Table() as arrow_table:
             shape = arrow_table.shape
-            columns = arrow_table.schema.names
+            columns = arrow_table.column_names
             dtypes = arrow_table.schema.types
         case np.ndarray() as arr:
             shape = arr.shape

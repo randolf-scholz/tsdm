@@ -84,7 +84,7 @@ class SetFuncTS(nn.Module):
         latent_size = input_size if latent_size is None else latent_size
         # time_encoder
         # feature_encoder -> CNN?
-        self.time_encoder = PositionalEncoding(dim_time, scale=10.0)
+        self.time_encoder = PositionalEncoding(num_dim=dim_time, scale=10.0)
         self.key_encoder = DeepSet(
             input_size + dim_time - 1,
             dim_keys,
@@ -206,7 +206,7 @@ class GroupedSetFuncTS(nn.Module):
         self.fast_encoder = fast_encoder
         self.slow_encoder = slow_encoder
 
-        self.time_encoder = Time2Vec(dim_time)
+        self.time_encoder = Time2Vec(num_dim=dim_time)
         self.key_encoder = DeepSetReZero(
             input_size,
             dim_keys,
@@ -294,10 +294,6 @@ class GroupedSetFuncTS(nn.Module):
             X.append(x)
             Y.append(y)
 
-        x = torch.nn.utils.rnn.pad_sequence(
-            X, batch_first=True, padding_value=float("nan")
-        )
-        y = torch.nn.utils.rnn.pad_sequence(
-            Y, batch_first=True, padding_value=float("nan")
-        )
+        x = nn.utils.rnn.pad_sequence(X, batch_first=True, padding_value=float("nan"))
+        y = nn.utils.rnn.pad_sequence(Y, batch_first=True, padding_value=float("nan"))
         return self.forward(x, y)

@@ -3,22 +3,28 @@ r"""Visualization Utilities for image data."""
 __all__ = [
     # Functions
     "kernel_heatmap",
+    "rasterize",
 ]
 
+from tempfile import TemporaryFile
 from typing import Literal
 
 import numpy as np
 import torch
-from matplotlib import cm, colors
+from matplotlib import colormaps, colors
+from matplotlib.figure import Figure
 from numpy.typing import NDArray
+from PIL import Image
 from torch import Tensor
 
 
 @torch.no_grad()
 def kernel_heatmap(
     kernel: NDArray | Tensor,
+    /,
+    *,
     fmt: Literal["HWC", "CHW"] = "HWC",
-    cmap: colors.Colormap = "seismic",
+    cmap: str | colors.Colormap = "seismic",
 ) -> NDArray:
     r"""Create heatmap of given matrix.
 
@@ -37,8 +43,12 @@ def kernel_heatmap(
     if isinstance(kernel, Tensor):
         kernel = kernel.cpu().numpy()
 
-    colormap = cm.get_cmap(cmap)
-    RGBA = colormap(kernel)
+    if isinstance(cmap, str):
+        colormap = colormaps[cmap]
+    else:
+        colormap = cmap
+
+    RGBA: NDArray = colormap(kernel)  # type: ignore[assignment]
     RGB = RGBA[..., :-1]
 
     if fmt == "HWC":
@@ -46,3 +56,37 @@ def kernel_heatmap(
     if fmt == "CHW":
         return np.rollaxis(RGB, -1)
     raise ValueError(fmt)
+
+
+def rasterize(
+    fig: Figure,
+    /,
+    *,
+    w: int = 3,
+    h: int = 3,
+    px: int = 512,
+    py: int = 512,
+) -> np.ndarray:
+    r"""Convert figure to image with specific pixel size.
+
+    The dpi setting will be automatically determined as the average of the
+    horizontal and vertical dpi.
+
+    Args:
+        fig: Figure to rasterize.
+        w: Width of figure in inches.
+        h: Height of figure in inches.
+        px: Width of figure in pixels.
+        py: Height of figure in pixels.
+    """
+    dpi = (px / w + py / h) // 2  # compromise
+    fig.set_dpi(dpi)
+    fig.set_size_inches(w, h)
+
+    # we serialize with PIL and return the array
+    with TemporaryFile(suffix=".png") as file:
+        fig.savefig(file, dpi=dpi)
+        im = Image.open(file)
+        arr = np.array(im)
+
+    return arr

@@ -65,6 +65,8 @@
       <excludeFolder url="file://$MODULE_DIR$/_docs_autoapi" />
       <excludeFolder url="file://$MODULE_DIR$/_docs_autosummary" />
       <excludeFolder url="file://$MODULE_DIR$/dev/datasets/MIMIC-IV/mimic-iv-2.2" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/_build_previous" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/_build_previous_bak" />
       <excludePattern pattern="*.ipynb_checkpoints" />
     </content>
     <orderEntry type="jdk" jdkName="Poetry (tsdm)" jdkType="Python SDK" />
