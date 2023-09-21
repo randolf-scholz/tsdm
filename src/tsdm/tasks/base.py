@@ -771,7 +771,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
 class Split(Generic[Sample_co]):
     """Represents a split of a dataset."""
 
-    name: SplitID = NotImplemented
+    name: Hashable = NotImplemented
     r"""List of index."""
     fold: Series = NotImplemented
     r"""Dictionary holding `Fold` associated with each key (index for split)."""
