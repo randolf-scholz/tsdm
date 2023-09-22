@@ -76,7 +76,10 @@ def test_zeros_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
 
 @mark.parametrize(
     "formula",
-    [true_like, lambda z: (z == z) | (z != z)],
+    [
+        true_like,
+        lambda z: (z == z) | (z != z),  # pylint: disable=comparison-with-itself
+    ],
     ids=["true_like", "(x==x)|(x!=x)"],
 )
 @mark.parametrize(
@@ -103,7 +106,10 @@ def test_true_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
 
 @mark.parametrize(
     "formula",
-    [false_like, lambda z: (z == z) ^ (z == z)],
+    [
+        false_like,
+        lambda z: (z == z) ^ (z == z),  # pylint: disable=comparison-with-itself
+    ],
     ids=["false_like", "(x==x)^(x==x)"],
 )
 @mark.parametrize(

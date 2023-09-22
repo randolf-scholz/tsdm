@@ -16,14 +16,16 @@ __all__ = [
     "TimeSeriesDistribution",
     "IVP_Generator",
     "IVP_Solver",
+    # functions
+    "solve_ivp",
 ]
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
+import numpy as np
 import scipy.stats
 from numpy.typing import ArrayLike
-from scipy.integrate import solve_ivp
 
 from tsdm.types.aliases import SizeLike
 from tsdm.types.variables import any_co as T_co
@@ -60,6 +62,7 @@ class _Distribution(Protocol[T_co]):
         self, *, loc: ArrayLike = 0, scale: ArrayLike = 1, moments: str = "mvsk"
     ) -> tuple[T_co, ...]:
         """Some statistics of the given RV."""
+        raise NotImplementedError
 
     def entropy(self, /) -> T_co:
         """Differential entropy of the RV."""
@@ -124,6 +127,25 @@ class TimeSeriesDistribution(
 
 
 @runtime_checkable
+class ODE(Protocol[T_co]):
+    """Represents a system of ordinary differential equations."""
+
+    def __call__(self, t: ArrayLike, y: ArrayLike) -> T_co:
+        """Evaluate the vector field at given time and state.
+
+        .. Signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
+
+        Args:
+            t: list of time stamps
+            y: list of states at time t
+
+        Returns:
+            f(t, y(t)) value of the veector field at time t and state y(t)
+        """
+        ...
+
+
+@runtime_checkable
 class IVP_Solver(Protocol[T_co]):
     """Protocol for initial value problem solvers.
 
@@ -131,22 +153,50 @@ class IVP_Solver(Protocol[T_co]):
 
     Examples:
         - `scipy.integrate.odeint`
+            - expects system to be Callable[[t, y], ...] or Callable[[t, y], ...]
+        - `scipy.integrate.solve_ivp`
+            - expects system to be Callable[[t, y], ...]
         - `torchdiffeq.odeint`
+            - expects system to be Callable[[t, y], ...]
         - `torchsde.sdeint`
+            - expects system to be SDE object with methods
+                - `f(self, t, y) -> ...` (drift)
+                - `g(self, t, y) -> ...` (diffusion)
 
     Note:
         - `scipy.integrate.solve_ivp` has y0 before t, therefore, we require that
           y0 is passed as a keyword argument.
     """
 
-    def __call__(self, system: Any, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
-        """Solve the initial value problem."""
+    def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+        """Solve the initial value problem.
+
+        .. Signature:: ``[(N,), (..., *D) -> (..., N, *D)``
+
+        Args:
+            system: Some object that represents the dynamics of the systems.
+            t: sorted list of N time points at which to solve for y.
+            y0: Initial state at t[0], tensor of shape `(..., *D)`.
+
+        Returns:
+            array-like object y[t_i] containing the solution of the initial value problem.
+        """
         ...
+
+
+def solve_ivp(
+    system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any
+) -> np.ndarray:
+    """Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
+    t_eval = np.asarray(t)
+    t0 = t_eval.min()
+    tf = t_eval.max()
+    return scipy.integrate.solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
 
 
 @runtime_checkable
 class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
-    """Protocol for Initial Value Problems.
+    """Protocol for Generators that solve Initial Value Problems (IVP).
 
     Subsumes ODE-Generators and SDE-Generators.
     """
@@ -154,10 +204,10 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
     @property
     def ivp_solver(self) -> IVP_Solver[T_co]:
         """Initial value problem solver."""
-        return NotImplemented
+        return cast(IVP_Solver[T_co], solve_ivp)
 
     @property
-    def system(self) -> Any:
+    def system(self) -> Any | ODE:
         """System of differential equations."""
         return NotImplemented
 
@@ -175,6 +225,13 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         """Solve the initial value problem."""
         if self.ivp_solver is NotImplemented or self.system is NotImplemented:
             raise NotImplementedError
+        if self.ivp_solver is scipy.integrate.solve_ivp:
+            raise ValueError(
+                "scipy.integrate.solve_ivp does not match the IVP_solver Protocol,"
+                " since it requires separate bounds [t0,tf] and evaluation points"
+                " t_eval. Please use the wrapped version"
+                " tsdm.random.generators.solve_ivp instead."
+            )
         return self.ivp_solver(self.system, t, y0=y0)
 
     def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
@@ -193,4 +250,5 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
 
 if TYPE_CHECKING:
     scipy_dist: type[Distribution] = scipy.stats.rv_continuous
-    scipy_solver: IVP_Solver = solve_ivp
+    scipy_solver: IVP_Solver = scipy.integrate.solve_ivp
+    _solve_ivp: IVP_Solver = solve_ivp

@@ -171,6 +171,7 @@ repos:
           (?x)^(
             (?!)  # intentionally matches nothing
             #|tests/
+            #|src/tsdm/
             |src/tsdm/constants.py
             #|src/tsdm/backend
             |src/tsdm/config
@@ -182,6 +183,9 @@ repos:
             |src/tsdm/models
             |src/tsdm/optimizers
             #|src/tsdm/random
+            |src/tsdm/random/stats
+            # |src/tsdm/random/samplers
+            |src/tsdm/random/generators
             #|src/tsdm/tasks
             |src/tsdm/types
             #|src/tsdm/utils

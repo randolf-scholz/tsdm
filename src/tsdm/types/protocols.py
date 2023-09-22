@@ -25,6 +25,7 @@ __all__ = [
     "MutableMappingProtocol",
     "SequenceProtocol",
     "MutableSequenceProtocol",
+    "Func",  # alternative to Callable
     # Functions
     "is_dataclass",
 ]
@@ -45,6 +46,7 @@ from collections.abc import (
 from typing import (
     Any,
     NamedTuple,
+    ParamSpec,
     Protocol,
     TypeGuard,
     TypeVar,
@@ -61,6 +63,7 @@ from tsdm.types.variables import (
     any_var as T,
     key_contra,
     key_var as K,
+    return_var_co as R,
     scalar_co,
     scalar_var as Scalar,
     value_co as V_co,
@@ -68,6 +71,7 @@ from tsdm.types.variables import (
 )
 
 A = TypeVar("A", bound="Array")
+P = ParamSpec("P")
 
 
 # region generic factory-protocols -----------------------------------------------------
@@ -561,6 +565,13 @@ class MutableMappingProtocol(MappingProtocol[K, V], Protocol[K, V]):
     def update(self, __m: Iterable[tuple[K, V]], **kwargs: V) -> None: ...
     @overload
     def update(self, **kwargs: V) -> None: ...
+
+
+@runtime_checkable
+class Func(Protocol[P, R]):
+    """Protocol for functions, alternative to `Callable`."""
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
 
 
 # endregion stdlib protocols -----------------------------------------------------------

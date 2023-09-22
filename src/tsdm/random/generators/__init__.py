@@ -20,6 +20,8 @@ __all__ = [
     "BouncingBall",
     "DampedPendulum",
     "LoktaVolterra",
+    # functions
+    "solve_ivp",
 ]
 
 from tsdm.random.generators._generators import (
@@ -29,6 +31,7 @@ from tsdm.random.generators._generators import (
     IVP_Solver,
     TimeSeriesDistribution,
     TimeSeriesGenerator,
+    solve_ivp,
 )
 from tsdm.random.generators.bouncing_ball import BouncingBall
 from tsdm.random.generators.dampened_pendulum import DampedPendulum

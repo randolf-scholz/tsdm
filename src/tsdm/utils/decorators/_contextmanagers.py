@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 from contextlib import ContextDecorator
+from importlib.util import find_spec
 from time import perf_counter_ns
 from types import ModuleType, TracebackType
 from typing import ClassVar, Literal, Optional
@@ -38,7 +39,7 @@ class ray_cluster(ContextDecorator):
         )
 
     def __enter__(self) -> Self:
-        if importlib.util.find_spec("ray") is not None:
+        if find_spec("ray") is not None:
             self.ray = importlib.import_module("ray")
             # Only use 80% of the available CPUs.
             self.LOGGER.warning("Starting ray cluster with num_cpus=%s.", self.num_cpus)

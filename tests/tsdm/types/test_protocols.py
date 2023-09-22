@@ -30,6 +30,7 @@ ARRAY_PROTOCOLS = (Array, NumericalArray, MutableArray)
 
 
 def test_shape() -> None:
+    """Test the Shape protocol."""
     data = [1, 2, 3]
     torch_tensor: Tensor = torch.tensor(data)
     numpy_ndarray: NDArray = ndarray(data)
@@ -140,6 +141,7 @@ def test_table() -> None:
 # @pytest.mark.parametrize("array", TEST_ARRAYS)
 @pytest.mark.parametrize("protocol", ARRAY_PROTOCOLS)
 def test_shared_attrs(protocol: type) -> None:
+    """Test that all arrays share the same attributes."""
     protocol_attrs = get_protocol_members(protocol)
     data = [1, 2, 3]
     arrays = {

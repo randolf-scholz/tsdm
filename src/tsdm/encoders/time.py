@@ -153,7 +153,7 @@ class DateTimeEncoder(BaseEncoder):
         datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
         if self.kind == Series:
             return datetimes.round(self.base_freq)
-        return DatetimeIndex(  # pylint: disable=no-member
+        return DatetimeIndex(
             datetimes, freq=self.freq, name=self.name, dtype=self.dtype
         ).round(self.base_freq)
 
