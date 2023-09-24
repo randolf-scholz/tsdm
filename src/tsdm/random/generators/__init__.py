@@ -17,6 +17,7 @@ __all__ = [
     # Generators
     "BouncingBall",
     "DampedPendulum",
+    "DampedPendulumXY",
     "LotkaVolterra",
     "SIR",
     # functions
@@ -31,14 +32,15 @@ from tsdm.random.generators._generators import (
     solve_ivp,
 )
 from tsdm.random.generators.bouncing_ball import BouncingBall
-from tsdm.random.generators.dampened_pendulum import DampedPendulum
+from tsdm.random.generators.dampened_pendulum import DampedPendulum, DampedPendulumXY
 from tsdm.random.generators.lotka_volterra import LotkaVolterra
 from tsdm.random.generators.sir_model import SIR
 
 GENERATORS: dict[str, type[TimeSeriesGenerator]] = {
-    "DampedPendulum": DampedPendulum,
-    "LoktaVolterra": LotkaVolterra,
     "BouncingBall": BouncingBall,
+    "DampedPendulum": DampedPendulum,
+    "DampedPendulumXY": DampedPendulumXY,
+    "LotkaVolterra": LotkaVolterra,
     "SIR": SIR,
 }
 r"""Dictionary of all available generators."""

@@ -32,7 +32,7 @@ class SIR(IVP_Generator[NDArray]):
     """
 
     _: KW_ONLY
-    alpha: float = 0.5
+    alpha: float = 0.1
     """Recovery rate."""
     beta: float = 0.5
     """Transmission rate."""
@@ -46,7 +46,7 @@ class SIR(IVP_Generator[NDArray]):
         """
         return Dirichlet.rvs(weights, size=size)
 
-    def make_observations(self, y: NDArray, /, *, noise: float = 0.01) -> NDArray:
+    def make_observations(self, y: NDArray, /, *, noise: float = 0.001) -> NDArray:
         r"""Create observations from the solution.
 
         We sample from a dirichlet distribution with parameters
@@ -76,18 +76,17 @@ class SIR(IVP_Generator[NDArray]):
         )
         return np.einsum("..., ...d -> ...d", np.ones_like(t), x)
 
-    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> NDArray:
-        r"""Solve the initial value problem."""
-        x = super().solve_ivp(t, y0=y0)
-        return self.project_solution(x)
-
-    def project_solution(self, x: NDArray, /) -> NDArray:
+    def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:
         r"""Project the solution onto the constraint set."""
+        assert x.min() > -tol, "Integrator produced vastly negative values."
+        assert x.max() < 1 + tol, "Integrator produced vastly positive values."
+        assert np.allclose(x.sum(axis=-1), 1, atol=tol), "Constraints vioalted."
+
         x = x.clip(0, 1)
         x /= x.sum(axis=-1, keepdims=True)
         return x
 
-    def validate_constraints(self, x: NDArray, /) -> None:
+    def validate_solution(self, x: NDArray, /) -> None:
         assert (
             x.min() >= 0 and x.max() <= +1 and np.allclose(x.sum(axis=-1), 1)
         ), "Integrator produced invalid values."

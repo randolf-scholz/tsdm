@@ -11,7 +11,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from scipy.stats import norm as univariate_normal
+from scipy.stats import norm as univariate_normal, uniform
 
 from tsdm.random.generators._generators import IVP_Generator
 from tsdm.random.stats.distributions import Distribution
@@ -47,7 +47,7 @@ class LotkaVolterra(IVP_Generator[NDArray]):
     """Initial angle."""
     predator0: float = 1.0
     """Initial angular velocity."""
-    observation_noise: Distribution = univariate_normal(loc=0, scale=0.05)
+    observation_noise: Distribution = uniform(loc=0.95, scale=0.1)  # 5% noise
     """Noise distribution."""
     parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
     """Noise distribution."""
@@ -60,8 +60,8 @@ class LotkaVolterra(IVP_Generator[NDArray]):
 
     def make_observations(self, x: NDArray, /) -> NDArray:
         """Create observations from the solution."""
-        # add observation noise
-        return x + self.observation_noise.rvs(size=x.shape)
+        # multiplicative noise
+        return x * self.observation_noise.rvs(size=x.shape)
 
     def system(self, t: Any, state: ArrayLike) -> NDArray:
         """Vector field of the pendulum.
@@ -86,6 +86,11 @@ class LotkaVolterra(IVP_Generator[NDArray]):
         )
         return np.einsum("..., ...d -> ...d", np.ones_like(t), new_state)
 
-    def validate_constraints(self, x: NDArray, /) -> None:
+    def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:
+        """Project the solution onto the constraint set."""
+        assert x.min() > -tol, f"Integrator produced vastly negative values {x.min()}."
+        return x.clip(0)
+
+    def validate_solution(self, x: NDArray, /) -> None:
         """Validate constraints on the parameters."""
-        assert x.min() >= 0 and x.max() <= +1
+        assert x.min() >= 0, f"Integrator produced negative values: {x.min()}<0"

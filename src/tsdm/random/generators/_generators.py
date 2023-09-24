@@ -156,14 +156,9 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         """Generate (multiple) initial state(s) y₀."""
         ...
 
-    @abstractmethod
     def make_observations(self, sol: Any, /) -> T_co:
         """Create observations from the solution."""
-        ...
-
-    def validate_constraints(self, sol: Any, /) -> None:
-        """Validate constraints on the parameters."""
-        ...
+        return sol
 
     def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
         """Solve the initial value problem."""
@@ -181,8 +176,8 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         # project onto constraint set
         sol = self.project_solution(sol)
 
-        # validate constraints
-        self.validate_constraints(sol)
+        # validate solution
+        self.validate_solution(sol)
 
         return sol
 
@@ -197,7 +192,18 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         # add observation noise
         observations = self.make_observations(sol)
 
+        # validate observations
+        self.validate_observations(observations)
+
         return observations
+
+    def validate_solution(self, sol: Any, /) -> None:
+        """Validate constraints on the parameters."""
+        assert True
+
+    def validate_observations(self, values: Any, /) -> None:
+        """Validate constraints on the parameters."""
+        self.validate_solution(values)
 
 
 if TYPE_CHECKING:
