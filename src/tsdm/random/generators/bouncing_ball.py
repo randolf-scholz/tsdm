@@ -14,7 +14,6 @@ __all__ = ["BouncingBall"]
 from dataclasses import KW_ONLY, dataclass
 from typing import Final
 
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.stats import truncnorm
@@ -129,11 +128,3 @@ class BouncingBall(IVP_Generator[NDArray]):
 
     def validate_observations(self, x: NDArray, /) -> None:
         assert x.min() >= -1 and x.max() <= +1, f"{[x.min(), x.max()]} not in [-1,+1]"
-
-
-def example():
-    """Example usage of the bouncing ball generator."""
-    t = np.linspace(-10, 20, 1000)
-    y0 = np.random.uniform(-0.5, 0.7, size=(5, 2))
-    x = BouncingBall().solve_ivp(t, y0=y0)
-    plt.plot(t, x[0], t, x[1], t, x[3])
