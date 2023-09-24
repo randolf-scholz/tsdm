@@ -112,6 +112,7 @@ class BouncingBall(IVP_Generator[np.ndarray]):
 
 
 def example():
+    """Example usage of the bouncing ball generator."""
     t = np.linspace(-10, 20, 1000)
     y0 = np.random.uniform(-0.5, 0.7, size=(5, 2))
     x = BouncingBall().solve_ivp(t, y0=y0)

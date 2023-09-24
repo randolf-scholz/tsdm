@@ -10,11 +10,10 @@ from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
 import numpy as np
-import scipy
 from numpy.typing import ArrayLike
 from scipy.stats import norm as univariate_normal
 
-from tsdm.random.generators._generators import Distribution, IVP_Generator, IVP_Solver
+from tsdm.random.generators._generators import Distribution, IVP_Generator
 from tsdm.types.aliases import SizeLike
 
 
@@ -54,8 +53,6 @@ class DampedPendulum(IVP_Generator[np.ndarray]):
     """Initial angle."""
     omega0: float = 4.0
     """Initial angular velocity."""
-    ivp_solver: IVP_Solver = scipy.integrate.solve_ivp
-    """Solver for the initial value problem."""
     observation_noise: Distribution = univariate_normal(loc=0, scale=0.05)
     """Noise distribution."""
     parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
