@@ -12,8 +12,6 @@ __all__ = [
     # Protocols
     "Generator",
     "TimeSeriesGenerator",
-    "Distribution",
-    "TimeSeriesDistribution",
     "IVP_Generator",
     "IVP_Solver",
     # functions
@@ -26,8 +24,11 @@ from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 import numpy as np
 import scipy.stats
 from numpy.typing import ArrayLike
+from scipy.optimize import OptimizeResult as OdeResult
 
+from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
+from tsdm.types.callback_protocols import SelfMap
 from tsdm.types.variables import any_co as T_co
 
 
@@ -52,81 +53,6 @@ class TimeSeriesGenerator(Protocol[T_co]):
 
 
 @runtime_checkable
-class _Distribution(Protocol[T_co]):
-    """Protocol for distributions.
-
-    We follow the design of `scipy.stats.rv_continuous` and `scipy.stats.rv_discrete`.
-    """
-
-    def stats(
-        self, *, loc: ArrayLike = 0, scale: ArrayLike = 1, moments: str = "mvsk"
-    ) -> tuple[T_co, ...]:
-        """Some statistics of the given RV."""
-        raise NotImplementedError
-
-    def entropy(self, /) -> T_co:
-        """Differential entropy of the RV."""
-        raise NotImplementedError
-
-    def moment(self, order: int) -> T_co:
-        """Non-central moment of order n."""
-        raise NotImplementedError
-
-    def pdf(self, x: ArrayLike, /) -> T_co:
-        """Probability density function at x of the given RV."""
-        raise NotImplementedError
-
-    def cdf(self, x: ArrayLike, /) -> T_co:
-        """Cumulative distribution function of the given RV."""
-        raise NotImplementedError
-
-    def ppf(self, q: ArrayLike, /) -> T_co:
-        """Percent point function (inverse of `cdf`) at q of the given RV."""
-        raise NotImplementedError
-
-    def sf(self, x: ArrayLike, /) -> T_co:
-        """Survival function (1 - `cdf`) at x of the given RV."""
-        raise NotImplementedError
-
-    def isf(self, q: ArrayLike, /) -> T_co:
-        """Inverse survival function at q of the given RV."""
-        raise NotImplementedError
-
-    def logpdf(self, x: ArrayLike, /) -> T_co:
-        """Log of the probability density function at x of the given RV."""
-        try:
-            return self.pdf(x).log()
-        except AttributeError as exc:
-            raise NotImplementedError from exc
-
-    def logcdf(self, x: ArrayLike, /) -> T_co:
-        """Log of the cumulative distribution function at x of the given RV."""
-        try:
-            return self.cdf(x).log()
-        except AttributeError as exc:
-            raise NotImplementedError from exc
-
-    def logsf(self, x: ArrayLike, /) -> T_co:
-        """Log of the survival function of the given RV."""
-        try:
-            return self.sf(x).log()
-        except AttributeError as exc:
-            raise NotImplementedError from exc
-
-
-@runtime_checkable
-class Distribution(_Distribution[T_co], Generator[T_co], Protocol[T_co]):
-    """Protocol for distributions."""
-
-
-@runtime_checkable
-class TimeSeriesDistribution(
-    _Distribution[T_co], TimeSeriesGenerator[T_co], Protocol[T_co]
-):
-    """Protocol for time-series distributions."""
-
-
-@runtime_checkable
 class ODE(Protocol[T_co]):
     """Represents a system of ordinary differential equations."""
 
@@ -134,6 +60,11 @@ class ODE(Protocol[T_co]):
         """Evaluate the vector field at given time and state.
 
         .. Signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
+
+        Sub-signatures:
+            - ``[(,), (..., *D) -> (..., *D)``
+            - ``[(...,), (*D,) -> (..., *D)``
+            - ``[(,), (*D,) -> (*D,)``
 
         Args:
             t: list of time stamps
@@ -191,7 +122,11 @@ def solve_ivp(
     t_eval = np.asarray(t)
     t0 = t_eval.min()
     tf = t_eval.max()
-    return scipy.integrate.solve_ivp(system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs)
+    sol: OdeResult = scipy.integrate.solve_ivp(
+        system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs
+    )
+    # NOTE: output shape: (d, n_timestamps), move time axis to the front
+    return np.moveaxis(sol.y, -1, 0)
 
 
 @runtime_checkable
@@ -207,9 +142,14 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         return cast(IVP_Solver[T_co], solve_ivp)
 
     @property
-    def system(self) -> Any | ODE:
+    def system(self) -> ODE | Any:
         """System of differential equations."""
         return NotImplemented
+
+    @property
+    def project_solution(self) -> SelfMap:
+        """Project the solution onto the constraint set."""
+        return lambda sol: sol
 
     @abstractmethod
     def get_initial_state(self, size: SizeLike = ()) -> T_co:
@@ -219,6 +159,10 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
     @abstractmethod
     def make_observations(self, sol: Any, /) -> T_co:
         """Create observations from the solution."""
+        ...
+
+    def validate_constraints(self, sol: Any, /) -> None:
+        """Validate constraints on the parameters."""
         ...
 
     def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
@@ -232,7 +176,15 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
                 " t_eval. Please use the wrapped version"
                 " tsdm.random.generators.solve_ivp instead."
             )
-        return self.ivp_solver(self.system, t, y0=y0)
+        sol = self.ivp_solver(self.system, t, y0=y0)
+
+        # project onto constraint set
+        sol = self.project_solution(sol)
+
+        # validate constraints
+        self.validate_constraints(sol)
+
+        return sol
 
     def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
         """Random variates of given type."""

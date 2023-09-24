@@ -7,21 +7,50 @@ References:
 __all__ = ["DampedPendulum"]
 
 from dataclasses import KW_ONLY, dataclass
-from typing import Any
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal
 
-from tsdm.random.generators._generators import Distribution, IVP_Generator
+from tsdm.random.generators._generators import IVP_Generator
+from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
 
 
 @dataclass
-class DampedPendulum(IVP_Generator[np.ndarray]):
-    """Dampened Pendulum Simulation.
+class DampedPendulum(IVP_Generator[NDArray]):
+    r"""Dampened Pendulum Simulation.
 
     The dampended pendulum is an autonomous system with two degrees of freedom.
+
+    .. math::
+        dθ/dt = ω
+        dω/dt = -(g/l)⋅sin(θ) - (γ/m)⋅ω
+
+    Note: (Second equilibrium)
+        Usually the top position is an unstable equilibrium.
+        For the dampened pendulum, the jacobian of the vector field at θ=π, ω=0 is
+
+        .. math::
+            J = [[0, 1], [-(g/l)\cos θ, -γ/m]]
+              = [[0, 1], [g/l, -γ/m]]
+
+        Applying the formula for the eigenvalues of a 2x2 matrix,
+
+        .. math:: λ = ½(tr J ± √{(tr J)² - 4⋅det J})
+
+        We get
+
+        .. math:: λ = ½(-γ/m ± √{γ²/m² + 4g/l})
+
+        The equilibrium is stable if Re(λ)<0, so in this case iff
+
+        .. math::
+            ½(-γ/m ± √{γ²/m² + 4g/l}) < 0
+            ⟺ √{γ²/m² + 4g/l}) < γ/m
+            ⟺ 4g/l < 0
+
+        which is obviously false. Hence, the top position is a stable equilibrium.
 
     References:
         - Neural Continuous-Discrete State Space Models
@@ -58,34 +87,41 @@ class DampedPendulum(IVP_Generator[np.ndarray]):
     parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
     """Noise distribution."""
 
-    def get_initial_state(self, size: SizeLike = ()) -> np.ndarray:
+    def get_initial_state(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         theta0 = self.theta0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.omega0 * self.parameter_noise.rvs(size=size).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
-    def make_observations(self, sol: Any, /) -> np.ndarray:
+    def make_observations(self, y: NDArray, /) -> NDArray:
         """Create observations from the solution."""
         # add observation noise
-        observations = sol.y + self.observation_noise.rvs(size=sol.y.shape)
-        return observations
+        return y + self.observation_noise.rvs(size=y.shape)
 
-    def system(self, state: ArrayLike, *, t: Any = None) -> np.ndarray:
+    def system(self, t: ArrayLike, x: ArrayLike) -> NDArray:
         """Vector field of the pendulum.
 
         .. Signature:: ``[(...,), (..., 2) -> (..., 2)``
-        """
-        if t is not None:
-            raise ValueError("Damped-Pendulum qquations are a time-invariant system.")
 
-        state = np.asarray(state)
+        sub-signatures:
+            - ``[(...,), (2, ) -> (..., 2)``
+            - ``[(,), (..., 2) -> (..., 2)``
+        """
+        t = np.asarray(t)
+        state = np.asarray(x)
         theta = state[..., 0]
         omega = state[..., 1]
 
-        return np.stack(
+        alpha = self.g / self.length
+        beta = self.gamma / self.mass
+
+        new_state = np.stack(
             [
                 omega,
-                -(self.g / self.length) * np.sin(theta)
-                - self.gamma / self.mass * omega,
+                -alpha * np.sin(theta) - beta * omega,
             ]
         )
+        return np.einsum("..., ...d -> ...d", np.ones_like(t), new_state)
+
+    def validate_constraints(self, x: NDArray, /) -> None:
+        """Validate that solution satisfies constraints."""

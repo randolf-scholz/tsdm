@@ -50,7 +50,7 @@ from tsdm.backend.universal import (
 from tsdm.types.callback_protocols import (
     ClipProto,
     ContractionProto,
-    SelfMapProto,
+    SelfMap,
     TensorLikeProto,
     ToTensorProto,
     WhereProto,
@@ -114,7 +114,7 @@ class Kernels:
         "torch": torch.clip,
     }
 
-    isnan: Mapping[BackendID, SelfMapProto] = {
+    isnan: Mapping[BackendID, SelfMap] = {
         "numpy": numpy.isnan,
         "pandas": pandas.isna,
         "torch": torch.isnan,
@@ -144,13 +144,13 @@ class Kernels:
         "torch": torch_nanstd,
     }
 
-    false_like: Mapping[BackendID, SelfMapProto] = {
+    false_like: Mapping[BackendID, SelfMap] = {
         "numpy": universal_false_like,
         "pandas": pandas_false_like,
         "torch": universal_false_like,
     }
 
-    true_like: Mapping[BackendID, SelfMapProto] = {
+    true_like: Mapping[BackendID, SelfMap] = {
         "numpy": universal_true_like,
         "pandas": pandas_true_like,
         "torch": universal_true_like,
@@ -174,7 +174,7 @@ class Kernels:
         "torch": torch.where,  # type: ignore[dict-item]
     }
 
-    strip_whitespace: Mapping[BackendID, SelfMapProto] = {
+    strip_whitespace: Mapping[BackendID, SelfMap] = {
         "pandas": pandas_strip_whitespace,
         "arrow": arrow_strip_whitespace,
     }
@@ -187,7 +187,7 @@ class Backend(Generic[T]):
 
     # KERNELS
     clip: ClipProto[T]
-    isnan: SelfMapProto[T]
+    isnan: SelfMap[T]
     where: WhereProto[T]
 
     nanmax: ContractionProto[T]
@@ -197,10 +197,10 @@ class Backend(Generic[T]):
 
     tensor_like: TensorLikeProto[T]
     to_tensor: ToTensorProto[T]
-    true_like: SelfMapProto[T]
-    false_like: SelfMapProto[T]
+    true_like: SelfMap[T]
+    false_like: SelfMap[T]
 
-    strip_whitespace: SelfMapProto[T]
+    strip_whitespace: SelfMap[T]
 
     def __init__(self, backend: str) -> None:
         # set the selected backend

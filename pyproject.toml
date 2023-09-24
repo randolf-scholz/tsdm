@@ -193,7 +193,7 @@ ignore = [
     "E241",  # E241 multiple spaces after ','
     "E501",  # E501 line too long (use ruff instead)
     "E704",  # E704 multiple statements on one line (def)
-    "E741",  # E741 ambiguous variable nam
+    # "E741",  # E741 ambiguous variable nam
     "W503",  # W503 line break before binary operator
     "W504",  # W504 line break after binary operator
 ]

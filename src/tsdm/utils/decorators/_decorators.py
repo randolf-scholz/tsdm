@@ -57,7 +57,6 @@ from tsdm.types.variables import (
     CollectionType,
     any_var as T,
     key_var as K,
-    object_var as O,
     return_var_co as R,
     torch_module_var,
     value_co as V_co,
@@ -357,21 +356,21 @@ def decorator(deco: Callable) -> Callable:
     return _parametrized_decorator
 
 
-def attribute(func: Callable[[O], R]) -> R:
+def attribute(func: Callable[[T], R]) -> R:
     r"""Create decorator that converts method to attribute."""
 
     @wraps(func, updated=())
     class _attribute:
         __slots__ = ("func", "payload")
         sentinel = object()
-        func: Callable[[O], R]
+        func: Callable[[T], R]
         payload: R
 
         def __init__(self, function: Callable) -> None:
             self.func = function
             self.payload = cast(Any, self.sentinel)
 
-        def __get__(self, obj: O | None, obj_type: Optional[type] = None) -> Self | R:
+        def __get__(self, obj: T | None, obj_type: Optional[type] = None) -> Self | R:
             if obj is None:
                 return self
             if self.payload is self.sentinel:
@@ -523,11 +522,11 @@ def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
 
 @decorator
 def vectorize(
-    func: Callable[[O], R],
+    func: Callable[[T], R],
     /,
     *,
     kind: type[CollectionType],
-) -> Callable[[O | CollectionType], R | CollectionType]:
+) -> Callable[[T | CollectionType], R | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly.
@@ -585,10 +584,16 @@ class IterItems(MappingProtocol[K, V_co], Protocol[K, V_co]):
 
 @overload
 def iter_keys(obj: type[MappingProtocol[K, V_co]], /) -> type[IterKeys[K, V_co]]: ...
+
+
 @overload
 def iter_keys(obj: MappingProtocol[K, V_co], /) -> IterKeys[K, V_co]: ...
+
+
 @overload
 def iter_keys(obj: T, /) -> T: ...
+
+
 def iter_keys(obj, /):
     r"""Redirects __iter__ to keys()."""
     base_class = obj if isinstance(obj, type) else type(obj)
@@ -618,10 +623,16 @@ def iter_keys(obj, /):
 def iter_values(
     obj: type[MappingProtocol[K, V_co]], /
 ) -> type[IterValues[K, V_co]]: ...
+
+
 @overload
 def iter_values(obj: MappingProtocol[K, V_co], /) -> IterValues[K, V_co]: ...
+
+
 @overload
 def iter_values(obj: T, /) -> T: ...
+
+
 def iter_values(obj, /):
     r"""Redirects __iter__ to values()."""
     base_class = obj if isinstance(obj, type) else type(obj)
@@ -649,10 +660,16 @@ def iter_values(obj, /):
 
 @overload
 def iter_items(obj: type[MappingProtocol[K, V_co]], /) -> type[IterItems[K, V_co]]: ...
+
+
 @overload
 def iter_items(obj: MappingProtocol[K, V_co], /) -> IterItems[K, V_co]: ...
+
+
 @overload
 def iter_items(obj: T, /) -> T: ...
+
+
 def iter_items(obj, /):
     r"""Redirects __iter__ to items()."""
     base_class = obj if isinstance(obj, type) else type(obj)
@@ -758,13 +775,13 @@ def wrap_func(
 
 @decorator
 def wrap_method(
-    func: Callable[Concatenate[O, P], R],
+    func: Callable[Concatenate[T, P], R],
     /,
     *,
-    before: Optional[Callable[[O], None] | Callable[Concatenate[O, P], None]] = None,
-    after: Optional[Callable[[O], None] | Callable[Concatenate[O, P], None]] = None,
+    before: Optional[Callable[[T], None] | Callable[Concatenate[T, P], None]] = None,
+    after: Optional[Callable[[T], None] | Callable[Concatenate[T, P], None]] = None,
     pass_args: bool = False,
-) -> Callable[Concatenate[O, P], R]:
+) -> Callable[Concatenate[T, P], R]:
     r"""Wrap a function with pre- and post-hooks."""
     logger = __logger__.getChild(func.__name__)
 
@@ -777,7 +794,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 before(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
@@ -785,7 +802,7 @@ def wrap_method(
             logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
                 after(self, *args, **kwargs)
                 return result
@@ -794,7 +811,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 before(self, *args, **kwargs)
                 result = func(self, *args, **kwargs)
                 after(self, *args, **kwargs)
@@ -804,7 +821,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 before(self)
                 return func(self, *args, **kwargs)
 
@@ -812,7 +829,7 @@ def wrap_method(
             logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
                 after(self)
                 return result
@@ -821,7 +838,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 before(self)
                 result = func(self, *args, **kwargs)
                 after(self)

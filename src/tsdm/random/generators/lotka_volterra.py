@@ -4,21 +4,22 @@ References:
     - https://en.wikipedia.org/wiki/Lotka-Volterra_equations
 """
 
-__all__ = ["LoktaVolterra"]
+__all__ = ["LotkaVolterra"]
 
 from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal
 
-from tsdm.random.generators._generators import Distribution, IVP_Generator
+from tsdm.random.generators._generators import IVP_Generator
+from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
 
 
 @dataclass
-class LoktaVolterra(IVP_Generator[np.ndarray]):
+class LotkaVolterra(IVP_Generator[NDArray]):
     r"""Lotka–Volterra Equations Simulation.
 
     The Lotka–Volterra equations, also known as the predator–prey equations, are a pair of
@@ -51,34 +52,40 @@ class LoktaVolterra(IVP_Generator[np.ndarray]):
     parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
     """Noise distribution."""
 
-    def get_initial_state(self, size: SizeLike = ()) -> np.ndarray:
+    def get_initial_state(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         theta0 = self.prey0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.predator0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
-    def make_observations(self, sol: Any, /) -> np.ndarray:
+    def make_observations(self, x: NDArray, /) -> NDArray:
         """Create observations from the solution."""
         # add observation noise
-        observations = sol.y + self.observation_noise.rvs(size=sol.y.shape)
-        return observations
+        return x + self.observation_noise.rvs(size=x.shape)
 
-    def system(self, state: ArrayLike, *, t: Any = None) -> np.ndarray:
+    def system(self, t: Any, state: ArrayLike) -> NDArray:
         """Vector field of the pendulum.
 
-        .. Signature:: ``[(...,), (..., 2) -> (..., 2)``
-        """
-        if t is not None:
-            raise ValueError("Lotka-Volterra equations are a time-invariant system.")
+        .. Signature:: ``[(...B, N), (...B, N, 2) -> (...B, N, 2)``
 
+        sub-signatures:
+            - ``[(...,), (2, ) -> (..., 2)``
+            - ``[(,), (..., 2) -> (..., 2)``
+        """
+        t = np.asarray(t)
         state = np.asarray(state)
+
         x = state[..., 0]
         y = state[..., 1]
         xy = x * y
-
-        return np.stack(
+        new_state = np.stack(
             [
                 self.alpha * x - self.beta * xy,
                 self.delta * xy - self.gamma * y,
             ]
         )
+        return np.einsum("..., ...d -> ...d", np.ones_like(t), new_state)
+
+    def validate_constraints(self, x: NDArray, /) -> None:
+        """Validate constraints on the parameters."""
+        assert x.min() >= 0 and x.max() <= +1

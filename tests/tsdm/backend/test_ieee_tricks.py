@@ -19,7 +19,7 @@ import torch
 from pytest import mark
 
 from tsdm.backend.universal import false_like, true_like
-from tsdm.types.callback_protocols import SelfMapProto
+from tsdm.types.callback_protocols import SelfMap
 
 T = TypeVar("T", pandas.Series, numpy.ndarray, torch.Tensor)
 
@@ -37,7 +37,7 @@ TIME = numpy.array(DATA) * numpy.timedelta64(1, "s")
     ],
     ids=["torch", "pandas", "numpy"],
 )
-def test_make_ones_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
+def test_make_ones_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     """Analogous to `ones_like`.
 
     Candidates for creating ones are:
@@ -61,7 +61,7 @@ def test_make_ones_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
     ],
     ids=["torch", "pandas", "numpy"],
 )
-def test_zeros_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
+def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     """Analogous to `zeros_like`.
 
     For creating zeros there are multiple good candidates:
@@ -93,7 +93,7 @@ def test_zeros_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
-def test_true_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
+def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     """Analogous to `ones_like(x, dtype=bool)`.
 
     Candidates:
@@ -123,7 +123,7 @@ def test_true_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
     ],
     ids=["torch", "pandas", "numpy", "pandas-timedelta", "numpy-timedelta"],
 )
-def test_false_like(data: T, expected: T, formula: SelfMapProto[T]) -> None:
+def test_false_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     """Analogous to `zeros_like(x, dtype=bool)`.
 
     Candidates:

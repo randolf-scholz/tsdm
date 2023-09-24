@@ -16,7 +16,7 @@ from typing import Final
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import truncnorm
 
 from tsdm.random.generators._generators import IVP_Generator
@@ -24,7 +24,7 @@ from tsdm.types.aliases import SizeLike
 
 
 @dataclass
-class BouncingBall(IVP_Generator[np.ndarray]):
+class BouncingBall(IVP_Generator[NDArray]):
     """Bouncing Ball Simulation.
 
     NOTE: This simulation differs from the reference in two regards:
@@ -51,7 +51,7 @@ class BouncingBall(IVP_Generator[np.ndarray]):
     y_noise: Final[float] = 0.05
     """Standard deviation of the observation noise."""
 
-    def get_initial_state(self, size: SizeLike = ()) -> np.ndarray:
+    def get_initial_state(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         x0 = np.random.uniform(low=self.x_min, high=self.x_max, size=size)
         v0 = np.random.uniform(
@@ -59,16 +59,20 @@ class BouncingBall(IVP_Generator[np.ndarray]):
         ) * np.random.choice([-1, 1], size=size)
         return np.stack([x0, v0], axis=-1)
 
-    def make_observations(self, sol: np.ndarray, /) -> np.ndarray:
+    def make_observations(self, x: NDArray, /) -> NDArray:
         """Create observations from the solution."""
         # sample from truncated normal distribution
-        y = truncnorm.rvs(self.x_min, self.x_max, loc=sol, scale=self.y_noise)
+
+        # cf. https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.truncnorm.html
+        lower = (self.x_min - x) / self.y_noise
+        upper = (self.x_max - x) / self.y_noise
+        y = truncnorm.rvs(lower, upper, loc=x, scale=self.y_noise)
 
         # validate and return
-        assert y.min() >= -1 and y.max() <= +1
+        assert y.min() >= -1 and y.max() <= +1, f"{[y.min(), y.max()]} not in [-1,+1]"
         return y
 
-    def solve_ivp(self, t: ArrayLike, *, y0: ArrayLike) -> np.ndarray:
+    def solve_ivp(self, t: ArrayLike, *, y0: ArrayLike) -> NDArray:
         """Solve the initial value problem.
 
         Signature: ``[(N,), (..., 2)] -> (..., N)``
@@ -107,8 +111,11 @@ class BouncingBall(IVP_Generator[np.ndarray]):
         x = np.moveaxis(x, 0, -1)
 
         # validate and return
-        assert x.min() >= -1 and x.max() <= +1
         return x
+
+    def validate_constraints(self, x: NDArray) -> None:
+        """Validate constraints on the parameters."""
+        assert x.min() >= -1 and x.max() <= +1
 
 
 def example():
