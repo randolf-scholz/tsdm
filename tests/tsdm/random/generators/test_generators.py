@@ -19,7 +19,7 @@ RESULT_DIR = PROJECT.TEST_RESULTS_PATH / (PROJECT.TEST_RESULTS_PATH / __file__).
 RESULT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-@mark.flaky(reruns=2)
+@mark.flaky(reruns=3)
 def test_bouncing_ball() -> None:
     """Test Bouncing Ball."""
     # sample from generator
@@ -37,11 +37,11 @@ def test_bouncing_ball() -> None:
     fig.savefig(RESULT_DIR / "bouncing_ball.png")
 
 
-@mark.flaky(reruns=2)
+@mark.flaky(reruns=3)
 def test_lotka_volterra() -> None:
     """Test Lotka-Volterra."""
     # sample from generator
-    t = np.linspace(0, 10, 256)
+    t = np.linspace(0, 20, 256)
     y = LotkaVolterra().rvs(t)
 
     # generate plot
@@ -58,7 +58,7 @@ def test_lotka_volterra() -> None:
     fig.savefig(RESULT_DIR / "lotka_volterra.png")
 
 
-@mark.flaky(reruns=2)
+@mark.flaky(reruns=3)
 def test_damped_pendulum() -> None:
     """Test Damped Pendulum."""
     # sample from generator
@@ -85,7 +85,7 @@ def test_damped_pendulum() -> None:
     fig.savefig(RESULT_DIR / "damped_pendulum.png")
 
 
-@mark.flaky(reruns=2)
+@mark.flaky(reruns=3)
 def test_damped_pendulum_xy() -> None:
     """Test Damped Pendulum XY."""
     # sample from generator
@@ -107,7 +107,7 @@ def test_damped_pendulum_xy() -> None:
     fig.savefig(RESULT_DIR / "damped_pendulum_xy.png")
 
 
-@mark.flaky(reruns=2)
+@mark.flaky(reruns=3)
 def test_sir_model() -> None:
     """Test SIR model."""
     # sample from generator

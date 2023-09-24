@@ -36,13 +36,13 @@ class LotkaVolterra(IVP_Generator[NDArray]):
 
     _: KW_ONLY
     alpha: float = 1.0
-    """Gravitational acceleration."""
-    beta: float = 1.0
-    """Length of the pendulum."""
-    gamma: float = 1.0
-    """Mass of the pendulum."""
-    delta: float = 1.0
-    """Damping coefficient."""
+    """Prey reproduciton rate."""
+    beta: float = 0.5
+    """Prey capture rate."""
+    gamma: float = 0.7
+    """Predator death rate."""
+    delta: float = 0.3
+    """Predator feeding rate."""
     prey0: float = 1.0
     """Initial angle."""
     predator0: float = 1.0
