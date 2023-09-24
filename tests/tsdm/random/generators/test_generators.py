@@ -66,7 +66,7 @@ def test_damped_pendulum() -> None:
     y = DampedPendulum().rvs(t)
 
     # generate plot
-    colors = iter(plt.colormaps["tab10"].colors)
+    colors = iter(plt.colormaps["tab10"].colors)  # type: ignore[attr-defined]
     fig, axes = plt.subplots(ncols=2, figsize=(12, 6), constrained_layout=True)
     axes[0].plot(t, y[..., 0], ".", label="θ", color=next(colors))
     axes[0].set_ylim(-max(abs(y[..., 0])), +max(abs(y[..., 0])))
