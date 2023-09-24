@@ -6,7 +6,7 @@
 # region project configuration ------------------------------------------------------
 [project]
 name = "tsdm"
-version = "0.5.0"
+version = "0.5.1"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
 
@@ -491,7 +491,7 @@ line-length = 120
 # region poetry configuration ----------------------------------------------------------
 [tool.poetry]
 name = "tsdm"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
 description = "Time-Series Datasets and Models"
 
