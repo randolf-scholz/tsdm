@@ -22,6 +22,11 @@ repos:
           # MD013: Line length (unused)
         # MD029: Ordered list item prefix (false positives)
         # MD033: Inline HTML (unused)
+      - id: axes-axis
+        name: rename 'axes=' => 'axis='
+        types: [python]
+        language: pygrep
+        entry: "axes="
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
     rev: v4.4.0

@@ -236,12 +236,12 @@ def apply_along_axes(
     op: Callable[..., tensor_var],
     /,
     *operands: tensor_var,
-    axes: tuple[int, ...],
+    axis: tuple[int, ...],
 ) -> tensor_var:
     r"""Apply a binary function to multiple axes of a tensor."""
     assert len(operands) >= 1, "at least one operand is required"
     if isinstance(operands[0], Tensor):
-        return torch_apply_along_axes(op, *operands, axes=axes)
+        return torch_apply_along_axes(op, *operands, axis=axis)
     if isinstance(operands[0], ndarray):
-        return numpy_apply_along_axes(op, *operands, axes=axes)
+        return numpy_apply_along_axes(op, *operands, axis=axis)
     raise TypeError(f"Unsupported type: {type(operands[0])}.")

@@ -56,7 +56,7 @@ def torch_apply_along_axes(
     op: Callable[..., Tensor],
     /,
     *tensors: Tensor,
-    axes: tuple[int, ...],
+    axis: tuple[int, ...],
 ) -> Tensor:
     r"""Apply a function to multiple tensors along axes.
 
@@ -64,11 +64,11 @@ def torch_apply_along_axes(
     """
     assert len({t.shape for t in tensors}) <= 1, "all tensors must have the same shape"
     assert len(tensors) >= 1, "at least one tensor is required"
-    axes = tuple(axes)
+    axis = tuple(axis)
     rank = len(tensors[0].shape)
     source = tuple(range(rank))
-    inverse_permutation: tuple[int, ...] = axes + tuple(
-        ax for ax in range(rank) if ax not in axes
+    inverse_permutation: tuple[int, ...] = axis + tuple(
+        ax for ax in range(rank) if ax not in axis
     )
     perm = tuple(np.argsort(inverse_permutation))
     tensors = tuple(torch.moveaxis(tensor, source, perm) for tensor in tensors)

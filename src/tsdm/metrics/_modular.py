@@ -45,7 +45,7 @@ class BaseLoss(nn.Module, metaclass=ABCMeta):
     r"""Base class for a loss function."""
 
     # Constants
-    axes: Final[tuple[int, ...]]
+    axis: Final[tuple[int, ...]]
     r"""CONST: The axes over which the loss is computed."""
     normalize: Final[bool]
     r"""CONST: Whether to normalize the weights."""
@@ -54,12 +54,12 @@ class BaseLoss(nn.Module, metaclass=ABCMeta):
         self,
         /,
         *,
-        axes: int | tuple[int, ...] = -1,
+        axis: int | tuple[int, ...] = -1,
         normalize: bool = False,
     ):
         super().__init__()
         self.normalize = normalize
-        self.axes = (axes,) if isinstance(axes, int) else tuple(axes)
+        self.axis = (axis,) if isinstance(axis, int) else tuple(axis)
 
     @abstractmethod
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
@@ -85,7 +85,7 @@ class WeightedLoss(BaseLoss, metaclass=ABCMeta):
         *,
         learnable: bool = False,
         normalize: bool = False,
-        axes: Axes = None,
+        axis: Axes = None,
     ) -> None:
         r"""Initialize the loss function."""
         w = torch.as_tensor(weight, dtype=torch.float32)
@@ -93,8 +93,8 @@ class WeightedLoss(BaseLoss, metaclass=ABCMeta):
             raise ValueError(
                 "Weights must be non-negative and at least one must be positive."
             )
-        axes = tuple(range(-w.ndim, 0)) if axes is None else axes
-        super().__init__(axes=axes, normalize=normalize)
+        axis = tuple(range(-w.ndim, 0)) if axis is None else axis
+        super().__init__(axis=axis, normalize=normalize)
 
         # Set the weight tensor.
         w = w / torch.sum(w)
@@ -102,10 +102,10 @@ class WeightedLoss(BaseLoss, metaclass=ABCMeta):
         self.learnable = learnable
 
         # Validate the axes.
-        if len(self.axes) != self.weight.ndim:
+        if len(self.axis) != self.weight.ndim:
             raise ValueError(
                 "Number of axes does not match weight shape:"
-                f" {len(self.axes)} != {self.weight.ndim=}"
+                f" {len(self.axis)} != {self.weight.ndim=}"
             )
 
     @abstractmethod
@@ -135,10 +135,10 @@ class MAE(BaseLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = torch.abs(r)
-        r = torch.sum(r, dim=self.axes)
+        r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m, dim=self.axes)
+            c = torch.sum(m, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -170,10 +170,10 @@ class WMAE(WeightedLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = self.weight * torch.abs(r)
-        r = torch.sum(r, dim=self.axes)
+        r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m * self.weight, dim=self.axes)
+            c = torch.sum(m * self.weight, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -236,10 +236,10 @@ class MSE(BaseLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = r**2
-        r = torch.sum(r, dim=self.axes)  # shape: (..., )
+        r = torch.sum(r, dim=self.axis)  # shape: (..., )
 
         if self.normalize:
-            c = torch.sum(m, dim=self.axes)
+            c = torch.sum(m, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -301,10 +301,10 @@ class WMSE(WeightedLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = self.weight * r**2
-        r = torch.sum(r, dim=self.axes)
+        r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m * self.weight, dim=self.axes)
+            c = torch.sum(m * self.weight, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -336,10 +336,10 @@ class RMSE(BaseLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = r**2
-        r = torch.sum(r, dim=self.axes)
+        r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m, dim=self.axes)
+            c = torch.sum(m, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -371,10 +371,10 @@ class WRMSE(WeightedLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = self.weight * r**2
-        r = torch.sum(r, dim=self.axes)
+        r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m * self.weight, dim=self.axes)
+            c = torch.sum(m * self.weight, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -410,9 +410,9 @@ class LP(BaseLoss):
         self,
         p: float = 2.0,
         normalize: bool = False,
-        axes: int | tuple[int, ...] = -1,
+        axis: int | tuple[int, ...] = -1,
     ):
-        super().__init__(normalize=normalize, axes=axes)
+        super().__init__(normalize=normalize, axis=axis)
         self.p = p
 
     @jit.export
@@ -423,10 +423,10 @@ class LP(BaseLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = r**self.p
-        r = torch.sum(r, dim=self.axes)
+        r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m, dim=self.axes)
+            c = torch.sum(m, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 
@@ -465,9 +465,9 @@ class WLP(WeightedLoss):
         p: float = 2.0,
         learnable: bool = False,
         normalize: bool = False,
-        axes: Axes = None,
+        axis: Axes = None,
     ):
-        super().__init__(weight, normalize=normalize, learnable=learnable, axes=axes)
+        super().__init__(weight, normalize=normalize, learnable=learnable, axis=axis)
         self.p = p
 
     @jit.export
@@ -478,10 +478,10 @@ class WLP(WeightedLoss):
         m = ~torch.isnan(targets)
         r = torch.where(m, r, 0.0)
         r = self.weight * r**self.p
-        r = torch.sum(r, dim=self.axes)
+        r = torch.sum(r, dim=self.axis)
 
         if self.normalize:
-            c = torch.sum(m * self.weight, dim=self.axes)
+            c = torch.sum(m * self.weight, dim=self.axis)
         else:
             c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
 

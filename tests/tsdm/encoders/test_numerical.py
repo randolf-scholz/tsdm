@@ -62,20 +62,20 @@ def test_get_broadcast(
 
 def test_reduce_axes():
     """Test the get_reduced_axes function."""
-    axes: tuple[int, ...] = (-2, -1)
-    assert get_reduced_axes(..., axes) == axes
-    assert get_reduced_axes(0, axes) == (-1,)
-    assert get_reduced_axes([1], axes) == (-1,)
-    assert get_reduced_axes([1, 2], axes) == axes
-    assert get_reduced_axes(slice(None), axes) == axes
-    assert get_reduced_axes((), axes) == axes
-    assert get_reduced_axes((1,), axes) == (-1,)
+    axis: tuple[int, ...] = (-2, -1)
+    assert get_reduced_axes(..., axis) == axis
+    assert get_reduced_axes(0, axis) == (-1,)
+    assert get_reduced_axes([1], axis) == (-1,)
+    assert get_reduced_axes([1, 2], axis) == axis
+    assert get_reduced_axes(slice(None), axis) == axis
+    assert get_reduced_axes((), axis) == axis
+    assert get_reduced_axes((1,), axis) == (-1,)
     assert get_reduced_axes((slice(None), 1), (-2, -1)) == (-2,)
 
-    axes = (-4, -3, -2, -1)
-    assert get_reduced_axes((..., 1, slice(None)), axes) == (-4, -3, -1)
-    assert get_reduced_axes((1, ..., 1), axes) == (-3, -2)
-    assert get_reduced_axes((1, ...), axes) == (-3, -2, -1)
+    axis = (-4, -3, -2, -1)
+    assert get_reduced_axes((..., 1, slice(None)), axis) == (-4, -3, -1)
+    assert get_reduced_axes((1, ..., 1), axis) == (-3, -2)
+    assert get_reduced_axes((1, ...), axis) == (-3, -2, -1)
 
 
 @mark.parametrize(

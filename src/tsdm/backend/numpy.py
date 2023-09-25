@@ -21,7 +21,7 @@ def numpy_apply_along_axes(
     op: Callable[..., NDArray],
     /,
     *arrays: NDArray,
-    axes: tuple[int, ...],
+    axis: tuple[int, ...],
 ) -> NDArray:
     r"""Apply a function to multiple arrays along axes.
 
@@ -29,11 +29,11 @@ def numpy_apply_along_axes(
     """
     assert len({a.shape for a in arrays}) <= 1, "all arrays must have the same shape"
     assert len(arrays) >= 1, "at least one array is required"
-    axes = tuple(axes)
+    axis = tuple(axis)
     rank = len(arrays[0].shape)
     source = tuple(range(rank))
-    inverse_permutation: tuple[int, ...] = axes + tuple(
-        ax for ax in range(rank) if ax not in axes
+    inverse_permutation: tuple[int, ...] = axis + tuple(
+        ax for ax in range(rank) if ax not in axis
     )
     perm = tuple(np.argsort(inverse_permutation))
     arrays = tuple(np.moveaxis(array, source, perm) for array in arrays)

@@ -28,9 +28,10 @@ Goals
 """
 
 __all__ = [
-    # functions
+    # Functions
     "get_broadcast",
     "get_reduced_axes",
+    "invert_axis_selection",
     # Classes
     "BoundaryEncoder",
     "LinearScaler",
@@ -99,7 +100,7 @@ PARAMETERS: TypeAlias = tuple[
 """Type Hint for parameters tuple."""
 
 
-def invert_axes_selection(axis: Axes, /, *, ndim: int) -> tuple[int, ...]:
+def invert_axis_selection(axis: Axes, /, *, ndim: int) -> tuple[int, ...]:
     r"""Invert axes-selection for a rank `ndim` tensor.
 
     Example:
@@ -197,51 +198,51 @@ def slice_size(slc: slice) -> int | None:
 
 
 @overload
-def get_reduced_axes(item: Index | tuple[Index, ...], /, axes: None) -> None: ...
+def get_reduced_axes(item: Index | tuple[Index, ...], /, axis: None) -> None: ...
 @overload
 def get_reduced_axes(
-    item: Index | tuple[Index, ...], /, axes: SizeLike
+    item: Index | tuple[Index, ...], /, axis: SizeLike
 ) -> tuple[int, ...]: ...
 @overload
-def get_reduced_axes(item: Index | tuple[Index, ...], /, axes: Axes) -> Axes: ...
-def get_reduced_axes(item, axes):
+def get_reduced_axes(item: Index | tuple[Index, ...], /, axis: Axes) -> Axes: ...
+def get_reduced_axes(item, axis):
     """Determine if a slice would remove some axes."""
-    if axes is None:
+    if axis is None:
         return None
-    if isinstance(axes, int):
-        axes = (axes,)
-    if len(axes) == 0:
-        return axes
+    if isinstance(axis, int):
+        axis = (axis,)
+    if len(axis) == 0:
+        return axis
 
     match item:
         case int():
-            return axes[1:]
+            return axis[1:]
         case EllipsisType():
-            return axes
+            return axis
         case None:
             raise NotImplementedError("Slicing with None not implemented.")
         case list() as lst:
             if len(lst) <= 1:
-                return axes[1:]
-            return axes
+                return axis[1:]
+            return axis
         case slice() as slc:
             if slice_size(slc) in (0, 1):
-                return axes[1:]
-            return axes
+                return axis[1:]
+            return axis
         case tuple() as tup:
             if sum(x is Ellipsis for x in tup) > 1:
                 raise ValueError("Only one Ellipsis is allowed.")
             if len(tup) == 0:
-                return axes
+                return axis
             if Ellipsis in tup:
                 idx = tup.index(Ellipsis)
                 return (
-                    get_reduced_axes(tup[:idx], axes[:idx])
-                    + get_reduced_axes(tup[idx], axes[idx : idx + len(tup) - 1])
-                    + get_reduced_axes(tup[idx + 1 :], axes[idx + len(tup) - 1 :])
+                    get_reduced_axes(tup[:idx], axis[:idx])
+                    + get_reduced_axes(tup[idx], axis[idx : idx + len(tup) - 1])
+                    + get_reduced_axes(tup[idx + 1 :], axis[idx + len(tup) - 1 :])
                 )
-            return get_reduced_axes(item[0], axes[:1]) + get_reduced_axes(
-                item[1:], axes[1:]
+            return get_reduced_axes(item[0], axis[:1]) + get_reduced_axes(
+                item[1:], axis[1:]
             )
         case _:
             raise TypeError(f"Unknown type {type(item)}")
@@ -639,7 +640,7 @@ class StandardScaler(BaseEncoder[T, T]):
         self.backend: Backend[T] = Backend(self.selected_backend)
 
         # universal fitting procedure
-        axes = invert_axes_selection(self.axis, ndim=len(data.shape))
+        axes = invert_axis_selection(self.axis, ndim=len(data.shape))
 
         if self.mean_learnable:
             self.mean = self.backend.nanmean(data, axis=axes)
@@ -833,7 +834,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
             return
 
         # universal fitting procedure
-        axes = invert_axes_selection(self.axis, ndim=len(data.shape))
+        axes = invert_axis_selection(self.axis, ndim=len(data.shape))
 
         if self.xmin_learnable:
             self.xmin = self.backend.nanmin(data, axis=axes)
