@@ -51,7 +51,7 @@ def visualize_distribution(
     print_stats: bool = True,
     extra_stats: Optional[dict] = None,
 ) -> None:
-    r"""Plot the distribution of x in the given axis.
+    r"""Plot the distribution of x in the given figure axes.
 
     Args:
         data: Data to plot.
