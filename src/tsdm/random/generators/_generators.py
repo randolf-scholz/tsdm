@@ -13,13 +13,14 @@ __all__ = [
     "Generator",
     "TimeSeriesGenerator",
     "IVP_Generator",
+    "IVP_GeneratorBase",
     "IVP_Solver",
     # functions
     "solve_ivp",
 ]
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, cast, final, runtime_checkable
 
 import numpy as np
 import scipy.stats
@@ -28,7 +29,7 @@ from scipy.optimize import OptimizeResult as OdeResult
 
 from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
-from tsdm.types.callback_protocols import SelfMap
+from tsdm.types.callback_protocols import NullMap, SelfMap
 from tsdm.types.variables import any_co as T_co
 
 
@@ -131,15 +132,55 @@ def solve_ivp(
 
 @runtime_checkable
 class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
-    """Protocol for Generators that solve Initial Value Problems (IVP).
+    r"""Protocol for Generators that solve Initial Value Problems (IVP).
+
+    Needs to implement the following things:
+
+    - `get_initial_state` to generate initial states x₀
+    - `solve_ivp` to solve the initial value problem
 
     Subsumes ODE-Generators and SDE-Generators.
+
+    Examples:
+        Nonlinear ODE
+
+        .. math::
+             \dot{x}(t) &= f(t, x(t)) \\
+                   y(t) &= g(t, x(t))
     """
 
-    @property
-    def ivp_solver(self) -> IVP_Solver[T_co]:
-        """Initial value problem solver."""
-        return cast(IVP_Solver[T_co], solve_ivp)
+    @abstractmethod
+    def get_initial_state(self, size: SizeLike = ()) -> T_co:
+        """Generate (multiple) initial state(s) y₀."""
+        ...
+
+    @abstractmethod
+    def make_observations(self, sol: Any, /) -> T_co:
+        """Create observations from the solution."""
+        ...
+
+    @abstractmethod
+    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+        """Solve the initial value problem."""
+        ...
+
+    @final
+    def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
+        """Random variates of given type."""
+        # get the initial state
+        y0 = self.get_initial_state(size=size)
+
+        # solve the initial value problem
+        sol = self.solve_ivp(t, y0=y0)
+
+        # get observations (add noise))
+        obs = self.make_observations(sol)
+
+        return obs
+
+
+class IVP_GeneratorBase(IVP_Generator[T_co]):
+    """Base class for IVP_Generators."""
 
     @property
     def system(self) -> ODE | Any:
@@ -147,20 +188,20 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         return NotImplemented
 
     @property
-    def project_solution(self) -> SelfMap:
-        """Project the solution onto the constraint set."""
-        return lambda sol: sol
+    def ivp_solver(self) -> IVP_Solver[T_co]:
+        """Initial value problem solver."""
+        return cast(IVP_Solver[T_co], solve_ivp)
 
     @abstractmethod
-    def get_initial_state(self, size: SizeLike = ()) -> T_co:
+    def _get_initial_state(self, size: SizeLike = ()) -> T_co:
         """Generate (multiple) initial state(s) y₀."""
         ...
 
-    def make_observations(self, sol: Any, /) -> T_co:
+    def _make_observations(self, sol: Any, /) -> T_co:
         """Create observations from the solution."""
         return sol
 
-    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+    def _solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
         """Solve the initial value problem."""
         if self.ivp_solver is NotImplemented or self.system is NotImplemented:
             raise NotImplementedError
@@ -171,39 +212,76 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
                 " t_eval. Please use the wrapped version"
                 " tsdm.random.generators.solve_ivp instead."
             )
-        sol = self.ivp_solver(self.system, t, y0=y0)
+        # solve the initial value problem
+        return self.ivp_solver(self.system, t, y0=y0)
 
+    @final
+    def get_initial_state(self, size: SizeLike = ()) -> T_co:
+        """Generate (multiple) initial state(s) y₀."""
+        # get the initial state
+        y0 = self._get_initial_state(size=size)
+        # project onto constraint set
+        y0 = self.project_initial_state(y0)
+        # validate initial state
+        self.validate_initial_state(y0)
+        return y0
+
+    @final
+    def make_observations(self, sol: Any, /) -> T_co:
+        """Create observations from the solution."""
+        # get observations (add noise))
+        obs = self._make_observations(sol)
+        # project onto constraint set
+        obs = self.project_observations(obs)
+        # validate observations
+        self.validate_observations(obs)
+        return obs
+
+    @final
+    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+        """Solve the initial value problem."""
+        # solve the initial value problem
+        sol = self._solve_ivp(t, y0=y0)
         # project onto constraint set
         sol = self.project_solution(sol)
-
         # validate solution
         self.validate_solution(sol)
-
         return sol
 
-    def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
-        """Random variates of given type."""
-        # get the initial state
-        y0 = self.get_initial_state(size=size)
+    # region validation and projection -------------------------------------------------
+    # NOTE: These are optional and can be overwritten by subclasses to enforce/validate
+    #       constraints on the initial state, solution and observations.
+    @property
+    def project_solution(self) -> SelfMap:
+        """Project the solution onto the constraint set."""
+        return lambda sol: sol
 
-        # solve the initial value problem
-        sol = self.solve_ivp(t, y0=y0)
+    @property
+    def project_initial_state(self) -> SelfMap:
+        """Project the initial state onto the constraint set."""
+        return lambda sol: sol
 
-        # add observation noise
-        observations = self.make_observations(sol)
+    @property
+    def project_observations(self) -> SelfMap:
+        """Project the observations onto the constraint set."""
+        return lambda sol: sol
 
-        # validate observations
-        self.validate_observations(observations)
+    @property
+    def validate_initial_state(self) -> NullMap:
+        """Validate constraints on the initial state."""
+        return lambda y0: None
 
-        return observations
-
-    def validate_solution(self, sol: Any, /) -> None:
+    @property
+    def validate_solution(self) -> NullMap:
         """Validate constraints on the parameters."""
-        assert True
+        return lambda sol: None
 
-    def validate_observations(self, values: Any, /) -> None:
+    @property
+    def validate_observations(self) -> NullMap:
         """Validate constraints on the parameters."""
-        self.validate_solution(values)
+        return lambda obs: None
+
+    # endregion validation and projection ----------------------------------------------
 
 
 if TYPE_CHECKING:

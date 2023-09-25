@@ -13,13 +13,13 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, uniform
 
-from tsdm.random.generators._generators import IVP_Generator
+from tsdm.random.generators._generators import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
 
 
 @dataclass
-class LotkaVolterra(IVP_Generator[NDArray]):
+class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     r"""Lotka–Volterra Equations Simulation.
 
     The Lotka–Volterra equations, also known as the predator–prey equations, are a pair of
@@ -52,13 +52,13 @@ class LotkaVolterra(IVP_Generator[NDArray]):
     parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
     """Noise distribution."""
 
-    def get_initial_state(self, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         theta0 = self.prey0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.predator0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
-    def make_observations(self, x: NDArray, /) -> NDArray:
+    def _make_observations(self, x: NDArray, /) -> NDArray:
         """Create observations from the solution."""
         # multiplicative noise
         return x * self.observation_noise.rvs(size=x.shape)

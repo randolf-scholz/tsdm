@@ -7,13 +7,13 @@ from dataclasses import KW_ONLY, dataclass
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from tsdm.random.generators._generators import IVP_Generator
+from tsdm.random.generators._generators import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Dirichlet
 from tsdm.types.aliases import SizeLike
 
 
 @dataclass
-class SIR(IVP_Generator[NDArray]):
+class SIR(IVP_GeneratorBase[NDArray]):
     r"""SIR model from epidemiology.
 
     .. math::
@@ -37,7 +37,7 @@ class SIR(IVP_Generator[NDArray]):
     beta: float = 0.5
     """Transmission rate."""
 
-    def get_initial_state(
+    def _get_initial_state(
         self, size: SizeLike = (), *, weights: ArrayLike = (100, 1, 0)
     ) -> NDArray:
         """Generate (multiple) initial state(s) y₀.
@@ -46,7 +46,7 @@ class SIR(IVP_Generator[NDArray]):
         """
         return Dirichlet.rvs(weights, size=size)
 
-    def make_observations(self, y: NDArray, /, *, noise: float = 0.001) -> NDArray:
+    def _make_observations(self, y: NDArray, /, *, noise: float = 0.001) -> NDArray:
         r"""Create observations from the solution.
 
         We sample from a dirichlet distribution with parameters

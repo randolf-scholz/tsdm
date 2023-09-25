@@ -2,7 +2,7 @@
 <project version="4">
   <component name="Black">
     <option name="pathToExecutable" value="$USER_HOME$/.pyenv/shims/black" />
-    <option name="sdkUUID" value="fc102ab3-8d1b-4a29-8e20-0a60a13e6106" />
+    <option name="sdkUUID" value="dd41179f-e2a8-4e57-ac17-8bd412f9b738" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (tsdm)" project-jdk-type="Python SDK" />
   <component name="PythonCompatibilityInspectionAdvertiser">
