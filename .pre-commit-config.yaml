@@ -147,13 +147,6 @@ repos:
         files: (^src/|^tests/)
         additional_dependencies: [types-all]
         stages: [pre-push]
-  # pyright
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.327
-    hooks:
-      - id: pyright
-        files: (^src/|^tests/)
-        stages: [pre-push]
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
     rev: v1.0.2

@@ -47,18 +47,7 @@ dependencies = [
 
 
 [project.optional-dependencies]
-dev = ["tsdm[extras,test,docs,typing,flake8,linters,formatters,devtools]"]
-extras = [
-    "ipympl>=0.9.3",
-    "ipywidgets>=8.1.1",
-    "jupyterlab>=4.0.6",
-    "jupyterlab>=4.0.6",
-    "notebook>=7.0.4",
-    "openml>=0.14.1",
-    "openpyxl>=3.1.2",
-    "psutil>=5.9.5",
-    "torchinfo>=1.8.0",
-]
+dev = ["tsdm[test,docs,extras,typing,flake8,linters,formatters,devtools]"]
 test = [
     "coverage>=7.3.1",
     "pytest-benchmark[histogram]>=4.0.0",
@@ -79,6 +68,17 @@ docs = [
     "sphinx-math-dollar>=1.2.1",
     "sphinx-typo3-theme>=4.9.0",
     "sphinx>=7.2.6",
+]
+extras = [
+    "ipympl>=0.9.3",
+    "ipywidgets>=8.1.1",
+    "jupyterlab>=4.0.6",
+    "jupyterlab>=4.0.6",
+    "notebook>=7.0.4",
+    "openml>=0.14.1",
+    "openpyxl>=3.1.2",
+    "psutil>=5.9.5",
+    "torchinfo>=1.8.0",
 ]
 typing = [
     "mypy>=1.5.1",
@@ -118,7 +118,7 @@ linters = [
     "pyflakes>=3.1.0",
     "pylint>=2.17.5",
     "pylint-gitlab>=1.2.0",
-    "ruff>=0.0.290",
+    "ruff>=0.0.291",
     "ruff-lsp>=0.0.39",
     "slotscheck>=0.17.0",
 ]
@@ -144,7 +144,7 @@ devtools = [
 [project.urls]
 homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
 documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
-repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi"
+repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple"
 # endregion project configuration ------------------------------------------------------
 
 
@@ -202,10 +202,10 @@ per-file-ignores = ["tests/*:D103"]
 #Google Python style is not RST until after processed by Napoleon
 #See https://github.com/peterjc/flake8-rst-docstrings/issues/17
 extend-ignore = [
-    "D407",   # Missing dashed underline after section
-    "RST201", # Unexpected indentation.
-    "RST203", # Definition list ends without a blank line# unexpected unindent.
-    "RST301", # Block quote ends without a blank line# unexpected unindent.
+    "D407",    # Missing dashed underline after section
+    "RST201",  # Unexpected indentation.
+    "RST203",  # Definition list ends without a blank line# unexpected unindent.
+    "RST301",  # Block quote ends without a blank line# unexpected unindent.
     # "ANN101",  # Missing type annotation for self in method
     # "ANN201",  # Missing return type annotation for public function
     # "RST303",  # Unknown directive type
@@ -251,29 +251,29 @@ rst-directives = ["Signature", "literalinclude"]
 [tool.pylint."MESSAGES CONTROL"]
 enable = ["useless-suppression"]
 disable = [
-    "C0103", # invalid-name
-    "C0144", # non-ascii-name
-    "C0204", # bad-mcs-classmethod-argument
-    "C0415", # import-outside-toplevel
-    "E0611", # no-name-in-module
-    "E1101", # no-member  # FIXME: too many false positives
-    "E1121", # too-many-function-args  # too many false positives
-    "E1123", # unexpected-keyword-arg  # too many false positives
-    "E1130", # invalid-unary-operand-type
-    "R0801", # similar lines
-    "R0902", # too-many-instance-attributes
-    "R0903", # too-few-public-methods
-    "R0911", # too-many-return-statements
-    "R0913", # too-many-arguments
-    "R0914", # too-many-locals
-    "R0915", # too-many-statements
+    "C0103",  # invalid-name
+    "C0144",  # non-ascii-name
+    "C0204",  # bad-mcs-classmethod-argument
+    "C0415",  # import-outside-toplevel
+    "E0611",  # no-name-in-module
+    "E1101",  # no-member  # FIXME: too many false positives
+    "E1121",  # too-many-function-args  # too many false positives
+    "E1123",  # unexpected-keyword-arg  # too many false positives
+    "E1130",  # invalid-unary-operand-type
+    "R0801",  # similar lines
+    "R0902",  # too-many-instance-attributes
+    "R0903",  # too-few-public-methods
+    "R0911",  # too-many-return-statements
+    "R0913",  # too-many-arguments
+    "R0914",  # too-many-locals
+    "R0915",  # too-many-statements
     #    "W0221",  # arguments-differ
     #    "W0511",  # (fixme) (todos)
-    "W1113", # keyword-arg-before-vararg
-    "W2301", # unnecessary-ellipsis
+    "W1113",  # keyword-arg-before-vararg
+    "W2301",  # unnecessary-ellipsis
 ]
 fail-on = [
-    "C0116", # missing-function-docstring
+    "C0116",  # missing-function-docstring
 ]
 fail-under = 9.0
 
@@ -302,7 +302,7 @@ python_version = "3.10"
 #platform = "linux"
 
 disable_error_code = [
-    "func-returns-value", # checks style, not type https://github.com/python/mypy/issues/6549
+    "func-returns-value",  # checks style, not type https://github.com/python/mypy/issues/6549
 ]
 
 # warnings
@@ -403,9 +403,9 @@ convention = "google"
 #match = '(?!test_).*\.py$'
 match_dir = '^(?!(.venv|bugs|dev|.*ipynb_checkpoints)).*'
 add-ignore = [
-    "D105", # Missing docstring in magic method
-    "D102", # Missing docstring in public method
-    "D107", # Missing docstring in __init__
+    "D105",  # Missing docstring in magic method
+    "D102",  # Missing docstring in public method
+    "D107",  # Missing docstring in __init__
 ]
 # endregion Pydocstyle Configuration ---------------------------------------------------
 
@@ -419,13 +419,15 @@ pythonVersion = "3.10"
 pythonPlatform = "Linux"
 stubPath = ""
 include = ["src/", "tests/"]
-exclude = ["**/node_modules", "**/__pycache__", "**/.ipynb_checkpoints"]
-executionEnvironments = [
-    { root = "src/", pythonVersion = "3.10", pythonPlatform = "Linux", extraPaths = [
-        "",
-    ] },
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.ipynb_checkpoints",
 ]
-useLibraryCodeForTypes = false # otherwise hundreds of pandas false-positives.
+executionEnvironments = [
+    {root = "src/", pythonVersion = "3.10", pythonPlatform = "Linux", extraPaths = [""]}
+]
+useLibraryCodeForTypes = false  # otherwise hundreds of pandas false-positives.
 # Type Check Diagnostics Settings
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
 reportMissingImports = false
@@ -450,7 +452,7 @@ addopts = [
     #    "--reruns-delay=",    # add time (seconds) delay between reruns.
     #    "--only-rerun=",      # If passed, only rerun errors matching the regex provided.
     # coverage options
-    "--cov=tsdm",                            # Path or package name to measure during execution (multi-allowed).
+    "--cov=tsdm",  # Path or package name to measure during execution (multi-allowed).
     "--cov-report=term:skip-covered",
     "--cov-report=xml:reports/coverage.xml",
     #    "--cov-report=annotate:reports/coverage",
@@ -459,7 +461,7 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "serial",
 ]
-required_plugins = ["pytest-rerunfailures", "pytest-cov"]
+required_plugins = ["pytest-rerunfailures", "pytest-cov", "pytest-benchmark"]
 # endregion pytest configuration -------------------------------------------------------
 
 
@@ -504,7 +506,7 @@ readme = "README.md"
 # urls
 documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
 homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi"
+repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple"
 
 # meta-information
 keywords = ["time-series", "machine-learning"]
@@ -623,7 +625,7 @@ pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
 pylint = ">=2.17.5"
 pylint-gitlab = ">=1.2.0"
-ruff = ">=0.0.290"
+ruff = ">=0.0.291"
 ruff-lsp = ">=0.0.39"
 slotscheck = ">=0.17.0"
 

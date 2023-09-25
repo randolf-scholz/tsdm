@@ -10,14 +10,14 @@ Content:
 
 __all__ = [
     # CONSTANTS
-    "PROJECT",
     "CONFIG",
+    "PROJECT",
     # Classes
-    "Project",
     "Config",
+    "Project",
     # Functions
-    "get_package_structure",
     "generate_folders",
+    "get_package_structure",
 ]
 
 from typing import Final
