@@ -31,6 +31,7 @@ __all__ = [
     "geometric_mean",
     "grad_norm",
     "multi_norm",
+    "scaled_norm",
     "tensor_norm",
 ]
 
@@ -66,5 +67,6 @@ from tsdm.linalg._tensor_functions import (
     geometric_mean,
     grad_norm,
     multi_norm,
+    scaled_norm,
     tensor_norm,
 )
