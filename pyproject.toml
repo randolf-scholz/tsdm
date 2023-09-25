@@ -6,7 +6,7 @@
 # region project configuration ------------------------------------------------------
 [project]
 name = "tsdm"
-version = "0.5.1"
+version = "0.5.2"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
 
@@ -116,7 +116,7 @@ linters = [
     "pycodestyle>=2.11.0",
     "pydocstyle>=6.3.0",
     "pyflakes>=3.1.0",
-    "pylint>=2.17.5",
+    "pylint>=2.17.6",
     "pylint-gitlab>=1.2.0",
     "ruff>=0.0.291",
     "ruff-lsp>=0.0.39",
@@ -493,7 +493,7 @@ line-length = 120
 # region poetry configuration ----------------------------------------------------------
 [tool.poetry]
 name = "tsdm"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
 description = "Time-Series Datasets and Models"
 
@@ -623,7 +623,7 @@ perflint = ">=0.7.3"
 pycodestyle = ">=2.11.0"
 pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
-pylint = ">=2.17.5"
+pylint = ">=2.17.6"
 pylint-gitlab = ">=1.2.0"
 ruff = ">=0.0.291"
 ruff-lsp = ">=0.0.39"

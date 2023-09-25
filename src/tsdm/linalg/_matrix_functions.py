@@ -403,7 +403,7 @@ def schatten_norm(
     if p == 0:
         if scaled:
             σ = torch.where(m, σ, float("nan"))
-            result = geometric_mean(σ, axes=-1)
+            result = geometric_mean(σ, axis=-1)
         else:
             result = m.sum(dim=-1)
         return apply_keepdim(result, dim, keepdim)
@@ -450,8 +450,8 @@ def matrix_norm(
     m = int(dim[0] < dim[1]) * (1 - int(keepdim))
     axes = [dim[0], dim[1] - m]
 
-    x = tensor_norm(x, p=p, axes=axes[:1], keepdim=keepdim, scaled=scaled)
-    x = tensor_norm(x, p=q, axes=axes[1:], keepdim=keepdim, scaled=scaled)
+    x = tensor_norm(x, p=p, axis=axes[:1], keepdim=keepdim, scaled=scaled)
+    x = tensor_norm(x, p=q, axis=axes[1:], keepdim=keepdim, scaled=scaled)
     return x
 
 

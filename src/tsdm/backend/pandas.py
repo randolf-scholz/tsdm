@@ -43,25 +43,25 @@ def pandas_true_like(x: P, /) -> P:
 
 
 def pandas_infer_axes(
-    x: P, /, *, axes: Axes = None
+    x: P, /, *, axis: Axes = None
 ) -> Literal[None, "index", "columns"]:
     """Convert axes specification to pandas-compatible axes specification.
 
     - Series: -1 → 0, -2 → Error
     - DataFrame: -1 → 1, -2 → 0
     """
-    match axes:
+    match axis:
         case None:
             return None
         case int():
             pass
         case tuple():
-            if len(axes) != 1:
-                raise ValueError(f"Expected 1 axis, got {len(axes)}.")
-            axes = axes[0]
+            if len(axis) != 1:
+                raise ValueError(f"Expected 1 axis, got {len(axis)}.")
+            axis = axis[0]
         case _:
-            raise TypeError(f"Expected int or Iterable[int], got {type(axes)}.")
-    return "columns" if axes % len(x.shape) else "index"
+            raise TypeError(f"Expected int or Iterable[int], got {type(axis)}.")
+    return "columns" if axis % len(x.shape) else "index"
 
 
 def pandas_clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
@@ -72,22 +72,22 @@ def pandas_clip(x: P, lower: NDArray | None, upper: NDArray | None, /) -> P:
 
 def pandas_nanmax(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmax`."""
-    return x.max(axis=pandas_infer_axes(x, axes=axis), skipna=True)
+    return x.max(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
 def pandas_nanmin(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmin`."""
-    return x.min(axis=pandas_infer_axes(x, axes=axis), skipna=True)
+    return x.min(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
 def pandas_nanmean(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanmean`."""
-    return x.mean(axis=pandas_infer_axes(x, axes=axis), skipna=True)
+    return x.mean(axis=pandas_infer_axes(x, axis=axis), skipna=True)
 
 
 def pandas_nanstd(x: P, /, *, axis: Axes = None) -> P:
     """Analogue to `numpy.nanstd`."""
-    return x.std(axis=pandas_infer_axes(x, axes=axis), skipna=True, ddof=0)
+    return x.std(axis=pandas_infer_axes(x, axis=axis), skipna=True, ddof=0)
 
 
 def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:

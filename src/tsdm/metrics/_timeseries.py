@@ -68,9 +68,9 @@ class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
     """
 
     # Constants
-    time_axes: Final[tuple[int, ...]]
+    time_axis: Final[tuple[int, ...]]
     r"""CONST: The time-axes over which the loss is computed."""
-    channel_axes: Final[tuple[int, ...]]
+    channel_axis: Final[tuple[int, ...]]
     """CONST: The channel-axes over which the loss is computed."""
     normalize_time: Final[bool]
     r"""CONST: Whether to normalize the weights."""
@@ -81,22 +81,22 @@ class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
         self,
         /,
         *,
-        time_axes: int | tuple[int, ...] = -2,
-        channel_axes: int | tuple[int, ...] = -1,
+        time_axis: int | tuple[int, ...] = -2,
+        channel_axis: int | tuple[int, ...] = -1,
         normalize_time: bool = True,
         normalize_channels: bool = False,
     ):
         super().__init__()
         self.normalize_time = bool(normalize_time)
         self.normalize_channels = bool(normalize_channels)
-        self.time_axes = (
-            (time_axes,) if isinstance(time_axes, int) else tuple(time_axes)
+        self.time_axis = (
+            (time_axis,) if isinstance(time_axis, int) else tuple(time_axis)
         )
-        self.channel_axes = (
-            (channel_axes,) if isinstance(channel_axes, int) else tuple(channel_axes)
+        self.channel_axis = (
+            (channel_axis,) if isinstance(channel_axis, int) else tuple(channel_axis)
         )
 
-        if not set(self.time_axes).isdisjoint(self.channel_axes):
+        if not set(self.time_axis).isdisjoint(self.channel_axis):
             raise ValueError("Time and channel axes must be disjoint!")
 
     @abstractmethod
@@ -139,8 +139,8 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
         weight: Tensor,
         /,
         *,
-        time_axes: Axes = None,
-        channel_axes: Axes = None,
+        time_axis: Axes = None,
+        channel_axis: Axes = None,
         normalize_channels: bool = False,
         normalize_time: bool = True,
         learnable: bool = False,
@@ -151,13 +151,13 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
             raise ValueError(
                 "Weights must be non-negative and at least one must be positive."
             )
-        channel_axes = (
-            tuple(range(-w.ndim, 0)) if channel_axes is None else channel_axes
+        channel_axis = (
+            tuple(range(-w.ndim, 0)) if channel_axis is None else channel_axis
         )
-        time_axes = (-w.ndim - 1,) if time_axes is None else time_axes
+        time_axis = (-w.ndim - 1,) if time_axis is None else time_axis
         super().__init__(
-            time_axes=time_axes,
-            channel_axes=channel_axes,
+            time_axis=time_axis,
+            channel_axis=channel_axis,
             normalize_channels=normalize_channels,
             normalize_time=normalize_time,
         )
@@ -168,10 +168,10 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
         self.learnable = learnable
 
         # Validate the axes.
-        if len(self.channel_axes) != self.weight.ndim:
+        if len(self.channel_axis) != self.weight.ndim:
             raise ValueError(
                 "Number of axes does not match weight shape:"
-                f" {len(self.channel_axes)} != {self.weight.ndim=}"
+                f" {len(self.channel_axis)} != {self.weight.ndim=}"
             )
 
     @abstractmethod
@@ -299,21 +299,21 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
         r = r**2  # must come after where, else we get NaN gradients!
         # compute normalization constant
         if self.normalize_time and self.normalize_channels:
-            c = torch.sum(m, dim=self.time_axes + self.channel_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.time_axes + self.channel_axes, keepdim=True)
+            c = torch.sum(m, dim=self.time_axis + self.channel_axis, keepdim=True)
+            s = torch.sum(r / c, dim=self.time_axis + self.channel_axis, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
         elif self.normalize_time and not self.normalize_channels:
-            c = torch.sum(m, dim=self.time_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.time_axes, keepdim=True)
+            c = torch.sum(m, dim=self.time_axis, keepdim=True)
+            s = torch.sum(r / c, dim=self.time_axis, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.channel_axes, keepdim=True)
+            r = torch.sum(r, dim=self.channel_axis, keepdim=True)
         elif not self.normalize_time and self.normalize_channels:
-            c = torch.sum(m, dim=self.channel_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.channel_axes, keepdim=True)
+            c = torch.sum(m, dim=self.channel_axis, keepdim=True)
+            s = torch.sum(r / c, dim=self.channel_axis, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.time_axes, keepdim=True)
+            r = torch.sum(r, dim=self.time_axis, keepdim=True)
         else:
-            r = torch.sum(r, dim=self.time_axes + self.channel_axes, keepdim=True)
+            r = torch.sum(r, dim=self.time_axis + self.channel_axis, keepdim=True)
 
         # aggregate over batch-dimensions
         r = torch.mean(r)
@@ -347,23 +347,23 @@ class TimeSeriesWMSE(WeightedTimeSeriesLoss):
         # compute normalization constant
         if self.normalize_time and self.normalize_channels:
             c = torch.sum(
-                self.weight * m, dim=self.time_axes + self.channel_axes, keepdim=True
+                self.weight * m, dim=self.time_axis + self.channel_axis, keepdim=True
             )
-            s = torch.sum(r / c, dim=self.time_axes + self.channel_axes, keepdim=True)
+            s = torch.sum(r / c, dim=self.time_axis + self.channel_axis, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
         elif self.normalize_time and not self.normalize_channels:
-            c = torch.sum(m, dim=self.time_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.time_axes, keepdim=True)
+            c = torch.sum(m, dim=self.time_axis, keepdim=True)
+            s = torch.sum(r / c, dim=self.time_axis, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.channel_axes, keepdim=True)
+            r = torch.sum(r, dim=self.channel_axis, keepdim=True)
         elif not self.normalize_time and self.normalize_channels:
-            c = torch.sum(self.weight * m, dim=self.channel_axes, keepdim=True)
-            s = torch.sum(r / c, dim=self.channel_axes, keepdim=True)
+            c = torch.sum(self.weight * m, dim=self.channel_axis, keepdim=True)
+            s = torch.sum(r / c, dim=self.channel_axis, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
-            r = torch.sum(r, dim=self.time_axes, keepdim=True)
+            r = torch.sum(r, dim=self.time_axis, keepdim=True)
         else:
             # c = torch.tensor(1.0, device=targets.device, dtype=targets.dtype)
-            r = torch.sum(r, dim=self.time_axes + self.channel_axes, keepdim=True)
+            r = torch.sum(r, dim=self.time_axis + self.channel_axis, keepdim=True)
 
         # # aggregate over time
         # s = torch.sum(r / c, dim=self.axes + self.time_axes, keepdim=True)

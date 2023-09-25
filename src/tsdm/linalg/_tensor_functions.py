@@ -18,19 +18,19 @@ from torch import Tensor, jit
 @jit.script
 def geometric_mean(
     x: Tensor,
-    axes: Union[None, int, list[int]] = None,
+    axis: Union[None, int, list[int]] = None,
     keepdim: bool = False,
 ) -> Tensor:
     r"""Geometric mean of a tensor.
 
     .. Signature:: ``(..., n) -> (...)``
     """
-    if axes is None:
+    if axis is None:
         dim = list(range(x.ndim))
-    elif isinstance(axes, int):
-        dim = [axes]
+    elif isinstance(axis, int):
+        dim = [axis]
     else:
-        dim = axes
+        dim = axis
 
     return x.log().nanmean(dim=dim, keepdim=keepdim).exp()
 
@@ -110,7 +110,7 @@ def grad_norm(
 def tensor_norm(
     x: Tensor,
     p: float = 2.0,
-    axes: Union[None, int, list[int]] = None,
+    axis: Union[None, int, list[int]] = None,
     keepdim: bool = True,
     scaled: bool = False,
 ) -> Tensor:
@@ -136,12 +136,12 @@ def tensor_norm(
     | $p=-∞$ | minimum value                     | minimum value                      |
     +--------+-----------------------------------+------------------------------------+
     """
-    if axes is None:
+    if axis is None:
         dim = list(range(x.ndim))
-    elif isinstance(axes, int):
-        dim = [axes]
+    elif isinstance(axis, int):
+        dim = [axis]
     else:
-        dim = axes
+        dim = axis
 
     if not torch.is_floating_point(x):
         x = x.to(dtype=torch.float)
@@ -155,7 +155,7 @@ def tensor_norm(
         if p == -float("inf"):
             return x.amin(dim=dim, keepdim=keepdim)
         if p == 0:
-            return geometric_mean(x, axes=dim, keepdim=keepdim)
+            return geometric_mean(x, axis=dim, keepdim=keepdim)
 
         # NOTE: preconditioning improves numerical stability
         x_max = x.amax(dim=dim, keepdim=True)
@@ -178,19 +178,19 @@ def tensor_norm(
 def scaled_norm(
     x: Tensor,
     p: float = 2.0,
-    axes: Union[None, int, list[int]] = None,
+    axis: Union[None, int, list[int]] = None,
     keepdim: bool = True,
 ) -> Tensor:
     r"""Shortcut for `tensor_norm(x, p, axes, keepdim, scaled=True)`.
 
     .. Signature:: ``(..., n) -> ...``
     """
-    if axes is None:
+    if axis is None:
         dim = list(range(x.ndim))
-    elif isinstance(axes, int):
-        dim = [axes]
+    elif isinstance(axis, int):
+        dim = [axis]
     else:
-        dim = axes
+        dim = axis
 
     if not torch.is_floating_point(x):
         x = x.to(dtype=torch.float)
@@ -203,7 +203,7 @@ def scaled_norm(
     if p == -float("inf"):
         return x.amin(dim=dim, keepdim=keepdim)
     if p == 0:
-        return geometric_mean(x, axes=dim, keepdim=keepdim)
+        return geometric_mean(x, axis=dim, keepdim=keepdim)
 
     # NOTE: preconditioning with x_max is not necessary, but it helps with numerical stability
     x_max = x.amax(dim=dim, keepdim=True)
