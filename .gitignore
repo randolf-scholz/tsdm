@@ -1,5 +1,4 @@
 # region custom ########################################################################
-# top level folders starting with underscore
 
 # hidden directories
 .*/
@@ -29,6 +28,9 @@ docs/_build
 !docs/_ext/
 !docs/_templates/
 reports/
+tests/results/
+tests/reports/
+tests/.benchmarks
 
 # pytorch model files
 *.pt

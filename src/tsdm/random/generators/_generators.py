@@ -12,20 +12,24 @@ __all__ = [
     # Protocols
     "Generator",
     "TimeSeriesGenerator",
-    "Distribution",
-    "TimeSeriesDistribution",
     "IVP_Generator",
+    "IVP_GeneratorBase",
     "IVP_Solver",
+    # functions
+    "solve_ivp",
 ]
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, cast, final, runtime_checkable
 
+import numpy as np
 import scipy.stats
 from numpy.typing import ArrayLike
-from scipy.integrate import solve_ivp
+from scipy.optimize import OptimizeResult as OdeResult
 
+from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
+from tsdm.types.callback_protocols import NullMap, SelfMap
 from tsdm.types.variables import any_co as T_co
 
 
@@ -50,77 +54,27 @@ class TimeSeriesGenerator(Protocol[T_co]):
 
 
 @runtime_checkable
-class _Distribution(Protocol[T_co]):
-    """Protocol for distributions.
+class ODE(Protocol[T_co]):
+    """Represents a system of ordinary differential equations."""
 
-    We follow the design of `scipy.stats.rv_continuous` and `scipy.stats.rv_discrete`.
-    """
+    def __call__(self, t: ArrayLike, y: ArrayLike) -> T_co:
+        """Evaluate the vector field at given time and state.
 
-    def stats(
-        self, *, loc: ArrayLike = 0, scale: ArrayLike = 1, moments: str = "mvsk"
-    ) -> tuple[T_co, ...]:
-        """Some statistics of the given RV."""
+        .. Signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
 
-    def entropy(self, /) -> T_co:
-        """Differential entropy of the RV."""
-        raise NotImplementedError
+        Sub-signatures:
+            - ``[(,), (..., *D) -> (..., *D)``
+            - ``[(...,), (*D,) -> (..., *D)``
+            - ``[(,), (*D,) -> (*D,)``
 
-    def moment(self, order: int) -> T_co:
-        """Non-central moment of order n."""
-        raise NotImplementedError
+        Args:
+            t: list of time stamps
+            y: list of states at time t
 
-    def pdf(self, x: ArrayLike, /) -> T_co:
-        """Probability density function at x of the given RV."""
-        raise NotImplementedError
-
-    def cdf(self, x: ArrayLike, /) -> T_co:
-        """Cumulative distribution function of the given RV."""
-        raise NotImplementedError
-
-    def ppf(self, q: ArrayLike, /) -> T_co:
-        """Percent point function (inverse of `cdf`) at q of the given RV."""
-        raise NotImplementedError
-
-    def sf(self, x: ArrayLike, /) -> T_co:
-        """Survival function (1 - `cdf`) at x of the given RV."""
-        raise NotImplementedError
-
-    def isf(self, q: ArrayLike, /) -> T_co:
-        """Inverse survival function at q of the given RV."""
-        raise NotImplementedError
-
-    def logpdf(self, x: ArrayLike, /) -> T_co:
-        """Log of the probability density function at x of the given RV."""
-        try:
-            return self.pdf(x).log()
-        except AttributeError as exc:
-            raise NotImplementedError from exc
-
-    def logcdf(self, x: ArrayLike, /) -> T_co:
-        """Log of the cumulative distribution function at x of the given RV."""
-        try:
-            return self.cdf(x).log()
-        except AttributeError as exc:
-            raise NotImplementedError from exc
-
-    def logsf(self, x: ArrayLike, /) -> T_co:
-        """Log of the survival function of the given RV."""
-        try:
-            return self.sf(x).log()
-        except AttributeError as exc:
-            raise NotImplementedError from exc
-
-
-@runtime_checkable
-class Distribution(_Distribution[T_co], Generator[T_co], Protocol[T_co]):
-    """Protocol for distributions."""
-
-
-@runtime_checkable
-class TimeSeriesDistribution(
-    _Distribution[T_co], TimeSeriesGenerator[T_co], Protocol[T_co]
-):
-    """Protocol for time-series distributions."""
+        Returns:
+            f(t, y(t)) value of the veector field at time t and state y(t)
+        """
+        ...
 
 
 @runtime_checkable
@@ -131,35 +85,69 @@ class IVP_Solver(Protocol[T_co]):
 
     Examples:
         - `scipy.integrate.odeint`
+            - expects system to be Callable[[t, y], ...] or Callable[[t, y], ...]
+        - `scipy.integrate.solve_ivp`
+            - expects system to be Callable[[t, y], ...]
         - `torchdiffeq.odeint`
+            - expects system to be Callable[[t, y], ...]
         - `torchsde.sdeint`
+            - expects system to be SDE object with methods
+                - `f(self, t, y) -> ...` (drift)
+                - `g(self, t, y) -> ...` (diffusion)
 
     Note:
         - `scipy.integrate.solve_ivp` has y0 before t, therefore, we require that
           y0 is passed as a keyword argument.
     """
 
-    def __call__(self, system: Any, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
-        """Solve the initial value problem."""
+    def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+        """Solve the initial value problem.
+
+        .. Signature:: ``[(N,), (..., *D) -> (..., N, *D)``
+
+        Args:
+            system: Some object that represents the dynamics of the systems.
+            t: sorted list of N time points at which to solve for y.
+            y0: Initial state at t[0], tensor of shape `(..., *D)`.
+
+        Returns:
+            array-like object y[t_i] containing the solution of the initial value problem.
+        """
         ...
+
+
+def solve_ivp(
+    system: ODE, t: ArrayLike, /, *, y0: ArrayLike, **kwargs: Any
+) -> np.ndarray:
+    """Wrapped version of `scipy.integrate.solve_ivp` that matches the IVP_solver Protocol."""
+    t_eval = np.asarray(t)
+    t0 = t_eval.min()
+    tf = t_eval.max()
+    sol: OdeResult = scipy.integrate.solve_ivp(
+        system, (t0, tf), y0=y0, t_eval=t_eval, **kwargs
+    )
+    # NOTE: output shape: (d, n_timestamps), move time axis to the front
+    return np.moveaxis(sol.y, -1, 0)
 
 
 @runtime_checkable
 class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
-    """Protocol for Initial Value Problems.
+    r"""Protocol for Generators that solve Initial Value Problems (IVP).
+
+    Needs to implement the following things:
+
+    - `get_initial_state` to generate initial states x₀
+    - `solve_ivp` to solve the initial value problem
 
     Subsumes ODE-Generators and SDE-Generators.
+
+    Examples:
+        Nonlinear ODE
+
+        .. math::
+             \dot{x}(t) &= f(t, x(t)) \\
+                   y(t) &= g(t, x(t))
     """
-
-    @property
-    def ivp_solver(self) -> IVP_Solver[T_co]:
-        """Initial value problem solver."""
-        return NotImplemented
-
-    @property
-    def system(self) -> Any:
-        """System of differential equations."""
-        return NotImplemented
 
     @abstractmethod
     def get_initial_state(self, size: SizeLike = ()) -> T_co:
@@ -171,11 +159,10 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         """Create observations from the solution."""
         ...
 
+    @abstractmethod
     def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
         """Solve the initial value problem."""
-        if self.ivp_solver is NotImplemented or self.system is NotImplemented:
-            raise NotImplementedError
-        return self.ivp_solver(self.system, t, y0=y0)
+        ...
 
     def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
         """Random variates of given type."""
@@ -185,12 +172,118 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         # solve the initial value problem
         sol = self.solve_ivp(t, y0=y0)
 
-        # add observation noise
-        observations = self.make_observations(sol)
+        # get observations (add noise))
+        obs = self.make_observations(sol)
 
-        return observations
+        return obs
+
+
+class IVP_GeneratorBase(IVP_Generator[T_co]):
+    """Base class for IVP_Generators."""
+
+    @property
+    def system(self) -> ODE | Any:
+        """System of differential equations."""
+        return NotImplemented
+
+    @property
+    def ivp_solver(self) -> IVP_Solver[T_co]:
+        """Initial value problem solver."""
+        return cast(IVP_Solver[T_co], solve_ivp)
+
+    @abstractmethod
+    def _get_initial_state(self, size: SizeLike = ()) -> T_co:
+        """Generate (multiple) initial state(s) y₀."""
+        ...
+
+    def _make_observations(self, sol: Any, /) -> T_co:
+        """Create observations from the solution."""
+        return sol
+
+    def _solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+        """Solve the initial value problem."""
+        if self.ivp_solver is NotImplemented or self.system is NotImplemented:
+            raise NotImplementedError
+        if self.ivp_solver is scipy.integrate.solve_ivp:
+            raise ValueError(
+                "scipy.integrate.solve_ivp does not match the IVP_solver Protocol,"
+                " since it requires separate bounds [t0,tf] and evaluation points"
+                " t_eval. Please use the wrapped version"
+                " tsdm.random.generators.solve_ivp instead."
+            )
+        # solve the initial value problem
+        return self.ivp_solver(self.system, t, y0=y0)
+
+    @final
+    def get_initial_state(self, size: SizeLike = ()) -> T_co:
+        """Generate (multiple) initial state(s) y₀."""
+        # get the initial state
+        y0 = self._get_initial_state(size=size)
+        # project onto constraint set
+        y0 = self.project_initial_state(y0)
+        # validate initial state
+        self.validate_initial_state(y0)
+        return y0
+
+    @final
+    def make_observations(self, sol: Any, /) -> T_co:
+        """Create observations from the solution."""
+        # get observations (add noise))
+        obs = self._make_observations(sol)
+        # project onto constraint set
+        obs = self.project_observations(obs)
+        # validate observations
+        self.validate_observations(obs)
+        return obs
+
+    @final
+    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+        """Solve the initial value problem."""
+        # solve the initial value problem
+        sol = self._solve_ivp(t, y0=y0)
+        # project onto constraint set
+        sol = self.project_solution(sol)
+        # validate solution
+        self.validate_solution(sol)
+        return sol
+
+    # region validation and projection -------------------------------------------------
+    # NOTE: These are optional and can be overwritten by subclasses to enforce/validate
+    #       constraints on the initial state, solution and observations.
+    @property
+    def project_solution(self) -> SelfMap:
+        """Project the solution onto the constraint set."""
+        return lambda sol: sol
+
+    @property
+    def project_initial_state(self) -> SelfMap:
+        """Project the initial state onto the constraint set."""
+        return lambda sol: sol
+
+    @property
+    def project_observations(self) -> SelfMap:
+        """Project the observations onto the constraint set."""
+        return lambda sol: sol
+
+    @property
+    def validate_initial_state(self) -> NullMap:
+        """Validate constraints on the initial state."""
+        return lambda y0: None
+
+    @property
+    def validate_solution(self) -> NullMap:
+        """Validate constraints on the parameters."""
+        return lambda sol: None
+
+    @property
+    def validate_observations(self) -> NullMap:
+        """Validate constraints on the parameters."""
+        return lambda obs: None
+
+    # endregion validation and projection ----------------------------------------------
 
 
 if TYPE_CHECKING:
     scipy_dist: type[Distribution] = scipy.stats.rv_continuous
-    scipy_solver: IVP_Solver = solve_ivp
+    scipy_solver: IVP_Solver = scipy.integrate.solve_ivp
+    _solve_ivp: IVP_Solver = solve_ivp

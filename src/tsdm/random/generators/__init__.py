@@ -12,31 +12,35 @@ __all__ = [
     # Protocols
     "Generator",
     "TimeSeriesGenerator",
-    "Distribution",
-    "TimeSeriesDistribution",
     "IVP_Generator",
     "IVP_Solver",
     # Generators
     "BouncingBall",
     "DampedPendulum",
-    "LoktaVolterra",
+    "DampedPendulumXY",
+    "LotkaVolterra",
+    "SIR",
+    # functions
+    "solve_ivp",
 ]
 
 from tsdm.random.generators._generators import (
-    Distribution,
     Generator,
     IVP_Generator,
     IVP_Solver,
-    TimeSeriesDistribution,
     TimeSeriesGenerator,
+    solve_ivp,
 )
 from tsdm.random.generators.bouncing_ball import BouncingBall
-from tsdm.random.generators.dampened_pendulum import DampedPendulum
-from tsdm.random.generators.lotka_volterra import LoktaVolterra
+from tsdm.random.generators.dampened_pendulum import DampedPendulum, DampedPendulumXY
+from tsdm.random.generators.lotka_volterra import LotkaVolterra
+from tsdm.random.generators.sir_model import SIR
 
 GENERATORS: dict[str, type[TimeSeriesGenerator]] = {
-    "DampedPendulum": DampedPendulum,
-    "LoktaVolterra": LoktaVolterra,
     "BouncingBall": BouncingBall,
+    "DampedPendulum": DampedPendulum,
+    "DampedPendulumXY": DampedPendulumXY,
+    "LotkaVolterra": LotkaVolterra,
+    "SIR": SIR,
 }
 r"""Dictionary of all available generators."""

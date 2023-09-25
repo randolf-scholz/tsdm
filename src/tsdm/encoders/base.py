@@ -50,10 +50,15 @@ encoder_var = TypeVar("encoder_var", bound="BaseEncoder")
 
 E = TypeVar("E", bound="BaseEncoder")
 """Type alias for encoder_var."""
+U = TypeVar("U")
+V = TypeVar("V")
+W = TypeVar("W")
+X = TypeVar("X")
+Y = TypeVar("Y")
 
 
 @runtime_checkable
-class Encoder(Protocol[T, S]):
+class Encoder(Protocol[U, V]):
     """Protocol for Encoders."""
 
     @property
@@ -66,26 +71,28 @@ class Encoder(Protocol[T, S]):
         r"""Whether the encoder requires fitting."""
         ...
 
-    # def __invert__(self) -> Encoder:
-    #     r"""Return the inverse encoder (i.e. decoder)."""
+    def __invert__(self) -> Encoder[V, U]:
+        r"""Return the inverse encoder (i.e. decoder)."""
+        ...
 
-    def __matmul__(self, other: Encoder, /) -> Encoder:
+    def __matmul__(self, other: Encoder[V, W], /) -> Encoder[U, W]:
         r"""Return chained encoders."""
         ...
 
-    def __or__(self, other: Encoder, /) -> Encoder:
+    # FIXME: Encoder[tuple[U, X], tuple[V, Y]] causes segmentation fault
+    def __or__(self, other: Encoder[X, Y], /) -> Encoder:
         r"""Return product encoders."""
         ...
 
-    def encode(self, data: T, /) -> S:
+    def encode(self, data: U, /) -> V:
         """Encode the data by transformation."""
         ...
 
-    def decode(self, data: S, /) -> T:
+    def decode(self, data: V, /) -> U:
         """Decode the data by transformation."""
         ...
 
-    def fit(self, data: T, /) -> None:
+    def fit(self, data: U, /) -> None:
         r"""Fits the encoder to data."""
         ...
 

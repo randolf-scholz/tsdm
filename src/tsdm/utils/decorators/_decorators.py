@@ -52,12 +52,11 @@ from typing_extensions import Self, override
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import Nested
-from tsdm.types.protocols import MappingProtocol, NTuple
+from tsdm.types.protocols import Func, MappingProtocol, NTuple
 from tsdm.types.variables import (
     CollectionType,
     any_var as T,
     key_var as K,
-    object_var as O,
     return_var_co as R,
     torch_module_var,
     value_co as V_co,
@@ -357,21 +356,21 @@ def decorator(deco: Callable) -> Callable:
     return _parametrized_decorator
 
 
-def attribute(func: Callable[[O], R]) -> R:
+def attribute(func: Callable[[T], R]) -> R:
     r"""Create decorator that converts method to attribute."""
 
     @wraps(func, updated=())
     class _attribute:
         __slots__ = ("func", "payload")
         sentinel = object()
-        func: Callable[[O], R]
+        func: Callable[[T], R]
         payload: R
 
         def __init__(self, function: Callable) -> None:
             self.func = function
             self.payload = cast(Any, self.sentinel)
 
-        def __get__(self, obj: O | None, obj_type: Optional[type] = None) -> Self | R:
+        def __get__(self, obj: T | None, obj_type: Optional[type] = None) -> Self | R:
             if obj is None:
                 return self
             if self.payload is self.sentinel:
@@ -523,11 +522,11 @@ def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
 
 @decorator
 def vectorize(
-    func: Callable[[O], R],
+    func: Callable[[T], R],
     /,
     *,
     kind: type[CollectionType],
-) -> Callable[[O | CollectionType], R | CollectionType]:
+) -> Callable[[T | CollectionType], R | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
     The signature will change accordingly.
@@ -585,10 +584,16 @@ class IterItems(MappingProtocol[K, V_co], Protocol[K, V_co]):
 
 @overload
 def iter_keys(obj: type[MappingProtocol[K, V_co]], /) -> type[IterKeys[K, V_co]]: ...
+
+
 @overload
 def iter_keys(obj: MappingProtocol[K, V_co], /) -> IterKeys[K, V_co]: ...
+
+
 @overload
 def iter_keys(obj: T, /) -> T: ...
+
+
 def iter_keys(obj, /):
     r"""Redirects __iter__ to keys()."""
     base_class = obj if isinstance(obj, type) else type(obj)
@@ -618,10 +623,16 @@ def iter_keys(obj, /):
 def iter_values(
     obj: type[MappingProtocol[K, V_co]], /
 ) -> type[IterValues[K, V_co]]: ...
+
+
 @overload
 def iter_values(obj: MappingProtocol[K, V_co], /) -> IterValues[K, V_co]: ...
+
+
 @overload
 def iter_values(obj: T, /) -> T: ...
+
+
 def iter_values(obj, /):
     r"""Redirects __iter__ to values()."""
     base_class = obj if isinstance(obj, type) else type(obj)
@@ -649,10 +660,16 @@ def iter_values(obj, /):
 
 @overload
 def iter_items(obj: type[MappingProtocol[K, V_co]], /) -> type[IterItems[K, V_co]]: ...
+
+
 @overload
 def iter_items(obj: MappingProtocol[K, V_co], /) -> IterItems[K, V_co]: ...
+
+
 @overload
 def iter_items(obj: T, /) -> T: ...
+
+
 def iter_items(obj, /):
     r"""Redirects __iter__ to items()."""
     base_class = obj if isinstance(obj, type) else type(obj)
@@ -688,32 +705,24 @@ def wrap_func(
     pass_args: bool = False,
 ) -> Callable[P, R]:
     r"""Wrap a function with pre- and post-hooks."""
-    if before is None and after is None:
-        __logger__.debug("No hooks added to %s", func)
-        return func
+    logger = __logger__.getChild(func.__name__)
 
-    if before is not None and after is None:
-        __logger__.debug("Adding pre hook %s to %s", before, func)
-        if pass_args:
+    # FIXME: https://github.com/python/mypy/issues/6680
+    match before, after, pass_args:
+        case None, None, bool():
+            logger.debug("No hooks to add, returning as-is.")
+            _wrapper = func
+
+        case Func(), None, True:
+            logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 before(*args, **kwargs)
                 return func(*args, **kwargs)
 
-            return _wrapper
-
-        @wraps(func)
-        def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            before()
-            return func(*args, **kwargs)
-
-        return _wrapper
-
-    if before is None and after is not None:
-        __logger__.debug("Adding post hook %s to %s", after, func)
-
-        if pass_args:
+        case None, Func(), True:
+            logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -721,20 +730,8 @@ def wrap_func(
                 after(*args, **kwargs)
                 return result
 
-            return _wrapper
-
-        @wraps(func)
-        def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            result = func(*args, **kwargs)
-            after()
-            return result
-
-        return _wrapper
-
-    if before is not None and after is not None:
-        __logger__.debug("Adding pre and post hook %s, %s to %s", before, after, func)
-
-        if pass_args:
+        case Func(), Func(), True:
+            logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -743,98 +740,114 @@ def wrap_func(
                 after(*args, **kwargs)
                 return result
 
-            return _wrapper
+        case Func(), None, False:
+            logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
 
-        @wraps(func)
-        def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            before()
-            result = func(*args, **kwargs)
-            after()
-            return result
+            @wraps(func)
+            def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                before()
+                return func(*args, **kwargs)
 
-        return _wrapper
+        case None, Func(), False:
+            logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
 
-    raise RuntimeError(f"Unreachable code reached for {func}")
+            @wraps(func)
+            def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                result = func(*args, **kwargs)
+                after()
+                return result
+
+        case Func(), Func(), False:
+            logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
+
+            @wraps(func)
+            def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                before()
+                result = func(*args, **kwargs)
+                after()
+                return result
+
+        case _:
+            raise TypeError("Got unexpected arguments.")
+
+    return _wrapper
 
 
 @decorator
 def wrap_method(
-    func: Callable[Concatenate[O, P], R],
+    func: Callable[Concatenate[T, P], R],
     /,
     *,
-    before: Optional[Callable[[O], None] | Callable[Concatenate[O, P], None]] = None,
-    after: Optional[Callable[[O], None] | Callable[Concatenate[O, P], None]] = None,
+    before: Optional[Callable[[T], None] | Callable[Concatenate[T, P], None]] = None,
+    after: Optional[Callable[[T], None] | Callable[Concatenate[T, P], None]] = None,
     pass_args: bool = False,
-) -> Callable[Concatenate[O, P], R]:
+) -> Callable[Concatenate[T, P], R]:
     r"""Wrap a function with pre- and post-hooks."""
-    if before is None and after is None:
-        __logger__.debug("No hooks added to %s", func)
-        return func
+    logger = __logger__.getChild(func.__name__)
 
-    if before is not None and after is None:
-        __logger__.debug("Adding pre hook %s to %s", before, func)
+    match before, after, pass_args:
+        case None, None, bool():
+            logger.debug("No hooks to add, returning as-is.")
+            _wrapper = func
 
-        if pass_args:
+        case Func(), None, True:
+            logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 before(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
-            return _wrapper
-
-        @wraps(func)
-        def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-            before(self)
-            return func(self, *args, **kwargs)
-
-        return _wrapper
-
-    if before is None and after is not None:
-        __logger__.debug("Adding post hook %s to %s", after, func)
-
-        if pass_args:
+        case None, Func(), True:
+            logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
                 after(self, *args, **kwargs)
                 return result
 
-            return _wrapper
-
-        @wraps(func)
-        def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-            result = func(self, *args, **kwargs)
-            after(self)
-            return result
-
-        return _wrapper
-
-    if before is not None and after is not None:
-        __logger__.debug("Adding pre and post hook %s, %s to %s", before, after, func)
-
-        if pass_args:
+        case Func(), Func(), True:
+            logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 before(self, *args, **kwargs)
                 result = func(self, *args, **kwargs)
                 after(self, *args, **kwargs)
                 return result
 
-            return _wrapper
+        case Func(), None, False:
+            logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
 
-        @wraps(func)
-        def _wrapper(self: O, *args: P.args, **kwargs: P.kwargs) -> R:
-            before(self)
-            result = func(self, *args, **kwargs)
-            after(self)
-            return result
+            @wraps(func)
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+                before(self)
+                return func(self, *args, **kwargs)
 
-        return _wrapper
+        case None, Func(), False:
+            logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
 
-    raise RuntimeError(f"Unreachable code reached for {func}")
+            @wraps(func)
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+                result = func(self, *args, **kwargs)
+                after(self)
+                return result
+
+        case Func(), Func(), False:
+            logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
+
+            @wraps(func)
+            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+                before(self)
+                result = func(self, *args, **kwargs)
+                after(self)
+                return result
+
+        case _:
+            raise TypeError("Got unexpected arguments.")
+
+    return _wrapper
 
 
 def lazy_torch_jit(func: Callable[P, R]) -> Callable[P, R]:

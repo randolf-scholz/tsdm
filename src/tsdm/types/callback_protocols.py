@@ -2,10 +2,10 @@
 
 __all__ = [
     # generic callback-protocols
-    "IndexedValueProto",
-    "NullFuncProto",
-    "SelfMapProto",
-    "WrappedValueProto",
+    "GetitemMap",
+    "NullMap",
+    "SelfMap",
+    "WrappedValue",
     # callback-protocols
     "ClipProto",
     "ContractionProto",
@@ -22,10 +22,17 @@ from numpy.typing import ArrayLike
 from tsdm.types.aliases import Axes, Scalar
 from tsdm.types.variables import any_co as T_co, any_contra as T_contra, any_var as T
 
+
 # region generic callback-protocols ----------------------------------------------------
+class NullMap(Protocol[T_contra]):
+    r"""A generic protocol for functions without args that always returns None."""
+
+    def __call__(self, x: T_contra, /) -> None:
+        r"""Returns `None`."""
+        ...
 
 
-class SelfMapProto(Protocol[T]):
+class SelfMap(Protocol[T]):
     r"""A generic protocol for endofunctions."""
 
     def __call__(self, x: T, /) -> T:
@@ -33,7 +40,7 @@ class SelfMapProto(Protocol[T]):
         ...
 
 
-class IndexedValueProto(Protocol[T_co]):
+class GetitemMap(Protocol[T_co]):
     r"""A generic protocol for indexed values."""
 
     def __call__(self, key: int, /) -> T_co:
@@ -41,15 +48,7 @@ class IndexedValueProto(Protocol[T_co]):
         ...
 
 
-class NullFuncProto(Protocol):
-    r"""A generic protocol for functions without args that always returns None."""
-
-    def __call__(self) -> None:
-        r"""Returns `None`."""
-        ...
-
-
-class WrappedValueProto(Protocol[T_co]):
+class WrappedValue(Protocol[T_co]):
     r"""A generic protocol for wrapped values."""
 
     def __call__(self) -> T_co:

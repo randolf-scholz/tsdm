@@ -168,35 +168,43 @@ class Project:
     def ROOT_PATH(self) -> Path:
         r"""Return the root directory."""
         assert len(self.ROOT_PACKAGE.__path__) == 1
-        return Path(self.ROOT_PACKAGE.__path__[0])
+        path = Path(self.ROOT_PACKAGE.__path__[0])
+
+        if path.parent.stem != "src":
+            raise ValueError(
+                f"This seems to be an installed version of {self.NAME},"
+                f" as {path} is not in src/*"
+            )
+        return path.parent.parent
+
+    @cached_property
+    def DOCS_PATH(self) -> Path:
+        r"""Return the docs directory."""
+        docs_path = self.ROOT_PATH / "docs"
+        if not docs_path.exists():
+            raise ValueError(f"Docs directory {docs_path} does not exist!")
+        return docs_path
+
+    @cached_property
+    def SOURCE_PATH(self) -> Path:
+        r"""Return the source directory."""
+        source_path = self.ROOT_PATH / "src"
+        if not source_path.exists():
+            raise ValueError(f"Source directory {source_path} does not exist!")
+        return source_path
 
     @cached_property
     def TESTS_PATH(self) -> Path:
         r"""Return the test directory."""
-        tests_path = self.ROOT_PATH.parent.parent / "tests"
-
-        if self.ROOT_PATH.parent.stem != "src":
-            raise ValueError(
-                f"This seems to be an installed version of {self.NAME},"
-                f" as {self.ROOT_PATH} is not in src/*"
-            )
+        tests_path = self.ROOT_PATH / "tests"
         if not tests_path.exists():
             raise ValueError(f"Tests directory {tests_path} does not exist!")
         return tests_path
 
     @cached_property
-    def SOURCE_PATH(self) -> Path:
-        r"""Return the source directory."""
-        source_path = self.ROOT_PATH.parent.parent / "src"
-
-        if self.ROOT_PATH.parent.stem != "src":
-            raise ValueError(
-                f"This seems to be an installed version of {self.NAME},"
-                f" as {self.ROOT_PATH} is not in src/*"
-            )
-        if not source_path.exists():
-            raise ValueError(f"Source directory {source_path} does not exist!")
-        return source_path
+    def TEST_RESULTS_PATH(self) -> Path:
+        r"""Return the test results directory."""
+        return self.TESTS_PATH / "results"
 
     def make_test_folders(self, dry_run: bool = True) -> None:
         r"""Make the tests folder if it does not exist."""

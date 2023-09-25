@@ -62,10 +62,11 @@ from tsdm.metrics import LOSSES, Loss
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
-from tsdm.types.variables import any_var as T
+from tsdm.types.variables import any_co as T_co, any_var as T
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
-MaybeWrapped: TypeAlias = T | Callable[[], T] | Callable[[int], T]
+MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
+"""Type Alias for maybe wrapped values."""
 
 
 def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:

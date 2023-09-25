@@ -4,25 +4,79 @@ References:
     - https://en.wikipedia.org/wiki/Pendulum_(mechanics)
 """
 
-__all__ = ["DampedPendulum"]
+__all__ = ["DampedPendulum", "DampedPendulumXY"]
 
 from dataclasses import KW_ONLY, dataclass
-from typing import Any
 
 import numpy as np
-import scipy
-from numpy.typing import ArrayLike
-from scipy.stats import norm as univariate_normal
+from numpy.typing import ArrayLike, NDArray
+from scipy.stats import norm as univariate_normal, truncnorm
 
-from tsdm.random.generators._generators import Distribution, IVP_Generator, IVP_Solver
+from tsdm.random.generators._generators import IVP_GeneratorBase
+from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
 
 
 @dataclass
-class DampedPendulum(IVP_Generator[np.ndarray]):
-    """Dampened Pendulum Simulation.
+class DampedPendulum(IVP_GeneratorBase[NDArray]):
+    r"""Dampened Pendulum Simulation.
 
     The dampended pendulum is an autonomous system with two degrees of freedom.
+
+    .. math::
+        dθ/dt = ω
+        dω/dt = -(g/l)⋅sin(θ) - (γ/m)⋅ω
+
+    Note: (Second equilibrium)
+        Usually the top position is an unstable equilibrium.
+        For the dampened pendulum, the jacobian of the vector field at θ=π, ω=0 is
+
+        .. math::
+            J = [[0, 1], [-(g/l)\cos θ, -γ/m]]
+              = [[0, 1], [g/l, -γ/m]]
+
+        Applying the formula for the eigenvalues of a 2x2 matrix,
+
+        .. math:: λ = ½(tr J ± √{(tr J)² - 4⋅det J})
+
+        We get
+
+        .. math:: λ = ½(-γ/m ± √{γ²/m² + 4g/l})
+
+        The equilibrium is stable if Re(λ)<0, so in this case iff
+
+        .. math::
+            ½(-γ/m ± √{γ²/m² + 4g/l}) < 0
+            ⟺ √{γ²/m² + 4g/l}) < γ/m
+            ⟺ 4g/l < 0
+
+        which is obviously false. Hence, the top position is a stable equilibrium.
+
+    Note: (periodicity)
+        These equations are periodic with period 2π.
+        in particular, quite annoyingly, when solving numerically we can
+        get rather large values for θ. This could be avoided by using a
+        different coordinate system, but we don't do that here.
+
+    Warning:
+        This variant leads to un-physical results.
+        This is because the equations only work if the pendulum cannot cross
+        the top position.
+
+    Note: (critical energy)
+        The energy of the pendulum at position θ and velocity ω is
+
+        .. math:: E = m⋅g⋅l⋅(1 - cos θ) + ½⋅m⋅l²⋅ω²
+
+        The critical energy is the energy at the top position, i.e. θ=π, ω=0.
+
+        Therefore, we need to choose the initial conditions such that the
+        energy is below the critical energy.
+
+        .. math:: E* > E₀
+            ⟺ 2⋅m⋅g⋅l > m⋅g⋅l⋅(1 - cos θ₀) + ½⋅m⋅l²⋅ω₀²
+            ⟺ 1 + cos θ₀ > ½⋅(l/g)⋅ω₀²
+            ⟺ ω₀ < √{ 2(g/l)(1 + cos θ₀) }
 
     References:
         - Neural Continuous-Discrete State Space Models
@@ -54,41 +108,73 @@ class DampedPendulum(IVP_Generator[np.ndarray]):
     """Initial angle."""
     omega0: float = 4.0
     """Initial angular velocity."""
-    ivp_solver: IVP_Solver = scipy.integrate.solve_ivp
-    """Solver for the initial value problem."""
     observation_noise: Distribution = univariate_normal(loc=0, scale=0.05)
     """Noise distribution."""
     parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
     """Noise distribution."""
 
-    def get_initial_state(self, size: SizeLike = ()) -> np.ndarray:
+    def _get_initial_state(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         theta0 = self.theta0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.omega0 * self.parameter_noise.rvs(size=size).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
-    def make_observations(self, sol: Any, /) -> np.ndarray:
+    def _make_observations(self, y: NDArray, /) -> NDArray:
         """Create observations from the solution."""
         # add observation noise
-        observations = sol.y + self.observation_noise.rvs(size=sol.y.shape)
-        return observations
+        return y + self.observation_noise.rvs(size=y.shape)
 
-    def system(self, state: ArrayLike, *, t: Any = None) -> np.ndarray:
+    def system(self, t: ArrayLike, x: ArrayLike) -> NDArray:
         """Vector field of the pendulum.
 
         .. Signature:: ``[(...,), (..., 2) -> (..., 2)``
-        """
-        if t is not None:
-            raise ValueError("Damped-Pendulum qquations are a time-invariant system.")
 
-        state = np.asarray(state)
+        sub-signatures:
+            - ``[(...,), (2, ) -> (..., 2)``
+            - ``[(,), (..., 2) -> (..., 2)``
+        """
+        t = np.asarray(t)
+        state = np.asarray(x)
         theta = state[..., 0]
         omega = state[..., 1]
 
-        return np.stack(
+        alpha = self.g / self.length
+        beta = self.gamma / self.mass
+
+        new_state = np.stack(
             [
                 omega,
-                -(self.g / self.length) * np.sin(theta)
-                - self.gamma / self.mass * omega,
+                -alpha * np.sin(theta) - beta * omega,
             ]
         )
+        return np.einsum("..., ...d -> ...d", np.ones_like(t), new_state)
+
+
+class DampedPendulumXY(DampedPendulum):
+    """Dampened Pendulum Simulation.
+
+    This variant returns only cartesian coordinates.
+    """
+
+    def _make_observations(self, y: NDArray, /, *, noise: float = 0.05) -> NDArray:
+        """Create observations from the solution.
+
+        Noise is automatically scaled by the length of the pendulum.
+        """
+        theta = y[..., 0]
+        x = self.length * np.sin(theta)
+        y = -self.length * np.cos(theta)
+        loc = np.stack([x, y], axis=-1)
+
+        # Random noise on angle
+        # sample from truncated normal distribution
+        # cf. https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.truncnorm.html
+        loc_min, loc_max = -self.length, +self.length
+        noise = noise * self.length
+        lower = (loc_min - loc) / noise
+        upper = (loc_max - loc) / noise
+        return truncnorm.rvs(lower, upper, loc=loc, scale=noise)
+
+    def validate_observations(self, values: NDArray, /) -> None:
+        """Validate constraints on the parameters."""
+        assert values.min() >= -self.length and values.max() <= +self.length

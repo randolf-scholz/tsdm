@@ -14,17 +14,16 @@ __all__ = ["BouncingBall"]
 from dataclasses import KW_ONLY, dataclass
 from typing import Final
 
-import matplotlib.pyplot as plt
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 from scipy.stats import truncnorm
 
-from tsdm.random.generators._generators import IVP_Generator
+from tsdm.random.generators._generators import IVP_GeneratorBase
 from tsdm.types.aliases import SizeLike
 
 
 @dataclass
-class BouncingBall(IVP_Generator[np.ndarray]):
+class BouncingBall(IVP_GeneratorBase[NDArray]):
     """Bouncing Ball Simulation.
 
     NOTE: This simulation differs from the reference in two regards:
@@ -51,7 +50,7 @@ class BouncingBall(IVP_Generator[np.ndarray]):
     y_noise: Final[float] = 0.05
     """Standard deviation of the observation noise."""
 
-    def get_initial_state(self, size: SizeLike = ()) -> np.ndarray:
+    def _get_initial_state(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         x0 = np.random.uniform(low=self.x_min, high=self.x_max, size=size)
         v0 = np.random.uniform(
@@ -59,19 +58,20 @@ class BouncingBall(IVP_Generator[np.ndarray]):
         ) * np.random.choice([-1, 1], size=size)
         return np.stack([x0, v0], axis=-1)
 
-    def make_observations(self, sol: np.ndarray, /) -> np.ndarray:
+    def _make_observations(self, loc: NDArray, /) -> NDArray:
         """Create observations from the solution."""
+        x = loc[..., 0]
         # sample from truncated normal distribution
-        y = truncnorm.rvs(self.x_min, self.x_max, loc=sol, scale=self.y_noise)
-
-        # validate and return
-        assert y.min() >= -1 and y.max() <= +1
+        # cf. https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.truncnorm.html
+        lower = (self.x_min - x) / self.y_noise
+        upper = (self.x_max - x) / self.y_noise
+        y = truncnorm.rvs(lower, upper, loc=x, scale=self.y_noise)
         return y
 
-    def solve_ivp(self, t: ArrayLike, *, y0: ArrayLike) -> np.ndarray:
+    def _solve_ivp(self, t: ArrayLike, *, y0: ArrayLike) -> NDArray:
         """Solve the initial value problem.
 
-        Signature: ``[(N,), (..., 2)] -> (..., N)``
+        NOTE: possibly not properly vectorized.
         """
         # cast to array
         t = np.asarray(t)
@@ -102,17 +102,29 @@ class BouncingBall(IVP_Generator[np.ndarray]):
                 -next_wall + v0 * (t - t2),
             ],
         )
+        v = np.select(
+            [
+                t <= t1,  # no bounce
+                (t > t1) & (t <= t2),  # one bounce
+                t > t2,  # two bounces
+            ],
+            [
+                v0,
+                -v0,
+                v0,
+            ],
+        )
 
         # move time axis to the back
         x = np.moveaxis(x, 0, -1)
+        v = np.moveaxis(v, 0, -1)
 
-        # validate and return
-        assert x.min() >= -1 and x.max() <= +1
-        return x
+        return np.stack([x, v], axis=-1)
 
+    def validate_solution(self, sol: NDArray, /) -> None:
+        """Validate constraints on the parameters."""
+        x = sol[..., 0]
+        assert x.min() >= -1 and x.max() <= +1, f"{[x.min(), x.max()]} not in [-1,+1]"
 
-def example():
-    t = np.linspace(-10, 20, 1000)
-    y0 = np.random.uniform(-0.5, 0.7, size=(5, 2))
-    x = BouncingBall().solve_ivp(t, y0=y0)
-    plt.plot(t, x[0], t, x[1], t, x[3])
+    def validate_observations(self, x: NDArray, /) -> None:
+        assert x.min() >= -1 and x.max() <= +1, f"{[x.min(), x.max()]} not in [-1,+1]"
