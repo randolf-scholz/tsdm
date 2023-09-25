@@ -164,7 +164,6 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         """Solve the initial value problem."""
         ...
 
-    @final
     def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
         """Random variates of given type."""
         # get the initial state
