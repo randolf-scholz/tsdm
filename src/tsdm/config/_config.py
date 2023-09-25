@@ -2,11 +2,11 @@ r"""TSDM Configuration."""
 
 __all__ = [
     # Classes
-    "Project",
     "Config",
+    "Project",
     # Functions
-    "get_package_structure",
     "generate_folders",
+    "get_package_structure",
 ]
 
 import logging
