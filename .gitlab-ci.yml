@@ -90,7 +90,7 @@ setup:
     # build the package.
     - poetry build
     # install package
-    - pip install --upgrade $(ls dist/*.whl)
+    # - pip install --upgrade $(ls dist/*.whl)
     # install dev dependencies.
     - pip install --upgrade -e .[dev]
     - pip list
