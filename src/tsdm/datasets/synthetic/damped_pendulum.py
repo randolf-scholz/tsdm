@@ -13,7 +13,28 @@ from tsdm.random import generators
 
 @final
 class DampedPendulum(BaseDataset):
-    """Dataset Wrapper for the Damped Pendulum Generator."""
+    """Dataset Wrapper for the Damped Pendulum Generator.
+
+    Note:
+        We follow the description of the Damped Pendulum in paper [1], see
+        appendix C1.
+
+    References:
+        - Neural Continuous-Discrete State Space Models
+          Abdul Fatir Ansari, Alvin Heng, Andre Lim, Harold Soh
+          Proceedings of the 40th International Conference on Machine Learning
+          https://proceedings.mlr.press/v202/ansari23a.html
+          https://github.com/clear-nus/NCDSSM
+        - Deep Variational Bayes Filters: Unsupervised Learning of State Space Models from Raw Data
+          Maximilian Karl, Maximilian Soelch, Justin Bayer, Patrick van der Smagt
+          ICLR 2017
+          https://openreview.net/forum?id=HyTqHL5xg
+        - Deep Rao-Blackwellised Particle Filters for Time Series Forecasting
+          Richard Kurle, Syama Sundar Rangapuram, Emmanuel de Bézenac, Stephan Günnemann, Jan Gasthaus
+          NeurIPS 2020
+          https://proceedings.neurips.cc/paper/2020/hash/afb0b97df87090596ae7c503f60bb23f-Abstract.html
+          https://dl.acm.org/doi/10.5555/3495724.3497013
+    """
 
     rawdata_files = []
     num_sequences = 7000
