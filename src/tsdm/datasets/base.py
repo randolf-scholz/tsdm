@@ -82,7 +82,7 @@ class Dataset(Protocol[T_co]):
         ...
 
 
-class BaseDatasetMetaClass(type(Protocol)):
+class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(

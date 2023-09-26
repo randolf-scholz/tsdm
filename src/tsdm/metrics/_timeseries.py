@@ -30,7 +30,7 @@ from torch import Tensor, jit, nn
 
 from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss
 from tsdm.types.aliases import Axes
-from tsdm.utils.decorators import autojit
+from tsdm.utils.wrappers import autojit
 
 
 @runtime_checkable

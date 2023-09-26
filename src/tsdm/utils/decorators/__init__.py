@@ -12,11 +12,7 @@ __all__ = [
     "CONTEXT_MANAGERS",
     "CLASS_DECORATORS",
     # Functions
-    "iter_items",
-    "iter_keys",
-    "iter_values",
     "debug",
-    "autojit",
     "decorator",
     "return_namedtuple",
     "timefun",
@@ -36,12 +32,8 @@ from tsdm.utils.decorators._contextmanagers import ray_cluster, timer
 from tsdm.utils.decorators._decorators import (
     ClassDecorator,
     Decorator,
-    autojit,
     debug,
     decorator,
-    iter_items,
-    iter_keys,
-    iter_values,
     return_namedtuple,
     timefun,
     trace,
@@ -57,9 +49,6 @@ CONTEXT_MANAGERS: dict[str, type[AbstractContextManager]] = {
 r"""Dictionary of all available context managers."""
 
 DECORATORS: dict[str, Decorator] = {
-    "IterItems": iter_items,
-    "IterKeys": iter_keys,
-    "IterValues": iter_values,
     "decorator": decorator,
     "debug": debug,
     "named_return": return_namedtuple,
@@ -71,11 +60,5 @@ DECORATORS: dict[str, Decorator] = {
     # "sphinx_value": sphinx_value,
 }
 r"""Dictionary of all available decorators."""
-
-
-CLASS_DECORATORS: dict[str, ClassDecorator] = {
-    "autojit": autojit,
-}
-r"""Dictionary of all available class decorators."""
 
 del AbstractContextManager

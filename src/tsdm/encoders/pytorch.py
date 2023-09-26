@@ -16,7 +16,7 @@ import torch
 from torch import Tensor, jit, nn
 
 from tsdm.encoders.base import BaseEncoder
-from tsdm.utils.decorators import autojit
+from tsdm.utils.wrappers import autojit
 
 # TODO: Add TensorEncoder
 

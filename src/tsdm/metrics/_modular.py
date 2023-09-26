@@ -29,7 +29,7 @@ import torch
 from torch import Tensor, jit, nn
 
 from tsdm.types.aliases import Axes
-from tsdm.utils.decorators import autojit
+from tsdm.utils.wrappers import autojit
 
 
 @runtime_checkable
