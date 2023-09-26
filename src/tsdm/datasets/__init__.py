@@ -29,7 +29,6 @@ __all__ = [
     # Types
     "Dataset",
     # Constants
-    "TSC",
     "DATASETS",
     # ABCs
     "BaseDataset",
@@ -39,6 +38,7 @@ __all__ = [
     "TimeSeriesCollection",
     "TimeSeriesDataset",
     # Datasets
+    "DampedPendulum_Ansari2023",
     "BeijingAirQuality",
     "ETT",
     "Electricity",
@@ -83,14 +83,10 @@ from tsdm.datasets.mimic import (
     MIMIC_IV_Bilos2021,
 )
 from tsdm.datasets.physionet import PhysioNet2012, PhysioNet2019
+from tsdm.datasets.synthetic import DampedPendulum_Ansari2023
 from tsdm.datasets.timeseries import KIWI
 from tsdm.datasets.uci import BeijingAirQuality, Electricity, Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_DeBrouwer2019
-
-TSC: dict[str, type[TimeSeriesCollection]] = {
-    "KiwiDataset": KiwiDataset,
-    "KIWI": KIWI,
-}
 
 DATASETS: dict[str, type[Dataset]] = {
     "BeijingAirQuality": BeijingAirQuality,
@@ -100,6 +96,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "KIWI_RUNS": KIWI_RUNS,
     "KIWI_Dataset": KIWI_Dataset,
     # "KIWI_RUNS_OLD": KIWI_RUNS_OLD,
+    "DampedPendulum_Ansari2023": DampedPendulum_Ansari2023,
     "MIMIC_III": MIMIC_III_RAW,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV": MIMIC_IV_RAW,

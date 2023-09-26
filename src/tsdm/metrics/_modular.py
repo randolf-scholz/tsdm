@@ -7,7 +7,7 @@ Note:
 
 __all__ = [
     # Base Classes
-    "Loss",
+    "Metric",
     "BaseLoss",
     "WeightedLoss",
     # Classes
@@ -33,7 +33,7 @@ from tsdm.utils.decorators import autojit
 
 
 @runtime_checkable
-class Loss(Protocol):
+class Metric(Protocol):
     r"""Protocol for a loss function."""
 
     def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:

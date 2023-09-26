@@ -36,14 +36,15 @@ __all__ = [
     "mimic",
     "uci",
     # Protocol
-    "Task",
+    "ForecastingTask",
     # Constants
+    "OLD_TASKS",
     "TASKS",
     # Classes
     "OldBaseTask",
     "TimeSeriesTask",
     "TimeSeriesSampleGenerator",
-    # Tasks
+    # Old Tasks
     "ETT_Zhou2021",
     "ElectricityDeepAR",
     "ElectricityDeepState",
@@ -59,15 +60,17 @@ __all__ = [
     "TrafficTFT",
     "TrafficTRMF",
     "USHCN_DeBrouwer2019",
-    # Task Datasets
-    "InSilicoSampleGenerator",
+    # New Tasks
+    "DampedPendulum_Ansari2023",
     "InSilicoTask",
     "KiwiTask",
+    # Other
+    "InSilicoSampleGenerator",
 ]
 
 from tsdm.tasks import base, kiwi, mimic, uci
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.tasks.base import Task, TimeSeriesSampleGenerator, TimeSeriesTask
+from tsdm.tasks.base import ForecastingTask, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi import (
     KIWI_FINAL_PRODUCT,
@@ -82,6 +85,7 @@ from tsdm.tasks.mimic import (
     MIMIC_III_DeBrouwer2019,
     MIMIC_IV_Bilos2021,
 )
+from tsdm.tasks.synthetic import DampedPendulum_Ansari2023
 from tsdm.tasks.uci import (
     ElectricityDeepAR,
     ElectricityDeepState,
@@ -93,11 +97,16 @@ from tsdm.tasks.uci import (
 )
 from tsdm.tasks.ushcn import USHCN_DeBrouwer2019
 
-TASKS: dict[str, type[Task]] = {
-    "ETT_Zhou2021": ETT_Zhou2021,
-    "ElectricityLim2021": ElectricityLim2021,
-    "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
+TASKS: dict[str, type[ForecastingTask]] = {
     "KiwiTask": KiwiTask,
+    "InSilicoTask": InSilicoTask,
+    "DampedPendulum_Ansari2023": DampedPendulum_Ansari2023,
+    # "ElectricityLim2021": ElectricityLim2021,  # FIXME: unfinished
+}
+
+OLD_TASKS: dict[str, type[OldBaseTask]] = {
+    "ETT_Zhou2021": ETT_Zhou2021,
+    "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
     "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
     "MIMIC_III_Bilos2021": MIMIC_III_DeBrouwer2019,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,

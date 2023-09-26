@@ -104,6 +104,7 @@ class ElectricityLim2021(TimeSeriesTask):
 
     KeyType = Literal["train", "test", "valid", "joint", "whole"]
     r"""Type Hint for index."""
+
     preprocessor: BaseEncoder
 
     # FIXME: need a different base class for this task!

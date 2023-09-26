@@ -99,7 +99,7 @@ create a `Sample` from the `TimeSeriesCollection`.
 
 __all__ = [
     # Protocol
-    "Task",
+    "ForecastingTask",
     # Classes
     "Sample",
     "Inputs",
@@ -111,7 +111,7 @@ __all__ = [
 
 import logging
 import warnings
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
@@ -125,6 +125,7 @@ from typing import (
     Protocol,
     TypeAlias,
     TypeVar,
+    runtime_checkable,
 )
 
 import numpy as np
@@ -139,16 +140,10 @@ from typing_extensions import Self, assert_type
 
 from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
+from tsdm.metrics import Metric
 from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
-
-
-class Task(Protocol):
-    """Protocol for tasks."""
-
-    # FIXME: Implement Protocol for Tasks
-
 
 Sample_co = TypeVar("Sample_co", covariant=True)
 """Covariant type variable for `Sample`."""
@@ -466,6 +461,46 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 raise ValueError(f"Targets {cols} not in found metadata columns!")
 
 
+@runtime_checkable
+class ForecastingTask(Protocol[SplitID, Sample_co]):
+    """Protocol for tasks."""
+
+    @property
+    def dataset(self) -> TimeSeriesCollection:
+        """The dataset."""
+        ...
+
+    @property
+    def folds(self) -> DataFrame:
+        """A mapping of all the splits."""
+        ...
+
+    @property
+    def splits(self) -> Mapping[SplitID, TimeSeriesCollection]:
+        r"""Dictionary holding sampler associated with each key."""
+        ...
+
+    @property
+    def samplers(self) -> Mapping[SplitID, TorchSampler]:
+        """A mapping of all the samplers."""
+        ...
+
+    @property
+    def generators(self) -> Mapping[SplitID, TimeSeriesSampleGenerator]:
+        r"""Dictionary holding the generator associated with each key."""
+        ...
+
+    @property
+    def dataloaders(self) -> Mapping[SplitID, DataLoader[Sample_co]]:
+        """A mapping of all the dataloaders."""
+        ...
+
+    @property
+    def test_metrics(self) -> Mapping[SplitID, Metric]:
+        """A mapping of all the test metrics."""
+        ...
+
+
 @dataclass
 class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     r"""Abstract Base Class for Tasks.
@@ -646,14 +681,17 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         r"""Create the encoder associated with the specified key."""
         return NotImplemented
 
+    @abstractmethod
     def make_folds(self, /) -> DataFrame:
         r"""Return the folds associated with the specified key."""
         return NotImplemented
 
+    @abstractmethod
     def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
-        r"""Return the splits associated with the specified key."""
+        r"""Return the generator associated with the specified key."""
         return NotImplemented
 
+    @abstractmethod
     def make_sampler(self, key: SplitID, /) -> TorchSampler[K]:
         r"""Create the sampler associated with the specified key."""
         return NotImplemented

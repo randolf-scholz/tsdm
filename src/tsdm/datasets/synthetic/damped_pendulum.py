@@ -1,6 +1,6 @@
 """Dataset Wrapper for the Damped Pendulum Generator."""
 
-__all__ = ["DampedPendulum"]
+__all__ = ["DampedPendulum_Ansari2023"]
 
 from functools import cached_property
 from typing import final
@@ -16,7 +16,7 @@ from tsdm.random import generators
 
 
 @final
-class DampedPendulum(SingleTableDataset):
+class DampedPendulum_Ansari2023(SingleTableDataset):
     """Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:

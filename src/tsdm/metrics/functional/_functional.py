@@ -6,7 +6,8 @@ Contains losses in functional form.
   - See `tsdm.losses` for modular implementations.
 """
 
-__all__ = [  # Functions
+__all__ = [
+    # Functions
     "nd",
     "nrmse",
     "rmse",

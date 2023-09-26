@@ -58,7 +58,7 @@ from tsdm.linalg import (
     row_corr,
     schatten_norm,
 )
-from tsdm.metrics import LOSSES, Loss
+from tsdm.metrics import LOSSES, Metric
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
@@ -118,7 +118,8 @@ class TargetsAndPredics(NamedTuple):
 
 @torch.no_grad()
 def compute_metrics(
-    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]],
+    metrics: Sequence[str | Metric | type[Metric]]
+    | Mapping[str, str | Metric | type[Metric]],
     /,
     *,
     targets: Tensor,
@@ -350,7 +351,8 @@ def log_lr_scheduler(
 
 def log_metrics(
     step: int,
-    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]],
+    metrics: Sequence[str | Metric | type[Metric]]
+    | Mapping[str, str | Metric | type[Metric]],
     writer: SummaryWriter,
     *,
     inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,

@@ -1,7 +1,7 @@
 """Time series dataset."""
 
 __all__ = [
-    "DampedPendulum",
+    "DampedPendulum_Ansari2023",
     "ETTh1",
     "ETTh2",
     "ETTm1",
@@ -26,7 +26,7 @@ from tsdm.datasets.mimic.mimic_iv_bilos2021 import (
 )
 from tsdm.datasets.physionet.physionet2012 import PhysioNet2012 as _PhysioNet2012
 from tsdm.datasets.physionet.physionet2019 import PhysioNet2019 as _PhysioNet2019
-from tsdm.datasets.synthetic import DampedPendulum as _DampedPendulum
+from tsdm.datasets.synthetic import DampedPendulum_Ansari2023 as _DampedPendulum
 from tsdm.datasets.uci.electricity import Electricity as _Electricity
 from tsdm.datasets.uci.traffic import Traffic as _Traffic
 from tsdm.datasets.ushcn.ushcn import USHCN as _USHCN
@@ -161,7 +161,7 @@ class Traffic(TimeSeriesCollection):
         super().__init__(timeseries=ds.table)
 
 
-class DampedPendulum(TimeSeriesCollection):
+class DampedPendulum_Ansari2023(TimeSeriesCollection):
     """Damped Pendulum Time Series Collection."""
 
     def __init__(self) -> None:
