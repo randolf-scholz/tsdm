@@ -94,8 +94,8 @@ setup:
     # install dev dependencies.
     - pip install --upgrade -e .[dev]
     - pip list
-    - echo "validating that package can be imported"
-    - python -c "import ${MODULENAME} as module; print(module.__version__)"
+    - echo "Validating that package $MODULENAME can be imported..."
+    - python -c "import $MODULENAME as module; print(module.__version__)"
   after_script:
     - source ${VENVNAME}/bin/activate
     - VERSION="$(poetry version -s)"
