@@ -2,7 +2,7 @@
 # Template: https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
 
 # region global --------------------------------------------------------------------------------------------------------
-image: python:3.10-bullseye
+image: python:3.10-bookworm
 
 stages:
   - build
@@ -87,7 +87,7 @@ setup:
     - VERSION='"'$(poetry version -s)'"'
     - python -c "import re; assert re.match($regex, $VERSION)"
     - echo ">>> Installing version $VERSION <<<"
-    # uninstall previous version
+    # uninstall previous if applicable
     - pip uninstall -y $MODULENAME
     # build the package.
     - poetry build
@@ -96,7 +96,6 @@ setup:
     # install dev dependencies.
     - pip install --upgrade -e .[dev]
     - pip list
-    - pip install --upgrade torch
     - python -c "import torch as module; print(module.__version__)"
     - echo "Validating that package $MODULENAME can be imported..."
     - python -c "import $MODULENAME as module; print(module.__version__)"
