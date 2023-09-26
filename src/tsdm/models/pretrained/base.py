@@ -269,12 +269,16 @@ class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
 
     def autodetect_component_files(self) -> dict[str, str]:
         r"""Detect which components are available."""
+        assert self.rawdata_path.exists(), "Path does not exist!"
+
         if is_zipfile(self.rawdata_path):
             with ZipFile(self.rawdata_path, "r") as zf:
                 return {Path(f).stem: f for f in zf.namelist()}
         if self.rawdata_path.is_dir():
             return {f.stem: f.name for f in self.rawdata_path.iterdir()}
-        raise ValueError(f"{self.rawdata_path} unsupported filetype!")
+        if self.rawdata_path.is_file():
+            raise ValueError(f"{self.rawdata_path!r} is of unknown file type!")
+        raise TypeError(f"Unsupported type {self.rawdata_path!r}.")
 
     def detect_components(self) -> list[str]:
         r"""Detect which components are available."""
