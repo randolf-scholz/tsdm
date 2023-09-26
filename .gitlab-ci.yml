@@ -87,10 +87,12 @@ setup:
     - VERSION='"'$(poetry version -s)'"'
     - python -c "import re; assert re.match($regex, $VERSION)"
     - echo ">>> Installing version $VERSION <<<"
+    # uninstall previous version
+    - pip uninstall -y $MODULENAME
     # build the package.
     - poetry build
     # install package
-    # - pip install --upgrade $(ls dist/*.whl)
+    - pip install --upgrade $(ls dist/*.whl)
     # install dev dependencies.
     - pip install --upgrade -e .[dev]
     - pip list
