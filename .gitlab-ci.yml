@@ -94,6 +94,8 @@ setup:
     # install dev dependencies.
     - pip install --upgrade -e .[dev]
     - pip list
+    - pip install --upgrade torch
+    - python -c "import torch as module; print(module.__version__)"
     - echo "Validating that package $MODULENAME can be imported..."
     - python -c "import $MODULENAME as module; print(module.__version__)"
   after_script:
