@@ -2,17 +2,21 @@
 
 __all__ = ["DampedPendulum"]
 
-from typing import Any, final
+from functools import cached_property
+from typing import final
 
 import numpy as np
+import pandas as pd
+from pandas import DataFrame, Index
 from scipy.stats import norm as univariate_normal
+from tqdm.autonotebook import trange
 
-from tsdm.datasets.base import BaseDataset
+from tsdm.datasets.base import SingleTableDataset
 from tsdm.random import generators
 
 
 @final
-class DampedPendulum(BaseDataset):
+class DampedPendulum(SingleTableDataset):
     """Dataset Wrapper for the Damped Pendulum Generator.
 
     Note:
@@ -42,7 +46,7 @@ class DampedPendulum(BaseDataset):
     t_min = 0.0
     t_max = 15.0
 
-    @property
+    @cached_property
     def generator(self) -> generators.DampedPendulum:
         return generators.DampedPendulum(
             length=1.0,
@@ -51,18 +55,27 @@ class DampedPendulum(BaseDataset):
             gamma=0.25,
             theta0=np.pi,
             omega0=4.0,
-            observation_noise=univariate_normal(loc=0, scale=-0.05),
+            observation_noise=univariate_normal(loc=0, scale=0.05),
             parameter_noise=univariate_normal(loc=0, scale=1),
         )
 
-    def clean(self) -> None:
+    def clean_table(self) -> None:
         self.LOGGER.info("Generating data...")
 
         # generate time range
         t_range = np.arange(self.t_min, self.t_max + self.step / 2, self.step)
         assert t_range[0] == self.t_min
         assert t_range[-1] == self.t_max
-        assert all(np.diff(t_range) == self.step)
+        assert np.allclose(np.diff(t_range), self.step)
 
-    def load(self, *, initializing: bool = False) -> Any:
-        raise NotImplementedError
+        sequences: dict[int, DataFrame] = {}
+        for k in trange(self.num_sequences, desc="generating sequences"):
+            data = self.generator.rvs(t_range)
+            sequences[k] = DataFrame(
+                data,
+                index=Index(t_range, name="time"),
+                columns=["theta", "omega"],
+                dtype="float32[pyarrow]",
+            )
+
+        return pd.concat(sequences, names=["sequence_id"], axis="index")
