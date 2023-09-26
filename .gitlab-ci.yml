@@ -257,7 +257,7 @@ pytest:
     - setup
   script:
     - pytest --version
-    - pytest -k "not slow"
+    - pytest -k "not slow" -n 4
     - coverage xml -o $REPORT_DIR/cobertura-coverage.xml
     - coverage report
   after_script:
