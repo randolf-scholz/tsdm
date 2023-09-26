@@ -92,13 +92,12 @@ setup:
     # build the package.
     - poetry build
     # install package
-    - pip install --upgrade $(ls dist/*.whl)
+    - pip install --upgrade --prefer-binary $(ls dist/*.whl)
     # install dev dependencies.
-    - pip install --upgrade -e .[dev]
+    - pip install --upgrade --prefer-binary -e .[dev]
     - pip list
     - python -c "import torch as module; print(module.__version__)"
     - echo "Validating that package $MODULENAME can be imported..."
-    - export PYTORCH_JIT=0
     - python -c "import $MODULENAME as module; print(module.__version__)"
   after_script:
     - source ${VENVNAME}/bin/activate
