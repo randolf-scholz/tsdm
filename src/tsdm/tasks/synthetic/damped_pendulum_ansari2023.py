@@ -19,7 +19,7 @@ from torch.utils.data import Sampler as TorchSampler
 from tsdm import datasets
 from tsdm.tasks.base import SplitID, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.types.variables import key_var as K
-from tsdm.utils.data import is_partition
+from tsdm.utils.data import folds_as_frame, is_partition
 
 
 @final
@@ -48,11 +48,11 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     valid_size = 1000
     test_size = 1000
 
-    def __init__(self, validate: bool = True) -> None:
+    def __init__(self, validate: bool = True, initialize: bool = True) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
         timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
 
-        super().__init__(dataset=timeseries, validate=validate)
+        super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
 
     def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
         raise NotImplementedError
@@ -83,4 +83,4 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
             }
             assert is_partition(fold.values(), union=self.dataset.metaindex)
             folds.append(fold)
-        return folds
+        return folds_as_frame(folds, index=self.dataset.metaindex)

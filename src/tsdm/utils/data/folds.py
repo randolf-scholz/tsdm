@@ -89,6 +89,7 @@ def folds_as_frame(
     Args:
         folds: a list of dictionaries, where each dictionary holds the split information,
                e.g. is a dictionary like {train: train_indices, test: test_indices}
+               or   is a dictionary like {train: train_mask,    test: test_mask}
 
     Returns:
         DataFrame with the schema
@@ -109,26 +110,34 @@ def folds_as_frame(
         | TS₄  | valid | test  | train | valid |  test |
         +------+-------+-------+-------+-------+-------+
     """
-    if index is None:
-        # create a default index
-        first_fold = next(iter(folds))
-        first_split = next(iter(first_fold.values()))
+    # test if the indices are given as boolean masks or as indices
+    first_fold = next(iter(folds))
+    first_split = next(iter(first_fold.values()))
+    is_mask = first_split.dtype == bool
 
+    if not is_mask and index is None:
+        raise ValueError("Please provide `index` if `folds` are not boolean masks.")
+
+    if index is None:
         name_index: Index = (
             first_split.index
             if isinstance(first_split, Series)
             else np.arange(len(first_split))
         )
+        index = name_index
     else:
         name_index = index
 
     fold_idx = Index(range(len(folds)), name="fold")
     splits = DataFrame(index=name_index, columns=fold_idx, dtype="string")
 
+    # construct the folds
     for k in fold_idx:
         for key, split in folds[k].items():
-            # where cond is false is replaces with key
-            splits[k] = splits[k].where(~split, key)
+            # get the mask
+            mask = split if is_mask else index.isin(split)
+            # NOTE: where cond is false is replaces with key
+            splits[k] = splits[k].where(~mask, key)
 
     if not sparse:
         return splits

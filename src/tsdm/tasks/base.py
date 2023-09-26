@@ -589,6 +589,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
 
     validate: bool = True
     """Whether to validate the folds."""
+    initialize: bool = True
 
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
@@ -601,7 +602,13 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
             self.validate_folds()
 
         if self.index is NotImplemented:
-            self.index = self.folds.columns
+            if isinstance(self.folds, DataFrame):
+                self.index = self.folds.columns
+            else:
+                self.index = Series(list(self.folds), name="folds")
+
+        if not self.initialize:
+            return
 
         # create LazyDicts for the Mapping attributes
         if self.collate_fns is NotImplemented:
@@ -628,11 +635,11 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
 
     def __iter__(self) -> Iterator[SplitID]:
         r"""Iterate over the split keys."""
-        return iter(self.folds)
+        return iter(self.index)
 
     def __len__(self) -> int:
         r"""Return the number of splits."""
-        return len(self.folds)
+        return len(self.index)
 
     def __getitem__(self, key: SplitID) -> Any:
         r"""Return the objects associated with the splitID."""
@@ -686,8 +693,8 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         return NotImplemented
 
     @abstractmethod
-    def make_folds(self, /) -> DataFrame:
-        r"""Return the folds associated with the specified key."""
+    def make_folds(self, /) -> Mapping[SplitID, Series]:
+        r"""Return the indices of the datapoints associated with the specific split."""
         return NotImplemented
 
     @abstractmethod
@@ -701,7 +708,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         return NotImplemented
 
     def make_split(self, key: SplitID, /) -> TimeSeriesCollection:
-        r"""Return the splits associated with the specified key."""
+        r"""Return the sub-dataset associated with the specified split."""
         return self.dataset[self.folds[key]]
 
     def make_test_metric(self, key: SplitID, /) -> Callable[[Tensor, Tensor], Tensor]:
