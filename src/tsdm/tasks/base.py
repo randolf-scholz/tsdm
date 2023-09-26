@@ -587,6 +587,9 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     infer_patterns: Sequence[str] = ("test", "testing", "val", "valid", "validation")
     r"""List of patterns to match for infererence splits."""
 
+    validate: bool = True
+    """Whether to validate the folds."""
+
     def __post_init__(self) -> None:
         r"""Initialize the task object."""
         if self.folds is NotImplemented:
@@ -594,7 +597,8 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
             self.folds = self.make_folds()
 
         # check the folds for consistency
-        self.validate_folds()
+        if self.validate:
+            self.validate_folds()
 
         if self.index is NotImplemented:
             self.index = self.folds.columns

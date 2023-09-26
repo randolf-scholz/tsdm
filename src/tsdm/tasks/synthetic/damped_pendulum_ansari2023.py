@@ -13,11 +13,13 @@ __all__ = ["DampedPendulum_Ansari2023"]
 from typing import final
 
 from pandas import DataFrame
+from sklearn.model_selection import train_test_split
 from torch.utils.data import Sampler as TorchSampler
 
 from tsdm import datasets
 from tsdm.tasks.base import SplitID, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.types.variables import key_var as K
+from tsdm.utils.data import is_partition
 
 
 @final
@@ -34,19 +36,23 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         simulate irregularly-sampled data. The models were evaluated on imputation of the missing
         timesteps and forecasts of 20s/10s beyond the training regime for bouncing ball/damped pendulum.
 
+        [table 1] Imputation and forecasting results for bouncing ball and damped pendulum datasets
+        averaged over 50 sample trajectories. Mean ± standard deviation are computed over 5 independent runs.
+
         [Appendix C.1] The training, validation, and test datasets consist of 5000, 1000, and 1000
         sequences of length 15s each, respectively.
     """
 
-    train_size = 0.70
-    valid_size = 0.15
-    test_size = 0.15
+    num_folds = 5
+    train_size = 5000
+    valid_size = 1000
+    test_size = 1000
 
-    def __init__(self) -> None:
+    def __init__(self, validate: bool = True) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
         timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
 
-        super().__init__(dataset=timeseries)
+        super().__init__(dataset=timeseries, validate=validate)
 
     def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
         raise NotImplementedError
@@ -56,30 +62,25 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
 
     def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""
-        raise NotImplementedError
-        # num_folds = 5
-        # folds = []
-        # # NOTE: all folds are the same due to fixed random state.
-        # # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-        # for _ in range(num_folds):
-        #     # get the test data
-        #     train_idx, test_idx = train_test_split(
-        #         self.dataset.metaindex,
-        #         test_size=self.test_size
-        #         / (self.train_size + self.valid_size + self.test_size),
-        #         random_state=self.RANDOM_STATE,
-        #     )
-        #     train_idx, valid_idx = train_test_split(
-        #         train_idx,
-        #         test_size=self.valid_size / (self.train_size + self.valid_size),
-        #         random_state=self.RANDOM_STATE,
-        #     )
-        #     fold = {
-        #         "train": train_idx,
-        #         "valid": valid_idx,
-        #         "test": test_idx,
-        #     }
-        #     assert is_partition(fold.values(), union=self.IDs)
-        #     folds.append(fold)
-        #
-        # return folds
+        # NOTE: all folds are the same due to fixed random state.
+        # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
+        folds = []
+        for _ in range(self.num_folds):
+            # get the test split
+            train_idx, test_idx = train_test_split(
+                self.dataset.metaindex,
+                test_size=self.test_size,
+            )
+            # get the train and validation split
+            train_idx, valid_idx = train_test_split(
+                train_idx,
+                test_size=self.valid_size,
+            )
+            fold = {
+                "train": train_idx,
+                "valid": valid_idx,
+                "test": test_idx,
+            }
+            assert is_partition(fold.values(), union=self.dataset.metaindex)
+            folds.append(fold)
+        return folds

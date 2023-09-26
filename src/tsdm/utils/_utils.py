@@ -12,7 +12,6 @@ __all__ = [
     "flatten_nested",
     "initialize_from_config",
     "is_dunder",
-    "is_partition",
     "is_zipfile",
     "now",
     "pairwise_disjoint",
@@ -299,19 +298,6 @@ def initialize_from_config(config: dict[str, Any]) -> nn.Module:
 def is_dunder(name: str) -> bool:
     r"""Check if name is a dunder method."""
     return name.isidentifier() and name.startswith("__") and name.endswith("__")
-
-
-def is_partition(*partition: Collection, union: Optional[Sequence] = None) -> bool:
-    r"""Check if partition is a valid partition of union."""
-    if len(partition) == 1:
-        return is_partition(*next(iter(partition)), union=union)
-
-    sets = (set(p) for p in partition)
-    part_union = set().union(*sets)
-
-    if union is not None and part_union != set(union):
-        return False
-    return len(part_union) == sum(len(p) for p in partition)
 
 
 def is_zipfile(path: Path) -> bool:

@@ -72,7 +72,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils import is_partition
+from tsdm.utils.data import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
 

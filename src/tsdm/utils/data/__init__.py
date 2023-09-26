@@ -8,6 +8,7 @@ __all__ = [
     "MappingDataset",
     "InlineTable",
     # folds
+    "is_partition",
     "folds_as_frame",
     "folds_as_sparse_frame",
     "folds_from_groups",
@@ -76,4 +77,5 @@ from tsdm.utils.data.folds import (
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,
+    is_partition,
 )
