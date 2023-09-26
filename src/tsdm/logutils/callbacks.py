@@ -69,7 +69,7 @@ from tsdm.logutils.logfuncs import (
     log_values,
     make_checkpoint,
 )
-from tsdm.metrics import Loss
+from tsdm.metrics import Metric
 from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
@@ -281,7 +281,9 @@ class EvaluationCallback(BaseCallback):
     _: KW_ONLY
 
     dataloaders: Mapping[str, DataLoader]
-    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]]
+    metrics: Sequence[str | Metric | type[Metric]] | Mapping[
+        str, str | Metric | type[Metric]
+    ]
     model: Model
     predict_fn: Callable[..., tuple[Tensor, Tensor]]
     writer: SummaryWriter
@@ -542,7 +544,9 @@ class LRSchedulerCallback(BaseCallback):
 class MetricsCallback(BaseCallback):
     """Callback to log multiple metrics to tensorboard."""
 
-    metrics: Sequence[str | Loss | type[Loss]] | Mapping[str, str | Loss | type[Loss]]
+    metrics: Sequence[str | Metric | type[Metric]] | Mapping[
+        str, str | Metric | type[Metric]
+    ]
     writer: SummaryWriter
 
     _: KW_ONLY

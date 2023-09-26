@@ -2,7 +2,7 @@
 # Template: https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
 
 # region global --------------------------------------------------------------------------------------------------------
-image: python:3.10-bullseye
+image: python:3.10
 
 stages:
   - build
@@ -87,15 +87,18 @@ setup:
     - VERSION='"'$(poetry version -s)'"'
     - python -c "import re; assert re.match($regex, $VERSION)"
     - echo ">>> Installing version $VERSION <<<"
+    # uninstall previous if applicable
+    - pip uninstall -y $MODULENAME
     # build the package.
-    - poetry build
+    # - poetry build
     # install package
-    - pip install --upgrade $(ls dist/*.whl)
+    # - pip install --upgrade --prefer-binary $(ls dist/*.whl)
     # install dev dependencies.
-    - pip install --upgrade -e .[dev]
+    - pip install --upgrade --prefer-binary -e .[dev]
     - pip list
-    - echo "validating that package can be imported"
-    - python -c "import ${MODULENAME} as module; print(module.__version__)"
+    - python -c "import torch as module; print(module.__version__)"
+    - echo "Validating that package $MODULENAME can be imported..."
+    - python -c "import $MODULENAME as module; print(module.__version__)"
   after_script:
     - source ${VENVNAME}/bin/activate
     - VERSION="$(poetry version -s)"
@@ -257,7 +260,7 @@ pytest:
     - setup
   script:
     - pytest --version
-    - pytest -k "not slow"
+    - pytest -k "not slow" -n 4
     - coverage xml -o $REPORT_DIR/cobertura-coverage.xml
     - coverage report
   after_script:

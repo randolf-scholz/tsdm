@@ -78,7 +78,7 @@ from tsdm.logutils.callbacks import (  # ModelCallback,
     MetricsCallback,
     OptimizerCallback,
 )
-from tsdm.metrics import Loss
+from tsdm.metrics import Metric
 from tsdm.types.aliases import JSON, PathLike
 from tsdm.utils.funcutils import get_mandatory_kwargs
 from tsdm.utils.strings import repr_mapping
@@ -210,7 +210,7 @@ class DefaultLogger(BaseLogger):
     """Hyperparameters used for the experiment."""
     lr_scheduler: Optional[TorchLRScheduler] = None
     """Learning rate scheduler."""
-    metrics: Optional[Mapping[str, Loss]] = None
+    metrics: Optional[Mapping[str, Metric]] = None
     """Metrics used for evaluation."""
     model: Optional[TorchModule] = None
     """Model used for training."""
@@ -232,7 +232,7 @@ class DefaultLogger(BaseLogger):
         hparam_dict: Optional[dict[str, Any]] = None,
         kernel: Optional[Tensor] = None,
         lr_scheduler: Optional[TorchLRScheduler] = None,
-        metrics: Optional[Mapping[str, Loss]] = None,
+        metrics: Optional[Mapping[str, Metric]] = None,
         model: Optional[TorchModule] = None,
         optimizer: Optional[TorchOptimizer] = None,
         predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None,

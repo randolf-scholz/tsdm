@@ -2,24 +2,40 @@ r"""Utility function to process folds and splits."""
 
 __all__ = [
     # functions
+    "is_partition",
     "folds_as_frame",
     "folds_as_sparse_frame",
     "folds_from_groups",
 ]
 
-from collections.abc import Mapping, Sequence
-from typing import Optional, TypeAlias
+from collections.abc import Collection, Hashable, Iterable, Mapping, Sequence
+from typing import Optional
 
 import numpy as np
 from pandas import DataFrame, Index, MultiIndex, Series
 
-FOLDS: TypeAlias = Sequence[Mapping[str, Series]]
-r"""Type Hint for Folds. the series must be boolean."""
+
+def is_partition(
+    partition: Iterable[Collection[Hashable]],
+    /,
+    *,
+    union: Optional[Collection[Hashable]] = None,
+) -> bool:
+    r"""Check if partition is a valid partition of union."""
+    # if len(partition) == 1:
+    #     return is_partition(*next(iter(partition)), union=union)
+
+    sets = (set(p) for p in partition)
+    part_union = set().union(*sets)
+
+    if union is not None and part_union != set(union):
+        return False
+    return len(part_union) == sum(len(p) for p in partition)
 
 
 def folds_from_groups(
     groups: Series, /, *, num_folds: int = 5, seed: Optional[int] = None, **splits: int
-) -> FOLDS:
+) -> Sequence[Mapping[str, Series]]:
     r"""Create folds from a Series of groups.
 
     Arguments:
@@ -62,21 +78,36 @@ def folds_from_groups(
 
 
 def folds_as_frame(
-    folds: FOLDS, /, *, index: Optional[Index] = None, sparse: bool = False
+    folds: Sequence[Mapping[str, Series]],
+    /,
+    *,
+    index: Optional[Index] = None,
+    sparse: bool = False,
 ) -> DataFrame:
     r"""Create a table holding the fold information.
 
-    +-------+-------+-------+-------+-------+-------+
-    | fold  | 0     | 1     | 2     | 3     | 4     |
-    +=======+=======+=======+=======+=======+=======+
-    | 15325 | train | train |  test | train | train |
-    +-------+-------+-------+-------+-------+-------+
-    | 15326 | train | train | train | train |  test |
-    +-------+-------+-------+-------+-------+-------+
-    | 15327 |  test | valid | train | train | train |
-    +-------+-------+-------+-------+-------+-------+
-    | 15328 | valid | train | train | train |  test |
-    +-------+-------+-------+-------+-------+-------+
+    Args:
+        folds: a list of dictionaries, where each dictionary holds the split information,
+               e.g. is a dictionary like {train: train_indices, test: test_indices}
+
+    Returns:
+        DataFrame with the schema
+            index: metaindex of the time-series collection
+            columns: fold number
+            values: train/valid/test
+
+    Example:
+        +------+-------+-------+-------+-------+-------+
+        | fold | 0     | 1     | 2     | 3     | 4     |
+        +======+=======+=======+=======+=======+=======+
+        | TS₁  | train | valid |  test | train | valid |
+        +------+-------+-------+-------+-------+-------+
+        | TS₂  | test  | train | valid | test  | train |
+        +------+-------+-------+-------+-------+-------+
+        | ...  |       |       |       |       |       |
+        +------+-------+-------+-------+-------+-------+
+        | TS₄  | valid | test  | train | valid |  test |
+        +------+-------+-------+-------+-------+-------+
     """
     if index is None:
         # create a default index

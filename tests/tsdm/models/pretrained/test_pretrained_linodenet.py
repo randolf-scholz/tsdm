@@ -5,6 +5,7 @@ import logging
 
 import pandas as pd
 import torch
+from pytest import mark
 
 from tsdm.encoders import BaseEncoder
 from tsdm.models.pretrained import LinODEnet
@@ -13,6 +14,7 @@ logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
+@mark.xfail(reason="Download link may be expired.")
 def test_pretrained() -> None:
     """Test the serialization of models."""
     __logger__.info("Testing %s.", LinODEnet)

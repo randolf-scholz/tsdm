@@ -50,7 +50,7 @@ __all__ = [
     # Sub-Modules
     "functional",
     # Types
-    "Loss",
+    "Metric",
     "FunctionalLoss",
     # Constants
     "LOSSES",
@@ -95,7 +95,7 @@ from tsdm.metrics._modular import (
     WMSE,
     WRMSE,
     BaseLoss,
-    Loss,
+    Metric,
     WeightedLoss,
 )
 from tsdm.metrics._timeseries import (
@@ -151,7 +151,7 @@ TORCH_LOSSES: dict[str, type[nn.Module]] = {
 r"""Dictionary of all available modular losses in torch."""
 
 
-MODULAR_LOSSES: dict[str, type[Loss]] = {
+MODULAR_LOSSES: dict[str, type[Metric]] = {
     "ND": ND,
     "NRMSE": NRMSE,
     "Q_Quantile": Q_Quantile,
@@ -168,7 +168,7 @@ MODULAR_LOSSES: dict[str, type[Loss]] = {
 r"""Dictionary of all available modular losses."""
 
 
-LOSSES: dict[str, FunctionalLoss | type[Loss]] = {
+LOSSES: dict[str, FunctionalLoss | type[Metric]] = {
     **FUNCTIONAL_LOSSES,
     **MODULAR_LOSSES,
 }
