@@ -121,7 +121,7 @@ class Dirichlet:
         raise NotImplementedError
 
     @classmethod
-    def rvs(self, alphas: ArrayLike, size: SizeLike = ()) -> NDArray:
+    def rvs(cls, alphas: ArrayLike, size: SizeLike = ()) -> NDArray:
         """Random variates of the Dirichlet distribution."""
         alphas = np.asarray(alphas)
         size = (size,) if isinstance(size, int) else size

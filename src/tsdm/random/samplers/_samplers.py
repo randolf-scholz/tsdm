@@ -24,12 +24,14 @@ from datetime import timedelta as py_td
 from itertools import chain, count
 from typing import (
     Any,
+    Final,
     Generic,
     Literal,
     Optional,
     Protocol,
-    Union,
+    TypeVar,
     cast,
+    overload,
     runtime_checkable,
 )
 
@@ -595,7 +597,11 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         return f"{self.__class__.__name__}[{self.stride}, {self.seq_len}]"
 
 
-class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
+MODE = TypeVar("MODE", Literal["masks"], Literal["slices"], Literal["points"])
+Modes = TypeVar("Modes", bound=Literal["masks", "slices", "points"])
+
+
+class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     r"""Sampler that generates sliding windows over an interval.
 
     The `SlidingWindowSampler` generates tuples.
@@ -615,14 +621,16 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
     """
 
     data: NDArray[NumpyDTVar]
-    grid: NDArray[np.integer]
-    horizons: NumpyTDVar | NDArray[NumpyTDVar]
-    mode: Literal["masks", "slices", "points"]
-    shuffle: bool
-    start_values: NDArray[NumpyDTVar]
+
+    mode: MODE
+    shuffle: Final[bool]
     stride: NumpyTDVar
     tmax: NumpyDTVar
     tmin: NumpyDTVar
+    grid: Final[NDArray[np.integer]]
+
+    horizons: NumpyTDVar | NDArray[NumpyTDVar]
+    start_values: NDArray[NumpyDTVar]
     offset: NumpyDTVar
     total_horizon: NumpyTDVar
     zero_td: NumpyTDVar
@@ -635,12 +643,12 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
         /,
         *,
         horizons: str | Sequence[str] | NumpyTDVar | Sequence[NumpyTDVar],
-        mode: Literal["masks", "slices", "points"] = "masks",
+        mode: MODE = "masks",  # type: ignore[assignment]
         shuffle: bool = False,
         stride: str | NumpyTDVar,
         tmax: Optional[str | NumpyDTVar] = None,
         tmin: Optional[str | NumpyDTVar] = None,
-    ):
+    ) -> None:
         super().__init__(data_source)
 
         # coerce non-numpy types to numpy.
@@ -732,15 +740,19 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
             for start, stop in sliding_window_view(bounds, 2)
         )
 
+    @overload
     def __iter__(
-        self,
-    ) -> Union[
-        Iterator[slice],
-        Iterator[tuple[slice, ...]],
-        Iterator[NDArray[np.bool_]],
-        Iterator[tuple[NDArray[np.bool_], ...]],
-        Iterator[NDArray[NumpyDTVar]],
-    ]:
+        self: "SlidingWindowSampler[Literal['slices'],NumpyDTVar, NumpyTDVar]",
+    ) -> Iterator[slice] | Iterator[tuple[slice, ...]]: ...
+    @overload
+    def __iter__(
+        self: "SlidingWindowSampler[Literal['masks'],NumpyDTVar, NumpyTDVar]",
+    ) -> Iterator[NDArray[np.bool_]] | Iterator[tuple[NDArray[np.bool_], ...]]: ...
+    @overload
+    def __iter__(
+        self: "SlidingWindowSampler[Literal['points'],NumpyDTVar, NumpyTDVar]",
+    ) -> Iterator[NDArray[NumpyDTVar]]: ...
+    def __iter__(self):
         r"""Iterate through.
 
         For each k, we return either:
@@ -767,4 +779,4 @@ class SlidingWindowSampler(BaseSampler, Generic[NumpyDTVar, NumpyTDVar]):
 
         for k in grid:
             vals = self.start_values + k * self.stride
-            yield yield_fn(vals)  # type: ignore[misc]
+            yield yield_fn(vals)

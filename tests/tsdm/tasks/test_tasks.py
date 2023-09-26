@@ -26,7 +26,10 @@ def test_time_series_sample_generator() -> None:
     # make sampler, generate key
     subsamplers = {
         key: SlidingWindowSampler(
-            ds.timeseries.index, horizons=["2h", "1h"], stride="1h"
+            ds.timeseries.index,
+            horizons=["2h", "1h"],
+            stride="1h",
+            mode="masks",
         )
         for key, ds in TSC.items()
     }
