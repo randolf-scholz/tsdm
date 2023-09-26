@@ -51,7 +51,7 @@ def visualize_distribution(
     print_stats: bool = True,
     extra_stats: Optional[dict] = None,
 ) -> None:
-    r"""Plot the distribution of x in the given axis.
+    r"""Plot the distribution of x in the given figure axes.
 
     Args:
         data: Data to plot.
@@ -91,29 +91,31 @@ def visualize_distribution(
 
     if print_stats:
         stats = {
-            "NaNs": f"{100 * np.mean(nans):.2f}" + r"\%",
-            "Mean": f"{np.mean(x):.2e}",
-            "Median": f"{np.median(x):.2e}",
-            "Mode": f"{mode(x)[0][0]:.2e}",
-            "Stdev": f"{np.std(x):.2e}",
+            "NaNs": f"{100 * np.mean(nans):6.2%}",
+            "Mode": f"{mode(x)[0]: .2g}",
+            "Min": f"{np.min(x): .2g}",
+            "Median": f"{np.median(x): .2g}",
+            "Max": f"{np.max(x): .2g}",
+            "Mean": f"{np.mean(x): .2g}",
+            "Stdev": f"{np.std(x): .2g}",
         }
         if extra_stats is not None:
             stats |= {str(key): str(val) for key, val in extra_stats.items()}
 
-        pad = max(len(key) for key in stats)
-
-        table = (
-            r"\scriptsize"
-            + r"\begin{tabular}{ll}"
-            + r"\\ ".join([key.ljust(pad) + " & " + val for key, val in stats.items()])
-            + r"\end{tabular}"
-        )
+        pad = max(map(len, stats), default=0)
+        table = "\n".join([f"{key:<{pad}}  {val}" for key, val in stats.items()])
 
         # if extra_stats is not None:
         __logger__.info("writing table %s", table)
 
-        # text = r"\begin{tabular}{ll}test & and\\ more &test\end{tabular}"
-        textbox = AnchoredText(table, loc=loc, borderpad=0.0)
+        # use mono-spaced font
+        textbox = AnchoredText(
+            table,
+            loc=loc,
+            borderpad=0.0,
+            prop={"family": "monospace"},
+        )
+        textbox.patch.set_alpha(0.8)
         ax.add_artist(textbox)
 
 

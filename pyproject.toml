@@ -6,7 +6,7 @@
 # region project configuration ------------------------------------------------------
 [project]
 name = "tsdm"
-version = "0.5.2"
+version = "0.5.3"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
 
@@ -461,7 +461,12 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "serial",
 ]
-required_plugins = ["pytest-rerunfailures", "pytest-cov", "pytest-benchmark"]
+required_plugins = [
+    "pytest-benchmark",
+    "pytest-cov",
+    "pytest-rerunfailures",
+    "pytest-xdist",
+]
 # endregion pytest configuration -------------------------------------------------------
 
 
@@ -493,7 +498,7 @@ line-length = 120
 # region poetry configuration ----------------------------------------------------------
 [tool.poetry]
 name = "tsdm"
-version = "0.5.2"
+version = "0.5.3"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
 description = "Time-Series Datasets and Models"
 

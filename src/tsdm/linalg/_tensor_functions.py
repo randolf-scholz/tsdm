@@ -1,11 +1,13 @@
 """Tensor functions."""
 
 __all__ = [
+    # Functions
     "geometric_mean",
     "grad_norm",
     "multi_norm",
-    "tensor_norm",
+    "relative_error",
     "scaled_norm",
+    "tensor_norm",
 ]
 
 
@@ -13,6 +15,22 @@ from typing import Union
 
 import torch
 from torch import Tensor, jit
+
+
+@jit.script
+def relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
+    r"""Relative error of `xhat` w.r.t. `x_true`.
+
+    Note:
+        Automatically adds a small epsilon to the denominator to avoid division by zero.
+    """
+    eps: float = {
+        torch.bfloat16: 2**-8,
+        torch.float16: 2**-11,
+        torch.float32: 2**-24,
+        torch.float64: 2**-53,
+    }[xhat.dtype]
+    return torch.abs(xhat - x_true) / (torch.abs(x_true) + eps)
 
 
 @jit.script
