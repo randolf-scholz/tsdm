@@ -57,7 +57,7 @@ class InSilicoTask(TimeSeriesTask):
             key: SlidingWindowSampler(tsd.timeindex, horizons=["2h", "1h"], stride="1h")
             for key, tsd in split.items()
         }
-        return HierarchicalSampler(  # type: ignore[return-value]
+        return HierarchicalSampler(
             split, subsamplers, shuffle=self.split_type(key) == "training"
         )
 

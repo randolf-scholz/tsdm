@@ -43,10 +43,12 @@ Sampler: TypeAlias = TorchSampler
 r"""Type hint for samplers."""
 
 SAMPLERS: Final[dict[str, type[Sampler]]] = {
-    "SliceSampler": SliceSampler,
-    # "TimeSliceSampler": TimeSliceSampler,
-    "SequenceSampler": SequenceSampler,
     "CollectionSampler": CollectionSampler,
+    "HierarchicalSampler": HierarchicalSampler,
+    "IntervalSampler": IntervalSampler,
+    "SequenceSampler": SequenceSampler,
+    "SliceSampler": SliceSampler,
+    "SlidingWindowSampler": SlidingWindowSampler,
 }
 r"""Dictionary of all available samplers."""
 

@@ -308,7 +308,7 @@ class KiwiTask(TimeSeriesTask):
             )
             for key, tsd in split.items()
         }
-        return HierarchicalSampler(  # type: ignore[return-value]
+        return HierarchicalSampler(
             split, subsamplers, early_stop=early_stop, shuffle=shuffle
         )
 

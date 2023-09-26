@@ -18,7 +18,7 @@ __all__ = [
 
 import logging
 import math
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from datetime import timedelta as py_td
 from itertools import chain, count
@@ -111,7 +111,7 @@ class BaseSamplerMetaClass(ABCMeta):
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
-class BaseSampler(TorchSampler[T_co], Sized, ABC, metaclass=BaseSamplerMetaClass):
+class BaseSampler(TorchSampler[T_co], Sized, metaclass=BaseSamplerMetaClass):
     r"""Abstract Base Class for all Samplers."""
 
     LOGGER: logging.Logger
@@ -295,7 +295,7 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
         return self.subsamplers[key]
 
 
-class HierarchicalSampler(Sampler[tuple[K, T_co]]):
+class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
     r"""Samples a single random dataset from a collection of dataset.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
@@ -323,6 +323,7 @@ class HierarchicalSampler(Sampler[tuple[K, T_co]]):
         shuffle: bool = True,
         early_stop: bool = False,
     ):
+        super().__init__(data_source)
         self.data = data_source
         self.idx = Index(data_source.keys())
         self.subsamplers = dict(subsamplers)
