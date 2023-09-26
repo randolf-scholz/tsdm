@@ -125,11 +125,48 @@ def grad_norm(
 
 
 @jit.script
+def scaled_norm(
+    x: Tensor,
+    p: float = 2.0,
+    axis: Union[None, int, list[int]] = None,
+    keepdim: bool = False,
+) -> Tensor:
+    r"""Shortcut for `tensor_norm(x, p, axes, keepdim, scaled=True)`.
+
+    .. Signature:: ``(..., n) -> ...``
+    """
+    if axis is None:
+        dim = list(range(x.ndim))
+    elif isinstance(axis, int):
+        dim = [axis]
+    else:
+        dim = axis
+
+    if not torch.is_floating_point(x):
+        x = x.to(dtype=torch.float)
+    x = x.abs()
+
+    # TODO: deal with nan values
+
+    if p == float("inf"):
+        return x.amax(dim=dim, keepdim=keepdim)
+    if p == -float("inf"):
+        return x.amin(dim=dim, keepdim=keepdim)
+    if p == 0:
+        return geometric_mean(x, axis=dim, keepdim=keepdim)
+
+    # NOTE: preconditioning with x_max is not necessary, but it helps with numerical stability
+    # x_max = x.amax(dim=dim, keepdim=True)
+    # return x_max * (x / x_max).pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+    return x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+
+
+@jit.script
 def tensor_norm(
     x: Tensor,
     p: float = 2.0,
     axis: Union[None, int, list[int]] = None,
-    keepdim: bool = True,
+    keepdim: bool = False,
     scaled: bool = False,
 ) -> Tensor:
     r"""Entry-wise norm of $p$-th order.
@@ -188,41 +225,6 @@ def tensor_norm(
         return (x != 0).sum(dim=dim, keepdim=keepdim)
 
     # NOTE: preconditioning improves numerical stability
-    x_max = x.amax(dim=dim, keepdim=True)
-    return x_max * (x / x_max).pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
-
-
-@jit.script
-def scaled_norm(
-    x: Tensor,
-    p: float = 2.0,
-    axis: Union[None, int, list[int]] = None,
-    keepdim: bool = True,
-) -> Tensor:
-    r"""Shortcut for `tensor_norm(x, p, axes, keepdim, scaled=True)`.
-
-    .. Signature:: ``(..., n) -> ...``
-    """
-    if axis is None:
-        dim = list(range(x.ndim))
-    elif isinstance(axis, int):
-        dim = [axis]
-    else:
-        dim = axis
-
-    if not torch.is_floating_point(x):
-        x = x.to(dtype=torch.float)
-    x = x.abs()
-
-    # TODO: deal with nan values
-
-    if p == float("inf"):
-        return x.amax(dim=dim, keepdim=keepdim)
-    if p == -float("inf"):
-        return x.amin(dim=dim, keepdim=keepdim)
-    if p == 0:
-        return geometric_mean(x, axis=dim, keepdim=keepdim)
-
-    # NOTE: preconditioning with x_max is not necessary, but it helps with numerical stability
-    x_max = x.amax(dim=dim, keepdim=True)
-    return x_max * (x / x_max).pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+    # x_max = x.amax(dim=dim, keepdim=True)
+    # return x_max * (x / x_max).pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
+    return x.pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
