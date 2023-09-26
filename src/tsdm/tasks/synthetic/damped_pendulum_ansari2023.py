@@ -22,7 +22,25 @@ from tsdm.types.variables import key_var as K
 
 @final
 class DampedPendulum_Ansari2023(TimeSeriesTask):
-    """Forecasting task on synthetic damped pendulum data."""
+    """Forecasting task on synthetic damped pendulum data.
+
+    Note:
+        This uses scipy's builtin RK45 solver, instead of RK4.
+
+    .. epigraph::
+
+        [section 5.1] We trained all the models on 10s/5s sequences (with a discretization of 0.1s)
+        for bouncing ball/damped pendulum with 0%, 30%, 50% and 80% timesteps missing at random to
+        simulate irregularly-sampled data. The models were evaluated on imputation of the missing
+        timesteps and forecasts of 20s/10s beyond the training regime for bouncing ball/damped pendulum.
+
+        [Appendix C.1] The training, validation, and test datasets consist of 5000, 1000, and 1000
+        sequences of length 15s each, respectively.
+    """
+
+    train_size = 0.70
+    valid_size = 0.15
+    test_size = 0.15
 
     def __init__(self) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
@@ -37,4 +55,31 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         raise NotImplementedError
 
     def make_folds(self, /) -> DataFrame:
+        r"""Create the folds."""
         raise NotImplementedError
+        # num_folds = 5
+        # folds = []
+        # # NOTE: all folds are the same due to fixed random state.
+        # # see https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
+        # for _ in range(num_folds):
+        #     # get the test data
+        #     train_idx, test_idx = train_test_split(
+        #         self.dataset.metaindex,
+        #         test_size=self.test_size
+        #         / (self.train_size + self.valid_size + self.test_size),
+        #         random_state=self.RANDOM_STATE,
+        #     )
+        #     train_idx, valid_idx = train_test_split(
+        #         train_idx,
+        #         test_size=self.valid_size / (self.train_size + self.valid_size),
+        #         random_state=self.RANDOM_STATE,
+        #     )
+        #     fold = {
+        #         "train": train_idx,
+        #         "valid": valid_idx,
+        #         "test": test_idx,
+        #     }
+        #     assert is_partition(fold.values(), union=self.IDs)
+        #     folds.append(fold)
+        #
+        # return folds
