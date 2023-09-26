@@ -22,20 +22,12 @@ import os
 import subprocess
 import warnings
 import webbrowser
-from abc import ABC, ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Collection, Iterator, Mapping, MutableMapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import (
-    Any,
-    ClassVar,
-    Generic,
-    Optional,
-    Protocol,
-    overload,
-    runtime_checkable,
-)
+from typing import Any, ClassVar, Optional, Protocol, overload, runtime_checkable
 from urllib.parse import urlparse
 
 import pandas
@@ -90,7 +82,7 @@ class Dataset(Protocol[T_co]):
         ...
 
 
-class BaseDatasetMetaClass(ABCMeta):
+class BaseDatasetMetaClass(type(Protocol)):
     r"""Metaclass for BaseDataset."""
 
     def __init__(
@@ -125,7 +117,7 @@ class BaseDatasetMetaClass(ABCMeta):
     # return super().__getitem__(parent)
 
 
-class BaseDataset(Generic[T_co], ABC, metaclass=BaseDatasetMetaClass):
+class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     r"""Abstract base class that all dataset must subclass.
 
     Implements methods that are available for all dataset classes.
@@ -495,15 +487,12 @@ class SingleTableDataset(BaseDataset[T_co]):
             validate_file_hash(self.dataset_path, self.dataset_hash)
 
 
-class MultiTableDataset(
-    BaseDataset[T_co],
-    Mapping[Key, T_co],
-    Generic[Key, T_co],
-):
+class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
     r"""Dataset class that consists of multiple tables.
 
     The tables are stored in a dictionary-like object.
     """
+
     RAWDATA_DIR: ClassVar[Path]
     """Path to raw data directory."""
     DATASET_DIR: ClassVar[Path]
@@ -753,11 +742,13 @@ class MultiTableDataset(
 
 
 @dataclass
-class TimeSeriesDataset(TorchDataset[Series]):
+class TimeSeriesDataset(TorchDataset[Series]):  # Q: Should this be a Mapping?
     r"""Abstract Base Class for TimeSeriesDatasets.
 
-    A TimeSeriesDataset is a dataset that contains time series data and MetaData.
-    More specifically, it is a tuple (TS, M) where TS is a time series and M is metdata.
+    A TimeSeriesDataset is a dataset that contains time series data and metadata.
+    More specifically, it is a tuple (TS, M) where TS is a time series and M is metadata.
+
+    For a given time-index, the time series data is a vector of measurements.
     """
 
     timeseries: DataFrame
@@ -788,6 +779,10 @@ class TimeSeriesDataset(TorchDataset[Series]):
         if self.timeindex is NotImplemented:
             self.timeindex = self.timeseries.index.copy().unqiue()
 
+    def __iter__(self) -> Iterator[Series]:
+        r"""Iterate over the timestamps."""
+        return iter(self.timeindex)
+
     def __len__(self) -> int:
         r"""Return the number of timestamps."""
         return len(self.timeindex)
@@ -800,10 +795,6 @@ class TimeSeriesDataset(TorchDataset[Series]):
         r"""Get item from timeseries."""
         # we might get an index object, or a slice, or boolean mask...
         return self.timeseries.loc[key]
-
-    def __iter__(self) -> Iterator[Series]:
-        r"""Iterate over the timestamps."""
-        return iter(self.timeindex)
 
     def __repr__(self) -> str:
         r"""Get the representation of the collection."""
@@ -920,10 +911,10 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             mf = self.metadata_description
 
         if isinstance(ts.index, MultiIndex):
-            index = ts.index.droplevel(-1).unique()
+            # ~~index = ts.index.droplevel(-1).unique()~~
             return TimeSeriesCollection(
                 name=self.name,
-                metaindex=index,
+                # metaindex=index,  # NOTE: regenerate metaindex.
                 timeseries=ts,
                 metadata=md,
                 timeindex_description=tf,

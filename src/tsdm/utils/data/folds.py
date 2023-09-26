@@ -90,6 +90,8 @@ def folds_as_frame(
         folds: a list of dictionaries, where each dictionary holds the split information,
                e.g. is a dictionary like {train: train_indices, test: test_indices}
                or   is a dictionary like {train: train_mask,    test: test_mask}
+        sparse: If True, return a sparse table.
+        index: The index of the time-series collection. Attempts to infer the index if not given.
 
     Returns:
         DataFrame with the schema

@@ -10,11 +10,11 @@ References:
 
 __all__ = ["DampedPendulum_Ansari2023"]
 
-from typing import final
+from typing import Any, final
 
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
-from torch.utils.data import Sampler as TorchSampler
+from torch.utils.data import DataLoader, Sampler as TorchSampler
 
 from tsdm import datasets
 from tsdm.tasks.base import SplitID, TimeSeriesSampleGenerator, TimeSeriesTask
@@ -27,7 +27,8 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     """Forecasting task on synthetic damped pendulum data.
 
     Note:
-        This uses scipy's builtin RK45 solver, instead of RK4.
+        - This uses scipy's builtin RK45 solver, instead of RK4.
+        - The individual time series are only 150 steps long, so the whole sequence is returned
 
     .. epigraph::
 
@@ -53,6 +54,11 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
 
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
+
+    def make_dataloader(self, key: SplitID, /, **dataloader_kwargs: Any) -> DataLoader:
+        r"""Simply returns the whole series."""
+        # split = self.splits[key]
+        raise NotImplementedError
 
     def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
         raise NotImplementedError
@@ -83,4 +89,4 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
             }
             assert is_partition(fold.values(), union=self.dataset.metaindex)
             folds.append(fold)
-        return folds_as_frame(folds, index=self.dataset.metaindex)
+        return folds_as_frame(folds, index=self.dataset.metaindex, sparse=True)
