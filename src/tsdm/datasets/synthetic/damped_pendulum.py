@@ -59,7 +59,7 @@ class DampedPendulum(SingleTableDataset):
             parameter_noise=univariate_normal(loc=0, scale=1),
         )
 
-    def clean_table(self) -> None:
+    def clean_table(self) -> DataFrame:
         self.LOGGER.info("Generating data...")
 
         # generate time range

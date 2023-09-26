@@ -52,7 +52,7 @@ from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.remote import download
-from tsdm.utils.strings import repr_dataclass, repr_mapping
+from tsdm.utils.strings import repr_array, repr_dataclass, repr_mapping
 
 
 @runtime_checkable
@@ -387,7 +387,7 @@ class SingleTableDataset(BaseDataset[T_co]):
     r"""Shape of the in-memory cleaned dataset table(s)."""
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}<{get_return_typehint(self.clean_table)}>"
+        return f"{self.__class__.__name__}(table: {repr_array(self.table)})"
 
     def _repr_html_(self) -> str:
         if self._table is NotImplemented:
