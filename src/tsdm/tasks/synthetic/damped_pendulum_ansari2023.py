@@ -14,12 +14,11 @@ from typing import Any, final
 
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, RandomSampler
 
 from tsdm import datasets
 from tsdm.random.samplers import Sampler
 from tsdm.tasks.base import SplitID, TimeSeriesSampleGenerator, TimeSeriesTask
-from tsdm.types.variables import key_var as K
 from tsdm.utils.data import folds_as_frame, is_partition
 
 
@@ -64,8 +63,8 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
         raise NotImplementedError
 
-    def make_sampler(self, key: SplitID, /) -> Sampler[K]:
-        raise NotImplementedError
+    def make_sampler(self, key: SplitID, /) -> Sampler[int]:
+        return RandomSampler(self.splits[key].metaindex)
 
     def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""

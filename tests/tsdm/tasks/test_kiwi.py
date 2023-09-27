@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-r"""Test task implementation with InSilicoData."""
+r"""Test task implementation with InSilico."""
 
 import logging
 
@@ -52,7 +52,7 @@ def test_kiwi_task(SplitID=(0, "train")):
     assert callable(task.collate_fns[SplitID])
 
     # validate generator
-    generator: TimeSeriesSampleGenerator = task.generators[SplitID]
+    generator: TimeSeriesSampleGenerator = task.generators[SplitID]  # type: ignore[assignment]
     assert isinstance(generator, torch.utils.data.Dataset)
 
     # make sample

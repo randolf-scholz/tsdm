@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-r"""Test task implementation with InSilicoData."""
+r"""Test task implementation with InSilico."""
 
 import logging
 

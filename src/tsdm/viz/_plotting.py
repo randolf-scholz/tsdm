@@ -145,7 +145,7 @@ def shared_grid_plot(
 
     nrows, ncols = array.shape[:2]
 
-    subplots_kwargs = {
+    subplots_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
         "figsize": (5 * ncols, 3 * nrows),
         "sharex": "col",
         "sharey": "row",
@@ -231,7 +231,7 @@ def plot_spectrum(
         figure_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
         scatter_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
     """
-    axis_kwargs = {
+    axis_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
         "xlim": (-2.5, +2.5),
         "ylim": (-2.5, +2.5),
         "aspect": "equal",
@@ -239,13 +239,13 @@ def plot_spectrum(
         "xlabel": "real part",
     } | axis_kwargs
 
-    figure_kwargs = {
+    figure_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
         "figsize": (4, 4),
         "constrained_layout": True,
         "dpi": 256,  # default: 1024px×1024px
     } | figure_kwargs
 
-    scatter_kwargs = {
+    scatter_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
         "edgecolors": "none",
     } | scatter_kwargs
 
