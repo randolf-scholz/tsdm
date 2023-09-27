@@ -21,7 +21,7 @@ __all__ = [
 import inspect
 import json
 import pickle
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import (
     Any,
@@ -30,6 +30,7 @@ from typing import (
     Optional,
     Protocol,
     TypeAlias,
+    TypedDict,
     TypeGuard,
     runtime_checkable,
 )
@@ -39,7 +40,8 @@ import yaml
 from matplotlib.figure import Figure
 from matplotlib.pyplot import close as close_figure
 from pandas import DataFrame
-from torch import Tensor
+from torch import Tensor, jit, nn
+from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard import SummaryWriter
 
@@ -60,13 +62,28 @@ from tsdm.linalg import (
 )
 from tsdm.metrics import LOSSES, Metric
 from tsdm.models import Model
-from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
-from tsdm.types.variables import any_co as T_co, any_var as T
+from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
 """Type Alias for maybe wrapped values."""
+
+
+class AdamState(TypedDict):
+    """Adam optimizer state."""
+
+    step: Tensor
+    exp_avg: Tensor
+    exp_avg_sq: Tensor
+
+
+def yield_optimizer_params(optimizer: Optimizer, /) -> Iterator[nn.Parameter]:
+    """Get parameters from optimizer."""
+    for group in optimizer.param_groups:
+        for param in group["params"]:
+            if param.requires_grad:
+                yield param
 
 
 def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
@@ -78,6 +95,32 @@ def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
             return x()  # type: ignore[call-arg]
 
     return x
+
+
+def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
+    r"""Fast way to 'transpose' a list of dictionaries.
+
+    Assumptions:
+        - all dictionaries have the same keys
+        - the keys are always in the same order
+        - at least one item in the input
+        - can iterate multiple times over lst
+
+    Example:
+        >>> list_of_dicts = [
+        ...     {"name": "Alice",   "age": 30},
+        ...     {"name": "Bob",     "age": 25},
+        ...     {"name": "Charlie", "age": 35},
+        ... ]
+        >>> transpose_list_of_dicts(list_of_dicts)
+        {'name': ('Alice', 'Bob', 'Charlie'), 'age': (30, 25, 35)}
+    """
+    return dict(
+        zip(
+            next(iter(lst)),
+            zip(*(d.values() for d in lst)),
+        )
+    )
 
 
 @runtime_checkable
@@ -161,11 +204,11 @@ def make_checkpoint(step: int, objects: Mapping[str, Any], path: PathLike) -> No
         match obj:
             case None:
                 pass
-            case torch.jit.ScriptModule():
-                torch.jit.save(obj, path / name)
-            case torch.nn.Module():
+            case jit.ScriptModule():
+                jit.save(obj, path / name)
+            case nn.Module():
                 torch.save(obj, path / name)
-            case torch.optim.Optimizer():
+            case Optimizer():
                 torch.save(obj, path / name)
             case LRScheduler():
                 torch.save(obj, path / name)
@@ -429,6 +472,7 @@ def log_optimizer(
     *,
     log_histograms: bool = True,
     log_norms: bool = True,
+    log_extras: bool = True,
     name: str = "optimizer",
     prefix: str = "",
     postfix: str = "",
@@ -436,19 +480,18 @@ def log_optimizer(
     r"""Log optimizer data under ``prefix:optimizer:postfix/``."""
     identifier = f"{prefix+':'*bool(prefix)}{name}{':'*bool(postfix)+postfix}"
 
-    variables = list(optimizer.state.values())
-    gradients = [w.grad for w in variables]
-    moments_1 = [d["exp_avg"] for d in optimizer.state.values() if "exp_avg" in d]
-    moments_2 = [d["exp_avg_sq"] for d in optimizer.state.values() if "exp_avg_sq" in d]
+    # NOTE: optimizer.state is of kind
+    #  dict[tensor, {step: Tensor, exp_avg: Tensor, exp_avg_sq: Tensor}}]
+    optim_state: dict[Tensor, dict[str, Tensor]] = optimizer.state  # type: ignore[assignment]
+
+    # get the variables and gradients
+    variables = list(optim_state)
+    gradients = [w.grad for w in optim_state]
     log = writer.add_scalar
 
     if log_norms:
         log(f"{identifier}/model-gradients", multi_norm(gradients), step)
         log(f"{identifier}/model-variables", multi_norm(variables), step)
-        if moments_1:
-            log(f"{identifier}/param-moments_1", multi_norm(moments_1), step)
-        if moments_2:
-            log(f"{identifier}/param-moments_2", multi_norm(moments_2), step)
 
     if log_histograms:
         for j, (w, g) in enumerate(zip(variables, gradients)):
@@ -457,11 +500,20 @@ def log_optimizer(
             writer.add_histogram(f"{identifier}:model-variables/{j}", w, step)
             writer.add_histogram(f"{identifier}:model-gradients/{j}", g, step)
 
-        for j, (a, b) in enumerate(zip(moments_1, moments_2)):
-            if not a.numel():
-                continue
-            writer.add_histogram(f"{identifier}:param-moments_1/{j}", a, step)
-            writer.add_histogram(f"{identifier}:param-moments_2/{j}", b, step)
+    if log_extras:
+        extras: dict[str, list[Tensor]] = transpose_list_of_dicts(optim_state.values())
+        extras.pop("step", None)
+
+        if log_norms:
+            for key, tensor_list in extras.items():
+                log(f"{identifier}/{key}", multi_norm(tensor_list), step)
+
+        if log_histograms:
+            for key, tensor_list in extras.items():
+                for j, tensor in enumerate(tensor_list):
+                    if not tensor.numel():
+                        continue
+                    writer.add_histogram(f"{identifier}:{key}/{j}", tensor, step)
 
 
 def log_values(
