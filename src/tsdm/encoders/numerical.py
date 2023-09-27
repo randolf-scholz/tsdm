@@ -340,6 +340,13 @@ class BoundaryEncoder(BaseEncoder[T, T]):
 
     def __post_init__(self) -> None:
         """Validate the parameters."""
+        # convert nans to None
+        if pd.isna(self.lower_bound):
+            self.lower_bound = None
+
+        if pd.isna(self.upper_bound):
+            self.upper_bound = None
+
         if self.lower_bound is None and not self.lower_included:
             raise ValueError(
                 "If no lower_bound is provided, then lower_included must be True."

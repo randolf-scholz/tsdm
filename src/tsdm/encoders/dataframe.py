@@ -29,6 +29,7 @@ from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
 from typing_extensions import deprecated
 
+from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import PandasObject, PathLike
 from tsdm.types.dtypes import TORCH_DTYPES
@@ -322,15 +323,13 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
 
     def __init__(
         self,
-        column_encoders: Mapping[K, BaseEncoder] = NotImplemented,
+        column_encoders: Mapping[K, BaseEncoder] = EMPTY_MAP,
         *,
-        index_encoders: Mapping[K, BaseEncoder] = NotImplemented,
+        index_encoders: Mapping[K, BaseEncoder] = EMPTY_MAP,
     ) -> None:
         super().__init__()
-        self.column_encoders = (
-            {} if column_encoders is NotImplemented else column_encoders
-        )
-        self.index_encoders = {} if index_encoders is NotImplemented else index_encoders
+        self.index_encoders = index_encoders
+        self.column_encoders = column_encoders
         self.encoders = {**column_encoders, **index_encoders}
 
     def __getitem__(self, key: K) -> BaseEncoder:

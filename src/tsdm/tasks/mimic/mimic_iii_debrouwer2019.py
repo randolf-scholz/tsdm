@@ -221,7 +221,9 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
             self.observation_time /= t_max
             ts["TIME_STAMP"] /= t_max
             ts = ts.set_index(["UNIQUE_ID", "TIME_STAMP"])
-        ts = ts.dropna(axis=1, how="all").copy()
+
+        # NOTE: only numpy float types supported by torch
+        ts = ts.dropna(axis=1, how="all").copy().astype("float32")
         return ts
 
     @cached_property

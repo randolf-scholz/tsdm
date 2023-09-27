@@ -10,6 +10,7 @@
       <w>addnodes</w>
       <w>alkalinephos</w>
       <w>allclose</w>
+      <w>amax</w>
       <w>amsfonts</w>
       <w>amsmath</w>
       <w>amssymb</w>
@@ -48,6 +49,7 @@
       <w>binarizer</w>
       <w>bools</w>
       <w>borgwardt</w>
+      <w>branchless</w>
       <w>brubaker</w>
       <w>builddir</w>
       <w>bysource</w>
@@ -65,6 +67,7 @@
       <w>codeauthor</w>
       <w>codeclimate</w>
       <w>coef</w>
+      <w>coldim</w>
       <w>colenc</w>
       <w>colname</w>
       <w>colspec</w>
@@ -326,6 +329,7 @@
       <w>rieck</w>
       <w>rishab</w>
       <w>rmse</w>
+      <w>rowdim</w>
       <w>rpartial</w>
       <w>rprop</w>
       <w>rrelu</w>

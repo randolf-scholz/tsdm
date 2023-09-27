@@ -112,6 +112,15 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
             .sort_index(axis="columns")
         )
 
+        # NOTE: Standardization is performed over full data slice, including test!
+        # https://github.com/mbilos/neural-flows-experiments/blob/d19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
+        ts = (ts - ts.mean()) / ts.std()
+
+        # drop values outside 5 sigma range
+        ts = ts[(-5 < ts) & (ts < 5)]
+
+        # NOTE: only numpy float types supported by torch
+        ts = ts.dropna(axis=1, how="all").copy().astype("float32")
         return ts
 
     def download_file(self, fname: str, /) -> None:
