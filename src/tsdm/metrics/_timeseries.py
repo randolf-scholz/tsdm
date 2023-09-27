@@ -6,9 +6,12 @@ Note:
 """
 
 __all__ = [
+    # Protocols
     "TimeSeriesLoss",
+    # ABCs
     "TimeSeriesBaseLoss",
     "WeightedTimeSeriesLoss",
+    # Classes
     "ND",
     "NRMSE",
     "Q_Quantile",
@@ -21,7 +24,7 @@ __all__ = [
     # "TimeSeriesWRMSE",
 ]
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable
 from typing import Final, Optional, Protocol, runtime_checkable
 
@@ -54,7 +57,7 @@ class TimeSeriesLoss(Protocol):
         ...
 
 
-class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
+class TimeSeriesBaseLoss(nn.Module):
     r"""Base class for a time-series function.
 
     Because the loss is computed over a sequence of variable length, the default is to normalize
@@ -105,7 +108,7 @@ class TimeSeriesBaseLoss(nn.Module, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class WeightedTimeSeriesLoss(TimeSeriesBaseLoss, metaclass=ABCMeta):
+class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
     r"""Base class for a weighted time series loss function.
 
     Because the loss is computed over a sequence of variable length, the default is to normalize

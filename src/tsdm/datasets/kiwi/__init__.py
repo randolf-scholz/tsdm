@@ -5,12 +5,15 @@ References:
 """
 
 __all__ = [
-    "InSilicoData",
-    "KiwiDataset",
-    "KIWI_RUNS",
-    "KIWI_Dataset",
+    "InSilico",
+    "InSilicoTSC",
+    "KiwiBenchmark",
+    "KiwiBenchmarkTSC",
+    # OLD Datasets
+    "KiwiRuns",
+    "KiwiRunsTSC",
 ]
 
-from tsdm.datasets.kiwi.in_silico_data import InSilicoData
-from tsdm.datasets.kiwi.kiwi_benchmark import KIWI_Dataset
-from tsdm.datasets.kiwi.kiwi_runs import KIWI_RUNS, KiwiDataset
+from tsdm.datasets.kiwi.in_silico import InSilico, InSilicoTSC
+from tsdm.datasets.kiwi.kiwi_benchmark import KiwiBenchmark, KiwiBenchmarkTSC
+from tsdm.datasets.kiwi.kiwi_runs import KiwiRuns, KiwiRunsTSC

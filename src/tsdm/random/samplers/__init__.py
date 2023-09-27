@@ -7,11 +7,10 @@ Note:
 
 __all__ = [
     # Constants
-    "Sampler",
     "SAMPLERS",
     # ABC
+    "Sampler",
     "BaseSampler",
-    "BaseSamplerMetaClass",
     # Classes
     "CollectionSampler",
     "HierarchicalSampler",
@@ -29,18 +28,15 @@ from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.random.samplers._samplers import (
     BaseSampler,
-    BaseSamplerMetaClass,
     CollectionSampler,
     HierarchicalSampler,
     IntervalSampler,
+    Sampler,
     SequenceSampler,
     SliceSampler,
     SlidingWindowSampler,
     compute_grid,
 )
-
-Sampler: TypeAlias = TorchSampler
-r"""Type hint for samplers."""
 
 SAMPLERS: Final[dict[str, type[Sampler]]] = {
     "CollectionSampler": CollectionSampler,

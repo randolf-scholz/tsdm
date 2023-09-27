@@ -83,8 +83,6 @@ __all__ = [
 ]
 
 
-from abc import ABCMeta
-
 from torch import nn
 
 from tsdm.metrics._modular import (
@@ -174,4 +172,4 @@ LOSSES: dict[str, FunctionalLoss | type[Metric]] = {
 }
 r"""Dictionary of all available losses."""
 
-del nn, ABCMeta
+del nn

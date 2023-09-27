@@ -9,11 +9,8 @@ __all__ = [
     "system",
     # Constants
     # Classes
-    "PatchedABCMeta",
     "LazyDict",
     "LazyValue",
-    # decorators
-    "abstractattribute",
     # utils
     "deep_dict_update",
     "deep_kval_update",
@@ -46,7 +43,6 @@ __all__ = [
 ]
 
 from tsdm.utils import data, decorators, remote, system
-from tsdm.utils._subclassing import PatchedABCMeta, abstractattribute
 from tsdm.utils._utils import (
     deep_dict_update,
     deep_kval_update,

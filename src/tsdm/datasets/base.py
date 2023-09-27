@@ -8,7 +8,6 @@ __all__ = [
     "Dataset",
     # Classes
     "BaseDataset",
-    "BaseDatasetMetaClass",
     "SingleTableDataset",
     "MultiTableDataset",
     "TimeSeriesDataset",
@@ -105,16 +104,6 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
                 cls.DATASET_DIR = Path("~/.tsdm/datasets") / cls.__name__
             else:
                 cls.DATASET_DIR = CONFIG.DATASETDIR / cls.__name__
-
-        # print(f"Setting Attribute {cls}.RAWDATA_DIR = {cls.RAWDATA_DIR}")
-        # print(f"{cls=}\n\n{args=}\n\n{kwargs.keys()=}\n\n")
-
-    # def __getitem__(cls, parent: type[BaseDataset]) -> type[BaseDataset]:
-    #     # if inspect.isabstract(cls):
-    #     cls.RAWDATA_DIR = parent.RAWDATA_DIR
-    #     print(f"Setting {cls}.RAWDATA_DIR = {parent.RAWDATA_DIR=}")
-    #     return cls
-    # return super().__getitem__(parent)
 
 
 class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):

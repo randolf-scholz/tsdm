@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from typing import Final, Protocol, runtime_checkable
 
 import torch
@@ -41,7 +41,7 @@ class Metric(Protocol):
         ...
 
 
-class BaseLoss(nn.Module, metaclass=ABCMeta):
+class BaseLoss(nn.Module, Metric):
     r"""Base class for a loss function."""
 
     # Constants
@@ -67,7 +67,7 @@ class BaseLoss(nn.Module, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class WeightedLoss(BaseLoss, metaclass=ABCMeta):
+class WeightedLoss(BaseLoss, Metric):
     r"""Base class for a weighted loss function."""
 
     # Parameters

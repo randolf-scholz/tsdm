@@ -3,7 +3,6 @@ r"""Random Samplers."""
 __all__ = [
     # ABCs
     "BaseSampler",
-    "BaseSamplerMetaClass",
     # Classes
     "SliceSampler",
     # "TimeSliceSampler",
@@ -18,7 +17,7 @@ __all__ = [
 
 import logging
 import math
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
 from datetime import timedelta as py_td
 from itertools import chain, count
@@ -40,22 +39,12 @@ import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
-from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.types.protocols import Lookup
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
 from tsdm.utils.data.datasets import DatasetCollection
 from tsdm.utils.strings import repr_mapping
-
-
-@runtime_checkable
-class Sampler(Protocol[T_co]):
-    r"""Protocol for `Sampler`."""
-
-    def __iter__(self) -> Iterator[T_co]: ...
-
-    def __len__(self) -> int: ...
 
 
 def compute_grid(
@@ -99,19 +88,29 @@ def compute_grid(
     return cast(Sequence[int], np.arange(kmin, kmax + 1))
 
 
-class BaseSamplerMetaClass(ABCMeta):
-    r"""Metaclass for BaseSampler."""
+@runtime_checkable
+class Sampler(Protocol[T_co]):
+    r"""Protocol for `Sampler`."""
+
+    def __iter__(self) -> Iterator[T_co]: ...
+
+    def __len__(self) -> int: ...
+
+
+class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
+    r"""Metaclass for BaseDataset."""
 
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
+        """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
-class BaseSampler(TorchSampler[T_co], Sized, metaclass=BaseSamplerMetaClass):
+class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
     r"""Abstract Base Class for all Samplers."""
 
     LOGGER: logging.Logger
@@ -121,7 +120,6 @@ class BaseSampler(TorchSampler[T_co], Sized, metaclass=BaseSamplerMetaClass):
 
     def __init__(self, data_source: Sized, /) -> None:
         r"""Initialize the sampler."""
-        super().__init__(data_source)
         self.data = data_source
 
     @abstractmethod
@@ -133,7 +131,7 @@ class BaseSampler(TorchSampler[T_co], Sized, metaclass=BaseSamplerMetaClass):
         r"""Iterate over random indices."""
 
 
-class SliceSampler(TorchSampler[Sequence[T_co]]):
+class SliceSampler(BaseSampler[Sequence[T_co]]):
     r"""Sample by index.
 
     Default modus operandi:
@@ -210,6 +208,10 @@ class SliceSampler(TorchSampler[Sequence[T_co]]):
     def sampler(self) -> tuple[int, int]:
         r"""Return random start_index and window_size."""
         return self._sampler()
+
+    def __len__(self) -> int:
+        r"""Return the maximum allowed index."""
+        return float("inf")  # type: ignore[return-value]
 
     def __iter__(self) -> Iterator[Sequence[T_co]]:
         r"""Yield random slice from dataset."""

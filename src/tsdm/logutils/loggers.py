@@ -54,7 +54,6 @@ __all__ = [
 ]
 
 import logging
-from abc import ABCMeta
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
@@ -105,19 +104,20 @@ class Logger(Protocol):
         ...
 
 
-class LoggerMetaclass(ABCMeta):
-    """Metaclass for callbacks."""
+class BaseLoggerMetaClass(type(Protocol)):  # type: ignore[misc]
+    r"""Metaclass for BaseDataset."""
 
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
+        """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
-class BaseLogger(metaclass=LoggerMetaclass):
+class BaseLogger(Logger, metaclass=BaseLoggerMetaClass):
     """Base class for loggers."""
 
     LOGGER: ClassVar[logging.Logger]
@@ -125,6 +125,11 @@ class BaseLogger(metaclass=LoggerMetaclass):
 
     _callbacks: dict[str, list[tuple[Callback[...], int, set[str]]]] = defaultdict(list)
     """Callbacks to be called at the end of a batch/epoch."""
+
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "LOGGER"):
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+        return super().__new__(cls)
 
     @property
     def callbacks(self) -> dict[str, list[Callback]]:

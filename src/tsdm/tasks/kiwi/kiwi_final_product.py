@@ -20,8 +20,9 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.nn import MSELoss
 from torch.utils.data import DataLoader
+from typing_extensions import deprecated
 
-from tsdm.datasets import KIWI_RUNS
+from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.data import MappingDataset
@@ -106,6 +107,7 @@ def get_time_table(
     return df
 
 
+@deprecated("outdated task, use tasks.KIWI_Benchmark instead!")
 class KIWI_FINAL_PRODUCT(OldBaseTask):
     r"""Forecast the final biomass or product."""
 
@@ -212,9 +214,9 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         observables.index = observables.apply(ts.columns.get_loc)
 
     @cached_property
-    def dataset(self) -> KIWI_RUNS:
+    def dataset(self) -> KiwiRuns:
         # Drop runs that don't work for this task.
-        dataset = KIWI_RUNS()
+        dataset = KiwiRuns()
         dataset.timeseries = dataset.timeseries.drop([355, 445, 482]).astype("float32")
         dataset.metadata = dataset.metadata.drop([355, 445, 482])
         return dataset

@@ -1,16 +1,22 @@
 """The KIWI Benchmark Dataset."""
 
-__all__ = ["KIWI_Dataset"]
+__all__ = [
+    "KiwiBenchmarkTSC",
+    "KiwiBenchmark",
+]
 
 from zipfile import ZipFile
 
-from tsdm.datasets.base import MultiTableDataset
+from pandas import DataFrame
+
+from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
 
 
-class KIWI_Dataset(MultiTableDataset):
+class KiwiBenchmark(MultiTableDataset):
     r"""KIWI Benchmark Dataset."""
-
-    BASE_URL = r"https://tubcloud.tu-berlin.de/s/rorBS7Lwbgmreti/download/"
+    # https://tubcloud.tu-berlin.de/s/YA65b8iieQoWQTW
+    # BASE_URL = r"https://tubcloud.tu-berlin.de/s/rorBS7Lwbgmreti/download/"
+    BASE_URL = r"https://tubcloud.tu-berlin.de/s/YA65b8iieQoWQTW/download/"
     INFO_URL = r"https://kiwi-biolab.de/"
     HOME_URL = r"https://kiwi-biolab.de/"
     GITHUB_URL = r"https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/kiwi-dataset"
@@ -33,3 +39,21 @@ class KIWI_Dataset(MultiTableDataset):
     def clean_table(self, key: str) -> None:
         with ZipFile(self.rawdata_paths["kiwi-benchmark.zip"], "r") as archive:
             archive.extract(f"{key}.parquet", self.DATASET_DIR)
+
+
+class KiwiBenchmarkTSC(TimeSeriesCollection):
+    r"""The KIWI dataset wrapped as TimeSeriesCollection."""
+
+    timeseries: DataFrame
+    metadata: DataFrame
+    timeseries_description: DataFrame
+    metadata_description: DataFrame
+
+    def __init__(self) -> None:
+        ds = KiwiBenchmark()
+        super().__init__(
+            timeseries=ds.timeseries,
+            metadata=ds.metadata,
+            timeseries_description=ds.timeseries_description,
+            metadata_description=ds.metadata_description,
+        )

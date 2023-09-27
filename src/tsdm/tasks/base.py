@@ -111,7 +111,7 @@ __all__ = [
 
 import logging
 import warnings
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
@@ -131,16 +131,13 @@ from typing import (
 import numpy as np
 from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
-from torch.utils.data import (
-    DataLoader,
-    Dataset as TorchDataset,
-    Sampler as TorchSampler,
-)
+from torch.utils.data import DataLoader, Dataset as TorchDataset
 from typing_extensions import Self, assert_type
 
 from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
+from tsdm.random.samplers import Sampler
 from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
@@ -153,18 +150,6 @@ SplitID = TypeVar("SplitID", bound=Hashable)
 
 Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
 """Type of a batch of data."""
-
-
-class BaseTaskMetaClass(ABCMeta):
-    r"""Metaclass for BaseTask."""
-
-    def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
-    ) -> None:
-        super().__init__(name, bases, namespace, **kwds)
-
-        if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
 class Inputs(NamedTuple):
@@ -481,7 +466,7 @@ class ForecastingTask(Protocol[SplitID, Sample_co]):
         ...
 
     @property
-    def samplers(self) -> Mapping[SplitID, TorchSampler]:
+    def samplers(self) -> Mapping[SplitID, Sampler]:
         """A mapping of all the samplers."""
         ...
 
@@ -501,8 +486,20 @@ class ForecastingTask(Protocol[SplitID, Sample_co]):
         ...
 
 
+class TimeSeriesTaskMetaClass(type(Protocol)):  # type: ignore[misc]
+    """Metaclass for TimeSeriesTask."""
+
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        """When a new class/subclass is created, this method is called."""
+        super().__init__(name, bases, namespace, **kwds)
+        if not hasattr(cls, "LOGGER"):
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+
+
 @dataclass
-class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
+class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=TimeSeriesTaskMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -575,7 +572,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
     r"""Dictionary holding `Encoder` associated with each key."""
     generators: Mapping[SplitID, TimeSeriesSampleGenerator] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    samplers: Mapping[SplitID, TorchSampler] = NotImplemented
+    samplers: Mapping[SplitID, Sampler] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
     splits: Mapping[SplitID, TimeSeriesCollection] = NotImplemented
     r"""Dictionary holding sampler associated with each key."""
@@ -703,7 +700,7 @@ class TimeSeriesTask(Generic[SplitID, Sample_co], metaclass=BaseTaskMetaClass):
         return NotImplemented
 
     @abstractmethod
-    def make_sampler(self, key: SplitID, /) -> TorchSampler[K]:
+    def make_sampler(self, key: SplitID, /) -> Sampler[K]:
         r"""Create the sampler associated with the specified key."""
         return NotImplemented
 
@@ -833,7 +830,7 @@ class Split(Generic[Sample_co]):
     r"""Dictionary holding `Encoder` associated with each key."""
     generator: TimeSeriesSampleGenerator = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    sampler: TorchSampler = NotImplemented
+    sampler: Sampler = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
     split: TimeSeriesCollection = NotImplemented
     r"""Dictionary holding sampler associated with each key."""

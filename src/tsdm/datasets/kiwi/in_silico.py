@@ -1,6 +1,6 @@
 r"""In silico experiments."""
 
-__all__ = ["InSilicoData"]
+__all__ = ["InSilico", "InSilicoTSC"]
 
 import shutil
 from importlib import resources
@@ -10,7 +10,7 @@ from zipfile import ZipFile
 import pandas as pd
 from pandas import DataFrame
 
-from tsdm.datasets.base import MultiTableDataset
+from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
 from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 TIMESERIES_DESCRIPTION: InlineTable = {
@@ -45,7 +45,7 @@ KEY: TypeAlias = Literal[
 ]
 
 
-class InSilicoData(MultiTableDataset[KEY, DataFrame]):
+class InSilico(MultiTableDataset[KEY, DataFrame]):
     r"""Artificially generated data, 8 runs, 7 attributes, ~465 samples.
 
     +---------+---------+---------+-----------+---------+-------+---------+-----------+------+
@@ -100,3 +100,14 @@ class InSilicoData(MultiTableDataset[KEY, DataFrame]):
         self.LOGGER.info("Copying data files into %s.", self.rawdata_paths[fname])
         with resources.path(__package__, fname) as path:
             shutil.copy(path, self.rawdata_paths[fname])
+
+
+class InSilicoTSC(TimeSeriesCollection):
+    r"""The in silico dataset wrapped as TimeSeriesCollection."""
+
+    def __init__(self) -> None:
+        ds = InSilico()
+        super().__init__(
+            timeseries=ds.timeseries,
+            timeseries_description=ds.timeseries_description,
+        )

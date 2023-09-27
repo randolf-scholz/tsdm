@@ -25,14 +25,13 @@ __all__ = [
 # TODO: Improve Typing for Encoders.
 
 import logging
-from abc import ABC, ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from copy import deepcopy
 from functools import wraps
 from typing import (
     Any,
     ClassVar,
-    Generic,
     Literal,
     Protocol,
     TypeVar,
@@ -97,19 +96,20 @@ class Encoder(Protocol[U, V]):
         ...
 
 
-class BaseEncoderMetaClass(ABCMeta):
+class BaseEncoderMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
+        """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
-class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
+class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
     r"""Base class that all encoders must subclass."""
 
     LOGGER: ClassVar[logging.Logger]
@@ -118,23 +118,11 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     _is_fitted: bool = False
     r"""Whether the encoder has been fitted."""
 
-    @property
-    @abstractmethod
-    def requires_fit(self) -> bool:
-        r"""Whether the encoder requires fitting."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.transform = self.encode
-        self.inverse_transform = self.decode
-
-    def __init_subclass__(cls, /, *args: Any, **kwargs: Any) -> None:
+    def __init_subclass__(cls) -> None:
         r"""Initialize the subclass.
 
         The wrapping of fit/encode/decode must be done here to avoid `~pickle.PickleError`!
         """
-        super().__init_subclass__(*args, **kwargs)
-
         original_fit = cls.fit
         original_encode = cls.encode
         original_decode = cls.decode
@@ -169,6 +157,11 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
         cls.encode = encode  # type: ignore[method-assign]
         cls.decode = decode  # type: ignore[method-assign]
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.transform = self.encode
+        self.inverse_transform = self.decode
+
     def __invert__(self) -> BaseEncoder[S, T]:
         r"""Return the inverse encoder (i.e. decoder)."""
         return InverseEncoder(self)
@@ -188,6 +181,12 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
         return repr_object(self, fallback=repr_type, recursive=1)
+
+    @property
+    @abstractmethod
+    def requires_fit(self) -> bool:
+        r"""Whether the encoder requires fitting."""
+        ...
 
     @property
     def is_fitted(self) -> bool:
@@ -219,10 +218,12 @@ class BaseEncoder(ABC, Generic[T, S], metaclass=BaseEncoderMetaClass):
     @abstractmethod
     def encode(self, data: T, /) -> S:
         r"""Encode the data by transformation."""
+        ...
 
     @abstractmethod
     def decode(self, data: S, /) -> T:
         r"""Decode the data by inverse transformation."""
+        ...
 
     def simplify(self) -> Self:
         r"""Simplify the encoder."""

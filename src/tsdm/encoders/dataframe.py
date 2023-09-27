@@ -81,7 +81,7 @@ class CSVEncoder(BaseEncoder):
         return DataFrame(frame).astype(self.dtypes)
 
 
-@deprecated("deprecated in favor of FastFrameEncoder")
+@deprecated("deprecated in favor of encoders.FastFrameEncoder")
 class FrameEncoder(BaseEncoder, Generic[ColEncVar, IndEncVar]):
     r"""Encode a DataFrame by group-wise transformations.
 

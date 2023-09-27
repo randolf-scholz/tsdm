@@ -3,7 +3,7 @@ r"""Test converters to masked format etc."""
 
 import logging
 
-from tsdm.datasets import InSilicoData, TimeSeriesCollection, TimeSeriesDataset
+from tsdm.datasets import InSilico, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator
 
@@ -18,7 +18,7 @@ def test_time_series_sample_generator() -> None:
     LOGGER.info("Testing.")
 
     # make dataset
-    dataset = InSilicoData()
+    dataset = InSilico()
     TSC = TimeSeriesCollection(
         timeseries=dataset.timeseries,
     )

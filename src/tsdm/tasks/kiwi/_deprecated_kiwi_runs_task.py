@@ -4,7 +4,7 @@ r"""Deprecated Kiwi Task Object."""
 __all__ = [
     # Classes
     "KIWI_RUNS_TASK",
-    "KiwiForecastingTask",
+    "KIWI_RUNS_GENERATOR",
 ]
 
 from collections.abc import Callable
@@ -18,8 +18,9 @@ from pandas import DataFrame, MultiIndex, Series
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.utils.data import DataLoader
+from typing_extensions import deprecated
 
-from tsdm.datasets import KIWI_RUNS, KiwiDataset
+from tsdm.datasets import KiwiRuns, KiwiRunsTSC
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
@@ -30,7 +31,7 @@ from tsdm.utils.data.timeseries import TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 
-class KiwiForecastingTask(TimeSeriesSampleGenerator):
+class KIWI_RUNS_GENERATOR(TimeSeriesSampleGenerator):
     r"""Bioprocess forecasting task using the KIWI-biolab data."""
 
     targets = ["Base", "DOT", "Glucose", "OD600"]
@@ -55,7 +56,7 @@ class KiwiForecastingTask(TimeSeriesSampleGenerator):
     sample_format = ("masked", "masked")
 
     def __init__(self, **kwargs: Any) -> None:
-        ds = KiwiDataset()
+        ds = KiwiRunsTSC()
         super().__init__(ds, **kwargs)
 
 
@@ -87,6 +88,7 @@ class Batch(NamedTuple):
         return repr_namedtuple(self)
 
 
+@deprecated("outdated task, use tasks.KIWI_Benchmark instead!")
 class KIWI_RUNS_TASK(OldBaseTask):
     r"""A collection of bioreactor runs.
 
@@ -204,9 +206,9 @@ class KIWI_RUNS_TASK(OldBaseTask):
         return jit.script(WRMSE(w))
 
     @cached_property
-    def dataset(self) -> KIWI_RUNS:
+    def dataset(self) -> KiwiRuns:
         r"""Return the cached dataset."""
-        dataset = KIWI_RUNS()
+        dataset = KiwiRuns()
         dataset.metadata.drop([482], inplace=True)
         dataset.timeseries.drop([482], inplace=True)
         return dataset

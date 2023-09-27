@@ -5,8 +5,8 @@ Extracted from iLab DataBase.
 
 __all__ = [
     # Classes
-    "KIWI_RUNS",
-    "KiwiDataset",
+    "KiwiRuns",
+    "KiwiRunsTSC",
 ]
 
 import pickle
@@ -14,6 +14,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
+from typing_extensions import deprecated
 
 from tsdm.constants import NULL_VALUES
 from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
@@ -245,7 +246,8 @@ metadata_description_dict = {
 # fmt: on
 
 
-class KIWI_RUNS(MultiTableDataset):
+@deprecated("outdated class, use datasets.KIWI_Benchmark instead!")
+class KiwiRuns(MultiTableDataset):
     r"""KIWI RUN Data.
 
     The cleaned data will consist of 3 parts:
@@ -537,7 +539,8 @@ class KIWI_RUNS(MultiTableDataset):
         )
 
 
-class KiwiDataset(TimeSeriesCollection):
+@deprecated("outdated class, use datasets.KIWI_Benchmark instead!")
+class KiwiRunsTSC(TimeSeriesCollection):
     r"""The KIWI dataset."""
 
     metaindex: MultiIndex
@@ -551,7 +554,7 @@ class KiwiDataset(TimeSeriesCollection):
     global_metadata_description: None
 
     def __init__(self) -> None:
-        ds = KIWI_RUNS()
+        ds = KiwiRuns()
 
         super().__init__(
             metaindex=ds.index,
