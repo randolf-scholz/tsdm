@@ -213,8 +213,9 @@ def tensor_norm(
             return geometric_mean(x, axis=dim, keepdim=keepdim)
 
         # NOTE: preconditioning improves numerical stability
-        x_max = x.amax(dim=dim, keepdim=True)
-        return x_max * (x / x_max).pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+        # x_max = x.amax(dim=dim, keepdim=True)
+        # return x_max * (x / x_max).pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+        return x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
 
     # non-scaled
     if p == float("inf"):

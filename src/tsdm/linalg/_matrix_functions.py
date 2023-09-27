@@ -276,7 +276,7 @@ def logarithmic_norm(
 ) -> Tensor:
     r"""Compute the logarithmic norm of a matrix.
 
-    .. math:: \lim_{ε→0⁺} \frac{‖𝕀+εA‖_p-1}{ε}
+    .. math:: \lim_{ε→0⁺} \frac{‖𝕀+εA‖ₚ-1}{ε}
 
     .. Signature:: ``(..., n, n) -> ...``
 
@@ -296,6 +296,9 @@ def logarithmic_norm(
           | Gustaf Söderlind, BIT Numerical Mathematics, 2006
           | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
     """
+    if scaled:
+        raise NotImplementedError("Implementation not validated!")
+
     rowdim, coldim = dim
     rowdim = rowdim % x.ndim
     coldim = coldim % x.ndim
@@ -319,21 +322,21 @@ def logarithmic_norm(
     m = torch.eye(N, dtype=torch.bool, device=x.device)
     x = torch.where(m, x.real, x.abs())
 
-    if scaled:
-        shift = int(coldim < rowdim) * (1 - int(keepdim))
-        if p == 1:
-            x = x.mean(dim=coldim, keepdim=keepdim)
-            return x.amax(dim=rowdim - shift, keepdim=keepdim)
-        if p == -1:
-            x = x.mean(dim=coldim, keepdim=keepdim)
-            return x.amin(dim=rowdim - shift, keepdim=keepdim)
-        shift = int(rowdim < coldim) * (1 - int(keepdim))
-        if p == float("inf"):
-            x = x.mean(dim=rowdim, keepdim=keepdim)
-            return x.amax(dim=coldim - shift, keepdim=keepdim)
-        if p == -float("inf"):
-            x = x.mean(dim=rowdim, keepdim=keepdim)
-            return x.amin(dim=coldim - shift, keepdim=keepdim)
+    # if scaled:
+    #     shift = int(coldim < rowdim) * (1 - int(keepdim))
+    #     if p == 1:
+    #         x = x.mean(dim=coldim, keepdim=keepdim)
+    #         return x.amax(dim=rowdim - shift, keepdim=keepdim)
+    #     if p == -1:
+    #         x = x.mean(dim=coldim, keepdim=keepdim)
+    #         return x.amin(dim=rowdim - shift, keepdim=keepdim)
+    #     shift = int(rowdim < coldim) * (1 - int(keepdim))
+    #     if p == float("inf"):
+    #         x = x.mean(dim=rowdim, keepdim=keepdim)
+    #         return x.amax(dim=coldim - shift, keepdim=keepdim)
+    #     if p == -float("inf"):
+    #         x = x.mean(dim=rowdim, keepdim=keepdim)
+    #         return x.amin(dim=coldim - shift, keepdim=keepdim)
 
     shift = int(coldim < rowdim) * (1 - int(keepdim))
     if p == 1:
@@ -390,6 +393,14 @@ def schatten_norm(
     σ = torch.linalg.svdvals(x)
     m = σ != 0
 
+    if p == 0:
+        if scaled:
+            σ = torch.where(m, σ, float("nan"))
+            result = geometric_mean(σ, axis=-1)
+        else:
+            result = m.sum(dim=-1)
+        return apply_keepdim(result, dim, keepdim)
+
     if p == float("+inf"):
         σ = torch.where(m, σ, float("-inf"))
         maxvals = σ.amax(dim=-1)
@@ -400,13 +411,6 @@ def schatten_norm(
         minvals = σ.amin(dim=-1)
         minvals = torch.where(minvals == float("+inf"), float("nan"), minvals)
         return apply_keepdim(minvals, dim, keepdim)
-    if p == 0:
-        if scaled:
-            σ = torch.where(m, σ, float("nan"))
-            result = geometric_mean(σ, axis=-1)
-        else:
-            result = m.sum(dim=-1)
-        return apply_keepdim(result, dim, keepdim)
 
     σ = torch.where(m, σ, float("-inf"))
     σ_max = σ.amax(dim=-1)
@@ -472,23 +476,23 @@ def operator_norm(
         ‖x‖ₚ ≔ (⅟ₙ ∑_{k=0}^n |xₖ|ᵖ)^{1/p}  \text{scaled=True}
         ‖A‖ₚ ≔ \sup_{x≠0} \frac{‖Ax‖ₚ}{‖x‖ₚ}
 
-    +--------+--------------------------+--------+
-    |        | regular                  | scaled |
-    +========+==========================+========+
-    | $p=+∞$ | maximum absolute row sum | ?      |
-    +--------+--------------------------+--------+
-    | $p=+2$ | maximum singular value   | ?      |
-    +--------+--------------------------+--------+
-    | $p=+1$ | maximum absolute col sum | ?      |
-    +--------+--------------------------+--------+
-    | $p=±0$ | ∞                        | ?      |
-    +--------+--------------------------+--------+
-    | $p=-1$ | minimum absolute col sum | ?      |
-    +--------+--------------------------+--------+
-    | $p=-2$ | minimum singular value   | ?      |
-    +--------+--------------------------+--------+
-    | $p=-∞$ | minimum absolute row sum | ?      |
-    +--------+--------------------------+--------+
+    +--------+--------------------------+---------+
+    |        | regular                  | scaled  |
+    +========+==========================+=========+
+    | $p=+∞$ | maximum absolute row sum | ᵖ√(n/m) |
+    +--------+--------------------------+---------+
+    | $p=+2$ | maximum singular value   | ᵖ√(n/m) |
+    +--------+--------------------------+---------+
+    | $p=+1$ | maximum absolute col sum | ᵖ√(n/m) |
+    +--------+--------------------------+---------+
+    | $p=±0$ | ∞                        | ᵖ√(n/m) |
+    +--------+--------------------------+---------+
+    | $p=-1$ | minimum absolute col sum | ᵖ√(n/m) |
+    +--------+--------------------------+---------+
+    | $p=-2$ | minimum singular value   | ᵖ√(n/m) |
+    +--------+--------------------------+---------+
+    | $p=-∞$ | minimum absolute row sum | ᵖ√(n/m) |
+    +--------+--------------------------+---------+
 
     References:
         - Matrix Norms (induced) <https://en.wikipedia.org/wiki/Matrix_norm#Matrix_norms_induced_by_vector_norms>
@@ -497,34 +501,37 @@ def operator_norm(
     rowdim, coldim = dim
     assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."
 
+    # branchless: c = (coldim / rowdim) ** (scaled / p)
     if scaled:
-        raise NotImplementedError("Scaled operator norm is not implemented.")
+        c = (coldim / rowdim) ** (1 / p)
+    else:
+        c = 1.0
 
     if p == 2:
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         σ = torch.linalg.svdvals(x)
         r = σ.amax(dim=-1)
-        return apply_keepdim(r, dim, keepdim)
+        return c * apply_keepdim(r, dim, keepdim)
     if p == -2:
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         σ = torch.linalg.svdvals(x)
         r = σ.amin(dim=-1)
-        return apply_keepdim(r, dim, keepdim)
+        return c * apply_keepdim(r, dim, keepdim)
 
     x = x.abs()
     shift = int(coldim < rowdim) * int(keepdim)
 
     if p == 1:
         x = x.sum(dim=coldim, keepdim=keepdim)
-        return x.amax(dim=rowdim - shift, keepdim=keepdim)
+        return c * x.amax(dim=rowdim - shift, keepdim=keepdim)
     if p == -1:
         x = x.sum(dim=coldim, keepdim=keepdim)
-        return x.amin(dim=rowdim - shift, keepdim=keepdim)
+        return c * x.amin(dim=rowdim - shift, keepdim=keepdim)
     if p == float("inf"):
         x = x.sum(dim=rowdim, keepdim=keepdim)
-        return x.amax(dim=coldim + shift, keepdim=keepdim)
+        return c * x.amax(dim=coldim + shift, keepdim=keepdim)
     if p == -float("inf"):
         x = x.sum(dim=rowdim, keepdim=keepdim)
-        return x.amin(dim=coldim + shift, keepdim=keepdim)
+        return c * x.amin(dim=coldim + shift, keepdim=keepdim)
 
     raise NotImplementedError("Currently only p=±1,±2,±inf are supported.")
