@@ -19,7 +19,7 @@ from torch._jit_internal import _copy_to_script_wrapper
 
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.utils import deep_dict_update, initialize_from_config
-from tsdm.utils.decorators import autojit
+from tsdm.utils.wrappers import autojit
 
 
 @autojit

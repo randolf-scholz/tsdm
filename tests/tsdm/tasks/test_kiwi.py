@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-r"""Test task implementation with InSilicoData."""
+r"""Test task implementation with InSilico."""
 
 import logging
 
@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from tsdm.datasets import TimeSeriesCollection
 from tsdm.encoders import BaseEncoder
 from tsdm.random.samplers import HierarchicalSampler
-from tsdm.tasks import KiwiTask, TimeSeriesSampleGenerator
+from tsdm.tasks import KiwiBenchmark, TimeSeriesSampleGenerator
 from tsdm.tasks.base import Sample
 
 logging.basicConfig(level=logging.INFO)
@@ -26,9 +26,9 @@ __logger__ = logging.getLogger(__name__)
 )  # FIXME: broken test! this mask is incorrect!
 def test_kiwi_task(SplitID=(0, "train")):
     r"""Test the KiwiTask."""
-    LOGGER = __logger__.getChild(KiwiTask.__name__)
+    LOGGER = __logger__.getChild(KiwiBenchmark.__name__)
     LOGGER.info("Testing.")
-    task = KiwiTask()
+    task = KiwiBenchmark()
 
     # reveal_type(task)
     # reveal_type(task.folds)
@@ -52,7 +52,7 @@ def test_kiwi_task(SplitID=(0, "train")):
     assert callable(task.collate_fns[SplitID])
 
     # validate generator
-    generator: TimeSeriesSampleGenerator = task.generators[SplitID]
+    generator: TimeSeriesSampleGenerator = task.generators[SplitID]  # type: ignore[assignment]
     assert isinstance(generator, torch.utils.data.Dataset)
 
     # make sample

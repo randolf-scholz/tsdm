@@ -16,7 +16,7 @@ from torch import Tensor, nn
 
 from tsdm.models.generic.mlp import MLP
 from tsdm.models.generic.rezero import ReZeroMLP
-from tsdm.utils.decorators import autojit
+from tsdm.utils.wrappers import autojit
 
 
 @autojit

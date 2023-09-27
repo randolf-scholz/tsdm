@@ -7,15 +7,15 @@ Note:
 
 __all__ = [
     # Constants
-    "Sampler",
     "SAMPLERS",
     # ABC
+    "Sampler",
     "BaseSampler",
-    "BaseSamplerMetaClass",
     # Classes
     "CollectionSampler",
     "HierarchicalSampler",
     "IntervalSampler",
+    "RandomSampler",
     "SequenceSampler",
     "SliceSampler",
     "SlidingWindowSampler",
@@ -29,24 +29,25 @@ from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.random.samplers._samplers import (
     BaseSampler,
-    BaseSamplerMetaClass,
     CollectionSampler,
     HierarchicalSampler,
     IntervalSampler,
+    RandomSampler,
+    Sampler,
     SequenceSampler,
     SliceSampler,
     SlidingWindowSampler,
     compute_grid,
 )
 
-Sampler: TypeAlias = TorchSampler
-r"""Type hint for samplers."""
-
 SAMPLERS: Final[dict[str, type[Sampler]]] = {
-    "SliceSampler": SliceSampler,
-    # "TimeSliceSampler": TimeSliceSampler,
-    "SequenceSampler": SequenceSampler,
     "CollectionSampler": CollectionSampler,
+    "HierarchicalSampler": HierarchicalSampler,
+    "IntervalSampler": IntervalSampler,
+    "SequenceSampler": SequenceSampler,
+    "SliceSampler": SliceSampler,
+    "SlidingWindowSampler": SlidingWindowSampler,
+    "RandomSampler": RandomSampler,
 }
 r"""Dictionary of all available samplers."""
 

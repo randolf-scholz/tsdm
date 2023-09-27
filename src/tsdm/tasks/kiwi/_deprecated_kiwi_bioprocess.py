@@ -16,8 +16,9 @@ import torch
 from pandas import DataFrame, Series
 from torch import Tensor, jit
 from torch.utils.data import DataLoader
+from typing_extensions import deprecated
 
-from tsdm.datasets import KIWI_RUNS
+from tsdm.datasets import KiwiRuns
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
@@ -40,6 +41,7 @@ class Sample(NamedTuple):
         return repr_namedtuple(self)
 
 
+@deprecated("outdated task, use tasks.KIWI_Benchmark instead!")
 class Kiwi_BioProcessTask(OldBaseTask):
     r"""A collection of bioreactor runs.
 
@@ -157,8 +159,8 @@ class Kiwi_BioProcessTask(OldBaseTask):
         return jit.script(WRMSE(w))
 
     @cached_property
-    def dataset(self) -> KIWI_RUNS:
-        dataset = KIWI_RUNS()
+    def dataset(self) -> KiwiRuns:
+        dataset = KiwiRuns()
         dataset.metadata.drop([482], inplace=True)
         dataset.timeseries.drop([482], inplace=True)
         return dataset

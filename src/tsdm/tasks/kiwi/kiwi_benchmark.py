@@ -2,7 +2,7 @@ r"""Implementation of the kiwi task."""
 
 __all__ = [
     # Classes
-    "KiwiTask",
+    "KiwiBenchmark",
 ]
 
 
@@ -12,9 +12,8 @@ from typing import Any, NamedTuple, TypeVar
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
-from torch.utils.data import Sampler as TorchSampler
 
-from tsdm.datasets import KiwiDataset
+from tsdm import datasets
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
@@ -28,7 +27,7 @@ from tsdm.encoders import (
     TimeDeltaEncoder,
 )
 from tsdm.metrics import TimeSeriesMSE
-from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
+from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
 from tsdm.utils.strings import repr_namedtuple
@@ -51,13 +50,13 @@ class Batch(NamedTuple):
         return repr_namedtuple(self)
 
 
-class KiwiTask(TimeSeriesTask):
+class KiwiBenchmark(TimeSeriesTask):
     r"""Task for the KIWI dataset.
 
     The task is to forecast the observables inside the forecasting horizon.
     """
 
-    dataset: KiwiDataset
+    dataset: datasets.KiwiBenchmarkTSC
 
     # sampler kwargs
     observation_horizon: str = "2h"
@@ -168,7 +167,7 @@ class KiwiTask(TimeSeriesTask):
         self.observation_horizon = self.sampler_kwargs["observation_horizon"]
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
-        dataset = KiwiDataset()
+        dataset = datasets.KiwiBenchmarkTSC()
         ts = dataset.timeseries
         ts = ts.astype("float64")
 
@@ -285,7 +284,7 @@ class KiwiTask(TimeSeriesTask):
 
         return encoder
 
-    def make_sampler(self, key: SplitID, /, **kwds: Any) -> TorchSampler:
+    def make_sampler(self, key: SplitID, /, **kwds: Any) -> Sampler:
         split = self.splits[key]
 
         # get configuration
@@ -308,7 +307,7 @@ class KiwiTask(TimeSeriesTask):
             )
             for key, tsd in split.items()
         }
-        return HierarchicalSampler(  # type: ignore[return-value]
+        return HierarchicalSampler(
             split, subsamplers, early_stop=early_stop, shuffle=shuffle
         )
 

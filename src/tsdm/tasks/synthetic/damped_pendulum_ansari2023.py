@@ -14,12 +14,12 @@ from typing import final
 
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
-from torch.utils.data import Sampler as TorchSampler
 
 from tsdm import datasets
-from tsdm.tasks.base import SplitID, TimeSeriesSampleGenerator, TimeSeriesTask
-from tsdm.types.variables import key_var as K
-from tsdm.utils.data import is_partition
+from tsdm.random.samplers import RandomSampler, Sampler
+from tsdm.tasks.base import SplitID, TimeSeriesTask
+from tsdm.utils.data import folds_as_frame, is_partition
+from tsdm.utils.data.datasets import DataFrame2Dataset
 
 
 @final
@@ -27,7 +27,8 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     """Forecasting task on synthetic damped pendulum data.
 
     Note:
-        This uses scipy's builtin RK45 solver, instead of RK4.
+        - This uses scipy's builtin RK45 solver, instead of RK4.
+        - The individual time series are only 150 steps long, so the whole sequence is returned
 
     .. epigraph::
 
@@ -48,17 +49,17 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     valid_size = 1000
     test_size = 1000
 
-    def __init__(self, validate: bool = True) -> None:
+    def __init__(self, validate: bool = True, initialize: bool = True) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
         timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
 
-        super().__init__(dataset=timeseries, validate=validate)
+        super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
 
-    def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
-        raise NotImplementedError
+    def make_generator(self, key: SplitID, /) -> DataFrame2Dataset[int]:
+        return DataFrame2Dataset(self.splits[key].timeseries)
 
-    def make_sampler(self, key: SplitID, /) -> TorchSampler[K]:
-        raise NotImplementedError
+    def make_sampler(self, key: SplitID, /) -> Sampler[int]:
+        return RandomSampler(self.splits[key].metaindex)
 
     def make_folds(self, /) -> DataFrame:
         r"""Create the folds."""
@@ -83,4 +84,4 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
             }
             assert is_partition(fold.values(), union=self.dataset.metaindex)
             folds.append(fold)
-        return folds
+        return folds_as_frame(folds, index=self.dataset.metaindex, sparse=True)

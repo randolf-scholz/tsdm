@@ -52,7 +52,7 @@ __all__ = [
     "ElectricityLim2021",
     "ElectricityTRMF",
     "KIWI_FINAL_PRODUCT",
-    "KiwiForecastingTask",
+    "KIWI_RUNS_GENERATOR",
     "Kiwi_BioProcessTask",
     "MIMIC_III_Bilos2021",
     "MIMIC_III_DeBrouwer2019",
@@ -63,7 +63,7 @@ __all__ = [
     # New Tasks
     "DampedPendulum_Ansari2023",
     "InSilicoTask",
-    "KiwiTask",
+    "KiwiBenchmark",
     # Other
     "InSilicoSampleGenerator",
 ]
@@ -74,11 +74,11 @@ from tsdm.tasks.base import ForecastingTask, TimeSeriesSampleGenerator, TimeSeri
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi import (
     KIWI_FINAL_PRODUCT,
+    KIWI_RUNS_GENERATOR,
     InSilicoSampleGenerator,
     InSilicoTask,
     Kiwi_BioProcessTask,
-    KiwiForecastingTask,
-    KiwiTask,
+    KiwiBenchmark,
 )
 from tsdm.tasks.mimic import (
     MIMIC_III_Bilos2021,
@@ -98,7 +98,7 @@ from tsdm.tasks.uci import (
 from tsdm.tasks.ushcn import USHCN_DeBrouwer2019
 
 TASKS: dict[str, type[ForecastingTask]] = {
-    "KiwiTask": KiwiTask,
+    "KiwiBenchmark": KiwiBenchmark,
     "InSilicoTask": InSilicoTask,
     "DampedPendulum_Ansari2023": DampedPendulum_Ansari2023,
     # "ElectricityLim2021": ElectricityLim2021,  # FIXME: unfinished

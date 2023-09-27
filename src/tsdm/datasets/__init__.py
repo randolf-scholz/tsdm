@@ -5,8 +5,8 @@ Implement your own by subclassing `BaseDataset`
 Basic Usage
 -----------
 
->>> from tsdm.datasets import InSilicoData
->>> dataset = InSilicoData()
+>>> from tsdm.datasets import InSilico
+>>> dataset = InSilico()
 
 Some design decisions:
 
@@ -30,6 +30,9 @@ __all__ = [
     "Dataset",
     # Constants
     "DATASETS",
+    "TIMESERIES",
+    "OLD_DATASETS",
+    "OLD_TIMESERIES",
     # ABCs
     "BaseDataset",
     "SingleTableDataset",
@@ -42,11 +45,8 @@ __all__ = [
     "BeijingAirQuality",
     "ETT",
     "Electricity",
-    "InSilicoData",
-    "KiwiDataset",
-    "KIWI_Dataset",
-    "KIWI",
-    "KIWI_RUNS",
+    "InSilico",
+    "KiwiBenchmark",
     "MIMIC_III",
     "MIMIC_III_RAW",
     "MIMIC_III_Bilos2021",
@@ -59,6 +59,13 @@ __all__ = [
     "Traffic",
     "USHCN",
     "USHCN_DeBrouwer2019",
+    # Timeseries
+    "InSilicoTSC",
+    "KiwiBenchmarkTSC",
+    # Deprecated Datasets
+    "KiwiRuns",
+    # Deprecated Timeseries
+    "KiwiRunsTSC",
 ]
 
 # submodules
@@ -72,7 +79,14 @@ from tsdm.datasets.base import (
     TimeSeriesDataset,
 )
 from tsdm.datasets.ett import ETT
-from tsdm.datasets.kiwi import KIWI_RUNS, InSilicoData, KIWI_Dataset, KiwiDataset
+from tsdm.datasets.kiwi import (
+    InSilico,
+    InSilicoTSC,
+    KiwiBenchmark,
+    KiwiBenchmarkTSC,
+    KiwiRuns,
+    KiwiRunsTSC,
+)
 from tsdm.datasets.mimic import (
     MIMIC_III,
     MIMIC_III_RAW,
@@ -84,19 +98,16 @@ from tsdm.datasets.mimic import (
 )
 from tsdm.datasets.physionet import PhysioNet2012, PhysioNet2019
 from tsdm.datasets.synthetic import DampedPendulum_Ansari2023
-from tsdm.datasets.timeseries import KIWI
 from tsdm.datasets.uci import BeijingAirQuality, Electricity, Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_DeBrouwer2019
 
 DATASETS: dict[str, type[Dataset]] = {
     "BeijingAirQuality": BeijingAirQuality,
+    "DampedPendulum_Ansari2023": DampedPendulum_Ansari2023,
     "ETT": ETT,
     "Electricity": Electricity,
-    "InSilicoData": InSilicoData,
-    "KIWI_RUNS": KIWI_RUNS,
-    "KIWI_Dataset": KIWI_Dataset,
-    # "KIWI_RUNS_OLD": KIWI_RUNS_OLD,
-    "DampedPendulum_Ansari2023": DampedPendulum_Ansari2023,
+    "InSilico": InSilico,
+    "KiwiBenchmark": KiwiBenchmark,
     "MIMIC_III": MIMIC_III_RAW,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV": MIMIC_IV_RAW,
@@ -108,3 +119,19 @@ DATASETS: dict[str, type[Dataset]] = {
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available dataset."""
+
+TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
+    "InSilicoTSC": InSilicoTSC,
+    "KiwiBenchmarkTSC": KiwiBenchmarkTSC,
+}
+"""Dictionary of all available timseries classes."""
+
+OLD_DATASETS: dict[str, type[Dataset]] = {
+    "KiwiRuns": KiwiRuns,
+}
+"""Deprecated dataset classes."""
+
+OLD_TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
+    "KiwiRunsTSC": KiwiRunsTSC,
+}
+"""Deprecated timeseries classes."""

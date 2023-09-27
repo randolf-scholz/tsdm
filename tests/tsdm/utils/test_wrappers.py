@@ -3,7 +3,7 @@ r"""TODO: Add Test summary."""
 
 import logging
 
-from tsdm.utils.decorators import iter_items, iter_keys, iter_values
+from tsdm.utils.wrappers import iter_items, iter_keys, iter_values
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)

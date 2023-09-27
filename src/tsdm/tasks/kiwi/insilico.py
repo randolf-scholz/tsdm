@@ -6,12 +6,10 @@ __all__ = [
     "InSilicoTask",
 ]
 
-
 from pandas import DataFrame
-from torch.utils.data import Sampler as TorchSampler
 
-from tsdm.datasets import InSilicoData, TimeSeriesCollection
-from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
+from tsdm.datasets import InSilicoTSC, TimeSeriesCollection
+from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
 from tsdm.tasks.base import TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.types.variables import key_var as K
 from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
@@ -32,32 +30,35 @@ class InSilicoSampleGenerator(TimeSeriesSampleGenerator):
 class InSilicoTask(TimeSeriesTask):
     r"""Task for the KIWI dataset."""
 
-    dataset: TimeSeriesCollection
+    # dataset: TimeSeriesCollection
 
     observation_horizon: str = "2h"
     r"""The number of datapoints observed during prediction."""
     forecasting_horizon: str = "1h'"
     r"""The number of datapoints the model should forecast."""
 
-    def __init__(self) -> None:
-        ds = InSilicoData()
+    def __init__(
+        self,
+        observation_horizon: str = "2h",
+        forecasting_horizon: str = "1h",
+    ) -> None:
+        ds = InSilicoTSC()
         dataset = TimeSeriesCollection(ds.timeseries)
+        self.observation_horizon = observation_horizon
+        self.forecasting_horizon = forecasting_horizon
         super().__init__(dataset)
 
     @staticmethod
     def default_test_metric(*, targets, predictions):
         pass
 
-    # def make_encoder(self, key: K, /) -> ModularEncoder:
-    #     ...
-
-    def make_sampler(self, key: K, /) -> TorchSampler:
+    def make_sampler(self, key: K, /) -> Sampler:
         split: TimeSeriesCollection = self.splits[key]
         subsamplers = {
             key: SlidingWindowSampler(tsd.timeindex, horizons=["2h", "1h"], stride="1h")
             for key, tsd in split.items()
         }
-        return HierarchicalSampler(  # type: ignore[return-value]
+        return HierarchicalSampler(
             split, subsamplers, shuffle=self.split_type(key) == "training"
         )
 

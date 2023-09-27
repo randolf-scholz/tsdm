@@ -8,7 +8,6 @@ __all__ = [
 import logging
 import os
 import subprocess
-from abc import ABC, ABCMeta
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Protocol
@@ -115,7 +114,7 @@ class StateSpaceForecastingModel(ForecastingModel, Protocol):
         ...
 
 
-class BaseModelMetaClass(ABCMeta):
+class BaseModelMetaClass(type):
     r"""Metaclass for BaseDataset."""
 
     def __init__(
@@ -132,7 +131,7 @@ class BaseModelMetaClass(ABCMeta):
             cls.MODEL_DIR = CONFIG.MODELDIR / cls.__name__
 
 
-class BaseModel(ABC):
+class BaseModel(metaclass=BaseModelMetaClass):
     r"""BaseModel that all models should subclass."""
 
     LOGGER: logging.Logger

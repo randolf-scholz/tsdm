@@ -43,7 +43,7 @@ __all__ = [
     "TensorSplitter",
 ]
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable, Iterable
 from dataclasses import KW_ONLY, dataclass
 from types import EllipsisType
@@ -248,7 +248,7 @@ def get_reduced_axes(item, axis):
             raise TypeError(f"Unknown type {type(item)}")
 
 
-class NumericalEncoder(BaseEncoder[T, T], ABC):
+class NumericalEncoder(BaseEncoder[T, T]):
     """Represents a numerical encoder."""
 
     backend: Backend[T]

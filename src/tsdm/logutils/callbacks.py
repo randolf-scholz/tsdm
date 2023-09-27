@@ -26,7 +26,7 @@ __all__ = [
 
 import inspect
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable, Iterable, Mapping, MutableSequence, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from functools import wraps
@@ -35,7 +35,6 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
-    Generic,
     Literal,
     Optional,
     ParamSpec,
@@ -116,20 +115,20 @@ def is_callback(func: Callable, /) -> TypeGuard[Callback]:
     )
 
 
-class CallbackMetaclass(ABCMeta):
-    """Metaclass for callbacks."""
+class BaseCallbackMetaClass(type(Protocol)):  # type: ignore[misc]
+    """Metaclass for PreTrained."""
 
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
+        """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
-
-        if "LOGGER" not in namespace:
+        if not hasattr(cls, "LOGGER"):
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
 @dataclass(repr=False)
-class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
+class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
     """Base class for callbacks."""
 
     LOGGER: ClassVar[logging.Logger]
@@ -164,7 +163,6 @@ class BaseCallback(Generic[P], metaclass=CallbackMetaclass):
                 self.LOGGER.debug("Skipping callback.")
 
         cls.__call__ = __call__  # type: ignore[method-assign]
-        super().__init_subclass__()
 
     @abstractmethod
     def callback(self, i: int, /, **state_dict: P.kwargs) -> None:

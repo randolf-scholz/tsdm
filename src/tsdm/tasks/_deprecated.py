@@ -4,10 +4,10 @@ __all__ = ["BaseTask", "OldBaseTask"]
 
 import logging
 import warnings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, ClassVar, Generic, Literal, Optional
+from typing import Any, ClassVar, Generic, Literal, Optional, Protocol
 
 from pandas import DataFrame
 from torch import Tensor
@@ -19,12 +19,24 @@ from torch.utils.data import (
 
 from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
-from tsdm.tasks.base import BaseTaskMetaClass
 from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
 
 
-class BaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
+class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
+    r"""Metaclass for BaseDataset."""
+
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        """When a new class/subclass is created, this method is called."""
+        super().__init__(name, bases, namespace, **kwds)
+
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+
+
+class BaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
@@ -181,7 +193,7 @@ class BaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
         return LazyDict({k: self.make_dataloader for k in self.splits})
 
 
-class OldBaseTask(ABC, Generic[K], metaclass=BaseTaskMetaClass):
+class OldBaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).

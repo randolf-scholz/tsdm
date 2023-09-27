@@ -7,8 +7,9 @@ Each model comes with several components:
 """
 
 __all__ = [
+    # Protocol
+    "PreTrained",
     # Abstract Base Classes
-    "PreTrainedMeta",
     "PreTrainedBase",
     # Classes
     # "OldLinODEnet",
@@ -25,7 +26,7 @@ from typing import Final, TypeAlias
 
 from torch import nn
 
-from tsdm.models.pretrained.base import PreTrainedBase, PreTrainedMeta
+from tsdm.models.pretrained.base import PreTrained, PreTrainedBase
 from tsdm.models.pretrained.linodenet import LinODEnet
 
 Model: TypeAlias = PreTrainedBase

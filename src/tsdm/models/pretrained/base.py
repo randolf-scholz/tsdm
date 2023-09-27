@@ -28,19 +28,18 @@ Therefore, we need to define a way of storing and loading these files.
 """
 
 __all__ = [
+    # Protocols
+    "PreTrained",
     # Classes
-    "PreTrainedMeta",
     "PreTrainedBase",
 ]
 
 import inspect
 import json
 import logging
-import os
 import pickle
 import warnings
 import webbrowser
-from abc import ABC, ABCMeta
 from collections.abc import Collection, Mapping
 from functools import cached_property
 from io import IOBase
@@ -79,29 +78,29 @@ class PreTrained(Protocol):
     """Mapping of component names to their respective components."""
 
 
-class PreTrainedMeta(ABCMeta):
-    r"""Metaclass for `PreTrainedModel`."""
+class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
+    """Metaclass for PreTrained."""
 
     def __init__(
-        cls,
+        cls,  # pyright: ignore[reportSelfClsParameterName]
         name: str,
         bases: tuple[type, ...],
-        attributes: dict[str, Any],
+        namespace: dict[str, Any],
         **kwds: Any,
     ) -> None:
-        super().__init__(name, bases, attributes, **kwds)
+        """When a new class/subclass is created, this method is called."""
+        super().__init__(name, bases, namespace, **kwds)
 
-        if "LOGGER" not in attributes:
+        if not hasattr(cls, "LOGGER"):
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
-        if "RAWDATA_DIR" not in attributes:
-            if os.environ.get("GENERATING_DOCS", False):
-                cls.RAWDATA_DIR = Path(f"~/.tsdm/models/{cls.__name__}/")
-            else:
-                cls.RAWDATA_DIR = CONFIG.MODELDIR / cls.__name__
+        if not hasattr(cls, "RAWDATA_DIR"):
+            cls.RAWDATA_DIR = CONFIG.MODELDIR / cls.__name__
+            # if os.environ.get("GENERATING_DOCS", False):
+            #     cls.RAWDATA_DIR = Path(f"~/.tsdm/models/{cls.__name__}/")
 
 
-class PreTrainedBase(ABC, metaclass=PreTrainedMeta):
+class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
     r"""Base class for all pretrained models.
 
     A pretrained model can provide multiple components:

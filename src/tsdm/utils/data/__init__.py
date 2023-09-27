@@ -3,10 +3,13 @@ r"""Subclasses of `torch.util.data.Dataset`."""
 __all__ = [
     # Modules
     "timeseries",
+    # Protocols
+    "MapStyleDataset",
     # Classes
     "DatasetCollection",
     "MappingDataset",
     "InlineTable",
+    "DataFrame2Dataset",
     # folds
     "is_partition",
     "folds_as_frame",
@@ -72,7 +75,12 @@ from tsdm.utils.data.dataloaders import (
     unpack_sequence,
     unpad_sequence,
 )
-from tsdm.utils.data.datasets import DatasetCollection, MappingDataset
+from tsdm.utils.data.datasets import (
+    DataFrame2Dataset,
+    DatasetCollection,
+    MappingDataset,
+    MapStyleDataset,
+)
 from tsdm.utils.data.folds import (
     folds_as_frame,
     folds_as_sparse_frame,

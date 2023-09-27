@@ -6,7 +6,6 @@ __all__ = [
     "ETTh2",
     "ETTm1",
     "ETTm2",
-    "KIWI",
     "MIMIC_III_DeBrouwer2019",
     "MIMIC_IV_Bilos2021",
     "PhysioNet2012",
@@ -17,7 +16,6 @@ __all__ = [
 
 from tsdm.datasets.base import TimeSeriesCollection
 from tsdm.datasets.ett import ETT
-from tsdm.datasets.kiwi.kiwi_benchmark import KIWI_Dataset
 from tsdm.datasets.mimic.mimic_iii_debrouwer2019 import (
     MIMIC_III_DeBrouwer2019 as _MIMIC_III_DeBrouwer2019,
 )
@@ -33,19 +31,6 @@ from tsdm.datasets.ushcn.ushcn import USHCN as _USHCN
 from tsdm.datasets.ushcn.ushcn_debrouwer2019 import (
     USHCN_DeBrouwer2019 as _USHCN_DeBrouwer2019,
 )
-
-
-class KIWI(TimeSeriesCollection):
-    r"""The KIWI dataset wrapped as TimeSeriesCollection."""
-
-    def __init__(self) -> None:
-        ds = KIWI_Dataset()
-        super().__init__(
-            timeseries=ds.timeseries,
-            metadata=ds.metadata,
-            timeseries_description=ds.timeseries_description,
-            metadata_description=ds.metadata_description,
-        )
 
 
 class USHCN(TimeSeriesCollection):

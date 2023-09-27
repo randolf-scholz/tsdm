@@ -469,6 +469,8 @@ class SupportsKeysAndGetItem(Protocol[K, V_co]):
 class SequenceProtocol(Collection[T_co], Reversible[T_co], Protocol[T_co]):
     """Protocol version of `collections.abc.Sequence`."""
 
+    # FIXME: implement mixin methods
+
     @overload
     @abstractmethod
     def __getitem__(self, index: int) -> T_co: ...
@@ -486,6 +488,8 @@ class SequenceProtocol(Collection[T_co], Reversible[T_co], Protocol[T_co]):
 
 class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
     """Protocol version of `collections.abc.MutableSequence`."""
+
+    # FIXME: implement mixin methods
 
     @abstractmethod
     def insert(self, index: int, value: T) -> None: ...
@@ -521,6 +525,8 @@ class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
 class MappingProtocol(Collection[K], Protocol[K, V_co]):
     """Protocol version of `collections.abc.Mapping`."""
 
+    # FIXME: implement mixin methods
+
     @abstractmethod
     def __getitem__(self, __key: K) -> V_co: ...
 
@@ -538,6 +544,8 @@ class MappingProtocol(Collection[K], Protocol[K, V_co]):
 
 class MutableMappingProtocol(MappingProtocol[K, V], Protocol[K, V]):
     """Protocol version of `collections.abc.MutableMapping`."""
+
+    # FIXME: implement mixin methods
 
     @abstractmethod
     def __setitem__(self, __key: K, __value: V) -> None: ...
