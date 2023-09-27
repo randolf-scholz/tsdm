@@ -110,7 +110,7 @@ OLD_TASKS: dict[str, type[OldBaseTask]] = {
     "ETT_Zhou2021": ETT_Zhou2021,
     "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
     "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
-    "MIMIC_III_Bilos2021": MIMIC_III_DeBrouwer2019,
+    "MIMIC_III_Bilos2021": MIMIC_III_Bilos2021,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
