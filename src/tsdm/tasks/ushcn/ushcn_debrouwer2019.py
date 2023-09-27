@@ -225,7 +225,9 @@ class USHCN_DeBrouwer2019(OldBaseTask):
             self.observation_time /= t_max
             ts["Time"] /= t_max
             ts = ts.set_index(["ID", "Time"])
-        ts = ts.dropna(axis=1, how="all").copy()
+
+        # NOTE: only numpy float types supported by torch
+        ts = ts.dropna(axis=1, how="all").copy().astype("float32")
         return ts
 
     @cached_property

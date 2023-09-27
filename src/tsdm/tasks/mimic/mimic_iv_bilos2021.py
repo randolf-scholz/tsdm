@@ -241,6 +241,9 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         # drop values outside 5 sigma range
         ts = ts[(-5 < ts) & (ts < 5)]
         ts = ts.dropna(axis=1, how="all").copy()
+
+        # NOTE: only numpy float types supported by torch
+        ts = ts.dropna(axis=1, how="all").copy().astype("float32")
         return ts
 
     @cached_property
