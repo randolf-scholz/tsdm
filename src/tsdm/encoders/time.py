@@ -12,6 +12,7 @@ __all__ = [
 ]
 
 from collections.abc import Hashable, Sequence
+from copy import deepcopy
 from typing import Any, ClassVar, Final, Literal, Optional, cast, overload
 
 import numpy as np
@@ -19,7 +20,7 @@ import pandas as pd
 import torch
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
 from torch import Tensor
-from typing_extensions import Self
+from typing_extensions import Self, deprecated
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
@@ -27,6 +28,7 @@ from tsdm.types.aliases import DType, PandasObject
 from tsdm.utils.data.timeseries import TimeTensor
 
 
+@deprecated("decode unimplemented")
 class Time2Float(BaseEncoder):
     r"""Convert `Series` encoded as `datetime64` or `timedelta64` to `floating`.
 
@@ -48,7 +50,7 @@ class Time2Float(BaseEncoder):
     def fit(self, data: Series, /) -> None:
         ds = data
         self.original_dtype = ds.dtype
-        self.offset = ds[0].copy()
+        self.offset = deepcopy(ds[0])
         assert (
             ds.is_monotonic_increasing
         ), "Time-Values must be monotonically increasing!"
@@ -60,7 +62,7 @@ class Time2Float(BaseEncoder):
 
         if pd.api.types.is_datetime64_dtype(ds):
             ds = ds.view("datetime64[ns]")
-            self.offset = ds[0].copy()
+            self.offset = deepcopy(ds[0])
             timedeltas = ds - self.offset
         elif pd.api.types.is_timedelta64_dtype(ds):
             timedeltas = ds.view("timedelta64[ns]")
@@ -103,6 +105,7 @@ class Time2Float(BaseEncoder):
 
     def decode(self, data: Series, /) -> Series:
         r"""Roughly equal to: ``ds ⟶ (scale*ds + offset).astype(original_dtype)``."""
+        raise NotImplementedError
 
 
 class DateTimeEncoder(BaseEncoder):
@@ -145,6 +148,11 @@ class DateTimeEncoder(BaseEncoder):
             self.freq = data.freq
 
     def encode(self, data: Series | DatetimeIndex, /) -> Series:
+        # FIXME: remove this patch with pyarrow 14
+        # https://github.com/apache/arrow/issues/36789
+        if isinstance(data.dtype, pd.core.dtypes.dtypes.ArrowDtype):
+            data = data.astype("datetime64[ns]")
+
         return (data - self.offset) / Timedelta(1, unit=self.unit)
 
     def decode(self, data: Series, /) -> Series | DatetimeIndex:

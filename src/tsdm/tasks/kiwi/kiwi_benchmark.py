@@ -236,12 +236,14 @@ class KiwiBenchmark(TimeSeriesTask):
         return collate_fn
 
     def make_encoder(self, key: SplitID, /) -> Encoder:
-        VF = self.dataset.timeseries_description
+        descr = self.dataset.timeseries_description[
+            ["kind", "lower_bound", "upper_bound"]
+        ]
         column_encoders = {}
-        for col, scale, lower, upper in VF[["scale", "lower", "upper"]].itertuples():
+        for col, scale, lower, upper in descr.itertuples():
             encoder: Encoder
             match scale:
-                case "percent":
+                case "percent" | "fraction":
                     encoder = (
                         StandardScaler()
                         @ LogitBoxCoxEncoder()

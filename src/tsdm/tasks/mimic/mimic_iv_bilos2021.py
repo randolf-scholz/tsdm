@@ -66,7 +66,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
-from tsdm.encoders import FrameEncoder, MinMaxScaler, StandardScaler
+from tsdm.encoders import FastFrameEncoder, MinMaxScaler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.data import is_partition
 from tsdm.utils.strings import repr_namedtuple
@@ -206,8 +206,6 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
     valid_size = 0.15
     test_size = 0.15
 
-    preprocessor: FrameEncoder[StandardScaler, dict[Any, MinMaxScaler]]
-
     def __init__(self, *, normalize_time: bool = True) -> None:
         warnings.warn(
             "This task is included for historical reasons, but it has several defects:",
@@ -216,10 +214,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         )
 
         super().__init__()
-        self.preprocessor = FrameEncoder(
-            column_encoders=StandardScaler(),
-            index_encoders={"time_stamp": MinMaxScaler()},
-        )
+
         self.normalize_time = normalize_time
         self.IDs = self.dataset.reset_index()["hadm_id"].unique()
 
@@ -228,23 +223,17 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         r"""Load the dataset."""
         ds = MIMIC_IV_Dataset()
 
-        # Standardization is performed over full data slice, including test!
-        # https://github.com/mbilos/neural-flows-experiments/blob/d19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
-
-        # Standardize the x-values, min-max scale the t values.
+        # we additionally min-max scale time axis
         ts = ds.table
+        self.preprocessor = FastFrameEncoder(
+            index_encoders={"time_stamp": MinMaxScaler()}
+        )
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor.index_encoders["time_stamp"]
-        self.observation_time /= index_encoder.params.xmax  # type: ignore[assignment]
+        self.observation_time /= index_encoder.params.xmax  # type: ignore[attr-defined]
 
-        # drop values outside 5 sigma range
-        ts = ts[(-5 < ts) & (ts < 5)]
-        ts = ts.dropna(axis=1, how="all").copy()
-
-        # NOTE: only numpy float types supported by torch
-        ts = ts.dropna(axis=1, how="all").copy().astype("float32")
-        return ts
+        return ts.astype("float32")
 
     @cached_property
     def folds(self) -> list[dict[str, Sequence[int]]]:
