@@ -90,7 +90,7 @@ setup:
     # uninstall previous if applicable
     - pip uninstall -y $MODULENAME
     # build the package.
-    # - poetry build
+    - poetry build
     # install package
     # - pip install --upgrade --prefer-binary $(ls dist/*.whl)
     # install dev dependencies.
