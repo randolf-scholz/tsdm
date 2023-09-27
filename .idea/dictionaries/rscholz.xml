@@ -172,6 +172,7 @@
       <w>iptg</w>
       <w>iscore</w>
       <w>iscores</w>
+      <w>isfinite</w>
       <w>isna</w>
       <w>isort</w>
       <w>issubclass</w>

@@ -35,6 +35,8 @@ __all__ = [
     "kiwi",
     "mimic",
     "uci",
+    "ushcn",
+    "utils",
     # Protocol
     "ForecastingTask",
     # Constants
@@ -68,7 +70,7 @@ __all__ = [
     "InSilicoSampleGenerator",
 ]
 
-from tsdm.tasks import base, kiwi, mimic, uci
+from tsdm.tasks import base, kiwi, mimic, uci, ushcn, utils
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.tasks.base import ForecastingTask, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021

@@ -50,11 +50,10 @@ References
 """
 
 __all__ = [
-    "USHCN_DeBrouwer2019",
-    "ushcn_collate",
-    "Sample",
     "Batch",
+    "USHCN_DeBrouwer2019",
     "USHCN_SampleGenerator",
+    "ushcn_collate",
 ]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -101,21 +100,6 @@ class Sample(NamedTuple):
         return repr_namedtuple(self)
 
 
-class Batch(NamedTuple):
-    r"""A single sample of the data."""
-
-    x_time: Tensor  # B×N:   the input timestamps.
-    x_vals: Tensor  # B×N×D: the input values.
-    x_mask: Tensor  # B×N×D: the input mask.
-
-    y_time: Tensor  # B×K:   the target timestamps.
-    y_vals: Tensor  # B×K×D: the target values.
-    y_mask: Tensor  # B×K×D: teh target mask.
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
-
-
 @dataclass
 class USHCN_SampleGenerator(Dataset):
     r"""Wrapper for creating samples of the dataset."""
@@ -147,6 +131,21 @@ class USHCN_SampleGenerator(Dataset):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
+
+
+class Batch(NamedTuple):
+    r"""A single sample of the data."""
+
+    x_time: Tensor  # B×N:   the input timestamps.
+    x_vals: Tensor  # B×N×D: the input values.
+    x_mask: Tensor  # B×N×D: the input mask.
+
+    y_time: Tensor  # B×K:   the target timestamps.
+    y_vals: Tensor  # B×K×D: the target values.
+    y_mask: Tensor  # B×K×D: teh target mask.
+
+    def __repr__(self) -> str:
+        return repr_namedtuple(self)
 
 
 # @torch.jit.script  # seems to break things
