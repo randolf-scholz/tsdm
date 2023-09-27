@@ -22,7 +22,7 @@ def test_random_sampler() -> None:
         float: 8,
         Ellipsis: 9,
     }
-    sampler = RandomSampler(map_style_dataset)
+    sampler = RandomSampler(map_style_dataset, shuffle=True)
 
     # check length
     assert len(sampler) == len(map_style_dataset) == 10
@@ -38,7 +38,7 @@ def test_random_sampler() -> None:
 def test_random_sampler_index() -> None:
     r"""Test RandomSampler."""
     indices = Index([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
-    sampler = RandomSampler(indices)
+    sampler = RandomSampler(indices, shuffle=True)
 
     # check length
     assert len(sampler) == len(indices) == 10

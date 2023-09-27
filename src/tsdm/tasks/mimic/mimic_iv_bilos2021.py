@@ -64,6 +64,7 @@ from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
+from typing_extensions import deprecated
 
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FastFrameEncoder, MinMaxScaler
@@ -145,7 +146,7 @@ class Batch(NamedTuple):
         return repr_namedtuple(self)
 
 
-# @torch.jit.script  # seems to break things
+@deprecated("Consider using tasks.utils.collate_timeseries instead.")
 def mimic_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 

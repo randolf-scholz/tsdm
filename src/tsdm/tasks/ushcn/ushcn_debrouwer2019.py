@@ -68,6 +68,7 @@ from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
+from typing_extensions import deprecated
 
 from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
@@ -148,7 +149,7 @@ class Batch(NamedTuple):
         return repr_namedtuple(self)
 
 
-# @torch.jit.script  # seems to break things
+@deprecated("Consider using tasks.utils.collate_timeseries instead.")
 def ushcn_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 
