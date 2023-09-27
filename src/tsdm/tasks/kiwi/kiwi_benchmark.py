@@ -17,14 +17,13 @@ from tsdm import datasets
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
+    DateTimeEncoder,
     Encoder,
     FastFrameEncoder,
     FrameAsDict,
-    LinearScaler,
     LogitBoxCoxEncoder,
     MinMaxScaler,
     StandardScaler,
-    TimeDeltaEncoder,
 )
 from tsdm.metrics import TimeSeriesMSE
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
@@ -247,7 +246,7 @@ class KiwiBenchmark(TimeSeriesTask):
                     encoder = (
                         StandardScaler()
                         @ LogitBoxCoxEncoder()
-                        @ LinearScaler(lower, upper)
+                        @ MinMaxScaler(xmin=lower, xmax=upper)
                         @ BoundaryEncoder(lower, upper, mode="clip")
                     )
                 case "absolute":
@@ -274,7 +273,7 @@ class KiwiBenchmark(TimeSeriesTask):
             index_encoders={
                 # "run_id": IdentityEncoder(),
                 # "experiment_id": IdentityEncoder(),
-                "measurement_time": MinMaxScaler() @ TimeDeltaEncoder(),
+                "measurement_time": MinMaxScaler() @ DateTimeEncoder(),
             },
         )
 
