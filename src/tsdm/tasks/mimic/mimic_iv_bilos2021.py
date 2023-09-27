@@ -45,11 +45,11 @@ References
 """
 
 __all__ = [
-    "MIMIC_IV_Bilos2021",
-    "mimic_collate",
-    "Sample",
     "Batch",
-    "TaskDataset",
+    "MIMIC_IV_Bilos2021",
+    "MIMIC_IV_SampleGenerator",
+    "Sample",
+    "mimic_collate",
 ]
 
 import warnings
@@ -113,7 +113,7 @@ class Batch(NamedTuple):
 
 
 @dataclass
-class TaskDataset(Dataset):
+class MIMIC_IV_SampleGenerator(Dataset):
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
@@ -353,7 +353,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         r"""Return the dataloader for the given key."""
         fold, partition = key
         fold_idx = self.folds[fold][partition]
-        dataset = TaskDataset(
+        dataset = MIMIC_IV_SampleGenerator(
             [val for idx, val in self.tensors.items() if idx in fold_idx],
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,

@@ -6,7 +6,7 @@
 # region project configuration ------------------------------------------------------
 [project]
 name = "tsdm"
-version = "0.5.4"
+version = "0.5.5"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
 
@@ -33,7 +33,7 @@ dependencies = [
     "numpy>=1.26.0",
     "pandas>=2.1.1",
     "pillow>=10.0.1",
-    "polars>=0.19.4",
+    "polars>=0.19.5",
     "pyarrow>=13.0.0",
     "pyyaml>=6.0.1",
     "requests>=2.31.0",
@@ -82,7 +82,7 @@ extras = [
 ]
 typing = [
     "mypy>=1.5.1",
-    "pyright>=1.1.328",
+    "pyright>=1.1.329",
     "types-colorama>=0.4.15",
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
@@ -498,7 +498,7 @@ line-length = 120
 # region poetry configuration ----------------------------------------------------------
 [tool.poetry]
 name = "tsdm"
-version = "0.5.4"
+version = "0.5.5"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
 description = "Time-Series Datasets and Models"
 
@@ -532,7 +532,7 @@ matplotlib = ">=3.8.0"
 numpy = ">=1.26.0"
 pandas = ">=2.1.1"
 pillow = ">=10.0.1"
-polars = ">=0.19.4"
+polars = ">=0.19.5"
 pyarrow = ">=13.0.0"
 pyyaml = ">=6.0.1"
 requests = ">=2.31.0"
@@ -637,7 +637,7 @@ slotscheck = ">=0.17.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.5.1"
-pyright = ">=1.1.328"
+pyright = ">=1.1.329"
 types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"

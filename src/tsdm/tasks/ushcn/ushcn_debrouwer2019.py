@@ -54,7 +54,7 @@ __all__ = [
     "ushcn_collate",
     "Sample",
     "Batch",
-    "TaskDataset",
+    "USHCN_SampleGenerator",
 ]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -117,7 +117,7 @@ class Batch(NamedTuple):
 
 
 @dataclass
-class TaskDataset(Dataset):
+class USHCN_SampleGenerator(Dataset):
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
@@ -341,7 +341,7 @@ class USHCN_DeBrouwer2019(OldBaseTask):
         r"""Return the dataloader for the given key."""
         fold, partition = key
         fold_idx = self.folds[fold][partition]
-        dataset = TaskDataset(
+        dataset = USHCN_SampleGenerator(
             [val for idx, val in self.tensors.items() if idx in fold_idx],
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,

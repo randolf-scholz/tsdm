@@ -46,11 +46,11 @@ References
 """
 
 __all__ = [
-    "MIMIC_III_DeBrouwer2019",
-    "mimic_iii_collate",
-    "Sample",
     "Batch",
-    "TaskDataset",
+    "MIMIC_III_DeBrouwer2019",
+    "MIMIC_III_SampleGenerator",
+    "Sample",
+    "mimic_iii_collate",
 ]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -113,7 +113,7 @@ class Batch(NamedTuple):
 
 
 @dataclass
-class TaskDataset(Dataset):
+class MIMIC_III_SampleGenerator(Dataset):
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
@@ -337,7 +337,7 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
         r"""Return the dataloader for the given key."""
         fold, partition = key
         fold_idx = self.folds[fold][partition]
-        dataset = TaskDataset(
+        dataset = MIMIC_III_SampleGenerator(
             [val for idx, val in self.tensors.items() if idx in fold_idx],
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
