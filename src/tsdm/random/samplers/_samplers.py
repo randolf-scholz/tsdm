@@ -4,6 +4,7 @@ __all__ = [
     # ABCs
     "BaseSampler",
     # Classes
+    "RandomSampler",
     "SliceSampler",
     # "TimeSliceSampler",
     "SequenceSampler",
@@ -23,6 +24,7 @@ from datetime import timedelta as py_td
 from itertools import chain, count
 from typing import (
     Any,
+    ClassVar,
     Final,
     Generic,
     Literal,
@@ -43,7 +45,7 @@ from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from tsdm.types.protocols import Lookup
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
-from tsdm.utils.data.datasets import DatasetCollection
+from tsdm.utils.data.datasets import DatasetCollection, MapStyleDataset
 from tsdm.utils.strings import repr_mapping
 
 
@@ -113,8 +115,9 @@ class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
 class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
     r"""Abstract Base Class for all Samplers."""
 
-    LOGGER: logging.Logger
+    LOGGER: ClassVar[logging.Logger]
     r"""Logger for the sampler."""
+
     data: Sized
     r"""Copy of the original Data source."""
 
@@ -122,13 +125,47 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
         r"""Initialize the sampler."""
         self.data = data_source
 
-    @abstractmethod
     def __len__(self) -> int:
         r"""Return the length of the sampler."""
+        return len(self.data)
 
     @abstractmethod
     def __iter__(self) -> Iterator[T_co]:
         r"""Iterate over random indices."""
+
+
+class RandomSampler(BaseSampler[T_co]):
+    """Sampler randomly from the data source.
+
+    This mimics torch.utils.data.SubsetRandomSampler, but uses python integers instead of torch tensors.
+    """
+
+    data: MapStyleDataset[Any, T_co]
+    index: Index
+
+    def __init__(self, data_source: MapStyleDataset[Any, T_co], /) -> None:
+        r"""Initialize the sampler."""
+        super().__init__(data_source)
+
+        # ISSUE: data.__iter__ might either iter keys or values!
+        # ISSUE: auto-detection with try-except may be very slow!
+
+        # FIXME: pretty horrible way to do it.
+        if hasattr(self.data, "keys"):
+            self.index = Series(self.data.keys())
+        elif hasattr(self.data, "__array__"):
+            self.index = Series(range(len(self.data)))
+        elif isinstance(self.data, tuple | list | set):
+            self.index = Series(range(len(self.data)))
+        elif hasattr(self.data, "index"):
+            self.index = self.data.index
+        else:  # __iter__ -> keys:
+            self.index = Series(self.data)
+
+    def __iter__(self) -> Iterator[T_co]:
+        for idx in np.random.permutation(len(self)):
+            key = self.index[idx]
+            yield self.data[key]
 
 
 class SliceSampler(BaseSampler[Sequence[T_co]]):

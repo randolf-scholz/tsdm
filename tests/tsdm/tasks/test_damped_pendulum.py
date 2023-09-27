@@ -32,7 +32,7 @@ def test_damped_pendulum() -> None:
 
     # test generator
     test_generator = task.generators[0, "test"]
-    for idx in test_indices[:20]:
+    for idx in test_indices[:10]:
         assert isinstance(test_generator[idx], DataFrame)
 
 

@@ -15,6 +15,7 @@ __all__ = [
     "CollectionSampler",
     "HierarchicalSampler",
     "IntervalSampler",
+    "RandomSampler",
     "SequenceSampler",
     "SliceSampler",
     "SlidingWindowSampler",
@@ -31,6 +32,7 @@ from tsdm.random.samplers._samplers import (
     CollectionSampler,
     HierarchicalSampler,
     IntervalSampler,
+    RandomSampler,
     Sampler,
     SequenceSampler,
     SliceSampler,
@@ -45,6 +47,7 @@ SAMPLERS: Final[dict[str, type[Sampler]]] = {
     "SequenceSampler": SequenceSampler,
     "SliceSampler": SliceSampler,
     "SlidingWindowSampler": SlidingWindowSampler,
+    "RandomSampler": RandomSampler,
 }
 r"""Dictionary of all available samplers."""
 

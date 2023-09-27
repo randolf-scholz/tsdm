@@ -10,14 +10,13 @@ References:
 
 __all__ = ["DampedPendulum_Ansari2023"]
 
-from typing import Any, final
+from typing import final
 
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, RandomSampler
 
 from tsdm import datasets
-from tsdm.random.samplers import Sampler
+from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import SplitID, TimeSeriesTask
 from tsdm.utils.data import folds_as_frame, is_partition
 from tsdm.utils.data.datasets import DataFrame2Dataset
@@ -55,11 +54,6 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
 
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
-
-    def make_dataloader(self, key: SplitID, /, **dataloader_kwargs: Any) -> DataLoader:
-        r"""Simply returns the whole series."""
-        # split = self.splits[key]
-        raise NotImplementedError
 
     def make_generator(self, key: SplitID, /) -> DataFrame2Dataset[int]:
         return DataFrame2Dataset(self.splits[key].timeseries)

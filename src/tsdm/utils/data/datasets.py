@@ -35,20 +35,32 @@ TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 #
 #     def __getitem__(self):
 
+# MapStyleDataset: TypeAlias = MappingProtocol
 
-class MapStyleDataset(Protocol[key_contra, return_var_co]):
+
+class MapStyleDataset(Protocol[K, return_var_co]):
     """Protocol version of `torch.utils.data.Dataset`."""
 
+    # Q: make Mapping?
+
     @abstractmethod
-    def __getitem__(self, key: key_contra, /) -> return_var_co:
+    def __len__(self) -> int:
+        """Length of the dataset."""
+        ...
+
+    @abstractmethod
+    def __getitem__(self, key: K, /) -> return_var_co:
         """Map key to sample."""
+        ...
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[K]:
+        """Iterate over the keys."""
         ...
 
 
 @dataclass
-class DataFrame2Dataset(
-    MapStyleDataset[key_contra, DataFrame], TorchDataset[DataFrame]
-):
+class DataFrame2Dataset(MapStyleDataset[K, DataFrame], TorchDataset[DataFrame]):
     """Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting `.loc`.
 
     It is assumed that the DataFrame has a MultiIndex.
@@ -58,13 +70,14 @@ class DataFrame2Dataset(
 
     _: KW_ONLY
 
-    levels: Optional[list[str]] = None
-
     def __post_init__(self):
         self.index = self.data.index.copy().droplevel(-1).unique()
 
     def __len__(self) -> int:
         return len(self.index)
+
+    def __iter__(self) -> Iterator[K]:
+        return iter(self.index)
 
     def __getitem__(self, item: key_contra, /) -> DataFrame:
         return self.data.loc[item]
