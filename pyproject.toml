@@ -6,7 +6,7 @@
 # region project configuration ------------------------------------------------------
 [project]
 name = "tsdm"
-version = "0.5.3"
+version = "0.5.4"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
 
@@ -62,7 +62,7 @@ docs = [
     "nbsphinx>=0.9.3",
     "piccolo-theme>=0.18.0",
     "pydata-sphinx-theme>=0.14.1",
-    "sphinx-autoapi>=2.1.1",
+    "sphinx-autoapi>=3.0.0",
     "sphinx-automodapi>=0.16.0",
     "sphinx-copybutton>=0.5.2",
     "sphinx-math-dollar>=1.2.1",
@@ -498,7 +498,7 @@ line-length = 120
 # region poetry configuration ----------------------------------------------------------
 [tool.poetry]
 name = "tsdm"
-version = "0.5.3"
+version = "0.5.4"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
 description = "Time-Series Datasets and Models"
 
@@ -574,7 +574,7 @@ nbsphinx = ">=0.9.3"
 piccolo-theme = ">=0.18.0"
 pydata-sphinx-theme = ">=0.14.1"
 sphinx = ">=7.2.6"
-sphinx-autoapi = ">=2.1.1"
+sphinx-autoapi = ">=3.0.0"
 sphinx-autodoc-typehints = ">=1.24.0"
 sphinx-automodapi = ">=0.16.0"
 sphinx-copybutton = ">=0.5.2"
