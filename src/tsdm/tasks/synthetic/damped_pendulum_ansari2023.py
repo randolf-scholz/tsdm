@@ -18,8 +18,9 @@ from torch.utils.data import DataLoader, RandomSampler
 
 from tsdm import datasets
 from tsdm.random.samplers import Sampler
-from tsdm.tasks.base import SplitID, TimeSeriesSampleGenerator, TimeSeriesTask
+from tsdm.tasks.base import SplitID, TimeSeriesTask
 from tsdm.utils.data import folds_as_frame, is_partition
+from tsdm.utils.data.datasets import DataFrame2Dataset
 
 
 @final
@@ -60,8 +61,8 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         # split = self.splits[key]
         raise NotImplementedError
 
-    def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
-        raise NotImplementedError
+    def make_generator(self, key: SplitID, /) -> DataFrame2Dataset[int]:
+        return DataFrame2Dataset(self.splits[key].timeseries)
 
     def make_sampler(self, key: SplitID, /) -> Sampler[int]:
         return RandomSampler(self.splits[key].metaindex)

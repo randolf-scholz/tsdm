@@ -20,7 +20,7 @@ from functools import wraps
 from typing import Any, Protocol, overload
 
 from torch import jit, nn
-from typing_extensions import override
+from typing_extensions import deprecated, override
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import MappingProtocol
@@ -151,6 +151,7 @@ def iter_items(obj, /):
     return new_obj
 
 
+@deprecated("do not use this function")
 def getitem_loc(obj: T, /) -> T:
     """Redirects __getitem__ to .loc.__getitem__."""
     base_class = obj if isinstance(obj, type) else type(obj)
@@ -177,6 +178,7 @@ def getitem_loc(obj: T, /) -> T:
     return new_obj
 
 
+@deprecated("do not use this function")
 def getitem_iloc(obj: T, /) -> T:
     """Redirects __getitem__ to .iloc.__getitem__."""
     base_class = obj if isinstance(obj, type) else type(obj)

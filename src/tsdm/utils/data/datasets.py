@@ -1,22 +1,79 @@
 r"""Generic Dataset classes."""
 
 __all__ = [
+    # Protocols
+    "MapStyleDataset",
     # Classes
     "MappingDataset",
     "DatasetCollection",
+    "DataFrame2Dataset",
 ]
 
+from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import Any, Optional, TypeVar, overload
+from dataclasses import KW_ONLY, dataclass
+from typing import Any, Optional, Protocol, TypeVar, overload
 
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Self
 
-from tsdm.types.variables import any_var as T, key_var as K, nested_key_var as K2
-from tsdm.utils.strings import repr_mapping
+from tsdm.types.variables import (
+    any_var as T,
+    key_contra,
+    key_var as K,
+    nested_key_var as K2,
+    return_var_co,
+)
+from tsdm.utils.strings import repr_array, repr_mapping
 
 TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
+
+
+# class DataFrame2Dataset(TorchDataset[T]):
+#     """Convert a DataFrame to a Dataset."""
+#
+#     def __getitem__(self):
+
+
+class MapStyleDataset(Protocol[key_contra, return_var_co]):
+    """Protocol version of `torch.utils.data.Dataset`."""
+
+    @abstractmethod
+    def __getitem__(self, key: key_contra, /) -> return_var_co:
+        """Map key to sample."""
+        ...
+
+
+@dataclass
+class DataFrame2Dataset(
+    MapStyleDataset[key_contra, DataFrame], TorchDataset[DataFrame]
+):
+    """Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting `.loc`.
+
+    It is assumed that the DataFrame has a MultiIndex.
+    """
+
+    data: DataFrame
+
+    _: KW_ONLY
+
+    levels: Optional[list[str]] = None
+
+    def __post_init__(self):
+        self.index = self.data.index.copy().droplevel(-1).unique()
+
+    def __len__(self) -> int:
+        return len(self.index)
+
+    def __getitem__(self, item: key_contra, /) -> DataFrame:
+        return self.data.loc[item]
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(groups: {len(self.index)}, data:"
+            f" {repr_array(self.data)})"
+        )
 
 
 class DatasetCollection(TorchDataset[TorchDataset[T]], Mapping[K, TorchDataset[T]]):

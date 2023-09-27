@@ -928,7 +928,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         r"""Get the length of the collection."""
         return len(self.metaindex)
 
-    def __iter__(self) -> Iterator[K]:
+    def __iter__(self) -> Iterator[Any]:
         r"""Iterate over the collection."""
         return iter(self.metaindex)
 

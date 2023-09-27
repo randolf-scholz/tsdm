@@ -111,7 +111,7 @@ __all__ = [
 
 import logging
 import warnings
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
@@ -138,8 +138,9 @@ from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
-from tsdm.types.variables import key_contra, key_var as K
+from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
+from tsdm.utils.data.datasets import MapStyleDataset
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 
 Sample_co = TypeVar("Sample_co", covariant=True)
@@ -446,18 +447,6 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 raise ValueError(f"Targets {cols} not in found metadata columns!")
 
 
-class MapStyleGenerator(Protocol[key_contra, Sample_co]):
-    """Protocol version of `torch.utils.data.Dataset`."""
-
-    @abstractmethod
-    def __getitem__(self, key: key_contra, /) -> Sample_co:
-        """Map key to sample."""
-        ...
-
-
-ABCMeta.register(MapStyleGenerator, TorchDataset)
-
-
 @runtime_checkable
 class ForecastingTask(Protocol[SplitID, K, Sample_co]):
     """Protocol for tasks."""
@@ -483,7 +472,7 @@ class ForecastingTask(Protocol[SplitID, K, Sample_co]):
         ...
 
     @property
-    def generators(self) -> Mapping[SplitID, MapStyleGenerator[K, Sample_co]]:
+    def generators(self) -> Mapping[SplitID, MapStyleDataset[K, Sample_co]]:
         r"""Dictionary holding the generator associated with each key."""
         ...
 
@@ -582,7 +571,7 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
     r"""Dictionary holding `DataLoader` associated with each key."""
     encoders: Mapping[SplitID, Encoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    generators: Mapping[SplitID, MapStyleGenerator[K, Sample_co]] = NotImplemented
+    generators: Mapping[SplitID, MapStyleDataset[K, Sample_co]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
     samplers: Mapping[SplitID, Sampler[K]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
@@ -707,7 +696,7 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> MapStyleGenerator[K, Sample_co]:
+    def make_generator(self, key: SplitID, /) -> MapStyleDataset[K, Sample_co]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 
