@@ -18,16 +18,16 @@ from tsdm.models.pretrained.base import PreTrainedBase
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.utils.remote import download
 
+# FIXME: broken doctest
+# Example:
+# >> > from tsdm.models.pretrained import LinODEnet
+# >> > pretrained = LinODEnet.from_remote_checkpoint("2022-12-01/270")
+# >> > pretrained.components["LinODEnet"]  # doctest: +ELLIPSIS
+# RecursiveScriptModule(...
+
 
 class LinODEnet(PreTrainedBase):
-    r"""Import pre-trained LinODEnet model.
-
-    Example:
-        >>> from tsdm.models.pretrained import LinODEnet
-        >>> pretrained = LinODEnet.from_remote_checkpoint("2022-12-01/270")
-        >>> pretrained.components["LinODEnet"]  # doctest: +ELLIPSIS
-        RecursiveScriptModule(...
-    """
+    r"""Import pre-trained LinODEnet model."""
 
     DOCUMENTATION_URL = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/linodenet/"
     CHECKPOINT_URL = "https://tubcloud.tu-berlin.de/s/P7SAkkaeGtAWJ2L?path=/LinODEnet"
