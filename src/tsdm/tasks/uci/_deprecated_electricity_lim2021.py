@@ -206,7 +206,7 @@ class ElectricityLim2021(OldBaseTask):
     #         "sampler": None,
     #         "batch_sampler": None,
     #         "num_workers": 0,
-    #         "collate_fn": lambda *x: x,
+    #         "collate_fn": lambda x: x,
     #         "pin_memory": False,
     #         "drop_last": False,
     #         "timeout": 0,

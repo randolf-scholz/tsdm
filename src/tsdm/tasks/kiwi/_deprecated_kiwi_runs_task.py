@@ -290,7 +290,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
             "sampler": None,
             "batch_sampler": None,
             "num_workers": 0,
-            "collate_fn": lambda *x: x,
+            "collate_fn": lambda x: x,
             "pin_memory": False,
             "drop_last": False,
             "timeout": 0,
@@ -329,7 +329,7 @@ class KIWI_RUNS_TASK(OldBaseTask):
         sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
 
         # construct the dataloader
-        kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
+        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
         return DataLoader(dataset, sampler=sampler, **kwargs)
 
 

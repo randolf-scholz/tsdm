@@ -346,5 +346,5 @@ class USHCN_DeBrouwer2019(OldBaseTask):
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )
-        kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
+        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)

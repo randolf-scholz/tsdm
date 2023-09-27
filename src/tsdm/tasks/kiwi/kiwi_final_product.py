@@ -329,7 +329,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
 
         # Construct the dataloader
-        kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
+        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
         return DataLoader(dataset, sampler=sampler, **kwargs)
 
 
