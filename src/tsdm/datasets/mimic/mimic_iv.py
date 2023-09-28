@@ -131,8 +131,8 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    BASE_URL = r"https://www.physionet.org/content/mimiciv/get-zip/"
-    INFO_URL = r"https://www.physionet.org/content/mimiciv/"
+    BASE_URL = r"https://physionet.org/content/mimiciv/get-zip/"
+    INFO_URL = r"https://physionet.org/content/mimiciv/"
     HOME_URL = r"https://mimic.mit.edu/"
 
     __version__ = "2.2"

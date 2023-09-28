@@ -45,8 +45,8 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    BASE_URL = r"https://www.physionet.org/content/mimiciv/get-zip/1.0/"
-    INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
+    BASE_URL = r"https://physionet.org/content/mimiciv/get-zip/1.0/"
+    INFO_URL = r"https://physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
 
@@ -73,20 +73,11 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
     }
 
     def clean_table(self) -> DataFrame:
-        if not self.rawdata_files_exist():
-            raise RuntimeError(
-                "Please manually apply the preprocessing code found at"
-                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
-                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
-                " package because the original.\nauthors did not provide a license"
-                " for it."
-            )
-
         self.LOGGER.info("Loading main file.")
         table: Table = csv.read_csv(self.rawdata_paths["full_dataset.csv"])
 
         if table.shape != self.rawdata_shape:
-            raise ValueError(f"The {table.shape=} is not correct.")
+            raise ValueError(f"{table.shape=} does not match {self.rawdata_shape=}.")
 
         # Convert to pandas.
         ts = (
@@ -112,18 +103,27 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
             .sort_index(axis="columns")
         )
 
-        # NOTE: Standardization is performed over full data slice, including test!
-        # https://github.com/mbilos/neural-flows-experiments/blob/d19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
+        # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
+        #  over the full data slice, including test!
+        # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
         ts = (ts - ts.mean()) / ts.std()
 
-        # drop values outside 5 sigma range
-        ts = ts[(-5 < ts) & (ts < 5)]
+        # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
+        ts = ts[(-5 < ts) & (ts < 5)].dropna(axis=1, how="all").copy()
 
         # NOTE: only numpy float types supported by torch
-        ts = ts.dropna(axis=1, how="all").copy().astype("float32")
-        return ts
+        return ts.astype("float32")
 
     def download_file(self, fname: str, /) -> None:
+        if not self.rawdata_files_exist():
+            raise RuntimeError(
+                "Please manually apply the preprocessing code found at"
+                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
+                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
+                " package because the original.\nauthors did not provide a license"
+                " for it."
+            )
+
         path = self.rawdata_paths[fname]
 
         cut_dirs = self.BASE_URL.count("/") - 3
