@@ -33,13 +33,13 @@ dependencies = [
     "numpy>=1.26.0",
     "pandas>=2.1.1",
     "pillow>=10.0.1",
-    "polars>=0.19.5",
+    "polars>=0.19.6",
     "pyarrow>=13.0.0",
     "pyyaml>=6.0.1",
     "requests>=2.31.0",
     "scikit-learn>=1.3.1",
     "scipy>=1.11.3",
-    "tensorboard>=2.14.0",
+    "tensorboard>=2.14.1",
     "torch>=2.0.1",
     "tqdm>=4.66.1",
     "typing-extensions>=4.8.0",
@@ -116,7 +116,7 @@ linters = [
     "pycodestyle>=2.11.0",
     "pydocstyle>=6.3.0",
     "pyflakes>=3.1.0",
-    "pylint>=2.17.6",
+    "pylint>=2.17.7",
     "pylint-gitlab>=1.2.0",
     "ruff>=0.0.291",
     "ruff-lsp>=0.0.39",
@@ -532,13 +532,13 @@ matplotlib = ">=3.8.0"
 numpy = ">=1.26.0"
 pandas = ">=2.1.1"
 pillow = ">=10.0.1"
-polars = ">=0.19.5"
+polars = ">=0.19.6"
 pyarrow = ">=13.0.0"
 pyyaml = ">=6.0.1"
 requests = ">=2.31.0"
 scikit-learn = ">=1.3.1"
 scipy = ">=1.11.3"
-tensorboard = ">=2.14.0"
+tensorboard = ">=2.14.1"
 torch = ">=2.0.1"
 tqdm = ">=4.66.1"
 typing-extensions = ">=4.8.0"
@@ -585,7 +585,7 @@ sphinx-typo3-theme = ">=4.9.0"
 
 
 [tool.poetry.group.devtools.dependencies]
-cmake = ">=3.27.5"
+cmake = ">=3.27.6"
 devtools = ">=0.12.2"
 johnnydep = ">=1.20.3"
 ninja = ">=1.11.1"
@@ -628,7 +628,7 @@ perflint = ">=0.7.3"
 pycodestyle = ">=2.11.0"
 pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
-pylint = ">=2.17.6"
+pylint = ">=2.17.7"
 pylint-gitlab = ">=1.2.0"
 ruff = ">=0.0.291"
 ruff-lsp = ">=0.0.39"
