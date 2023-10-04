@@ -13,7 +13,7 @@ repos:
         name: markdownlint
         types: [markdown]
         language: system
-        stages: [manual]
+        stages: [pre-push, manual]
         verbose: true
         entry: mdl
         args:
@@ -27,6 +27,13 @@ repos:
         types: [python]
         language: pygrep
         entry: "axes="
+      - id: mypy
+        name: mypy
+        language: system
+        files: (^src/|^tests/)
+        types: [python]
+        entry: mypy
+        stages: [pre-push, manual]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
     rev: v4.4.0
@@ -106,7 +113,7 @@ repos:
         types: [python]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.291
+    rev: v0.0.292
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -144,14 +151,6 @@ repos:
   #      - id: slotscheck
   #        language: system
   #        files: ^src/
-  # mypy
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
-    hooks:
-      - id: mypy
-        files: (^src/|^tests/)
-        additional_dependencies: [types-all]
-        stages: [pre-push]
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
     rev: v1.0.2
