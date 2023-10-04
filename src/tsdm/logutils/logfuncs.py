@@ -482,7 +482,7 @@ def log_optimizer(
 
     # NOTE: optimizer.state is of kind
     #  dict[tensor, {step: Tensor, exp_avg: Tensor, exp_avg_sq: Tensor}}]
-    optim_state: dict[Tensor, dict[str, Tensor]] = optimizer.state  # type: ignore[assignment]
+    optim_state: dict[Tensor, dict[str, Tensor]] = optimizer.state
 
     # get the variables and gradients
     variables = list(optim_state)

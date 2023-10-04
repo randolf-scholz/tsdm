@@ -65,7 +65,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 from typing_extensions import deprecated
 
-from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
+from tsdm.datasets import MIMIC_III_Bilos2021 as MIMIC_III_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.data import is_partition
 from tsdm.utils.strings import repr_namedtuple
@@ -215,7 +215,7 @@ class MIMIC_III_Bilos2021(OldBaseTask):
     @cached_property
     def dataset(self) -> DataFrame:
         r"""Load the dataset."""
-        ts = MIMIC_III_Dataset().timeseries
+        ts = MIMIC_III_Dataset().table
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
         if self.normalize_time:
             ts = ts.reset_index()

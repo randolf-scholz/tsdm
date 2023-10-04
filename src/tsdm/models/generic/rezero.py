@@ -109,7 +109,7 @@ class ReZero(nn.Sequential):
         r"""Get a sub-model."""
         modules: list[nn.Module] = list(self._modules.values())
         if isinstance(item, slice):
-            return ReZero(*modules[item], weights=self.weights[item])  # type: ignore[index]
+            return ReZero(*modules[item], weights=self.weights[item])
         return modules[item]
 
     @jit.export
