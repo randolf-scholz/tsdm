@@ -7,6 +7,9 @@ __all__ = [
     "CONST_NONE_FN",
     "CONSTANT_FUNCTIONS",
     # Constants
+    "ATOL",
+    "RTOL",
+    "EPS",
     "BUILTIN_CONSTANTS",
     "BUILTIN_TYPES",
     "EMPTY_PATH",
@@ -30,6 +33,23 @@ from typing import Any, Final, Literal
 import numpy as np
 import pandas
 import torch
+
+ATOL: Final[float] = 1e-6
+"""CONST: Default absolute precision."""
+RTOL: Final[float] = 1e-6
+"""CONST: Default relative precision."""
+EPS: Final[dict[torch.dtype, float]] = {
+    torch.float16: 1e-3,
+    torch.float32: 1e-6,
+    torch.float64: 1e-15,
+    # complex floats
+    torch.complex32: 1e-3,
+    torch.complex64: 1e-6,
+    torch.complex128: 1e-15,
+    # other floats
+    torch.bfloat16: 1e-2,
+}
+"""CONST: Default epsilon for each dtype."""
 
 EMPTY_PATH: Final[Path] = Path()
 r"""Constant: Blank path."""

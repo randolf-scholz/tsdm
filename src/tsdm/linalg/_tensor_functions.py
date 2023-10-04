@@ -5,6 +5,7 @@ __all__ = [
     "geometric_mean",
     "grad_norm",
     "multi_norm",
+    "norm",
     "relative_error",
     "scaled_norm",
     "tensor_norm",
@@ -62,102 +63,25 @@ def geometric_mean(
 
 
 @jit.script
-def multi_norm(
-    tensors: list[Tensor],
-    p: float = 2,
-    q: float = 2,
-    scaled: bool = True,
-) -> Tensor:
-    r"""Return the (scaled) p-q norm of the gradients.
-
-    .. Signature:: ``(...) -> ()``
-
-
-    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
-
-    If `normalize=True`, the sums are replaced with averages.
-    """
-    _tensors: list[Tensor] = []
-    for tensor in tensors:
-        if tensor.numel() > 0:
-            _tensors.append(tensor)
-    tensors = _tensors
-
-    if len(tensors) == 0:
-        return torch.tensor(0.0)
-
-    if scaled:
-        # Initializing s this way automatically gets the dtype and device correct
-        s = torch.mean(tensors.pop() ** p) ** (q / p)
-        for x in tensors:
-            s += torch.mean(x**p) ** (q / p)
-        return (s / (1 + len(tensors))) ** (1 / q)
-
-    # else
-    s = torch.sum(tensors.pop() ** p) ** (q / p)
-    for x in tensors:
-        s += torch.sum(x**p) ** (q / p)
-    return s ** (1 / q)
-
-
-@jit.script
-def grad_norm(
-    tensors: list[Tensor],
-    p: float = 2,
-    q: float = 2,
-    scaled: bool = True,
-) -> Tensor:
-    r"""Return the (scaled) p-q norm of the gradients.
-
-    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
-
-    If `normalize=True`, the sums are replaced with averages.
-    """
-    if len(tensors) == 0:
-        return torch.tensor(0.0)
-
-    if scaled:
-        # Initializing s this way automatically gets the dtype and device correct
-        x = tensors.pop()
-        assert x.grad is not None
-        s = torch.mean(x.grad**p) ** (q / p)
-        for x in tensors:
-            assert x.grad is not None
-            s += torch.mean(x.grad**p) ** (q / p)
-        return (s / (1 + len(tensors))) ** (1 / q)
-    # else
-    x = tensors.pop()
-    assert x.grad is not None
-    s = torch.sum(x.grad**p) ** (q / p)
-    for x in tensors:
-        assert x.grad is not None
-        s += torch.sum(x.grad**p) ** (q / p)
-    return s ** (1 / q)
-
-
-@jit.script
 def scaled_norm(
     x: Tensor,
     p: float = 2.0,
     axis: Union[None, int, list[int]] = None,
     keepdim: bool = False,
 ) -> Tensor:
-    r"""Shortcut for `tensor_norm(x, p, axes, keepdim, scaled=True)`.
+    r"""Shortcut for scaled norm.
 
     .. Signature:: ``(..., n) -> ...``
     """
+    # TODO: deal with nan values
+    x = x.abs()
+
     if axis is None:
         dim = list(range(x.ndim))
     elif isinstance(axis, int):
         dim = [axis]
     else:
         dim = axis
-
-    if not torch.is_floating_point(x):
-        x = x.to(dtype=torch.float)
-    x = x.abs()
-
-    # TODO: deal with nan values
 
     if p == float("inf"):
         return x.amax(dim=dim, keepdim=keepdim)
@@ -166,10 +90,49 @@ def scaled_norm(
     if p == 0:
         return geometric_mean(x, axis=dim, keepdim=keepdim)
 
-    # NOTE: preconditioning with x_max is not necessary, but it helps with numerical stability
-    # x_max = x.amax(dim=dim, keepdim=True)
-    # return x_max * (x / x_max).pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
-    return x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+    # NOTE: preconditioning with x_max is not necessary, but it helps with numerical stability and prevents overflow
+    x_max = x.abs().amax(dim=dim, keepdim=True)
+    result = x_max * (x / x_max).pow(p).mean(dim=dim, keepdim=True).pow(1 / p)
+    return result.squeeze(dim=dim * (1 - int(keepdim)))  # branchless
+    # return x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
+
+
+@jit.script
+def norm(
+    x: Tensor,
+    p: float = 2.0,
+    axis: Union[None, int, list[int]] = None,
+    keepdim: bool = False,
+) -> Tensor:
+    r"""Shortcut for non-scaled norm.
+
+    .. Signature:: ``(..., n) -> ...``
+
+    Only present here for testing purposes.
+    """
+    # TODO: deal with nan values
+    x = x.abs()
+
+    if axis is None:
+        dim = list(range(x.ndim))
+    elif isinstance(axis, int):
+        dim = [axis]
+    else:
+        dim = axis
+
+    # non-scaled
+    if p == float("inf"):
+        return x.amax(dim=dim, keepdim=keepdim)
+    if p == -float("inf"):
+        return x.amin(dim=dim, keepdim=keepdim)
+    if p == 0:
+        return (x != 0).sum(dim=dim, keepdim=keepdim)
+
+    # NOTE: preconditioning improves numerical stability
+    x_max = x.amax(dim=dim, keepdim=True)
+    result = x_max * (x / x_max).pow(p).sum(dim=dim, keepdim=True).pow(1 / p)
+    return result.squeeze(dim=dim * (1 - int(keepdim)))  # branchless
+    # return x.pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
 
 
 @jit.script
@@ -202,41 +165,66 @@ def tensor_norm(
     | $p=-∞$ | minimum value                     | minimum value                      |
     +--------+-----------------------------------+------------------------------------+
     """
-    if axis is None:
-        dim = list(range(x.ndim))
-    elif isinstance(axis, int):
-        dim = [axis]
-    else:
-        dim = axis
+    return (
+        scaled_norm(x, p=p, axis=axis, keepdim=keepdim)
+        if scaled
+        else norm(x, p=p, axis=axis, keepdim=keepdim)
+    )
 
-    if not torch.is_floating_point(x):
-        x = x.to(dtype=torch.float)
-    x = x.abs()
 
-    # TODO: deal with nan values
+@jit.script
+def multi_norm(
+    tensors: list[Tensor],
+    p: float = 2,
+    q: float = 2,
+    scaled: bool = True,
+) -> Tensor:
+    r"""Return the (scaled) p-q norm of the gradients.
 
-    if scaled:
-        if p == float("inf"):
-            return x.amax(dim=dim, keepdim=keepdim)
-        if p == -float("inf"):
-            return x.amin(dim=dim, keepdim=keepdim)
-        if p == 0:
-            return geometric_mean(x, axis=dim, keepdim=keepdim)
+    .. Signature:: ``(...) -> ()``
 
-        # NOTE: preconditioning improves numerical stability
-        # x_max = x.amax(dim=dim, keepdim=True)
-        # return x_max * (x / x_max).pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
-        return x.pow(p).mean(dim=dim, keepdim=keepdim).pow(1 / p)
 
-    # non-scaled
-    if p == float("inf"):
-        return x.amax(dim=dim, keepdim=keepdim)
-    if p == -float("inf"):
-        return x.amin(dim=dim, keepdim=keepdim)
-    if p == 0:
-        return (x != 0).sum(dim=dim, keepdim=keepdim)
+    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
 
-    # NOTE: preconditioning improves numerical stability
-    # x_max = x.amax(dim=dim, keepdim=True)
-    # return x_max * (x / x_max).pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
-    return x.pow(p).sum(dim=dim, keepdim=keepdim).pow(1 / p)
+    If `normalize=True`, the sums are replaced with averages.
+    """
+    _tensors: list[Tensor] = []
+    for tensor in tensors:
+        if tensor.numel() > 0:
+            _tensors.append(tensor)
+    tensors = _tensors
+
+    if len(tensors) == 0:
+        return torch.tensor(0.0)
+
+    x = tensors[0]
+    s = tensor_norm(x, p=p, scaled=scaled) ** q
+    for x in tensors[1:]:
+        s += tensor_norm(x, p=p, scaled=scaled) ** q
+    return (s / (1 + int(scaled) * len(tensors))) ** (1 / q)
+
+
+@jit.script
+def grad_norm(
+    tensors: list[Tensor],
+    p: float = 2,
+    q: float = 2,
+    scaled: bool = True,
+) -> Tensor:
+    r"""Return the (scaled) p-q norm of the gradients.
+
+    .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
+
+    If `normalize=True`, the sums are replaced with averages.
+    """
+    if len(tensors) == 0:
+        return torch.tensor(0.0)
+
+    # Initializing s this way automatically gets the dtype and device correct
+    x = tensors[0]
+    assert x.grad is not None
+    s = tensor_norm(x.grad, p=p, scaled=scaled) ** q
+    for x in tensors[1:]:
+        assert x.grad is not None
+        s += tensor_norm(x.grad, p=p, scaled=scaled) ** q
+    return (s / (1 + int(scaled) * len(tensors))) ** (1 / q)
