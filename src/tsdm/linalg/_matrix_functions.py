@@ -1,4 +1,4 @@
-r"""Matrix functions."""
+r"""Functions specific to rank-2 tensors."""
 
 __all__ = [
     # Functions
@@ -34,13 +34,13 @@ from tsdm.linalg._tensor_functions import geometric_mean, tensor_norm
 def erank(x: Tensor) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
+    .. Signature:: ``(..., m, n) -> ...``
+
     .. math:: \operatorname{erank}(A) ≔ e^{H(\frac{𝛔}{‖𝛔‖_1})}
         = ∏ \bigl(\frac{σ_i}{‖σ_i‖}\bigr)^{- \frac{σ_i}{‖σ_i‖}}
 
     By definition, the effective rank is equal to the exponential of the entropy of the
     distribution of the singular values.
-
-    .. Signature:: ``(..., m, n) -> ...``
 
     References:
         - | `The effective rank: A measure of effective dimensionality
@@ -59,9 +59,9 @@ def erank(x: Tensor) -> Tensor:
 def relerank(x: Tensor) -> Tensor:
     r"""Compute the relative effective rank of a matrix.
 
-    This is the effective rank scaled by $\min(m,n)$.
-
     .. Signature:: ``(..., m, n) -> ...``
+
+    This is the effective rank scaled by $\min(m,n)$.
     """
     return erank(x) / min(x.shape[-2:])
 
@@ -104,9 +104,9 @@ def row_corr(x: Tensor) -> Tensor:
 def closest_symm(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Symmetric part of square matrix.
 
-    .. math:: \argmin_{X: X^⊤ = -X} ‖A-X‖
-
     .. Signature:: ``(..., n, n) -> (..., n, n)``
+
+    .. math:: \argmin_{X: X^⊤ = -X} ‖A-X‖
     """
     rowdim, coldim = dim
     return (x + x.swapaxes(rowdim, coldim)) / 2
@@ -116,9 +116,9 @@ def closest_symm(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
 def closest_skew(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Skew-Symmetric part of a matrix.
 
-    .. math:: \argmin_{X: X^⊤ = X} ‖A-X‖
-
     .. Signature:: ``(..., n, n) -> (..., n, n)``
+
+    .. math:: \argmin_{X: X^⊤ = X} ‖A-X‖
     """
     rowdim, coldim = dim
     return (x - x.swapaxes(rowdim, coldim)) / 2
@@ -128,9 +128,9 @@ def closest_skew(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
 def closest_orth(x: Tensor) -> Tensor:
     r"""Orthogonal part of a square matrix.
 
-    .. math:: \argmin_{X: XᵀX = 𝕀} ‖A-X‖
-
     .. Signature:: ``(..., n, n) -> (..., n, n)``
+
+    .. math:: \argmin_{X: XᵀX = 𝕀} ‖A-X‖
     """
     U, _, Vt = torch.linalg.svd(x, full_matrices=True)
     Q = torch.einsum("...ij, ...jk->...ik", U, Vt)
@@ -153,9 +153,9 @@ def closest_diag(x: Tensor) -> Tensor:
 def reldist(x: Tensor, y: Tensor) -> Tensor:
     r"""Relative distance between two matrices.
 
-    .. math::  \frac{‖x-y‖}{‖y‖}
-
     .. Signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
+
+    .. math::  \frac{‖x-y‖}{‖y‖}
     """
     r = torch.linalg.matrix_norm(x - y, ord="fro", dim=(-2, -1))
     yy = torch.linalg.matrix_norm(y, ord="fro", dim=(-2, -1))
@@ -167,9 +167,9 @@ def reldist(x: Tensor, y: Tensor) -> Tensor:
 def reldist_diag(x: Tensor) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
-    .. math:: \frac{‖A-X‖}{‖A‖}  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
-
     .. Signature:: ``(..., n, n) -> ...``
+
+    .. math:: \frac{‖A-X‖}{‖A‖}  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
     """
     return reldist(closest_diag(x), x)
 
@@ -196,9 +196,9 @@ def reldist_skew(x: Tensor) -> Tensor:
 def reldist_orth(x: Tensor) -> Tensor:
     r"""Relative magnitude of orthogonal part.
 
-    .. math:: \min_{Q: Q^⊤Q = 𝕀} \frac{‖A-Q‖}{‖A‖}
-
     .. Signature:: ``(..., n, n) -> ...``
+
+    .. math:: \min_{X: X^⊤X = 𝕀} \frac{‖A-X‖}{‖A‖}
     """
     return reldist(closest_orth(x), x)
 
@@ -207,11 +207,11 @@ def reldist_orth(x: Tensor) -> Tensor:
 def stiffness_ratio(x: Tensor) -> Tensor:
     r"""Compute the stiffness ratio of a matrix.
 
+    .. Signature:: ``(..., n, n) -> ...``
+
     .. math:: \frac{|\Re(λ_\max)|}{|\Re(λ_\min)|}
 
     Only applicable if $\Re(λ_i)<0$ for all $i$.
-
-    .. Signature:: ``(..., n, n) -> ...``
 
     References:
         - | Numerical Methods for Ordinary Differential Systems: The Initial Value Problem
@@ -366,6 +366,8 @@ def schatten_norm(
 ) -> Tensor:
     r"""Schatten norm $p$-th order.
 
+    .. Signature:: ``(..., m, n) -> ...``
+
     .. math::  ‖A‖_p^p ≔ \tr(|A|^p) = ∑_i σ_i^p
 
     The Schatten norm is equivalent to the vector norm of the singular values.
@@ -377,8 +379,6 @@ def schatten_norm(
     - $p=-1$: Reciprocal sum of singular values.
     - $p=-2$: Reciprocal sum of squared singular values.
     - $p=+∞$: Minimal Singular Value
-
-    .. Signature:: ``(..., n, n) -> ...``
 
     References:
         - Matrix Norms (schatten) <https://en.wikipedia.org/wiki/Matrix_norm#Schatten_norms>
@@ -435,6 +435,8 @@ def matrix_norm(
 ) -> Tensor:
     r"""Entry-Wise Matrix norm of $p,q$-th order.
 
+    .. Signature:: ``(..., m, n) -> ...``
+
     .. math:: ‖A‖_{p,q} ≔ \Bigl(∑_n \Bigl(∑_m |A_{mn}|^p\Bigr)^{q/p} \Bigr)^{1/q}
 
     If $q$ is not specified, then $q=p$ is used. The scaled version is defined as
@@ -469,7 +471,7 @@ def operator_norm(
 ) -> Tensor:
     r"""Operator norm of $p$-th order.
 
-    .. Signature:: ``(..., n) -> ...``
+    .. Signature:: ``(..., m, n) -> ...``
 
     .. math::
         ‖x‖ₚ ≔ (   ∑_{k=0}^n |xₖ|ᵖ)^{1/p}  \text{scaled=False}

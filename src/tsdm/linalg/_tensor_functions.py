@@ -19,17 +19,25 @@ from torch import Tensor, jit
 
 @jit.script
 def relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
-    r"""Relative error of `xhat` w.r.t. `x_true`.
+    r"""Element-wise relative error of `xhat` w.r.t. `x_true`.
+
+    .. Signature:: ``[(..., n), (..., n)] -> (..., n)``
 
     Note:
         Automatically adds a small epsilon to the denominator to avoid division by zero.
     """
-    eps: float = {
-        torch.bfloat16: 2**-8,
-        torch.float16: 2**-11,
-        torch.float32: 2**-24,
-        torch.float64: 2**-53,
-    }[xhat.dtype]
+    EPS: dict[torch.dtype, float] = {
+        torch.float16: 1e-3,
+        torch.float32: 1e-6,
+        torch.float64: 1e-15,
+        # complex floats
+        torch.complex32: 1e-3,
+        torch.complex64: 1e-6,
+        torch.complex128: 1e-15,
+        # other floats
+        torch.bfloat16: 1e-2,
+    }
+    eps = EPS[xhat.dtype]
     return torch.abs(xhat - x_true) / (torch.abs(x_true) + eps)
 
 
@@ -61,6 +69,9 @@ def multi_norm(
     scaled: bool = True,
 ) -> Tensor:
     r"""Return the (scaled) p-q norm of the gradients.
+
+    .. Signature:: ``(...) -> ()``
+
 
     .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
 
