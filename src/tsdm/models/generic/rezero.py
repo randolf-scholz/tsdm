@@ -114,7 +114,7 @@ class ReZero(nn.Sequential):
 
     @jit.export
     def __len__(self) -> int:
-        r"""Get the number of sub-models."""
+        r"""Get the number of submodels."""
         return len(self._modules)
 
 
@@ -162,7 +162,7 @@ class ConcatEmbedding(nn.Module):
         r""".. Signature:: ``(..., d) -> (..., d+e)``."""
         shape = list(x.shape[:-1]) + [self.pad_size]
         z = torch.cat([x, self.padding.expand(shape)], dim=-1)
-        torch.cuda.synchronize()  # needed when cat holds 0-size tensor
+        torch.cuda.synchronize()  # needed when `cat` holds 0-size tensor
         return z
 
     @jit.export

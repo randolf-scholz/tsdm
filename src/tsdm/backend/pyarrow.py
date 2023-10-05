@@ -1,4 +1,4 @@
-"""implement pyarrow backend for tsdm."""
+"""Implements `pyarrow`-backend for tsdm."""
 
 __all__ = [
     # Functions
@@ -99,18 +99,18 @@ def arrow_strip_whitespace(obj: P, /, *cols: str) -> P:
 
 
 def arrow_false_like(arr: Array, /) -> BooleanArray:
-    """Create an BooleanArray of False values with the same length as arr."""
+    """Creates a `BooleanArray` of False values with the same length as arr."""
     m = arr.is_valid()
     return pa.compute.xor(m, m)
 
 
 def arrow_true_like(arr: Array, /) -> BooleanArray:
-    """Create an BooleanArray of True values with same length as arr."""
+    """Creates a `BooleanArray` of True values with the same length as arr."""
     return pa.compute.invert(arrow_false_like(arr))
 
 
 def arrow_full_like(arr: Array, /, *, fill_value: Scalar) -> Array:
-    """Create an Array of fill_value with same length as arr."""
+    """Creates an `Array` of `fill_value` with the same length as arr."""
     if not isinstance(fill_value, Scalar):
         fill_value = pa.scalar(fill_value)
     if fill_value is NA:
@@ -122,7 +122,7 @@ def arrow_full_like(arr: Array, /, *, fill_value: Scalar) -> Array:
 
 
 def arrow_null_like(arr: Array, /) -> Array:
-    """Create an Array of null-values with same length as arr."""
+    """Creates an `Array` of null-values with the same length as arr."""
     return arrow_full_like(arr, fill_value=NA)
 
 

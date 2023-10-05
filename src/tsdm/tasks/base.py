@@ -71,14 +71,14 @@ Default DataLoader Creation
 
 .. code-block:: python
 
-    data = pre_processor.encode(data)  # DataFrame to DataFrame
-    data = pre_encoder.encode(data)  # DataFrame to DataSet
+    data = pre_processor.encode(data)  # `DataFrame` to `DataFrame`
+    data = pre_encoder.encode(data)  # `DataFrame` to `DataSet`
     dataset = TensorDataset(*inputs, targets)
     sampler = SequenceSampler(tuple[TimeTensor], tuple[StaticTensor])
     dataloader = DataLoader(dataset, sampler=sampler, collate=...)
     batch = next(dataloader)
 
-The whole responsitbility of this class is to use a key from the "sampler" and
+The whole responsibility of this class is to use a key from the "sampler" and
 create a `Sample` from the `TimeSeriesCollection`.
 
 **`Flowchart Sketch <image_link_>`_**
@@ -386,7 +386,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
             x.loc[ts_forecast_mask, columns] = NA
 
             y = ts.copy()
-            # mask everything except targets in forecasting horizon
+            # mask everything except targets in the forecasting horizon
             y.loc[ts_observed_mask] = NA
             y.loc[ts_forecast_mask, ts.columns.difference(self.targets)] = NA
 
@@ -532,8 +532,8 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
             - ASSUMPTION: the split key is of the form `*fold, partition`, where `partition` is one of
               `train`, `valid`, `test`, and `fold` is an integer or tuple of integers.
 
-    To make this simpler, we here first consider the `Mapping` interface, i.e.
-    Samplers are all of fixed sized. and the dataset is a `Mapping` type.
+    To make this simpler, we first consider the `Mapping` interface,
+    i.e. all the samplers are of fixed sized. and the dataset is a `Mapping` type.
     We do not support `torch.utils.data.IterableDataset`, as this point.
 
     .. note::

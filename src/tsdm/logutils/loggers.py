@@ -29,7 +29,7 @@ Examples
 --------
 We want to log the left-inverse residual of the linodenet.
 Sometimes, this is also used as a regularization term.
-therefore the logging function either has to:
+Therefore, the logging function either has to:
 
 - compute R and log it
 - use the existing R and log it
@@ -242,7 +242,7 @@ class DefaultLogger(BaseLogger):
         optimizer: Optional[TorchOptimizer] = None,
         predict_fn: Optional[Callable[..., tuple[Tensor, Tensor]]] = None,
     ) -> None:
-        # convert to absolute path
+        # convert to an absolute path
         self.log_dir = Path(log_dir).absolute()
         self.checkpoint_dir = Path(checkpoint_dir).absolute()
         self.results_dir = Path(results_dir).absolute()

@@ -45,9 +45,9 @@ def triplet2dense() -> DataFrame:
     r"""Convert a DataFrame in triplet format to dense format. Inverse operation of `dense2triplet`.
 
     ``cat_features``: Either a set of index denoting the columns containing categorical features.
-    In this case the categories will be inferred from data.
+    In this case, the categories will be inferred from data.
     Or a dictionary of sets such that a key:value pair corresponds to a column and
-    all possible categories in that column. Use empty set to infer categories from data.
+    all possible categories in that column. Use the empty set to infer categories from data.
     """
     raise NotImplementedError
 

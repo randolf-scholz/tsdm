@@ -24,7 +24,7 @@ from tsdm.config import config_files
 
 
 def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
-    r"""Create nested dictionary of the package structure."""
+    r"""Creates nested dictionary of the package structure."""
     d = {}
     for name in dir(root_module):
         attr = getattr(root_module, name)

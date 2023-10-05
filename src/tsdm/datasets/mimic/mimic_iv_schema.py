@@ -529,7 +529,7 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "starttime"                     : TIME_TYPE,
         "endtime"                       : TIME_TYPE,
         "storetime"                     : TIME_TYPE,
-        "itemid"                        : ID_TYPE,  # NOTE: unstack, but high dim
+        "itemid"                        : ID_TYPE,  # NOTE: unstack, but high-dim.
         "amount"                        : VALUE_TYPE,
         "amountuom"                     : DICT_TYPE,
         "rate"                          : VALUE_TYPE,

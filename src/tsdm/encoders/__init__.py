@@ -58,23 +58,23 @@ numerical
 
 category
 
-- support {1, ..., K}
-- dimensionless: True
-- ordered: False
+- support: `{1, ..., K}`
+- dimensionless: `True`
+- ordered: `False`
 - Encoders: `OneHotEncoder`
 
 ordinal
 
-- support {1, ..., K}
-- dimensionless: True
-- ordered: True
+- support: `{1, ..., K}`
+- dimensionless: `True`
+- ordered: `True`
 - Encoders: `OrdinalEncoder`, `PositionalEncoder`
 
 cyclic
 
-- support: [0, 2π)
-- dimensionless: True
-- ordered: False
+- support: $[0, 2π)$
+- dimensionless: `True`
+- ordered: `False`
 - Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
 
 See Also:

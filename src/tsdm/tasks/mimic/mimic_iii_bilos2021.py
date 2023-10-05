@@ -20,7 +20,7 @@ Notes:
     - Authors code is available at [2]_.
     - The authors use a 70/15/15 split for train/valid/test. This is not mentioned in the paper but can
       be seen in the code. Moreover, the authors (accidentally?) use the same random seed (0) for each fold [3]_.
-      This explains the low reported stds.::
+      This explains the low reported values for the standard deviation::
 
             train_idx, eval_idx = train_test_split(
                 full_data.index.unique(),
@@ -161,7 +161,7 @@ def mimic_iii_collate(batch: list[Sample]) -> Batch:
         t, x, t_target = sample.inputs
         y = sample.targets
 
-        # get whole time interval
+        # get the whole time interval
         time = torch.cat((t, t_target))
         sorted_idx = torch.argsort(time)
 
@@ -268,7 +268,7 @@ class MIMIC_III_Bilos2021(OldBaseTask):
                 mask = splits.index.isin(split)
                 splits[k] = splits[k].where(
                     ~mask, key
-                )  # where cond is false is replaces with key
+                )  # where cond is `False`, the value is replaced with 'key'.
         return splits
 
     @cached_property

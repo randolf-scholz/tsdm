@@ -45,9 +45,9 @@ class PaddedBatch(NamedTuple):
     x: Tensor  # B×N×D: the padded input values.
     y: Tensor  # B×K×F: the padded target values.
 
-    mq: Tensor  # B×N: the queries mask.
-    mx: Tensor  # B×N: the inputs  mask.
-    my: Tensor  # B×K: the targets mask.
+    mq: Tensor  # B×N: the 'queries' mask.
+    mx: Tensor  # B×N: the 'inputs'  mask.
+    my: Tensor  # B×K: the 'targets' mask.
 
     def __repr__(self) -> str:
         return repr_namedtuple(self)
@@ -73,7 +73,7 @@ def collate_timeseries(batch: list[Sample]) -> PaddedBatch:
         t, x, t_target = sample.inputs
         y = sample.targets
 
-        # get whole time interval
+        # get the whole time interval
         t_combined = torch.cat((t, t_target))
         sorted_idx = torch.argsort(t_combined)
 

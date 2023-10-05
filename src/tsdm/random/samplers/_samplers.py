@@ -78,7 +78,7 @@ def compute_grid(
         ),
     )
 
-    # generates zero variable of correct type
+    # generates zero-variable of the correct type.
     zero_dt = tmin - tmin
 
     if td == zero_dt:
@@ -132,6 +132,9 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
 
     data: Sized
     r"""Copy of the original Data source."""
+
+    shuffle: bool = False
+    r"""Whether to shuffle the data."""
 
     def __init__(self, data_source: Sized, /) -> None:
         r"""Initialize the sampler."""
@@ -273,7 +276,7 @@ class SliceSampler(BaseSampler[Sequence[T_co]]):
 
 
 class CollectionSampler(BaseSampler[tuple[K, T_co]]):
-    r"""Samples a single random dataset from a collection of dataset.
+    r"""Samples a single random dataset from a collection of datasets.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
     """
@@ -348,7 +351,7 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
 
 
 class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
-    r"""Samples a single random dataset from a collection of dataset.
+    r"""Samples a single random dataset from a collection of datasets.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
     """
@@ -660,17 +663,17 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     The `SlidingWindowSampler` generates tuples.
 
     Inputs:
-
-    - Ordered timestamps T
-    - Starting time t_0
-    - Final time t_f
-    - stride ∆t (how much the sampler advances at each step) default, depending on data type of T:
-        - integer: GCD(∆T)
-        - float: max(⌊AVG(∆T)⌋, ε)
+    - Ordered timestamps $T$
+    - Starting time $t_0$
+    - Final time $t_f$
+    - stride ∆t (how much the sampler advances at each step) default,
+      depending on the data type of $T$:
+        - integer: $GCD(∆T)$
+        - float: $\max(⌊AVG(∆T)⌋, ε)$
         - timestamp: resolution dependent.
-    - horizons: TimeDelta or Tuple[TimeDelta]
+    - horizons: `TimeDelta` or `tuple[TimeDelta, ...]`
 
-    The sampler will return tuples of ``len(horizons)+1``.
+    The sampler will return tuples of `len(horizons)+1`.
     """
 
     data: NDArray[NumpyDTVar]

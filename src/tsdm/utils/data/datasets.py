@@ -142,7 +142,7 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
     r"""Represents a ``Mapping[Key, Dataset]``.
 
     ``ds[key]`` returns the dataset for the given key.
-    If the key is a tuple, tries to divert to the nested dataset.
+    If the key is a tuple, try to divert to the nested dataset.
 
     ``ds[(key, subkey)]=ds[key][subkey]``
     """
@@ -173,7 +173,7 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
     def __getitem__(self, key):
         r"""Get the dataset for the given key.
 
-        If the key is a tuple, tries to divert to the nested dataset.
+        If the key is a tuple, try to divert to the nested dataset.
         """
         if not isinstance(key, tuple):
             return self.datasets[key]
@@ -191,7 +191,7 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
     ) -> Self:
         r"""Create a `MappingDataset` from a `DataFrame`.
 
-        If ``levels`` is given, the selected levels from the `DataFrame`'s `MultiIndex` are used as keys.
+        If `levels` are given, the selected levels from the `DataFrame`'s `MultiIndex` are used as keys.
         """
         if levels is not None:
             min_index = df.index.to_frame()

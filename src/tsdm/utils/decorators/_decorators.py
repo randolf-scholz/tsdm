@@ -169,15 +169,15 @@ def decorator(deco: Callable) -> Callable:
     In particular, when the decorator has optional arguments, one needs to be able to distinguish
     between FUNCTIONAL MODE and BRACKET MODE.
 
-    To achieve this, we introduce a special senitel value for the first argument.
+    To achieve this, we introduce a special sentinel value for the first argument.
     Adding this senitel requires that the decorator has no mandatory positional-only arguments.
     Otherwise, the new signature would have an optional positional-only argument before the first
     mandatory positional-only argument.
 
-    Therefore, we add senitel values to all mandatory positional-only arguments.
+    Therefore, we add sentinel values to all mandatory positional-only arguments.
     If the mandatory positional args are not given
 
-    IDEA: We replace the decorators signature with a new signature in which all arguments
+    IDEA: We replace the decorator's signature with a new signature in which all arguments
     have default values.
 
     Fundamentally, signatures that lead to ambiguity between the 3 modes cannot be allowed.
@@ -222,7 +222,7 @@ def decorator(deco: Callable) -> Callable:
     NameError: name 'before' is not defined
 
     the result is a wrapped function. The fundamental problem is a disambiguation between the cases.
-    In either case the decorator sees as input (callable, None, None) and so it cannot distinguish
+    In either case, the decorator sees as input (callable, None, None) and so it cannot distinguish
     whether the first input is a wrapping, or the wrapped.
 
     Thus, we either need to abandon positional arguments with default values.
@@ -333,7 +333,7 @@ def decorator(deco: Callable) -> Callable:
 
 
 def attribute(func: Callable[[T], R]) -> R:
-    r"""Create decorator that converts method to attribute."""
+    r"""Create a decorator that converts method to attribute."""
 
     @wraps(func, updated=())
     class _attribute:
@@ -363,8 +363,8 @@ def debug(func: Callable[P, R]) -> Callable[P, R]:
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         args_repr = [f"{type(a)}" for a in args]
         kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
-        signature = ", ".join(args_repr + kwargs_repr)
-        print(f"Calling {func.__name__}({signature})")
+        sign = ", ".join(args_repr + kwargs_repr)
+        print(f"Calling {func.__name__}({sign})")
         value = func(*args, **kwargs)
         # print(f"{func.__name__!r} returned {value!r}")
         return value

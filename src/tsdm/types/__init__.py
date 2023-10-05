@@ -1,4 +1,4 @@
-r"""Generic types for type hints etc."""
+r"""Generic types for type hints, etc."""
 
 __all__ = [
     # Submodules

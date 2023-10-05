@@ -30,7 +30,7 @@ OPTIMIZERS: Final[dict[str, type[Optimizer]]] = {
     "AdamW": optim.AdamW,
     # Implements AdamW algorithm.
     "SparseAdam": optim.SparseAdam,
-    # Implements lazy version of Adam algorithm suitable for sparse tensors.
+    # Implements lazy variant of the Adam algorithm suitable for sparse tensors.
     "Adamax": optim.Adamax,
     # Implements Adamax algorithm (a variant of Adam based on infinity norm).
     "ASGD": optim.ASGD,

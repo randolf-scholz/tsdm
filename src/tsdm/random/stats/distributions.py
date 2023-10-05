@@ -24,7 +24,7 @@ class Generator(Protocol[T_co]):
 
     @abstractmethod
     def rvs(self, size: SizeLike = ()) -> T_co:
-        """Random variates of given type."""
+        """Random variates of the given type."""
         ...
 
 
@@ -34,7 +34,7 @@ class TimeSeriesGenerator(Protocol[T_co]):
 
     @abstractmethod
     def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
-        """Random variates of given type."""
+        """Random variates of the given type."""
         ...
 
 

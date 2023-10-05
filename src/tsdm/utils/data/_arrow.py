@@ -91,7 +91,7 @@ def is_numeric(array: Array, /) -> Array:
         Array.from_pandas(
             pd.to_numeric(
                 pd.Series(array, dtype="string[pyarrow]"),
-                # NOTE: string[pyarrow] actually StringDtype, needed so we don't use to_pandas()
+                # NOTE: string[pyarrow] is actually `StringDtype`, so we can't use `to_pandas`
                 errors="coerce",
                 dtype_backend="pyarrow",
                 downcast="float",

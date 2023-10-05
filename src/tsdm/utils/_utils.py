@@ -243,7 +243,7 @@ def prepend_path(
     *,
     keep_none: bool = True,
 ) -> Nested[Optional[Path]]:
-    r"""Prepends path to all files in nested iterable.
+    r"""Prepends the given path to all files in nested iterable.
 
     If `keep_none=True`, then `None` values are kept, else they are replaced by `parent`.
     """
@@ -283,8 +283,8 @@ def paths_exists(paths: Nested[Optional[PathLike]], /) -> bool:
     raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
 
 
-def initialize_from_config(config: dict[str, Any]) -> nn.Module:
-    r"""Initialize `nn.Module` from config object."""
+def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
+    r"""Initialize `nn.Module` from a config object."""
     assert "__name__" in config, "__name__ not found in dict!"
     assert "__module__" in config, "__module__ not found in dict!"
     __logger__.debug("Initializing %s", config)
@@ -295,12 +295,12 @@ def initialize_from_config(config: dict[str, Any]) -> nn.Module:
     return cls(**opts)
 
 
-def is_dunder(name: str) -> bool:
-    r"""Check if name is a dunder method."""
+def is_dunder(name: str, /) -> bool:
+    r"""Check if the name is a dunder method."""
     return name.isidentifier() and name.startswith("__") and name.endswith("__")
 
 
-def is_zipfile(path: Path) -> bool:
+def is_zipfile(path: Path, /) -> bool:
     r"""Return `True` if the file is a zipfile."""
     try:
         with ZipFile(path):

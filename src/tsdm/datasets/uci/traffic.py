@@ -225,7 +225,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         The task we propose on this dataset is to classify each observed day as the correct day of the week,
         from Monday to Sunday, e.g. label it with an integer in {1,2,3,4,5,6,7}.
 
-        In truth 1 encodes as Sunday and 7 as Saturday.
+        In truth, '1' encodes as Sunday and '7' as Saturday.
 
         PEMS_train: 267 rows
 
@@ -235,7 +235,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         PEMS_test: same but only 172 rows
         station_labels: labels of the 963 stations
 
-        In total 440 days of observations.
+        In total, 440 days of observations.
 
         - original data range is 455 days: 2008-01-01 - 2009-03-30 (15 months)
         - authors manually removed holidays as well as 2 anomalies: 2008-03-09 and 2009-03-08.
@@ -261,7 +261,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
 
         However, there was a big mistake made: they assumed 1 encodes as
 
-        The true missing dates appear to be, by reverse-engineering:
+        The true missing dates appear to be by reverse-engineering:
 
         - "2008-01-02": "1 day off New Year’s Day",
         - "2008-01-22": "1 day off Martin Luther King Jr. Day",
@@ -329,7 +329,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
 
     def _clean_labels(self) -> DataFrame:
         """Clean the labels of the PEMS-SF dataset."""
-        # Shuffle dates according to permutation the authors applied
+        # Shuffle the dates according to the permutation the authors applied.
         shuffled_dates = self.dates[self.randperm]
 
         with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:

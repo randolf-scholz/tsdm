@@ -252,7 +252,7 @@ def apply_keepdim(x: Tensor, dim: tuple[int, int], keepdim: bool = False) -> Ten
 
     We assume x was some tensor to which a reduction was applied, such that
 
-    1. The affected dims were mapped, in order, to the last dimensions of x.
+    1. The affected axes were mapped, in order, to the last dimensions of x.
     2. The reduction was performed over the last dimensions of x.
     3. We now want to insert the dimensions back into x at the right places.
     """
@@ -450,7 +450,7 @@ def matrix_norm(
     """
     # convert to tuple
     dim = (dim[0] % x.ndim, dim[1] % x.ndim)  # absolufy dim
-    # if keepdim[0] is False then we need to adjust dim[1] accordingly:
+    # if keepdim[0] is `False`, then we need to adjust dim[1] accordingly:
     # this only happens if dim[0] < dim[1], otherwise dim[1] is already correct
     # 1 if dim[1] needs to change, 0 otherwise
     m = int(dim[0] < dim[1]) * (1 - int(keepdim))

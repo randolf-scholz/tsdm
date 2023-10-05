@@ -86,7 +86,7 @@ class Dataclass(Protocol):
 
 
 def is_dataclass(obj: Any) -> TypeGuard[Dataclass]:
-    r"""Check if object is a dataclass."""
+    r"""Check if the object is a dataclass."""
     return dataclasses.is_dataclass(obj)
 
 
@@ -228,7 +228,7 @@ class SupportsShape(Protocol[scalar_co]):
         ...
 
     def __len__(self) -> int:
-        """Number of elements along first axis."""
+        """Number of elements along the first axis."""
         ...
 
     # binary operations
@@ -239,7 +239,7 @@ class SupportsShape(Protocol[scalar_co]):
 
 @runtime_checkable
 class Array(Protocol[scalar_co]):
-    r"""Protocol for array-like objects (tensors with single data type).
+    r"""Protocol for array-like objects (tensors with a single data type).
 
     Matches with
 
@@ -280,7 +280,7 @@ class Array(Protocol[scalar_co]):
         ...
 
     def __len__(self) -> int:
-        """Number of elements along first axis."""
+        """Number of elements along the first axis."""
         ...
 
     def __iter__(self) -> Iterator[Self]:

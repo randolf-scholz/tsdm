@@ -145,7 +145,7 @@ class BaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
 
     @abstractmethod
     def make_sampler(self, key: K, /) -> TorchSampler:
-        r"""Create sampler for the given split."""
+        r"""Creates sampler for the given split."""
 
     def make_dataloader(
         self,

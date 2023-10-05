@@ -212,7 +212,7 @@ def write_requirements(
     package: str,
     version: Optional[str] = None,
 ) -> None:
-    r"""Write a requirements dictionary to a requirements.txt file.
+    r"""Write a 'requirements'-dictionary to a `requirements.txt` file.
 
     If `version=None`, then the latest version is used.
     """

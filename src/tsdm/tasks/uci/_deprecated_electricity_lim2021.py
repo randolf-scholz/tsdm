@@ -56,7 +56,7 @@ class ElectricityLim2021(OldBaseTask):
     r"""Experiments as performed by the "TFT" paper.
 
     Note that there is an issue: in the pipe-line, the hourly aggregation is done via mean,
-    whereas in the TRMF paper, the hourly aggregation is done via sum.
+    whereas in the TRMF paper, the hourly aggregation is done via summing.
 
     .. epigraph:: We convert the data to reflect hourly consumption, by aggregating blocks of 4 columns
 
@@ -69,13 +69,12 @@ class ElectricityLim2021(OldBaseTask):
     - preprocessing: what partitions of the dataset are mean and variance computed over?
       train? train+validation?
     - Since the values are in kW, an hourly value would correspond to summing the values.
-    - Testing: How exactly is the loss computed? From the description it can not be
+    - Testing: How exactly is the loss computed? From the description, it cannot be
       precisely inferred. Looking inside the code reveals that the test split is actually the
       last 14 days, which makes sense given that the observation period is 7 days. However,
-      the paper does not mention the stride. Given the description
-      "we use the past week (i.e. 168 hours) to forecast over the next 24 hours."
-      Does not tell the stride, i.e. how much the sliding window is moved. We assume this to be
-      24h.
+      the paper does not mention the stride. Given the description:
+      "we used the past week (i.e. 168 hours) to forecast over the next 24 hours."
+      Does not tell the stride, i.e. how much the sliding window is moved. We assume this to be 24h.
     - Is the loss computed on the original scale, or on the pre-processed (i.e. z-score normalized)
       scale? The code reveals that apparently the loss is computed on the original scale!
 
@@ -186,7 +185,7 @@ class ElectricityLim2021(OldBaseTask):
     @cached_property
     def splits(self) -> Mapping[KeyType, Any]:
         r"""Return cached splits of the dataset."""
-        # We intentionally use these mask instead of the simpler
+        # We intentionally use these masks instead of the simpler
         # ds[lower:upper], in order to get the boundary inclusion right.
 
         return {

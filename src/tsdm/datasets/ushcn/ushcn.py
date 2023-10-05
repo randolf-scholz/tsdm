@@ -514,7 +514,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             # fmt: on
         }
 
-        # dtypes but with same index as colspec.
+        # dtypes but with the same index as colspec.
         base_dtypes = self.rawdata_schemas["timeseries"]
         column_dtypes = {
             key: base_dtypes[key[0]] if isinstance(key, tuple) else base_dtypes[key]

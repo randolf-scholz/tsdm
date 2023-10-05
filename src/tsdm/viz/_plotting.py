@@ -58,9 +58,9 @@ def visualize_distribution(
         ax: Axes to plot into.
         num_bins: Number of bins to use for histogram.
         log: If True, use log base 10, if `float`, use  log w.r.t. this base
-        loc: Location of stats text.
+        loc: Location of 'stats' text.
         print_stats: Add table of mean, std, min, max, median, mode to plot
-        extra_stats: Additional things to add to the stats table
+        extra_stats: Additional things to add to the 'stats' table
     """
     if isinstance(data, Tensor):
         data = data.detach().cpu().numpy()
@@ -222,7 +222,7 @@ def plot_spectrum(
     figure_kwargs: Mapping[str, Any] = EMPTY_MAP,
     scatter_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> Figure:
-    r"""Create scatter-plot of complex matrix eigenvalues.
+    r"""Create a scatter-plot of complex matrix eigenvalues.
 
     Arguments:
         kernel: Tensor
@@ -263,7 +263,7 @@ def plot_spectrum(
 
 
 def center_axes(fig: Figure, /, *, remove_labels: bool = True) -> Figure:
-    r"""Center axes in figure."""
+    r"""Center axes in the figure."""
     for ax in fig.axes:
         if remove_labels:
             ax.set(xlabel="", ylabel="")

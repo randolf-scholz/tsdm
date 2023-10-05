@@ -136,9 +136,9 @@ def get_broadcast(
     axis: Axes,
     keep_axis: bool = False,
 ) -> tuple[slice | None, ...]:
-    r"""Creates an indexer that broadcasts a tensors contracted via ``axis``.
+    r"""Creates an indexer that broadcasts a tensors contracted via `axis`.
 
-    Essentially works like a-posteriori adding a ``keepdims=True`` to a contraction.
+    Essentially works like a-posteriori adding the `keepdims=True` option to a contraction.
     If `x = contraction(data, axis)` (e.g. sum, mean, max), then ``x[broadcast]``
     for ``broadcast=get_braodcast(data.shape, axis) is roughly equivalent to
     ``contraction(data, axis, keepdims=True)``.
@@ -160,7 +160,7 @@ def get_broadcast(
     Args:
         original_shape: The tensor to be contracted.
         axis: The axes to be contracted.
-        keep_axis: select `True` if axis are the axes to be kept instead.
+        keep_axis: select `True` if the axes are to be kept instead.
 
     Example:
         data is of shape  ``(2,3,4,5,6,7)``
@@ -314,7 +314,7 @@ class BoundaryEncoder(BaseEncoder[T, T]):
 
 
     Note:
-        requires_fit: whether the lower/upper bounds/values should be determined by the data.
+        requires_fit: whether the data should determine the lower/upper bounds/values.
             - if lower/upper not provided, then they are determined by the data.
             - if lower_substitute/upper_substitute not provided, then they are determined by the data.
 
@@ -337,6 +337,13 @@ class BoundaryEncoder(BaseEncoder[T, T]):
 
     mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask"
     axis: Axes = None
+
+    # derived attributes
+    backend: Backend[T] = NotImplemented
+    lower_value: float | T = NotImplemented
+    upper_value: float | T = NotImplemented
+    lower_satisfied: Callable[[T], T] = NotImplemented
+    upper_satisfied: Callable[[T], T] = NotImplemented
 
     def __post_init__(self) -> None:
         """Validate the parameters."""
@@ -484,7 +491,7 @@ class LinearScaler(BaseEncoder[T, T]):
         loc: the offset.
         scale: the scaling factor.
         axis: the axis along which to perform the operation. both μ and σ must have
-            shapes that can be broadcasted to the shape of the data along these axis.
+            shapes that can be broadcasted to the shape of the data along these axes.
     """
 
     requires_fit: ClassVar[bool] = False
@@ -495,6 +502,8 @@ class LinearScaler(BaseEncoder[T, T]):
 
     axis: tuple[int, ...]
     r"""Over which axis to perform the scaling."""
+    backend: Backend[T]
+    """The backend of the encoder."""
 
     class Parameters(NamedTuple):
         r"""The parameters of the LinearScaler."""
@@ -559,8 +568,8 @@ class LinearScaler(BaseEncoder[T, T]):
         return repr_dataclass(self)
 
     def fit(self, data: T, /) -> None:
-        self.selected_backend = get_backend(data)
-        self.backend: Backend[T] = Backend(self.selected_backend)
+        selected_backend = get_backend(data)
+        self.backend: Backend[T] = Backend(selected_backend)
 
     def encode(self, data: T, /) -> T:
         # broadcast = get_broadcast(data.shape, axis=self.axis)
@@ -588,8 +597,13 @@ class StandardScaler(BaseEncoder[T, T]):
     r"""The mean value."""
     stdv: T
     r"""The standard-deviation."""
+
+    _: KW_ONLY
+
     axis: Axes
     r"""The axis to perform the scaling. If None, automatically select the axis."""
+    backend: Backend[T]
+    """The backend of the encoder."""
 
     @property
     def requires_fit(self) -> bool:
@@ -643,8 +657,8 @@ class StandardScaler(BaseEncoder[T, T]):
 
     def fit(self, data: T, /) -> None:
         # switch the backend
-        self.selected_backend = get_backend(data)
-        self.backend: Backend[T] = Backend(self.selected_backend)
+        selected_backend = get_backend(data)
+        self.backend: Backend[T] = Backend(selected_backend)
 
         # universal fitting procedure
         axes = invert_axis_selection(self.axis, ndim=len(data.shape))
@@ -686,7 +700,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         the encoded value is ½(y_min + y_max).
 
     Note:
-        Generally the transformation is given by the formula:
+        Generally, the transformation is given by the formula:
 
         .. math:: x ↦ \frac{x - xₘᵢₙ}{xₘₐₓ - xₘᵢₙ}(yₘₐₓ - yₘᵢₙ) + yₘᵢₙ
 
@@ -714,10 +728,15 @@ class MinMaxScaler(BaseEncoder[T, T]):
     xmax: T  # or: ScalarType.
     scale: T  # or: ScalarType.
     r"""The scaling factor."""
+
+    _: KW_ONLY
+
     axis: Axes
     r"""Over which axis to perform the scaling."""
     safe_computation: bool
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
+    backend: Backend[T]
+    """The backend of the encoder."""
 
     class Parameters(NamedTuple):
         r"""The parameters of the MinMaxScaler."""
@@ -758,7 +777,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
         xmax: float | T = NotImplemented,
         axis: Axes = (),
         safe_computation: bool = True,
-        backend: str | None = None,
     ) -> None:
         super().__init__()
         self.xmin = cast(T, xmin)
@@ -807,15 +825,13 @@ class MinMaxScaler(BaseEncoder[T, T]):
         # initialize the new encoder
         cls: type[Self] = type(self)
         encoder = cls(ymin, ymax, xmin=xmin, xmax=xmax, axis=axis)
-        encoder.switch_backend(self.selected_backend)
+        encoder.switch_backend(self.backend)
         encoder._is_fitted = self._is_fitted
         return encoder
 
-    def switch_backend(self, backend: str) -> None:
+    def switch_backend(self, backend: str | Backend) -> None:
         r"""Switch the backend of the scaler."""
-        self.selected_backend = backend
-        self.backend: Backend[T] = Backend(self.selected_backend)
-
+        self.backend: Backend[T] = Backend(backend)
         # recast the parameters
         # self.recast_parameters()
 
@@ -914,7 +930,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
 
 class LogEncoder(BaseEncoder[NDArray, NDArray]):
-    r"""Encode data on logarithmic scale.
+    r"""Encode data on a logarithmic scale.
 
     Uses base 2 by default for lower numerical error and fast computation.
     """

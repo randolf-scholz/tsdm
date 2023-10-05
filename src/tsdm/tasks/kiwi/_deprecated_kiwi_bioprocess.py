@@ -45,7 +45,7 @@ class Sample(NamedTuple):
 class Kiwi_BioProcessTask(OldBaseTask):
     r"""A collection of bioreactor runs.
 
-    For this task we do several simplifications
+    For this task, we do several simplifications:
 
     - drop run_id 355
     - drop almost all metadata

@@ -657,6 +657,7 @@
           <option value="types.UnionType.*" />
           <option value="pandas.core.indexes.datetimes.DatetimeIndex.round" />
           <option value="pandas.core.indexes.datetimes.DatetimeIndex.day_name" />
+          <option value="typing_extensions.*" />
         </list>
       </option>
     </inspection_tool>

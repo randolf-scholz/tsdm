@@ -163,6 +163,7 @@
       <w>iinfo</w>
       <w>iloader</w>
       <w>iloc</w>
+      <w>ilshift</w>
       <w>includehidden</w>
       <w>inds</w>
       <w>injective</w>
@@ -170,6 +171,7 @@
       <w>intersphinx</w>
       <w>invperm</w>
       <w>iptg</w>
+      <w>irshift</w>
       <w>iscore</w>
       <w>iscores</w>
       <w>isfinite</w>

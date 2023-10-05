@@ -6,7 +6,7 @@ Requirements:
 
 - store multiple table like data structures
 - need support for basic types (int, float, string, bool, null)
-- need support for lists, tuples and dicts
+- need support for lists, tuples, and dicts
 - need support for comments
 - need support for datetime and timedelta types
 
@@ -26,4 +26,4 @@ We decided to use YAML for the following reasons:
 
 However, yaml is not perfect:
 
-- can mush types (always use single quotes for strings!!!)
+- can mush types (always use single quotes for strings!)

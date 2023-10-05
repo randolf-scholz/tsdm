@@ -126,7 +126,8 @@ def regularity_coefficient(
     .. math:: κ(𝐭) = \frac{(t_\max-t_\min)/𝗀𝖼𝖽(𝐭)}{|𝐭|}
 
     In particular, if the time-series is regular, $κ=1$, and if it is irregular, $κ=∞$.
-    To make the time-series regular, one would have to insert an additional :math:`(κ(𝐭)-1) | 𝐭 |` data-points.
+    To make the time-series regular, one would have to insert additional
+    :math:`(κ(𝐭)-1) | 𝐭 |`-many data-points.
     """
     if isinstance(s, DataFrame):
         return regularity_coefficient(Series(s.index))
@@ -167,7 +168,7 @@ def distributiveness(s: Series) -> float:
 
     .. math:: σ(TS) = \min\{ d(TS, TS') ∣ 𝐄[∆t(TS')] = 𝐄[∆t(TS)], TS' regular \}
 
-    I.e. the minimum distance (for example Dynamic Time Warping) between the time series,
+    I.e. the minimum distance (for example, Dynamic Time Warping) between the time series,
     and a regular time series with the same average frequency.
     """
     # TODO: implement correct function

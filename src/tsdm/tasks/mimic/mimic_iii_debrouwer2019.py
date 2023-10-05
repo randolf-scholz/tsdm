@@ -23,21 +23,21 @@ Evaluation Protocol
 
 Notes:
     - Authors code is available at [2]_.
-    - The authors code is missing the pre-processing script to create the folds for MIMIC-III. There is an open issue:
+    - The author's code is missing the pre-processing script to create the folds for MIMIC-III. There is an open issue:
       <https://github.com/edebrouwer/gru_ode_bayes/issues/15>, but the authors are not responding.
       We assume the MIMIC-III pre-processing script is similar/the same as the one for the Climate dataset.
 
     - The train/valid/test split is 62/18/10. The authors write:
 
         We report the performance using 5-fold cross-validation. Hyperparameters (dropout and weight decay) are chosen
-        using an inner holdout validation set (20%) and performance are assessed on a left-out test set (10%).
+        using an inner holdout validation set (20%), and performance is assessed on a left-out test set (10%).
 
       Here, 20% validation refers to 20% of the non-test data, i.e. 20% of 90% = 18% of the total data. [3]_
     - The random seed is fixed to 432 at the start of the splitting process. [4]_
 
 References
 ----------
-.. [1] | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+.. [1] | `GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
        | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves.
          `Advances in Neural Information Processing Systems 2019 <https://proceedings.neurips.cc/paper/2019>`_
 .. [2] https://github.com/edebrouwer/gru_ode_bayes
@@ -163,7 +163,7 @@ def mimic_iii_collate(batch: list[Sample]) -> Batch:
         t, x, t_target = sample.inputs
         y = sample.targets
 
-        # get whole time interval
+        # get the whole time interval
         time = torch.cat((t, t_target))
         sorted_idx = torch.argsort(time)
 

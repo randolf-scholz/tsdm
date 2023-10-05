@@ -3,7 +3,7 @@
 ## Naming Conventions
 
 - `is_<cat>(x)`-methods:
-  - check if object has a certain property or belongs to a certain category
+  - check if the object has a certain property or belongs to a certain category
   - must return a boolean
   - prefer `is_<cat-with-property>(x)` over `has_<property>(x)`-methods
 - `*_to_*`-methods: convert from one representation to another

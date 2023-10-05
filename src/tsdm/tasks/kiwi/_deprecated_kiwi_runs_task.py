@@ -92,7 +92,7 @@ class Batch(NamedTuple):
 class KIWI_RUNS_TASK(OldBaseTask):
     r"""A collection of bioreactor runs.
 
-    For this task we do several simplifications:
+    For this task, we do several simplifications:
 
     - drop run_id 355
     - drop almost all metadata

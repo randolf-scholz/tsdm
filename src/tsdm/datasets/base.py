@@ -107,7 +107,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
 
 
 class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
-    r"""Abstract base class that all dataset must subclass.
+    r"""Abstract base class that all datasets must subclass.
 
     Implements methods that are available for all dataset classes.
 
@@ -320,17 +320,17 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
             self.LOGGER.debug("Finished downloading dataset.")
             return
 
-        # Check if file already exists.
+        # Check if the file already exists.
         if self.rawdata_files_exist(key) and not force:
             self.LOGGER.debug("Dataset already exists. Skipping download.")
             return
 
-        # Download file.
+        # Download the file.
         self.LOGGER.debug("Starting to download dataset <%s>", key)
         self.download_file(key)
         self.LOGGER.debug("Finished downloading dataset <%s>", key)
 
-        # Validate file.
+        # Validate the file.
         if validate and self.rawdata_hashes is not NotImplemented:
             validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes)
 
@@ -398,14 +398,14 @@ class SingleTableDataset(BaseDataset[T_co]):
         return self.DATASET_DIR / self.dataset_file
 
     def dataset_file_exists(self) -> bool:
-        r"""Check if dataset file exists."""
+        r"""Check if the dataset file exists."""
         return paths_exists(self.dataset_path)
 
     @abstractmethod
     def clean_table(self) -> T_co | None:
         r"""Generate the cleaned dataset table.
 
-        If table is returned, the `self.serialize` method is used to write it to disk.
+        If a table is returned, the `self.serialize` method is used to write it to disk.
         If manually writing the table to disk, return None.
         """
 
@@ -610,7 +610,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
     def clean_table(self, key: Key) -> T_co | None:
         r"""Create the cleaned table for the given key.
 
-        If table is returned, the `self.serialize` method is used to write it to disk.
+        If a table is returned, the `self.serialize` method is used to write it to disk.
         If manually writing the table to disk, return None.
         """
 
@@ -625,7 +625,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         r"""Create the preprocessed table for the selected key.
 
         Args:
-            key: The key of the dataset to clean. If None, clean all dataset.
+            key: The key of the dataset to clean. If None, clean all datasets.
             force: Force cleaning of dataset.
             validate: Validate the dataset after cleaning.
             validate_rawdata: Validate the raw data files before cleaning.

@@ -355,7 +355,7 @@ def validate_table_hash(
     logger: logging.Logger = __logger__,
     **hash_kwargs: Any,
 ) -> None:
-    """Validate the hash of a pandas object, given hash values from a table."""
+    """Validate the hash of a `pandas` object, given hash values from a table."""
     # Try to determine the hash algorithm from the array type
     name = f"{type(table)} of shape={table.shape}"
 
@@ -542,10 +542,10 @@ def validate_table_schema(
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,
 ) -> None:
-    """Validate the schema of a pandas object, given schema values from a table.
+    """Validate the schema of a `pandas` object, given schema values from a table.
 
-    Checks if the columns and dtypes of the table match the reference schema.
-    Checks if the shape of the table matches the reference schema.
+    Check if the columns and dtypes of the table match the reference schema.
+    Check if the shape of the table matches the reference schema.
     """
     # get shape, columns and dtypes from table
     match table:

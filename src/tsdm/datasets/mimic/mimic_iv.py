@@ -35,8 +35,8 @@ Preprocessing Details
 6. procedureevents: convert storetime to second resolution
 7. chartevents:
     - Drop rows with missing valueuom
-    - cast value to float
-    - unstack value/valueuom??
+    - Cast values to float.
+    - Unstack value/valueuom?
 
 Tables that may require unstacking
 ----------------------------------
@@ -291,7 +291,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
     def clean_table(self, key: KEYS) -> Table:
         table: Table = super().clean_table(key)
 
-        # drop data with missing hadm_id
+        # drop data with missing 'hadm_id'.
         if "hadm_id" in table.column_names:
             table = filter_nulls(table, "hadm_id")
 
