@@ -179,7 +179,7 @@ class Project:
 
     @cached_property
     def DOCS_PATH(self) -> Path:
-        r"""Return the docs directory."""
+        r"""Return the `docs` directory."""
         docs_path = self.ROOT_PATH / "docs"
         if not docs_path.exists():
             raise ValueError(f"Docs directory {docs_path} does not exist!")
@@ -203,8 +203,29 @@ class Project:
 
     @cached_property
     def TEST_RESULTS_PATH(self) -> Path:
-        r"""Return the test results directory."""
+        r"""Return the test `results` directory."""
         return self.TESTS_PATH / "results"
+
+    @cached_property
+    def RESULTS_DIR(self) -> dict[str | Path, Path]:
+        r"""Return the `results` directory."""
+
+        class ResultsDir(dict):
+            """Results directory."""
+
+            TEST_RESULTS_PATH = self.TEST_RESULTS_PATH
+
+            def __setitem__(self, key, value):
+                raise RuntimeError("ResultsDir is read-only!")
+
+            def __getitem__(self, key):
+                if key not in self:
+                    path = self.TEST_RESULTS_PATH / Path(key).stem
+                    path.mkdir(parents=True, exist_ok=True)
+                    super().__setitem__(key, path)
+                return super().__getitem__(key)
+
+        return ResultsDir()
 
     def make_test_folders(self, dry_run: bool = True) -> None:
         r"""Make the tests folder if it does not exist."""

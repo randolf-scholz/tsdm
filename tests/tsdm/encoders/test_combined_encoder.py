@@ -10,6 +10,7 @@ import torch
 from pandas import DataFrame
 from pytest import mark
 
+from tsdm.config import PROJECT
 from tsdm.encoders import (
     BaseEncoder,
     BoundaryEncoder,
@@ -24,6 +25,7 @@ from tsdm.encoders import (
 )
 from tsdm.tasks import KiwiBenchmark
 
+RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
@@ -31,6 +33,8 @@ __logger__ = logging.getLogger(__name__)
 @mark.slow
 def test_combined_encoder(SplitID=(0, "train")):
     r"""Test complicated combined encoder."""
+    torch.manual_seed(0)
+    np.random.seed(0)
     task = KiwiBenchmark()
     ts = task.dataset.timeseries.iloc[:20_000]  # use first 20_000 values only
     descr = task.dataset.timeseries_description[["kind", "lower_bound", "upper_bound"]]
@@ -127,10 +131,10 @@ def test_combined_encoder(SplitID=(0, "train")):
                 raise ValueError(f"{scale=} unknown")
 
     # test_serialization
-    with open("trained_encoder.pickle", "wb") as file:
+    with open(RESULT_DIR / "trained_encoder.pickle", "wb") as file:
         pickle.dump(encoder, file)
 
-    with open("trained_encoder.pickle", "rb") as file:
+    with open(RESULT_DIR / "trained_encoder.pickle", "rb") as file:
         loaded_encoder = pickle.load(file)
 
     assert isinstance(loaded_encoder, BaseEncoder)

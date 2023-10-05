@@ -10,8 +10,7 @@ from scipy.stats import gamma
 from tsdm.config import PROJECT
 from tsdm.viz import visualize_distribution
 
-RESULT_DIR = PROJECT.TEST_RESULTS_PATH / (PROJECT.TEST_RESULTS_PATH / __file__).stem
-RESULT_DIR.mkdir(parents=True, exist_ok=True)
+RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
 def test_visualize_distribution() -> None:
