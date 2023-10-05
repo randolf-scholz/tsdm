@@ -33,6 +33,14 @@ repos:
         files: (^src/|^tests/)
         types: [python]
         entry: mypy
+        require_serial: true
+        args:
+          [
+            "--hide-error-context",
+            "--hide-error-end",
+            "--no-pretty",
+            "--no-error-summary",
+          ]
         stages: [pre-push, manual]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
