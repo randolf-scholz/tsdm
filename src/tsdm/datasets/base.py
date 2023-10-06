@@ -33,6 +33,7 @@ import pandas
 from pandas import DataFrame, Index, MultiIndex, Series
 from pyarrow import Table, parquet
 from torch.utils.data import Dataset as TorchDataset
+from tqdm.autonotebook import tqdm
 from typing_extensions import Self
 
 from tsdm.config import CONFIG
@@ -156,8 +157,8 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         if version is not NotImplemented:
             self.__version__ = version
         if self.__version__ is not NotImplemented:
-            self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
-            self.DATASET_DIR /= self.__version__  # type: ignore[misc]
+            self.RAWDATA_DIR /= str(self.__version__)  # type: ignore[misc]
+            self.DATASET_DIR /= str(self.__version__)  # type: ignore[misc]
 
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -166,6 +167,10 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         if reset:
             self.clean()
         if initialize:
+            # NOTE: We call clean first for memory efficiency.
+            #  Preprocessing can take lots of resources, so we should only load tables
+            #  on a need-to basis.
+            self.clean()
             self.load(initializing=True)
 
     def __repr__(self) -> str:
@@ -503,11 +508,12 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         initialize: bool = True,
         reset: bool = False,
         version: str = NotImplemented,
+        verbose: bool = True,
     ) -> None:
         r"""Initialize the Dataset."""
         self.LOGGER.debug("Calling Mapping.__init__")
-        Mapping.__init__(self)
-
+        Mapping.__init__(self)  # Q: Why do we need this?
+        self.verbose = verbose
         self.LOGGER.debug("Adding keys as attributes.")
         self._key_attributes = False
         if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
@@ -642,9 +648,16 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         # key=None: Recursively clean all tables
         if key is None:
             self.LOGGER.debug("Starting to clean dataset.")
-            for key_ in self.table_names:
+            for name in (
+                pbar := tqdm(
+                    self.table_names,
+                    desc="Cleaning tables",
+                    disable=not self.verbose,
+                )
+            ):
+                pbar.set_postfix(table=name)
                 self.clean(
-                    key=key_, force=force, validate=validate, validate_rawdata=False
+                    key=name, force=force, validate=validate, validate_rawdata=False
                 )
             self.LOGGER.debug("Finished cleaning dataset.")
             return
@@ -701,7 +714,14 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         # key=None: Recursively load all tables.
         if key is None:
             self.LOGGER.debug("Starting to load dataset.")
-            for name in self.table_names:
+            for name in (
+                pbar := tqdm(
+                    self.table_names,
+                    desc="Loading tables",
+                    disable=not self.verbose,
+                )
+            ):
+                pbar.set_postfix(table=name)
                 self.load(key=name, force=force, validate=validate, **kwargs)
             self.LOGGER.debug("Finished loading dataset.")
             return self.tables

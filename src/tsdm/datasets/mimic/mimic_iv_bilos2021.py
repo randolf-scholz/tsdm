@@ -142,3 +142,47 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
 
         file = self.RAWDATA_DIR / "index.html"
         os.rename(file, fname)
+
+
+# class MIMIC_IV_Bilos2021(MIMIC_IV):
+#     RAWDATA_DIR = MIMIC_IV.RAWDATA_DIR
+#     __version__: Final[str] = "1.0"
+#     rawdata_hashes = {
+#         "mimic-iv-1.0.zip": (
+#             "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+#         ),
+#     }
+#
+#     mimic_iv: MIMIC_IV
+#
+#     @cached_property
+#     def rawdata(self):
+#         self.mimic_iv = MIMIC_IV()
+#         return self.mimic_iv.tables
+#
+#     def clean_admissions(self):
+#         adm = self.rawdata["admissions"]
+#         patients_df = self.rawdata["patients"]
+#         chartevents = self.rawdata["chartevents"]
+#
+#         # keep only patients present in patients data
+#         adm_dob = pd.merge(
+#             patients_df[["subject_id", "anchor_age"]], adm, on="subject_id"
+#         )
+#
+#         df = adm.groupby("subject_id")["hadm_id"].nunique()
+#         subj_ids = list(df[df == 1].index)
+#
+#         adm_1 = adm_dob.assign(
+#             elapsed_days=(adm_dob["dischtime"] - adm_dob["admittime"]).dt.days
+#         ).loc[adm_dob["subject_id"].isin(subj_ids)]
+#
+#         adm_2 = adm_1.loc[
+#             (adm_1["elapsed_days"] > 2)
+#             & (adm_1["elapsed_days"] < 30)
+#             # only patients older than 15
+#             & (adm_1["anchor_age"] > 15)
+#             & (adm_1["hadm_id"].isin(chartevents["hadm_id"]))
+#         ]
+#
+#         return adm_2
