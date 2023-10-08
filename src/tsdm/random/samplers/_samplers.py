@@ -555,7 +555,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
     def __getattr__(self, key: str) -> Any:
         r"""Forward all other attributes to the interval frame."""
-        return self.intervals.__getattr__(key)
+        return getattr(self.intervals, key)
 
     def __getitem__(self, key: int) -> slice:
         r"""Return a slice from the sampler."""

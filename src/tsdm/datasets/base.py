@@ -18,6 +18,7 @@ import html
 import inspect
 import logging
 import os
+import shutil
 import subprocess
 import warnings
 import webbrowser
@@ -106,6 +107,30 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
             else:
                 cls.DATASET_DIR = CONFIG.DATASETDIR / cls.__name__
 
+    # def __call__(
+    #     cls,
+    #     *args,
+    #     initialize: bool = True,
+    #     reset: bool = False,
+    #     version: str = NotImplemented,
+    #     **kwargs,
+    # ):
+    #     """When a new instance is created, this method is called."""
+    #     obj = cls.__new__(*args, **kwargs)
+    #     cls.__pre_init__(obj, version)
+    #     cls.__init__(obj)
+    #     cls.__post_init__(obj, initialize, reset)
+    #
+    #     if version is not NotImplemented:
+    #         instance.__version__ = str(version)
+    #     if instance.__version__ is not NotImplemented:
+    #         instance.RAWDATA_DIR /= instance.__version__  # type: ignore[misc]
+    #         instance.DATASET_DIR /= instance.__version__  # type: ignore[misc]
+    #
+    #     if not inspect.isabstract(instance):
+    #         instance.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
+    #         instance.DATASET_DIR.mkdir(parents=True, exist_ok=True)
+
 
 class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     r"""Abstract base class that all datasets must subclass.
@@ -146,6 +171,34 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     rawdata_shapes: Mapping[str, tuple[int, ...]] = NotImplemented
     r"""Shapes for the raw dataset tables(s)."""
 
+    def __pre_init__(
+        self, *, version: str = NotImplemented, reset: bool = False
+    ) -> None:
+        r"""Initialize the dataset."""
+        if version is not NotImplemented:
+            self.__version__ = str(version)
+        if self.__version__ is not NotImplemented:
+            self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
+            self.DATASET_DIR /= self.__version__  # type: ignore[misc]
+
+        if not inspect.isabstract(self):
+            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
+            self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
+
+        if reset:
+            # delete rawdata and dataset directories
+            self.remove_rawdata_files()
+            self.remove_dataset_files()
+
+    def __post_init__(self, *, initialize: bool = True) -> None:
+        r"""Initialize the dataset."""
+        if initialize:
+            # NOTE: We call clean first for memory efficiency.
+            #  Preprocessing can take lots of resources, so we should only load tables
+            #  on a need-to basis.
+            self.clean()
+            self.load(initializing=True)
+
     def __init__(
         self,
         *,
@@ -155,23 +208,32 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     ) -> None:
         r"""Initialize the dataset."""
         if version is not NotImplemented:
-            self.__version__ = version
+            self.__version__ = str(version)
         if self.__version__ is not NotImplemented:
-            self.RAWDATA_DIR /= str(self.__version__)  # type: ignore[misc]
-            self.DATASET_DIR /= str(self.__version__)  # type: ignore[misc]
+            self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
+            self.DATASET_DIR /= self.__version__  # type: ignore[misc]
 
         if not inspect.isabstract(self):
             self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
             self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
         if reset:
-            self.clean()
+            # delete rawdata and dataset directories
+            self.remove_rawdata_files()
+            self.remove_dataset_files()
         if initialize:
             # NOTE: We call clean first for memory efficiency.
             #  Preprocessing can take lots of resources, so we should only load tables
             #  on a need-to basis.
             self.clean()
             self.load(initializing=True)
+
+    @property
+    def version_info(self) -> tuple[int, ...]:
+        r"""Version information of the dataset."""
+        if self.__version__ is NotImplemented:
+            return NotImplemented
+        return tuple(int(i) for i in self.__version__.split("."))
 
     def __repr__(self) -> str:
         r"""Return a string representation of the dataset."""
@@ -341,14 +403,26 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
 
     def remove_rawdata_files(self) -> None:
         r"""Recreate the rawdata directory."""
-        if self.RAWDATA_DIR.exists():
-            self.RAWDATA_DIR.rmdir()
+        if not self.RAWDATA_DIR.exists():
+            warnings.warn(f"{self.RAWDATA_DIR} does not exist!", stacklevel=2)
+            return
+        # ask for confirmation
+        if input(f"Delete {self.RAWDATA_DIR}? [y/N] ").lower() != "y":
+            return
+
+        shutil.rmtree(self.RAWDATA_DIR)
         self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
 
     def remove_dataset_files(self) -> None:
         r"""Recreate the dataset directory."""
-        if self.DATASET_DIR.exists():
-            self.DATASET_DIR.rmdir()
+        if not self.DATASET_DIR.exists():
+            warnings.warn(f"{self.DATASET_DIR} does not exist!", stacklevel=2)
+            return
+        # ask for confirmation
+        if input(f"Delete {self.DATASET_DIR}? [y/N] ").lower() != "y":
+            return
+
+        shutil.rmtree(self.DATASET_DIR)
         self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -545,7 +619,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         r"""Get attribute."""
         if self._key_attributes and key in self.table_names:
             return self.tables[key]
-        raise AttributeError(f"{self.__class__.__name__} has no attribute {key}!")
+        return self.__getattribute__(key)
 
     def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""

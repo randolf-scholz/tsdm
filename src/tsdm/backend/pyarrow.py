@@ -72,8 +72,6 @@ def strip_whitespace_array(arr: Array, /) -> Array:
         return pa.chunked_array(
             [strip_whitespace_array(chunk) for chunk in arr.chunks],
         )
-    if isinstance(arr, Array) and arr.type == pa.string():
-        return pa.compute.utf8_trim_whitespace(arr)
     if isinstance(arr, ListArray) and arr.type.value_type == pa.string():
         return pa.compute.map(
             pa.compute.utf8_trim_whitespace,
@@ -84,6 +82,8 @@ def strip_whitespace_array(arr: Array, /) -> Array:
             arr.indices,
             pa.compute.utf8_trim_whitespace(arr.dictionary),
         )
+    if isinstance(arr, Array) and arr.type in {pa.string(), pa.large_string()}:
+        return pa.compute.utf8_trim_whitespace(arr)
     raise ValueError(f"Expected string array, got {arr.type}.")
 
 

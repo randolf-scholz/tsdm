@@ -67,7 +67,7 @@ def download(
         with (
             open(path, "wb") as file,
             tqdm(
-                desc=str(path),
+                desc=f"Downloading {path.name} from {url}",
                 total=int(response.headers.get("content-length", 0)),
                 unit="iB",
                 unit_scale=True,
