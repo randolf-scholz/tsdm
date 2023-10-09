@@ -78,6 +78,7 @@ from tsdm.datasets.mimic.mimic_iv_schema import (
     UNSTACKED_SCHEMAS,
 )
 from tsdm.utils.data import cast_columns, filter_nulls, force_cast, strip_whitespace
+from tsdm.utils.remote import download_directory_to_zip
 
 disallow_nan_values = {
     # fmt: off
@@ -133,8 +134,9 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
     """
 
     BASE_URL = r"https://physionet.org/content/mimiciv/get-zip"
-    INFO_URL = r"https://physionet.org/content/mimiciv/"
+    CONTENT_URL = r"https://physionet.org/files/mimiciv"
     HOME_URL = r"https://mimic.mit.edu/"
+    INFO_URL = r"https://physionet.org/content/mimiciv/"
 
     __version__ = NotImplemented
     rawdata_hashes = {
@@ -248,14 +250,23 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
         return table
 
     def download_file(self, fname: str, /) -> None:
+        if self.version_info not in [(1, 0), (2, 2)]:
+            # zip file is not directly downloadable for other versions.
+            download_directory_to_zip(
+                f"{self.CONTENT_URL}/{self.__version__}/",
+                self.rawdata_paths[fname],
+                username=input("MIMIC-IV username: "),
+                password=getpass(prompt="MIMIC-IV password: ", stream=None),
+                headers={"User-Agent": "Wget/1.21.2"},
+            )
+
         self.download_from_url(
             f"{self.BASE_URL}/{self.__version__}/",
             self.rawdata_paths[fname],
             username=input("MIMIC-IV username: "),
             password=getpass(prompt="MIMIC-IV password: ", stream=None),
-            headers={
-                "User-Agent": "Wget/1.21.2"
-            },  # NOTE: MIMIC only allows wget for some reason...
+            # NOTE: MIMIC only allows wget for some reason...
+            headers={"User-Agent": "Wget/1.21.2"},
         )
 
 

@@ -34,6 +34,7 @@ import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
+from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import PathLike
 from tsdm.types.protocols import SupportsShape
 
@@ -197,7 +198,7 @@ def validate_file_hash(
     logger: logging.Logger = __logger__,
     errors: Literal["warn", "raise", "ignore"] = "warn",
     hash_algorithm: Optional[str] = None,
-    hash_kwargs: Mapping[str, Any] = NotImplemented,
+    hash_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
     """Validate file(s), given reference hash value(s).
 
@@ -214,8 +215,6 @@ def validate_file_hash(
         ValueError: If the file hash does not match the reference hash.
         LookupError: If the file is not found in the reference hash table.
     """
-    hash_kwargs = {} if hash_kwargs is NotImplemented else hash_kwargs
-
     if errors not in {"warn", "raise", "ignore"}:
         raise ValueError(
             f"Invalid value for errors: {errors!r}. "

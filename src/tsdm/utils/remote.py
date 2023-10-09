@@ -2,43 +2,236 @@ r"""Implements a downloader for the TSDM-package."""
 
 __all__ = [
     "download",
+    "download_directory_to_zip",
+    "download_io",
     "import_from_url",
+    "iter_content",
+    "stream_download",
 ]
 
 import logging
+import os
 import subprocess
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from html.parser import HTMLParser
+from io import IOBase
 from pathlib import Path
-from typing import Any, Optional
+from typing import IO, Any, Optional
 from urllib.parse import urlparse
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import requests
+from requests import Session
 from tqdm.autonotebook import tqdm
 
+from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import PathLike
 from tsdm.utils.hash import validate_file_hash
 
 
-def download(
+class LinkParser(HTMLParser):
+    """Parse links from an HTML page."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.links: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            for name, value in attrs:
+                if name == "href" and value is not None:
+                    self.links.append(value)
+
+
+def download_io(
     url: str,
-    fname: Optional[PathLike] = None,
+    file: IO | IOBase,
     *,
-    headers: Optional[Mapping[str, str]] = None,
+    session: Optional[Session] = None,
     username: Optional[str] = None,
     password: Optional[str] = None,
-    request_options: Optional[Mapping[str, Any]] = None,
-    # download validation
+    headers: Mapping[str, str] = EMPTY_MAP,
+    request_options: Mapping[str, Any] = EMPTY_MAP,
     chunk_size: int = 1024,
+) -> None:
+    """Download a file from a URL to an IO stream."""
+    if session is None:
+        # construct the request
+        request_options = {
+            "headers": headers,
+            "auth": None if username is None else (username, password),
+            "stream": True,
+            "timeout": 10,
+        } | request_options
+        response = requests.get(url, **request_options)  # type: ignore[arg-type]
+    else:
+        response = session.get(url)
+
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"Failed to download {url} with status code {response.status_code}."
+        )
+
+    with tqdm(
+        desc=f"Downloading {url}",
+        total=int(response.headers.get("content-length", 0)),
+        unit="iB",
+        unit_scale=True,
+        unit_divisor=1024,
+        leave=False,
+    ) as progress_bar:
+        for data in response.iter_content(chunk_size=chunk_size):
+            if data:  # filter out keep-alive new chunks
+                progress_bar.update(chunk_size)
+                file.write(data)
+
+
+def stream_download(
+    url: str,
+    *,
+    session: Optional[Session] = None,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    headers: Mapping[str, str] = EMPTY_MAP,
+    request_options: Mapping[str, Any] = EMPTY_MAP,
+    chunk_size: int = 1024,
+) -> Iterator[bytes]:
+    """Download a file as a bytes-stream."""
+    if session is None:
+        # construct the request
+        request_options = {
+            "headers": headers,
+            "auth": None if username is None else (username, password),
+            "stream": True,
+            "timeout": 10,
+        } | request_options
+        response = requests.get(url, **request_options)  # type: ignore[arg-type]
+    else:
+        response = session.get(url)
+
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"Failed to download {url} with status code {response.status_code}."
+        )
+    with tqdm(
+        desc=f"Downloading {url}",
+        total=int(response.headers.get("content-length", 0)),
+        unit="iB",
+        unit_scale=True,
+        unit_divisor=1024,
+        leave=False,
+    ) as progress_bar:
+        for data in response.iter_content(chunk_size=chunk_size):
+            if data:  # filter out keep-alive new chunks
+                progress_bar.update(chunk_size)
+                yield data
+
+
+def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
+    """Iterate over the contents of a directory."""
+    response = session.get(url)
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"Failed to download {url} with status code {response.status_code}."
+        )
+
+    parser = LinkParser()
+    parser.feed(response.text)
+
+    for link in parser.links:
+        if link == "../":
+            continue
+        elif link.endswith("/"):  # Recursion
+            yield from iter_content(url + link, session=session)
+        else:
+            yield url + link
+
+
+# NOTE: Session options as of requests 2.26.0
+# __attrs__ = [
+#     "headers",
+#     "cookies",
+#     "auth",
+#     "proxies",
+#     "hooks",
+#     "params",
+#     "verify",
+#     "cert",
+#     "adapters",
+#     "stream",
+#     "trust_env",
+#     "max_redirects",
+# ]
+def download_directory_to_zip(
+    url: str,
+    zip_filename: PathLike,
+    *,
+    # session options
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    headers: Mapping[str, str] = EMPTY_MAP,
+    stream: bool = True,
+) -> None:
+    """Download a directory from a URL to a zip file."""
+    with Session() as session:
+        session.auth = (
+            (username, password)
+            if username is not None and password is not None
+            else None
+        )
+        session.headers.update(headers)
+        session.stream = stream
+
+        response = session.get(url)
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Failed to create session for {url} with status code"
+                f" {response.status_code}."
+            )
+
+        # Get the contents of the directory
+        content: list[str] = sorted(iter_content(url, session=session))
+        # Download the directory
+        with ZipFile(zip_filename, "w", compression=ZIP_DEFLATED) as archive:
+            for href in (pbar := tqdm(content)):
+                # get relative path w.r.t. the base url
+                file_name = os.path.relpath(href, url)
+                pbar.set_description(f"Downloading {file_name}")
+                with archive.open(file_name, "w") as file:
+                    download_io(href, file, session=session)
+
+
+def download(
+    url: str,
+    fname: Optional[PathLike | IOBase] = None,
+    *,
+    # request options
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    headers: Mapping[str, str] = EMPTY_MAP,
+    request_options: Mapping[str, Any] = EMPTY_MAP,
+    chunk_size: int = 1024,
+    # file options
     skip_existing: bool = False,
     hash_value: Optional[str] = None,
     hash_algorithm: Optional[str] = None,
-    hash_kwargs: Optional[Mapping[str, Any]] = None,
+    hash_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
     r"""Download a file from a URL.
 
     This is essentially a wrapper around `requests.get` with a progress bar.
     """
-    hash_kwargs = {} if hash_kwargs is None else hash_kwargs
+    if isinstance(fname, IOBase):
+        download_io(
+            url,
+            fname,
+            username=username,
+            password=password,
+            headers=headers,
+            request_options=request_options,
+            chunk_size=chunk_size,
+        )
+        return
 
     # construct the path
     path = Path(url.split("/")[-1] if fname is None else fname)
@@ -53,37 +246,25 @@ def download(
             )
         return
 
-    # construct the request
-    request_options = {
-        "headers": {} if headers is None else headers,
-        "auth": None if username is None else (username, password),
-        "stream": True,
-        "timeout": 10,
-    } | ({} if request_options is None else request_options)
-    response = requests.get(url, **request_options)  # type: ignore[arg-type]
-
     # attempt to download the file
     try:
-        with (
-            open(path, "wb") as file,
-            tqdm(
-                desc=f"Downloading {path.name} from {url}",
-                total=int(response.headers.get("content-length", 0)),
-                unit="iB",
-                unit_scale=True,
-                unit_divisor=1024,
-            ) as progress_bar,
-        ):
-            for data in response.iter_content(chunk_size=chunk_size):
-                if data:  # filter out keep-alive new chunks
-                    size = file.write(data)
-                    progress_bar.update(size)
+        with open(path, "wb") as file:
+            download_io(
+                url,
+                file,
+                username=username,
+                password=password,
+                headers=headers,
+                request_options=request_options,
+                chunk_size=chunk_size,
+            )
     except Exception as exc:
         path.unlink()
         raise RuntimeError(
             f"Error {exc!r} occurred while downloading {fname}, deleting partial files."
         ) from exc
-        # validate the file hash
+
+    # validate the file hash
     if hash_value is not None:
         validate_file_hash(
             path, hash_value, hash_algorithm=hash_algorithm, hash_kwargs=hash_kwargs
