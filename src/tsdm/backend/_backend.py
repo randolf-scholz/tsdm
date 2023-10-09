@@ -20,7 +20,7 @@ import torch
 from numpy import ndarray
 from pandas import DataFrame, Series
 from torch import Tensor
-from typing_extensions import get_args
+from typing_extensions import Self, get_args
 
 from tsdm.backend.numpy import numpy_apply_along_axes, numpy_like
 from tsdm.backend.pandas import (
@@ -202,8 +202,11 @@ class Backend(Generic[T]):
 
     strip_whitespace: SelfMap[T]
 
-    def __init__(self, backend: str) -> None:
+    def __init__(self, backend: str | Self) -> None:
         # set the selected backend
+        if isinstance(backend, Backend):
+            backend = backend.selected_backend
+
         assert backend in get_args(BackendID)
         self.selected_backend = cast(BackendID, backend)
 

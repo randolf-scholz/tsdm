@@ -1,4 +1,4 @@
-"""implement pandas backend for tsdm."""
+"""Implement `pandas`-backend for tsdm."""
 
 __all__ = [
     # Functions
@@ -126,7 +126,7 @@ def strip_whitespace_series(series: Series, /) -> Series:
 
 
 def pandas_strip_whitespace(x: P, /) -> P:
-    """Strip whitespace from all string elements in a pandas object."""
+    """Strip whitespace from all string elements in a `pandas` object."""
     if isinstance(x, DataFrame):
         return strip_whitespace_dataframe(x)
     if isinstance(x, Series):

@@ -1,4 +1,4 @@
-"""implement pandas backend for tsdm."""
+"""Implements `numpy`-backend for tsdm."""
 
 
 __all__ = [

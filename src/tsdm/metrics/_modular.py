@@ -196,12 +196,12 @@ class MSE(BaseLoss):
 
     .. math:: 𝖬𝖲𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖^2
 
-    If the normalize option is set to True, then the normalized ℓ²-norm is used instead:
+    If the `normalize` option is set to True, then the normalized ℓ²-norm is used instead:
 
     .. math:: ‖z‖^2_{2^*} ≔ \frac{1}{K}∑_{k=1}^K z_k^2
 
     If nan_policy is set to 'omit', then NaN targets are ignored, not counting them as observations.
-    In this case, the loss is computed as-if the NaN channels would not exist.
+    In this case, the loss is computed as if the NaN channels would not exist.
 
     .. math:: ‖z‖^2_{2^*} ≔ \frac{1}{∑_k m_k} ∑_{k=1}^K [m_k \? z_k^2 : 0]
 
@@ -262,12 +262,12 @@ class WMSE(WeightedLoss):
 
     .. math:: 𝗐𝖬𝖲𝖤(x，x̂) ∼ \frac{1}{N}∑_{n=1}^N ‖x̂_n - x_n‖_w^2
 
-    If the normalize option is set to True, then the weighted normalized weighted ℓ²-norm instead:
+    If the `normalize` option is set to True, then the weighted normalized weighted ℓ²-norm instead:
 
     .. math:: ‖z‖^2_{w^*} ≔ \frac{1}{∑_k m_k} ∑_{k=1}^K w_k z_k^2
 
     If nan_policy is set to 'omit', then NaN targets are ignored, not counting them as observations.
-    In this case, the loss is computed as-if the NaN channels would not exist.
+    In this case, the loss is computed as if the NaN channels would not exist.
     Crucially, the existing weights are re-weighted:
 
     .. math:: ‖z‖^2_{w^*} ≔ \frac{1}{∑_k m_k w_k} ∑_{k=1}^K [m_k \? w_k z_k^2 : 0]

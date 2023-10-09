@@ -16,7 +16,6 @@ __all__ = [
     "folds_as_sparse_frame",
     "folds_from_groups",
     # rnn
-    "collate_list",
     "collate_packed",
     "collate_padded",
     "unpad_sequence",
@@ -69,7 +68,6 @@ from tsdm.utils.data._data import (
     vlookup_uniques,
 )
 from tsdm.utils.data.dataloaders import (
-    collate_list,
     collate_packed,
     collate_padded,
     unpack_sequence,

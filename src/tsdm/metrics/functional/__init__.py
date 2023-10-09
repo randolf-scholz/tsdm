@@ -1,7 +1,5 @@
 r"""Implementations of loss functions.
 
-Notes
------
 Contains losses in functional form.
 """
 

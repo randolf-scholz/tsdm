@@ -45,8 +45,8 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    BASE_URL = r"https://www.physionet.org/content/mimiciv/get-zip/1.0/"
-    INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
+    BASE_URL = r"https://physionet.org/content/mimiciv/get-zip/1.0/"
+    INFO_URL = r"https://physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
 
@@ -73,20 +73,11 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
     }
 
     def clean_table(self) -> DataFrame:
-        if not self.rawdata_files_exist():
-            raise RuntimeError(
-                "Please manually apply the preprocessing code found at"
-                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
-                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
-                " package because the original.\nauthors did not provide a license"
-                " for it."
-            )
-
         self.LOGGER.info("Loading main file.")
         table: Table = csv.read_csv(self.rawdata_paths["full_dataset.csv"])
 
         if table.shape != self.rawdata_shape:
-            raise ValueError(f"The {table.shape=} is not correct.")
+            raise ValueError(f"{table.shape=} does not match {self.rawdata_shape=}.")
 
         # Convert to pandas.
         ts = (
@@ -112,18 +103,27 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
             .sort_index(axis="columns")
         )
 
-        # NOTE: Standardization is performed over full data slice, including test!
-        # https://github.com/mbilos/neural-flows-experiments/blob/d19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L50-L63
+        # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
+        #  over the full data slice, including test!
+        # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
         ts = (ts - ts.mean()) / ts.std()
 
-        # drop values outside 5 sigma range
-        ts = ts[(-5 < ts) & (ts < 5)]
+        # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
+        ts = ts[(-5 < ts) & (ts < 5)].dropna(axis=1, how="all").copy()
 
         # NOTE: only numpy float types supported by torch
-        ts = ts.dropna(axis=1, how="all").copy().astype("float32")
-        return ts
+        return ts.astype("float32")
 
     def download_file(self, fname: str, /) -> None:
+        if not self.rawdata_files_exist():
+            raise RuntimeError(
+                "Please manually apply the preprocessing code found at"
+                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
+                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
+                " package because the original.\nauthors did not provide a license"
+                " for it."
+            )
+
         path = self.rawdata_paths[fname]
 
         cut_dirs = self.BASE_URL.count("/") - 3
@@ -142,3 +142,47 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
 
         file = self.RAWDATA_DIR / "index.html"
         os.rename(file, fname)
+
+
+# class MIMIC_IV_Bilos2021(MIMIC_IV):
+#     RAWDATA_DIR = MIMIC_IV.RAWDATA_DIR
+#     __version__: Final[str] = "1.0"
+#     rawdata_hashes = {
+#         "mimic-iv-1.0.zip": (
+#             "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
+#         ),
+#     }
+#
+#     mimic_iv: MIMIC_IV
+#
+#     @cached_property
+#     def rawdata(self):
+#         self.mimic_iv = MIMIC_IV()
+#         return self.mimic_iv.tables
+#
+#     def clean_admissions(self):
+#         adm = self.rawdata["admissions"]
+#         patients_df = self.rawdata["patients"]
+#         chartevents = self.rawdata["chartevents"]
+#
+#         # keep only patients present in patients data
+#         adm_dob = pd.merge(
+#             patients_df[["subject_id", "anchor_age"]], adm, on="subject_id"
+#         )
+#
+#         df = adm.groupby("subject_id")["hadm_id"].nunique()
+#         subj_ids = list(df[df == 1].index)
+#
+#         adm_1 = adm_dob.assign(
+#             elapsed_days=(adm_dob["dischtime"] - adm_dob["admittime"]).dt.days
+#         ).loc[adm_dob["subject_id"].isin(subj_ids)]
+#
+#         adm_2 = adm_1.loc[
+#             (adm_1["elapsed_days"] > 2)
+#             & (adm_1["elapsed_days"] < 30)
+#             # only patients older than 15
+#             & (adm_1["anchor_age"] > 15)
+#             & (adm_1["hadm_id"].isin(chartevents["hadm_id"]))
+#         ]
+#
+#         return adm_2

@@ -51,7 +51,7 @@ class TrafficTRMF:
 
         5.1 Forecasting
         [...]
-        For electricity and traffic, we consider the 24-hour ahead forecasting task and use last
+        For electricity and traffic, we consider the 24-hour ahead forecasting task and use the last
         seven days as the test periods.
 
         A.1 Datasets and Evaluation Criteria

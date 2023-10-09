@@ -53,7 +53,7 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
         which is obviously false. Hence, the top position is a stable equilibrium.
 
     Note: (periodicity)
-        These equations are periodic with period 2π.
+        These equations are periodic with a period of 2π.
         in particular, quite annoyingly, when solving numerically we can
         get rather large values for θ. This could be avoided by using a
         different coordinate system, but we don't do that here.

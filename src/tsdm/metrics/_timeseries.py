@@ -50,7 +50,7 @@ class TimeSeriesLoss(Protocol):
         returns a single scalar. Each pair $(x_n,x̂_n)$ is of equal length $T_n$,
         but different pairs may have different lengths.
 
-        In principle this means that nested/ragged tensors are required.
+        In principle, this means that nested/ragged tensors are required.
         However, for the sake of simplicity, we assume that the tensors are
         padded with missing values, such that they are of equal length.
         """
@@ -122,7 +122,7 @@ class WeightedTimeSeriesLoss(TimeSeriesBaseLoss):
 
     .. math:: 𝓛(x，x̂)  = ∑_t ω_t Φ(w ⊙ (x_t - x̂_t))
 
-    where $Φ$ is some function acting on the weighted residuals, for example $Φ(r) = ‖r‖$.
+    where $Φ$ is some function acting on the weighted residuals, for example, $Φ(r) = ‖r‖$.
     """
 
     # Parameters

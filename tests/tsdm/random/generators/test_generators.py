@@ -15,8 +15,7 @@ from tsdm.random.generators import (
     LotkaVolterra,
 )
 
-RESULT_DIR = PROJECT.TEST_RESULTS_PATH / (PROJECT.TEST_RESULTS_PATH / __file__).stem
-RESULT_DIR.mkdir(parents=True, exist_ok=True)
+RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
 @mark.flaky(reruns=3)

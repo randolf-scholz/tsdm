@@ -90,7 +90,7 @@ class FrameEncoder(BaseEncoder, Generic[ColEncVar, IndEncVar]):
     In this case, the positions of the columns in the encoded DataFrame should coincide with the
     positions of the columns in the input DataFrame.
 
-    Todo: We want encoding groups, so for example applying an encoder to a group of columns.
+    Todo: We want encoding groups, so for example, applying an encoder to a group of columns.
 
     - [ ] Add support for groups of column-encoders
     """
@@ -305,7 +305,7 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
     In this case, the positions of the columns in the encoded DataFrame should coincide with the
     positions of the columns in the input DataFrame.
 
-    Todo: We want encoding groups, so for example applying an encoder to a group of columns.
+    Todo: We want encoding groups, so for example, applying an encoder to a group of columns.
 
     - [ ] Add support for groups of column-encoders
     """
@@ -385,7 +385,7 @@ class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
 
 
 class FrameIndexer(BaseEncoder):
-    r"""Change index of a pandas DataFrame.
+    r"""Change index of a `pandas.DataFrame`.
 
     For compatibility, this is done by integer index.
     """
@@ -1049,8 +1049,8 @@ class FrameAsDict(Mapping[str, list[str]], BaseEncoder):
         """Encode a DataFrame as a dict of Tensors.
 
         The encode method ensures treatment of missingness:
-        if columns in the dataframe are missing the correponding tensor columns
-        will be filled with NANs, if the datatype allows it.
+        if columns in the dataframe are missing, the correponding tensor columns
+        will be filled with `NAN`-values if the datatype allows it.
         """
         if self.encode_index:
             data = data.reset_index()

@@ -112,7 +112,7 @@ class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):
         return len(self.__dict__)
 
     def __hash__(self) -> int:
-        r"""Return permutation-invariant hash on `items()`."""
+        r"""Returns permutation-invariant hash on `items()`."""
         # Alternative:
         # https://stackoverflow.com/questions/1151658/python-hashable-dicts
         # return hash((frozenset(self), frozenset(self.itervalues())))

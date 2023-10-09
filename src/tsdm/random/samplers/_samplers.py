@@ -20,6 +20,7 @@ import logging
 import math
 from abc import abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
+from dataclasses import KW_ONLY, dataclass
 from datetime import timedelta as py_td
 from itertools import chain, count
 from typing import (
@@ -41,12 +42,13 @@ import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
+from typing_extensions import deprecated
 
 from tsdm.types.protocols import Lookup
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
 from tsdm.utils.data.datasets import DatasetCollection, MapStyleDataset
-from tsdm.utils.strings import repr_mapping
+from tsdm.utils.strings import repr_dataclass, repr_mapping
 
 
 def compute_grid(
@@ -76,7 +78,7 @@ def compute_grid(
         ),
     )
 
-    # generates zero variable of correct type
+    # generates zero-variable of the correct type.
     zero_dt = tmin - tmin
 
     if td == zero_dt:
@@ -94,9 +96,19 @@ def compute_grid(
 class Sampler(Protocol[T_co]):
     r"""Protocol for `Sampler`."""
 
-    def __iter__(self) -> Iterator[T_co]: ...
+    @property
+    @abstractmethod
+    def shuffle(self) -> bool:
+        """Whether to shuffle the data."""
+        ...
 
-    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[T_co]:
+        """Return an iterator over the indices of the data source."""
+        ...
+
+    def __len__(self) -> int:
+        """The number of samples that can be drawn by __iter__."""
+        ...
 
 
 class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
@@ -121,6 +133,9 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
     data: Sized
     r"""Copy of the original Data source."""
 
+    shuffle: bool = False
+    r"""Whether to shuffle the data."""
+
     def __init__(self, data_source: Sized, /) -> None:
         r"""Initialize the sampler."""
         self.data = data_source
@@ -129,11 +144,8 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
         r"""Return the length of the sampler."""
         return len(self.data)
 
-    @abstractmethod
-    def __iter__(self) -> Iterator[T_co]:
-        r"""Iterate over random indices."""
 
-
+@dataclass
 class RandomSampler(BaseSampler[T_co]):
     """Sampler randomly from the data source.
 
@@ -141,15 +153,10 @@ class RandomSampler(BaseSampler[T_co]):
     """
 
     data: MapStyleDataset[Any, T_co]
-    index: Index
+    _: KW_ONLY
+    shuffle: bool = False
 
-    def __init__(self, data_source: MapStyleDataset[Any, T_co], /) -> None:
-        r"""Initialize the sampler."""
-        super().__init__(data_source)
-
-        # ISSUE: data.__iter__ might either iter keys or values!
-        # ISSUE: auto-detection with try-except may be very slow!
-
+    def __post_init__(self) -> None:
         # FIXME: pretty horrible way to do it.
         if hasattr(self.data, "keys"):
             self.index = Series(self.data.keys())
@@ -163,11 +170,17 @@ class RandomSampler(BaseSampler[T_co]):
             self.index = Series(self.data)
 
     def __iter__(self) -> Iterator[T_co]:
-        for idx in np.random.permutation(len(self)):
+        for idx in (
+            np.random.permutation(len(self)) if self.shuffle else np.arange(len(self))
+        ):
             key = self.index[idx]
             yield self.data[key]
 
+    def __repr__(self):
+        return repr_dataclass(self)
 
+
+@deprecated("Use SlidingWindowSampler instead.")
 class SliceSampler(BaseSampler[Sequence[T_co]]):
     r"""Sample by index.
 
@@ -201,6 +214,7 @@ class SliceSampler(BaseSampler[Sequence[T_co]]):
     data: Sequence[T_co]
     idx: NDArray
     rng: np.random.Generator
+    shuffle: bool = False
 
     def __init__(
         self,
@@ -210,11 +224,13 @@ class SliceSampler(BaseSampler[Sequence[T_co]]):
         slice_sampler: Optional[int | Callable[[], int]] = None,
         sampler: Optional[Callable[[], tuple[int, int]]] = None,
         generator: Optional[np.random.Generator] = None,
-    ):
+        shuffle: bool = False,
+    ) -> None:
         super().__init__(data_source)
         self.data = data_source
         self.idx = np.arange(len(data_source))
         self.rng = np.random.default_rng() if generator is None else generator
+        self.shuffle = shuffle
 
         def _slicesampler_dispatch() -> Callable[[], int]:
             # use default if None is provided
@@ -260,7 +276,7 @@ class SliceSampler(BaseSampler[Sequence[T_co]]):
 
 
 class CollectionSampler(BaseSampler[tuple[K, T_co]]):
-    r"""Samples a single random dataset from a collection of dataset.
+    r"""Samples a single random dataset from a collection of datasets.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
     """
@@ -271,7 +287,7 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
     r"""The subsamplers to sample from the collection."""
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
-    shuffle: bool = True
+    shuffle: bool = False
     r"""Whether to sample in random order."""
     sizes: Series
     r"""The sizes of the subsamplers."""
@@ -284,7 +300,7 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
         subsamplers: Mapping[K, BaseSampler[T_co]],
         /,
         *,
-        shuffle: bool = True,
+        shuffle: bool = False,
         early_stop: bool = False,
     ):
         super().__init__(data_source)
@@ -335,7 +351,7 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
 
 
 class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
-    r"""Samples a single random dataset from a collection of dataset.
+    r"""Samples a single random dataset from a collection of datasets.
 
     Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
     """
@@ -346,7 +362,7 @@ class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
     r"""The subsamplers to sample from the collection."""
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
-    shuffle: bool = True
+    shuffle: bool = False
     r"""Whether to sample in random order."""
     sizes: Series
     r"""The sizes of the subsamplers."""
@@ -359,7 +375,7 @@ class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
         subsamplers: Mapping[K, Sampler[T_co]],
         /,
         *,
-        shuffle: bool = True,
+        shuffle: bool = False,
         early_stop: bool = False,
     ):
         super().__init__(data_source)
@@ -432,8 +448,8 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     offset: TDVar
     deltax: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]
     stride: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]
-    shuffle: bool
     intervals: DataFrame
+    shuffle: bool = False
 
     @staticmethod
     def _get_value(
@@ -455,7 +471,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
         stride: Optional[TDVar | Lookup[int, TDVar] | Callable[[int], TDVar]] = None,
         levels: Optional[Sequence[int]] = None,
         offset: Optional[TDVar] = None,
-        shuffle: bool = True,
+        shuffle: bool = False,
     ) -> None:
         super().__init__([])
         # set stride and offset
@@ -539,7 +555,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
     def __getattr__(self, key: str) -> Any:
         r"""Forward all other attributes to the interval frame."""
-        return self.intervals.__getattr__(key)
+        return getattr(self.intervals, key)
 
     def __getitem__(self, key: int) -> slice:
         r"""Return a slice from the sampler."""
@@ -553,11 +569,11 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
     k_max: int
     return_mask: bool
     seq_len: TDVar
-    shuffle: bool
     stride: TDVar
     xmax: DTVar
     xmin: DTVar
     # total_delta: TDVar
+    shuffle: bool = False
 
     def __init__(
         self,
@@ -647,23 +663,22 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     The `SlidingWindowSampler` generates tuples.
 
     Inputs:
-
-    - Ordered timestamps T
-    - Starting time t_0
-    - Final time t_f
-    - stride ∆t (how much the sampler advances at each step) default, depending on data type of T:
-        - integer: GCD(∆T)
-        - float: max(⌊AVG(∆T)⌋, ε)
+    - Ordered timestamps $T$
+    - Starting time $t_0$
+    - Final time $t_f$
+    - stride ∆t (how much the sampler advances at each step) default,
+      depending on the data type of $T$:
+        - integer: $GCD(∆T)$
+        - float: $\max(⌊AVG(∆T)⌋, ε)$
         - timestamp: resolution dependent.
-    - horizons: TimeDelta or Tuple[TimeDelta]
+    - horizons: `TimeDelta` or `tuple[TimeDelta, ...]`
 
-    The sampler will return tuples of ``len(horizons)+1``.
+    The sampler will return tuples of `len(horizons)+1`.
     """
 
     data: NDArray[NumpyDTVar]
 
     mode: MODE
-    shuffle: Final[bool]
     stride: NumpyTDVar
     tmax: NumpyDTVar
     tmin: NumpyDTVar
@@ -676,6 +691,8 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     zero_td: NumpyTDVar
     multi_horizon: bool
     cumulative_horizons: NDArray[NumpyTDVar]
+
+    shuffle: bool = False
 
     def __init__(
         self,

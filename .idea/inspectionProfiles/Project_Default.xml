@@ -108,6 +108,7 @@
       </option>
     </inspection_tool>
     <inspection_tool class="CssUnknownTarget" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="CssUnknownUnit" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="CssUnresolvedClass" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="CssUnresolvedClassInComposesRule" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="CssUnresolvedCustomProperty" enabled="true" level="ERROR" enabled_by_default="true" />
@@ -655,6 +656,7 @@
           <option value="types.UnionType.*" />
           <option value="pandas.core.indexes.datetimes.DatetimeIndex.round" />
           <option value="pandas.core.indexes.datetimes.DatetimeIndex.day_name" />
+          <option value="typing_extensions.*" />
         </list>
       </option>
     </inspection_tool>

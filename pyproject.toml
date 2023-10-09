@@ -6,7 +6,7 @@
 # region project configuration ------------------------------------------------------
 [project]
 name = "tsdm"
-version = "0.5.4"
+version = "0.5.7"
 authors = [{ name = "Randolf Scholz", email = "randolf.scholz@gmail.com" }]
 description = "Time-Series Datasets and Models"
 
@@ -33,14 +33,14 @@ dependencies = [
     "numpy>=1.26.0",
     "pandas>=2.1.1",
     "pillow>=10.0.1",
-    "polars>=0.19.4",
+    "polars>=0.19.7",
     "pyarrow>=13.0.0",
     "pyyaml>=6.0.1",
     "requests>=2.31.0",
     "scikit-learn>=1.3.1",
-    "scipy>=1.11.2",
-    "tensorboard>=2.14.0",
-    "torch>=2.0.1",
+    "scipy>=1.11.3",
+    "tensorboard>=2.14.1",
+    "torch>=2.1.0",
     "tqdm>=4.66.1",
     "typing-extensions>=4.8.0",
 ]
@@ -49,9 +49,10 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["tsdm[test,docs,extras,typing,flake8,linters,formatters,devtools]"]
 test = [
-    "coverage>=7.3.1",
+    "coverage>=7.3.2",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
+    "pytest-repeat>=0.9.2",
     "pytest-rerunfailures>=12.0",
     "pytest-xdist>=3.3.1",
     "pytest>=7.4.2",
@@ -66,6 +67,7 @@ docs = [
     "sphinx-automodapi>=0.16.0",
     "sphinx-copybutton>=0.5.2",
     "sphinx-math-dollar>=1.2.1",
+    "sphinx-togglebutton>=0.3.2",
     "sphinx-typo3-theme>=4.9.0",
     "sphinx>=7.2.6",
 ]
@@ -82,10 +84,11 @@ extras = [
 ]
 typing = [
     "mypy>=1.5.1",
-    "pyright>=1.1.328",
+    "pyright>=1.1.330",
     "types-colorama>=0.4.15",
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
+    "types-jsonschema>=4.19.0",
     "types-pillow>=10.0.0",
     "types-protobuf>=4.24.0",
     "types-psutil>=5.9.5",
@@ -116,10 +119,10 @@ linters = [
     "pycodestyle>=2.11.0",
     "pydocstyle>=6.3.0",
     "pyflakes>=3.1.0",
-    "pylint>=2.17.6",
-    "pylint-gitlab>=1.2.0",
-    "ruff>=0.0.291",
-    "ruff-lsp>=0.0.39",
+    "pylint>=2.17.7",
+    "pylint-gitlab>=2.0.0",
+    "ruff>=0.0.292",
+    "ruff-lsp>=0.0.40",
     "slotscheck>=0.17.0",
 ]
 formatters = [
@@ -451,6 +454,9 @@ addopts = [
     #    "--reruns=",          # number of times to re-run failed tests. defaults to 0.
     #    "--reruns-delay=",    # add time (seconds) delay between reruns.
     #    "--only-rerun=",      # If passed, only rerun errors matching the regex provided.
+    # xdists options
+    "--numprocesses=4",  # use 4 parallel processes
+    # "--dist=loadfile", # loadscope, loadfile, load, each, no
     # coverage options
     "--cov=tsdm",  # Path or package name to measure during execution (multi-allowed).
     "--cov-report=term:skip-covered",
@@ -464,6 +470,7 @@ markers = [
 required_plugins = [
     "pytest-benchmark",
     "pytest-cov",
+    "pytest-repeat",
     "pytest-rerunfailures",
     "pytest-xdist",
 ]
@@ -498,7 +505,7 @@ line-length = 120
 # region poetry configuration ----------------------------------------------------------
 [tool.poetry]
 name = "tsdm"
-version = "0.5.4"
+version = "0.5.7"
 authors = ["Randolf Scholz <rscholz@ismll.de>"]
 description = "Time-Series Datasets and Models"
 
@@ -527,19 +534,19 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
 matplotlib = ">=3.8.0"
 numpy = ">=1.26.0"
 pandas = ">=2.1.1"
 pillow = ">=10.0.1"
-polars = ">=0.19.4"
+polars = ">=0.19.7"
 pyarrow = ">=13.0.0"
+python = ">=3.10,<3.12"
 pyyaml = ">=6.0.1"
 requests = ">=2.31.0"
 scikit-learn = ">=1.3.1"
-scipy = ">=1.11.2"
-tensorboard = ">=2.14.0"
-torch = ">=2.0.1"
+scipy = ">=1.11.3"
+tensorboard = ">=2.14.1"
+torch = ">=2.1.0"
 tqdm = ">=4.66.1"
 typing-extensions = ">=4.8.0"
 
@@ -556,10 +563,11 @@ torchinfo = ">=1.8.0"
 
 
 [tool.poetry.group.test.dependencies]
-coverage = ">=7.3.1"
+coverage = ">=7.3.2"
 pytest = ">=7.4.2"
 pytest-benchmark = ">=4.0.0"
 pytest-cov = ">=4.1.0"
+pytest-repeat = ">=0.9.2"
 pytest-rerunfailures = ">=12.0"
 pytest-xdist = ">=3.3.1"
 
@@ -580,12 +588,13 @@ sphinx-automodapi = ">=0.16.0"
 sphinx-copybutton = ">=0.5.2"
 sphinx-math-dollar = ">=1.2.1"
 #sphinx-pdj-theme = ">=0.4.0"
+sphinx-togglebutton = ">=0.3.2"
 sphinx-typo3-theme = ">=4.9.0"
 #sphinxawesome-theme = ">=4.1.0"
 
 
 [tool.poetry.group.devtools.dependencies]
-cmake = ">=3.27.5"
+cmake = ">=3.27.6"
 devtools = ">=0.12.2"
 johnnydep = ">=1.20.3"
 ninja = ">=1.11.1"
@@ -628,19 +637,20 @@ perflint = ">=0.7.3"
 pycodestyle = ">=2.11.0"
 pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
-pylint = ">=2.17.6"
-pylint-gitlab = ">=1.2.0"
-ruff = ">=0.0.291"
-ruff-lsp = ">=0.0.39"
+pylint = ">=2.17.7"
+pylint-gitlab = ">=2.0.0"
+ruff = ">=0.0.292"
+ruff-lsp = ">=0.0.40"
 slotscheck = ">=0.17.0"
 
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.5.1"
-pyright = ">=1.1.328"
+pyright = ">=1.1.330"
 types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"
+types-jsonschema = ">=4.19.0"
 types-pillow = ">=10.0.0"
 types-protobuf = ">=4.24.0"
 types-psutil = ">=5.9.5"

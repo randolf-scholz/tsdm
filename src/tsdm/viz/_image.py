@@ -28,7 +28,8 @@ def kernel_heatmap(
 ) -> NDArray:
     r"""Create heatmap of given matrix.
 
-    .. Signature:: ``(..., ) ⟶ (..., 3)`` if "HWC" or ``(..., ) ⟶ (3, ...)`` if "CHW".
+    .. Signature:: ``(..., ) ⟶ (..., 3)`` if "HWC"
+    .. Signature:: ``(..., ) ⟶ (3, ...)`` if "CHW".
 
     By default, the data is linearly transformed to a normal distribution $𝓝(½,⅙)$,
     which ensures that 99.7% of the data lies in the interval $[0,1]$, and then clipped.
@@ -67,17 +68,17 @@ def rasterize(
     px: int = 512,
     py: int = 512,
 ) -> np.ndarray:
-    r"""Convert figure to image with specific pixel size.
+    r"""Convert a figure to image with specific pixel size.
 
     The dpi setting will be automatically determined as the average of the
     horizontal and vertical dpi.
 
     Args:
         fig: Figure to rasterize.
-        w: Width of figure in inches.
-        h: Height of figure in inches.
-        px: Width of figure in pixels.
-        py: Height of figure in pixels.
+        w: Width of the figure in inches.
+        h: Height of the figure in inches.
+        px: Width of the figure in pixels.
+        py: Height of the figure in pixels.
     """
     dpi = (px / w + py / h) // 2  # compromise
     fig.set_dpi(dpi)

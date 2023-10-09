@@ -1,6 +1,6 @@
 """Utilities for backends.
 
-Currently, supports pandas / numpy / torch.
+Supports pandas / numpy / torch.
 """
 
 __all__ = [

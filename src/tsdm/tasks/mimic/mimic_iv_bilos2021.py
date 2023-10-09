@@ -20,7 +20,7 @@ Notes:
     - Authors code is available at [2]_.
     - The authors use a 70/15/15 split for train/valid/test. This is not mentioned in the paper but can
       be seen in the code. Moreover, the authors (accidentally?) use the same random seed (0) for each fold [3]_.
-      This explains the low reported stds.::
+      This explains the low reported values for the standard deviation::
 
             train_idx, eval_idx = train_test_split(
                 full_data.index.unique(),
@@ -45,11 +45,11 @@ References
 """
 
 __all__ = [
-    "MIMIC_IV_Bilos2021",
-    "mimic_collate",
-    "Sample",
     "Batch",
-    "TaskDataset",
+    "MIMIC_IV_Bilos2021",
+    "MIMIC_IV_SampleGenerator",
+    "Sample",
+    "mimic_collate",
 ]
 
 import warnings
@@ -64,6 +64,7 @@ from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
+from typing_extensions import deprecated
 
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FastFrameEncoder, MinMaxScaler
@@ -97,23 +98,8 @@ class Sample(NamedTuple):
         return repr_namedtuple(self)
 
 
-class Batch(NamedTuple):
-    r"""A single sample of the data."""
-
-    x_time: Tensor  # B×N:   the input timestamps.
-    x_vals: Tensor  # B×N×D: the input values.
-    x_mask: Tensor  # B×N×D: the input mask.
-
-    y_time: Tensor  # B×K:   the target timestamps.
-    y_vals: Tensor  # B×K×D: the target values.
-    y_mask: Tensor  # B×K×D: teh target mask.
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
-
-
 @dataclass
-class TaskDataset(Dataset):
+class MIMIC_IV_SampleGenerator(Dataset):
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
@@ -145,7 +131,22 @@ class TaskDataset(Dataset):
         return f"{self.__class__.__name__}"
 
 
-# @torch.jit.script  # seems to break things
+class Batch(NamedTuple):
+    r"""A single sample of the data."""
+
+    x_time: Tensor  # B×N:   the input timestamps.
+    x_vals: Tensor  # B×N×D: the input values.
+    x_mask: Tensor  # B×N×D: the input mask.
+
+    y_time: Tensor  # B×K:   the target timestamps.
+    y_vals: Tensor  # B×K×D: the target values.
+    y_mask: Tensor  # B×K×D: teh target mask.
+
+    def __repr__(self) -> str:
+        return repr_namedtuple(self)
+
+
+@deprecated("Consider using tasks.utils.collate_timeseries instead.")
 def mimic_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 
@@ -275,7 +276,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
                 mask = splits.index.isin(split)
                 splits[k] = splits[k].where(
                     ~mask, key
-                )  # where cond is false is replaces with key
+                )  # where cond is `False`, the value is replaced with 'key'.
         return splits
 
     @cached_property
@@ -353,12 +354,12 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         r"""Return the dataloader for the given key."""
         fold, partition = key
         fold_idx = self.folds[fold][partition]
-        dataset = TaskDataset(
+        dataset = MIMIC_IV_SampleGenerator(
             [val for idx, val in self.tensors.items() if idx in fold_idx],
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )
-        kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
+        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)
 
 

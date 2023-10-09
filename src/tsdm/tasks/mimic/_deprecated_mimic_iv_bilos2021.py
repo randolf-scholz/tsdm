@@ -117,7 +117,7 @@ def mimic_collate(batch: list[Sample]) -> Batch:
         t, x, t_target = sample.inputs
         y = sample.targets
 
-        # get whole time interval
+        # get the whole time interval
         time = torch.cat((t, t_target))
         sorted_idx = torch.argsort(time)
 
@@ -252,7 +252,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
                 mask = splits.index.isin(split)
                 splits[k] = splits[k].where(
                     ~mask, key
-                )  # where cond is false is replaces with key
+                )  # where cond is `False`, the value is replaced with 'key'.
         return splits
 
     @cached_property
@@ -335,7 +335,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )
-        kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
+        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)
 
 

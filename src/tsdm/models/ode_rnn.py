@@ -24,7 +24,7 @@ from tsdm.utils import deep_dict_update
 
 @contextmanager
 def add_to_path(p: Path) -> Iterator:
-    r"""Append path to environment variable PATH.
+    r"""Appends a path to environment variable PATH.
 
     References:
         - https://stackoverflow.com/a/41904558/9318372
@@ -41,7 +41,7 @@ def add_to_path(p: Path) -> Iterator:
 def path_import(
     module_path: Path, /, *, module_name: Optional[str] = None
 ) -> ModuleType:
-    r"""Return python module imported from path.
+    r"""Return python module imported from the path.
 
     References:
         - https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly

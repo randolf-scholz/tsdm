@@ -81,7 +81,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
         x0 = y0[..., 0]
         v0 = y0[..., 1]
 
-        # mod out period ⇝ at most 2 bounces
+        # mod-out period ⇝ at most 2 bounces
         half_period = (self.x_max - self.x_min) / abs(v0)
         t = np.mod.outer(t, 2 * half_period)
 

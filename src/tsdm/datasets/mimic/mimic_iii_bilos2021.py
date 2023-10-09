@@ -45,53 +45,42 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    BASE_URL = r"https://www.physionet.org/content/mimiciv/get-zip/1.0/"
-    INFO_URL = r"https://www.physionet.org/content/mimiciv/1.0/"
+    BASE_URL = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
+    INFO_URL = r"https://physionet.org/content/mimiciii/1.4/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"
 
-    rawdata_files = ["full_dataset.csv"]
+    rawdata_files = ["complete_tensor.csv"]
     rawdata_hashes = {
-        "full_dataset.csv": (
+        "complete_tensor.csv": (
             "sha256:f2b09be20b021a681783d92a0091a49dcd23d8128011cb25990a61b1c2c1210f"
         )
     }
     rawdata_schemas = {
-        "full_dataset.csv": {
+        "complete_tensor.csv": {
             "hadm_id": "int32[pyarrow]",
             "time_stamp": "int16[pyarrow]",
         }
     }
 
-    rawdata_shape = (2485649, 206)
+    rawdata_shape = (3082224, 7)
     table_names = ["timeseries"]
     table_hashes = {
         "timeseries": "pandas:-5464950709022187442",
     }
     table_shapes = {
-        "timeseries": (2485649, 102),
+        "timeseries": (552327, 96),
+        "metadata": (96, 3),
     }
 
     def clean_table(self) -> DataFrame:
-        if not self.rawdata_files_exist():
-            raise RuntimeError(
-                "Please manually apply the preprocessing code found at"
-                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
-                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
-                " package because the original.\nauthors did not provide a license"
-                " for it."
-            )
-
         self.LOGGER.info("Loading main file.")
-        table: Table = csv.read_csv(self.rawdata_paths["full_dataset.csv"])
-
-        if table.shape != self.rawdata_shape:
-            raise ValueError(f"The {table.shape=} is not correct.")
+        table: Table = csv.read_csv(self.rawdata_paths["complete_tensor.csv"])
 
         # Convert to pandas.
         ts = (
             table.to_pandas(self_destruct=True)
-            .astype(self.rawdata_schemas["full_dataset.csv"])
+            .astype(self.rawdata_schemas["complete_tensor.csv"])
             .set_index(["hadm_id", "time_stamp"])
             .sort_index()
         )
@@ -112,14 +101,28 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
             .sort_index(axis="columns")
         )
 
-        return ts
+        # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
+        #  over the full data slice, including test!
+        # https://github.com/mbilos/neural-flows-experiments/blob/master/nfe/experiments/gru_ode_bayes/lib/get_data.py
+        ts = (ts - ts.mean()) / ts.std()
+
+        return ts.astype("float32")
 
     def download_file(self, fname: str, /) -> None:
+        if not self.rawdata_files_exist():
+            raise RuntimeError(
+                "Please manually apply the preprocessing code found at"
+                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
+                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
+                " package because the original.\nauthors did not provide a license"
+                " for it."
+            )
+
         path = self.rawdata_paths[fname]
 
         cut_dirs = self.BASE_URL.count("/") - 3
-        user = input("MIMIC-IV username: ")
-        password = getpass(prompt="MIMIC-IV password: ", stream=None)
+        user = input("MIMIC-III username: ")
+        password = getpass(prompt="MIMIC-III password: ", stream=None)
 
         os.environ["PASSWORD"] = password
 

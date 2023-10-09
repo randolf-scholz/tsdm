@@ -1,10 +1,10 @@
 r"""Generators for synthetic time series dataset.
 
 Contrary to `tsdm.dataset`, which contains static, real-world dataset, this module
-contains generators for synthetic dataset. By design each generator consists of
+contains generators for synthetic dataset. By design, each generator consists of
 
 - Configuration parameters, e.g. number of dimensions etc.
-- Allows sampling from the data ground truth distribution p(x,y)
+- Allows sampling from the data ground truth distribution $p(x,y)$.
 - Allows estimating the Bayes Error, i.e. the best performance possible on the dataset.
 """
 
@@ -26,6 +26,7 @@ import numpy as np
 import scipy.stats
 from numpy.typing import ArrayLike
 from scipy.optimize import OptimizeResult as OdeResult
+from scipy.stats import rv_continuous
 
 from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
@@ -39,7 +40,7 @@ class Generator(Protocol[T_co]):
 
     @abstractmethod
     def rvs(self, size: SizeLike = ()) -> T_co:
-        """Random variates of given type."""
+        """Random variates of the given type."""
         ...
 
 
@@ -49,7 +50,7 @@ class TimeSeriesGenerator(Protocol[T_co]):
 
     @abstractmethod
     def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
-        """Random variates of given type."""
+        """Random variates of the given type."""
         ...
 
 
@@ -79,17 +80,17 @@ class ODE(Protocol[T_co]):
 
 @runtime_checkable
 class IVP_Solver(Protocol[T_co]):
-    """Protocol for initial value problem solvers.
+    r"""Protocol for initial value problem solvers.
 
-    This is desined to be compatible with several solvers from different libraries:
+    This is designed to be compatible with several solvers from different libraries:
 
     Examples:
         - `scipy.integrate.odeint`
-            - expects system to be Callable[[t, y], ...] or Callable[[t, y], ...]
+            - expects system-component to be `Callable[[t, y], ...]` or `Callable[[t, y], ...]`
         - `scipy.integrate.solve_ivp`
-            - expects system to be Callable[[t, y], ...]
+            - expects system to be `Callable[[t, y], ...]`
         - `torchdiffeq.odeint`
-            - expects system to be Callable[[t, y], ...]
+            - expects system to be `Callable[[t, y], ...]`
         - `torchsde.sdeint`
             - expects system to be SDE object with methods
                 - `f(self, t, y) -> ...` (drift)
@@ -97,7 +98,7 @@ class IVP_Solver(Protocol[T_co]):
 
     Note:
         - `scipy.integrate.solve_ivp` has y0 before t, therefore, we require that
-          y0 is passed as a keyword argument.
+          `y0` is passed as a keyword argument.
     """
 
     def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
@@ -165,7 +166,7 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         ...
 
     def rvs(self, t: ArrayLike, size: SizeLike = ()) -> T_co:
-        """Random variates of given type."""
+        """Random variates of the given type."""
         # get the initial state
         y0 = self.get_initial_state(size=size)
 
@@ -219,7 +220,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         """Generate (multiple) initial state(s) y₀."""
         # get the initial state
         y0 = self._get_initial_state(size=size)
-        # project onto constraint set
+        # project onto the constraint set
         y0 = self.project_initial_state(y0)
         # validate initial state
         self.validate_initial_state(y0)
@@ -230,7 +231,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         """Create observations from the solution."""
         # get observations (add noise))
         obs = self._make_observations(sol)
-        # project onto constraint set
+        # project onto the constraint set
         obs = self.project_observations(obs)
         # validate observations
         self.validate_observations(obs)
@@ -241,7 +242,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         """Solve the initial value problem."""
         # solve the initial value problem
         sol = self._solve_ivp(t, y0=y0)
-        # project onto constraint set
+        # project onto the constraint set
         sol = self.project_solution(sol)
         # validate solution
         self.validate_solution(sol)
@@ -284,6 +285,6 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
 
 
 if TYPE_CHECKING:
-    scipy_dist: type[Distribution] = scipy.stats.rv_continuous
+    scipy_dist: type[Distribution] = rv_continuous
     scipy_solver: IVP_Solver = scipy.integrate.solve_ivp
     _solve_ivp: IVP_Solver = solve_ivp

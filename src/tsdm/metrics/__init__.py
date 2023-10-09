@@ -1,5 +1,7 @@
 r"""Implementation of loss functions.
 
+Contains losses in both modular and functional form.
+
 Theory
 ------
 We define the following
@@ -9,8 +11,8 @@ We define the following
     .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)^n ⟶ ℝ_{≥0}
         \qq{s.t.} \text{$𝔪(Y，Ŷ) = 0$ if and only if $y_n=ŷ_n∀n=1:N$}
 
-    I.e. a function that takes a finite number of pairs $(y_n, ŷ_n)_{n=1:N}$
-    and returns a non-negative scalar. We donote $Y≔(y_n)_n$ and $Ŷ≔(ŷ_n)_n$
+    I.e., a function that takes a finite number of pairs $(y_n, ŷ_n)_{n=1:N}$
+    and returns a non-negative scalar. We denote $Y≔(y_n)_n$ and $Ŷ≔(ŷ_n)_n$
     and write $𝔪(Y，Ŷ)$ for the metric value.
 
 2. A metric is called **decomposable**, if and only if it can be written as a composition
@@ -25,7 +27,7 @@ We define the following
     - mean: $Ψ(r) = 𝐄_n r_n ≔ \frac{1}{N} ∑_{n=1}^N r_N$
     - median: $Ψ(r) = 𝐌_n r_n ≔ \Median((r_n)_{n=1:N})$
 
-3. A metric is called **instance-wise**, if it can be written in the form
+3. A metric is called **instance-wise** if it can be written in the form
 
     .. math:: 𝔪： ⋃_{n∈ℕ}(𝓨×𝓨)^n ⟶ ℝ_{≥0}, 𝔪(Y，Ŷ) = ∑_{n=1}^N ω(n,N) ℓ(y_n，ŷ_n)
 
@@ -38,12 +40,9 @@ We define the following
 
 Note that in the context of time-series, we allow the accumulator to depend on the time variable.
 
-Notes
------
-Contains losses in both modular and functional form.
-
-- See `tsdm.losses.functional` for functional implementations.
-- See `tsdm.losses` for modular implementations.
+See Also:
+    - `tsdm.losses.functional` for functional implementations.
+    - `tsdm.losses` for modular implementations.
 """
 
 __all__ = [

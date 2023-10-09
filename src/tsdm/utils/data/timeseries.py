@@ -65,7 +65,7 @@ class TimeTensor(Tensor):
     def __new__(
         cls, x: Sized, *args: Any, index: Optional[Index] = None, **kwargs: Any
     ) -> Self:
-        r"""Create new object.
+        r"""Create a new object.
 
         If index is not provided, then `range(len(x))` will be used as the index.
         """
@@ -229,7 +229,7 @@ class TimeSeriesDataset(TorchDataset):
         return max(self.timeseries.index) - min(self.timeseries.index)
 
     def __getitem__(self, item: Any) -> Self:
-        r"""Return corresponding slice from each tensor."""
+        r"""Returns the corresponding slice from each tensor."""
         if isinstance(self.timeseries, tuple):
             if isinstance(self.timeseries, NTuple):
                 timeseries = self.ts_type(*(ts[item] for ts in self.timeseries))

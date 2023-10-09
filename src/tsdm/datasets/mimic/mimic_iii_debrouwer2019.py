@@ -2,7 +2,7 @@ r"""MIMIC-III Clinical Database.
 
 Abstract
 --------
-MIMIC-III is a large, freely-available database comprising de-identified health-related
+MIMIC-III is a large, freely available database comprising de-identified health-related
 data associated with over forty thousand patients who stayed in critical care units of
 the Beth Israel Deaconess Medical Center between 2001 and 2012.
 The database includes information such as demographics, vital sign measurements made at
@@ -101,14 +101,6 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
     metadata: DataFrame
 
     def clean_table(self, key: KEY) -> DataFrame:
-        if not self.rawdata_files_exist():
-            raise RuntimeError(
-                "Please manually apply the preprocessing code found at"
-                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
-                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
-                " package because the original.\nauthors did not provide a license"
-                " for it."
-            )
         if key == "metadata":
             return self.timeseries.describe().T.astype("float32")
 
@@ -141,6 +133,15 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         return ts
 
     def download_file(self, fname: str, /) -> None:
+        if not self.rawdata_files_exist():
+            raise RuntimeError(
+                "Please manually apply the preprocessing code found at"
+                f" {self.GITHUB_URL}.\nPut the resulting file 'complete_tensor.csv' in"
+                f" {self.RAWDATA_DIR}.\nThe cleaning code is not included in this"
+                " package because the original.\nauthors did not provide a license"
+                " for it."
+            )
+
         path = self.rawdata_paths[fname]
 
         cut_dirs = self.BASE_URL.count("/") - 3

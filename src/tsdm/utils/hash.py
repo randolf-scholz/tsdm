@@ -34,6 +34,7 @@ import pyarrow as pa
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 
+from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import PathLike
 from tsdm.types.protocols import SupportsShape
 
@@ -197,7 +198,7 @@ def validate_file_hash(
     logger: logging.Logger = __logger__,
     errors: Literal["warn", "raise", "ignore"] = "warn",
     hash_algorithm: Optional[str] = None,
-    hash_kwargs: Mapping[str, Any] = NotImplemented,
+    hash_kwargs: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
     """Validate file(s), given reference hash value(s).
 
@@ -214,8 +215,6 @@ def validate_file_hash(
         ValueError: If the file hash does not match the reference hash.
         LookupError: If the file is not found in the reference hash table.
     """
-    hash_kwargs = {} if hash_kwargs is NotImplemented else hash_kwargs
-
     if errors not in {"warn", "raise", "ignore"}:
         raise ValueError(
             f"Invalid value for errors: {errors!r}. "
@@ -355,7 +354,7 @@ def validate_table_hash(
     logger: logging.Logger = __logger__,
     **hash_kwargs: Any,
 ) -> None:
-    """Validate the hash of a pandas object, given hash values from a table."""
+    """Validate the hash of a `pandas` object, given hash values from a table."""
     # Try to determine the hash algorithm from the array type
     name = f"{type(table)} of shape={table.shape}"
 
@@ -542,10 +541,10 @@ def validate_table_schema(
     reference_shape: Optional[tuple[int, int]] = None,
     reference_schema: Optional[Sequence[str] | Mapping[str, str] | pa.Schema] = None,
 ) -> None:
-    """Validate the schema of a pandas object, given schema values from a table.
+    """Validate the schema of a `pandas` object, given schema values from a table.
 
-    Checks if the columns and dtypes of the table match the reference schema.
-    Checks if the shape of the table matches the reference schema.
+    Check if the columns and dtypes of the table match the reference schema.
+    Check if the shape of the table matches the reference schema.
     """
     # get shape, columns and dtypes from table
     match table:

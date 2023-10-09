@@ -37,7 +37,7 @@ More details
 Data used in the competition is sourced from ICU patients in three separate hospital systems.
 Data from two hospital systems will be publicly available; however, one data set will be censored
 and used for scoring. The data for each patient will be contained within a single pipe-delimited
-text file. Each file will have the same header and each row will represent a single hour's worth
+text file. Each file will have the same header, and each row will represent a single hour's worth
 of data. Available patient co-variates consist of Demographics, Vital Signs, and Laboratory values,
 which are defined in the tables below.
 
@@ -45,10 +45,10 @@ The following time points are defined for each patient:
 
 tsuspicion
 
-    1. Clinical suspicion of infection identified as the earlier timestamp of IV antibiotics and
+    1. Clinical suspicion of infection, identified as the earlier timestamp of IV antibiotics and
        blood cultures within a specified duration.
     2. If antibiotics were given first, then the cultures must have been obtained within 24 hours.
-       If cultures were obtained first, then antibiotic must have been subsequently ordered within
+       If cultures were obtained first, then antibiotics must have been subsequently ordered within
        72 hours.
     3. Antibiotics must have been administered for at least 72 consecutive hours to be considered.
 

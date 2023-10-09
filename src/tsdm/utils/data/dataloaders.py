@@ -10,7 +10,6 @@ We implement multiple levels of abstraction.
 
 __all__ = [
     # Functions
-    "collate_list",
     "collate_packed",
     "collate_padded",
     "unpad_sequence",
@@ -31,11 +30,6 @@ from torch.nn.utils.rnn import (
 from tsdm.linalg import aggregate_and, cumulative_and
 
 
-def collate_list(batch: list[Tensor], /) -> list[Tensor]:
-    r"""Collates list of tensors as list of tensors."""
-    return batch
-
-
 def collate_packed(batch: list[Tensor], /) -> PackedSequence:
     r"""Collates list of tensors into a PackedSequence."""
     # First, need to sort in descending order by length
@@ -46,7 +40,7 @@ def collate_packed(batch: list[Tensor], /) -> PackedSequence:
 def collate_padded(
     batch: list[Tensor], /, *, batch_first: bool = True, padding_value: float = 0.0
 ) -> Tensor:
-    r"""Collates list of tensors of varying lengths into a single Tensor, padded with zeros.
+    r"""Collates a list of tensors of varying lengths into a single Tensor, padded with zeros.
 
     Equivalent to `torch.nn.utils.rnn.pad_sequence`, but with `batch_first=True` as default
 

@@ -35,8 +35,8 @@ Preprocessing Details
 6. procedureevents: convert storetime to second resolution
 7. chartevents:
     - Drop rows with missing valueuom
-    - cast value to float
-    - unstack value/valueuom??
+    - Cast values to float.
+    - Unstack value/valueuom?
 
 Tables that may require unstacking
 ----------------------------------
@@ -56,6 +56,7 @@ __all__ = ["MIMIC_IV_RAW", "MIMIC_IV"]
 
 
 import gzip
+from functools import cached_property
 from getpass import getpass
 from typing import get_args
 from zipfile import ZipFile
@@ -77,6 +78,7 @@ from tsdm.datasets.mimic.mimic_iv_schema import (
     UNSTACKED_SCHEMAS,
 )
 from tsdm.utils.data import cast_columns, filter_nulls, force_cast, strip_whitespace
+from tsdm.utils.remote import download_directory_to_zip
 
 disallow_nan_values = {
     # fmt: off
@@ -131,11 +133,12 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    BASE_URL = r"https://www.physionet.org/content/mimiciv/get-zip/"
-    INFO_URL = r"https://www.physionet.org/content/mimiciv/"
+    BASE_URL = r"https://physionet.org/content/mimiciv/get-zip"
+    CONTENT_URL = r"https://physionet.org/files/mimiciv"
     HOME_URL = r"https://mimic.mit.edu/"
+    INFO_URL = r"https://physionet.org/content/mimiciv/"
 
-    __version__ = "2.2"
+    __version__ = NotImplemented
     rawdata_hashes = {
         "mimic-iv-1.0.zip": (
             "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
@@ -145,53 +148,85 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
         ),
     }
 
-    table_names: tuple[KEYS, ...] = get_args(KEYS)
+    @cached_property
+    def table_names(self) -> tuple[KEYS, ...]:
+        names = tuple(self.filelist)
+        assert set(names) <= set(get_args(KEYS))
+        return names
 
-    @property
+    @cached_property
     def rawdata_files(self) -> list[str]:
         return [f"mimic-iv-{self.__version__}.zip"]
 
-    @property
+    @cached_property
     def filelist(self) -> dict[KEYS, str]:
         """Mapping between table_names and contents of the zip file."""
-        return {
+        top = f"mimic-iv-{self.__version__}"
+
+        files = {
             # fmt: off
-            # "CHANGELOG"          : f"mimic-iv-{self.__version__}/CHANGELOG.txt",
-            # "LICENSE"            : f"mimic-iv-{self.__version__}/LICENSE.txt",
-            # "SHA256SUMS"         : f"mimic-iv-{self.__version__}/SHA256SUMS.txt",
-            "admissions"         : f"mimic-iv-{self.__version__}/hosp/admissions.csv.gz",
-            "d_hcpcs"            : f"mimic-iv-{self.__version__}/hosp/d_hcpcs.csv.gz",
-            "d_icd_diagnoses"    : f"mimic-iv-{self.__version__}/hosp/d_icd_diagnoses.csv.gz",
-            "d_icd_procedures"   : f"mimic-iv-{self.__version__}/hosp/d_icd_procedures.csv.gz",
-            "d_labitems"         : f"mimic-iv-{self.__version__}/hosp/d_labitems.csv.gz",
-            "diagnoses_icd"      : f"mimic-iv-{self.__version__}/hosp/diagnoses_icd.csv.gz",
-            "drgcodes"           : f"mimic-iv-{self.__version__}/hosp/drgcodes.csv.gz",
-            "emar"               : f"mimic-iv-{self.__version__}/hosp/emar.csv.gz",
-            "emar_detail"        : f"mimic-iv-{self.__version__}/hosp/emar_detail.csv.gz",
-            "hcpcsevents"        : f"mimic-iv-{self.__version__}/hosp/hcpcsevents.csv.gz",
-            "labevents"          : f"mimic-iv-{self.__version__}/hosp/labevents.csv.gz",
-            "microbiologyevents" : f"mimic-iv-{self.__version__}/hosp/microbiologyevents.csv.gz",
-            "omr"                : f"mimic-iv-{self.__version__}/hosp/omr.csv.gz",
-            "patients"           : f"mimic-iv-{self.__version__}/hosp/patients.csv.gz",
-            "pharmacy"           : f"mimic-iv-{self.__version__}/hosp/pharmacy.csv.gz",
-            "poe"                : f"mimic-iv-{self.__version__}/hosp/poe.csv.gz",
-            "poe_detail"         : f"mimic-iv-{self.__version__}/hosp/poe_detail.csv.gz",
-            "prescriptions"      : f"mimic-iv-{self.__version__}/hosp/prescriptions.csv.gz",
-            "procedures_icd"     : f"mimic-iv-{self.__version__}/hosp/procedures_icd.csv.gz",
-            "provider"           : f"mimic-iv-{self.__version__}/hosp/provider.csv.gz",
-            "services"           : f"mimic-iv-{self.__version__}/hosp/services.csv.gz",
-            "transfers"          : f"mimic-iv-{self.__version__}/hosp/transfers.csv.gz",
-            "caregiver"          : f"mimic-iv-{self.__version__}/icu/caregiver.csv.gz",
-            "chartevents"        : f"mimic-iv-{self.__version__}/icu/chartevents.csv.gz",
-            "d_items"            : f"mimic-iv-{self.__version__}/icu/d_items.csv.gz",
-            "datetimeevents"     : f"mimic-iv-{self.__version__}/icu/datetimeevents.csv.gz",
-            "icustays"           : f"mimic-iv-{self.__version__}/icu/icustays.csv.gz",
-            "ingredientevents"   : f"mimic-iv-{self.__version__}/icu/ingredientevents.csv.gz",
-            "inputevents"        : f"mimic-iv-{self.__version__}/icu/inputevents.csv.gz",
-            "outputevents"       : f"mimic-iv-{self.__version__}/icu/outputevents.csv.gz",
-            "procedureevents"    : f"mimic-iv-{self.__version__}/icu/procedureevents.csv.gz",
+            # "CHANGELOG"          : f"{top}/CHANGELOG.txt",
+            # "LICENSE"            : f"{top}/LICENSE.txt",
+            # "SHA256SUMS"         : f"{top}/SHA256SUMS.txt",
+            # core
+            "admissions"         : f"{top}/core/admissions.csv.gz",
+            "patients"           : f"{top}/core/patients.csv.gz",
+            "transfers"          : f"{top}/core/transfers.csv.gz",
+            # hosp
+            "d_hcpcs"            : f"{top}/hosp/d_hcpcs.csv.gz",
+            "d_icd_diagnoses"    : f"{top}/hosp/d_icd_diagnoses.csv.gz",
+            "d_icd_procedures"   : f"{top}/hosp/d_icd_procedures.csv.gz",
+            "d_labitems"         : f"{top}/hosp/d_labitems.csv.gz",
+            "diagnoses_icd"      : f"{top}/hosp/diagnoses_icd.csv.gz",
+            "drgcodes"           : f"{top}/hosp/drgcodes.csv.gz",
+            "emar"               : f"{top}/hosp/emar.csv.gz",
+            "emar_detail"        : f"{top}/hosp/emar_detail.csv.gz",
+            "hcpcsevents"        : f"{top}/hosp/hcpcsevents.csv.gz",
+            "labevents"          : f"{top}/hosp/labevents.csv.gz",
+            "microbiologyevents" : f"{top}/hosp/microbiologyevents.csv.gz",
+            "pharmacy"           : f"{top}/hosp/pharmacy.csv.gz",
+            # "omr"                : f"{top}/hosp/omr.csv.gz",                    # NOTE: only version ≥2.0
+            "poe"                : f"{top}/hosp/poe.csv.gz",
+            "poe_detail"         : f"{top}/hosp/poe_detail.csv.gz",
+            "prescriptions"      : f"{top}/hosp/prescriptions.csv.gz",
+            "procedures_icd"     : f"{top}/hosp/procedures_icd.csv.gz",
+            # "provider"           : f"{top}/hosp/provider.csv.gz",               # NOTE: only version ≥2.2
+            "services"           : f"{top}/hosp/services.csv.gz",
+            # icu
+            # "caregiver"          : f"{top}/icu/caregiver.csv.gz",             # NOTE: only version ≥2.2
+            "chartevents"        : f"{top}/icu/chartevents.csv.gz",
+            "d_items"            : f"{top}/icu/d_items.csv.gz",
+            "datetimeevents"     : f"{top}/icu/datetimeevents.csv.gz",
+            "icustays"           : f"{top}/icu/icustays.csv.gz",
+            "inputevents"        : f"{top}/icu/inputevents.csv.gz",
+            # "ingredientevents"   : f"{top}/icu/ingredientevents.csv.gz",        # NOTE: only version ≥2.0
+            "outputevents"       : f"{top}/icu/outputevents.csv.gz",
+            "procedureevents"    : f"{top}/icu/procedureevents.csv.gz",
             # fmt: on
         }
+
+        if self.version_info >= (2, 0):
+            files |= {
+                # fmt: off
+                "admissions"       : f"{top}/hosp/admissions.csv.gz",           # NOTE: changed folder
+                "patients"         : f"{top}/hosp/patients.csv.gz",             # NOTE: changed folder
+                "transfers"        : f"{top}/hosp/transfers.csv.gz",            # NOTE: changed folder
+                "ingredientevents" : f"{top}/icu/ingredientevents.csv.gz",      # NOTE: new table
+                "omr"              : f"{top}/hosp/omr.csv.gz",
+                # NOTE: new table
+                # fmt: on
+            }
+
+        if self.version_info >= (2, 2):
+            files |= {
+                # fmt: off
+                "caregiver"        : f"{top}/icu/caregiver.csv.gz",             # NOTE: new table
+                "provider"         : f"{top}/hosp/provider.csv.gz",
+                # NOTE: new table
+                # fmt: on
+            }
+
+        return files  # type: ignore[return-value]
 
     def clean_table(self, key: KEYS) -> Table:
         with ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive:
@@ -215,14 +250,23 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
         return table
 
     def download_file(self, fname: str, /) -> None:
+        if self.version_info not in [(1, 0), (2, 2)]:
+            # zip file is not directly downloadable for other versions.
+            download_directory_to_zip(
+                f"{self.CONTENT_URL}/{self.__version__}/",
+                self.rawdata_paths[fname],
+                username=input("MIMIC-IV username: "),
+                password=getpass(prompt="MIMIC-IV password: ", stream=None),
+                headers={"User-Agent": "Wget/1.21.2"},
+            )
+
         self.download_from_url(
-            self.BASE_URL + f"{self.__version__}/",
+            f"{self.BASE_URL}/{self.__version__}/",
             self.rawdata_paths[fname],
             username=input("MIMIC-IV username: "),
             password=getpass(prompt="MIMIC-IV password: ", stream=None),
-            headers={
-                "User-Agent": "Wget/1.21.2"
-            },  # NOTE: MIMIC only allows wget for some reason...
+            # NOTE: MIMIC only allows wget for some reason...
+            headers={"User-Agent": "Wget/1.21.2"},
         )
 
 
@@ -291,7 +335,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
     def clean_table(self, key: KEYS) -> Table:
         table: Table = super().clean_table(key)
 
-        # drop data with missing hadm_id
+        # drop data with missing `hadm_id`.
         if "hadm_id" in table.column_names:
             table = filter_nulls(table, "hadm_id")
 
@@ -323,13 +367,14 @@ class MIMIC_IV(MIMIC_IV_RAW):
                     "infusion_rate_adjustment_amount",
                 ]
                 table = strip_whitespace(table, *cols)
-                table = force_cast(table, **{col: pa.float32() for col in cols})
+                table = force_cast(table, **{col: pa.float64() for col in cols})
             case "hcpcsevents":
                 pass
             case "labevents":
                 table = filter_nulls(table, "storetime")
                 table = filter_nulls(table, "value", "valuenum", "valueuom")
-                table = cast_columns(table, value="float32")
+                table = strip_whitespace(table)
+                table = cast_columns(table, value="float64")
                 assert table["value"] == table["valuenum"]
                 table = table.drop_columns("valuenum")
             case "microbiologyevents":
@@ -351,7 +396,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                     values="result_value",
                 )
 
-                for col in (pbar := tqdm(df.columns)):
+                for col in (pbar := tqdm(df.columns, desc="Fixing columns")):
                     pbar.set_postfix(column=f"{col!r}")
 
                     # Replace NaN with empty lists
@@ -403,7 +448,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 pass
             case "chartevents":
                 table = filter_nulls(table, "value", "valuenum", "valueuom")
-                table = cast_columns(table, value="float32")
+                table = cast_columns(table, value="float64")
                 assert table["value"] == table["valuenum"]
                 table = table.drop("valuenum")
             case "d_items":
@@ -420,29 +465,23 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 pass
             case "procedureevents":
                 table = cast_columns(table, False, storetime="timestamp[s]")
+                time_conversion = pd.Series(
+                    {"None": 0, "min": 60, "day": 60 * 60 * 24, "hour": 60 * 60},
+                    dtype="duration[s][pyarrow]",
+                    name="time",
+                )
                 duration = (
                     table.to_pandas(types_mapper=pd.ArrowDtype)
                     .pivot(
                         index=["orderid"],
-                        columns="valueuom",
+                        columns="valueuom",  # "None", "min", "day", or "hour"
                         values="value",
                     )
                     .fillna(0)
-                    .dot(
-                        pd.Series(
-                            {
-                                "None": 0,
-                                "min": 60,
-                                "day": 60 * 60 * 24,
-                                "hour": 60 * 60,
-                            },
-                            dtype="duration[s][pyarrow]",
-                            name="time",
-                        )
-                    )
+                    .dot(time_conversion)
                 )
                 table = table.set_column(
-                    len(table.column_names),
+                    len(table.column_names),  # <- append to end
                     "procedure_duration",
                     Array.from_pandas(duration, type="duration[s]", safe=False),
                 )

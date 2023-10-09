@@ -1,6 +1,7 @@
 """Data utilities for Apache Arrow."""
 
 __all__ = [
+    "cast_column",
     "cast_columns",
     "compute_entropy",
     "filter_nulls",
@@ -58,6 +59,22 @@ def force_cast(x: P, dtype: Optional[DataType] = None, /, **dtypes: DataType) ->
     ).cast(new_schema)
 
 
+def cast_column(table: Table, col: str, dtype: DataType, /, *, safe: bool) -> Table:
+    """Concatenate columns into a new column."""
+    index = table.column_names.index(col)
+    try:
+        casted_column = (
+            table[col].combine_chunks().dictionary_encode()
+            if isinstance(dtype, pa.DictionaryType)
+            else table[col].cast(dtype, safe=safe)
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            f"Error {exc!r} occurred while casting column {col!r} to {dtype!r}."
+        ) from exc
+    return table.set_column(index, col, casted_column)
+
+
 def cast_columns(table: Table, safe: bool = True, /, **dtypes: DataType) -> Table:
     """Cast columns to the given data types."""
     schema: pa.Schema = table.schema
@@ -68,19 +85,7 @@ def cast_columns(table: Table, safe: bool = True, /, **dtypes: DataType) -> Tabl
     new_dtypes = current_dtypes | dtypes
 
     for col, dtype in new_dtypes.items():
-        if isinstance(dtype, pa.DictionaryType):
-            arr = table[col].combine_chunks()
-            table = table.set_column(
-                table.column_names.index(col),
-                col,
-                arr.dictionary_encode(),
-            )
-        else:
-            table = table.set_column(
-                table.column_names.index(col),
-                col,
-                table[col].cast(dtype, safe=safe),
-            )
+        table = cast_column(table, col, dtype, safe=safe)
     return table
 
 
@@ -91,7 +96,7 @@ def is_numeric(array: Array, /) -> Array:
         Array.from_pandas(
             pd.to_numeric(
                 pd.Series(array, dtype="string[pyarrow]"),
-                # NOTE: string[pyarrow] actually StringDtype, needed so we don't use to_pandas()
+                # NOTE: string[pyarrow] is actually `StringDtype`, so we can't use `to_pandas`
                 errors="coerce",
                 dtype_backend="pyarrow",
                 downcast="float",

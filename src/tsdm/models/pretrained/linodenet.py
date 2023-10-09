@@ -120,8 +120,8 @@ class LinODEnet(PreTrainedBase):
             X = X.to(device=self.device)
             T_list = torch.split(T, sizes.to_list())
             X_list = torch.split(X, sizes.to_list())
-            T = pad_sequence(T_list, batch_first=True, padding_value=torch.nan)
-            X = pad_sequence(X_list, batch_first=True, padding_value=torch.nan)
+            T = pad_sequence(T_list, batch_first=True, padding_value=torch.nan)  # type: ignore[arg-type]
+            X = pad_sequence(X_list, batch_first=True, padding_value=torch.nan)  # type: ignore[arg-type]
 
             XHAT = self.model(T, X)
 

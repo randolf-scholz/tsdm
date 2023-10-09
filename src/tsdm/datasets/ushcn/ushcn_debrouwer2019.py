@@ -12,7 +12,7 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
     r"""Preprocessed subset of the USHCN climate dataset used by De Brouwer et al.
 
     References:
-        - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series
+        - | `GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series
             <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
           | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves
           | `Advances in Neural Information Processing Systems 2019

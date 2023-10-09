@@ -45,7 +45,7 @@ class Sample(NamedTuple):
 class Kiwi_BioProcessTask(OldBaseTask):
     r"""A collection of bioreactor runs.
 
-    For this task we do several simplifications
+    For this task, we do several simplifications:
 
     - drop run_id 355
     - drop almost all metadata
@@ -199,7 +199,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
             "sampler": None,
             "batch_sampler": None,
             "num_workers": 0,
-            "collate_fn": lambda *x: x,
+            "collate_fn": lambda x: x,
             "pin_memory": False,
             "drop_last": False,
             "timeout": 0,
@@ -241,7 +241,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
         sampler = HierarchicalSampler(DS, subsamplers, shuffle=shuffle)
 
         # construct the dataloader
-        kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
+        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
         return DataLoader(dataset, sampler=sampler, **kwargs)
 
 

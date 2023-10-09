@@ -19,6 +19,7 @@ vital signs, laboratory results, and medications.
 __all__ = ["MIMIC_III_RAW", "MIMIC_III"]
 
 import gzip
+from functools import cached_property
 from getpass import getpass
 from typing import get_args
 from zipfile import ZipFile
@@ -74,18 +75,50 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
         ),
     }
 
-    table_names: tuple[KEYS, ...] = get_args(KEYS)
+    @cached_property
+    def table_names(self) -> tuple[KEYS, ...]:
+        names = tuple(self.filelist)
+        assert set(names) <= set(get_args(KEYS))
+        return names
 
-    @property
+    @cached_property
     def rawdata_files(self) -> list[str]:
         return [f"mimic-iii-clinical-database-{self.__version__}.zip"]
 
-    @property
+    @cached_property
     def filelist(self) -> dict[KEYS, str]:
         """Mapping between table_names and contents of the zip file."""
+        assert self.version_info >= (1, 4), "MIMIC-III v1.4+ is required."
         return {
-            key: f"mimic-iii-clinical-database-{self.__version__}/{key}.csv.gz"
-            for key in self.table_names
+            key: f"mimic-iii-clinical-database-{self.__version__}/{key}.csv.gz"  # type: ignore[misc]
+            for key in [
+                "ADMISSIONS",
+                "CALLOUT",
+                "CAREGIVERS",
+                "CHARTEVENTS",
+                "CPTEVENTS",
+                "DATETIMEEVENTS",
+                "D_CPT",
+                "DIAGNOSES_ICD",
+                "D_ICD_DIAGNOSES",
+                "D_ICD_PROCEDURES",
+                "D_ITEMS",
+                "D_LABITEMS",
+                "DRGCODES",
+                "ICUSTAYS",
+                "INPUTEVENTS_CV",
+                "INPUTEVENTS_MV",
+                "LABEVENTS",
+                "MICROBIOLOGYEVENTS",
+                "NOTEEVENTS",
+                "OUTPUTEVENTS",
+                "PATIENTS",
+                "PRESCRIPTIONS",
+                "PROCEDUREEVENTS_MV",
+                "PROCEDURES_ICD",
+                "SERVICES",
+                "TRANSFERS",
+            ]
         }
 
     def clean_table(self, key: KEYS) -> Table:
@@ -132,6 +165,8 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
 class MIMIC_III(MIMIC_III_RAW):
     """Lightly preprocessed version of the MIMIC-III dataset."""
 
+    RAWDATA_DIR = MIMIC_III_RAW.RAWDATA_DIR
+
     def clean_table(self, key: KEYS) -> Table:
         table: Table = super().clean_table(key)
 
@@ -147,7 +182,7 @@ class MIMIC_III(MIMIC_III_RAW):
                 table = filter_nulls(
                     table, "ICUSTAY_ID", "VALUE", "VALUENUM", "VALUEUOM"
                 )
-                table = cast_columns(table, VALUE="float32")
+                table = cast_columns(table, VALUE="float64")
             case "CPTEVENTS":
                 table = cast_columns(table, CHARTDATE="date32")
             case "DATETIMEEVENTS":
@@ -175,14 +210,14 @@ class MIMIC_III(MIMIC_III_RAW):
             case "LABEVENTS":
                 table = filter_nulls(table, "VALUE", "VALUENUM", "VALUEUOM")
                 table = strip_whitespace(table)
-                table = cast_columns(table, VALUE="float32")
+                table = cast_columns(table, VALUE="float64")
             case "MICROBIOLOGYEVENTS":
                 table = cast_columns(table, CHARTDATE="date32")
             case "NOTEEVENTS":
                 pass
             case "OUTPUTEVENTS":
                 table = filter_nulls(table, "VALUE", "VALUEUOM")
-                table = cast_columns(table, VALUE="float32")
+                table = cast_columns(table, VALUE="float64")
             case "PATIENTS":
                 table = cast_columns(
                     table,

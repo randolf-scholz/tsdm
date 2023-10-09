@@ -1,4 +1,4 @@
-r"""Utility function that act on tabular data."""
+r"""Utility functions that act on tabular data."""
 
 __all__ = [
     # classes
@@ -99,7 +99,7 @@ class BoundaryTable(TypedDict):
 
 
 def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
-    """Find joint keys in collection of Mappings."""
+    """Find joint keys in a collection of Mappings."""
     # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
     return set.intersection(*map(set, (d.keys() for d in mappings)))  # type: ignore[arg-type]
 
@@ -172,7 +172,7 @@ def detect_outliers_series(
     upper_inclusive: bool,
 ) -> Series:
     """Detect outliers in a Series, given boundary values."""
-    # detect lower bound violations
+    # detect lower-bound violations
     match lower_bound, lower_inclusive:
         case None, _:
             mask_lower = pandas_false_like(s)
@@ -183,7 +183,7 @@ def detect_outliers_series(
         case _:
             raise ValueError("Invalid combination of lower_bound and lower_inclusive.")
 
-    # detect upper bound violations
+    # detect upper-bound violations
     match upper_bound, upper_inclusive:
         case None, _:
             mask_upper = pandas_false_like(s)

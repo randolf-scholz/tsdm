@@ -63,7 +63,7 @@ from tsdm.linalg import (
 from tsdm.metrics import LOSSES, Metric
 from tsdm.models import Model
 from tsdm.types.aliases import JSON, PathLike
-from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
+from tsdm.types.variables import any_co as T_co, any_var as T, key_var as Key
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
@@ -97,7 +97,7 @@ def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
     return x
 
 
-def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
+def transpose_list_of_dicts(lst: Iterable[dict[Key, T]], /) -> dict[Key, list[T]]:
     r"""Fast way to 'transpose' a list of dictionaries.
 
     Assumptions:
@@ -482,7 +482,7 @@ def log_optimizer(
 
     # NOTE: optimizer.state is of kind
     #  dict[tensor, {step: Tensor, exp_avg: Tensor, exp_avg_sq: Tensor}}]
-    optim_state: dict[Tensor, dict[str, Tensor]] = optimizer.state  # type: ignore[assignment]
+    optim_state: dict[Tensor, dict[str, Tensor]] = optimizer.state
 
     # get the variables and gradients
     variables = list(optim_state)
@@ -578,7 +578,7 @@ def log_plot(
 
     Args:
         step: The current step.
-        plot: The plot to log, can be a figure, or a callable returning a figure.
+        plot: The plot to log can be a figure or a function returning a figure.
         writer: The writer to log to.
         name: The name of the plot.
         prefix: The prefix of the plot.

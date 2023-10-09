@@ -23,21 +23,21 @@ Evaluation Protocol
 
 Notes:
     - Authors code is available at [2]_.
-    - The authors code is missing the pre-processing script to create the folds for MIMIC-III. There is an open issue:
+    - The author's code is missing the pre-processing script to create the folds for MIMIC-III. There is an open issue:
       <https://github.com/edebrouwer/gru_ode_bayes/issues/15>, but the authors are not responding.
       We assume the MIMIC-III pre-processing script is similar/the same as the one for the Climate dataset.
 
     - The train/valid/test split is 62/18/10. The authors write:
 
         We report the performance using 5-fold cross-validation. Hyperparameters (dropout and weight decay) are chosen
-        using an inner holdout validation set (20%) and performance are assessed on a left-out test set (10%).
+        using an inner holdout validation set (20%), and performance is assessed on a left-out test set (10%).
 
       Here, 20% validation refers to 20% of the non-test data, i.e. 20% of 90% = 18% of the total data. [3]_
     - The random seed is fixed to 432 at the start of the splitting process. [4]_
 
 References
 ----------
-.. [1] | `GRU-ODE-Bayes: Continuous Modeling of Sporadically-Observed Time Series <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+.. [1] | `GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
        | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves.
          `Advances in Neural Information Processing Systems 2019 <https://proceedings.neurips.cc/paper/2019>`_
 .. [2] https://github.com/edebrouwer/gru_ode_bayes
@@ -46,11 +46,11 @@ References
 """
 
 __all__ = [
-    "MIMIC_III_DeBrouwer2019",
-    "mimic_iii_collate",
-    "Sample",
     "Batch",
-    "TaskDataset",
+    "MIMIC_III_DeBrouwer2019",
+    "MIMIC_III_SampleGenerator",
+    "Sample",
+    "mimic_iii_collate",
 ]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -65,6 +65,7 @@ from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
+from typing_extensions import deprecated
 
 from tsdm.datasets import MIMIC_III_DeBrouwer2019 as MIMIC_III_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
@@ -97,23 +98,8 @@ class Sample(NamedTuple):
         return repr_namedtuple(self)
 
 
-class Batch(NamedTuple):
-    r"""A single sample of the data."""
-
-    x_time: Tensor  # B×N:   the input timestamps.
-    x_vals: Tensor  # B×N×D: the input values.
-    x_mask: Tensor  # B×N×D: the input mask.
-
-    y_time: Tensor  # B×K:   the target timestamps.
-    y_vals: Tensor  # B×K×D: the target values.
-    y_mask: Tensor  # B×K×D: teh target mask.
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
-
-
 @dataclass
-class TaskDataset(Dataset):
+class MIMIC_III_SampleGenerator(Dataset):
     r"""Wrapper for creating samples of the dataset."""
 
     tensors: list[tuple[Tensor, Tensor]]
@@ -145,7 +131,22 @@ class TaskDataset(Dataset):
         return f"{self.__class__.__name__}"
 
 
-# @torch.jit.script  # seems to break things
+class Batch(NamedTuple):
+    r"""A single sample of the data."""
+
+    x_time: Tensor  # B×N:   the input timestamps.
+    x_vals: Tensor  # B×N×D: the input values.
+    x_mask: Tensor  # B×N×D: the input mask.
+
+    y_time: Tensor  # B×K:   the target timestamps.
+    y_vals: Tensor  # B×K×D: the target values.
+    y_mask: Tensor  # B×K×D: teh target mask.
+
+    def __repr__(self) -> str:
+        return repr_namedtuple(self)
+
+
+@deprecated("Consider using tasks.utils.collate_timeseries instead.")
 def mimic_iii_collate(batch: list[Sample]) -> Batch:
     r"""Collate tensors into batch.
 
@@ -162,7 +163,7 @@ def mimic_iii_collate(batch: list[Sample]) -> Batch:
         t, x, t_target = sample.inputs
         y = sample.targets
 
-        # get whole time interval
+        # get the whole time interval
         time = torch.cat((t, t_target))
         sorted_idx = torch.argsort(time)
 
@@ -337,10 +338,10 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
         r"""Return the dataloader for the given key."""
         fold, partition = key
         fold_idx = self.folds[fold][partition]
-        dataset = TaskDataset(
+        dataset = MIMIC_III_SampleGenerator(
             [val for idx, val in self.tensors.items() if idx in fold_idx],
             observation_time=self.observation_time,
             prediction_steps=self.prediction_steps,
         )
-        kwargs: dict[str, Any] = {"collate_fn": lambda *x: x} | dataloader_kwargs
+        kwargs: dict[str, Any] = {"collate_fn": lambda x: x} | dataloader_kwargs
         return DataLoader(dataset, **kwargs)

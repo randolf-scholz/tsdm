@@ -8,8 +8,8 @@ forecasting horizons.
 
 .. note::
 
-    One thing that is weird about torch's way to approach the issue, is that there
-    are two seperated functionalities: sampling rows and selecting columns.
+    One thing that is weird about torch's way to approach the issue is that there
+    are two separated functionalities: sampling rows and selecting columns.
     In principle, the sampler could do both, supposedly.
     However, the TaskDataset is really responsible for creating the sample.
 
@@ -35,6 +35,8 @@ __all__ = [
     "kiwi",
     "mimic",
     "uci",
+    "ushcn",
+    "utils",
     # Protocol
     "ForecastingTask",
     # Constants
@@ -68,7 +70,7 @@ __all__ = [
     "InSilicoSampleGenerator",
 ]
 
-from tsdm.tasks import base, kiwi, mimic, uci
+from tsdm.tasks import base, kiwi, mimic, uci, ushcn, utils
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.tasks.base import ForecastingTask, TimeSeriesSampleGenerator, TimeSeriesTask
 from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
@@ -108,7 +110,7 @@ OLD_TASKS: dict[str, type[OldBaseTask]] = {
     "ETT_Zhou2021": ETT_Zhou2021,
     "KIWI_FINAL_PRODUCT": KIWI_FINAL_PRODUCT,
     "Kiwi_BioProcessTask": Kiwi_BioProcessTask,
-    "MIMIC_III_Bilos2021": MIMIC_III_DeBrouwer2019,
+    "MIMIC_III_Bilos2021": MIMIC_III_Bilos2021,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
     "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,

@@ -38,7 +38,7 @@ from typing import Literal, TypeAlias
 import pyarrow as pa
 
 ID_TYPE = pa.uint32()
-VALUE_TYPE = pa.float32()
+VALUE_TYPE = pa.float64()
 TIME_TYPE = pa.timestamp("s")
 DATE_TYPE = pa.date32()
 BOOL_TYPE = pa.bool_()
@@ -529,7 +529,7 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "starttime"                     : TIME_TYPE,
         "endtime"                       : TIME_TYPE,
         "storetime"                     : TIME_TYPE,
-        "itemid"                        : ID_TYPE,  # NOTE: unstack, but high dim
+        "itemid"                        : ID_TYPE,  # NOTE: unstack, but high-dim.
         "amount"                        : VALUE_TYPE,
         "amountuom"                     : DICT_TYPE,
         "rate"                          : VALUE_TYPE,

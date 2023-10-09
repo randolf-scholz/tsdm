@@ -264,7 +264,7 @@ class ConfigCallback(BaseCallback):
 
 @dataclass
 class WrapCallback(BaseCallback):
-    """Wraps a callable as a callback."""
+    """Wraps callable as a callback."""
 
     func: Callable[..., None]
 

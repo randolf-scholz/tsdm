@@ -43,7 +43,7 @@ class Time2Float(BaseEncoder):
     scale: Any
 
     def __init__(self, normalization: Literal["gcd", "max", "none"] = "max") -> None:
-        r"""Choose the normalizations scheme."""
+        r"""Choose the normalization scheme."""
         super().__init__()
         self.normalization = normalization
 
@@ -150,7 +150,7 @@ class DateTimeEncoder(BaseEncoder):
     def encode(self, data: Series | DatetimeIndex, /) -> Series:
         # FIXME: remove this patch with pyarrow 14
         # https://github.com/apache/arrow/issues/36789
-        if isinstance(data.dtype, pd.core.dtypes.dtypes.ArrowDtype):
+        if isinstance(data.dtype, pd.ArrowDtype):
             data = data.astype("datetime64[ns]")
 
         return (data - self.offset) / Timedelta(1, unit=self.unit)

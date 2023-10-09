@@ -10,7 +10,6 @@ __all__ = [
     # Constants
     "DECORATORS",
     "CONTEXT_MANAGERS",
-    "CLASS_DECORATORS",
     # Functions
     "debug",
     "decorator",

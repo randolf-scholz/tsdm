@@ -20,7 +20,7 @@ from tsdm.types.aliases import SizeLike
 
 @dataclass
 class LotkaVolterra(IVP_GeneratorBase[NDArray]):
-    r"""Lotka–Volterra Equations Simulation.
+    r"""Lotka-Volterra Equations Simulation.
 
     The Lotka–Volterra equations, also known as the predator–prey equations, are a pair of
     first-order, non-linear, differential equations frequently used to describe the dynamics of
@@ -30,7 +30,7 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
         \dot{x} = α⋅x - β⋅x⋅y
         \dot{y} = δ⋅x⋅y - γ⋅y
 
-    Here, x is the number of prey, y is the number of some predator, and α, β, γ, δ are positive
+    Here, x is the number of prey, y is the number of predators, and α, β, γ, δ are positive
     real parameters describing the interaction of the two species.
     """
 

@@ -434,7 +434,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
                     md_mask = (df["Time"] == "00:00") & df["Parameter"].isin(
                         self.table_schemas["metadata"]
                     )
-                    # keep first instance of each metadata item
+                    # keep the first instance of each metadata item
                     md_mask &= ~df.loc[md_mask, "Parameter"].duplicated()
                     md_frame = df.loc[md_mask].drop(columns=["Time"])
                     assert len(md_frame) <= 5, "Too many metadata items!"

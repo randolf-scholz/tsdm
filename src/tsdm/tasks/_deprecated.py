@@ -145,7 +145,7 @@ class BaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
 
     @abstractmethod
     def make_sampler(self, key: K, /) -> TorchSampler:
-        r"""Create sampler for the given split."""
+        r"""Creates sampler for the given split."""
 
     def make_dataloader(
         self,
@@ -238,21 +238,25 @@ class OldBaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
     @abstractmethod
     def test_metric(self) -> Callable[..., Tensor]:
         r"""The metric to be used for evaluation."""
+        ...
 
     @property
     @abstractmethod
     def dataset(self) -> Dataset | DataFrame:
         r"""Return the cached dataset associated with the task."""
+        ...
 
     @property
     @abstractmethod
     def index(self) -> Sequence[K]:
         r"""List of index."""
+        ...
 
     @property
     @abstractmethod
     def splits(self) -> Mapping[K, Any]:
         r"""Cache dictionary of dataset slices."""
+        ...
 
     @abstractmethod
     def make_dataloader(
@@ -270,6 +274,7 @@ class OldBaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
         Returns:
             DataLoader: A DataLoader for the selected key.
         """
+        ...
 
     @cached_property
     def dataloaders(self) -> Mapping[Any, DataLoader]:

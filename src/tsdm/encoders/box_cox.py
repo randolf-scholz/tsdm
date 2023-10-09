@@ -29,7 +29,7 @@ ROOT_3 = np.sqrt(3)
 
 
 class BoxCoxEncoder(BaseEncoder):
-    r"""Encode data on logarithmic scale with offset.
+    r"""Encode data on a logarithmic scale with offset.
 
     .. math:: x ↦ \log(x+c)
 
@@ -224,7 +224,7 @@ class BoxCoxEncoder(BaseEncoder):
 
 
 class LogitBoxCoxEncoder(BaseEncoder):
-    r"""Encode data on logarithmic scale with offset.
+    r"""Encode data on a logarithmic scale with offset.
 
     .. math:: x ↦ \log(x+c)
 
