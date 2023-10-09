@@ -107,29 +107,27 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
             else:
                 cls.DATASET_DIR = CONFIG.DATASETDIR / cls.__name__
 
-    # def __call__(
-    #     cls,
-    #     *args,
-    #     initialize: bool = True,
-    #     reset: bool = False,
-    #     version: str = NotImplemented,
-    #     **kwargs,
-    # ):
-    #     """When a new instance is created, this method is called."""
-    #     obj = cls.__new__(*args, **kwargs)
-    #     cls.__pre_init__(obj, version)
-    #     cls.__init__(obj)
-    #     cls.__post_init__(obj, initialize, reset)
-    #
-    #     if version is not NotImplemented:
-    #         instance.__version__ = str(version)
-    #     if instance.__version__ is not NotImplemented:
-    #         instance.RAWDATA_DIR /= instance.__version__  # type: ignore[misc]
-    #         instance.DATASET_DIR /= instance.__version__  # type: ignore[misc]
-    #
-    #     if not inspect.isabstract(instance):
-    #         instance.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
-    #         instance.DATASET_DIR.mkdir(parents=True, exist_ok=True)
+    def __call__(
+        cls,
+        *init_args: Any,
+        initialize: bool = True,
+        reset: bool = False,
+        verbose: bool = True,
+        version: str = NotImplemented,
+        **init_kwargs: Any,
+    ) -> Self:
+        obj: Self = cls.__new__(cls, *init_args, **init_kwargs)
+        cls.__pre_init__(
+            obj,
+            *init_args,
+            reset=reset,
+            version=version,
+            verbose=verbose,
+            **init_kwargs,
+        )
+        cls.__init__(obj, *init_args, **init_kwargs)  # type: ignore[misc]
+        cls.__post_init__(obj, *init_args, initialize=initialize, **init_kwargs)
+        return obj
 
 
 class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
@@ -171,44 +169,40 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     rawdata_shapes: Mapping[str, tuple[int, ...]] = NotImplemented
     r"""Shapes for the raw dataset tables(s)."""
 
-    def __pre_init__(
-        self, *, version: str = NotImplemented, reset: bool = False
-    ) -> None:
-        r"""Initialize the dataset."""
-        if version is not NotImplemented:
-            self.__version__ = str(version)
-        if self.__version__ is not NotImplemented:
-            self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
-            self.DATASET_DIR /= self.__version__  # type: ignore[misc]
-
-        if not inspect.isabstract(self):
-            self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
-            self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
-
-        if reset:
-            # delete rawdata and dataset directories
-            self.remove_rawdata_files()
-            self.remove_dataset_files()
-
-    def __post_init__(self, *, initialize: bool = True) -> None:
-        r"""Initialize the dataset."""
-        if initialize:
-            # NOTE: We call clean first for memory efficiency.
-            #  Preprocessing can take lots of resources, so we should only load tables
-            #  on a need-to basis.
-            self.clean()
-            self.load(initializing=True)
-
     def __init__(
         self,
         *,
         initialize: bool = True,
         reset: bool = False,
+        verbose: bool = False,
         version: str = NotImplemented,
     ) -> None:
+        r"""Initialize the dataset.
+
+        Args:
+            initialize: Whether to initialize the dataset.
+            reset: Whether to reset the dataset.
+            version: Version of the dataset. Leave empty for unversioned dataset.
+            verbose: Whether to print verbose output.
+        """
+        ...
+
+    def __pre_init__(
+        self,
+        *_: Any,
+        reset: bool,
+        verbose: bool,
+        version: Any,
+        **__: Any,
+    ) -> None:
         r"""Initialize the dataset."""
+        self.verbose = verbose
+
+        # set the version
         if version is not NotImplemented:
             self.__version__ = str(version)
+
+        # update the paths
         if self.__version__ is not NotImplemented:
             self.RAWDATA_DIR /= self.__version__  # type: ignore[misc]
             self.DATASET_DIR /= self.__version__  # type: ignore[misc]
@@ -221,6 +215,9 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
             # delete rawdata and dataset directories
             self.remove_rawdata_files()
             self.remove_dataset_files()
+
+    def __post_init__(self, *_: Any, initialize: bool, **__: Any) -> None:
+        r"""Initialize the dataset."""
         if initialize:
             # NOTE: We call clean first for memory efficiency.
             #  Preprocessing can take lots of resources, so we should only load tables
@@ -576,20 +573,9 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
     table_shapes: Mapping[Key, tuple[int, ...]] = NotImplemented
     r"""Shapes of the in-memory cleaned dataset table(s)."""
 
-    def __init__(
-        self,
-        *,
-        initialize: bool = True,
-        reset: bool = False,
-        version: str = NotImplemented,
-        verbose: bool = True,
-    ) -> None:
-        r"""Initialize the Dataset."""
-        self.LOGGER.debug("Calling Mapping.__init__")
-        Mapping.__init__(self)  # Q: Why do we need this?
-        self.verbose = verbose
-        self.LOGGER.debug("Adding keys as attributes.")
-        self._key_attributes = False
+    @cached_property
+    def _key_attributes(self) -> bool:
+        r"""Whether to add table names as attributes."""
         if invalid_keys := {key for key in self.table_names if not key.isidentifier()}:
             warnings.warn(
                 "Not adding keys as attributes!"
@@ -597,18 +583,27 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
                 RuntimeWarning,
                 stacklevel=2,
             )
-        elif hasattr_keys := {key for key in self.table_names if hasattr(self, key)}:
+            return False
+
+        def attr_exists(obj: object, key: str) -> bool:
+            """Test if attribute exists using only __getattribute__ and not __getattr__."""
+            try:
+                obj.__getattribute__(key)
+            except AttributeError:
+                return False
+            return True
+
+        if hasattr_keys := {key for key in self.table_names if attr_exists(self, key)}:
             warnings.warn(
                 "Not adding keys as attributes!"
                 f" Keys {hasattr_keys} already exist as attributes!",
                 RuntimeWarning,
                 stacklevel=2,
             )
-        else:
-            self._key_attributes = True
+            return False
 
-        self.LOGGER.debug("Calling super().__init__")
-        super().__init__(initialize=initialize, reset=reset, version=version)
+        self.LOGGER.debug("Adding keys as attributes.")
+        return True
 
     def __dir__(self) -> list[str]:
         if self._key_attributes:
@@ -700,7 +695,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         *,
         force: bool = False,
         validate: bool = True,
-        validate_rawdata: bool = True,
+        validate_rawdata: bool = False,
     ) -> None:
         r"""Create the preprocessed table for the selected key.
 
@@ -719,6 +714,11 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         if validate_rawdata and self.rawdata_hashes is not NotImplemented:
             assert self.rawdata_valid
 
+        # skip if cleaned files already exist
+        if not force and self.dataset_files_exist(key=key):
+            self.LOGGER.debug("Cleaned data file already exists, skipping <%s>", key)
+            return
+
         # key=None: Recursively clean all tables
         if key is None:
             self.LOGGER.debug("Starting to clean dataset.")
@@ -727,6 +727,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
                     self.table_names,
                     desc="Cleaning tables",
                     disable=not self.verbose,
+                    leave=False,
                 )
             ):
                 pbar.set_postfix(table=name)
@@ -734,11 +735,6 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
                     key=name, force=force, validate=validate, validate_rawdata=False
                 )
             self.LOGGER.debug("Finished cleaning dataset.")
-            return
-
-        # skip if cleaned files already exist
-        if not force and self.dataset_files_exist(key=key):
-            self.LOGGER.debug("Cleaned data file already exists, skipping <%s>", key)
             return
 
         # Clean the selected table
@@ -793,6 +789,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
                     self.table_names,
                     desc="Loading tables",
                     disable=not self.verbose,
+                    leave=False,
                 )
             ):
                 pbar.set_postfix(table=name)

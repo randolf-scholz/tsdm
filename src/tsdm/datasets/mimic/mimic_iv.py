@@ -136,7 +136,7 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
     INFO_URL = r"https://physionet.org/content/mimiciv/"
     HOME_URL = r"https://mimic.mit.edu/"
 
-    __version__ = "2.2"
+    __version__ = NotImplemented
     rawdata_hashes = {
         "mimic-iv-1.0.zip": (
             "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
@@ -182,21 +182,22 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
             "hcpcsevents"        : f"{top}/hosp/hcpcsevents.csv.gz",
             "labevents"          : f"{top}/hosp/labevents.csv.gz",
             "microbiologyevents" : f"{top}/hosp/microbiologyevents.csv.gz",
-            "omr"                : f"{top}/hosp/omr.csv.gz",
             "pharmacy"           : f"{top}/hosp/pharmacy.csv.gz",
+            # "omr"                : f"{top}/hosp/omr.csv.gz",                    # NOTE: only version ≥2.0
             "poe"                : f"{top}/hosp/poe.csv.gz",
             "poe_detail"         : f"{top}/hosp/poe_detail.csv.gz",
             "prescriptions"      : f"{top}/hosp/prescriptions.csv.gz",
             "procedures_icd"     : f"{top}/hosp/procedures_icd.csv.gz",
+            # "provider"           : f"{top}/hosp/provider.csv.gz",               # NOTE: only version ≥2.2
             "services"           : f"{top}/hosp/services.csv.gz",
             # icu
-            "caregiver"          : f"{top}/icu/caregiver.csv.gz",
+            # "caregiver"          : f"{top}/icu/caregiver.csv.gz",             # NOTE: only version ≥2.2
             "chartevents"        : f"{top}/icu/chartevents.csv.gz",
             "d_items"            : f"{top}/icu/d_items.csv.gz",
             "datetimeevents"     : f"{top}/icu/datetimeevents.csv.gz",
             "icustays"           : f"{top}/icu/icustays.csv.gz",
-            "ingredientevents"   : f"{top}/icu/ingredientevents.csv.gz",
             "inputevents"        : f"{top}/icu/inputevents.csv.gz",
+            # "ingredientevents"   : f"{top}/icu/ingredientevents.csv.gz",        # NOTE: only version ≥2.0
             "outputevents"       : f"{top}/icu/outputevents.csv.gz",
             "procedureevents"    : f"{top}/icu/procedureevents.csv.gz",
             # fmt: on
@@ -205,23 +206,25 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
         if self.version_info >= (2, 0):
             files |= {
                 # fmt: off
-                "admissions"       : f"{top}/hosp/admissions.csv.gz",
-                "patients"         : f"{top}/hosp/patients.csv.gz",
-                "transfers"        : f"{top}/hosp/transfers.csv.gz",
-                "ingredientevents" : f"{top}/icu/ingredientevents.csv.gz",
+                "admissions"       : f"{top}/hosp/admissions.csv.gz",           # NOTE: changed folder
+                "patients"         : f"{top}/hosp/patients.csv.gz",             # NOTE: changed folder
+                "transfers"        : f"{top}/hosp/transfers.csv.gz",            # NOTE: changed folder
+                "ingredientevents" : f"{top}/icu/ingredientevents.csv.gz",      # NOTE: new table
                 "omr"              : f"{top}/hosp/omr.csv.gz",
+                # NOTE: new table
                 # fmt: on
             }
 
         if self.version_info >= (2, 2):
             files |= {
                 # fmt: off
-                "caregiver"        : f"{top}/icu/caregiver.csv.gz",
+                "caregiver"        : f"{top}/icu/caregiver.csv.gz",             # NOTE: new table
                 "provider"         : f"{top}/hosp/provider.csv.gz",
+                # NOTE: new table
                 # fmt: on
             }
 
-        return files
+        return files  # type: ignore[return-value]
 
     def clean_table(self, key: KEYS) -> Table:
         with ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive:
@@ -321,7 +324,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
     def clean_table(self, key: KEYS) -> Table:
         table: Table = super().clean_table(key)
 
-        # drop data with missing 'hadm_id'.
+        # drop data with missing `hadm_id`.
         if "hadm_id" in table.column_names:
             table = filter_nulls(table, "hadm_id")
 

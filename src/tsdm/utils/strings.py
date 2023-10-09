@@ -122,16 +122,18 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
         identifier = "<dataclass>"
     elif isinstance(obj, tuple):
         identifier = "<tuple>"
-    elif isinstance(obj, Array | DataFrame | Series):
+    elif isinstance(obj, type):
+        identifier = "<type>"
+    elif isinstance(obj, DataFrame | Series):
         identifier = "<array>"
-    elif isinstance(obj, Mapping):  # type: ignore[unreachable]
+    elif isinstance(obj, Mapping):
         identifier = "<mapping>"
     elif isinstance(obj, Sequence):
         identifier = "<sequence>"
-    elif isinstance(obj, type):
-        identifier = "<type>"
     elif isinstance(obj, FunctionType):
         identifier = "<function>"
+    elif isinstance(obj, Array):
+        identifier = "<array>"
     else:
         identifier = ""
     if type(obj) in BUILTIN_TYPES:
