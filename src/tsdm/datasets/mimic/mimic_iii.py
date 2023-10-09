@@ -165,6 +165,8 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
 class MIMIC_III(MIMIC_III_RAW):
     """Lightly preprocessed version of the MIMIC-III dataset."""
 
+    RAWDATA_DIR = MIMIC_III_RAW.RAWDATA_DIR
+
     def clean_table(self, key: KEYS) -> Table:
         table: Table = super().clean_table(key)
 
@@ -180,7 +182,7 @@ class MIMIC_III(MIMIC_III_RAW):
                 table = filter_nulls(
                     table, "ICUSTAY_ID", "VALUE", "VALUENUM", "VALUEUOM"
                 )
-                table = cast_columns(table, VALUE="float32")
+                table = cast_columns(table, VALUE="float64")
             case "CPTEVENTS":
                 table = cast_columns(table, CHARTDATE="date32")
             case "DATETIMEEVENTS":
@@ -208,14 +210,14 @@ class MIMIC_III(MIMIC_III_RAW):
             case "LABEVENTS":
                 table = filter_nulls(table, "VALUE", "VALUENUM", "VALUEUOM")
                 table = strip_whitespace(table)
-                table = cast_columns(table, VALUE="float32")
+                table = cast_columns(table, VALUE="float64")
             case "MICROBIOLOGYEVENTS":
                 table = cast_columns(table, CHARTDATE="date32")
             case "NOTEEVENTS":
                 pass
             case "OUTPUTEVENTS":
                 table = filter_nulls(table, "VALUE", "VALUEUOM")
-                table = cast_columns(table, VALUE="float32")
+                table = cast_columns(table, VALUE="float64")
             case "PATIENTS":
                 table = cast_columns(
                     table,

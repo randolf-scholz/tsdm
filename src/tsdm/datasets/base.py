@@ -695,7 +695,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         *,
         force: bool = False,
         validate: bool = True,
-        validate_rawdata: bool = False,
+        validate_rawdata: bool = True,
     ) -> None:
         r"""Create the preprocessed table for the selected key.
 

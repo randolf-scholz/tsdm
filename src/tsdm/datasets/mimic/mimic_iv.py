@@ -356,14 +356,14 @@ class MIMIC_IV(MIMIC_IV_RAW):
                     "infusion_rate_adjustment_amount",
                 ]
                 table = strip_whitespace(table, *cols)
-                table = force_cast(table, **{col: pa.float32() for col in cols})
+                table = force_cast(table, **{col: pa.float64() for col in cols})
             case "hcpcsevents":
                 pass
             case "labevents":
                 table = filter_nulls(table, "storetime")
                 table = filter_nulls(table, "value", "valuenum", "valueuom")
                 table = strip_whitespace(table)
-                table = cast_columns(table, value="float32")
+                table = cast_columns(table, value="float64")
                 assert table["value"] == table["valuenum"]
                 table = table.drop_columns("valuenum")
             case "microbiologyevents":
@@ -437,7 +437,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 pass
             case "chartevents":
                 table = filter_nulls(table, "value", "valuenum", "valueuom")
-                table = cast_columns(table, value="float32")
+                table = cast_columns(table, value="float64")
                 assert table["value"] == table["valuenum"]
                 table = table.drop("valuenum")
             case "d_items":
