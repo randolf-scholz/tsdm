@@ -425,6 +425,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 pass
             case "poe_detail":
                 table = (
+                    # NOTE: we use polars because pandas is too slow.
                     pl.from_arrow(table)
                     .pivot(  # type: ignore[union-attr]
                         index=["poe_id", "poe_seq", "subject_id"],
