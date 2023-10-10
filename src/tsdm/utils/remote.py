@@ -63,7 +63,7 @@ def download_io(
             "stream": True,
             "timeout": 10,
         } | request_options
-        response = requests.get(url, **request_options)  # type: ignore[arg-type]
+        response = requests.get(url, **request_options)
     else:
         response = session.get(url)
 
@@ -105,7 +105,7 @@ def stream_download(
             "stream": True,
             "timeout": 10,
         } | request_options
-        response = requests.get(url, **request_options)  # type: ignore[arg-type]
+        response = requests.get(url, **request_options)
     else:
         response = session.get(url)
 
@@ -201,7 +201,7 @@ def download_directory_to_zip(
         content: list[str] = sorted(iter_content(url, session=session))
 
         # Download the directory
-        with ZipFile(zip_filename, **zip_options) as archive:  # type: ignore[arg-type]
+        with ZipFile(zip_filename, **zip_options) as archive:
             for href in (pbar := tqdm(content)):
                 # get relative path w.r.t. the base url
                 file_name = os.path.relpath(href, url)

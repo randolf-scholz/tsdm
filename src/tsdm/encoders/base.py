@@ -541,7 +541,7 @@ def direct_sum_encoders(
     *encoders: E,
     simplify: Literal[False],
 ) -> ProductEncoder[E]: ...
-def direct_sum_encoders(  # type: ignore[misc]
+def direct_sum_encoders(
     *encoders: E, simplify: bool = True, copy: bool = True
 ) -> Encoder:
     r"""Product-Type for Encoders.

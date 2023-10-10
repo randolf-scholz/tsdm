@@ -300,6 +300,9 @@ generated-members = ["numpy.*", "torch.*"]
 files = ["src/", "tests/"]
 plugins = ["numpy.typing.mypy_plugin"]
 
+# use new type inference, remove when mypy 1.7 is released
+new_type_inference = true
+
 # platform configuration
 python_version = "3.10"
 #platform = "linux"
