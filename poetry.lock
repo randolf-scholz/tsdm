@@ -1599,13 +1599,13 @@ test = ["black", "coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mypy", "pre-commit"
 
 [[package]]
 name = "google-auth"
-version = "2.23.2"
+version = "2.23.3"
 description = "Google Authentication Library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-auth-2.23.2.tar.gz", hash = "sha256:5a9af4be520ba33651471a0264eead312521566f44631cbb621164bc30c8fd40"},
-    {file = "google_auth-2.23.2-py2.py3-none-any.whl", hash = "sha256:c2e253347579d483004f17c3bd0bf92e611ef6c7ba24d41c5c59f2e7aeeaf088"},
+    {file = "google-auth-2.23.3.tar.gz", hash = "sha256:6864247895eea5d13b9c57c9e03abb49cb94ce2dc7c58e91cba3248c7477c9e3"},
+    {file = "google_auth-2.23.3-py2.py3-none-any.whl", hash = "sha256:a8f4608e65c244ead9e0538f181a96c6e11199ec114d41f1d7b1bffa96937bda"},
 ]
 
 [package.dependencies]
@@ -4220,17 +4220,17 @@ testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtuale
 
 [[package]]
 name = "pytest-repeat"
-version = "0.9.2"
+version = "0.9.3"
 description = "pytest plugin for repeating tests"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest-repeat-0.9.2.tar.gz", hash = "sha256:79673445ae99aee333b811c7d0037aeb408f933b8898375ff2f4fff1e3ba686b"},
-    {file = "pytest_repeat-0.9.2-py3-none-any.whl", hash = "sha256:05782f82b328311551c5929c50430e9103fed562354707db8511c392e8c798d0"},
+    {file = "pytest_repeat-0.9.3-py3-none-any.whl", hash = "sha256:26ab2df18226af9d5ce441c858f273121e92ff55f5bb311d25755b8d7abdd8ed"},
+    {file = "pytest_repeat-0.9.3.tar.gz", hash = "sha256:ffd3836dfcd67bb270bec648b330e20be37d2966448c4148c4092d1e8aba8185"},
 ]
 
 [package.dependencies]
-pytest = ">=3.6"
+pytest = "*"
 
 [[package]]
 name = "pytest-rerunfailures"
@@ -6276,4 +6276,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "67a1d72d725b1a79b5b8acf48b2ba69e5de5fbaedb7caba48010a36a0c36068b"
+content-hash = "a84af82af00995a07c114b6a305dd9e811fa3d956de3d0848c5484cf0b5368f2"
