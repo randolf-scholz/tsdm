@@ -44,7 +44,7 @@ repos:
         stages: [pre-push, manual]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-added-large-files
         description: "prevents giant files from being committed."
@@ -167,7 +167,7 @@ repos:
         files: ^dev/
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.329
+    rev: v1.1.330.post0
     hooks:
       - id: pyright
         # not everything works with pyright yet
