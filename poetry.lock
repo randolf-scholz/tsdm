@@ -206,13 +206,13 @@ trio = ["trio (>=0.22)"]
 
 [[package]]
 name = "anytree"
-version = "2.9.0"
+version = "2.9.2"
 description = "Powerful and Lightweight Python Tree Data Structure with various plugins"
 optional = false
 python-versions = ">=3.7.2,<4"
 files = [
-    {file = "anytree-2.9.0-py3-none-any.whl", hash = "sha256:7f1ad0f9b225705b780ea0593c8ff52af05df9428e7cc34b9379b879fa462663"},
-    {file = "anytree-2.9.0.tar.gz", hash = "sha256:06f7bc294293da2755f4699cc5da5c92d9182a5cfae2842c83fb56f02bd427c8"},
+    {file = "anytree-2.9.2-py3-none-any.whl", hash = "sha256:3cf661b1626dd7dea721ef15b677d769944694a202af83fb6656adfc94b3ae71"},
+    {file = "anytree-2.9.2.tar.gz", hash = "sha256:e02af617d41ede47f922e5deea0e4efc3201c6e7330cfc1265409762e5381283"},
 ]
 
 [package.dependencies]
@@ -2101,13 +2101,13 @@ referencing = ">=0.28.0"
 
 [[package]]
 name = "jupyter-client"
-version = "8.3.1"
+version = "8.4.0"
 description = "Jupyter protocol implementation and client libraries"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "jupyter_client-8.3.1-py3-none-any.whl", hash = "sha256:5eb9f55eb0650e81de6b7e34308d8b92d04fe4ec41cd8193a913979e33d8e1a5"},
-    {file = "jupyter_client-8.3.1.tar.gz", hash = "sha256:60294b2d5b869356c893f57b1a877ea6510d60d45cf4b38057f1672d85699ac9"},
+    {file = "jupyter_client-8.4.0-py3-none-any.whl", hash = "sha256:6a2a950ec23a8f62f9e4c66acec7f0ea6c7d1f80ba0992e747b10c56ce2e6dbe"},
+    {file = "jupyter_client-8.4.0.tar.gz", hash = "sha256:dc1b857d5d7d76ac101766c6e9b646bf18742721126e72e5d484c75a993cada2"},
 ]
 
 [package.dependencies]
@@ -4142,13 +4142,13 @@ tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 
 [[package]]
 name = "pyright"
-version = "1.1.330.post0"
+version = "1.1.331"
 description = "Command line wrapper for pyright"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.330.post0-py3-none-any.whl", hash = "sha256:2e9e0878298685b66485b340a0aaa16342129eb03ff9ed0e3c1ab66b8bfbe914"},
-    {file = "pyright-1.1.330.post0.tar.gz", hash = "sha256:8e5b09cc5d1cfa0bcbf8824b0316d21c43fe229da7cef0a09cd12fcf6cb3eedd"},
+    {file = "pyright-1.1.331-py3-none-any.whl", hash = "sha256:d200a01794e7f2a04d5042a6c3abee36ce92780287d3037edfc3604d45488f0e"},
+    {file = "pyright-1.1.331.tar.gz", hash = "sha256:c3e7b86154cac86c3bd61ea0f963143d001c201e246825aaabdddfcce5d04293"},
 ]
 
 [package.dependencies]
@@ -6276,4 +6276,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "b9d2dae6b9d0e7972de772d55f7b81f65e23673a88ba5e9a0ae2b3dc4aa17a4d"
+content-hash = "8d474e0be959a071fef772d3ae6658f6548b45dad00e68f9bf7d35dc977a2d63"
