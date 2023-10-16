@@ -3,8 +3,8 @@
 __all__ = [
     # NamedTuples
     "PaddedBatch",
-    "Inputs",
     "Sample",
+    "TimeSeriesSample",
     # Functions
     "collate_timeseries",
     # Classes
@@ -16,60 +16,109 @@ from collections.abc import Hashable, Iterator, Sequence
 from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
 from types import NotImplementedType
-from typing import Any, Generic, NamedTuple
+from typing import Any, NamedTuple, Optional
 
-import pandas as pd
 import torch
-from pandas import DataFrame
+from pandas import DataFrame, Index
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset as TorchDataset
 
-from tsdm.types.variables import any_co as T_co
 from tsdm.utils.strings import pprint_repr
 
 
 @pprint_repr
-class Inputs(NamedTuple, Generic[T_co]):
+class Sample(NamedTuple):
     r"""A single sample of the data."""
-
-    t: T_co
-    x: T_co
-    t_target: T_co
+    key: Any
+    t: Index
+    x: DataFrame
+    t_target: Index
+    targets: DataFrame
 
 
 @pprint_repr
-class Sample(NamedTuple, Generic[T_co]):
-    r"""A single sample of the data."""
+class TimeSeriesSample(NamedTuple):
+    r"""A single sample of time series data.
 
-    key: Hashable
-    inputs: Inputs[T_co]
-    targets: T_co
-    original: Any = None
+    Examples:
+        time series forecasting/imputation::
+
+            t, x, q, y = sample
+            yhat = model(q, t, x)  # predict at time q given history (t, x).
+            loss = d(y, yhat)  # compute the loss
+
+        time series classification::
+
+            t, x, *_, md_targets = sample
+            md_hat = model(t, x)  # predict class of the time series.
+            loss = d(md_targets, md_hat)  # compute the loss
+
+
+
+    Attributes:
+        t_inputs   (Float[Nᵢ]):   Timestamps of the inputs.
+        inputs     (Float[Nᵢ×D]): The inputs for all timesteps.
+        t_targets  (Float[Nₜ]):   Timestamps of the targets.
+        targets    (Float[Nₜ×K]): The targets for the target timesteps.
+        metadata   (Float[M]):    Static metadata.
+        md_targets (Float[M]):    Static metadata targets.
+    """
+
+    t_inputs: Tensor
+    inputs: Tensor
+    t_targets: Tensor
+    targets: Tensor
+    metadata: Optional[Tensor] = None
+    md_targets: Optional[Tensor] = None
 
 
 @pprint_repr
 class PaddedBatch(NamedTuple):
-    r"""A single sample of the data."""
+    r"""A padded batch of samples.
 
-    # N = number of observations + K + padding
+    Note:
+        - B: batch-size
+        - T: maximum sequence length (= N + K)
+        - D: input dimension
+        - K: target dimension
+
+    Example:
+        t, x, y, mq, mx, my = collate_timeseries(batch)
+        yhat = model(t, x)  # predict for the whole padded batch
+        r = where(my, y-yhat, 0)  # set residual to zero for missing values
+        loss = r.abs().pow(2).sum()  # compute the loss
+
+    Attributes:
+        t (Float[B×T]):   Combined timestamps of inputs and targets.
+        x (Float[B×T×D]): The inputs for all timesteps.
+        y (Float[B×T×F]): The targets for the target timesteps.
+        mq (Bool[B×T]):   The 'queries' mask, True if the given time stamp is a query.
+        mx (Bool[B×T×D]): The 'inputs' mask, True indicates an observation, False a missing value.
+        my (Bool[B×T×F]): The 'targets' mask, True indicates a target, False a missing value.
+        metadata (Optional[Float[B×M]]):   Stacked metadata.
+        md_targets (Optional[Float[B×M]]): Stacked metadata targets.
+
+    In this context, 'query' means that the model should predict the value at this time stamp.
+    Consequently, `mq` is identical to or-reducing `my` along the target dimension.
+    """
+
     t: Tensor  # B×N:   the padded timestamps/queries.
     x: Tensor  # B×N×D: the padded input values.
-    y: Tensor  # B×K×F: the padded target values.
-
-    mq: Tensor  # B×N: the 'queries' mask.
-    mx: Tensor  # B×N: the 'inputs'  mask.
-    my: Tensor  # B×K: the 'targets' mask.
+    y: Tensor  # B×N×F: the padded target values.
+    mq: Tensor  # B×N:   the 'queries' mask.
+    mx: Tensor  # B×N×D: the 'inputs' mask.
+    my: Tensor  # B×N×F: the 'targets' mask.
+    metadata: Optional[Tensor] = None  # B×M:   stacked metadata.
+    md_targets: Optional[Tensor] = None  # B×M:   stacked metadata targets.
 
 
 # @torch.jit.script  # seems to break things
-def collate_timeseries(batch: list[Sample[Tensor]]) -> PaddedBatch:
-    r"""Collate timeseries into padded batch.
+def collate_timeseries(batch: list[TimeSeriesSample]) -> PaddedBatch:
+    r"""Collate timeseries samples into padded batch.
 
     Assumptions:
         - t_target is sorted.
-
-    Transform the data slightly: `t, x, t_target → T, X where X[t_target:] = NAN`.
     """
     masks_inputs: list[Tensor] = []
     masks_queries: list[Tensor] = []
@@ -77,16 +126,21 @@ def collate_timeseries(batch: list[Sample[Tensor]]) -> PaddedBatch:
     padded_inputs: list[Tensor] = []
     padded_queries: list[Tensor] = []
     padded_targets: list[Tensor] = []
+    metadata: list[Tensor] = []
+    md_targets: list[Tensor] = []
 
     for sample in batch:
-        t, x, t_target = sample.inputs
+        if sample.metadata is not None:
+            metadata.append(sample.metadata)
+        if sample.md_targets is not None:
+            md_targets.append(sample.md_targets)
+
+        t_inputs = sample.t_inputs
+        x = sample.inputs
+        t_target = sample.t_targets
         y = sample.targets
 
-        # get the whole time interval
-        t_combined = torch.cat((t, t_target))
-        sorted_idx = torch.argsort(t_combined)
-
-        # pad the x-values
+        # pad the x-values by the target length
         x_padding = torch.full(
             (t_target.shape[0], x.shape[-1]),
             fill_value=NAN,
@@ -95,15 +149,19 @@ def collate_timeseries(batch: list[Sample[Tensor]]) -> PaddedBatch:
         )
         x_padded = torch.cat((x, x_padding))
 
+        # get the whole time interval
+        t_combined = torch.cat((t_inputs, t_target))
+        sorted_idx = torch.argsort(t_combined)
+
         # create a mask for looking up the target values
-        m_targets = torch.ones_like(t_target, dtype=torch.bool)
         m_queries = torch.cat(
             [
-                torch.zeros_like(t, dtype=torch.bool),
-                m_targets,
+                torch.zeros_like(t_inputs, dtype=torch.bool),
+                torch.ones_like(t_target, dtype=torch.bool),
             ]
         )
-        m_inputs = ~m_queries
+        m_inputs = x.isfinite()
+        m_targets = y.isfinite()
 
         # append to lists, ordering by time
         masks_inputs.append(m_inputs[sorted_idx])
@@ -120,6 +178,8 @@ def collate_timeseries(batch: list[Sample[Tensor]]) -> PaddedBatch:
         mq=pad_sequence(masks_queries, batch_first=True).squeeze(),
         mx=pad_sequence(masks_inputs, batch_first=True).squeeze(),
         my=pad_sequence(masks_target, batch_first=True).squeeze(),
+        metadata=torch.stack(metadata) if metadata else None,
+        md_targets=torch.stack(md_targets) if md_targets else None,
     )
 
 
@@ -149,8 +209,8 @@ class FixedSliceSampleGenerator(TorchDataset[Sample]):
 
     def __post_init__(self) -> None:
         # set the index
-        self.index: pd.Index = self.data_source.reset_index(level=-1).index.unique()
-        self.columns: pd.Index = self.data_source.columns
+        self.index: Index = self.data_source.reset_index(level=-1).index.unique()
+        self.columns: Index = self.data_source.columns
 
         match self.input_slice, self.target_slice:
             case NotImplementedType(), NotImplementedType():
@@ -212,9 +272,9 @@ class FixedSliceSampleGenerator(TorchDataset[Sample]):
                 )
 
         # cast to index.
-        self.observables = pd.Index(self.observables)
-        self.targets = pd.Index(self.targets)
-        self.covariates = pd.Index(self.covariates)
+        self.observables = Index(self.observables)
+        self.targets = Index(self.targets)
+        self.covariates = Index(self.covariates)
 
         # validate the columns
         if not set(self.observables).issubset(self.columns):
@@ -253,11 +313,10 @@ class FixedSliceSampleGenerator(TorchDataset[Sample]):
         inputs.loc[self.input_slice, not_covariates] = NAN
         targets.loc[:, not_targeted] = NAN
 
-        # create the sample
-        inputs = Inputs(
+        return Sample(
+            key=key,
             t=inputs.index.copy(),
             x=inputs.copy(),
             t_target=targets.index.copy(),
+            targets=targets,
         )
-        sample = Sample(key=key, inputs=inputs, targets=targets, original=ts)
-        return sample

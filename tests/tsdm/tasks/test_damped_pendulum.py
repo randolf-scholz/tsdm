@@ -3,8 +3,6 @@ r"""Test the DampedPendulum task."""
 
 import logging
 
-from pandas import DataFrame
-
 from tsdm import tasks
 
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +31,7 @@ def test_damped_pendulum() -> None:
     # test generator
     test_generator = task.generators[0, "test"]
     for idx in test_indices[:10]:
-        assert isinstance(test_generator[idx], DataFrame)
+        assert isinstance(test_generator[idx], tuple)
 
 
 def _main() -> None:
