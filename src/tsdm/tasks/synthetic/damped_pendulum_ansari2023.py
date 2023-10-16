@@ -49,7 +49,13 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     valid_size = 1000
     test_size = 1000
 
-    def __init__(self, validate: bool = True, initialize: bool = True) -> None:
+    def __init__(
+        self,
+        *,
+        validate: bool = True,
+        initialize: bool = True,
+        missing_rate: float = 0.0,
+    ) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
         timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
 

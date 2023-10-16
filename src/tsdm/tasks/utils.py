@@ -1,42 +1,54 @@
 """Task-specific utilities."""
 
-__all__ = ["PaddedBatch", "Inputs", "Sample", "collate_timeseries"]
+__all__ = [
+    # NamedTuples
+    "PaddedBatch",
+    "Inputs",
+    "Sample",
+    # Functions
+    "collate_timeseries",
+    # Classes
+    "FixedSliceSampleGenerator",
+]
 
+import warnings
+from collections.abc import Hashable, Iterator, Sequence
+from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
-from typing import NamedTuple
+from types import NotImplementedType
+from typing import Any, Generic, NamedTuple
 
+import pandas as pd
 import torch
+from pandas import DataFrame
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import Dataset as TorchDataset
 
-from tsdm.utils.strings import repr_namedtuple
+from tsdm.types.variables import any_co as T_co
+from tsdm.utils.strings import pprint_repr
 
 
-class Inputs(NamedTuple):
+@pprint_repr
+class Inputs(NamedTuple, Generic[T_co]):
     r"""A single sample of the data."""
 
-    t: Tensor
-    x: Tensor
-    t_target: Tensor
-
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
+    t: T_co
+    x: T_co
+    t_target: T_co
 
 
-class Sample(NamedTuple):
+@pprint_repr
+class Sample(NamedTuple, Generic[T_co]):
     r"""A single sample of the data."""
 
-    key: int
-    inputs: Inputs
-    targets: Tensor
-    originals: tuple[Tensor, Tensor]
-
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
+    key: Hashable
+    inputs: Inputs[T_co]
+    targets: T_co
+    original: Any = None
 
 
+@pprint_repr
 class PaddedBatch(NamedTuple):
     r"""A single sample of the data."""
 
@@ -49,12 +61,9 @@ class PaddedBatch(NamedTuple):
     mx: Tensor  # B×N: the 'inputs'  mask.
     my: Tensor  # B×K: the 'targets' mask.
 
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
-
 
 # @torch.jit.script  # seems to break things
-def collate_timeseries(batch: list[Sample]) -> PaddedBatch:
+def collate_timeseries(batch: list[Sample[Tensor]]) -> PaddedBatch:
     r"""Collate timeseries into padded batch.
 
     Assumptions:
@@ -112,3 +121,143 @@ def collate_timeseries(batch: list[Sample]) -> PaddedBatch:
         mx=pad_sequence(masks_inputs, batch_first=True).squeeze(),
         my=pad_sequence(masks_target, batch_first=True).squeeze(),
     )
+
+
+@pprint_repr
+@dataclass
+class FixedSliceSampleGenerator(TorchDataset[Sample]):
+    """Utility class for generating samples from a fixed slice of a time series.
+
+    Assumptions:
+        - `data_source` is a multi-index dataframe whose innermost index is the time index.
+        - `key` is always a tuple for the n-1 outermost indices.
+        - For each key, we are only interested in a fixed slice of the time series.
+    """
+
+    data_source: DataFrame
+    input_slice: slice = NotImplemented
+    target_slice: slice = NotImplemented
+
+    _: KW_ONLY
+
+    observables: Sequence[Hashable] = NotImplemented
+    """These columns are unmasked over the obs.-horizon in the input slice."""
+    targets: Sequence[Hashable] = NotImplemented
+    """These columns are unmasked over the pred.-horizon in the target slice."""
+    covariates: Sequence[Hashable] = ()
+    """These columns are unmasked over the whole inputs slice."""
+
+    def __post_init__(self) -> None:
+        # set the index
+        self.index: pd.Index = self.data_source.reset_index(level=-1).index.unique()
+        self.columns: pd.Index = self.data_source.columns
+
+        match self.input_slice, self.target_slice:
+            case NotImplementedType(), NotImplementedType():
+                raise ValueError("Please specify slices for the input and target.")
+            case NotImplementedType(), slice():
+                self.input_slice = slice(None, self.target_slice.start)
+            case slice(), NotImplementedType():
+                self.target_slice = slice(self.input_slice.stop, None)
+            case slice(), slice():
+                pass
+            case _:
+                raise TypeError(
+                    "Incorrect input types! Explected slices but got"
+                    f" {type(self.input_slice)=} and {type(self.target_slice)=}."
+                )
+
+        # validate the slices
+        if self.input_slice.start is not None:
+            assert self.target_slice.start is not None
+            assert self.input_slice.start <= self.target_slice.start
+        if self.input_slice.stop is not None:
+            assert self.target_slice.start is not None
+            assert self.input_slice.stop <= self.target_slice.start
+        if self.target_slice.stop is not None:
+            assert self.input_slice.stop is not None
+            assert self.input_slice.stop <= self.target_slice.stop
+
+        # set the combined slice
+        self.combined_slice = slice(self.input_slice.start, self.target_slice.stop)
+
+        match self.observables, self.targets:
+            case NotImplementedType(), NotImplementedType():
+                print(
+                    "No observables/targets specified. Assuming autoregressive case:"
+                    " all columns are both inputs and targets."
+                )
+                self.observables = self.columns.copy()
+                self.targets = self.columns.copy()
+            case NotImplementedType(), Sequence():
+                warnings.warn(
+                    "Targets are specified, but not observables. Assuming remaining"
+                    " columns are observables.",
+                    stacklevel=2,
+                )
+                self.observables = self.columns.difference(self.targets).copy()
+            case Sequence(), NotImplementedType():
+                warnings.warn(
+                    "Observables are specified, but not targets. Assuming remaining"
+                    " columns are targets.",
+                    stacklevel=2,
+                )
+                self.targets = self.columns.difference(self.observables).copy()
+            case Sequence(), Sequence():
+                pass
+            case _:
+                raise TypeError(
+                    "Incorrect input types! Explected sequences but got"
+                    f" {type(self.observables)=} and {type(self.targets)=}."
+                )
+
+        # cast to index.
+        self.observables = pd.Index(self.observables)
+        self.targets = pd.Index(self.targets)
+        self.covariates = pd.Index(self.covariates)
+
+        # validate the columns
+        if not set(self.observables).issubset(self.columns):
+            raise ValueError(
+                "Observables contain columns that are not in the data source."
+            )
+        if not set(self.targets).issubset(self.columns):
+            raise ValueError("Targets contain columns that are not in the data source.")
+
+    def __len__(self) -> int:
+        """Number of unique entries in the outer n-1 index levels."""
+        return len(self.index)
+
+    def __iter__(self) -> Iterator[Sample]:
+        """Iterate over all the samples in the dataset."""
+        for key in self.index:
+            yield self[key]
+
+    def __getitem__(self, key: Hashable) -> Sample:
+        """Yield a single sample."""
+        # select the individual time series
+        ts = self.data_source.loc[key]
+        # get the slices
+        inputs = ts.loc[self.combined_slice]
+        targets = ts.loc[self.target_slice]
+
+        # get the  masks
+        not_observed = self.columns.intersection(self.observables).union(
+            self.columns.intersection(self.covariates)
+        )
+        not_targeted = self.columns.intersection(self.targets)
+        not_covariates = self.columns.difference(self.covariates)
+
+        # apply the masks
+        inputs.loc[:, not_observed] = NAN
+        inputs.loc[self.input_slice, not_covariates] = NAN
+        targets.loc[:, not_targeted] = NAN
+
+        # create the sample
+        inputs = Inputs(
+            t=inputs.index.copy(),
+            x=inputs.copy(),
+            t_target=targets.index.copy(),
+        )
+        sample = Sample(key=key, inputs=inputs, targets=targets, original=ts)
+        return sample

@@ -24,30 +24,6 @@ timeseries_description = {
 }
 # fmt: on
 
-
-# fmt: off
-foo = {
-    # Name                   : [Dtype,                    Unit, Type, Lower, Upper, Lower included, Upper included]
-    "Acetate_Dilution"       : ["float[pyarrow]",         "", "", None, None, True, True],
-    "Feed_concentration_glc" : ["float[pyarrow]",         "", "", None, None, True, True],
-    "OD_Dilution"            : ["float[pyarrow]",         "", "", None, None, True, True],
-    "Stir_Max_Restarts"      : ["float[pyarrow]",         "", "", None, None, True, True],
-    "capacity_per_container" : ["float[pyarrow]",         "", "", None, None, True, True],
-    "color"                  : ["string[pyarrow]",        "", "", None, None, True, True],
-    "end_time"               : ["timestamp[ms][pyarrow]", "", "", None, None, True, True],
-    "medium_name"            : ["string[pyarrow]",        "", "", None, None, True, True],
-    "organism_name"          : ["string[pyarrow]",        "", "", None, None, True, True],
-    "pH_correction_factor"   : ["float[pyarrow]",         "", "", None, None, True, True],
-    "ph_Base_conc"           : ["float[pyarrow]",         "", "", None, None, True, True],
-    "ph_Ki"                  : ["float[pyarrow]",         "", "", None, None, True, True],
-    "ph_Kp"                  : ["float[pyarrow]",         "", "", None, None, True, True],
-    "ph_Tolerance"           : ["float[pyarrow]",         "", "", None, None, True, True],
-    "plasmid_name"           : ["string[pyarrow]",        "", "", None, None, True, True],
-    "profile_name"           : ["string[pyarrow]",        "", "", None, None, True, True],
-    "start_time"             : ["timestamp[ms][pyarrow]", "", "", None, None, True, True],
-}
-# fmt: on
-
 # fmt: off
 metadata_description = {
     # Name                   : [Unit,  Type,   Dtype, Lower, Upper, Lower included, Upper included]

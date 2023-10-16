@@ -25,7 +25,7 @@ import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from dataclasses import is_dataclass
 from functools import partial
-from types import FunctionType, MethodType
+from types import FunctionType
 from typing import Any, Final, Optional, Protocol, cast, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -759,12 +759,10 @@ def repr_dtype(obj: str | type | DType, /) -> str:
 
 def pprint_repr(cls: type[T], /) -> type[T]:
     """Add appropriate __repr__ to class."""
-    if "__repr__" in cls.__dict__:
-        return cls
-
+    repr_fun: Callable[..., str]
     if is_dataclass(cls):
         repr_fun = repr_dataclass
-    elif issubclass(cls, NTuple):
+    elif issubclass(cls, NTuple):  # type: ignore[misc]
         repr_fun = repr_namedtuple
     elif issubclass(cls, Mapping):
         repr_fun = repr_mapping
@@ -775,10 +773,7 @@ def pprint_repr(cls: type[T], /) -> type[T]:
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    def __repr__(self: T) -> str:
-        return repr_fun(self)
-
-    cls.__repr__ = MethodType(__repr__, cls)
+    cls.__repr__ = repr_fun
     return cls
 
 

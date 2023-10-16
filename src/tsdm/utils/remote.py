@@ -141,7 +141,8 @@ def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
     for link in parser.links:
         if link == "../":
             continue
-        elif link.endswith("/"):  # Recursion
+
+        if link.endswith("/"):  # Recursion
             yield from iter_content(url + link, session=session)
         else:
             yield url + link

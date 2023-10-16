@@ -298,7 +298,7 @@ class FrameEncoder(BaseEncoder, Generic[ColEncVar, IndEncVar]):
         return repr_mapping(items, title=self.__class__.__name__, recursive=2)
 
 
-class FastFrameEncoder(Mapping[K, BaseEncoder], BaseEncoder):
+class FastFrameEncoder(BaseEncoder, Mapping[K, BaseEncoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Per-column encoding is possible through the dictionary input.
@@ -918,7 +918,7 @@ class ValueEncoder(BaseEncoder):
         return decoded
 
 
-class FrameAsDict(Mapping[str, list[str]], BaseEncoder):
+class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
     r"""Encodes a DataFrame as a dict of Tensors.
 
     This is useful for passing a DataFrame to a PyTorch model.

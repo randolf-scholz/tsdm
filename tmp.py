@@ -33,7 +33,6 @@ from typing import Any, NamedTuple
 if sys.version_info >= (3, 11):
     # NOTE: importlib.metadata is bugged in 3.10: https://github.com/python/cpython/issues/94113
     import importlib.metadata as metadata
-
     import tomllib
 else:
     try:
