@@ -110,6 +110,7 @@ DATASETS: dict[str, type[Dataset]] = {
     "KiwiBenchmark": KiwiBenchmark,
     "MIMIC_III": MIMIC_III_RAW,
     "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
+    "MIMIC_III_Bilos2021": MIMIC_III_Bilos2021,
     "MIMIC_IV": MIMIC_IV_RAW,
     "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
     "Physionet2012": PhysioNet2012,
