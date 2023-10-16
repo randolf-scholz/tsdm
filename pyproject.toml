@@ -50,6 +50,7 @@ dependencies = [
 dev = ["tsdm[test,docs,extras,typing,flake8,linters,formatters,devtools]"]
 test = [
     "coverage>=7.3.2",
+    "pygal>=3.0.0",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
     "pytest-repeat>=0.9.3",
@@ -70,6 +71,16 @@ docs = [
     "sphinx-togglebutton>=0.3.2",
     "sphinx-typo3-theme>=4.9.0",
     "sphinx>=7.2.6",
+]
+devtools = [
+    "pip>=23.3",
+    "pre-commit>=3.5.0",
+    "pybadges>=3.0.1",
+    "pydeps>=1.12.17",
+    "pygments>=2.16.1",
+    "setuptools>=68.2.2",
+    "twine>=4.0.2",
+    "wheel>=0.41.2",
 ]
 extras = [
     "ipympl>=0.9.3",
@@ -131,16 +142,7 @@ formatters = [
     "nbstripout-fast>=1.0.2",
     "ssort>=0.11.6",
 ]
-devtools = [
-    "pip>=23.3",
-    "pre-commit>=3.5.0",
-    "pybadges>=3.0.1",
-    "pydeps>=1.12.17",
-    "pygments>=2.16.1",
-    "setuptools>=68.2.2",
-    "twine>=4.0.2",
-    "wheel>=0.41.2",
-]
+
 
 
 [project.urls]
@@ -567,6 +569,7 @@ torchinfo = ">=1.8.0"
 
 [tool.poetry.group.test.dependencies]
 coverage = ">=7.3.2"
+pygal = ">=3.0.0"
 pytest = ">=7.4.2"
 pytest-benchmark = ">=4.0.0"
 pytest-cov = ">=4.1.0"
