@@ -2,6 +2,7 @@ r"""Utility functions for string manipulation."""
 
 __all__ = [
     # Functions
+    "pprint_repr",
     "snake2camel",
     # "camel2snake",
     "dict2string",
@@ -24,7 +25,7 @@ import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from dataclasses import is_dataclass
 from functools import partial
-from types import FunctionType
+from types import FunctionType, MethodType
 from typing import Any, Final, Optional, Protocol, cast, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -34,6 +35,7 @@ from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
 from tsdm.types.aliases import DType
 from tsdm.types.dtypes import TYPESTRINGS
 from tsdm.types.protocols import Array, Dataclass, NTuple
+from tsdm.types.variables import any_var as T
 
 __logger__ = logging.getLogger(__name__)
 
@@ -753,6 +755,31 @@ def repr_dtype(obj: str | type | DType, /) -> str:
     if obj in TYPESTRINGS:
         return TYPESTRINGS[obj]  # type: ignore[index]
     return str(obj)
+
+
+def pprint_repr(cls: type[T], /) -> type[T]:
+    """Add appropriate __repr__ to class."""
+    if "__repr__" in cls.__dict__:
+        return cls
+
+    if is_dataclass(cls):
+        repr_fun = repr_dataclass
+    elif issubclass(cls, NTuple):
+        repr_fun = repr_namedtuple
+    elif issubclass(cls, Mapping):
+        repr_fun = repr_mapping
+    elif issubclass(cls, Sequence):
+        repr_fun = repr_sequence
+    elif issubclass(cls, type):
+        repr_fun = repr_type
+    else:
+        raise TypeError(f"Unsupported type {cls}.")
+
+    def __repr__(self: T) -> str:
+        return repr_fun(self)
+
+    cls.__repr__ = MethodType(__repr__, cls)
+    return cls
 
 
 RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
