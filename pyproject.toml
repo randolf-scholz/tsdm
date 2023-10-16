@@ -30,9 +30,9 @@ classifiers = [
 requires-python = ">=3.10,<3.12"
 dependencies = [
     "matplotlib>=3.8.0",
-    "numpy>=1.26.0",
+    "numpy>=1.26.1",
     "pandas>=2.1.1",
-    "pillow>=10.0.1",
+    "pillow>=10.1.0",
     "polars>=0.19.8",
     "pyarrow>=13.0.0",
     "pyyaml>=6.0.1",
@@ -74,12 +74,12 @@ docs = [
 extras = [
     "ipympl>=0.9.3",
     "ipywidgets>=8.1.1",
-    "jupyterlab>=4.0.6",
-    "jupyterlab>=4.0.6",
-    "notebook>=7.0.4",
+    "jupyterlab>=4.0.7",
+    "jupyterlab>=4.0.7",
+    "notebook>=7.0.5",
     "openml>=0.14.1",
     "openpyxl>=3.1.2",
-    "psutil>=5.9.5",
+    "psutil>=5.9.6",
     "torchinfo>=1.8.0",
 ]
 typing = [
@@ -107,7 +107,7 @@ flake8 = [
     "flake8-bugbear>=23.9.16",
     "flake8-comprehensions>=3.14.0",
     "flake8-docstrings>=1.7.0",
-    "flake8-pyi>=23.6.0",
+    "flake8-pyi>=23.10.0",
     "flake8-pyproject>=1.2.3",
     "flake8-rst>=0.8.0",
     "flake8-rst-docstrings>=0.3.0",
@@ -116,7 +116,7 @@ linters = [
     "bandit>=1.7.5",
     "mccabe>=0.7.0",
     "perflint>=0.7.3",
-    "pycodestyle>=2.11.0",
+    "pycodestyle>=2.11.1",
     "pydocstyle>=6.3.0",
     "pyflakes>=3.1.0",
     "pylint>=2.17.7",
@@ -133,9 +133,9 @@ formatters = [
     "ssort>=0.11.6",
 ]
 devtools = [
-    "pip>=23.2.1",
-    "pre-commit>=3.4.0",
-    "pybadges>=3.0.0",
+    "pip>=23.3",
+    "pre-commit>=3.5.0",
+    "pybadges>=3.0.1",
     "pydeps>=1.12.17",
     "pygments>=2.16.1",
     "setuptools>=68.2.2",
@@ -540,9 +540,9 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 matplotlib = ">=3.8.0"
-numpy = ">=1.26.0"
+numpy = ">=1.26.1"
 pandas = ">=2.1.1"
-pillow = ">=10.0.1"
+pillow = ">=10.1.0"
 polars = ">=0.19.8"
 pyarrow = ">=13.0.0"
 pyyaml = ">=6.0.1"
@@ -558,11 +558,11 @@ typing-extensions = ">=4.8.0"
 [tool.poetry.group.extra.dependencies]
 ipympl = ">=0.9.3"
 ipywidgets = ">=8.1.1"
-jupyterlab = ">=4.0.6"
-notebook = ">=7.0.4"
+jupyterlab = ">=4.0.7"
+notebook = ">=7.0.5"
 openml = ">=0.14.1"
 openpyxl = ">=3.1.2"
-psutil = ">=5.9.5"
+psutil = ">=5.9.6"
 torchinfo = ">=1.8.0"
 
 
@@ -598,16 +598,16 @@ sphinx-typo3-theme = ">=4.9.0"
 
 
 [tool.poetry.group.devtools.dependencies]
-cmake = ">=3.27.6"
+cmake = ">=3.27.7"
 devtools = ">=0.12.2"
 johnnydep = ">=1.20.3"
 ninja = ">=1.11.1"
-pip = ">=23.2.1"
+pip = ">=23.3"
 pip-tools = ">=7.3.0"
 pipdeptree = ">=2.13.0"
 pipreqs = ">=0.4.13"
-pre-commit = ">=3.4.0"
-pybadges = ">=3.0.0"
+pre-commit = ">=3.5.0"
+pybadges = ">=3.0.1"
 pydeps = ">=1.12.17"
 setuptools = ">=68.2.2"
 twine = ">=4.0.2"
@@ -620,7 +620,7 @@ flake8-annotations = ">=3.0.1"
 flake8-bugbear = ">=23.9.16"
 flake8-comprehensions = ">=3.14.0"
 flake8-docstrings = ">=1.7.0"
-flake8-pyi = ">=23.6.0"
+flake8-pyi = ">=23.10.0"
 flake8-pyproject = ">=1.2.3"
 flake8-rst = ">=0.8.0"
 flake8-rst-docstrings = ">=0.3.0"
@@ -638,7 +638,7 @@ ssort = ">=0.11.6"
 bandit = ">=1.7.5"
 mccabe = ">=0.7.0"
 perflint = ">=0.7.3"
-pycodestyle = ">=2.11.0"
+pycodestyle = ">=2.11.1"
 pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
 pylint = ">=2.17.7"
