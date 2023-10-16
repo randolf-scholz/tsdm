@@ -28,6 +28,8 @@ __all__ = [
     "Func",  # alternative to Callable
     # Functions
     "is_dataclass",
+    # TypeVars
+    "ArrayType",
 ]
 
 import dataclasses
@@ -70,7 +72,7 @@ from tsdm.types.variables import (
     value_var as V,
 )
 
-A = TypeVar("A", bound="Array")
+ArrayType = TypeVar("ArrayType", bound="Array")
 P = ParamSpec("P")
 
 
