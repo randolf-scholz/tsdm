@@ -450,7 +450,7 @@ class SingleTableDataset(BaseDataset[T_co]):
         if self._table is NotImplemented:
             return f"<pre>{html.escape(repr(self))}</pre>"
         if hasattr(self.table, "_repr_html_"):
-            header = f"<h3><pre>{html.escape(repr(self))}</pre></h3>"
+            header = f"<pre>{html.escape(repr(self))}</pre>"
             # noinspection PyProtectedMember
             html_repr = self.table._repr_html_()  # pylint: disable=protected-access
             return header + html_repr
@@ -524,7 +524,7 @@ class SingleTableDataset(BaseDataset[T_co]):
 
         return table
 
-    def clean(self, *, force: bool = True, validate: bool = True) -> None:
+    def clean(self, *, force: bool = False, validate: bool = True) -> None:
         r"""Clean the selected DATASET_OBJECT."""
         # Skip if dataset file already exists.
         if self.dataset_file_exists() and not force:
