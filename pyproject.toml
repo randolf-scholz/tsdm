@@ -20,14 +20,14 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: GPU :: NVIDIA CUDA :: 11.7",
     "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
     "Operating System :: POSIX :: Linux",
 ]
 
 # dependencies
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     "matplotlib>=3.8.0",
     "numpy>=1.26.1",
@@ -115,14 +115,13 @@ flake8 = [
 linters = [
     "bandit>=1.7.5",
     "mccabe>=0.7.0",
-    "perflint>=0.7.3",
     "pycodestyle>=2.11.1",
     "pydocstyle>=6.3.0",
     "pyflakes>=3.1.0",
-    "pylint>=2.17.7",
+    "pylint>=3.0.1",
     "pylint-gitlab>=2.0.0",
     "ruff>=0.0.292",
-    "ruff-lsp>=0.0.40",
+    "ruff-lsp>=0.0.41",
     "slotscheck>=0.17.0",
 ]
 formatters = [
@@ -304,7 +303,7 @@ plugins = ["numpy.typing.mypy_plugin"]
 new_type_inference = true
 
 # platform configuration
-python_version = "3.10"
+python_version = "3.11"
 #platform = "linux"
 
 disable_error_code = [
@@ -382,7 +381,7 @@ ignore_missing_imports = true
 [tool.isort]
 # isort profiles: black, django, pycharm, google, open_stack, plone, attrs, hug, wemake, appnexus
 # black-compatible: black, appnexus
-py_version = 310
+py_version = 311
 profile = "black"
 src_paths = ["src/", "tests/"]
 known_first_party = ["linodenet", "tsdm"]
@@ -395,7 +394,7 @@ combine_as_imports = true
 # region Black Configuration -----------------------------------------------------------
 [tool.black]
 line-length = 88
-target-version = ['py310']
+target-version = ['py311']
 color = true
 preview = true
 # endregion Black Configuration --------------------------------------------------------
@@ -422,7 +421,7 @@ add-ignore = [
 root = ""
 venv = ".venv"
 venvPath = "."
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 pythonPlatform = "Linux"
 stubPath = ""
 include = ["src/", "tests/"]
@@ -432,7 +431,7 @@ exclude = [
     "**/.ipynb_checkpoints",
 ]
 executionEnvironments = [
-    {root = "src/", pythonVersion = "3.10", pythonPlatform = "Linux", extraPaths = [""]}
+    {root = "src/", pythonVersion = "3.11", pythonPlatform = "Linux", extraPaths = [""]}
 ]
 useLibraryCodeForTypes = false  # otherwise hundreds of pandas false-positives.
 # Type Check Diagnostics Settings
@@ -530,7 +529,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: GPU :: NVIDIA CUDA :: 11.7",
     "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
     "Operating System :: POSIX :: Linux",
@@ -538,7 +537,7 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.11,<3.13"
 matplotlib = ">=3.8.0"
 numpy = ">=1.26.1"
 pandas = ">=2.1.1"
@@ -637,14 +636,13 @@ ssort = ">=0.11.6"
 [tool.poetry.group.linters.dependencies]
 bandit = ">=1.7.5"
 mccabe = ">=0.7.0"
-perflint = ">=0.7.3"
 pycodestyle = ">=2.11.1"
 pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
-pylint = ">=2.17.7"
+pylint = ">=3.0.1"
 pylint-gitlab = ">=2.0.0"
 ruff = ">=0.0.292"
-ruff-lsp = ">=0.0.40"
+ruff-lsp = ">=0.0.41"
 slotscheck = ">=0.17.0"
 
 
