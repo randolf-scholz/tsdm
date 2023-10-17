@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test RNN utils."""
 
 import logging
@@ -10,7 +9,6 @@ from torch.nn.utils.rnn import pack_sequence, pad_sequence
 
 from tsdm.utils.data import unpack_sequence, unpad_sequence
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -111,15 +109,3 @@ def test_unpad_sequence_float(tensors: list[Tensor]) -> None:
         mask_y = y == padding_value
         assert torch.all(mask_x == mask_y)
         assert torch.all(x[~mask_x] == y[~mask_y])
-
-
-def _main() -> None:
-    for tensors in TESTCASES:
-        test_unpack_sequence(tensors)
-        test_unpad_lengths(tensors)
-        test_unpad_sequence_nan(tensors)
-        test_unpad_sequence_float(tensors)
-
-
-if __name__ == "__main__":
-    _main()

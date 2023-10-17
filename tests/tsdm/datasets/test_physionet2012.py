@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test PhysioNet 2012."""
 
 import logging
@@ -8,7 +7,6 @@ from pandas import DataFrame
 
 from tsdm.datasets import PhysioNet2012
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -21,11 +19,3 @@ def test_physionet_2012() -> None:
 
     assert isinstance(ds.metadata, DataFrame)
     assert isinstance(ds.timeseries, DataFrame)
-
-
-def _main() -> None:
-    test_physionet_2012()
-
-
-if __name__ == "__main__":
-    _main()

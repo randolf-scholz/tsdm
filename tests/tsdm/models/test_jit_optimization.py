@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Test whether the JIT compiler optimizes out if/else with Final."""
 
 from typing import Final
@@ -46,11 +45,3 @@ def test_jit_optimization() -> None:
     print(scripted.code)
     assert "relu" in scripted.code
     assert "tanh" not in scripted.code
-
-
-def _main() -> None:
-    test_jit_optimization()
-
-
-if __name__ == "__main__":
-    _main()

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Test the RandomSampler."""
 
 from pandas import Index
@@ -48,11 +47,3 @@ def test_random_sampler_index() -> None:
 
     # check that the order is random (might fail with probability 1/n!)
     assert list(sampler) != list(indices)
-
-
-def _main() -> None:
-    test_random_sampler()
-
-
-if __name__ == "__main__":
-    _main()

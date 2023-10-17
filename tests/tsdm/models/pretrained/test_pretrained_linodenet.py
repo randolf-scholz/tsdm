@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Testing Attribute Serialization."""
 
 import logging
@@ -10,7 +9,6 @@ from pytest import mark
 from tsdm.encoders import BaseEncoder
 from tsdm.models.pretrained import LinODEnet
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -37,11 +35,3 @@ def test_pretrained() -> None:
 
     # optimizer = pretrained.components["optimizer"]
     # assert isinstance(optimizer, torch.optim.Optimizer)
-
-
-def _main() -> None:
-    test_pretrained()
-
-
-if __name__ == "__main__":
-    _main()

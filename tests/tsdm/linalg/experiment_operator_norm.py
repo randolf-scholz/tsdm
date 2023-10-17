@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Experiments with the scaled Lᴾ norm."""
 
 import matplotlib.pyplot as plt
@@ -107,7 +106,3 @@ def unit_circle_lp_scaled():
     # fig.suptitle("Unit circle of the Lₚ norm vs the scaled Lₚ norm.", fontsize=20)
     fig.savefig("unit_circle.png", dpi=300)
     fig.show()
-
-
-if __name__ == "__main__":
-    unit_circle_lp_scaled()

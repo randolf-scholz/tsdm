@@ -1,7 +1,8 @@
-#!/usr/bin/env python
-r"""Test the standardizer encoder."""
+r"""Test numerical encoders."""
 
 import logging
+import pickle
+from tempfile import TemporaryFile
 from typing import TypeVar
 
 import numpy as np
@@ -13,20 +14,18 @@ from tsdm.encoders.numerical import (
     BoundaryEncoder,
     LinearScaler,
     MinMaxScaler,
+    NumericalEncoder,
     StandardScaler,
     get_broadcast,
     get_reduced_axes,
 )
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
-
-
 T = TypeVar("T", pd.Series, np.ndarray, torch.Tensor)
 
 
-@mark.parametrize("shape", ((5, 2, 3, 4), (7,)))
-@mark.parametrize("axis", ((1, -1), (-1,), -2, 0, None, ()))
+@mark.parametrize("shape", ((5, 2, 3, 4), (7,)), ids=str)
+@mark.parametrize("axis", ((1, -1), (-1,), -2, 0, None, ()), ids=str)
 def test_get_broadcast(
     shape: tuple[int, ...], axis: None | int | tuple[int, ...]
 ) -> None:
@@ -60,7 +59,7 @@ def test_get_broadcast(
     assert m[broadcast].shape == m_ref.shape
 
 
-def test_reduce_axes():
+def test_reduce_axes() -> None:
     """Test the get_reduced_axes function."""
     axis: tuple[int, ...] = (-2, -1)
     assert get_reduced_axes(..., axis) == axis
@@ -158,17 +157,17 @@ def test_boundary_encoder(data: T) -> None:
     assert np.isnan(encoded).sum() == ((data <= 0).sum() + (data > 1).sum())
 
 
-@mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
+@mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
 @mark.parametrize("tensor_type", (np.array, torch.tensor))
-def test_scaler(Encoder, tensor_type):
+def test_scaler(encoder_type, tensor_type):
     r"""Check whether the Standardizer encoder works as expected."""
-    LOGGER = __logger__.getChild(Encoder.__name__)
+    LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing.")
 
     LOGGER.info("Testing without batching.")
     X = np.random.rand(3)
     X = tensor_type(X)
-    encoder = Encoder()
+    encoder = encoder_type()
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
@@ -178,7 +177,7 @@ def test_scaler(Encoder, tensor_type):
     LOGGER.info("Testing with single batch-dim.")
     X = np.random.rand(3, 5)
     X = tensor_type(X)
-    encoder = Encoder(axis=-1)
+    encoder = encoder_type(axis=-1)
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
@@ -199,7 +198,7 @@ def test_scaler(Encoder, tensor_type):
     # weird input
     X = np.random.rand(2, 3, 4, 5)
     X = tensor_type(X)
-    encoder = Encoder(axis=(-2, -1))
+    encoder = encoder_type(axis=(-2, -1))
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
@@ -216,15 +215,15 @@ def test_scaler(Encoder, tensor_type):
     LOGGER.info("Testing finished!")
 
 
-@mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
-def test_scaler_dataframe(Encoder):
-    """Check whether the scaler-encoders works as expected on DataFrame."""
-    LOGGER = __logger__.getChild(Encoder.__name__)
+@mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
+def test_scaler_dataframe(encoder_type: type[NumericalEncoder]) -> None:
+    """Check whether the scaler-encoders work as expected on DataFrame."""
+    LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing Encoder applied to pandas.DataFrame.")
 
     LOGGER.info("Testing without batching.")
     X = pd.DataFrame(np.random.rand(5, 3), columns=["a", "b", "c"])
-    encoder = Encoder(axis=-1)
+    encoder = encoder_type(axis=-1)
 
     # validate fitting
     encoder.fit(X)
@@ -238,10 +237,10 @@ def test_scaler_dataframe(Encoder):
         and encoded.columns.equals(X.columns)
         and encoded.index.equals(X.index)
     )
-    if Encoder is MinMaxScaler:
+    if encoder_type is MinMaxScaler:
         assert all(encoded.min() >= 0.0)
         assert all(encoded.max() <= 1.0)
-    if Encoder is StandardScaler:
+    if encoder_type is StandardScaler:
         assert np.allclose(encoded.mean(), 0.0)
         assert np.allclose(encoded.std(ddof=0), 1.0)
 
@@ -250,15 +249,26 @@ def test_scaler_dataframe(Encoder):
     pd.testing.assert_frame_equal(X, decoded)
     assert np.allclose(X, decoded)
 
+    # check parameters
+    params = encoder.params
+    assert isinstance(params, tuple)
 
-@mark.parametrize("Encoder", (StandardScaler, MinMaxScaler))
-def test_scaler_series(Encoder):
-    """Check whether the scaler-encoders works as expected on Series."""
-    LOGGER = __logger__.getChild(Encoder.__name__)
+    # test pickling
+    with TemporaryFile() as f:
+        pickle.dump(params, f)
+        f.seek(0)
+        reloaded_params = pickle.load(f)
+        assert reloaded_params == params
+
+
+@mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
+def test_scaler_series(encoder_type: type[NumericalEncoder]) -> None:
+    """Check whether the scaler-encoders work as expected on Series."""
+    LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing Encoder applied to pandas.Series.")
 
     X = pd.Series([-1.0, 1.2, 2.7, 3.0], name="foo")
-    encoder = Encoder()
+    encoder = encoder_type()
 
     # validate fitting
     encoder.fit(X)
@@ -272,10 +282,10 @@ def test_scaler_series(Encoder):
         and encoded.name == X.name
         and encoded.index.equals(X.index)
     )
-    if Encoder is MinMaxScaler:
+    if encoder_type is MinMaxScaler:
         assert encoded.min() >= 0.0
         assert encoded.max() <= 1.0
-    if Encoder is StandardScaler:
+    if encoder_type is StandardScaler:
         assert np.allclose(encoded.mean(), 0.0)
         assert np.allclose(encoded.std(ddof=0), 1.0)
 
@@ -286,7 +296,7 @@ def test_scaler_series(Encoder):
 
 
 @mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
-def test_standard_scaler(axis):
+def test_standard_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None:
     """Test the MinMaxScaler."""
     TRUE_SHAPE = {
         None: (2, 3, 4, 5),
@@ -312,7 +322,7 @@ def test_standard_scaler(axis):
 
 
 @mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
-def test_minmax_scaler(axis):
+def test_minmax_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None:
     """Test the MinMaxScaler."""
     TRUE_SHAPE = {
         None: (2, 3, 4, 5),
@@ -336,13 +346,13 @@ def test_minmax_scaler(axis):
 def test_linear_scaler(tensor_type):
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(LinearScaler.__name__)
-    Encoder = LinearScaler
+    encoder_type = LinearScaler
     LOGGER.info("Testing.")
 
     LOGGER.info("Testing without batching.")
     X = np.random.rand(3)
     X = tensor_type(X)
-    encoder = Encoder()
+    encoder = encoder_type()
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
@@ -352,7 +362,7 @@ def test_linear_scaler(tensor_type):
     LOGGER.info("Testing with single batch-dim.")
     X = np.random.rand(3, 5)
     X = tensor_type(X)
-    encoder = Encoder()
+    encoder = encoder_type()
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
@@ -373,7 +383,7 @@ def test_linear_scaler(tensor_type):
     # weird input
     X = np.random.rand(1, 2, 3, 4, 5)
     X = tensor_type(X)
-    encoder = Encoder(axis=(1, 2))
+    encoder = encoder_type(axis=(1, 2))
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
@@ -386,11 +396,3 @@ def test_linear_scaler(tensor_type):
     # decoded = encoder.decode(encoded)
     # assert np.allclose(X, decoded)
     # assert encoder.params[0].shape == (2, 3)
-
-
-def _main() -> None:
-    pass
-
-
-if __name__ == "__main__":
-    _main()

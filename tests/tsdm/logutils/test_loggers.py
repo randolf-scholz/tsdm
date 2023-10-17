@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 """Test the logutils module."""
 
-import logging
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -11,8 +9,6 @@ from tsdm.config import PROJECT
 from tsdm.metrics import MSE
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
-logging.basicConfig(level=logging.INFO)
-__logger__ = logging.getLogger(__name__)
 
 
 def test_base_logger() -> None:
@@ -31,11 +27,3 @@ def test_base_logger() -> None:
     targets = torch.randn(10, 3)
     predics = torch.randn(10, 3)
     logger.callback("batch", 1, targets=targets, predics=predics)
-
-
-def _main() -> None:
-    test_base_logger()
-
-
-if __name__ == "__main__":
-    _main()

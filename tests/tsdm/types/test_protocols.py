@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Test the Array protocol."""
 
 import logging
@@ -194,13 +193,3 @@ def test_array() -> None:
     arrays = [torch_array, numpy_array, pandas_array, pandas_array2]
     shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
     __logger__.info("Shared attributes/methods of Arrays: %s", shared_attrs)
-
-
-def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
-    test_table()
-    test_array()
-
-
-if __name__ == "__main__":
-    _main()

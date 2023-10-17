@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 r"""Test task implementation with InSilico."""
 
-import logging
 
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import DataLoader
@@ -35,12 +33,3 @@ def test_insilico_task(SplitID=(0, "train")):
     dataloader = task.dataloaders[SplitID]
     batch = next(iter(dataloader))
     assert batch is not None
-
-
-def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
-    test_insilico_task()
-
-
-if __name__ == "__main__":
-    _main()

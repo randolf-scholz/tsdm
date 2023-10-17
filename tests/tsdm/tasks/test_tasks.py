@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test converters to masked format etc."""
 
 import logging
@@ -14,8 +13,6 @@ from tsdm.tasks import (
     USHCN_DeBrouwer2019,
 )
 from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator
-
-logging.basicConfig(level=logging.INFO)
 
 __logger__ = logging.getLogger(__name__)
 
@@ -89,11 +86,3 @@ def test_time_series_sample_generator() -> None:
     )
     sample = task[key[1]]
     assert isinstance(sample, Sample)
-
-
-def _main() -> None:
-    test_time_series_sample_generator()
-
-
-if __name__ == "__main__":
-    _main()

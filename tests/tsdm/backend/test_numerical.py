@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Tests for the numerical backend."""
 
 import numpy as np
@@ -9,7 +8,7 @@ import torch
 from tsdm.backend import is_singleton
 
 
-def test_is_singleton():
+def test_is_singleton() -> None:
     """Test the is_singleton function."""
     # numpy
     assert is_singleton(np.array(1))
@@ -53,7 +52,3 @@ def test_is_singleton():
     # assert is_singleton([0])
     # assert is_singleton((0,))
     # assert is_singleton({0})
-
-
-if __name__ == "__main__":
-    test_is_singleton()

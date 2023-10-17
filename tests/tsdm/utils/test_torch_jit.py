@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Test torch.jit compatibliity.."""
 
 from tempfile import TemporaryFile
@@ -35,8 +34,3 @@ def test_jit_namedtuple():
 
     loaded(Sample(1, Tensor(1), Tensor(1), Tensor(1), Tensor(1)))
     loaded(Sample("abs", Tensor(1), Tensor(1), Tensor(1), Tensor(1)))
-
-
-if __name__ == "__main__":
-    # main program
-    pass

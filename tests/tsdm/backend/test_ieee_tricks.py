@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """This module contains tests for some tricks with tensor-types.
 
 Often, we need some constant tensor that is the same shape/device as given tensor.
@@ -132,7 +131,3 @@ def test_false_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     """
     result = formula(data)
     assert all(result == expected)
-
-
-if __name__ == "__main__":
-    pass

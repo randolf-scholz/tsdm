@@ -1,12 +1,7 @@
-#!/usr/bin/env python
 """Test that Dataloader works for non-Dataset objects."""
 
-import logging
 
 from torch.utils.data import DataLoader
-
-logging.basicConfig(level=logging.INFO)
-__logger__ = logging.getLogger(__name__)
 
 
 def test_dataloader() -> None:
@@ -28,11 +23,3 @@ def test_dataloader() -> None:
     for batch in dataloader:
         print(batch)
         assert all(x <= 0 for x in batch)
-
-
-def _main() -> None:
-    test_dataloader()
-
-
-if __name__ == "__main__":
-    _main()

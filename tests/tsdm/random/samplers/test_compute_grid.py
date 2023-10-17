@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test compute_grid function."""
 
 import logging
@@ -19,7 +18,6 @@ from typing_extensions import NamedTuple
 from tsdm.random.samplers import compute_grid
 from tsdm.types.time import DTVar, TDVar
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 MODES = ["numpy", "pandas", "python", "np_int", "np_float", "int", "float"]
 
@@ -148,13 +146,3 @@ def test_grid_extra() -> None:
     _validate_grid_results(tmin, tmax, timedelta, offset)
 
     LOGGER.info("Finished testing on extra data")
-
-
-def _main() -> None:
-    for mode in MODES:
-        test_grid_pandas(mode)
-    test_grid_extra()
-
-
-if __name__ == "__main__":
-    _main()

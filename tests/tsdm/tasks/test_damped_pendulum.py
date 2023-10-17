@@ -1,11 +1,9 @@
-#!/usr/bin/env python
 r"""Test the DampedPendulum task."""
 
 import logging
 
 from tsdm import tasks
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -32,11 +30,3 @@ def test_damped_pendulum() -> None:
     test_generator = task.generators[0, "test"]
     for idx in test_indices[:10]:
         assert isinstance(test_generator[idx], tuple)
-
-
-def _main() -> None:
-    test_damped_pendulum()
-
-
-if __name__ == "__main__":
-    _main()

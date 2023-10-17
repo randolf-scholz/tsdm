@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 r"""Test tsdm.viz plotting utilities."""
 
-import logging
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -31,12 +29,3 @@ def test_visualize_distribution_bimodal() -> None:
     fig, ax = plt.subplots(figsize=(5, 3))
     visualize_distribution(data, ax=ax, num_bins=50, log=False)
     fig.savefig(RESULT_DIR / "test_visualize_distribution_bimodal.png", dpi=300)
-
-
-def __main__():
-    logging.basicConfig(level=logging.INFO)
-    test_visualize_distribution()
-
-
-if __name__ == "__main__":
-    __main__()

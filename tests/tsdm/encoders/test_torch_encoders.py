@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test the torch encoders."""
 
 import logging
@@ -11,8 +10,6 @@ from tsdm.encoders.pytorch import (
     PositionalEncoding as PositionalEncoder_Torch,
     Time2Vec,
 )
-
-logging.basicConfig(level=logging.NOTSET)
 
 __logger__ = logging.getLogger(__name__)
 
@@ -123,12 +120,3 @@ def test_Time2Vec() -> None:
     assert torch.allclose(t_inverse, t), "inverse failed"
 
     LOGGER.info("Finished Testing")
-
-
-def _main() -> None:
-    test_PositionalEncoder()
-    test_Time2Vec()
-
-
-if __name__ == "__main__":
-    _main()
