@@ -161,7 +161,7 @@ class IVP_Generator(TimeSeriesGenerator[T_co], Protocol[T_co]):
         ...
 
     @abstractmethod
-    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> Any:
         """Solve the initial value problem."""
         ...
 
@@ -192,16 +192,51 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         """Initial value problem solver."""
         return cast(IVP_Solver[T_co], solve_ivp)
 
+    @final
+    def get_initial_state(self, size: SizeLike = ()) -> T_co:
+        """Generate (multiple) initial state(s) y₀."""
+        # get the initial state
+        y0 = self._get_initial_state_impl(size=size)
+        # project onto the constraint set
+        y0 = self.project_initial_state(y0)
+        # validate initial state
+        self.validate_initial_state(y0)
+        return y0
+
+    @final
+    def make_observations(self, sol: Any, /) -> T_co:
+        """Create observations from the solution."""
+        # get observations (add noise))
+        obs = self._make_observations_impl(sol)
+        # project onto the constraint set
+        obs = self.project_observations(obs)
+        # validate observations
+        self.validate_observations(obs)
+        return obs
+
+    @final
+    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+        """Solve the initial value problem."""
+        # solve the initial value problem
+        sol = self._solve_ivp_impl(t, y0=y0)
+        # project onto the constraint set
+        sol = self.project_solution(sol)
+        # validate solution
+        self.validate_solution(sol)
+        return sol
+
+    # region implementation ------------------------------------------------------------
     @abstractmethod
-    def _get_initial_state(self, size: SizeLike = ()) -> T_co:
+    def _get_initial_state_impl(self, size: SizeLike = ()) -> T_co:
         """Generate (multiple) initial state(s) y₀."""
         ...
 
-    def _make_observations(self, sol: Any, /) -> T_co:
+    @abstractmethod
+    def _make_observations_impl(self, sol: Any, /) -> T_co:
         """Create observations from the solution."""
-        return sol
+        ...
 
-    def _solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
+    def _solve_ivp_impl(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
         """Solve the initial value problem."""
         if self.ivp_solver is NotImplemented or self.system is NotImplemented:
             raise NotImplementedError
@@ -215,38 +250,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
         # solve the initial value problem
         return self.ivp_solver(self.system, t, y0=y0)
 
-    @final
-    def get_initial_state(self, size: SizeLike = ()) -> T_co:
-        """Generate (multiple) initial state(s) y₀."""
-        # get the initial state
-        y0 = self._get_initial_state(size=size)
-        # project onto the constraint set
-        y0 = self.project_initial_state(y0)
-        # validate initial state
-        self.validate_initial_state(y0)
-        return y0
-
-    @final
-    def make_observations(self, sol: Any, /) -> T_co:
-        """Create observations from the solution."""
-        # get observations (add noise))
-        obs = self._make_observations(sol)
-        # project onto the constraint set
-        obs = self.project_observations(obs)
-        # validate observations
-        self.validate_observations(obs)
-        return obs
-
-    @final
-    def solve_ivp(self, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
-        """Solve the initial value problem."""
-        # solve the initial value problem
-        sol = self._solve_ivp(t, y0=y0)
-        # project onto the constraint set
-        sol = self.project_solution(sol)
-        # validate solution
-        self.validate_solution(sol)
-        return sol
+    # endregion implementation ---------------------------------------------------------
 
     # region validation and projection -------------------------------------------------
     # NOTE: These are optional and can be overwritten by subclasses to enforce/validate
