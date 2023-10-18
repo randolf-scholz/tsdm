@@ -9,7 +9,7 @@ __all__ = [
     "get_backend",
 ]
 
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
 from typing import Generic, Literal, ParamSpec, TypeAlias, cast
@@ -48,6 +48,7 @@ from tsdm.backend.universal import (
     true_like as universal_true_like,
 )
 from tsdm.types.callback_protocols import (
+    ApplyAlongAxes,
     ClipProto,
     ContractionProto,
     SelfMap,
@@ -55,7 +56,7 @@ from tsdm.types.callback_protocols import (
     ToTensorProto,
     WhereProto,
 )
-from tsdm.types.variables import any_var as T, tensor_var
+from tsdm.types.variables import any_var as T
 
 P = ParamSpec("P")
 
@@ -105,8 +106,8 @@ def get_backend(obj: object, /, *, fallback: BackendID = "numpy") -> BackendID:
             raise ValueError(f"More than 1 backend detected: {types}.")
 
 
-class Kernels:
-    """A class that provides backend kernels."""
+class Kernels:  # Q: how to make this more elegant?
+    """A collection of kernels for numerical operations."""
 
     clip: Mapping[BackendID, ClipProto] = {
         "numpy": numpy.clip,
@@ -179,9 +180,16 @@ class Kernels:
         "arrow": arrow_strip_whitespace,
     }
 
+    apply_along_axes: Mapping[BackendID, ApplyAlongAxes] = {
+        "numpy": numpy_apply_along_axes,
+        "torch": torch_apply_along_axes,
+    }
+
 
 class Backend(Generic[T]):
     """Provides kernels for numerical operations."""
+
+    __slots__ = ("selected_backend", *Kernels.__annotations__.keys())
 
     selected_backend: BackendID
 
@@ -201,6 +209,7 @@ class Backend(Generic[T]):
     false_like: SelfMap[T]
 
     strip_whitespace: SelfMap[T]
+    apply_along_axes: ApplyAlongAxes[T]
 
     def __init__(self, backend: str | Self) -> None:
         # set the selected backend
@@ -210,41 +219,34 @@ class Backend(Generic[T]):
         assert backend in get_args(BackendID)
         self.selected_backend = cast(BackendID, backend)
 
-        # select the kernels
-        self.clip = Kernels.clip.get(self.selected_backend, NotImplemented)
-        self.isnan = Kernels.isnan.get(self.selected_backend, NotImplemented)
-        self.where = Kernels.where.get(self.selected_backend, NotImplemented)
+        for attr in Kernels.__annotations__:
+            implementations = getattr(Kernels, attr)
+            impl = implementations.get(self.selected_backend, NotImplemented)
+            setattr(self, attr, impl)
 
-        # contractions
-        self.nanmax = Kernels.nanmax.get(self.selected_backend, NotImplemented)
-        self.nanmean = Kernels.nanmean.get(self.selected_backend, NotImplemented)
-        self.nanmin = Kernels.nanmin.get(self.selected_backend, NotImplemented)
-        self.nanstd = Kernels.nanstd.get(self.selected_backend, NotImplemented)
-
-        # tensor creation
-        self.tensor_like = Kernels.tensor_like.get(
-            self.selected_backend, NotImplemented
-        )
-        self.to_tensor = Kernels.to_tensor.get(self.selected_backend, NotImplemented)
-        self.true_like = Kernels.true_like.get(self.selected_backend, NotImplemented)
-        self.false_like = Kernels.false_like.get(self.selected_backend, NotImplemented)
-
-        # other
-        self.strip_whitespace = Kernels.strip_whitespace.get(
-            self.selected_backend, NotImplemented
-        )
-
-
-def apply_along_axes(
-    op: Callable[..., tensor_var],
-    /,
-    *operands: tensor_var,
-    axis: tuple[int, ...],
-) -> tensor_var:
-    r"""Apply a binary function to multiple axes of a tensor."""
-    assert len(operands) >= 1, "at least one operand is required"
-    if isinstance(operands[0], Tensor):
-        return torch_apply_along_axes(op, *operands, axis=axis)
-    if isinstance(operands[0], ndarray):
-        return numpy_apply_along_axes(op, *operands, axis=axis)
-    raise TypeError(f"Unsupported type: {type(operands[0])}.")
+        # # select the kernels
+        # self.clip = Kernels.clip.get(self.selected_backend, NotImplemented)
+        # self.isnan = Kernels.isnan.get(self.selected_backend, NotImplemented)
+        # self.where = Kernels.where.get(self.selected_backend, NotImplemented)
+        #
+        # # contractions
+        # self.nanmax = Kernels.nanmax.get(self.selected_backend, NotImplemented)
+        # self.nanmean = Kernels.nanmean.get(self.selected_backend, NotImplemented)
+        # self.nanmin = Kernels.nanmin.get(self.selected_backend, NotImplemented)
+        # self.nanstd = Kernels.nanstd.get(self.selected_backend, NotImplemented)
+        #
+        # # tensor creation
+        # self.tensor_like = Kernels.tensor_like.get(
+        #     self.selected_backend, NotImplemented
+        # )
+        # self.to_tensor = Kernels.to_tensor.get(self.selected_backend, NotImplemented)
+        # self.true_like = Kernels.true_like.get(self.selected_backend, NotImplemented)
+        # self.false_like = Kernels.false_like.get(self.selected_backend, NotImplemented)
+        #
+        # # other
+        # self.strip_whitespace = Kernels.strip_whitespace.get(
+        #     self.selected_backend, NotImplemented
+        # )
+        # self.apply_along_axes = Kernels.apply_along_axes.get(
+        #     self.selected_backend, NotImplemented
+        # )

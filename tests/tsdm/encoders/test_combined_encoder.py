@@ -55,7 +55,7 @@ def test_combined_encoder(SplitID=(0, "train")):
                     @ BoundaryEncoder(lower, upper, mode="clip")
                 )
             case "absolute":
-                if pd.notna(upper) and upper < np.inf:
+                if upper is not None and upper < np.inf:
                     column_encoders[col] = (
                         BoxCoxEncoder()
                         # @ MinMaxScaler(lower, upper)

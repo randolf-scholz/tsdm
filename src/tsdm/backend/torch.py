@@ -38,10 +38,11 @@ def torch_nanmax(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> 
 
 def torch_nanstd(x: Tensor, /, *, axis: Axes = None, keepdims: bool = False) -> Tensor:
     """Analogue to `numpy.nanstd`."""
+    r = x - torch.nanmean(x, dim=axis, keepdim=True)
     return torch.sqrt(
-        torch.nanmean(  # type: ignore[call-arg]
-            (x - torch.nanmean(x, dim=axis, keepdim=True)) ** 2,
-            axis=axis,
+        torch.nanmean(
+            r.pow(2),
+            dim=axis,
             keepdim=keepdims,
         )
     )
@@ -56,7 +57,7 @@ def torch_apply_along_axes(
     op: Callable[..., Tensor],
     /,
     *tensors: Tensor,
-    axis: tuple[int, ...],
+    axis: Axes,
 ) -> Tensor:
     r"""Apply a function to multiple tensors along axes.
 
@@ -64,7 +65,14 @@ def torch_apply_along_axes(
     """
     assert len({t.shape for t in tensors}) <= 1, "all tensors must have the same shape"
     assert len(tensors) >= 1, "at least one tensor is required"
-    axis = tuple(axis)
+
+    if axis is None:
+        axis = ()
+    elif isinstance(axis, int):
+        axis = (axis,)
+    else:
+        axis = tuple(axis)
+
     rank = len(tensors[0].shape)
     source = tuple(range(rank))
     inverse_permutation: tuple[int, ...] = axis + tuple(

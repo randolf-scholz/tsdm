@@ -75,6 +75,8 @@ class TimeSeriesBaseLoss(nn.Module):
     r"""CONST: The time-axes over which the loss is computed."""
     channel_axis: Final[tuple[int, ...]]
     """CONST: The channel-axes over which the loss is computed."""
+    combined_axis: Final[tuple[int, ...]]
+    """CONST: The combined time- and channel-axes."""
     normalize_time: Final[bool]
     r"""CONST: Whether to normalize the weights."""
     normalize_channels: Final[bool]
@@ -98,6 +100,7 @@ class TimeSeriesBaseLoss(nn.Module):
         self.channel_axis = (
             (channel_axis,) if isinstance(channel_axis, int) else tuple(channel_axis)
         )
+        self.combined_axis = self.time_axis + self.channel_axis
 
         if not set(self.time_axis).isdisjoint(self.channel_axis):
             raise ValueError("Time and channel axes must be disjoint!")
@@ -300,10 +303,12 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
         m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
         r = torch.where(m, r, 0.0)
         r = r**2  # must come after where, else we get NaN gradients!
+
         # compute normalization constant
+        # NOTE: JIT does not support match-case
         if self.normalize_time and self.normalize_channels:
-            c = torch.sum(m, dim=self.time_axis + self.channel_axis, keepdim=True)
-            s = torch.sum(r / c, dim=self.time_axis + self.channel_axis, keepdim=True)
+            c = torch.sum(m, dim=self.combined_axis, keepdim=True)
+            s = torch.sum(r / c, dim=self.combined_axis, keepdim=True)
             r = torch.where(c > 0, s, 0.0)
         elif self.normalize_time and not self.normalize_channels:
             c = torch.sum(m, dim=self.time_axis, keepdim=True)
@@ -316,7 +321,7 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
             r = torch.where(c > 0, s, 0.0)
             r = torch.sum(r, dim=self.time_axis, keepdim=True)
         else:
-            r = torch.sum(r, dim=self.time_axis + self.channel_axis, keepdim=True)
+            r = torch.sum(r, dim=self.combined_axis, keepdim=True)
 
         # aggregate over batch-dimensions
         r = torch.mean(r)

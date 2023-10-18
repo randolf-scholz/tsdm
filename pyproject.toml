@@ -33,7 +33,7 @@ dependencies = [
     "numpy>=1.26.1",
     "pandas>=2.1.1",
     "pillow>=10.1.0",
-    "polars>=0.19.8",
+    "polars>=0.19.9",
     "pyarrow>=13.0.0",
     "pyyaml>=6.0.1",
     "requests>=2.31.0",
@@ -87,7 +87,7 @@ extras = [
     "ipywidgets>=8.1.1",
     "jupyterlab>=4.0.7",
     "jupyterlab>=4.0.7",
-    "notebook>=7.0.5",
+    "notebook>=7.0.6",
     "openml>=0.14.1",
     "openpyxl>=3.1.2",
     "psutil>=5.9.6",
@@ -100,7 +100,7 @@ typing = [
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
     "types-jsonschema>=4.19.0",
-    "types-pillow>=10.0.0",
+    "types-pillow>=10.1.0",
     "types-protobuf>=4.24.0",
     "types-psutil>=5.9.5",
     "types-pygments>=2.16.0",
@@ -131,12 +131,12 @@ linters = [
     "pyflakes>=3.1.0",
     "pylint>=3.0.1",
     "pylint-gitlab>=2.0.0",
-    "ruff>=0.0.292",
+    "ruff>=0.1.0",
     "ruff-lsp>=0.0.41",
     "slotscheck>=0.17.0",
 ]
 formatters = [
-    "black[d,jupyter]>=23.9.1",
+    "black[d,jupyter]>=23.10.0",
     "blacken-docs>=1.16.0",
     "isort>=5.12.0",
     "nbstripout-fast>=1.0.2",
@@ -544,7 +544,7 @@ matplotlib = ">=3.8.0"
 numpy = ">=1.26.1"
 pandas = ">=2.1.1"
 pillow = ">=10.1.0"
-polars = ">=0.19.8"
+polars = ">=0.19.9"
 pyarrow = ">=13.0.0"
 pyyaml = ">=6.0.1"
 requests = ">=2.31.0"
@@ -560,7 +560,7 @@ typing-extensions = ">=4.8.0"
 ipympl = ">=0.9.3"
 ipywidgets = ">=8.1.1"
 jupyterlab = ">=4.0.7"
-notebook = ">=7.0.5"
+notebook = ">=7.0.6"
 openml = ">=0.14.1"
 openpyxl = ">=3.1.2"
 psutil = ">=5.9.6"
@@ -629,7 +629,7 @@ flake8-rst-docstrings = ">=0.3.0"
 
 
 [tool.poetry.group.formatters.dependencies]
-black = { version = ">=23.9.1", extras = ["d", "jupyter"] }
+black = { version = ">=23.10.0", extras = ["d", "jupyter"] }
 blacken-docs = ">=1.16.0"
 isort = ">=5.12.0"
 nbstripout-fast = ">=1.0.2"
@@ -644,7 +644,7 @@ pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
 pylint = ">=3.0.1"
 pylint-gitlab = ">=2.0.0"
-ruff = ">=0.0.292"
+ruff = ">=0.1.0"
 ruff-lsp = ">=0.0.41"
 slotscheck = ">=0.17.0"
 
@@ -656,7 +656,7 @@ types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"
 types-jsonschema = ">=4.19.0"
-types-pillow = ">=10.0.0"
+types-pillow = ">=10.1.0"
 types-protobuf = ">=4.24.0"
 types-psutil = ">=5.9.5"
 types-pygments = ">=2.16.0"

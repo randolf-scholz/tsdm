@@ -7,6 +7,7 @@ __all__ = [
     "SelfMap",
     "WrappedValue",
     # callback-protocols
+    "ApplyAlongAxes",
     "ClipProto",
     "ContractionProto",
     "IsScalarProto",
@@ -15,6 +16,7 @@ __all__ = [
     "WhereProto",
 ]
 
+from collections.abc import Callable
 from typing import Protocol
 
 from numpy.typing import ArrayLike
@@ -94,6 +96,12 @@ class WhereProto(Protocol[T]):
     """Bound-Protocol for `where`-function."""
 
     def __call__(self, cond: T, x: T, y: Scalar | T, /) -> T: ...
+
+
+class ApplyAlongAxes(Protocol[T]):
+    """Bound-Protocol for `apply_along_axes`-function."""
+
+    def __call__(self, op: Callable[..., T], /, *tensors: T, axis: Axes) -> T: ...
 
 
 # endregion Callback-Protocols ---------------------------------------------------------

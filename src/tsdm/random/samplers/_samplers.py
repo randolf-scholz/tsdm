@@ -67,7 +67,7 @@ def compute_grid(
     # cast strings to timestamp/timedelta
     tmin = cast(DTVar, Timestamp(tmin) if isinstance(tmin, str) else tmin)
     tmax = cast(DTVar, Timestamp(tmax) if isinstance(tmax, str) else tmax)
-    td = Timedelta(timedelta) if isinstance(timedelta, str) else timedelta
+    td = cast(TDVar, Timedelta(timedelta) if isinstance(timedelta, str) else timedelta)
 
     offset = cast(
         DTVar,
@@ -86,8 +86,8 @@ def compute_grid(
     if tmin > offset or offset > tmax:
         raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
 
-    kmax = math.floor((tmax - offset) / td)
-    kmin = math.ceil((tmin - offset) / td)
+    kmax = math.floor(cast(TDVar, tmax - offset) / td)  # type: ignore[redundant-cast]
+    kmin = math.ceil(cast(TDVar, tmin - offset) / td)  # type: ignore[redundant-cast]
 
     return cast(Sequence[int], np.arange(kmin, kmax + 1))
 
@@ -136,13 +136,19 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
     shuffle: bool = False
     r"""Whether to shuffle the data."""
 
-    def __init__(self, data_source: Sized, /) -> None:
+    def __init__(self, data_source: Sized, /, *, shuffle: bool) -> None:
         r"""Initialize the sampler."""
         self.data = data_source
+        self.shuffle = shuffle
 
     def __len__(self) -> int:
         r"""Return the length of the sampler."""
         return len(self.data)
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[T_co]:
+        r"""Return an iterator over the indices of the data source."""
+        ...
 
 
 @dataclass
@@ -226,24 +232,20 @@ class SliceSampler(BaseSampler[Sequence[T_co]]):
         generator: Optional[np.random.Generator] = None,
         shuffle: bool = False,
     ) -> None:
-        super().__init__(data_source)
+        super().__init__(data_source, shuffle=shuffle)
         self.data = data_source
         self.idx = np.arange(len(data_source))
         self.rng = np.random.default_rng() if generator is None else generator
-        self.shuffle = shuffle
 
-        def _slicesampler_dispatch() -> Callable[[], int]:
-            # use default if None is provided
-            if slice_sampler is None:
-                return lambda: max(1, len(data_source) // 10)
-            # convert int to constant function
-            if callable(slice_sampler):
-                return slice_sampler
-            if isinstance(slice_sampler, int):
-                return lambda: slice_sampler
-            raise NotImplementedError("slice_sampler not compatible.")
-
-        self._slice_sampler = _slicesampler_dispatch()
+        match slice_sampler:
+            case None:
+                self._slice_sampler = lambda: max(1, len(data_source) // 10)
+            case int() as number:
+                self._slice_sampler = lambda: number
+            case Callable() as sampler:  # type: ignore[misc]
+                self._slice_sampler = sampler  # type: ignore[unreachable]
+            case _:
+                raise TypeError("slice_sampler not compatible.")
 
         def _default_sampler() -> tuple[int, int]:
             window_size: int = self._slice_sampler()
@@ -303,9 +305,8 @@ class CollectionSampler(BaseSampler[tuple[K, T_co]]):
         shuffle: bool = False,
         early_stop: bool = False,
     ):
-        super().__init__(data_source)
+        super().__init__(data_source, shuffle=shuffle)
         self.data = data_source
-        self.shuffle = shuffle
         self.idx = data_source.keys()
         self.subsamplers = dict(subsamplers)
         self.early_stop = early_stop
@@ -378,12 +379,11 @@ class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
         shuffle: bool = False,
         early_stop: bool = False,
     ):
-        super().__init__(data_source)
+        super().__init__(data_source, shuffle=shuffle)
         self.data = data_source
         self.idx = Index(data_source.keys())
         self.subsamplers = dict(subsamplers)
         self.sizes = Series({key: len(self.subsamplers[key]) for key in self.idx})
-        self.shuffle = shuffle
         self.early_stop = early_stop
 
         if early_stop:
@@ -455,12 +455,13 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     def _get_value(
         obj: TDVar | Lookup[int, TDVar] | Callable[[int], TDVar], k: int, /
     ) -> TDVar:
-        if callable(obj):
-            return obj(k)
-        if isinstance(obj, Lookup):  # Mapping/Sequence
-            return obj[k]
-        # Fallback: multiple!
-        return obj
+        match obj:
+            case Callable() as func:  # type: ignore[misc]
+                return func(k)
+            case Lookup() as mapping:
+                return mapping[k]
+            case _:
+                return obj  # type: ignore[return-value]
 
     def __init__(
         self,
@@ -473,37 +474,38 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
         offset: Optional[TDVar] = None,
         shuffle: bool = False,
     ) -> None:
-        super().__init__([])
+        super().__init__([], shuffle=shuffle)
         # set stride and offset
         zero = 0 * (xmax - xmin)
         stride = zero if stride is None else stride
         offset = xmin if offset is None else offset
+        delta_max = max(offset - xmin, xmax - offset)
 
         # validate bounds
         assert xmin <= offset <= xmax, "Assumption: xmin≤xoffset≤xmax violated!"
 
-        # determine delta_max
-        delta_max = max(offset - xmin, xmax - offset)
-
         # determine levels
-        if levels is None:
-            if isinstance(deltax, Mapping):
-                levels = [k for k in deltax.keys() if deltax[k] <= delta_max]
-            elif isinstance(deltax, Sequence):
-                levels = [k for k in range(len(deltax)) if deltax[k] <= delta_max]
-            elif callable(deltax):
+
+        match levels, deltax:
+            case None, Mapping() as mapping:
+                levels = [k for k, v in mapping.items() if v <= delta_max]
+            case None, Sequence() as sequence:
+                levels = [k for k, v in enumerate(sequence) if v <= delta_max]
+            case None, Callable() as func:  # type: ignore[misc]
                 levels = []
                 for k in count():
-                    dt = self._get_value(deltax, k)
+                    dt = self._get_value(func, k)
                     if dt == zero:
                         continue
                     if dt > delta_max:
                         break
                     levels.append(k)
-            else:
+            case None, _:
                 levels = [0]
-        else:
-            levels = [k for k in levels if self._get_value(deltax, k) <= delta_max]
+            case Sequence() as seq, _:
+                levels = [k for k in seq if self._get_value(deltax, k) <= delta_max]
+            case _:
+                raise TypeError("levels not compatible.")
 
         # validate levels
         assert all(self._get_value(deltax, k) <= delta_max for k in levels)
@@ -531,10 +533,9 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
             )
 
         # set variables
-        self.offset = offset
+        self.offset = cast(TDVar, offset)  # type: ignore[redundant-cast]
         self.deltax = deltax
         self.stride = stride
-        self.shuffle = shuffle
         self.intervals = DataFrame(
             intervals, columns=["left", "right", "delta", "stride"]
         )
@@ -587,18 +588,23 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         tmax: Optional[DTVar] = None,
         tmin: Optional[DTVar] = None,
     ) -> None:
-        super().__init__(data_source)
+        super().__init__(data_source, shuffle=shuffle)
 
-        self.xmin = (
-            self.data_source[0]
-            if tmin is None
-            else (Timestamp(tmin) if isinstance(tmin, str) else tmin)
-        )
-        self.xmax = (
-            self.data_source[-1]
-            if tmax is None
-            else (Timestamp(tmax) if isinstance(tmax, str) else tmax)
-        )
+        match tmin:
+            case None:
+                self.xmin = self.data_source[0]
+            case str() as time_str:
+                self.xmin = Timestamp(time_str)
+            case _:
+                self.xmin = tmin
+
+        match tmax:
+            case None:
+                self.xmax = self.data_source[-1]
+            case str() as time_str:
+                self.xmax = Timestamp(time_str)
+            case _:
+                self.xmax = tmax
 
         total_delta = cast(TDVar, self.xmax - self.xmin)  # type: ignore[redundant-cast]
         self.stride = cast(
@@ -611,7 +617,6 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         # k_max = max {k∈ℕ ∣ x_min + seq_len + k⋅stride ≤ x_max}
         self.k_max = int((total_delta - self.seq_len) // self.stride)
         self.return_mask = return_mask
-        self.shuffle = shuffle
 
         self.samples = np.array(
             [
@@ -627,7 +632,8 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
     def _iter_tuples(self) -> Iterator[tuple[DTVar, DTVar]]:
         x = self.xmin
         y = cast(DTVar, x + self.seq_len)  # type: ignore[operator, call-overload, redundant-cast]
-        x, y = min(x, y), max(x, y)  # allows nice handling of negative seq_len
+        # allows nice handling of negative seq_len
+        x, y = min(x, y), max(x, y)  # pyright: ignore[reportGeneralTypeIssues]
         yield x, y
 
         for _ in range(len(self)):
@@ -706,38 +712,38 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         tmax: Optional[str | NumpyDTVar] = None,
         tmin: Optional[str | NumpyDTVar] = None,
     ) -> None:
-        super().__init__(data_source)
-
-        # coerce non-numpy types to numpy.
-        horizons = Timedelta(horizons) if isinstance(horizons, str) else horizons
-        stride = Timedelta(stride) if isinstance(stride, str) else stride
-        tmin = Timestamp(tmin) if isinstance(tmin, str) else tmin
-        tmax = Timestamp(tmax) if isinstance(tmax, str) else tmax
-
-        self.shuffle = shuffle
+        super().__init__(data_source, shuffle=shuffle)
         self.mode = mode
-        self.stride = stride
+        self.stride = Timedelta(stride) if isinstance(stride, str) else stride
 
-        if tmin is None:
-            if isinstance(self.data, Series | DataFrame):
-                self.tmin = self.data.iloc[0]
-            else:
-                self.tmin = self.data[0]
-        else:
-            self.tmin = tmin
+        match tmin:
+            case None:
+                self.tmin = (
+                    self.data.iloc[0] if isinstance(self.data, Series) else self.data[0]
+                )
+            case str() as time_str:
+                self.tmin = Timestamp(time_str)
+            case _:
+                self.tmin = tmin
 
-        if tmax is None:
-            if isinstance(self.data, Series | DataFrame):
-                self.tmax = self.data.iloc[-1]
-            else:
-                self.tmax = self.data[-1]
-        else:
-            self.tmax = tmax
+        match tmax:
+            case None:
+                self.tmax = (
+                    self.data.iloc[-1]
+                    if isinstance(self.data, Series)
+                    else self.data[-1]
+                )
+            case str() as time_str:
+                self.tmax = Timestamp(time_str)
+            case _:
+                self.tmax = tmax
 
         # this gives us the correct zero, depending on the dtype
-        self.zero_td = self.tmin - self.tmin  # type: ignore[assignment]
+        self.zero_td = cast(NumpyTDVar, self.tmin - self.tmin)  # type: ignore[redundant-cast]
         assert self.stride > self.zero_td, "stride cannot be zero."
 
+        # convert horizons to timedelta
+        horizons = Timedelta(horizons) if isinstance(horizons, str) else horizons
         if isinstance(horizons, Sequence):
             self.multi_horizon = True
             if isinstance(horizons[0], str | Timedelta | py_td):
@@ -797,19 +803,36 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
             for start, stop in sliding_window_view(bounds, 2)
         )
 
+    @property
+    def make_key(self) -> Callable[[NDArray], Any]:
+        r"""Return the correct yield function."""
+        match self.mode, self.multi_horizon:
+            case "points", _:
+                return self.__make__points__
+            case "masks", False:
+                return self.__make__mask__
+            case "masks", True:
+                return self.__make__masks__
+            case "slices", False:
+                return self.__make__slice__
+            case "slices", True:
+                return self.__make__slices__
+            case _:
+                raise ValueError(f"Invalid mode {self.mode=}")
+
     @overload
     def __iter__(
-        self: "SlidingWindowSampler[Literal['slices'],NumpyDTVar, NumpyTDVar]",
+        self: "SlidingWindowSampler[Literal['slices'], NumpyDTVar, NumpyTDVar]",
     ) -> Iterator[slice] | Iterator[tuple[slice, ...]]: ...
     @overload
     def __iter__(
-        self: "SlidingWindowSampler[Literal['masks'],NumpyDTVar, NumpyTDVar]",
+        self: "SlidingWindowSampler[Literal['masks'], NumpyDTVar, NumpyTDVar]",
     ) -> Iterator[NDArray[np.bool_]] | Iterator[tuple[NDArray[np.bool_], ...]]: ...
     @overload
     def __iter__(
-        self: "SlidingWindowSampler[Literal['points'],NumpyDTVar, NumpyTDVar]",
+        self: "SlidingWindowSampler[Literal['points'], NumpyDTVar, NumpyTDVar]",
     ) -> Iterator[NDArray[NumpyDTVar]]: ...
-    def __iter__(self):
+    def __iter__(self):  # pyright: ignore[reportGeneralTypeIssues]
         r"""Iterate through.
 
         For each k, we return either:
@@ -818,22 +841,17 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
         - mode=masks: $(mask_1, …, mask_m)$
         """
-        funcs = {
-            ("points", True): self.__make__points__,
-            ("points", False): self.__make__points__,
-            ("masks", False): self.__make__mask__,
-            ("masks", True): self.__make__masks__,
-            ("slices", False): self.__make__slice__,
-            ("slices", True): self.__make__slices__,
-        }
-        yield_fn = funcs[self.mode, self.multi_horizon]
-
         if self.shuffle:
             perm = np.random.permutation(len(self.grid))
             grid = self.grid[perm]
         else:
             grid = self.grid
 
+        # unpack variables (avoid repeated lookups)
+        t0 = self.start_values
+        stride = self.stride
+        make_key = self.make_key
+
         for k in grid:
-            vals = self.start_values + k * self.stride
-            yield yield_fn(vals)
+            vals = t0 + k * stride
+            yield make_key(vals)

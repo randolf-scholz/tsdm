@@ -195,7 +195,7 @@ repos:
             |tests/tsdm/viz
             #|src/tsdm/
             |src/tsdm/constants.py
-            #|src/tsdm/backend
+            |src/tsdm/backend
             |src/tsdm/config
             #|src/tsdm/datasets
             #|src/tsdm/encoders

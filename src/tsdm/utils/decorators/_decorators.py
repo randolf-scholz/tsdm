@@ -509,58 +509,58 @@ def wrap_func(
             logger.debug("No hooks to add, returning as-is.")
             _wrapper = func
 
-        case Func(), None, True:
-            logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
+        case Func() as pre, None, True:
+            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                before(*args, **kwargs)
+                pre(*args, **kwargs)
                 return func(*args, **kwargs)
 
-        case None, Func(), True:
-            logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
+        case None, Func() as post, True:
+            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(*args, **kwargs)
-                after(*args, **kwargs)
+                post(*args, **kwargs)
                 return result
 
-        case Func(), Func(), True:
-            logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
+        case Func() as pre, Func() as post, True:
+            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                before(*args, **kwargs)
+                pre(*args, **kwargs)
                 result = func(*args, **kwargs)
-                after(*args, **kwargs)
+                post(*args, **kwargs)
                 return result
 
-        case Func(), None, False:
-            logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
+        case Func() as pre, None, False:
+            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                before()
+                pre()
                 return func(*args, **kwargs)
 
-        case None, Func(), False:
-            logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
+        case None, Func() as post, False:
+            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(*args, **kwargs)
-                after()
+                post()
                 return result
 
-        case Func(), Func(), False:
-            logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
+        case Func() as pre, Func() as post, False:
+            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                before()
+                pre()
                 result = func(*args, **kwargs)
-                after()
+                post()
                 return result
 
         case _:
@@ -586,58 +586,58 @@ def wrap_method(
             logger.debug("No hooks to add, returning as-is.")
             _wrapper = func
 
-        case Func(), None, True:
-            logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
+        case Func() as pre, None, True:
+            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
-                before(self, *args, **kwargs)
+                pre(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
-        case None, Func(), True:
-            logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
+        case None, Func() as post, True:
+            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
-                after(self, *args, **kwargs)
+                post(self, *args, **kwargs)
                 return result
 
-        case Func(), Func(), True:
-            logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
+        case Func() as pre, Func() as post, True:
+            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
-                before(self, *args, **kwargs)
+                pre(self, *args, **kwargs)
                 result = func(self, *args, **kwargs)
-                after(self, *args, **kwargs)
+                post(self, *args, **kwargs)
                 return result
 
-        case Func(), None, False:
-            logger.debug("Adding pre hook %s", before)  # type: ignore[unreachable]
+        case Func() as pre, None, False:
+            logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
-                before(self)
+                pre(self)
                 return func(self, *args, **kwargs)
 
-        case None, Func(), False:
-            logger.debug("Adding post hook %s", after)  # type: ignore[unreachable]
+        case None, Func() as post, False:
+            logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
-                after(self)
+                post(self)
                 return result
 
-        case Func(), Func(), False:
-            logger.debug("Adding pre hook %s and post hook %s", before, after)  # type: ignore[unreachable]
+        case Func() as pre, Func() as post, False:
+            logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
             def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
-                before(self)
+                pre(self)
                 result = func(self, *args, **kwargs)
-                after(self)
+                post(self)
                 return result
 
         case _:

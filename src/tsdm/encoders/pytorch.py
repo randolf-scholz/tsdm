@@ -81,12 +81,10 @@ class Time2Vec(nn.Module):
         self.freq = nn.Parameter(torch.randn(num_dim - 1))
         self.phase = nn.Parameter(torch.randn(num_dim - 1))
 
-        if activation == "sin":
-            self.act = torch.sin
-        elif activation == "cos":
-            self.act = torch.cos
-        else:
-            raise ValueError(f"Unknown activation function: {activation}")
+        self.act = {
+            "sin": torch.sin,
+            "cos": torch.cos,
+        }[activation]
 
     @jit.export
     def encode(self, t: Tensor) -> Tensor:

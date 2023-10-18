@@ -451,14 +451,15 @@ def repr_sequence(
     pad = " " * padding * linebreaks
 
     # set brackets
-    if isinstance(obj, list):
-        left, right = "[", "]"
-    elif isinstance(obj, set):
-        left, right = "{", "}"
-    elif isinstance(obj, tuple):
-        left, right = "(", ")"
-    else:
-        left, right = "[", "]"
+    match obj:
+        case list():
+            left, right = "[", "]"
+        case tuple():
+            left, right = "(", ")"
+        case set():
+            left, right = "{", "}"
+        case _:
+            left, right = "[", "]"
 
     # set type
     self = obj if wrapped is None else wrapped

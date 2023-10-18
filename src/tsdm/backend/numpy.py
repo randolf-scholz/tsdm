@@ -11,6 +11,8 @@ from collections.abc import Callable
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from tsdm.types.aliases import Axes
+
 
 def numpy_like(x: ArrayLike, ref: NDArray, /) -> NDArray:
     """Create an array of the same shape as `x`."""
@@ -21,7 +23,7 @@ def numpy_apply_along_axes(
     op: Callable[..., NDArray],
     /,
     *arrays: NDArray,
-    axis: tuple[int, ...],
+    axis: Axes,
 ) -> NDArray:
     r"""Apply a function to multiple arrays along axes.
 
@@ -29,7 +31,14 @@ def numpy_apply_along_axes(
     """
     assert len({a.shape for a in arrays}) <= 1, "all arrays must have the same shape"
     assert len(arrays) >= 1, "at least one array is required"
-    axis = tuple(axis)
+
+    if axis is None:
+        axis = ()
+    elif isinstance(axis, int):
+        axis = (axis,)
+    else:
+        axis = tuple(axis)
+
     rank = len(arrays[0].shape)
     source = tuple(range(rank))
     inverse_permutation: tuple[int, ...] = axis + tuple(

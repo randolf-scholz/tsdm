@@ -950,45 +950,46 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     def __getitem__(self, key, /):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
-        if isinstance(key, Series):
-            if isinstance(key.index, MultiIndex):
+
+        match key:
+            case Series() as s if isinstance(s.index, MultiIndex):  # type: ignore[misc, has-type]
+                ts = self.timeseries.loc[s]  # type: ignore[unreachable]
+            case Series() as s:  # type: ignore[misc]
+                assert pandas.api.types.is_bool_dtype(s)  # type: ignore[unreachable]
+                # NOTE: loc[s] would not work here?!
+                ts = self.timeseries.loc[s[s].index]
+            case _:
                 ts = self.timeseries.loc[key]
-            else:
-                ts = self.timeseries.loc[key[key].index]
-        else:
-            ts = self.timeseries.loc[key]
 
         # make sure metadata is always DataFrame.
-        if self.metadata is None:
-            md = None
-        elif isinstance(_md := self.metadata.loc[key], Series):
-            md = self.metadata.loc[[key]]
-        else:
-            md = _md
+        match self.metadata:
+            case DataFrame() as df:  # type: ignore[misc]
+                md = df.loc[key]  # type: ignore[unreachable]
+                if isinstance(md, Series):
+                    md = df.loc[[key]]
+            case _:
+                md = self.metadata
 
         # slice the timeindex-descriptions
-        if self.timeindex_description is None:
-            tf = None
-        elif self.timeindex_description.index.equals(self.metaindex):
-            tf = self.timeindex_description.loc[key]
-        else:
-            tf = self.timeindex_description
+        match self.timeindex_description:
+            case DataFrame() as desc if desc.index.equals(self.metaindex):  # type: ignore[misc, has-type]
+                tidx_desc = desc.loc[key]  # type: ignore[unreachable]
+            case _:
+                tidx_desc = self.timeindex_description
 
         # slice the ts-descriptions
-        if self.timeseries_description is None:
-            vf = None
-        elif self.timeseries_description.index.equals(self.metaindex):
-            vf = self.timeseries_description.loc[key]
-        else:
-            vf = self.timeseries_description
+        match self.timeseries_description:
+            case DataFrame() as desc if desc.index.equals(self.metaindex):  # type: ignore[misc, has-type]
+                ts_desc = desc.loc[key]  # type: ignore[unreachable]
+            case _:
+                ts_desc = self.timeseries_description
 
         # slice the metadata-descriptions
-        if self.metadata_description is None:
-            mf = None
-        elif self.metadata_description.index.equals(self.metaindex):
-            mf = self.metadata_description.loc[key]
-        else:
-            mf = self.metadata_description
+        match self.metadata_description:
+            case DataFrame() as desc if desc.index.equals(self.metaindex):  # type: ignore[misc, has-type]
+                md_desc = desc.loc[key]  # type: ignore[unreachable]
+            case _:
+                md_desc = self.metadata_description
 
         if isinstance(ts.index, MultiIndex):
             # ~~index = ts.index.droplevel(-1).unique()~~
@@ -997,9 +998,9 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 # metaindex=index,  # NOTE: regenerate metaindex.
                 timeseries=ts,
                 metadata=md,
-                timeindex_description=tf,
-                timeseries_description=vf,
-                metadata_description=mf,
+                timeindex_description=tidx_desc,
+                timeseries_description=ts_desc,
+                metadata_description=md_desc,
                 global_metadata=self.global_metadata,
                 global_metadata_description=self.global_metadata_description,
                 metaindex_description=self.metaindex_description,
@@ -1010,9 +1011,9 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             timeindex=ts.index,
             timeseries=ts,
             metadata=md,
-            index_description=tf,
-            timeseries_description=vf,
-            metadata_description=mf,
+            index_description=tidx_desc,
+            timeseries_description=ts_desc,
+            metadata_description=md_desc,
         )
 
     def __len__(self) -> int:

@@ -50,6 +50,7 @@ from types import EllipsisType
 from typing import (
     Any,
     ClassVar,
+    Generic,
     Literal,
     NamedTuple,
     NewType,
@@ -248,7 +249,7 @@ def get_reduced_axes(item, axis):
             raise TypeError(f"Unknown type {type(item)}")
 
 
-class NumericalEncoder(BaseEncoder[T, T]):
+class NumericalEncoder(BaseEncoder[T, T], Generic[T]):
     """Represents a numerical encoder."""
 
     backend: Backend[T]
@@ -263,7 +264,6 @@ class NumericalEncoder(BaseEncoder[T, T]):
         r"""The parameters of the encoder."""
         raise NotImplementedError
 
-    @abstractmethod
     def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the encoder."""
         self.backend: Backend[T] = Backend(backend)
@@ -373,15 +373,33 @@ class BoundaryEncoder(BaseEncoder[T, T]):
             raise ValueError("lower_bound must be smaller than upper_bound.")
 
     class Parameters(NamedTuple):
-        r"""The parameters of the LinearScaler."""
+        r"""The parameters of the BoundaryScalar."""
 
-        loc: TensorLike
-        scale: TensorLike
-        axis: tuple[int, ...]
-        requires_fit: bool
+        lower_bound: TensorLike
+        lower_included: bool
+        lower_value: TensorLike
+        upper_bound: TensorLike
+        upper_included: bool
+        upper_value: TensorLike
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode]
+        axis: Axes = None
 
         def __repr__(self) -> str:
             return repr_namedtuple(self)
+
+    @property
+    def params(self) -> Parameters:
+        r"""Parameters of the LinearScaler."""
+        return self.Parameters(
+            lower_bound=self.lower_bound,
+            lower_included=self.lower_included,
+            lower_value=self.lower_value,
+            upper_bound=self.upper_bound,
+            upper_included=self.upper_included,
+            upper_value=self.upper_value,
+            mode=self.mode,
+            axis=self.axis,
+        )
 
     @classmethod
     def from_interval(cls, interval: pd.Interval, **kwargs: Any) -> Self:

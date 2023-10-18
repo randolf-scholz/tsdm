@@ -37,11 +37,11 @@ def test_jit_optimization() -> None:
     ]:
         attr = getattr(scripted, prop)
         print(f"\nscripted.{prop}<{type(attr)}> = {attr!r}")
-    assert "relu" not in scripted.code
-    assert "tanh" in scripted.code
+    assert "relu" not in scripted.code  # pyright: ignore[reportGeneralTypeIssues]
+    assert "tanh" in scripted.code  # pyright: ignore[reportGeneralTypeIssues]
 
     model = Foo(use_relu=True)
     scripted = jit.script(model)
-    print(scripted.code)
-    assert "relu" in scripted.code
-    assert "tanh" not in scripted.code
+    print(scripted.code)  # pyright: ignore[reportGeneralTypeIssues]
+    assert "relu" in scripted.code  # pyright: ignore[reportGeneralTypeIssues]
+    assert "tanh" not in scripted.code  # pyright: ignore[reportGeneralTypeIssues]

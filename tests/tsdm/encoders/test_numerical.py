@@ -14,14 +14,14 @@ from tsdm.encoders.numerical import (
     BoundaryEncoder,
     LinearScaler,
     MinMaxScaler,
-    NumericalEncoder,
     StandardScaler,
     get_broadcast,
     get_reduced_axes,
 )
 
 __logger__ = logging.getLogger(__name__)
-T = TypeVar("T", pd.Series, np.ndarray, torch.Tensor)
+T = TypeVar("T", pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)
+E = TypeVar("E", StandardScaler, MinMaxScaler)
 
 
 @mark.parametrize("shape", ((5, 2, 3, 4), (7,)), ids=str)
@@ -158,25 +158,29 @@ def test_boundary_encoder(data: T) -> None:
 
 
 @mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
-@mark.parametrize("tensor_type", (np.array, torch.tensor))
-def test_scaler(encoder_type, tensor_type):
+@mark.parametrize("tensor_type", (pd.Series, pd.DataFrame, np.array, torch.tensor))
+def test_scaler(encoder_type: type[E], tensor_type: type[T]) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing.")
 
-    LOGGER.info("Testing without batching.")
-    X = np.random.rand(3)
-    X = tensor_type(X)
-    encoder = encoder_type()
-    encoder.fit(X)
-    encoded = encoder.encode(X)
-    decoded = encoder.decode(encoded)
-    assert np.allclose(X, decoded)
-    assert encoder.params[0].shape == (), f"{encoder.params}"
+    if tensor_type != pd.DataFrame:
+        LOGGER.info("Testing without batching.")
+        data = np.random.rand(3)
+        X = tensor_type(data)
+        encoder = encoder_type()
+        encoder.fit(X)
+        encoded = encoder.encode(X)
+        decoded = encoder.decode(encoded)
+        assert np.allclose(X, decoded)
+        assert encoder.params[0].shape == (), f"{encoder.params}"
+
+    if tensor_type == pd.Series:
+        return
 
     LOGGER.info("Testing with single batch-dim.")
-    X = np.random.rand(3, 5)
-    X = tensor_type(X)
+    data = np.random.rand(3, 5)
+    X = tensor_type(data)
     encoder = encoder_type(axis=-1)
     encoder.fit(X)
     encoded = encoder.encode(X)
@@ -186,18 +190,22 @@ def test_scaler(encoder_type, tensor_type):
 
     LOGGER.info("Testing slicing.")
     encoder = encoder[2]  # select the third encoder
-    Y = encoded
+    Y = encoded.loc[:, 2] if isinstance(encoded, pd.DataFrame) else encoded[:, 2]
     # encoder.fit(X[:, 2])
-    encoded = encoder.encode(X[:, 2])
+    X = X.loc[:, 2] if isinstance(X, pd.DataFrame) else X[:, 2]
+    encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
-    assert np.allclose(Y[:, 2], encoded)
-    assert np.allclose(X[:, 2], decoded)
+    assert np.allclose(Y, encoded)
+    assert np.allclose(X, decoded)
     assert encoder.params[0].shape == ()
+
+    if tensor_type == pd.DataFrame:
+        return
 
     LOGGER.info("Testing with many batch-dim.")
     # weird input
-    X = np.random.rand(2, 3, 4, 5)
-    X = tensor_type(X)
+    data = np.random.rand(2, 3, 4, 5)
+    X = tensor_type(data)
     encoder = encoder_type(axis=(-2, -1))
     encoder.fit(X)
     encoded = encoder.encode(X)
@@ -216,7 +224,7 @@ def test_scaler(encoder_type, tensor_type):
 
 
 @mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
-def test_scaler_dataframe(encoder_type: type[NumericalEncoder]) -> None:
+def test_scaler_dataframe(encoder_type: type[E]) -> None:
     """Check whether the scaler-encoders work as expected on DataFrame."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing Encoder applied to pandas.DataFrame.")
@@ -258,11 +266,15 @@ def test_scaler_dataframe(encoder_type: type[NumericalEncoder]) -> None:
         pickle.dump(params, f)
         f.seek(0)
         reloaded_params = pickle.load(f)
-        assert reloaded_params == params
+        for x, y in zip(params, reloaded_params, strict=True):
+            try:
+                assert all(x == y)
+            except Exception:
+                assert x == y
 
 
 @mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
-def test_scaler_series(encoder_type: type[NumericalEncoder]) -> None:
+def test_scaler_series(encoder_type: type[E]) -> None:
     """Check whether the scaler-encoders work as expected on Series."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing Encoder applied to pandas.Series.")
@@ -342,16 +354,16 @@ def test_minmax_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None:
     assert np.allclose(X, decoded)
 
 
-@mark.parametrize("tensor_type", (np.array, torch.tensor))
-def test_linear_scaler(tensor_type):
+@mark.parametrize("tensor_type", (pd.Series, pd.DataFrame, np.array, torch.tensor))
+def test_linear_scaler(tensor_type: type[T]) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(LinearScaler.__name__)
     encoder_type = LinearScaler
     LOGGER.info("Testing.")
 
     LOGGER.info("Testing without batching.")
-    X = np.random.rand(3)
-    X = tensor_type(X)
+    data = np.random.rand(3)
+    X = tensor_type(data)
     encoder = encoder_type()
     encoder.fit(X)
     encoded = encoder.encode(X)
@@ -359,15 +371,21 @@ def test_linear_scaler(tensor_type):
     assert np.allclose(X, decoded)
     assert isinstance(encoder.params[0], float), f"{encoder.params}"
 
+    if tensor_type == pd.Series:
+        return
+
     LOGGER.info("Testing with single batch-dim.")
-    X = np.random.rand(3, 5)
-    X = tensor_type(X)
+    data = np.random.rand(3, 5)
+    X = tensor_type(data)
     encoder = encoder_type()
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
     assert isinstance(encoder.params[0], float), f"{encoder.params}"
+
+    if tensor_type == pd.DataFrame:
+        return
 
     # LOGGER.info("Testing slicing.")
     # encoder = encoder[2]  # select the third encoder
@@ -381,8 +399,8 @@ def test_linear_scaler(tensor_type):
 
     LOGGER.info("Testing with many batch-dim.")
     # weird input
-    X = np.random.rand(1, 2, 3, 4, 5)
-    X = tensor_type(X)
+    data = np.random.rand(1, 2, 3, 4, 5)
+    X = tensor_type(data)
     encoder = encoder_type(axis=(1, 2))
     encoder.fit(X)
     encoded = encoder.encode(X)
