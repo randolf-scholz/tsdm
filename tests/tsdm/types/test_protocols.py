@@ -5,11 +5,10 @@ from typing import NamedTuple
 
 import numpy
 import pyarrow as pa
-import pytest
 import torch
-from numpy import ndarray
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series
+from pytest import mark
 from torch import Tensor
 from typing_extensions import get_protocol_members
 
@@ -20,6 +19,7 @@ from tsdm.types.protocols import (
     NumericalArray,
     Shape,
     SupportsShape,
+    assert_protocol,
 )
 
 __logger__ = logging.getLogger(__name__)
@@ -28,11 +28,30 @@ __logger__ = logging.getLogger(__name__)
 ARRAY_PROTOCOLS = (Array, NumericalArray, MutableArray)
 
 
+ARRAYS = {
+    "torch_tensor": torch.tensor([1, 2, 3]),
+    "numpy_ndarray": numpy.ndarray([1, 2, 3]),
+    "pandas_series": Series([1, 2, 3]),
+    "pandas_index": Index([1, 2, 3]),
+    "pandas_dataframe": DataFrame(numpy.random.randn(3, 3)),
+    "pyarrow_array": pa.array([1, 2, 3]),
+    "pyarrow_table": pa.table({"a": [1, 2, 3], "b": [4, 5, 6]}),
+    # "python_array": memoryview(builtin_array("i", [1, 2, 3])),
+}
+
+NUMERICAL_ARRAYS = {
+    "torch_tensor": torch.tensor([1, 2, 3]),
+    "numpy_ndarray": numpy.ndarray([1, 2, 3]),
+    "pandas_series": Series([1, 2, 3]),
+    "pandas_dataframe": DataFrame(numpy.random.randn(3, 3)),
+}
+
+
 def test_shape() -> None:
     """Test the Shape protocol."""
     data = [1, 2, 3]
     torch_tensor: Tensor = torch.tensor(data)
-    numpy_ndarray: NDArray = ndarray(data)
+    numpy_ndarray: NDArray = numpy.ndarray(data)
     pandas_series: Series = Series(data)
     pandas_index: Index = Index(data)
 
@@ -88,7 +107,7 @@ def test_table() -> None:
         torch_table, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(torch_table))}"
 
-    numpy_ndarray: NDArray = ndarray([1, 2, 3])
+    numpy_ndarray: NDArray = numpy.ndarray([1, 2, 3])
     numpy_table: SupportsShape = numpy_ndarray
     assert isinstance(
         numpy_table, SupportsShape
@@ -138,23 +157,18 @@ def test_table() -> None:
 
 
 # @pytest.mark.parametrize("array", TEST_ARRAYS)
-@pytest.mark.parametrize("protocol", ARRAY_PROTOCOLS)
-def test_shared_attrs(protocol: type) -> None:
+@mark.parametrize("protocol", ARRAY_PROTOCOLS)
+def test_numerical_arrays(protocol: type) -> None:
     """Test that all arrays share the same attributes."""
     protocol_attrs = get_protocol_members(protocol)
-    data = [1, 2, 3]
-    arrays = {
-        "torch_tensor": torch.tensor(data),
-        "numpy_ndarray": ndarray(data),
-        "pandas_series": Series(data),
-        # "pyarrow_array": pa.array(data),
-    }
-    for key, array in arrays.items():
+    for key, array in NUMERICAL_ARRAYS.items():
         missing_attrs = protocol_attrs - set(dir(array))
         assert not missing_attrs, f"{key}: missing Attributes: {missing_attrs}"
         assert isinstance(array, protocol), f"{key} is not a {protocol.__name__}!"
 
-    shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays.values()))
+    shared_attrs = set.intersection(
+        *(set(dir(arr)) for arr in NUMERICAL_ARRAYS.values())
+    )
     superfluous_attrs = shared_attrs - protocol_attrs
     print(
         f"Shared attributes/methods not covered by {protocol.__name__!r}:"
@@ -162,34 +176,60 @@ def test_shared_attrs(protocol: type) -> None:
     )
 
 
-def test_array() -> None:
+# NOTE: Intentionally not using parametrize to allow type-checking
+def test_arrays_jointly() -> None:
     """Test the Array protocol (singular dtype and ndim)."""
+    # list of all arrays
+    arrays: list = []
+
     # test torch
     torch_tensor: Tensor = torch.tensor([1, 2, 3])
-    torch_array: Array = torch_tensor
-    assert isinstance(
-        torch_array, Array
-    ), f"Missing Attributes: {set(dir(Array)) - set(dir(torch_array))}"
+    assert_protocol(torch_tensor, Array)
+    arrays.append(torch_tensor)
 
     # test numpy
-    numpy_ndarray: NDArray[numpy.int_] = ndarray([1, 2, 3])
-    numpy_array: Array[numpy.int_] = numpy_ndarray
-    assert isinstance(
-        numpy_array, Array
-    ), f"Missing Attributes: {set(dir(Array)) - set(dir(numpy_array))}"
+    numpy_array: Array = numpy.ndarray([1, 2, 3])
+    assert_protocol(numpy_array, Array)
+    arrays.append(numpy_array)
 
     # test pandas Series
-    pandas_series: Series = Series([1, 2, 3])
-    pandas_array: Array = pandas_series
-    assert isinstance(
-        pandas_array, Array
-    ), f"Missing Attributes: {set(dir(Array)) - set(dir(pandas_array))}"
+    pandas_series: Array = Series([1, 2, 3])
+    assert_protocol(pandas_series, Array)
+    arrays.append(pandas_series)
 
     # test pandas Index
-    pandas_index: Index = Index([1, 2, 3])
-    pandas_array2: Array = pandas_index
+    pandas_index: Array = Index([1, 2, 3])
+    assert_protocol(pandas_index, Array)
+    arrays.append(pandas_index)
+
+    # test dataframe
+    pandas_frame: Array = DataFrame(numpy.random.randn(3, 3))
+    assert_protocol(pandas_frame, Array)
+    arrays.append(pandas_frame)
+
+    # test pyarrow.Array
+    pyarrow_array: Array = pa.array([1, 2, 3])
+    assert_protocol(pyarrow_array, Array)
+    arrays.append(pyarrow_array)
+
+    # test pyarrow.Table
+    pyarrow_table: Array = pa.table({"a": [1, 2, 3], "b": [4, 5, 6]})
+    assert_protocol(pyarrow_table, Array)
+    arrays.append(pyarrow_table)
+
+    # # test python array (missing: __array__)
+    # python_array: Array = memoryview(builtin_array("i", [1, 2, 3]))
+    # # assert_protocol(python_array, Array)
+    # arrays.append(python_array)
 
     # test combined
-    arrays = [torch_array, numpy_array, pandas_array, pandas_array2]
     shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
+    superfluous_attrs = shared_attrs - set(dir(Array))
+    assert not superfluous_attrs, f"Shared attributes/methods: {superfluous_attrs}"
     __logger__.info("Shared attributes/methods of Arrays: %s", shared_attrs)
+
+
+@mark.parametrize("name", ARRAYS)
+def test_array_all(name: str) -> None:
+    """Test the Array protocol (singular dtype and ndim)."""
+    assert_protocol(ARRAYS[name], Array)

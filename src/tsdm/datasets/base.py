@@ -1,4 +1,5 @@
 r"""Base Classes for dataset."""
+
 # NOTE: signature of metaclass.__init__ should match that of type.__new__
 # NOTE: type.__new__(cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs: Any)
 # NOTE: type.__init__(self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs: Any)
@@ -425,6 +426,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
 
 class SingleTableDataset(BaseDataset[T_co]):
     r"""Dataset class that consists of a singular DataFrame."""
+
     RAWDATA_DIR: ClassVar[Path]
     """Path to raw data directory."""
     DATASET_DIR: ClassVar[Path]

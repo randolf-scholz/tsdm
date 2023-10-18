@@ -1,6 +1,5 @@
 r"""Test task implementation with InSilico."""
 
-
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import DataLoader
 

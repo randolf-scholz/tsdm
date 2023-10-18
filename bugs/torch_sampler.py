@@ -38,6 +38,7 @@ class MySequentialSampler(MySampler[int]):
     Args:
         data_source (Dataset): dataset to sample from
     """
+
     data_source: Sized
 
     def __init__(self, data_source: Sized) -> None:

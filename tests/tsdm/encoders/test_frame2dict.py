@@ -1,6 +1,5 @@
 r"""Test the standardizer encoder."""
 
-
 from pandas import DataFrame
 
 from tsdm.encoders import FrameAsDict

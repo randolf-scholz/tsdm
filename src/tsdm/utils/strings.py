@@ -29,12 +29,20 @@ from types import FunctionType
 from typing import Any, Final, Optional, Protocol, cast, overload
 
 from pandas import DataFrame, Index, MultiIndex, Series
+from pyarrow import Array as pyarrow_array, Table as pyarrow_table
 from torch import Tensor
 
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
 from tsdm.types.aliases import DType
 from tsdm.types.dtypes import TYPESTRINGS
-from tsdm.types.protocols import Array, Dataclass, NTuple
+from tsdm.types.protocols import (
+    Array,
+    Dataclass,
+    NTuple,
+    SupportsDevice,
+    SupportsDtype,
+    SupportsShape,
+)
 from tsdm.types.variables import any_var as T
 
 __logger__ = logging.getLogger(__name__)
@@ -710,30 +718,41 @@ def repr_type(
 
 
 def repr_array(
-    obj: Array | DataFrame | Series | Tensor,
+    obj: Array,
     /,
     *,
     title: Optional[str] = None,
     **_: Any,
 ) -> str:
     r"""Return a string representation of an array object."""
-    assert isinstance(
-        obj, (Index, Array, DataFrame, Series)
-    ), f"Object {obj=} is not an array, but {type(obj)=}."
+    assert isinstance(obj, Array), f"Object {obj=} is not an array, but {type(obj)=}."
 
     title = type(obj).__name__ if title is None else title
 
     string = title + "["
-    string += str(tuple(obj.shape))
 
-    if isinstance(obj, DataFrame | MultiIndex):
-        dtypes = [repr_dtype(dtype) for dtype in obj.dtypes]
-        string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
-    elif isinstance(obj, Index | Series | Array):
-        string += ", " + repr_dtype(obj.dtype)
+    # add the shape
+    if isinstance(obj, SupportsShape):
+        string += str(tuple(obj.shape))
     else:
-        raise TypeError(f"Cannot get dtype of {type(obj)}")
-    if isinstance(obj, Tensor):
+        string += f"({len(obj)},)"
+
+    match obj:
+        case DataFrame() | MultiIndex() as frame:  # type: ignore[misc]
+            dtypes = [repr_dtype(dtype) for dtype in frame.dtypes]  # type: ignore[unreachable]
+            string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
+        case pyarrow_table() as table:  # type: ignore[misc]
+            dtypes = [repr_dtype(dtype) for dtype in table.schema.types]  # type: ignore[unreachable]
+            string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
+        case pyarrow_array() as array:  # type: ignore[misc]
+            string += ", " + repr_dtype(array.type)  # type: ignore[unreachable]
+        case SupportsDtype() as tensor:
+            string += ", " + repr_dtype(tensor.dtype)
+        case _:
+            raise TypeError(f"Cannot get dtype of {type(obj)}")
+
+    # add the device
+    if isinstance(obj, SupportsDevice):
         string += f"@{obj.device}"
 
     string += "]"

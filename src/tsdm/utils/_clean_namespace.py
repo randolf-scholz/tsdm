@@ -1,6 +1,5 @@
 """Clean namespace of module (unused)."""
 
-
 # import logging
 # from datetime import datetime
 # c_now=datetime.now()

@@ -81,6 +81,7 @@ See Also:
     - `tsdm.encoders.functional` for functional implementations.
     - `tsdm.encoders` for modular implementations.
 """
+
 #  TODO: Add more encoders
 # - Target Encoding: enc(x) = mean(enc(y|x))
 # - Binary Encoding: enx(x) = ...
@@ -151,7 +152,6 @@ __all__ = [
     "TensorSplitter",
     "Time2Float",
     "TimeDeltaEncoder",
-    "TimeSlicer",
     "TripletDecoder",
     "TripletEncoder",
     "ValueEncoder",
@@ -213,7 +213,6 @@ from tsdm.encoders.time import (
     SocialTimeEncoder,
     Time2Float,
     TimeDeltaEncoder,
-    TimeSlicer,
 )
 
 SKLEARN_MODULAR_ENCODERS: dict[str, type[BaseEstimator]] = {

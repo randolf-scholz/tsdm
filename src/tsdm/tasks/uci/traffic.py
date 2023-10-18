@@ -1,6 +1,5 @@
 r"""Tasks associated with the Traffic dataset."""
 
-
 __all__ = ["TrafficTFT", "TrafficTRMF"]
 
 

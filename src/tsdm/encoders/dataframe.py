@@ -897,16 +897,16 @@ class ValueEncoder(BaseEncoder):
         return array.astype(self.dtype)
 
     def decode(self, data: NDArray, /) -> DataFrame:
-        data = DataFrame(data, columns=self.original_columns)
+        frame = DataFrame(data, columns=self.original_columns)
 
         # Assemble the columns
-        columns = data[self.column_columns]
+        columns = frame[self.column_columns]
         columns.columns = self.column_columns
         columns = columns.astype(self.column_dtypes)
         columns = columns.squeeze(axis="columns")
 
         # assemble the index
-        index = data[self.index_columns]
+        index = frame[self.index_columns]
         index.columns = self.index_columns
         index = index.astype(self.index_dtypes)
         index = index.squeeze(axis="columns")

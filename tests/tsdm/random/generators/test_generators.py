@@ -1,6 +1,5 @@
 r"""Test synthetic generators."""
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 from pytest import mark

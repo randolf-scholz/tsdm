@@ -1,6 +1,5 @@
 r"""Testing Attribute Serialization."""
 
-
 from torch import jit, nn
 
 

@@ -1,6 +1,5 @@
 """Implements `numpy`-backend for tsdm."""
 
-
 __all__ = [
     "numpy_like",
     "numpy_apply_along_axes",

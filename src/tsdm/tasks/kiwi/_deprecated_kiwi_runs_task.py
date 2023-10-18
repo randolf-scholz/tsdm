@@ -1,4 +1,5 @@
 r"""Deprecated Kiwi Task Object."""
+
 # mypy: ignore-errors
 
 __all__ = [

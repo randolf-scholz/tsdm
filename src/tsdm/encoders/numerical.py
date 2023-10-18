@@ -82,7 +82,6 @@ ClippingMode: TypeAlias = Literal["mask", "clip"]
 r"""Type Hint for clipping mode."""
 Index: TypeAlias = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
-
 scalars: TypeAlias = None | bool | int | float | complex | str
 """Type Hint for scalar objects."""
 

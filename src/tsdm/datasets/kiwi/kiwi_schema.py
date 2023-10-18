@@ -1,4 +1,5 @@
 """Schema for the KIWI-dataset."""
+
 # NOTE: THis should only contain static data
 
 __all__ = ["timeseries_description", "metadata_description"]

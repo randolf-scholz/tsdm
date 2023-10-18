@@ -30,6 +30,7 @@ from tsdm.utils.strings import pprint_repr
 @pprint_repr
 class Sample(NamedTuple):
     r"""A single sample of the data."""
+
     key: Any
     t: Index
     x: DataFrame

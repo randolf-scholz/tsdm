@@ -1,6 +1,5 @@
 """Test that Dataloader works for non-Dataset objects."""
 
-
 from torch.utils.data import DataLoader
 
 

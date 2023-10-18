@@ -161,8 +161,10 @@ class TargetsAndPredics(NamedTuple):
 
 @torch.no_grad()
 def compute_metrics(
-    metrics: Sequence[str | Metric | type[Metric]]
-    | Mapping[str, str | Metric | type[Metric]],
+    metrics: (
+        Sequence[str | Metric | type[Metric]]
+        | Mapping[str, str | Metric | type[Metric]]
+    ),
     /,
     *,
     targets: Tensor,
@@ -394,8 +396,10 @@ def log_lr_scheduler(
 
 def log_metrics(
     step: int,
-    metrics: Sequence[str | Metric | type[Metric]]
-    | Mapping[str, str | Metric | type[Metric]],
+    metrics: (
+        Sequence[str | Metric | type[Metric]]
+        | Mapping[str, str | Metric | type[Metric]]
+    ),
     writer: SummaryWriter,
     *,
     inputs: Optional[Mapping[Literal["targets", "predics"], Tensor]] = None,

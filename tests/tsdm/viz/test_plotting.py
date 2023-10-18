@@ -1,6 +1,5 @@
 r"""Test tsdm.viz plotting utilities."""
 
-
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gamma

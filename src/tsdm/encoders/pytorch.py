@@ -1,6 +1,5 @@
 r"""Encoders that work with torch tensors."""
 
-
 __all__ = [
     # Classes
     "Time2Vec",
