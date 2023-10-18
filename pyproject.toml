@@ -94,8 +94,8 @@ extras = [
     "torchinfo>=1.8.0",
 ]
 typing = [
-    "mypy>=1.6.0",
-    "pyright>=1.1.331",
+    "mypy>=1.6.1",
+    "pyright>=1.1.332",
     "types-colorama>=0.4.15",
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
@@ -650,8 +650,8 @@ slotscheck = ">=0.17.0"
 
 
 [tool.poetry.group.typing.dependencies]
-mypy = ">=1.6.0"
-pyright = ">=1.1.331"
+mypy = ">=1.6.1"
+pyright = ">=1.1.332"
 types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"
