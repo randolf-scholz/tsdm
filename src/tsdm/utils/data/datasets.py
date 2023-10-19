@@ -1,29 +1,42 @@
 r"""Generic Dataset classes."""
 
 __all__ = [
+    # Type Aliases
+    "Dataset",
     # Protocols
-    "MapStyleDataset",
+    "IterableDataset",
+    "MapDataset",
+    "PandasDataset",
     # Classes
-    "MappingDataset",
-    "DatasetCollection",
     "DataFrame2Dataset",
+    "DatasetCollection",
+    "MappingDataset",
 ]
 
 from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
-from typing import Any, Optional, Protocol, TypeVar, overload
+from typing import (
+    Any,
+    Optional,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
 
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Self
 
+from tsdm.types.protocols import SupportsGetItem
 from tsdm.types.variables import (
     any_var as T,
     key_contra,
     key_var as K,
     nested_key_var as K2,
-    return_var_co,
+    value_co as V_co,
 )
 from tsdm.utils.strings import repr_array, repr_mapping
 
@@ -34,14 +47,31 @@ TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 #     """Convert a DataFrame to a Dataset."""
 #
 #     def __getitem__(self):
-
 # MapStyleDataset: TypeAlias = MappingProtocol
 
 
-class MapStyleDataset(Protocol[K, return_var_co]):
-    """Protocol version of `torch.utils.data.Dataset`."""
+@runtime_checkable
+class PandasDataset(Protocol[K, V_co]):
+    """Protocol version of `pandas.DataFrame`."""
 
-    # Q: make Mapping?
+    @property
+    def index(self) -> Sequence[K]: ...
+
+    @property
+    def loc(self) -> SupportsGetItem[K, V_co]: ...
+
+
+@runtime_checkable
+class MapDataset(Protocol[K, V_co]):
+    """Protocol version of `torch.utils.data.Dataset`.
+
+    Note:
+        - We additionally require a `len()` method, since we only consider non-streaming datasets.
+        - We deviate from the original in that we require a `keys()` method.
+          Otherwise, it is unclear how to iterate over the dataset. `torch.utils.data.Dataset`
+          simply makes the assumption that the dataset is indexed by integers.
+          But this is simply wrong for many use cases such as dictionaries or DataFrames.
+    """
 
     @abstractmethod
     def __len__(self) -> int:
@@ -49,18 +79,53 @@ class MapStyleDataset(Protocol[K, return_var_co]):
         ...
 
     @abstractmethod
-    def __getitem__(self, key: K, /) -> return_var_co:
+    def __getitem__(self, key: K, /) -> V_co:
         """Map key to sample."""
         ...
 
     @abstractmethod
-    def __iter__(self) -> Iterator[K]:
+    def keys(self) -> Iterable[K]:
         """Iterate over the keys."""
         ...
 
 
+@runtime_checkable
+class IterableDataset(Protocol[V_co]):
+    """Protocol version of `torch.utils.data.IterableDataset`.
+
+    Note:
+        - We deviate from the original in that we require a `len()` method.
+        - We deviate from the original in that we require a `__getitem__` method.
+          Otherwise, the whole dataset needs to be wrapped in order to allow
+          random access. For iterable datasets, we assume that the dataset is
+          indexed by integers 0...n-1.
+
+    Important:
+        Always test for MapDataset first!
+    """
+
+    @abstractmethod
+    def __len__(self) -> int:
+        """Length of the dataset."""
+        ...
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[V_co]:
+        """Iterate over the dataset."""
+        ...
+
+    @abstractmethod
+    def __getitem__(self, key: int, /) -> V_co:
+        """Map key to sample."""
+        ...
+
+
+Dataset: TypeAlias = MapDataset[Any, V_co] | IterableDataset[V_co]
+"""Type alias for a generic dataset."""
+
+
 @dataclass
-class DataFrame2Dataset(MapStyleDataset[K, DataFrame], TorchDataset[DataFrame]):
+class DataFrame2Dataset(MapDataset[K, DataFrame], TorchDataset[DataFrame]):
     """Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting `.loc`.
 
     It is assumed that the DataFrame has a MultiIndex.
@@ -76,7 +141,7 @@ class DataFrame2Dataset(MapStyleDataset[K, DataFrame], TorchDataset[DataFrame]):
     def __len__(self) -> int:
         return len(self.index)
 
-    def __iter__(self) -> Iterator[K]:
+    def keys(self) -> Iterator[K]:
         return iter(self.index)
 
     def __getitem__(self, item: key_contra, /) -> DataFrame:

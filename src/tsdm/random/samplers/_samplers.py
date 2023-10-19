@@ -5,10 +5,8 @@ __all__ = [
     "BaseSampler",
     # Classes
     "RandomSampler",
-    "SliceSampler",
     # "TimeSliceSampler",
     "SequenceSampler",
-    "CollectionSampler",
     "IntervalSampler",
     "HierarchicalSampler",
     "SlidingWindowSampler",
@@ -19,7 +17,7 @@ __all__ = [
 import logging
 import math
 from abc import abstractmethod
-from collections.abc import Callable, Iterator, Mapping, Sequence, Sized
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from datetime import timedelta as py_td
 from itertools import chain, count
@@ -42,13 +40,208 @@ import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
-from typing_extensions import deprecated
 
 from tsdm.types.protocols import Lookup
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
-from tsdm.utils.data.datasets import DatasetCollection, MapStyleDataset
-from tsdm.utils.strings import repr_dataclass, repr_mapping
+from tsdm.utils.data.datasets import Dataset, IterableDataset, MapDataset
+from tsdm.utils.strings import pprint_repr, repr_mapping
+
+
+@runtime_checkable
+class Sampler(Protocol[T_co]):
+    r"""Protocol for `Sampler` classes."""
+
+    @property
+    @abstractmethod
+    def shuffle(self) -> bool:
+        """Whether to shuffle the data."""
+        ...
+
+    def __iter__(self) -> Iterator[T_co]:
+        """Return an iterator over the indices of the data source."""
+        ...
+
+    def __len__(self) -> int:
+        """The number of samples that can be drawn by __iter__."""
+        ...
+
+
+class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
+    r"""Metaclass for BaseDataset."""
+
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+    ) -> None:
+        """When a new class/subclass is created, this method is called."""
+        super().__init__(name, bases, namespace, **kwds)
+
+        if "LOGGER" not in namespace:
+            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+
+
+class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
+    r"""Abstract Base Class for all Samplers."""
+
+    LOGGER: ClassVar[logging.Logger]
+    r"""Logger for the sampler."""
+
+    shuffle: bool = False
+    r"""Whether to randomize sampling."""
+
+    def __init__(self, *, shuffle: bool) -> None:
+        r"""Initialize the sampler."""
+        self.shuffle = shuffle
+
+    @abstractmethod
+    def __len__(self) -> int:
+        r"""Return the length of the sampler."""
+        ...
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[T_co]:
+        r"""Return an iterator over the indices of the data source."""
+        ...
+
+
+def get_index(dataset: Dataset[T_co], /) -> Index:
+    r"""Return an index object for the dataset.
+
+    We support the following data types:
+        - Series, DataFrame.
+        - Mapping Types
+        - Iterable Types
+    """
+    match dataset:
+        # NOTE: Series and DataFrame satisfy the MapDataset protocol.
+        case Series() | DataFrame() as pandas_dataset:  # type: ignore[misc]
+            return pandas_dataset.index  # type: ignore[unreachable]
+        case MapDataset() as map_dataset:
+            return Index(map_dataset.keys())
+        case IterableDataset() as iterable_dataset:
+            return Index(range(len(iterable_dataset)))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+@pprint_repr
+@dataclass
+class RandomSampler(BaseSampler[T_co]):
+    """Sampler randomly from the data source.
+
+    Note:
+        If the input is a DataFrame,
+    """
+
+    data: Dataset[T_co]
+
+    _: KW_ONLY
+
+    shuffle: bool = False
+
+    def __post_init__(self) -> None:
+        self.index: Index = get_index(self.data)
+        self.size: int = len(self.index)
+
+    def __iter__(self) -> Iterator[T_co]:
+        if self.shuffle:
+            permutation = np.random.permutation(self.size)
+            for key in self.index[permutation]:
+                yield self.data[key]
+            return
+
+        # shortcut: iterate over index directly
+        for key in self.index:
+            yield self.data[key]
+
+    def __len__(self) -> int:
+        return self.size
+
+
+class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
+    r"""Samples a single random dataset from a collection of datasets.
+
+    Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
+    """
+
+    index: Index
+    r"""The shared index."""
+    subsamplers: Mapping[K, Sampler[T_co]]
+    r"""The subsamplers to sample from the collection."""
+    sizes: Series
+    r"""The sizes of the subsamplers."""
+    partition: Series
+    r"""Contains each key a number of times equal to the size of the subsampler."""
+
+    early_stop: bool = False
+    r"""Whether to stop sampling when the index is exhausted."""
+    shuffle: bool = False
+    r"""Whether to sample in random order."""
+
+    def __init__(
+        self,
+        data_source: Mapping[K, T],
+        /,
+        subsamplers: Mapping[K, Sampler[T_co]],
+        *,
+        shuffle: bool = False,
+        early_stop: bool = False,
+    ) -> None:
+        super().__init__(shuffle=shuffle)
+        self.data = data_source
+        self.early_stop = early_stop
+        self.index = get_index(data_source)
+        self.subsamplers = dict(subsamplers)
+
+        self.sizes = Series({key: len(self.subsamplers[key]) for key in self.index})
+
+        if early_stop:  # duplicate keys to match the minimum subsampler size
+            self.partition = Series(
+                chain(*([key] * min(self.sizes) for key in self.index))
+            )
+        else:  # duplicate keys to match each sub-sampler's size
+            self.partition = Series(
+                chain(*([key] * self.sizes[key] for key in self.index))
+            )
+
+    def __len__(self) -> int:
+        r"""Return the maximum allowed index."""
+        if self.early_stop:
+            return min(self.sizes) * len(self.subsamplers)
+        return sum(self.sizes)
+
+    def __iter__(self) -> Iterator[tuple[K, T_co]]:
+        r"""Return indices of the samples.
+
+        When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
+        When ``early_stop=False``, it will sample all samples.
+        """
+        activate_iterators = {
+            key: iter(sampler) for key, sampler in self.subsamplers.items()
+        }
+
+        if self.shuffle:
+            perm = np.random.permutation(self.partition)
+        else:
+            perm = self.partition
+
+        for key in perm:
+            # This won't raise StopIteration, because the length is matched.
+            try:
+                value = next(activate_iterators[key])
+            except StopIteration as exc:
+                raise RuntimeError(
+                    f"Iterator of {key=} exhausted prematurely."
+                ) from exc
+            yield key, value
+
+    def __getitem__(self, key: K) -> Sampler[T_co]:
+        r"""Return the subsampler for the given key."""
+        return self.subsamplers[key]
+
+    def __repr__(self) -> str:
+        r"""Pretty print."""
+        return repr_mapping(self.subsamplers, title=self.__class__.__name__)
 
 
 def compute_grid(
@@ -90,346 +283,6 @@ def compute_grid(
     kmin = math.ceil(cast(TDVar, tmin - offset) / td)  # type: ignore[redundant-cast]
 
     return cast(Sequence[int], np.arange(kmin, kmax + 1))
-
-
-@runtime_checkable
-class Sampler(Protocol[T_co]):
-    r"""Protocol for `Sampler`."""
-
-    @property
-    @abstractmethod
-    def shuffle(self) -> bool:
-        """Whether to shuffle the data."""
-        ...
-
-    def __iter__(self) -> Iterator[T_co]:
-        """Return an iterator over the indices of the data source."""
-        ...
-
-    def __len__(self) -> int:
-        """The number of samples that can be drawn by __iter__."""
-        ...
-
-
-class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
-    r"""Metaclass for BaseDataset."""
-
-    def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
-    ) -> None:
-        """When a new class/subclass is created, this method is called."""
-        super().__init__(name, bases, namespace, **kwds)
-
-        if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
-
-
-class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
-    r"""Abstract Base Class for all Samplers."""
-
-    LOGGER: ClassVar[logging.Logger]
-    r"""Logger for the sampler."""
-
-    data: Sized
-    r"""Copy of the original Data source."""
-
-    shuffle: bool = False
-    r"""Whether to shuffle the data."""
-
-    def __init__(self, data_source: Sized, /, *, shuffle: bool) -> None:
-        r"""Initialize the sampler."""
-        self.data = data_source
-        self.shuffle = shuffle
-
-    def __len__(self) -> int:
-        r"""Return the length of the sampler."""
-        return len(self.data)
-
-    @abstractmethod
-    def __iter__(self) -> Iterator[T_co]:
-        r"""Return an iterator over the indices of the data source."""
-        ...
-
-
-@dataclass
-class RandomSampler(BaseSampler[T_co]):
-    """Sampler randomly from the data source.
-
-    This mimics torch.utils.data.SubsetRandomSampler, but uses python integers instead of torch tensors.
-    """
-
-    data: MapStyleDataset[Any, T_co]
-    _: KW_ONLY
-    shuffle: bool = False
-
-    def __post_init__(self) -> None:
-        # FIXME: pretty horrible way to do it.
-        if hasattr(self.data, "keys"):
-            self.index = Series(self.data.keys())
-        elif hasattr(self.data, "__array__"):
-            self.index = Series(range(len(self.data)))
-        elif isinstance(self.data, tuple | list | set):
-            self.index = Series(range(len(self.data)))
-        elif hasattr(self.data, "index"):
-            self.index = self.data.index
-        else:  # __iter__ -> keys:
-            self.index = Series(self.data)
-
-    def __iter__(self) -> Iterator[T_co]:
-        for idx in (
-            np.random.permutation(len(self)) if self.shuffle else np.arange(len(self))
-        ):
-            key = self.index[idx]
-            yield self.data[key]
-
-    def __repr__(self):
-        return repr_dataclass(self)
-
-
-@deprecated("Use SlidingWindowSampler instead.")
-class SliceSampler(BaseSampler[Sequence[T_co]]):
-    r"""Sample by index.
-
-    Default modus operandi:
-
-    - Use fixed window size
-    - Sample starting index uniformly from [0:-window]
-
-    Should you want to sample windows of varying size, you may supply a
-
-    Alternatives:
-
-    - sample with fixed horizon and start/stop between bounds
-      - [sₖ, tₖ], sᵢ = t₀ + k⋅Δt, tᵢ = t₀ + (k+1)⋅Δt
-    - sample with a fixed start location and varying length.
-      - [sₖ, tₖ], sᵢ = t₀, tᵢ= t₀ + k⋅Δt
-    - sample with a fixed final location and varying length.
-      - [sₖ, tₖ], sᵢ = tₗ - k⋅Δt, tᵢ= tₗ
-    - sample with varying start and final location and varying length.
-      - all slices of length k⋅Δt such that 0 < k⋅Δt < max_length
-      - start stop location within bounds [t_min, t_max]
-      - start stop locations from the set t_offset + [t_min, t_max] ∩ Δtℤ
-      - [sₖ, tⱼ], sᵢ = t₀ + k⋅Δt, tⱼ = t₀ + k⋅Δt
-
-    Attributes:
-        data:
-        idx: range(len(data))
-        rng: a numpy random Generator
-    """
-
-    data: Sequence[T_co]
-    idx: NDArray
-    rng: np.random.Generator
-    shuffle: bool = False
-
-    def __init__(
-        self,
-        data_source: Sequence[T_co],
-        /,
-        *,
-        slice_sampler: Optional[int | Callable[[], int]] = None,
-        sampler: Optional[Callable[[], tuple[int, int]]] = None,
-        generator: Optional[np.random.Generator] = None,
-        shuffle: bool = False,
-    ) -> None:
-        super().__init__(data_source, shuffle=shuffle)
-        self.data = data_source
-        self.idx = np.arange(len(data_source))
-        self.rng = np.random.default_rng() if generator is None else generator
-
-        match slice_sampler:
-            case None:
-                self._slice_sampler = lambda: max(1, len(data_source) // 10)
-            case int() as number:
-                self._slice_sampler = lambda: number
-            case Callable() as sampler:  # type: ignore[misc]
-                self._slice_sampler = sampler  # type: ignore[unreachable]
-            case _:
-                raise TypeError("slice_sampler not compatible.")
-
-        def _default_sampler() -> tuple[int, int]:
-            window_size: int = self._slice_sampler()
-            start_index: int = self.rng.choice(
-                self.idx[: -1 * window_size]
-            )  # -1*w silences pylint.
-            return window_size, start_index
-
-        self._sampler = _default_sampler if sampler is None else sampler
-
-    def slice_sampler(self) -> int:
-        r"""Return random window size."""
-        return self._slice_sampler()
-
-    def sampler(self) -> tuple[int, int]:
-        r"""Return random start_index and window_size."""
-        return self._sampler()
-
-    def __len__(self) -> int:
-        r"""Return the maximum allowed index."""
-        return float("inf")  # type: ignore[return-value]
-
-    def __iter__(self) -> Iterator[Sequence[T_co]]:
-        r"""Yield random slice from dataset."""
-        while True:
-            # sample len and index
-            window_size, start_index = self.sampler()
-            # return slice
-            yield self.data[start_index : start_index + window_size]
-
-
-class CollectionSampler(BaseSampler[tuple[K, T_co]]):
-    r"""Samples a single random dataset from a collection of datasets.
-
-    Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
-    """
-
-    idx: Index
-    r"""The shared index."""
-    subsamplers: Mapping[K, BaseSampler[T_co]]
-    r"""The subsamplers to sample from the collection."""
-    early_stop: bool = False
-    r"""Whether to stop sampling when the index is exhausted."""
-    shuffle: bool = False
-    r"""Whether to sample in random order."""
-    sizes: Series
-    r"""The sizes of the subsamplers."""
-    partition: Series
-    r"""Contains each key a number of times equal to the size of the subsampler."""
-
-    def __init__(
-        self,
-        data_source: DatasetCollection,
-        subsamplers: Mapping[K, BaseSampler[T_co]],
-        /,
-        *,
-        shuffle: bool = False,
-        early_stop: bool = False,
-    ):
-        super().__init__(data_source, shuffle=shuffle)
-        self.data = data_source
-        self.idx = data_source.keys()
-        self.subsamplers = dict(subsamplers)
-        self.early_stop = early_stop
-        self.sizes = Series({key: len(self.subsamplers[key]) for key in self.idx})
-
-        if early_stop:
-            partition = list(chain(*([key] * min(self.sizes) for key in self.idx)))
-        else:
-            partition = list(chain(*([key] * self.sizes[key] for key in self.idx)))
-        self.partition = Series(partition)
-
-    def __len__(self) -> int:
-        r"""Return the maximum allowed index."""
-        if self.early_stop:
-            return min(self.sizes) * len(self.subsamplers)
-        return sum(self.sizes)
-
-    def __iter__(self) -> Iterator[tuple[K, T_co]]:
-        r"""Return indices of the samples.
-
-        When `early_stop=True`, it will sample precisely `min() * len(subsamplers)` samples.
-        When `early_stop=False`, it will sample all samples.
-        """
-        activate_iterators = {
-            key: iter(sampler) for key, sampler in self.subsamplers.items()
-        }
-        perm = np.random.permutation(self.partition)
-
-        for key in perm:
-            # This won't raise StopIteration, because the length is matched.
-            # value = yield from activate_iterators[key]
-            try:
-                value = next(activate_iterators[key])
-            except StopIteration as exc:
-                raise RuntimeError(
-                    f"Iterator of {key=} exhausted prematurely."
-                ) from exc
-            yield key, value
-
-    def __getitem__(self, key: K) -> BaseSampler[T_co]:
-        r"""Return the subsampler for the given key."""
-        return self.subsamplers[key]
-
-
-class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
-    r"""Samples a single random dataset from a collection of datasets.
-
-    Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
-    """
-
-    idx: Index
-    r"""The shared index."""
-    subsamplers: Mapping[K, Sampler[T_co]]
-    r"""The subsamplers to sample from the collection."""
-    early_stop: bool = False
-    r"""Whether to stop sampling when the index is exhausted."""
-    shuffle: bool = False
-    r"""Whether to sample in random order."""
-    sizes: Series
-    r"""The sizes of the subsamplers."""
-    partition: Series
-    r"""Contains each key a number of times equal to the size of the subsampler."""
-
-    def __init__(
-        self,
-        data_source: Mapping[K, T],
-        subsamplers: Mapping[K, Sampler[T_co]],
-        /,
-        *,
-        shuffle: bool = False,
-        early_stop: bool = False,
-    ):
-        super().__init__(data_source, shuffle=shuffle)
-        self.data = data_source
-        self.idx = Index(data_source.keys())
-        self.subsamplers = dict(subsamplers)
-        self.sizes = Series({key: len(self.subsamplers[key]) for key in self.idx})
-        self.early_stop = early_stop
-
-        if early_stop:
-            partition = list(chain(*([key] * min(self.sizes) for key in self.idx)))
-        else:
-            partition = list(chain(*([key] * self.sizes[key] for key in self.idx)))
-        self.partition = Series(partition)
-
-    def __len__(self) -> int:
-        r"""Return the maximum allowed index."""
-        if self.early_stop:
-            return min(self.sizes) * len(self.subsamplers)
-        return sum(self.sizes)
-
-    def __iter__(self) -> Iterator[tuple[K, T_co]]:
-        r"""Return indices of the samples.
-
-        When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
-        When ``early_stop=False``, it will sample all samples.
-        """
-        activate_iterators = {
-            key: iter(sampler) for key, sampler in self.subsamplers.items()
-        }
-
-        if self.shuffle:
-            perm = np.random.permutation(self.partition)
-        else:
-            perm = self.partition
-
-        for key in perm:
-            # This won't raise StopIteration, because the length is matched.
-            try:
-                value = next(activate_iterators[key])
-            except StopIteration as exc:
-                raise RuntimeError(
-                    f"Iterator of {key=} exhausted prematurely."
-                ) from exc
-            yield key, value
-
-    def __getitem__(self, key: K) -> Sampler[T_co]:
-        r"""Return the subsampler for the given key."""
-        return self.subsamplers[key]
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_mapping(self.subsamplers, title=self.__class__.__name__)
 
 
 class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
@@ -474,7 +327,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
         offset: Optional[TDVar] = None,
         shuffle: bool = False,
     ) -> None:
-        super().__init__([], shuffle=shuffle)
+        super().__init__(shuffle=shuffle)
         # set stride and offset
         zero = 0 * (xmax - xmin)
         stride = zero if stride is None else stride
@@ -564,17 +417,22 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
 
 
 class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
-    r"""Samples sequences of length seq_len."""
+    r"""Samples sequences of fixed length."""
 
-    data_source: NDArray[DTVar]  # type: ignore[type-var]
-    k_max: int
-    return_mask: bool
+    data: NDArray[DTVar]  # type: ignore[type-var]
     seq_len: TDVar
+    """The length of the sequences."""
     stride: TDVar
+    """The stride at which to sample."""
     xmax: DTVar
+    """The maximum value at which to stop sampling."""
     xmin: DTVar
+    """The minimum value at which to start sampling."""
     # total_delta: TDVar
+    return_mask: bool = False
+    """Whether to return masks instead of indices."""
     shuffle: bool = False
+    """Whether to shuffle the data."""
 
     def __init__(
         self,
@@ -588,11 +446,12 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         tmax: Optional[DTVar] = None,
         tmin: Optional[DTVar] = None,
     ) -> None:
-        super().__init__(data_source, shuffle=shuffle)
+        super().__init__(shuffle=shuffle)
+        self.data = np.asarray(data_source)
 
         match tmin:
             case None:
-                self.xmin = self.data_source[0]
+                self.xmin = self.data[0]
             case str() as time_str:
                 self.xmin = Timestamp(time_str)
             case _:
@@ -600,7 +459,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
         match tmax:
             case None:
-                self.xmax = self.data_source[-1]
+                self.xmax = self.data[-1]
             case str() as time_str:
                 self.xmax = Timestamp(time_str)
             case _:
@@ -621,7 +480,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         self.samples = np.array(
             [
                 (
-                    (x <= self.data_source) & (self.data_source < y)  # type: ignore[operator]
+                    (x <= self.data) & (self.data < y)  # type: ignore[operator]
                     if self.return_mask
                     else [x, y]
                 )
@@ -712,7 +571,8 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         tmax: Optional[str | NumpyDTVar] = None,
         tmin: Optional[str | NumpyDTVar] = None,
     ) -> None:
-        super().__init__(data_source, shuffle=shuffle)
+        super().__init__(shuffle=shuffle)
+        self.data = np.asarray(data_source)
         self.mode = mode
         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
 

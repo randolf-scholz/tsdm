@@ -12,13 +12,13 @@ __all__ = [
     "Sampler",
     "BaseSampler",
     # Classes
-    "CollectionSampler",
     "HierarchicalSampler",
     "IntervalSampler",
     "RandomSampler",
     "SequenceSampler",
-    "SliceSampler",
     "SlidingWindowSampler",
+    "CollectionSampler",
+    "SliceSampler",
     # Functions
     "compute_grid",
 ]
@@ -29,16 +29,15 @@ from torch.utils.data import Sampler as TorchSampler
 
 from tsdm.random.samplers._samplers import (
     BaseSampler,
-    CollectionSampler,
     HierarchicalSampler,
     IntervalSampler,
     RandomSampler,
     Sampler,
     SequenceSampler,
-    SliceSampler,
     SlidingWindowSampler,
     compute_grid,
 )
+from tsdm.random.samplers._samplers_deprecated import CollectionSampler, SliceSampler
 
 SAMPLERS: Final[dict[str, type[Sampler]]] = {
     "CollectionSampler": CollectionSampler,

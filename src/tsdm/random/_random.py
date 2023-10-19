@@ -15,7 +15,7 @@ import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import Timedelta, Timestamp, date_range, timedelta_range
 
-from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS
+from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS, TIME_UNITS
 from tsdm.types.time import DTVar, TDVar
 
 __logger__ = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ def sample_timestamps(
 def sample_timedeltas(
     low: str | TDVar = "0s",
     high: str | TDVar = "1h",
-    size: Optional[int] = None,
+    size: int = 1,
     /,
     *,
     freq: str | TDVar = "1s",
@@ -90,15 +90,11 @@ def sample_timedeltas(
     # randomly sample timedeltas
     rng = np.random.default_rng()
     timedeltas = timedelta_range(low_dt, high_dt, freq=freq_dt)
-    timedeltas = rng.choice(timedeltas, size=size)
-
-    # Convert to base unit based on freq
-    units = {
-        u: np.timedelta64(1, u)
-        for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
-    }
-    base_unit = next(u for u, val in units.items() if freq_dt >= val)
-    return timedeltas.astype(f"timedelta64[{base_unit}]")
+    # convert to numpy
+    base_unit = next(u for u, val in TIME_UNITS.items() if freq_dt >= val)
+    numpy_timedeltas = np.asarray(timedeltas, dtype=base_unit)
+    sampled_timedeltas = rng.choice(numpy_timedeltas, size=size)
+    return sampled_timedeltas
 
 
 def random_data(

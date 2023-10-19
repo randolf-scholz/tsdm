@@ -18,6 +18,8 @@ from tsdm.types.protocols import (
     NTuple,
     NumericalArray,
     Shape,
+    SupportsKeysAndGetItem,
+    SupportsKwargs,
     SupportsShape,
     assert_protocol,
 )
@@ -233,3 +235,32 @@ def test_arrays_jointly() -> None:
 def test_array_all(name: str) -> None:
     """Test the Array protocol (singular dtype and ndim)."""
     assert_protocol(ARRAYS[name], Array)
+
+
+class Foo:
+    r"""Dummy class that supports `**kwargs`."""
+
+    @staticmethod
+    def keys() -> list[str]:
+        return ["some", "strings"]
+
+    def __getitem__(self, key: str) -> int:
+        return len(key)
+
+
+class Bar:
+    r"""Dummy class that does not support `**kwargs`."""
+
+    @staticmethod
+    def keys() -> list[int]:
+        return [1, 2]
+
+    def __getitem__(self, key: int) -> int:
+        return key
+
+
+def test_supportskwargs():
+    assert isinstance(Foo(), SupportsKeysAndGetItem)
+    assert isinstance(Bar(), SupportsKeysAndGetItem)
+    assert isinstance(Foo(), SupportsKwargs)
+    assert not isinstance(Bar(), SupportsKwargs)

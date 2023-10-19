@@ -4,7 +4,11 @@ __all__ = [
     # Modules
     "timeseries",
     # Protocols
-    "MapStyleDataset",
+    "MapDataset",
+    "IterableDataset",
+    "PandasDataset",
+    # Type Aliases
+    "Dataset",
     # Classes
     "DatasetCollection",
     "MappingDataset",
@@ -75,9 +79,12 @@ from tsdm.utils.data.dataloaders import (
 )
 from tsdm.utils.data.datasets import (
     DataFrame2Dataset,
+    Dataset,
     DatasetCollection,
+    IterableDataset,
+    MapDataset,
     MappingDataset,
-    MapStyleDataset,
+    PandasDataset,
 )
 from tsdm.utils.data.folds import (
     folds_as_frame,

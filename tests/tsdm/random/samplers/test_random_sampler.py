@@ -1,6 +1,5 @@
 """Test the RandomSampler."""
 
-from pandas import Index
 from pytest import mark
 
 from tsdm.random.samplers import RandomSampler
@@ -36,7 +35,7 @@ def test_random_sampler() -> None:
 @mark.flaky(reruns=2)  # 1 in 10¹² chance of failure
 def test_random_sampler_index() -> None:
     r"""Test RandomSampler."""
-    indices = Index([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+    indices = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
     sampler = RandomSampler(indices, shuffle=True)
 
     # check length

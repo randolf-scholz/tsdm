@@ -24,7 +24,9 @@ __all__ = [
     "NumericalArray",
     "MutableArray",
     # stdlib
+    "SupportsGetItem",
     "SupportsKeysAndGetItem",
+    "SupportsKwargs",
     "MappingProtocol",
     "MutableMappingProtocol",
     "SequenceProtocol",
@@ -167,6 +169,15 @@ class NTuple(Protocol[T_co]):
 
 
 # region misc protocols ----------------------------------------------------------------
+
+
+@runtime_checkable
+class Func(Protocol[P, R]):
+    """Protocol for functions, alternative to `Callable`."""
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
+
+
 @runtime_checkable
 class Lookup(Protocol[key_contra, V_co]):
     """Mapping/Sequence like generic that is contravariant in Keys."""
@@ -522,13 +533,42 @@ class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
 # - SupportsAbs (and other Supports* classes)
 
 
+@runtime_checkable
+class SupportsGetItem(Protocol[key_contra, V_co]):
+    """Protocol for objects that support `__getitem__`."""
+
+    def __getitem__(self, key: key_contra, /) -> V_co: ...
+
+
+@runtime_checkable
 class SupportsKeysAndGetItem(Protocol[K, V_co]):
     """Protocol for objects that support `__getitem__` and `keys`."""
 
     def keys(self) -> Iterable[K]: ...
-    def __getitem__(self, __key: K) -> V_co: ...
+    def __getitem__(self, key: K, /) -> V_co: ...
 
 
+class SupportsKwargsType(type(Protocol)):  # type: ignore[misc]
+    """Metaclass for `SupportsKwargs`."""
+
+    def __instancecheck__(self, other: object, /) -> bool:
+        return isinstance(other, SupportsKeysAndGetItem) and isinstance(
+            next(iter(other.keys())), str
+        )
+
+    def __subclasscheck__(self, other: type, /) -> bool:
+        raise NotImplementedError("Cannot check whether a class is a SupportsKwargs.")
+
+
+@runtime_checkable
+class SupportsKwargs(Protocol[V_co], metaclass=SupportsKwargsType):
+    """Protocol for objects that support `**kwargs`."""
+
+    def keys(self) -> Iterable[str]: ...
+    def __getitem__(self, key: str, /) -> V_co: ...
+
+
+@runtime_checkable
 class SequenceProtocol(Collection[T_co], Reversible[T_co], Protocol[T_co]):
     """Protocol version of `collections.abc.Sequence`."""
 
@@ -549,6 +589,7 @@ class SequenceProtocol(Collection[T_co], Reversible[T_co], Protocol[T_co]):
     def __reversed__(self) -> Iterator[T_co]: ...
 
 
+@runtime_checkable
 class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
     """Protocol version of `collections.abc.MutableSequence`."""
 
@@ -585,6 +626,7 @@ class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
     def __iadd__(self, values: Iterable[T]) -> Self: ...
 
 
+@runtime_checkable
 class MappingProtocol(Collection[K], Protocol[K, V_co]):
     """Protocol version of `collections.abc.Mapping`."""
 
@@ -605,6 +647,7 @@ class MappingProtocol(Collection[K], Protocol[K, V_co]):
     def __eq__(self, __other: object) -> bool: ...
 
 
+@runtime_checkable
 class MutableMappingProtocol(MappingProtocol[K, V], Protocol[K, V]):
     """Protocol version of `collections.abc.MutableMapping`."""
 
@@ -636,13 +679,6 @@ class MutableMappingProtocol(MappingProtocol[K, V], Protocol[K, V]):
     def update(self, __m: Iterable[tuple[K, V]], **kwargs: V) -> None: ...
     @overload
     def update(self, **kwargs: V) -> None: ...
-
-
-@runtime_checkable
-class Func(Protocol[P, R]):
-    """Protocol for functions, alternative to `Callable`."""
-
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
 
 
 # endregion stdlib protocols -----------------------------------------------------------

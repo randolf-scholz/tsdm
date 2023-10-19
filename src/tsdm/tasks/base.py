@@ -140,7 +140,7 @@ from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
 from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
-from tsdm.utils.data.datasets import MapStyleDataset
+from tsdm.utils.data.datasets import MapDataset
 from tsdm.utils.strings import repr_dataclass, repr_namedtuple
 
 Sample_co = TypeVar("Sample_co", covariant=True)
@@ -472,7 +472,7 @@ class ForecastingTask(Protocol[SplitID, K, Sample_co]):
         ...
 
     @property
-    def generators(self) -> Mapping[SplitID, MapStyleDataset[K, Sample_co]]:
+    def generators(self) -> Mapping[SplitID, MapDataset[K, Sample_co]]:
         r"""Dictionary holding the generator associated with each key."""
         ...
 
@@ -571,7 +571,7 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
     r"""Dictionary holding `DataLoader` associated with each key."""
     encoders: Mapping[SplitID, Encoder] = NotImplemented
     r"""Dictionary holding `Encoder` associated with each key."""
-    generators: Mapping[SplitID, MapStyleDataset[K, Sample_co]] = NotImplemented
+    generators: Mapping[SplitID, MapDataset[K, Sample_co]] = NotImplemented
     r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
     samplers: Mapping[SplitID, Sampler[K]] = NotImplemented
     r"""Dictionary holding `Sampler` associated with each key."""
@@ -696,7 +696,7 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> MapStyleDataset[K, Sample_co]:
+    def make_generator(self, key: SplitID, /) -> MapDataset[K, Sample_co]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 
