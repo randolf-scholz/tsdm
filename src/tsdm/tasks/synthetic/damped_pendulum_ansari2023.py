@@ -18,8 +18,8 @@ from sklearn.model_selection import train_test_split
 from tsdm import datasets
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import SplitID, TimeSeriesTask
+from tsdm.tasks.utils import FixedSliceSampleGenerator
 from tsdm.utils.data import folds_as_frame, is_partition
-from tsdm.utils.data.datasets import DataFrame2Dataset
 
 
 @final
@@ -49,14 +49,27 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
     valid_size = 1000
     test_size = 1000
 
-    def __init__(self, validate: bool = True, initialize: bool = True) -> None:
+    observation_horizon: float = 10.0
+    prediction_horizon: float = 5.0
+
+    def __init__(
+        self,
+        *,
+        validate: bool = True,
+        initialize: bool = True,
+        missing_rate: float = 0.0,
+    ) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
         timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
 
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
 
-    def make_generator(self, key: SplitID, /) -> DataFrame2Dataset[int]:
-        return DataFrame2Dataset(self.splits[key].timeseries)
+    def make_generator(self, key: SplitID, /) -> FixedSliceSampleGenerator:
+        return FixedSliceSampleGenerator(
+            self.splits[key].timeseries,
+            input_slice=slice(None, self.observation_horizon),
+            target_slice=slice(self.observation_horizon, None),
+        )
 
     def make_sampler(self, key: SplitID, /) -> Sampler[int]:
         return RandomSampler(self.splits[key].metaindex)

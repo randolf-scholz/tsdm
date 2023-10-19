@@ -1,13 +1,6 @@
-#!/usr/bin/env python
 r"""Testing Attribute Serialization."""
 
-import logging
-
-import pytest
 from torch import jit, nn
-
-logging.basicConfig(level=logging.INFO)
-__logger__ = logging.getLogger(__name__)
 
 
 def validate_model_attribute(model: nn.Module, attr: str) -> None:
@@ -36,17 +29,3 @@ def validate_model_attribute(model: nn.Module, attr: str) -> None:
         print(f"{loaded_model}.{attr}={attribute}")
     else:
         print(f"{loaded_model}.{attr} does not exist")
-
-
-@pytest.mark.skip(reason="not implemented")
-def test_model_serialization() -> None:
-    """Test the serialization of models."""
-    __logger__.info("Testing %s.", object)
-
-
-def _main() -> None:
-    test_model_serialization()
-
-
-if __name__ == "__main__":
-    _main()

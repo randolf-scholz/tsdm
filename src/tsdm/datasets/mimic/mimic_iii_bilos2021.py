@@ -22,9 +22,8 @@ import os
 import subprocess
 from getpass import getpass
 
-import numpy as np
+import pandas as pd
 from pandas import DataFrame
-from pyarrow import Table, csv
 
 from tsdm.datasets.base import SingleTableDataset
 
@@ -58,12 +57,16 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
     }
     rawdata_schemas = {
         "complete_tensor.csv": {
-            "hadm_id": "int32[pyarrow]",
-            "time_stamp": "int16[pyarrow]",
+            "UNIQUE_ID": "int16",
+            "TIME_STAMP": "int16",
+            "LABEL_CODE": "int16",
+            "VALUENORM": "float32",
+            "MEAN": "float32",
+            "STD": "float32",
         }
     }
 
-    rawdata_shape = (3082224, 7)
+    rawdata_shapes = {"complete_tensor.csv": (3082224, 7)}
     table_names = ["timeseries"]
     table_hashes = {
         "timeseries": "pandas:-5464950709022187442",
@@ -75,31 +78,28 @@ class MIMIC_III_Bilos2021(SingleTableDataset):
 
     def clean_table(self) -> DataFrame:
         self.LOGGER.info("Loading main file.")
-        table: Table = csv.read_csv(self.rawdata_paths["complete_tensor.csv"])
+        ts = pd.read_csv(self.rawdata_paths["complete_tensor.csv"], index_col=0)
 
-        # Convert to pandas.
+        # Check shape.
+        if ts.shape != self.rawdata_shapes["complete_tensor.csv"]:
+            raise ValueError(
+                f"The {ts.shape=} is not correct.Please apply the modified"
+                " preprocessing using bin_k=2, as outlined inthe appendix. The"
+                " resulting tensor should have 3082224 rows and 7 columns."
+            )
+
+        # Extract Original Data Table.
         ts = (
-            table.to_pandas(self_destruct=True)
-            .astype(self.rawdata_schemas["complete_tensor.csv"])
-            .set_index(["hadm_id", "time_stamp"])
-            .sort_index()
-        )
-
-        # Remove mask columns, replace values with nan.
-        # Original labels: Value_label_k, Mask_label_k for k in 0, ..., 99.
-        for i, col in enumerate(ts):
-            if i % 2 == 1:
-                continue
-            assert ts.columns[i + 1] == col.replace("Value", "Mask")
-            ts[col] = np.where(ts.iloc[:, i + 1], ts[col], np.nan)
-
-        # Drop mask columns.
-        ts = (
-            ts.drop(columns=ts.columns[1::2])
-            .dropna(how="all")
+            ts.astype(self.rawdata_schemas["complete_tensor.csv"])
+            .loc[:, ["UNIQUE_ID", "TIME_STAMP", "LABEL_CODE", "VALUENUM"]]
+            .reset_index(drop=True)
+            .set_index(["UNIQUE_ID", "TIME_STAMP"])
+            .pivot(columns="LABEL_CODE", values="VALUENUM")
             .astype("float32")
-            .sort_index(axis="columns")
+            .sort_index()
+            .sort_index(axis=1)
         )
+        ts.columns = ts.columns.astype("string")
 
         # NOTE: For the MIMIC-III and MIMIC-IV datasets, Bilos et al. perform standardization
         #  over the full data slice, including test!

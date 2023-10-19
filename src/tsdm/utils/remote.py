@@ -18,7 +18,7 @@ from io import IOBase
 from pathlib import Path
 from typing import IO, Any, Optional
 from urllib.parse import urlparse
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZipFile
 
 import requests
 from requests import Session
@@ -63,7 +63,7 @@ def download_io(
             "stream": True,
             "timeout": 10,
         } | request_options
-        response = requests.get(url, **request_options)  # type: ignore[arg-type]
+        response = requests.get(url, **request_options)
     else:
         response = session.get(url)
 
@@ -105,7 +105,7 @@ def stream_download(
             "stream": True,
             "timeout": 10,
         } | request_options
-        response = requests.get(url, **request_options)  # type: ignore[arg-type]
+        response = requests.get(url, **request_options)
     else:
         response = session.get(url)
 
@@ -141,7 +141,8 @@ def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
     for link in parser.links:
         if link == "../":
             continue
-        elif link.endswith("/"):  # Recursion
+
+        if link.endswith("/"):  # Recursion
             yield from iter_content(url + link, session=session)
         else:
             yield url + link
@@ -171,8 +172,16 @@ def download_directory_to_zip(
     password: Optional[str] = None,
     headers: Mapping[str, str] = EMPTY_MAP,
     stream: bool = True,
+    add_toplevel_dir: bool = True,
+    zip_options: Mapping[str, Any] = EMPTY_MAP,
 ) -> None:
     """Download a directory from a URL to a zip file."""
+    path = Path(zip_filename)
+    assert path.suffix == ".zip", f"{path=} must have .zip suffix!"
+    stem = f"{path.stem}/" if add_toplevel_dir else ""
+    zip_options = {"mode": "w"} | zip_options
+
+    # Create a session
     with Session() as session:
         session.auth = (
             (username, password)
@@ -191,13 +200,15 @@ def download_directory_to_zip(
 
         # Get the contents of the directory
         content: list[str] = sorted(iter_content(url, session=session))
+
         # Download the directory
-        with ZipFile(zip_filename, "w", compression=ZIP_DEFLATED) as archive:
+        with ZipFile(zip_filename, **zip_options) as archive:
             for href in (pbar := tqdm(content)):
                 # get relative path w.r.t. the base url
                 file_name = os.path.relpath(href, url)
                 pbar.set_description(f"Downloading {file_name}")
-                with archive.open(file_name, "w") as file:
+                # file_size = int(session.head(href).headers.get("content-length", 0))
+                with archive.open(stem + file_name, "w", force_zip64=True) as file:
                     download_io(href, file, session=session)
 
 

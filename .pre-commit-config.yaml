@@ -44,7 +44,7 @@ repos:
         stages: [pre-push, manual]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # https://pre-commit.com/hooks.html
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-added-large-files
         description: "prevents giant files from being committed."
@@ -108,7 +108,7 @@ repos:
       - id: isort
   # black
   - repo: https://github.com/psf/black
-    rev: 23.9.1
+    rev: 23.10.0
     hooks:
       - id: black
       - id: black-jupyter
@@ -121,7 +121,7 @@ repos:
         types: [python]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.292
+    rev: v0.1.0
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -167,7 +167,7 @@ repos:
         files: ^dev/
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.329
+    rev: v1.1.332
     hooks:
       - id: pyright
         # not everything works with pyright yet
@@ -195,7 +195,7 @@ repos:
             |tests/tsdm/viz
             #|src/tsdm/
             |src/tsdm/constants.py
-            #|src/tsdm/backend
+            |src/tsdm/backend
             |src/tsdm/config
             #|src/tsdm/datasets
             #|src/tsdm/encoders

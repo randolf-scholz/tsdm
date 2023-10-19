@@ -74,9 +74,46 @@ class Encoder(Protocol[U, V]):
         r"""Return the inverse encoder (i.e. decoder)."""
         ...
 
-    def __matmul__(self, other: Encoder[V, W], /) -> Encoder[U, W]:
-        r"""Return chained encoders."""
+    def __matmul__(self, other: Encoder[X, U], /) -> Encoder[X, V]:
+        r"""Chain the encoders (pure function composition).
+
+        Example:
+            enc = enc1 @ enc2
+            enc(x) == enc1(enc2(x))
+
+        Raises:
+            TypeError if other is not an encoder.
+        """
         ...
+
+    def __gt__(self, other: Encoder[V, W], /) -> Encoder[U, W]:
+        r"""Pipe the encoders (encoder composition).
+
+        Note that the order is reversed compared to `@`.
+
+        Example:
+            enc = enc1 > enc2
+            enc.encode(x) == enc2.encode(enc1.encode(x))
+            enc.decode(y) == enc1.decode(enc2.decode(y))
+
+        Note:
+            - `>` is associative:
+                (enc1 > enc2) > enc3 == enc1 > (enc2 > enc3)
+              Proof::
+                 ((A > B) > C).encode(x)
+                     = C.encode((A > B).encode(x))
+                     = C.encode(B.encode(A.encode(x)))
+                 (A > (B > C)).encode(x)
+                     = (B > C).encode(A.encode(x))
+                     = C.encode(B.encode(A.encode(x)))
+            - inverse law:
+              ~(enc1 > enc2) == ~enc2 > ~enc1
+              Proof::
+                  ~(A > B).encode(x)
+                      = (A > B).decode(x)
+                      = B.decode(A.decode(x))
+        """
+        return other @ self
 
     # FIXME: Encoder[tuple[U, X], tuple[V, Y]] causes segmentation fault
     def __or__(self, other: Encoder[X, Y], /) -> Encoder:
@@ -541,7 +578,7 @@ def direct_sum_encoders(
     *encoders: E,
     simplify: Literal[False],
 ) -> ProductEncoder[E]: ...
-def direct_sum_encoders(  # type: ignore[misc]
+def direct_sum_encoders(
     *encoders: E, simplify: bool = True, copy: bool = True
 ) -> Encoder:
     r"""Product-Type for Encoders.

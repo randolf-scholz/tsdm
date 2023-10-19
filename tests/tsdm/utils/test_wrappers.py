@@ -1,11 +1,9 @@
-#!/usr/bin/env python
-r"""TODO: Add Test summary."""
+r"""Test iteration wrapper functions."""
 
 import logging
 
 from tsdm.utils.wrappers import iter_items, iter_keys, iter_values
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -109,13 +107,3 @@ def test_itervalues() -> None:
     # test __iter__
     for element in iter_obj:
         assert isinstance(element, int)
-
-
-def _main() -> None:
-    test_iteritems()
-    test_iterkeys()
-    test_itervalues()
-
-
-if __name__ == "__main__":
-    _main()

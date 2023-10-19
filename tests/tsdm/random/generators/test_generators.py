@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-r"""Test PhysioNet 2012."""
-
+r"""Test synthetic generators."""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -136,14 +134,3 @@ def test_sir_model() -> None:
 
     # save plot
     fig.savefig(RESULT_DIR / "sir_model.png")
-
-
-def __main__():
-    test_bouncing_ball()
-    test_lotka_volterra()
-    test_damped_pendulum()
-    test_sir_model()
-
-
-if __name__ == "__main__":
-    __main__()

@@ -279,9 +279,10 @@ class EvaluationCallback(BaseCallback):
     _: KW_ONLY
 
     dataloaders: Mapping[str, DataLoader]
-    metrics: Sequence[str | Metric | type[Metric]] | Mapping[
-        str, str | Metric | type[Metric]
-    ]
+    metrics: (
+        Sequence[str | Metric | type[Metric]]
+        | Mapping[str, str | Metric | type[Metric]]
+    )
     model: Model
     predict_fn: Callable[..., tuple[Tensor, Tensor]]
     writer: SummaryWriter
@@ -542,9 +543,10 @@ class LRSchedulerCallback(BaseCallback):
 class MetricsCallback(BaseCallback):
     """Callback to log multiple metrics to tensorboard."""
 
-    metrics: Sequence[str | Metric | type[Metric]] | Mapping[
-        str, str | Metric | type[Metric]
-    ]
+    metrics: (
+        Sequence[str | Metric | type[Metric]]
+        | Mapping[str, str | Metric | type[Metric]]
+    )
     writer: SummaryWriter
 
     _: KW_ONLY

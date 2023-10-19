@@ -1,6 +1,5 @@
 r"""Tasks associated with the Electricity dataset."""
 
-
 __all__ = [
     # CLASSES
     "ElectricityDeepState",

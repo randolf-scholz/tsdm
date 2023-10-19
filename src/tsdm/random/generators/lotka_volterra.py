@@ -52,13 +52,13 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
     """Noise distribution."""
 
-    def _get_initial_state(self, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         theta0 = self.prey0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.predator0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
-    def _make_observations(self, x: NDArray, /) -> NDArray:
+    def _make_observations_impl(self, x: NDArray, /) -> NDArray:
         """Create observations from the solution."""
         # multiplicative noise
         return x * self.observation_noise.rvs(size=x.shape)

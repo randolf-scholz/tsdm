@@ -130,7 +130,8 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
             .sort_index(axis=1)
         )
         ts.columns = ts.columns.astype("string")
-        return ts
+
+        return ts.astype("float32")
 
     def download_file(self, fname: str, /) -> None:
         if not self.rawdata_files_exist():

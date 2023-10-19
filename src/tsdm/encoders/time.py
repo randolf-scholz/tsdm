@@ -8,24 +8,20 @@ __all__ = [
     "SocialTimeEncoder",
     "Time2Float",
     "TimeDeltaEncoder",
-    "TimeSlicer",
 ]
 
-from collections.abc import Hashable, Sequence
+from collections.abc import Hashable
 from copy import deepcopy
-from typing import Any, ClassVar, Final, Literal, Optional, cast, overload
+from typing import Any, ClassVar, Final, Literal, Optional, cast
 
 import numpy as np
 import pandas as pd
-import torch
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
-from torch import Tensor
 from typing_extensions import Self, deprecated
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasObject
-from tsdm.utils.data.timeseries import TimeTensor
 
 
 @deprecated("decode unimplemented")
@@ -363,69 +359,3 @@ class PositionalEncoder(BaseEncoder):
     def decode(self, data: np.ndarray, /) -> np.ndarray:
         r""".. Signature:: ``(..., 2d) -> ...``."""
         return np.arcsin(data[..., 0])
-
-
-class TimeSlicer(BaseEncoder):
-    r"""Reorganizes the data by slicing."""
-
-    requires_fit: ClassVar[bool] = False
-
-    horizon: Any
-    r"""The horizon of the data."""
-
-    # TODO: multiple horizons
-
-    def __init__(self, horizon: Any) -> None:
-        super().__init__()
-        self.horizon = horizon
-
-    @staticmethod
-    def is_tensor_pair(data: Any, /) -> bool:
-        r"""Check if the data is a pair of tensors."""
-        if isinstance(data, Sequence) and len(data) == 2:
-            if isinstance(data[0], Tensor) and isinstance(data[1], Tensor):
-                return True
-        return False
-
-    @overload
-    def encode(self, data: TimeTensor, /) -> Sequence[TimeTensor]: ...
-    @overload
-    def encode(
-        self, data: Sequence[TimeTensor], /
-    ) -> Sequence[Sequence[TimeTensor]]: ...
-    @overload
-    def encode(
-        self,
-        data: Sequence[tuple[Tensor, Tensor]],
-        /,
-    ) -> Sequence[Sequence[tuple[Tensor, Tensor]]]: ...
-    def encode(self, data, /):
-        r"""Slice the data.
-
-        Provide pairs of tensors (T, X) and return a list of pairs (T_sliced, X_sliced).
-        """
-        if isinstance(data, TimeTensor):
-            return data[: self.horizon], data[self.horizon]
-        if self.is_tensor_pair(data):
-            T, X = data
-            idx = T <= self.horizon
-            return (T[idx], X[idx]), (T[~idx], X[~idx])
-        return tuple(self.encode(item) for item in data)
-
-    @overload
-    def decode(self, data: Sequence[TimeTensor], /) -> TimeTensor: ...
-    @overload
-    def decode(
-        self, data: Sequence[Sequence[TimeTensor]], /
-    ) -> Sequence[TimeTensor]: ...
-    @overload
-    def decode(
-        self,
-        data: Sequence[Sequence[tuple[Tensor, Tensor]]],
-        /,
-    ) -> Sequence[tuple[Tensor, Tensor]]: ...
-    def decode(self, data, /):
-        r"""Restores the original data."""
-        if isinstance(data[0], TimeTensor) or self.is_tensor_pair(data[0]):
-            return torch.cat(data, dim=0)
-        return tuple(self.decode(item) for item in data)

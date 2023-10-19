@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test converters to masked format etc."""
 
 import logging
@@ -7,7 +6,6 @@ from pandas import NA, DataFrame, testing
 
 from tsdm.encoders.functional import make_masked_format
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -35,11 +33,3 @@ def test_make_masked_format() -> None:
     testing.assert_frame_equal(x, data, check_dtype=False)
     testing.assert_frame_equal(m, mask, check_dtype=False)
     testing.assert_frame_equal(d, diff, check_dtype=False)
-
-
-def _main() -> None:
-    test_make_masked_format()
-
-
-if __name__ == "__main__":
-    _main()

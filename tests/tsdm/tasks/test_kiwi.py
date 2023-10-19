@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test task implementation with InSilico."""
 
 import logging
@@ -16,7 +15,6 @@ from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark, TimeSeriesSampleGenerator
 from tsdm.tasks.base import Sample
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -90,11 +88,3 @@ def test_kiwi_task(SplitID=(0, "train")):
     assert isinstance(batch, list | tuple)
     sample = batch[0]
     assert isinstance(sample, tuple | Tensor)
-
-
-def _main() -> None:
-    test_kiwi_task()
-
-
-if __name__ == "__main__":
-    _main()

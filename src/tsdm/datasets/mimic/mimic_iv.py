@@ -143,6 +143,9 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
         "mimic-iv-1.0.zip": (
             "sha256:dd226e8694ad75149eed2840a813c24d5c82cac2218822bc35ef72e900baad3d"
         ),
+        "mimic-iv-2.0.zip": (
+            "sha256:e11e9a56d234f2899714fb1712255abe0616dfcc6cba314178e8055b8765b3b9"
+        ),
         "mimic-iv-2.2.zip": (
             "sha256:ddcedf49da4ff9a29ee25780b6ffc654d08af080fc1130dd0128a29514f21a74"
         ),
@@ -259,15 +262,15 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
                 password=getpass(prompt="MIMIC-IV password: ", stream=None),
                 headers={"User-Agent": "Wget/1.21.2"},
             )
-
-        self.download_from_url(
-            f"{self.BASE_URL}/{self.__version__}/",
-            self.rawdata_paths[fname],
-            username=input("MIMIC-IV username: "),
-            password=getpass(prompt="MIMIC-IV password: ", stream=None),
-            # NOTE: MIMIC only allows wget for some reason...
-            headers={"User-Agent": "Wget/1.21.2"},
-        )
+        else:
+            self.download_from_url(
+                f"{self.BASE_URL}/{self.__version__}/",
+                self.rawdata_paths[fname],
+                username=input("MIMIC-IV username: "),
+                password=getpass(prompt="MIMIC-IV password: ", stream=None),
+                # NOTE: MIMIC only allows wget for some reason...
+                headers={"User-Agent": "Wget/1.21.2"},
+            )
 
 
 class MIMIC_IV(MIMIC_IV_RAW):
@@ -425,6 +428,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
                 pass
             case "poe_detail":
                 table = (
+                    # NOTE: we use polars because pandas is too slow.
                     pl.from_arrow(table)
                     .pivot(  # type: ignore[union-attr]
                         index=["poe_id", "poe_seq", "subject_id"],

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Test scaled norm."""
 
 import torch
@@ -71,7 +70,3 @@ def test_shape(
     assert tensor_norm.shape == reference_shape
     assert torch.allclose(tensor_norm, reference_norm, atol=ATOL, rtol=RTOL)
     assert torch.allclose(scaled_norm, reference_scaled_norm, atol=ATOL, rtol=RTOL)
-
-
-if __name__ == "__main__":
-    pass

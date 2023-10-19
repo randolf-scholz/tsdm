@@ -42,7 +42,6 @@
       <excludeFolder url="file://$MODULE_DIR$/experiments/.virtual_documents" />
       <excludeFolder url="file://$MODULE_DIR$/experiments/runs" />
       <excludeFolder url="file://$MODULE_DIR$/experiments/.ipynb_checkpoints" />
-      <excludeFolder url="file://$MODULE_DIR$/bugs" />
       <excludeFolder url="file://$MODULE_DIR$/examples/.virtual_documents" />
       <excludeFolder url="file://$MODULE_DIR$/docs/apidoc" />
       <excludeFolder url="file://$MODULE_DIR$/dev/datasets/MIMIC-IV/processed" />

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Check pandas MultiIndex Slicing."""
 
 import numpy as np
@@ -43,7 +42,3 @@ def test_multiindex_slicing_2levels():
     )
     mask = pd.Series(np.random.randn(len(mask_index)) > 0.5, index=mask_index)
     _ = df.loc[mask]
-
-
-if __name__ == "__main__":
-    pass

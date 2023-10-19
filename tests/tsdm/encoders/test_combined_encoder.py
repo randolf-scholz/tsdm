@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 r"""Test the standardizer encoder."""
 
-import logging
 import pickle
 
 import numpy as np
@@ -26,8 +24,6 @@ from tsdm.encoders import (
 from tsdm.tasks import KiwiBenchmark
 
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
-logging.basicConfig(level=logging.INFO)
-__logger__ = logging.getLogger(__name__)
 
 
 @mark.slow
@@ -59,7 +55,7 @@ def test_combined_encoder(SplitID=(0, "train")):
                     @ BoundaryEncoder(lower, upper, mode="clip")
                 )
             case "absolute":
-                if pd.notna(upper) and upper < np.inf:
+                if upper is not None and upper < np.inf:
                     column_encoders[col] = (
                         BoxCoxEncoder()
                         # @ MinMaxScaler(lower, upper)
@@ -138,33 +134,3 @@ def test_combined_encoder(SplitID=(0, "train")):
         loaded_encoder = pickle.load(file)
 
     assert isinstance(loaded_encoder, BaseEncoder)
-
-
-def _main() -> None: ...
-
-
-if __name__ == "__main__":
-    _main()
-
-# encoder = (
-#    FrameAsDict(
-#        groups={
-#            "key": ["run_id", "experiment_id"],
-#            "T": ["measurement_time"],
-#            "X": ...,
-#        },
-#        dtypes={"T": "float32", "X": "float32"},
-#        encode_index=True,
-#    )
-#    @ Standardizer()
-#    @ FrameEncoder(
-#        column_encoders=column_encoders,
-#        index_encoders={
-#            "measurement_time": MinMaxScaler() @ TimeDeltaEncoder(),
-#        },
-#    )
-# )
-# encoder.fit(ts)  # fit encoder to the whole dataset
-# encoded = encoder.encode(ts)
-# decoded = encoder.decode(encoded)
-#

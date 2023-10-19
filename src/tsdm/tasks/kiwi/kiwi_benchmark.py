@@ -300,7 +300,7 @@ class KiwiBenchmark(TimeSeriesTask):
         assert not sampler_kwargs, f"Unknown sampler_kwargs: {sampler_kwargs}"
 
         subsamplers = {
-            key: SlidingWindowSampler(  # type: ignore[type-var]
+            key: SlidingWindowSampler(
                 tsd.timeindex,
                 horizons=[observation_horizon, forecasting_horizon],
                 stride=stride,

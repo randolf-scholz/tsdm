@@ -12,6 +12,7 @@ T = TypeVar("T")
 
 class _NamedTuple(tuple[T, ...], ABC):
     r"""To check for namedtuple."""
+
     __slots__ = ()
 
     @abstractmethod

@@ -113,13 +113,13 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
     """Noise distribution."""
 
-    def _get_initial_state(self, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         theta0 = self.theta0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.omega0 * self.parameter_noise.rvs(size=size).clip(-2, +2)
         return np.stack([theta0, omega0], axis=-1)
 
-    def _make_observations(self, y: NDArray, /) -> NDArray:
+    def _make_observations_impl(self, y: NDArray, /) -> NDArray:
         """Create observations from the solution."""
         # add observation noise
         return y + self.observation_noise.rvs(size=y.shape)
@@ -156,7 +156,7 @@ class DampedPendulumXY(DampedPendulum):
     This variant returns only cartesian coordinates.
     """
 
-    def _make_observations(self, y: NDArray, /, *, noise: float = 0.05) -> NDArray:
+    def _make_observations_impl(self, y: NDArray, /, *, noise: float = 0.05) -> NDArray:
         """Create observations from the solution.
 
         Noise is automatically scaled by the length of the pendulum.

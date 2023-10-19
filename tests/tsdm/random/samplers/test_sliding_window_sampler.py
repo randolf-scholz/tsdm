@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test Sliding Window Sampler."""
 
 import logging
@@ -9,7 +8,6 @@ from pandas import DataFrame, Series
 
 from tsdm.random.samplers import SlidingWindowSampler
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -36,11 +34,3 @@ def test_SlidingWindowSampler():
     X = DataFrame(np.random.randn(len(T), 2), columns=["ch1", "ch2"], index=T)
     assert len(indices) >= 0 and len(X) > 0  # TODO: implement test
     # samples = X.loc[indices]
-
-
-def _main() -> None:
-    test_SlidingWindowSampler()
-
-
-if __name__ == "__main__":
-    _main()

@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 r"""Test loss function normalization."""
 
-from itertools import product
 from math import pi, prod, sqrt
 
 import pytest
@@ -101,15 +99,3 @@ def test_time_loss_normalization(
     assert (
         abs(result - expected) < rtol * abs(expected) + atol
     ), f"tolerance exceeded! {shape=}, {result=}, {expected=}"
-
-
-def _main() -> None:
-    for loss, b_shape, c_shape in product(LOSSES, BATCH_SHAPES, CHANNEL_SHAPES):
-        test_loss_normalization(loss, b_shape, c_shape)  # type: ignore[type-abstract]
-
-    for b_shape, t_shape, c_shape in product(BATCH_SHAPES, TIME_SHAPES, CHANNEL_SHAPES):
-        test_time_loss_normalization(b_shape, t_shape, c_shape)
-
-
-if __name__ == "__main__":
-    _main()

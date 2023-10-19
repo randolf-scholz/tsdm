@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Testing of In Silico dataset, as a token for the whole BaseDataset architecture."""
 
 import logging
@@ -35,13 +34,3 @@ def test_dataset_protocol() -> None:
     ds = InSilico()
     assert isinstance(ds, Dataset)
     assert isinstance(ds, BaseDataset)
-
-
-def _main() -> None:
-    logging.basicConfig(level=logging.INFO)
-    test_caching()
-    test_dataset_protocol()
-
-
-if __name__ == "__main__":
-    _main()

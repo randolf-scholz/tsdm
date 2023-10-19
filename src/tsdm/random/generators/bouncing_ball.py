@@ -50,7 +50,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
     y_noise: Final[float] = 0.05
     """Standard deviation of the observation noise."""
 
-    def _get_initial_state(self, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         x0 = np.random.uniform(low=self.x_min, high=self.x_max, size=size)
         v0 = np.random.uniform(
@@ -58,7 +58,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
         ) * np.random.choice([-1, 1], size=size)
         return np.stack([x0, v0], axis=-1)
 
-    def _make_observations(self, loc: NDArray, /) -> NDArray:
+    def _make_observations_impl(self, loc: NDArray, /) -> NDArray:
         """Create observations from the solution."""
         x = loc[..., 0]
         # sample from truncated normal distribution
@@ -68,7 +68,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
         y = truncnorm.rvs(lower, upper, loc=x, scale=self.y_noise)
         return y
 
-    def _solve_ivp(self, t: ArrayLike, *, y0: ArrayLike) -> NDArray:
+    def _solve_ivp_impl(self, t: ArrayLike, *, y0: ArrayLike) -> NDArray:
         """Solve the initial value problem.
 
         NOTE: possibly not properly vectorized.

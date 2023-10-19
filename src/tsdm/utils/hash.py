@@ -308,15 +308,15 @@ def validate_file_hash(
     # Finally, compare the hashes.
     if file.suffix == ".parquet":
         warnings.warn(
-            f"Parquet file {file.name!r} not validated since the format is not binary"
-            f" stable! The {hash_algorithm!r}-hash is {hash_value!r}.",
+            f"{file!s} ✘✘ refusing to validate, since parquet is not binary stable!"
+            f" Hash {hash_algorithm!s}:{hash_value!s}",
             UserWarning,
             stacklevel=2,
         )
     elif reference_hash is None:
         msg = (
-            f"No reference hash given for file {file.name!r}."
-            f" The {hash_algorithm!r}-hash is {hash_value!r}."
+            f"{file!s} ?? cannot be validated, since no reference hash is given!"
+            f" Hash {hash_algorithm!s}:{hash_value!s}"
         )
         match errors:
             case "raise":
@@ -327,8 +327,8 @@ def validate_file_hash(
                 logger.info(msg)
     elif hash_value != reference_hash:
         msg = (
-            f"File {file.name!r} failed to validate!"
-            f" The {hash_algorithm!r}-hash-value {hash_value!r}"
+            f"{file!s} ✘✘ failed the validation!"
+            f" Hash {hash_algorithm!s}:{hash_value!s}"
             f" does not match reference {reference_hash!r}."
         )
         match errors:
@@ -340,7 +340,7 @@ def validate_file_hash(
                 logger.info(msg)
     else:
         logger.info(
-            "File '%s' validated successfully with '%s'-hash '%s'.",
+            "%s ✔✔ successful validation! Hash %s:%s matches reference.",
             *(file, hash_algorithm, hash_value),
         )
 

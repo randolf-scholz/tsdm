@@ -9,12 +9,16 @@ References
 
 __all__ = [
     # Classes
-    "SupportsShape",
     "Dataclass",
     "Hash",
     "Lookup",
     "NTuple",
     "Shape",
+    # Mixins
+    "SupportsDevice",
+    "SupportsDtype",
+    "SupportsNdim",
+    "SupportsShape",
     # Arrays
     "Array",
     "NumericalArray",
@@ -27,7 +31,12 @@ __all__ = [
     "MutableSequenceProtocol",
     "Func",  # alternative to Callable
     # Functions
+    "assert_protocol",
     "is_dataclass",
+    # TypeVars
+    "ArrayType",
+    "NumericalArrayType",
+    "MutableArrayType",
 ]
 
 import dataclasses
@@ -40,7 +49,6 @@ from collections.abc import (
     KeysView,
     Mapping,
     Reversible,
-    Sequence,
     ValuesView,
 )
 from typing import (
@@ -56,7 +64,12 @@ from typing import (
 
 import numpy as np
 from numpy.typing import NDArray
-from typing_extensions import Self, SupportsIndex, get_original_bases
+from typing_extensions import (
+    Self,
+    SupportsIndex,
+    get_original_bases,
+    get_protocol_members,
+)
 
 from tsdm.types.variables import (
     any_co as T_co,
@@ -70,11 +83,29 @@ from tsdm.types.variables import (
     value_var as V,
 )
 
-A = TypeVar("A", bound="Array")
+ArrayType = TypeVar("ArrayType", bound="Array")
+NumericalArrayType = TypeVar("NumericalArrayType", bound="NumericalArray")
+MutableArrayType = TypeVar("MutableArrayType", bound="MutableArray")
 P = ParamSpec("P")
 
 
 # region generic factory-protocols -----------------------------------------------------
+def assert_protocol(obj: Any, proto: type, /) -> None:
+    """Assert that the object is a given protocol."""
+    if isinstance(obj, type):
+        match = issubclass(obj, proto)
+        name = obj.__name__
+    else:
+        match = isinstance(obj, proto)
+        name = obj.__class__.__name__
+
+    if not match:
+        raise AssertionError(
+            f"{name} is not a {proto.__name__}!"
+            f"\n Missing Attributes: {get_protocol_members(proto) - set(dir(obj))}"
+        )
+
+
 @runtime_checkable
 class Dataclass(Protocol):
     r"""Protocol for anonymous dataclasses."""
@@ -223,17 +254,38 @@ class SupportsShape(Protocol[scalar_co]):
     r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
 
     @property
-    def shape(self) -> Sequence[int]:
+    def shape(self) -> tuple[int, ...]:
         """Yield the shape of the array."""
         ...
 
-    def __len__(self) -> int:
-        """Number of elements along the first axis."""
+
+@runtime_checkable
+class SupportsDtype(Protocol):
+    r"""We just test for dtype, since e.g. tf.Tensor does not have ndim."""
+
+    @property
+    def dtype(self) -> str | np.dtype | type:
+        r"""Yield the data type of the array."""
         ...
 
-    # binary operations
-    def __getitem__(self, key: Any, /) -> Self | scalar_co:
-        """Return an element/slice of the table."""
+
+@runtime_checkable
+class SupportsNdim(Protocol):
+    r"""We just test for ndim, since e.g. tf.Tensor does not have ndim."""
+
+    @property
+    def ndim(self) -> int:
+        r"""Number of dimensions."""
+        ...
+
+
+@runtime_checkable
+class SupportsDevice(Protocol):
+    """Protocol for objects that support `device`."""
+
+    @property
+    def device(self) -> Any:
+        """Return the device of the tensor."""
         ...
 
 
@@ -251,10 +303,17 @@ class Array(Protocol[scalar_co]):
 
     Does not match with
 
-    - `pandas.DataFrame`
-    - `pyarrow.Table`
-    - `pyarrow.Array`
+    - `pandas.DataFrame`  (reason: dtypes instead of dtype, __getitem__ returns a Series)
+    - `pyarrow.Table`  (reason: no dtype, __getitem__ returns a Series)
+    - `pyarrow.Array`  (reason: no dtype, __getitem__ returns a scalar)
+
+    References:
+        - https://docs.python.org/3/c-api/buffer.html
+        - https://numpy.org/doc/stable/reference/arrays.interface.html
+
     """
+
+    # NOTE: This is a highly cut down version, to support the bare minimum.
 
     def __array__(self) -> NDArray:
         """Return a numpy array.
@@ -264,38 +323,41 @@ class Array(Protocol[scalar_co]):
         """
         ...
 
-    @property
-    def ndim(self) -> int:
-        r"""Number of dimensions."""
-        ...
-
-    @property
-    def dtype(self) -> scalar_co | np.dtype | type:
-        r"""Yield the data type of the array."""
-        ...
-
-    @property
-    def shape(self) -> tuple[int, ...]:
-        """Yield the shape of the array."""
-        ...
-
     def __len__(self) -> int:
         """Number of elements along the first axis."""
         ...
 
-    def __iter__(self) -> Iterator[Self]:
-        """Iterate over the first dimension."""
+    # @property
+    # def ndim(self) -> int:
+    #     r"""Number of dimensions."""
+    #     ...
+
+    # def __iter__(self) -> Iterator[Self]:
+    #     """Iterate over the first dimension."""
+    #     ...
+
+    # @property
+    # def shape(self) -> tuple[int, ...]:
+    #     """Yield the shape of the array."""
+    #     ...
+
+    def __getitem__(self, key: Any, /) -> Self | scalar_co:
+        """Return an element/slice of the table."""
         ...
 
-    # binary operations
+    def take(self, indices: Any) -> Self | scalar_co:
+        """Return an element/slice of the table."""
+        ...
+
     # @overload
     # def __getitem__(self, key, /):
-    def __getitem__(self, key: None | slice | list | tuple | Self, /) -> Self:
-        """Return an element/slice of the array."""
-        ...
+    # def __getitem__(self, key: None | slice | list | tuple | Self, /) -> Self:
+    #     """Return an element/slice of the array."""
+    #     ...
 
 
-class NumericalArray(Array[Scalar], Protocol[Scalar]):
+@runtime_checkable
+class NumericalArray(Array[Scalar], SupportsShape, Protocol[Scalar]):
     r"""Subclass of `Array` that supports numerical operations.
 
     Note:
@@ -390,6 +452,7 @@ class NumericalArray(Array[Scalar], Protocol[Scalar]):
     # def __rrshift__(self, other: Self | Scalar, /) -> Self: ...
 
 
+@runtime_checkable
 class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
     r"""Subclass of `Array` that supports inplace operations."""
 

@@ -2,7 +2,7 @@
 # Template: https://gitlab.com/gitlab-org/gitlab/-/tree/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
 
 # region global --------------------------------------------------------------------------------------------------------
-image: python:3.10
+image: python:3.11
 
 stages:
   - build

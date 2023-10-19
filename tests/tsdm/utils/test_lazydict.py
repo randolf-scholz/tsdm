@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test LazyDict."""
 
 import logging
@@ -8,7 +7,6 @@ import pytest
 
 from tsdm.utils import LazyDict, LazyValue
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -130,13 +128,3 @@ def test_lazydict_copy() -> None:
         assert valueA is not valueB
         assert isinstance(valueB, int)
         assert isinstance(valueA, LazyValue)
-
-
-def _main() -> None:
-    test_lazydict()
-    test_lazydict_fromkeys()
-    test_lazydict_copy()
-
-
-if __name__ == "__main__":
-    _main()

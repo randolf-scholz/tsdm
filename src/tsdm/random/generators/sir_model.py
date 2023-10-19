@@ -37,7 +37,7 @@ class SIR(IVP_GeneratorBase[NDArray]):
     beta: float = 0.5
     """Transmission rate."""
 
-    def _get_initial_state(
+    def _get_initial_state_impl(
         self, size: SizeLike = (), *, weights: ArrayLike = (100, 1, 0)
     ) -> NDArray:
         """Generate (multiple) initial state(s) y₀.
@@ -46,7 +46,9 @@ class SIR(IVP_GeneratorBase[NDArray]):
         """
         return Dirichlet.rvs(weights, size=size)
 
-    def _make_observations(self, y: NDArray, /, *, noise: float = 0.001) -> NDArray:
+    def _make_observations_impl(
+        self, y: NDArray, /, *, noise: float = 0.001
+    ) -> NDArray:
         r"""Create observations from the solution.
 
         We sample from a dirichlet distribution with parameters

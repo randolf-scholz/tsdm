@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 r"""Test converters to masked format etc."""
 
 import logging
@@ -7,7 +6,6 @@ from pandas import Series, date_range, testing
 
 from tsdm.encoders import DateTimeEncoder
 
-logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)
 
 
@@ -31,11 +29,3 @@ def test_datetime_encoder() -> None:
     encoded = encoder.encode(time)
     decoded = encoder.decode(encoded)
     testing.assert_series_equal(time, decoded)
-
-
-def _main() -> None:
-    test_datetime_encoder()
-
-
-if __name__ == "__main__":
-    _main()

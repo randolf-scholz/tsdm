@@ -101,7 +101,7 @@ class BoundaryTable(TypedDict):
 def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
     """Find joint keys in a collection of Mappings."""
     # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
-    return set.intersection(*map(set, (d.keys() for d in mappings)))  # type: ignore[arg-type]
+    return set.intersection(*map(set, (d.keys() for d in mappings)))
 
 
 def make_dataframe(
