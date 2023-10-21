@@ -9,7 +9,7 @@ __all__ = [
 ]
 
 from math import prod
-from typing import Any, TypeVar
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -17,17 +17,14 @@ import pyarrow as pa
 
 from tsdm.types.protocols import NumericalArray, SupportsShape
 
-A = TypeVar("A", bound=NumericalArray)
-"""A type variable for numerical objects."""
 
-
-def false_like(x: A, /) -> A:
+def false_like(x: NumericalArray, /) -> NumericalArray[bool]:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
     z = x == x  # pylint: disable=comparison-with-itself
     return z ^ z
 
 
-def true_like(x: A, /) -> A:
+def true_like(x: NumericalArray, /) -> NumericalArray[bool]:
     """Returns a constant boolean tensor with the same shape/device as `x`."""
     # NOTE: cannot use ~false_like(x) because for float types:
     # (𝙽𝚊𝙽 == 𝙽𝚊𝙽) == False and (𝙽𝚊𝙽 != 𝙽𝚊𝙽) == True

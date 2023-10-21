@@ -9,18 +9,21 @@ References
 
 __all__ = [
     # Classes
-    "Dataclass",
+    "Func",  # alternative to Callable
     "Hash",
     "Lookup",
-    "NTuple",
-    "Shape",
+    "ShapeLike",
     # Mixins
+    "SupportsArray",
+    "SupportsDataframe",
     "SupportsDevice",
     "SupportsDtype",
     "SupportsNdim",
     "SupportsShape",
     # Arrays
-    "Array",
+    "SeriesKind",
+    "TableKind",
+    "ArrayKind",
     "NumericalArray",
     "MutableArray",
     # stdlib
@@ -31,10 +34,13 @@ __all__ = [
     "MutableMappingProtocol",
     "SequenceProtocol",
     "MutableSequenceProtocol",
-    "Func",  # alternative to Callable
+    # Factory classes
+    "Dataclass",
+    "NTuple",
+    "is_dataclass",
+    "is_namedtuple",
     # Functions
     "assert_protocol",
-    "is_dataclass",
     # TypeVars
     "ArrayType",
     "NumericalArrayType",
@@ -49,12 +55,12 @@ from collections.abc import (
     Iterable,
     Iterator,
     KeysView,
-    Mapping,
     Reversible,
     ValuesView,
 )
 from typing import (
     Any,
+    ClassVar,
     NamedTuple,
     ParamSpec,
     Protocol,
@@ -80,18 +86,18 @@ from tsdm.types.variables import (
     key_var as K,
     return_var_co as R,
     scalar_co,
-    scalar_var as Scalar,
     value_co as V_co,
     value_var as V,
 )
 
-ArrayType = TypeVar("ArrayType", bound="Array")
+ArrayType = TypeVar("ArrayType", bound="ArrayKind")
 NumericalArrayType = TypeVar("NumericalArrayType", bound="NumericalArray")
 MutableArrayType = TypeVar("MutableArrayType", bound="MutableArray")
 P = ParamSpec("P")
+Scalar = TypeVar("Scalar")
+BoolArray = TypeVar("BoolArray", bound="NumericalArray", covariant=True)
 
 
-# region generic factory-protocols -----------------------------------------------------
 def assert_protocol(obj: Any, proto: type, /) -> None:
     """Assert that the object is a given protocol."""
     if isinstance(obj, type):
@@ -106,66 +112,6 @@ def assert_protocol(obj: Any, proto: type, /) -> None:
             f"{name} is not a {proto.__name__}!"
             f"\n Missing Attributes: {get_protocol_members(proto) - set(dir(obj))}"
         )
-
-
-@runtime_checkable
-class Dataclass(Protocol):
-    r"""Protocol for anonymous dataclasses."""
-
-    @property
-    def __dataclass_fields__(self) -> Mapping[str, dataclasses.Field]:
-        r"""Return the fields of the dataclass."""
-        ...
-
-
-def is_dataclass(obj: Any) -> TypeGuard[Dataclass]:
-    r"""Check if the object is a dataclass."""
-    return dataclasses.is_dataclass(obj)
-
-
-@runtime_checkable
-class NTuple(Protocol[T_co]):
-    r"""Protocol for anonymous namedtuple.
-
-    References:
-        - https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi
-    """
-
-    @classmethod
-    def __subclasshook__(cls, other: type, /) -> bool:
-        """Cf https://github.com/python/cpython/issues/106363."""
-        if NamedTuple in get_original_bases(other):
-            return True
-        return NotImplemented
-
-    # fmt: off
-    @property
-    def _fields(self) -> tuple[str, ...]: ...
-    def _asdict(self) -> Mapping[str, T_co]: ...
-    # def __new__(cls, __iterable: Iterable[T_co] = ...) -> Self: ...
-    def __len__(self) -> int: ...
-    def __contains__(self, key: object, /) -> bool: ...
-    @overload
-    def __getitem__(self, key: SupportsIndex, /) -> T_co: ...
-    @overload
-    def __getitem__(self, key: slice, /) -> tuple[T_co, ...]: ...
-    def __iter__(self) -> Iterator[T_co]: ...
-    # def __lt__(self, __value: tuple[T_co, ...]) -> bool: ...
-    # def __le__(self, __value: tuple[T_co, ...]) -> bool: ...
-    # def __gt__(self, __value: tuple[T_co, ...]) -> bool: ...
-    # def __ge__(self, __value: tuple[T_co, ...]) -> bool: ...
-    # @overload
-    # def __add__(self, __value: tuple[T_co, ...]) -> tuple[T_co, ...]: ...
-    # @overload
-    # def __add__(self, __value: tuple[T, ...]) -> tuple[T_co | T, ...]: ...
-    # def __mul__(self, __value: SupportsIndex) -> tuple[T_co, ...]: ...
-    # def __rmul__(self, __value: SupportsIndex) -> tuple[T_co, ...]: ...
-    # def count(self, __value: Any) -> int: ...
-    # def index(self, __value: Any, __start: SupportsIndex = 0, __stop: SupportsIndex = sys.maxsize) -> int: ...
-    # fmt: on
-
-
-# endregion generic factory-protocols --------------------------------------------------
 
 
 # region misc protocols ----------------------------------------------------------------
@@ -232,7 +178,7 @@ class Hash(Protocol):
 
 # region container protocols -----------------------------------------------------------
 @runtime_checkable
-class Shape(Protocol):
+class ShapeLike(Protocol):
     """Protocol for shapes, very similar to tuple, but without `__contains__`.
 
     Note:
@@ -253,7 +199,7 @@ class Shape(Protocol):
 
     # binary operations
     # NOTE: Not returning self, cf. https://github.com/python/typeshed/issues/10727
-    def __add__(self, other: Self | tuple, /) -> "Shape": ...
+    def __add__(self, other: Self | tuple, /) -> "ShapeLike": ...
     def __eq__(self, other: object, /) -> bool: ...
     def __ne__(self, other: object, /) -> bool: ...
     def __lt__(self, other: Self | tuple, /) -> bool: ...
@@ -301,30 +247,185 @@ class SupportsDevice(Protocol):
 
 
 @runtime_checkable
-class Array(Protocol[scalar_co]):
-    r"""Protocol for array-like objects (tensors with a single data type).
+class SupportsArray(Protocol):
+    """Protocol for objects that support `__array__`.
 
-    Matches with
+    See: https://numpy.org/doc/stable/reference/c-api/array.html
+    """
 
-    - `numpy.ndarray`
-    - `torch.Tensor`
-    - `tensorflow.Tensor`
-    - `jax.numpy.ndarray`
-    - `pandas.Series`
+    def __array__(self) -> NDArray[np.object_]:
+        """Return the array of the tensor."""
+        ...
 
-    Does not match with
 
-    - `pandas.DataFrame`  (reason: dtypes instead of dtype, __getitem__ returns a Series)
-    - `pyarrow.Table`  (reason: no dtype, __getitem__ returns a Series)
-    - `pyarrow.Array`  (reason: no dtype, __getitem__ returns a scalar)
+@runtime_checkable
+class SupportsDataframe(Protocol):
+    """Protocol for objects that support `__dataframe__`.
+
+    See: https://data-apis.org/dataframe-protocol/latest/index.html
+    """
+
+    def __dataframe__(self) -> object:
+        """Return the dataframe of the tensor."""
+        ...
+
+
+@runtime_checkable
+class SeriesKind(Protocol[scalar_co]):
+    """A 1d array of homogeneous data type.
+
+    Examples:
+        - `pandas.Series`
+        - `polars.Series`
+        - `pyarrow.Array`
+
+    Counter-Examples:
+        - `numpy.ndarray`  lacks `value_counts`
+        - `pandas.DataFrame`  lacks `value_counts`
+        - `polars.DataFrame`  lacks `value_counts`
+        - `pyarrow.Table`  lacks `value_counts`
+        - `torch.Tensor`  lacks `value_counts`
+    """
+
+    def __array__(self) -> NDArray:
+        """Return a numpy array (usually of type `object` since columns are heterogeneous).
+
+        References
+            - https://numpy.org/devdocs/user/basics.interoperability.html
+        """
+        ...
+
+    def __len__(self) -> int:
+        """Number of elements in the series."""
+        ...
+
+    def __iter__(self) -> Iterator[scalar_co]:
+        """Iterate over the elements of the series."""
+        ...
+
+    @overload
+    def __getitem__(self, key: int, /) -> scalar_co: ...
+    @overload
+    def __getitem__(self, key: slice, /) -> Self: ...
+
+    def unique(self) -> Self:
+        """Return the unique elements of the series."""
+        ...
+
+    # NOTE: kind of inconsistent across backends
+    def value_counts(self) -> Self | "SeriesKind" | "TableKind":
+        """Return the number of occurences for each unique element of the series."""
+        ...
+
+    # NOTE: kind of inconsistent across backends
+    def take(self, indices: Self | list[int] | NDArray, /) -> Self:
+        """Select elements from the series by index."""
+        ...
+
+
+@runtime_checkable
+class TableKind(Protocol):
+    """A 2d column-oriented array with heterogenous data types.
+
+    That it, it is a column-oriented 2d tensor which allows heterogenous data types.
+
+    Note:
+        In contrast to tensors (row-oriented), tables are column-oriented. Therefore,
+        `__getitem__` returns a column, which is a SeriesKind, i.e. homogeneous 1d tensor.
+
+    Examples:
+        - `pandas.DataFrame`
+        - `polars.DataFrame`
+        - `pyarrow.Table`
+
+    Counter-Examples:
+        - `numpy.ndarray`  lacks `__dataframe__`
+        - `pandas.Series`  lacks `__dataframe__`
+        - `polars.Series`  lacks `__dataframe__`
+        - `pyarrow.Array`  lacks `__dataframe__`
+        - `torch.Tensor`  lacks `__dataframe__`
+    """
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        """Yield the shape of the table."""
+        ...
+
+    def __array__(self) -> NDArray[np.object_]:
+        """Return a numpy array (usually of type `object` since columns are heterogeneous).
+
+        References
+            - https://numpy.org/devdocs/user/basics.interoperability.html
+        """
+        ...
+
+    def __dataframe__(
+        self, nan_as_null: bool = False, allow_copy: bool = True
+    ) -> object:
+        """Return the dataframe interchange object implementing the interchange protocol.
+
+        References:
+            - https://data-apis.org/dataframe-protocol/latest/index.html
+        """
+        ...
+
+    def __len__(self) -> int:
+        """Number of rows."""
+        ...
+
+    def __getitem__(self, key: Any, /) -> "SeriesKind" | Self:
+        """Return the corresponding column."""
+        ...
+
+    # FIXME: https://github.com/pola-rs/polars/issues/11911
+    # def take(self, indices: Any, /) -> Any:
+    #     """Return an element/slice of the table."""
+    #     ...
+
+    # @property
+    # def columns(self) -> tuple[str, ...]:
+    #     """Yield the columns or the column names."""
+    #     ...
+    #
+    # def __iter__(self) -> Iterator[str]:
+    #     """Iterate over the column or column names."""
+    #     ...
+
+
+@runtime_checkable
+class ArrayKind(Protocol[scalar_co]):
+    r"""An n-dimensional array of a single homogeneous data type.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Series`
+        - `polars.Series`
+        - `pyarrow.Array`
+        - `tensorflow.Tensor`
+        - `torch.Tensor`
+        - `memoryview`
+
+    Counter-Examples:
+        - `pandas.DataFrame`
+        - `polars.DataFrame`
+        - `pyarrow.Table`
 
     References:
         - https://docs.python.org/3/c-api/buffer.html
         - https://numpy.org/doc/stable/reference/arrays.interface.html
-
     """
 
     # NOTE: This is a highly cut down version, to support the bare minimum.
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """Yield the shape of the array."""
+        ...
+
+    # @property
+    # def ndim(self) -> int:
+    #     """Number of dimensions."""
+    #     ...
 
     def __array__(self) -> NDArray:
         """Return a numpy array.
@@ -338,13 +439,17 @@ class Array(Protocol[scalar_co]):
         """Number of elements along the first axis."""
         ...
 
+    def __getitem__(self, key: Any, /) -> Self | scalar_co:
+        """Return an element/slice of the table."""
+        ...
+
+    def take(self, indices: Any, /) -> Any:
+        """Return an element/slice of the table."""
+        ...
+
     # @property
     # def ndim(self) -> int:
     #     r"""Number of dimensions."""
-    #     ...
-
-    # def __iter__(self) -> Iterator[Self]:
-    #     """Iterate over the first dimension."""
     #     ...
 
     # @property
@@ -352,13 +457,9 @@ class Array(Protocol[scalar_co]):
     #     """Yield the shape of the array."""
     #     ...
 
-    def __getitem__(self, key: Any, /) -> Self | scalar_co:
-        """Return an element/slice of the table."""
-        ...
-
-    def take(self, indices: Any) -> Self | scalar_co:
-        """Return an element/slice of the table."""
-        ...
+    # def __iter__(self) -> Iterator[Self]:
+    #     """Iterate over the first dimension."""
+    #     ...
 
     # @overload
     # def __getitem__(self, key, /):
@@ -368,12 +469,29 @@ class Array(Protocol[scalar_co]):
 
 
 @runtime_checkable
-class NumericalArray(Array[Scalar], SupportsShape, Protocol[Scalar]):
+class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     r"""Subclass of `Array` that supports numerical operations.
 
-    Note:
-        - incplace operations are excluded since certain libraries make tensors immutable.
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Series`
+        - `pandas.DataFrame`
+        - `torch.Tensor`
+        - `polars.Series`
+
+    Counter-Examples:
+        - `polars.DataFrame`
+        - `pyarrow.Array`
+        - `pyarrow.Table`
     """
+
+    def all(self) -> Self | bool:
+        """Return True if all elements are True."""
+        ...
+
+    def any(self) -> Self | bool:
+        """Return True if any element is True."""
+        ...
 
     # unary operations
     # negation -
@@ -387,71 +505,77 @@ class NumericalArray(Array[Scalar], SupportsShape, Protocol[Scalar]):
 
     # comparisons
     # equality ==
-    def __eq__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    def __eq__(self, other: Self | Scalar | Any, /) -> Self | "NumericalArray[bool]": ...  # type: ignore[override]
 
     # inequality !=
-    def __ne__(self, other: Self | Scalar, /) -> Self: ...  # type: ignore[override]
+    def __ne__(self, other: Self | Scalar | Any, /) -> Self | "NumericalArray[bool]": ...  # type: ignore[override]
 
     # greater than or equal >=
-    def __le__(self, other: Self | Scalar, /) -> Self: ...
+    def __le__(
+        self, other: Self | Scalar | Any, /
+    ) -> Self | "NumericalArray[bool]": ...
 
     # less than or equal <=
-    def __ge__(self, other: Self | Scalar, /) -> Self: ...
+    def __ge__(
+        self, other: Self | Scalar | Any, /
+    ) -> Self | "NumericalArray[bool]": ...
 
     # less than <
-    def __lt__(self, other: Self | Scalar, /) -> Self: ...
+    def __lt__(
+        self, other: Self | Scalar | Any, /
+    ) -> Self | "NumericalArray[bool]": ...
 
     # greater than >
-    def __gt__(self, other: Self | Scalar, /) -> Self: ...
+    def __gt__(
+        self, other: Self | Scalar | Any, /
+    ) -> Self | "NumericalArray[bool]": ...
 
     # matrix operations
     # matmul @
-    def __matmul__(self, other: Self, /) -> Self: ...
-    def __rmatmul__(self, other: Self, /) -> Self: ...
+    # def __matmul__(self, other: Self, /) -> Self: ...
+    # def __rmatmul__(self, other: Self, /) -> Self: ...
 
     # arithmetic
     # addition +
-    def __add__(self, other: Self | Scalar, /) -> Self: ...
-    def __radd__(self, other: Self | Scalar, /) -> Self: ...
+    def __add__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __radd__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # subtraction -
-    def __sub__(self, other: Self | Scalar, /) -> Self: ...
-    def __rsub__(self, other: Self | Scalar, /) -> Self: ...
+    def __sub__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __rsub__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # multiplication *
-    def __mul__(self, other: Self | Scalar, /) -> Self: ...
-    def __rmul__(self, other: Self | Scalar, /) -> Self: ...
+    def __mul__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __rmul__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # true division /
-    def __truediv__(self, other: Self | Scalar, /) -> Self: ...
-    def __rtruediv__(self, other: Self | Scalar, /) -> Self: ...
+    def __truediv__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __rtruediv__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # floor division //
-    def __floordiv__(self, other: Self | Scalar, /) -> Self: ...
-    def __rfloordiv__(self, other: Self | Scalar, /) -> Self: ...
+    def __floordiv__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __rfloordiv__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # power **
-    def __pow__(
-        self, exponent: Self | Scalar, modulo: None | int = None, /
-    ) -> Self: ...
-    def __rpow__(self, base: Self | Scalar, modulo: None | int = None, /) -> Self: ...
+    def __pow__(self, exponent: Self | Scalar | Any, /) -> Self: ...
+    def __rpow__(self, base: Self | Scalar | Any, /) -> Self: ...
 
     # modulo %
-    def __mod__(self, other: Self | Scalar, /) -> Self: ...
-    def __rmod__(self, other: Self | Scalar, /) -> Self: ...
+    def __mod__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __rmod__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # boolean operations
     # AND &
-    def __and__(self, other: Self | Scalar, /) -> Self: ...
-    def __rand__(self, other: Self | Scalar, /) -> Self: ...
+    def __and__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __rand__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # OR |
-    def __or__(self, other: Self | Scalar, /) -> Self: ...
-    def __ror__(self, other: Self | Scalar, /) -> Self: ...
+    def __or__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __ror__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # XOR ^
-    def __xor__(self, other: Self | Scalar, /) -> Self: ...
-    def __rxor__(self, other: Self | Scalar, /) -> Self: ...
+    def __xor__(self, other: Self | Scalar | Any, /) -> Self: ...
+    def __rxor__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # bitwise operators
     # # left shift <<
@@ -465,7 +589,20 @@ class NumericalArray(Array[Scalar], SupportsShape, Protocol[Scalar]):
 
 @runtime_checkable
 class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
-    r"""Subclass of `Array` that supports inplace operations."""
+    r"""Subclass of `Array` that supports inplace operations.
+
+    Examples:
+        - `numpy.ndarray`
+        - `pandas.Series`
+        - `pandas.DataFrame`
+        - `torch.Tensor`
+
+    Counter-Examples:
+        - `polars.DataFrame`
+        - `polars.Series`
+        - `pyarrow.Array`
+        - `pyarrow.Table`
+    """
 
     # inplace matrix operations
     # NOTE: __imatmul__ not supported since it potentially changes the shape of the array.
@@ -474,35 +611,35 @@ class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
 
     # inplace arithmetic operations
     # addition +=
-    def __iadd__(self, other: Self | Scalar, /) -> Self: ...
+    def __iadd__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # floor division //=
-    def __ifloordiv__(self, other: Self | Scalar, /) -> Self: ...
+    def __ifloordiv__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # modulo %=
-    def __imod__(self, other: Self | Scalar, /) -> Self: ...
+    def __imod__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # multiplication *=
-    def __imul__(self, other: Self | Scalar, /) -> Self: ...
+    def __imul__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # power **=
-    def __ipow__(self, power: Self | Scalar, modulo: None | int = None, /) -> Self: ...
+    def __ipow__(self, power: Self | Scalar | Any, /) -> Self: ...
 
     # subtraction -=
-    def __isub__(self, other: Self | Scalar, /) -> Self: ...
+    def __isub__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # true division /=
-    def __itruediv__(self, other: Self | Scalar, /) -> Self: ...
+    def __itruediv__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # inplace boolean operations
     # AND &=
-    def __iand__(self, other: Self | Scalar, /) -> Self: ...
+    def __iand__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # OR |=
-    def __ior__(self, other: Self | Scalar, /) -> Self: ...
+    def __ior__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # XOR ^=
-    def __ixor__(self, other: Self | Scalar, /) -> Self: ...
+    def __ixor__(self, other: Self | Scalar | Any, /) -> Self: ...
 
     # inplace bitwise operations
     # # left shift =<<
@@ -682,3 +819,127 @@ class MutableMappingProtocol(MappingProtocol[K, V], Protocol[K, V]):
 
 
 # endregion stdlib protocols -----------------------------------------------------------
+
+
+# region generic factory-protocols -----------------------------------------------------
+
+
+@runtime_checkable
+class Dataclass(Protocol):
+    r"""Protocol for anonymous dataclasses.
+
+    Similar to `DataClassInstance` from typeshed, but allows isinstance and issubclass.
+    """
+
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+    r"""The fields of the dataclass."""
+
+    # @property
+    # def __dataclass_fields__(self) -> dict[str, dataclasses.Field]:
+    #     """Return the fields of the dataclass."""
+    #     ...
+
+    @classmethod
+    def __subclasshook__(cls, other: type, /) -> bool:
+        """Cf https://github.com/python/cpython/issues/106363."""
+        fields = getattr(other, "__dataclass_fields__", None)
+        return isinstance(fields, dict)
+
+
+@runtime_checkable
+class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
+    r"""Protocol for anonymous namedtuple.
+
+    References:
+        - https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi
+    """
+
+    # NOTE: Problems is set tuple[str, ...]
+    _fields: Any  # FIXME: Should be tuple[*str] (not tuple[str, ...])
+    r"""The fields of the namedtuple."""
+    # FIXME: https://github.com/python/typing/issues/1216
+    # FIXME: https://github.com/python/typing/issues/1273
+
+    # @property  # NOTE: @property won't work for classes
+    # def _fields(self) -> tuple[str, ...]:
+    #     """Return the fields of the namedtuple."""
+    #     ...
+
+    # fmt: off
+    def _asdict(self) -> dict[str, Any]: ...
+    # def __new__(cls, __iterable: Iterable[T_co] = ...) -> Self: ...
+    def __len__(self) -> int: ...
+    def __contains__(self, key: object, /) -> bool: ...
+    @overload
+    def __getitem__(self, key: SupportsIndex, /) -> T_co: ...
+    @overload
+    def __getitem__(self, key: slice, /) -> tuple[T_co, ...]: ...
+    def __iter__(self) -> Iterator[T_co]: ...
+    # def __lt__(self, __value: tuple[T_co, ...]) -> bool: ...
+    # def __le__(self, __value: tuple[T_co, ...]) -> bool: ...
+    # def __gt__(self, __value: tuple[T_co, ...]) -> bool: ...
+    # def __ge__(self, __value: tuple[T_co, ...]) -> bool: ...
+    # @overload
+    # def __add__(self, __value: tuple[T_co, ...]) -> tuple[T_co, ...]: ...
+    # @overload
+    # def __add__(self, __value: tuple[T, ...]) -> tuple[T_co | T, ...]: ...
+    # def __mul__(self, __value: SupportsIndex) -> tuple[T_co, ...]: ...
+    # def __rmul__(self, __value: SupportsIndex) -> tuple[T_co, ...]: ...
+    # def count(self, __value: Any) -> int: ...
+    # def index(self, __value: Any, __start: SupportsIndex = 0, __stop: SupportsIndex = sys.maxsize) -> int: ...
+    # fmt: on
+
+    @classmethod
+    def __subclasshook__(cls, other: type, /) -> bool:
+        """Cf https://github.com/python/cpython/issues/106363."""
+        if NamedTuple in get_original_bases(other):
+            return True
+        return NotImplemented
+
+
+@overload
+def is_dataclass(obj: type, /) -> TypeGuard[type[Dataclass]]: ...
+@overload
+def is_dataclass(obj: object, /) -> TypeGuard[Dataclass]: ...
+def is_dataclass(obj: Any, /) -> TypeGuard[Dataclass | type[Dataclass]]:
+    r"""Check if the object is a dataclass."""
+    # return dataclasses.is_dataclass(obj)
+    return (
+        issubclass(obj, Dataclass)  # type: ignore[misc]
+        if isinstance(obj, type)
+        else issubclass(type(obj), Dataclass)  # type: ignore[misc]
+    )
+
+
+# @overload
+# def is_dataclass(obj: DataclassInstance) -> Literal[True]: ...
+# @overload
+# def is_dataclass(obj: type) -> TypeGuard[type[DataclassInstance]]: ...
+# @overload
+# def is_dataclass(
+#     obj: object,
+# ) -> TypeGuard[DataclassInstance | type[DataclassInstance]]: ...
+
+
+#
+#
+# reveal_type(is_dataclass)
+
+
+@overload
+def is_namedtuple(obj: type, /) -> TypeGuard[type[NTuple]]: ...
+@overload
+def is_namedtuple(obj: object, /) -> TypeGuard[NTuple]: ...
+def is_namedtuple(obj: Any, /) -> TypeGuard[NTuple | type[NTuple]]:
+    """Check if the object is a namedtuple."""
+    return (
+        issubclass(obj, NTuple)  # type: ignore[misc]
+        if isinstance(obj, type)
+        else issubclass(type(obj), NTuple)  # type: ignore[misc]
+    )
+
+
+# NOTE: TypedDict not supported, since instances of type-dicts forget their parent class.
+#  and are just plain dicts.
+
+# endregion generic factory-protocols --------------------------------------------------

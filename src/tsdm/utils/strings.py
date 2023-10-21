@@ -36,9 +36,10 @@ from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
 from tsdm.types.aliases import DType
 from tsdm.types.dtypes import TYPESTRINGS
 from tsdm.types.protocols import (
-    Array,
+    ArrayKind,
     Dataclass,
     NTuple,
+    SupportsArray,
     SupportsDevice,
     SupportsDtype,
     SupportsShape,
@@ -142,7 +143,7 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
         identifier = "<sequence>"
     elif isinstance(obj, FunctionType):
         identifier = "<function>"
-    elif isinstance(obj, Array):
+    elif isinstance(obj, ArrayKind):
         identifier = "<array>"
     else:
         identifier = ""
@@ -195,7 +196,7 @@ def repr_object(
     if is_dataclass(x):
         __logger__.debug("repr_object: → dataclass")
         return repr_dataclass(obj, **kwargs)
-    if isinstance(x, Array | Tensor | Series | DataFrame | Index):
+    if isinstance(x, ArrayKind | Tensor | Series | DataFrame | Index):
         __logger__.debug("repr_object: → array")
         return repr_array(obj, **kwargs)
     if isinstance(x, Mapping):  # type: ignore[unreachable]
@@ -718,16 +719,20 @@ def repr_type(
 
 
 def repr_array(
-    obj: Array,
+    obj: SupportsArray,
     /,
     *,
     title: Optional[str] = None,
     **_: Any,
 ) -> str:
     r"""Return a string representation of an array object."""
-    assert isinstance(obj, Array), f"Object {obj=} is not an array, but {type(obj)=}."
+    if isinstance(obj, type):
+        raise TypeError("Input must be an instance, not Type.")
+    if not isinstance(obj, SupportsArray):
+        raise TypeError("Object does not support `__array__` dunder.")
 
-    title = type(obj).__name__ if title is None else title
+    cls: type = obj.__class__
+    title = cls.__name__ if title is None else title
 
     string = title + "["
 
@@ -735,9 +740,12 @@ def repr_array(
     if isinstance(obj, SupportsShape):
         string += str(tuple(obj.shape))
     else:
-        string += f"({len(obj)},)"
+        string += str(tuple(obj.__array__().shape))
 
+    # add the dtype
     match obj:
+        case SupportsDtype() as tensor:
+            string += ", " + repr_dtype(tensor.dtype)
         case DataFrame() | MultiIndex() as frame:  # type: ignore[misc]
             dtypes = [repr_dtype(dtype) for dtype in frame.dtypes]  # type: ignore[unreachable]
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
@@ -746,8 +754,6 @@ def repr_array(
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
         case pyarrow_array() as array:  # type: ignore[misc]
             string += ", " + repr_dtype(array.type)  # type: ignore[unreachable]
-        case SupportsDtype() as tensor:
-            string += ", " + repr_dtype(tensor.dtype)
         case _:
             raise TypeError(f"Cannot get dtype of {type(obj)}")
 
@@ -780,6 +786,7 @@ def repr_dtype(obj: str | type | DType, /) -> str:
 def pprint_repr(cls: type[T], /) -> type[T]:
     """Add appropriate __repr__ to class."""
     repr_fun: Callable[..., str]
+
     if is_dataclass(cls):
         repr_fun = repr_dataclass
     elif issubclass(cls, NTuple):  # type: ignore[misc]
