@@ -70,6 +70,35 @@ MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
 """Type Alias for maybe wrapped values."""
 
 
+@runtime_checkable
+class LogFunction(Protocol):
+    """Protocol for logging functions."""
+
+    def __call__(
+        self,
+        step: int,
+        logged_object: Any,
+        writer: SummaryWriter,
+        /,
+        *,
+        name: str = "",
+        prefix: str = "",
+        postfix: str = "",
+    ) -> None:
+        """Log to tensorboard."""
+        ...
+
+
+def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
+    """Check if the function is a callback."""
+    sig = inspect.signature(func)
+    params = list(sig.parameters.values())
+    P = inspect.Parameter
+    return len(params) >= 6 and all(
+        p.kind in (P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD) for p in params[:3]
+    )
+
+
 class AdamState(TypedDict):
     """Adam optimizer state."""
 
@@ -120,35 +149,6 @@ def transpose_list_of_dicts(lst: Iterable[dict[Key, T]], /) -> dict[Key, list[T]
             next(iter(lst)),
             zip(*(d.values() for d in lst)),
         )
-    )
-
-
-@runtime_checkable
-class LogFunction(Protocol):
-    """Protocol for logging functions."""
-
-    def __call__(
-        self,
-        step: int,
-        logged_object: Any,
-        writer: SummaryWriter,
-        /,
-        *,
-        name: str = "",
-        prefix: str = "",
-        postfix: str = "",
-    ) -> None:
-        """Log to tensorboard."""
-        ...
-
-
-def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
-    """Check if the function is a callback."""
-    sig = inspect.signature(func)
-    params = list(sig.parameters.values())
-    P = inspect.Parameter
-    return len(params) >= 6 and all(
-        p.kind in (P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD) for p in params[:3]
     )
 
 
