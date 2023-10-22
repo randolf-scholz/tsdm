@@ -110,17 +110,17 @@ class IterableDataset(Protocol[V_co]):
         ...
 
     @abstractmethod
-    def __iter__(self) -> Iterator[V_co]:
-        """Iterate over the dataset."""
-        ...
-
-    @abstractmethod
     def __getitem__(self, key: int, /) -> V_co:
         """Map key to sample."""
         ...
 
+    @abstractmethod
+    def __iter__(self) -> Iterator[V_co]:
+        """Iterate over the dataset."""
+        ...
 
-Dataset: TypeAlias = MapDataset[Any, V_co] | IterableDataset[V_co]
+
+Dataset: TypeAlias = MapDataset[K, V_co] | IterableDataset[V_co]
 """Type alias for a generic dataset."""
 
 

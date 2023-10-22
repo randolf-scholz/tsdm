@@ -1,4 +1,9 @@
-r"""Random Samplers."""
+r"""Samplers for randomly selecting **indices** that can be used to select data.
+
+Samplers will typically return one of:
+    - integers / strings / slices / boolean-masks
+    - sequences of the above
+"""
 
 __all__ = [
     # ABCs
@@ -43,9 +48,9 @@ from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 
 from tsdm.types.protocols import Lookup
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
-from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
+from tsdm.types.variables import any_co as T_co, key_other_var as K2, key_var as K
 from tsdm.utils.data.datasets import Dataset, IterableDataset, MapDataset
-from tsdm.utils.strings import pprint_repr, repr_mapping
+from tsdm.utils.strings import pprint_repr
 
 
 @runtime_checkable
@@ -55,7 +60,7 @@ class Sampler(Protocol[T_co]):
     @property
     @abstractmethod
     def shuffle(self) -> bool:
-        """Whether to shuffle the data."""
+        """Whether to shuffle the indices."""
         ...
 
     def __iter__(self) -> Iterator[T_co]:
@@ -63,7 +68,7 @@ class Sampler(Protocol[T_co]):
         ...
 
     def __len__(self) -> int:
-        """The number of samples that can be drawn by __iter__."""
+        """The number of indices that can be drawn by __iter__."""
         ...
 
 
@@ -104,7 +109,7 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
         ...
 
 
-def get_index(dataset: Dataset[T_co], /) -> Index:
+def get_index(dataset: Dataset, /) -> Index:
     r"""Return an index object for the dataset.
 
     We support the following data types:
@@ -125,84 +130,103 @@ def get_index(dataset: Dataset[T_co], /) -> Index:
 
 
 @pprint_repr
-@dataclass
-class RandomSampler(BaseSampler[T_co]):
+@dataclass(init=False)
+class RandomSampler(BaseSampler[K]):
     """Sampler randomly from the data source.
 
     Note:
-        If the input is a DataFrame,
+        - In the input is a DataFrame, we raise an exception since it is not clear what to do.
+          In this case, like what is desired is to sample from the inde
     """
 
-    data: Dataset[T_co]
-
-    _: KW_ONLY
-
+    data: Dataset[K, Any]  # map style or iterable style
     shuffle: bool = False
 
-    def __post_init__(self) -> None:
-        self.index: Index = get_index(self.data)
+    @overload
+    def __init__(
+        self: "RandomSampler[K]",
+        data_source: MapDataset[K, Any],
+        /,
+        shuffle: bool = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "RandomSampler[int]",
+        data_source: IterableDataset,
+        /,
+        shuffle: bool = ...,
+    ) -> None: ...
+    def __init__(self, data_source: Dataset, /, shuffle: bool = False) -> None:
+        """Initialize the sampler."""
+        super().__init__(shuffle=shuffle)
+        self.data = data_source
+
+        match data_source:
+            case MapDataset() as map_data:  # in this case, K given by the Mapping
+                self.index = Index(map_data.keys())
+            case IterableDataset() as seq_data:  # can we forcibly bind K to int?
+                self.index = Index(range(len(seq_data)))
+            case _:
+                raise TypeError
+
         self.size: int = len(self.index)
 
-    def __iter__(self) -> Iterator[T_co]:
-        if self.shuffle:
-            permutation = np.random.permutation(self.size)
-            for key in self.index[permutation]:
-                yield self.data[key]
-            return
-
-        # shortcut: iterate over index directly
-        for key in self.index:
-            yield self.data[key]
+    def __iter__(self) -> Iterator[K]:
+        yield from (
+            self.index
+            if not self.shuffle
+            else self.index[np.random.permutation(self.size)]
+        )
 
     def __len__(self) -> int:
         return self.size
 
 
-class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
-    r"""Samples a single random dataset from a collection of datasets.
+@pprint_repr
+@dataclass
+class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
+    r"""Draw samples from a hierarchical data source."""
 
-    Optionally, we can delegate a subsampler to then sample from the randomly drawn dataset.
-    """
-
-    index: Index
+    data_source: MapDataset[K, Dataset[K2, Any]]
     r"""The shared index."""
-    subsamplers: Mapping[K, Sampler[T_co]]
+    subsamplers: Mapping[K, Sampler[K2]] = NotImplemented
     r"""The subsamplers to sample from the collection."""
-    sizes: Series
-    r"""The sizes of the subsamplers."""
-    partition: Series
-    r"""Contains each key a number of times equal to the size of the subsampler."""
+
+    _: KW_ONLY
 
     early_stop: bool = False
     r"""Whether to stop sampling when the index is exhausted."""
     shuffle: bool = False
     r"""Whether to sample in random order."""
 
-    def __init__(
-        self,
-        data_source: Mapping[K, T],
-        /,
-        subsamplers: Mapping[K, Sampler[T_co]],
-        *,
-        shuffle: bool = False,
-        early_stop: bool = False,
-    ) -> None:
-        super().__init__(shuffle=shuffle)
-        self.data = data_source
-        self.early_stop = early_stop
-        self.index = get_index(data_source)
-        self.subsamplers = dict(subsamplers)
+    def __post_init__(self) -> None:
+        self.subsamplers = (
+            {
+                key: RandomSampler(self.data_source[key], shuffle=self.shuffle)
+                for key in self.data_source.keys()
+            }
+            if self.subsamplers is NotImplemented
+            else dict(self.subsamplers)
+        )
 
-        self.sizes = Series({key: len(self.subsamplers[key]) for key in self.index})
+        self.index: Index = get_index(self.data_source)
 
-        if early_stop:  # duplicate keys to match the minimum subsampler size
-            self.partition = Series(
-                chain(*([key] * min(self.sizes) for key in self.index))
-            )
-        else:  # duplicate keys to match each sub-sampler's size
-            self.partition = Series(
-                chain(*([key] * self.sizes[key] for key in self.index))
-            )
+        self.sizes: Series = Series(
+            {key: len(self.subsamplers[key]) for key in self.index}
+        )
+
+        self.partition: Series = (
+            Series(chain(*([key] * min(self.sizes) for key in self.index)))
+            if self.early_stop
+            else Series(chain(*([key] * self.sizes[key] for key in self.index)))
+        )
+
+        # if self.early_stop:  # duplicate keys to match the minimum subsampler size
+        #     self.partition =
+        # else:  # duplicate keys to match each sub-sampler's size
+        #     self.partition = Series(
+        #         chain(*([key] * self.sizes[key] for key in self.index))
+        #     )
 
     def __len__(self) -> int:
         r"""Return the maximum allowed index."""
@@ -210,38 +234,32 @@ class HierarchicalSampler(BaseSampler[tuple[K, T_co]]):
             return min(self.sizes) * len(self.subsamplers)
         return sum(self.sizes)
 
-    def __iter__(self) -> Iterator[tuple[K, T_co]]:
+    def __getitem__(self, key: K) -> Sampler[K2]:
+        r"""Return the subsampler for the given key."""
+        return self.subsamplers[key]
+
+    def __iter__(self) -> Iterator[tuple[K, K2]]:
         r"""Return indices of the samples.
 
         When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
         When ``early_stop=False``, it will sample all samples.
         """
+        permutation = (
+            np.random.permutation(self.partition) if self.shuffle else self.partition
+        )
+
         activate_iterators = {
             key: iter(sampler) for key, sampler in self.subsamplers.items()
         }
 
-        if self.shuffle:
-            perm = np.random.permutation(self.partition)
-        else:
-            perm = self.partition
-
-        for key in perm:
-            # This won't raise StopIteration, because the length is matched.
-            try:
-                value = next(activate_iterators[key])
-            except StopIteration as exc:
-                raise RuntimeError(
-                    f"Iterator of {key=} exhausted prematurely."
-                ) from exc
-            yield key, value
-
-    def __getitem__(self, key: K) -> Sampler[T_co]:
-        r"""Return the subsampler for the given key."""
-        return self.subsamplers[key]
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_mapping(self.subsamplers, title=self.__class__.__name__)
+        # This won't raise StopIteration, because the length is matched.
+        for key in permutation:
+            # for-break faster than try-next-except
+            for value in activate_iterators[key]:
+                yield key, value
+                break
+            else:  # activate_iterators[key] is exhausted
+                raise RuntimeError(f"Sampler of {key=} exhausted prematurely.")
 
 
 def compute_grid(

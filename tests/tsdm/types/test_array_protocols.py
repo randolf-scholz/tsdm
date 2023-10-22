@@ -354,3 +354,6 @@ def test_arrays_jointly() -> None:
     superfluous_attrs = shared_attrs - set(dir(ArrayKind))
     assert not superfluous_attrs, f"Shared attributes/methods: {superfluous_attrs}"
     __logger__.info("Shared attributes/methods of Arrays: %s", shared_attrs)
+
+
+# def test_table_intersection_sequence

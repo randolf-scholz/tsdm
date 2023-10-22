@@ -1,4 +1,4 @@
-r"""Test `module.class`."""
+r"""Test other protocols."""
 
 from dataclasses import dataclass
 from typing import NamedTuple

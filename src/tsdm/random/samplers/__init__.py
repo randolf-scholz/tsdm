@@ -1,8 +1,8 @@
 r"""Random Samplers.
 
 Note:
-    Samplers are used to randomly select samples from pre-existing data.
-    For methods to randomly generate data, see `tsdm.random.generators`.
+    Samplers are used to randomly select **indices** that can be used to select data.
+    For methods that randomly select data from the data source directly, see `tsdm.random.generators`.
 """
 
 __all__ = [
