@@ -15,20 +15,18 @@ __all__ = [
     "repr_namedtuple",
     "repr_object",
     "repr_sequence",
-    "repr_sized",
     "repr_type",
 ]
 __ALL__ = dir() + __all__
 
 import inspect
 import logging
-from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
+from collections.abc import Callable, Iterable, Mapping, Sequence, Set
 from dataclasses import is_dataclass
-from functools import partial
 from types import FunctionType
 from typing import Any, Final, Optional, Protocol, cast, overload
 
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, MultiIndex
 from pyarrow import Array as pyarrow_array, Table as pyarrow_table
 from torch import Tensor
 
@@ -74,17 +72,18 @@ def snake2camel(s: list[str]) -> list[str]: ...
 def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]: ...
 def snake2camel(s):
     r"""Convert ``snake_case`` to ``CamelCase``."""
-    if isinstance(s, tuple):
-        return tuple(snake2camel(x) for x in s)
-
-    if isinstance(s, Iterable) and not isinstance(s, str):
-        return [snake2camel(x) for x in s]
-
-    if isinstance(s, str):
-        substrings = s.split("_")
-        return "".join(s[0].capitalize() + s[1:] for s in substrings)
-
-    raise TypeError(f"Type {type(s)} nor understood, expected string or iterable.")
+    match s:
+        case tuple() as tup:
+            return tuple(snake2camel(x) for x in tup)
+        case str() as string:
+            substrings = string.split("_")
+            return "".join(s[0].capitalize() + s[1:] for s in substrings)
+        case Iterable() as iterable:
+            return [snake2camel(x) for x in iterable]
+        case _:
+            raise TypeError(
+                f"Type {type(s)} nor understood, expected string or iterable."
+            )
 
 
 def tensor_info(x: Tensor) -> str:
@@ -129,50 +128,25 @@ class ReprProtocol(Protocol):
 
 def get_identifier(obj: Any, /, **_: Any) -> str:
     r"""Return the identifier of an object."""
-    if is_dataclass(obj):
-        identifier = "<dataclass>"
-    elif isinstance(obj, tuple):
-        identifier = "<tuple>"
-    elif isinstance(obj, type):
-        identifier = "<type>"
-    elif isinstance(obj, DataFrame | Series):
-        identifier = "<array>"
-    elif isinstance(obj, Mapping):
-        identifier = "<mapping>"
-    elif isinstance(obj, Sequence):
-        identifier = "<sequence>"
-    elif isinstance(obj, FunctionType):
-        identifier = "<function>"
-    elif isinstance(obj, ArrayKind):
-        identifier = "<array>"
-    else:
-        identifier = ""
-    if type(obj) in BUILTIN_TYPES:
-        identifier = ""
-    return identifier
-
-
-# def get_identifier_cls(cls: type, /, **_: Any) -> str:
-#     r"""Return the identifier of an object."""
-#     if is_dataclass(cls):
-#         identifier = "<dataclass>"
-#     elif issubclass(cls, NTuple):
-#         identifier = "<tuple>"
-#     elif issubclass(cls, Array | DataFrame | Series):
-#         identifier = "<array>"
-#     elif issubclass(cls, Mapping):
-#         identifier = "<mapping>"
-#     elif issubclass(cls, Sequence):
-#         identifier = "<sequence>"
-#     elif issubclass(cls, type):
-#         identifier = "<type>"
-#     elif issubclass(cls, FunctionType):
-#         identifier = "<function>"
-#     else:
-#         identifier = ""
-#     if cls in BUILTIN_TYPES:
-#         identifier = ""
-#     return identifier
+    match obj:
+        case _ if type(obj) in BUILTIN_TYPES:
+            return ""
+        case tuple():
+            return "<tuple>"
+        case type():
+            return "<type>"
+        case Dataclass():
+            return "<dataclass>"
+        case Mapping():
+            return "<mapping>"
+        case Sequence():
+            return "<sequence>"
+        case ArrayKind():
+            return "<array>"
+        case FunctionType():
+            return "<function>"
+        case _:
+            return ""
 
 
 def repr_object(
@@ -187,29 +161,34 @@ def repr_object(
     x = kwargs.get("wrapped", obj)
     x = obj if x is None else obj
 
-    if isinstance(x, str):
-        __logger__.debug("repr_object: → str")
-        return obj
-    if inspect.isclass(x) or inspect.isbuiltin(x):
-        __logger__.debug("repr_object: → type")
-        return repr(obj)
-    if is_dataclass(x):
-        __logger__.debug("repr_object: → dataclass")
-        return repr_dataclass(obj, **kwargs)
-    if isinstance(x, ArrayKind | Tensor | Series | DataFrame | Index):
-        __logger__.debug("repr_object: → array")
-        return repr_array(obj, **kwargs)
-    if isinstance(x, Mapping):  # type: ignore[unreachable]
-        __logger__.debug("repr_object: → mapping")
-        return repr_mapping(obj, **kwargs)
-    if isinstance(x, NTuple):
-        __logger__.debug("repr_object: → namedtuple")
-        return repr_namedtuple(obj, **kwargs)
-    if isinstance(x, Sequence):
-        __logger__.debug("repr_object: → sequence")
-        return repr_sequence(obj, **kwargs)
-    __logger__.debug("repr_object: → fallback %s", fallback)
-    return fallback(obj)
+    match x:
+        case str() as string:
+            __logger__.debug("repr_object: → str")
+            return string
+        case builtin if inspect.isbuiltin(builtin):
+            __logger__.debug("repr_object: → builtin")
+            return repr(builtin)
+        case type() as cls:
+            __logger__.debug("repr_object: → type")
+            return repr(cls)
+        case Dataclass() as dtc:
+            __logger__.debug("repr_object: → dataclass")
+            return repr_dataclass(dtc, **kwargs)
+        case ArrayKind() as array:
+            __logger__.debug("repr_object: → array")
+            return repr_array(array, **kwargs)
+        case Mapping() as mapping:
+            __logger__.debug("repr_object: → mapping")
+            return repr_mapping(mapping, **kwargs)
+        case Sequence() as sequence:
+            __logger__.debug("repr_object: → sequence")
+            return repr_sequence(sequence, **kwargs)
+        case NTuple() as ntuple:
+            __logger__.debug("repr_object: → namedtuple")
+            return repr_namedtuple(ntuple, **kwargs)
+        case _:
+            __logger__.debug("repr_object: → fallback %s", fallback)
+            return fallback(obj)
 
 
 def repr_mapping(
@@ -336,16 +315,6 @@ def repr_mapping(
         repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
     recurse = recursive if isinstance(recursive, bool) else recursive - 1 or False
 
-    to_string = partial(
-        repr_fun,
-        align=align,
-        indent=indent + padding,  # + max_key_length,
-        padding=padding,
-        recursive=recurse,
-        # repr_fun=repr_fun,
-        # wrapped=wrapped,
-    )
-
     __logger__.debug(
         "repr_mapping: %s",
         {
@@ -364,16 +333,37 @@ def repr_mapping(
         },
     )
 
+    def to_string(key: Any, value: Any, justify: int = 0) -> str:
+        """Encode key and value."""
+        try:
+            encoded_value = repr_fun(
+                value,
+                align=align,
+                indent=indent + padding,
+                padding=padding,
+                recursive=recurse,
+                # repr_fun=repr_fun,
+                # wrapped=None,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                f"repr_mapping:{key=!r}: Failed to value of type {type(value)}"
+            ) from exc
+
+        return f"{str(key):<{justify}}: {encoded_value}"
+
     # precompute the items
     head_half = maxitems // 2
     tail_half = max(len(obj) - head_half, head_half)
     head_items = [
-        f"{str(key):<{max_key_length}}: {to_string(value)}"
+        to_string(key, value, justify=max_key_length)
+        # f"{str(key):<{max_key_length}}: {to_string(value)}"
         for i, (key, value) in enumerate(obj.items())
         if i < head_half
     ]
     tail_items = [
-        f"{str(key):<{max_key_length}}: {to_string(value)}"
+        to_string(key, value, justify=max_key_length)
+        # f"{str(key):<{max_key_length}}: {to_string(value)}"
         for i, (key, value) in enumerate(obj.items())
         if i >= tail_half
     ]
@@ -461,11 +451,9 @@ def repr_sequence(
 
     # set brackets
     match obj:
-        case list():
-            left, right = "[", "]"
         case tuple():
             left, right = "(", ")"
-        case set():
+        case Set():
             left, right = "{", "}"
         case _:
             left, right = "[", "]"
@@ -490,16 +478,6 @@ def repr_sequence(
         repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
     recurse = recursive if isinstance(recursive, bool) else recursive - 1 or False
 
-    to_string = partial(
-        repr_fun,
-        align=align,
-        indent=indent + padding,
-        padding=padding,
-        recursive=recurse,
-        # repr_fun=repr_fun,
-        # wrapped=None,
-    )
-
     __logger__.debug(
         "repr_sequence: %s",
         {
@@ -518,12 +496,30 @@ def repr_sequence(
         },
     )
 
+    def to_string(index: int, val: Any) -> str:
+        try:
+            encoded_value = repr_fun(
+                val,
+                align=align,
+                indent=indent + padding,
+                padding=padding,
+                recursive=recurse,
+                # repr_fun=repr_fun,
+                # wrapped=None,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                f"repr_sequence:{index=!r}: Failed to value of type {type(val)}"
+            ) from exc
+
+        return encoded_value
+
     # precompute the items
     # If len(obj) < maxitems//2, then tail_items is empty.
     head_half = maxitems // 2
     tail_half = max(len(obj) - head_half, head_half)
-    head_items = [to_string(val) for val in obj[:head_half]]
-    tail_items = [to_string(val) for val in obj[tail_half:]]
+    head_items = [to_string(*x) for x in enumerate(obj[:head_half], start=0)]
+    tail_items = [to_string(*x) for x in enumerate(obj[tail_half:], start=tail_half)]
 
     # assemble the string
     string = f"{title}{identifier}{left}{br}"
@@ -545,7 +541,7 @@ def repr_sequence(
 
 
 def repr_dataclass(
-    obj: object,
+    obj: Dataclass,
     /,
     *,
     align: bool = ALIGN,
@@ -565,7 +561,7 @@ def repr_dataclass(
     - recursive=`True`: ``Name<dataclass>(item1=repr(item1), item2=repr(item2), ...)``
     """
     if not is_dataclass(obj) or not isinstance(obj, Dataclass):
-        raise TypeError(f"Expected Sequence, got {type(obj)}.")
+        raise TypeError(f"Expected Dataclass, got {type(obj)}.")
 
     if repr_fun is NotImplemented:
         repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
@@ -744,8 +740,6 @@ def repr_array(
 
     # add the dtype
     match obj:
-        case SupportsDtype() as tensor:
-            string += ", " + repr_dtype(tensor.dtype)
         case DataFrame() | MultiIndex() as frame:  # type: ignore[misc]
             dtypes = [repr_dtype(dtype) for dtype in frame.dtypes]  # type: ignore[unreachable]
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
@@ -754,6 +748,8 @@ def repr_array(
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
         case pyarrow_array() as array:  # type: ignore[misc]
             string += ", " + repr_dtype(array.type)  # type: ignore[unreachable]
+        case SupportsDtype() as tensor:
+            string += ", " + repr_dtype(tensor.dtype)
         case _:
             raise TypeError(f"Cannot get dtype of {type(obj)}")
 
@@ -765,22 +761,15 @@ def repr_array(
     return string
 
 
-def repr_sized(obj: Sized, /, *, title: Optional[str] = None) -> str:
-    r"""Return a string representation of a sized object."""
-    title = type(obj).__name__ if title is None else title
-    string = title + "["
-    string += str(len(obj))
-    string += "]"
-    return string
-
-
-def repr_dtype(obj: str | type | DType, /) -> str:
+def repr_dtype(dtype: str | type | DType, /) -> str:
     r"""Return a string representation of a dtype object."""
-    if isinstance(obj, str):
-        return obj
-    if obj in TYPESTRINGS:
-        return TYPESTRINGS[obj]  # type: ignore[index]
-    return str(obj)
+    match dtype:
+        case str() as string:
+            return string
+        case type() as cls if cls in TYPESTRINGS:
+            return TYPESTRINGS[cls]
+        case _:
+            return str(dtype)
 
 
 def pprint_repr(cls: type[T], /) -> type[T]:
