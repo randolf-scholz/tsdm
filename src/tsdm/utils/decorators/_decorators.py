@@ -35,7 +35,8 @@ from torch import jit
 from typing_extensions import Self
 
 from tsdm.types.aliases import Nested
-from tsdm.types.protocols import Func, NTuple
+from tsdm.types.callback_protocols import Func
+from tsdm.types.protocols import NTuple
 from tsdm.types.variables import CollectionType, any_var as T, return_var_co as R
 from tsdm.utils.funcutils import rpartial
 

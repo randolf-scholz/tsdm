@@ -9,7 +9,6 @@ References
 
 __all__ = [
     # Classes
-    "Func",  # alternative to Callable
     "Hash",
     "Lookup",
     "ShapeLike",
@@ -84,7 +83,6 @@ from tsdm.types.variables import (
     any_var as T,
     key_contra,
     key_var as K,
-    return_var_co as R,
     scalar_co,
     value_co as V_co,
     value_var as V,
@@ -115,13 +113,6 @@ def assert_protocol(obj: Any, proto: type, /) -> None:
 
 
 # region misc protocols ----------------------------------------------------------------
-
-
-@runtime_checkable
-class Func(Protocol[P, R]):
-    """Protocol for functions, alternative to `Callable`."""
-
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
 
 
 @runtime_checkable
