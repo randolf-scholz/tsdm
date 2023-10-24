@@ -202,25 +202,25 @@ def test_shared_attrs() -> None:
     for proto, examples in EXAMPLES.items():
         shared_attrs = set.intersection(*(set(dir(s)) for s in examples.values()))
         superfluous_attrs = sorted(shared_attrs - set(dir(proto)))
-        print(f"\n\t{proto.__name__!r}: {superfluous_attrs}")
+        print(f"\n\t{proto.__name__!r}:\n\t{superfluous_attrs}")
 
 
 def test_series_joint_attrs() -> None:
     shared_attrs = set.intersection(*(set(dir(s)) for s in SERIES.values()))
     superfluous_attrs = shared_attrs - set(dir(SeriesKind))
-    print(f"Shared attributes/methods not covered by SeriesKind: {superfluous_attrs}")
+    print(f"\nShared members not covered by SeriesKind:\n\t{superfluous_attrs}")
 
 
 def test_table_joint_attrs() -> None:
     shared_attrs = set.intersection(*(set(dir(t)) for t in TABLES.values()))
     superfluous_attrs = shared_attrs - set(dir(TableKind))
-    print(f"Shared attributes/methods not covered by TableKind: {superfluous_attrs}")
+    print(f"\nShared members not covered by TableKind:\n\t{superfluous_attrs}")
 
 
 def test_array_joint_attrs() -> None:
     shared_attrs = set.intersection(*(set(dir(a)) for a in ARRAYS.values()))
     superfluous_attrs = shared_attrs - set(dir(ArrayKind))
-    print(f"Shared attributes/methods not covered by ArrayKind: {superfluous_attrs}")
+    print(f"\nShared members not covered by ArrayKind:\n\t{superfluous_attrs}")
 
 
 def test_table_manual() -> None:
@@ -280,7 +280,7 @@ def test_table_manual() -> None:
         pyarrow_series_table,
     ]
     shared_attrs = set.intersection(*(set(dir(tab)) for tab in tables))
-    __logger__.info("Shared attributes/methods of Tables: %s", shared_attrs)
+    __logger__.info("\nShared members of Tables: %s", shared_attrs)
 
 
 # @pytest.mark.parametrize("array", TEST_ARRAYS)
@@ -298,8 +298,7 @@ def test_numerical_arrays(protocol: type) -> None:
     )
     superfluous_attrs = shared_attrs - protocol_attrs
     print(
-        f"Shared attributes/methods not covered by {protocol.__name__!r}:"
-        f" {superfluous_attrs}"
+        f"\nShared members not covered by {protocol.__name__!r}:\n\t{superfluous_attrs}"
     )
 
 
@@ -352,8 +351,8 @@ def test_arrays_jointly() -> None:
     # test combined
     shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
     superfluous_attrs = shared_attrs - set(dir(ArrayKind))
-    assert not superfluous_attrs, f"Shared attributes/methods: {superfluous_attrs}"
-    __logger__.info("Shared attributes/methods of Arrays: %s", shared_attrs)
+    assert not superfluous_attrs, f"\nShared members:\n\t{superfluous_attrs}"
+    __logger__.info("\nShared members of Arrays: %s", shared_attrs)
 
 
 # def test_table_intersection_sequence

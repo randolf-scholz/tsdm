@@ -54,6 +54,7 @@ from typing import (
     Literal,
     NamedTuple,
     NewType,
+    Optional,
     TypeAlias,
     TypeVar,
     cast,
@@ -190,7 +191,7 @@ def get_broadcast(
     return tuple(None if a in contracted_axes else slice(None) for a in range(rank))
 
 
-def slice_size(slc: slice) -> int | None:
+def slice_size(slc: slice) -> Optional[int]:
     """Get the size of a slice."""
     if slc.stop is None or slc.start is None:
         return None

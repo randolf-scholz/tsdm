@@ -25,6 +25,9 @@ __all__ = [
     "ArrayKind",
     "NumericalArray",
     "MutableArray",
+    # Time-Types
+    "DateTime",
+    "TimeDelta",
     # stdlib
     "SupportsGetItem",
     "SupportsKeysAndGetItem",
@@ -44,6 +47,8 @@ __all__ = [
     "ArrayType",
     "NumericalArrayType",
     "MutableArrayType",
+    "DT_Type",
+    "TD_Type",
 ]
 
 import dataclasses
@@ -63,6 +68,8 @@ from typing import (
     NamedTuple,
     ParamSpec,
     Protocol,
+    SupportsFloat,
+    SupportsInt,
     TypeGuard,
     TypeVar,
     overload,
@@ -485,6 +492,9 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         ...
 
     # unary operations
+    # positive +
+    def __pos__(self) -> Self: ...
+
     # negation -
     def __neg__(self) -> Self: ...
 
@@ -924,3 +934,98 @@ def is_namedtuple(obj: Any, /) -> TypeGuard[NTuple | type[NTuple]]:
 #  and are just plain dicts.
 
 # endregion generic factory-protocols --------------------------------------------------
+
+
+# region datetime and timedelta protocols ----------------------------------------------
+
+
+@runtime_checkable
+class TimeDelta(Protocol):
+    """Time delta provides several arithmetical operations."""
+
+    # unary operations
+    def __pos__(self) -> Self: ...
+    def __neg__(self) -> Self: ...
+    def __abs__(self) -> Self: ...
+    def __bool__(self) -> bool: ...
+
+    # comparisons
+    def __le__(self, other: Self, /) -> bool: ...
+    def __lt__(self, other: Self, /) -> bool: ...
+    def __ge__(self, other: Self, /) -> bool: ...
+    def __gt__(self, other: Self, /) -> bool: ...
+
+    # arithmetic
+    # addition +
+    def __add__(self, other: Self, /) -> Self: ...
+    def __radd__(self, other: Self, /) -> Self: ...
+
+    # subtraction -
+    def __sub__(self, other: Self, /) -> Self: ...
+    def __rsub__(self, other: Self, /) -> Self: ...
+
+    # multiplication *
+    def __mul__(self, other: int, /) -> Self: ...
+    def __rmul__(self, other: int, /) -> Self: ...
+
+    # division /
+    def __truediv__(self, other: Self, /) -> SupportsFloat: ...
+
+    # @overload
+    # def __truediv__(self, other: Self, /) -> float: ...
+    # @overload
+    # def __truediv__(self, other: float, /) -> Self: ...
+
+    # floor division //
+    def __floordiv__(self, other: Self, /) -> SupportsInt: ...
+
+    # @overload
+    # def __floordiv__(self, other: Self, /) -> int: ...
+    # @overload
+    # def __floordiv__(self, other: int, /) -> Self: ...
+
+    # modulo %
+    def __mod__(self, other: Self, /) -> Self: ...
+
+    # NOTE: __rmod__ missing on fallback pydatetime
+    # def __rmod__(self, other: Self, /) -> Self: ...
+
+    # divmod
+    def __divmod__(self, other: Self, /) -> tuple[SupportsInt, Self]: ...
+
+    # NOTE: __rdivmod__ missing on fallback pydatetime
+    # def __rdivmod__(self, other: Self, /) -> tuple[SupportsInt, Self]: ...
+
+
+TD_Type = TypeVar("TD_Type", bound=TimeDelta)
+
+
+@runtime_checkable
+class DateTime(Protocol[TD_Type]):  # bind appropriate TimeDelta type
+    """Datetime can be compared and subtracted."""
+
+    def __le__(self, other: Self, /) -> bool: ...
+    def __lt__(self, other: Self, /) -> bool: ...
+    def __ge__(self, other: Self, /) -> bool: ...
+    def __gt__(self, other: Self, /) -> bool: ...
+
+    def __add__(self, other: TD_Type, /) -> Self: ...
+    def __radd__(self, other: TD_Type, /) -> Self: ...
+
+    # NOTE: we only keep this overload, the others are fragile.
+    def __sub__(self, other: Self, /) -> TD_Type: ...
+
+    # @overload
+    # def __sub__(self, other: TD, /) -> Self: ...
+    # @overload
+    # def __sub__(self, other: Self, /) -> TD: ...
+    # NOTE: __rsub__ missing on fallback pydatetime
+    # @overload
+    # def __rsub__(self, other: TD, /) -> Self: ...
+    # @overload
+    # def __rsub__(self, other: Self, /) -> TD: ...
+
+
+DT_Type = TypeVar("DT_Type", bound=DateTime)
+
+# endregion datetime and timedelta protocols -------------------------------------------

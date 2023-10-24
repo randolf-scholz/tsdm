@@ -1,6 +1,7 @@
 r"""Test Sliding Window Sampler."""
 
 import logging
+from typing import reveal_type
 
 import numpy as np
 import pandas as pd
@@ -34,3 +35,39 @@ def test_SlidingWindowSampler():
     X = DataFrame(np.random.randn(len(T), 2), columns=["ch1", "ch2"], index=T)
     assert len(indices) >= 0 and len(X) > 0  # TODO: implement test
     # samples = X.loc[indices]
+
+
+def test_mode_points() -> None:
+    """Test the SlidingWindowSampler."""
+    data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    stride = 2
+    horizons = [3, 2]
+
+    sampler = SlidingWindowSampler(
+        data, stride=stride, horizons=horizons, mode="points", shuffle=False
+    )
+    reveal_type(sampler)
+
+
+def test_mode_slices() -> None:
+    """Test the SlidingWindowSampler."""
+    data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    stride = 2
+    horizons = [3, 2]
+
+    sampler = SlidingWindowSampler(
+        data, stride=stride, horizons=horizons, mode="slices", shuffle=False
+    )
+    reveal_type(sampler)
+
+
+def test_mode_masks() -> None:
+    """Test the SlidingWindowSampler."""
+    data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    stride = 2
+    horizons = [3, 2]
+
+    sampler = SlidingWindowSampler(
+        data, stride=stride, horizons=horizons, mode="masks", shuffle=False
+    )
+    reveal_type(sampler)
