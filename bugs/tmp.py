@@ -1,72 +1,32 @@
 #!/usr/bin/env python3
 
-from types import EllipsisType
+from typing import Generic, Literal, TypeAlias, TypeVar, overload
 
-import numpy as np
-import torch
-from numpy._typing import _NestedSequence
+MODE = TypeVar("MODE", Literal["A"], Literal["B"])
+modes: TypeAlias = Literal["A", "B"]
 
-#
-# x = ...
-# match x:
-#     case EllipsisType():
-#         print(0)
-# import numpy as np
-#
+A: TypeAlias = Literal["A"]
+B: TypeAlias = Literal["B"]
 
 
-x: _NestedSequence = torch.tensor([1, 2, 3])
-y: _NestedSequence = np.array([1, 2, 3])
-z: _NestedSequence = [[[[1]]]]
+class Foo(Generic[MODE]):
+    # @overload
+    # def __new__(cls, mode: A) -> "Foo[A]": ...
+    #
+    # @overload
+    # def __new__(cls, mode: B) -> "Foo[B]": ...
+    #
+    # def __new__(cls, *args, **kwargs):
+    #     return super().__new__(cls)
 
-# reveal_type(np.ndarray.__getitem__)
-#
-#
-# def __getitem__(
-#     self,
-#     key: (
-#         NDArray[integer[Any]]
-#         | NDArray[bool_]
-#         | tuple[NDArray[integer[Any]] | NDArray[bool_], ...]
-#     ),
-# ) -> ndarray[Any, _DType_co]: ...
-# @overload
-# def __getitem__(self, key: SupportsIndex | tuple[SupportsIndex, ...]) -> Any: ...
-# @overload
-# def __getitem__(
-#     self,
-# ) -> ndarray[Any, _DType_co]: ...
-# @overload
-# def __getitem__(self: NDArray[void], key: str) -> NDArray[Any]: ...
-# @overload
-# def __getitem__(
-#     self: NDArray[void], key: list[str]
-# ) -> ndarray[_ShapeType, _dtype[void]]: ...
+    @overload
+    def __init__(self: "Foo[A]", mode: A) -> None: ...
+    @overload
+    def __init__(self: "Foo[B]", mode: B) -> None: ...
 
-# indices: Union[
-#     Union[
-#         None,
-#         _bool,
-#         _int,
-#         SupportsIndex,
-#         slice,
-#         ellipsis,
-#         Tensor,
-#         _NestedSequence[Union[_bool, _int]],
-#         _NestedSequence[Tensor],
-#     ],
-#     tuple[
-#         Union[
-#             None,
-#             _bool,
-#             _int,
-#             SupportsIndex,
-#             slice,
-#             ellipsis,
-#             Tensor,
-#             _NestedSequence[Union[_bool, _int]],
-#             _NestedSequence[Tensor],
-#         ],
-#         ...,
-#     ],
-# ]
+    def __init__(self, mode):
+        self.mode = mode
+
+
+reveal_type(Foo("A"))
+reveal_type(Foo("B"))

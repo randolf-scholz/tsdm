@@ -554,6 +554,7 @@ tensorboard = ">=2.15.0"
 torch = ">=2.1.0"
 tqdm = ">=4.66.1"
 typing-extensions = ">=4.8.0"
+pydantic = ">=2.0"
 
 
 [tool.poetry.group.extra.dependencies]

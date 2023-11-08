@@ -3,6 +3,8 @@ r"""Generic Dataset classes."""
 __all__ = [
     # Type Aliases
     "Dataset",
+    "IterableDataset",
+    "TabularDataset",
     # Protocols
     "IterableDataset",
     "MapDataset",
@@ -58,7 +60,14 @@ class PandasDataset(Protocol[K, V_co]):
     def index(self) -> Sequence[K]: ...
 
     @property
-    def loc(self) -> SupportsGetItem[K, V_co]: ...
+    def loc(self) -> SupportsGetItem[K, V_co]:
+        """Access a group of rows and columns by label(s) or a boolean array."""
+        ...
+
+    @property
+    def iloc(self) -> SupportsGetItem[int, V_co]:
+        """Purely integer-location based indexing for selection by position."""
+        ...
 
 
 @runtime_checkable
@@ -122,6 +131,12 @@ class IterableDataset(Protocol[V_co]):
 
 Dataset: TypeAlias = MapDataset[K, V_co] | IterableDataset[V_co]
 """Type alias for a generic dataset."""
+
+SequentialDataset: TypeAlias = IterableDataset[V_co] | PandasDataset[Any, V_co]
+"""Type alias for a sequential dataset."""
+
+TabularDataset: TypeAlias = MapDataset[K, V_co] | PandasDataset[K, V_co]
+"""Type alias for a "tabular" dataset."""
 
 
 @dataclass

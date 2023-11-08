@@ -1,93 +1,91 @@
-# TOTOs
+# TODOs
 
-## Multi-Datasets
-
-A single dataset can have multiple processed versions originating from the same raw data.
-
-- For example, a dataset can have a version with and without the `NaN` values removed.
-- A dataset might be available in multiple versions (e.g. MIMIC-IV v1.0 and v2.0).
-
-We want to allow subclasses of a `BaseDataset`, which work as follows:
-
-- They share the same `RAWDATADIR`.
-  - This stores the raw data, potentially multiple versions like `mimic-iv-v1.0.zip` and `mimic-iv-v2.0.zip`
-  - The `DATSETDIR` contains a base folder for the dataset, e.g. `MIMIC-IV` with potentially multiple subfolders.
-- The `BaseDataset` class provides
-  - Downloading functionality.
-  - Light preprocessing, in particular conversion of the data to binary parquet format with appropriate column types.
-  - "Subclasses" can use this data to build more complex preprocessing pipelines.
-
-Questions:
-
-- Do "subclasses" really make sense here?
-  - It seems sufficient that the dataset would instantiate the "base class".
-- The download functionality etc. should be maintained.
-
-Implementation:
-
-Create 3 subclass of BaseDataset:
-
-1. `MIMIC_IV` the base_class
-2. A `DerivedDataset` abstract base class that is parametrized by a `BaseDataset`
-3. The subclass / instance of the `DerivedDataset` class.
-
-```python
-class MIMIC_IV(BaseDataset):
-    ...
+## 
 
 
-class DerivedDataset(ABCMeta):
-    ...
+- Encoder serialization / deserialization (beyond pickle)
+  - use a library like pydantic/attrs to convert to JSON
+  - What about the "params" tuple
+- Multiple parametrizations
+- samplers / dataloading
+- tasks (MIMIC-III, MIMIC-IV)
+- custom tasks with metadata.
+- encoders: optimal transport, vector encoders
+- factorized filter (controls treated differently)
 
 
-class MIMIC_IV_DeBrouwer(
-    DerivedDataset[MIMIC_IV["1.0"]]
-):  # <-- too magic for type checkers / linters
-    RAWDATADIR = MIMIC_IV.RAWDATADIR
-    DATASETDIR = MIMIC_IV.DATASETDIR / MIMIC_IV_DeBrouwer
-    RAWDATAFILES = MIMIC_IV.RAWDATAFILES
-    RAWDATAPATHS = MIMIC_IV.RAWDATAPATHS
-    download = MIMIC_IV.download
+For encoders and samplers, we want some dataclass like library.
+Requirements:
+
+- annotated attributes should be converted to `__slots__` of the class
+- We often want to use custom `__init__`, as we allow wider input types than the annotated type, i.e. we usually want to perform some kind of type casting.
+- In particular, we want to allow string input such as "3h", instead of requiring a `timedelta` object for convenience.
+- Initialized classes might not be final, in particular encoders require a `fit` method. 
+  Only after calling `fit` the class should be considered final.
+- Classes should have a fixed set of attributes, i.e. we want to use dataclasses with `__slots__`.
+- Finalized objects should be serializable to a stable text format, e.g. JSON/YAML/YOML.
+  - Serialization format should natively support datetime and timedelta objects.
+  - This should work recursively, as an encoder might use another encoder as a submodule
+- Serialized object should be deserializeable, i.e. we want to be able to load a serialized object and call `fit` on it.
+- The base class/decorator should avoid adding extra attributes.
+- Support for type hints.
+- when converting to `dict`, special fields should be stored:
+  - `__name__`: name of the class
+  - `__module__`: module of the class
+  This allows us to reconstruct the class from the dictionary:
+  - `getattr(module, name)(**dict)`
+
+## Converting class to dictionary
+
+This is needed for initializing classes from hyperparamters.
+Essentially, each module should have a hyperparameter dictionary with defaults.
+Some hyperparameters might be dependent
 
 
-@extends(MIMIC_IV)
-class MIMIC_IV_DeBrouwer(FrameDataset, ...):
-    ...
-```
+When converting a class to a dictionary, then fields without default value are marked with `NotImplemented`.
+Note that this
 
-Question: How to combine with Versioning? We want to allow multiple versions of the same dataset. Options:
+- finally, we want to write hyperparameter dictionaries for torch modules.
+  In this case, we want a dictionary-like object for each class, 
+  that can be used to initialize the class.
+  If a class requires submodules, then `__init__` should expect these modules as arguments.
+  an additional `from_hyperparams` classmethod should be provided, which should accept a single (typed) dictionary as input.
+  This dicitonary should be used to initialize the class and its submodules.
 
-1. MIMIC_IV @ "1.0"
-2. MIMIC_IV["1.0"] => returns a class `"MIMIC-IV@1.0"` that can then be instantiated.
-3. MIMIC_IV(version="1.0")
 
-Should different versions be different classes, or different instances of the same class?
-At least in the case of MIMIC-IV, the data, e.g. the columns in the table may change between versions.
-Thus, it seems versions should be different classes.
 
-=> Create `MetaClass` called `VersionedDataset`?
 
-```python
-class DerivedDatasetMetaClass(ABCMeta):
-    r"""Metaclass for BaseDataset."""
+So:
 
-    def __init__(cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any) -> None:
-        super().__init__(name, bases, namespace, **kwds)
+1. Each finalized object is associated with a dataclass/typeddict like object.
+2. This object uses strict data types, whereas `__init__` might be more flexible.
+3. Objects should be initializable given a (nested) dictionary that matches the dataclass/typeddict.
 
-        if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+There are 3 types of fields:
 
-        if os.environ.get("GENERATING_DOCS", False):
-            cls.RAWDATA_DIR = Path(f"~/.tsdm/rawdata/{cls.__name__}/")
-            cls.DATASET_DIR = Path(f"~/.tsdm/datasets/{cls.__name__}/")
-        else:
-            cls.RAWDATA_DIR = RAWDATADIR / cls.__name__
-            cls.DATASET_DIR = DATASETDIR / cls.__name__
+1. Mandatory fields
+2. Optional fields. These may or may bot be present (could be `None`/`null`)
+3. Dependent fields. These are computed from other fields. They are not mandatory, but also do not have a fixed default value.
 
-    def __getitem__(cls, klass: type[BaseDataset]) -> type[BaseDataset]:
-        r"""Get the dataset class."""
-        return klass
-```
+|                 | input to `__init__`? | has a static default? |
+|-----------------|----------------------|-----------------------|
+| default field   | mandatory            | no                    |
+| optional field  | yes                  | yes                   |
+| dependent field | yes                  | no                    |
+| computed field  | no                   | no                    |
+
+- Optional fields should be annotated as `field_name: Optional[field_type] = None`
+- Dependent fields should be annotated as 
+
+Example: Encoder:
+
+- needs some inputs -> `__init__`
+- after calling `encoder.fit(data)` it is finalized
+  - we should be able to export/import non-finalized encoders as well as finalized encoders
+  - There are attributes which are only set after calling `fit`, e.g. `encoder._input_dim`
+  - When deserializing, all these attributes need to be loaded correctly.
+    - However, we may not wish to show all of these attributes in documentation, or have them as individual fields.
+    - Possibly, these attributes could be collected in a dictionary "auxiliary fields" which is not part of the dataclass.
 
 ---
 

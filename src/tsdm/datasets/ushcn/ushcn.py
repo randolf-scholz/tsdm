@@ -468,12 +468,24 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         return ts
 
     def _clean_raw_timeseries(self) -> DataFrame:
+        # FIXME: https://github.com/pola-rs/polars/issues/8312
+        # FIXME: https://github.com/apache/arrow/issues/33404
         warnings.warn(
             "This can take a while to run. Consider using the Modin backend."
-            "Refactor if read_fwf becomes available in polars or pyarrow.",
-            UserWarning,
-            stacklevel=2,
+            " Refactor if read_fwf becomes available in polars or pyarrow.",
         )
+
+        import polars as pl
+        import pyarrow.csv as csv
+
+        # table = pl.read_csv(self.rawdata_paths["us.txt.gz"], separator="\n")
+        table = csv.read_csv(
+            self.rawdata_paths["us.txt.gz"],
+            # compression="gzip",
+        )
+        print(table.schema)
+
+        raise 0
 
         # column: (start, stop)
         colspecs: dict[str | tuple[str, int], tuple[int, int]] = {

@@ -54,7 +54,7 @@ LR_SCHEDULERS: Final[dict[str, type[LRScheduler]]] = {
     "MultiStepLR": lr_scheduler.MultiStepLR,
     "ExponentialLR": lr_scheduler.ExponentialLR,
     "CosineAnnealingLR": lr_scheduler.CosineAnnealingLR,
-    # "ReduceLROnPlateau": lr_scheduler.ReduceLROnPlateau,   # not subclass of _LRScheduler...
+    "ReduceLROnPlateau": lr_scheduler.ReduceLROnPlateau,
     "CyclicLR": lr_scheduler.CyclicLR,
     "OneCycleLR": lr_scheduler.OneCycleLR,
     "CosineAnnealingWarmRestarts": lr_scheduler.CosineAnnealingWarmRestarts,
