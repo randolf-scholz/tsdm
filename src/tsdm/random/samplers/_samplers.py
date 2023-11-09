@@ -18,7 +18,7 @@ __all__ = [
 import logging
 import math
 from abc import abstractmethod
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
 from datetime import timedelta as py_td
 from itertools import chain
@@ -43,6 +43,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 
+from tsdm.types.protocols import DateTime as DTLike, TimeDelta as TDLike
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
 from tsdm.types.variables import any_co as T_co, key_other_var as K2, key_var as K
 from tsdm.utils.data.datasets import (
@@ -351,8 +352,6 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
             - `both`: the window is closed on both sides.
             - `neither`: the window is open on both sides.
         shuffle: Whether to shuffle the indices (default: False).
-        tmin: The minimum value of the interval (optional).
-        tmax: The maximum value of the interval (optional).
 
     The window is considered to be closed on the left and open on the right, but this
     can be changed by setting 'closed'
@@ -377,86 +376,120 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
 
     data: NDArray[NumpyDTVar]
 
-    mode: MODE
+    horizons: NumpyTDVar | NDArray[NumpyTDVar]
     stride: NumpyTDVar
-    tmax: NumpyDTVar
-    tmin: NumpyDTVar
+    mode: MODE
+    multi_horizon: bool
+    shuffle: bool
+
+    # auxiliary variables
     grid: Final[NDArray[np.integer]]
 
-    horizons: NumpyTDVar | NDArray[NumpyTDVar]
     initial_windows: NDArray[NumpyDTVar]
     offset: NumpyDTVar
     total_horizon: NumpyTDVar
     zero_td: NumpyTDVar
-    multi_horizon: bool
     cumulative_horizons: NDArray[NumpyTDVar]
 
-    shuffle: bool = False
-
+    # region overloads
     @overload
     def __init__(
         self: "SlidingWindowSampler[W, ONE]",
+        data_source: SequentialDataset[NumpyDTVar],
+        /,
         *,
         stride: str | NumpyTDVar,
-        horizons: str | TD,
+        horizons: str | NumpyTDVar,
         mode: W,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[S, ONE]",
-        *,
-        stride: str | NumpyTDVar,
-        horizons: str | TD,
-        mode: S,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[B, ONE]",
-        *,
-        stride: str | NumpyTDVar,
-        horizons: str | TD,
-        mode: B,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[M, ONE]",
-        *,
-        stride: str | NumpyTDVar,
-        horizons: str | TD,
-        mode: M,
+        closed: Literal["left", "right", "both", "neither"] = "left",
+        shuffle: bool = False,
     ) -> None: ...
     @overload
     def __init__(
         self: "SlidingWindowSampler[W, MANY]",
+        data_source: SequentialDataset[NumpyDTVar],
+        /,
         *,
         stride: str | NumpyTDVar,
-        horizons: Sequence[str | TD],
+        horizons: Sequence[str | NumpyTDVar],
         mode: W,
+        closed: Literal["left", "right", "both", "neither"] = "left",
+        shuffle: bool = False,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[S, ONE]",
+        data_source: SequentialDataset[NumpyDTVar],
+        /,
+        *,
+        stride: str | NumpyTDVar,
+        horizons: str | NumpyTDVar,
+        mode: S,
+        closed: Literal["left", "right", "both", "neither"] = "left",
+        shuffle: bool = False,
     ) -> None: ...
     @overload
     def __init__(
         self: "SlidingWindowSampler[S, MANY]",
+        data_source: SequentialDataset[NumpyDTVar],
+        /,
         *,
         stride: str | NumpyTDVar,
-        horizons: Sequence[str | TD],
+        horizons: Sequence[str | NumpyTDVar],
         mode: S,
+        closed: Literal["left", "right", "both", "neither"] = "left",
+        shuffle: bool = False,
     ) -> None: ...
     @overload
     def __init__(
-        self: "SlidingWindowSampler[B, MANY]",
+        self: "SlidingWindowSampler[M, ONE]",
+        data_source: SequentialDataset[NumpyDTVar],
+        /,
         *,
         stride: str | NumpyTDVar,
-        horizons: Sequence[str | TD],
-        mode: B,
+        horizons: str | NumpyTDVar,
+        mode: M,
+        closed: Literal["left", "right", "both", "neither"] = "left",
+        shuffle: bool = False,
     ) -> None: ...
     @overload
     def __init__(
         self: "SlidingWindowSampler[M, MANY]",
+        data_source: SequentialDataset[NumpyDTVar],
+        /,
         *,
         stride: str | NumpyTDVar,
-        horizons: Sequence[str | TD],
+        horizons: Sequence[str | NumpyTDVar],
         mode: M,
+        closed: Literal["left", "right", "both", "neither"] = "left",
+        shuffle: bool = False,
     ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[B, ONE]",
+        data_source: SequentialDataset[NumpyDTVar],
+        /,
+        *,
+        stride: str | NumpyTDVar,
+        horizons: str | NumpyTDVar,
+        mode: B,
+        closed: Literal["left", "right", "both", "neither"] = "left",
+        shuffle: bool = False,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[B, MANY]",
+        data_source: SequentialDataset[NumpyDTVar],
+        /,
+        *,
+        stride: str | NumpyTDVar,
+        horizons: Sequence[str | NumpyTDVar],
+        mode: B,
+        closed: Literal["left", "right", "both", "neither"] = "left",
+        shuffle: bool = False,
+    ) -> None: ...
+
+    # endregion overloads
     def __init__(
         self,
         data_source: SequentialDataset[NumpyDTVar],
@@ -465,65 +498,36 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         horizons: str | NumpyTDVar | Sequence[str] | Sequence[NumpyTDVar],
         stride: str | NumpyTDVar,
         mode: MODE = "masks",  # type: ignore[assignment]
-        tmin: Optional[str | NumpyDTVar] = None,
-        tmax: Optional[str | NumpyDTVar] = None,
         closed: Literal["left", "right", "both", "neither"] = "left",
         shuffle: bool = False,
     ) -> None:
         super().__init__(shuffle=shuffle)
         self.mode = mode
         self.closed = closed
-
-        # NOTE:
-
         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
-
-        match tmin:
-            case None:
-                self.tmin = (
-                    self.data.iloc[0] if isinstance(self.data, Series) else self.data[0]
-                )
-            case str() as time_str:
-                self.tmin = Timestamp(time_str)
-            case _:
-                self.tmin = tmin
-
-        match tmax:
-            case None:
-                self.tmax = (
-                    self.data.iloc[-1]
-                    if isinstance(self.data, Series)
-                    else self.data[-1]
-                )
-            case str() as time_str:
-                self.tmax = Timestamp(time_str)
-            case _:
-                self.tmax = tmax
-
-        # this gives us the correct zero, depending on the dtype
-        self.zero_td = cast(NumpyTDVar, self.tmin - self.tmin)  # type: ignore[redundant-cast]
-        assert self.stride > self.zero_td, "stride cannot be zero."
+        zero_td = 0 * self.stride  # timedelta of the correct type.
+        assert self.stride > zero_td, "stride cannot be zero."
 
         horizons = Timedelta(horizons) if isinstance(horizons, str) else horizons
 
-        if isinstance(horizons, Sequence):
-            self.multi_horizon = True
-            if isinstance(horizons[0], str | Timedelta | py_td):
-                self.horizons = pd.to_timedelta(horizons)
-                concat_horizons = self.horizons.insert(0, self.zero_td)  # type: ignore[union-attr]
-            else:
-                self.horizons = np.array(horizons)
-                concat_horizons = np.concatenate([[self.zero_td], self.horizons])  # type: ignore[arg-type]
-        else:
-            self.multi_horizon = False
-            self.horizons = horizons
-            conat_horizons = np.concatenate([self.zero_td, self.horizons])
+        match horizons:
+            case str() as string:
+                self.horizons = Timedelta(string)
+                self.multi_horizon = False
+                self.horizons = np.array([self.horizons])
+            case Iterable() as iterable:
+                self.multi_horizon = True
+                self.horizons = pd.to_timedelta(iterable)  # Series or TimeDeltaIndex
+            case TDLike() as td:
+                self.multi_horizon = False
+                self.horizons = np.array([td])
+            case _:
+                raise TypeError(f"Invalid type {type(horizons)} for {horizons=}")
 
-        self.total_horizon = self.horizons[-1]
-        self.cumulative_horizons = np.cumsum(conat_horizons)
-
+        concat_horizons = np.concatenate([[zero_td], self.horizons])  # type: ignore[arg-type]
+        self.cumulative_horizons = np.cumsum(concat_horizons)
+        self.total_horizon = self.cumulative_horizons[-1]
         self.initial_windows = self.tmin + self.cumulative_horizons  # type: ignore[assignment, call-overload, operator]
-
         self.offset = self.tmin + self.total_horizon  # type: ignore[assignment, call-overload, operator]
 
         # precompute the possible slices
@@ -596,6 +600,7 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
             case _:
                 raise ValueError(f"Invalid mode {self.mode=}")
 
+    # region overloads
     @overload
     def __iter__(self: "SlidingWindowSampler[S, ONE, Any, Any]") -> Iterator[slice]: ...
     @overload
@@ -626,6 +631,8 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     def __iter__(
         self: "SlidingWindowSampler[W, MANY, NumpyDTVar, Any]",
     ) -> Iterator[list[NDArray[NumpyDTVar]]]: ...
+
+    # endregion overloads
     def __iter__(self):  # pyright: ignore[reportGeneralTypeIssues]
         r"""Iterate through.
 
@@ -642,12 +649,12 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
             grid = self.grid
 
         # unpack variables (avoid repeated lookups)
-        t0 = self.initial_windows
+        window = self.tmin + self.cumulative_horizons
         stride = self.stride
         make_key = self.make_key
 
         for k in grid:
-            yield make_key(t0 + k * stride)
+            yield make_key(window + k * stride)
 
 
 class RandomWindowSampler(BaseSampler):
