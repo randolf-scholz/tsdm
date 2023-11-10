@@ -44,7 +44,12 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.constants import BOOLEAN_PAIRS
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import HashableType, key_var as K
+from tsdm.types.variables import (
+    HashableType,
+    any_var as T,
+    key_other_var as K2,
+    key_var as K,
+)
 
 __logger__ = logging.getLogger(__name__)
 
@@ -98,44 +103,58 @@ def flatten_nested(
 
 
 def flatten_dict(
-    d: dict[str, Any],
+    d: dict[K, Any],
     /,
     *,
-    recursive: bool = True,
-    join_fn: Callable[[Sequence[str]], str] = ".".join,
-) -> dict[str, Any]:
+    recursive: bool | int = True,
+    join_fn: Callable[[Sequence[K]], K2] = ".".join,
+    split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),
+) -> dict[K2, Any]:
     r"""Flatten dictionaries recursively."""
+    if not recursive:
+        return d
+
+    recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result = {}
     for key, item in d.items():
-        if isinstance(item, dict) and recursive:
-            subdict = flatten_dict(item, recursive=True, join_fn=join_fn)
-            for subkey, subitem in subdict.items():
-                result[join_fn((key, subkey))] = subitem
+        if isinstance(item, dict):
+            for subkey, subitem in flatten_dict(
+                item,
+                recursive=recursive,
+                join_fn=join_fn,
+                split_fn=split_fn,
+            ).items():
+                result[join_fn((key, *split_fn(subkey)))] = subitem
         else:
             result[key] = item
     return result
 
 
 def unflatten_dict(
-    d: dict[str, Any],
+    d: dict[K, Any],
     /,
     *,
     recursive: bool = True,
-    split_fn: Callable[[str], Sequence[str]] = lambda s: s.split(".", maxsplit=1),
-) -> dict[str, Any]:
+    split_fn: Callable[[K], Iterable[K2]] = lambda s: s.split("."),
+    join_fn: Callable[[Sequence[K2]], K] = ".".join,
+) -> dict[K2, Any]:
     r"""Unflatten dictionaries recursively."""
+    if not recursive:
+        return d
+    recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result: dict[str, Any] = {}
     for key, item in d.items():
-        split = split_fn(key)
-        result.setdefault(split[0], {})
-        if len(split) > 1 and recursive:
-            assert len(split) == 2
-            subdict = unflatten_dict(
-                {split[1]: item}, recursive=recursive, split_fn=split_fn
+        outer_key, *inner_keys = split_fn(key)
+        if inner_keys:
+            result.setdefault(outer_key, {})
+            result[outer_key] |= unflatten_dict(
+                {join_fn(inner_keys): item},
+                recursive=recursive,
+                split_fn=split_fn,
+                join_fn=join_fn,
             )
-            result[split[0]] |= subdict
         else:
-            result[split[0]] = item
+            result[outer_key] = item
     return result
 
 

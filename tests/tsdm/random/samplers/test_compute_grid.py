@@ -120,6 +120,23 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
     # return tmin, tmax, timedelta, offset  # type: ignore[return-value]
 
 
+def test_edge_case() -> None:
+    import math
+
+    data = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    stride = 2
+    tmin = min(data)
+    tmax = max(data)
+    horizon = 4
+    offset = tmin + horizon
+    print((tmin - offset) / stride, math.ceil((tmin - offset) / stride))  # -2.0
+    print((tmax - offset) / stride, math.floor((tmax - offset) / stride))  # 2.5
+    print((tmax - tmin - horizon) / stride)
+
+    grid = compute_grid(tmin - tmin, tmax - tmin - horizon, stride)
+    print(grid)
+
+
 @mark.parametrize("mode", MODES)
 def test_grid_pandas(mode: str) -> None:
     r"""Test compute_grid function with various input types."""

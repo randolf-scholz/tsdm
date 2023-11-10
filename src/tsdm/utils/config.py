@@ -45,19 +45,22 @@ class ConfigMetaclass(ABCMeta):
     }
     # fmt: on
 
+    # NOTE: This is the canonical signature
+    #   https://github.com/python/typeshed/blob/7f9b3ea6c354273ff6ef78c15f274d6e29becb22/stdlib/builtins.pyi#L193-L195
     def __new__(
         cls,
         name: str,
         bases: tuple[type, ...],
-        attrs: dict[str, Any],
+        namespace: dict[str, Any],
+        /,
         **kwds: Any,
-    ) -> type:
+    ) -> Self:
         r"""Create a new class, patch in dataclass fields, and return it."""
-        if "__annotations__" not in attrs:
-            attrs["__annotations__"] = {}
+        if "__annotations__" not in namespace:
+            namespace["__annotations__"] = {}
 
-        config_type = super().__new__(cls, name, bases, attrs, **kwds)
-        FIELDS = set(attrs["__annotations__"])
+        config_type = super().__new__(cls, name, bases, namespace, **kwds)
+        FIELDS = set(namespace["__annotations__"])
 
         # check forbidden fields
         FORBIDDEN_FIELDS = cls._FORBIDDEN_FIELDS & FIELDS
@@ -81,7 +84,7 @@ class ConfigMetaclass(ABCMeta):
         patched_fields = [
             ("_", KW_ONLY),
             ("NAME", str, field(default=NAME)),
-            ("MODULE", str, field(default=attrs["__module__"])),
+            ("MODULE", str, field(default=namespace["__module__"])),
         ]
 
         for key, hint, *value in patched_fields:

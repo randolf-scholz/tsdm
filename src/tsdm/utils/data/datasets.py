@@ -32,7 +32,7 @@ from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Self
 
-from tsdm.types.protocols import SupportsGetItem
+from tsdm.types.protocols import ArrayKind, SupportsGetItem
 from tsdm.types.variables import (
     any_var as T,
     key_contra,
@@ -57,7 +57,7 @@ class PandasDataset(Protocol[K, V_co]):
     """Protocol version of `pandas.DataFrame`."""
 
     @property
-    def index(self) -> Sequence[K]: ...
+    def index(self) -> ArrayKind[K]: ...
 
     @property
     def loc(self) -> SupportsGetItem[K, V_co]:
@@ -129,14 +129,16 @@ class IterableDataset(Protocol[V_co]):
         ...
 
 
-Dataset: TypeAlias = MapDataset[K, V_co] | IterableDataset[V_co]
-"""Type alias for a generic dataset."""
+TabularDataset: TypeAlias = MapDataset[K, V_co] | PandasDataset[K, V_co]
+"""Type alias for a "tabular" dataset."""
 
 SequentialDataset: TypeAlias = IterableDataset[V_co] | PandasDataset[Any, V_co]
 """Type alias for a sequential dataset."""
 
-TabularDataset: TypeAlias = MapDataset[K, V_co] | PandasDataset[K, V_co]
-"""Type alias for a "tabular" dataset."""
+Dataset: TypeAlias = (
+    IterableDataset[V_co] | MapDataset[Any, V_co] | PandasDataset[Any, V_co]
+)
+"""Type alias for a generic dataset."""
 
 
 @dataclass

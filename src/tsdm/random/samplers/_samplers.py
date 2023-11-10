@@ -1,6 +1,8 @@
 r"""Samplers for randomly selecting data.
 
-NOTE: In the context of pytorch dataloaders, samplers typically are used to select indices.
+
+NOTE:
+    For Mapping-style datasets, the sampler will return the keys of the mapping.
 """
 
 __all__ = [
@@ -30,6 +32,7 @@ from typing import (
     Literal,
     Optional,
     Protocol,
+    Self,
     TypeAlias,
     TypeVar,
     cast,
@@ -45,7 +48,13 @@ from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 
 from tsdm.types.protocols import DateTime as DTLike, TimeDelta as TDLike
 from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
-from tsdm.types.variables import any_co as T_co, key_other_var as K2, key_var as K
+from tsdm.types.variables import (
+    any_co as T_co,
+    any_other_var as T2,
+    any_var as T,
+    key_other_var as K2,
+    key_var as K,
+)
 from tsdm.utils.data.datasets import (
     Dataset,
     IterableDataset,
@@ -77,6 +86,21 @@ class Sampler(Protocol[T_co]):
 class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
+    # def __new__(
+    #     cls,
+    #     name: str,
+    #     bases: tuple[type, ...],
+    #     namespace: dict[str, Any],
+    #     /,
+    #     **kwds: Any,
+    # ) -> Self:
+    #     # NOTE: https://stackoverflow.com/a/73677355/9318372
+    #     if "__slots__" not in namespace:
+    #         namespace["__slots__"] = tuple()
+    #     return super(BaseSamplerMetaClass, cls).__new__(
+    #         cls, name, bases, namespace, **kwds
+    #     )
+
     def __init__(
         cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
@@ -87,18 +111,21 @@ class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
             cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
 
 
+@dataclass
 class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
     r"""Abstract Base Class for all Samplers."""
 
     LOGGER: ClassVar[logging.Logger]
     r"""Logger for the sampler."""
 
+    _: KW_ONLY
+
     shuffle: bool = False
     r"""Whether to randomize sampling."""
 
-    def __init__(self, *, shuffle: bool) -> None:
-        r"""Initialize the sampler."""
-        self.shuffle = shuffle
+    # def __init__(self, *, shuffle: bool) -> None:
+    #     r"""Initialize the sampler."""
+    #     self.shuffle = shuffle
 
     @abstractmethod
     def __len__(self) -> int:
@@ -111,113 +138,33 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
         ...
 
 
-def get_index(dataset: Dataset, /) -> Index:
-    r"""Return an index object for the dataset.
-
-    We support the following data types:
-        - Series, DataFrame.
-        - Mapping Types
-        - Iterable Types
-    """
-    match dataset:
-        # NOTE: Series and DataFrame satisfy the MapDataset protocol.
-        case Series() | DataFrame() as pandas_dataset:  # type: ignore[misc]
-            return pandas_dataset.index  # type: ignore[unreachable]
-        case MapDataset() as map_dataset:
-            return Index(map_dataset.keys())
-        case IterableDataset() as iterable_dataset:
-            return Index(range(len(iterable_dataset)))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
-@overload
-def compute_grid(
-    tmin: DTVar, tmax: DTVar, step: TDVar, /, *, offset: Optional[DTVar] = None
-) -> NDArray[np.int_]: ...
-@overload
-def compute_grid(
-    tmin: str, tmax: str, step: str, /, *, offset: Optional[str] = None
-) -> NDArray[np.int_]: ...
-@overload
-def compute_grid(tmin, tmax, step, /, *, offset=None) -> NDArray[np.int_]:
-    r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
-
-    That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
-    Special case: if $Δt=0$, returns $[0]$.
-    """
-    # cast strings to timestamp/timedelta
-    tmin = cast(DTVar, Timestamp(tmin) if isinstance(tmin, str) else tmin)
-    tmax = cast(DTVar, Timestamp(tmax) if isinstance(tmax, str) else tmax)
-    td = cast(TDVar, Timedelta(step) if isinstance(step, str) else step)
-    offset = (
-        tmin
-        if offset is None
-        else cast(DTVar, Timestamp(offset) if isinstance(offset, str) else offset)
-    )
-    # validate inputs
-    if td == tmin - tmin:  # generates zero-variable of the correct type.
-        raise ValueError("Δt=0 is not allowed!")
-    if tmin > offset or offset > tmax:
-        raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
-
-    kmax = math.floor(cast(TDVar, tmax - offset) / td)  # type: ignore[redundant-cast]
-    kmin = math.ceil(cast(TDVar, tmin - offset) / td)  # type: ignore[redundant-cast]
-
-    return np.arange(kmin, kmax + 1)
-
-
 @pprint_repr
 @dataclass(init=False, slots=True)
-class RandomSampler(BaseSampler[K]):
-    """Sample randomly from the data source.
+class RandomSampler(BaseSampler[T_co]):
+    """Sample randomly from the data source."""
 
-    Note:
-        - In the input is a DataFrame, we raise an exception since it is not clear what to do.
-          In this case, like what is desired is to sample from the inde
-    """
-
-    data: Dataset[K, Any]  # map style or iterable style
+    data: Dataset[T_co]  # map style or iterable style
     shuffle: bool = False
 
     index: Index = field(init=False)
     size: int = field(init=False)
 
-    @overload
-    def __init__(
-        self: "RandomSampler[K]",
-        data_source: MapDataset[K, Any],
-        /,
-        shuffle: bool = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "RandomSampler[int]",
-        data_source: IterableDataset,
-        /,
-        shuffle: bool = ...,
-    ) -> None: ...
-    def __init__(self, data_source: Dataset, /, shuffle: bool = False) -> None:
+    def __init__(self, data_source: Dataset[T_co], /, *, shuffle: bool = False) -> None:
         """Initialize the sampler."""
-        super().__init__(shuffle=shuffle)
+        super(RandomSampler, self).__init__(shuffle=shuffle)
         self.data = data_source
+        self.index = get_index(self.data)
+        self.size = len(self.index)
 
-        match data_source:
-            case MapDataset() as map_data:  # in this case, K given by the Mapping
-                self.index = Index(map_data.keys())
-            case IterableDataset() as seq_data:  # can we forcibly bind K to int?
-                self.index = Index(range(len(seq_data)))
-            case _:
-                raise TypeError
-
-        self.size: int = len(self.index)
-
-    def __iter__(self) -> Iterator[K]:
-        yield from (
+    def __iter__(self) -> Iterator[T_co]:
+        index = (
             self.index
             if not self.shuffle
             else self.index[np.random.permutation(self.size)]
         )
+        data = self.data  # avoids attribute lookup in the loop
+        for key in index:
+            yield data[key]
 
     def __len__(self) -> int:
         return self.size
@@ -228,7 +175,7 @@ class RandomSampler(BaseSampler[K]):
 class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
     r"""Draw samples from a hierarchical data source."""
 
-    data_source: MapDataset[K, Dataset[K2, Any]]
+    data_source: MapDataset[K, Dataset[K2]]
     r"""The shared index."""
     subsamplers: Mapping[K, Sampler[K2]] = NotImplemented
     r"""The subsamplers to sample from the collection."""
@@ -320,8 +267,8 @@ M: Final = "masks"  # bool
 B: Final = "bounds"  # tuple
 W: Final = "windows"  #
 
-ONE: Final = "single"
-MANY: Final = "multi"
+ONE: Final = False
+MANY: Final = True
 
 MODE = TypeVar(
     "MODE",
@@ -331,13 +278,26 @@ MODE = TypeVar(
     Literal["bounds"],
 )
 MODES: TypeAlias = Literal["bounds", "slices", "masks", "windows"]
+MULTI = TypeVar("MULTI", Literal[True], Literal[False])
 
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
 class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     r"""Sampler that generates a single sliding window over an interval.
 
+    Note:
+        This sampler is intended to be used with continuous time series data types,
+        such as `float`, `numpy.timedelta64`, `datetime.timedelta`, `pandas.Timestamp`, etc.
+        For discrete time series, particularly integer types, use `DiscreteSlidingWindowSampler`.
+        Otherwise, off-by-one errors may occur, for example,
+        for `horizons=(3, 1)` and `stride=2`, given the data `np.arange(10)`,
+        this sampler will produce 3 windows.
+
+    Note:
+        drop_last and shuffle are mutable,
+
     Args:
+        data_source: A dataset that contains the ordered timestamps.
         stride: How much the window(s) advances at each step.
         horizons: The size of the window. Multiple can be given, in which case
             the sampler will return a list of windows.
@@ -352,6 +312,8 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
             - `both`: the window is closed on both sides.
             - `neither`: the window is open on both sides.
         shuffle: Whether to shuffle the indices (default: False).
+        drop_last: Whether to drop the last incomplete window (default: False).
+            If multiple horizons are given, then this considers only the final horizon.
 
     The window is considered to be closed on the left and open on the right, but this
     can be changed by setting 'closed'
@@ -381,15 +343,13 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     mode: MODE
     multi_horizon: bool
     shuffle: bool
+    drop_last: bool
 
-    # auxiliary variables
-    grid: Final[NDArray[np.integer]]
-
-    initial_windows: NDArray[NumpyDTVar]
-    offset: NumpyDTVar
-    total_horizon: NumpyTDVar
-    zero_td: NumpyTDVar
+    # dependent variables
+    tmin: NumpyDTVar
+    tmax: NumpyDTVar
     cumulative_horizons: NDArray[NumpyTDVar]
+    grid: Final[NDArray[np.integer]]
 
     # region overloads
     @overload
@@ -500,16 +460,18 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         mode: MODE = "masks",  # type: ignore[assignment]
         closed: Literal["left", "right", "both", "neither"] = "left",
         shuffle: bool = False,
+        drop_last: bool = False,
     ) -> None:
         super().__init__(shuffle=shuffle)
+        self.data = np.asarray(data_source)
         self.mode = mode
         self.closed = closed
+        self.drop_last = drop_last
         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
         zero_td = 0 * self.stride  # timedelta of the correct type.
-        assert self.stride > zero_td, "stride cannot be zero."
+        assert self.stride > zero_td, "stride must be positive."
 
-        horizons = Timedelta(horizons) if isinstance(horizons, str) else horizons
-
+        # region set horizon(s)
         match horizons:
             case str() as string:
                 self.horizons = Timedelta(string)
@@ -526,22 +488,57 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
 
         concat_horizons = np.concatenate([[zero_td], self.horizons])  # type: ignore[arg-type]
         self.cumulative_horizons = np.cumsum(concat_horizons)
-        self.total_horizon = self.cumulative_horizons[-1]
-        self.initial_windows = self.tmin + self.cumulative_horizons  # type: ignore[assignment, call-overload, operator]
-        self.offset = self.tmin + self.total_horizon  # type: ignore[assignment, call-overload, operator]
+        # endregion set horizon(s)
+
+        # region set tmin, tmax, offset
+        self.tmin = get_first(data_source)
+        self.tmax = get_last(data_source)
+        # endregion set tmin, tmax, offset
 
         # precompute the possible slices
-        grid = compute_grid(self.tmin, self.tmax, self.stride, offset=self.offset)
-        self.grid = grid[grid >= 0]  # type: ignore[assignment, operator]
+        # NOTE: we compute the grid assuming drop_last=False,
+        #  dropping the last slice is done in __iter__ and __len__
+        #  Thus, we select the grid based of cumulative_horizons[-2]
+        # Q: What if only one horizon with tmin=-∞?
+        self.grid = compute_grid(
+            self.tmin,
+            self.tmax - self.cumulative_horizons[-2],
+            self.stride,
+        )
+
+        # offset = self.tmin + self.cumulative_horizons[-1]  # type: ignore[assignment, call-overload, operator]
+        # grid = compute_grid(self.tmin, self.tmax, self.stride, offset=offset)
+        # # Q: Why drop negative k?? If tmin is unbounded, then there is a problem...
+        # self.grid = grid[grid >= 0]  # type: ignore[assignment, operator]
+
+        # NOTE: append single value to grid
 
     def __len__(self) -> int:
         r"""Return the number of samples."""
-        return len(self.grid)
+        return len(self.grid) - self.drop_last
+
+    # region make functions ------------------------------------------------------------
+    @staticmethod
+    def make_slice(bounds: NDArray[NumpyDTVar]) -> slice:
+        r"""Return a tuple of slices."""
+        return slice(bounds[0], bounds[-1])
 
     @staticmethod
     def make_bound(bounds: NDArray[NumpyDTVar]) -> tuple[NumpyDTVar, NumpyTDVar]:
         r"""Return the boundaries of the window."""
         return bounds[0], bounds[-1]
+
+    def make_index(self, bounds: NDArray[NumpyDTVar]) -> NDArray[np.integer]:
+        r"""Return indices of the data points inside the window."""
+        raise NotImplementedError
+
+    def make_mask(self, bounds: NDArray[NumpyDTVar]) -> NDArray[np.bool_]:
+        r"""Return a tuple of masks."""
+        return (bounds[0] <= self.data) & (self.data < bounds[-1])
+
+    def make_window(self, bounds: NDArray[NumpyDTVar]) -> NDArray[NumpyDTVar]:
+        r"""Return the actual data points inside the window."""
+        return self.data[(bounds[0] <= self.data) & (self.data < bounds[-1])]
 
     @staticmethod
     def make_bounds(bounds: NDArray[NumpyDTVar]) -> list[tuple[NumpyDTVar, NumpyTDVar]]:
@@ -549,36 +546,32 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         return [(start, stop) for start, stop in sliding_window_view(bounds, 2)]
 
     @staticmethod
-    def make_slice(bounds: NDArray[NumpyDTVar]) -> slice:
-        r"""Return a tuple of slices."""
-        return slice(bounds[0], bounds[-1])
-
-    @staticmethod
     def make_slices(bounds: NDArray[NumpyDTVar]) -> list[slice]:
         r"""Return a tuple of slices."""
         return [slice(start, stop) for start, stop in sliding_window_view(bounds, 2)]
 
-    def make_mask(self, bounds: NDArray[NumpyDTVar]) -> NDArray[np.bool_]:
-        r"""Return a tuple of masks."""
-        return (bounds[0] <= self.data) & (self.data < bounds[-1])
-
-    def make_masks(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[np.bool_], ...]:
+    def make_masks(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[np.bool_]]:
         r"""Return a tuple of masks."""
         return [
             (start <= self.data) & (self.data < stop)
             for start, stop in sliding_window_view(bounds, 2)
         ]
 
-    def make_window(self, bounds: NDArray[NumpyDTVar]) -> NDArray[NumpyDTVar]:
-        r"""Return the actual data points inside the window."""
-        return self.data[bounds[0] : bounds[-1]]
+    def make_indices(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[np.integer]]:
+        r"""Return indices of the data points inside the windows."""
+        raise NotImplementedError
 
     def make_windows(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[NumpyDTVar]]:
         r"""Return the actual data points inside the windows."""
-        return [self.data[start:stop] for start, stop in sliding_window_view(bounds, 2)]
+        return [
+            self.data[(start <= self.data) & (self.data < stop)]
+            for start, stop in sliding_window_view(bounds, 2)
+        ]
+
+    # endregion make functions ---------------------------------------------------------
 
     @property
-    def make_key(self) -> Callable[[NDArray[NumpyDTVar]], Any]:
+    def make_output(self) -> Callable[[NDArray[NumpyDTVar]], Any]:
         r"""Return the correct yield function."""
         match self.mode, self.multi_horizon:
             case "bounds", False:
@@ -642,19 +635,30 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
         - mode=masks: $(mask_1, …, mask_m)$
         """
+        grid = self.grid[:-1] if self.drop_last else self.grid
+
         if self.shuffle:
-            perm = np.random.permutation(len(self.grid))
-            grid = self.grid[perm]
-        else:
-            grid = self.grid
+            grid = grid[np.random.permutation(len(grid))]
 
         # unpack variables (avoid repeated lookups)
         window = self.tmin + self.cumulative_horizons
         stride = self.stride
-        make_key = self.make_key
+        make_key = self.make_output
 
-        for k in grid:
+        for k in grid:  # NOTE: k is some range of integers.
             yield make_key(window + k * stride)
+
+
+# class SlidingSampler: ...
+# class SlidingSliceSampler: ...
+# class SlidingMaskSampler: ...
+# class SlidingWindowSampler: ...
+# class SlidingBoundsSampler: ...
+# class SlidingIndexSampler: ...
+
+
+class DiscreteSlidingWindowSampler(BaseSampler):
+    """Sample a sliding window from the data source."""
 
 
 class RandomWindowSampler(BaseSampler):
@@ -679,3 +683,103 @@ class RandomWindowSampler(BaseSampler):
             - If set to None, the sampler will draw indefinitely.
             - If not given, the sampler will draw all possible samples (O(freq²)).
     """
+
+
+def get_index(dataset: Dataset, /) -> Index:
+    r"""Return an index object for the dataset.
+
+    We support the following data types:
+        - Series, DataFrame.
+        - Mapping Types
+        - Iterable Types
+    """
+    match dataset:
+        # NOTE: Series and DataFrame satisfy the MapDataset protocol.
+        case Series() | DataFrame() as pandas_dataset:  # type: ignore[misc]
+            return pandas_dataset.index  # type: ignore[unreachable]
+        case MapDataset() as map_dataset:
+            return Index(map_dataset.keys())
+        case IterableDataset() as iterable_dataset:
+            return Index(range(len(iterable_dataset)))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+def get_first(dataset: Dataset[T], /) -> T:
+    """Return the first element of the dataset."""
+    match dataset:
+        case Series() | DataFrame() as pandas_dataset:  # type: ignore[misc]
+            return pandas_dataset.iloc[0]  # type: ignore[unreachable]
+        case MapDataset() as map_dataset:
+            return map_dataset[next(iter(map_dataset.keys()))]
+        case IterableDataset() as iterable_dataset:
+            return next(iter(iterable_dataset))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+def get_last(dataset: Dataset[T], /) -> T:
+    """Return the last element of the dataset."""
+    match dataset:
+        case Series() | DataFrame() as pandas_dataset:  # type: ignore[misc]
+            return pandas_dataset.iloc[-1]  # type: ignore[unreachable]
+        case MapDataset() as map_dataset:
+            return map_dataset[next(reversed(map_dataset.keys()))]
+        case IterableDataset() as iterable_dataset:
+            return next(reversed(iterable_dataset))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+@overload
+def compute_grid(
+    tmin: DTVar, tmax: DTVar, step: TDVar, /, *, offset: Optional[DTVar] = None
+) -> NDArray[np.int_]: ...
+@overload
+def compute_grid(
+    tmin: str, tmax: str, step: str, /, *, offset: Optional[str] = None
+) -> NDArray[np.int_]: ...
+def compute_grid(tmin, tmax, step, /, *, offset=None):
+    r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
+
+    That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
+    Special case: if $Δt=0$, returns $[0]$.
+
+    .. math::
+        if ∆t > 0
+        tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘᵢₙ-t₀)/Δt⌉
+        t₀+k⋅Δt ≤ tₘₐₓ ⟺ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
+        if ∆t < 0
+        tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≥ k ⟺ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
+        t₀+k⋅Δt ≤ tₘₐₓ ⟺ k ≥ ⌈(tₘₐₓ-t₀)/Δt⌉
+
+    Note:
+        This function is used to compute the strides for the sliding window sampler.
+        given a window ∆s<tₘₐₓ-tₘᵢₙ, we want to find all k≥0 such that
+        tₘᵢₙ ≤ [tₗ+k⋅Δt, tᵣ+k∆t] ≤ tₘₐₓ. This is equivalent to finding all k such that
+
+
+    """
+    # cast strings to timestamp/timedelta
+    tmin = cast(DTVar, Timestamp(tmin) if isinstance(tmin, str) else tmin)
+    tmax = cast(DTVar, Timestamp(tmax) if isinstance(tmax, str) else tmax)
+    td = cast(TDVar, Timedelta(step) if isinstance(step, str) else step)
+    offset = (
+        tmin
+        if offset is None
+        else cast(DTVar, Timestamp(offset) if isinstance(offset, str) else offset)
+    )
+    # validate inputs
+    if tmin > offset or offset > tmax:
+        raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
+
+    zero_td = tmin - tmin
+    if td > zero_td:
+        kmin = math.ceil(cast(TDVar, tmin - offset) / td)  # type: ignore[redundant-cast]
+        kmax = math.floor(cast(TDVar, tmax - offset) / td)  # type: ignore[redundant-cast]
+    elif td < zero_td:
+        kmin = math.ceil(cast(TDVar, tmax - offset) / td)
+        kmax = math.floor(cast(TDVar, tmin - offset) / td)
+    else:
+        raise ValueError(f"Δt={td} is not allowed!")
+    return np.arange(kmin, kmax + 1)

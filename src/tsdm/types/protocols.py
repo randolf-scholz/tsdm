@@ -944,7 +944,6 @@ TD_Type = TypeVar("TD_Type", bound="TimeDelta")
 DT_Type = TypeVar("DT_Type", bound="DateTime[TimeDelta]")
 
 
-@deprecated("Does not work as expected!")
 @runtime_checkable
 class TimeDelta(Protocol):
     """Time delta provides several arithmetical operations."""
@@ -1003,7 +1002,6 @@ class TimeDelta(Protocol):
     # def __rdivmod__(self, other: Self, /) -> tuple[SupportsInt, Self]: ...
 
 
-@deprecated("Does not work as expected!")
 @runtime_checkable
 class DateTime(Protocol[TD_Type]):  # bind appropriate TimeDelta type
     """Datetime can be compared and subtracted."""

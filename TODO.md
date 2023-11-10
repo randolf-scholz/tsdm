@@ -1,7 +1,6 @@
 # TODOs
 
-## 
-
+##
 
 - Encoder serialization / deserialization (beyond pickle)
   - use a library like pydantic/attrs to convert to JSON
@@ -13,14 +12,13 @@
 - encoders: optimal transport, vector encoders
 - factorized filter (controls treated differently)
 
-
 For encoders and samplers, we want some dataclass like library.
 Requirements:
 
 - annotated attributes should be converted to `__slots__` of the class
 - We often want to use custom `__init__`, as we allow wider input types than the annotated type, i.e. we usually want to perform some kind of type casting.
 - In particular, we want to allow string input such as "3h", instead of requiring a `timedelta` object for convenience.
-- Initialized classes might not be final, in particular encoders require a `fit` method. 
+- Initialized classes might not be final, in particular encoders require a `fit` method.
   Only after calling `fit` the class should be considered final.
 - Classes should have a fixed set of attributes, i.e. we want to use dataclasses with `__slots__`.
 - Finalized objects should be serializable to a stable text format, e.g. JSON/YAML/YOML.
@@ -32,7 +30,7 @@ Requirements:
 - when converting to `dict`, special fields should be stored:
   - `__name__`: name of the class
   - `__module__`: module of the class
-  This allows us to reconstruct the class from the dictionary:
+    This allows us to reconstruct the class from the dictionary:
   - `getattr(module, name)(**dict)`
 
 ## Converting class to dictionary
@@ -41,19 +39,15 @@ This is needed for initializing classes from hyperparamters.
 Essentially, each module should have a hyperparameter dictionary with defaults.
 Some hyperparameters might be dependent
 
-
 When converting a class to a dictionary, then fields without default value are marked with `NotImplemented`.
 Note that this
 
 - finally, we want to write hyperparameter dictionaries for torch modules.
-  In this case, we want a dictionary-like object for each class, 
+  In this case, we want a dictionary-like object for each class,
   that can be used to initialize the class.
   If a class requires submodules, then `__init__` should expect these modules as arguments.
   an additional `from_hyperparams` classmethod should be provided, which should accept a single (typed) dictionary as input.
   This dicitonary should be used to initialize the class and its submodules.
-
-
-
 
 So:
 
@@ -68,14 +62,14 @@ There are 3 types of fields:
 3. Dependent fields. These are computed from other fields. They are not mandatory, but also do not have a fixed default value.
 
 |                 | input to `__init__`? | has a static default? |
-|-----------------|----------------------|-----------------------|
+| --------------- | -------------------- | --------------------- |
 | default field   | mandatory            | no                    |
 | optional field  | yes                  | yes                   |
 | dependent field | yes                  | no                    |
 | computed field  | no                   | no                    |
 
 - Optional fields should be annotated as `field_name: Optional[field_type] = None`
-- Dependent fields should be annotated as 
+- Dependent fields should be annotated as
 
 Example: Encoder:
 
