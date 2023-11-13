@@ -43,14 +43,14 @@ EXPECTED_RESULTS_BOUNDS = {
 EXPECTED_RESULTS_SLICES = {
     # horizons, stride=1, drop_last=True
     (2, 1, True): [
-        slice(11, 13, None),
-        slice(12, 14, None),
-        slice(13, 15, None),
-        slice(14, 16, None),
-        slice(15, 17, None),
-        slice(16, 18, None),
-        slice(17, 19, None),
-        slice(18, 20, None),
+        slice(11, 13, None),  # (11, 13)
+        slice(12, 14, None),  # (12, 14)
+        slice(13, 15, None),  # (13, 15)
+        slice(14, 16, None),  # (14, 16)
+        slice(15, 17, None),  # (15, 17)
+        slice(16, 18, None),  # (16, 18)
+        slice(17, 19, None),  # (17, 19)
+        slice(18, 20, None),  # (18, 20)
     ],
     (3, 1, True): [
         slice(11, 14, None),
@@ -150,14 +150,14 @@ EXPECTED_RESULTS_SLICES = {
 EXPECTED_RESULTS_MASKS = {
     # horizons, stride=1, drop_last=True
     (2, 1, True): [
-        np.array([T, T, F, F, F, F, F, F, F, F]),
-        np.array([F, T, T, F, F, F, F, F, F, F]),
-        np.array([F, F, T, T, F, F, F, F, F, F]),
-        np.array([F, F, F, T, T, F, F, F, F, F]),
-        np.array([F, F, F, F, T, T, F, F, F, F]),
-        np.array([F, F, F, F, F, T, T, F, F, F]),
-        np.array([F, F, F, F, F, F, T, T, F, F]),
-        np.array([F, F, F, F, F, F, F, T, T, F]),
+        np.array([T, T, F, F, F, F, F, F, F, F]),  # (11, 13)
+        np.array([F, T, T, F, F, F, F, F, F, F]),  # (12, 14)
+        np.array([F, F, T, T, F, F, F, F, F, F]),  # (13, 15)
+        np.array([F, F, F, T, T, F, F, F, F, F]),  # (14, 16)
+        np.array([F, F, F, F, T, T, F, F, F, F]),  # (15, 17)
+        np.array([F, F, F, F, F, T, T, F, F, F]),  # (16, 18)
+        np.array([F, F, F, F, F, F, T, T, F, F]),  # (17, 19)
+        np.array([F, F, F, F, F, F, F, T, T, F]),  # (18, 20)
         np.array([F, F, F, F, F, F, F, F, T, T]),
     ],
     (3, 1, True): [
@@ -262,14 +262,14 @@ EXPECTED_RESULTS_MASKS = {
 EXPECTED_RESULTS_WINDOWS = {
     # horizons, stride=1, drop_last=True
     (2, 1, True): [
-        np.array([11, 12]),
-        np.array([12, 13]),
-        np.array([13, 14]),
-        np.array([14, 15]),
-        np.array([15, 16]),
-        np.array([16, 17]),
-        np.array([17, 18]),
-        np.array([18, 19]),
+        np.array([11, 12]),  # (11, 13)
+        np.array([12, 13]),  # (12, 14)
+        np.array([13, 14]),  # (13, 15)
+        np.array([14, 15]),  # (14, 16)
+        np.array([15, 16]),  # (15, 17)
+        np.array([16, 17]),  # (16, 18)
+        np.array([17, 18]),  # (17, 19)
+        np.array([18, 19]),  # (18, 20)
         np.array([19, 20]),
     ],
     (3, 1, True): [
@@ -411,11 +411,15 @@ def test_sliding_window_sampler(
 
     expected = EXPECTED_RESULTS_DISCRETE_DATA[mode, horizons, stride, drop_last]
 
-    assert len(sampler) == len(
-        expected
-    ), f"sampler:\n{list(sampler)}\nexpected:\n{expected}"
+    assert len(sampler) == len(expected), (
+        "LENGTH MISMATCH!"
+        f"\nsampler:\n{list(sampler)}\nexpected:\n{expected}\ngrid={sampler.grid}\n"
+    )
 
-    assert all(np.array_equal(m1, m2) for m1, m2 in zip(sampler, expected, strict=True))
+    for m1, m2 in zip(sampler, expected, strict=True):
+        assert np.array_equal(
+            m1, m2
+        ), f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
 
 
 def test_SlidingWindowSampler():
@@ -449,23 +453,41 @@ def test_single_window() -> None:
     horizons = 3
 
     sampler = SlidingWindowSampler(
-        DISCRETE_DATA, stride=stride, horizons=horizons, mode="windows", shuffle=False
+        DISCRETE_DATA,
+        stride=stride,
+        horizons=horizons,
+        mode="windows",
+        shuffle=False,
+        drop_last=False,
     )
     assert_type(sampler, SlidingWindowSampler)
 
-    assert all(
-        np.array_equal(m1, m2)
-        for m1, m2 in zip(
-            sampler,
-            [
-                np.array([11, 12, 13]),
-                np.array([13, 14, 15]),
-                np.array([15, 16, 17]),
-                np.array([17, 18, 19]),
-            ],
-            strict=True,
-        )
-    )
+    for m1, m2 in zip(
+        sampler,
+        [
+            np.array([11, 12, 13]),
+            np.array([13, 14, 15]),
+            np.array([15, 16, 17]),
+            np.array([17, 18, 19]),
+            np.array([19, 20]),
+        ],
+        strict=True,
+    ):
+        assert np.array_equal(m1, m2)
+
+    # try with drop_last=True
+    sampler.drop_last = True
+    for m1, m2 in zip(
+        sampler,
+        [
+            np.array([11, 12, 13]),
+            np.array([13, 14, 15]),
+            np.array([15, 16, 17]),
+            np.array([17, 18, 19]),
+        ],
+        strict=True,
+    ):
+        assert np.array_equal(m1, m2)
 
 
 def test_single_slice() -> None:
@@ -474,10 +496,25 @@ def test_single_slice() -> None:
     horizons = 3
 
     sampler = SlidingWindowSampler(
-        DISCRETE_DATA, stride=stride, horizons=horizons, mode="slices", shuffle=False
+        DISCRETE_DATA,
+        stride=stride,
+        horizons=horizons,
+        mode="slices",
+        shuffle=False,
+        drop_last=False,
     )
     assert_type(sampler, SlidingWindowSampler)
 
+    assert list(sampler) == [
+        slice(11, 14, None),
+        slice(13, 16, None),
+        slice(15, 18, None),
+        slice(17, 20, None),
+        slice(19, 22, None),
+    ]
+
+    # try with drop_last=True
+    sampler.drop_last = True
     assert list(sampler) == [
         slice(11, 14, None),
         slice(13, 16, None),
@@ -519,10 +556,32 @@ def test_single_mask() -> None:
     horizons = 3
 
     sampler = SlidingWindowSampler(
-        DISCRETE_DATA, stride=stride, horizons=horizons, mode="masks", shuffle=False
+        DISCRETE_DATA,
+        stride=stride,
+        horizons=horizons,
+        mode="masks",
+        shuffle=False,
+        drop_last=False,
     )
     assert_type(sampler, SlidingWindowSampler)
 
+    assert all(
+        np.array_equal(m1, m2)
+        for m1, m2 in zip(
+            sampler,
+            [
+                np.array([T, T, T, F, F, F, F, F, F, F]),
+                np.array([F, F, T, T, T, F, F, F, F, F]),
+                np.array([F, F, F, F, T, T, T, F, F, F]),
+                np.array([F, F, F, F, F, F, T, T, T, F]),
+                np.array([F, F, F, F, F, F, F, F, T, T]),
+            ],
+            strict=True,
+        )
+    )
+
+    # try with drop_last=True
+    sampler.drop_last = True
     assert all(
         np.array_equal(m1, m2)
         for m1, m2 in zip(
@@ -544,10 +603,25 @@ def test_single_bounds() -> None:
     horizons = 3
 
     sampler = SlidingWindowSampler(
-        DISCRETE_DATA, stride=stride, horizons=horizons, mode="bounds", shuffle=False
+        DISCRETE_DATA,
+        stride=stride,
+        horizons=horizons,
+        mode="bounds",
+        shuffle=False,
+        drop_last=False,
     )
     assert_type(sampler, SlidingWindowSampler)
 
+    assert list(sampler) == [
+        (11, 14),
+        (13, 16),
+        (15, 18),
+        (17, 20),
+        (19, 22),
+    ]
+
+    # try with drop_last=True
+    sampler.drop_last = True
     assert list(sampler) == [
         (11, 14),
         (13, 16),

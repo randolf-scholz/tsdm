@@ -19,6 +19,7 @@ __all__ = [
 
 import logging
 import math
+import warnings
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
@@ -313,7 +314,9 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
             - `neither`: the window is open on both sides.
         shuffle: Whether to shuffle the indices (default: False).
         drop_last: Whether to drop the last incomplete window (default: False).
-            If multiple horizons are given, then this considers only the final horizon.
+            If true, it is guaranteed that each window is completely contained in the data.
+            If false, the last window may only partially overlap with the data.
+            If multiple horizons are given, these rules apply to the last horizon.
 
     The window is considered to be closed on the left and open on the right, but this
     can be changed by setting 'closed'
@@ -341,7 +344,7 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     horizons: NumpyTDVar | NDArray[NumpyTDVar]
     stride: NumpyTDVar
     mode: MODE
-    multi_horizon: bool
+    multi_horizon: Final[bool]
     shuffle: bool
     drop_last: bool
 
@@ -502,7 +505,7 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         # Q: What if only one horizon with tmin=-∞?
         self.grid = compute_grid(
             self.tmin,
-            self.tmax - self.cumulative_horizons[-2],
+            self.tmax - self.cumulative_horizons[-1 if drop_last else -2],
             self.stride,
         )
 
@@ -515,22 +518,18 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
 
     def __len__(self) -> int:
         r"""Return the number of samples."""
-        return len(self.grid) - self.drop_last
+        return len(self.grid)  # - self.drop_last
 
     # region make functions ------------------------------------------------------------
-    @staticmethod
-    def make_slice(bounds: NDArray[NumpyDTVar]) -> slice:
-        r"""Return a tuple of slices."""
-        return slice(bounds[0], bounds[-1])
-
     @staticmethod
     def make_bound(bounds: NDArray[NumpyDTVar]) -> tuple[NumpyDTVar, NumpyTDVar]:
         r"""Return the boundaries of the window."""
         return bounds[0], bounds[-1]
 
-    def make_index(self, bounds: NDArray[NumpyDTVar]) -> NDArray[np.integer]:
-        r"""Return indices of the data points inside the window."""
-        raise NotImplementedError
+    @staticmethod
+    def make_slice(bounds: NDArray[NumpyDTVar]) -> slice:
+        r"""Return a tuple of slices."""
+        return slice(bounds[0], bounds[-1])
 
     def make_mask(self, bounds: NDArray[NumpyDTVar]) -> NDArray[np.bool_]:
         r"""Return a tuple of masks."""
@@ -556,10 +555,6 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
             (start <= self.data) & (self.data < stop)
             for start, stop in sliding_window_view(bounds, 2)
         ]
-
-    def make_indices(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[np.integer]]:
-        r"""Return indices of the data points inside the windows."""
-        raise NotImplementedError
 
     def make_windows(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[NumpyDTVar]]:
         r"""Return the actual data points inside the windows."""
@@ -635,7 +630,8 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
         - mode=masks: $(mask_1, …, mask_m)$
         """
-        grid = self.grid[:-1] if self.drop_last else self.grid
+        # grid = self.grid[:-1] if self.drop_last else self.grid
+        grid = self.grid
 
         if self.shuffle:
             grid = grid[np.random.permutation(len(grid))]
@@ -734,11 +730,11 @@ def get_last(dataset: Dataset[T], /) -> T:
 @overload
 def compute_grid(
     tmin: DTVar, tmax: DTVar, step: TDVar, /, *, offset: Optional[DTVar] = None
-) -> NDArray[np.int_]: ...
+) -> list[int]: ...
 @overload
 def compute_grid(
     tmin: str, tmax: str, step: str, /, *, offset: Optional[str] = None
-) -> NDArray[np.int_]: ...
+) -> list[int]: ...
 def compute_grid(tmin, tmax, step, /, *, offset=None):
     r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
 
@@ -773,13 +769,24 @@ def compute_grid(tmin, tmax, step, /, *, offset=None):
     if tmin > offset or offset > tmax:
         raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
 
+    # NOTE: time-delta types should support divmod!
     zero_td = tmin - tmin
     if td > zero_td:
-        kmin = math.ceil(cast(TDVar, tmin - offset) / td)  # type: ignore[redundant-cast]
-        kmax = math.floor(cast(TDVar, tmax - offset) / td)  # type: ignore[redundant-cast]
+        kmin, _ = divmod(tmin - offset, td)
+        kmax, _ = divmod(tmax - offset, td)
     elif td < zero_td:
-        kmin = math.ceil(cast(TDVar, tmax - offset) / td)
-        kmax = math.floor(cast(TDVar, tmin - offset) / td)
+        kmin, _ = divmod(tmax - offset, td)
+        kmax, _ = divmod(tmin - offset, td)
     else:
         raise ValueError(f"Δt={td} is not allowed!")
-    return np.arange(kmin, kmax + 1)
+
+    # if td > zero_td:
+    #     kmin = math.ceil(cast(TDVar, tmin - offset) / td)  # type: ignore[redundant-cast]
+    #     kmax = math.floor(cast(TDVar, tmax - offset) / td)  # type: ignore[redundant-cast]
+    # elif td < zero_td:
+    #     kmin = math.ceil(cast(TDVar, tmax - offset) / td)
+    #     kmax = math.floor(cast(TDVar, tmin - offset) / td)
+    # else:
+    #     raise ValueError(f"Δt={td} is not allowed!")
+
+    return list(range(int(kmin), int(kmax) + 1))
