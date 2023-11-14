@@ -294,14 +294,14 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         for `horizons=(3, 1)` and `stride=2`, given the data `np.arange(10)`,
         this sampler will produce 3 windows.
 
-    Note:
-        drop_last and shuffle are mutable,
-
     Args:
         data_source: A dataset that contains the ordered timestamps.
         stride: How much the window(s) advances at each step.
-        horizons: The size of the window. Multiple can be given, in which case
-            the sampler will return a list of windows.
+        horizons: The size of the window.
+            NOTE: The size is specified as a timedelta, not as the number of data points.
+              When sampling discrete data, this may lead to off-by-one errors.
+              Consider using `DiscreteSlidingWindowSampler` instead.
+            Multiple horizons can be given, in which case the sampler will return a list.
         mode: There are 4 modes, determining the output of the sampler (default: 'masks').
             - `tuple` / 'bounds': return the bounds of the window(s) as a tuple.
             - `slice` / 'slice': return the slice of the lower and upper bounds of the window.
