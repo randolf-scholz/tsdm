@@ -481,8 +481,13 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
                 self.multi_horizon = False
                 self.horizons = np.array([self.horizons])
             case Iterable() as iterable:
+                values = list(iterable)
                 self.multi_horizon = True
-                self.horizons = pd.to_timedelta(iterable)  # Series or TimeDeltaIndex
+                self.horizons = (
+                    pd.to_timedelta(values)  # Series or TimeDeltaIndex
+                    if isinstance(values[0], str)
+                    else np.array(values)
+                )
             case TDLike() as td:
                 self.multi_horizon = False
                 self.horizons = np.array([td])
@@ -498,16 +503,39 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         self.tmax = get_last(data_source)
         # endregion set tmin, tmax, offset
 
+        self._MAKE_FUNCTIONS: dict[
+            tuple[MODES, bool], Callable[[NDArray[NumpyDTVar]], Any]
+        ] = {
+            ("bounds", False): self.make_bound,
+            ("bounds", True): self.make_bounds,
+            ("masks", False): self.make_mask,
+            ("masks", True): self.make_masks,
+            ("slices", False): self.make_slice,
+            ("slices", True): self.make_slices,
+            ("windows", False): self.make_window,
+            ("windows", True): self.make_windows,
+        }
+
         # precompute the possible slices
         # NOTE: we compute the grid assuming drop_last=False,
         #  dropping the last slice is done in __iter__ and __len__
         #  Thus, we select the grid based of cumulative_horizons[-2]
         # Q: What if only one horizon with tmin=-∞?
-        self.grid = compute_grid(
-            self.tmin,
-            self.tmax - self.cumulative_horizons[-1 if drop_last else -2],
-            self.stride,
-        )
+        # self.grid = np.array(
+        #     compute_grid(
+        #         self.tmin,
+        #         self.tmax - self.cumulative_horizons[-1 if drop_last else -2],
+        #         self.stride,
+        #     )
+        # )
+        #
+        # self.grid_drop_last = np.array(
+        #     compute_grid(
+        #         self.tmin,
+        #         self.tmax - self.cumulative_horizons[-2],
+        #         self.stride,
+        #     )
+        # )
 
         # offset = self.tmin + self.cumulative_horizons[-1]  # type: ignore[assignment, call-overload, operator]
         # grid = compute_grid(self.tmin, self.tmax, self.stride, offset=offset)
@@ -515,6 +543,17 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         # self.grid = grid[grid >= 0]  # type: ignore[assignment, operator]
 
         # NOTE: append single value to grid
+
+    @property
+    def grid(self) -> NDArray[np.integer]:
+        r"""Return the grid of indices."""
+        return np.array(
+            compute_grid(
+                self.tmin,
+                self.tmax - self.cumulative_horizons[-1 if self.drop_last else -2],
+                self.stride,
+            )
+        )
 
     def __len__(self) -> int:
         r"""Return the number of samples."""
@@ -565,29 +604,6 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
 
     # endregion make functions ---------------------------------------------------------
 
-    @property
-    def make_output(self) -> Callable[[NDArray[NumpyDTVar]], Any]:
-        r"""Return the correct yield function."""
-        match self.mode, self.multi_horizon:
-            case "bounds", False:
-                return self.make_bound
-            case "bounds", True:
-                return self.make_bounds
-            case "masks", False:
-                return self.make_mask
-            case "masks", True:
-                return self.make_masks
-            case "slices", False:
-                return self.make_slice
-            case "slices", True:
-                return self.make_slices
-            case "windows", False:
-                return self.make_window
-            case "windows", True:
-                return self.make_windows
-            case _:
-                raise ValueError(f"Invalid mode {self.mode=}")
-
     # region overloads
     @overload
     def __iter__(self: "SlidingWindowSampler[S, ONE, Any, Any]") -> Iterator[slice]: ...
@@ -630,19 +646,17 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
         - mode=masks: $(mask_1, …, mask_m)$
         """
-        # grid = self.grid[:-1] if self.drop_last else self.grid
+        # unpack variables (avoids attribute lookup in loop)
+        window = self.tmin + self.cumulative_horizons
+        stride = self.stride
+        make_fn = self._MAKE_FUNCTIONS[self.mode, self.multi_horizon]
         grid = self.grid
 
         if self.shuffle:
             grid = grid[np.random.permutation(len(grid))]
 
-        # unpack variables (avoid repeated lookups)
-        window = self.tmin + self.cumulative_horizons
-        stride = self.stride
-        make_key = self.make_output
-
         for k in grid:  # NOTE: k is some range of integers.
-            yield make_key(window + k * stride)
+            yield make_fn(window + k * stride)
 
 
 # class SlidingSampler: ...
@@ -743,18 +757,18 @@ def compute_grid(tmin, tmax, step, /, *, offset=None):
 
     .. math::
         if ∆t > 0
-        tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘᵢₙ-t₀)/Δt⌉
-        t₀+k⋅Δt ≤ tₘₐₓ ⟺ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
+            tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘᵢₙ-t₀)/Δt⌉
+            t₀+k⋅Δt ≤ tₘₐₓ ⟺ (tₘₐₓ-t₀)/Δt ≥ ⟺ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
+            ⟹ ⌈(tₘᵢₙ-t₀)/Δt⌉ ≤ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
         if ∆t < 0
-        tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≥ k ⟺ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
-        t₀+k⋅Δt ≤ tₘₐₓ ⟺ k ≥ ⌈(tₘₐₓ-t₀)/Δt⌉
+            tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≥ k ⟺ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
+            t₀+k⋅Δt ≤ tₘₐₓ ⟺ (tₘₐₓ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘₐₓ-t₀)/Δt⌉
+            ⟹ ⌈(tₘₐₓ-t₀)/Δt⌉ ≤ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
 
     Note:
         This function is used to compute the strides for the sliding window sampler.
         given a window ∆s<tₘₐₓ-tₘᵢₙ, we want to find all k≥0 such that
         tₘᵢₙ ≤ [tₗ+k⋅Δt, tᵣ+k∆t] ≤ tₘₐₓ. This is equivalent to finding all k such that
-
-
     """
     # cast strings to timestamp/timedelta
     tmin = cast(DTVar, Timestamp(tmin) if isinstance(tmin, str) else tmin)
@@ -763,30 +777,23 @@ def compute_grid(tmin, tmax, step, /, *, offset=None):
     offset = (
         tmin
         if offset is None
-        else cast(DTVar, Timestamp(offset) if isinstance(offset, str) else offset)
+        else (cast(DTVar, Timestamp(offset) if isinstance(offset, str) else offset))
     )
     # validate inputs
-    if tmin > offset or offset > tmax:
+    if (tmin > offset) or (offset > tmax):
         raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
 
-    # NOTE: time-delta types should support divmod!
+    # NOTE: time-delta types should support divmod / floordiv!
+    #  Importantly, floordiv always rounds down, even for negative numbers.
+    #  We use this formula for ceil-div: https://stackoverflow.com/a/17511341/9318372
     zero_td = tmin - tmin
     if td > zero_td:
-        kmin, _ = divmod(tmin - offset, td)
-        kmax, _ = divmod(tmax - offset, td)
+        kmin = -int((offset - tmin) // td)  # ⌈a/b⌉ = -(-a//b)
+        kmax = int((tmax - offset) // td)  # ⌊a/b⌋ = a//b
     elif td < zero_td:
-        kmin, _ = divmod(tmax - offset, td)
-        kmax, _ = divmod(tmin - offset, td)
+        kmin = -int((offset - tmax) // td)  # ⌈a/b⌉ = -(-a//b)
+        kmax = int((tmin - offset) // td)  # ⌊a/b⌋ = a//b
     else:
         raise ValueError(f"Δt={td} is not allowed!")
 
-    # if td > zero_td:
-    #     kmin = math.ceil(cast(TDVar, tmin - offset) / td)  # type: ignore[redundant-cast]
-    #     kmax = math.floor(cast(TDVar, tmax - offset) / td)  # type: ignore[redundant-cast]
-    # elif td < zero_td:
-    #     kmin = math.ceil(cast(TDVar, tmax - offset) / td)
-    #     kmax = math.floor(cast(TDVar, tmin - offset) / td)
-    # else:
-    #     raise ValueError(f"Δt={td} is not allowed!")
-
-    return list(range(int(kmin), int(kmax) + 1))
+    return list(range(kmin, kmax + 1))

@@ -480,8 +480,7 @@ EXPECTED_RESULTS_CONTINUOUS_WINDOWS = {
     ],
 }
 EXPECTED_RESULTS_CONTINUOUS_MASKS = {
-    # CONTINUOUS_DATA = [2.5, 3.3, 3.7, 4.0, 5.9, 6.4, 6.4, 6.6, 7.5, 8.9]
-    # horizons, stride=1, drop_last=True
+    # horizons, stride=1.0, drop_last=True
     (2.5, 1.0, True): [
         np.array([T, T, T, T, F, F, F, F, F, F]),  # (2.5, 5.0)
         np.array([F, F, T, T, T, F, F, F, F, F]),  # (3.5, 6.0)
@@ -497,7 +496,7 @@ EXPECTED_RESULTS_CONTINUOUS_MASKS = {
         np.array([T, T, T, T, T, T, T, T, F, F]),  # (2.5, 7.0)
         np.array([F, F, T, T, T, T, T, T, T, F]),  # (3.5, 8.0)
     ],
-    # horizons, stride=2, drop_last=True
+    # horizons, stride=2.5, drop_last=True
     (2.5, 2.5, True): [
         np.array([T, T, T, T, F, F, F, F, F, F]),  # (2.5, 5.0)
         np.array([F, F, F, F, T, T, T, T, F, F]),  # (5.0, 7.5)
@@ -509,7 +508,7 @@ EXPECTED_RESULTS_CONTINUOUS_MASKS = {
     (4.5, 2.5, True): [
         np.array([T, T, T, T, T, T, T, T, F, F]),  # (2.5, 7.0)
     ],
-    # horizons, stride=1, drop_last=False
+    # horizons, stride=1.0, drop_last=False
     (2.5, 1.0, False): [
         np.array([T, T, T, T, F, F, F, F, F, F]),  # (2.5, 5.0)
         np.array([F, F, T, T, T, F, F, F, F, F]),  # (3.5, 6.0)
@@ -537,7 +536,7 @@ EXPECTED_RESULTS_CONTINUOUS_MASKS = {
         np.array([F, F, F, F, F, F, F, F, T, T]),  # (7.5, 12.0),
         np.array([F, F, F, F, F, F, F, F, F, T]),  # (8.5, 13.0),
     ],
-    # horizons, stride=2, drop_last=False
+    # horizons, stride=2.5, drop_last=False
     (2.5, 2.5, False): [
         np.array([T, T, T, T, F, F, F, F, F, F]),  # (2.5, 5.0)
         np.array([F, F, F, F, T, T, T, T, F, F]),  # (5.0, 7.5)
@@ -555,7 +554,7 @@ EXPECTED_RESULTS_CONTINUOUS_MASKS = {
     ],
 }
 EXPECTED_RESULTS_CONTINUOUS_SLICES = {
-    # horizons, stride=1, drop_last=True
+    # horizons, stride=1.0, drop_last=True
     (2.5, 1.0, True): [
         slice(2.5, 5.0, None),  # (2.5, 5.0)
         slice(3.5, 6.0, None),  # (3.5, 6.0)
@@ -571,7 +570,7 @@ EXPECTED_RESULTS_CONTINUOUS_SLICES = {
         slice(2.5, 7.0, None),  # (2.5, 7.0)
         slice(3.5, 8.0, None),  # (3.5, 8.0)
     ],
-    # horizons, stride=2, drop_last=True
+    # horizons, stride=2.5, drop_last=True
     (2.5, 2.5, True): [
         slice(2.5, 5.0, None),  # (2.5, 5.0)
         slice(5.0, 7.5, None),  # (5.0, 7.5)
@@ -583,7 +582,7 @@ EXPECTED_RESULTS_CONTINUOUS_SLICES = {
     (4.5, 2.5, True): [
         slice(2.5, 7.0, None),  # (2.5, 7.0)
     ],
-    # horizons, stride=1, drop_last=False
+    # horizons, stride=1.0, drop_last=False
     (2.5, 1.0, False): [
         slice(2.5, 5.0, None),  # (2.5, 5.0)
         slice(3.5, 6.0, None),  # (3.5, 6.0)
@@ -611,7 +610,7 @@ EXPECTED_RESULTS_CONTINUOUS_SLICES = {
         slice(7.5, 12.0, None),  # (7.5, 12.0),
         slice(8.5, 13.0, None),  # (8.5, 13.0),
     ],
-    # horizons, stride=2, drop_last=False
+    # horizons, stride=2.5, drop_last=False
     (2.5, 2.5, False): [
         slice(2.5, 5.0, None),  # (2.5, 5.0)
         slice(5.0, 7.5, None),  # (5.0, 7.5)
@@ -713,29 +712,26 @@ def test_sliding_window_sampler_continuous(
         ), f"SAMPLE MISMATCH!sample:\n{m1}\nexpected:\n{m2}\ngrid={sampler.grid}\n"
 
 
-def test_SlidingWindowSampler():
+def test_pandas_timestamps():
     """Test the SlidingWindowSampler."""
-    LOGGER = __logger__.getChild(SlidingWindowSampler.__name__)
-    LOGGER.info("Testing.")
-
-    tds = Series(pd.to_timedelta(np.random.rand(200), "m"))
+    timedeltas = Series(pd.to_timedelta(np.random.rand(200), "m"))
     tmin = pd.Timestamp(0)
-    tmax = tmin + pd.Timedelta(2, "h")
-    T = pd.concat([Series([tmin]), tmin + tds.cumsum(), Series([tmax])])
-    T = T.reset_index(drop=True)
-
-    stride = "5m"
-    # mode = "points"
-    horizons = "15m"
-    shuffle = False
+    time = pd.concat(
+        [
+            Series([tmin]),
+            tmin + timedeltas.cumsum(),
+        ]
+    ).reset_index(drop=True)
 
     sampler = SlidingWindowSampler(
-        T, stride=stride, horizons=horizons, mode="points", shuffle=shuffle
+        time,
+        stride="5m",
+        horizons="15m",
+        mode="bounds",
+        shuffle=False,
+        drop_last=False,
     )
-    indices = list(sampler)
-    X = DataFrame(np.random.randn(len(T), 2), columns=["ch1", "ch2"], index=T)
-    assert len(indices) >= 0 and len(X) > 0  # TODO: implement test
-    # samples = X.loc[indices]
+    list(sampler)
 
 
 def test_single_window() -> None:
@@ -923,17 +919,19 @@ def test_single_bounds() -> None:
 
 def test_mode_slices_multi() -> None:
     """Test the SlidingWindowSampler."""
-    stride = 2
-    horizons = 3
-
     sampler = SlidingWindowSampler(
-        DISCRETE_DATA, stride=stride, horizons=horizons, mode="slices", shuffle=False
+        DISCRETE_DATA,
+        horizons=(3, 1),
+        stride=2,
+        mode="slices",
+        shuffle=False,
+        drop_last=False,
     )
     assert_type(sampler, SlidingWindowSampler)
 
     assert list(sampler) == [
-        [slice(11, 14, None), slice(15, 15, None)],
-        [slice(13, 16, None), slice(17, 17, None)],
-        [slice(15, 18, None), slice(18, 18, None)],
-        [slice(17, 20, None), slice(20, 20, None)],
+        [slice(11, 14, None), slice(14, 15, None)],
+        [slice(13, 16, None), slice(16, 17, None)],
+        [slice(15, 18, None), slice(18, 19, None)],
+        [slice(17, 20, None), slice(20, 21, None)],
     ]
