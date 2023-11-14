@@ -27,7 +27,7 @@ import logging
 import os
 import shutil
 import warnings
-from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Mapping
 from datetime import datetime
 from importlib import import_module
 from pathlib import Path
@@ -102,7 +102,7 @@ def flatten_dict(
     /,
     *,
     recursive: bool | int = True,
-    join_fn: Callable[[Sequence[K]], K2] = ".".join,
+    join_fn: Callable[[Iterable[K]], K2] = ".".join,
     split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),
 ) -> dict[K2, Any]:
     r"""Flatten dictionaries recursively."""
@@ -131,7 +131,7 @@ def unflatten_dict(
     *,
     recursive: bool = True,
     split_fn: Callable[[K], Iterable[K2]] = lambda s: s.split("."),
-    join_fn: Callable[[Sequence[K2]], K] = ".".join,
+    join_fn: Callable[[Iterable[K2]], K] = ".".join,
 ) -> dict[K2, Any]:
     r"""Unflatten dictionaries recursively."""
     if not recursive:

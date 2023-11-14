@@ -322,7 +322,7 @@ class DefaultLogger(BaseLogger):
                     "optimizer": self.optimizer,
                     "lr_scheduler": self.lr_scheduler,
                 }
-                | checkpointable_objects,
+                | dict(checkpointable_objects),
                 path=self.checkpoint_dir,
                 frequency=checkpoint_frequency,
             ),

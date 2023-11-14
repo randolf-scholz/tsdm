@@ -145,17 +145,17 @@ def shared_grid_plot(
 
     nrows, ncols = array.shape[:2]
 
-    subplots_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
+    subplots_kwargs = {
         "figsize": (5 * ncols, 3 * nrows),
         "sharex": "col",
         "sharey": "row",
         "squeeze": False,
         "tight_layout": True,
-    } | subplots_kwargs
+    } | dict(subplots_kwargs)
 
     axes: NDArray[Axes]  # type: ignore[type-var]
     fig: Figure
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **subplots_kwargs)
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **subplots_kwargs)  # type: ignore[arg-type]
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):
@@ -237,17 +237,17 @@ def plot_spectrum(
         "aspect": "equal",
         "ylabel": "imag part",
         "xlabel": "real part",
-    } | axis_kwargs
+    } | dict(axis_kwargs)
 
     figure_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
         "figsize": (4, 4),
         "constrained_layout": True,
         "dpi": 256,  # default: 1024px×1024px
-    } | figure_kwargs
+    } | dict(figure_kwargs)
 
     scatter_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
         "edgecolors": "none",
-    } | scatter_kwargs
+    } | dict(scatter_kwargs)
 
     if not isinstance(kernel, Tensor):
         kernel = torch.tensor(kernel, dtype=torch.float32)
@@ -255,7 +255,7 @@ def plot_spectrum(
     with plt.style.context(style):
         assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
         eigs = eigvals(kernel).detach().cpu()
-        fig, ax = plt.subplots(**figure_kwargs)
+        fig, ax = plt.subplots(**figure_kwargs)  # type: ignore[arg-type]
         ax.set(**axis_kwargs)
         ax.scatter(eigs.real, eigs.imag, **scatter_kwargs)
 
