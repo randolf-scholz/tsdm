@@ -123,8 +123,10 @@ from typing import (
     NamedTuple,
     Optional,
     Protocol,
+    Self,
     TypeAlias,
     TypeVar,
+    assert_type,
     runtime_checkable,
 )
 
@@ -132,7 +134,6 @@ import numpy as np
 from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset as TorchDataset
-from typing_extensions import Self, assert_type
 
 from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder

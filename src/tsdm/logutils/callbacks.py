@@ -39,6 +39,7 @@ from typing import (
     Optional,
     ParamSpec,
     Protocol,
+    Self,
     TypeGuard,
     TypeVar,
     overload,
@@ -53,7 +54,6 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.autonotebook import tqdm
-from typing_extensions import Self
 
 from tsdm.logutils.logfuncs import (
     TargetsAndPredics,

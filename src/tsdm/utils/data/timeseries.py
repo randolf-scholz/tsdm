@@ -12,13 +12,12 @@ __all__ = [
 ]
 
 from collections.abc import Iterator, Sized
-from typing import Any, NamedTuple, Optional, TypeAlias
+from typing import Any, NamedTuple, Optional, Self, TypeAlias
 
 import numpy as np
 from pandas import DataFrame, Index, Series, Timedelta
 from torch import Tensor
 from torch.utils.data import Dataset as TorchDataset
-from typing_extensions import Self
 
 from tsdm.types.protocols import NTuple
 from tsdm.utils.strings import repr_array, repr_sequence

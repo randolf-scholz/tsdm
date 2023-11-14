@@ -28,7 +28,7 @@ from collections.abc import Collection, Iterator, Mapping, MutableMapping, Seque
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Optional, Protocol, overload, runtime_checkable
+from typing import Any, ClassVar, Optional, Protocol, Self, overload, runtime_checkable
 from urllib.parse import urlparse
 
 import pandas
@@ -36,7 +36,6 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pyarrow import Table, parquet
 from torch.utils.data import Dataset as TorchDataset
 from tqdm.autonotebook import tqdm
-from typing_extensions import Self
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike

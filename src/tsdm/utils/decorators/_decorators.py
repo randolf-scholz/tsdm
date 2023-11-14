@@ -29,10 +29,18 @@ from functools import wraps
 from inspect import Parameter, Signature, getsource, signature
 from time import perf_counter_ns
 from types import GenericAlias
-from typing import Any, Concatenate, NamedTuple, Optional, ParamSpec, Protocol, cast
+from typing import (
+    Any,
+    Concatenate,
+    NamedTuple,
+    Optional,
+    ParamSpec,
+    Protocol,
+    Self,
+    cast,
+)
 
 from torch import jit
-from typing_extensions import Self
 
 from tsdm.types.aliases import Nested
 from tsdm.types.callback_protocols import Func

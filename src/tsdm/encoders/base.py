@@ -34,12 +34,11 @@ from typing import (
     ClassVar,
     Literal,
     Protocol,
+    Self,
     TypeVar,
     overload,
     runtime_checkable,
 )
-
-from typing_extensions import Self
 
 from tsdm.types.variables import any_other_var as S, any_var as T, key_var as K
 from tsdm.utils.strings import repr_object, repr_type

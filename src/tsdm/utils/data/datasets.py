@@ -22,6 +22,7 @@ from typing import (
     Any,
     Optional,
     Protocol,
+    Self,
     TypeAlias,
     TypeVar,
     overload,
@@ -30,7 +31,6 @@ from typing import (
 
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import Dataset as TorchDataset
-from typing_extensions import Self
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
 from tsdm.types.variables import (

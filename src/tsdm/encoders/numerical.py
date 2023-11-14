@@ -55,6 +55,7 @@ from typing import (
     NamedTuple,
     NewType,
     Optional,
+    Self,
     TypeAlias,
     TypeVar,
     cast,
@@ -67,7 +68,6 @@ import torch
 from numpy.typing import NDArray
 from pandas import DataFrame, Series
 from torch import Tensor
-from typing_extensions import Self
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder

@@ -17,9 +17,7 @@ from contextlib import ContextDecorator
 from importlib.util import find_spec
 from time import perf_counter_ns
 from types import ModuleType, TracebackType
-from typing import ClassVar, Literal, Optional
-
-from typing_extensions import Self
+from typing import ClassVar, Literal, Optional, Self
 
 
 class ray_cluster(ContextDecorator):

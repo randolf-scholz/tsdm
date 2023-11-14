@@ -11,9 +11,7 @@ __all__ = [
 from abc import ABCMeta
 from collections.abc import Iterator, MutableMapping
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any
-
-from typing_extensions import Self
+from typing import Any, Self
 
 
 def is_allcaps(s: str) -> bool:
@@ -54,7 +52,7 @@ class ConfigMetaclass(ABCMeta):
         namespace: dict[str, Any],
         /,
         **kwds: Any,
-    ) -> Self:
+    ) -> type:
         r"""Create a new class, patch in dataclass fields, and return it."""
         if "__annotations__" not in namespace:
             namespace["__annotations__"] = {}

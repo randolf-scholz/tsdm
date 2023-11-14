@@ -27,13 +27,21 @@ import logging
 import operator
 from collections.abc import Mapping, Sequence
 from functools import reduce
-from typing import Any, Generic, NamedTuple, Optional, overload
+from typing import (
+    Any,
+    Generic,
+    NamedTuple,
+    NotRequired,
+    Optional,
+    Required,
+    TypedDict,
+    overload,
+)
 
 import pandas as pd
 from pandas import DataFrame, Index, Series
 from pyarrow import Array, Table
 from scipy import stats
-from typing_extensions import NotRequired, Required, TypedDict
 
 from tsdm.backend.pandas import (
     pandas_false_like,

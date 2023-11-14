@@ -12,12 +12,12 @@ __all__ = [
 
 from collections.abc import Hashable
 from copy import deepcopy
-from typing import Any, ClassVar, Final, Literal, Optional, cast
+from typing import Any, ClassVar, Final, Literal, Optional, Self, cast
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
-from typing_extensions import Self, deprecated
+from typing_extensions import deprecated
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder

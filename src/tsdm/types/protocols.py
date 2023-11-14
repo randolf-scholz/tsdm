@@ -64,6 +64,8 @@ from typing import (
     NamedTuple,
     ParamSpec,
     Protocol,
+    Self,
+    SupportsIndex,
     TypeGuard,
     TypeVar,
     overload,
@@ -72,12 +74,7 @@ from typing import (
 
 import numpy as np
 from numpy.typing import NDArray
-from typing_extensions import (
-    Self,
-    SupportsIndex,
-    get_original_bases,
-    get_protocol_members,
-)
+from typing_extensions import get_original_bases, get_protocol_members
 
 from tsdm.types.variables import (
     any_co as T_co,
