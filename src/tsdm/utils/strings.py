@@ -740,14 +740,14 @@ def repr_array(
 
     # add the dtype
     match obj:
-        case DataFrame() | MultiIndex() as frame:  # type: ignore[misc]
-            dtypes = [repr_dtype(dtype) for dtype in frame.dtypes]  # type: ignore[unreachable]
+        case DataFrame() | MultiIndex() as frame:
+            dtypes = [repr_dtype(dtype) for dtype in frame.dtypes]
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
-        case pyarrow_table() as table:  # type: ignore[misc]
-            dtypes = [repr_dtype(dtype) for dtype in table.schema.types]  # type: ignore[unreachable]
+        case pyarrow_table() as table:
+            dtypes = [repr_dtype(dtype) for dtype in table.schema.types]  #
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
-        case pyarrow_array() as array:  # type: ignore[misc]
-            string += ", " + repr_dtype(array.type)  # type: ignore[unreachable]
+        case pyarrow_array() as array:
+            string += ", " + repr_dtype(array.type)
         case SupportsDtype() as tensor:
             string += ", " + repr_dtype(tensor.dtype)
         case _:

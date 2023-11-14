@@ -34,8 +34,8 @@ class ResNetBlock(nn.Sequential):
     """
 
     HP = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
+        "__module__": __module__,
         "input_size": None,
         "num_subblocks": 2,
         "subblocks": [
@@ -73,9 +73,9 @@ class ResNetBlock(nn.Sequential):
 
         for k in range(HP["num_subblocks"]):
             key = f"subblock{k}"
-            module = nn.Sequential(
-                *[initialize_from_config(layer) for layer in HP["subblocks"]]
-            )
+            module = nn.Sequential(*[
+                initialize_from_config(layer) for layer in HP["subblocks"]
+            ])
             self.add_module(key, module)
             subblocks[key] = module
 
@@ -123,9 +123,9 @@ class ConcatEmbedding(nn.Module):
     r"""Maps $x ⟼ [x,w]$."""
 
     HP = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__module__": __module__,
         "input_size": int,
         "hidden_size": int,
     }

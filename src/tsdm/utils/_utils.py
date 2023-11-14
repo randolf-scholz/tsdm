@@ -44,12 +44,7 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.constants import BOOLEAN_PAIRS
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import (
-    HashableType,
-    any_var as T,
-    key_other_var as K2,
-    key_var as K,
-)
+from tsdm.types.variables import HashableType, key_other_var as K2, key_var as K
 
 __logger__ = logging.getLogger(__name__)
 

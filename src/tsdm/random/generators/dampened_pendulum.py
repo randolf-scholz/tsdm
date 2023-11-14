@@ -141,12 +141,10 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
         alpha = self.g / self.length
         beta = self.gamma / self.mass
 
-        new_state = np.stack(
-            [
-                omega,
-                -alpha * np.sin(theta) - beta * omega,
-            ]
-        )
+        new_state = np.stack([
+            omega,
+            -alpha * np.sin(theta) - beta * omega,
+        ])
         return np.einsum("..., ...d -> ...d", np.ones_like(t), new_state)
 
 

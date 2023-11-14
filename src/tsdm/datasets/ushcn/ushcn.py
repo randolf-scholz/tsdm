@@ -473,9 +473,9 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         warnings.warn(
             "This can take a while to run. Consider using the Modin backend."
             " Refactor if read_fwf becomes available in polars or pyarrow.",
+            stacklevel=2,
         )
 
-        import polars as pl
         import pyarrow.csv as csv
 
         # table = pl.read_csv(self.rawdata_paths["us.txt.gz"], separator="\n")
@@ -484,8 +484,6 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             # compression="gzip",
         )
         print(table.schema)
-
-        raise 0
 
         # column: (start, stop)
         colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
@@ -556,9 +554,9 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         self.LOGGER.info("Cleaning up columns...")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
         data.columns = pd.MultiIndex.from_frame(
-            DataFrame(data_cols, columns=["VAR", "DAY"]).astype(
-                {"VAR": "string[pyarrow]", "DAY": "int8[pyarrow]"}
-            )
+            DataFrame(data_cols, columns=["VAR", "DAY"]).astype({
+                "VAR": "string[pyarrow]", "DAY": "int8[pyarrow]"
+            })
         )
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
@@ -566,15 +564,13 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         data = (
             data.stack(level="DAY", dropna=False)
             .reset_index(level="DAY")
-            .astype(  # correct dtypes after stacking operation
-                {
-                    "DAY": "int8[pyarrow]",
-                    "VALUE": VALUES_DTYPE,
-                    "MFLAG": MFLAGS_DTYPE,
-                    "QFLAG": QFLAGS_DTYPE,
-                    "SFLAG": SFLAGS_DTYPE,
-                }
-            )
+            .astype({  # correct dtypes after stacking operation
+                "DAY": "int8[pyarrow]",
+                "VALUE": VALUES_DTYPE,
+                "MFLAG": MFLAGS_DTYPE,
+                "QFLAG": QFLAGS_DTYPE,
+                "SFLAG": SFLAGS_DTYPE,
+            })
         )
 
         self.LOGGER.info("Merging on ID columns...")

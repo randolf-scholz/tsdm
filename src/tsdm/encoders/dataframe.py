@@ -832,7 +832,7 @@ class TensorEncoder(BaseEncoder):
         pass
 
     @overload
-    def encode(self, data: PandasObject, /) -> Tensor: ...  # type: ignore[misc]
+    def encode(self, data: PandasObject, /) -> Tensor: ...  # type: ignore[overload-overlap]
     @overload
     def encode(self, data: tuple[PandasObject, ...], /) -> tuple[Tensor, ...]: ...
     def encode(self, data, /):

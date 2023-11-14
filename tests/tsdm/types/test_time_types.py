@@ -7,13 +7,13 @@ import pandas
 from pytest import mark
 from typing_extensions import get_protocol_members
 
-from tsdm.types.protocols import DateTime, TimeDelta
+from tsdm.types.time import DateTime, TimeDelta
 
 ISO_DATE = "2021-01-01"
 
 TIMEDELTAS: dict[str, TimeDelta] = {
-    "float": 10.0,
-    "int": 10,
+    "float": float(10.0),
+    "int": int(10),
     "numpy": numpy.timedelta64(1, "D"),
     "numpy_float": numpy.float64(10.0),
     "numpy_int": numpy.int64(10),
@@ -24,8 +24,8 @@ TIMEDELTAS: dict[str, TimeDelta] = {
 
 
 DATETIMES: dict[str, DateTime] = {  # pyright: ignore[reportGeneralTypeIssues]
-    "float": 10.0,
-    "int": 10,
+    "float": float(10.0),
+    "int": int(10),
     "numpy": numpy.datetime64(ISO_DATE),
     "numpy_float": numpy.float64(10.0),
     "numpy_int": numpy.int64(10),

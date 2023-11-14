@@ -155,7 +155,7 @@ def shared_grid_plot(
 
     axes: NDArray[Axes]  # type: ignore[type-var]
     fig: Figure
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **subplots_kwargs)  # type: ignore[arg-type]
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, **subplots_kwargs)
 
     # call the plot functions
     for idx in np.ndindex(axes.shape):
@@ -255,7 +255,7 @@ def plot_spectrum(
     with plt.style.context(style):
         assert len(kernel.shape) == 2 and kernel.shape[0] == kernel.shape[1]
         eigs = eigvals(kernel).detach().cpu()
-        fig, ax = plt.subplots(**figure_kwargs)  # type: ignore[arg-type]
+        fig, ax = plt.subplots(**figure_kwargs)
         ax.set(**axis_kwargs)
         ax.scatter(eigs.real, eigs.imag, **scatter_kwargs)
 

@@ -655,17 +655,15 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
             return_type = get_return_typehint(self.clean_table)
             type_hints = {key: str(return_type) for key in self.table_names}
 
-        return LazyDict(
-            {
-                key: LazyValue(
-                    self.load,
-                    args=(key,),
-                    kwargs={"initializing": True},
-                    type_hint=type_hints[key],
-                )
-                for key in self.table_names
-            }
-        )
+        return LazyDict({
+            key: LazyValue(
+                self.load,
+                args=(key,),
+                kwargs={"initializing": True},
+                type_hint=type_hints[key],
+            )
+            for key in self.table_names
+        })
 
     @cached_property
     def dataset_files(self) -> Mapping[Key, str]:
@@ -760,7 +758,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         return self.deserialize(self.dataset_paths[key])
 
     @overload
-    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T_co]: ...  # type: ignore[misc]
+    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T_co]: ...  # type: ignore[overload-overlap]
     @overload
     def load(self, key: Key = ..., **kwargs: Any) -> T_co: ...
     def load(
@@ -954,10 +952,10 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
         # TODO: There must be a better way to slice this
 
         match key:
-            case Series() as s if isinstance(s.index, MultiIndex):  # type: ignore[misc, has-type]
-                ts = self.timeseries.loc[s]  # type: ignore[unreachable]
-            case Series() as s:  # type: ignore[misc]
-                assert pandas.api.types.is_bool_dtype(s)  # type: ignore[unreachable]
+            case Series() as s if isinstance(s.index, MultiIndex):
+                ts = self.timeseries.loc[s]
+            case Series() as s:
+                assert pandas.api.types.is_bool_dtype(s)
                 # NOTE: loc[s] would not work here?!
                 ts = self.timeseries.loc[s[s].index]
             case _:
@@ -965,8 +963,8 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
 
         # make sure metadata is always DataFrame.
         match self.metadata:
-            case DataFrame() as df:  # type: ignore[misc]
-                md = df.loc[key]  # type: ignore[unreachable]
+            case DataFrame() as df:
+                md = df.loc[key]
                 if isinstance(md, Series):
                     md = df.loc[[key]]
             case _:
@@ -974,22 +972,22 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
 
         # slice the timeindex-descriptions
         match self.timeindex_description:
-            case DataFrame() as desc if desc.index.equals(self.metaindex):  # type: ignore[misc, has-type]
-                tidx_desc = desc.loc[key]  # type: ignore[unreachable]
+            case DataFrame() as desc if desc.index.equals(self.metaindex):
+                tidx_desc = desc.loc[key]
             case _:
                 tidx_desc = self.timeindex_description
 
         # slice the ts-descriptions
         match self.timeseries_description:
-            case DataFrame() as desc if desc.index.equals(self.metaindex):  # type: ignore[misc, has-type]
-                ts_desc = desc.loc[key]  # type: ignore[unreachable]
+            case DataFrame() as desc if desc.index.equals(self.metaindex):
+                ts_desc = desc.loc[key]
             case _:
                 ts_desc = self.timeseries_description
 
         # slice the metadata-descriptions
         match self.metadata_description:
-            case DataFrame() as desc if desc.index.equals(self.metaindex):  # type: ignore[misc, has-type]
-                md_desc = desc.loc[key]  # type: ignore[unreachable]
+            case DataFrame() as desc if desc.index.equals(self.metaindex):
+                md_desc = desc.loc[key]
             case _:
                 md_desc = self.metadata_description
 

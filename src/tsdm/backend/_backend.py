@@ -75,11 +75,20 @@ def gather_types(obj: object) -> set[BackendID]:
             types |= set().union(*map(gather_types, mapping.values()))
         case Tensor():
             types.add("torch")
-        case DataFrame() | Series():  # type: ignore[misc]
-            types.add("pandas")  # type: ignore[unreachable]
+        case DataFrame() | Series():
+            types.add("pandas")
         case ndarray():
             types.add("numpy")
-        case None | bool() | int() | float() | complex() | str() | datetime() | timedelta():
+        case (
+            None
+            | bool()
+            | int()
+            | float()
+            | complex()
+            | str()
+            | datetime()
+            | timedelta()
+        ):
             # FIXME: https://github.com/python/cpython/issues/106246
             # use PythonScalar instead of Scalar when the above issue is fixed
             # types.add("fallback")

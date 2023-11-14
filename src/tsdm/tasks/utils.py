@@ -155,12 +155,10 @@ def collate_timeseries(batch: list[TimeSeriesSample]) -> PaddedBatch:
         sorted_idx = torch.argsort(t_combined)
 
         # create a mask for looking up the target values
-        m_queries = torch.cat(
-            [
-                torch.zeros_like(t_inputs, dtype=torch.bool),
-                torch.ones_like(t_target, dtype=torch.bool),
-            ]
-        )
+        m_queries = torch.cat([
+            torch.zeros_like(t_inputs, dtype=torch.bool),
+            torch.ones_like(t_target, dtype=torch.bool),
+        ])
         m_inputs = x.isfinite()
         m_targets = y.isfinite()
 

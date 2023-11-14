@@ -3,8 +3,8 @@ r"""Generic Dataset classes."""
 __all__ = [
     # Type Aliases
     "Dataset",
-    "IterableDataset",
     "TabularDataset",
+    "SequentialDataset",
     # Protocols
     "IterableDataset",
     "MapDataset",

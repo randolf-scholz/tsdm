@@ -12,11 +12,13 @@ __all__ = [
     "Sampler",
     "BaseSampler",
     # Classes
-    "HierarchicalSampler",
-    "RandomSampler",
-    "SlidingWindowSampler",
     "CollectionSampler",
+    "HierarchicalSampler",
+    "IntervalSampler",
+    "RandomSampler",
+    "SequenceSampler",
     "SliceSampler",
+    "SlidingWindowSampler",
     # Functions
     "compute_grid",
 ]

@@ -26,8 +26,6 @@ __all__ = [
     "NumericalArray",
     "MutableArray",
     # Time-Types
-    "DateTime",
-    "TimeDelta",
     # stdlib
     "SupportsGetItem",
     "SupportsKeysAndGetItem",
@@ -47,8 +45,6 @@ __all__ = [
     "ArrayType",
     "NumericalArrayType",
     "MutableArrayType",
-    "DT_Type",
-    "TD_Type",
 ]
 
 import dataclasses
@@ -68,8 +64,6 @@ from typing import (
     NamedTuple,
     ParamSpec,
     Protocol,
-    SupportsFloat,
-    SupportsInt,
     TypeGuard,
     TypeVar,
     overload,
@@ -81,7 +75,6 @@ from numpy.typing import NDArray
 from typing_extensions import (
     Self,
     SupportsIndex,
-    deprecated,
     get_original_bases,
     get_protocol_members,
 )
@@ -935,113 +928,3 @@ def is_namedtuple(obj: Any, /) -> TypeGuard[NTuple | type[NTuple]]:
 #  and are just plain dicts.
 
 # endregion generic factory-protocols --------------------------------------------------
-
-
-# region datetime and timedelta protocols ----------------------------------------------
-
-
-TD_Type = TypeVar("TD_Type", bound="TimeDelta")
-DT_Type = TypeVar("DT_Type", bound="DateTime[TimeDelta]")
-
-
-@runtime_checkable
-class TimeDelta(Protocol):
-    """Time delta provides several arithmetical operations."""
-
-    # unary operations
-    def __pos__(self: TD_Type) -> TD_Type: ...
-    def __neg__(self: TD_Type) -> TD_Type: ...
-    def __abs__(self: TD_Type) -> TD_Type: ...
-    def __bool__(self) -> bool: ...
-
-    # comparisons
-    def __le__(self: TD_Type, other: TD_Type, /) -> bool: ...
-    def __lt__(self: TD_Type, other: TD_Type, /) -> bool: ...
-    def __ge__(self: TD_Type, other: TD_Type, /) -> bool: ...
-    def __gt__(self: TD_Type, other: TD_Type, /) -> bool: ...
-
-    # arithmetic
-    # addition +
-    def __add__(self: TD_Type, other: TD_Type, /) -> TD_Type: ...
-    def __radd__(self: TD_Type, other: TD_Type, /) -> TD_Type: ...
-
-    # subtraction -
-    def __sub__(self: TD_Type, other: TD_Type, /) -> TD_Type: ...
-    def __rsub__(self: TD_Type, other: TD_Type, /) -> TD_Type: ...
-
-    # multiplication *
-    def __mul__(self: TD_Type, other: int, /) -> TD_Type: ...
-    def __rmul__(self: TD_Type, other: int, /) -> TD_Type: ...
-
-    # division /
-    def __truediv__(self: TD_Type, other: TD_Type, /) -> SupportsFloat: ...
-
-    # @overload
-    # def __truediv__(self, other: Self, /) -> float: ...
-    # @overload
-    # def __truediv__(self, other: float, /) -> Self: ...
-
-    # floor division //
-    def __floordiv__(self: TD_Type, other: TD_Type, /) -> SupportsInt: ...
-
-    # @overload
-    # def __floordiv__(self, other: Self, /) -> int: ...
-    # @overload
-    # def __floordiv__(self, other: int, /) -> Self: ...
-
-    # modulo %
-    def __mod__(self: TD_Type, other: TD_Type, /) -> TD_Type: ...
-
-    # NOTE: __rmod__ missing on fallback pydatetime
-    # def __rmod__(self, other: Self, /) -> Self: ...
-
-    # divmod
-    def __divmod__(self: TD_Type, other: TD_Type, /) -> tuple[SupportsInt, TD_Type]: ...
-
-    # NOTE: __rdivmod__ missing on fallback pydatetime
-    # def __rdivmod__(self, other: Self, /) -> tuple[SupportsInt, Self]: ...
-
-
-@runtime_checkable
-class DateTime(Protocol[TD_Type]):  # bind appropriate TimeDelta type
-    """Datetime can be compared and subtracted."""
-
-    def __le__(self: DT_Type, other: DT_Type, /) -> bool: ...
-    def __lt__(self: DT_Type, other: DT_Type, /) -> bool: ...
-    def __ge__(self: DT_Type, other: DT_Type, /) -> bool: ...
-    def __gt__(self: DT_Type, other: DT_Type, /) -> bool: ...
-
-    def __add__(self: DT_Type, other: TD_Type, /) -> DT_Type: ...
-    def __radd__(self: DT_Type, other: TD_Type, /) -> DT_Type: ...
-
-    # NOTE: we only keep this overload, the others are fragile.
-    def __sub__(self: DT_Type, other: DT_Type, /) -> TD_Type: ...
-
-    # @overload
-    # def __sub__(self, other: TD, /) -> Self: ...
-    # @overload
-    # def __sub__(self, other: Self, /) -> TD: ...
-    # NOTE: __rsub__ missing on fallback pydatetime
-    # @overload
-    # def __rsub__(self, other: TD, /) -> Self: ...
-    # @overload
-    # def __rsub__(self, other: Self, /) -> TD: ...
-
-
-# from datetime import datetime, timedelta
-# from typing import cast
-
-#
-# def foo(x: DT_Type[TD_Type], y: TD_Type) -> DT_Type:
-#     return x + 5.0 + y
-#
-
-#
-# a: DateTime = datetime(2020, 1, 1)
-# b: TimeDelta = timedelta(days=5)
-# reveal_type(a)
-# x = a + 5.0
-# y = b + 5.0
-# reveal_type(x)
-
-# endregion datetime and timedelta protocols -------------------------------------------

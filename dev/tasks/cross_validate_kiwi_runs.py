@@ -49,14 +49,14 @@ class ReplicateBasedSplitter:
         keys = list(col_run_to_exp.keys())
         for train_repl_sets, test_repl_sets in self.splitter.split(keys):
             train_keys = list(
-                chain(
-                    *[col_run_to_exp[keys[key_index]] for key_index in train_repl_sets]
-                )
+                chain(*[
+                    col_run_to_exp[keys[key_index]] for key_index in train_repl_sets
+                ])
             )
             test_keys = list(
-                chain(
-                    *[col_run_to_exp[keys[key_index]] for key_index in test_repl_sets]
-                )
+                chain(*[
+                    col_run_to_exp[keys[key_index]] for key_index in test_repl_sets
+                ])
             )
             yield train_keys, test_keys
 

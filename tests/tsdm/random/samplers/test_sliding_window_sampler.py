@@ -1,11 +1,11 @@
 r"""Test Sliding Window Sampler."""
 
 import logging
-from typing import assert_type, reveal_type
+from typing import assert_type
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, Series
+from pandas import Series
 from pytest import mark
 
 from tsdm.random.samplers import SlidingWindowSampler
@@ -652,7 +652,6 @@ def test_sliding_window_sampler_discrete(
     mode: str,
 ) -> None:
     """Test the SlidingWindowSampler."""
-
     sampler = SlidingWindowSampler(
         DISCRETE_DATA,
         stride=stride,
@@ -688,7 +687,6 @@ def test_sliding_window_sampler_continuous(
     mode: str,
 ) -> None:
     """Test the SlidingWindowSampler."""
-
     sampler = SlidingWindowSampler(
         CONTINUOUS_DATA,
         stride=stride,
@@ -716,12 +714,10 @@ def test_pandas_timestamps():
     """Test the SlidingWindowSampler."""
     timedeltas = Series(pd.to_timedelta(np.random.rand(200), "m"))
     tmin = pd.Timestamp(0)
-    time = pd.concat(
-        [
-            Series([tmin]),
-            tmin + timedeltas.cumsum(),
-        ]
-    ).reset_index(drop=True)
+    time = pd.concat([
+        Series([tmin]),
+        tmin + timedeltas.cumsum(),
+    ]).reset_index(drop=True)
 
     sampler = SlidingWindowSampler(
         time,

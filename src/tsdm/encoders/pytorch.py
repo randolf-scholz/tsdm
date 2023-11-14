@@ -118,9 +118,9 @@ class PositionalEncoding(nn.Module):
     """
 
     HP: dict = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__module__": __module__,
         "num_dim": int,
         "scale": float,
     }

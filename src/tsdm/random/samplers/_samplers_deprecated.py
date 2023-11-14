@@ -3,34 +3,18 @@
 __all__ = ["SliceSampler", "CollectionSampler"]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from datetime import timedelta as py_td
 from itertools import chain, count
-from typing import (
-    Any,
-    Callable,
-    Final,
-    Generic,
-    Iterator,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    cast,
-    overload,
-)
+from typing import Any, Generic, Optional, cast
 
 import numpy as np
-import pandas as pd
 from numpy._typing import NDArray
-from numpy.lib.stride_tricks import sliding_window_view
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from typing_extensions import deprecated
 
-from tsdm.random.samplers import BaseSampler, SlidingWindowSampler, compute_grid
-from tsdm.random.samplers._samplers import MODE
+from tsdm.random.samplers import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup
-from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
-from tsdm.types.variables import any_co as T_co, any_var as T, key_var as K
+from tsdm.types.time import DTVar, TDVar
+from tsdm.types.variables import any_co as T_co, key_var as K
 from tsdm.utils.data import DatasetCollection
 
 
@@ -299,9 +283,9 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
             if not valid_strides:
                 break
 
-            intervals.extend(
-                [(x0 + i * st, x0 + i * st + dt, dt, st) for i in valid_strides]
-            )
+            intervals.extend([
+                (x0 + i * st, x0 + i * st + dt, dt, st) for i in valid_strides
+            ])
 
         # set variables
         self.offset = cast(TDVar, offset)  # type: ignore[redundant-cast]
@@ -402,16 +386,14 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         self.k_max = int((total_delta - self.seq_len) // self.stride)
         self.return_mask = return_mask
 
-        self.samples = np.array(
-            [
-                (
-                    (x <= self.data) & (self.data < y)  # type: ignore[operator]
-                    if self.return_mask
-                    else [x, y]
-                )
-                for x, y in self._iter_tuples()
-            ]
-        )
+        self.samples = np.array([
+            (
+                (x <= self.data) & (self.data < y)  # type: ignore[operator]
+                if self.return_mask
+                else [x, y]
+            )
+            for x, y in self._iter_tuples()
+        ])
 
     def _iter_tuples(self) -> Iterator[tuple[DTVar, DTVar]]:
         x = self.xmin
@@ -443,173 +425,174 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         return f"{self.__class__.__name__}[{self.stride}, {self.seq_len}]"
 
 
-class MultipleSlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar]):
-    r"""Sampler that generates sliding windows over an interval.
-
-    The `SlidingWindowSampler` generates tuples.
-
-    Inputs:
-    - Ordered timestamps $T$
-    - Starting time $t_0$
-    - Final time $t_f$
-    - stride ∆t (how much the sampler advances at each step) default,
-      depending on the data type of $T$:
-        - integer: $GCD(∆T)$
-        - float: $\max(⌊AVG(∆T)⌋, ε)$
-        - timestamp: resolution dependent.
-    - horizons: `TimeDelta` or `tuple[TimeDelta, ...]`
-
-    The sampler will return tuples of `len(horizons)+1`.
-    """
-
-    data: NDArray[NumpyDTVar]
-
-    horizons: Sequence[T]
-    stride: NumpyTDVar
-    tmin: NumpyDTVar
-    tmax: NumpyDTVar
-
-    mode: MODE
-    shuffle: bool = False
-
-    grid: Final[NDArray[np.integer]]
-    start_values: NDArray[NumpyDTVar]
-    offset: NumpyDTVar
-    zero_td: T
-    cumulative_horizons: NDArray[T]
-    total_horizon: T
-
-    def __init__(
-        self,
-        data_source: Sequence[NumpyDTVar],
-        /,
-        *,
-        horizons: Sequence[str | T],
-        stride: str | T,
-        tmin: Optional[str | NumpyDTVar] = None,
-        tmax: Optional[str | NumpyDTVar] = None,
-        mode: MODE = "masks",  # type: ignore[assignment]
-        shuffle: bool = False,
-    ) -> None:
-        super().__init__(shuffle=shuffle)
-        self.data = np.asarray(data_source)
-        self.mode = mode
-        self.stride = Timedelta(stride) if isinstance(stride, str) else stride
-
-        match tmin:
-            case None:
-                self.tmin = (
-                    self.data.iloc[0] if isinstance(self.data, Series) else self.data[0]
-                )
-            case str() as time_str:
-                self.tmin = Timestamp(time_str)
-            case _:
-                self.tmin = tmin
-
-        match tmax:
-            case None:
-                self.tmax = (
-                    self.data.iloc[-1]
-                    if isinstance(self.data, Series)
-                    else self.data[-1]
-                )
-            case str() as time_str:
-                self.tmax = Timestamp(time_str)
-            case _:
-                self.tmax = tmax
-
-        # this gives us the correct zero, depending on the dtype
-        self.zero_td = cast(NumpyTDVar, self.tmin - self.tmin)  # type: ignore[redundant-cast]
-        assert self.stride > self.zero_td, "stride cannot be zero."
-
-        # convert horizons to timedelta
-        if isinstance(horizons[0], str | Timedelta | py_td):
-            self.horizons = pd.to_timedelta(horizons)
-            concat_horizons = self.horizons.insert(0, self.zero_td)  # type: ignore[union-attr]
-        else:
-            self.horizons = np.array(horizons)
-            concat_horizons = np.concatenate(([self.zero_td], self.horizons))  # type: ignore[arg-type]
-
-        self.cumulative_horizons = np.cumsum(concat_horizons)
-        self.total_horizon = self.cumulative_horizons[-1]
-
-        self.start_values = self.tmin + self.cumulative_horizons  # type: ignore[assignment, call-overload, operator]
-
-        self.offset = self.tmin + self.total_horizon  # type: ignore[assignment, call-overload, operator]
-
-        # precompute the possible slices
-        grid = compute_grid(self.tmin, self.tmax, self.stride, offset=self.offset)
-        self.grid = grid[grid >= 0]  # type: ignore[assignment, operator]
-
-    def __len__(self) -> int:
-        r"""Return the number of samples."""
-        return len(self.grid)
-
-    @staticmethod
-    def __make__points__(bounds: NDArray[NumpyDTVar]) -> NDArray[NumpyDTVar]:
-        r"""Return the points as-is."""
-        return bounds
-
-    @staticmethod
-    def __make__slices__(bounds: NDArray[NumpyDTVar]) -> tuple[slice, ...]:
-        r"""Return a tuple of slices."""
-        return tuple(
-            slice(start, stop) for start, stop in sliding_window_view(bounds, 2)
-        )
-
-    def __make__masks__(
-        self, bounds: NDArray[NumpyDTVar]
-    ) -> tuple[NDArray[np.bool_], ...]:
-        r"""Return a tuple of masks."""
-        return tuple(
-            (start <= self.data) & (self.data < stop)
-            for start, stop in sliding_window_view(bounds, 2)
-        )
-
-    @property
-    def make_key(self) -> Callable[[NDArray], Any]:
-        r"""Return the correct yield function."""
-        match self.mode:
-            case "points", _:
-                return self.__make__points__
-            case "masks", True:
-                return self.__make__masks__
-            case "slices", True:
-                return self.__make__slices__
-            case _:
-                raise ValueError(f"Invalid mode {self.mode=}")
-
-    @overload
-    def __iter__(
-        self: "SlidingWindowSampler[Literal['slices'], NumpyDTVar]",
-    ) -> Iterator[tuple[slice, ...]]: ...
-    @overload
-    def __iter__(
-        self: "SlidingWindowSampler[Literal['masks'], NumpyDTVar]",
-    ) -> Iterator[tuple[NDArray[np.bool_], ...]]: ...
-    @overload
-    def __iter__(
-        self: "SlidingWindowSampler[Literal['points'], NumpyDTVar]",
-    ) -> Iterator[tuple[NDArray[NumpyDTVar], ...]]: ...
-    def __iter__(self):  # pyright: ignore[reportGeneralTypeIssues]
-        r"""Iterate through.
-
-        For each k, we return either:
-
-        - mode=points: $(x₀ + k⋅∆t, x₁+k⋅∆t, …, xₘ+k⋅∆t)$
-        - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
-        - mode=masks: $(mask_1, …, mask_m)$
-        """
-        if self.shuffle:
-            perm = np.random.permutation(len(self.grid))
-            grid = self.grid[perm]
-        else:
-            grid = self.grid
-
-        # unpack variables (avoid repeated lookups)
-        t0 = self.start_values
-        stride = self.stride
-        make_key = self.make_key
-
-        for k in grid:
-            yield make_key(t0 + k * stride)  # shifted window
+#
+# class MultipleSlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar]):
+#     r"""Sampler that generates sliding windows over an interval.
+#
+#     The `SlidingWindowSampler` generates tuples.
+#
+#     Inputs:
+#     - Ordered timestamps $T$
+#     - Starting time $t_0$
+#     - Final time $t_f$
+#     - stride ∆t (how much the sampler advances at each step) default,
+#       depending on the data type of $T$:
+#         - integer: $GCD(∆T)$
+#         - float: $\max(⌊AVG(∆T)⌋, ε)$
+#         - timestamp: resolution dependent.
+#     - horizons: `TimeDelta` or `tuple[TimeDelta, ...]`
+#
+#     The sampler will return tuples of `len(horizons)+1`.
+#     """
+#
+#     data: NDArray[NumpyDTVar]
+#
+#     horizons: Sequence[T]
+#     stride: NumpyTDVar
+#     tmin: NumpyDTVar
+#     tmax: NumpyDTVar
+#
+#     mode: MODE
+#     shuffle: bool = False
+#
+#     grid: Final[NDArray[np.integer]]
+#     start_values: NDArray[NumpyDTVar]
+#     offset: NumpyDTVar
+#     zero_td: T
+#     cumulative_horizons: NDArray[T]
+#     total_horizon: T
+#
+#     def __init__(
+#         self,
+#         data_source: Sequence[NumpyDTVar],
+#         /,
+#         *,
+#         horizons: Sequence[str | T],
+#         stride: str | T,
+#         tmin: Optional[str | NumpyDTVar] = None,
+#         tmax: Optional[str | NumpyDTVar] = None,
+#         mode: MODE = "masks",  # type: ignore[assignment]
+#         shuffle: bool = False,
+#     ) -> None:
+#         super().__init__(shuffle=shuffle)
+#         self.data = np.asarray(data_source)
+#         self.mode = mode
+#         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
+#
+#         match tmin:
+#             case None:
+#                 self.tmin = (
+#                     self.data.iloc[0] if isinstance(self.data, Series) else self.data[0]
+#                 )
+#             case str() as time_str:
+#                 self.tmin = Timestamp(time_str)
+#             case _:
+#                 self.tmin = tmin
+#
+#         match tmax:
+#             case None:
+#                 self.tmax = (
+#                     self.data.iloc[-1]
+#                     if isinstance(self.data, Series)
+#                     else self.data[-1]
+#                 )
+#             case str() as time_str:
+#                 self.tmax = Timestamp(time_str)
+#             case _:
+#                 self.tmax = tmax
+#
+#         # this gives us the correct zero, depending on the dtype
+#         self.zero_td = cast(NumpyTDVar, self.tmin - self.tmin)
+#         assert self.stride > self.zero_td, "stride cannot be zero."
+#
+#         # convert horizons to timedelta
+#         if isinstance(horizons[0], str | Timedelta | py_td):
+#             self.horizons = pd.to_timedelta(horizons)
+#             concat_horizons = self.horizons.insert(0, self.zero_td)
+#         else:
+#             self.horizons = np.array(horizons)
+#             concat_horizons = np.concatenate(([self.zero_td], self.horizons))
+#
+#         self.cumulative_horizons = np.cumsum(concat_horizons)
+#         self.total_horizon = self.cumulative_horizons[-1]
+#
+#         self.start_values = self.tmin + self.cumulative_horizons
+#
+#         self.offset = self.tmin + self.total_horizon
+#
+#         # precompute the possible slices
+#         grid = compute_grid(self.tmin, self.tmax, self.stride, offset=self.offset)
+#         self.grid = grid[grid >= 0]  # type: ignore[assignment, operator]
+#
+#     def __len__(self) -> int:
+#         r"""Return the number of samples."""
+#         return len(self.grid)
+#
+#     @staticmethod
+#     def __make__points__(bounds: NDArray[NumpyDTVar]) -> NDArray[NumpyDTVar]:
+#         r"""Return the points as-is."""
+#         return bounds
+#
+#     @staticmethod
+#     def __make__slices__(bounds: NDArray[NumpyDTVar]) -> tuple[slice, ...]:
+#         r"""Return a tuple of slices."""
+#         return tuple(
+#             slice(start, stop) for start, stop in sliding_window_view(bounds, 2)
+#         )
+#
+#     def __make__masks__(
+#         self, bounds: NDArray[NumpyDTVar]
+#     ) -> tuple[NDArray[np.bool_], ...]:
+#         r"""Return a tuple of masks."""
+#         return tuple(
+#             (start <= self.data) & (self.data < stop)
+#             for start, stop in sliding_window_view(bounds, 2)
+#         )
+#
+#     @property
+#     def make_key(self) -> Callable[[NDArray], Any]:
+#         r"""Return the correct yield function."""
+#         match self.mode:
+#             case "points", _:
+#                 return self.__make__points__
+#             case "masks", True:
+#                 return self.__make__masks__
+#             case "slices", True:
+#                 return self.__make__slices__
+#             case _:
+#                 raise ValueError(f"Invalid mode {self.mode=}")
+#
+#     @overload
+#     def __iter__(
+#         self: "SlidingWindowSampler[Literal['slices'], NumpyDTVar]",
+#     ) -> Iterator[tuple[slice, ...]]: ...
+#     @overload
+#     def __iter__(
+#         self: "SlidingWindowSampler[Literal['masks'], NumpyDTVar]",
+#     ) -> Iterator[tuple[NDArray[np.bool_], ...]]: ...
+#     @overload
+#     def __iter__(
+#         self: "SlidingWindowSampler[Literal['points'], NumpyDTVar]",
+#     ) -> Iterator[tuple[NDArray[NumpyDTVar], ...]]: ...
+#     def __iter__(self):  # pyright: ignore[reportGeneralTypeIssues]
+#         r"""Iterate through.
+#
+#         For each k, we return either:
+#
+#         - mode=points: $(x₀ + k⋅∆t, x₁+k⋅∆t, …, xₘ+k⋅∆t)$
+#         - mode=slices: $(slice(x₀ + k⋅∆t, x₁+k⋅∆t), …, slice(xₘ₋₁+k⋅∆t, xₘ+k⋅∆t))$
+#         - mode=masks: $(mask_1, …, mask_m)$
+#         """
+#         if self.shuffle:
+#             perm = np.random.permutation(len(self.grid))
+#             grid = self.grid[perm]
+#         else:
+#             grid = self.grid
+#
+#         # unpack variables (avoid repeated lookups)
+#         t0 = self.start_values
+#         stride = self.stride
+#         make_key = self.make_key
+#
+#         for k in grid:
+#             yield make_key(t0 + k * stride)  # shifted window

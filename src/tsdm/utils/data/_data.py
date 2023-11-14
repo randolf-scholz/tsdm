@@ -147,17 +147,17 @@ def strip_whitespace(frame: DataFrame, /, *cols: str) -> DataFrame: ...  # type:
 def strip_whitespace(table, /, *cols):
     """Strip whitespace from all string columns in a table or frame."""
     match table:
-        case Table() as table:  # type: ignore[misc]
-            return strip_whitespace_table(table, *cols)  # type: ignore[unreachable]
-        case Array() as array:  # type: ignore[misc]
-            if cols:  # type: ignore[unreachable]
+        case Table() as table:
+            return strip_whitespace_table(table, *cols)
+        case Array() as array:
+            if cols:
                 raise ValueError("Cannot specify columns for an Array.")
             return strip_whitespace_array(array)
-        case Series() as series:  # type: ignore[misc]
-            assert not cols  # type: ignore[unreachable]
+        case Series() as series:
+            assert not cols
             return strip_whitespace_series(series)
-        case DataFrame() as frame:  # type: ignore[misc]
-            return strip_whitespace_dataframe(frame, *cols)  # type: ignore[unreachable]
+        case DataFrame() as frame:
+            return strip_whitespace_dataframe(frame, *cols)
         case _:
             raise TypeError(f"Unsupported type: {type(table)}")
 
@@ -246,14 +246,12 @@ def detect_outliers(
 ):
     """Detect outliers in a Series or DataFrame, given boundary values."""
     if description is not None:
-        if not all(
-            [
-                lower_bound is None,
-                upper_bound is None,
-                lower_inclusive is None,
-                upper_inclusive is None,
-            ]
-        ):
+        if not all([
+            lower_bound is None,
+            upper_bound is None,
+            lower_inclusive is None,
+            upper_inclusive is None,
+        ]):
             raise ValueError("Either description or bounds should be given, not both.")
         lower_bound = description["lower_bound"]
         upper_bound = description["upper_bound"]
@@ -429,14 +427,12 @@ def remove_outliers(
 ):
     """Remove outliers from a DataFrame, given boundary values."""
     if description is not None:
-        if not all(
-            [
-                lower_bound is None,
-                upper_bound is None,
-                lower_inclusive is None,
-                upper_inclusive is None,
-            ]
-        ):
+        if not all([
+            lower_bound is None,
+            upper_bound is None,
+            lower_inclusive is None,
+            upper_inclusive is None,
+        ]):
             raise ValueError("Either description or bounds should be given, not both.")
         lower_bound = description["lower_bound"]
         upper_bound = description["upper_bound"]

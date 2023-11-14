@@ -25,7 +25,7 @@ from typing_extensions import Self
 class ray_cluster(ContextDecorator):
     """Context manager for starting and stopping a ray cluster."""
 
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")  # type: ignore[name-defined]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")
     """Logger for this class."""
     ray: ModuleType | None = None
     """Ray module."""
@@ -65,7 +65,7 @@ class ray_cluster(ContextDecorator):
 class timer(ContextDecorator):
     """Context manager for timing a block of code."""
 
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")  # type: ignore[name-defined]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")
 
     start_time: int
     """Start time of the timer."""

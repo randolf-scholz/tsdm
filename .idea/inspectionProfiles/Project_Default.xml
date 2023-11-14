@@ -296,6 +296,7 @@
     <inspection_tool class="HttpRequestPlaceholder" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="HttpRequestWhitespaceInsideRequestTargetPath" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="HttpUrlsUsage" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="IdentifierGrammar" enabled="false" level="TYPO" enabled_by_default="false" />
     <inspection_tool class="IfStatementWithIdenticalBranchesJS" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="IfStatementWithTooManyBranchesJS" enabled="false" level="WARNING" enabled_by_default="false">
       <option name="m_limit" value="3" />
@@ -729,6 +730,13 @@
           <option value="pandas.core.indexes.datetimes.DatetimeIndex.round" />
           <option value="pandas.core.indexes.datetimes.DatetimeIndex.day_name" />
           <option value="typing_extensions.*" />
+          <option value="tsdm.models.generic.rezero.__module__" />
+          <option value="tsdm.models.generic.resnet.__module__" />
+          <option value="tsdm.models.generic.dense.__module__" />
+          <option value="tsdm.models.generic.conv1d.__module__" />
+          <option value="tsdm.models.generic.mlp.__module__" />
+          <option value="tsdm.models.generic.scaled_dot_product_attention.__module__" />
+          <option value="tsdm.encoders.pytorch.__module__" />
         </list>
       </option>
     </inspection_tool>
@@ -925,6 +933,8 @@
       <option name="m_limit" value="30" />
     </inspection_tool>
     <inspection_tool class="StringLiteralBreaksHTMLJS" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="StructuralWrap" enabled="false" level="TYPO" enabled_by_default="false" />
+    <inspection_tool class="Style" enabled="false" level="TYPO" enabled_by_default="false" />
     <inspection_tool class="Stylelint" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="SuspiciousTypeOfGuard" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="SwJsonMaybeSpecificationInspection" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -989,6 +999,7 @@
     <inspection_tool class="UnusedProperty" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="UpdateDependencyToLatestVersion" enabled="false" level="INFORMATION" enabled_by_default="false" />
     <inspection_tool class="UseEllipsisInPropertyInspection" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="ValeProblem" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="VoidExpressionJS" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="VueDataFunction" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="VueDeprecatedSymbol" enabled="false" level="WARNING" enabled_by_default="false" />

@@ -108,31 +108,27 @@ class Kiwi_BioProcessTask(OldBaseTask):
         self.targets = targets = Series(["Base", "DOT", "Glucose", "OD600"])
         self.targets.index = self.targets.apply(ts.columns.get_loc)
 
-        self.controls = controls = Series(
-            [
-                "Cumulated_feed_volume_glucose",
-                "Cumulated_feed_volume_medium",
-                "InducerConcentration",
-                "StirringSpeed",
-                "Flow_Air",
-                "Temperature",
-                "Probe_Volume",
-            ]
-        )
+        self.controls = controls = Series([
+            "Cumulated_feed_volume_glucose",
+            "Cumulated_feed_volume_medium",
+            "InducerConcentration",
+            "StirringSpeed",
+            "Flow_Air",
+            "Temperature",
+            "Probe_Volume",
+        ])
         controls.index = controls.apply(ts.columns.get_loc)
 
-        self.observables = observables = Series(
-            [
-                "Base",
-                "DOT",
-                "Glucose",
-                "OD600",
-                "Acetate",
-                "Fluo_GFP",
-                "Volume",
-                "pH",
-            ]
-        )
+        self.observables = observables = Series([
+            "Base",
+            "DOT",
+            "Glucose",
+            "OD600",
+            "Acetate",
+            "Fluo_GFP",
+            "Volume",
+            "pH",
+        ])
         observables.index = observables.apply(ts.columns.get_loc)
 
         assert (
@@ -222,15 +218,13 @@ class Kiwi_BioProcessTask(OldBaseTask):
             targets=self.targets.index,
         )
 
-        DS = MappingDataset(
-            {
-                idx: TimeSeriesDataset(
-                    ts.loc[idx],
-                    metadata=md.loc[idx],
-                )
-                for idx in md.index
-            }
-        )
+        DS = MappingDataset({
+            idx: TimeSeriesDataset(
+                ts.loc[idx],
+                metadata=md.loc[idx],
+            )
+            for idx in md.index
+        })
 
         # construct the sampler
         subsamplers = {

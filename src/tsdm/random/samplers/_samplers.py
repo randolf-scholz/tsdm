@@ -1,7 +1,6 @@
 r"""Samplers for randomly selecting data.
 
-
-NOTE:
+Note:
     For Mapping-style datasets, the sampler will return the keys of the mapping.
 """
 
@@ -18,12 +17,9 @@ __all__ = [
 ]
 
 import logging
-import math
-import warnings
 from abc import abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from datetime import timedelta as py_td
 from itertools import chain
 from typing import (
     Any,
@@ -33,7 +29,6 @@ from typing import (
     Literal,
     Optional,
     Protocol,
-    Self,
     TypeAlias,
     TypeVar,
     cast,
@@ -47,11 +42,9 @@ from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 
-from tsdm.types.protocols import DateTime as DTLike, TimeDelta as TDLike
-from tsdm.types.time import DTVar, NumpyDTVar, NumpyTDVar, TDVar
+from tsdm.types.time import TD, DateTime, NumpyDTVar, NumpyTDVar, TimeDelta as TDLike
 from tsdm.types.variables import (
     any_co as T_co,
-    any_other_var as T2,
     any_var as T,
     key_other_var as K2,
     key_var as K,
@@ -63,6 +56,111 @@ from tsdm.utils.data.datasets import (
     SequentialDataset,
 )
 from tsdm.utils.strings import pprint_repr
+
+
+# region helper functions --------------------------------------------------------------
+def get_index(dataset: Dataset[T], /) -> Index:
+    r"""Return an index object for the dataset.
+
+    We support the following data types:
+        - Series, DataFrame.
+        - Mapping Types
+        - Iterable Types
+    """
+    match dataset:
+        # NOTE: Series and DataFrame satisfy the MapDataset protocol.
+        case Series() | DataFrame() as pandas_dataset:
+            return pandas_dataset.index
+        case MapDataset() as map_dataset:
+            return Index(map_dataset.keys())
+        case IterableDataset() as iterable_dataset:
+            return Index(range(len(iterable_dataset)))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+def get_first(dataset: Dataset[T], /) -> T:
+    """Return the first element of the dataset."""
+    match dataset:
+        case Series() | DataFrame() as pandas_dataset:
+            return pandas_dataset.iloc[0]
+        case MapDataset() as map_dataset:
+            return map_dataset[next(iter(map_dataset.keys()))]
+        case IterableDataset() as iterable_dataset:
+            return next(iter(iterable_dataset))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+def get_last(dataset: Dataset[T], /) -> T:
+    """Return the last element of the dataset."""
+    match dataset:
+        case Series() | DataFrame() as pandas_dataset:
+            return pandas_dataset.iloc[-1]
+        case MapDataset() as map_dataset:
+            return map_dataset[next(reversed(map_dataset.keys()))]
+        case IterableDataset() as iterable_dataset:
+            return next(reversed(iterable_dataset))
+        case _:
+            raise TypeError(f"Got unsupported data type {type(dataset)}.")
+
+
+def compute_grid(
+    tmin: str | DateTime[TD],
+    tmax: str | DateTime[TD],
+    step: str | TD,
+    /,
+    *,
+    offset: Optional[str | DateTime[TD]] = None,
+) -> list[int]:
+    r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
+
+    That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
+    Special case: if $Δt=0$, returns $[0]$.
+
+    .. math::
+        if ∆t > 0
+            tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘᵢₙ-t₀)/Δt⌉
+            t₀+k⋅Δt ≤ tₘₐₓ ⟺ (tₘₐₓ-t₀)/Δt ≥ ⟺ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
+            ⟹ ⌈(tₘᵢₙ-t₀)/Δt⌉ ≤ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
+        if ∆t < 0
+            tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≥ k ⟺ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
+            t₀+k⋅Δt ≤ tₘₐₓ ⟺ (tₘₐₓ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘₐₓ-t₀)/Δt⌉
+            ⟹ ⌈(tₘₐₓ-t₀)/Δt⌉ ≤ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
+
+    Note:
+        This function is used to compute the strides for the sliding window sampler.
+        given a window ∆s<tₘₐₓ-tₘᵢₙ, we want to find all k≥0 such that
+        tₘᵢₙ ≤ [tₗ+k⋅Δt, tᵣ+k∆t] ≤ tₘₐₓ. This is equivalent to finding all k such that
+    """
+    # cast strings to timestamp/timedelta
+    if offset is None:
+        offset = tmin
+    tmin = cast(DateTime[TD], Timestamp(tmin) if isinstance(tmin, str) else tmin)
+    tmax = cast(DateTime[TD], Timestamp(tmax) if isinstance(tmax, str) else tmax)
+    t0 = cast(DateTime[TD], Timestamp(offset) if isinstance(offset, str) else offset)
+    step = cast(TD, Timedelta(step) if isinstance(step, str) else step)
+    # validate inputs
+    if (tmin > t0) or (t0 > tmax):
+        raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
+
+    # NOTE: time-delta types should support divmod / floordiv!
+    #  Importantly, floordiv always rounds down, even for negative numbers.
+    #  We use this formula for ceil-div: https://stackoverflow.com/a/17511341/9318372
+    zero_td = tmin - tmin
+    if step > zero_td:
+        kmin = -int((t0 - tmin) // step)  # ⌈a/b⌉ = -(-a//b)
+        kmax = int((tmax - t0) // step)  # ⌊a/b⌋ = a//b
+    elif step < zero_td:
+        kmin = -int((t0 - tmax) // step)  # ⌈a/b⌉ = -(-a//b)
+        kmax = int((tmin - t0) // step)  # ⌊a/b⌋ = a//b
+    else:
+        raise ValueError(f"Δt={step} is not allowed!")
+
+    return list(range(kmin, kmax + 1))
+
+
+# endregion helper functions -----------------------------------------------------------
 
 
 @runtime_checkable
@@ -200,9 +298,9 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
 
         self.index: Index = get_index(self.data_source)
 
-        self.sizes: Series = Series(
-            {key: len(self.subsamplers[key]) for key in self.index}
-        )
+        self.sizes: Series = Series({
+            key: len(self.subsamplers[key]) for key in self.index
+        })
 
         self.partition: Series = (
             Series(chain(*([key] * min(self.sizes) for key in self.index)))
@@ -255,10 +353,8 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
             #     raise RuntimeError(f"Sampler of {key=} exhausted prematurely.")
 
 
-class HierarchicalMappingSampler: ...  # subsamplers for MapDataset
-
-
-class HierarchicalSequenceSampler: ...  # subsamplers for IterableDataset
+# class HierarchicalMappingSampler: ...  # subsamplers for MapDataset
+# class HierarchicalSequenceSampler: ...  # subsamplers for IterableDataset
 
 
 # TODO: Hierarchical sampler for Sequence
@@ -494,7 +590,7 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
             case _:
                 raise TypeError(f"Invalid type {type(horizons)} for {horizons=}")
 
-        concat_horizons = np.concatenate([[zero_td], self.horizons])  # type: ignore[arg-type]
+        concat_horizons = np.concatenate([[zero_td], self.horizons])
         self.cumulative_horizons = np.cumsum(concat_horizons)
         # endregion set horizon(s)
 
@@ -693,107 +789,3 @@ class RandomWindowSampler(BaseSampler):
             - If set to None, the sampler will draw indefinitely.
             - If not given, the sampler will draw all possible samples (O(freq²)).
     """
-
-
-def get_index(dataset: Dataset, /) -> Index:
-    r"""Return an index object for the dataset.
-
-    We support the following data types:
-        - Series, DataFrame.
-        - Mapping Types
-        - Iterable Types
-    """
-    match dataset:
-        # NOTE: Series and DataFrame satisfy the MapDataset protocol.
-        case Series() | DataFrame() as pandas_dataset:  # type: ignore[misc]
-            return pandas_dataset.index  # type: ignore[unreachable]
-        case MapDataset() as map_dataset:
-            return Index(map_dataset.keys())
-        case IterableDataset() as iterable_dataset:
-            return Index(range(len(iterable_dataset)))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
-def get_first(dataset: Dataset[T], /) -> T:
-    """Return the first element of the dataset."""
-    match dataset:
-        case Series() | DataFrame() as pandas_dataset:  # type: ignore[misc]
-            return pandas_dataset.iloc[0]  # type: ignore[unreachable]
-        case MapDataset() as map_dataset:
-            return map_dataset[next(iter(map_dataset.keys()))]
-        case IterableDataset() as iterable_dataset:
-            return next(iter(iterable_dataset))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
-def get_last(dataset: Dataset[T], /) -> T:
-    """Return the last element of the dataset."""
-    match dataset:
-        case Series() | DataFrame() as pandas_dataset:  # type: ignore[misc]
-            return pandas_dataset.iloc[-1]  # type: ignore[unreachable]
-        case MapDataset() as map_dataset:
-            return map_dataset[next(reversed(map_dataset.keys()))]
-        case IterableDataset() as iterable_dataset:
-            return next(reversed(iterable_dataset))
-        case _:
-            raise TypeError(f"Got unsupported data type {type(dataset)}.")
-
-
-@overload
-def compute_grid(
-    tmin: DTVar, tmax: DTVar, step: TDVar, /, *, offset: Optional[DTVar] = None
-) -> list[int]: ...
-@overload
-def compute_grid(
-    tmin: str, tmax: str, step: str, /, *, offset: Optional[str] = None
-) -> list[int]: ...
-def compute_grid(tmin, tmax, step, /, *, offset=None):
-    r"""Compute $\{k∈ℤ ∣ tₘᵢₙ ≤ t₀+k⋅Δt ≤ tₘₐₓ\}$.
-
-    That is, a list of all integers such that $t₀+k⋅Δ$ is in the interval $[tₘᵢₙ, tₘₐₓ]$.
-    Special case: if $Δt=0$, returns $[0]$.
-
-    .. math::
-        if ∆t > 0
-            tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘᵢₙ-t₀)/Δt⌉
-            t₀+k⋅Δt ≤ tₘₐₓ ⟺ (tₘₐₓ-t₀)/Δt ≥ ⟺ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
-            ⟹ ⌈(tₘᵢₙ-t₀)/Δt⌉ ≤ k ≤ ⌊(tₘₐₓ-t₀)/Δt⌋
-        if ∆t < 0
-            tₘᵢₙ ≤ t₀+k⋅Δt ⟺ (tₘᵢₙ-t₀)/Δt ≥ k ⟺ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
-            t₀+k⋅Δt ≤ tₘₐₓ ⟺ (tₘₐₓ-t₀)/Δt ≤ k ⟺ k ≥ ⌈(tₘₐₓ-t₀)/Δt⌉
-            ⟹ ⌈(tₘₐₓ-t₀)/Δt⌉ ≤ k ≤ ⌊(tₘᵢₙ-t₀)/Δt⌋
-
-    Note:
-        This function is used to compute the strides for the sliding window sampler.
-        given a window ∆s<tₘₐₓ-tₘᵢₙ, we want to find all k≥0 such that
-        tₘᵢₙ ≤ [tₗ+k⋅Δt, tᵣ+k∆t] ≤ tₘₐₓ. This is equivalent to finding all k such that
-    """
-    # cast strings to timestamp/timedelta
-    tmin = cast(DTVar, Timestamp(tmin) if isinstance(tmin, str) else tmin)
-    tmax = cast(DTVar, Timestamp(tmax) if isinstance(tmax, str) else tmax)
-    td = cast(TDVar, Timedelta(step) if isinstance(step, str) else step)
-    offset = (
-        tmin
-        if offset is None
-        else (cast(DTVar, Timestamp(offset) if isinstance(offset, str) else offset))
-    )
-    # validate inputs
-    if (tmin > offset) or (offset > tmax):
-        raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
-
-    # NOTE: time-delta types should support divmod / floordiv!
-    #  Importantly, floordiv always rounds down, even for negative numbers.
-    #  We use this formula for ceil-div: https://stackoverflow.com/a/17511341/9318372
-    zero_td = tmin - tmin
-    if td > zero_td:
-        kmin = -int((offset - tmin) // td)  # ⌈a/b⌉ = -(-a//b)
-        kmax = int((tmax - offset) // td)  # ⌊a/b⌋ = a//b
-    elif td < zero_td:
-        kmin = -int((offset - tmax) // td)  # ⌈a/b⌉ = -(-a//b)
-        kmax = int((tmin - offset) // td)  # ⌊a/b⌋ = a//b
-    else:
-        raise ValueError(f"Δt={td} is not allowed!")
-
-    return list(range(kmin, kmax + 1))

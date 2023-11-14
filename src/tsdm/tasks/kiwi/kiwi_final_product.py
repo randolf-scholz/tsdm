@@ -113,7 +113,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
     r"""Type Hint for Keys."""
-    index: list[KeyType] = list(product(range(5), ("train", "test")))  # type: ignore[arg-type]
+    index: list[KeyType] = list(product(range(5), ("train", "test")))
     r"""Available index."""
     target: Literal["Fluo_GFP", "OD600"]
     r"""The target variables."""
@@ -174,42 +174,36 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         self.metadata = self.metadata.rename(columns={self.target: "target_value"})
 
         # Construct the dataset object
-        self.DS = MappingDataset(
-            {
-                key: TimeSeriesDataset(
-                    self.timeseries.loc[key],
-                    metadata=self.metadata.loc[key],
-                )
-                for key in self.metadata.index
-            }
-        )
+        self.DS = MappingDataset({
+            key: TimeSeriesDataset(
+                self.timeseries.loc[key],
+                metadata=self.metadata.loc[key],
+            )
+            for key in self.metadata.index
+        })
 
-        self.controls = controls = Series(
-            [
-                "Cumulated_feed_volume_glucose",
-                "Cumulated_feed_volume_medium",
-                "InducerConcentration",
-                "StirringSpeed",
-                "Flow_Air",
-                "Temperature",
-                "Probe_Volume",
-            ]
-        )
+        self.controls = controls = Series([
+            "Cumulated_feed_volume_glucose",
+            "Cumulated_feed_volume_medium",
+            "InducerConcentration",
+            "StirringSpeed",
+            "Flow_Air",
+            "Temperature",
+            "Probe_Volume",
+        ])
         # get reverse index
         controls.index = controls.apply(ts.columns.get_loc)
 
-        self.observables = observables = Series(
-            [
-                "Base",
-                "DOT",
-                "Glucose",
-                "OD600",
-                "Acetate",
-                "Fluo_GFP",
-                "Volume",
-                "pH",
-            ]
-        )
+        self.observables = observables = Series([
+            "Base",
+            "DOT",
+            "Glucose",
+            "OD600",
+            "Acetate",
+            "Fluo_GFP",
+            "Volume",
+            "pH",
+        ])
         # get reverse index
         observables.index = observables.apply(ts.columns.get_loc)
 
@@ -305,15 +299,13 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         ts, md = self.splits[key]
         dataset = _Dataset(ts, md, self.observables)
 
-        DS = MappingDataset(
-            {
-                idx: TimeSeriesDataset(
-                    ts.loc[idx],
-                    metadata=(md.loc[idx], self.final_value.loc[idx]),
-                )
-                for idx in md.index
-            }
-        )
+        DS = MappingDataset({
+            idx: TimeSeriesDataset(
+                ts.loc[idx],
+                metadata=(md.loc[idx], self.final_value.loc[idx]),
+            )
+            for idx in md.index
+        })
 
         # construct the sampler
         subsamplers = {}

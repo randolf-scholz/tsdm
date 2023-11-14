@@ -155,30 +155,26 @@ class KIWI_RUNS_TASK(OldBaseTask):
         self.targets = targets = Series(["Base", "DOT", "Glucose", "OD600"])
         self.targets.index = self.targets.apply(ts.columns.get_loc)
 
-        self.controls = controls = Series(
-            [
-                "Cumulated_feed_volume_glucose",
-                "Cumulated_feed_volume_medium",
-                "InducerConcentration",
-                "StirringSpeed",
-                "Flow_Air",
-                "Temperature",
-                "Probe_Volume",
-            ]
-        )
+        self.controls = controls = Series([
+            "Cumulated_feed_volume_glucose",
+            "Cumulated_feed_volume_medium",
+            "InducerConcentration",
+            "StirringSpeed",
+            "Flow_Air",
+            "Temperature",
+            "Probe_Volume",
+        ])
         controls.index = controls.apply(ts.columns.get_loc)
 
-        self.observables = observables = Series(
-            [
-                "Base",
-                "DOT",
-                "Glucose",
-                "OD600",
-                "Acetate",
-                "Fluo_GFP",
-                "pH",
-            ]
-        )
+        self.observables = observables = Series([
+            "Base",
+            "DOT",
+            "Glucose",
+            "OD600",
+            "Acetate",
+            "Fluo_GFP",
+            "pH",
+        ])
         observables.index = observables.apply(ts.columns.get_loc)
 
         assert (

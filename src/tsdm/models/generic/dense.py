@@ -18,8 +18,8 @@ class ReverseDense(nn.Module):
     r"""ReverseDense module $x→A⋅ϕ(x)$."""
 
     HP: Final[dict] = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
+        "__module__": __module__,
         "input_size": None,
         "output_size": None,
         "bias": True,
