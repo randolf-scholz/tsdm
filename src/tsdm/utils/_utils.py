@@ -44,7 +44,12 @@ from tqdm.autonotebook import tqdm
 
 from tsdm.constants import BOOLEAN_PAIRS
 from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import HashableType, key_other_var as K2, key_var as K
+from tsdm.types.variables import (
+    HashableType,
+    any_var as T,
+    key_other_var as K2,
+    key_var as K,
+)
 
 __logger__ = logging.getLogger(__name__)
 
@@ -97,20 +102,28 @@ def flatten_nested(
     raise ValueError(f"{type(nested)} is not understood")
 
 
+@overload
+def flatten_dict(
+    d: T, /, *, recursive: bool = ..., join_fn: Any = ..., split_fn: Any = ...
+) -> T: ...
+@overload
 def flatten_dict(
     d: dict[K, Any],
     /,
     *,
-    recursive: bool | int = True,
-    join_fn: Callable[[Iterable[K]], K2] = ".".join,
-    split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),
-) -> dict[K2, Any]:
+    recursive: bool | int = ...,
+    join_fn: Callable[[Iterable[K]], K2] = ...,
+    split_fn: Callable[[K2], Iterable[K]] = ...,
+) -> dict[K | K2, Any]: ...
+def flatten_dict(
+    d: dict[K, Any], /, *, recursive=True, join_fn=".".join, split_fn=lambda x: x.split
+) -> dict[K | K2, Any]:
     r"""Flatten dictionaries recursively."""
     if not recursive:
-        return d
+        return cast(dict[K | K2, Any], d)
 
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
-    result = {}
+    result: dict[K | K2, Any] = {}
     for key, item in d.items():
         if isinstance(item, dict):
             for subkey, subitem in flatten_dict(
@@ -126,18 +139,19 @@ def flatten_dict(
 
 
 def unflatten_dict(
-    d: dict[K, Any],
+    d: dict[K | K2, Any],
     /,
     *,
     recursive: bool = True,
-    split_fn: Callable[[K], Iterable[K2]] = lambda s: s.split("."),
-    join_fn: Callable[[Iterable[K2]], K] = ".".join,
-) -> dict[K2, Any]:
+    join_fn: Callable[[Iterable[K]], K2] = ".".join,
+    split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),
+) -> dict[K, Any]:
     r"""Unflatten dictionaries recursively."""
     if not recursive:
         return d
+
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
-    result: dict[str, Any] = {}
+    result: dict[K, Any] = {}
     for key, item in d.items():
         outer_key, *inner_keys = split_fn(key)
         if inner_keys:
