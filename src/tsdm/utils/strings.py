@@ -730,7 +730,7 @@ def repr_array(
     cls: type = obj.__class__
     title = cls.__name__ if title is None else title
 
-    string = title + "["
+    string = f"{title}["
 
     # add the shape
     if isinstance(obj, SupportsShape):
@@ -755,7 +755,8 @@ def repr_array(
 
     # add the device
     if isinstance(obj, SupportsDevice):
-        string += f"@{obj.device}"
+        # FIXME: mypy thinks it's Never
+        string += f"@{obj.device}"  # type: ignore[attr-defined]
 
     string += "]"
     return string
