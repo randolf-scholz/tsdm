@@ -6,7 +6,7 @@ from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 
 from tsdm.random.generators._generators import IVP_GeneratorBase
 
@@ -32,7 +32,7 @@ class DuffingOszillator(IVP_GeneratorBase[NDArray]):
     omega: float = 1.0
     """Angular frequency of periodic driving force."""
 
-    def system(self, t: Any, state: ArrayLike) -> NDArray:
+    def system(self, t: Any, state: NDArray) -> NDArray:
         x = state[..., 0]
         p = state[..., 1]
         return np.stack(

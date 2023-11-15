@@ -14,10 +14,11 @@ def exhaust_iterable(obj: Iterable, /) -> None:
         pass
 
 
+@mark.flaky(reruns=2)
 def test_hierarchical_sampler() -> None:
     data = {
-        "foo": {"a": 1, "b": 2},
-        "bar": {"x": 3, "y": 4, "z": 5},
+        "foo": [1, 2, 3, 4],
+        "bar": [5, 6],
     }
 
     key_pairs = {(outer, inner) for outer in data for inner in data[outer]}
@@ -33,6 +34,7 @@ def test_hierarchical_sampler() -> None:
 
     assert len(sampler) == len(key_pairs)
     assert set(sampler) == key_pairs
+    assert list(sampler) != list(key_pairs)  # can fail with low probability
 
 
 @fixture

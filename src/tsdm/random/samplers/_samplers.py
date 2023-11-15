@@ -24,7 +24,6 @@ from itertools import chain
 from typing import (
     Any,
     ClassVar,
-    Final,
     Generic,
     Literal,
     Optional,
@@ -42,7 +41,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 
-from tsdm.types.time import TD, DateTime, NumpyDTVar, NumpyTDVar, TimeDelta as TDLike
+from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
 from tsdm.types.variables import (
     any_co as T_co,
     any_var as T,
@@ -136,26 +135,32 @@ def compute_grid(
     # cast strings to timestamp/timedelta
     if offset is None:
         offset = tmin
-    tmin = cast(DateTime[TD], Timestamp(tmin) if isinstance(tmin, str) else tmin)
-    tmax = cast(DateTime[TD], Timestamp(tmax) if isinstance(tmax, str) else tmax)
-    t0 = cast(DateTime[TD], Timestamp(offset) if isinstance(offset, str) else offset)
-    step = cast(TD, Timedelta(step) if isinstance(step, str) else step)
+
+    # I gave up trying to properly type hint this function.
+    # Python just lacks some critical abilities like
+    #  typeof https://github.com/python/typing/issues/769
+    #  or generic bounds https://github.com/python/typing/issues/548
+    t_min = cast(Any, Timestamp(tmin) if isinstance(tmin, str) else tmin)
+    t_max = cast(Any, Timestamp(tmax) if isinstance(tmax, str) else tmax)
+    t_0 = cast(Any, Timestamp(offset) if isinstance(offset, str) else offset)
+    delta = Timedelta(step) if isinstance(step, str) else step
+
     # validate inputs
-    if (tmin > t0) or (t0 > tmax):
+    if (t_min > t_0) or (t_0 > t_max):
         raise ValueError("tₘᵢₙ ≤ t₀ ≤ tₘₐₓ violated!")
 
     # NOTE: time-delta types should support divmod / floordiv!
     #  Importantly, floordiv always rounds down, even for negative numbers.
     #  We use this formula for ceil-div: https://stackoverflow.com/a/17511341/9318372
-    zero_td = tmin - tmin
-    if step > zero_td:
-        kmin = -int((t0 - tmin) // step)  # ⌈a/b⌉ = -(-a//b)
-        kmax = int((tmax - t0) // step)  # ⌊a/b⌋ = a//b
-    elif step < zero_td:
-        kmin = -int((t0 - tmax) // step)  # ⌈a/b⌉ = -(-a//b)
-        kmax = int((tmin - t0) // step)  # ⌊a/b⌋ = a//b
+    zero_td = t_min - t_min
+    if delta > zero_td:
+        kmin = -int((t_0 - t_min) // delta)  # ⌈a/b⌉ = -(-a//b)
+        kmax = int((t_max - t_0) // delta)  # ⌊a/b⌋ = a//b
+    elif delta < zero_td:
+        kmin = -int((t_0 - t_max) // delta)  # ⌈a/b⌉ = -(-a//b)
+        kmax = int((t_min - t_0) // delta)  # ⌊a/b⌋ = a//b
     else:
-        raise ValueError(f"Δt={step} is not allowed!")
+        raise ValueError(f"Δt={delta} is not allowed!")
 
     return list(range(kmin, kmax + 1))
 
@@ -165,7 +170,11 @@ def compute_grid(
 
 @runtime_checkable
 class Sampler(Protocol[T_co]):
-    r"""Protocol for `Sampler` classes."""
+    r"""Protocol for `Sampler` classes.
+
+    Plug-in replacement for `torch.utils.data.Sampler`.
+    In contrast, each Sampler must additionally have a `shuffle` attribute.
+    """
 
     @property
     @abstractmethod
@@ -222,10 +231,6 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
     shuffle: bool = False
     r"""Whether to randomize sampling."""
 
-    # def __init__(self, *, shuffle: bool) -> None:
-    #     r"""Initialize the sampler."""
-    #     self.shuffle = shuffle
-
     @abstractmethod
     def __len__(self) -> int:
         r"""Return the length of the sampler."""
@@ -240,7 +245,13 @@ class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
 @pprint_repr
 @dataclass(init=False, slots=True)
 class RandomSampler(BaseSampler[T_co]):
-    """Sample randomly from the data source."""
+    """Sample randomly from the data source.
+
+    Note:
+        In contrast to torch.utils.data.RandomSampler, this sampler also works for map-style datasets.
+        In this case, the sampler will return random values of the mapping.
+        For Iterable-style datasets, the sampler will return random values of the iterable.
+    """
 
     data: Dataset[T_co]  # map style or iterable style
     shuffle: bool = False
@@ -248,10 +259,10 @@ class RandomSampler(BaseSampler[T_co]):
     index: Index = field(init=False)
     size: int = field(init=False)
 
-    def __init__(self, data_source: Dataset[T_co], /, *, shuffle: bool = False) -> None:
+    def __init__(self, data: Dataset[T_co], /, *, shuffle: bool = False) -> None:
         """Initialize the sampler."""
         super(RandomSampler, self).__init__(shuffle=shuffle)
-        self.data = data_source
+        self.data = data
         self.index = get_index(self.data)
         self.size = len(self.index)
 
@@ -269,12 +280,14 @@ class RandomSampler(BaseSampler[T_co]):
         return self.size
 
 
+# class HierarchicalMappingSampler: ...  # subsamplers for MapDataset
+# class HierarchicalSequenceSampler: ...  # subsamplers for IterableDataset
 @pprint_repr
 @dataclass
 class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
     r"""Draw samples from a hierarchical data source."""
 
-    data_source: MapDataset[K, Dataset[K2]]
+    data: MapDataset[K, Dataset[K2]]
     r"""The shared index."""
     subsamplers: Mapping[K, Sampler[K2]] = NotImplemented
     r"""The subsamplers to sample from the collection."""
@@ -287,17 +300,13 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
     r"""Whether to sample in random order."""
 
     def __post_init__(self) -> None:
-        self.subsamplers = (
-            {
-                key: RandomSampler(self.data_source[key], shuffle=self.shuffle)
-                for key in self.data_source.keys()
+        if self.subsamplers is NotImplemented:
+            self.subsamplers = {
+                key: RandomSampler(self.data[key], shuffle=self.shuffle)
+                for key in self.data.keys()
             }
-            if self.subsamplers is NotImplemented
-            else dict(self.subsamplers)
-        )
 
-        self.index: Index = get_index(self.data_source)
-
+        self.index: Index = get_index(self.data)
         self.sizes: Series = Series({
             key: len(self.subsamplers[key]) for key in self.index
         })
@@ -307,13 +316,6 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
             if self.early_stop
             else Series(chain(*([key] * self.sizes[key] for key in self.index)))
         )
-
-        # if self.early_stop:  # duplicate keys to match the minimum subsampler size
-        #     self.partition =
-        # else:  # duplicate keys to match each sub-sampler's size
-        #     self.partition = Series(
-        #         chain(*([key] * self.sizes[key] for key in self.index))
-        #     )
 
     def __len__(self) -> int:
         r"""Return the maximum allowed index."""
@@ -353,33 +355,22 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
             #     raise RuntimeError(f"Sampler of {key=} exhausted prematurely.")
 
 
-# class HierarchicalMappingSampler: ...  # subsamplers for MapDataset
-# class HierarchicalSequenceSampler: ...  # subsamplers for IterableDataset
-
-
 # TODO: Hierarchical sampler for Sequence
 
-S: Final = "slices"  # slice
-M: Final = "masks"  # bool
-B: Final = "bounds"  # tuple
-W: Final = "windows"  #
+S: TypeAlias = Literal["slices"]  # slice
+M: TypeAlias = Literal["masks"]  # bool
+B: TypeAlias = Literal["bounds"]  # tuple
+W: TypeAlias = Literal["windows"]  #
+MODE = TypeVar("MODE", B, M, W, S)
+MODES: TypeAlias = B | M | W | S
 
-ONE: Final = False
-MANY: Final = True
-
-MODE = TypeVar(
-    "MODE",
-    Literal["masks"],
-    Literal["slices"],
-    Literal["points"],
-    Literal["bounds"],
-)
-MODES: TypeAlias = Literal["bounds", "slices", "masks", "windows"]
-MULTI = TypeVar("MULTI", Literal[True], Literal[False])
+ONE: TypeAlias = Literal[False]
+MANY: TypeAlias = Literal[True]
+MULTI = TypeVar("MULTI", ONE, MANY)
 
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
-class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
+class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
     r"""Sampler that generates a single sliding window over an interval.
 
     Note:
@@ -435,136 +426,126 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
     The sampler will return tuples of `len(horizons)+1`.
     """
 
-    data: NDArray[NumpyDTVar]
+    data: NDArray[DT]  # type: ignore[type-var]
 
-    horizons: NumpyTDVar | NDArray[NumpyTDVar]
-    stride: NumpyTDVar
+    horizons: TDLike | NDArray[TDLike]  # type: ignore[type-var]
+    stride: TDLike
     mode: MODE
-    multi_horizon: Final[bool]
+    multi_horizon: bool
     shuffle: bool
     drop_last: bool
 
     # dependent variables
-    tmin: NumpyDTVar
-    tmax: NumpyDTVar
-    cumulative_horizons: NDArray[NumpyTDVar]
-    grid: Final[NDArray[np.integer]]
+    tmin: DT
+    tmax: DT
+    cumulative_horizons: NDArray[TDLike]
+    # grid: Final[NDArray[np.integer]]
 
-    # region overloads
+    # region __init__ overloads --------------------------------------------------------
     @overload
     def __init__(
-        self: "SlidingWindowSampler[W, ONE]",
-        data_source: SequentialDataset[NumpyDTVar],
+        self: "SlidingWindowSampler[DT, S, ONE]",
+        data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | NumpyTDVar,
-        horizons: str | NumpyTDVar,
-        mode: W,
-        closed: Literal["left", "right", "both", "neither"] = "left",
-        shuffle: bool = False,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[W, MANY]",
-        data_source: SequentialDataset[NumpyDTVar],
-        /,
-        *,
-        stride: str | NumpyTDVar,
-        horizons: Sequence[str | NumpyTDVar],
-        mode: W,
-        closed: Literal["left", "right", "both", "neither"] = "left",
-        shuffle: bool = False,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[S, ONE]",
-        data_source: SequentialDataset[NumpyDTVar],
-        /,
-        *,
-        stride: str | NumpyTDVar,
-        horizons: str | NumpyTDVar,
+        stride: str | TD,
+        horizons: str | TD,
         mode: S,
-        closed: Literal["left", "right", "both", "neither"] = "left",
         shuffle: bool = False,
     ) -> None: ...
     @overload
     def __init__(
-        self: "SlidingWindowSampler[S, MANY]",
-        data_source: SequentialDataset[NumpyDTVar],
+        self: "SlidingWindowSampler[DT, B, ONE]",
+        data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | NumpyTDVar,
-        horizons: Sequence[str | NumpyTDVar],
+        stride: str | TD,
+        horizons: str | TD,
+        mode: B,
+        shuffle: bool = False,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[DT, M, ONE]",
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        stride: str | TD,
+        horizons: str | TD,
+        mode: M,
+        shuffle: bool = False,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[DT, W, ONE]",
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        stride: str | TD,
+        horizons: str | TD,
+        mode: W,
+        shuffle: bool = False,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[DT, S, MANY]",
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        stride: str | TD,
+        horizons: Sequence[str | TD],
         mode: S,
-        closed: Literal["left", "right", "both", "neither"] = "left",
         shuffle: bool = False,
     ) -> None: ...
     @overload
     def __init__(
-        self: "SlidingWindowSampler[M, ONE]",
-        data_source: SequentialDataset[NumpyDTVar],
+        self: "SlidingWindowSampler[DT, B, MANY]",
+        data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | NumpyTDVar,
-        horizons: str | NumpyTDVar,
-        mode: M,
-        closed: Literal["left", "right", "both", "neither"] = "left",
-        shuffle: bool = False,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[M, MANY]",
-        data_source: SequentialDataset[NumpyDTVar],
-        /,
-        *,
-        stride: str | NumpyTDVar,
-        horizons: Sequence[str | NumpyTDVar],
-        mode: M,
-        closed: Literal["left", "right", "both", "neither"] = "left",
-        shuffle: bool = False,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[B, ONE]",
-        data_source: SequentialDataset[NumpyDTVar],
-        /,
-        *,
-        stride: str | NumpyTDVar,
-        horizons: str | NumpyTDVar,
+        stride: str | TD,
+        horizons: Sequence[str | TD],
         mode: B,
-        closed: Literal["left", "right", "both", "neither"] = "left",
         shuffle: bool = False,
     ) -> None: ...
     @overload
     def __init__(
-        self: "SlidingWindowSampler[B, MANY]",
-        data_source: SequentialDataset[NumpyDTVar],
+        self: "SlidingWindowSampler[DT, M, MANY]",
+        data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | NumpyTDVar,
-        horizons: Sequence[str | NumpyTDVar],
-        mode: B,
-        closed: Literal["left", "right", "both", "neither"] = "left",
+        stride: str | TD,
+        horizons: Sequence[str | TD],
+        mode: M,
+        shuffle: bool = False,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[DT, W, MANY]",
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        stride: str | TD,
+        horizons: Sequence[str | TD],
+        mode: W,
         shuffle: bool = False,
     ) -> None: ...
 
-    # endregion overloads
+    # endregion __init__ overloads -----------------------------------------------------
     def __init__(
         self,
-        data_source: SequentialDataset[NumpyDTVar],
+        data_source,
         /,
         *,
-        horizons: str | NumpyTDVar | Sequence[str] | Sequence[NumpyTDVar],
-        stride: str | NumpyTDVar,
-        mode: MODE = "masks",  # type: ignore[assignment]
-        closed: Literal["left", "right", "both", "neither"] = "left",
-        shuffle: bool = False,
-        drop_last: bool = False,
-    ) -> None:
+        horizons,
+        stride,
+        mode="masks",
+        shuffle=False,
+        drop_last=False,
+    ):
         super().__init__(shuffle=shuffle)
         self.data = np.asarray(data_source)
         self.mode = mode
-        self.closed = closed
         self.drop_last = drop_last
         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
         zero_td = 0 * self.stride  # timedelta of the correct type.
@@ -599,47 +580,6 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         self.tmax = get_last(data_source)
         # endregion set tmin, tmax, offset
 
-        self._MAKE_FUNCTIONS: dict[
-            tuple[MODES, bool], Callable[[NDArray[NumpyDTVar]], Any]
-        ] = {
-            ("bounds", False): self.make_bound,
-            ("bounds", True): self.make_bounds,
-            ("masks", False): self.make_mask,
-            ("masks", True): self.make_masks,
-            ("slices", False): self.make_slice,
-            ("slices", True): self.make_slices,
-            ("windows", False): self.make_window,
-            ("windows", True): self.make_windows,
-        }
-
-        # precompute the possible slices
-        # NOTE: we compute the grid assuming drop_last=False,
-        #  dropping the last slice is done in __iter__ and __len__
-        #  Thus, we select the grid based of cumulative_horizons[-2]
-        # Q: What if only one horizon with tmin=-∞?
-        # self.grid = np.array(
-        #     compute_grid(
-        #         self.tmin,
-        #         self.tmax - self.cumulative_horizons[-1 if drop_last else -2],
-        #         self.stride,
-        #     )
-        # )
-        #
-        # self.grid_drop_last = np.array(
-        #     compute_grid(
-        #         self.tmin,
-        #         self.tmax - self.cumulative_horizons[-2],
-        #         self.stride,
-        #     )
-        # )
-
-        # offset = self.tmin + self.cumulative_horizons[-1]  # type: ignore[assignment, call-overload, operator]
-        # grid = compute_grid(self.tmin, self.tmax, self.stride, offset=offset)
-        # # Q: Why drop negative k?? If tmin is unbounded, then there is a problem...
-        # self.grid = grid[grid >= 0]  # type: ignore[assignment, operator]
-
-        # NOTE: append single value to grid
-
     @property
     def grid(self) -> NDArray[np.integer]:
         r"""Return the grid of indices."""
@@ -657,82 +597,96 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
 
     # region make functions ------------------------------------------------------------
     @staticmethod
-    def make_bound(bounds: NDArray[NumpyDTVar]) -> tuple[NumpyDTVar, NumpyTDVar]:
+    def make_bound(bounds: NDArray[DT]) -> tuple[DT, DT]:
         r"""Return the boundaries of the window."""
         return bounds[0], bounds[-1]
 
     @staticmethod
-    def make_slice(bounds: NDArray[NumpyDTVar]) -> slice:
+    def make_slice(bounds: NDArray[DT]) -> slice:
         r"""Return a tuple of slices."""
         return slice(bounds[0], bounds[-1])
 
-    def make_mask(self, bounds: NDArray[NumpyDTVar]) -> NDArray[np.bool_]:
+    def make_mask(self, bounds: NDArray[DT]) -> NDArray[np.bool_]:
         r"""Return a tuple of masks."""
         return (bounds[0] <= self.data) & (self.data < bounds[-1])
 
-    def make_window(self, bounds: NDArray[NumpyDTVar]) -> NDArray[NumpyDTVar]:
+    def make_window(self, bounds: NDArray[DT]) -> NDArray[DT]:
         r"""Return the actual data points inside the window."""
         return self.data[(bounds[0] <= self.data) & (self.data < bounds[-1])]
 
     @staticmethod
-    def make_bounds(bounds: NDArray[NumpyDTVar]) -> list[tuple[NumpyDTVar, NumpyTDVar]]:
+    def make_bounds(bounds: NDArray[DT]) -> list[tuple[DT, DT]]:
         r"""Return the boundaries of the windows."""
         return [(start, stop) for start, stop in sliding_window_view(bounds, 2)]
 
     @staticmethod
-    def make_slices(bounds: NDArray[NumpyDTVar]) -> list[slice]:
+    def make_slices(bounds: NDArray[DT]) -> list[slice]:
         r"""Return a tuple of slices."""
         return [slice(start, stop) for start, stop in sliding_window_view(bounds, 2)]
 
-    def make_masks(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[np.bool_]]:
+    def make_masks(self, bounds: NDArray[DT]) -> list[NDArray[np.bool_]]:
         r"""Return a tuple of masks."""
         return [
             (start <= self.data) & (self.data < stop)
             for start, stop in sliding_window_view(bounds, 2)
         ]
 
-    def make_windows(self, bounds: NDArray[NumpyDTVar]) -> list[NDArray[NumpyDTVar]]:
+    def make_windows(self, bounds: NDArray[DT]) -> list[NDArray[DT]]:
         r"""Return the actual data points inside the windows."""
         return [
             self.data[(start <= self.data) & (self.data < stop)]
             for start, stop in sliding_window_view(bounds, 2)
         ]
 
+    @property
+    def _MAKE_FUNCTIONS(self) -> dict[tuple[MODES, bool], Callable[[NDArray[DT]], Any]]:
+        r"""Return the make functions."""
+        return {
+            ("bounds", False): self.make_bound,
+            ("bounds", True): self.make_bounds,
+            ("masks", False): self.make_mask,
+            ("masks", True): self.make_masks,
+            ("slices", False): self.make_slice,
+            ("slices", True): self.make_slices,
+            ("windows", False): self.make_window,
+            ("windows", True): self.make_windows,
+        }
+
     # endregion make functions ---------------------------------------------------------
 
-    # region overloads
+    # region __iter__ overloads --------------------------------------------------------
     @overload
-    def __iter__(self: "SlidingWindowSampler[S, ONE, Any, Any]") -> Iterator[slice]: ...
-    @overload
-    def __iter__(
-        self: "SlidingWindowSampler[S, MANY, Any, Any]",
-    ) -> Iterator[list[slice]]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, S, ONE]") -> Iterator[slice]: ...
     @overload
     def __iter__(
-        self: "SlidingWindowSampler[M, ONE, Any, Any]",
-    ) -> Iterator[tuple[NumpyDTVar, NumpyDTVar]]: ...
+        self: "SlidingWindowSampler[DT, B, ONE]",
+    ) -> Iterator[tuple[DT, DT]]: ...
     @overload
     def __iter__(
-        self: "SlidingWindowSampler[M, MANY, Any, Any]",
-    ) -> Iterator[list[tuple[NumpyDTVar, NumpyDTVar]]]: ...
-    @overload
-    def __iter__(
-        self: "SlidingWindowSampler[M, ONE, Any, Any]",
+        self: "SlidingWindowSampler[DT, M, ONE]",
     ) -> Iterator[NDArray[np.bool_]]: ...
     @overload
     def __iter__(
-        self: "SlidingWindowSampler[M, MANY, Any, Any]",
+        self: "SlidingWindowSampler[DT, W, ONE]",
+    ) -> Iterator[NDArray[DT]]: ...
+    @overload
+    def __iter__(
+        self: "SlidingWindowSampler[DT, S, MANY]",
+    ) -> Iterator[list[slice]]: ...
+    @overload
+    def __iter__(
+        self: "SlidingWindowSampler[DT, B, MANY]",
+    ) -> Iterator[list[tuple[DT, DT]]]: ...
+    @overload
+    def __iter__(
+        self: "SlidingWindowSampler[DT, M, MANY]",
     ) -> Iterator[list[NDArray[np.bool_]]]: ...
     @overload
     def __iter__(
-        self: "SlidingWindowSampler[W, ONE, NumpyDTVar, Any]",
-    ) -> Iterator[NDArray[NumpyDTVar]]: ...
-    @overload
-    def __iter__(
-        self: "SlidingWindowSampler[W, MANY, NumpyDTVar, Any]",
-    ) -> Iterator[list[NDArray[NumpyDTVar]]]: ...
+        self: "SlidingWindowSampler[DT, W, MANY]",
+    ) -> Iterator[list[NDArray[DT]]]: ...
 
-    # endregion overloads
+    # endregion __iter__ overloads -----------------------------------------------------
     def __iter__(self):  # pyright: ignore[reportGeneralTypeIssues]
         r"""Iterate through.
 
@@ -743,7 +697,7 @@ class SlidingWindowSampler(BaseSampler, Generic[MODE, NumpyDTVar, NumpyTDVar]):
         - mode=masks: $(mask_1, …, mask_m)$
         """
         # unpack variables (avoids attribute lookup in loop)
-        window = self.tmin + self.cumulative_horizons
+        window = self.tmin + self.cumulative_horizons  # type: ignore[operator]
         stride = self.stride
         make_fn = self._MAKE_FUNCTIONS[self.mode, self.multi_horizon]
         grid = self.grid

@@ -16,7 +16,7 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Reversible, Sequence
 from dataclasses import KW_ONLY, dataclass
 from typing import (
     Any,
@@ -54,10 +54,16 @@ TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 
 @runtime_checkable
 class PandasDataset(Protocol[K, V_co]):
-    """Protocol version of `pandas.DataFrame`."""
+    """Protocol version of `pandas.DataFrame`/`Series`.
+
+    Note that in particular, `__getitem__` is not present, as it returns columns,
+    but we are usually interested in the rows.
+    """
 
     @property
-    def index(self) -> ArrayKind[K]: ...
+    def index(self) -> ArrayKind[K]:
+        """Returns the row labels of the DataFrame."""
+        ...
 
     @property
     def loc(self) -> SupportsGetItem[K, V_co]:
@@ -67,34 +73,6 @@ class PandasDataset(Protocol[K, V_co]):
     @property
     def iloc(self) -> SupportsGetItem[int, V_co]:
         """Purely integer-location based indexing for selection by position."""
-        ...
-
-
-@runtime_checkable
-class MapDataset(Protocol[K, V_co]):
-    """Protocol version of `torch.utils.data.Dataset`.
-
-    Note:
-        - We additionally require a `len()` method, since we only consider non-streaming datasets.
-        - We deviate from the original in that we require a `keys()` method.
-          Otherwise, it is unclear how to iterate over the dataset. `torch.utils.data.Dataset`
-          simply makes the assumption that the dataset is indexed by integers.
-          But this is simply wrong for many use cases such as dictionaries or DataFrames.
-    """
-
-    @abstractmethod
-    def __len__(self) -> int:
-        """Length of the dataset."""
-        ...
-
-    @abstractmethod
-    def __getitem__(self, key: K, /) -> V_co:
-        """Map key to sample."""
-        ...
-
-    @abstractmethod
-    def keys(self) -> Iterable[K]:
-        """Iterate over the keys."""
         ...
 
 
@@ -126,6 +104,34 @@ class IterableDataset(Protocol[V_co]):
     @abstractmethod
     def __iter__(self) -> Iterator[V_co]:
         """Iterate over the dataset."""
+        ...
+
+
+@runtime_checkable
+class MapDataset(Protocol[K, V_co]):
+    """Protocol version of `torch.utils.data.Dataset`.
+
+    Note:
+        - We additionally require a `len()` method, since we only consider non-streaming datasets.
+        - We deviate from the original in that we require a `keys()` method.
+          Otherwise, it is unclear how to iterate over the dataset. `torch.utils.data.Dataset`
+          simply makes the assumption that the dataset is indexed by integers.
+          But this is simply wrong for many use cases such as dictionaries or DataFrames.
+    """
+
+    @abstractmethod
+    def __len__(self) -> int:
+        """Length of the dataset."""
+        ...
+
+    @abstractmethod
+    def __getitem__(self, key: K, /) -> V_co:
+        """Map key to sample."""
+        ...
+
+    @abstractmethod
+    def keys(self) -> Reversible[K] | IterableDataset[K]:
+        """Iterate over the keys."""
         ...
 
 
