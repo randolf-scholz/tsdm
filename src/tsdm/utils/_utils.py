@@ -97,6 +97,16 @@ def flatten_nested(
     raise ValueError(f"{type(nested)} is not understood")
 
 
+def is_flattened(
+    d: Mapping, /, *, key_type: type = object, val_type: type = Mapping
+) -> bool:
+    r"""Check if mapping is flattened."""
+    return all(
+        isinstance(key, key_type) and not isinstance(val, val_type)
+        for key, val in d.items()
+    )
+
+
 def flatten_dict(
     d: Mapping[K, Any],
     /,
@@ -107,6 +117,13 @@ def flatten_dict(
 ) -> dict[K2, Any]:
     r"""Flatten dictionaries recursively.
 
+    Args:
+        d: dictionary to flatten
+        recursive: whether to flatten recursively. If `recursive` is an integer,
+            then it flattens recursively up to `recursive` levels.
+        join_fn: function to join keys
+        split_fn: function to split keys
+
     Examples:
         Using ``join_fn = ".".join`` and ``split_fn = lambda s: s.split(".")``
         will combine string keys like ``"a"`` and ``"b"`` into ``"a.b"``.
@@ -114,14 +131,31 @@ def flatten_dict(
         >>> flatten_dict({"a": {"b": 1, "c": 2}})
         {'a.b': 1, 'a.c': 2}
 
+        >>> flatten_dict({"a": {"b": {"x": 2}, "c": 2}})
+        {'a.b.x': 2, 'a.c': 2}
+
         >>> flatten_dict({"a": {"b": 1, "c": 2}}, recursive=False)
         {'a': {'b': 1, 'c': 2}}
 
         Using ``join_fn = tuple`` and ``split_fn = lambda s: s`` will combine
         keys like ``("a", "b")`` and ``("a", "c")`` into ``("a", "b", "c")``.
 
+        >>> flatten_dict({"a": {"b": 1, "c": 2}}, join_fn=tuple, split_fn=lambda x: x)
+        {('a', 'b'): 1, ('a', 'c'): 2}
+
+        >>> flatten_dict({"a": {"b": {"x": 2}, "c": 2}}, join_fn=tuple, split_fn=lambda x: x)
+        {('a', 'b', 'x'): 2, ('a', 'c'): 2}
+
         >>> flatten_dict({"a": {17: "foo", 18: "bar"}}, join_fn=tuple, split_fn=lambda x: x)
         {('a', 17): 'foo', ('a', 18): 'bar'}
+
+        When trying to flatten a partially flattened dictionary, setting recursive=<int>.
+
+        >>> flatten_dict({"a": {(1, True): "foo", (2, False): "bar"}}, join_fn=tuple, split_fn=lambda x: x)
+        {('a', (1, True)): 'foo', ('a', (2, False)): 'bar'}
+
+        >>> flatten_dict({"a": {(1, True): "foo", (2, False): "bar"}}, join_fn=tuple, split_fn=lambda x: x, recursive=1)
+        {('a', 1, True): 'foo', ('a', 2, False): 'bar'}
     """
     if not recursive:
         return cast(dict[K2, Any], d)
@@ -129,7 +163,7 @@ def flatten_dict(
     recursive = recursive if isinstance(recursive, bool) else recursive - 1
     result: dict[K2, Any] = {}
     for key, item in d.items():
-        if isinstance(item, dict):
+        if isinstance(item, Mapping):
             for subkey, subitem in flatten_dict(
                 item,
                 recursive=recursive,

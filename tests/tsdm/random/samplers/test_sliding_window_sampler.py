@@ -380,6 +380,7 @@ EXPECTED_RESULTS_DISCRETE_DATA = flatten_dict(
     },
     join_fn=tuple,
     split_fn=lambda x: x,
+    recursive=1,
 )
 # NOTE that we include duplicates in the continuous data
 # We test horizons ∈ {2.5, 3.5, 4.5}, stride ∈ {1.0, 2.5}, drop_last ∈ {True, False}
@@ -637,6 +638,7 @@ EXPECTED_RESULTS_CONTINUOUS_DATA = flatten_dict(
     },
     join_fn=tuple,
     split_fn=lambda x: x,
+    recursive=1,
 )
 
 
