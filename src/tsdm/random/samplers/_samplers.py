@@ -544,7 +544,11 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         drop_last=False,
     ):
         super().__init__(shuffle=shuffle)
-        self.data = np.asarray(data_source)
+        # FIXME: correct the dtype of the data (https://github.com/pandas-dev/pandas/issues/55997)
+        self.data = np.array(data_source)
+        if hasattr(data_source[0], "to_numpy"):
+            self.data = self.data.astype(data_source[0].to_numpy().dtype)
+
         self.mode = mode
         self.drop_last = drop_last
         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
