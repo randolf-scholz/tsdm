@@ -1,5 +1,6 @@
 r"""Test Sliding Window Sampler."""
 
+import datetime
 import logging
 from typing import assert_type
 
@@ -933,3 +934,33 @@ def test_mode_slices_multi() -> None:
         [slice(15, 18, None), slice(18, 19, None)],
         [slice(17, 20, None), slice(20, 21, None)],
     ]
+
+
+# dates 2020-01-01 to 2020-01-10
+PYTHON_DATES = [
+    datetime.datetime(2020, 1, 1) + datetime.timedelta(days=i) for i in range(10)
+]
+DATETIME_DATA = {
+    "list-python": PYTHON_DATES,
+    "list-pandas": [pd.Timestamp(d) for d in PYTHON_DATES],
+    "numpy": np.array(PYTHON_DATES, dtype="datetime64[ns]"),
+    "series-numpy": Series(PYTHON_DATES, dtype="datetime64[ns]"),
+    "series-polars": Series(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
+    "index-numpy": pd.Index(PYTHON_DATES, dtype="datetime64[ns]"),
+    "index-polars": pd.Index(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
+}
+
+
+@mark.parametrize("data", DATETIME_DATA.values(), ids=DATETIME_DATA)
+def test_timedelta_data(data):
+    """Test the SlidingWindowSampler with datetime/timedelta data."""
+    sampler = SlidingWindowSampler(
+        data,
+        stride="2h",
+        horizons="3d",
+        mode="bounds",
+        shuffle=False,
+        drop_last=False,
+    )
+
+    list(sampler)

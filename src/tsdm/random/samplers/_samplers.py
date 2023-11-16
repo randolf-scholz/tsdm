@@ -559,7 +559,7 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         match horizons:
             case str() as string:
                 self.multi_horizon = False
-                self.horizons = np.array(Timedelta(string).to_numpy())
+                self.horizons = np.array([Timedelta(string).to_numpy()])
             case Iterable() as iterable:
                 values = list(iterable)
                 self.multi_horizon = True
@@ -574,12 +574,11 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
             case _:
                 raise TypeError(f"Invalid type {type(horizons)} for {horizons=}")
 
-        self.cumulative_horizons = np.cumsum(
-            np.concatenate([
-                np.array([zero_td], dtype=self.horizons.dtype),
-                self.horizons,
-            ])
-        )
+        with_zero = np.concatenate([
+            np.array([zero_td], dtype=self.horizons.dtype),
+            self.horizons,
+        ])
+        self.cumulative_horizons = np.cumsum(with_zero)
         # endregion set horizon(s)
 
         # region set tmin, tmax, offset
