@@ -9,9 +9,8 @@ __all__ = [
 ]
 
 
-from typing import Optional
-
 from torch import nn
+from typing_extensions import Optional
 
 from tsdm.utils.wrappers import autojit
 

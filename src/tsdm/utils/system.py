@@ -23,7 +23,8 @@ import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
+
+from typing_extensions import Optional
 
 from tsdm.utils.strings import repr_mapping
 

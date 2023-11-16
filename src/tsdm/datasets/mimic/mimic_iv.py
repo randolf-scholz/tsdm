@@ -58,7 +58,6 @@ __all__ = ["MIMIC_IV_RAW", "MIMIC_IV"]
 import gzip
 from functools import cached_property
 from getpass import getpass
-from typing import get_args
 from zipfile import ZipFile
 
 import pandas as pd
@@ -67,6 +66,7 @@ import pyarrow as pa
 from pandas import DataFrame
 from pyarrow import Array, Table, csv
 from tqdm.autonotebook import tqdm
+from typing_extensions import get_args
 
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.datasets.mimic.mimic_iv_schema import (

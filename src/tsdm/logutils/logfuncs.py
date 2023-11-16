@@ -23,17 +23,6 @@ import json
 import pickle
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import (
-    Any,
-    Literal,
-    NamedTuple,
-    Optional,
-    Protocol,
-    TypeAlias,
-    TypedDict,
-    TypeGuard,
-    runtime_checkable,
-)
 
 import torch
 import yaml
@@ -44,6 +33,17 @@ from torch import Tensor, jit, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard import SummaryWriter
+from typing_extensions import (
+    Any,
+    Literal,
+    NamedTuple,
+    Optional,
+    Protocol,
+    TypeAlias,
+    TypedDict,
+    TypeGuard,
+    runtime_checkable,
+)
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.linalg import (

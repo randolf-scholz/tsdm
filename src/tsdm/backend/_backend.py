@@ -12,7 +12,6 @@ __all__ = [
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
-from typing import Generic, Literal, ParamSpec, Self, TypeAlias, cast, get_args
 
 import numpy
 import pandas
@@ -20,6 +19,15 @@ import torch
 from numpy import ndarray
 from pandas import DataFrame, Series
 from torch import Tensor
+from typing_extensions import (
+    Generic,
+    Literal,
+    ParamSpec,
+    Self,
+    TypeAlias,
+    cast,
+    get_args,
+)
 
 from tsdm.backend.numpy import numpy_apply_along_axes, numpy_like
 from tsdm.backend.pandas import (

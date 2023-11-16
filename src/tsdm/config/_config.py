@@ -16,9 +16,9 @@ from importlib import import_module, resources
 from itertools import chain
 from pathlib import Path
 from types import ModuleType
-from typing import Any, ClassVar
 
 import yaml
+from typing_extensions import Any, ClassVar
 
 from tsdm.config import config_files
 

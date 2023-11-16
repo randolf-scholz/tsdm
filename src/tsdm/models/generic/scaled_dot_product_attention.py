@@ -9,10 +9,10 @@ __all__ = [
 ]
 
 from math import sqrt
-from typing import Optional
 
 import torch
 from torch import Tensor, nn
+from typing_extensions import Optional
 
 from tsdm.utils.wrappers import autojit
 

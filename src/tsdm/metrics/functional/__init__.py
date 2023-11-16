@@ -19,9 +19,9 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from typing import Final, TypeAlias
 
 from torch import Tensor, nn
+from typing_extensions import Final, TypeAlias
 
 from tsdm.metrics.functional._functional import (
     nd,

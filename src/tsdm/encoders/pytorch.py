@@ -9,10 +9,9 @@ __all__ = [
     "PositionalEncoder",
 ]
 
-from typing import ClassVar, Final
-
 import torch
 from torch import Tensor, jit, nn
+from typing_extensions import ClassVar, Final
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.wrappers import autojit

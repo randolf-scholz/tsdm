@@ -20,13 +20,20 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol, cast, final, runtime_checkable
 
 import numpy as np
 import scipy.stats
 from numpy.typing import ArrayLike
 from scipy.optimize import OptimizeResult as OdeResult
 from scipy.stats import rv_continuous
+from typing_extensions import (
+    TYPE_CHECKING,
+    Any,
+    Protocol,
+    cast,
+    final,
+    runtime_checkable,
+)
 
 from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike

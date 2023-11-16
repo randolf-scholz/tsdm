@@ -58,7 +58,10 @@ from collections.abc import (
     Reversible,
     ValuesView,
 )
-from typing import (
+
+import numpy as np
+from numpy.typing import NDArray
+from typing_extensions import (
     Any,
     ClassVar,
     NamedTuple,
@@ -68,13 +71,11 @@ from typing import (
     SupportsIndex,
     TypeGuard,
     TypeVar,
+    get_original_bases,
+    get_protocol_members,
     overload,
     runtime_checkable,
 )
-
-import numpy as np
-from numpy.typing import NDArray
-from typing_extensions import get_original_bases, get_protocol_members
 
 from tsdm.types.variables import (
     any_co as T_co,

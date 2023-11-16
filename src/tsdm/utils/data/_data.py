@@ -27,7 +27,12 @@ import logging
 import operator
 from collections.abc import Mapping, Sequence
 from functools import reduce
-from typing import (
+
+import pandas as pd
+from pandas import DataFrame, Index, Series
+from pyarrow import Array, Table
+from scipy import stats
+from typing_extensions import (
     Any,
     Generic,
     NamedTuple,
@@ -37,11 +42,6 @@ from typing import (
     TypedDict,
     overload,
 )
-
-import pandas as pd
-from pandas import DataFrame, Index, Series
-from pyarrow import Array, Table
-from scipy import stats
 
 from tsdm.backend.pandas import (
     pandas_false_like,

@@ -11,7 +11,8 @@ __all__ = [
 from abc import ABCMeta
 from collections.abc import Iterator, MutableMapping
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, Self
+
+from typing_extensions import Any, Self
 
 
 def is_allcaps(s: str) -> bool:

@@ -114,11 +114,11 @@ def test_dataclass_protocol() -> None:
 
 @mark.xfail(reason="Attribute __dataclass_fields__ does not exist on class.")
 def test_dataclass_protocol_itself() -> None:
-    assert issubclass(Dataclass, Dataclass)
+    assert issubclass(Dataclass, Dataclass)  # type: ignore[misc]
 
 
 def test_namedtuple_protocol_itself() -> None:
-    assert issubclass(NTuple, NTuple)
+    assert issubclass(NTuple, NTuple)  # type: ignore[misc]
 
 
 def test_namedtuple_protocol() -> None:

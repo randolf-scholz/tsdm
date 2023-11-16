@@ -175,11 +175,11 @@
 #
 # logging.setLoggerClass(MyLogger)
 #
-# from typing import cast
+# from typing_extensions import cast
 #
 # LOGGER: MyLogger = cast(MyLogger, logging.getLogger(__name__))
 #
-# from typing import TypeVar, Generic
+# from typing_extensions import TypeVar, Generic
 # T = TypeVar("T", bound="Foo")
 #
 # class Foo():

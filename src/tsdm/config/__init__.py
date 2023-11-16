@@ -20,7 +20,7 @@ __all__ = [
     "get_package_structure",
 ]
 
-from typing import Final
+from typing_extensions import Final
 
 from tsdm.config._config import Config, Project, generate_folders, get_package_structure
 

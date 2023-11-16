@@ -59,7 +59,6 @@ __all__ = [
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, NamedTuple
 
 import numpy as np
 import torch
@@ -68,7 +67,7 @@ from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
-from typing_extensions import deprecated
+from typing_extensions import Any, NamedTuple, deprecated
 
 from tsdm.datasets import USHCN_DeBrouwer2019 as USHCN_DeBrouwer2019_Dataset
 from tsdm.tasks._deprecated import OldBaseTask

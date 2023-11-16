@@ -56,12 +56,12 @@ from collections.abc import (
 )
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, TypeAlias
 
 import numpy as np
 import torch
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
+from typing_extensions import Any, TypeAlias
 
 from tsdm.types.protocols import Lookup
 from tsdm.types.variables import (

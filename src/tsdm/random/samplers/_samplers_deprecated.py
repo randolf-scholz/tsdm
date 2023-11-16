@@ -4,12 +4,11 @@ __all__ = ["SliceSampler", "CollectionSampler"]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from itertools import chain, count
-from typing import Any, Generic, Optional, cast
 
 import numpy as np
 from numpy._typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
-from typing_extensions import deprecated
+from typing_extensions import Any, Generic, Optional, cast, deprecated
 
 from tsdm.random.samplers import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup

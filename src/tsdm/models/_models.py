@@ -10,10 +10,10 @@ import os
 import subprocess
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional, Protocol
 from urllib.parse import urlparse
 
 from torch import Tensor
+from typing_extensions import Any, Optional, Protocol
 
 from tsdm.config import CONFIG
 

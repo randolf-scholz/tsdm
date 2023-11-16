@@ -5,7 +5,7 @@ r"""Base Classes for dataset."""
 # NOTE: type.__init__(self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any) -> None
 
 __all__ = [
-    # Protocol
+    # Protocols
     "Dataset",
     # Classes
     "BaseDataset",
@@ -28,7 +28,6 @@ from collections.abc import Collection, Iterator, Mapping, MutableMapping, Seque
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Optional, Protocol, Self, overload, runtime_checkable
 from urllib.parse import urlparse
 
 import pandas
@@ -36,6 +35,15 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from pyarrow import Table, parquet
 from torch.utils.data import Dataset as TorchDataset
 from tqdm.autonotebook import tqdm
+from typing_extensions import (
+    Any,
+    ClassVar,
+    Optional,
+    Protocol,
+    Self,
+    overload,
+    runtime_checkable,
+)
 
 from tsdm.config import CONFIG
 from tsdm.types.aliases import PathLike

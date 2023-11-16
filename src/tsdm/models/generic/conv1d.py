@@ -6,9 +6,9 @@ r"""#TODO add module summary line.
 __all__ = ["ConvBlock"]
 
 from collections import OrderedDict
-from typing import Any, Literal
 
 from torch import nn
+from typing_extensions import Any, Literal
 
 from tsdm.utils.wrappers import autojit
 

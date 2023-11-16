@@ -159,13 +159,13 @@ HR 	Heart rate (beats per minute)
 
 __all__ = ["PhysioNet2019"]
 
-from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from tqdm.autonotebook import tqdm
+from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers

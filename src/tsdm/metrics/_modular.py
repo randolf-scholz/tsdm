@@ -23,10 +23,10 @@ __all__ = [
 
 
 from abc import abstractmethod
-from typing import Final, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, jit, nn
+from typing_extensions import Final, Protocol, runtime_checkable
 
 from tsdm.types.aliases import Axes
 from tsdm.utils.wrappers import autojit

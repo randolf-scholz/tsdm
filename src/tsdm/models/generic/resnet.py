@@ -8,9 +8,9 @@ __all__ = ["ResNet", "ResNetBlock"]
 
 from collections import OrderedDict
 from collections.abc import Iterable
-from typing import Any, Final, Optional, Self, TypeVar
 
 from torch import Tensor, jit, nn
+from typing_extensions import Any, Final, Optional, Self, TypeVar
 
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.utils import deep_dict_update, initialize_from_config

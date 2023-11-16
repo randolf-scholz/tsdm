@@ -18,7 +18,10 @@ __all__ = [
 from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Reversible, Sequence
 from dataclasses import KW_ONLY, dataclass
-from typing import (
+
+from pandas import DataFrame, Index, MultiIndex
+from torch.utils.data import Dataset as TorchDataset
+from typing_extensions import (
     Any,
     Optional,
     Protocol,
@@ -28,9 +31,6 @@ from typing import (
     overload,
     runtime_checkable,
 )
-
-from pandas import DataFrame, MultiIndex
-from torch.utils.data import Dataset as TorchDataset
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
 from tsdm.types.variables import (
@@ -164,8 +164,8 @@ class DataFrame2Dataset(MapDataset[K, DataFrame], TorchDataset[DataFrame]):
     def __len__(self) -> int:
         return len(self.index)
 
-    def keys(self) -> Iterator[K]:
-        return iter(self.index)
+    def keys(self) -> Index:
+        return self.index
 
     def __getitem__(self, item: key_contra, /) -> DataFrame:
         return self.data.loc[item]

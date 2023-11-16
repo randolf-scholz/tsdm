@@ -3,10 +3,10 @@ r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 __all__ = ["USHCN"]
 
 import warnings
-from typing import Literal, TypeAlias
 
 import pandas as pd
 from pandas import DataFrame
+from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers

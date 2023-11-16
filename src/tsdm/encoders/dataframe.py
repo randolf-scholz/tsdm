@@ -18,7 +18,6 @@ import warnings
 from collections import namedtuple
 from collections.abc import Hashable, Iterable, Iterator, Mapping
 from types import EllipsisType
-from typing import Any, ClassVar, Generic, Optional, TypeVar, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -27,7 +26,16 @@ from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
-from typing_extensions import deprecated
+from typing_extensions import (
+    Any,
+    ClassVar,
+    Generic,
+    Optional,
+    TypeVar,
+    cast,
+    deprecated,
+    overload,
+)
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder

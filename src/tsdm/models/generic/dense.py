@@ -5,9 +5,8 @@ r"""#TODO add module summary line.
 
 __all__ = ["ReverseDense"]
 
-from typing import Any, Final, Optional
-
 from torch import Tensor, jit, nn
+from typing_extensions import Any, Final, Optional
 
 from tsdm.utils import deep_dict_update, initialize_from_config
 from tsdm.utils.wrappers import autojit

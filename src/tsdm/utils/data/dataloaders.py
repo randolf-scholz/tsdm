@@ -16,8 +16,6 @@ __all__ = [
     "unpack_sequence",
 ]
 
-from typing import Optional
-
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import (
@@ -26,6 +24,7 @@ from torch.nn.utils.rnn import (
     pad_packed_sequence,
     pad_sequence,
 )
+from typing_extensions import Optional
 
 from tsdm.linalg import aggregate_and, cumulative_and
 

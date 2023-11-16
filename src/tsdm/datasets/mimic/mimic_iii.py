@@ -21,11 +21,11 @@ __all__ = ["MIMIC_III_RAW", "MIMIC_III"]
 import gzip
 from functools import cached_property
 from getpass import getpass
-from typing import get_args
 from zipfile import ZipFile
 
 from pandas import DataFrame
 from pyarrow import Table, csv
+from typing_extensions import get_args
 
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.datasets.mimic.mimic_iii_schema import (

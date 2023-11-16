@@ -23,9 +23,8 @@ __all__ = [
     "compute_grid",
 ]
 
-from typing import Final, TypeAlias
-
 from torch.utils.data import Sampler as TorchSampler
+from typing_extensions import Final, TypeAlias
 
 from tsdm.random.samplers._samplers import (
     BaseSampler,

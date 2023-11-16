@@ -23,9 +23,8 @@ __all__ = [
     "GroupedSetFuncTS",
 ]
 
-from typing import Final, TypeAlias
-
 from torch import nn
+from typing_extensions import Final, TypeAlias
 
 from tsdm.models import activations, generic, pretrained
 from tsdm.models._models import BaseModel

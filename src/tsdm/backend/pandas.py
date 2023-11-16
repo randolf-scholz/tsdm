@@ -19,10 +19,9 @@ __all__ = [
     "strip_whitespace_dataframe",
 ]
 
-from typing import Literal, TypeVar
-
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Series
+from typing_extensions import Literal, TypeVar
 
 from tsdm.types.aliases import Axes, Scalar
 

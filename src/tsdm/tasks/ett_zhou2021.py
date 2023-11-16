@@ -8,11 +8,11 @@ __all__ = [
 
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, Literal
 
 from pandas import DataFrame
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, TensorDataset
+from typing_extensions import Any, Literal
 
 from tsdm.datasets import ETT
 from tsdm.encoders import (

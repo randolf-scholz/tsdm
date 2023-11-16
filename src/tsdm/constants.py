@@ -29,11 +29,11 @@ __all__ = [
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Final, Literal
 
 import numpy as np
 import pandas
 import torch
+from typing_extensions import Any, Final, Literal
 
 ATOL: Final[float] = 1e-6
 """CONST: Default absolute precision."""

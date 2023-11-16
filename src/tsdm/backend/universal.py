@@ -9,11 +9,11 @@ __all__ = [
 ]
 
 from math import prod
-from typing import Any
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+from typing_extensions import Any
 
 from tsdm.types.protocols import NumericalArray, SupportsShape
 

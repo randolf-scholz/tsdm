@@ -24,11 +24,11 @@ import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Set
 from dataclasses import is_dataclass
 from types import FunctionType
-from typing import Any, Final, Optional, Protocol, cast, overload
 
 from pandas import DataFrame, MultiIndex
 from pyarrow import Array as pyarrow_array, Table as pyarrow_table
 from torch import Tensor
+from typing_extensions import Any, Final, Optional, Protocol, cast, overload
 
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
 from tsdm.types.aliases import DType

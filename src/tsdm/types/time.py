@@ -22,7 +22,6 @@ __all__ = [
 
 
 from datetime import datetime as py_dt, timedelta as py_td
-from typing import Protocol, SupportsFloat, SupportsInt, TypeVar, runtime_checkable
 
 from numpy import (
     datetime64 as np_dt,
@@ -31,6 +30,13 @@ from numpy import (
     timedelta64 as np_td,
 )
 from pandas import Timedelta as pd_td, Timestamp as pd_dt
+from typing_extensions import (
+    Protocol,
+    SupportsFloat,
+    SupportsInt,
+    TypeVar,
+    runtime_checkable,
+)
 
 # region datetime and timedelta protocols ----------------------------------------------
 TD = TypeVar("TD", bound="TimeDelta")

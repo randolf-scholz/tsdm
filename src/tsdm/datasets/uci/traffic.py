@@ -52,12 +52,12 @@ __all__ = ["Traffic"]
 import warnings
 from functools import cached_property
 from io import StringIO
-from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
+from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 

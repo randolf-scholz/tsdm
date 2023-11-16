@@ -22,11 +22,11 @@ __all__ = ["MIMIC_III_DeBrouwer2019"]
 import os
 import subprocess
 from getpass import getpass
-from typing import Literal, TypeAlias
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from pandas import DataFrame
+from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 

@@ -19,9 +19,9 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from typing import Protocol, SupportsIndex, SupportsInt, runtime_checkable
 
 from numpy.typing import ArrayLike
+from typing_extensions import Protocol, SupportsIndex, SupportsInt, runtime_checkable
 
 from tsdm.types.aliases import Axes, Scalar
 from tsdm.types.protocols import P

@@ -11,13 +11,13 @@ __all__ = [
 
 import logging
 from collections.abc import Sequence
-from typing import Literal, Optional, TypeVar, overload
 
 import pandas as pd
 import polars as pl
 import pyarrow as pa
 from pyarrow import Array, DataType, Table
 from tqdm.autonotebook import tqdm
+from typing_extensions import Literal, Optional, TypeVar, overload
 
 from tsdm.types.dtypes import PYARROW_TO_POLARS
 

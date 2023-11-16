@@ -9,11 +9,11 @@ __all__ = [
 
 
 import logging
-from typing import Optional
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import Timedelta, Timestamp, date_range, timedelta_range
+from typing_extensions import Optional
 
 from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS, TIME_UNITS
 from tsdm.types.time import DTVar, TDVar

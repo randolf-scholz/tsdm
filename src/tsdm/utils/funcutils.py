@@ -20,7 +20,8 @@ import inspect
 from collections.abc import Callable, Sequence
 from functools import wraps
 from inspect import Parameter
-from typing import Any, Optional, ParamSpec, cast, overload
+
+from typing_extensions import Any, Optional, ParamSpec, cast, overload
 
 from tsdm.types.protocols import Dataclass, is_dataclass
 from tsdm.types.variables import return_var_co as R

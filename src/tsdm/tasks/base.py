@@ -115,7 +115,12 @@ from abc import abstractmethod
 from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
-from typing import (
+
+import numpy as np
+from pandas import NA, DataFrame, Index, MultiIndex, Series
+from torch import Tensor
+from torch.utils.data import DataLoader, Dataset as TorchDataset
+from typing_extensions import (
     Any,
     ClassVar,
     Generic,
@@ -129,11 +134,6 @@ from typing import (
     assert_type,
     runtime_checkable,
 )
-
-import numpy as np
-from pandas import NA, DataFrame, Index, MultiIndex, Series
-from torch import Tensor
-from torch.utils.data import DataLoader, Dataset as TorchDataset
 
 from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder

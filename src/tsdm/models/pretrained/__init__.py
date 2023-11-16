@@ -22,9 +22,8 @@ __all__ = [
     "MODELS",
 ]
 
-from typing import Final, TypeAlias
-
 from torch import nn
+from typing_extensions import Final, TypeAlias
 
 from tsdm.models.pretrained.base import PreTrained, PreTrainedBase
 from tsdm.models.pretrained.linodenet import LinODEnet

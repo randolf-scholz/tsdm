@@ -29,7 +29,8 @@ from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from copy import deepcopy
 from functools import wraps
-from typing import (
+
+from typing_extensions import (
     Any,
     ClassVar,
     Literal,

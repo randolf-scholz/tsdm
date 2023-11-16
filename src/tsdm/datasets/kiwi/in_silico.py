@@ -4,11 +4,11 @@ __all__ = ["InSilico", "InSilicoTSC"]
 
 import shutil
 from importlib import resources
-from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import pandas as pd
 from pandas import DataFrame
+from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
 from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers

@@ -32,7 +32,6 @@ from datetime import datetime
 from importlib import import_module
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Literal, Optional, cast, overload
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -41,6 +40,7 @@ from numpy.typing import NDArray
 from pandas import Series
 from torch import nn
 from tqdm.autonotebook import tqdm
+from typing_extensions import Any, Literal, Optional, cast, overload
 
 from tsdm.constants import BOOLEAN_PAIRS
 from tsdm.types.aliases import Nested, PathLike

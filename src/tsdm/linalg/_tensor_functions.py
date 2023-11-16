@@ -12,10 +12,9 @@ __all__ = [
 ]
 
 
-from typing import Union
-
 import torch
 from torch import Tensor, jit
+from typing_extensions import Union
 
 
 @jit.script

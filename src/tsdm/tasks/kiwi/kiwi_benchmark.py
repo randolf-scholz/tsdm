@@ -7,11 +7,11 @@ __all__ = [
 
 
 from collections.abc import Callable, Hashable
-from typing import Any, NamedTuple, TypeVar
 
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
+from typing_extensions import Any, NamedTuple, TypeVar
 
 from tsdm import datasets
 from tsdm.encoders import (

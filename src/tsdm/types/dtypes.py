@@ -64,7 +64,6 @@ __all__ = [
 ]
 
 from datetime import datetime, timedelta
-from typing import Final
 
 import numpy as np
 import pandas
@@ -72,6 +71,7 @@ import polars
 import pyarrow
 import torch
 from pandas.api.extensions import ExtensionDtype
+from typing_extensions import Final
 
 # region numpy typecodes ---------------------------------------------------------------
 NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {

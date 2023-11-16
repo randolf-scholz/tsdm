@@ -14,7 +14,8 @@ __all__ = [
 
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from typing import Any, Generic, Optional, Self, TypeAlias, Union, overload
+
+from typing_extensions import Any, Generic, Optional, Self, TypeAlias, Union, overload
 
 from tsdm.types.protocols import SupportsKeysAndGetItem
 from tsdm.types.variables import (

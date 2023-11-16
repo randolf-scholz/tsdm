@@ -33,9 +33,8 @@ already shows 12 different ways of saying "barcode not scanning".
 
 __all__ = ["KEYS", "SCHEMAS", "TRUE_VALUES", "FALSE_VALUES", "NULL_VALUES"]
 
-from typing import Literal, TypeAlias
-
 import pyarrow as pa
+from typing_extensions import Literal, TypeAlias
 
 ID_TYPE = pa.uint32()
 VALUE_TYPE = pa.float64()

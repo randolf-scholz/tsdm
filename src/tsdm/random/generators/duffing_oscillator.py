@@ -3,10 +3,10 @@
 __all__ = ["DuffingOszillator"]
 
 from dataclasses import KW_ONLY, dataclass
-from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+from typing_extensions import Any
 
 from tsdm.random.generators._generators import IVP_GeneratorBase
 

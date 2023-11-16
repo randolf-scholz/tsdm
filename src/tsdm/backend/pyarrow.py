@@ -13,7 +13,6 @@ __all__ = [
 ]
 
 import logging
-from typing import TypeVar, overload
 
 import pyarrow as pa
 from pyarrow import (
@@ -26,6 +25,7 @@ from pyarrow import (
     Scalar,
     Table,
 )
+from typing_extensions import TypeVar, overload
 
 __logger__ = logging.getLogger(__name__)
 

@@ -32,7 +32,16 @@ from dataclasses import KW_ONLY, dataclass, field
 from functools import wraps
 from itertools import chain
 from pathlib import Path
-from typing import (
+
+import torch
+import yaml
+from pandas import DataFrame, MultiIndex
+from torch import Tensor
+from torch.optim.lr_scheduler import LRScheduler
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from tqdm.autonotebook import tqdm
+from typing_extensions import (
     Any,
     ClassVar,
     Literal,
@@ -45,15 +54,6 @@ from typing import (
     overload,
     runtime_checkable,
 )
-
-import torch
-import yaml
-from pandas import DataFrame, MultiIndex
-from torch import Tensor
-from torch.optim.lr_scheduler import LRScheduler
-from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-from tqdm.autonotebook import tqdm
 
 from tsdm.logutils.logfuncs import (
     TargetsAndPredics,

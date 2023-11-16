@@ -17,10 +17,9 @@ __all__ = [
 
 from collections.abc import Iterator
 from functools import wraps
-from typing import Any, Protocol, overload
 
 from torch import jit, nn
-from typing_extensions import deprecated, override
+from typing_extensions import Any, Protocol, deprecated, overload, override
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import MappingProtocol

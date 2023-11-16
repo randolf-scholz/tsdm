@@ -23,11 +23,11 @@ __all__ = [
 
 import warnings
 from collections.abc import Callable
-from typing import TypeAlias, TypeVar
 
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
+from typing_extensions import TypeAlias, TypeVar
 
 S = TypeVar("S", DataFrame, Series)
 

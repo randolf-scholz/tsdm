@@ -47,7 +47,14 @@ from abc import abstractmethod
 from collections.abc import Callable, Iterable
 from dataclasses import KW_ONLY, dataclass
 from types import EllipsisType
-from typing import (
+
+import numpy as np
+import pandas as pd
+import torch
+from numpy.typing import NDArray
+from pandas import DataFrame, Series
+from torch import Tensor
+from typing_extensions import (
     Any,
     ClassVar,
     Generic,
@@ -61,13 +68,6 @@ from typing import (
     cast,
     overload,
 )
-
-import numpy as np
-import pandas as pd
-import torch
-from numpy.typing import NDArray
-from pandas import DataFrame, Series
-from torch import Tensor
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder

@@ -9,10 +9,9 @@ __all__ = [
     "LR_SCHEDULERS",
 ]
 
-from typing import Final, TypeAlias
-
 from torch import optim
 from torch.optim import lr_scheduler
+from typing_extensions import Final, TypeAlias
 
 Optimizer: TypeAlias = optim.Optimizer
 r"""Type hint for optimizers."""

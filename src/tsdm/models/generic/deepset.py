@@ -9,10 +9,9 @@ __all__ = [
     "DeepSetReZero",
 ]
 
-from typing import Optional
-
 import torch
 from torch import Tensor, nn
+from typing_extensions import Optional
 
 from tsdm.models.generic.mlp import MLP
 from tsdm.models.generic.rezero import ReZeroMLP

@@ -16,13 +16,13 @@ from collections.abc import Iterator, Mapping
 from html.parser import HTMLParser
 from io import IOBase
 from pathlib import Path
-from typing import IO, Any, Optional
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import requests
 from requests import Session
 from tqdm.autonotebook import tqdm
+from typing_extensions import IO, Any, Optional
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import PathLike

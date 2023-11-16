@@ -11,11 +11,11 @@ __all__ = [
 
 from collections import OrderedDict
 from math import ceil, log2
-from typing import Any, Final, Optional
 
 import torch
 from torch import Tensor, jit, nn
 from torch._jit_internal import _copy_to_script_wrapper
+from typing_extensions import Any, Final, Optional
 
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.utils import deep_dict_update, initialize_from_config

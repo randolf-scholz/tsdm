@@ -16,13 +16,13 @@ from collections.abc import Hashable, Iterator, Sequence
 from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
 from types import NotImplementedType
-from typing import Any, NamedTuple, Optional
 
 import torch
 from pandas import DataFrame, Index
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset as TorchDataset
+from typing_extensions import Any, NamedTuple, Optional
 
 from tsdm.utils.strings import pprint_repr
 

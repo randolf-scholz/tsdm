@@ -10,7 +10,6 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
-from typing import Any, Literal, NamedTuple, Optional
 
 import pandas as pd
 import torch
@@ -20,7 +19,7 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.nn import MSELoss
 from torch.utils.data import DataLoader
-from typing_extensions import deprecated
+from typing_extensions import Any, Literal, NamedTuple, Optional, deprecated
 
 from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler

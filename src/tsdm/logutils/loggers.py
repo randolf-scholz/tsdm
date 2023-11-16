@@ -57,7 +57,6 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, NamedTuple, Optional, Protocol, runtime_checkable
 
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
@@ -66,6 +65,14 @@ from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
+from typing_extensions import (
+    Any,
+    ClassVar,
+    NamedTuple,
+    Optional,
+    Protocol,
+    runtime_checkable,
+)
 
 from tsdm.logutils.callbacks import (  # ModelCallback,
     Callback,

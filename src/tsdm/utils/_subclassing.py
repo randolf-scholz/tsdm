@@ -8,7 +8,8 @@ __all__ = [
 
 from abc import ABCMeta
 from collections.abc import Callable
-from typing import Any, Generic, Optional, TypeVar, cast
+
+from typing_extensions import Any, Generic, Optional, TypeVar, cast
 
 T = TypeVar("T")
 R = TypeVar("R")

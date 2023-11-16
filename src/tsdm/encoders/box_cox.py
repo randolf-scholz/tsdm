@@ -8,7 +8,6 @@ __all__ = [
 
 import warnings
 from collections.abc import Callable
-from typing import ClassVar, Literal, Optional, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -17,6 +16,7 @@ from numpy._typing import NDArray
 from pandas import Series
 from scipy.optimize import minimize
 from scipy.special import erfinv
+from typing_extensions import ClassVar, Literal, Optional, TypeAlias
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.strings import repr_mapping
