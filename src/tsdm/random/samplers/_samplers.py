@@ -362,7 +362,7 @@ M: TypeAlias = Literal["masks"]  # bool
 B: TypeAlias = Literal["bounds"]  # tuple
 W: TypeAlias = Literal["windows"]  #
 MODE = TypeVar("MODE", B, M, W, S)
-MODES: TypeAlias = B | M | W | S
+_MODES: TypeAlias = B | M | W | S
 
 ONE: TypeAlias = Literal[False]
 MANY: TypeAlias = Literal[True]
@@ -425,6 +425,8 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
 
     The sampler will return tuples of `len(horizons)+1`.
     """
+
+    MODES: ClassVar[tuple[B, S, M, W]] = ("bounds", "slices", "masks", "windows")
 
     data: NDArray[DT]  # type: ignore[type-var]
 
@@ -643,7 +645,9 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         ]
 
     @property
-    def _MAKE_FUNCTIONS(self) -> dict[tuple[MODES, bool], Callable[[NDArray[DT]], Any]]:
+    def _MAKE_FUNCTIONS(
+        self,
+    ) -> dict[tuple[_MODES, bool], Callable[[NDArray[DT]], Any]]:
         r"""Return the make functions."""
         return {
             ("bounds", False): self.make_bound,

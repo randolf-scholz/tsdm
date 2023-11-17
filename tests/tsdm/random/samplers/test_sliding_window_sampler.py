@@ -2,12 +2,12 @@ r"""Test Sliding Window Sampler."""
 
 import datetime
 import logging
-from typing import assert_type
 
 import numpy as np
 import pandas as pd
 from pandas import Series
 from pytest import mark
+from typing_extensions import Any, assert_type
 
 from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.utils import flatten_dict
@@ -945,22 +945,138 @@ DATETIME_DATA = {
     "list-pandas": [pd.Timestamp(d) for d in PYTHON_DATES],
     "numpy": np.array(PYTHON_DATES, dtype="datetime64[ns]"),
     "series-numpy": Series(PYTHON_DATES, dtype="datetime64[ns]"),
-    "series-polars": Series(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
+    "series-pyarrow": Series(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
     "index-numpy": pd.Index(PYTHON_DATES, dtype="datetime64[ns]"),
-    "index-polars": pd.Index(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
+    "index-pyarrow": pd.Index(PYTHON_DATES, dtype="timestamp[ns][pyarrow]"),
 }
 
 
+@mark.parametrize("mode", SlidingWindowSampler.MODES)
 @mark.parametrize("data", DATETIME_DATA.values(), ids=DATETIME_DATA)
-def test_timedelta_data(data):
+def test_datetime_data(mode, data):
     """Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingWindowSampler(
         data,
-        stride="2h",
+        stride="8h",
         horizons="3d",
-        mode="bounds",
+        mode=mode,
         shuffle=False,
         drop_last=False,
     )
+    assert_type(sampler, SlidingWindowSampler[Any, mode, False])
 
-    list(sampler)
+    result = list(sampler)
+    assert len(result) == 28
+    assert len(sampler) == 28
+
+    data_type = type(data[0])
+    sample_result = result[0]
+
+    match mode:
+        case "bounds":
+            assert isinstance(sample_result, tuple)
+            assert isinstance(sample_result[0], data_type), type(sample_result[0])
+        case "slices":
+            assert isinstance(sample_result, slice)
+            assert isinstance(sample_result.start, data_type), type(sample_result.start)
+        case "masks":
+            assert isinstance(sample_result, np.ndarray)
+            assert np.issubdtype(sample_result.dtype, np.bool_)
+        case "windows":
+            assert isinstance(sample_result, np.ndarray)
+            assert isinstance(sample_result[0], data_type), type(sample_result[0])
+
+
+# increasing data with random step size
+PYTHON_INTEGERS = [-7, 0, 3, 4, 6, 11, 12, 14, 18, 20, 21]
+INTEGER_DATA = {
+    "python-int": PYTHON_INTEGERS,
+    "numpy-int64": np.array(PYTHON_INTEGERS, dtype=np.int64),
+    "numpy-int32": np.array(PYTHON_INTEGERS, dtype=np.int32),
+    "series-pyarrow-int32": Series(PYTHON_INTEGERS, dtype="int32[pyarrow]"),
+    "index-pyarrow-int32": pd.Index(PYTHON_INTEGERS, dtype="int32[pyarrow]"),
+}
+
+
+@mark.parametrize("mode", SlidingWindowSampler.MODES)
+@mark.parametrize("data", INTEGER_DATA.values(), ids=INTEGER_DATA)
+def test_integer_data(mode, data):
+    """Test the SlidingWindowSampler with datetime/timedelta data."""
+    sampler = SlidingWindowSampler(
+        data,
+        stride=2,
+        horizons=3,
+        mode=mode,
+        shuffle=False,
+        drop_last=False,
+    )
+    assert_type(sampler, SlidingWindowSampler[Any, mode, False])
+
+    result = list(sampler)
+    assert len(result) == 15
+    assert len(sampler) == 15
+
+    sample_result = result[0]
+
+    # FIXME: https://github.com/pandas-dev/pandas/issues/56021
+    match mode:
+        case "bounds":
+            assert isinstance(sample_result, tuple)
+            assert isinstance(sample_result[0], np.integer), type(sample_result[0])
+        case "slices":
+            assert isinstance(sample_result, slice)
+            assert isinstance(sample_result.start, np.integer), type(
+                sample_result.start
+            )
+        case "masks":
+            assert isinstance(sample_result, np.ndarray)
+            assert np.issubdtype(sample_result.dtype, np.bool_)
+        case "windows":
+            assert isinstance(sample_result, np.ndarray)
+            assert isinstance(sample_result[0], np.integer), type(sample_result[0])
+
+
+PYTHON_FLOATS = [-2.3, 0.1, 4.2, 5.3, 5.5, 5.6, 6.0, 8.4, 10.7]
+FLOAT_DATA = {
+    "python-float": PYTHON_FLOATS,
+    "numpy-float64": np.array(PYTHON_FLOATS, dtype=np.float64),
+    "numpy-float32": np.array(PYTHON_FLOATS, dtype=np.float32),
+    "series-pyarrow-float32": Series(PYTHON_FLOATS, dtype="float32[pyarrow]"),
+    "index-pyarrow-float32": pd.Index(PYTHON_FLOATS, dtype="float32[pyarrow]"),
+}
+
+
+@mark.parametrize("mode", SlidingWindowSampler.MODES)
+@mark.parametrize("data", FLOAT_DATA.values(), ids=FLOAT_DATA)
+def test_float_data(mode, data):
+    """Test the SlidingWindowSampler with datetime/timedelta data."""
+    sampler = SlidingWindowSampler(
+        data,
+        stride=2.1,
+        horizons=2.8,
+        mode=mode,
+        shuffle=False,
+        drop_last=False,
+    )
+    assert_type(sampler, SlidingWindowSampler[Any, mode, False])
+
+    result = list(sampler)
+    assert len(result) == 7
+    assert len(sampler) == 7
+
+    sample_result = result[0]
+
+    # FIXME: https://github.com/pandas-dev/pandas/issues/56021
+    match mode:
+        case "bounds":
+            assert isinstance(sample_result, tuple)
+            assert isinstance(sample_result[0], np.floating), type(sample_result[0])
+        case "slices":
+            assert isinstance(sample_result, slice)
+            assert isinstance(sample_result.start, np.floating)
+        case "masks":
+            assert isinstance(sample_result, np.ndarray)
+            assert np.issubdtype(sample_result.dtype, np.bool_)
+        case "windows":
+            assert isinstance(sample_result, np.ndarray)
+            assert isinstance(sample_result[0], np.floating), type(sample_result[0])
