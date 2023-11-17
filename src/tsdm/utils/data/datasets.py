@@ -72,13 +72,23 @@ class PandasDataset(Protocol[K, V_co]):
 
     @property
     def iloc(self) -> SupportsGetItem[int, V_co]:
-        """Purely integer-location based indexing for selection by position."""
+        """Purely integer location-based indexing for selection by position."""
         ...
 
 
 @runtime_checkable
 class IterableDataset(Protocol[V_co]):
-    """Protocol version of `torch.utils.data.IterableDataset`.
+    """Protocol version of `torch.utils.data.IterableDataset`."""
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[V_co]:
+        """Iterate over the dataset."""
+        ...
+
+
+@runtime_checkable
+class IndexableDataset(Protocol[V_co]):
+    """Protocol version of `torch.utils.data.IterableDataset` with len and getitem.
 
     Note:
         - We deviate from the original in that we require a `len()` method.
@@ -97,26 +107,25 @@ class IterableDataset(Protocol[V_co]):
         ...
 
     @abstractmethod
-    def __getitem__(self, key: int, /) -> V_co:
-        """Map key to sample."""
+    def __iter__(self) -> Iterator[V_co]:
+        """Iterate over the dataset."""
         ...
 
     @abstractmethod
-    def __iter__(self) -> Iterator[V_co]:
-        """Iterate over the dataset."""
+    def __getitem__(self, key: int, /) -> V_co:
+        """Map key to sample."""
         ...
 
 
 @runtime_checkable
 class MapDataset(Protocol[K, V_co]):
-    """Protocol version of `torch.utils.data.Dataset`.
+    """Protocol version of `torch.utils.data.Dataset` with a `keys()` method.
 
     Note:
-        - We additionally require a `len()` method, since we only consider non-streaming datasets.
-        - We deviate from the original in that we require a `keys()` method.
-          Otherwise, it is unclear how to iterate over the dataset. `torch.utils.data.Dataset`
-          simply makes the assumption that the dataset is indexed by integers.
-          But this is simply wrong for many use cases such as dictionaries or DataFrames.
+        We deviate from the original in that we require a `keys()` method.
+        Otherwise, it is unclear how to iterate over the dataset. `torch.utils.data.Dataset`
+        simply makes the assumption that the dataset is indexed by integers.
+        But this is simply wrong for many use cases such as dictionaries or DataFrames.
     """
 
     @abstractmethod
@@ -142,7 +151,10 @@ SequentialDataset: TypeAlias = IterableDataset[V_co] | PandasDataset[Any, V_co]
 """Type alias for a sequential dataset."""
 
 Dataset: TypeAlias = (
-    IterableDataset[V_co] | MapDataset[Any, V_co] | PandasDataset[Any, V_co]
+    IterableDataset[V_co]
+    | IndexableDataset[V_co]
+    | MapDataset[Any, V_co]
+    | PandasDataset[Any, V_co]
 )
 """Type alias for a generic dataset."""
 

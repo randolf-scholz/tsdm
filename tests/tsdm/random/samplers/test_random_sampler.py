@@ -3,6 +3,7 @@
 from typing import assert_type
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 from pytest import mark
 
@@ -124,3 +125,25 @@ def test_numpy_data() -> None:
     # check that we can iterate over the index
     for val in sampler:
         assert isinstance(val, np.str_)
+
+
+PYTHON_STRINGS = ["foo", "bar", "baz", "qux", "quux", "quuz", "corge"]
+STRING_DATA = {
+    "list": PYTHON_STRINGS,
+    "tuple": tuple(PYTHON_STRINGS),
+    "set": set(PYTHON_STRINGS),
+    "dict": dict(enumerate(PYTHON_STRINGS)),
+    "numpy": np.array(PYTHON_STRINGS, dtype=np.str_),
+    "series": pd.Series(PYTHON_STRINGS, dtype="string"),
+    "series-pyarrow": pd.Series(PYTHON_STRINGS, dtype="string[pyarrow]"),
+    "index": pd.Index(PYTHON_STRINGS, dtype="string"),
+}
+
+
+@mark.parametrize("data", STRING_DATA.values(), ids=STRING_DATA)
+def test_string_data(data):
+    sampler = RandomSampler(data, shuffle=True)
+
+    assert len(sampler) == len(data)
+    assert set(sampler) == set(data)
+    assert list(sampler) != list(data)
