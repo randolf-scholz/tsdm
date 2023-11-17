@@ -544,47 +544,45 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         drop_last=False,
     ):
         super().__init__(shuffle=shuffle)
-        # FIXME: correct the dtype of the data (https://github.com/pandas-dev/pandas/issues/55997)
-        self.data = np.array(data_source)
-        if hasattr(data_source[0], "to_numpy"):
-            self.data = self.data.astype(data_source[0].to_numpy().dtype)
 
+        # region set basic attributes --------------------------------------------------
+        self.tmin = get_first(data_source)
+        self.tmax = get_last(data_source)
+        zero_td: TD = self.tmin - self.tmin  # timedelta of the correct type
+        dt_type: type[DT] = type(self.tmin)
+        td_type: type[TD] = type(zero_td)
+        self.data = np.array(data_source, dtype=dt_type)
         self.mode = mode
         self.drop_last = drop_last
         self.stride = Timedelta(stride) if isinstance(stride, str) else stride
-        zero_td = 0 * self.stride  # timedelta of the correct type.
         assert self.stride > zero_td, "stride must be positive."
+        # endregion set basic attributes -----------------------------------------------
 
-        # region set horizon(s)
+        # region set horizon(s) --------------------------------------------------------
         match horizons:
             case str() as string:
                 self.multi_horizon = False
-                self.horizons = np.array([Timedelta(string).to_numpy()])
+                self.horizons = np.array([Timedelta(string)], dtype=td_type)
             case Iterable() as iterable:
                 values = list(iterable)
                 self.multi_horizon = True
                 self.horizons = (
-                    pd.to_timedelta(values).to_numpy()  # Series or TimeDeltaIndex
+                    pd.to_timedelta(values).to_numpy(dtype=td_type)
                     if isinstance(values[0], str)
-                    else np.array(values)
+                    else np.array(values, dtype=td_type)
                 )
             case TDLike() as td:
                 self.multi_horizon = False
-                self.horizons = np.array([td])
+                self.horizons = np.array([td], dtype=td_type)
             case _:
                 raise TypeError(f"Invalid type {type(horizons)} for {horizons=}")
 
         with_zero = np.concatenate([
-            np.array([zero_td], dtype=self.horizons.dtype),
+            np.array([zero_td], dtype=td_type),
             self.horizons,
         ])
-        self.cumulative_horizons = np.cumsum(with_zero)
-        # endregion set horizon(s)
-
-        # region set tmin, tmax, offset
-        self.tmin = get_first(data_source)
-        self.tmax = get_last(data_source)
-        # endregion set tmin, tmax, offset
+        self.cumulative_horizons = np.cumsum(with_zero, dtype=td_type)
+        # endregion set horizon(s) -----------------------------------------------------
 
     @property
     def grid(self) -> NDArray[np.integer]:
