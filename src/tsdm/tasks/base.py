@@ -102,6 +102,7 @@ __all__ = [
     "ForecastingTask",
     # Classes
     "Batch",
+    "Split",
     "TimeSeriesTask",
 ]
 
@@ -126,8 +127,7 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.data.datasets import MapDataset
-from tsdm.data.timeseries import TimeSeriesCollection
+from tsdm.data import MapDataset, TimeSeriesCollection, TimeSeriesSampleGenerator
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
@@ -143,6 +143,31 @@ SplitID = TypeVar("SplitID", bound=Hashable)
 
 Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
 """Type of a batch of data."""
+
+
+@dataclass
+class Split(Generic[Sample_co]):
+    """Represents a split of a dataset."""
+
+    name: Hashable = NotImplemented
+    r"""List of index."""
+    fold: Series = NotImplemented
+    r"""Dictionary holding `Fold` associated with each key (index for split)."""
+
+    collate_fn: Callable[[list[Sample_co]], Batch] = NotImplemented
+    r"""Collate function used to create batches from samples."""
+    dataloader: DataLoader[Sample_co] = NotImplemented
+    r"""Dictionary holding `DataLoader` associated with each key."""
+    encoders: Encoder = NotImplemented
+    r"""Dictionary holding `Encoder` associated with each key."""
+    generator: TimeSeriesSampleGenerator = NotImplemented
+    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
+    sampler: Sampler = NotImplemented
+    r"""Dictionary holding `Sampler` associated with each key."""
+    split: TimeSeriesCollection = NotImplemented
+    r"""Dictionary holding sampler associated with each key."""
+    test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
+    r"""Metric used for evaluation."""
 
 
 @runtime_checkable

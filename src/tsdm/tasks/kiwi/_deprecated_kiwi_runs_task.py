@@ -20,8 +20,7 @@ from torch import Tensor, jit
 from torch.utils.data import DataLoader
 from typing_extensions import Any, Literal, NamedTuple, Optional, deprecated
 
-from tsdm.data import MappingDataset
-from tsdm.data.generators import TimeSeriesSampleGenerator
+from tsdm.data import MappingDataset, TimeSeriesSampleGenerator
 from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import KiwiRuns, KiwiRunsTSC
 from tsdm.encoders import Encoder

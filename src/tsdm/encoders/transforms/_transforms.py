@@ -25,14 +25,14 @@ import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
 from typing_extensions import Protocol, runtime_checkable
 
-from tsdm.types.variables import any_other_var as T, any_var as S
+from tsdm.types.variables import any_co as T_co, any_contra as S_contra
 
 
 @runtime_checkable
-class Transform(Protocol[S, T]):
+class Transform(Protocol[S_contra, T_co]):
     r"""Protocol for encoders."""
 
-    def __call__(self, x: S, /) -> T:
+    def __call__(self, x: S_contra, /) -> T_co:
         """Apply the encoder."""
         ...
 

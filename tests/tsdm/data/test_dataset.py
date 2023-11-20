@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-r"""TODO: Add Test summary."""
+r"""Test dataset protocols."""
 
 import logging
 from collections.abc import Mapping
@@ -7,8 +6,8 @@ from collections.abc import Mapping
 import pandas as pd
 from pytest import mark
 
+from tsdm.data import MapDataset, PandasDataset
 from tsdm.types.protocols import MappingProtocol, assert_protocol
-from tsdm.utils.data import MapDataset, PandasDataset
 
 logging.basicConfig(level=logging.INFO)
 __logger__ = logging.getLogger(__name__)

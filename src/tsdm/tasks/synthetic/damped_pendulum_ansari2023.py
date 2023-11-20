@@ -17,7 +17,7 @@ from typing_extensions import final
 import tsdm.data.timeseries
 from tsdm import datasets
 from tsdm.data import folds_as_frame, is_partition
-from tsdm.data.generators import FixedSliceSampleGenerator
+from tsdm.data.timeseries import FixedSliceSampleGenerator
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import SplitID, TimeSeriesTask
 

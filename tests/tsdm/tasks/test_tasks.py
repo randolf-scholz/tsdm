@@ -4,8 +4,8 @@ import logging
 
 from pytest import mark
 
-from tsdm.data.generators import Sample, TimeSeriesSampleGenerator
-from tsdm.data.timeseries import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.data import TimeSeriesSampleGenerator
+from tsdm.data.timeseries import Sample, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.datasets import InSilico
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import (

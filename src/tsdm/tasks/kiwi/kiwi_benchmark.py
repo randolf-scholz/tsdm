@@ -14,8 +14,13 @@ from torch.nn.utils.rnn import pad_sequence
 from typing_extensions import Any, NamedTuple, TypeVar
 
 from tsdm import datasets
-from tsdm.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
-from tsdm.data.generators import Sample, TimeSeriesSampleGenerator
+from tsdm.data import (
+    TimeSeriesSampleGenerator,
+    folds_as_frame,
+    folds_as_sparse_frame,
+    folds_from_groups,
+)
+from tsdm.data.timeseries import Sample
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,

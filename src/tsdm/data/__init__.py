@@ -7,7 +7,7 @@ __all__ = [
     "MapDataset",
     "IterableDataset",
     "PandasDataset",
-    # Type Aliases
+    "IndexableDataset",
     "Dataset",
     # Classes
     "DatasetCollection",
@@ -24,6 +24,10 @@ __all__ = [
     "collate_padded",
     "unpad_sequence",
     "unpack_sequence",
+    # timeseries
+    "TimeSeriesCollection",
+    "TimeSeriesDataset",
+    "TimeSeriesSampleGenerator",
     # Functions
     # data - arrow
     "cast_columns",
@@ -81,6 +85,7 @@ from tsdm.data.datasets import (
     DataFrame2Dataset,
     Dataset,
     DatasetCollection,
+    IndexableDataset,
     IterableDataset,
     MapDataset,
     MappingDataset,
@@ -91,4 +96,9 @@ from tsdm.data.folds import (
     folds_as_sparse_frame,
     folds_from_groups,
     is_partition,
+)
+from tsdm.data.timeseries import (
+    TimeSeriesCollection,
+    TimeSeriesDataset,
+    TimeSeriesSampleGenerator,
 )

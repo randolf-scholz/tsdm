@@ -528,6 +528,29 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         shuffle: bool = ...,
     ) -> None: ...
 
+    # @overload
+    # def __init__(
+    #     self: "SlidingWindowSampler[DT, Any, ONE]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     stride: str | Timedelta,
+    #     horizons: str | Timedelta,
+    #     mode: str,
+    #     shuffle: bool = ...,
+    # ) -> None: ...
+    # @overload
+    # def __init__(
+    #     self: "SlidingWindowSampler[DT, Any, MANY]",
+    #     data_source: SequentialDataset[DT],
+    #     /,
+    #     *,
+    #     stride: str | Timedelta,
+    #     horizons: Sequence[str | Timedelta],
+    #     mode: str,
+    #     shuffle: bool = ...,
+    # ) -> None: ...
+
     # endregion __init__ overloads -----------------------------------------------------
     def __init__(
         self,

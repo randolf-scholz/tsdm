@@ -42,9 +42,6 @@ from tsdm.types.variables import (
 )
 from tsdm.utils.strings import repr_array, repr_mapping
 
-TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
-
-
 # class DataFrame2Dataset(TorchDataset[T]):
 #     """Convert a DataFrame to a Dataset."""
 #
@@ -52,6 +49,7 @@ TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 # MapStyleDataset: TypeAlias = MappingProtocol
 
 
+# region Protocols ---------------------------------------------------------------------
 @runtime_checkable
 class PandasDataset(Protocol[K, V_co]):
     """Protocol version of `pandas.DataFrame`/`Series`.
@@ -154,6 +152,7 @@ Dataset: TypeAlias = (
     IndexableDataset[V_co] | MapDataset[Any, V_co] | PandasDataset[Any, V_co]
 )
 """Type alias for a generic dataset."""
+# endregion Protocol -------------------------------------------------------------------
 
 
 @dataclass
@@ -233,6 +232,9 @@ class DatasetCollection(TorchDataset[TorchDataset[T]], Mapping[K, TorchDataset[T
     def __repr__(self) -> str:
         r"""Representation of the dataset."""
         return repr_mapping(self)
+
+
+TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 
 
 class MappingDataset(Mapping[K, TorchDatasetVar]):

@@ -7,8 +7,12 @@ __all__ = [
 
 from pandas import DataFrame
 
-from tsdm.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
-from tsdm.data.generators import TimeSeriesSampleGenerator
+from tsdm.data import (
+    TimeSeriesSampleGenerator,
+    folds_as_frame,
+    folds_as_sparse_frame,
+    folds_from_groups,
+)
 from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets import InSilicoTSC
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler

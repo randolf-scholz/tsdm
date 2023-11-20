@@ -7,7 +7,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import pack_sequence, pad_sequence
 
-from tsdm.utils.data import unpack_sequence, unpad_sequence
+from tsdm.data import unpack_sequence, unpad_sequence
 
 __logger__ = logging.getLogger(__name__)
 

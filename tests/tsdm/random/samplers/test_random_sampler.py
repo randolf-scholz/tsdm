@@ -7,8 +7,8 @@ import pandas as pd
 from numpy.typing import NDArray
 from pytest import mark
 
+from tsdm.data import IterableDataset, MapDataset
 from tsdm.random.samplers import RandomSampler
-from tsdm.utils.data import IterableDataset, MapDataset
 
 
 @mark.flaky(reruns=2)  # 1 in 10¹² chance of failure
