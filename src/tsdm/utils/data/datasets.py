@@ -139,7 +139,7 @@ class MapDataset(Protocol[K, V_co]):
         ...
 
     @abstractmethod
-    def keys(self) -> Reversible[K] | IterableDataset[K]:
+    def keys(self) -> Reversible[K] | IndexableDataset[K]:
         """Iterate over the keys."""
         ...
 
@@ -151,10 +151,7 @@ SequentialDataset: TypeAlias = IterableDataset[V_co] | PandasDataset[Any, V_co]
 """Type alias for a sequential dataset."""
 
 Dataset: TypeAlias = (
-    IterableDataset[V_co]
-    | IndexableDataset[V_co]
-    | MapDataset[Any, V_co]
-    | PandasDataset[Any, V_co]
+    IndexableDataset[V_co] | MapDataset[Any, V_co] | PandasDataset[Any, V_co]
 )
 """Type alias for a generic dataset."""
 

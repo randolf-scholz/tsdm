@@ -305,6 +305,7 @@ class KiwiBenchmark(TimeSeriesTask):
                 horizons=[observation_horizon, forecasting_horizon],
                 stride=stride,
                 shuffle=shuffle,
+                mode="masks",
             )
             for key, tsd in split.items()
         }

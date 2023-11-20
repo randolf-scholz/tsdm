@@ -55,7 +55,12 @@ class InSilicoTask(TimeSeriesTask):
     def make_sampler(self, key: K, /) -> Sampler:
         split: TimeSeriesCollection = self.splits[key]
         subsamplers = {
-            key: SlidingWindowSampler(tsd.timeindex, horizons=["2h", "1h"], stride="1h")
+            key: SlidingWindowSampler(
+                tsd.timeindex,
+                horizons=["2h", "1h"],
+                stride="1h",
+                mode="masks",
+            )
             for key, tsd in split.items()
         }
         sampler = HierarchicalSampler(

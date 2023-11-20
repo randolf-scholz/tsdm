@@ -50,7 +50,7 @@ from tsdm.types.variables import (
 )
 from tsdm.utils.data.datasets import (
     Dataset,
-    IterableDataset,
+    IndexableDataset,
     MapDataset,
     SequentialDataset,
 )
@@ -72,7 +72,7 @@ def get_index(dataset: Dataset[T], /) -> Index:
             return pandas_dataset.index
         case MapDataset() as map_dataset:
             return Index(map_dataset.keys())
-        case IterableDataset() as iterable_dataset:
+        case IndexableDataset() as iterable_dataset:
             return Index(range(len(iterable_dataset)))
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
@@ -85,7 +85,7 @@ def get_first(dataset: Dataset[T], /) -> T:
             return pandas_dataset.iloc[0]
         case MapDataset() as map_dataset:
             return map_dataset[next(iter(map_dataset.keys()))]
-        case IterableDataset() as iterable_dataset:
+        case IndexableDataset() as iterable_dataset:
             return next(iter(iterable_dataset))
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
@@ -98,7 +98,7 @@ def get_last(dataset: Dataset[T], /) -> T:
             return pandas_dataset.iloc[-1]
         case MapDataset() as map_dataset:
             return map_dataset[next(reversed(map_dataset.keys()))]
-        case IterableDataset() as iterable_dataset:
+        case IndexableDataset() as iterable_dataset:
             return next(reversed(iterable_dataset))
         case _:
             raise TypeError(f"Got unsupported data type {type(dataset)}.")
@@ -281,7 +281,7 @@ class RandomSampler(BaseSampler[T_co]):
 
 
 # class HierarchicalMappingSampler: ...  # subsamplers for MapDataset
-# class HierarchicalSequenceSampler: ...  # subsamplers for IterableDataset
+# class HierarchicalSequenceSampler: ...  # subsamplers for IndexableDataset
 @pprint_repr
 @dataclass
 class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
@@ -450,10 +450,10 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | TD,
-        horizons: str | TD,
+        stride: str | Timedelta,
+        horizons: str | Timedelta,
         mode: S,
-        shuffle: bool = False,
+        shuffle: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -461,10 +461,10 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | TD,
-        horizons: str | TD,
+        stride: str | Timedelta,
+        horizons: str | Timedelta,
         mode: B,
-        shuffle: bool = False,
+        shuffle: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -472,10 +472,10 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | TD,
-        horizons: str | TD,
+        stride: str | Timedelta,
+        horizons: str | Timedelta,
         mode: M,
-        shuffle: bool = False,
+        shuffle: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -483,10 +483,10 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | TD,
-        horizons: str | TD,
+        stride: str | Timedelta,
+        horizons: str | Timedelta,
         mode: W,
-        shuffle: bool = False,
+        shuffle: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -494,10 +494,10 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | TD,
-        horizons: Sequence[str | TD],
+        stride: str | Timedelta,
+        horizons: Sequence[str | Timedelta],
         mode: S,
-        shuffle: bool = False,
+        shuffle: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -505,10 +505,10 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | TD,
-        horizons: Sequence[str | TD],
+        stride: str | Timedelta,
+        horizons: Sequence[str | Timedelta],
         mode: B,
-        shuffle: bool = False,
+        shuffle: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -516,10 +516,10 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | TD,
-        horizons: Sequence[str | TD],
+        stride: str | Timedelta,
+        horizons: Sequence[str | Timedelta],
         mode: M,
-        shuffle: bool = False,
+        shuffle: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -527,10 +527,10 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | TD,
-        horizons: Sequence[str | TD],
+        stride: str | Timedelta,
+        horizons: Sequence[str | Timedelta],
         mode: W,
-        shuffle: bool = False,
+        shuffle: bool = ...,
     ) -> None: ...
 
     # endregion __init__ overloads -----------------------------------------------------
@@ -541,18 +541,19 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         *,
         horizons,
         stride,
-        mode="masks",
+        mode,
         shuffle=False,
         drop_last=False,
     ):
+        # FIXME: we can do better typing-wise once PEP696 is accepted and HKTs are supported.
         super().__init__(shuffle=shuffle)
 
         # region set basic attributes --------------------------------------------------
         self.tmin = get_first(data_source)
         self.tmax = get_last(data_source)
-        zero_td: TD = self.tmin - self.tmin  # timedelta of the correct type
+        zero_td = cast(Any, self.tmin - self.tmin)  # timedelta of the correct type
         dt_type: type[DT] = type(self.tmin)
-        td_type: type[TD] = type(zero_td)
+        td_type: type[Any] = type(zero_td)
         self.data = np.array(data_source, dtype=dt_type)
         self.mode = mode
         self.drop_last = drop_last
@@ -663,37 +664,24 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
     # endregion make functions ---------------------------------------------------------
 
     # region __iter__ overloads --------------------------------------------------------
+    # fmt: off
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, S, ONE]") -> Iterator[slice]: ...
     @overload
-    def __iter__(
-        self: "SlidingWindowSampler[DT, B, ONE]",
-    ) -> Iterator[tuple[DT, DT]]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, B, ONE]") -> Iterator[tuple[DT, DT]]: ...
     @overload
-    def __iter__(
-        self: "SlidingWindowSampler[DT, M, ONE]",
-    ) -> Iterator[NDArray[np.bool_]]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, M, ONE]") -> Iterator[NDArray[np.bool_]]: ...
     @overload
-    def __iter__(
-        self: "SlidingWindowSampler[DT, W, ONE]",
-    ) -> Iterator[NDArray[DT]]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, W, ONE]") -> Iterator[NDArray[DT]]: ...
     @overload
-    def __iter__(
-        self: "SlidingWindowSampler[DT, S, MANY]",
-    ) -> Iterator[list[slice]]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, S, MANY]") -> Iterator[list[slice]]: ...
     @overload
-    def __iter__(
-        self: "SlidingWindowSampler[DT, B, MANY]",
-    ) -> Iterator[list[tuple[DT, DT]]]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, B, MANY]") -> Iterator[list[tuple[DT, DT]]]: ...
     @overload
-    def __iter__(
-        self: "SlidingWindowSampler[DT, M, MANY]",
-    ) -> Iterator[list[NDArray[np.bool_]]]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, M, MANY]") -> Iterator[list[NDArray[np.bool_]]]: ...
     @overload
-    def __iter__(
-        self: "SlidingWindowSampler[DT, W, MANY]",
-    ) -> Iterator[list[NDArray[DT]]]: ...
-
+    def __iter__(self: "SlidingWindowSampler[DT, W, MANY]") -> Iterator[list[NDArray[DT]]]: ...
+    # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
     def __iter__(self):  # pyright: ignore[reportGeneralTypeIssues]
         r"""Iterate through.
