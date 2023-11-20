@@ -8,51 +8,43 @@ Contains encoders in functional form.
 """
 
 __all__ = [
-    # Types
-    "FunctionalEncoder",
+    # Protocol
+    "Transform",
     # Functions
     "make_dense_triplets",
     "make_masked_format",
     "make_sparse_triplets",
     "time2float",
     "time2int",
-    "triplet2dense",
-    "timefeatures",
 ]
 
-
 import warnings
-from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype, DataFrame, Series
-from typing_extensions import TypeAlias, TypeVar
+from typing_extensions import Protocol, runtime_checkable
 
-S = TypeVar("S", DataFrame, Series)
-
-FunctionalEncoder: TypeAlias = Callable[[S], S]
+from tsdm.types.variables import any_other_var as T, any_var as S
 
 
-def infer_categories(s: Series) -> set:
+@runtime_checkable
+class Transform(Protocol[S, T]):
+    r"""Protocol for encoders."""
+
+    def __call__(self, x: S, /) -> T:
+        """Apply the encoder."""
+        ...
+
+
+def infer_categories(s: Series, /) -> set:
     r"""Return categories."""
     categories = s.astype(CategoricalDtype()).categories
 
     return set(categories)
 
 
-def triplet2dense() -> DataFrame:
-    r"""Convert a DataFrame in triplet format to dense format. Inverse operation of `dense2triplet`.
-
-    ``cat_features``: Either a set of index denoting the columns containing categorical features.
-    In this case, the categories will be inferred from data.
-    Or a dictionary of sets such that a key:value pair corresponds to a column and
-    all possible categories in that column. Use the empty set to infer categories from data.
-    """
-    raise NotImplementedError
-
-
-def make_dense_triplets(df: DataFrame) -> DataFrame:
+def make_dense_triplets(df: DataFrame, /) -> DataFrame:
     r"""Convert DataFrame to dense triplet format.
 
     Given that `df` has $d$ columns
@@ -89,7 +81,7 @@ def make_dense_triplets(df: DataFrame) -> DataFrame:
     return result
 
 
-def make_sparse_triplets(df: DataFrame) -> DataFrame:
+def make_sparse_triplets(df: DataFrame, /) -> DataFrame:
     r"""Convert DataFrame to sparse triplet format.
 
     Given that `df` has $d$ columns with $n$ rows containing $N ≤ n⋅d$ observations
@@ -122,7 +114,7 @@ def make_sparse_triplets(df: DataFrame) -> DataFrame:
     return result
 
 
-def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
+def make_masked_format(df: DataFrame, /) -> tuple[DataFrame, DataFrame, DataFrame]:
     r"""Convert DataFrame into masked format, returning 3 DataFrames with the same shape.
 
     Returns:
@@ -160,7 +152,7 @@ def make_masked_format(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
     return df, m, d
 
 
-def time2int(ds: Series) -> Series:
+def time2int(ds: Series, /) -> Series:
     r"""Convert `Series` encoded as `datetime64` or `timedelta64` to `integer`."""
     if pd.api.types.is_integer_dtype(ds):
         return ds
@@ -177,7 +169,7 @@ def time2int(ds: Series) -> Series:
     return timedeltas // common_interval
 
 
-def time2float(ds: Series) -> Series:
+def time2float(ds: Series, /) -> Series:
     r"""Convert `Series` encoded as `datetime64` or `timedelta64` to `floating`."""
     if pd.api.types.is_integer_dtype(ds):
         return ds
@@ -195,8 +187,3 @@ def time2float(ds: Series) -> Series:
     common_interval = np.gcd.reduce(timedeltas.view(int)).view("timedelta64[ns]")
 
     return (timedeltas / common_interval).astype(float)
-
-
-# TODO: add timefeatures
-def timefeatures() -> None:
-    r"""Return time features from datetime."""

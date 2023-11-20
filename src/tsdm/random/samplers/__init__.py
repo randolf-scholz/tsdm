@@ -8,8 +8,9 @@ Note:
 __all__ = [
     # Constants
     "SAMPLERS",
-    # ABC
+    # Protocols
     "Sampler",
+    # ABC
     "BaseSampler",
     # Classes
     "CollectionSampler",
@@ -22,9 +23,6 @@ __all__ = [
     # Functions
     "compute_grid",
 ]
-
-from torch.utils.data import Sampler as TorchSampler
-from typing_extensions import Final, TypeAlias
 
 from tsdm.random.samplers._samplers import (
     BaseSampler,
@@ -41,7 +39,7 @@ from tsdm.random.samplers._samplers_deprecated import (
     SliceSampler,
 )
 
-SAMPLERS: Final[dict[str, type[Sampler]]] = {
+SAMPLERS: dict[str, type[Sampler]] = {
     "CollectionSampler": CollectionSampler,
     "HierarchicalSampler": HierarchicalSampler,
     "IntervalSampler": IntervalSampler,
@@ -51,5 +49,3 @@ SAMPLERS: Final[dict[str, type[Sampler]]] = {
     "RandomSampler": RandomSampler,
 }
 r"""Dictionary of all available samplers."""
-
-del Final, TypeAlias, TorchSampler

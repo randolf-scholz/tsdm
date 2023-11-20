@@ -102,7 +102,7 @@ See Also:
 
 __all__ = [
     # Sub-Packages
-    "functional",
+    "transforms",
     # Modules
     "base",
     "numerical",
@@ -110,13 +110,9 @@ __all__ = [
     "pytorch",
     # Types
     "Encoder",
-    "FunctionalEncoder",
     # Constants
     "ENCODERS",
-    "MODULAR_ENCODERS",
-    "FUNCTIONAL_ENCODERS",
-    "SKLEARN_MODULAR_ENCODERS",
-    # "SKLEARN_FUNCTIONAL_ENCODERS",
+    "SKLEARN_ENCODERS",
     # ABC
     "BaseEncoder",
     # Classes
@@ -163,7 +159,7 @@ __all__ = [
 from sklearn import preprocessing as sk_preprocessing
 from sklearn.base import BaseEstimator
 
-from tsdm.encoders import base, functional, numerical, pytorch, time
+from tsdm.encoders import base, numerical, pytorch, time, transforms
 from tsdm.encoders.base import (
     BaseEncoder,
     ChainedEncoder,
@@ -188,10 +184,6 @@ from tsdm.encoders.dataframe import (
     TripletEncoder,
     ValueEncoder,
 )
-from tsdm.encoders.functional import (  # SKLEARN_FUNCTIONAL_ENCODERS,
-    FUNCTIONAL_ENCODERS,
-    FunctionalEncoder,
-)
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
     FloatEncoder,
@@ -215,7 +207,7 @@ from tsdm.encoders.time import (
     TimeDeltaEncoder,
 )
 
-SKLEARN_MODULAR_ENCODERS: dict[str, type[BaseEstimator]] = {
+SKLEARN_ENCODERS: dict[str, type[BaseEstimator]] = {
     "Binarizer": sk_preprocessing.Binarizer,
     "FunctionTransformer": sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer": sk_preprocessing.KBinsDiscretizer,
@@ -237,7 +229,7 @@ SKLEARN_MODULAR_ENCODERS: dict[str, type[BaseEstimator]] = {
 }
 r"""Dictionary of all available sklearn encoders."""
 
-MODULAR_ENCODERS: dict[str, type[Encoder]] = {
+ENCODERS: dict[str, type[Encoder]] = {
     # "BaseEncoder": BaseEncoder,  # Only concrete classes!
     "BoundaryEncoder": BoundaryEncoder,
     "BoxCoxEncoder": BoxCoxEncoder,
@@ -265,13 +257,6 @@ MODULAR_ENCODERS: dict[str, type[Encoder]] = {
     "Time2Float": Time2Float,
     "TimeDeltaEncoder": TimeDeltaEncoder,
     "TripletEncoder": TripletEncoder,
-}
-r"""Dictionary of all available modular encoders."""
-
-
-ENCODERS: dict[str, FunctionalEncoder | type[Encoder]] = {
-    **FUNCTIONAL_ENCODERS,
-    **MODULAR_ENCODERS,
 }
 r"""Dictionary of all available encoders."""
 

@@ -455,5 +455,4 @@ r"""Type variable for AsyncGenerators."""
 
 del abc, TypeVar, ModuleType, GenericAlias, Path
 del DataFrame, Index, MultiIndex, Series
-del Tensor, nn
-del ndarray
+del Tensor, nn, ndarray

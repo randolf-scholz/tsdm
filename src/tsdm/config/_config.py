@@ -47,8 +47,8 @@ def generate_folders(dirs: str | list | dict, /, *, parent: Path) -> None:
         - https://stackoverflow.com/a/22058144/9318372
     """
     match dirs:
-        case str() | Path() as pth:
-            path = parent.joinpath(pth)
+        case str() as string:
+            path = parent.joinpath(string)
             path.mkdir(parents=True, exist_ok=True)
         case list() as lst:
             for item in lst:
