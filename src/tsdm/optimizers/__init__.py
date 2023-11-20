@@ -10,16 +10,10 @@ __all__ = [
 ]
 
 from torch import optim
-from torch.optim import lr_scheduler
-from typing_extensions import Final, TypeAlias
+from torch.optim import Optimizer, lr_scheduler
+from torch.optim.lr_scheduler import LRScheduler
 
-Optimizer: TypeAlias = optim.Optimizer
-r"""Type hint for optimizers."""
-LRScheduler = lr_scheduler.LRScheduler
-r"""Type hint for lr_schedulers."""
-
-
-OPTIMIZERS: Final[dict[str, type[Optimizer]]] = {
+OPTIMIZERS: dict[str, type[Optimizer]] = {
     "Adadelta": optim.Adadelta,
     # Implements Adadelta algorithm.
     "Adagrad": optim.Adagrad,
@@ -46,7 +40,7 @@ OPTIMIZERS: Final[dict[str, type[Optimizer]]] = {
 r"""Dictionary of all available optimizers."""
 
 
-LR_SCHEDULERS: Final[dict[str, type[LRScheduler]]] = {
+LR_SCHEDULERS: dict[str, type[LRScheduler]] = {
     "LambdaLR": lr_scheduler.LambdaLR,
     "MultiplicativeLR": lr_scheduler.MultiplicativeLR,
     "StepLR": lr_scheduler.StepLR,
@@ -60,4 +54,4 @@ LR_SCHEDULERS: Final[dict[str, type[LRScheduler]]] = {
 }
 r"""Dictionary of all available lr_schedulers."""
 
-del Final, TypeAlias, lr_scheduler, optim
+del lr_scheduler, optim
