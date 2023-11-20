@@ -12,14 +12,11 @@ __all__ = [
     "get_package_structure",
 ]
 
-from typing_extensions import Final
-
-from tsdm.config._config import Config, Project, generate_folders, get_package_structure
-
-PROJECT: Final[Project] = Project()
-"""Project configuration."""
-
-CONFIG: Final[Config] = Config()
-"""Configuration Class."""
-
-del Final
+from tsdm.config._config import (
+    CONFIG,
+    PROJECT,
+    Config,
+    Project,
+    generate_folders,
+    get_package_structure,
+)

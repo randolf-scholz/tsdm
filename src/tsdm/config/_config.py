@@ -7,6 +7,9 @@ __all__ = [
     # Functions
     "generate_folders",
     "get_package_structure",
+    # Constants
+    "CONFIG",
+    "PROJECT",
 ]
 
 import logging
@@ -18,7 +21,7 @@ from itertools import chain
 from pathlib import Path
 from types import ModuleType
 
-from typing_extensions import Any, ClassVar
+from typing_extensions import Any, ClassVar, Final
 
 
 def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
@@ -256,9 +259,10 @@ class Project:
             print("Pass option `dry_run=False` to actually create the folders.")
 
 
-# logging.basicConfig(
-#     filename=str(LOGDIR.joinpath("example.log")),
-#     filemode="w",
-#     format="[%(asctime)s] [%(levelname)-s]\t[%(name)s]\t%(message)s, (%(filename)s:%(lineno)s)",
-#     datefmt="%Y-%m-%d %H:%M:%S",
-#     level=logging.INFO)
+# region CONSTANTS
+PROJECT: Final[Project] = Project()
+"""Project configuration."""
+
+CONFIG: Final[Config] = Config()
+"""Configuration Class."""
+# endregion CONSTANTS
