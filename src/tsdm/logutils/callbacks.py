@@ -90,21 +90,26 @@ class Callback(Protocol[P]):
     # required_kwargs: ClassVar[set[str]]
     # """The required kwargs for the callback."""
 
+    # @property
+    # def frequency(self) -> int:
+    #     """The frequency at which the callback is called."""
+
     @property
     def required_kwargs(self) -> set[str]:
         """The required kwargs for the callback."""
         ...
-
-    # @property
-    # def frequency(self) -> int:
-    #     """The frequency at which the callback is called."""
 
     def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
         """Log something at time index i."""
         ...
 
 
-def is_callback(func: Callable, /) -> TypeGuard[Callback]:
+# NOTE: overloads from MutableSequence.
+# NOTE: Use PEP 695: Type Parameter Syntax in 3.12
+CB = TypeVar("CB", bound=Callback)
+
+
+def is_callback(func: CB, /) -> TypeGuard[CB]:
     """Check if the function is a callback."""
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
@@ -132,7 +137,8 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
     """Base class for callbacks."""
 
     LOGGER: ClassVar[logging.Logger]
-    """The debug-logger for the callback."""
+    """Logger for the class."""
+
     # required_kwargs: ClassVar[set[str]]
     # """The required kwargs for the callback."""
 
@@ -159,8 +165,6 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
             """Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:
                 self.callback(i, **state_dict)
-            else:
-                self.LOGGER.debug("Skipping callback.")
 
         cls.__call__ = __call__  # type: ignore[method-assign]
 
@@ -174,11 +178,6 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
     def __repr__(self) -> str:
         """Return a string representation of the callback."""
         return repr_object(self)
-
-
-# NOTE: overloads from MutableSequence.
-# NOTE: Use PEP 695: Type Parameter Syntax in 3.9
-CB = TypeVar("CB", bound=Callback)
 
 
 class CallbackList(BaseCallback, MutableSequence[CB]):

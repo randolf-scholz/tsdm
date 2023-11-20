@@ -1,12 +1,4 @@
-r"""Configuration Options.
-
-Content:
-
-- config.yaml
-- dataset.yaml
-- models.yaml
-- hashes.yaml
-"""
+r"""Configuration Options."""
 
 __all__ = [
     # CONSTANTS

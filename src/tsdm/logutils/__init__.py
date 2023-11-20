@@ -69,7 +69,7 @@ from tsdm.logutils.logfuncs import (
 )
 from tsdm.logutils.loggers import BaseLogger, DefaultLogger, Logger
 
-CALLBACKS: dict[str, type[Callback[...]]] = {
+CALLBACKS: dict[str, type[Callback]] = {
     "CheckpointCallback": CheckpointCallback,
     "ConfigCallback": ConfigCallback,
     "EvaluationCallback": EvaluationCallback,

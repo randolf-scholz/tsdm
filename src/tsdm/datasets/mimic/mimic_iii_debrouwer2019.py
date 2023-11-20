@@ -23,8 +23,8 @@ import os
 import subprocess
 from getpass import getpass
 
-import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
 from pandas import DataFrame
 from typing_extensions import Literal, TypeAlias
 

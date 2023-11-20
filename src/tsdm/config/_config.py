@@ -11,16 +11,14 @@ __all__ = [
 
 import logging
 import os
+import tomllib
 from functools import cached_property
 from importlib import import_module, resources
 from itertools import chain
 from pathlib import Path
 from types import ModuleType
 
-import yaml
 from typing_extensions import Any, ClassVar
-
-from tsdm.config import config_files
 
 
 def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
@@ -39,19 +37,24 @@ def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
     return d
 
 
-def generate_folders(d: dict, /, *, current_path: Path) -> None:
+def generate_folders(dirs: str | list | dict, /, *, parent: Path) -> None:
     r"""Create nested folder structure based on nested dictionary index.
 
     References:
         - https://stackoverflow.com/a/22058144/9318372
     """
-    for directory in d:
-        path = current_path.joinpath(directory)
-        if d[directory] is None:
-            # print(f"Creating folder {path!r}.")
+    match dirs:
+        case str() | Path() as pth:
+            path = parent.joinpath(pth)
             path.mkdir(parents=True, exist_ok=True)
-        else:
-            generate_folders(d[directory], current_path=path)
+        case list() as lst:
+            for item in lst:
+                generate_folders(item, parent=parent)
+        case dict() as d:
+            for key, value in d.items():
+                generate_folders(value, parent=parent.joinpath(key))
+        case _:
+            raise TypeError
 
 
 class ConfigMeta(type):
@@ -87,6 +90,13 @@ class Config(metaclass=ConfigMeta):
 
     _autojit: bool = True
 
+    @cached_property
+    def CONFIG_FILE(self) -> dict:
+        r"""Return dictionary containing basic configuration of TSDM."""
+        path = resources.files(__package__) / "config.toml"
+        with path.open("rb") as file:
+            return tomllib.load(file)
+
     def __init__(self):
         r"""Initialize the configuration."""
         # TODO: Should be initialized by an init/toml file.
@@ -101,10 +111,10 @@ class Config(metaclass=ConfigMeta):
 
         # further initialization
         self.LOGDIR.mkdir(parents=True, exist_ok=True)
-        self.LOGGER.info("Available Models: %s", set(self.MODELS))
-        self.LOGGER.info("Available Datasets: %s", set(self.DATASETS))
+        # self.LOGGER.info("Available Models: %s", set(self.MODELS))
+        # self.LOGGER.info("Available Datasets: %s", set(self.DATASETS))
         self.LOGGER.debug("Initializing folder structure")
-        generate_folders(self.CONFIG_FILE["folders"], current_path=self.BASEDIR)
+        generate_folders(self.CONFIG_FILE["folders"], parent=self.BASEDIR)
         self.LOGGER.debug("Created folder structure in %s", self.BASEDIR)
 
     @property
@@ -118,34 +128,19 @@ class Config(metaclass=ConfigMeta):
         self._autojit = bool(value)
         os.environ["TSDM_AUTOJIT"] = str(value)
 
-    @cached_property
-    def CONFIG_FILE(self) -> dict:
-        r"""Return dictionary containing basic configuration of TSDM."""
-        path = resources.files(config_files) / "config.yaml"
-        with path.open("r", encoding="utf8") as file:
-            # with open(file, "r", encoding="utf8") as f:
-            return yaml.safe_load(file)
-
-    @cached_property
-    def MODELS(self) -> dict:
-        r"""Dictionary containing sources of the available models."""
-        path = resources.files(config_files) / "models.yaml"
-        with path.open("r", encoding="utf8") as file:
-            return yaml.safe_load(file)
-
-    @cached_property
-    def DATASETS(self) -> dict:
-        r"""Dictionary containing sources of the available datasets."""
-        path = resources.files(config_files) / "datasets.yaml"
-        with path.open("r", encoding="utf8") as file:
-            return yaml.safe_load(file)
-
-    @cached_property
-    def HASHES(self) -> dict:
-        r"""Dictionary containing hashes of the available datasets."""
-        path = resources.files(config_files) / "hashes.yaml"
-        with path.open("r", encoding="utf8") as file:
-            return yaml.safe_load(file)
+    # @cached_property
+    # def MODELS(self) -> dict:
+    #     r"""Dictionary containing sources of the available models."""
+    #     path = resources.files(config_files) / "models.yaml"
+    #     with path.open("r", encoding="utf8") as file:
+    #         return yaml.safe_load(file)
+    #
+    # @cached_property
+    # def DATASETS(self) -> dict:
+    #     r"""Dictionary containing sources of the available datasets."""
+    #     path = resources.files(config_files) / "datasets.yaml"
+    #     with path.open("r", encoding="utf8") as file:
+    #         return yaml.safe_load(file)
 
 
 class Project:
