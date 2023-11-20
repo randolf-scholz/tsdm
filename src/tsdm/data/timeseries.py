@@ -1,247 +1,242 @@
-r"""Representation of Time Series Datasets."""
+"""Timeseries data structures and functions."""
 
 __all__ = [
-    # Classes
-    "TimeTensor",
+    "TimeSeriesCollection",
     "TimeSeriesDataset",
-    "TimeSeriesTuple",
-    "TimeSeriesBatch",
-    # Types
-    "IndexedArray",
-    # Functions
 ]
 
-from collections.abc import Iterator, Sized
+from collections.abc import Iterator, Mapping
+from dataclasses import KW_ONLY, dataclass
 
-import numpy as np
-from pandas import DataFrame, Index, Series, Timedelta
-from torch import Tensor
+import pandas
+from pandas import DataFrame, Index, MultiIndex, Series
 from torch.utils.data import Dataset as TorchDataset
-from typing_extensions import Any, NamedTuple, Optional, Self, TypeAlias
+from typing_extensions import Any, Optional, Self, overload
 
-from tsdm.types.protocols import NTuple
-from tsdm.utils.strings import repr_array, repr_sequence
-
-
-class _IndexMethodClone:
-    r"""Clone `DataFrame.loc` and similar methods to tensor-like object."""
-
-    def __init__(self, data: Tensor, index: Index, method: str = "loc") -> None:
-        self.data = data
-        self.index = index
-        self.index_method = getattr(self.index, method)
-
-    def __getitem__(self, key):
-        idx = self.index_method[key]
-
-        if isinstance(idx, Series):
-            idx = idx.values
-
-        return self.data[idx]
+from tsdm.types.variables import key_var as K
+from tsdm.utils.strings import repr_dataclass
 
 
-class _TupleIndexMethodClone:
-    r"""Clone `DataFrame.loc` and similar methods to tensor-like object."""
+@dataclass
+class TimeSeriesDataset(TorchDataset[Series]):  # Q: Should this be a Mapping?
+    r"""Abstract Base Class for TimeSeriesDatasets.
 
-    def __init__(
-        self, data: tuple[Tensor, ...], index: tuple[Index, ...], method: str = "loc"
-    ):
-        self.data = data
-        self.index = index
-        self.method = tuple(getattr(idx, method) for idx in self.index)
+    A TimeSeriesDataset is a dataset that contains time series data and metadata.
+    More specifically, it is a tuple (TS, M) where TS is a time series and M is metadata.
 
-    def __getitem__(self, item):
-        indices = tuple(method[item] for method in self.method)
-        return tuple(data[indices] for data in self.data)
-
-
-class TimeTensor(Tensor):
-    r"""Subclass of `Tensor` that holds an index.
-
-    Use `TimeTensor.loc` and `TimeTensor.iloc` just like with `DataFrame`.
+    For a given time-index, the time series data is a vector of measurements.
     """
 
-    def __new__(
-        cls, x: Sized, *args: Any, index: Optional[Index] = None, **kwargs: Any
-    ) -> Self:
-        r"""Create a new object.
+    timeseries: DataFrame
+    r"""The time series data."""
 
-        If index is not provided, then `range(len(x))` will be used as the index.
-        """
-        if isinstance(x, (DataFrame, Series)):
-            assert index is None, "Index given, but x is DataFrame/Series"
-            x = x.values
-        return super().__new__(cls, *(x, *args), **kwargs)
+    _: KW_ONLY
 
-    def __init__(self, x: Sized, index: Optional[Index] = None):
-        super().__init__()  # optional
-        if isinstance(x, (DataFrame, Series)):
-            index = x.index
-        else:
-            index = Index(np.arange(len(x))) if index is None else index
+    # Main Attributes
+    metadata: Optional[DataFrame] = None
+    r"""The metadata of the dataset."""
+    timeindex: Index = NotImplemented
+    r"""The time-index of the dataset."""
+    name: str = NotImplemented
+    r"""The name of the dataset."""
 
-        self.index = Series(np.arange(len(x)), index=index)
-        # self.loc = self.index.loc
-        self.loc = _IndexMethodClone(self, self.index, "loc")
-        self.iloc = _IndexMethodClone(self, self.index, "iloc")
-        self.at = _IndexMethodClone(self, self.index, "at")
-        self.iat = _IndexMethodClone(self, self.index, "iat")
+    # Space Descriptors
+    index_description: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    timeseries_description: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_description: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
 
+    def __post_init__(self) -> None:
+        r"""Post init."""
+        if self.name is NotImplemented:
+            self.name = self.__class__.__name__
+        if self.timeindex is NotImplemented:
+            self.timeindex = self.timeseries.index.copy().unqiue()
 
-IndexedArray: TypeAlias = Series | DataFrame | TimeTensor
-r"""Type Hint for IndexedArrays."""
-
-
-class TimeSeriesTuple(NamedTuple):
-    r"""A tuple of Tensors describing a slice of a multivariate timeseries."""
-
-    timestamps: Tensor
-    r"""Timestamps of the data."""
-
-    observables: Tensor
-    r"""The observables."""
-
-    covariates: Tensor
-    r"""The controls."""
-
-    targets: Tensor
-    r"""The targets."""
-
-
-class TimeSeriesBatch(NamedTuple):
-    r"""Inputs for the model."""
-
-    inputs: TimeSeriesTuple
-    r"""The inputs."""
-
-    future: TimeSeriesTuple
-    r"""The future."""
-
-    metadata: Tensor
-    r"""The metadata."""
-
-
-class TimeSeriesDataset(TorchDataset):
-    r"""A general Time Series Dataset.
-
-    A `TimeSeriesDataset` consists of 2 things:
-
-    - timeseries: single `TimeTensor` or `tuple[TimeTensor]`
-    - metadata: single `Tensor` or `tuple[Tensor]`
-
-    In the case of a tuple, the elements are allowed to be NamedTuples.
-    When retrieving items, we generally use slices:
-
-    - start and stop: `ds[timestamp] = ds[timestamp:timestamp]`
-    - return both time and metadata: `ds[t₀:t₁] = tuple[X[t₀:t₁] for X in self.timeseries], metadata`
-    """
-
-    timeseries: IndexedArray
-    metadata: Optional[IndexedArray] = None
-    ts_type: type[tuple] = tuple
-    r"""The type of the timeseries."""
-    md_type: type[tuple] = tuple
-    r"""The type of the metadata."""
-
-    def __init__(
-        self,
-        timeseries: IndexedArray,
-        metadata: Optional[IndexedArray] = None,
-    ):
-        super().__init__()
-
-        self.timeseries = timeseries
-        self.metadata = metadata
-
-        # # Set up the timeseries
-        # if isinstance(timeseries, Mapping):
-        #     self.ts_type = namedtuple("timeseries", timeseries.keys())  # type: ignore[misc]
-        #     self.timeseries = self.ts_type(**timeseries)
-        # # test for namedtuple
-        # elif isinstance(timeseries, tuple):
-        #     if hasattr(timeseries, "_fields"):  # check namedtuple
-        #         self.ts_type = type(timeseries)
-        #         self.timeseries = timeseries
-        #     else:
-        #         self.ts_type = tuple
-        #         self.timeseries = tuple(timeseries)
-        # else:
-        #     self.timeseries = timeseries
-        #
-        # # Set up the metadata
-        # if isinstance(metadata, Mapping):
-        #     self.md_type = namedtuple("metadata", metadata.keys())  # type: ignore[misc]
-        #     self.timeseries = self.md_type(**timeseries)
-        # elif isinstance(metadata, tuple):
-        #     if hasattr(metadata, "_fields"):  # check namedtuple
-        #         self.md_type = type(metadata)
-        #         self.metadata = metadata
-        #     else:
-        #         self.md_type = tuple
-        #         self.metadata = tuple(metadata)
-        # else:
-        #     self.metadata = metadata
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        title = self.__class__.__name__
-        pad = 2
-
-        if isinstance(self.timeseries, tuple):
-            ts_lines = repr_sequence(
-                self.timeseries,
-                linebreaks=False,
-                padding=pad,
-                repr_fun=repr_array,
-                title="timeseries=",
-            )
-        else:
-            ts_lines = repr_array(self.timeseries)
-
-        if self.metadata is None:
-            md_lines = f"{None}"
-        elif isinstance(self.metadata, tuple):
-            md_lines = repr_sequence(
-                self.metadata,
-                linebreaks=False,
-                padding=pad,
-                repr_fun=repr_array,
-                title="metadata=",
-            )
-        else:
-            md_lines = "metadata=" + repr_array(self.metadata)
-
-        return f"{title}[{ts_lines}, {md_lines}]"
+    def __iter__(self) -> Iterator[Series]:
+        r"""Iterate over the timestamps."""
+        return iter(self.timeindex)
 
     def __len__(self) -> int:
-        r"""Return the total number of observations across all timeseries."""
-        if isinstance(self.timeseries, tuple):
-            return sum(len(ts) for ts in self.timeseries)
-        return len(self.timeseries)
+        r"""Return the number of timestamps."""
+        return len(self.timeindex)
 
-    def timespan(self) -> Timedelta:
-        r"""Return the timespan of the dataset."""
-        if isinstance(self.timeseries, tuple):
-            tmax = max(max(ts.index) for ts in self.timeseries)
-            tmin = min(min(ts.index) for ts in self.timeseries)
-            return tmax - tmin
-        return max(self.timeseries.index) - min(self.timeseries.index)
+    @overload
+    def __getitem__(self, key: K, /) -> Series: ...
+    @overload
+    def __getitem__(self, key: Index | slice | list[K], /) -> DataFrame: ...
+    def __getitem__(self, key, /):
+        r"""Get item from timeseries."""
+        # we might get an index object, or a slice, or boolean mask...
+        return self.timeseries.loc[key]
 
-    def __getitem__(self, item: Any) -> Self:
-        r"""Returns the corresponding slice from each tensor."""
-        if isinstance(self.timeseries, tuple):
-            if isinstance(self.timeseries, NTuple):
-                timeseries = self.ts_type(*(ts[item] for ts in self.timeseries))
+    def __repr__(self) -> str:
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, title=self.name)
+
+
+@dataclass
+class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
+    r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
+
+    A TimeSeriesCollection is a tuple (I, D, G) consiting of
+
+    - index $I$
+    - indexed TimeSeriesDatasets $D = { (TS_i, M_i) ∣ i ∈ I }$
+    - global variables $G∈𝓖$
+    """
+
+    timeseries: DataFrame
+    r"""The time series data."""
+
+    _: KW_ONLY
+
+    # Main attributes
+    metadata: Optional[DataFrame] = None
+    r"""The metadata of the dataset."""
+    timeindex: MultiIndex = NotImplemented
+    r"""The time-index of the collection."""
+    metaindex: Index = NotImplemented
+    r"""The index of the collection."""
+    global_metadata: Optional[DataFrame] = None
+    r"""Metaindex-independent data."""
+
+    # Space descriptors
+    timeseries_description: Optional[DataFrame] = None
+    r"""Data associated with each channel such as measurement device, unit, etc."""
+    metadata_description: Optional[DataFrame] = None
+    r"""Data associated with each metadata such as measurement device, unit,  etc."""
+    timeindex_description: Optional[DataFrame] = None
+    r"""Data associated with the time such as measurement device, unit, etc."""
+    metaindex_description: Optional[DataFrame] = None
+    r"""Data associated with each index such as measurement device, unit, etc."""
+    global_metadata_description: Optional[DataFrame] = None
+    r"""Data associated with each global metadata such as measurement device, unit,  etc."""
+
+    # other
+    name: str = NotImplemented
+    r"""The name of the collection."""
+
+    def __post_init__(self) -> None:
+        r"""Post init."""
+        if self.name is NotImplemented:
+            if hasattr(self.timeseries, "name") and self.timeseries.name is not None:
+                self.name = str(self.timeseries.name)
             else:
-                timeseries = tuple(ts[item] for ts in self.timeseries)
-        else:
-            timeseries = self.timeseries.loc[item]
+                self.name = self.__class__.__name__
 
-        cls = type(self)
-        return cls(timeseries, metadata=self.metadata)
+        if self.timeindex is NotImplemented:
+            self.timeindex = self.timeseries.index.copy()
 
-    def __iter__(self) -> Iterator:
-        r"""Iterate over each timeseries."""
-        if self.metadata is None:
-            return iter(self.timeseries)
-        return iter(zip(self.timeseries, self.metadata))
+        if self.metaindex is NotImplemented:
+            if self.metadata is not None:
+                self.metaindex = self.metadata.index.copy().unique()
+            elif isinstance(self.timeseries.index, MultiIndex):
+                self.metaindex = self.timeseries.index.copy().droplevel(-1).unique()
+                # self.timeseries = self.timeseries.droplevel(0)
+            else:
+                self.metaindex = self.timeseries.index.copy().unique()
+
+    @overload
+    def __getitem__(self, key: K, /) -> TimeSeriesDataset: ...
+    @overload
+    def __getitem__(self, key: slice, /) -> Self: ...
+    def __getitem__(self, key, /):
+        r"""Get the timeseries and metadata of the dataset at index `key`."""
+        # TODO: There must be a better way to slice this
+
+        match key:
+            case Series() as s if isinstance(s.index, MultiIndex):
+                ts = self.timeseries.loc[s]
+            case Series() as s:
+                assert pandas.api.types.is_bool_dtype(s)
+                # NOTE: loc[s] would not work here?!
+                ts = self.timeseries.loc[s[s].index]
+            case _:
+                ts = self.timeseries.loc[key]
+
+        # make sure metadata is always DataFrame.
+        match self.metadata:
+            case DataFrame() as df:
+                md = df.loc[key]
+                if isinstance(md, Series):
+                    md = df.loc[[key]]
+            case _:
+                md = self.metadata
+
+        # slice the timeindex-descriptions
+        match self.timeindex_description:
+            case DataFrame() as desc if desc.index.equals(self.metaindex):
+                tidx_desc = desc.loc[key]
+            case _:
+                tidx_desc = self.timeindex_description
+
+        # slice the ts-descriptions
+        match self.timeseries_description:
+            case DataFrame() as desc if desc.index.equals(self.metaindex):
+                ts_desc = desc.loc[key]
+            case _:
+                ts_desc = self.timeseries_description
+
+        # slice the metadata-descriptions
+        match self.metadata_description:
+            case DataFrame() as desc if desc.index.equals(self.metaindex):
+                md_desc = desc.loc[key]
+            case _:
+                md_desc = self.metadata_description
+
+        if isinstance(ts.index, MultiIndex):
+            # ~~index = ts.index.droplevel(-1).unique()~~
+            return TimeSeriesCollection(
+                name=self.name,
+                # metaindex=index,  # NOTE: regenerate metaindex.
+                timeseries=ts,
+                metadata=md,
+                timeindex_description=tidx_desc,
+                timeseries_description=ts_desc,
+                metadata_description=md_desc,
+                global_metadata=self.global_metadata,
+                global_metadata_description=self.global_metadata_description,
+                metaindex_description=self.metaindex_description,
+            )
+
+        return TimeSeriesDataset(
+            name=self.name,
+            timeindex=ts.index,
+            timeseries=ts,
+            metadata=md,
+            index_description=tidx_desc,
+            timeseries_description=ts_desc,
+            metadata_description=md_desc,
+        )
+
+    def __len__(self) -> int:
+        r"""Get the length of the collection."""
+        return len(self.metaindex)
+
+    def __iter__(self) -> Iterator[Any]:
+        r"""Iterate over the collection."""
+        return iter(self.metaindex)
+
+    def __repr__(self) -> str:
+        r"""Get the representation of the collection."""
+        return repr_dataclass(self, title=self.name)
+
+
+# TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
+#     "InSilicoTSC": InSilicoTSC,
+#     "KiwiBenchmarkTSC": KiwiBenchmarkTSC,
+# }
+# """Dictionary of all available timseries classes."""
+#
+# OLD_DATASETS: dict[str, type[Dataset]] = {
+#     "KiwiRuns": KiwiRuns,
+# }
+# """Deprecated dataset classes."""
+#
+# OLD_TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
+#     "KiwiRunsTSC": KiwiRunsTSC,
+# }
+# """Deprecated timeseries classes."""

@@ -14,7 +14,7 @@ __all__ = [
     "USHCN_DeBrouwer2019",
 ]
 
-from tsdm.datasets.base import TimeSeriesCollection
+from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.mimic.mimic_iii_debrouwer2019 import (
     MIMIC_III_DeBrouwer2019 as _MIMIC_III_DeBrouwer2019,

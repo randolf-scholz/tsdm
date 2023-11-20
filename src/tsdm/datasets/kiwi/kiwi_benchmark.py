@@ -9,7 +9,8 @@ from zipfile import ZipFile
 
 from pandas import DataFrame
 
-from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
+from tsdm.data.timeseries import TimeSeriesCollection
+from tsdm.datasets.base import MultiTableDataset
 
 
 class KiwiBenchmark(MultiTableDataset):

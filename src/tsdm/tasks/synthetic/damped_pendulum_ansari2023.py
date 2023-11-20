@@ -14,6 +14,7 @@ from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from typing_extensions import final
 
+import tsdm.data.timeseries
 from tsdm import datasets
 from tsdm.data import folds_as_frame, is_partition
 from tsdm.data.generators import FixedSliceSampleGenerator
@@ -59,7 +60,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         missing_rate: float = 0.0,
     ) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
-        timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
+        timeseries = tsdm.data.timeseries.TimeSeriesCollection(timeseries=dataset.table)
 
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
 

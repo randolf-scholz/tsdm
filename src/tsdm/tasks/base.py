@@ -127,7 +127,7 @@ from typing_extensions import (
 )
 
 from tsdm.data.datasets import MapDataset
-from tsdm.datasets import TimeSeriesCollection
+from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
@@ -228,7 +228,7 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
         - Encoders must be fit on the training data, but also transform the test data.
             - Need a way to associate a train split to each test/valid split.
             - ASSUMPTION: the split key is of the form `*fold, partition`, where `partition` is one of
-              `train`, `valid`, `test`, and `fold` is an integer or tuple of integers.
+              the strings `train`, `valid` or `test`, and `fold` is an integer or tuple of integers.
 
     To make this simpler, we first consider the `Mapping` interface,
     i.e. all the samplers are of fixed sized. and the dataset is a `Mapping` type.

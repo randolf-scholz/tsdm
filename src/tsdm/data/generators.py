@@ -31,7 +31,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset as TorchDataset
 from typing_extensions import Any, Generic, NamedTuple, Optional, Self, assert_type
 
-from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.data.timeseries import TimeSeriesCollection, TimeSeriesDataset
 from tsdm.encoders import Encoder
 from tsdm.random.samplers import Sampler
 from tsdm.tasks.base import Batch, Sample_co

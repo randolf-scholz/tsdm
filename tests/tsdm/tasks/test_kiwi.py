@@ -10,7 +10,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 from tsdm.data.generators import Sample, TimeSeriesSampleGenerator
-from tsdm.datasets import TimeSeriesCollection
+from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.encoders import BaseEncoder
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import KiwiBenchmark

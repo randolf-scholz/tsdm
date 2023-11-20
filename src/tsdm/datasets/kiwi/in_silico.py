@@ -11,7 +11,8 @@ from pandas import DataFrame
 from typing_extensions import Literal, TypeAlias
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
-from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
+from tsdm.data.timeseries import TimeSeriesCollection
+from tsdm.datasets.base import MultiTableDataset
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [

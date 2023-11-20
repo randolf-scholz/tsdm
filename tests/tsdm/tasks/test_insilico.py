@@ -3,7 +3,7 @@ r"""Test task implementation with InSilico."""
 from pandas import DataFrame, MultiIndex
 from torch.utils.data import DataLoader
 
-from tsdm.datasets import TimeSeriesCollection
+from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.random.samplers import HierarchicalSampler
 from tsdm.tasks import InSilicoSampleGenerator, InSilicoTask
 

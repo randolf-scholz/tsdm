@@ -5,7 +5,8 @@ import logging
 from pytest import mark
 
 from tsdm.data.generators import Sample, TimeSeriesSampleGenerator
-from tsdm.datasets import InSilico, TimeSeriesCollection, TimeSeriesDataset
+from tsdm.data.timeseries import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.datasets import InSilico
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import (
     MIMIC_III_Bilos2021,
