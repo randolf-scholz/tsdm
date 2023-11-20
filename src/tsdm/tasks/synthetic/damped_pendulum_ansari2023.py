@@ -15,10 +15,10 @@ from sklearn.model_selection import train_test_split
 from typing_extensions import final
 
 from tsdm import datasets
+from tsdm.data import folds_as_frame, is_partition
+from tsdm.data.generators import FixedSliceSampleGenerator
 from tsdm.random.samplers import RandomSampler, Sampler
 from tsdm.tasks.base import SplitID, TimeSeriesTask
-from tsdm.tasks.utils import FixedSliceSampleGenerator
-from tsdm.utils.data import folds_as_frame, is_partition
 
 
 @final

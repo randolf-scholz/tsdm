@@ -4,6 +4,7 @@ import logging
 
 from pytest import mark
 
+from tsdm.data.generators import Sample, TimeSeriesSampleGenerator
 from tsdm.datasets import InSilico, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
 from tsdm.tasks import (
@@ -12,7 +13,6 @@ from tsdm.tasks import (
     MIMIC_IV_Bilos2021,
     USHCN_DeBrouwer2019,
 )
-from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator
 
 __logger__ = logging.getLogger(__name__)
 

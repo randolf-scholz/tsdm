@@ -20,14 +20,14 @@ from torch import Tensor, jit
 from torch.utils.data import DataLoader
 from typing_extensions import Any, Literal, NamedTuple, Optional, deprecated
 
+from tsdm.data import MappingDataset
+from tsdm.data.generators import TimeSeriesSampleGenerator
+from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import KiwiRuns, KiwiRunsTSC
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.tasks.base import TimeSeriesSampleGenerator
-from tsdm.utils.data import MappingDataset
-from tsdm.utils.data.timeseries import TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 

@@ -1,7 +1,6 @@
 """Tasks based on the KIWI dataset."""
 
 __all__ = [
-    "InSilicoSampleGenerator",
     "InSilicoTask",
     "KiwiBenchmark",
     # OLD Tasks
@@ -17,6 +16,6 @@ from tsdm.tasks.kiwi._deprecated_kiwi_runs_task import (
     KIWI_RUNS_GENERATOR,
     KIWI_RUNS_TASK,
 )
-from tsdm.tasks.kiwi.insilico import InSilicoSampleGenerator, InSilicoTask
+from tsdm.tasks.kiwi.insilico import InSilicoTask
 from tsdm.tasks.kiwi.kiwi_benchmark import KiwiBenchmark
 from tsdm.tasks.kiwi.kiwi_final_product import KIWI_FINAL_PRODUCT

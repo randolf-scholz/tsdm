@@ -20,10 +20,10 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 from typing_extensions import Any, NamedTuple
 
+from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FrameEncoder, MinMaxScaler, StandardScaler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
 

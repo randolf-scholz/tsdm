@@ -21,11 +21,11 @@ from torch.nn import MSELoss
 from torch.utils.data import DataLoader
 from typing_extensions import Any, Literal, NamedTuple, Optional, deprecated
 
+from tsdm.data import MappingDataset
+from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import MappingDataset
-from tsdm.utils.data.timeseries import TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 __logger__ = logging.getLogger(__name__)

@@ -10,8 +10,8 @@ import pandas as pd
 from pandas import DataFrame
 from typing_extensions import Literal, TypeAlias
 
+from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
-from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [

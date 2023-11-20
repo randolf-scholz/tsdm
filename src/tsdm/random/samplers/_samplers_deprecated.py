@@ -10,11 +10,11 @@ from numpy._typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from typing_extensions import Any, Generic, Optional, cast, deprecated
 
+from tsdm.data import DatasetCollection
 from tsdm.random.samplers import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup
 from tsdm.types.time import DTVar, TDVar
 from tsdm.types.variables import any_co as T_co, key_var as K
-from tsdm.utils.data import DatasetCollection
 
 
 @deprecated("Use SlidingWindowSampler instead.")

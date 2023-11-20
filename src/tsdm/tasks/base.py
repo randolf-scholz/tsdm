@@ -101,48 +101,39 @@ __all__ = [
     # Protocol
     "ForecastingTask",
     # Classes
-    "Sample",
-    "Inputs",
-    "Targets",
     "Batch",
     "TimeSeriesTask",
-    "TimeSeriesSampleGenerator",
 ]
 
 import logging
 import warnings
 from abc import abstractmethod
-from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 
-import numpy as np
-from pandas import NA, DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
-from torch.utils.data import DataLoader, Dataset as TorchDataset
+from torch.utils.data import DataLoader
 from typing_extensions import (
     Any,
     ClassVar,
     Generic,
     Literal,
-    NamedTuple,
-    Optional,
     Protocol,
-    Self,
     TypeAlias,
     TypeVar,
-    assert_type,
     runtime_checkable,
 )
 
-from tsdm.datasets import TimeSeriesCollection, TimeSeriesDataset
+from tsdm.data.datasets import MapDataset
+from tsdm.datasets import TimeSeriesCollection
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
 from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
-from tsdm.utils.data.datasets import MapDataset
-from tsdm.utils.strings import repr_dataclass, repr_namedtuple
+from tsdm.utils.strings import repr_dataclass
 
 Sample_co = TypeVar("Sample_co", covariant=True)
 """Covariant type variable for `Sample`."""
@@ -152,300 +143,6 @@ SplitID = TypeVar("SplitID", bound=Hashable)
 
 Batch: TypeAlias = Tensor | Sequence[Tensor] | Mapping[str, Tensor]
 """Type of a batch of data."""
-
-
-class Inputs(NamedTuple):
-    r"""Tuple of inputs."""
-
-    q: Series
-    """Query time points."""
-    x: DataFrame
-    """Observations"""
-    u: Optional[DataFrame] = None
-    """Covariates."""
-    metadata: Optional[DataFrame] = None
-    """Metadata."""
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
-
-
-class Targets(NamedTuple):
-    r"""Tuple of inputs."""
-
-    y: DataFrame
-    """Target values at the query times."""
-    metadata: Optional[DataFrame] = None
-    """Target metadata."""
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
-
-
-class Sample(NamedTuple):
-    r"""A sample for forecasting task."""
-
-    key: Hashable
-    """The key of the sample - e.g. tuple[outer_index, (obs_rane, forecasting_range)]."""
-    inputs: Inputs
-    """The predictors the model is allowed to base its forecast on."""
-    targets: Targets
-    """The targets the model is supposed to predict."""
-    rawdata: Optional[Any] = None
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
-
-    def sparsify_index(self) -> Self:
-        r"""Drop rows that contain only NAN values."""
-        if self.inputs.x is not None:
-            self.inputs.x.dropna(how="all", inplace=True)
-
-        if self.inputs.u is not None:
-            self.inputs.u.dropna(how="all", inplace=True)
-
-        if self.targets.y is not None:
-            self.targets.y.dropna(how="all", inplace=True)
-
-        if self.inputs.q is not None:
-            diff = self.inputs.q.index.difference(self.targets.y.index)
-            self.inputs.q.drop(diff, inplace=True)
-
-        return self
-
-
-@dataclass
-class TimeSeriesSampleGenerator(TorchDataset[Sample]):
-    r"""Creates sample from a TimeSeriesCollection.
-
-    This class is responsible for creating samples from a TimeSeriesCollection.
-    It acts as a Map-Stype Dataset, keys should be created from an appriopriate Sampler instance.
-
-    There are different modus operandi for creating samples from a TimeSeriesCollection.
-
-    Format Specification
-    ~~~~~~~~~~~~~~~~~~~~
-    - column-sparse
-    - separate x and u and y
-    - masked: In this format, two equimodal copies of the data are stored with appropriate masking.
-        - inputs = (t, s, m)
-        - targets = (s', m')
-    - dense: Here, the data is split into groups of equal length. (x, u, y) share the same time index.
-        - inputs = (t, x, u, m_x)
-        - targets = (y, m_y)
-    - sparse: Here, the data is split into groups sparse tensors. ALl NAN-only rows are dropped.
-        - inputs = (t_y, (t_x, x), (t_u, u), m_x)
-        - targets = (y, m_y)
-
-    This class is used inside DataLoader.
-
-    +---------------+------------------+------------------+
-    | variable      | observation-mask | forecasting-mask |
-    +===============+==================+==================+
-    | observables X | ✔                | ✘                |
-    +---------------+------------------+------------------+
-    | controls U    | ✔                | ✔                |
-    +---------------+------------------+------------------+
-    | targets Y     | ✘                | ✔                |
-    +---------------+------------------+------------------+
-
-    Examples
-    --------
-    - time series classification task: empty forecasting horizon, only metadata_targets set.
-    - time series imputation task: observation horizon and forecasting horizon overlap
-    - time series forecasting task: observation horizon and forecasting horizon
-    - time series forecasting task (autoregressive): observables = targets
-    - time series event forecasting: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} given n
-    - time series event forecasting++: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} and n
-
-    Notes
-    -----
-    The option `pin_memory` of `torch.utils.data.DataLoader` recurses through
-    Mappings and Sequence. However, it will cast the types. The only preserved Types are
-
-    - dicts
-    - tuples
-    - namedtuples
-
-    Dataclasses are currently not supported. Therefore, we preferably use namedtuples
-    or dicts as containers.
-    """
-
-    dataset: TimeSeriesDataset | TimeSeriesCollection
-    """The dataset to sample from."""
-
-    _: KW_ONLY
-
-    targets: Index | list = NotImplemented
-    r"""Columns of the data that are used as targets."""
-    observables: Index | list = NotImplemented
-    r"""Columns of the data that are used as inputs."""
-    covariates: Index | list = NotImplemented
-    r"""Columns of the data that are used as controls."""
-    metadata_targets: Optional[Index | list] = None
-    r"""Columns of the metadata that are targets."""
-    metadata_observables: Optional[Index | list] = NotImplemented
-    r"""Columns of the metadata that are targets."""
-    sparse_index: bool = False
-    r"""Whether to drop sparse rows from the index."""
-    sparse_columns: bool = False
-    r"""Whether to drop sparse cols from the data."""
-
-    def __post_init__(self) -> None:
-        r"""Post init."""
-        if self.targets is NotImplemented:
-            self.targets = []
-        if self.observables is NotImplemented:
-            self.observables = self.dataset.timeseries.columns
-        if self.covariates is NotImplemented:
-            self.covariates = []
-        if self.metadata_observables is NotImplemented:
-            if self.dataset.metadata is None:
-                self.metadata_observables = None
-            else:
-                self.metadata_observables = self.dataset.metadata.columns
-        self.validate()
-
-    def __iter__(self) -> Iterator[Sample]:
-        return iter(self.dataset)
-
-    def __len__(self) -> int:
-        return len(self.dataset)
-
-    def __getitem__(self, key: K) -> Sample:
-        return self.make_sample(
-            key, sparse_index=self.sparse_index, sparse_columns=self.sparse_columns
-        )
-
-    def __repr__(self) -> str:
-        return repr_dataclass(self)
-
-    def get_subgenerator(self, key: K) -> Self:
-        r"""Get a subgenerator."""
-        other_kwargs = {k: v for k, v in self.__dict__.items() if k != "dataset"}
-        # noinspection PyArgumentList
-        return self.__class__(self.dataset[key], **other_kwargs)
-
-    def make_sample(
-        self, key: K, *, sparse_index: bool = False, sparse_columns: bool = False
-    ) -> Sample:
-        r"""Create a sample from a TimeSeriesCollection."""
-        # extract key
-        if isinstance(self.dataset, TimeSeriesDataset):
-            assert isinstance(key, tuple) and len(key) == 2
-            observation_horizon, forecasting_horizon = key
-            tsd = self.dataset
-        elif isinstance(self.dataset, TimeSeriesCollection):
-            assert isinstance(key, tuple) and len(key) == 2
-            assert isinstance(key[1], Collection) and len(key[1]) == 2
-            outer_key, (observation_horizon, forecasting_horizon) = key
-            tsd = self.dataset[outer_key]
-        else:
-            raise NotImplementedError
-
-        assert_type(tsd, TimeSeriesDataset)
-
-        # NOTE: observation horizon and forecasting horizon might be given in different formats
-        # (1) slices  (2) indices (3) boolean masks
-
-        # NOTE: Currently there is a bug with pandas indexing using [pyarrow] timestamps.
-        # This means only boolean masks are supported.
-        # https://github.com/pandas-dev/pandas/issues/53644 (fixed)
-        # https://github.com/pandas-dev/pandas/issues/53645 (closed)
-        # https://github.com/pandas-dev/pandas/issues/53154
-        # https://github.com/apache/arrow/issues/36047 (closed)
-
-        # timeseries
-        ts_observed: DataFrame = tsd[observation_horizon]
-        ts_forecast: DataFrame = tsd[forecasting_horizon]
-        joint_horizon_index = ts_observed.index.union(ts_forecast.index)
-
-        # FIXME: this is a workaround for the bug above.
-        # FIXME: ArrowNotImplementedError: Function 'is_in' has no kernel matching input types (duration[ns])
-
-        # NOTE: Using numpy since isin is broken for pyarrow timestamps.
-        joint_horizon_mask = np.isin(tsd.timeindex, joint_horizon_index)
-        ts = tsd[joint_horizon_mask]
-        ts_observed_mask = np.isin(ts.index, ts_observed.index)
-        ts_forecast_mask = np.isin(ts.index, ts_forecast.index)
-
-        u: Optional[DataFrame] = None
-
-        if sparse_columns:
-            x = ts[self.observables].copy()
-            x.loc[ts_forecast_mask] = NA
-
-            y = ts[self.targets].copy()
-            y.loc[ts_observed_mask] = NA
-
-            u = ts[self.covariates].copy()
-        else:
-            x = ts.copy()
-            # mask everything except covariates and observables
-            columns = ts.columns.difference(self.covariates)
-            x.loc[ts_observed_mask, columns.difference(self.observables)] = NA
-            x.loc[ts_forecast_mask, columns] = NA
-
-            y = ts.copy()
-            # mask everything except targets in the forecasting horizon
-            y.loc[ts_observed_mask] = NA
-            y.loc[ts_forecast_mask, ts.columns.difference(self.targets)] = NA
-
-        # t_target
-        t_target = y.index.to_series().copy()
-
-        # metadata
-        md = tsd.metadata
-        md_targets: Optional[DataFrame] = None
-        if self.metadata_targets is not None:
-            assert md is not None
-            md_targets = md[self.metadata_targets].copy()
-            md = md.drop(columns=self.metadata_targets)
-
-        # assemble sample
-        inputs = Inputs(q=t_target, x=x, u=u, metadata=md)
-        targets = Targets(y=y, metadata=md_targets)
-        sample = Sample(key=key, inputs=inputs, targets=targets, rawdata=ts)
-
-        if sparse_index:
-            sample.sparsify_index()
-
-        return sample
-
-    def validate(self) -> None:
-        r"""Validate that chosen columns are present."""
-        ts = self.dataset.timeseries
-        md = self.dataset.metadata
-        observables = set(self.observables)
-        targets = set(self.targets)
-        covariates = set() if self.covariates is None else set(self.covariates)
-        md_observables = (
-            set(self.metadata_observables)
-            if self.metadata_observables is not None
-            else set()
-        )
-        md_targets = (
-            set() if self.metadata_targets is None else set(self.metadata_targets)
-        )
-        ts_columns = set(ts.columns)
-        md_columns = set() if md is None else set(md.columns)
-
-        if cols := covariates - ts_columns:
-            raise ValueError(f"Covariates {cols} not in found timeseries columns!")
-        if cols := observables - ts_columns:
-            raise ValueError(f"Observables {cols} not in found timeseries columns!")
-        if cols := targets - ts_columns:
-            raise ValueError(f"Targets {cols} not found in timeseries columns!")
-        if cols := covariates & observables:
-            raise ValueError(f"Covariates and observables not disjoint! {cols}.")
-        if cols := ts_columns - (observables | targets | covariates):
-            warnings.warn(f"Unused columns in timeseries: {cols}", stacklevel=2)
-
-        if md is not None:
-            if cols := md_observables - md_columns:
-                raise ValueError(f"Observables {cols} not in found metadata columns!")
-            if cols := md_targets - md_columns:
-                raise ValueError(f"Targets {cols} not in found metadata columns!")
 
 
 @runtime_checkable
@@ -813,28 +510,3 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
                 raise ValueError("Each fold must have a unique train partition.")
         else:
             raise RuntimeError("Supposed to be unreachable")
-
-
-@dataclass
-class Split(Generic[Sample_co]):
-    """Represents a split of a dataset."""
-
-    name: Hashable = NotImplemented
-    r"""List of index."""
-    fold: Series = NotImplemented
-    r"""Dictionary holding `Fold` associated with each key (index for split)."""
-
-    collate_fn: Callable[[list[Sample_co]], Batch] = NotImplemented
-    r"""Collate function used to create batches from samples."""
-    dataloader: DataLoader[Sample_co] = NotImplemented
-    r"""Dictionary holding `DataLoader` associated with each key."""
-    encoders: Encoder = NotImplemented
-    r"""Dictionary holding `Encoder` associated with each key."""
-    generator: TimeSeriesSampleGenerator = NotImplemented
-    r"""Dictionary holding `torch.utils.data.Dataset` associated with each key."""
-    sampler: Sampler = NotImplemented
-    r"""Dictionary holding `Sampler` associated with each key."""
-    split: TimeSeriesCollection = NotImplemented
-    r"""Dictionary holding sampler associated with each key."""
-    test_metric: Callable[[Tensor, Tensor], Tensor] = NotImplemented
-    r"""Metric used for evaluation."""

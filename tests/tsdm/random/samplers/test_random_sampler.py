@@ -128,15 +128,15 @@ def test_numpy_data() -> None:
 
 
 PYTHON_STRINGS = ["foo", "bar", "baz", "qux", "quux", "quuz", "corge"]
+MAPPED_STRINGS = {2 * k + 1: s for k, s in enumerate(PYTHON_STRINGS)}  # generic index
 STRING_DATA = {
     "list": PYTHON_STRINGS,
     "tuple": tuple(PYTHON_STRINGS),
-    "set": set(PYTHON_STRINGS),
-    "dict": dict(enumerate(PYTHON_STRINGS)),
+    "dict": MAPPED_STRINGS,
     "numpy": np.array(PYTHON_STRINGS, dtype=np.str_),
-    "series": pd.Series(PYTHON_STRINGS, dtype="string"),
-    "series-pyarrow": pd.Series(PYTHON_STRINGS, dtype="string[pyarrow]"),
     "index": pd.Index(PYTHON_STRINGS, dtype="string"),
+    "series": pd.Series(MAPPED_STRINGS, dtype="string"),
+    "series-pyarrow": pd.Series(MAPPED_STRINGS, dtype="string[pyarrow]"),
 }
 
 
@@ -144,6 +144,6 @@ STRING_DATA = {
 def test_string_data(data):
     sampler = RandomSampler(data, shuffle=True)
 
-    assert len(sampler) == len(data)
-    assert set(sampler) == set(data)
-    assert list(sampler) != list(data)
+    assert len(sampler) == len(PYTHON_STRINGS)
+    assert set(sampler) == set(PYTHON_STRINGS)
+    assert list(sampler) != list(PYTHON_STRINGS)

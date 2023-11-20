@@ -68,6 +68,7 @@ from pyarrow import Array, Table, csv
 from tqdm.autonotebook import tqdm
 from typing_extensions import get_args
 
+from tsdm.data import cast_columns, filter_nulls, force_cast, strip_whitespace
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.datasets.mimic.mimic_iv_schema import (
     FALSE_VALUES,
@@ -77,7 +78,6 @@ from tsdm.datasets.mimic.mimic_iv_schema import (
     TRUE_VALUES,
     UNSTACKED_SCHEMAS,
 )
-from tsdm.utils.data import cast_columns, filter_nulls, force_cast, strip_whitespace
 from tsdm.utils.remote import download_directory_to_zip
 
 disallow_nan_values = {

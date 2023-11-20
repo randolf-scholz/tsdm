@@ -9,11 +9,11 @@ from pandas import DataFrame, MultiIndex
 from torch import Tensor
 from torch.utils.data import DataLoader
 
+from tsdm.data.generators import Sample, TimeSeriesSampleGenerator
 from tsdm.datasets import TimeSeriesCollection
 from tsdm.encoders import BaseEncoder
 from tsdm.random.samplers import HierarchicalSampler
-from tsdm.tasks import KiwiBenchmark, TimeSeriesSampleGenerator
-from tsdm.tasks.base import Sample
+from tsdm.tasks import KiwiBenchmark
 
 __logger__ = logging.getLogger(__name__)
 

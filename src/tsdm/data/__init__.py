@@ -47,15 +47,15 @@ __all__ = [
     "vlookup_uniques",
 ]
 
-from tsdm.utils.data import timeseries
-from tsdm.utils.data._arrow import (
+from tsdm.data import timeseries
+from tsdm.data._arrow import (
     cast_columns,
     compute_entropy,
     filter_nulls,
     force_cast,
     table_info,
 )
-from tsdm.utils.data._data import (
+from tsdm.data._data import (
     InlineTable,
     aggregate_nondestructive,
     detect_outliers,
@@ -71,13 +71,13 @@ from tsdm.utils.data._data import (
     strip_whitespace,
     vlookup_uniques,
 )
-from tsdm.utils.data.dataloaders import (
+from tsdm.data.dataloaders import (
     collate_packed,
     collate_padded,
     unpack_sequence,
     unpad_sequence,
 )
-from tsdm.utils.data.datasets import (
+from tsdm.data.datasets import (
     DataFrame2Dataset,
     Dataset,
     DatasetCollection,
@@ -86,7 +86,7 @@ from tsdm.utils.data.datasets import (
     MappingDataset,
     PandasDataset,
 )
-from tsdm.utils.data.folds import (
+from tsdm.data.folds import (
     folds_as_frame,
     folds_as_sparse_frame,
     folds_from_groups,

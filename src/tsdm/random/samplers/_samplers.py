@@ -41,18 +41,13 @@ from typing_extensions import (
     runtime_checkable,
 )
 
+from tsdm.data.datasets import Dataset, IndexableDataset, MapDataset, SequentialDataset
 from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
 from tsdm.types.variables import (
     any_co as T_co,
     any_var as T,
     key_other_var as K2,
     key_var as K,
-)
-from tsdm.utils.data.datasets import (
-    Dataset,
-    IndexableDataset,
-    MapDataset,
-    SequentialDataset,
 )
 from tsdm.utils.strings import pprint_repr
 

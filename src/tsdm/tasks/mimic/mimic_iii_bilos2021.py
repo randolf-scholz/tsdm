@@ -64,9 +64,9 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 from typing_extensions import Any, NamedTuple, deprecated
 
+from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_III_Bilos2021 as MIMIC_III_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
 

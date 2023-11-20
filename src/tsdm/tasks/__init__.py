@@ -36,7 +36,6 @@ __all__ = [
     "mimic",
     "uci",
     "ushcn",
-    "utils",
     # Protocol
     "ForecastingTask",
     # Constants
@@ -45,7 +44,6 @@ __all__ = [
     # Classes
     "OldBaseTask",
     "TimeSeriesTask",
-    "TimeSeriesSampleGenerator",
     # Old Tasks
     "ETT_Zhou2021",
     "ElectricityDeepAR",
@@ -67,17 +65,15 @@ __all__ = [
     "InSilicoTask",
     "KiwiBenchmark",
     # Other
-    "InSilicoSampleGenerator",
 ]
 
-from tsdm.tasks import base, kiwi, mimic, uci, ushcn, utils
+from tsdm.tasks import base, kiwi, mimic, uci, ushcn
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.tasks.base import ForecastingTask, TimeSeriesSampleGenerator, TimeSeriesTask
-from tsdm.tasks.ett_zhou2021 import ETT_Zhou2021
+from tsdm.tasks.base import ForecastingTask, TimeSeriesTask
+from tsdm.tasks.ett.ett_zhou2021 import ETT_Zhou2021
 from tsdm.tasks.kiwi import (
     KIWI_FINAL_PRODUCT,
     KIWI_RUNS_GENERATOR,
-    InSilicoSampleGenerator,
     InSilicoTask,
     Kiwi_BioProcessTask,
     KiwiBenchmark,
