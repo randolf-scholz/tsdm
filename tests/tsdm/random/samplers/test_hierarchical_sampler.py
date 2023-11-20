@@ -55,7 +55,7 @@ def test_benchmark_hierarchical_sampler(benchmark, benchmark_data):
 
 @mark.benchmark
 @mark.parametrize("method", ["iter_with_iter", "iter_with_yield"])
-def test_iter_speed(benchmark, method) -> None:
+def test_iter_speed(benchmark, method):
     class Foo:
         def __init__(self):
             self.data = list(range(100))

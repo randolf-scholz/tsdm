@@ -91,7 +91,7 @@ def visualize_distribution(
 
     if print_stats:
         stats = {
-            "NaNs": f"{100 * np.mean(nans):6.2%}",
+            "NaNs": f"{100 * np.mean(nans):6.2%}",  # type: ignore[reportGeneralTypeIssues]
             "Mode": f"{mode(x)[0]: .2g}",
             "Min": f"{np.min(x): .2g}",
             "Median": f"{np.median(x): .2g}",

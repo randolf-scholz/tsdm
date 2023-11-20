@@ -82,7 +82,7 @@ NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "numpy_ndarray": numpy.array(_ARRAY_DATA),
     "pandas_dataframe": pandas.DataFrame(_TABLE_DATA),
     "pandas_series": pandas.Series(_SERIES_DATA),
-    "polars_series": polars.Series(_SERIES_DATA),
+    "polars_series": polars.Series(_SERIES_DATA),  # type: ignore[reportGeneralTypeIssues]
     "torch_tensor": torch.tensor(_ARRAY_DATA),
 }
 

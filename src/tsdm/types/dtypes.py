@@ -380,7 +380,7 @@ r"""Dictionary of all `pyarrow` data types."""
 
 
 # region polars dtypes -----------------------------------------------------------------
-POLARS_DTYPES: Final[dict[str, polars.DataType]] = {
+POLARS_DTYPES: Final[dict[str, polars.PolarsDataType]] = {
     # fmt: off
     # numeric
     "Float32"    : polars.Float32(),
@@ -409,7 +409,6 @@ POLARS_DTYPES: Final[dict[str, polars.DataType]] = {
 }
 r"""Dictionary of all elementary `polars` data types."""
 # endregion polars dtypes --------------------------------------------------------------
-
 
 # region torch dtypes ------------------------------------------------------------------
 TORCH_INT_TYPESTRINGS: Final[dict[torch.dtype, str]] = {
@@ -514,7 +513,7 @@ r"""Dictionary of all `python` data types."""
 
 
 # region dtype conversion --------------------------------------------------------------
-PYARROW_TO_POLARS: Final[dict[pyarrow.DataType, polars.DataType]] = {
+PYARROW_TO_POLARS: Final[dict[pyarrow.DataType, polars.PolarsDataType]] = {
     # fmt: off
     pyarrow.null()          : polars.Null(),
     pyarrow.bool_()         : polars.Boolean(),

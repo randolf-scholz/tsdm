@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 
-from typing import Any, cast
+import numpy as np
+from numpy.typing import NDArray
 
-x: float = 1.0
+z: np.float64 = np.mean([1, 2, 3])
 
-x = cast(Any, x)
-
-reveal_type(x)
-
-x = cast(str, x)
-
-reveal_type(x)
+x = 100 * np.mean([1, 2, 3])
+y = int(100) * np.mean([1, 2, 3])
+u = np.mean([1, 2, 3]) * 100
