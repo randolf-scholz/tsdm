@@ -121,7 +121,7 @@ repos:
         types: [python]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -179,6 +179,7 @@ repos:
             |tests/tsdm/constants.py
             |tests/tsdm/backend
             |tests/tsdm/config
+            |tests/tsdm/data
             |tests/tsdm/datasets
             #|tests/tsdm/encoders
             |tests/tsdm/linalg
@@ -197,6 +198,7 @@ repos:
             |src/tsdm/constants.py
             |src/tsdm/backend
             |src/tsdm/config
+            #|src/tsdm/data
             #|src/tsdm/datasets
             |src/tsdm/encoders
             |src/tsdm/linalg
