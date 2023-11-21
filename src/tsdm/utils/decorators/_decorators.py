@@ -516,7 +516,7 @@ def wrap_func(
     match before, after, pass_args:
         case None, None, bool():
             logger.debug("No hooks to add, returning as-is.")
-            _wrapper = func
+            return func
 
         case Func() as pre, None, True:
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
@@ -575,7 +575,7 @@ def wrap_func(
         case _:
             raise TypeError("Got unexpected arguments.")
 
-    return _wrapper
+    return _wrapper  # type: ignore[unreachable]
 
 
 @decorator
@@ -593,13 +593,15 @@ def wrap_method(
     match before, after, pass_args:
         case None, None, bool():
             logger.debug("No hooks to add, returning as-is.")
-            _wrapper = func
+            return func
 
         case Func() as pre, None, True:
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _method(  # pyright: ignore
+                self: T, *args: P.args, **kwargs: P.kwargs
+            ) -> R:
                 pre(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
@@ -607,7 +609,7 @@ def wrap_method(
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _method(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
                 post(self, *args, **kwargs)
                 return result
@@ -616,7 +618,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _method(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 pre(self, *args, **kwargs)
                 result = func(self, *args, **kwargs)
                 post(self, *args, **kwargs)
@@ -626,7 +628,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _method(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 pre(self)
                 return func(self, *args, **kwargs)
 
@@ -634,7 +636,7 @@ def wrap_method(
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _method(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 result = func(self, *args, **kwargs)
                 post(self)
                 return result
@@ -643,7 +645,7 @@ def wrap_method(
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
-            def _wrapper(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
+            def _method(self: T, *args: P.args, **kwargs: P.kwargs) -> R:
                 pre(self)
                 result = func(self, *args, **kwargs)
                 post(self)
@@ -652,7 +654,7 @@ def wrap_method(
         case _:
             raise TypeError("Got unexpected arguments.")
 
-    return _wrapper
+    return _method  # type: ignore[unreachable]
 
 
 def lazy_torch_jit(func: Callable[P, R]) -> Callable[P, R]:
@@ -736,16 +738,16 @@ def recurse_on_builtin_container(
         match x:
             case kind():  # type: ignore[misc]
                 return func(x)  # type: ignore[unreachable]
-            case dict():
-                return {k: recurse(v) for k, v in x.items()}
-            case list():
-                return [recurse(obj) for obj in x]
-            case tuple():
-                return tuple(recurse(obj) for obj in x)
-            case set():
-                return {recurse(obj) for obj in x}
-            case frozenset():
-                return frozenset(recurse(obj) for obj in x)
+            case dict() as Dict:
+                return {k: recurse(v) for k, v in Dict.items()}
+            case list() as List:
+                return [recurse(obj) for obj in List]
+            case tuple() as Tuple:
+                return tuple(recurse(obj) for obj in Tuple)
+            case set() as Set:
+                return {recurse(obj) for obj in Set}  # pyright: ignore
+            case frozenset() as FrozenSet:
+                return frozenset(recurse(obj) for obj in FrozenSet)
             case _:
                 raise TypeError(f"Unsupported type: {type(x)}")
 

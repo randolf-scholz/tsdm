@@ -216,10 +216,10 @@ def detect_outliers_dataframe(
     df: DataFrame,
     /,
     *,
-    lower_bound: Mapping[T, float | None],
-    upper_bound: Mapping[T, float | None],
-    lower_inclusive: Mapping[T, bool],
-    upper_inclusive: Mapping[T, bool],
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool],
+    upper_inclusive: Mapping[Any, bool],
 ) -> DataFrame:
     """Detect outliers in a DataFrame, given boundary values."""
     given_bounds = joint_keys(
@@ -241,7 +241,42 @@ def detect_outliers_dataframe(
     return mask
 
 
-# TODO: add @overloads
+# region overloads ---------------------------------------------------------------------
+@overload
+def detect_outliers(
+    obj: Series,
+    description: Mapping[str, None | float | bool],
+    /,
+) -> Series: ...
+@overload
+def detect_outliers(
+    obj: Series,
+    /,
+    *,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool,
+    upper_inclusive: bool,
+) -> Series: ...
+@overload
+def detect_outliers(
+    obj: DataFrame,
+    description: Mapping[str, Mapping[Any, None | float | bool]],
+    /,
+) -> DataFrame: ...
+@overload
+def detect_outliers(
+    obj: DataFrame,
+    /,
+    *,
+    lower_bound: Mapping[Any, float | None],
+    upper_bound: Mapping[Any, float | None],
+    lower_inclusive: Mapping[Any, bool],
+    upper_inclusive: Mapping[Any, bool],
+) -> DataFrame: ...
+
+
+# endregion overloads ------------------------------------------------------------------
 def detect_outliers(
     obj,
     description=None,
@@ -253,35 +288,24 @@ def detect_outliers(
     upper_inclusive=None,
 ):
     """Detect outliers in a Series or DataFrame, given boundary values."""
+    options = {
+        "lower_bound": lower_bound,
+        "upper_bound": upper_bound,
+        "lower_inclusive": lower_inclusive,
+        "upper_inclusive": upper_inclusive,
+    }
+
     if description is not None:
-        if not all([
-            lower_bound is None,
-            upper_bound is None,
-            lower_inclusive is None,
-            upper_inclusive is None,
-        ]):
-            raise ValueError("Either description or bounds should be given, not both.")
-        lower_bound = description["lower_bound"]
-        upper_bound = description["upper_bound"]
-        lower_inclusive = description["lower_inclusive"]
-        upper_inclusive = description["upper_inclusive"]
-    if isinstance(obj, Series):
-        return detect_outliers_series(
-            obj,
-            lower_bound=lower_bound,
-            upper_bound=upper_bound,
-            lower_inclusive=lower_inclusive,
-            upper_inclusive=upper_inclusive,
-        )
-    if isinstance(obj, DataFrame):
-        return detect_outliers_dataframe(
-            obj,
-            lower_bound=lower_bound,
-            upper_bound=upper_bound,
-            lower_inclusive=lower_inclusive,
-            upper_inclusive=upper_inclusive,
-        )
-    raise TypeError(f"Unsupported type: {type(obj)}")
+        assert all(val is None for val in options.values())
+        options |= {key: description[key] for key in options}
+
+    match obj:
+        case Series() as s:
+            return detect_outliers_series(s, **options)  # pyright: ignore
+        case DataFrame() as df:
+            return detect_outliers_dataframe(df, **options)  # pyright: ignore
+        case _:
+            raise TypeError(f"Unsupported type: {type(obj)}")
 
 
 def remove_outliers_series(
@@ -379,6 +403,7 @@ def remove_outliers_dataframe(
     return df
 
 
+# region overloads ---------------------------------------------------------------------
 @overload
 def remove_outliers(
     s: Series,
@@ -421,6 +446,9 @@ def remove_outliers(
     lower_inclusive: Mapping[T, bool],
     upper_inclusive: Mapping[T, bool],
 ) -> DataFrame: ...
+
+
+# endregion overloads ------------------------------------------------------------------
 def remove_outliers(
     obj,
     description=None,
@@ -434,39 +462,26 @@ def remove_outliers(
     upper_inclusive=None,
 ):
     """Remove outliers from a DataFrame, given boundary values."""
+    options = {
+        "lower_bound": lower_bound,
+        "upper_bound": upper_bound,
+        "lower_inclusive": lower_inclusive,
+        "upper_inclusive": upper_inclusive,
+    }
+
     if description is not None:
-        if not all([
-            lower_bound is None,
-            upper_bound is None,
-            lower_inclusive is None,
-            upper_inclusive is None,
-        ]):
-            raise ValueError("Either description or bounds should be given, not both.")
-        lower_bound = description["lower_bound"]
-        upper_bound = description["upper_bound"]
-        lower_inclusive = description["lower_inclusive"]
-        upper_inclusive = description["upper_inclusive"]
-    if isinstance(obj, Series):
-        return remove_outliers_series(
-            obj,
-            drop=drop,
-            inplace=inplace,
-            lower_bound=lower_bound,
-            upper_bound=upper_bound,
-            lower_inclusive=lower_inclusive,
-            upper_inclusive=upper_inclusive,
-        )
-    if isinstance(obj, DataFrame):
-        return remove_outliers_dataframe(
-            obj,
-            drop=drop,
-            inplace=inplace,
-            lower_bound=lower_bound,
-            upper_bound=upper_bound,
-            lower_inclusive=lower_inclusive,
-            upper_inclusive=upper_inclusive,
-        )
-    raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
+        assert all(val is None for val in options.values())
+        options |= {key: description[key] for key in options}
+
+    options |= {"drop": drop, "inplace": inplace}
+
+    match obj:
+        case Series() as s:
+            return remove_outliers_series(s, **options)  # pyright: ignore
+        case DataFrame() as df:
+            return remove_outliers_dataframe(df, **options)  # pyright: ignore
+        case _:
+            raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 
 
 def float_is_int(series: Series) -> bool:

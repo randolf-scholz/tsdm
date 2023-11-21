@@ -226,30 +226,24 @@ def validate_file_hash(
         case str() | Path():  # must come before Iterable check!
             pass
         case Mapping():
+            match reference:
+                case Mapping() as mapping:
+                    ref = mapping
+                case None:
+                    ref = {}
+                case _:
+                    raise TypeError(
+                        f"Expected mapping or None, got {type(reference)} instead!"
+                    )
             for key, value in file.items():
-                if isinstance(reference, Mapping):
-                    validate_file_hash(
-                        value,
-                        reference.get(key, None),
-                        hash_algorithm=hash_algorithm,
-                        logger=logger,
-                        errors=errors,
-                        hash_kwargs=hash_kwargs,
-                    )
-                elif reference is None:
-                    validate_file_hash(
-                        value,
-                        reference,
-                        hash_algorithm=hash_algorithm,
-                        logger=logger,
-                        errors=errors,
-                        hash_kwargs=hash_kwargs,
-                    )
-                else:
-                    raise ValueError(
-                        "If a mapping of files is provided, reference_hash must be a"
-                        " mapping as well!"
-                    )
+                validate_file_hash(
+                    value,
+                    ref.get(key, None),
+                    hash_algorithm=hash_algorithm,
+                    logger=logger,
+                    errors=errors,
+                    hash_kwargs=hash_kwargs,
+                )
             return
         case Iterable():
             for f in file:
@@ -453,35 +447,36 @@ def validate_object_hash(
                 **hash_kwargs,
             )
         case Mapping():  # apply recursively to all values
-            if not isinstance(reference, None | Mapping):
-                raise ValueError(
-                    "If a mapping of objects is provided, reference_hash must be a"
-                    " mapping as well!"
-                )
+            match reference:
+                case Mapping() as mapping:
+                    ref = mapping
+                case None:
+                    ref = {}
+                case _:
+                    raise TypeError(
+                        f"Expected mapping or None, got {type(reference)} instead!"
+                    )
             for key, value in obj.items():
                 validate_object_hash(
                     value,
-                    reference.get(key, None),
+                    ref.get(key, None),
                     hash_algorithm=hash_algorithm,
                     logger=logger,
                     **hash_kwargs,
                 )
         case Iterable():
             match reference:
-                case str():
-                    raise ValueError("Cannot multiple items with single hash!")
                 case None:
-                    # apply recursively to all values
-                    for value in obj:
+                    for value in obj:  # recursion
                         validate_object_hash(
                             value,
-                            reference,
+                            None,
                             hash_algorithm=hash_algorithm,
                             logger=logger,
                             **hash_kwargs,
                         )
-                case Iterable():
-                    for value, ref in zip(obj, reference, strict=True):
+                case Iterable() as reference:
+                    for value, ref in zip(obj, reference, strict=True):  # recursion
                         validate_object_hash(
                             value,
                             ref,
@@ -489,8 +484,10 @@ def validate_object_hash(
                             logger=logger,
                             **hash_kwargs,
                         )
+                case str():
+                    raise TypeError("Cannot validate multiple items with single hash!")
                 case _:
-                    raise ValueError(f"Invalid reference hash type! {reference=}")
+                    raise TypeError(f"Invalid reference hash type! {reference=}")
         case _:
             # Determine the reference hash value.
             match reference:
@@ -546,7 +543,7 @@ def validate_table_schema(
     Check if the columns and dtypes of the table match the reference schema.
     Check if the shape of the table matches the reference schema.
     """
-    # get shape, columns and dtypes from table
+    # get data shape, columns and dtypes from table
     match table:
         case MultiIndex() as multiindex:
             shape = multiindex.shape
@@ -577,15 +574,22 @@ def validate_table_schema(
                 f"Cannot validate schema for {type(table)} objects!"
             )
 
-    if isinstance(reference_schema, pa.Schema):
-        reference_schema = dict(zip(reference_schema.names, reference_schema.types))
-
-    reference_columns = list(reference_schema) if reference_schema is not None else None
-    reference_dtypes = (
-        list(reference_schema.values())
-        if isinstance(reference_schema, Mapping)
-        else None
-    )
+    # get reference columns and dtypes
+    match reference_schema:
+        case pa.Schema() as schema:
+            reference_columns = schema.names
+            reference_dtypes = schema.types
+        case Mapping() as mapping:
+            reference_columns = list(mapping.keys())
+            reference_dtypes = list(mapping.values())
+        case Sequence() as seq:
+            reference_columns = list(seq)
+            reference_dtypes = None
+        case None:
+            reference_columns = None
+            reference_dtypes = None
+        case _:
+            raise TypeError(f"Invalid reference schema type! {type(reference_schema)=}")
 
     # Validate shape.
     if reference_shape is None:

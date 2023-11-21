@@ -35,7 +35,6 @@ from typing_extensions import (
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
 from tsdm.types.variables import (
     any_var as T,
-    key_contra,
     key_var as K,
     nested_key_var as K2,
     value_co as V_co,
@@ -175,7 +174,7 @@ class DataFrame2Dataset(MapDataset[K, DataFrame], TorchDataset[DataFrame]):
     def keys(self) -> Index:
         return self.index
 
-    def __getitem__(self, item: key_contra, /) -> DataFrame:
+    def __getitem__(self, item: K, /) -> DataFrame:
         return self.data.loc[item]
 
     def __repr__(self) -> str:
@@ -208,10 +207,8 @@ class DatasetCollection(TorchDataset[TorchDataset[T]], Mapping[K, TorchDataset[T
 
     @overload
     def __getitem__(self, key: Sequence[K] | slice) -> T: ...
-
     @overload
     def __getitem__(self, key: K) -> TorchDataset[T]: ...
-
     def __getitem__(self, key):
         r"""Hierarchical lookup."""
         # test for hierarchical indexing

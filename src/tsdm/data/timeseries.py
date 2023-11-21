@@ -32,8 +32,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Any, NamedTuple, Optional, Self, assert_type, overload
 
-from tsdm.types.variables import key_var as K
-from tsdm.utils.strings import pprint_repr, repr_dataclass, repr_namedtuple
+from tsdm.utils.strings import pprint_repr, repr_dataclass
 
 
 @dataclass
@@ -83,9 +82,9 @@ class TimeSeriesDataset(TorchDataset[Series]):  # Q: Should this be a Mapping?
         return len(self.timeindex)
 
     @overload
-    def __getitem__(self, key: K, /) -> Series: ...
+    def __getitem__(self, key: Index | slice | list[Hashable], /) -> DataFrame: ...
     @overload
-    def __getitem__(self, key: Index | slice | list[K], /) -> DataFrame: ...
+    def __getitem__(self, key: Hashable, /) -> Series: ...
     def __getitem__(self, key, /):
         r"""Get item from timeseries."""
         # we might get an index object, or a slice, or boolean mask...
@@ -159,9 +158,9 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.metaindex = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: K, /) -> TimeSeriesDataset: ...
-    @overload
     def __getitem__(self, key: slice, /) -> Self: ...
+    @overload
+    def __getitem__(self, key: Hashable, /) -> TimeSeriesDataset: ...
     def __getitem__(self, key, /):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
@@ -259,6 +258,9 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
 #     "KiwiRunsTSC": KiwiRunsTSC,
 # }
 # """Deprecated timeseries classes."""
+
+
+@pprint_repr
 class Inputs(NamedTuple):
     r"""Tuple of inputs."""
 
@@ -271,10 +273,8 @@ class Inputs(NamedTuple):
     metadata: Optional[DataFrame] = None
     """Metadata."""
 
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
 
-
+@pprint_repr
 class Targets(NamedTuple):
     r"""Tuple of inputs."""
 
@@ -283,10 +283,8 @@ class Targets(NamedTuple):
     metadata: Optional[DataFrame] = None
     """Target metadata."""
 
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
 
-
+@pprint_repr
 class Sample(NamedTuple):
     r"""A sample for forecasting task."""
 
@@ -297,9 +295,6 @@ class Sample(NamedTuple):
     targets: Targets
     """The targets the model is supposed to predict."""
     rawdata: Optional[Any] = None
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
 
     def sparsify_index(self) -> Self:
         r"""Drop rows that contain only NAN values."""
@@ -473,6 +468,7 @@ def collate_timeseries(batch: list[TimeSeriesSample]) -> PaddedBatch:
     )
 
 
+@pprint_repr
 @dataclass
 class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     r"""Creates sample from a TimeSeriesCollection.
@@ -571,36 +567,34 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     def __len__(self) -> int:
         return len(self.dataset)
 
-    def __getitem__(self, key: K) -> Sample:
+    def __getitem__(self, key: Hashable) -> Sample:
         return self.make_sample(
             key, sparse_index=self.sparse_index, sparse_columns=self.sparse_columns
         )
 
-    def __repr__(self) -> str:
-        return repr_dataclass(self)
-
-    def get_subgenerator(self, key: K) -> Self:
+    def get_subgenerator(self, key: Hashable) -> Self:
         r"""Get a subgenerator."""
         other_kwargs = {k: v for k, v in self.__dict__.items() if k != "dataset"}
         # noinspection PyArgumentList
         return self.__class__(self.dataset[key], **other_kwargs)
 
     def make_sample(
-        self, key: K, *, sparse_index: bool = False, sparse_columns: bool = False
+        self, key: Hashable, *, sparse_index: bool = False, sparse_columns: bool = False
     ) -> Sample:
         r"""Create a sample from a TimeSeriesCollection."""
         # extract key
-        if isinstance(self.dataset, TimeSeriesDataset):
-            assert isinstance(key, tuple) and len(key) == 2
-            observation_horizon, forecasting_horizon = key
-            tsd = self.dataset
-        elif isinstance(self.dataset, TimeSeriesCollection):
-            assert isinstance(key, tuple) and len(key) == 2
-            assert isinstance(key[1], Collection) and len(key[1]) == 2
-            outer_key, (observation_horizon, forecasting_horizon) = key
-            tsd = self.dataset[outer_key]
-        else:
-            raise NotImplementedError
+        match self.dataset:
+            case TimeSeriesDataset() as tsd:
+                assert isinstance(key, tuple) and len(key) == 2
+                observation_horizon, forecasting_horizon = key
+                tsd = tsd
+            case TimeSeriesCollection() as tsc:
+                assert isinstance(key, tuple) and len(key) == 2
+                assert isinstance(key[1], Collection) and len(key[1]) == 2
+                outer_key, (observation_horizon, forecasting_horizon) = key
+                tsd = tsc[outer_key]
+            case _:
+                raise NotImplementedError
 
         assert_type(tsd, TimeSeriesDataset)
 

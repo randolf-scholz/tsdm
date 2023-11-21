@@ -16,11 +16,11 @@ __all__ = [
     "write_requirements",
 ]
 
-import importlib
 import inspect
 import logging
 import subprocess
 import sys
+from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
 
@@ -192,7 +192,7 @@ def install_package(
         installer: Can also use `conda` or `mamba`
         options: Options to pass to the installer
     """
-    package_available = importlib.util.find_spec(package_name)
+    package_available = find_spec(package_name)
     install_call = (installer, "install", package_name)
     if not package_available:
         if non_interactive or query_bool(

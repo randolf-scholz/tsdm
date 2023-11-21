@@ -783,6 +783,8 @@ def pprint_repr(cls: type[T], /) -> type[T]:
         repr_fun = repr_namedtuple
     elif issubclass(cls, Mapping):
         repr_fun = repr_mapping
+    elif issubclass(cls, SupportsArray):
+        repr_fun = repr_array
     elif issubclass(cls, Sequence):
         repr_fun = repr_sequence
     elif issubclass(cls, type):
@@ -790,8 +792,8 @@ def pprint_repr(cls: type[T], /) -> type[T]:
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    cls.__repr__ = repr_fun
-    return cls
+    cls.__repr__ = repr_fun  # pyright: ignore
+    return cast(type[T], cls)
 
 
 RECURSIVE_REPR_FUNS: list[ReprProtocol] = [

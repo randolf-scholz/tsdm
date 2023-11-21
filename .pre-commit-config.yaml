@@ -210,7 +210,7 @@ repos:
             |src/tsdm/random/generators
             #|src/tsdm/tasks
             |src/tsdm/types
-            #|src/tsdm/utils
+            |src/tsdm/utils
             |src/tsdm/viz
           )
   - repo: https://github.com/randolf-scholz/assorted-hooks.git

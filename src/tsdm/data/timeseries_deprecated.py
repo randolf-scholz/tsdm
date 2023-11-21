@@ -68,14 +68,14 @@ class TimeTensor(Tensor):
 
         If index is not provided, then `range(len(x))` will be used as the index.
         """
-        if isinstance(x, (DataFrame, Series)):
+        if isinstance(x, DataFrame | Series):
             assert index is None, "Index given, but x is DataFrame/Series"
             x = x.values
         return super().__new__(cls, *(x, *args), **kwargs)
 
     def __init__(self, x: Sized, index: Optional[Index] = None):
         super().__init__()  # optional
-        if isinstance(x, (DataFrame, Series)):
+        if isinstance(x, DataFrame | Series):
             index = x.index
         else:
             index = Index(np.arange(len(x))) if index is None else index

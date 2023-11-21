@@ -118,29 +118,32 @@ def folds_as_frame(
     first_split = next(iter(first_fold.values()))
     is_mask = first_split.dtype == bool
 
-    if not is_mask and index is None:
-        raise ValueError("Please provide `index` if `folds` are not boolean masks.")
-
-    if index is None:
-        name_index: Index = (
-            first_split.index
-            if isinstance(first_split, Series)
-            else np.arange(len(first_split))
-        )
-        index = name_index
-    else:
-        name_index = index
+    match index, is_mask:
+        case None, False:
+            raise ValueError("Please provide `index` if `folds` are not boolean masks.")
+        case None, True:
+            idx: Index = (
+                first_split.index
+                if isinstance(first_split, Series)
+                else Index(range(len(first_split)))
+            )
+        case _:
+            idx = Index(index)
 
     fold_idx = Index(range(len(folds)), name="fold")
-    splits = DataFrame(index=name_index, columns=fold_idx, dtype="string")
+    splits = DataFrame(index=idx, columns=fold_idx, dtype="string")
 
     # construct the folds
-    for k in fold_idx:
-        for key, split in folds[k].items():
-            # get the mask
-            mask = split if is_mask else index.isin(split)
-            # NOTE: where cond is false is replaces with key
-            splits[k] = splits[k].where(~mask, key)
+    if is_mask:
+        for k, fold in enumerate(folds):
+            for key, split in fold.items():
+                # NOTE: where cond is false is replaces with key
+                splits[k].where(~split, key, inplace=True)
+    else:
+        for k, fold in enumerate(folds):
+            for key, split in fold.items():
+                # NOTE: where cond is false is replaces with key
+                splits[k].where(~idx.isin(split), key, inplace=True)
 
     if not sparse:
         return splits

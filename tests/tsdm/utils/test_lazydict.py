@@ -68,7 +68,7 @@ def test_lazydict() -> None:
     for value in ld.values():
         assert isinstance(value, LazyValue)
 
-    # test __ror__ operator
+    # test __ror__ operatortsdm/utils/test_lazydict.py:73:
     empty: dict = {}
     other: dict = empty | LazyDict({0: lambda: 0})
     assert other is not empty, "__ror__ should create a new dictionary"

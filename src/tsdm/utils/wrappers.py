@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from functools import wraps
 
 from torch import jit, nn
@@ -29,6 +29,54 @@ from tsdm.types.variables import (
     torch_module_var,
     value_co as V_co,
 )
+
+
+def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
+    r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
+
+    Makes it so that
+
+    .. code-block:: python
+
+        class MyModule:
+            ...
+
+
+        model = jit.script(MyModule())
+
+    and
+
+    .. code-block:: python
+
+        @autojit
+        class MyModule:
+            ...
+
+
+        model = MyModule()
+
+    are (roughly?) equivalent
+    """
+    assert isinstance(base_class, type)
+    assert issubclass(base_class, nn.Module)
+
+    @wraps(base_class, updated=())
+    class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
+        r"""A simple Wrapper."""
+
+        def __new__(cls, *args: Any, **kwargs: Any) -> torch_module_var:  # type: ignore[misc]
+            # Note: If __new__() does not return an instance of cls,
+            # then the new instance's __init__() method will not be invoked.
+            instance: torch_module_var = base_class(*args, **kwargs)
+
+            if CONFIG.autojit:
+                scripted: torch_module_var = jit.script(instance)  # pyright: ignore
+                return scripted
+            return instance
+
+    assert isinstance(WrappedClass, type)
+    assert issubclass(WrappedClass, base_class)
+    return WrappedClass
 
 
 class IterKeys(MappingProtocol[K, V_co], Protocol[K, V_co]):
@@ -60,7 +108,7 @@ def iter_keys(obj: MappingProtocol[K, V_co], /) -> IterKeys[K, V_co]: ...
 def iter_keys(obj: T, /) -> T: ...
 def iter_keys(obj, /):
     r"""Redirects __iter__ to keys()."""
-    base_class = obj if isinstance(obj, type) else type(obj)
+    base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type:ignore[valid-type, misc]
@@ -73,12 +121,14 @@ def iter_keys(obj, /):
             r"""Representation of the new object."""
             return r"IterKeys@" + super().__repr__()
 
+    assert isinstance(WrappedClass, type)
+    assert issubclass(WrappedClass, base_class)
+
     if isinstance(obj, type):
-        assert issubclass(WrappedClass, base_class)
         return WrappedClass
 
-    try:
-        new_obj = WrappedClass(obj)
+    try:  # instantiate object
+        new_obj = WrappedClass(obj)  # pyright: ignore
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
@@ -94,7 +144,7 @@ def iter_values(obj: MappingProtocol[K, V_co], /) -> IterValues[K, V_co]: ...
 def iter_values(obj: T, /) -> T: ...
 def iter_values(obj, /):
     r"""Redirects __iter__ to values()."""
-    base_class = obj if isinstance(obj, type) else type(obj)
+    base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type:ignore[valid-type, misc]
@@ -107,12 +157,14 @@ def iter_values(obj, /):
             r"""Representation of the new object."""
             return r"IterValues@" + super().__repr__()
 
+    assert isinstance(WrappedClass, type)
+    assert issubclass(WrappedClass, base_class)
+
     if isinstance(obj, type):
-        assert issubclass(WrappedClass, base_class)
         return WrappedClass
 
-    try:
-        new_obj = WrappedClass(obj)
+    try:  # instantiate object
+        new_obj = WrappedClass(obj)  # pyright: ignore
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
@@ -126,7 +178,7 @@ def iter_items(obj: MappingProtocol[K, V_co], /) -> IterItems[K, V_co]: ...
 def iter_items(obj: T, /) -> T: ...
 def iter_items(obj, /):
     r"""Redirects __iter__ to items()."""
-    base_class = obj if isinstance(obj, type) else type(obj)
+    base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type:ignore[valid-type, misc]
@@ -139,12 +191,14 @@ def iter_items(obj, /):
             r"""Representation of the dataset."""
             return r"IterItems@" + super().__repr__()
 
+    assert isinstance(WrappedClass, type)
+    assert issubclass(WrappedClass, base_class)
+
     if isinstance(obj, type):
-        assert issubclass(WrappedClass, base_class)
         return WrappedClass
 
-    try:
-        new_obj = WrappedClass(obj)
+    try:  # instantiate object
+        new_obj = WrappedClass(obj)  # pyright: ignore
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
@@ -153,10 +207,10 @@ def iter_items(obj, /):
 @deprecated("do not use this function")
 def getitem_loc(obj: T, /) -> T:
     """Redirects __getitem__ to .loc.__getitem__."""
-    base_class = obj if isinstance(obj, type) else type(obj)
+    base_class: type = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
+    class WrappedClass(base_class):
         r"""A simple Wrapper."""
 
         def __getitem__(self, key):
@@ -166,12 +220,14 @@ def getitem_loc(obj: T, /) -> T:
             r"""Representation of the dataset."""
             return r"GetItemLoc@" + super().__repr__()
 
+    assert isinstance(WrappedClass, type)
+    assert issubclass(WrappedClass, base_class)
+
     if isinstance(obj, type):
-        assert issubclass(WrappedClass, base_class)
         return WrappedClass  # type: ignore[return-value]
 
     try:
-        new_obj = WrappedClass(obj)
+        new_obj = WrappedClass(obj)  # pyright: ignore
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
@@ -180,10 +236,10 @@ def getitem_loc(obj: T, /) -> T:
 @deprecated("do not use this function")
 def getitem_iloc(obj: T, /) -> T:
     """Redirects __getitem__ to .iloc.__getitem__."""
-    base_class = obj if isinstance(obj, type) else type(obj)
+    base_class: type = obj if isinstance(obj, type) else type(obj)
 
     @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type:ignore[valid-type, misc]
+    class WrappedClass(base_class):
         r"""A simple Wrapper."""
 
         def __getitem__(self, key):
@@ -193,58 +249,14 @@ def getitem_iloc(obj: T, /) -> T:
             r"""Representation of the dataset."""
             return r"GetItemILoc@" + super().__repr__()
 
+    assert isinstance(WrappedClass, type)
+    assert issubclass(WrappedClass, base_class)
+
     if isinstance(obj, type):
-        assert issubclass(WrappedClass, base_class)
         return WrappedClass  # type: ignore[return-value]
 
     try:
-        new_obj = WrappedClass(obj)
+        new_obj = WrappedClass(obj)  # pyright: ignore
     except Exception as exc:
         raise TypeError(f"Could not wrap {obj} with {WrappedClass}") from exc
     return new_obj
-
-
-def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
-    r"""Class decorator that enables automatic jitting of nn.Modules upon instantiation.
-
-    Makes it so that
-
-    .. code-block:: python
-
-        class MyModule:
-            ...
-
-
-        model = jit.script(MyModule())
-
-    and
-
-    .. code-block:: python
-
-        @autojit
-        class MyModule:
-            ...
-
-
-        model = MyModule()
-
-    are (roughly?) equivalent
-    """
-    assert issubclass(base_class, nn.Module)
-
-    @wraps(base_class, updated=())
-    class WrappedClass(base_class):  # type: ignore[valid-type,misc]  # pylint: disable=too-few-public-methods
-        r"""A simple Wrapper."""
-
-        def __new__(cls, *args: Any, **kwargs: Any) -> torch_module_var:  # type: ignore[misc]
-            # Note: If __new__() does not return an instance of cls,
-            # then the new instance's __init__() method will not be invoked.
-            instance: torch_module_var = base_class(*args, **kwargs)
-
-            if CONFIG.autojit:
-                scripted: torch_module_var = jit.script(instance)
-                return scripted
-            return instance
-
-    assert issubclass(WrappedClass, base_class)
-    return WrappedClass

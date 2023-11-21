@@ -15,7 +15,16 @@ __all__ = [
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 
-from typing_extensions import Any, Generic, Optional, Self, TypeAlias, Union, overload
+from typing_extensions import (
+    Any,
+    Generic,
+    Optional,
+    Self,
+    TypeAlias,
+    Union,
+    cast,
+    overload,
+)
 
 from tsdm.types.protocols import SupportsKeysAndGetItem
 from tsdm.types.variables import (
@@ -162,7 +171,8 @@ class LazyDict(dict[K, V]):
 
     def __ror__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
         if isinstance(other, self.__class__):
-            return other | self
+            return other | self  # pyright: ignore
+
         warnings.warn(
             "Using __ror__ with a non-LazyDict is not recommended, "
             "It causes all values to be evaluated.",
@@ -170,8 +180,9 @@ class LazyDict(dict[K, V]):
             source=LazyDict,
             stacklevel=2,
         )
-        new = other.copy() if isinstance(other, LazyDict) else LazyDict(other)
-        new.update(self.asdict())
+
+        new = cast("LazyDict[K | K_other, V | T]", LazyDict(other))
+        new.update(self)  # type: ignore[arg-type]
         return new
 
     def __ior__(self: Self, other: "SupportsKeysAndGetItem[K, V]", /) -> Self:  # type: ignore[override, misc]
@@ -192,10 +203,10 @@ class LazyDict(dict[K, V]):
                 args = get_function_args(value, mandatory=True)  # type: ignore[unreachable]
                 match nargs := len(args):
                     case 0:
-                        return LazyValue(func=value)
+                        return LazyValue(func=value)  # pyright: ignore
                     case 1 if all(is_positional_arg(p) for p in args):
                         # set the key as input
-                        return LazyValue(func=value, args=(key,))
+                        return LazyValue(func=value, args=(key,))  # pyright: ignore
                     case _:
                         raise TypeError(f"Function {value} requires {nargs} args.")
             case [Callable()]:  # type: ignore[misc]
