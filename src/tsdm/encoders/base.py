@@ -115,8 +115,7 @@ class Encoder(Protocol[U, V]):
         """
         return other @ self
 
-    # FIXME: Encoder[tuple[U, X], tuple[V, Y]] causes segmentation fault
-    def __or__(self, other: Encoder[X, Y], /) -> Encoder:
+    def __or__(self, other: Encoder[X, Y], /) -> Encoder[tuple[U, X], tuple[V, Y]]:
         r"""Return product encoders."""
         ...
 
@@ -165,7 +164,7 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         original_decode = cls.decode
 
         @wraps(original_fit)
-        def fit(self: BaseEncoder, data: T, /) -> None:
+        def fit(self: Self, data: T, /) -> None:
             r"""Fit the encoder to the data."""
             if not self.requires_fit:
                 self.LOGGER.info(
@@ -177,14 +176,14 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
             self.is_fitted = True
 
         @wraps(original_encode)
-        def encode(self: BaseEncoder, data: T, /) -> S:
+        def encode(self: Self, data: T, /) -> S:
             r"""Encode the data."""
             if not self.is_fitted:
                 raise RuntimeError("Encoder has not been fitted.")
             return original_encode(self, data)
 
         @wraps(original_decode)
-        def decode(self: BaseEncoder, data: S, /) -> T:
+        def decode(self: Self, data: S, /) -> T:
             r"""Decode the data."""
             if not self.is_fitted:
                 raise RuntimeError("Encoder has not been fitted.")

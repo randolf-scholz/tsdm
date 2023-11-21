@@ -153,9 +153,9 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
     r"""Default format for the dataset."""
 
-    BASE_URL: ClassVar[Optional[str]] = None
+    BASE_URL: ClassVar[str] = NotImplemented
     r"""HTTP address from where the dataset can be downloaded."""
-    INFO_URL: ClassVar[Optional[str]] = None
+    INFO_URL: ClassVar[str] = NotImplemented
     r"""HTTP address containing additional information about the dataset."""
     RAWDATA_DIR: ClassVar[Path]
     r"""Location where the raw data is stored."""
@@ -286,15 +286,18 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     @classmethod
     def info(cls) -> None:
         r"""Open dataset information in browser."""
-        if cls.INFO_URL is None:
+        if cls.INFO_URL is NotImplemented:
             print(cls.__doc__)
         else:
             webbrowser.open_new_tab(cls.INFO_URL)
 
     @property
     @abstractmethod
-    def rawdata_files(self) -> Sequence[str]:
+    def rawdata_files(self) -> Sequence[str]:  # pyright: ignore
         r"""File names of the raw dataset files."""
+
+    rawdata_files: Sequence[str]  # type: ignore[no-redef]
+    # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @cached_property
     def rawdata_paths(self) -> Mapping[str, Path]:
@@ -363,7 +366,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
 
         Override this method for custom download logic.
         """
-        if self.BASE_URL is None:
+        if self.BASE_URL is NotImplemented:
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 
@@ -641,10 +644,13 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
 
     @property
     @abstractmethod
-    def table_names(self) -> Collection[Key]:
+    def table_names(self) -> Collection[Key]:  # pyright: ignore
         r"""Return the index of the dataset."""
         # TODO: use abstract-attribute!
         # https://stackoverflow.com/questions/23831510/abstract-attribute-not-property
+
+    table_names: Collection[Key]  # type: ignore[no-redef]
+    # Cf. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @cached_property
     def tables(self) -> MutableMapping[Key, T_co]:

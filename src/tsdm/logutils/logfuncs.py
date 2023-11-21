@@ -490,7 +490,7 @@ def log_optimizer(
 
     # get the variables and gradients
     variables = list(optim_state)
-    gradients = [w.grad for w in optim_state]
+    gradients = [w.grad for w in optim_state if w.grad is not None]
     log = writer.add_scalar
 
     if log_norms:

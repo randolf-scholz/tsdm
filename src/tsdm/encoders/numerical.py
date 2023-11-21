@@ -72,13 +72,19 @@ from typing_extensions import (
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axes, Nested, PandasObject, SizeLike
-from tsdm.types.protocols import NTuple
-from tsdm.utils.strings import repr_dataclass, repr_namedtuple
+from tsdm.types.protocols import NTuple, NumericalArray
+from tsdm.utils.strings import pprint_repr, repr_dataclass
 
-TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
+# TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
+# r"""Type Hint for tensor-like objects."""
+# T = TypeVar("T", Tensor, np.ndarray, DataFrame, Series)
+# r"""TypeVar for tensor-like objects."""
+
+TensorLike: TypeAlias = NumericalArray
 r"""Type Hint for tensor-like objects."""
-T = TypeVar("T", Tensor, np.ndarray, DataFrame, Series)
+T = TypeVar("T", bound=NumericalArray)
 r"""TypeVar for tensor-like objects."""
+
 ClippingMode: TypeAlias = Literal["mask", "clip"]
 r"""Type Hint for clipping mode."""
 Index: TypeAlias = None | int | list[int] | slice | EllipsisType
@@ -274,26 +280,26 @@ class NumericalEncoder(BaseEncoder[T, T], Generic[T]):
     def recast_parameters(self) -> None:
         r"""Recast the parameters to the current backend."""
         # switch the backend of the parameters
-        self.cast_backend(self.params)
+        self.cast_params(self.params)
+        raise NotImplementedError
 
-    def cast_backend(self, params: Nested) -> Nested:
+    def cast_params(self, params: Nested) -> Nested[T]:
         """Cast the parameters to the current backend."""
         if isinstance(params, (Tensor, np.ndarray, Series, DataFrame)):
-            return self.backend.to_tensor(params)
+            return self.backend.to_tensor(params)  # pyright: ignore
 
         match params:
             case NTuple() as ntup:
                 cls = type(ntup)
-                return cls(*(self.cast_backend(p) for p in ntup))
+                return cls(*(self.cast_params(p) for p in ntup))
             case tuple() as tup:
-                return tuple(self.cast_backend(p) for p in tup)
+                return tuple(self.cast_params(p) for p in tup)
             case list() as lst:
-                return [self.cast_backend(p) for p in lst]
+                return [self.cast_params(p) for p in lst]
             case dict() as dct:
-                return {k: self.cast_backend(v) for k, v in dct.items()}
-            # FIXME: activate when mypy 1.5 releases
-            # case Tensor() | np.ndarray() | Series() | DataFrame() as t:
-            #     return self.to_tensor(t)
+                return {k: self.cast_params(v) for k, v in dct.items()}
+            case Tensor() | np.ndarray() | Series() | DataFrame() as t:
+                return self.backend.to_tensor(t)
             case _ as p:
                 return p
 
@@ -372,20 +378,21 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         ):
             raise ValueError("lower_bound must be smaller than upper_bound.")
 
+    @pprint_repr
     class Parameters(NamedTuple):
         r"""The parameters of the BoundaryScalar."""
 
-        lower_bound: TensorLike
+        lower_bound: None | float | TensorLike
+        upper_bound: None | float | TensorLike
+
+        lower_value: float | TensorLike
+        upper_value: float | TensorLike
+
         lower_included: bool
-        lower_value: TensorLike
-        upper_bound: TensorLike
         upper_included: bool
-        upper_value: TensorLike
+
         mode: ClippingMode | tuple[ClippingMode, ClippingMode]
         axis: Axes = None
-
-        def __repr__(self) -> str:
-            return repr_namedtuple(self)
 
     @property
     def params(self) -> Parameters:
@@ -523,15 +530,13 @@ class LinearScaler(BaseEncoder[T, T]):
     backend: Backend[T]
     """The backend of the encoder."""
 
+    @pprint_repr
     class Parameters(NamedTuple):
         r"""The parameters of the LinearScaler."""
 
         loc: TensorLike
         scale: TensorLike
         axis: tuple[int, ...]
-
-        def __repr__(self) -> str:
-            return repr_namedtuple(self)
 
     @property
     def params(self) -> Parameters:
@@ -627,15 +632,13 @@ class StandardScaler(BaseEncoder[T, T]):
     def requires_fit(self) -> bool:
         return (self.mean is NotImplemented) or (self.stdv is NotImplemented)
 
+    @pprint_repr
     class Parameters(NamedTuple):
         r"""The parameters of the StandardScalar."""
 
         mean: TensorLike
         stdv: TensorLike
         axis: Axes
-
-        def __repr__(self) -> str:
-            return repr_namedtuple(self)
 
     @property
     def params(self) -> Parameters:
@@ -756,6 +759,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
     backend: Backend[T]
     """The backend of the encoder."""
 
+    @pprint_repr
     class Parameters(NamedTuple):
         r"""The parameters of the MinMaxScaler."""
 
@@ -765,9 +769,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
         ymax: TensorLike
         axis: Axes
         safe_computation: bool
-
-        def __repr__(self) -> str:
-            return repr_namedtuple(self)
 
     @property
     def params(self) -> Parameters:

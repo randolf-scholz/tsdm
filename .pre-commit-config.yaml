@@ -198,7 +198,7 @@ repos:
             |src/tsdm/backend
             |src/tsdm/config
             #|src/tsdm/datasets
-            #|src/tsdm/encoders
+            |src/tsdm/encoders
             |src/tsdm/linalg
             #|src/tsdm/logutils
             |src/tsdm/metrics

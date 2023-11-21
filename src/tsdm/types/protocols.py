@@ -396,7 +396,7 @@ class ArrayKind(Protocol[scalar_co]):
         - `memoryview`
 
     Counter-Examples:
-        - `pandas.DataFrame`
+        - `pandas.DataFrame` (different __getitem__)
         - `polars.DataFrame`
         - `pyarrow.Table`
 
@@ -467,13 +467,18 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         - `pandas.Series`
         - `pandas.DataFrame`
         - `torch.Tensor`
-        - `polars.Series`
 
     Counter-Examples:
+        - `polars.Series`  (missing ndim)
         - `polars.DataFrame`
         - `pyarrow.Array`
         - `pyarrow.Table`
     """
+
+    @property
+    def ndim(self) -> int:
+        """Number of dimensions."""
+        ...
 
     def all(self) -> Self | bool:
         """Return True if all elements are True."""

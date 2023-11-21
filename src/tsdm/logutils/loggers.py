@@ -155,10 +155,7 @@ class BaseLogger(Logger, metaclass=BaseLoggerMetaClass):
 
         # set the frequency
         if frequency is None:
-            if hasattr(callback, "frequency"):
-                frequency = callback.frequency
-            else:
-                frequency = 1
+            frequency = getattr(callback, "frequency", 1)
 
         self._callbacks[key].append((callback, frequency, required_kwargs))
 

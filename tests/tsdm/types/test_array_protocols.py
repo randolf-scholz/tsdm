@@ -36,61 +36,71 @@ _TABLE_DATA = {
     "strings": ["a", "b", "c", "d'"],
 }
 
+NP_ARRAY = numpy.array(_ARRAY_DATA)
+PD_INDEX = pandas.Index(_SERIES_DATA)
+PD_SERIES = pandas.Series(_SERIES_DATA)
+PD_DATAFRAME = pandas.DataFrame(_TABLE_DATA)
+PL_SERIES = polars.Series(_SERIES_DATA)
+PL_DATAFRAME = polars.DataFrame(_TABLE_DATA)
+PA_ARRAY = pyarrow.array(_SERIES_DATA)
+PA_TABLE = pyarrow.table(_TABLE_DATA)
+TORCH_TENSOR = torch.tensor(_ARRAY_DATA)
 
 SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
-    "numpy_ndarray": numpy.array(_ARRAY_DATA),
-    "pandas_dataframe": pandas.DataFrame(_TABLE_DATA),
-    "pandas_index": pandas.Index(_SERIES_DATA),
-    "pandas_series": pandas.Series(_SERIES_DATA),
-    "polars_dataframe": polars.DataFrame(_TABLE_DATA),
-    "polars_series": polars.Series(_SERIES_DATA),
-    "pyarrow_array": pyarrow.array(_SERIES_DATA),
-    "pyarrow_table": pyarrow.table(_TABLE_DATA),
-    "torch_tensor": torch.tensor(_ARRAY_DATA),
+    "numpy_ndarray": NP_ARRAY,
+    "pandas_dataframe": PD_DATAFRAME,
+    "pandas_index": PD_INDEX,
+    "pandas_series": PD_SERIES,
+    "polars_dataframe": PL_DATAFRAME,
+    "polars_series": PL_SERIES,
+    "pyarrow_array": PA_ARRAY,
+    "pyarrow_table": PA_TABLE,
+    "torch_tensor": TORCH_TENSOR,
     # "python_array": memoryview(builtin_array("i", [1, 2, 3])),
 }
 
 
 SERIES: dict[str, SeriesKind[str]] = {
     # "python_array": memoryview(builtin_array("i", [1, 2, 3])),
-    "pandas_index": pandas.Index(_SERIES_DATA),
-    "pandas_series": pandas.Series(_SERIES_DATA),
-    "polars_series": polars.Series(_SERIES_DATA),
-    "pyarrow_array": pyarrow.array(_SERIES_DATA),
+    "pandas_index": PD_INDEX,
+    "pandas_series": PD_SERIES,
+    "polars_series": PL_SERIES,
+    "pyarrow_array": PA_ARRAY,
 }
 
 TABLES: dict[str, TableKind] = {
-    "pandas_dataframe": pandas.DataFrame(_TABLE_DATA),
-    "polars_dataframe": polars.DataFrame(_TABLE_DATA),
-    "pyarrow_table": pyarrow.table(_TABLE_DATA),
+    "pandas_dataframe": PD_DATAFRAME,
+    "polars_dataframe": PL_DATAFRAME,
+    "pyarrow_table": PA_TABLE,
 }
 
 ARRAYS: dict[str, ArrayKind] = {
-    "numpy_ndarray": numpy.array(_ARRAY_DATA),
-    "pandas_dataframe": pandas.DataFrame(_TABLE_DATA),
-    "pandas_index": pandas.Index(_SERIES_DATA),
-    "pandas_series": pandas.Series(_SERIES_DATA),
-    # "polars_dataframe": polars.DataFrame(_TABLE_DATA),
-    "polars_series": polars.Series(_SERIES_DATA),
-    "torch_tensor": torch.tensor(_ARRAY_DATA),
-    # "pyarrow_array": pyarrow.array(_SERIES_DATA),
-    "pyarrow_table": pyarrow.table(_TABLE_DATA),
+    "numpy_ndarray": NP_ARRAY,
+    "pandas_dataframe": PD_DATAFRAME,
+    "pandas_index": PD_INDEX,
+    "pandas_series": PD_SERIES,
+    # "polars_dataframe": PL_DATAFRAME,
+    "polars_series": PL_SERIES,
+    "torch_tensor": TORCH_TENSOR,
+    # "pyarrow_array": PA_ARRAY,
+    "pyarrow_table": PA_TABLE,
     # "python_array": memoryview(builtin_array("i", [1, 2, 3])),
 }
 
 NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
-    "numpy_ndarray": numpy.array(_ARRAY_DATA),
-    "pandas_dataframe": pandas.DataFrame(_TABLE_DATA),
-    "pandas_series": pandas.Series(_SERIES_DATA),
-    "polars_series": polars.Series(_SERIES_DATA),  # type: ignore[reportGeneralTypeIssues]
-    "torch_tensor": torch.tensor(_ARRAY_DATA),
+    "numpy_ndarray": NP_ARRAY,
+    "pandas_dataframe": PD_DATAFRAME,
+    "pandas_series": PD_SERIES,
+    # "polars_series": PL_SERIES,  # missing: ndim
+    # "polars_dataframe": PL_DATAFRAME, # missing: lots
+    "torch_tensor": TORCH_TENSOR,
 }
 
 MUTABLE_ARRAYS: dict[str, MutableArray] = {
-    "numpy_ndarray": numpy.array(_ARRAY_DATA),
-    "pandas_dataframe": pandas.DataFrame(_TABLE_DATA),
-    "pandas_series": pandas.Series(_SERIES_DATA),
-    "torch_tensor": torch.tensor(_ARRAY_DATA),
+    "numpy_ndarray": NP_ARRAY,
+    "pandas_dataframe": PD_DATAFRAME,
+    "pandas_series": PD_SERIES,
+    "torch_tensor": TORCH_TENSOR,
 }
 
 EXAMPLES: dict[type, dict[str, Any]] = {
@@ -355,6 +365,3 @@ def test_arrays_jointly() -> None:
     superfluous_attrs = shared_attrs - set(dir(ArrayKind))
     assert not superfluous_attrs, f"\nShared members:\n\t{superfluous_attrs}"
     __logger__.info("\nShared members of Arrays: %s", shared_attrs)
-
-
-# def test_table_intersection_sequence
