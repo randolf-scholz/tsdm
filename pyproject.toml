@@ -51,12 +51,12 @@ dependencies = [
 dev = ["tsdm[test,docs,extras,typing,flake8,linters,formatters,devtools]"]
 test = [
     "coverage>=7.3.2",
-    "pygal>=3.0.1",
+    "pygal>=3.0.4",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
     "pytest-repeat>=0.9.3",
     "pytest-rerunfailures>=12.0",
-    "pytest-xdist>=3.4.0",
+    "pytest-xdist>=3.5.0",
     "pytest>=7.4.3",
 ]
 docs = [
@@ -78,8 +78,8 @@ devtools = [
     "pre-commit>=3.5.0",
     "pybadges>=3.0.1",
     "pydeps>=1.12.17",
-    "pygments>=2.17.1",
-    "setuptools>=69.0.0",
+    "pygments>=2.17.2",
+    "setuptools>=69.0.2",
     "twine>=4.0.2",
     "wheel>=0.41.3",
 ]
@@ -568,13 +568,13 @@ torchinfo = ">=1.8.0"
 
 [tool.poetry.group.test.dependencies]
 coverage = ">=7.3.2"
-pygal = ">=3.0.1"
+pygal = ">=3.0.4"
 pytest = ">=7.4.3"
 pytest-benchmark = ">=4.0.0"
 pytest-cov = ">=4.1.0"
 pytest-repeat = ">=0.9.3"
 pytest-rerunfailures = ">=12.0"
-pytest-xdist = ">=3.4.0"
+pytest-xdist = ">=3.5.0"
 
 
 [tool.poetry.group.docs.dependencies]
@@ -610,7 +610,7 @@ pipreqs = ">=0.4.13"
 pre-commit = ">=3.5.0"
 pybadges = ">=3.0.1"
 pydeps = ">=1.12.17"
-setuptools = ">=69.0.0"
+setuptools = ">=69.0.2"
 twine = ">=4.0.2"
 wheel = ">=0.41.3"
 
@@ -669,5 +669,5 @@ types-urllib3 = ">=1.26.25"
 
 
 [tool.poetry.group.unsorted.dependencies]
-pygments = ">=2.17.1"
+pygments = ">=2.17.2"
 # endregion poetry configuration -------------------------------------------------------
