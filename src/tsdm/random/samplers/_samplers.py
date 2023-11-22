@@ -28,6 +28,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from typing_extensions import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
     Generic,
@@ -42,6 +43,7 @@ from typing_extensions import (
 )
 
 from tsdm.data.datasets import Dataset, IndexableDataset, MapDataset, SequentialDataset
+from tsdm.types.protocols import SequenceProtocol
 from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
 from tsdm.types.variables import (
     any_co as T_co,
@@ -356,16 +358,23 @@ S: TypeAlias = Literal["slices"]  # slice
 M: TypeAlias = Literal["masks"]  # bool
 B: TypeAlias = Literal["bounds"]  # tuple
 W: TypeAlias = Literal["windows"]  #
-MODE = TypeVar("MODE", B, M, W, S)
-_MODES: TypeAlias = B | M | W | S
+Mode = TypeVar("Mode", B, M, W, S)
+Modes: TypeAlias = B | M | W | S
 
 ONE: TypeAlias = Literal[False]
 MANY: TypeAlias = Literal[True]
-MULTI = TypeVar("MULTI", ONE, MANY)
+Multi = TypeVar("Multi", ONE, MANY)
+
+
+# class MODESSS(NamedTuple):
+#     S: TypeAlias = S
+#     M: TypeAlias = M
+#     B: TypeAlias = B
+#     W: TypeAlias = W
 
 
 # FIXME: Allow ±∞ as bounds for timedelta types? This would allow "growing" windows.
-class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
+class SlidingWindowSampler(BaseSampler, Generic[DT, Mode, Multi]):
     r"""Sampler that generates a single sliding window over an interval.
 
     Note:
@@ -389,11 +398,6 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
             - `slice` / 'slice': return the slice of the lower and upper bounds of the window.
             - `bool` / 'mask': return the boolean mask of the data points inside the window.
             - `list` / 'window': return the actual data points inside the window(s).
-        closed: Whether the window is considered closed on the left or right (default: 'left').
-            - `left`: the window is closed on the left and open on the right.
-            - `right`: the window is open on the left and closed on the right.
-            - `both`: the window is closed on both sides.
-            - `neither`: the window is open on both sides.
         shuffle: Whether to shuffle the indices (default: False).
         drop_last: Whether to drop the last incomplete window (default: False).
             If true, it is guaranteed that each window is completely contained in the data.
@@ -421,13 +425,14 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
     The sampler will return tuples of `len(horizons)+1`.
     """
 
-    MODES: ClassVar[tuple[B, S, M, W]] = ("bounds", "slices", "masks", "windows")
+    # Mode: ClassVar[TypeAlias] = B | M | W | S
+    # MODES: ClassVar[tuple[B, S, M, W]] = ("bounds", "slices", "masks", "windows")
 
     data: NDArray[DT]  # type: ignore[type-var]
 
     horizons: TDLike | NDArray[TDLike]  # type: ignore[type-var]
     stride: TDLike
-    mode: MODE
+    mode: Mode
     multi_horizon: bool
     shuffle: bool
     drop_last: bool
@@ -439,49 +444,19 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
     # grid: Final[NDArray[np.integer]]
 
     # region __init__ overloads --------------------------------------------------------
+    # NOTE: We use SequenceProtocol instead of Sequence in order to exclude str <: Sequence[str]
+    #  cf. https://github.com/python/typing/issues/256#issuecomment-1442633430
     @overload
     def __init__(
         self: "SlidingWindowSampler[DT, S, ONE]",
         data_source: SequentialDataset[DT],
         /,
         *,
-        stride: str | Timedelta,
         horizons: str | Timedelta,
+        stride: str | Timedelta,
         mode: S,
         shuffle: bool = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[DT, B, ONE]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        stride: str | Timedelta,
-        horizons: str | Timedelta,
-        mode: B,
-        shuffle: bool = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[DT, M, ONE]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        stride: str | Timedelta,
-        horizons: str | Timedelta,
-        mode: M,
-        shuffle: bool = ...,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "SlidingWindowSampler[DT, W, ONE]",
-        data_source: SequentialDataset[DT],
-        /,
-        *,
-        stride: str | Timedelta,
-        horizons: str | Timedelta,
-        mode: W,
-        shuffle: bool = ...,
+        drop_last: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -489,10 +464,23 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
+        horizons: SequenceProtocol[str | Timedelta],
         stride: str | Timedelta,
-        horizons: Sequence[str | Timedelta],
         mode: S,
         shuffle: bool = ...,
+        drop_last: bool = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[DT, B, ONE]",
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        horizons: str | Timedelta,
+        stride: str | Timedelta,
+        mode: B,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -500,10 +488,23 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
+        horizons: SequenceProtocol[str | Timedelta],
         stride: str | Timedelta,
-        horizons: Sequence[str | Timedelta],
         mode: B,
         shuffle: bool = ...,
+        drop_last: bool = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[DT, M, ONE]",
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        horizons: str | Timedelta,
+        stride: str | Timedelta,
+        mode: M,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -511,10 +512,23 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
+        horizons: SequenceProtocol[str | Timedelta],
         stride: str | Timedelta,
-        horizons: Sequence[str | Timedelta],
         mode: M,
         shuffle: bool = ...,
+        drop_last: bool = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "SlidingWindowSampler[DT, W, ONE]",
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        horizons: str | Timedelta,
+        stride: str | Timedelta,
+        mode: W,
+        shuffle: bool = ...,
+        drop_last: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -522,13 +536,14 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         data_source: SequentialDataset[DT],
         /,
         *,
+        horizons: SequenceProtocol[str | Timedelta],
         stride: str | Timedelta,
-        horizons: Sequence[str | Timedelta],
         mode: W,
         shuffle: bool = ...,
+        drop_last: bool = ...,
     ) -> None: ...
 
-    # @overload
+    # @overload  # fallback mode=str
     # def __init__(
     #     self: "SlidingWindowSampler[DT, Any, ONE]",
     #     data_source: SequentialDataset[DT],
@@ -536,8 +551,9 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
     #     *,
     #     stride: str | Timedelta,
     #     horizons: str | Timedelta,
-    #     mode: str,
+    #     mode: str = ...,
     #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
     # ) -> None: ...
     # @overload
     # def __init__(
@@ -547,8 +563,9 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
     #     *,
     #     stride: str | Timedelta,
     #     horizons: Sequence[str | Timedelta],
-    #     mode: str,
+    #     mode: str = ...,
     #     shuffle: bool = ...,
+    #     drop_last: bool = ...,
     # ) -> None: ...
 
     # endregion __init__ overloads -----------------------------------------------------
@@ -666,7 +683,7 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
     @property
     def _MAKE_FUNCTIONS(
         self,
-    ) -> dict[tuple[_MODES, bool], Callable[[NDArray[DT]], Any]]:
+    ) -> dict[tuple[Modes, bool], Callable[[NDArray[DT]], Any]]:
         r"""Return the make functions."""
         return {
             ("bounds", False): self.make_bound,
@@ -683,6 +700,8 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
 
     # region __iter__ overloads --------------------------------------------------------
     # fmt: off
+    @overload  # fallback
+    def __iter__(self: "SlidingWindowSampler[DT, Any, ONE]") -> Iterator: ...
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, S, ONE]") -> Iterator[slice]: ...
     @overload
@@ -691,6 +710,8 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
     def __iter__(self: "SlidingWindowSampler[DT, M, ONE]") -> Iterator[NDArray[np.bool_]]: ...
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, W, ONE]") -> Iterator[NDArray[DT]]: ...
+    @overload  # fallback
+    def __iter__(self: "SlidingWindowSampler[DT, Any, MANY]") -> Iterator[list]: ...
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, S, MANY]") -> Iterator[list[slice]]: ...
     @overload
@@ -711,7 +732,7 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
         - mode=masks: $(mask_1, …, mask_m)$
         """
         # unpack variables (avoids attribute lookup in loop)
-        window = self.tmin + self.cumulative_horizons  # type: ignore[operator]
+        window = self.tmin + self.cumulative_horizons
         stride = self.stride
         make_fn = self._MAKE_FUNCTIONS[self.mode, self.multi_horizon]
         grid = self.grid
@@ -721,6 +742,28 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, MODE, MULTI]):
 
         for k in grid:  # NOTE: k is some range of integers.
             yield make_fn(window + k * stride)
+
+
+if TYPE_CHECKING:
+
+    def foo(
+        data_source: SequentialDataset[DT],
+        /,
+        *,
+        stride: str | Timedelta,
+        horizons: str | Timedelta,
+        mode: S,
+    ) -> None: ...
+
+    def bar(x: DT) -> DT:
+        return x
+
+    bar(int(1))
+    bar(float(1.0))
+
+    foo([1, 2, 3, 4, 5], horizons=1, stride=1, mode="slices")
+
+    SlidingWindowSampler([1, 2, 3, 4, 5], horizons=1, stride=1, mode="windows")
 
 
 # class SlidingSampler: ...

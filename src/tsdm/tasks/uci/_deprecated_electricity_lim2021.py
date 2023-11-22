@@ -128,7 +128,7 @@ class ElectricityLim2021(OldBaseTask):
         self.observation_horizon = 24 * 7
         self.forecasting_horizon = 24
 
-        self.encoder = StandardScaler()
+        self.encoder = StandardScaler()  # type: ignore[var-annotated]
         self.encoder.fit(self.splits["train"])
 
     @cached_property

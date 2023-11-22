@@ -1,5 +1,6 @@
 r"""Test other protocols."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import NamedTuple
 
@@ -12,12 +13,14 @@ from pytest import mark
 from tsdm.types.protocols import (
     Dataclass,
     NTuple,
+    SequenceProtocol,
     ShapeLike,
     SupportsKeysAndGetItem,
     SupportsKwargs,
     is_dataclass,
     is_namedtuple,
 )
+from tsdm.types.variables import any_var as T
 
 
 def test_shapelike_protocol() -> None:
@@ -221,3 +224,23 @@ def test_supportskwargs() -> None:
     assert isinstance(Bar(), SupportsKeysAndGetItem)
     assert isinstance(Foo(), SupportsKwargs)
     assert not isinstance(Bar(), SupportsKwargs)
+
+
+def test_sequence_protocol() -> None:
+    """Validate the SequenceProtocol class."""
+
+    def foo(x: Sequence[T]) -> SequenceProtocol[T]:
+        return x
+
+    # checking list
+    seq_list: SequenceProtocol[int] = [1, 2, 3]
+    assert isinstance(seq_list, Sequence)
+    assert isinstance(seq_list, SequenceProtocol)
+
+    # check tuple
+    seq_tup: SequenceProtocol[int] = (1, 2, 3)
+    assert isinstance(seq_tup, Sequence)
+    assert isinstance(seq_tup, SequenceProtocol)
+
+    # check that string is NOT a SequenceProtol
+    assert not isinstance("foo", SequenceProtocol)

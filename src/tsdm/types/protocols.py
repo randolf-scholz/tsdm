@@ -58,6 +58,7 @@ from collections.abc import (
     Reversible,
     ValuesView,
 )
+from types import GenericAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -112,6 +113,57 @@ def assert_protocol(obj: Any, proto: type, /) -> None:
 
 
 # region misc protocols ----------------------------------------------------------------
+@runtime_checkable
+class GenericIterable(Protocol[T_co]):
+    def __class_getitem__(cls, item: type) -> GenericAlias: ...
+    def __iter__(self) -> Iterator[T_co]: ...
+
+
+x: GenericIterable[str] = ["a", "b", "c"]
+y: GenericIterable[str] = "abc"
+
+assert isinstance(y, GenericIterable)
+assert hasattr(y, "__class_getitem__")
+
+
+@runtime_checkable
+class Indexable(Protocol[T_co]):
+    """Protocol Alternative to `Sequence`.
+
+    Assumes that the container is indexed by integers 0...len(self)-1.
+
+    Examples:
+        - list
+        - tuple
+        - numpy.ndarray
+        - pandas.Index
+        - pandas.Series (with integer index)
+    """
+
+    @abstractmethod
+    def __len__(self) -> int: ...
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: int, /) -> T_co: ...
+    @overload
+    @abstractmethod
+    def __getitem__(self, index: slice, /) -> "Indexable[T_co]": ...
+
+    # Mixin methods
+    # TODO: implement mixin methods
+    def __iter__(self) -> Iterator[T_co]:
+        for i in range(len(self)):
+            yield self[i]
+
+    def __reversed__(self) -> Iterator[T_co]:
+        for i in reversed(range(len(self))):
+            yield self[i]
+
+    def __contains__(self, value: object, /) -> bool:
+        for x in self:
+            if x == value or x is value:
+                return True
+        return False
 
 
 @runtime_checkable
@@ -695,60 +747,64 @@ class SupportsKwargs(Protocol[V_co], metaclass=SupportsKwargsType):
 
 @runtime_checkable
 class SequenceProtocol(Collection[T_co], Reversible[T_co], Protocol[T_co]):
-    """Protocol version of `collections.abc.Sequence`."""
+    """Protocol version of `collections.abc.Sequence`.
 
-    # FIXME: implement mixin methods
+    References:
+        - https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
+        - https://github.com/python/cpython/blob/main/Lib/_collections_abc.py
+    """
 
+    @abstractmethod
+    def __len__(self) -> int: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: int) -> T_co: ...
+    def __getitem__(self, index: int, /) -> T_co: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice) -> "SequenceProtocol[T_co]": ...
+    def __getitem__(self, index: slice, /) -> "SequenceProtocol[T_co]": ...
 
     # Mixin methods
-    def index(self, value: Any, start: int = 0, stop: int = ...) -> int: ...
-    def count(self, value: Any) -> int: ...
-    def __contains__(self, value: object) -> bool: ...
+    # TODO: implement mixin methods
     def __iter__(self) -> Iterator[T_co]: ...
     def __reversed__(self) -> Iterator[T_co]: ...
+    def __contains__(self, value: object, /) -> bool: ...
+    def index(self, value: Any, start: int = 0, stop: int = ..., /) -> int: ...
+    def count(self, value: Any, /) -> int: ...
 
 
 @runtime_checkable
 class MutableSequenceProtocol(SequenceProtocol[T], Protocol[T]):
     """Protocol version of `collections.abc.MutableSequence`."""
 
-    # FIXME: implement mixin methods
-
-    @abstractmethod
-    def insert(self, index: int, value: T) -> None: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: int) -> T: ...
+    def __getitem__(self, index: int, /) -> T: ...
     @overload
     @abstractmethod
-    def __getitem__(self, index: slice) -> "MutableSequenceProtocol[T]": ...
+    def __getitem__(self, index: slice, /) -> "MutableSequenceProtocol[T]": ...
     @overload
     @abstractmethod
-    def __setitem__(self, index: int, value: T) -> None: ...
+    def __setitem__(self, index: int, value: T, /) -> None: ...
     @overload
     @abstractmethod
-    def __setitem__(self, index: slice, value: Iterable[T]) -> None: ...
+    def __setitem__(self, index: slice, value: Iterable[T], /) -> None: ...
     @overload
     @abstractmethod
-    def __delitem__(self, index: int) -> None: ...
+    def __delitem__(self, index: int, /) -> None: ...
     @overload
     @abstractmethod
-    def __delitem__(self, index: slice) -> None: ...
+    def __delitem__(self, index: slice, /) -> None: ...
+    def insert(self, index: int, value: T, /) -> None: ...
 
     # Mixin methods
-    def append(self, value: T) -> None: ...
-    def clear(self) -> None: ...
-    def extend(self, values: Iterable[T]) -> None: ...
-    def reverse(self) -> None: ...
-    def pop(self, index: int = -1) -> T: ...
-    def remove(self, value: T) -> None: ...
-    def __iadd__(self, values: Iterable[T]) -> Self: ...
+    # TODO: Implement mixin methods
+    def append(self, value: T, /) -> None: ...
+    def clear(self, /) -> None: ...
+    def extend(self, values: Iterable[T], /) -> None: ...
+    def reverse(self, /) -> None: ...
+    def pop(self, index: int = -1, /) -> T: ...
+    def remove(self, value: T, /) -> None: ...
+    def __iadd__(self, values: Iterable[T], /) -> Self: ...
 
 
 @runtime_checkable

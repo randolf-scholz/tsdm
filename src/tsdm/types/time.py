@@ -31,10 +31,13 @@ from numpy import (
 )
 from pandas import Timedelta as pd_td, Timestamp as pd_dt
 from typing_extensions import (
+    Any,
     Protocol,
+    Self,
     SupportsFloat,
     SupportsInt,
     TypeVar,
+    overload,
     runtime_checkable,
 )
 
@@ -43,9 +46,10 @@ TD = TypeVar("TD", bound="TimeDelta")
 TD_co = TypeVar("TD_co", bound="TimeDelta", covariant=True)
 TD_contra = TypeVar("TD_contra", bound="TimeDelta", contravariant=True)
 
-DT = TypeVar("DT", bound="DateTime[TimeDelta]")
-DT_co = TypeVar("DT_co", bound="DateTime[TimeDelta]", covariant=True)
-DT_contra = TypeVar("DT_contra", bound="DateTime[TimeDelta]", contravariant=True)
+# FIXME: https://github.com/python/typing/issues/548
+DT = TypeVar("DT", bound="DateTime")
+DT_co = TypeVar("DT_co", bound="DateTime", covariant=True)
+DT_contra = TypeVar("DT_contra", bound="DateTime", contravariant=True)
 
 
 @runtime_checkable
@@ -125,6 +129,7 @@ class DateTime(Protocol[TD]):  # bind appropriate TimeDelta type
     # def __sub__(self, other: TD, /) -> Self: ...
     # @overload
     # def __sub__(self, other: Self, /) -> TD: ...
+
     # NOTE: __rsub__ missing on fallback pydatetime
     # @overload
     # def __rsub__(self, other: TD, /) -> Self: ...

@@ -273,8 +273,8 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
             x0 = self._get_value(offset, k)
 
             # get valid interval bounds, probably there is an easier way to do it...
-            stride_left: Sequence[int] = compute_grid(xmin, xmax, st, offset=x0)
-            stride_right: Sequence[int] = compute_grid(xmin, xmax, st, offset=x0 + dt)
+            stride_left: list[int] = compute_grid(xmin, xmax, st, offset=x0)  # type: ignore[misc]
+            stride_right: list[int] = compute_grid(xmin, xmax, st, offset=x0 + dt)  # type: ignore[misc]
             valid_strides: set[int] = set.intersection(
                 set(stride_left), set(stride_right)
             )
