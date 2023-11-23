@@ -115,22 +115,16 @@ def assert_protocol(obj: Any, proto: type, /) -> None:
 # region misc protocols ----------------------------------------------------------------
 @runtime_checkable
 class GenericIterable(Protocol[T_co]):
+    """Does not work currently!"""
+
+    # FIXME: https://github.com/python/cpython/issues/112319
     def __class_getitem__(cls, item: type) -> GenericAlias: ...
     def __iter__(self) -> Iterator[T_co]: ...
 
 
-x: GenericIterable[str] = ["a", "b", "c"]
-y: GenericIterable[str] = "abc"
-
-assert isinstance(y, GenericIterable)
-assert hasattr(y, "__class_getitem__")
-
-
 @runtime_checkable
 class Indexable(Protocol[T_co]):
-    """Protocol Alternative to `Sequence`.
-
-    Assumes that the container is indexed by integers 0...len(self)-1.
+    """Alternative to `Sequence` without `__reversed__`, `index` and `count`.
 
     Examples:
         - list
