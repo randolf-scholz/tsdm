@@ -182,7 +182,7 @@ def unflatten_dict(
     d: Mapping[K2, Any],
     /,
     *,
-    recursive: bool = True,
+    recursive: bool | int = True,
     join_fn: Callable[[Iterable[K]], K2] = ".".join,  # type: ignore[assignment]
     split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),  # type: ignore[attr-defined]
 ) -> dict[K, Any]:

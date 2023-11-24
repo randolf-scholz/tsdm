@@ -673,7 +673,7 @@ def test_sliding_window_sampler_discrete(
     result = list(sampler)
 
     # check that static types are correct
-    assert_type(sampler, SlidingWindowSampler[int, str, ONE])
+    assert_type(sampler, SlidingWindowSampler[int, Any, ONE])
 
     expected = EXPECTED_RESULTS_DISCRETE_DATA[mode, horizons, stride, drop_last]
 
@@ -708,7 +708,7 @@ def test_sliding_window_sampler_continuous(
     result = list(sampler)
 
     # check that static types are correct
-    assert_type(sampler, SlidingWindowSampler[float, str, ONE])
+    assert_type(sampler, SlidingWindowSampler[float, Any, ONE])
 
     expected = EXPECTED_RESULTS_CONTINUOUS_DATA[mode, horizons, stride, drop_last]
 
@@ -754,7 +754,7 @@ def test_datetime_data(mode: str, data: Any) -> None:
     sample = result[0]
 
     # check that static types are correct
-    assert_type(sampler, SlidingWindowSampler[Any, str, ONE])
+    assert_type(sampler, SlidingWindowSampler[Any, Any, ONE])
     assert_type(result, list)
     assert_type(sample, Any)
 
@@ -859,7 +859,7 @@ def test_float_data(mode: str, data: Any) -> None:
     sample = result[0]
 
     # check that static types are correct
-    assert_type(sampler, SlidingWindowSampler[Any, str, ONE])
+    assert_type(sampler, SlidingWindowSampler[Any, Any, ONE])
     assert_type(result, list)
     assert_type(sample, Any)
 

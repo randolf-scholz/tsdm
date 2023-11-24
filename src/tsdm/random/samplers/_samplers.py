@@ -367,7 +367,7 @@ S: TypeAlias = Literal["slices"]  # slice
 M: TypeAlias = Literal["masks"]  # bool
 B: TypeAlias = Literal["bounds"]  # tuple
 W: TypeAlias = Literal["windows"]  #
-Mode = TypeVar("Mode", B, M, W, S, str)
+Mode = TypeVar("Mode", B, M, W, S)
 Modes: TypeAlias = B | M | W | S
 
 ONE: TypeAlias = Literal["one"]
@@ -547,7 +547,7 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     ) -> None: ...
     @overload  # fallback mode=str
     def __init__(
-        self: "SlidingWindowSampler[DT, str, MULTI]",
+        self: "SlidingWindowSampler[DT, Any, MULTI]",
         data_source: SequentialDataset[DT],
         /,
         *,
@@ -559,7 +559,7 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     ) -> None: ...
     @overload  # fallback mode=str
     def __init__(
-        self: "SlidingWindowSampler[DT, str, ONE]",
+        self: "SlidingWindowSampler[DT, Any, ONE]",
         data_source: SequentialDataset[DT],
         /,
         *,
@@ -711,7 +711,7 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, W, ONE]", /) -> Iterator[NDArray[DT]]: ...
     @overload  # fallback mode=str
-    def __iter__(self: "SlidingWindowSampler[DT, str, ONE]", /) -> Iterator: ...
+    def __iter__(self: "SlidingWindowSampler[DT, Any, ONE]", /) -> Iterator: ...
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, S, MULTI]", /) -> Iterator[list[slice]]: ...
     @overload
@@ -721,7 +721,7 @@ class SlidingWindowSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     @overload
     def __iter__(self: "SlidingWindowSampler[DT, W, MULTI]", /) -> Iterator[list[NDArray[DT]]]: ...
     @overload  # fallback mode=str
-    def __iter__(self: "SlidingWindowSampler[DT, str, MULTI]", /) -> Iterator[list]: ...
+    def __iter__(self: "SlidingWindowSampler[DT, Any, MULTI]", /) -> Iterator[list]: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
     def __iter__(self, /):
