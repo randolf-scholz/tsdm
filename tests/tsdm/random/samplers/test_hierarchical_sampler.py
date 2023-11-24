@@ -72,10 +72,10 @@ def test_iter_speed(benchmark, method):
 
     match method:
         case "iter_with_iter":
-            obj = Foo()
+            foo = Foo()
+            benchmark(exhaust_iterable, foo)
         case "iter_with_yield":
-            obj = Bar()
+            bar = Bar()
+            benchmark(exhaust_iterable, bar)
         case _:
             raise AssertionError
-
-    benchmark(exhaust_iterable, obj)

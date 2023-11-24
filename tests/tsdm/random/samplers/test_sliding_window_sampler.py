@@ -6,9 +6,10 @@ from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from pandas import Series
 from pytest import mark
-from typing_extensions import TYPE_CHECKING, Any, Literal, TypeAlias, assert_type
+from typing_extensions import Any, Iterator, Literal, TypeAlias, assert_type
 
 from tsdm.random.samplers import SlidingWindowSampler
 from tsdm.types.time import DateTime
@@ -23,8 +24,8 @@ M: TypeAlias = Literal["masks"]  # bool
 B: TypeAlias = Literal["bounds"]  # tuple
 W: TypeAlias = Literal["windows"]  #
 
-ONE: TypeAlias = Literal[False]
-MANY: TypeAlias = Literal[True]
+ONE: TypeAlias = Literal["one"]
+MULTI: TypeAlias = Literal["multi"]
 
 DISCRETE_DATA = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 # region expected results discrete data ------------------------------------------------
@@ -657,7 +658,9 @@ EXPECTED_RESULTS_CONTINUOUS_DATA = flatten_dict(
 @mark.parametrize("stride", [1, 2], ids=lambda x: f"stride={x}")
 @mark.parametrize("horizons", [2, 3, 4], ids=lambda x: f"horizon={x}")
 @mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
-def test_sliding_window_sampler_discrete(drop_last, stride, horizons, mode):
+def test_sliding_window_sampler_discrete(
+    drop_last: bool, stride: int, horizons: int, mode: str
+) -> None:
     """Test the SlidingWindowSampler."""
     sampler = SlidingWindowSampler(
         DISCRETE_DATA,
@@ -667,13 +670,16 @@ def test_sliding_window_sampler_discrete(drop_last, stride, horizons, mode):
         shuffle=False,
         drop_last=drop_last,
     )
-    assert_type(sampler, SlidingWindowSampler)
+    result = list(sampler)
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[int, str, ONE])
 
     expected = EXPECTED_RESULTS_DISCRETE_DATA[mode, horizons, stride, drop_last]
 
     assert len(sampler) == len(expected), (
         "LENGTH MISMATCH!"
-        f"\nsampler:\n{list(sampler)}\nexpected:\n{expected}\ngrid={sampler.grid}\n"
+        f"\nsampler:\n{result}\nexpected:\n{expected}\ngrid={sampler.grid}\n"
     )
 
     for m1, m2 in zip(sampler, expected, strict=True):
@@ -687,7 +693,9 @@ def test_sliding_window_sampler_discrete(drop_last, stride, horizons, mode):
 @mark.parametrize("stride", [1.0, 2.5], ids=lambda x: f"stride={x}")
 @mark.parametrize("horizons", [2.5, 3.5, 4.5], ids=lambda x: f"horizon={x}")
 @mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
-def test_sliding_window_sampler_continuous(drop_last, stride, horizons, mode):
+def test_sliding_window_sampler_continuous(
+    drop_last: bool, stride: float, horizons: float, mode: str
+) -> None:
     """Test the SlidingWindowSampler."""
     sampler = SlidingWindowSampler(
         CONTINUOUS_DATA,
@@ -697,14 +705,16 @@ def test_sliding_window_sampler_continuous(drop_last, stride, horizons, mode):
         shuffle=False,
         drop_last=drop_last,
     )
-    reveal_type(sampler)
-    assert_type(sampler, SlidingWindowSampler)
+    result = list(sampler)
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[float, str, ONE])
 
     expected = EXPECTED_RESULTS_CONTINUOUS_DATA[mode, horizons, stride, drop_last]
 
     assert len(sampler) == len(expected), (
         "LENGTH MISMATCH!"
-        f"\nsampler:\n{list(sampler)}\nexpected:\n{expected}\ngrid={sampler.grid}\n"
+        f"\nsampler:\n{result}\nexpected:\n{expected}\ngrid={sampler.grid}\n"
     )
 
     for m1, m2 in zip(sampler, expected, strict=True):
@@ -730,7 +740,7 @@ DATETIME_DATA = {
 
 @mark.parametrize("mode", SlidingWindowSampler.MODES)
 @mark.parametrize("data", DATETIME_DATA.values(), ids=DATETIME_DATA)
-def test_datetime_data(mode, data):
+def test_datetime_data(mode: str, data: Any) -> None:
     """Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingWindowSampler(
         data,
@@ -740,9 +750,13 @@ def test_datetime_data(mode, data):
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler)
     result = list(sampler)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[Any, str, ONE])
     assert_type(result, list)
+    assert_type(sample, Any)
 
     assert len(result) == 28
     assert len(sampler) == 28
@@ -769,7 +783,7 @@ def test_datetime_data(mode, data):
 
 # increasing data with random step size
 PYTHON_INTEGERS = [-7, 0, 3, 4, 6, 11, 12, 14, 18, 20, 21]
-INTEGER_DATA = {
+INTEGER_DATA: dict[str, Any] = {
     "python-int": PYTHON_INTEGERS,
     "numpy-int64": np.array(PYTHON_INTEGERS, dtype=np.int64),
     "numpy-int32": np.array(PYTHON_INTEGERS, dtype=np.int32),
@@ -780,7 +794,7 @@ INTEGER_DATA = {
 
 @mark.parametrize("mode", SlidingWindowSampler.MODES)
 @mark.parametrize("data", INTEGER_DATA.values(), ids=INTEGER_DATA)
-def test_integer_data(mode, data):
+def test_integer_data(mode: str, data: Any) -> None:
     """Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingWindowSampler(
         data,
@@ -790,30 +804,31 @@ def test_integer_data(mode, data):
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler)
-
     result = list(sampler)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[Any, str, ONE])
+    assert_type(result, list)
+    assert_type(sample, Any)
+
     assert len(result) == 15
     assert len(sampler) == 15
-
-    sample_result = result[0]
 
     # FIXME: https://github.com/pandas-dev/pandas/issues/56021
     match mode:
         case "bounds":
-            assert isinstance(sample_result, tuple)
-            assert isinstance(sample_result[0], np.integer), type(sample_result[0])
+            assert isinstance(sample, tuple)
+            assert isinstance(sample[0], np.integer), type(sample[0])
         case "slices":
-            assert isinstance(sample_result, slice)
-            assert isinstance(sample_result.start, np.integer), type(
-                sample_result.start
-            )
+            assert isinstance(sample, slice)
+            assert isinstance(sample.start, np.integer), type(sample.start)
         case "masks":
-            assert isinstance(sample_result, np.ndarray)
-            assert np.issubdtype(sample_result.dtype, np.bool_)
+            assert isinstance(sample, np.ndarray)
+            assert np.issubdtype(sample.dtype, np.bool_)
         case "windows":
-            assert isinstance(sample_result, np.ndarray)
-            assert isinstance(sample_result[0], np.integer), type(sample_result[0])
+            assert isinstance(sample, np.ndarray)
+            assert isinstance(sample[0], np.integer), type(sample[0])
         case _:
             raise NotImplementedError
 
@@ -830,7 +845,7 @@ FLOAT_DATA = {
 
 @mark.parametrize("mode", SlidingWindowSampler.MODES)
 @mark.parametrize("data", FLOAT_DATA.values(), ids=FLOAT_DATA)
-def test_float_data(mode, data):
+def test_float_data(mode: str, data: Any) -> None:
     """Test the SlidingWindowSampler with datetime/timedelta data."""
     sampler = SlidingWindowSampler(
         data,
@@ -840,28 +855,31 @@ def test_float_data(mode, data):
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler)
-
     result = list(sampler)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[Any, str, ONE])
+    assert_type(result, list)
+    assert_type(sample, Any)
+
     assert len(result) == 7
     assert len(sampler) == 7
-
-    sample_result = result[0]
 
     # FIXME: https://github.com/pandas-dev/pandas/issues/56021
     match mode:
         case "bounds":
-            assert isinstance(sample_result, tuple)
-            assert isinstance(sample_result[0], np.floating), type(sample_result[0])
+            assert isinstance(sample, tuple)
+            assert isinstance(sample[0], np.floating), type(sample[0])
         case "slices":
-            assert isinstance(sample_result, slice)
-            assert isinstance(sample_result.start, np.floating)
+            assert isinstance(sample, slice)
+            assert isinstance(sample.start, np.floating)
         case "masks":
-            assert isinstance(sample_result, np.ndarray)
-            assert np.issubdtype(sample_result.dtype, np.bool_)
+            assert isinstance(sample, np.ndarray)
+            assert np.issubdtype(sample.dtype, np.bool_)
         case "windows":
-            assert isinstance(sample_result, np.ndarray)
-            assert isinstance(sample_result[0], np.floating), type(sample_result[0])
+            assert isinstance(sample, np.ndarray)
+            assert isinstance(sample[0], np.floating), type(sample[0])
         case _:
             raise NotImplementedError
 
@@ -888,7 +906,7 @@ def test_pandas_timestamps() -> None:
     list(sampler)
 
 
-def test_single_window() -> None:
+def test_slices_single() -> None:
     """Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
@@ -901,9 +919,14 @@ def test_single_window() -> None:
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler[int, W, ONE])
     result = list(sampler)
-    assert_type(result, list)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[int, W, ONE])
+    assert_type(iter(sampler), Iterator[NDArray])
+    assert_type(result, list[NDArray])
+    assert_type(sample, NDArray)
 
     for m1, m2 in zip(
         result,
@@ -933,7 +956,7 @@ def test_single_window() -> None:
         assert np.array_equal(m1, m2)
 
 
-def test_single_slice() -> None:
+def test_slice_single() -> None:
     """Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
@@ -946,9 +969,13 @@ def test_single_slice() -> None:
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler[int, S, ONE])
     result = list(sampler)
-    assert_type(result, list)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[int, S, ONE])
+    assert_type(result, list[slice])
+    assert_type(sample, slice)
 
     assert result == [
         slice(11, 14, None),
@@ -968,7 +995,7 @@ def test_single_slice() -> None:
     ]
 
 
-def test_mode_windows_multi() -> None:
+def test_windows_multi() -> None:
     """Test the SlidingWindowSampler."""
     stride = 2
     horizons = [3, 1]
@@ -981,9 +1008,15 @@ def test_mode_windows_multi() -> None:
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler[int, W, ONE])
     result = list(sampler)
-    assert_type(result, list)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[int, W, MULTI])
+    assert_type(iter(sampler), Iterator[list[NDArray]])
+    assert_type(result, list[list[NDArray]])
+    assert_type(sample, list[NDArray])
+    assert_type(sample[0], NDArray)
 
     assert all(
         np.array_equal(m1[0], m2[0]) and np.array_equal(m1[1], m2[1])
@@ -1000,7 +1033,7 @@ def test_mode_windows_multi() -> None:
     )
 
 
-def test_single_mask() -> None:
+def test_masks_single() -> None:
     """Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
@@ -1013,9 +1046,14 @@ def test_single_mask() -> None:
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler[int, M, ONE])
     result = list(sampler)
-    assert_type(result, list)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[int, M, ONE])
+    assert_type(iter(sampler), Iterator[NDArray[np.bool_]])
+    assert_type(result, list[NDArray[np.bool_]])
+    assert_type(sample, NDArray[np.bool_])
 
     assert all(
         np.array_equal(m1, m2)
@@ -1049,7 +1087,7 @@ def test_single_mask() -> None:
     )
 
 
-def test_single_bounds() -> None:
+def test_bounds_single() -> None:
     """Test the SlidingWindowSampler."""
     stride = 2
     horizons = 3
@@ -1062,9 +1100,14 @@ def test_single_bounds() -> None:
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler[int, B, ONE])
     result = list(sampler)
-    assert_type(result, list)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[int, B, ONE])
+    assert_type(iter(sampler), Iterator[tuple[int, int]])
+    assert_type(result, list[tuple[int, int]])
+    assert_type(sample, tuple[int, int])
 
     assert result == [
         (11, 14),
@@ -1084,7 +1127,7 @@ def test_single_bounds() -> None:
     ]
 
 
-def test_mode_slices_multi() -> None:
+def test_slices_multi() -> None:
     """Test the SlidingWindowSampler."""
     sampler = SlidingWindowSampler(
         DISCRETE_DATA,
@@ -1094,9 +1137,14 @@ def test_mode_slices_multi() -> None:
         shuffle=False,
         drop_last=False,
     )
-    assert_type(sampler, SlidingWindowSampler[int, S, MANY])
     result = list(sampler)
-    assert_type(result, list)
+    sample = result[0]
+
+    # check that static types are correct
+    assert_type(sampler, SlidingWindowSampler[int, S, MULTI])
+    assert_type(result, list[list[slice]])
+    assert_type(sample, list[slice])
+    assert_type(sample[0], slice)
 
     assert result == [
         [slice(11, 14, None), slice(14, 15, None)],

@@ -244,3 +244,35 @@ def test_sequence_protocol() -> None:
 
     # check that string is NOT a SequenceProtol
     assert not isinstance("foo", SequenceProtocol)
+
+
+def test_get_interscetion_indexable() -> None:
+    containers = [
+        list,
+        tuple,
+        pandas.Series,
+        pandas.Index,
+        numpy.ndarray,
+        torch.Tensor,
+    ]
+    shared_attrs = set.intersection(*[set(dir(c)) for c in containers])
+    excluded_attrs = {
+        "__init__",
+        "__getattribute__",
+        "__sizeof__",
+        "__init_subclass__",
+        "__subclasshook__",
+        "__getstate__",
+        "__dir__",
+        "__doc__",
+        "__delattr__",
+        "__class__",
+        "__format__",
+        "__reduce_ex__",
+        "__setattr__",
+        "__repr__",
+        "__str__",
+        "__reduce__",
+    }
+    attrs = sorted(shared_attrs - excluded_attrs)
+    print("Shared attributes:\n" + "\n".join(attrs))

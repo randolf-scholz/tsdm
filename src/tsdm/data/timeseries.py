@@ -158,9 +158,9 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.metaindex = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: slice, /) -> Self: ...
+    def __getitem__(self, key: slice, /) -> Self: ...  # type: ignore[overload-overlap]
     @overload
-    def __getitem__(self, key: Any, /) -> TimeSeriesDataset: ...
+    def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...
     def __getitem__(self, key, /):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this

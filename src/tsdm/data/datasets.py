@@ -147,9 +147,7 @@ TabularDataset: TypeAlias = MapDataset[K, V_co] | PandasDataset[K, V_co]
 SequentialDataset: TypeAlias = IterableDataset[V_co] | PandasDataset[Any, V_co]
 """Type alias for a sequential dataset."""
 
-Dataset: TypeAlias = (
-    IndexableDataset[V_co] | MapDataset[Any, V_co] | PandasDataset[Any, V_co]
-)
+Dataset: TypeAlias = IndexableDataset[V_co] | MapDataset[Any, V_co]
 """Type alias for a generic dataset."""
 # endregion Protocol -------------------------------------------------------------------
 
