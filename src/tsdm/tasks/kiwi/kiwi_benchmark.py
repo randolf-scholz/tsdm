@@ -6,12 +6,12 @@ __all__ = [
 ]
 
 
-from collections.abc import Callable, Hashable
+from collections.abc import Callable
 
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
-from typing_extensions import Any, NamedTuple, TypeVar
+from typing_extensions import Any, NamedTuple
 
 from tsdm import datasets
 from tsdm.data import (
@@ -33,11 +33,10 @@ from tsdm.encoders import (
     StandardScaler,
 )
 from tsdm.metrics import TimeSeriesMSE
-from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
+from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
 from tsdm.tasks.base import TimeSeriesTask
+from tsdm.types.aliases import SplitID
 from tsdm.utils.strings import repr_namedtuple
-
-SplitID = TypeVar("SplitID", bound=Hashable)
 
 
 class Batch(NamedTuple):
@@ -306,7 +305,7 @@ class KiwiBenchmark(TimeSeriesTask):
         assert not sampler_kwargs, f"Unknown sampler_kwargs: {sampler_kwargs}"
 
         subsamplers = {
-            key: SlidingWindowSampler(
+            key: SlidingSampler(
                 tsd.timeindex,
                 horizons=[observation_horizon, forecasting_horizon],
                 stride=stride,

@@ -31,13 +31,10 @@ from numpy import (
 )
 from pandas import Timedelta as pd_td, Timestamp as pd_dt
 from typing_extensions import (
-    Any,
     Protocol,
-    Self,
     SupportsFloat,
     SupportsInt,
     TypeVar,
-    overload,
     runtime_checkable,
 )
 

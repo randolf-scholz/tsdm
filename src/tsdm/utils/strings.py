@@ -44,7 +44,7 @@ from tsdm.types.protocols import (
 )
 from tsdm.types.variables import any_var as T
 
-__logger__ = logging.getLogger(__name__)
+__logger__: logging.Logger = logging.getLogger(__name__)
 
 MAXITEMS: Final[int] = 20
 r"""Default maxitems for repr_funcs."""

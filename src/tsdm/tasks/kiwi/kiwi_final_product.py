@@ -5,7 +5,6 @@ __all__ = [
     "KIWI_FINAL_PRODUCT",
 ]
 
-import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import cached_property
@@ -27,8 +26,6 @@ from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.strings import repr_namedtuple
-
-__logger__ = logging.getLogger(__name__)
 
 
 class Sample(NamedTuple):
@@ -91,7 +88,7 @@ def get_time_table(
         t_induction = get_induction_time(slc)
         t_target = get_final_product(slc, target=target)
         if pd.isna(t_induction):
-            __logger__.info("%s: no t_induction!", idx)
+            KIWI_FINAL_PRODUCT.LOGGER.info("%s: no t_induction!", idx)
             t_max = get_final_product(slc.loc[slc.index < t_target], target=target)
             assert t_max < t_target
         else:

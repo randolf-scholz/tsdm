@@ -17,7 +17,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from torch import Tensor, nn
-from typing_extensions import Any, Optional, Protocol, TypeAlias
+from typing_extensions import Any, ClassVar, Optional, Protocol, TypeAlias
 
 from tsdm.config import CONFIG
 
@@ -141,7 +141,7 @@ class BaseModelMetaClass(type):
 class BaseModel(metaclass=BaseModelMetaClass):
     r"""BaseModel that all models should subclass."""
 
-    LOGGER: logging.Logger
+    LOGGER: ClassVar[logging.Logger]
     r"""Logger for the model."""
     SOURCE_URL: Optional[str] = None
     r"""HTTP address from where the model can be downloaded."""

@@ -7,7 +7,7 @@ from pytest import mark
 from tsdm.data import TimeSeriesSampleGenerator
 from tsdm.data.timeseries import Sample, TimeSeriesCollection, TimeSeriesDataset
 from tsdm.datasets import InSilico
-from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
+from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
 from tsdm.tasks import (
     MIMIC_III_Bilos2021,
     MIMIC_III_DeBrouwer2019,
@@ -47,7 +47,7 @@ def test_time_series_sample_generator() -> None:
 
     # make sampler, generate key
     subsamplers = {
-        key: SlidingWindowSampler(
+        key: SlidingSampler(
             ds.timeseries.index,
             horizons=["2h", "1h"],
             stride="1h",

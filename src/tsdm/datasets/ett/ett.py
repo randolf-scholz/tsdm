@@ -27,7 +27,10 @@ class ETT(MultiTableDataset[KEY, DataFrame]):
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""
-    dataset_hashes = {
+
+    table_names = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]  # pyright: ignore
+    rawdata_files = ["ETTh1.csv", "ETTh2.csv", "ETTm1.csv", "ETTm2.csv"]
+    dataset_hashes = {  # pyright: ignore
         "ETTh1": (
             "sha256:b56abe3a5a0ac54428be73a37249d549440a7512fce182adcafba9ee43a03694"
         ),
@@ -55,16 +58,12 @@ class ETT(MultiTableDataset[KEY, DataFrame]):
             "sha256:db973ca252c6410a30d0469b13d696cf919648d0f3fd588c60f03fdbdbadd1fd"
         ),
     }
-    table_shapes = {
+    table_shapes = {  # pyright: ignore
         "ETTh1": (17420, 7),
         "ETTh2": (17420, 7),
         "ETTm1": (69680, 7),
         "ETTm2": (69680, 7),
     }
-    table_names = ["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
-
-    rawdata_files = ["ETTh1.csv", "ETTh2.csv", "ETTm1.csv", "ETTm2.csv"]
-    r"""Files containing the raw data."""
 
     def clean_table(self, key: KEY) -> DataFrame:
         df = read_csv(

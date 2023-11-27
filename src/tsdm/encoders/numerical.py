@@ -57,7 +57,6 @@ from torch import Tensor
 from typing_extensions import (
     Any,
     ClassVar,
-    Generic,
     Literal,
     NamedTuple,
     NewType,
@@ -84,13 +83,12 @@ TensorLike: TypeAlias = NumericalArray
 r"""Type Hint for tensor-like objects."""
 T = TypeVar("T", bound=NumericalArray)
 r"""TypeVar for tensor-like objects."""
-
-ClippingMode: TypeAlias = Literal["mask", "clip"]
-r"""Type Hint for clipping mode."""
 Index: TypeAlias = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
 scalars: TypeAlias = None | bool | int | float | complex | str
 """Type Hint for scalar objects."""
+ClippingMode: TypeAlias = Literal["mask", "clip"]
+r"""Type Hint for clipping mode."""
 
 PARAMETERS: TypeAlias = tuple[
     scalars
@@ -255,7 +253,7 @@ def get_reduced_axes(item, axis):
             raise TypeError(f"Unknown type {type(item)}")
 
 
-class NumericalEncoder(BaseEncoder[T, T], Generic[T]):
+class NumericalEncoder(BaseEncoder[T, T]):
     """Represents a numerical encoder."""
 
     backend: Backend[T]
@@ -304,6 +302,7 @@ class NumericalEncoder(BaseEncoder[T, T], Generic[T]):
                 return p
 
 
+@pprint_repr
 @dataclass
 class BoundaryEncoder(BaseEncoder[T, T]):
     r"""Clip or mask values outside a given range.

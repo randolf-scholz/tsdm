@@ -398,7 +398,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
         x = self.xmin
         y = cast(DTVar, x + self.seq_len)  # type: ignore[operator, call-overload, redundant-cast]
         # allows nice handling of negative seq_len
-        x, y = min(x, y), max(x, y)  # pyright: ignore[reportGeneralTypeIssues]
+        x, y = min(x, y), max(x, y)
         yield x, y
 
         for _ in range(len(self)):
@@ -573,7 +573,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 #     def __iter__(
 #         self: "SlidingWindowSampler[Literal['points'], NumpyDTVar]",
 #     ) -> Iterator[tuple[NDArray[NumpyDTVar], ...]]: ...
-#     def __iter__(self):  # pyright: ignore[reportGeneralTypeIssues]
+#     def __iter__(self):
 #         r"""Iterate through.
 #
 #         For each k, we return either:

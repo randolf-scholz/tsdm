@@ -66,8 +66,8 @@ class InSilico(MultiTableDataset[KEY, DataFrame]):
             "sha256:ee9ad6278fb27dd933c22aecfc7b5b2501336e859a7f012cace2bb265f713cba"
         ),
     }
-    table_names = ["timeseries", "timeseries_description"]
-    table_shapes = {"timeseries": (5206, 7)}
+    table_names = ["timeseries", "timeseries_description"]  # pyright: ignore
+    table_shapes = {"timeseries": (5206, 7)}  # pyright: ignore
 
     def _timeseries(self) -> DataFrame:
         with ZipFile(self.rawdata_paths["in_silico.zip"]) as files:

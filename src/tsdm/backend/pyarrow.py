@@ -12,7 +12,6 @@ __all__ = [
     "strip_whitespace_array",
 ]
 
-import logging
 
 import pyarrow as pa
 from pyarrow import (
@@ -25,13 +24,7 @@ from pyarrow import (
     Scalar,
     Table,
 )
-from typing_extensions import TypeVar, overload
-
-__logger__ = logging.getLogger(__name__)
-
-
-P = TypeVar("P", Array, Table)
-"""A type variable for pyarrow objects."""
+from typing_extensions import overload
 
 
 def is_string_array(arr: Array, /) -> bool:
@@ -55,14 +48,12 @@ def strip_whitespace_table(table: Table, /, *cols: str) -> Table:
     """Strip whitespace from selected columns in table."""
     for col in cols or table.column_names:
         if is_string_array(table[col]):
-            __logger__.debug("Trimming the string column %r", col)
+            # Trimming the string column col
             table = table.set_column(
                 table.column_names.index(col),
                 col,
                 strip_whitespace_array(table[col]),
             )
-        else:
-            __logger__.debug("Ignoring non string column %r", col)
     return table
 
 
@@ -87,7 +78,11 @@ def strip_whitespace_array(arr: Array, /) -> Array:
     raise ValueError(f"Expected string array, got {arr.type}.")
 
 
-def arrow_strip_whitespace(obj: P, /, *cols: str) -> P:
+@overload
+def arrow_strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
+@overload
+def arrow_strip_whitespace(obj: Array, /, *cols: str) -> Array: ...
+def arrow_strip_whitespace(obj, /, *cols):
     """Strip whitespace from all string elements in an arrow object."""
     if isinstance(obj, Table):
         return strip_whitespace_table(obj, *cols)

@@ -95,14 +95,14 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     def __init__(self, *, use_corrected_dates: bool = True) -> None:
         self.use_corrected_dates = use_corrected_dates
 
-    table_names = ["timeseries", "labels", "randperm", "invperm"]
+    table_names = ["timeseries", "labels", "randperm", "invperm"]  # pyright: ignore
     rawdata_files = ["PEMS-SF.zip"]
     rawdata_hashes = {
         "PEMS-SF.zip": (
             "sha256:371d15048b5401026396d4587e5f9be79792e06d74f7a42a0ec84975e692147e"
         ),
     }
-    dataset_hashes = {
+    dataset_hashes = {  # pyright: ignore
         "timeseries": (
             "sha256:acb7f2a37e14691d67a325e18eecf88c22bc4c175f1a11b5566a07fdf2cd8f62"
         ),

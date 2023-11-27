@@ -339,15 +339,15 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "Parameter": "string[pyarrow]",
         "Value": "float32[pyarrow]",
     }
-    table_names = {
-        "timeseries": DataFrame,
-        "metadata": DataFrame,
-        "timeseries_description": DataFrame,
-        "metadata_description": DataFrame,
-        "raw_timeseries": DataFrame,
-        "raw_metadata": DataFrame,
-    }
-    table_schemas = {
+    table_names = [  # pyright: ignore
+        "timeseries",
+        "metadata",
+        "timeseries_description",
+        "metadata_description",
+        "raw_timeseries",
+        "raw_metadata",
+    ]
+    table_schemas = {  # pyright: ignore
         "timeseries": {
             # fmt: off
             "Albumin"     : "float32[pyarrow]",

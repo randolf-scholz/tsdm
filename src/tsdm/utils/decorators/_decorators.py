@@ -48,7 +48,7 @@ from tsdm.types.protocols import NTuple
 from tsdm.types.variables import CollectionType, any_var as T, return_var_co as R
 from tsdm.utils.funcutils import rpartial
 
-__logger__ = logging.getLogger(__name__)
+__logger__: logging.Logger = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 

@@ -161,8 +161,8 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         "WSPM"    : "float32[pyarrow]",
         # fmt: on
     }
-    table_names = ["timeseries", "timeseries_description"]
-    table_schemas = {
+    table_names = ["timeseries", "timeseries_description"]  # pyright: ignore
+    table_schemas = {  # pyright: ignore
         "timeseries": {
             # fmt: off
             "PM2.5" : "float[pyarrow]",

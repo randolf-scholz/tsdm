@@ -7,9 +7,6 @@ __all__ = [
     "sample_timedeltas",
 ]
 
-
-import logging
-
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from pandas import Timedelta, Timestamp, date_range, timedelta_range
@@ -17,8 +14,6 @@ from typing_extensions import Optional
 
 from tsdm.constants import EXAMPLE_BOOLS, EXAMPLE_EMOJIS, EXAMPLE_STRINGS, TIME_UNITS
 from tsdm.types.time import DTVar, TDVar
-
-__logger__ = logging.getLogger(__name__)
 
 
 def sample_timestamps(
@@ -98,9 +93,12 @@ def sample_timedeltas(
 
 
 def random_data(
-    size: tuple[int], *, dtype: DTypeLike = float, missing: float = 0.5
+    size: tuple[int], *, dtype: DTypeLike = float, missing: float = 0.0
 ) -> NDArray:
     r"""Create random data of given size and dtype."""
+    if missing != 0.0:
+        raise NotImplementedError("Missing values not yet implemented.")
+
     dtype = np.dtype(dtype)
     rng = np.random.default_rng()
     if np.issubdtype(dtype, np.integer):
@@ -120,7 +118,5 @@ def random_data(
         result = rng.choice(EXAMPLE_STRINGS, size=size)
     else:
         raise NotImplementedError
-
-    __logger__.warning("TODO: implement missing %s!", missing)
 
     return result

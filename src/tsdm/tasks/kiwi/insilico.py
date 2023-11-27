@@ -15,9 +15,9 @@ from tsdm.data import (
 )
 from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets import InSilicoTSC
-from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
+from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.types.variables import key_var as K
+from tsdm.types.aliases import SplitID
 
 
 class InSilicoTask(TimeSeriesTask):
@@ -45,10 +45,10 @@ class InSilicoTask(TimeSeriesTask):
     def default_test_metric(*, targets, predictions):
         pass
 
-    def make_sampler(self, key: K, /) -> Sampler:
+    def make_sampler(self, key: SplitID, /) -> Sampler:
         split: TimeSeriesCollection = self.splits[key]
         subsamplers = {
-            key: SlidingWindowSampler(
+            key: SlidingSampler(
                 tsd.timeindex,
                 horizons=["2h", "1h"],
                 stride="1h",
@@ -72,7 +72,7 @@ class InSilicoTask(TimeSeriesTask):
         df = folds_as_frame(folds)
         return folds_as_sparse_frame(df)
 
-    def make_generator(self, key: K, /) -> TimeSeriesSampleGenerator:
+    def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
         split = self.splits[key]
         return TimeSeriesSampleGenerator(
             split,

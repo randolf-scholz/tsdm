@@ -44,7 +44,7 @@ MATPLOTLIB_CONFIG = {
 }
 
 
-def set_latex_plotting():
+def set_latex_plotting() -> None:
     r"""Set matplotlib to use LaTeX for rendering."""
     # pylint: disable=import-outside-toplevel
     import shutil

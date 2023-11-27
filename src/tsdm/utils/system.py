@@ -28,7 +28,7 @@ from typing_extensions import Optional
 
 from tsdm.utils.strings import repr_mapping
 
-__logger__ = logging.getLogger(__name__)
+__logger__: logging.Logger = logging.getLogger(__name__)
 
 
 def get_requirements(

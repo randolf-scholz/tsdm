@@ -38,7 +38,7 @@ from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import PathLike
 from tsdm.types.protocols import SupportsShape
 
-__logger__ = logging.getLogger(__name__)
+__logger__: logging.Logger = logging.getLogger(__name__)
 
 DEFAULT_HASH_METHOD = "sha256"
 """The default hash method to use."""

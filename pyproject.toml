@@ -436,10 +436,11 @@ executionEnvironments = [
 useLibraryCodeForTypes = false  # otherwise hundreds of pandas false-positives.
 # Type Check Diagnostics Settings
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md#type-check-diagnostics-settings
-reportMissingImports = false
-reportMissingTypeStubs = false
-reportUnsupportedDunderAll = false
+#reportMissingImports = false
+#reportMissingTypeStubs = false
+#reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false
+#reportUnnecessaryTypeIgnoreComment = true  # highlight unnecessary # type: ignore
 # endregion Pyright Configuration ------------------------------------------------------
 
 

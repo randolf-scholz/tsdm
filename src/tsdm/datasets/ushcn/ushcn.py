@@ -278,7 +278,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = [
+    table_names = [  # pyright: ignore
         "timeseries",
         "timeseries_description",
         "metadata",
@@ -335,14 +335,14 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             # fmt: on
         },
     }
-    table_shapes = {
+    table_shapes = {  # pyright: ignore
         "timeseries": (204771562, 5),
         "metadata": (1218, 9),
         "state_codes": (48, 3),
         "metadata_description": (9, 6),
         "timeseries_description": (8, 6),
     }
-    table_schemas = {
+    table_schemas = {  # pyright: ignore
         "timeseries": {
             # fmt: off
             "PRCP" : "int16[pyarrow]",

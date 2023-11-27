@@ -23,7 +23,6 @@ __all__ = [
     "unflatten_dict",
 ]
 
-import logging
 import os
 import shutil
 import warnings
@@ -43,10 +42,8 @@ from tqdm.autonotebook import tqdm
 from typing_extensions import Any, Literal, Optional, cast, overload
 
 from tsdm.constants import BOOLEAN_PAIRS
-from tsdm.types.aliases import Nested, PathLike
+from tsdm.types.aliases import Nested, NestedDict, NestedMapping, PathLike
 from tsdm.types.variables import HashableType, key_other_var as K2, key_var as K
-
-__logger__ = logging.getLogger(__name__)
 
 
 def variants(s: str | list[str]) -> list[str]:
@@ -108,7 +105,7 @@ def is_flattened(
 
 
 def flatten_dict(
-    d: Mapping[K, Any],
+    d: NestedMapping[K, Any],
     /,
     *,
     recursive: bool | int = True,
@@ -185,7 +182,7 @@ def unflatten_dict(
     recursive: bool | int = True,
     join_fn: Callable[[Iterable[K]], K2] = ".".join,  # type: ignore[assignment]
     split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),  # type: ignore[attr-defined]
-) -> dict[K, Any]:
+) -> NestedDict[K, Any]:
     r"""Unflatten dictionaries recursively.
 
     Examples:
@@ -334,19 +331,20 @@ def prepend_path(
     If `keep_none=True`, then `None` values are kept, else they are replaced by `parent`.
     """
     # TODO: change it to apply_nested in python 3.10
-
-    if files is None:
-        return None if keep_none else parent
-    if isinstance(files, str | Path | os.PathLike):
-        return parent / Path(files)
-    if isinstance(files, Mapping):
-        return {
-            k: prepend_path(v, parent, keep_none=keep_none) for k, v in files.items()  # type: ignore[arg-type]
-        }
-    # TODO https://github.com/python/mypy/issues/11615
-    if isinstance(files, Collection):
-        return [prepend_path(f, parent, keep_none=keep_none) for f in files]  # type: ignore[arg-type]
-    raise TypeError(f"Unsupported type: {type(files)}")
+    match files:
+        case None:
+            return None if keep_none else parent
+        case str() | Path() | os.PathLike() as path:
+            return parent / Path(path)
+        case Mapping() as mapping:
+            return {
+                k: prepend_path(v, parent, keep_none=keep_none) for k, v in mapping.items()  # type: ignore[arg-type]
+            }
+        case Collection() as coll:
+            # TODO https://github.com/python/mypy/issues/11615
+            return [prepend_path(f, parent, keep_none=keep_none) for f in coll]  # type: ignore[arg-type]
+        case _:
+            raise TypeError(f"Unsupported type: {type(files)}")
 
 
 def paths_exists(paths: Nested[Optional[PathLike]], /) -> bool:
@@ -365,15 +363,14 @@ def paths_exists(paths: Nested[Optional[PathLike]], /) -> bool:
             return all(paths_exists(f) for f in mapping.values())
         case Iterable() as iterable:
             return all(paths_exists(f) for f in iterable)
-
-    raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
+        case _:
+            raise TypeError(f"Unknown type for rawdata_file: {type(paths)}")
 
 
 def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
     r"""Initialize `nn.Module` from a config object."""
     assert "__name__" in config, "__name__ not found in dict!"
     assert "__module__" in config, "__module__ not found in dict!"
-    __logger__.debug("Initializing %s", config)
     config = config.copy()
     module = import_module(config.pop("__module__"))
     cls = getattr(module, config.pop("__name__"))
@@ -466,7 +463,7 @@ def repackage_zip(path: PathLike, /) -> None:
         )
 
         if not requirements:
-            __logger__.info("%s: skipping repackage_zip.", original_path)
+            print(f"Skipping repackage_zip for {original_path}.")
             return
 
     # create a temporary directory

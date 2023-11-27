@@ -9,7 +9,6 @@ __all__ = [
     "table_info",
 ]
 
-import logging
 from collections.abc import Sequence
 
 import pandas as pd
@@ -17,21 +16,18 @@ import polars as pl
 import pyarrow as pa
 from pyarrow import Array, DataType, Table
 from tqdm.autonotebook import tqdm
-from typing_extensions import Literal, Optional, TypeVar, overload
+from typing_extensions import Literal, overload
 
 from tsdm.types.dtypes import PYARROW_TO_POLARS
 
-__logger__ = logging.getLogger(__name__)
-
-
-P = TypeVar("P", Array, Table)
-
 
 @overload
-def force_cast(x: P, dtype: DataType, /) -> P: ...
+def force_cast(x: Array, dtype: DataType, /) -> Array: ...
+@overload
+def force_cast(x: Table, dtype: DataType, /) -> Table: ...
 @overload
 def force_cast(x: Table, /, **dtypes: DataType) -> Table: ...
-def force_cast(x: P, dtype: Optional[DataType] = None, /, **dtypes: DataType) -> P:
+def force_cast(x, dtype=None, /, **dtypes):
     """Cast an array or table to the given data type, replacing non-castable elements with null."""
     x = x.combine_chunks()  # deals with chunked arrays
 

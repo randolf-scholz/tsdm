@@ -8,7 +8,6 @@ __all__ = [
     "center_axes",
 ]
 
-import logging
 from collections.abc import Callable, Mapping
 
 import numpy as np
@@ -23,8 +22,6 @@ from torch.linalg import eigvals
 from typing_extensions import Any, Literal, Optional, TypeAlias
 
 from tsdm.constants import EMPTY_MAP
-
-__logger__ = logging.getLogger(__name__)
 
 Location: TypeAlias = Literal[
     "upper right",
@@ -91,7 +88,7 @@ def visualize_distribution(
 
     if print_stats:
         stats = {
-            "NaNs": f"{100 * np.mean(nans):6.2%}",  # pyright: ignore
+            "NaNs": f"{100 * np.mean(nans):6.2%}",
             "Mode": f"{mode(x)[0]: .2g}",
             "Min": f"{np.min(x): .2g}",
             "Median": f"{np.median(x): .2g}",
@@ -104,9 +101,6 @@ def visualize_distribution(
 
         pad = max(map(len, stats), default=0)
         table = "\n".join([f"{key:<{pad}}  {val}" for key, val in stats.items()])
-
-        # if extra_stats is not None:
-        __logger__.info("writing table %s", table)
 
         # use mono-spaced font
         textbox = AnchoredText(
@@ -231,7 +225,7 @@ def plot_spectrum(
         figure_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
         scatter_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
     """
-    axis_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
+    axis_kwargs = {
         "xlim": (-2.5, +2.5),
         "ylim": (-2.5, +2.5),
         "aspect": "equal",
@@ -239,13 +233,13 @@ def plot_spectrum(
         "xlabel": "real part",
     } | dict(axis_kwargs)
 
-    figure_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
+    figure_kwargs = {
         "figsize": (4, 4),
         "constrained_layout": True,
         "dpi": 256,  # default: 1024px×1024px
     } | dict(figure_kwargs)
 
-    scatter_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
+    scatter_kwargs = {
         "edgecolors": "none",
     } | dict(scatter_kwargs)
 
