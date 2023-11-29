@@ -766,7 +766,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         return self.deserialize(self.dataset_paths[key])
 
     @overload
-    def load(self, key: None = None, **kwargs: Any) -> Mapping[Key, T_co]: ...  # type: ignore[overload-overlap]
+    def load(self, key: None = ..., **kwargs: Any) -> Mapping[Key, T_co]: ...
     @overload
     def load(self, key: Key = ..., **kwargs: Any) -> T_co: ...
     def load(

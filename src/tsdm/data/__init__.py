@@ -10,7 +10,6 @@ __all__ = [
     "IndexableDataset",
     "Dataset",
     # Classes
-    "DatasetCollection",
     "MappingDataset",
     "InlineTable",
     "DataFrame2Dataset",
@@ -84,7 +83,6 @@ from tsdm.data.dataloaders import (
 from tsdm.data.datasets import (
     DataFrame2Dataset,
     Dataset,
-    DatasetCollection,
     IndexableDataset,
     IterableDataset,
     MapDataset,

@@ -158,7 +158,7 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
                 self.metaindex = self.timeseries.index.copy().unique()
 
     @overload
-    def __getitem__(self, key: slice, /) -> Self: ...  # type: ignore[overload-overlap]
+    def __getitem__(self, key: slice, /) -> Self: ...
     @overload
     def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...
     def __getitem__(self, key, /):

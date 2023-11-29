@@ -516,22 +516,29 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
         - If keys are `partition`, they are assumed to be `partition` keys.
         - If keys are `*folds, partition`, then test whether for each fold there is a unique train partition.
         """
-        if isinstance(self.folds, Series | DataFrame):
-            split_index = self.folds.T.index
-        elif isinstance(self.folds, Mapping):
-            split_index = Index(self.folds.keys())
-        else:
-            raise TypeError(f"Cannot infer train-partition from {type(self.folds)=}")
+        # get the index
+        match self.folds:
+            case Series() | DataFrame():
+                split_index = self.folds.T.index
+            case Mapping():
+                split_index = Index(self.folds.keys())
+            case _:
+                raise TypeError(
+                    f"Cannot infer train-partition from {type(self.folds)=}"
+                )
 
-        if isinstance(split_index, MultiIndex):
-            *fold, partition = split_index.names
-            df = split_index.to_frame(index=False)
-            df["is_train"] = df[partition].str.lower().isin(self.train_patterns)
-            if not all(df.groupby(fold)["is_train"].sum() == 1):
-                raise ValueError("Each fold must have a unique train partition.")
-        elif isinstance(split_index, Index):
-            mask = split_index.str.lower().isin(self.train_patterns)
-            if not sum(mask) == 1:
-                raise ValueError("Each fold must have a unique train partition.")
-        else:
-            raise RuntimeError("Supposed to be unreachable")
+        match split_index:
+            case MultiIndex(names=names):
+                *fold, partition = names
+                df = split_index.to_frame(index=False)
+                df["is_train"] = df[partition].str.lower().isin(self.train_patterns)
+                if not all(df.groupby(fold)["is_train"].sum() == 1):
+                    raise ValueError("Each fold must have a unique train partition.")
+            case Index():
+                mask = split_index.str.lower().isin(self.train_patterns)
+                if not sum(mask) == 1:
+                    raise ValueError("Each fold must have a unique train partition.")
+            case _:
+                raise TypeError(
+                    f"Expected Index or MultiIndex, got {type(split_index)=}"
+                )

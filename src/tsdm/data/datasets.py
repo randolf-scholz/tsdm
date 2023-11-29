@@ -11,12 +11,11 @@ __all__ = [
     "PandasDataset",
     # Classes
     "DataFrame2Dataset",
-    "DatasetCollection",
     "MappingDataset",
 ]
 
 from abc import abstractmethod
-from collections.abc import Iterable, Iterator, Mapping, Reversible, Sequence
+from collections.abc import Iterator, Mapping, Reversible
 from dataclasses import KW_ONLY, dataclass
 
 from pandas import DataFrame, Index, MultiIndex
@@ -33,13 +32,10 @@ from typing_extensions import (
 )
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
-from tsdm.types.variables import (
-    any_var as T,
-    key_var as K,
-    nested_key_var as K2,
-    value_co as V_co,
-)
-from tsdm.utils.strings import repr_array, repr_mapping
+from tsdm.types.variables import key_var as K, nested_key_var as K2, value_co as V_co
+from tsdm.utils.strings import pprint_repr, repr_array
+
+TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 
 # class DataFrame2Dataset(TorchDataset[T]):
 #     """Convert a DataFrame to a Dataset."""
@@ -182,56 +178,7 @@ class DataFrame2Dataset(MapDataset[K, DataFrame], TorchDataset[DataFrame]):
         )
 
 
-class DatasetCollection(TorchDataset[TorchDataset[T]], Mapping[K, TorchDataset[T]]):
-    r"""Represents a ``Mapping[index, torch.Datasets]``.
-
-    All tensors must have a shared index, in the sense that ``index.unique()`` is identical for all inputs.
-    """
-
-    dataset: Mapping[K, TorchDataset[T]]
-    r"""The dataset."""
-
-    def __init__(self, indexed_datasets: Mapping[K, TorchDataset[T]]) -> None:
-        super().__init__()
-        self.dataset = dict(indexed_datasets)
-        self.index = list(self.dataset.keys())
-        self.keys = self.dataset.keys  # type: ignore[method-assign]
-        self.values = self.dataset.values  # type: ignore[method-assign]
-        self.items = self.dataset.items  # type: ignore[method-assign]
-
-    def __len__(self) -> int:
-        r"""Length of the dataset."""
-        return len(self.dataset)
-
-    @overload
-    def __getitem__(self, key: Sequence[K] | slice) -> T: ...
-    @overload
-    def __getitem__(self, key: K) -> TorchDataset[T]: ...
-    def __getitem__(self, key):
-        r"""Hierarchical lookup."""
-        # test for hierarchical indexing
-        if isinstance(key, Sequence):
-            first, rest = key[0], key[1:]
-            if isinstance(first, (Iterable, slice)):
-                # pass remaining indices to sub-object
-                value = self.dataset[first]  # type: ignore[index]
-                return value[rest]
-        # no hierarchical indexing
-        return self.dataset[key]
-
-    def __iter__(self) -> Iterator[TorchDataset[T]]:  # type: ignore[override]
-        r"""Iterate over the dataset."""
-        for key in self.index:
-            yield self.dataset[key]
-
-    def __repr__(self) -> str:
-        r"""Representation of the dataset."""
-        return repr_mapping(self)
-
-
-TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
-
-
+@pprint_repr
 class MappingDataset(Mapping[K, TorchDatasetVar]):
     r"""Represents a ``Mapping[Key, Dataset]``.
 
@@ -295,7 +242,3 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
             index = df.index
 
         return cls({idx: df.loc[idx] for idx in index})
-
-    def __repr__(self) -> str:
-        r"""Representation of the dataset."""
-        return repr_mapping(self)

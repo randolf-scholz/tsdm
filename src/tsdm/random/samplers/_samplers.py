@@ -650,27 +650,23 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         return bounds[0], bounds[-1]
 
     @staticmethod
-    def make_slice(bounds: NDArray[DT]) -> slice:
-        r"""Return a tuple of slices."""
-        return slice(bounds[0], bounds[-1])
-
-    def make_mask(self, bounds: NDArray[DT]) -> NDArray[np.bool_]:
-        r"""Return a tuple of masks."""
-        return (bounds[0] <= self.data) & (self.data < bounds[-1])
-
-    def make_window(self, bounds: NDArray[DT]) -> NDArray[DT]:
-        r"""Return the actual data points inside the window."""
-        return self.data[(bounds[0] <= self.data) & (self.data < bounds[-1])]
-
-    @staticmethod
     def make_bounds(bounds: NDArray[DT]) -> list[tuple[DT, DT]]:
         r"""Return the boundaries of the windows."""
         return [(start, stop) for start, stop in sliding_window_view(bounds, 2)]
 
     @staticmethod
+    def make_slice(bounds: NDArray[DT]) -> slice:
+        r"""Return a tuple of slices."""
+        return slice(bounds[0], bounds[-1])
+
+    @staticmethod
     def make_slices(bounds: NDArray[DT]) -> list[slice]:
         r"""Return a tuple of slices."""
         return [slice(start, stop) for start, stop in sliding_window_view(bounds, 2)]
+
+    def make_mask(self, bounds: NDArray[DT]) -> NDArray[np.bool_]:
+        r"""Return a tuple of masks."""
+        return (bounds[0] <= self.data) & (self.data < bounds[-1])
 
     def make_masks(self, bounds: NDArray[DT]) -> list[NDArray[np.bool_]]:
         r"""Return a tuple of masks."""
@@ -678,6 +674,10 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
             (start <= self.data) & (self.data < stop)
             for start, stop in sliding_window_view(bounds, 2)
         ]
+
+    def make_window(self, bounds: NDArray[DT]) -> NDArray[DT]:
+        r"""Return the actual data points inside the window."""
+        return self.data[(bounds[0] <= self.data) & (self.data < bounds[-1])]
 
     def make_windows(self, bounds: NDArray[DT]) -> list[NDArray[DT]]:
         r"""Return the actual data points inside the windows."""
@@ -744,27 +744,124 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         # unpack variables (avoids attribute lookup in loop)
         window = self.tmin + self.cumulative_horizons
         stride = self.stride
-        make_fn = self._MAKE_FUNCTIONS[self.mode, self.multi_horizon]
         grid = self.grid
 
         if self.shuffle:
             grid = grid[np.random.permutation(len(grid))]
 
+        # make_fn = self._MAKE_FUNCTIONS[self.mode, self.multi_horizon]
+        # for k in grid:  # NOTE: k is some range of integers.
+        #     yield make_fn(window + k * stride)
+        # return
+
         # create generator expression for the windows
-        # bounds = (window + k * stride for k in grid)
+        iter_horizons = (window + k * stride for k in grid)
 
-        for k in grid:  # NOTE: k is some range of integers.
-            yield make_fn(window + k * stride)
+        match self.mode, self.multi_horizon:
+            case "horizons", bool():
+                yield from iter_horizons
+            case "bounds", False:
+                for horizons in iter_horizons:
+                    yield horizons[0], horizons[-1]
+            case "bounds", True:
+                for horizons in iter_horizons:
+                    yield [
+                        (start, stop)
+                        for start, stop in sliding_window_view(horizons, 2)
+                    ]
+            case "slices", False:
+                for horizons in iter_horizons:
+                    yield slice(horizons[0], horizons[-1])
+            case "slices", True:
+                for horizons in iter_horizons:
+                    yield [
+                        slice(start, stop)
+                        for start, stop in sliding_window_view(horizons, 2)
+                    ]
+            case "masks", False:
+                for horizons in iter_horizons:
+                    yield (horizons[0] <= self.data) & (self.data < horizons[-1])
+            case "masks", True:
+                for horizons in iter_horizons:
+                    yield [
+                        (start <= self.data) & (self.data < stop)
+                        for start, stop in sliding_window_view(horizons, 2)
+                    ]
+            case "windows", False:
+                for horizons in iter_horizons:
+                    yield self.data[
+                        (horizons[0] <= self.data) & (self.data < horizons[-1])
+                    ]
+            case "windows", True:
+                for horizons in iter_horizons:
+                    yield [
+                        self.data[(start <= self.data) & (self.data < stop)]
+                        for start, stop in sliding_window_view(horizons, 2)
+                    ]
+            case _:
+                raise TypeError(f"Invalid mode {self.mode=}")
 
 
-# class SlidingSampler: ...
-# class SlidingSliceSampler: ...
+#
+# # class SlidingSampler: ...
+# class SlidingSliceSampler:
+#     @overload
+#     def __iter__(self, /) -> Iterator[slice]: ...
+#     @overload
+#     def __iter__(self, /) -> Iterator[list[slice]]: ...
+#     def __iter__(self):
+#         horizons = super().__iter__()
+#
+#         if not self.multi_horizon:
+#             for horizon in horizons:
+#                 yield slice(horizons[0], horizons[-1])
+#             return
+#
+#         for horizon in horizons:
+#             yield [
+#                 slice(start, stop) for start, stop in sliding_window_view(horizon, 2)
+#             ]
 #
 #
-# class SlidingMaskSampler: ...
+# class SlidingMaskSampler:
+#     @overload
+#     def __iter__(self, /) -> Iterator[NDArray[np.bool_]]: ...
+#     @overload
+#     def __iter__(self, /) -> Iterator[list[NDArray[np.bool_]]]: ...
+#     def __iter__(self):
+#         horizons = super().__iter__()
+#
+#         if self.multi_horizon:
+#             for horizon in horizons:
+#                 yield (horizons[0] <= self.data) & (self.data < horizons[-1])
+#             return
+#
+#         for horizon in horizons:
+#             yield [
+#                 (start <= self.data) & (self.data < stop)
+#                 for start, stop in sliding_window_view(horizon, 2)
+#             ]
+#
+#         yield (horizons[0] <= self.data) & (self.data < horizons[-1])
 #
 #
-# class SlidingWindowSampler: ...
+# class SlidingWindowSampler:
+#     @overload
+#     def __iter__(self, /) -> Iterator[NDArray[DT]]: ...
+#     @overload
+#     def __iter__(self, /) -> Iterator[list[NDArray[DT]]]: ...
+#     def __iter__(self):
+#         horizons = super().__iter__()
+#
+#         if self.multi_horizon:
+#             for horizon in horizons:
+#                 yield self.data[(horizons[0] <= self.data) & (self.data < horizons[-1])]
+#             return
+#         for horizon in horizons:
+#             yield [
+#                 self.data[(start <= self.data) & (self.data < stop)]
+#                 for start, stop in sliding_window_view(horizon, 2)
+#             ]
 #
 #
 # class SlidingBoundsSampler: ...

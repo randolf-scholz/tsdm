@@ -419,19 +419,11 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
 
 
 @overload
-def chain_encoders(*, simplify: Literal[True] = True) -> IdentityEncoder: ...
+def chain_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
 @overload
-def chain_encoders(e: E, /, *, simplify: Literal[True] = True) -> E: ...
+def chain_encoders(e: E, /, *, simplify: Literal[True]) -> E: ...
 @overload
-def chain_encoders(
-    e1: E,
-    e2: E,
-    /,
-    *encoders: E,
-    simplify: Literal[True] = True,
-) -> ChainedEncoder[E]: ...
-@overload
-def chain_encoders(*encoders: E, simplify: Literal[False]) -> ChainedEncoder[E]: ...
+def chain_encoders(*encoders: E, simplify: bool = ...) -> ChainedEncoder[E]: ...
 def chain_encoders(*encoders, simplify=True):
     r"""Chain encoders."""
     if len(encoders) == 0 and simplify:
@@ -443,29 +435,17 @@ def chain_encoders(*encoders, simplify=True):
 
 @overload
 def pow_encoder(
-    e: E,
-    n: Literal[0],
-    /,
-    *,
-    simplify: Literal[True] = True,
-    copy: bool = True,
+    e: Encoder, n: Literal[0], /, *, simplify: Literal[True], copy: bool = ...
 ) -> IdentityEncoder: ...
 @overload
 def pow_encoder(
-    e: E,
-    n: Literal[1],
-    /,
-    *,
-    simplify: Literal[True] = True,
-    copy: bool = True,
+    e: E, n: Literal[1], /, *, simplify: Literal[True], copy: bool = ...
 ) -> E: ...
 @overload
 def pow_encoder(
-    e: E, n: int, /, *, simplify: Literal[False], copy: bool = True
+    e: E, n: int, /, *, simplify: bool = ..., copy: bool = ...
 ) -> ChainedEncoder[E]: ...
-def pow_encoder(
-    encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
-) -> Encoder:
+def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
     r"""Apply encoder n times."""
     encoder = encoder.simplify() if simplify else encoder
     encoders = [(deepcopy(encoder) if copy else encoder) for _ in range(n)]
@@ -566,20 +546,14 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
 
 
 @overload
-def direct_sum_encoders(*, simplify: Literal[True] = True) -> IdentityEncoder: ...
+def direct_sum_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
 @overload
-def direct_sum_encoders(e: E, /, *, simplify: Literal[True] = True) -> E: ...
+def direct_sum_encoders(e: E, /, *, simplify: Literal[True]) -> E: ...
 @overload
 def direct_sum_encoders(
-    e1: E,
-    e2: E,
-    /,
-    *encoders: E,
-    simplify: Literal[False],
+    e1: E, e2: E, /, *encoders: E, simplify: bool = ...
 ) -> ProductEncoder[E]: ...
-def direct_sum_encoders(
-    *encoders: E, simplify: bool = True, copy: bool = True
-) -> Encoder:
+def direct_sum_encoders(*encoders, simplify=True):
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
@@ -593,29 +567,17 @@ def direct_sum_encoders(
 
 @overload
 def duplicate_encoder(
-    e: E,
-    n: Literal[0],
-    /,
-    *,
-    simplify: Literal[True] = True,
-    copy: bool = True,
+    e: Encoder, n: Literal[0], /, *, simplify: Literal[True], copy: bool = ...
 ) -> IdentityEncoder: ...
 @overload
 def duplicate_encoder(
-    e: E,
-    n: Literal[1],
-    /,
-    *,
-    simplify: Literal[True] = True,
-    copy: bool = True,
+    e: E, n: Literal[1], /, *, simplify: Literal[True], copy: bool = ...
 ) -> E: ...
 @overload
 def duplicate_encoder(
-    e: E, n: int, /, *, simplify: Literal[False], copy: bool = True
+    e: E, n: int, /, *, simplify: bool = ..., copy: bool = ...
 ) -> ProductEncoder[E]: ...
-def duplicate_encoder(
-    encoder: E, n: int, /, *, simplify: bool = True, copy: bool = True
-) -> Encoder:
+def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
     r"""Duplicate an encoder."""
     encoder = encoder.simplify() if simplify else encoder
     encoders = [deepcopy(encoder) if copy else encoder for _ in range(n)]

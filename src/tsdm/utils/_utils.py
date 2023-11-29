@@ -273,35 +273,23 @@ def deep_kval_update(d: dict, /, **new_kvals: Any) -> dict:
 
 @overload
 def prepend_path(
-    files: Mapping[K, PathLike],
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = False,
+    files: Mapping[K, PathLike], parent: Path, /, *, keep_none: bool = ...
 ) -> dict[K, Path]: ...
 @overload
 def prepend_path(
-    files: list[PathLike],
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = False,
+    files: list[PathLike], parent: Path, /, *, keep_none: bool = ...
 ) -> list[Path]: ...
 @overload
 def prepend_path(
-    files: PathLike,
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = False,
+    files: PathLike, parent: Path, /, *, keep_none: bool = ...
 ) -> Path: ...
 @overload
 def prepend_path(
-    files: Nested[PathLike],
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = False,
+    files: Nested[PathLike], parent: Path, /, *, keep_none: bool = ...
+) -> Nested[Path]: ...
+@overload
+def prepend_path(
+    files: Nested[Optional[PathLike]], parent: Path, /, *, keep_none: Literal[False]
 ) -> Nested[Path]: ...
 @overload
 def prepend_path(
@@ -309,23 +297,9 @@ def prepend_path(
     parent: Path,
     /,
     *,
-    keep_none: Literal[False] = False,
-) -> Nested[Path]: ...
-@overload
-def prepend_path(
-    files: Nested[Optional[PathLike]],
-    parent: Path,
-    /,
-    *,
-    keep_none: Literal[True] = True,
+    keep_none: Literal[True],
 ) -> Nested[Optional[Path]]: ...
-def prepend_path(
-    files: Nested[Optional[PathLike]],
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = True,
-) -> Nested[Optional[Path]]:
+def prepend_path(files, parent, /, *, keep_none=True):
     r"""Prepends the given path to all files in nested iterable.
 
     If `keep_none=True`, then `None` values are kept, else they are replaced by `parent`.
@@ -338,11 +312,11 @@ def prepend_path(
             return parent / Path(path)
         case Mapping() as mapping:
             return {
-                k: prepend_path(v, parent, keep_none=keep_none) for k, v in mapping.items()  # type: ignore[arg-type]
+                k: prepend_path(v, parent, keep_none=keep_none)
+                for k, v in mapping.items()
             }
         case Collection() as coll:
-            # TODO https://github.com/python/mypy/issues/11615
-            return [prepend_path(f, parent, keep_none=keep_none) for f in coll]  # type: ignore[arg-type]
+            return [prepend_path(f, parent, keep_none=keep_none) for f in coll]
         case _:
             raise TypeError(f"Unsupported type: {type(files)}")
 

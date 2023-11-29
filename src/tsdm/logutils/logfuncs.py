@@ -160,9 +160,30 @@ class TargetsAndPredics(NamedTuple):
 
 
 @torch.no_grad()
+def eval_metric(
+    metric: str | Metric | type[Metric], /, *, targets: Tensor, predics: Tensor
+) -> Tensor:
+    match metric:
+        case str() as metric_name:
+            _metric = LOSSES[metric_name]
+            return eval_metric(_metric, targets=targets, predics=predics)
+        case type() as metric_type:
+            metric_func = metric_type()
+            assert isinstance(metric_func, Metric)
+            return metric_func(targets, predics)
+        case Metric() as func:
+            return func(targets, predics)
+        case _:
+            raise TypeError(f"{type(metric)=} not understood!")
+
+
+@torch.no_grad()
 def compute_metrics(
     metrics: (
-        Sequence[str | Metric | type[Metric]]
+        str
+        | Metric
+        | type[Metric]
+        | Sequence[str | Metric | type[Metric]]
         | Mapping[str, str | Metric | type[Metric]]
     ),
     /,
@@ -171,29 +192,25 @@ def compute_metrics(
     predics: Tensor,
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics."""
-    results: dict[str, Tensor] = {}
-
-    if isinstance(metrics, Sequence):
-        for metric in metrics:
-            if isinstance(metric, str):
-                metric = LOSSES[metric]
-            if isinstance(metric, type) and callable(metric):
-                results[metric.__name__] = metric()(targets, predics)
-            elif callable(metric):
-                results[metric.__class__.__name__] = metric(targets, predics)
-            else:
-                raise ValueError(f"{type(metric)=} not understood!")
-        return results
-
-    for name, metric in metrics.items():
-        if isinstance(metric, str):
-            metric = LOSSES[metric]
-        if isinstance(metric, type) and callable(metric):
-            results[name] = metric()(targets, predics)
-        elif callable(metric):
-            results[name] = metric(targets, predics)
-        else:
-            raise ValueError(f"{type(metric)=} not understood!")
+    match metrics:
+        case str() as metric_name:
+            metric = LOSSES[metric_name]
+            return {metric_name: eval_metric(metric, targets, predics)}
+        case type() as metric_type:
+            return {metric_type.__name__: eval_metric(metric_type, targets, predics)}
+        case Metric() as func:
+            return {func.__class__.__name__: func(targets, predics)}
+        case Sequence() as sequence:
+            results: dict[str, Tensor] = {}
+            for metric in sequence:
+                results |= compute_metrics(metric, targets=targets, predics=predics)
+        case Mapping() as mapping:
+            return {
+                key: eval_metric(metric, targets=targets, predics=predics)
+                for key, metric in mapping.items()
+            }
+        case _:
+            raise TypeError(f"{type(metrics)=} not understood!")
     return results
 
 
