@@ -122,12 +122,12 @@ def arrow_null_like(arr: Array, /) -> Array:
 
 
 @overload
-def arrow_where(mask: BooleanScalar, x: Scalar, y: Scalar = NA, /) -> Scalar: ...
+def arrow_where(mask: BooleanScalar, x: Scalar, y: Scalar = ..., /) -> Scalar: ...
 @overload
 def arrow_where(  # type: ignore[misc]
     mask: BooleanArray | BooleanScalar,
     x: Array | Scalar,
-    y: Array | Scalar = NA,
+    y: Array | Scalar = ...,
     /,
 ) -> Array: ...
 def arrow_where(mask, x, y=NA, /):

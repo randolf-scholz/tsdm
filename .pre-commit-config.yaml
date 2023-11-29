@@ -216,7 +216,7 @@ repos:
             |src/tsdm/viz
           )
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.41
+    rev: v0.1.43
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
@@ -245,8 +245,9 @@ repos:
         files: (^src/|^tests/)
       - id: python-check-__all__-exists
         files: ^src/
-      #      - id: python-check-typing
-      #        files: (^src/|^tests/)
+      - id: python-check-typing
+        files: (^src/|^tests/)
+        args: ["--check-overload-default-ellipsis"]
       - id: python-check-clean-interface
         files: ^src/
         args: ["--no-load-silent"]

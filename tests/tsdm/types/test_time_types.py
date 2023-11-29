@@ -6,7 +6,7 @@ import numpy
 import numpy as np
 import pandas
 from pytest import mark
-from typing_extensions import TYPE_CHECKING, get_protocol_members
+from typing_extensions import get_protocol_members
 
 from tsdm.types.time import DT, TD, DateTime, TimeDelta
 
@@ -129,17 +129,36 @@ def test_datetime_assign() -> None:
     assert isinstance(dt_python, DateTime)
 
 
+def test_timedelta_assign() -> None:
+    td_float: TimeDelta = TD_FLOAT
+    td_int: TimeDelta = TD_INT
+    td_numpy: TimeDelta = TD_NUMPY
+    td_numpy_float: TimeDelta = TD_NUMPY_FLOAT
+    td_numpy_int: TimeDelta = TD_NUMPY_INT
+    td_pandas: TimeDelta = TD_PANDAS
+    td_python: TimeDelta = TD_PYTHON
+
+    assert isinstance(td_float, TimeDelta)
+    assert isinstance(td_int, TimeDelta)
+    assert isinstance(td_numpy, TimeDelta)
+    assert isinstance(td_numpy_float, TimeDelta)
+    assert isinstance(td_numpy_int, TimeDelta)
+    assert isinstance(td_pandas, TimeDelta)
+    assert isinstance(td_python, TimeDelta)
+
+
 def test_dt_var() -> None:
     """Type-Checking DT_VAR."""
+    # TODO: submit issue to pyright
 
     def id_dt(x: DT, /) -> DT:
         return x
 
     id_dt(DT_FLOAT)
     id_dt(DT_INT)
-    id_dt(DT_NUMPY)
-    id_dt(DT_NUMPY_FLOAT)
-    id_dt(DT_NUMPY_INT)
+    id_dt(DT_NUMPY)  # pyright: ignore
+    id_dt(DT_NUMPY_FLOAT)  # pyright: ignore
+    id_dt(DT_NUMPY_INT)  # pyright: ignore
     id_dt(DT_PANDAS)
     id_dt(DT_PYTHON)
 

@@ -85,6 +85,7 @@ __all__ = [
 
 from torch import nn
 
+from tsdm.metrics import functional
 from tsdm.metrics._modular import (
     MAE,
     MSE,
