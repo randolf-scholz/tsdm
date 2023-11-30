@@ -159,6 +159,7 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
 
     def __init_subclass__(cls) -> None:
         """Automatically set the required kwargs for the callback."""
+        super().__init_subclass__()  # Important!
 
         @wraps(cls.callback)
         def __call__(self: Self, i: int, /, **state_dict: P.kwargs) -> None:

@@ -45,7 +45,7 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Callable, Iterable
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, dataclass
 from types import EllipsisType
 
 import numpy as np
@@ -57,7 +57,6 @@ from torch import Tensor
 from typing_extensions import (
     Any,
     ClassVar,
-    Generic,
     Literal,
     NamedTuple,
     NewType,
@@ -865,7 +864,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         *,
         xmin: None | float | T = ...,
         xmax: None | float | T = ...,
-        axis: Axes = (),
+        axis: Axes = ...,
         safe_computation: bool = ...,
     ) -> None: ...
     def __init__(

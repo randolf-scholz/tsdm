@@ -1,7 +1,5 @@
 r"""Base Classes for Encoders."""
 
-from __future__ import annotations
-
 __all__ = [
     # Types / TypeVars
     "Encoder",
@@ -70,11 +68,11 @@ class Encoder(Protocol[U, V]):
         r"""Whether the encoder requires fitting."""
         ...
 
-    def __invert__(self) -> Encoder[V, U]:
+    def __invert__(self) -> "Encoder[V, U]":
         r"""Return the inverse encoder (i.e. decoder)."""
         ...
 
-    def __matmul__(self, other: Encoder[X, U], /) -> Encoder[X, V]:
+    def __matmul__(self, other: "Encoder[X, U]", /) -> "Encoder[X, V]":
         r"""Chain the encoders (pure function composition).
 
         Example:
@@ -86,7 +84,7 @@ class Encoder(Protocol[U, V]):
         """
         ...
 
-    def __gt__(self, other: Encoder[V, W], /) -> Encoder[U, W]:
+    def __gt__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
         r"""Pipe the encoders (encoder composition).
 
         Note that the order is reversed compared to `@`.
@@ -115,7 +113,7 @@ class Encoder(Protocol[U, V]):
         """
         return other @ self
 
-    def __or__(self, other: Encoder[X, Y], /) -> Encoder[tuple[U, X], tuple[V, Y]]:
+    def __or__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[U, X], tuple[V, Y]]":
         r"""Return product encoders."""
         ...
 
@@ -159,6 +157,7 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
 
         The wrapping of fit/encode/decode must be done here to avoid `~pickle.PickleError`!
         """
+        super().__init_subclass__()  # <-- This is important! Otherwise, weird things happen.
         original_fit = cls.fit
         original_encode = cls.encode
         original_decode = cls.decode
@@ -198,19 +197,19 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         self.transform = self.encode
         self.inverse_transform = self.decode
 
-    def __invert__(self) -> BaseEncoder[S, T]:
+    def __invert__(self) -> "BaseEncoder[S, T]":
         r"""Return the inverse encoder (i.e. decoder)."""
         return InverseEncoder(self)
 
-    def __matmul__(self, other: Encoder, /) -> ChainedEncoder:
+    def __matmul__(self, other: Encoder, /) -> "ChainedEncoder":
         r"""Return chained encoders."""
         return ChainedEncoder(self, other)
 
-    def __or__(self, other: Encoder, /) -> ProductEncoder:
+    def __or__(self, other: Encoder, /) -> "ProductEncoder":
         r"""Return product encoders."""
         return ProductEncoder(self, other)
 
-    def __pow__(self, power: int) -> DuplicateEncoder:
+    def __pow__(self, power: int) -> "DuplicateEncoder":
         r"""Return the product encoder of the encoder with itself power many times."""
         return DuplicateEncoder(self, power)
 
@@ -359,7 +358,7 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
     @overload
     def __getitem__(self, index: int) -> E: ...
     @overload
-    def __getitem__(self, index: slice) -> ChainedEncoder[E]: ...
+    def __getitem__(self, index: slice) -> "ChainedEncoder[E]": ...
     def __getitem__(self, index):
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
@@ -513,8 +512,8 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
     @overload
     def __getitem__(self, index: int) -> E: ...
     @overload
-    def __getitem__(self, index: slice) -> ProductEncoder[E]: ...
-    def __getitem__(self, index: int | slice) -> E | ProductEncoder[E]:
+    def __getitem__(self, index: slice) -> "ProductEncoder[E]": ...
+    def __getitem__(self, index: int | slice) -> E | "ProductEncoder[E]":
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]
@@ -615,8 +614,8 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
     @overload
     def __getitem__(self, key: K) -> E: ...
     @overload
-    def __getitem__(self, key: list[K]) -> MappingEncoder[K, E]: ...
-    def __getitem__(self, key: K | list[K]) -> E | MappingEncoder[K, E]:
+    def __getitem__(self, key: list[K]) -> "MappingEncoder[K, E]": ...
+    def __getitem__(self, key: K | list[K]) -> E | "MappingEncoder[K, E]":
         r"""Get the encoder for the given key."""
         if isinstance(key, list):
             return MappingEncoder({k: self.encoders[k] for k in key})
