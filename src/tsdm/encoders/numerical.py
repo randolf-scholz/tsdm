@@ -45,7 +45,7 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Callable, Iterable
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from types import EllipsisType
 
 import numpy as np
@@ -57,6 +57,7 @@ from torch import Tensor
 from typing_extensions import (
     Any,
     ClassVar,
+    Generic,
     Literal,
     NamedTuple,
     NewType,
@@ -303,7 +304,7 @@ class NumericalEncoder(BaseEncoder[T, T]):
 
 
 @pprint_repr
-@dataclass
+@dataclass(init=False)
 class BoundaryEncoder(BaseEncoder[T, T]):
     r"""Clip or mask values outside a given range.
 
@@ -332,8 +333,8 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         - `BoundaryEncoder(0, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to `data_max`.
     """
 
-    lower_bound: None | float | T = NotImplemented
-    upper_bound: None | float | T = NotImplemented
+    lower_bound: None | float | T
+    upper_bound: None | float | T
 
     _: KW_ONLY
 
@@ -344,15 +345,52 @@ class BoundaryEncoder(BaseEncoder[T, T]):
     axis: Axes = None
 
     # derived attributes
-    backend: Backend[T] = NotImplemented
-    lower_value: float | T = NotImplemented
-    upper_value: float | T = NotImplemented
-    lower_satisfied: Callable[[T], T] = NotImplemented
-    upper_satisfied: Callable[[T], T] = NotImplemented
+    backend: Backend[T]
+    lower_value: float | T
+    upper_value: float | T
+    lower_satisfied: Callable[[T], T]
+    upper_satisfied: Callable[[T], T]
 
-    def __post_init__(self) -> None:
-        """Validate the parameters."""
-        # convert nans to None
+    @overload  # only generic inputs.
+    def __init__(
+        self: "BoundaryEncoder[Any]",
+        lower_bound: None | float = ...,
+        upper_bound: None | float = ...,
+        *,
+        lower_included: bool = ...,
+        upper_included: bool = ...,
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = ...,
+        axis: Axes = ...,
+    ) -> None: ...
+    @overload  # at least one data type specific input.
+    def __init__(
+        self: "BoundaryEncoder[T]",
+        lower_bound: None | float | T = ...,
+        upper_bound: None | float | T = ...,
+        *,
+        lower_included: bool = ...,
+        upper_included: bool = ...,
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = ...,
+        axis: Axes = ...,
+    ) -> None: ...
+    def __init__(
+        self,
+        lower_bound: None | float | T = NotImplemented,
+        upper_bound: None | float | T = NotImplemented,
+        *,
+        lower_included: bool = True,
+        upper_included: bool = True,
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask",
+        axis: Axes = None,
+    ) -> None:
+        super().__init__()
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.lower_included = lower_included
+        self.upper_included = upper_included
+        self.mode = mode
+        self.axis = axis
+
         if pd.isna(self.lower_bound):
             self.lower_bound = None
 
@@ -529,6 +567,31 @@ class LinearScaler(BaseEncoder[T, T]):
     backend: Backend[T]
     """The backend of the encoder."""
 
+    @overload
+    def __init__(
+        self: "LinearScaler[Any]",
+        loc: float = ...,
+        scale: float = ...,
+        *,
+        axis: Axes = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "LinearScaler[T]",
+        loc: float | T = ...,
+        scale: float | T = ...,
+        *,
+        axis: Axes = ...,
+    ) -> None: ...
+    def __init__(
+        self, loc: float | T = 0.0, scale: float | T = 1.0, *, axis: Axes = None
+    ) -> None:
+        r"""Initialize the MinMaxScaler."""
+        super().__init__()
+        self.loc = cast(T, loc)
+        self.scale = cast(T, scale)
+        self.axis = axis  # type: ignore[assignment]
+
     @pprint_repr
     class Parameters(NamedTuple):
         r"""The parameters of the LinearScaler."""
@@ -545,19 +608,6 @@ class LinearScaler(BaseEncoder[T, T]):
             scale=self.scale,
             axis=self.axis,
         )
-
-    def __init__(
-        self,
-        loc: float | T = 0.0,
-        scale: float | T = 1.0,
-        *,
-        axis: Axes = None,
-    ):
-        r"""Initialize the MinMaxScaler."""
-        super().__init__()
-        self.loc = cast(T, loc)
-        self.scale = cast(T, scale)
-        self.axis = axis  # type: ignore[assignment]
 
     def __getitem__(self, item: int | slice | tuple[int | slice, ...]) -> Self:
         r"""Return a slice of the LinearScaler.
@@ -648,13 +698,23 @@ class StandardScaler(BaseEncoder[T, T]):
             axis=self.axis,
         )
 
+    @overload
     def __init__(
-        self,
-        mean: float | T = NotImplemented,
-        stdv: float | T = NotImplemented,
+        self: "StandardScaler[Any]",
+        mean: float = ...,
+        stdv: float = ...,
         *,
-        axis: Axes = (),
-    ) -> None:
+        axis: Axes = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "StandardScaler[T]",
+        mean: float | T = ...,
+        stdv: float | T = ...,
+        *,
+        axis: Axes = ...,
+    ) -> None: ...
+    def __init__(self, mean=NotImplemented, stdv=NotImplemented, *, axis=()):
         super().__init__()
         self.mean = cast(T, mean)
         self.stdv = cast(T, stdv)
@@ -786,26 +846,49 @@ class MinMaxScaler(BaseEncoder[T, T]):
         r"""Whether the scaler requires fitting."""
         return True
 
+    @overload
+    def __init__(
+        self: "MinMaxScaler[Any]",
+        ymin: float = ...,
+        ymax: float = ...,
+        *,
+        xmin: None | float = ...,
+        xmax: None | float = ...,
+        axis: Axes = ...,
+        safe_computation: bool = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "MinMaxScaler[T]",
+        ymin: float | T = ...,
+        ymax: float | T = ...,
+        *,
+        xmin: None | float | T = ...,
+        xmax: None | float | T = ...,
+        axis: Axes = (),
+        safe_computation: bool = ...,
+    ) -> None: ...
     def __init__(
         self,
         ymin: float | T = 0.0,
         ymax: float | T = 1.0,
         *,
-        xmin: float | T = NotImplemented,
-        xmax: float | T = NotImplemented,
+        xmin: None | float | T = None,
+        xmax: None | float | T = None,
         axis: Axes = (),
         safe_computation: bool = True,
     ) -> None:
         super().__init__()
-        self.xmin = cast(T, xmin)
-        self.xmax = cast(T, xmax)
+
         self.ymin = cast(T, ymin)
         self.ymax = cast(T, ymax)
         self.axis = axis
         self.safe_computation = safe_computation
 
-        self.xmin_learnable = xmin is NotImplemented
-        self.xmax_learnable = xmax is NotImplemented
+        self.xmin_learnable = xmin is None
+        self.xmax_learnable = xmax is None
+        self.xmin = cast(T, NotImplemented if xmin is None else xmin)
+        self.xmax = cast(T, NotImplemented if xmax is None else xmax)
 
         # set derived parameters
         if not (self.xmin_learnable or self.xmax_learnable):

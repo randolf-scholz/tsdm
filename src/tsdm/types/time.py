@@ -44,9 +44,9 @@ TD_co = TypeVar("TD_co", bound="TimeDelta", covariant=True)
 TD_contra = TypeVar("TD_contra", bound="TimeDelta", contravariant=True)
 
 # FIXME: https://github.com/python/typing/issues/548
-DT = TypeVar("DT", bound="DateTime")
-DT_co = TypeVar("DT_co", bound="DateTime", covariant=True)
-DT_contra = TypeVar("DT_contra", bound="DateTime", contravariant=True)
+DT = TypeVar("DT", bound="DateTime[Any]")
+DT_co = TypeVar("DT_co", bound="DateTime[Any]", covariant=True)
+DT_contra = TypeVar("DT_contra", bound="DateTime[Any]", contravariant=True)
 
 
 @runtime_checkable

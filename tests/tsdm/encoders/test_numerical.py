@@ -3,12 +3,13 @@ r"""Test numerical encoders."""
 import logging
 import pickle
 from tempfile import TemporaryFile
-from typing import TypeVar
 
 import numpy as np
 import pandas as pd
 import torch
+from numpy.typing import NDArray
 from pytest import mark, skip
+from typing_extensions import Any, Callable, TypeVar, assert_type
 
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
@@ -20,7 +21,14 @@ from tsdm.encoders.numerical import (
 )
 
 __logger__ = logging.getLogger(__name__)
-T = TypeVar("T", pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)
+T = TypeVar(
+    "T",
+    Callable[..., pd.Series],
+    Callable[..., pd.DataFrame],
+    Callable[..., np.ndarray],
+    Callable[..., torch.Tensor],
+)
+D = TypeVar("D", pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)
 E = TypeVar("E", StandardScaler, MinMaxScaler)
 
 
@@ -35,7 +43,7 @@ def test_get_broadcast(
     ):
         skip(f"{shape=} {axis=}")
 
-    arr: np.ndarray = np.random.randn(*shape)
+    arr: NDArray = np.asarray(np.random.randn(*shape))
 
     broadcast = get_broadcast(arr.shape, axis=axis)
     m = np.mean(arr, axis=axis)
@@ -86,7 +94,7 @@ def test_reduce_axes() -> None:
     ),
     ids=("numpy", "torch", "pandas"),
 )
-def test_boundary_encoder(data: T) -> None:
+def test_boundary_encoder(data: D) -> None:
     """Test the boundary encoder."""
     # test clip + numpy
     encoder = BoundaryEncoder(-1, +1, mode="clip")
@@ -159,7 +167,7 @@ def test_boundary_encoder(data: T) -> None:
 
 @mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
 @mark.parametrize("tensor_type", (pd.Series, pd.DataFrame, np.array, torch.tensor))
-def test_scaler(encoder_type: type[E], tensor_type: type[T]) -> None:
+def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
     LOGGER.info("Testing.")
@@ -190,9 +198,16 @@ def test_scaler(encoder_type: type[E], tensor_type: type[T]) -> None:
 
     LOGGER.info("Testing slicing.")
     encoder = encoder[2]  # select the third encoder
-    Y = encoded.loc[:, 2] if isinstance(encoded, pd.DataFrame) else encoded[:, 2]
-    # encoder.fit(X[:, 2])
-    X = X.loc[:, 2] if isinstance(X, pd.DataFrame) else X[:, 2]
+    match encoded:
+        case pd.DataFrame() as df:
+            Y = df.loc[:, 2]
+        case _ as arr:
+            Y = arr[:, 2]
+    match X:
+        case pd.DataFrame() as df:
+            X = df.loc[:, 2]
+        case _ as arr:
+            X = arr[:, 2]
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)
     assert np.allclose(Y, encoded)
@@ -317,8 +332,12 @@ def test_standard_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None
         (): (),
     }[axis]
 
+    # initialize
     X = np.random.randn(2, 3, 4, 5)
     encoder = StandardScaler(axis=axis)
+    assert_type(encoder, StandardScaler[Any])
+
+    # fit to data
     encoder.fit(X)
     assert encoder.params[0].shape == TRUE_SHAPE
     encoded = encoder.encode(X)
@@ -345,6 +364,8 @@ def test_minmax_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None:
 
     X = np.random.randn(2, 3, 4, 5)
     encoder = MinMaxScaler(axis=axis)
+    assert_type(encoder, MinMaxScaler[Any])
+
     encoder.fit(X)
     assert encoder.params[0].shape == TRUE_SHAPE
     encoded = encoder.encode(X)
@@ -355,7 +376,7 @@ def test_minmax_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None:
 
 
 @mark.parametrize("tensor_type", (pd.Series, pd.DataFrame, np.array, torch.tensor))
-def test_linear_scaler(tensor_type: type[T]) -> None:
+def test_linear_scaler(tensor_type: T) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(LinearScaler.__name__)
     encoder_type = LinearScaler

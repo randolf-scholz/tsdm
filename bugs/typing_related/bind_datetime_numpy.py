@@ -6,7 +6,7 @@ import numpy as np
 
 # FIXME: https://github.com/python/typing/issues/548
 TD = TypeVar("TD", bound="TimeDelta")
-DT = TypeVar("DT", bound="DateTime")
+DT = TypeVar("DT", bound="DateTime[Any]")
 
 
 class TimeDelta(Protocol):
