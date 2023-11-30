@@ -11,6 +11,7 @@ __all__ = [
     "TensorEncoder",
     "TripletDecoder",
     "TripletEncoder",
+    "TableEncoder",
     "ValueEncoder",
 ]
 
@@ -127,8 +128,8 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
     @staticmethod
     def _names(obj: Index | Series | DataFrame, /) -> Hashable:
         match obj:
-            case MultiIndex(names=names):
-                return FrozenList(names)
+            case MultiIndex() as multi_index:
+                return FrozenList(multi_index.names)
             case Index(name=name) | Series(name=name):
                 return name
             case DataFrame(columns=columns):
@@ -203,9 +204,9 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
             case Encoder() as encoder:
                 encoder.fit(data)
                 self.column_decoders = encoder
-            case Mapping() as encoders:
+            case Mapping() as mapping:
                 self.column_decoders = {}
-                for group, encoder in encoders.items():
+                for group, encoder in mapping.items():
                     encoder.fit(data[group])
                     encoded = encoder.encode(data[group])
                     self.column_decoders[self._names(encoded)] = encoder
@@ -218,9 +219,9 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
             case Encoder() as encoder:
                 encoder.fit(index)
                 self.index_decoders = encoder
-            case Mapping() as encoders:
+            case Mapping() as mapping:
                 self.index_decoders = {}
-                for group, encoder in encoders.items():
+                for group, encoder in mapping.items():
                     encoder.fit(index[group])
                     encoded = encoder.encode(index[group])
                     self.index_decoders[self._names(encoded)] = encoder
@@ -240,8 +241,8 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
                 encoded = encoder.encode(data)
                 encoded_cols = encoded_cols.drop(columns=data.columns)
                 encoded_cols = pd.concat([encoded_cols, encoded], axis="columns")
-            case Mapping() as encoders:
-                for group, encoder in encoders.items():
+            case Mapping() as mapping:
+                for group, encoder in mapping.items():
                     encoded = encoder.encode(data[group])
                     encoded_cols = encoded_cols.drop(columns=group)
                     encoded_cols = pd.concat([encoded_cols, encoded], axis="columns")
@@ -255,8 +256,8 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
                 encoded = encoder.encode(index)
                 encoded_inds = encoded_inds.drop(columns=index.columns)
                 encoded_inds = pd.concat([encoded_inds, encoded], axis="columns")
-            case Mapping() as encoders:
-                for group, encoder in encoders.items():
+            case Mapping() as mapping:
+                for group, encoder in mapping.items():
                     encoded = encoder.encode(index[group])
                     encoded_inds = encoded_inds.drop(columns=group)
                     encoded_inds = pd.concat([encoded_inds, encoded], axis="columns")
@@ -429,8 +430,12 @@ class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
         encoders: A mapping from column names to encoders.
             The keys should be one of: string,
             The special key `Ellipsis` (`...`) can be given once to indicate that all unnamed columns
-            should use the given Encoder.
+            should use the given Encoder. During fitting, it will be replaced by the remaining columns.
         copy_unused (default=True): if true, columns that are not named in the encoder are copied to the output.
+
+    Assumptions:
+        - all transformations yield the same number of rows
+        - groups are disjoint.
 
     Note:
         This does not cover the case of encoding the index.
@@ -449,14 +454,85 @@ class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
     encoded_dtypes: dict[K, type]
 
     def __init__(self, encoders: Mapping, *, copy_unused: bool = False) -> None:
-        # validate inputs:
-        if Ellipsis in encoders.keys() and copy_unused:
-            raise ValueError("Cannot copy unused columns when `...` is used.")
+        self.encoders = dict(encoders)
+        if self._has_ellipsis:
+            keys = list(encoders.keys())
+            if copy_unused:
+                raise ValueError("Cannot copy unused columns when `...` is used.")
+            if keys.count(Ellipsis) > 1:
+                raise ValueError("Only one `...` is allowed.")
+            if keys.index(Ellipsis) != len(keys) - 1:
+                raise ValueError("`...` must be the last key.")
+
+        # check that the groups are disjoint
+        groups = [keys for keys in self.encoders.keys() if keys is not Ellipsis]
+        keys_disjoint = len(set().union(*groups)) == sum(map(len, groups))
+        if not keys_disjoint:
+            raise ValueError("Groups must be disjoint!")
+
+    @property
+    def _has_ellipsis(self) -> bool:
+        # NOTE: use property since this changes during fitting
+        return Ellipsis in self.encoders.keys()
 
     def fit(self, data: TableType, /) -> None:
-        # step 1, determine groups
+        # step 1, get columns
+        match data:
+            case DataFrame() | pl.DataFrame() as frame:
+                self.original_columns = list(frame.columns)
+                self.original_dtypes = dict(frame.dtypes)
+            case pa.Table() as table:
+                self.original_columns = list(table.column_names)
+                self.original_dtypes = dict(table.schema.types)
+            case _:
+                raise NotImplementedError
 
-        encoded = self.encode(data)
+        # make copy
+        self.decoders = {}
+        self.encoded_dtypes = {}
+        self.encoded_columns = []
+
+        # NOTE: we do not use set to preserve order
+        remaining_columns = list(self.original_columns)
+        for group, encoder in self.encoders.items():
+            if group is Ellipsis:
+                continue
+            encoder.fit(data[group])
+            remaining_columns = [c for c in remaining_columns if c not in group]
+
+        if self._has_ellipsis:
+            assert remaining_columns, "no remaining columns!"
+            ellipsis_encoder = self.encoders.pop(Ellipsis)
+            ellipsis_group = remaining_columns
+            ellipsis_encoder.fit(data[ellipsis_group])
+            self.encoders[ellipsis_group] = ellipsis_encoder
+
+        # region forward pass ----------------------------------------------------------
+        # encode and check the result
+        encoded_groups = []
+        for group, encoder in self.encoders.items():
+            encoded_group = encoder.encode(data[group])
+            encoded_group_cols = list(encoded_group.columns)
+            self.decoders[encoded_group_cols] = encoder
+            encoded_groups.append(encoded_group)
+
+        # combine the encoded groups
+        match data:
+            case DataFrame():
+                encoded = pd.concat(encoded_groups, axis="columns")
+                self.encoded_columns = list(encoded.columns)
+                self.encoded_dtypes = dict(encoded.dtypes)
+            case pl.DataFrame():
+                encoded = pl.concat(encoded_groups, axis="columns")
+                self.encoded_columns = list(encoded.columns)
+                self.encoded_dtypes = dict(encoded.dtypes)
+            case pa.Table():
+                encoded = pa.concat_tables(encoded_groups)
+                self.encoded_columns = list(encoded.column_names)
+                self.encoded_dtypes = dict(encoded.schema.types)
+            case _:
+                raise NotImplementedError
+        # endregion --------------------------------------------------------------------
 
     def encode(self, data: TableType, /) -> TableType:
         encoded_groups = []
@@ -482,22 +558,13 @@ class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
         # combine the decoded groups
         match data:
             case DataFrame():
-                decoded = pd.concat(decoded_groups, axis="columns")
+                return pd.concat(decoded_groups, axis="columns")
             case pl.DataFrame():
-                decoded = pl.concat(decoded_groups, axis="columns")
+                return pl.concat(decoded_groups, axis="columns")
             case pa.Table():
-                decoded = pa.concat_tables(decoded_groups)
+                return pa.concat_tables(decoded_groups)
             case _:
                 raise NotImplementedError
-
-        if self.validate_decoded:
-            decoded = self.check_decoded(decoded)
-
-        return decoded
-
-    def check_decoded(self, data: TableType, /) -> TableType:
-        """Checks that the decoded data is equal to the original data."""
-        return data
 
 
 class FrameIndexer(BaseEncoder):
@@ -609,8 +676,8 @@ class FrameSplitter(BaseEncoder, Mapping):
                     self.groups[key] = obj
                     self.ellipsis = key
                     self.has_ellipsis = True
-                case str():
-                    self.groups[key] = [obj]
+                case str() as name:
+                    self.groups[key] = [name]
                 case Iterable() as iterable:
                     self.groups[key] = list(iterable)
                 case _:

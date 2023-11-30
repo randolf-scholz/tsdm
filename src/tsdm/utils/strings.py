@@ -740,16 +740,16 @@ def repr_array(
 
     # add the dtype
     match obj:
-        case DataFrame() | MultiIndex() as frame:
-            dtypes = [repr_dtype(dtype) for dtype in frame.dtypes]
+        case DataFrame(dtypes=dtypes) | MultiIndex(dtypes=dtypes):
+            dtypes = [repr_dtype(dtype) for dtype in dtypes]
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
         case pyarrow_table() as table:
             dtypes = [repr_dtype(dtype) for dtype in table.schema.types]  #
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
-        case pyarrow_array() as array:
-            string += ", " + repr_dtype(array.type)
-        case SupportsDtype() as tensor:
-            string += ", " + repr_dtype(tensor.dtype)
+        case pyarrow_array(type=dtype):
+            string += ", " + repr_dtype(dtype)
+        case SupportsDtype(dtype=dtype):
+            string += ", " + repr_dtype(dtype)
         case _:
             raise TypeError(f"Cannot get dtype of {type(obj)}")
 

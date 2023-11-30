@@ -54,12 +54,10 @@ def pandas_infer_axes(
             return None
         case int():
             pass
-        case tuple():
-            if len(axis) != 1:
-                raise ValueError(f"Expected 1 axis, got {len(axis)}.")
-            axis = axis[0]
+        case [int(ax)]:
+            axis = ax
         case _:
-            raise TypeError(f"Expected int or Iterable[int], got {type(axis)}.")
+            raise TypeError(f"Expected int or tuple[int], got {type(axis)}.")
     return "columns" if axis % len(x.shape) else "index"
 
 
