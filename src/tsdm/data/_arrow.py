@@ -22,9 +22,9 @@ from tsdm.types.dtypes import PYARROW_TO_POLARS
 
 
 @overload
-def force_cast(x: Array, dtype: DataType, /) -> Array: ...
-@overload
 def force_cast(x: Table, dtype: DataType, /) -> Table: ...
+@overload
+def force_cast(x: Array, dtype: DataType, /) -> Array: ...  # type: ignore[misc]
 @overload
 def force_cast(x: Table, /, **dtypes: DataType) -> Table: ...
 def force_cast(x, dtype=None, /, **dtypes):

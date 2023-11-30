@@ -34,6 +34,7 @@ __all__ = [
     "base",
     "kiwi",
     "mimic",
+    "synthetic",
     "uci",
     "ushcn",
     # Protocol
@@ -67,7 +68,7 @@ __all__ = [
     # Other
 ]
 
-from tsdm.tasks import base, kiwi, mimic, uci, ushcn
+from tsdm.tasks import base, kiwi, mimic, synthetic, uci, ushcn
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.tasks.base import ForecastingTask, TimeSeriesTask
 from tsdm.tasks.ett.ett_zhou2021 import ETT_Zhou2021

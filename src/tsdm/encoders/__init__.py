@@ -120,13 +120,13 @@ __all__ = [
     "BoxCoxEncoder",
     "ChainedEncoder",
     "CloneEncoder",
+    "CopyEncoder",
     "DateTimeEncoder",
     "DuplicateEncoder",
     "FloatEncoder",
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
-    "FastFrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
     "IdentityEncoder",
@@ -137,6 +137,7 @@ __all__ = [
     "LogitEncoder",
     "MappingEncoder",
     "MinMaxScaler",
+    "OldFrameEncoder",
     "PeriodicEncoder",
     "PeriodicSocialTimeEncoder",
     "PositionalEncoder",
@@ -164,6 +165,7 @@ from tsdm.encoders.base import (
     BaseEncoder,
     ChainedEncoder,
     CloneEncoder,
+    CopyEncoder,
     DuplicateEncoder,
     Encoder,
     IdentityEncoder,
@@ -172,13 +174,13 @@ from tsdm.encoders.base import (
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
-    FastFrameEncoder,
     Frame2TensorDict,
     FrameAsDict,
     FrameAsTuple,
     FrameEncoder,
     FrameIndexer,
     FrameSplitter,
+    OldFrameEncoder,
     TensorEncoder,
     TripletDecoder,
     TripletEncoder,
@@ -232,6 +234,7 @@ r"""Dictionary of all available sklearn encoders."""
 ENCODERS: dict[str, type[Encoder]] = {
     # "BaseEncoder": BaseEncoder,  # Only concrete classes!
     "BoundaryEncoder": BoundaryEncoder,
+    "CopyEncoder": CopyEncoder,
     "BoxCoxEncoder": BoxCoxEncoder,
     "ChainedEncoder": ChainedEncoder,
     "CloneEncoder": CloneEncoder,

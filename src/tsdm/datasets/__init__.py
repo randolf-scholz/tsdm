@@ -25,6 +25,7 @@ __all__ = [
     "mimic",
     "physionet",
     "kiwi",
+    "synthetic",
     "ushcn",
     # Types
     "Dataset",
@@ -64,7 +65,16 @@ __all__ = [
 ]
 
 # submodules
-from tsdm.datasets import base, kiwi, mimic, physionet, timeseries, uci, ushcn
+from tsdm.datasets import (
+    base,
+    kiwi,
+    mimic,
+    physionet,
+    synthetic,
+    timeseries,
+    uci,
+    ushcn,
+)
 from tsdm.datasets.base import (
     BaseDataset,
     Dataset,

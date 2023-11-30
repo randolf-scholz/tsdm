@@ -64,7 +64,6 @@ class BoxCoxEncoder(BaseEncoder):
 
         self.method = method
         self.initial_param = initial_param
-        super().__init__()
 
     def __repr__(self) -> str:
         return repr_mapping(
@@ -260,7 +259,6 @@ class LogitBoxCoxEncoder(BaseEncoder):
 
         self.method = method
         self.initial_param = initial_param
-        super().__init__()
 
     def __repr__(self) -> str:
         return repr_mapping(

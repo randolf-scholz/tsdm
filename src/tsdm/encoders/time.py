@@ -28,7 +28,7 @@ from typing_extensions import (
 )
 
 from tsdm.encoders.base import BaseEncoder
-from tsdm.encoders.dataframe import FrameEncoder
+from tsdm.encoders.dataframe import OldFrameEncoder
 from tsdm.types.aliases import DType, PandasObject
 
 
@@ -48,7 +48,6 @@ class Time2Float(BaseEncoder):
 
     def __init__(self, normalization: Literal["gcd", "max", "none"] = "max") -> None:
         r"""Choose the normalization scheme."""
-        super().__init__()
         self.normalization = normalization
 
     def fit(self, data: Series, /) -> None:
@@ -133,7 +132,6 @@ class DateTimeEncoder(BaseEncoder):
     r"""The frequency attribute in case of DatetimeIndex."""
 
     def __init__(self, unit: str = "s", base_freq: str = "s") -> None:
-        super().__init__()
         self.unit = unit
         self.base_freq = base_freq
 
@@ -186,7 +184,6 @@ class TimeDeltaEncoder(BaseEncoder):
     original_dtype: Any
 
     def __init__(self, *, unit: str = "s", base_freq: str = "s") -> None:
-        super().__init__()
         self.unit = unit
         self.base_freq = base_freq
         self.timedelta = Timedelta(1, unit=self.unit)
@@ -203,6 +200,45 @@ class TimeDeltaEncoder(BaseEncoder):
         return result
 
 
+class PositionalEncoder(BaseEncoder):
+    r"""Positional encoding.
+
+    .. math::
+        x_{2 k}(t)   &:=\sin \left(\frac{t}{t^{2 k / τ}}\right) \\
+        x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
+    """
+
+    requires_fit: ClassVar[bool] = False
+
+    # Constants
+    num_dim: Final[int]
+    r"""Number of dimensions."""
+
+    # Buffers
+    scale: Final[float]
+    r"""Scale factor for positional encoding."""
+    scales: Final[np.ndarray]
+    r"""Scale factors for positional encoding."""
+
+    def __init__(self, num_dim: int, scale: float) -> None:
+        self.num_dim = num_dim
+        self.scale = float(scale)
+        self.scales = self.scale ** (-np.arange(0, num_dim + 2, 2) / num_dim)
+        assert self.scales[0] == 1.0, "Something went wrong."
+
+    def encode(self, data: np.ndarray, /) -> np.ndarray:
+        r""".. Signature: ``... -> (..., 2d)``.
+
+        Note: we simply concatenate the sin and cosine terms without interleaving them.
+        """
+        z = np.einsum("..., d -> ...d", data, self.scales)
+        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
+
+    def decode(self, data: np.ndarray, /) -> np.ndarray:
+        r""".. Signature:: ``(..., 2d) -> ...``."""
+        return np.arcsin(data[..., 0])
+
+
 class PeriodicEncoder(BaseEncoder):
     r"""Encode periodic data as sin/cos waves."""
 
@@ -213,8 +249,7 @@ class PeriodicEncoder(BaseEncoder):
     dtype: DType
     colname: Hashable
 
-    def __init__(self, period: Optional[float] = None) -> None:
-        super().__init__()
+    def __init__(self, period: Optional[float] = None, /) -> None:
         self._period = period
 
     def fit(self, x: Series) -> None:
@@ -268,7 +303,6 @@ class SocialTimeEncoder(BaseEncoder):
     levels: list[str]
 
     def __init__(self, levels: str = "YMWDhms") -> None:
-        super().__init__()
         self.level_code = levels
         self.levels = [self.level_codes[k] for k in levels]
 
@@ -324,46 +358,5 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
             level: PeriodicEncoder(period=self.frequencies[level])
             for level in self.levels
         }
-        obj = FrameEncoder(column_encoders) @ self
+        obj = OldFrameEncoder(column_encoders) @ self
         return cast(Self, obj)
-
-
-class PositionalEncoder(BaseEncoder):
-    r"""Positional encoding.
-
-    .. math::
-        x_{2 k}(t)   &:=\sin \left(\frac{t}{t^{2 k / τ}}\right) \\
-        x_{2 k+1}(t) &:=\cos \left(\frac{t}{t^{2 k / τ}}\right)
-    """
-
-    requires_fit: ClassVar[bool] = False
-
-    # Constants
-    num_dim: Final[int]
-    r"""Number of dimensions."""
-
-    # Buffers
-    scale: Final[float]
-    r"""Scale factor for positional encoding."""
-    scales: Final[np.ndarray]
-    r"""Scale factors for positional encoding."""
-
-    def __init__(self, num_dim: int, scale: float) -> None:
-        super().__init__()
-
-        self.num_dim = num_dim
-        self.scale = float(scale)
-        self.scales = self.scale ** (-np.arange(0, num_dim + 2, 2) / num_dim)
-        assert self.scales[0] == 1.0, "Something went wrong."
-
-    def encode(self, data: np.ndarray, /) -> np.ndarray:
-        r""".. Signature: ``... -> (..., 2d)``.
-
-        Note: we simply concatenate the sin and cosine terms without interleaving them.
-        """
-        z = np.einsum("..., d -> ...d", data, self.scales)
-        return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
-
-    def decode(self, data: np.ndarray, /) -> np.ndarray:
-        r""".. Signature:: ``(..., 2d) -> ...``."""
-        return np.arcsin(data[..., 0])

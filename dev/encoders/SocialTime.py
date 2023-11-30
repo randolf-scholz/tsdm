@@ -128,7 +128,7 @@ from tsdm.encoders import *
 # In[11]:
 
 
-enc = FrameEncoder(PeriodicEncoder(), duplicate=True) @ SocialTimeEncoder()
+enc = OldFrameEncoder(PeriodicEncoder(), duplicate=True) @ SocialTimeEncoder()
 enc.fit(ds.index)
 enc.encode(ds.index)
 

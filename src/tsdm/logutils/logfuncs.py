@@ -193,11 +193,12 @@ def compute_metrics(
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics."""
     match metrics:
-        case str() as metric_name:
-            metric = LOSSES[metric_name]
-            return {metric_name: eval_metric(metric, targets, predics)}
-        case type() as metric_type:
-            return {metric_type.__name__: eval_metric(metric_type, targets, predics)}
+        case str() as name:
+            return {name: eval_metric(LOSSES[name], targets=targets, predics=predics)}
+        case type() as klass:
+            return {
+                klass.__name__: eval_metric(klass, targets=targets, predics=predics)
+            }
         case Metric() as func:
             return {func.__class__.__name__: func(targets, predics)}
         case Sequence() as sequence:

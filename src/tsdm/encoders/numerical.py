@@ -45,7 +45,7 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Callable, Iterable
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from types import EllipsisType
 
 import numpy as np
@@ -71,7 +71,7 @@ from typing_extensions import (
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axes, Nested, PandasObject, SizeLike
-from tsdm.types.protocols import NTuple, NumericalArray
+from tsdm.types.protocols import NTuple, NumericalArray, SupportsDtype
 from tsdm.utils.strings import pprint_repr, repr_dataclass
 
 # TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
@@ -382,7 +382,6 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask",
         axis: Axes = None,
     ) -> None:
-        super().__init__()
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.lower_included = lower_included
@@ -586,7 +585,6 @@ class LinearScaler(BaseEncoder[T, T]):
         self, loc: float | T = 0.0, scale: float | T = 1.0, *, axis: Axes = None
     ) -> None:
         r"""Initialize the MinMaxScaler."""
-        super().__init__()
         self.loc = cast(T, loc)
         self.scale = cast(T, scale)
         self.axis = axis  # type: ignore[assignment]
@@ -714,7 +712,6 @@ class StandardScaler(BaseEncoder[T, T]):
         axis: Axes = ...,
     ) -> None: ...
     def __init__(self, mean=NotImplemented, stdv=NotImplemented, *, axis=()):
-        super().__init__()
         self.mean = cast(T, mean)
         self.stdv = cast(T, stdv)
         self.axis = axis
@@ -877,8 +874,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
         axis: Axes = (),
         safe_computation: bool = True,
     ) -> None:
-        super().__init__()
-
         self.ymin = cast(T, ymin)
         self.ymax = cast(T, ymax)
         self.axis = axis
@@ -1073,35 +1068,34 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 
+@dataclass
 class FloatEncoder(BaseEncoder[NDArray, NDArray]):
     r"""Converts all columns of DataFrame to float32."""
 
     requires_fit: ClassVar[bool] = True
 
-    dtypes: Series = None
+    target_dtype: str = "float32"
+
+    original_dtypes: Series = field(init=False)
     r"""The original dtypes."""
 
     def __init__(self, dtype: str = "float32") -> None:
         self.target_dtype = dtype
-        super().__init__()
 
     def fit(self, data: PandasObject, /) -> None:
-        if isinstance(data, DataFrame):
-            self.dtypes = data.dtypes
-        elif isinstance(data, (Series, pd.Index)):
-            self.dtypes = data.dtype
-        # elif hasattr(data, "dtype"):
-        #     self.dtypes = data.dtype
-        # elif hasattr(data, "dtypes"):
-        #     self.dtypes = data.dtype
-        else:
-            raise TypeError(f"Cannot get dtype of {type(data)}")
+        match data:
+            case DataFrame(dtypes=dtypes):
+                self.original_dtypes = dtypes
+            case SupportsDtype(dtype=dtype):
+                self.original_dtypes = dtype
+            case _:
+                raise TypeError(f"Cannot get dtype of {type(data)}")
 
     def encode(self, data: PandasObject, /) -> PandasObject:
         return data.astype(self.target_dtype)
 
     def decode(self, data: PandasObject, /) -> PandasObject:
-        return data.astype(self.dtypes)
+        return data.astype(self.original_dtypes)
 
 
 class IntEncoder(BaseEncoder[NDArray, NDArray]):
@@ -1137,7 +1131,6 @@ class TensorSplitter(BaseEncoder):
         self, *, indices_or_sections: int | list[int] = 1, axis: int = 0
     ) -> None:
         r"""Concatenate tensors along the specified axis."""
-        super().__init__()
         self.axis = axis
         self.indices_or_sections = indices_or_sections
 
@@ -1175,7 +1168,6 @@ class TensorConcatenator(BaseEncoder):
 
     def __init__(self, axis: int = 0) -> None:
         r"""Concatenate tensors along the specified axis."""
-        super().__init__()
         self.axis = axis
 
     def fit(self, data: tuple[Tensor, ...], /) -> None:

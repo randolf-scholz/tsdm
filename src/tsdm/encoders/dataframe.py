@@ -4,8 +4,8 @@ __all__ = [
     # Classes
     "FrameAsDict",
     "FrameAsTuple",
+    "OldFrameEncoder",
     "FrameEncoder",
-    "FastFrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
     "TensorEncoder",
@@ -21,18 +21,28 @@ from types import EllipsisType
 
 import numpy as np
 import pandas as pd
+import polars as pl
+import pyarrow as pa
 import torch
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.indexes.frozen import FrozenList
 from torch import Tensor
-from typing_extensions import Any, ClassVar, Optional, TypeVar, deprecated, overload
+from typing_extensions import (
+    Any,
+    ClassVar,
+    Generic,
+    Optional,
+    TypeVar,
+    deprecated,
+    overload,
+)
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
 from tsdm.types.aliases import PandasObject, PathLike
 from tsdm.types.dtypes import TORCH_DTYPES
-from tsdm.types.protocols import NTuple
+from tsdm.types.protocols import NTuple, TableType
 from tsdm.types.variables import key_var as K
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.strings import repr_mapping
@@ -62,7 +72,6 @@ class CSVEncoder(BaseEncoder):
         to_csv_kwargs: Optional[dict[str, Any]] = None,
         read_csv_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
-        super().__init__()
         self.filename = filename
         self.read_csv_kwargs = read_csv_kwargs or {}
         self.to_csv_kwargs = to_csv_kwargs or {}
@@ -81,8 +90,12 @@ class CSVEncoder(BaseEncoder):
         return DataFrame(frame).astype(self.dtypes)
 
 
-@deprecated("deprecated in favor of encoders.FastFrameEncoder")
-class FrameEncoder(BaseEncoder):
+ColEnc = TypeVar("ColEnc", None, E, Mapping[Any, E])
+IndEnc = TypeVar("IndEnc", None, E, Mapping[Any, E])
+
+
+@deprecated("deprecated in favor of encoders.FrameEncoder")
+class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Per-column encoding is possible through the dictionary input.
@@ -102,13 +115,13 @@ class FrameEncoder(BaseEncoder):
     index_dtypes: Series
     duplicate: bool = False
 
-    column_encoders: Optional[Encoder | Mapping[Any, Encoder]]
+    column_encoders: ColEnc
     r"""Encoders for the columns."""
-    column_decoders: Optional[Encoder | Mapping[Any, Encoder]]
+    column_decoders: ColEnc
     r"""Reverse Dictionary from encoded column name -> encoder"""
-    index_encoders: Optional[Encoder | Mapping[Any, Encoder]]
+    index_encoders: IndEnc
     r"""Optional Encoder for the index."""
-    index_decoders: Optional[Encoder | Mapping[Any, Encoder]]
+    index_decoders: IndEnc
     r"""Reverse Dictionary from encoded index name -> encoder"""
 
     @staticmethod
@@ -123,6 +136,30 @@ class FrameEncoder(BaseEncoder):
             case _:
                 raise TypeError(f"Invalid {type(obj)=}")
 
+    @overload
+    def __init__(
+        self: "OldFrameEncoder[ColEnc, IndEnc]",
+        column_encoders: ColEnc,
+        *,
+        index_encoders: IndEnc,
+        duplicate: bool = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "OldFrameEncoder[ColEnc, Any]",
+        column_encoders: ColEnc,
+        *,
+        index_encoders: Optional[Encoder | Mapping[Any, Encoder]] = ...,
+        duplicate: bool = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "OldFrameEncoder[ColEnc, Any]",
+        column_encoders: Optional[Encoder | Mapping[Any, Encoder]] = ...,
+        *,
+        index_encoders: Optional[Encoder | Mapping[Any, Encoder]] = ...,
+        duplicate: bool = ...,
+    ) -> None: ...
     def __init__(
         self,
         column_encoders: Optional[Encoder | Mapping[Any, Encoder]] = None,
@@ -130,8 +167,6 @@ class FrameEncoder(BaseEncoder):
         index_encoders: Optional[Encoder | Mapping[Any, Encoder]] = None,
         duplicate: bool = False,
     ) -> None:
-        super().__init__()
-
         if column_encoders is None:
             self.column_encoders = None
         else:
@@ -302,7 +337,7 @@ class FrameEncoder(BaseEncoder):
         return repr_mapping(items, title=self.__class__.__name__, recursive=2)
 
 
-class FastFrameEncoder(BaseEncoder, Mapping[K, BaseEncoder]):
+class FrameEncoder(BaseEncoder, Mapping[K, BaseEncoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Per-column encoding is possible through the dictionary input.
@@ -331,7 +366,6 @@ class FastFrameEncoder(BaseEncoder, Mapping[K, BaseEncoder]):
         *,
         index_encoders: Mapping[K, BaseEncoder] = EMPTY_MAP,
     ) -> None:
-        super().__init__()
         self.index_encoders = index_encoders
         self.column_encoders = column_encoders
         self.encoders = {**column_encoders, **index_encoders}
@@ -388,6 +422,84 @@ class FastFrameEncoder(BaseEncoder, Mapping[K, BaseEncoder]):
         return data
 
 
+class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
+    """Encodes a table of data, by applying transformations to single columns or groups of columns.
+
+    Args:
+        encoders: A mapping from column names to encoders.
+            The keys should be one of: string,
+            The special key `Ellipsis` (`...`) can be given once to indicate that all unnamed columns
+            should use the given Encoder.
+        copy_unused (default=True): if true, columns that are not named in the encoder are copied to the output.
+
+    Note:
+        This does not cover the case of encoding the index.
+
+    The resulting table is the concatenation of the encoded columns.
+    """
+
+    encoders: dict[list[str], BaseEncoder]
+    decoders: dict[list[str], BaseEncoder]
+
+    validate_decoded: bool
+
+    original_columns: list[K]
+    encoded_columns: list[K]
+    original_dtypes: dict[K, type]
+    encoded_dtypes: dict[K, type]
+
+    def __init__(self, encoders: Mapping, *, copy_unused: bool = False) -> None:
+        # validate inputs:
+        if Ellipsis in encoders.keys() and copy_unused:
+            raise ValueError("Cannot copy unused columns when `...` is used.")
+
+    def fit(self, data: TableType, /) -> None:
+        # step 1, determine groups
+
+        encoded = self.encode(data)
+
+    def encode(self, data: TableType, /) -> TableType:
+        encoded_groups = []
+        for group, encoder in self.encoders.items():
+            encoded_groups.append(encoder.encode(data[group]))
+
+        # combine the encoded groups
+        match data:
+            case DataFrame():
+                return pd.concat(encoded_groups, axis="columns")
+            case pl.DataFrame():
+                return pl.concat(encoded_groups, axis="columns")
+            case pa.Table():
+                return pa.concat_tables(encoded_groups)
+            case _:
+                raise NotImplementedError
+
+    def decode(self, data: TableType, /) -> TableType:
+        decoded_groups = []
+        for group, encoder in self.decoders.items():
+            decoded_groups.append(encoder.decode(data[group]))
+
+        # combine the decoded groups
+        match data:
+            case DataFrame():
+                decoded = pd.concat(decoded_groups, axis="columns")
+            case pl.DataFrame():
+                decoded = pl.concat(decoded_groups, axis="columns")
+            case pa.Table():
+                decoded = pa.concat_tables(decoded_groups)
+            case _:
+                raise NotImplementedError
+
+        if self.validate_decoded:
+            decoded = self.check_decoded(decoded)
+
+        return decoded
+
+    def check_decoded(self, data: TableType, /) -> TableType:
+        """Checks that the decoded data is equal to the original data."""
+        return data
+
+
 class FrameIndexer(BaseEncoder):
     r"""Change index of a `pandas.DataFrame`.
 
@@ -402,8 +514,6 @@ class FrameIndexer(BaseEncoder):
     reset: EllipsisType | Hashable | list[Hashable]
 
     def __init__(self, *, reset: Optional[Hashable | list[Hashable]] = None) -> None:
-        super().__init__()
-
         match reset:
             case None:
                 self.reset = []
@@ -486,8 +596,6 @@ class FrameSplitter(BaseEncoder, Mapping):
         dropna: bool = False,
         fillna: bool = True,
     ) -> None:
-        super().__init__()
-
         if isinstance(groups, NTuple):
             self.rtype = type(groups)
             groups = groups._asdict()
@@ -642,7 +750,6 @@ class TripletEncoder(BaseEncoder):
         var_name: str = "variable",
         value_name: str = "value",
     ) -> None:
-        super().__init__()
         self.sparse = sparse
         self.var_name = var_name
         self.value_name = value_name
@@ -725,7 +832,6 @@ class TripletDecoder(BaseEncoder):
         var_name: Optional[str] = None,
         value_name: Optional[str] = None,
     ) -> None:
-        super().__init__()
         self.sparse = sparse
         self.var_name = var_name
         self.value_name = value_name
@@ -828,7 +934,6 @@ class TensorEncoder(BaseEncoder):
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
     ) -> None:
-        super().__init__()
         self.names = names
         self.dtype = torch.float32 if dtype is None else dtype
         # default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -884,7 +989,6 @@ class ValueEncoder(BaseEncoder):
     dtype: Optional[str] = None
 
     def __init__(self, dtype: Optional[str] = None, /) -> None:
-        super().__init__()
         self.dtype = dtype
 
     def fit(self, data: DataFrame, /) -> None:
@@ -975,7 +1079,6 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
         device: Optional[str | torch.device | Mapping[str, str | torch.dtype]] = None,
         encode_index: Optional[bool] = None,
     ) -> None:
-        super().__init__()
         self.groups = groups  # type: ignore[assignment]
         self.dtypes = dtypes  # type: ignore[assignment]
         self.device = device  # type: ignore[assignment]
@@ -1123,7 +1226,6 @@ class FrameAsTuple(BaseEncoder):
         index_dtype: Optional[torch.dtype] = torch.float32,
         device: Optional[str | torch.device] = None,
     ) -> None:
-        super().__init__()
         self.column_dtype = column_dtype
         self.index_dtype = index_dtype
         self.device = device

@@ -24,9 +24,6 @@ class TensorEncoder(BaseEncoder):
 
     requires_fit: ClassVar[bool] = False
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def encode(self, data):
         match data:
             case Tensor():
@@ -73,8 +70,6 @@ class Time2Vec(nn.Module):
     r"""Phase of the time encoding."""
 
     def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
-        super().__init__()
-
         self.num_dim = num_dim
         self.freq = nn.Parameter(torch.randn(num_dim - 1))
         self.phase = nn.Parameter(torch.randn(num_dim - 1))
@@ -135,7 +130,6 @@ class PositionalEncoding(nn.Module):
     r"""Scale factors for positional encoding."""
 
     def __init__(self, *, num_dim: int, scale: float) -> None:
-        super().__init__()
         assert num_dim % 2 == 0, "num_dim must be even"
         self.num_dim = num_dim
         self.scale = float(scale)
@@ -174,7 +168,6 @@ class Time2VecEncoder(BaseEncoder):
     requires_fit: ClassVar[bool] = False
 
     def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
-        super().__init__()
         self.encoder = Time2Vec(num_dim=num_dim, activation=activation)
 
     def encode(self, data: Tensor, /) -> Tensor:
@@ -190,7 +183,6 @@ class PositionalEncoder(BaseEncoder):
     requires_fit: ClassVar[bool] = False
 
     def __init__(self, *, num_dim: int, scale: float) -> None:
-        super().__init__()
         self.encoder = PositionalEncoding(num_dim=num_dim, scale=scale)
 
     def encode(self, data: Tensor, /) -> Tensor:

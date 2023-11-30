@@ -6,6 +6,7 @@ __all__ = [
     "encoder_var",
     # Classes
     "BaseEncoder",
+    "CopyEncoder",
     "ChainedEncoder",
     "CloneEncoder",
     "DuplicateEncoder",
@@ -191,11 +192,10 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         cls.fit = fit  # type: ignore[method-assign]
         cls.encode = encode  # type: ignore[method-assign]
         cls.decode = decode  # type: ignore[method-assign]
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.transform = self.encode
-        self.inverse_transform = self.decode
+        if not hasattr(cls, "transform"):
+            cls.transform = cls.encode
+        if not hasattr(cls, "inverse_transform"):
+            cls.inverse_transform = cls.decode
 
     def __invert__(self) -> "BaseEncoder[S, T]":
         r"""Return the inverse encoder (i.e. decoder)."""
@@ -291,6 +291,21 @@ class IdentityEncoder(BaseEncoder[T, T]):
         return data
 
 
+class CopyEncoder(BaseEncoder[T, T]):
+    r"""Encoder that deepcopies the input."""
+
+    requires_fit: ClassVar[bool] = False
+    is_injective: ClassVar[bool] = True
+    is_surjective: ClassVar[bool] = True
+    is_bijective: ClassVar[bool] = True
+
+    def encode(self, data: T, /) -> T:
+        return deepcopy(data)
+
+    def decode(self, data: T, /) -> T:
+        return deepcopy(data)
+
+
 class InverseEncoder(BaseEncoder[S, T]):
     """Applies an encoder in reverse."""
 
@@ -298,7 +313,6 @@ class InverseEncoder(BaseEncoder[S, T]):
     """The encoder to invert."""
 
     def __init__(self, encoder: BaseEncoder[T, S], /) -> None:
-        super().__init__()
         self.encoder = encoder
 
     def __repr__(self) -> str:
@@ -334,7 +348,6 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
     r"""List of encoders."""
 
     def __init__(self, *encoders: E, simplify: bool = True) -> None:
-        super().__init__()
         self.encoders = []
         for encoder in encoders:
             if simplify and isinstance(encoder, ChainedEncoder):
@@ -491,7 +504,6 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
         return all(e.is_injective for e in self.encoders)
 
     def __init__(self, *encoders: E, simplify: bool = True) -> None:
-        super().__init__()
         self.encoders = []
 
         for encoder in encoders:
@@ -603,7 +615,6 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
         return any(e.requires_fit for e in self.encoders.values())
 
     def __init__(self, encoders: Mapping[K, E]) -> None:
-        super().__init__()
         self.encoders = encoders
 
     def __repr__(self) -> str:
@@ -661,7 +672,6 @@ class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
         return self.encoder.requires_fit
 
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
-        super().__init__()
         self.base_encoder = encoder
         self.n = n
         self.encoder = ProductEncoder(*(self.base_encoder for _ in range(n)))
@@ -685,7 +695,6 @@ class CloneEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
         return self.encoder.requires_fit
 
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
-        super().__init__()
         self.base_encoder = encoder
         self.n = n
         self.encoder = ProductEncoder(*(deepcopy(self.base_encoder) for _ in range(n)))

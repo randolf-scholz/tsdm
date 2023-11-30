@@ -1,6 +1,6 @@
 """Deprecated samplers."""
 
-__all__ = []
+__all__ = ["IntervalSampler", "SequenceSampler"]
 
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from itertools import count

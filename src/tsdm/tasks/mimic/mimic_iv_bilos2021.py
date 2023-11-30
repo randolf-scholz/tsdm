@@ -67,7 +67,7 @@ from typing_extensions import Any, NamedTuple, deprecated
 
 from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
-from tsdm.encoders import FastFrameEncoder, MinMaxScaler
+from tsdm.encoders import FrameEncoder, MinMaxScaler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.strings import repr_namedtuple
 
@@ -225,9 +225,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
 
         # we additionally min-max scale time axis
         ts = ds.table
-        self.preprocessor = FastFrameEncoder(
-            index_encoders={"time_stamp": MinMaxScaler()}
-        )
+        self.preprocessor = FrameEncoder(index_encoders={"time_stamp": MinMaxScaler()})
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor.index_encoders["time_stamp"]

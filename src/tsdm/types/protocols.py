@@ -44,6 +44,7 @@ __all__ = [
     "assert_protocol",
     # TypeVars
     "ArrayType",
+    "TableType",
     "NumericalArrayType",
     "MutableArrayType",
 ]
@@ -89,9 +90,6 @@ from tsdm.types.variables import (
     value_var as V,
 )
 
-ArrayType = TypeVar("ArrayType", bound="ArrayKind")
-NumericalArrayType = TypeVar("NumericalArrayType", bound="NumericalArray")
-MutableArrayType = TypeVar("MutableArrayType", bound="MutableArray")
 P = ParamSpec("P")
 Scalar = TypeVar("Scalar")
 BoolArray = TypeVar("BoolArray", bound="NumericalArray", covariant=True)
@@ -688,6 +686,10 @@ class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
     # def __irshift__(self, other: Self | Scalar, /) -> Self: ...
 
 
+ArrayType = TypeVar("ArrayType", bound=ArrayKind)
+TableType = TypeVar("TableType", bound=TableKind)
+NumericalArrayType = TypeVar("NumericalArrayType", bound=NumericalArray)
+MutableArrayType = TypeVar("MutableArrayType", bound=MutableArray)
 # endregion container protocols --------------------------------------------------------
 
 

@@ -81,7 +81,7 @@ def strip_whitespace_array(arr: Array, /) -> Array:
 @overload
 def arrow_strip_whitespace(obj: Table, /, *cols: str) -> Table: ...
 @overload
-def arrow_strip_whitespace(obj: Array, /, *cols: str) -> Array: ...
+def arrow_strip_whitespace(obj: Array, /, *cols: str) -> Array: ...  # type: ignore[misc]
 def arrow_strip_whitespace(obj, /, *cols):
     """Strip whitespace from all string elements in an arrow object."""
     if isinstance(obj, Table):

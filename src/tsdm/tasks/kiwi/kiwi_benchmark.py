@@ -26,8 +26,8 @@ from tsdm.encoders import (
     BoxCoxEncoder,
     DateTimeEncoder,
     Encoder,
-    FastFrameEncoder,
     FrameAsDict,
+    FrameEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
     StandardScaler,
@@ -273,7 +273,7 @@ class KiwiBenchmark(TimeSeriesTask):
                 "X": ...,
             },
             dtypes={"T": "float32", "X": "float32"},
-        ) @ FastFrameEncoder(
+        ) @ FrameEncoder(
             column_encoders=column_encoders,
             index_encoders={
                 # "run_id": IdentityEncoder(),

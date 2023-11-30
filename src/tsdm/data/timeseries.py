@@ -157,11 +157,11 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             else:
                 self.metaindex = self.timeseries.index.copy().unique()
 
-    @overload
-    def __getitem__(self, key: slice, /) -> Self: ...
-    @overload
-    def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...
-    def __getitem__(self, key, /):
+    # @overload
+    # def __getitem__(self, key: slice, /) -> Self: ...
+    # @overload
+    # def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...
+    def __getitem__(self, key: object, /) -> TimeSeriesDataset:
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
         match key:
