@@ -442,7 +442,7 @@ useLibraryCodeForTypes = false  # otherwise hundreds of pandas false-positives.
 #reportMissingTypeStubs = false
 #reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false
-#reportUnnecessaryTypeIgnoreComment = true  # highlight unnecessary # type: ignore
+reportUnnecessaryTypeIgnoreComment = false  # highlight unnecessary # type: ignore
 # endregion Pyright Configuration ------------------------------------------------------
 
 

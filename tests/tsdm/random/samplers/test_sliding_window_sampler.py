@@ -383,7 +383,7 @@ EXPECTED_RESULTS_DISCRETE_WINDOWS = {
     ],
 }
 # endregion expected results discrete data ---------------------------------------------
-EXPECTED_RESULTS_DISCRETE_DATA = flatten_dict(
+EXPECTED_RESULTS_DISCRETE_DATA: dict = flatten_dict(
     {
         "bounds": EXPECTED_RESULTS_DISCRETE_BOUNDS,
         "masks": EXPECTED_RESULTS_DISCRETE_MASKS,
@@ -641,7 +641,7 @@ EXPECTED_RESULTS_CONTINUOUS_SLICES = {
     ],
 }
 # endregion expected results continuous data -------------------------------------------
-EXPECTED_RESULTS_CONTINUOUS_DATA = flatten_dict(
+EXPECTED_RESULTS_CONTINUOUS_DATA: dict = flatten_dict(
     {
         "bounds": EXPECTED_RESULTS_CONTINUOUS_BOUNDS,
         "masks": EXPECTED_RESULTS_CONTINUOUS_MASKS,

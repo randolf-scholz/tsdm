@@ -175,25 +175,7 @@ repos:
         files: |
           (?x)^(
             (?!)  # intentionally matches nothing
-            #|tests/tsdm/
-            |tests/tsdm/constants.py
-            |tests/tsdm/backend
-            |tests/tsdm/config
-            |tests/tsdm/data
-            |tests/tsdm/datasets
-            #|tests/tsdm/encoders
-            |tests/tsdm/linalg
-            #|tests/tsdm/logutils
-            |tests/tsdm/metrics
-            #|tests/tsdm/models
-            |tests/tsdm/optimizers
-            |tests/tsdm/random/stats
-            #|tests/tsdm/random/samplers
-            |tests/tsdm/random/generators
-            #|tests/tsdm/tasks
-            |tests/tsdm/types
-            |tests/tsdm/utils
-            |tests/tsdm/viz
+            |tests/tsdm/
             #|src/tsdm/
             |src/tsdm/constants.py
             |src/tsdm/backend

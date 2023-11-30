@@ -156,9 +156,9 @@ def test_dt_var() -> None:
 
     id_dt(DT_FLOAT)
     id_dt(DT_INT)
-    id_dt(DT_NUMPY)  # pyright: ignore
-    id_dt(DT_NUMPY_FLOAT)  # pyright: ignore
-    id_dt(DT_NUMPY_INT)  # pyright: ignore
+    id_dt(DT_NUMPY)
+    id_dt(DT_NUMPY_FLOAT)
+    id_dt(DT_NUMPY_INT)
     id_dt(DT_PANDAS)
     id_dt(DT_PYTHON)
 

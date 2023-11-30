@@ -140,7 +140,7 @@ def test_boundary_encoder(data: D) -> None:
     encoded2 = encoder.encode(data2)
     xmin, xmax = data.min(), data.max()
     mask = (data2 >= xmin) & (data2 <= xmax)
-    assert all(encoded2[mask] == data2[mask])
+    assert all(encoded2[mask] == data2[mask])  # pyright: ignore
     assert all(np.isnan(encoded2[~mask]))
 
     # test half-open interval + clip
@@ -323,13 +323,13 @@ def test_scaler_series(encoder_type: type[E]) -> None:
 
 
 @mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
-def test_standard_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None:
+def test_standard_scaler(axis):
     """Test the MinMaxScaler."""
     TRUE_SHAPE = {
-        None: (2, 3, 4, 5),
+        (): (),
         (-2, -1): (4, 5),
         -1: (5,),
-        (): (),
+        None: (2, 3, 4, 5),
     }[axis]
 
     # initialize
@@ -353,7 +353,7 @@ def test_standard_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None
 
 
 @mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
-def test_minmax_scaler(axis: None | int | tuple[()] | tuple[int, int]) -> None:
+def test_minmax_scaler(axis):
     """Test the MinMaxScaler."""
     TRUE_SHAPE = {
         None: (2, 3, 4, 5),
