@@ -18,7 +18,7 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.nn import MSELoss
 from torch.utils.data import DataLoader
-from typing_extensions import Any, Literal, NamedTuple, Optional, deprecated
+from typing_extensions import Any, Literal, NamedTuple, Optional, TypeAlias, deprecated
 
 from tsdm.data import MappingDataset
 from tsdm.data.timeseries import TimeSeriesDataset
@@ -107,9 +107,9 @@ def get_time_table(
 class KIWI_FINAL_PRODUCT(OldBaseTask):
     r"""Forecast the final biomass or product."""
 
-    KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
+    KEYS: TypeAlias = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
     r"""Type Hint for Keys."""
-    index: list[KeyType] = list(product(range(5), ("train", "test")))
+    index: list[KEYS] = list(product((0, 1, 2, 3, 4), ("train", "test")))
     r"""Available index."""
     target: Literal["Fluo_GFP", "OD600"]
     r"""The target variables."""
@@ -268,7 +268,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         return result
 
     @cached_property
-    def splits(self) -> dict[KeyType, tuple[DataFrame, DataFrame]]:
+    def splits(self) -> dict[KEYS, tuple[DataFrame, DataFrame]]:
         splits = {}
         for key in self.index:
             assert key in self.index, f"Wrong {key=}. Only {self.index} work."
@@ -285,7 +285,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     def make_dataloader(
         self,
-        key: KeyType,
+        key: KEYS,
         /,
         *,
         shuffle: bool = False,

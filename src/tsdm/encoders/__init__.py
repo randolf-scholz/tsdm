@@ -153,8 +153,6 @@ __all__ = [
     "TripletEncoder",
     "ValueEncoder",
     # Aliases
-    "Frame2TensorDict",
-    "Standardizer",
 ]
 
 from sklearn import preprocessing as sk_preprocessing
@@ -174,7 +172,6 @@ from tsdm.encoders.base import (
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
-    Frame2TensorDict,
     FrameAsDict,
     FrameAsTuple,
     FrameEncoder,
@@ -194,7 +191,6 @@ from tsdm.encoders.numerical import (
     LogEncoder,
     LogitEncoder,
     MinMaxScaler,
-    Standardizer,
     StandardScaler,
     TensorConcatenator,
     TensorSplitter,

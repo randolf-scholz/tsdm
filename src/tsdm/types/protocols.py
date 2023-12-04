@@ -50,6 +50,7 @@ __all__ = [
 ]
 
 import dataclasses
+import typing
 from abc import abstractmethod
 from collections.abc import (
     Collection,
@@ -62,11 +63,11 @@ from collections.abc import (
 from types import GenericAlias
 
 import numpy as np
+import typing_extensions
 from numpy.typing import NDArray
 from typing_extensions import (
     Any,
     ClassVar,
-    NamedTuple,
     ParamSpec,
     Protocol,
     Self,
@@ -941,36 +942,31 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
     @classmethod
     def __subclasshook__(cls, other: type, /) -> bool:
         """Cf https://github.com/python/cpython/issues/106363."""
-        if NamedTuple in get_original_bases(other):
-            return True
-        return NotImplemented
+        return (typing.NamedTuple in get_original_bases(other)) or (
+            typing_extensions.NamedTuple in get_original_bases(other)
+        )
 
 
 @overload
 def is_dataclass(obj: type, /) -> TypeGuard[type[Dataclass]]: ...
 @overload
 def is_dataclass(obj: object, /) -> TypeGuard[Dataclass]: ...
-def is_dataclass(obj, /):
+def is_dataclass(obj, /):  # pyright: ignore
     r"""Check if the object is a dataclass."""
-    # return dataclasses.is_dataclass(obj)
-    return (
-        issubclass(obj, Dataclass)  # type: ignore[misc]
-        if isinstance(obj, type)
-        else issubclass(type(obj), Dataclass)  # type: ignore[misc]
-    )
+    if isinstance(obj, type):
+        return issubclass(obj, Dataclass)  # type: ignore[misc]
+    return issubclass(type(obj), Dataclass)  # type: ignore[misc]
 
 
 @overload
 def is_namedtuple(obj: type, /) -> TypeGuard[type[NTuple]]: ...
 @overload
 def is_namedtuple(obj: object, /) -> TypeGuard[NTuple]: ...
-def is_namedtuple(obj, /):
+def is_namedtuple(obj, /):  # pyright: ignore
     """Check if the object is a namedtuple."""
-    return (
-        issubclass(obj, NTuple)  # type: ignore[misc]
-        if isinstance(obj, type)
-        else issubclass(type(obj), NTuple)  # type: ignore[misc]
-    )
+    if isinstance(obj, type):
+        return issubclass(obj, NTuple)  # type: ignore[misc]
+    return issubclass(type(obj), NTuple)  # type: ignore[misc]
 
 
 # NOTE: TypedDict not supported, since instances of type-dicts forget their parent class.

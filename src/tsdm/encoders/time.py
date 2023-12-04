@@ -111,7 +111,7 @@ class Time2Float(BaseEncoder):
         raise NotImplementedError
 
 
-class DateTimeEncoder(BaseEncoder):
+class DateTimeEncoder(BaseEncoder[Series, Series]):
     r"""Encode DateTime as Float."""
 
     requires_fit: ClassVar[bool] = True
@@ -249,7 +249,7 @@ class PeriodicEncoder(BaseEncoder):
     dtype: DType
     colname: Hashable
 
-    def __init__(self, period: Optional[float] = None, /) -> None:
+    def __init__(self, period: Optional[float] = None) -> None:
         self._period = period
 
     def fit(self, x: Series) -> None:

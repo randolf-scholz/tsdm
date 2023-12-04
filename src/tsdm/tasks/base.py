@@ -323,10 +323,11 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
             self.validate_folds()
 
         if self.index is NotImplemented:
-            if isinstance(self.folds, DataFrame):
-                self.index = self.folds.columns
-            else:
-                self.index = Series(list(self.folds), name="folds")
+            match self.folds:
+                case DataFrame() as frame:
+                    self.index = frame.columns
+                case _:
+                    self.index = Series(list(self.folds), name="folds")
 
         if not self.initialize:
             return

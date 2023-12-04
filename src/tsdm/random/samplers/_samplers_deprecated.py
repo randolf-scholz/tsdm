@@ -1,4 +1,5 @@
-# type: ignore
+# pyright: ignore
+# mypy: ignore-errors
 """Deprecated samplers."""
 
 __all__ = ["IntervalSampler", "SequenceSampler"]

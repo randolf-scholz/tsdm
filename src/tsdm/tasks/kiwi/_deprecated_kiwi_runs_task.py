@@ -1,4 +1,5 @@
-# type: ignore
+# pyright: ignore
+# mypy: ignore-errors
 r"""Deprecated Kiwi Task Object."""
 
 __all__ = [

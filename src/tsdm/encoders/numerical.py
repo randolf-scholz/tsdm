@@ -859,6 +859,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         axis: Axes = ...,
     ) -> None: ...
     def __init__(self, ymin=0.0, ymax=1.0, *, xmin=None, xmax=None, axis=()):
+        self.safe_computation = True
         self.ymin = cast(T, ymin)
         self.ymax = cast(T, ymax)
         self.axis = axis
@@ -971,13 +972,14 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
         y = (x - xbar) * scale + ybar
 
-        # NOTE: Ensure the conditions
-        # x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
-        y = self.backend.where(x < xmin, self.backend.clip(y, None, ymin), y)
-        y = self.backend.where(x > xmax, self.backend.clip(y, ymax, None), y)
-        y = self.backend.where(
-            (x >= xmin) & (x <= xmax), self.backend.clip(y, ymin, ymax), y
-        )
+        if self.safe_computation:
+            # NOTE: Ensure the conditions
+            # x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
+            y = self.backend.where(x < xmin, self.backend.clip(y, None, ymin), y)
+            y = self.backend.where(x > xmax, self.backend.clip(y, ymax, None), y)
+            y = self.backend.where(
+                (x >= xmin) & (x <= xmax), self.backend.clip(y, ymin, ymax), y
+            )
 
         return y
 
@@ -1169,7 +1171,3 @@ class TensorConcatenator(BaseEncoder):
     def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
         result = torch.split(data, self.lengths, dim=self.axis)
         return tuple(x.squeeze() for x in result)
-
-
-Standardizer = StandardScaler  # Do not remove! For old pickle files
-"""Alias for `StandardScaler`"""

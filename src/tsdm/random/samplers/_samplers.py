@@ -556,7 +556,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         *,
         horizons: VectorLike[str | Timedelta],
         stride: str | Timedelta,
-        mode: str = ...,
+        mode: str,
         shuffle: bool = ...,
         drop_last: bool = ...,
     ) -> None: ...
@@ -568,7 +568,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         *,
         horizons: str | Timedelta,
         stride: str | Timedelta,
-        mode: str = ...,
+        mode: str,
         shuffle: bool = ...,
         drop_last: bool = ...,
     ) -> None: ...
@@ -732,7 +732,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     def __iter__(self: "SlidingSampler[DT, U, ONE]", /) -> Iterator: ...
     # fmt: on
     # endregion __iter__ overloads -----------------------------------------------------
-    def __iter__(self, /):
+    def __iter__(self, /):  # pyright: ignore
         r"""Iterate through.
 
         For each k, we return either:

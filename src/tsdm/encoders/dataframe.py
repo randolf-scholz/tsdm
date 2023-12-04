@@ -17,7 +17,7 @@ __all__ = [
 
 import warnings
 from collections import namedtuple
-from collections.abc import Hashable, Iterable, Iterator, Mapping
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from types import EllipsisType
 
 import numpy as np
@@ -91,8 +91,8 @@ class CSVEncoder(BaseEncoder):
         return DataFrame(frame).astype(self.dtypes)
 
 
-ColEnc = TypeVar("ColEnc", None, E, Mapping[Any, E])
-IndEnc = TypeVar("IndEnc", None, E, Mapping[Any, E])
+ColEnc = TypeVar("ColEnc", None, Encoder, Mapping[Any, Encoder])
+IndEnc = TypeVar("IndEnc", None, Encoder, Mapping[Any, Encoder])
 
 
 @deprecated("deprecated in favor of encoders.FrameEncoder")
@@ -230,7 +230,7 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
         match self.column_encoders:
             case None:
                 pass
-            case BaseEncoder() as encoder:
+            case Encoder() as encoder:
                 encoded = encoder.encode(data)
                 encoded_cols = encoded_cols.drop(columns=data.columns)
                 encoded_cols = pd.concat([encoded_cols, encoded], axis="columns")
@@ -245,7 +245,7 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
         match self.index_encoders:
             case None:
                 pass
-            case BaseEncoder() as encoder:
+            case Encoder() as encoder:
                 encoded = encoder.encode(index)
                 encoded_inds = encoded_inds.drop(columns=index.columns)
                 encoded_inds = pd.concat([encoded_inds, encoded], axis="columns")
@@ -279,7 +279,7 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
         match self.column_decoders:
             case None:
                 pass
-            case BaseEncoder() as encoder:
+            case Encoder() as encoder:
                 decoded = encoder.decode(data)
                 decoded_cols = decoded_cols.drop(columns=data.columns)
                 decoded_cols[self._names(decoded)] = decoded
@@ -295,7 +295,7 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
         match self.index_decoders:
             case None:
                 pass
-            case BaseEncoder() as encoder:
+            case Encoder() as encoder:
                 decoded = encoder.decode(index)
                 decoded_inds = decoded_inds.drop(columns=index.columns)
                 decoded_inds[self._names(decoded)] = decoded
@@ -331,7 +331,7 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
         return repr_mapping(items, title=self.__class__.__name__, recursive=2)
 
 
-class FrameEncoder(BaseEncoder, Mapping[K, BaseEncoder]):
+class FrameEncoder(BaseEncoder, Mapping[K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Per-column encoding is possible through the dictionary input.
@@ -350,21 +350,21 @@ class FrameEncoder(BaseEncoder, Mapping[K, BaseEncoder]):
     original_index_columns: list[K]
     original_value_columns: list[K]
 
-    encoders: Mapping[K, BaseEncoder]
-    column_encoders: Mapping[K, BaseEncoder]
-    index_encoders: Mapping[K, BaseEncoder]
+    encoders: Mapping[K, Encoder]
+    column_encoders: Mapping[K, Encoder]
+    index_encoders: Mapping[K, Encoder]
 
     def __init__(
         self,
-        column_encoders: Mapping[K, BaseEncoder] = EMPTY_MAP,
+        column_encoders: Mapping[K, Encoder] = EMPTY_MAP,
         *,
-        index_encoders: Mapping[K, BaseEncoder] = EMPTY_MAP,
+        index_encoders: Mapping[K, Encoder] = EMPTY_MAP,
     ) -> None:
         self.index_encoders = index_encoders
         self.column_encoders = column_encoders
         self.encoders = {**column_encoders, **index_encoders}
 
-    def __getitem__(self, key: K) -> BaseEncoder:
+    def __getitem__(self, key: K) -> Encoder:
         return self.encoders[key]
 
     def __iter__(self) -> Iterator[K]:
@@ -416,7 +416,10 @@ class FrameEncoder(BaseEncoder, Mapping[K, BaseEncoder]):
         return data
 
 
-class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
+TableVar = TypeVar("TableVar", DataFrame, pl.DataFrame, pa.Table)
+
+
+class TableEncoder(BaseEncoder[TableVar, TableVar], Mapping[FrozenList[K], Encoder]):
     """Encodes a table of data, by applying transformations to single columns or groups of columns.
 
     Args:
@@ -436,18 +439,45 @@ class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
     The resulting table is the concatenation of the encoded columns.
     """
 
-    encoders: dict[list[str], BaseEncoder]
-    decoders: dict[list[str], BaseEncoder]
+    encoders: dict[FrozenList[K], Encoder]
+    decoders: dict[FrozenList, Encoder]
 
     validate_decoded: bool
 
     original_columns: list[K]
-    encoded_columns: list[K]
     original_dtypes: dict[K, type]
-    encoded_dtypes: dict[K, type]
 
-    def __init__(self, encoders: Mapping, *, copy_unused: bool = False) -> None:
-        self.encoders = dict(encoders)
+    encoded_columns: list[Hashable]
+    encoded_dtypes: dict[Hashable, type]
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(encoder.requires_fit for encoder in self.encoders.values())
+
+    def __len__(self) -> int:
+        return len(self.encoders)
+
+    def __iter__(self) -> Iterator[K]:
+        return iter(self.encoders)
+
+    def __getitem__(self, key: K) -> Encoder:
+        return self.encoders[key]
+
+    def __init__(
+        self,
+        encoders: Iterable[tuple[Sequence[K], Encoder]] | Mapping[Sequence[K], Encoder],
+        *,
+        copy_unused: bool = False,
+    ) -> None:
+
+        match encoders:
+            case Mapping() as mapping:
+                self.encoders = {FrozenList(keys): enc for keys, enc in mapping.items()}
+            case Iterable() as iterable:
+                self.encoders = {FrozenList(keys): enc for keys, enc in iterable}
+            case _:
+                raise TypeError(f"Invalid {type(encoders)=}")
+
         if self._has_ellipsis:
             keys = list(encoders.keys())
             if copy_unused:
@@ -496,7 +526,7 @@ class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
         if self._has_ellipsis:
             assert remaining_columns, "no remaining columns!"
             ellipsis_encoder = self.encoders.pop(Ellipsis)
-            ellipsis_group = remaining_columns
+            ellipsis_group = FrozenList(remaining_columns)
             ellipsis_encoder.fit(data[ellipsis_group])
             self.encoders[ellipsis_group] = ellipsis_encoder
 
@@ -1338,7 +1368,3 @@ class FrameAsTuple(BaseEncoder):
         else:
             decoded = columns.set_index(MultiIndex.from_frame(index))
         return decoded
-
-
-Frame2TensorDict = FrameAsDict  # Do not remove! For old pickle files
-"""Alias for FrameAsDict."""

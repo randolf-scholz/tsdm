@@ -1,4 +1,5 @@
-# type: ignore
+# pyright: ignore
+# mypy: ignore-errors
 r"""Bio-process Forecasting Task."""
 
 __all__ = [

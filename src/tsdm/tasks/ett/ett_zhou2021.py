@@ -188,7 +188,10 @@ class ETT_Zhou2021(OldBaseTask):
         # tensors = self.encoder.encode(ds)
         dataset = TensorDataset(*tensors)
         sampler = SequenceSampler(
-            dataset, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
+            dataset,
+            seq_len=self.horizon,
+            stride=1,
+            shuffle=shuffle,
         )
 
         return DataLoader(dataset, sampler=sampler, **dataloader_kwargs)
