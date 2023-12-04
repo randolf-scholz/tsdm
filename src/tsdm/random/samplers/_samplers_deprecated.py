@@ -1,3 +1,4 @@
+# type: ignore
 """Deprecated samplers."""
 
 __all__ = ["IntervalSampler", "SequenceSampler"]

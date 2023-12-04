@@ -130,19 +130,13 @@ class LazyDict(dict[K, V]):
     def __init__(self, /, **kwargs: FuncSpec | V) -> None: ...
     @overload
     def __init__(
-        self,
-        mapping: Mapping[K, FuncSpec | V],
-        /,
-        **kwargs: FuncSpec | V,
+        self, mapping: Mapping[K, FuncSpec | V], /, **kwargs: FuncSpec | V
     ) -> None: ...
     @overload
     def __init__(
-        self,
-        iterable: Iterable[tuple[K, FuncSpec | V]],
-        /,
-        **kwargs: FuncSpec | V,
+        self, iterable: Iterable[tuple[K, FuncSpec | V]], /, **kwargs: FuncSpec | V
     ) -> None: ...
-    def __init__(self, /, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, /, *args, **kwargs):
         r"""Initialize the dictionary."""
         super().__init__()
         self.update(*args, **kwargs)

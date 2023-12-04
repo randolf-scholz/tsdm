@@ -1,6 +1,5 @@
+# type: ignore
 r"""Deprecated Kiwi Task Object."""
-
-# mypy: ignore-errors
 
 __all__ = [
     # Classes

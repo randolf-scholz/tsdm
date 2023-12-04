@@ -70,6 +70,7 @@ class Time2Vec(nn.Module):
     r"""Phase of the time encoding."""
 
     def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
+        super().__init__()
         self.num_dim = num_dim
         self.freq = nn.Parameter(torch.randn(num_dim - 1))
         self.phase = nn.Parameter(torch.randn(num_dim - 1))
@@ -130,6 +131,7 @@ class PositionalEncoding(nn.Module):
     r"""Scale factors for positional encoding."""
 
     def __init__(self, *, num_dim: int, scale: float) -> None:
+        super().__init__()
         assert num_dim % 2 == 0, "num_dim must be even"
         self.num_dim = num_dim
         self.scale = float(scale)

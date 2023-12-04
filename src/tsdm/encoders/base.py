@@ -2,8 +2,11 @@ r"""Base Classes for Encoders."""
 
 __all__ = [
     # Types / TypeVars
+    "Transform",
+    "InvertibleTransform",
+    "EncoderProtocol",
+    # ABCs
     "Encoder",
-    "encoder_var",
     # Classes
     "BaseEncoder",
     "CopyEncoder",
@@ -43,47 +46,105 @@ from typing_extensions import (
 from tsdm.types.variables import any_other_var as S, any_var as T, key_var as K
 from tsdm.utils.strings import repr_object, repr_type
 
-encoder_var = TypeVar("encoder_var", bound="BaseEncoder")
-"""Type variable for encoders."""
-
-E = TypeVar("E", bound="BaseEncoder")
+E = TypeVar("E", bound="Encoder")
 """Type alias for encoder_var."""
+
 U = TypeVar("U")
+U_contra = TypeVar("U_contra", contravariant=True)
 V = TypeVar("V")
+V_co = TypeVar("V_co", covariant=True)
 W = TypeVar("W")
 X = TypeVar("X")
 Y = TypeVar("Y")
 
 
 @runtime_checkable
-class Encoder(Protocol[U, V]):
-    """Protocol for Encoders."""
+class Transform(Protocol[U_contra, V_co]):
+    """Protocol for transformers."""
 
-    @property
-    def is_fitted(self) -> bool:
-        """Whether the encoder has been fitted."""
-        ...
+    @abstractmethod
+    def fit(self, data: U_contra, /) -> None: ...
+    @abstractmethod
+    def transform(self, data: U_contra, /) -> V_co: ...
 
+
+@runtime_checkable
+class InvertibleTransform(Transform[U, V], Protocol):
+    """Protocol for invertible transformers."""
+
+    @abstractmethod
+    def inverse_transform(self, data: V, /) -> U: ...
+
+
+@runtime_checkable
+class EncoderProtocol(Protocol[U, V]):
+    """Minimal Protocol for Encoders."""
+
+    @abstractmethod
+    def fit(self, data: U, /) -> None: ...
+    @abstractmethod
+    def encode(self, data: U, /) -> V: ...
+    @abstractmethod
+    def decode(self, data: V, /) -> U: ...
+
+
+class Encoder(EncoderProtocol[U, V], Protocol):
+    """Protocol for Encoders with algebraic mixin methods."""
+
+    # region abstract methods ----------------------------------------------------------
+    @abstractmethod
+    def fit(self, data: U, /) -> None: ...
+    @abstractmethod
+    def encode(self, data: U, /) -> V: ...
+    @abstractmethod
+    def decode(self, data: V, /) -> U: ...
     @property
-    def requires_fit(self) -> bool:
-        r"""Whether the encoder requires fitting."""
-        ...
+    @abstractmethod
+    def requires_fit(self) -> bool: ...
+
+    # is_fitted: bool
+
+    is_fitted: bool  # NOTE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    # endregion abstract methods -------------------------------------------------------
+
+    # region mixin methods -------------------------------------------------------------
+    def simplify(self) -> Self:
+        r"""Simplify the encoder."""
+        return self
+
+    def __call__(self, data: U, /) -> V:
+        r"""Apply the encoder."""
+        return self.encode(data)
 
     def __invert__(self) -> "Encoder[V, U]":
-        r"""Return the inverse encoder (i.e. decoder)."""
-        ...
+        r"""Return the inverse encoder (i.e. decoder).
 
-    def __matmul__(self, other: "Encoder[X, U]", /) -> "Encoder[X, V]":
+        Example:
+            enc = ~self
+            enc(y) == self.decode(y)
+        """
+        return InverseEncoder(self)  # type: ignore[arg-type]
+
+    def __matmul__(self, other: "Encoder[T, U]", /) -> "Encoder[T, V]":
         r"""Chain the encoders (pure function composition).
 
         Example:
-            enc = enc1 @ enc2
-            enc(x) == enc1(enc2(x))
+            enc = self @ other
+            enc(x) == self(other(x))
 
         Raises:
             TypeError if other is not an encoder.
         """
-        ...
+        return ChainedEncoder(self, other)
+
+    def __rmatmul__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
+        r"""Chain the encoders (pure function composition).
+
+        Example:
+            enc = other @ self
+            enc(x) == other(self(x))
+        """
+        return ChainedEncoder(other, self)
 
     def __gt__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
         r"""Pipe the encoders (encoder composition).
@@ -92,6 +153,7 @@ class Encoder(Protocol[U, V]):
 
         Example:
             enc = enc1 > enc2
+            enc(x) = enc2(enc1(x))
             enc.encode(x) == enc2.encode(enc1.encode(x))
             enc.decode(y) == enc1.decode(enc2.decode(y))
 
@@ -112,23 +174,36 @@ class Encoder(Protocol[U, V]):
                       = (A > B).decode(x)
                       = B.decode(A.decode(x))
         """
-        return other @ self
+        return ChainedEncoder(other, self)
 
     def __or__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[U, X], tuple[V, Y]]":
-        r"""Return product encoders."""
-        ...
+        r"""Return product encoders.
 
-    def encode(self, data: U, /) -> V:
-        """Encode the data by transformation."""
-        ...
+        Example:
+            enc = self | other
+            enc((x, y)) == (self(x), other(y))
+        """
+        return ProductEncoder(self, other)
 
-    def decode(self, data: V, /) -> U:
-        """Decode the data by transformation."""
-        ...
+    def __ror__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[X, U], tuple[Y, V]]":
+        r"""Return product encoders.
 
-    def fit(self, data: U, /) -> None:
-        r"""Fits the encoder to data."""
-        ...
+        Example:
+            enc = other | self
+            enc((x, y)) == (other(x), self(y))
+        """
+        return ProductEncoder(other, self)
+
+    def __pow__(self: "Encoder[T, T]", power: int, /) -> "Encoder[T, T]":
+        r"""Return the chain of itself multiple times.
+
+        Example:
+            enc = self ** n
+            enc(x) == self(self(...self(x)...))
+        """
+        return pow_encoder(self, power)
+
+    # endregion mixin methods ----------------------------------------------------------
 
 
 class BaseEncoderMetaClass(type(Protocol)):  # type: ignore[misc]
@@ -153,6 +228,33 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
     _is_fitted: bool = False
     r"""Whether the encoder has been fitted."""
 
+    # region abstract methods ----------------------------------------------------------
+    @property
+    @abstractmethod
+    def requires_fit(self) -> bool:
+        r"""Whether the encoder requires fitting."""
+        ...
+
+    def fit(self, data: T, /) -> None:
+        r"""Implement as necessary."""
+        ...
+
+    @abstractmethod
+    def encode(self, data: T, /) -> S:
+        r"""Encode the data by transformation."""
+        ...
+
+    @abstractmethod
+    def decode(self, data: S, /) -> T:
+        r"""Decode the data by inverse transformation."""
+        ...
+
+    def simplify(self) -> Self:
+        r"""Simplify the encoder."""
+        return self
+
+    # endregion abstract methods -------------------------------------------------------
+
     def __init_subclass__(cls) -> None:
         r"""Initialize the subclass.
 
@@ -170,6 +272,8 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
                 self.LOGGER.info(
                     "Skipping fitting as encoder does not require fitting."
                 )
+                self.is_fitted = True
+                return
             else:
                 self.LOGGER.info("Fitting encoder to data.")
                 original_fit(self, data)
@@ -178,14 +282,14 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         @wraps(original_encode)
         def encode(self: Self, data: T, /) -> S:
             r"""Encode the data."""
-            if not self.is_fitted:
+            if self.requires_fit and not self.is_fitted:
                 raise RuntimeError("Encoder has not been fitted.")
             return original_encode(self, data)
 
         @wraps(original_decode)
         def decode(self: Self, data: S, /) -> T:
             r"""Decode the data."""
-            if not self.is_fitted:
+            if self.requires_fit and not self.is_fitted:
                 raise RuntimeError("Encoder has not been fitted.")
             return original_decode(self, data)
 
@@ -197,39 +301,17 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         if not hasattr(cls, "inverse_transform"):
             cls.inverse_transform = cls.decode
 
-    def __invert__(self) -> "BaseEncoder[S, T]":
-        r"""Return the inverse encoder (i.e. decoder)."""
-        return InverseEncoder(self)
-
-    def __matmul__(self, other: Encoder, /) -> "ChainedEncoder":
-        r"""Return chained encoders."""
-        return ChainedEncoder(self, other)
-
-    def __or__(self, other: Encoder, /) -> "ProductEncoder":
-        r"""Return product encoders."""
-        return ProductEncoder(self, other)
-
-    def __pow__(self, power: int) -> "DuplicateEncoder":
-        r"""Return the product encoder of the encoder with itself power many times."""
-        return DuplicateEncoder(self, power)
-
     def __repr__(self) -> str:
         r"""Return a string representation of the encoder."""
         return repr_object(self, fallback=repr_type, recursive=1)
 
     @property
-    @abstractmethod
-    def requires_fit(self) -> bool:
-        r"""Whether the encoder requires fitting."""
-        ...
-
-    @property
     def is_fitted(self) -> bool:
         r"""Whether the encoder has been fitted."""
-        return self._is_fitted
+        return (not self.requires_fit) or self._is_fitted
 
     @is_fitted.setter
-    def is_fitted(self, value: bool) -> None:
+    def is_fitted(self, value: bool, /) -> None:
         self._is_fitted = value
 
     @property
@@ -246,34 +328,6 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
     def is_bijective(self) -> bool:
         r"""Whether the encoder is bijective."""
         return self.is_surjective and self.is_injective
-
-    def fit(self, data: T, /) -> None:
-        r"""Implement as necessary."""
-
-    @abstractmethod
-    def encode(self, data: T, /) -> S:
-        r"""Encode the data by transformation."""
-        ...
-
-    @abstractmethod
-    def decode(self, data: S, /) -> T:
-        r"""Decode the data by inverse transformation."""
-        ...
-
-    def simplify(self) -> Self:
-        r"""Simplify the encoder."""
-        return self
-
-    def _post_fit_hook(self) -> None:
-        self.is_fitted = True
-
-    def _pre_encode_hook(self) -> None:
-        if self.requires_fit and not self.is_fitted:
-            raise RuntimeError("Encoder has not been fitted.")
-
-    def _pre_decode_hook(self) -> None:
-        if self.requires_fit and not self.is_fitted:
-            raise RuntimeError("Encoder has not been fitted.")
 
 
 class IdentityEncoder(BaseEncoder[T, T]):
@@ -336,7 +390,7 @@ class InverseEncoder(BaseEncoder[S, T]):
         return cls(self.encoder.simplify())
 
 
-def invert_encoder(encoder: BaseEncoder[T, S], /) -> BaseEncoder[S, T]:
+def invert_encoder(encoder: Encoder[T, S], /) -> Encoder[S, T]:
     r"""Return the inverse encoder (i.e. decoder)."""
     return ~encoder
 
@@ -395,11 +449,11 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
 
     @property
     def is_surjective(self) -> bool:
-        return all(e.is_surjective for e in self.encoders)
+        return all(e.is_surjective for e in self.encoders)  # type: ignore[attr-defined]
 
     @property
     def is_injective(self) -> bool:
-        return all(e.is_injective for e in self.encoders)
+        return all(e.is_injective for e in self.encoders)  # type: ignore[attr-defined]
 
     def fit(self, data: Any, /) -> None:
         for encoder in reversed(self.encoders):
@@ -447,7 +501,12 @@ def chain_encoders(*encoders, simplify=True):
 
 @overload
 def pow_encoder(
-    e: Encoder, n: Literal[0], /, *, simplify: Literal[True], copy: bool = ...
+    e: Encoder,
+    n: Literal[0],
+    /,
+    *,
+    simplify: Literal[True],
+    copy: bool = ...,
 ) -> IdentityEncoder: ...
 @overload
 def pow_encoder(
@@ -497,11 +556,11 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
 
     @property
     def is_surjective(self) -> bool:
-        return all(e.is_surjective for e in self.encoders)
+        return all(e.is_surjective for e in self.encoders)  # type: ignore[attr-defined]
 
     @property
     def is_injective(self) -> bool:
-        return all(e.is_injective for e in self.encoders)
+        return all(e.is_injective for e in self.encoders)  # type: ignore[attr-defined]
 
     def __init__(self, *encoders: E, simplify: bool = True) -> None:
         self.encoders = []
@@ -522,10 +581,10 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int) -> E: ...
+    def __getitem__(self, index: int, /) -> E: ...
     @overload
-    def __getitem__(self, index: slice) -> "ProductEncoder[E]": ...
-    def __getitem__(self, index: int | slice) -> E | "ProductEncoder[E]":
+    def __getitem__(self, index: slice, /) -> "ProductEncoder[E]": ...
+    def __getitem__(self, index, /):
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]
@@ -578,7 +637,12 @@ def direct_sum_encoders(*encoders, simplify=True):
 
 @overload
 def duplicate_encoder(
-    e: Encoder, n: Literal[0], /, *, simplify: Literal[True], copy: bool = ...
+    e: Encoder,
+    n: Literal[0],
+    /,
+    *,
+    simplify: Literal[True],
+    copy: bool = ...,
 ) -> IdentityEncoder: ...
 @overload
 def duplicate_encoder(
@@ -626,7 +690,7 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
     def __getitem__(self, key: K) -> E: ...
     @overload
     def __getitem__(self, key: list[K]) -> "MappingEncoder[K, E]": ...
-    def __getitem__(self, key: K | list[K]) -> E | "MappingEncoder[K, E]":
+    def __getitem__(self, key, /):
         r"""Get the encoder for the given key."""
         if isinstance(key, list):
             return MappingEncoder({k: self.encoders[k] for k in key})
@@ -667,11 +731,13 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
 class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     r"""Duplicate encoder multiple times (references same object)."""
 
+    base_encoder: Encoder[T, S]
+
     @property
     def requires_fit(self) -> bool:
         return self.encoder.requires_fit
 
-    def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
+    def __init__(self, encoder: Encoder[T, S], n: int = 1) -> None:
         self.base_encoder = encoder
         self.n = n
         self.encoder = ProductEncoder(*(self.base_encoder for _ in range(n)))

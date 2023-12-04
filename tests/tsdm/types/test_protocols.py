@@ -242,8 +242,9 @@ def test_sequence_protocol() -> None:
     assert isinstance(seq_tup, Sequence)
     assert isinstance(seq_tup, SequenceProtocol)
 
-    # check that string is NOT a SequenceProtol
-    assert not isinstance("foo", SequenceProtocol)
+    # check string
+    seq_str: str = "foo"
+    assert isinstance(seq_str, Sequence)
 
 
 def test_get_interscetion_indexable() -> None:

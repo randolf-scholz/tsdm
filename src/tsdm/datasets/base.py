@@ -766,18 +766,31 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         return self.deserialize(self.dataset_paths[key])
 
     @overload
-    def load(self, key: None = ..., **kwargs: Any) -> Mapping[Key, T_co]: ...
-    @overload
-    def load(self, key: Key = ..., **kwargs: Any) -> T_co: ...
     def load(
         self,
-        key: Optional[Key] = None,
+        key: None = ...,
         *,
-        force: bool = False,
-        validate: bool = True,
-        initializing: bool = False,
-        **kwargs: Any,
-    ) -> Mapping[Key, T_co] | T_co:
+        force: bool = ...,
+        validate: bool = ...,
+        initializing: bool = ...,
+    ) -> Mapping[Key, T_co]: ...
+    @overload
+    def load(
+        self,
+        key: Key = ...,
+        *,
+        force: bool = ...,
+        validate: bool = ...,
+        initializing: bool = ...,
+    ) -> T_co: ...
+    def load(
+        self,
+        key=None,
+        *,
+        force=False,
+        validate=True,
+        initializing=False,
+    ):
         r"""Load the selected DATASET_OBJECT.
 
         Args:
@@ -801,7 +814,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
                 )
             ):
                 pbar.set_postfix(table=name)
-                self.load(key=name, force=force, validate=validate, **kwargs)
+                self.load(key=name, force=force, validate=validate)
             self.LOGGER.debug("Finished loading dataset.")
             return self.tables
 

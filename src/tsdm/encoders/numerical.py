@@ -374,14 +374,14 @@ class BoundaryEncoder(BaseEncoder[T, T]):
     ) -> None: ...
     def __init__(
         self,
-        lower_bound: None | float | T = NotImplemented,
-        upper_bound: None | float | T = NotImplemented,
+        lower_bound=NotImplemented,
+        upper_bound=NotImplemented,
         *,
-        lower_included: bool = True,
-        upper_included: bool = True,
-        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask",
-        axis: Axes = None,
-    ) -> None:
+        lower_included=True,
+        upper_included=True,
+        mode="mask",
+        axis=None,
+    ):
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.lower_included = lower_included
@@ -581,13 +581,11 @@ class LinearScaler(BaseEncoder[T, T]):
         *,
         axis: Axes = ...,
     ) -> None: ...
-    def __init__(
-        self, loc: float | T = 0.0, scale: float | T = 1.0, *, axis: Axes = None
-    ) -> None:
+    def __init__(self, loc=0.0, scale=1.0, *, axis=None):
         r"""Initialize the MinMaxScaler."""
         self.loc = cast(T, loc)
         self.scale = cast(T, scale)
-        self.axis = axis  # type: ignore[assignment]
+        self.axis = axis
 
     @pprint_repr
     class Parameters(NamedTuple):
@@ -823,7 +821,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
         ymin: TensorLike
         ymax: TensorLike
         axis: Axes
-        safe_computation: bool
 
     @property
     def params(self) -> Parameters:
@@ -834,7 +831,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
             ymin=self.ymin,
             ymax=self.ymax,
             axis=self.axis,
-            safe_computation=self.safe_computation,
         )
 
     @property
@@ -851,7 +847,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
         xmin: None | float = ...,
         xmax: None | float = ...,
         axis: Axes = ...,
-        safe_computation: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -862,22 +857,11 @@ class MinMaxScaler(BaseEncoder[T, T]):
         xmin: None | float | T = ...,
         xmax: None | float | T = ...,
         axis: Axes = ...,
-        safe_computation: bool = ...,
     ) -> None: ...
-    def __init__(
-        self,
-        ymin: float | T = 0.0,
-        ymax: float | T = 1.0,
-        *,
-        xmin: None | float | T = None,
-        xmax: None | float | T = None,
-        axis: Axes = (),
-        safe_computation: bool = True,
-    ) -> None:
+    def __init__(self, ymin=0.0, ymax=1.0, *, xmin=None, xmax=None, axis=()):
         self.ymin = cast(T, ymin)
         self.ymax = cast(T, ymax)
         self.axis = axis
-        self.safe_computation = safe_computation
 
         self.xmin_learnable = xmin is None
         self.xmax_learnable = xmax is None
@@ -987,14 +971,13 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
         y = (x - xbar) * scale + ybar
 
-        if self.safe_computation:
-            # ensure the conditions
-            # x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
-            y = self.backend.where(x < xmin, self.backend.clip(y, None, ymin), y)
-            y = self.backend.where(x > xmax, self.backend.clip(y, ymax, None), y)
-            y = self.backend.where(
-                (x >= xmin) & (x <= xmax), self.backend.clip(y, ymin, ymax), y
-            )
+        # NOTE: Ensure the conditions
+        # x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
+        y = self.backend.where(x < xmin, self.backend.clip(y, None, ymin), y)
+        y = self.backend.where(x > xmax, self.backend.clip(y, ymax, None), y)
+        y = self.backend.where(
+            (x >= xmin) & (x <= xmax), self.backend.clip(y, ymin, ymax), y
+        )
 
         return y
 

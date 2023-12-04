@@ -1,55 +1,41 @@
+"""Test sklearn encoders."""
+
 from pytest import mark
 from sklearn import preprocessing as sk_preprocessing
-from sklearn.base import BaseEstimator
-from typing_extensions import Protocol, runtime_checkable
 
+from tsdm.encoders.sklearn import (
+    SKLEARN_ENCODERS,
+    SKLEARN_TRANSFORMS,
+    InvertibleTransform,
+    Transform,
+)
 
-@runtime_checkable
-class Transformer(Protocol):
-    """Protocol for transformers."""
-
-    def fit(self, X, y=None):
-        """Fit the transformer."""
-        ...
-
-    def fit_transform(self, X, y=None):
-        """Fit and transform the data."""
-        ...
-
-    def transform(self, X):
-        """Transform the data."""
-        ...
-
-    def inverse_transform(self, X):
-        """Inverse-transform the data."""
-        ...
-
-
-x: type[Transformer] = BaseEstimator
-
-SKLEARN_ENCODERS: dict[str, type[Transformer]] = {
+_SKLEARN_NOT_ENCODERS = {
     "Binarizer": sk_preprocessing.Binarizer,
-    "FunctionTransformer": sk_preprocessing.FunctionTransformer,
-    "KBinsDiscretizer": sk_preprocessing.KBinsDiscretizer,
     "KernelCenterer": sk_preprocessing.KernelCenterer,
-    "LabelBinarizer": sk_preprocessing.LabelBinarizer,
-    "LabelEncoder": sk_preprocessing.LabelEncoder,
-    "MaxAbsScaler": sk_preprocessing.MaxAbsScaler,
-    "MinMaxScaler": sk_preprocessing.MinMaxScaler,
-    "MultiLabelBinarizer": sk_preprocessing.MultiLabelBinarizer,
     "Normalizer": sk_preprocessing.Normalizer,
-    "OneHotEncoder": sk_preprocessing.OneHotEncoder,
-    "OrdinalEncoder": sk_preprocessing.OrdinalEncoder,
     "PolynomialFeatures": sk_preprocessing.PolynomialFeatures,
-    "PowerTransformer": sk_preprocessing.PowerTransformer,
-    "QuantileTransformer": sk_preprocessing.QuantileTransformer,
-    "RobustScaler": sk_preprocessing.RobustScaler,
     "SplineTransformer": sk_preprocessing.SplineTransformer,
-    "StandardScaler": sk_preprocessing.StandardScaler,
 }
-r"""Dictionary of all available sklearn encoders."""
+
+
+def test_all_checked() -> None:
+    assert (
+        _SKLEARN_NOT_ENCODERS.keys() | SKLEARN_ENCODERS.keys()
+        == SKLEARN_TRANSFORMS.keys()
+    )
+
+
+@mark.parametrize("encoder", SKLEARN_TRANSFORMS.values(), ids=SKLEARN_TRANSFORMS)
+def test_transform(encoder: type[Transform]) -> None:
+    assert issubclass(encoder, Transform)
 
 
 @mark.parametrize("encoder", SKLEARN_ENCODERS.values(), ids=SKLEARN_ENCODERS)
-def test_encoder(encoder: type[Transformer]):
-    assert issubclass(encoder, Transformer)
+def test_encoder(encoder: type[InvertibleTransform]) -> None:
+    assert issubclass(encoder, InvertibleTransform)
+
+
+@mark.parametrize("encoder", _SKLEARN_NOT_ENCODERS.values(), ids=_SKLEARN_NOT_ENCODERS)
+def test_not_encoder(encoder: type[Transform]) -> None:
+    assert not issubclass(encoder, InvertibleTransform)

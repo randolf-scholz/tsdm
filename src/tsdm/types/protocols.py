@@ -57,7 +57,6 @@ from collections.abc import (
     Iterable,
     Iterator,
     KeysView,
-    Reversible,
     ValuesView,
 )
 from types import GenericAlias
@@ -747,8 +746,13 @@ class SupportsKwargs(Protocol[V_co], metaclass=SupportsKwargsType):
 
 
 @runtime_checkable
-class SequenceProtocol(Collection[T_co], Reversible[T_co], Protocol[T_co]):
+class SequenceProtocol(Protocol[T_co]):
     """Protocol version of `collections.abc.Sequence`.
+
+    Note:
+        We intentionally exclude `Reversible`, since `tuple` fakes this:
+        `tuple` has not attribute `__reversed__`, rather it used the
+        `Sequence.register(tuple)` to artificially become a nominal subtype.
 
     References:
         - https://github.com/python/typeshed/blob/main/stdlib/typing.pyi
@@ -766,8 +770,8 @@ class SequenceProtocol(Collection[T_co], Reversible[T_co], Protocol[T_co]):
 
     # Mixin methods
     # TODO: implement mixin methods
+    # def __reversed__(self) -> Iterator[T_co]: ...  # NOTE: intentionally excluded
     def __iter__(self) -> Iterator[T_co]: ...
-    def __reversed__(self) -> Iterator[T_co]: ...
     def __contains__(self, value: object, /) -> bool: ...
     def index(self, value: Any, start: int = 0, stop: int = ..., /) -> int: ...
     def count(self, value: Any, /) -> int: ...
@@ -946,7 +950,7 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
 def is_dataclass(obj: type, /) -> TypeGuard[type[Dataclass]]: ...
 @overload
 def is_dataclass(obj: object, /) -> TypeGuard[Dataclass]: ...
-def is_dataclass(obj: Any, /) -> TypeGuard[Dataclass | type[Dataclass]]:
+def is_dataclass(obj, /):
     r"""Check if the object is a dataclass."""
     # return dataclasses.is_dataclass(obj)
     return (
@@ -956,26 +960,11 @@ def is_dataclass(obj: Any, /) -> TypeGuard[Dataclass | type[Dataclass]]:
     )
 
 
-# @overload
-# def is_dataclass(obj: DataclassInstance) -> Literal[True]: ...
-# @overload
-# def is_dataclass(obj: type) -> TypeGuard[type[DataclassInstance]]: ...
-# @overload
-# def is_dataclass(
-#     obj: object,
-# ) -> TypeGuard[DataclassInstance | type[DataclassInstance]]: ...
-
-
-#
-#
-# reveal_type(is_dataclass)
-
-
 @overload
 def is_namedtuple(obj: type, /) -> TypeGuard[type[NTuple]]: ...
 @overload
 def is_namedtuple(obj: object, /) -> TypeGuard[NTuple]: ...
-def is_namedtuple(obj: Any, /) -> TypeGuard[NTuple | type[NTuple]]:
+def is_namedtuple(obj, /):
     """Check if the object is a namedtuple."""
     return (
         issubclass(obj, NTuple)  # type: ignore[misc]

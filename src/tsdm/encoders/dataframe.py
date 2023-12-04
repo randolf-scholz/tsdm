@@ -114,7 +114,6 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
     dtypes: Series
     index_columns: Index
     index_dtypes: Series
-    duplicate: bool = False
 
     column_encoders: ColEnc
     r"""Encoders for the columns."""
@@ -143,7 +142,6 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
         column_encoders: ColEnc,
         *,
         index_encoders: IndEnc,
-        duplicate: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -151,7 +149,6 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
         column_encoders: ColEnc,
         *,
         index_encoders: Optional[Encoder | Mapping[Any, Encoder]] = ...,
-        duplicate: bool = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -159,15 +156,13 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
         column_encoders: Optional[Encoder | Mapping[Any, Encoder]] = ...,
         *,
         index_encoders: Optional[Encoder | Mapping[Any, Encoder]] = ...,
-        duplicate: bool = ...,
     ) -> None: ...
     def __init__(
         self,
-        column_encoders: Optional[Encoder | Mapping[Any, Encoder]] = None,
+        column_encoders=None,
         *,
-        index_encoders: Optional[Encoder | Mapping[Any, Encoder]] = None,
-        duplicate: bool = False,
-    ) -> None:
+        index_encoders=None,
+    ):
         if column_encoders is None:
             self.column_encoders = None
         else:
@@ -180,8 +175,6 @@ class OldFrameEncoder(BaseEncoder[DataFrame, DataFrame], Generic[ColEnc, IndEnc]
 
         # self.column_encoders = column_encoders
         # self.index_encoders = index_encoders
-
-        self.duplicate = duplicate
 
     def fit(self, data: DataFrame, /) -> None:
         data = data.copy()
@@ -523,13 +516,11 @@ class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
                 self.encoded_columns = list(encoded.columns)
                 self.encoded_dtypes = dict(encoded.dtypes)
             case pl.DataFrame():
-                encoded = pl.concat(encoded_groups, axis="columns")
+                encoded = pl.concat(encoded_groups, how="horizontal")
                 self.encoded_columns = list(encoded.columns)
                 self.encoded_dtypes = dict(encoded.dtypes)
             case pa.Table():
-                encoded = pa.concat_tables(encoded_groups)
-                self.encoded_columns = list(encoded.column_names)
-                self.encoded_dtypes = dict(encoded.schema.types)
+                raise NotImplementedError
             case _:
                 raise NotImplementedError
         # endregion --------------------------------------------------------------------
@@ -544,9 +535,9 @@ class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
             case DataFrame():
                 return pd.concat(encoded_groups, axis="columns")
             case pl.DataFrame():
-                return pl.concat(encoded_groups, axis="columns")
+                return pl.concat(encoded_groups, how="horizontal")
             case pa.Table():
-                return pa.concat_tables(encoded_groups)
+                raise NotImplementedError
             case _:
                 raise NotImplementedError
 
@@ -560,9 +551,9 @@ class TableEncoder(BaseEncoder[TableType, TableType], Mapping[K, BaseEncoder]):
             case DataFrame():
                 return pd.concat(decoded_groups, axis="columns")
             case pl.DataFrame():
-                return pl.concat(decoded_groups, axis="columns")
+                return pl.concat(decoded_groups, how="horizontal")
             case pa.Table():
-                return pa.concat_tables(decoded_groups)
+                raise NotImplementedError
             case _:
                 raise NotImplementedError
 

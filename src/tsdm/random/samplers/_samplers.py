@@ -264,7 +264,7 @@ class RandomSampler(BaseSampler[T_co]):
     @overload
     def __init__(self: "RandomSampler[T_co]", data: IndexableDataset[T_co], /, *, shuffle: bool = ...) -> None: ...
     # fmt: on
-    def __init__(self, data: Dataset[T_co], /, *, shuffle: bool = False) -> None:
+    def __init__(self, data, /, *, shuffle=False):
         """Initialize the sampler."""
         super(RandomSampler, self).__init__(shuffle=shuffle)
         self.data = data

@@ -198,7 +198,7 @@ repos:
             |src/tsdm/viz
           )
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.44
+    rev: v0.1.46
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
@@ -230,7 +230,9 @@ repos:
       - id: python-check-typing
         files: (^src/|^tests/)
         args:
-          ["--check-overload-default-ellipsis", "--check-no-future-annotations"]
+          - "--check-overload-default-ellipsis"
+          - "--check-no-future-annotations"
+          - "--check-no-hints-overload-implementation"
       - id: python-check-clean-interface
         files: ^src/
         args: ["--no-load-silent"]

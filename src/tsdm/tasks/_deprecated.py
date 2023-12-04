@@ -1,4 +1,6 @@
+# type: ignore
 """Deprecated Task code."""
+
 
 __all__ = ["BaseTask", "OldBaseTask"]
 
