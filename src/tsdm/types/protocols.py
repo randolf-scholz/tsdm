@@ -942,9 +942,11 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
     @classmethod
     def __subclasshook__(cls, other: type, /) -> bool:
         """Cf https://github.com/python/cpython/issues/106363."""
-        return (typing.NamedTuple in get_original_bases(other)) or (
+        if (typing.NamedTuple in get_original_bases(other)) or (
             typing_extensions.NamedTuple in get_original_bases(other)
-        )
+        ):
+            return True
+        return NotImplemented
 
 
 @overload

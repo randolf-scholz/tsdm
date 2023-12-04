@@ -22,7 +22,7 @@ import subprocess
 import warnings
 import webbrowser
 from abc import abstractmethod
-from collections.abc import Collection, Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
 from urllib.parse import urlparse
@@ -119,7 +119,8 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
         version: str = NotImplemented,
         **init_kwargs: Any,
     ) -> Self:
-        obj: Self = cls.__new__(cls, *init_args, **init_kwargs)
+        """Add custom initialization logic (pre/post hooks)."""
+        obj: Self = cls.__new__(cls, *init_args, **init_kwargs)  # pyright: ignore
         cls.__pre_init__(
             obj,
             *init_args,
@@ -653,7 +654,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
     # Cf. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @cached_property
-    def tables(self) -> MutableMapping[Key, T_co]:
+    def tables(self) -> Mapping[Key, T_co]:
         r"""Store cached version of dataset."""
         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
 

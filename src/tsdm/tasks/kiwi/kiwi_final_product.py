@@ -213,7 +213,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
-        return jit.script(MSELoss())
+        return jit.script(MSELoss())  # pyright: ignore
 
     @cached_property
     def split_idx(self) -> DataFrame:

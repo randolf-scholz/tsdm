@@ -10,7 +10,7 @@ from itertools import count
 import numpy as np
 from numpy._typing import NDArray
 from pandas import DataFrame, Timedelta, Timestamp
-from typing_extensions import Any, Generic, Optional, cast, deprecated
+from typing_extensions import Any, Generic, Iterable, Optional, cast, deprecated
 
 from tsdm.random.samplers import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup
@@ -43,7 +43,7 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
     ) -> TDVar:
         match obj:
             case Callable() as func:  # type: ignore[misc]
-                return func(k)
+                return func(k)  # pyright: ignore
             case Lookup() as mapping:
                 return mapping[k]
             case _:
@@ -114,14 +114,14 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
             if not valid_strides:
                 break
 
-            intervals.extend([
+            intervals.extend([  # pyright: ignore
                 (x0 + i * st, x0 + i * st + dt, dt, st) for i in valid_strides
             ])
 
         # set variables
         self.offset = cast(TDVar, offset)  # type: ignore[redundant-cast]
-        self.deltax = deltax
-        self.stride = stride
+        self.deltax = deltax  # pyright: ignore
+        self.stride = stride  # pyright: ignore
         self.intervals = DataFrame(
             intervals,
             columns=["lower_bound", "upper_bound", "delta", "stride"],
@@ -176,15 +176,15 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
     def __init__(
         self,
-        data_source: NDArray[DTVar],
+        data_source: Iterable[DTVar],
         /,
         *,
         return_mask: bool = False,
         seq_len: str | TDVar,
         shuffle: bool = False,
         stride: str | TDVar,
-        tmax: Optional[DTVar] = None,
         tmin: Optional[DTVar] = None,
+        tmax: Optional[DTVar] = None,
     ) -> None:
         super().__init__(shuffle=shuffle)
         self.data = np.asarray(data_source)
@@ -195,7 +195,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case str() as time_str:
                 self.xmin = Timestamp(time_str)
             case _:
-                self.xmin = tmin
+                self.xmin = tmin  # pyright: ignore
 
         match tmax:
             case None:
@@ -203,7 +203,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
             case str() as time_str:
                 self.xmax = Timestamp(time_str)
             case _:
-                self.xmax = tmax
+                self.xmax = tmax  # pyright: ignore
 
         total_delta = cast(TDVar, self.xmax - self.xmin)  # type: ignore[redundant-cast]
         self.stride = cast(

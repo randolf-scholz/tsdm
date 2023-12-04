@@ -22,7 +22,7 @@ from typing_extensions import Any, NamedTuple
 
 from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
-from tsdm.encoders import MinMaxScaler, OldFrameEncoder, StandardScaler
+from tsdm.encoders import FrameEncoder, MinMaxScaler, StandardScaler
 from tsdm.tasks._deprecated import OldBaseTask
 from tsdm.utils.strings import repr_namedtuple
 
@@ -184,12 +184,12 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
     test_size = 0.15  # of total
     valid_size = 0.2  # of train split size, i.e. 0.85*0.2=0.17
 
-    preprocessor: OldFrameEncoder
+    preprocessor: FrameEncoder
 
     def __init__(self, *, normalize_time: bool = True) -> None:
         super().__init__()
-        self.preprocessor = OldFrameEncoder(
-            column_encoders=StandardScaler(),
+        self.preprocessor = FrameEncoder(
+            {self.dataset.columns: StandardScaler()},
             index_encoders={"time_stamp": MinMaxScaler()},
         )
         self.normalize_time = normalize_time
@@ -209,7 +209,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor.index_encoders["time_stamp"]
-        self.observation_time /= index_encoder.params.xmax
+        self.observation_time /= index_encoder["time_stamp"].params.xmax
 
         # drop values outside 5 sigma range
         ts = ts[(-5 < ts) & (ts < 5)]

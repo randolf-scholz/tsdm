@@ -28,7 +28,7 @@ from typing_extensions import (
 )
 
 from tsdm.encoders.base import BaseEncoder
-from tsdm.encoders.dataframe import OldFrameEncoder
+from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasObject
 
 
@@ -358,5 +358,5 @@ class PeriodicSocialTimeEncoder(SocialTimeEncoder):
             level: PeriodicEncoder(period=self.frequencies[level])
             for level in self.levels
         }
-        obj = OldFrameEncoder(column_encoders) @ self
+        obj = FrameEncoder(column_encoders=column_encoders) @ self
         return cast(Self, obj)

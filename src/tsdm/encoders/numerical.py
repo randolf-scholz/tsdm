@@ -374,14 +374,14 @@ class BoundaryEncoder(BaseEncoder[T, T]):
     ) -> None: ...
     def __init__(
         self,
-        lower_bound=NotImplemented,
-        upper_bound=NotImplemented,
+        lower_bound: None | float | T = NotImplemented,
+        upper_bound: None | float | T = NotImplemented,
         *,
-        lower_included=True,
-        upper_included=True,
-        mode="mask",
-        axis=None,
-    ):
+        lower_included: bool = True,
+        upper_included: bool = True,
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask",
+        axis: Axes = None,
+    ) -> None:
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.lower_included = lower_included
@@ -487,39 +487,49 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         if self.upper_bound is NotImplemented:
             self.upper_bound = self.backend.nanmax(data)
 
-        self.lower_value: float | T = (
-            self.backend.to_tensor(float("-inf"))
-            if self.lower_bound is None
-            else (
-                self.backend.to_tensor(float("nan"))
-                if self.lower_mode == "mask"
-                else self.lower_bound if self.lower_mode == "clip" else NotImplemented
-            )
-        )
+        # set lower_value
+        match self.lower_bound, self.lower_mode:
+            case None, _:
+                self.lower_value = self.backend.to_tensor(float("-inf"))
+            case _, "mask":
+                self.lower_value = self.backend.to_tensor(float("nan"))
+            case _, "clip":
+                self.lower_value = self.lower_bound  # type: ignore[assignment]
+            case _:
+                self.lower_value = NotImplemented
 
-        self.upper_value: float | T = (
-            self.backend.to_tensor(float("+inf"))
-            if self.upper_bound is None
-            else (
-                self.backend.to_tensor(float("nan"))
-                if self.upper_mode == "mask"
-                else self.upper_bound if self.upper_mode == "clip" else NotImplemented
-            )
-        )
+        # set upper_value
+        match self.upper_bound, self.upper_mode:
+            case None, _:
+                self.upper_value = self.backend.to_tensor(float("+inf"))
+            case _, "mask":
+                self.upper_value = self.backend.to_tensor(float("nan"))
+            case _, "clip":
+                self.upper_value = self.upper_bound  # type: ignore[assignment]
+            case _:
+                self.upper_value = NotImplemented
 
-        # Create lower comparison function
-        self.lower_satisfied: Callable[[T], T] = (
-            self.backend.true_like
-            if self.lower_bound is None
-            else self._ge if self.lower_included else self._gt
-        )
+        # set lower comparison function
+        match self.lower_bound, self.lower_included:
+            case None, _:
+                self.lower_satisfied = self.backend.true_like
+            case _, True:
+                self.lower_satisfied = self._ge
+            case _, False:
+                self.lower_satisfied = self._gt
+            case _:
+                raise ValueError(f"Invalid {self.lower_bound=}/{self.lower_included=}")
 
-        # Create upper comparison function
-        self.upper_satisfied: Callable[[T], T] = (
-            self.backend.true_like
-            if self.upper_bound is None
-            else self._le if self.upper_included else self._lt
-        )
+        # set upper comparison function
+        match self.upper_bound, self.upper_included:
+            case None, _:
+                self.upper_satisfied = self.backend.true_like
+            case _, True:
+                self.upper_satisfied = self._le
+            case _, False:
+                self.upper_satisfied = self._lt
+            case _:
+                raise ValueError(f"Invalid {self.upper_bound=}/{self.upper_included=}")
 
     def _ge(self, x: T) -> T:
         return (x >= self.lower_bound) | self.backend.isnan(x)
@@ -560,7 +570,7 @@ class LinearScaler(BaseEncoder[T, T]):
     scale: T  # NDArray[np.number] | Tensor
     r"""The scaling factor."""
 
-    axis: tuple[int, ...]
+    axis: Axes
     r"""Over which axis to perform the scaling."""
     backend: Backend[T]
     """The backend of the encoder."""
@@ -581,11 +591,20 @@ class LinearScaler(BaseEncoder[T, T]):
         *,
         axis: Axes = ...,
     ) -> None: ...
-    def __init__(self, loc=0.0, scale=1.0, *, axis=None):
+    def __init__(
+        self,
+        loc: float | T = 0.0,
+        scale: float | T = 1.0,
+        *,
+        axis: Axes = None,
+    ) -> None:
         r"""Initialize the MinMaxScaler."""
         self.loc = cast(T, loc)
         self.scale = cast(T, scale)
         self.axis = axis
+
+        if axis is not None:
+            raise NotImplementedError("Axis not implemented yet.")
 
     @pprint_repr
     class Parameters(NamedTuple):
@@ -593,7 +612,7 @@ class LinearScaler(BaseEncoder[T, T]):
 
         loc: TensorLike
         scale: TensorLike
-        axis: tuple[int, ...]
+        axis: Axes
 
     @property
     def params(self) -> Parameters:
@@ -858,7 +877,15 @@ class MinMaxScaler(BaseEncoder[T, T]):
         xmax: None | float | T = ...,
         axis: Axes = ...,
     ) -> None: ...
-    def __init__(self, ymin=0.0, ymax=1.0, *, xmin=None, xmax=None, axis=()):
+    def __init__(
+        self,
+        ymin: float | T = 0.0,
+        ymax: float | T = 1.0,
+        *,
+        xmin: None | float | T = None,
+        xmax: None | float | T = None,
+        axis: Axes = (),
+    ) -> None:
         self.safe_computation = True
         self.ymin = cast(T, ymin)
         self.ymax = cast(T, ymax)

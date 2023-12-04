@@ -18,7 +18,7 @@ __all__ = [
 
 import logging
 from abc import abstractmethod
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
 from itertools import chain
 
@@ -445,7 +445,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     # dependent variables
     tmin: DT
     tmax: DT
-    cumulative_horizons: NDArray[TDLike]
+    cumulative_horizons: NDArray[TDLike]  # pyright: ignore
     # grid: Final[NDArray[np.integer]]
 
     # region __init__ overloads --------------------------------------------------------
@@ -643,67 +643,6 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         r"""Return the number of samples."""
         return len(self.grid)  # - self.drop_last
 
-    # region make functions ------------------------------------------------------------
-    @staticmethod
-    def make_bound(bounds: NDArray[DT]) -> tuple[DT, DT]:
-        r"""Return the boundaries of the window."""
-        return bounds[0], bounds[-1]
-
-    @staticmethod
-    def make_bounds(bounds: NDArray[DT]) -> list[tuple[DT, DT]]:
-        r"""Return the boundaries of the windows."""
-        return [(start, stop) for start, stop in sliding_window_view(bounds, 2)]
-
-    @staticmethod
-    def make_slice(bounds: NDArray[DT]) -> slice:
-        r"""Return a tuple of slices."""
-        return slice(bounds[0], bounds[-1])
-
-    @staticmethod
-    def make_slices(bounds: NDArray[DT]) -> list[slice]:
-        r"""Return a tuple of slices."""
-        return [slice(start, stop) for start, stop in sliding_window_view(bounds, 2)]
-
-    def make_mask(self, bounds: NDArray[DT]) -> NDArray[np.bool_]:
-        r"""Return a tuple of masks."""
-        return (bounds[0] <= self.data) & (self.data < bounds[-1])
-
-    def make_masks(self, bounds: NDArray[DT]) -> list[NDArray[np.bool_]]:
-        r"""Return a tuple of masks."""
-        return [
-            (start <= self.data) & (self.data < stop)
-            for start, stop in sliding_window_view(bounds, 2)
-        ]
-
-    def make_window(self, bounds: NDArray[DT]) -> NDArray[DT]:
-        r"""Return the actual data points inside the window."""
-        return self.data[(bounds[0] <= self.data) & (self.data < bounds[-1])]
-
-    def make_windows(self, bounds: NDArray[DT]) -> list[NDArray[DT]]:
-        r"""Return the actual data points inside the windows."""
-        return [
-            self.data[(start <= self.data) & (self.data < stop)]
-            for start, stop in sliding_window_view(bounds, 2)
-        ]
-
-    @property
-    def _MAKE_FUNCTIONS(
-        self,
-    ) -> dict[tuple[Modes, bool], Callable[[NDArray[DT]], Any]]:
-        r"""Return the make functions."""
-        return {
-            ("bounds", False): self.make_bound,
-            ("bounds", True): self.make_bounds,
-            ("masks", False): self.make_mask,
-            ("masks", True): self.make_masks,
-            ("slices", False): self.make_slice,
-            ("slices", True): self.make_slices,
-            ("windows", False): self.make_window,
-            ("windows", True): self.make_windows,
-        }
-
-    # endregion make functions ---------------------------------------------------------
-
     # region __iter__ overloads --------------------------------------------------------
     # fmt: off
     # @overload  # fallback (pyright: first match for Any)
@@ -715,7 +654,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     @overload
     def __iter__(self: "SlidingSampler[DT, M, MULTI]", /) -> Iterator[list[NDArray[np.bool_]]]: ...
     @overload
-    def __iter__(self: "SlidingSampler[DT, W, MULTI]", /) -> Iterator[list[NDArray[DT]]]: ...
+    def __iter__(self: "SlidingSampler[DT, W, MULTI]", /) -> Iterator[list[NDArray[DT]]]: ...  # pyright: ignore
     @overload  # fallback mode=str
     def __iter__(self: "SlidingSampler[DT, U, MULTI]", /) -> Iterator[list]: ...
     # @overload  # fallback (pyright: first match for Any)
@@ -727,7 +666,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     @overload
     def __iter__(self: "SlidingSampler[DT, M, ONE]", /) -> Iterator[NDArray[np.bool_]]: ...
     @overload
-    def __iter__(self: "SlidingSampler[DT, W, ONE]", /) -> Iterator[NDArray[DT]]: ...
+    def __iter__(self: "SlidingSampler[DT, W, ONE]", /) -> Iterator[NDArray[DT]]: ...  # pyright: ignore
     @overload  # fallback mode=str
     def __iter__(self: "SlidingSampler[DT, U, ONE]", /) -> Iterator: ...
     # fmt: on

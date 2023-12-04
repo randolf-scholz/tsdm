@@ -30,7 +30,11 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+        cls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        **kwds: Any,  # pyright: ignore
     ) -> None:
         """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)

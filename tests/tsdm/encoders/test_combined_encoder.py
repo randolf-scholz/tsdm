@@ -14,6 +14,7 @@ from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
     DateTimeEncoder,
+    Encoder,
     FrameAsDict,
     FrameEncoder,
     IdentityEncoder,
@@ -41,7 +42,7 @@ def test_combined_encoder(SplitID=(0, "train")):
     inputs = sample.inputs.x
 
     # Construct the encoder
-    column_encoders: dict[str, BaseEncoder] = {}
+    column_encoders: dict[str, Encoder] = {}
     for col, scale, lower, upper in descr.itertuples():
         if pd.isna(upper):
             upper = None

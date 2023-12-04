@@ -99,7 +99,7 @@ class Callback(Protocol[P]):
         """The required kwargs for the callback."""
         ...
 
-    def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
+    def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:  # pyright: ignore
         """Log something at time index i."""
         ...
 
@@ -162,7 +162,9 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
         super().__init_subclass__()  # Important!
 
         @wraps(cls.callback)
-        def __call__(self: Self, i: int, /, **state_dict: P.kwargs) -> None:
+        def __call__(
+            self: Self, i: int, /, **state_dict: P.kwargs  # pyright: ignore
+        ) -> None:
             """Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:
                 self.callback(i, **state_dict)
@@ -170,10 +172,10 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
         cls.__call__ = __call__  # type: ignore[method-assign]
 
     @abstractmethod
-    def callback(self, i: int, /, **state_dict: P.kwargs) -> None:
+    def callback(self, i: int, /, **state_dict: P.kwargs) -> None:  # pyright: ignore
         """Log something at the end of a batch/epoch."""
 
-    def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:
+    def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:  # pyright: ignore
         """Log something at the end of a batch/epoch."""
 
     def __repr__(self) -> str:

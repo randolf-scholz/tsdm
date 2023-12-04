@@ -20,8 +20,8 @@ from tsdm.encoders import (
     DateTimeEncoder,
     Encoder,
     FloatEncoder,
+    FrameEncoder,
     MinMaxScaler,
-    OldFrameEncoder,
     StandardScaler,
     TensorEncoder,
 )
@@ -136,10 +136,8 @@ class ETT_Zhou2021(OldBaseTask):
 
         self.preprocessor = ChainedEncoder(
             TensorEncoder(),
-            OldFrameEncoder(
-                column_encoders=StandardScaler() @ FloatEncoder(),
-                index_encoders=MinMaxScaler() @ DateTimeEncoder(),
-            ),
+            FrameEncoder(index_encoders={"date": MinMaxScaler() @ DateTimeEncoder()}),
+            StandardScaler() @ FloatEncoder(),
         )
 
         # Fit the Preprocessors
