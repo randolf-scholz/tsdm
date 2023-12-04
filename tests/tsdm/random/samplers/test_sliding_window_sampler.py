@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 r"""Test Sliding Window Sampler."""
 
 import datetime

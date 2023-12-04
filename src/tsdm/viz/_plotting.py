@@ -159,7 +159,7 @@ def shared_grid_plot(
     if titles is not None:
         # for ax, title in np.nditer([axes, titles]):
         for ax, title in zip(axes.flat, np.asarray(titles).flat):
-            ax.set_title(title)  # pyright: ignore[reportGeneralTypeIssues]
+            ax.set_title(title)
 
     # set axes x-labels
     if xlabels is not None:

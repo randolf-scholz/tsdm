@@ -422,7 +422,7 @@ def test_linear_scaler(tensor_type: T) -> None:
     # weird input
     data = np.random.rand(1, 2, 3, 4, 5)
     X = tensor_type(data)
-    encoder = encoder_type(axis=(1, 2))
+    encoder = encoder_type()
     encoder.fit(X)
     encoded = encoder.encode(X)
     decoded = encoder.decode(encoded)

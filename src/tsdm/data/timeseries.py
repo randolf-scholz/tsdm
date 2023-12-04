@@ -30,7 +30,7 @@ from pandas import NA, DataFrame, Index, MultiIndex, Series
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset as TorchDataset
-from typing_extensions import Any, NamedTuple, Optional, Self, assert_type, overload
+from typing_extensions import Any, NamedTuple, Optional, Self, overload
 
 from tsdm.utils.strings import pprint_repr, repr_dataclass
 
@@ -157,11 +157,11 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
             else:
                 self.metaindex = self.timeseries.index.copy().unique()
 
-    # @overload
-    # def __getitem__(self, key: slice, /) -> Self: ...
-    # @overload
-    # def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...
-    def __getitem__(self, key: object, /) -> TimeSeriesDataset:
+    @overload
+    def __getitem__(self, key: slice | Series, /) -> Self: ...
+    @overload
+    def __getitem__(self, key: object, /) -> TimeSeriesDataset: ...
+    def __getitem__(self, key, /):
         r"""Get the timeseries and metadata of the dataset at index `key`."""
         # TODO: There must be a better way to slice this
         match key:
@@ -560,12 +560,6 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 self.metadata_observables = self.dataset.metadata.columns
         self.validate()
 
-    def __iter__(self) -> Iterator[Sample]:
-        return iter(self.dataset)
-
-    def __len__(self) -> int:
-        return len(self.dataset)
-
     def __getitem__(self, key: Hashable) -> Sample:
         return self.make_sample(
             key, sparse_index=self.sparse_index, sparse_columns=self.sparse_columns
@@ -591,11 +585,11 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 assert isinstance(key, tuple) and len(key) == 2
                 assert isinstance(key[1], Collection) and len(key[1]) == 2
                 outer_key, (observation_horizon, forecasting_horizon) = key
-                tsd = tsc[outer_key]
+                tsd = tsc[outer_key]  # type: ignore[assignment]
             case _:
                 raise NotImplementedError
 
-        assert_type(tsd, TimeSeriesDataset)
+        assert isinstance(tsd, TimeSeriesDataset)
 
         # NOTE: observation horizon and forecasting horizon might be given in different formats
         # (1) slices  (2) indices (3) boolean masks

@@ -4,6 +4,7 @@ __all__ = [
     # Modules
     "timeseries",
     # Protocols
+    "TorchDataset",
     "MapDataset",
     "IterableDataset",
     "PandasDataset",
@@ -88,6 +89,7 @@ from tsdm.data.datasets import (
     MapDataset,
     MappingDataset,
     PandasDataset,
+    TorchDataset,
 )
 from tsdm.data.folds import (
     folds_as_frame,

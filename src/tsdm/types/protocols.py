@@ -28,12 +28,13 @@ __all__ = [
     "MutableArray",
     # Time-Types
     # stdlib
-    "SupportsGetItem",
-    "SupportsKeysAndGetItem",
-    "SupportsKwargs",
     "MappingProtocol",
     "MutableMappingProtocol",
     "SequenceProtocol",
+    "SupportsGetItem",
+    "SupportsKeysAndGetItem",
+    "SupportsKwargs",
+    "SupportsLenAndGetItem",
     "MutableSequenceProtocol",
     # Factory classes
     "Dataclass",
@@ -724,6 +725,14 @@ class SupportsKeysAndGetItem(Protocol[K, V_co]):
 
     def keys(self) -> Iterable[K]: ...
     def __getitem__(self, key: K, /) -> V_co: ...
+
+
+@runtime_checkable
+class SupportsLenAndGetItem(Protocol[V_co]):
+    """Protocol for objects that support integer based `__getitem__` and `__len__`."""
+
+    def __len__(self) -> int: ...
+    def __getitem__(self, index: int, /) -> V_co: ...
 
 
 class SupportsKwargsType(type(Protocol)):  # type: ignore[misc]

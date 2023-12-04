@@ -208,8 +208,8 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         ts = ds.table
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
-        index_encoder = self.preprocessor.index_encoders["time_stamp"]
-        self.observation_time /= index_encoder["time_stamp"].params.xmax
+        index_encoder: MinMaxScaler = self.preprocessor.index_encoders["time_stamp"]  # type: ignore[assignment]
+        self.observation_time /= index_encoder.params.xmax
 
         # drop values outside 5 sigma range
         ts = ts[(-5 < ts) & (ts < 5)]

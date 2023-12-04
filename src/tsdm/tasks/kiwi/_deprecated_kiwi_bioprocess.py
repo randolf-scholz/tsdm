@@ -1,5 +1,3 @@
-# pyright: ignore
-# mypy: ignore-errors
 r"""Bio-process Forecasting Task."""
 
 __all__ = [
@@ -228,7 +226,10 @@ class Kiwi_BioProcessTask(OldBaseTask):
         # construct the sampler
         subsamplers = {
             key: SequenceSampler(
-                ds.timeseries, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
+                ds.timeseries,
+                seq_len=self.horizon,
+                stride=1,
+                shuffle=shuffle,
             )
             for key, ds in DS.items()
         }

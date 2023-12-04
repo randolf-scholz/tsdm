@@ -6,6 +6,7 @@ __all__ = [
     "TabularDataset",
     "SequentialDataset",
     # Protocols
+    "TorchDataset",
     "IterableDataset",
     "MapDataset",
     "PandasDataset",
@@ -19,7 +20,6 @@ from collections.abc import Iterator, Mapping, Reversible
 from dataclasses import KW_ONLY, dataclass
 
 from pandas import DataFrame, Index, MultiIndex
-from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import (
     Any,
     Optional,
@@ -32,10 +32,13 @@ from typing_extensions import (
 )
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
-from tsdm.types.variables import key_var as K, nested_key_var as K2, value_co as V_co
+from tsdm.types.variables import (
+    key_contra as K_contra,
+    key_var as K,
+    nested_key_var as K2,
+    value_co as V_co,
+)
 from tsdm.utils.strings import pprint_repr, repr_array
-
-TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 
 # class DataFrame2Dataset(TorchDataset[T]):
 #     """Convert a DataFrame to a Dataset."""
@@ -45,6 +48,20 @@ TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
 
 
 # region Protocols ---------------------------------------------------------------------
+
+
+@runtime_checkable
+class TorchDataset(Protocol[K_contra, V_co]):
+    """Protocol version of `torch.utils.data.Dataset`."""
+
+    def __getitem__(self, key: K_contra, /) -> V_co:
+        """Map key to sample."""
+        ...
+
+
+TorchDatasetVar = TypeVar("TorchDatasetVar", bound=TorchDataset)
+
+
 @runtime_checkable
 class PandasDataset(Protocol[K, V_co]):
     """Protocol version of `pandas.DataFrame`/`Series`.
@@ -149,7 +166,7 @@ Dataset: TypeAlias = IndexableDataset[V_co] | MapDataset[Any, V_co]
 
 
 @dataclass
-class DataFrame2Dataset(MapDataset[K, DataFrame], TorchDataset[DataFrame]):
+class DataFrame2Dataset(MapDataset[K, DataFrame]):
     """Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting `.loc`.
 
     It is assumed that the DataFrame has a MultiIndex.

@@ -1,5 +1,3 @@
-# pyright: ignore
-# mypy: ignore-errors
 """Deprecated samplers."""
 
 __all__ = ["IntervalSampler", "SequenceSampler"]
@@ -13,7 +11,7 @@ from pandas import DataFrame, Timedelta, Timestamp
 from typing_extensions import Any, Generic, Iterable, Optional, cast, deprecated
 
 from tsdm.random.samplers import BaseSampler, compute_grid
-from tsdm.types.protocols import Lookup
+from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
 from tsdm.types.time import DTVar, TDVar
 
 
@@ -176,7 +174,7 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
     def __init__(
         self,
-        data_source: Iterable[DTVar],
+        data_source: Iterable[DTVar] | SupportsLenAndGetItem[DTVar],
         /,
         *,
         return_mask: bool = False,

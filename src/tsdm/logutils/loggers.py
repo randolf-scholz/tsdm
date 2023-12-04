@@ -154,10 +154,9 @@ class BaseLogger(Logger, metaclass=BaseLoggerMetaClass):
         )
 
         # set the frequency
-        if frequency is None:
-            frequency = getattr(callback, "frequency", 1)
+        freq = getattr(callback, "frequency", 1) if frequency is None else frequency
 
-        self._callbacks[key].append((callback, frequency, required_kwargs))
+        self._callbacks[key].append((callback, freq, required_kwargs))
 
     def combined_kwargs(self, key: str) -> set[str]:
         """Get the combined kwargs of all callbacks."""

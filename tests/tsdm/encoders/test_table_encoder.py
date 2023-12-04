@@ -5,8 +5,6 @@ import pandas as pd
 import polars as pl
 import pyarrow as pa
 
-from tsdm.encoders.dataframe import TableEncoder
-
 angle = np.linspace(0, np.pi, 5)
 
 sample_data = {

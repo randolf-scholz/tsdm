@@ -127,7 +127,12 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.data import MapDataset, TimeSeriesCollection, TimeSeriesSampleGenerator
+from tsdm.data import (
+    MapDataset,
+    TimeSeriesCollection,
+    TimeSeriesSampleGenerator,
+    TorchDataset,
+)
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
@@ -420,7 +425,7 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
         return NotImplemented
 
     @abstractmethod
-    def make_generator(self, key: SplitID, /) -> MapDataset[K, Sample_co]:
+    def make_generator(self, key: SplitID, /) -> TorchDataset[K, Sample_co]:
         r"""Return the generator associated with the specified key."""
         return NotImplemented
 

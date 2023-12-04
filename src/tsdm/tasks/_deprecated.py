@@ -1,7 +1,4 @@
-# pyright: ignore
-# mypy: ignore-errors
 """Deprecated Task code."""
-
 
 __all__ = ["BaseTask", "OldBaseTask"]
 
@@ -34,7 +31,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
-        **kwds: Any,  # pyright: ignore
+        **kwds: Any,
     ) -> None:
         """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)

@@ -34,7 +34,7 @@ from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
 from tsdm.types.aliases import PandasObject, PathLike
 from tsdm.types.dtypes import TORCH_DTYPES
-from tsdm.types.protocols import NTuple, TableType
+from tsdm.types.protocols import NTuple
 from tsdm.types.variables import key_var as K
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.strings import repr_mapping
@@ -252,7 +252,7 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
         # NOTE: use property since this changes during fitting
         return Ellipsis in self.encoders.keys()
 
-    def fit(self, data: TableType, /) -> None:
+    def fit(self, data: TableVar, /) -> None:
         # step 1, get columns
         match data:
             case DataFrame() as pandas_frame:
@@ -312,7 +312,7 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
                 raise NotImplementedError
         # endregion --------------------------------------------------------------------
 
-    def encode(self, data: TableType, /) -> TableType:
+    def encode(self, data: TableVar, /) -> TableVar:
         encoded_groups = []
         for group, encoder in self.encoders.items():
             encoded_groups.append(encoder.encode(data[group]))
@@ -328,7 +328,7 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
             case _:
                 raise NotImplementedError
 
-    def decode(self, data: TableType, /) -> TableType:
+    def decode(self, data: TableVar, /) -> TableVar:
         decoded_groups = []
         for group, encoder in self.decoders.items():
             decoded_groups.append(encoder.decode(data[group]))

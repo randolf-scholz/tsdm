@@ -443,6 +443,7 @@ useLibraryCodeForTypes = false  # otherwise hundreds of pandas false-positives.
 #reportUnsupportedDunderAll = false
 reportPrivateImportUsage = false
 reportUnnecessaryTypeIgnoreComment = false  # highlight unnecessary # type: ignore
+reportSelfClsParameterName = false
 # endregion Pyright Configuration ------------------------------------------------------
 
 

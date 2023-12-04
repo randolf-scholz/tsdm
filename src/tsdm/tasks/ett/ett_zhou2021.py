@@ -109,6 +109,7 @@ class ETT_Zhou2021(OldBaseTask):
     r"""Type hint available targets."""
     target: TARGET = "OT"
     r"""One of "HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"."""
+    dataset_id: Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
     def __init__(
         self,

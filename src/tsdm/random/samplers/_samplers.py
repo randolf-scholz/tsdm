@@ -371,7 +371,7 @@ W: TypeAlias = Literal["windows"]  # windows
 U: TypeAlias = str  # unknown (not statically known)
 
 Mode = TypeVar("Mode", S, B, M, W, U)
-Modes: TypeAlias = S | B | M | W
+Modes: TypeAlias = S | B | M | W | U
 
 ONE: TypeAlias = Literal["one"]
 MULTI: TypeAlias = Literal["multi"]

@@ -81,7 +81,7 @@ class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
     """Metaclass for PreTrained."""
 
     def __init__(
-        cls,  # pyright: ignore[reportSelfClsParameterName]
+        cls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
