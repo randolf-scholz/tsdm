@@ -54,6 +54,7 @@ from tsdm.utils.strings import pprint_repr, repr_array
 class TorchDataset(Protocol[K_contra, V_co]):
     """Protocol version of `torch.utils.data.Dataset`."""
 
+    @abstractmethod
     def __getitem__(self, key: K_contra, /) -> V_co:
         """Map key to sample."""
         ...
@@ -185,8 +186,8 @@ class DataFrame2Dataset(MapDataset[K, DataFrame]):
     def keys(self) -> Index:
         return self.index
 
-    def __getitem__(self, item: K, /) -> DataFrame:
-        return self.data.loc[item]
+    def __getitem__(self, key: K) -> DataFrame:
+        return self.data.loc[key]
 
     def __repr__(self) -> str:
         return (

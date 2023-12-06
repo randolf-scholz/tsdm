@@ -1,7 +1,9 @@
 r"""Test converters to masked format etc."""
 
 import logging
+from collections.abc import Sequence
 
+import numpy as np
 from pytest import mark
 
 from tsdm.data import TimeSeriesSampleGenerator
@@ -58,12 +60,18 @@ def test_time_series_sample_generator() -> None:
     sampler = HierarchicalSampler(TSC, subsamplers, shuffle=False)
     key = next(iter(sampler))
 
-    # construct the task dataset
+    # validate key
+    assert isinstance(key, tuple) and len(key) == 2
+    assert key[0] == 16130
+    assert isinstance(key[1], Sequence)
+    assert all(isinstance(horizon, np.ndarray) for horizon in key[1])
+
+    # construct the sample generator
     targets = ["Biomass", "Product"]
     observables = ["Biomass", "Substrate", "Acetate", "DOTm"]
     covariates = ["Volume", "Feed"]
 
-    task = TimeSeriesSampleGenerator(
+    generator = TimeSeriesSampleGenerator(
         TSC,
         targets=targets,
         observables=observables,
@@ -71,13 +79,16 @@ def test_time_series_sample_generator() -> None:
         sparse_index=True,
         sparse_columns=True,
     )
-    sample = task[key]
+    sample = generator[key]
     assert isinstance(sample, Sample)
 
     # test with TimeSeriesDataset
-    TSD = TSC[16130]
+    outer_key = key[0]
+    inner_key = key[1]
+    TSD = TSC[outer_key]  # selecting individual time series.
     assert isinstance(TSD, TimeSeriesDataset)
-    task = TimeSeriesSampleGenerator(
+
+    generator = TimeSeriesSampleGenerator(
         TSD,
         targets=targets,
         observables=observables,
@@ -85,5 +96,8 @@ def test_time_series_sample_generator() -> None:
         sparse_index=True,
         sparse_columns=True,
     )
-    sample = task[key[1]]
+
+    # assert isinstance(subkey, tuple)
+
+    sample = generator[inner_key]
     assert isinstance(sample, Sample)

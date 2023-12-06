@@ -175,7 +175,6 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
 
     Args:
         encoders: A mapping from column names to encoders.
-            The keys should be one of: string,
             The special key `Ellipsis` (`...`) can be given once to indicate that all unnamed columns
             should use the given Encoder. During fitting, it will be replaced by the remaining columns.
         copy_unused (default=True): if true, columns that are not named in the encoder are copied to the output.

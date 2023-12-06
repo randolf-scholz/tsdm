@@ -121,7 +121,7 @@ repos:
         types: [python]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.1.7
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -167,14 +167,14 @@ repos:
         files: ^dev/
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.338
+    rev: v1.1.339
     hooks:
       - id: pyright
         # not everything works with pyright yet
         # verbose regex
         files: (^src/|^tests/)
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.46
+    rev: v0.1.47
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps

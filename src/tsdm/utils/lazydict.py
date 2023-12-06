@@ -158,12 +158,16 @@ class LazyDict(dict[K, V]):
         r"""Return the representation of the dictionary."""
         return repr_mapping(self)
 
-    def __or__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
+    def __or__(
+        self, other: Mapping[K_other, T], /
+    ) -> "LazyDict[K | K_other, V | T]":  # pyright: ignore
         new = self.copy()
         new.update(other)  # type: ignore[arg-type]
         return new  # type: ignore[return-value]
 
-    def __ror__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
+    def __ror__(
+        self, other: Mapping[K_other, T], /
+    ) -> "LazyDict[K | K_other, V | T]":  # pyright: ignore
         if isinstance(other, self.__class__):
             return other | self  # pyright: ignore
 
@@ -197,10 +201,10 @@ class LazyDict(dict[K, V]):
                 args = get_function_args(value, mandatory=True)  # type: ignore[unreachable]
                 match nargs := len(args):
                     case 0:
-                        return LazyValue(func=value)  # pyright: ignore
+                        return LazyValue(func=value)
                     case 1 if all(is_positional_arg(p) for p in args):
                         # set the key as input
-                        return LazyValue(func=value, args=(key,))  # pyright: ignore
+                        return LazyValue(func=value, args=(key,))
                     case _:
                         raise TypeError(f"Function {value} requires {nargs} args.")
             case [Callable()]:  # type: ignore[misc]

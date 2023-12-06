@@ -189,7 +189,7 @@ class CallbackList(BaseCallback, MutableSequence[CB]):
     callbacks: list[CB]
     """The callbacks to log."""
 
-    def insert(self, index: int, value: CB, /) -> None:
+    def insert(self, index: int, value: CB) -> None:
         self.callbacks.insert(index, value)
 
     @overload

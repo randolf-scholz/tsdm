@@ -108,7 +108,7 @@ def iter_keys(obj, /):
     r"""Redirects __iter__ to keys()."""
     base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)
 
-    @wraps(base_class, updated=())  # pyright: ignore
+    @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type: ignore[valid-type, misc]
         r"""A simple Wrapper."""
 
@@ -144,7 +144,7 @@ def iter_values(obj, /):
     r"""Redirects __iter__ to values()."""
     base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)
 
-    @wraps(base_class, updated=())  # pyright: ignore
+    @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type: ignore[valid-type, misc]
         r"""A simple Wrapper."""
 
@@ -178,7 +178,7 @@ def iter_items(obj, /):
     r"""Redirects __iter__ to items()."""
     base_class: type[Mapping] = obj if isinstance(obj, type) else type(obj)
 
-    @wraps(base_class, updated=())  # pyright: ignore
+    @wraps(base_class, updated=())
     class WrappedClass(base_class):  # type: ignore[valid-type, misc]
         r"""A simple Wrapper."""
 

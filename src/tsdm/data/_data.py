@@ -418,12 +418,12 @@ def remove_outliers(
     s: Series,
     /,
     *,
+    lower_bound: float | None,
+    upper_bound: float | None,
+    lower_inclusive: bool,
+    upper_inclusive: bool,
     drop: bool = ...,
     inplace: bool = ...,
-    lower_bound: float | None = ...,
-    upper_bound: float | None = ...,
-    lower_inclusive: bool = ...,
-    upper_inclusive: bool = ...,
 ) -> Series: ...
 @overload
 def remove_outliers(
@@ -439,12 +439,12 @@ def remove_outliers(
     df: DataFrame,
     /,
     *,
-    drop: bool = ...,
-    inplace: bool = ...,
     lower_bound: Mapping[T, float | None],
     upper_bound: Mapping[T, float | None],
     lower_inclusive: Mapping[T, bool],
     upper_inclusive: Mapping[T, bool],
+    drop: bool = ...,
+    inplace: bool = ...,
 ) -> DataFrame: ...
 
 

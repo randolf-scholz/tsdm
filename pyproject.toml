@@ -96,7 +96,7 @@ extras = [
 ]
 typing = [
     "mypy>=1.7.1",
-    "pyright>=1.1.338",
+    "pyright>=1.1.339",
     "types-colorama>=0.4.15",
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
@@ -132,7 +132,7 @@ linters = [
     "pyflakes>=3.1.0",
     "pylint>=3.0.2",
     "pylint-gitlab>=2.0.0",
-    "ruff>=0.1.6",
+    "ruff>=0.1.7",
     "ruff-lsp>=0.0.45",
     "slotscheck>=0.17.1",
 ]
@@ -441,9 +441,12 @@ useLibraryCodeForTypes = false  # otherwise hundreds of pandas false-positives.
 #reportMissingImports = false
 #reportMissingTypeStubs = false
 #reportUnsupportedDunderAll = false
+reportOverlappingOverload = false
 reportPrivateImportUsage = false
 reportUnnecessaryTypeIgnoreComment = false  # highlight unnecessary # type: ignore
 reportSelfClsParameterName = false
+reportIncompatibleMethodOverride = false  # FIXME: temporary
+reportIncompatibleVariableOverride = false  # FIXME: temporary
 # endregion Pyright Configuration ------------------------------------------------------
 
 
@@ -647,14 +650,14 @@ pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
 pylint = ">=3.0.2"
 pylint-gitlab = ">=2.0.0"
-ruff = ">=0.1.6"
+ruff = ">=0.1.7"
 ruff-lsp = ">=0.0.45"
 slotscheck = ">=0.17.1"
 
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.7.1"
-pyright = ">=1.1.338"
+pyright = ">=1.1.339"
 types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"

@@ -20,7 +20,7 @@ DT_NUMPY_FLOAT = numpy.float64(10.0)
 DT_NUMPY_INT = numpy.int64(10)
 DT_PANDAS = pandas.Timestamp(ISO_DATE)
 DT_PYTHON = datetime.fromisoformat(ISO_DATE)
-DATETIMES: dict[str, DateTime] = {  # pyright: ignore[reportGeneralTypeIssues]
+DATETIMES: dict[str, DateTime] = {
     "float": DT_FLOAT,
     "int": DT_INT,
     "numpy": DT_NUMPY,

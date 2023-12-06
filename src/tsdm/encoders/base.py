@@ -102,8 +102,6 @@ class Encoder(EncoderProtocol[U, V], Protocol):
     @abstractmethod
     def requires_fit(self) -> bool: ...
 
-    # is_fitted: bool
-
     is_fitted: bool  # NOTE: https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
     # endregion abstract methods -------------------------------------------------------
 
@@ -425,7 +423,7 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
     @overload
     def __getitem__(self, index: int) -> E: ...
     @overload
-    def __getitem__(self, index: slice) -> "ChainedEncoder[E]": ...
+    def __getitem__(self, index: slice) -> Self: ...
     def __getitem__(self, index):
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
@@ -581,10 +579,10 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
         return len(self.encoders)
 
     @overload
-    def __getitem__(self, index: int, /) -> E: ...
+    def __getitem__(self, index: int) -> E: ...
     @overload
-    def __getitem__(self, index: slice, /) -> "ProductEncoder[E]": ...
-    def __getitem__(self, index, /):
+    def __getitem__(self, index: slice) -> Self: ...
+    def __getitem__(self, index):
         r"""Get the encoder at the given index."""
         if isinstance(index, int):
             return self.encoders[index]

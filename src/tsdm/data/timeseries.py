@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 import warnings
-from collections.abc import Collection, Hashable, Iterator, Mapping, Sequence
+from collections.abc import Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from math import nan as NAN
 from types import NotImplementedType
@@ -560,9 +560,11 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
                 self.metadata_observables = self.dataset.metadata.columns
         self.validate()
 
-    def __getitem__(self, key: Hashable) -> Sample:
+    def __getitem__(self, key: Hashable, /) -> Sample:
         return self.make_sample(
-            key, sparse_index=self.sparse_index, sparse_columns=self.sparse_columns
+            key,
+            sparse_index=self.sparse_index,
+            sparse_columns=self.sparse_columns,
         )
 
     def get_subgenerator(self, key: Hashable) -> Self:
@@ -576,18 +578,18 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     ) -> Sample:
         r"""Create a sample from a TimeSeriesCollection."""
         # extract key
-        match self.dataset:
-            case TimeSeriesDataset() as tsd:
-                assert isinstance(key, tuple) and len(key) == 2
-                observation_horizon, forecasting_horizon = key
+        match self.dataset, key:
+            case TimeSeriesDataset() as tsd, [observation_horizon, forecasting_horizon]:
                 tsd = tsd
-            case TimeSeriesCollection() as tsc:
-                assert isinstance(key, tuple) and len(key) == 2
-                assert isinstance(key[1], Collection) and len(key[1]) == 2
-                outer_key, (observation_horizon, forecasting_horizon) = key
+            case TimeSeriesCollection() as tsc, [
+                outer_key,
+                [observation_horizon, forecasting_horizon],
+            ]:
                 tsd = tsc[outer_key]  # type: ignore[assignment]
+            case TimeSeriesDataset() | TimeSeriesCollection(), _:
+                raise ValueError(f"Invalid key: {key!r}")
             case _:
-                raise NotImplementedError
+                raise TypeError(f"Invalid dataset type: {type(self.dataset)=}")
 
         assert isinstance(tsd, TimeSeriesDataset)
 
@@ -804,7 +806,7 @@ class FixedSliceSampleGenerator(TorchDataset[PlainSample]):
         for key in self.index:
             yield self[key]
 
-    def __getitem__(self, key: Hashable) -> PlainSample:
+    def __getitem__(self, key: Hashable, /) -> PlainSample:
         """Yield a single sample."""
         # select the individual time series
         ts = self.data_source.loc[key]

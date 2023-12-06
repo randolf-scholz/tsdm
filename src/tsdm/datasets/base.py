@@ -69,18 +69,25 @@ class Dataset(Protocol[T_co]):
         ...
 
     @property
+    @abstractmethod
     def rawdata_paths(self) -> Mapping[str, Path]:
         """Return list of paths to the rawdata files."""
         ...
 
+    # rawdata_paths: Mapping[str, Path]  # type: ignore[no-redef]
+    # # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+
+    @abstractmethod
     def clean(self) -> T_co | None:
         """Clean the dataset."""
         ...
 
+    @abstractmethod
     def download(self) -> None:
         """Download the dataset."""
         ...
 
+    @abstractmethod
     def load(self) -> T_co:
         """Load the dataset."""
         ...
@@ -300,7 +307,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     rawdata_files: Sequence[str]  # type: ignore[no-redef]
     # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
-    @cached_property
+    @property
     def rawdata_paths(self) -> Mapping[str, Path]:
         r"""Absolute paths corresponding to the raw dataset file(s)."""
         return {
