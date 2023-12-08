@@ -1,6 +1,10 @@
 r"""Utility functions for string manipulation."""
 
 __all__ = [
+    # CONSTANTS
+    "RECURSIVE_REPR_FUNS",
+    # Types
+    "ReprProtocol",
     # Functions
     "pprint_repr",
     "snake2camel",
@@ -15,7 +19,7 @@ __all__ = [
     "repr_namedtuple",
     "repr_object",
     "repr_sequence",
-    "repr_type",
+    "repr_shortform",
 ]
 __ALL__ = dir() + __all__
 
@@ -23,6 +27,7 @@ import inspect
 import logging
 from collections.abc import Callable, Iterable, Mapping, Sequence, Set
 from dataclasses import is_dataclass
+from functools import partialmethod
 from types import FunctionType
 
 from pandas import DataFrame, MultiIndex
@@ -34,15 +39,14 @@ from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
 from tsdm.types.aliases import DType
 from tsdm.types.dtypes import TYPESTRINGS
 from tsdm.types.protocols import (
-    ArrayKind,
     Dataclass,
     NTuple,
     SupportsArray,
     SupportsDevice,
     SupportsDtype,
-    SupportsShape,
 )
 from tsdm.types.variables import any_var as T
+from tsdm.utils.decorators import decorator
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 
@@ -129,28 +133,64 @@ class ReprProtocol(Protocol):
 def get_identifier(obj: Any, /, **_: Any) -> str:
     r"""Return the identifier of an object."""
     match obj:
-        case _ if type(obj) in BUILTIN_TYPES:
-            return ""
-        case tuple():
-            return "<tuple>"
-        case type():
-            return "<type>"
+        case type() as cls:
+            return f"<{cls.__name__}>"
+        case _ if (cls := type(obj)) in BUILTIN_TYPES:
+            return f"<{cls.__name__}>"
+        case SupportsArray():
+            return "<array>"
         case Dataclass():
             return "<dataclass>"
         case Mapping():
             return "<mapping>"
         case Sequence():
             return "<sequence>"
-        case ArrayKind():
-            return "<array>"
         case FunctionType():
             return "<function>"
         case _:
             return ""
 
 
+def repr_shortform(
+    obj: Any,
+    /,
+    *,
+    identifier: Optional[str] = None,
+    recursive: bool | int = False,
+    **_: Any,
+) -> str:
+    r"""Return a shorthed string representation using an object's type."""
+    __logger__.debug(
+        "repr_type: %s, identifier=%s, recursive=%s, %s",
+        type(obj),
+        identifier,
+        recursive,
+        _,
+    )
+
+    match obj:
+        case str() as string:
+            return string
+        case type() as cls:
+            return repr(cls)
+        case builtin if inspect.isbuiltin(builtin):
+            return repr(builtin)
+        case constant if constant in BUILTIN_CONSTANTS:
+            return repr(constant)
+        case bool() | int() | float() | complex() | bytes() | slice() | range():
+            return repr(obj)
+        case SupportsArray() as arr if arr.__array__().size <= 1:
+            return repr(arr.__array__().item())
+        case _:
+            # set identifier
+            if identifier is None:
+                identifier = get_identifier(obj) * bool(recursive)
+
+            return f"{obj.__class__.__name__}{identifier}()"
+
+
 def repr_object(
-    obj: Any, /, *, fallback: Callable[..., str] = repr, **kwargs: Any
+    obj: Any, /, *, fallback: Callable[..., str] = repr_shortform, **kwargs: Any
 ) -> str:
     r"""Return a string representation of an object.
 
@@ -171,21 +211,24 @@ def repr_object(
         case type() as cls:
             __logger__.debug("repr_object: → type")
             return repr(cls)
+        case SupportsArray() as array:
+            __logger__.debug("repr_object: → array")
+            return repr_array(array, **kwargs)
         case Dataclass() as dtc:
             __logger__.debug("repr_object: → dataclass")
             return repr_dataclass(dtc, **kwargs)
-        case ArrayKind() as array:
-            __logger__.debug("repr_object: → array")
-            return repr_array(array, **kwargs)
+        case NTuple() as ntuple:
+            __logger__.debug("repr_object: → namedtuple")
+            return repr_namedtuple(ntuple, **kwargs)
         case Mapping() as mapping:
             __logger__.debug("repr_object: → mapping")
             return repr_mapping(mapping, **kwargs)
         case Sequence() as sequence:
             __logger__.debug("repr_object: → sequence")
             return repr_sequence(sequence, **kwargs)
-        case NTuple() as ntuple:
-            __logger__.debug("repr_object: → namedtuple")
-            return repr_namedtuple(ntuple, **kwargs)
+        case _ if fallback is repr:
+            __logger__.debug("repr_object: → fallback %s", fallback)
+            return object.__repr__(obj)
         case _:
             __logger__.debug("repr_object: → fallback %s", fallback)
             return fallback(obj)
@@ -312,7 +355,9 @@ def repr_mapping(
 
     # create callable to stringify subitems
     if repr_fun is NotImplemented:
-        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+        repr_fun = cast(
+            Callable[..., str], repr_object if recursive else repr_shortform
+        )
     recurse = recursive if isinstance(recursive, bool) else recursive - 1 or False
 
     __logger__.debug(
@@ -347,7 +392,8 @@ def repr_mapping(
             )
         except Exception as exc:
             raise RuntimeError(
-                f"repr_mapping:{key=!r}: Failed to value of type {type(value)}"
+                f"repr_mapping:{key=!r}: Failed to get string representation for value"
+                f" of type {type(value)}"
             ) from exc
 
         return f"{str(key):<{justify}}: {encoded_value}"
@@ -475,7 +521,9 @@ def repr_sequence(
 
     # create callable to stringify subitems
     if repr_fun is NotImplemented:
-        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+        repr_fun = cast(
+            Callable[..., str], repr_object if recursive else repr_shortform
+        )
     recurse = recursive if isinstance(recursive, bool) else recursive - 1 or False
 
     __logger__.debug(
@@ -509,7 +557,8 @@ def repr_sequence(
             )
         except Exception as exc:
             raise RuntimeError(
-                f"repr_sequence:{index=!r}: Failed to value of type {type(val)}"
+                f"repr_sequence:{index=!r}: Failed to value of type"
+                f" {object.__repr__(type(val))}"
             ) from exc
 
         return encoded_value
@@ -564,7 +613,9 @@ def repr_dataclass(
         raise TypeError(f"Expected Dataclass, got {type(obj)}.")
 
     if repr_fun is NotImplemented:
-        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+        repr_fun = cast(
+            Callable[..., str], repr_object if recursive else repr_shortform
+        )
 
     fields = obj.__dataclass_fields__
 
@@ -635,7 +686,9 @@ def repr_namedtuple(
         raise TypeError(f"Expected NamedTuple, got {type(obj)}.")
 
     if repr_fun is NotImplemented:
-        repr_fun = cast(Callable[..., str], repr_object if recursive else repr_type)
+        repr_fun = cast(
+            Callable[..., str], repr_object if recursive else repr_shortform
+        )
 
     self = obj if wrapped is None else wrapped
     cls = type(self)
@@ -680,40 +733,6 @@ def repr_namedtuple(
     )
 
 
-def repr_type(
-    obj: Any,
-    /,
-    *,
-    identifier: Optional[str] = None,
-    recursive: bool | int = False,
-    **_: Any,
-) -> str:
-    r"""Return a string representation using an object's type."""
-    __logger__.debug(
-        "repr_type: %s, identifier=%s, recursive=%s, %s",
-        type(obj),
-        identifier,
-        recursive,
-        _,
-    )
-
-    if isinstance(obj, str):
-        return obj
-    if inspect.isclass(obj) or inspect.isbuiltin(obj):
-        return repr(obj)
-    for item in BUILTIN_CONSTANTS:
-        if obj is item:
-            return repr(obj)
-
-    # set identifier
-    if identifier is None:
-        identifier = get_identifier(obj) * bool(recursive)
-
-    is_type = isinstance(obj, type)
-    obj_repr = obj.__name__ if is_type else obj.__class__.__name__
-    return f"{obj_repr}{identifier}{()*(not is_type)}"
-
-
 def repr_array(
     obj: SupportsArray,
     /,
@@ -732,11 +751,12 @@ def repr_array(
 
     string = f"{title}["
 
-    # add the shape
-    if isinstance(obj, SupportsShape):
-        string += str(tuple(obj.shape))
+    # add the shape.
+    as_array = obj.__array__()
+    if as_array.size <= 1:  # scalar
+        string += repr(as_array.item())
     else:
-        string += str(tuple(obj.__array__().shape))
+        string += str(tuple(as_array.shape))
 
     # add the dtype
     match obj:
@@ -762,9 +782,11 @@ def repr_array(
     return string
 
 
-def repr_dtype(dtype: str | type | DType, /) -> str:
+def repr_dtype(dtype: str | type | DType | SupportsDtype, /) -> str:
     r"""Return a string representation of a dtype object."""
     match dtype:
+        case SupportsDtype(dtype=dtype):
+            return repr_dtype(dtype)
         case str() as string:
             return string
         case type() as cls if cls in TYPESTRINGS:
@@ -773,33 +795,55 @@ def repr_dtype(dtype: str | type | DType, /) -> str:
             return str(dtype)
 
 
-def pprint_repr(cls: type[T], /) -> type[T]:
+RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
+    repr_array,
+    repr_dataclass,
+    repr_mapping,
+    repr_namedtuple,
+    repr_object,
+    repr_sequence,
+    repr_shortform,
+]
+
+
+# from functools import wraps
+#
+#
+# def class_decorator(deco):
+#     @wraps(deco)
+#     def __parametrized_decorator(cls=NotImplemented, /, *args: Any, **kwargs: Any):
+#         if cls is NotImplemented:
+#             return partial(deco, *args, **kwargs)
+#         return deco(cls, *args, **kwargs)
+#
+#     return __parametrized_decorator
+#
+
+
+@overload
+def pprint_repr(cls: type[T], /) -> type[T]: ...
+@overload
+def pprint_repr(**kwds: Any) -> Callable[[type[T]], type[T]]: ...
+@decorator
+def pprint_repr(cls, /, **kwds):
     """Add appropriate __repr__ to class."""
-    repr_fun: Callable[..., str]
+    assert isinstance(cls, type), "Must be a class!"
+    repr_func: Callable[..., str]
 
     if is_dataclass(cls):
-        repr_fun = repr_dataclass
+        repr_func = repr_dataclass
     elif issubclass(cls, NTuple):  # type: ignore[misc]
-        repr_fun = repr_namedtuple
+        repr_func = repr_namedtuple
     elif issubclass(cls, Mapping):
-        repr_fun = repr_mapping
+        repr_func = repr_mapping
     elif issubclass(cls, SupportsArray):
-        repr_fun = repr_array
+        repr_func = repr_array
     elif issubclass(cls, Sequence):
-        repr_fun = repr_sequence
+        repr_func = repr_sequence
     elif issubclass(cls, type):
-        repr_fun = repr_type
+        repr_func = repr_shortform
     else:
         raise TypeError(f"Unsupported type {cls}.")
 
-    cls.__repr__ = repr_fun  # pyright: ignore
-    return cast(type[T], cls)
-
-
-RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
-    repr_object,
-    repr_mapping,
-    repr_sequence,
-    repr_dataclass,
-    repr_namedtuple,
-]
+    cls.__repr__ = partialmethod(repr_func, **kwds)  # pyright: ignore
+    return cls

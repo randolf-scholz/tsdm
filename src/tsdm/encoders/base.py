@@ -44,7 +44,7 @@ from typing_extensions import (
 )
 
 from tsdm.types.variables import any_other_var as S, any_var as T, key_var as K
-from tsdm.utils.strings import repr_object, repr_type
+from tsdm.utils.strings import pprint_repr
 
 E = TypeVar("E", bound="Encoder")
 """Type alias for encoder_var."""
@@ -297,10 +297,6 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         if not hasattr(cls, "inverse_transform"):
             cls.inverse_transform = cls.decode
 
-    def __repr__(self) -> str:
-        r"""Return a string representation of the encoder."""
-        return repr_object(self, fallback=repr_type, recursive=1)
-
     @property
     def is_fitted(self) -> bool:
         r"""Whether the encoder has been fitted."""
@@ -326,7 +322,7 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         return self.is_surjective and self.is_injective
 
 
-class IdentityEncoder(BaseEncoder[T, T]):
+class IdentityEncoder(BaseEncoder):
     r"""Dummy class that performs identity function."""
 
     requires_fit: ClassVar[bool] = False
@@ -391,6 +387,7 @@ def invert_encoder(encoder: Encoder[T, S], /) -> Encoder[S, T]:
     return ~encoder
 
 
+@pprint_repr(recursive=2)
 class ChainedEncoder(BaseEncoder, Sequence[E]):
     r"""Represents function composition of encoders."""
 
@@ -404,11 +401,6 @@ class ChainedEncoder(BaseEncoder, Sequence[E]):
                 self.encoders.extend(encoder)
             else:
                 self.encoders.append(encoder)
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the encoder."""
-        # One more level of recursion than BaseEncoder.__repr__
-        return repr_object(self, fallback=repr_type, recursive=2)
 
     def __invert__(self) -> Self:
         cls = type(self)
@@ -528,6 +520,7 @@ def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
     return chain_encoders(*encoders)
 
 
+@pprint_repr(recursive=2)
 class ProductEncoder(BaseEncoder, Sequence[E]):
     r"""Product-Type for Encoders.
 
@@ -566,11 +559,6 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
                 self.encoders.extend(encoder)
             else:
                 self.encoders.append(encoder)
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the encoder."""
-        # One more level of recursion than BaseEncoder.__repr__
-        return repr_object(self, fallback=repr_type, recursive=2)
 
     def __len__(self) -> int:
         r"""Return the number of the encoders."""
@@ -664,6 +652,7 @@ def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
     return direct_sum_encoders(*encoders)
 
 
+@pprint_repr(recursive=2)
 class MappingEncoder(BaseEncoder, Mapping[K, E]):
     r"""Encoder that maps keys to encoders."""
 
@@ -676,11 +665,6 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
 
     def __init__(self, encoders: Mapping[K, E]) -> None:
         self.encoders = encoders
-
-    def __repr__(self) -> str:
-        r"""Return a string representation of the encoder."""
-        # One more level of recursion than BaseEncoder.__repr__
-        return repr_object(self, fallback=repr_type, recursive=2)
 
     @overload
     def __getitem__(self, key: list[K], /) -> Self: ...

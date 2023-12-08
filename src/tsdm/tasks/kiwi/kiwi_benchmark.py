@@ -170,19 +170,18 @@ class KiwiBenchmark(TimeSeriesTask):
         self.forecasting_horizon = self.sampler_kwargs["forecasting_horizon"]
 
         dataset = datasets.KiwiBenchmarkTSC()
-        ts = dataset.timeseries
-        ts = ts.astype("float64")
+        dataset.timeseries = dataset.timeseries.astype("float32")
 
-        # forward fill covariates
-        ts.loc[:, self.covariates] = (
-            ts.loc[:, self.covariates]
-            .groupby(["run_id", "experiment_id"])
-            .ffill()
-            .fillna(0)  # covariates before first entry
-        )
-
-        dataset.timeseries = ts
         super().__init__(dataset=dataset)
+
+        # NOTE: We disable this for now, because this is not the right place to do it.
+        # # forward fill covariates
+        # ts.loc[:, self.covariates] = (
+        #     ts.loc[:, self.covariates]
+        #     .groupby(["run_id", "experiment_id"])
+        #     .ffill()
+        #     .fillna(0)  # covariates before first entry
+        # )
 
     # @staticmethod
     # def default_test_metric(*, targets, predictions):

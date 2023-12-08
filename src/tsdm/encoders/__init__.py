@@ -110,9 +110,11 @@ __all__ = [
     "pytorch",
     # Types
     "Encoder",
+    "EncoderProtocol",
+    "InvertibleTransform",
+    "Transform",
     # Constants
     "ENCODERS",
-    "SKLEARN_ENCODERS",
     # ABC
     "BaseEncoder",
     # Classes
@@ -154,9 +156,6 @@ __all__ = [
     # Aliases
 ]
 
-from sklearn import preprocessing as sk_preprocessing
-from sklearn.base import BaseEstimator
-
 from tsdm.encoders import base, numerical, pytorch, time, transforms
 from tsdm.encoders.base import (
     BaseEncoder,
@@ -165,9 +164,12 @@ from tsdm.encoders.base import (
     CopyEncoder,
     DuplicateEncoder,
     Encoder,
+    EncoderProtocol,
     IdentityEncoder,
+    InvertibleTransform,
     MappingEncoder,
     ProductEncoder,
+    Transform,
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
 from tsdm.encoders.dataframe import (
@@ -203,28 +205,6 @@ from tsdm.encoders.time import (
     TimeDeltaEncoder,
 )
 
-SKLEARN_ENCODERS: dict[str, type[BaseEstimator]] = {
-    "Binarizer": sk_preprocessing.Binarizer,
-    "FunctionTransformer": sk_preprocessing.FunctionTransformer,
-    "KBinsDiscretizer": sk_preprocessing.KBinsDiscretizer,
-    "KernelCenterer": sk_preprocessing.KernelCenterer,
-    "LabelBinarizer": sk_preprocessing.LabelBinarizer,
-    "LabelEncoder": sk_preprocessing.LabelEncoder,
-    "MaxAbsScaler": sk_preprocessing.MaxAbsScaler,
-    "MinMaxScaler": sk_preprocessing.MinMaxScaler,
-    "MultiLabelBinarizer": sk_preprocessing.MultiLabelBinarizer,
-    "Normalizer": sk_preprocessing.Normalizer,
-    "OneHotEncoder": sk_preprocessing.OneHotEncoder,
-    "OrdinalEncoder": sk_preprocessing.OrdinalEncoder,
-    "PolynomialFeatures": sk_preprocessing.PolynomialFeatures,
-    "PowerTransformer": sk_preprocessing.PowerTransformer,
-    "QuantileTransformer": sk_preprocessing.QuantileTransformer,
-    "RobustScaler": sk_preprocessing.RobustScaler,
-    "SplineTransformer": sk_preprocessing.SplineTransformer,
-    "StandardScaler": sk_preprocessing.StandardScaler,
-}
-r"""Dictionary of all available sklearn encoders."""
-
 ENCODERS: dict[str, type[Encoder]] = {
     # "BaseEncoder": BaseEncoder,  # Only concrete classes!
     "BoundaryEncoder": BoundaryEncoder,
@@ -256,5 +236,3 @@ ENCODERS: dict[str, type[Encoder]] = {
     "TripletEncoder": TripletEncoder,
 }
 r"""Dictionary of all available encoders."""
-
-del sk_preprocessing, BaseEstimator

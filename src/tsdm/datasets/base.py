@@ -41,11 +41,11 @@ from typing_extensions import (
 )
 
 from tsdm.config import CONFIG
+from tsdm.testing.hash import validate_file_hash, validate_table_hash
 from tsdm.types.aliases import PathLike
 from tsdm.types.variables import any_co as T_co, str_var as Key
 from tsdm.utils import paths_exists
 from tsdm.utils.funcutils import get_return_typehint
-from tsdm.utils.hash import validate_file_hash, validate_table_hash
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.remote import download
 from tsdm.utils.strings import repr_array, repr_mapping

@@ -142,7 +142,7 @@ class DecoratorError(Exception):
 
 
 def _last_positional_only_arg_index(sig: Signature) -> int:
-    r"""Return index such that all parameters before are POSITIONAL_ONLY."""
+    r"""Returns last index for which all preceeding parameters are POSITIONAL_ONLY."""
     for i, param in enumerate(sig.parameters.values()):
         if param.kind is not POSITIONAL_ONLY:
             return i

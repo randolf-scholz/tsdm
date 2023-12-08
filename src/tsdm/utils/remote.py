@@ -25,8 +25,8 @@ from tqdm.autonotebook import tqdm
 from typing_extensions import IO, Any, Optional
 
 from tsdm.constants import EMPTY_MAP
+from tsdm.testing.hash import validate_file_hash
 from tsdm.types.aliases import PathLike
-from tsdm.utils.hash import validate_file_hash
 
 
 class LinkParser(HTMLParser):

@@ -9,37 +9,9 @@ __all__ = [
     "SKLEARN_ENCODERS",
 ]
 
-
 from sklearn import preprocessing as sk_preprocessing
-from typing_extensions import Protocol, TypeVar, runtime_checkable
 
-U = TypeVar("U")
-V = TypeVar("V")
-U_contra = TypeVar("U_contra", contravariant=True)
-V_co = TypeVar("V_co", covariant=True)
-
-
-@runtime_checkable
-class Transform(Protocol[U_contra, V_co]):
-    """Protocol for transformers."""
-
-    def fit(self, X: U_contra, /) -> None:
-        """Fit the transformer."""
-        ...
-
-    def transform(self, X: U_contra, /) -> V_co:
-        """Transform the data."""
-        ...
-
-
-@runtime_checkable
-class InvertibleTransform(Transform[U, V], Protocol):
-    """Protocol for invertible transformers."""
-
-    def inverse_transform(self, X: V, /) -> U:
-        """Reverse transform the data."""
-        ...
-
+from tsdm.encoders.base import InvertibleTransform, Transform
 
 SKLEARN_TRANSFORMS: dict[str, type[Transform]] = {
     # fmt: off

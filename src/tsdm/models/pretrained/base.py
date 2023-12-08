@@ -56,14 +56,9 @@ from typing_extensions import IO, Any, ClassVar, Optional, Protocol, Self, cast
 from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
 from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
+from tsdm.testing._testing import is_zipfile
 from tsdm.types.aliases import PathLike
-from tsdm.utils import (
-    LazyDict,
-    initialize_from_config,
-    is_zipfile,
-    paths_exists,
-    repackage_zip,
-)
+from tsdm.utils import LazyDict, initialize_from_config, paths_exists, repackage_zip
 from tsdm.utils.remote import import_from_url
 from tsdm.utils.strings import repr_mapping
 

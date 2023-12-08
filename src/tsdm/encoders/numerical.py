@@ -687,7 +687,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
 
     axis: Axes
     r"""The axis to perform the scaling. If None, automatically select the axis."""
-    backend: Backend[Arr]
+    backend: Backend[Arr] = NotImplemented
     """The backend of the encoder."""
 
     @property
@@ -827,7 +827,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
     r"""Over which axis to perform the scaling."""
     safe_computation: bool
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
-    backend: Backend[Arr]
+    backend: Backend[Arr] = NotImplemented
     """The backend of the encoder."""
 
     @pprint_repr

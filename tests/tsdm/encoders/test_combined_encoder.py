@@ -4,6 +4,7 @@ import pickle
 
 import numpy as np
 import pandas as pd
+import pandas.testing
 import torch
 from pandas import DataFrame
 from pytest import mark
@@ -27,8 +28,9 @@ from tsdm.tasks import KiwiBenchmark
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
+@mark.xfail(reason="https://github.com/pandas-dev/pandas/issues/56409")
 @mark.slow
-def test_combined_encoder(SplitID=(0, "train")):
+def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
     r"""Test complicated combined encoder."""
     torch.manual_seed(0)
     np.random.seed(0)
@@ -40,7 +42,6 @@ def test_combined_encoder(SplitID=(0, "train")):
     key = next(iter(sampler))
     sample = generator[key]
     inputs = sample.inputs.x
-
     # Construct the encoder
     column_encoders: dict[str, Encoder] = {}
     for col, scale, lower, upper in descr.itertuples():
@@ -89,23 +90,56 @@ def test_combined_encoder(SplitID=(0, "train")):
     )
 
     encoder.fit(ts)  # fit encoder to the whole dataset
+
+    # encode and decode
     encoded = encoder.encode(ts)
+
+    # check normalization
+    xhat = DataFrame(encoded["X"], dtype="float32")
+    assert np.allclose(xhat.mean().dropna(), 0.0, atol=atol)
+    assert np.allclose(xhat.std(ddof=0).dropna(), 1.0, atol=atol)
+
+    # check that decode gives back original values
     decoded = encoder.decode(encoded)
-    MAD = (decoded - ts).abs().mean().mean()
-    assert all(decoded.isna() == ts.isna()), "NaN pattern mismatch"
-    assert MAD < 1e-3, "Large deviations from original values"
-    # check that the encoded values are within the bounds
+    pd.testing.assert_frame_equal(decoded, ts, atol=atol, rtol=2**-12)
 
     # apply encoder to a single slice
     encoded = encoder.encode(inputs)
-    xhat = DataFrame(encoded["X"])
+    xhat = DataFrame(encoded["X"], dtype="float32")
     assert (xhat.isna().values == inputs.isna().values).all(), "NaN pattern mismatch"
 
     # check that decoded matches with original
     decoded = encoder.decode(encoded)
-    MAD = (decoded - inputs).abs().mean().mean()
-    assert (decoded.isna().values == inputs.isna().values).all(), "NaN pattern mismatch"
-    assert MAD < 1e-3, "Large deviations from original values"
+    pd.testing.assert_frame_equal(
+        decoded.reset_index(drop=True),
+        inputs.reset_index(drop=True),
+        atol=atol,
+        rtol=rtol,
+    )
+    # manually compare index
+    reference_index = inputs.index
+    decoded_index = decoded.index
+    freq = pd.Timedelta("1us")
+    assert decoded_index.notna().all()
+    assert decoded_index.shape == reference_index.shape
+    assert decoded_index.dtype == reference_index.dtype
+    assert (decoded_index - reference_index).notna().all()
+    r = decoded_index - reference_index
+    print(r)
+    print(r / freq)
+    gg = r / freq
+    print(r[0])
+    print(r[1])
+    print(r.values)
+    print(gg[1])
+    raise
+    assert r.notna().all()
+    q = abs((reference_index - reference_index[0]) / freq)
+    assert q.notna().all()
+    print((rtol * q + atol))
+    print(r)
+    print(r <= (1e-3 * q + atol))
+    assert (r <= (1e-3 * q + atol)).all()
 
     # check that decoding random values satisfies bounds
     rng_data = torch.randn_like(encoded["X"])

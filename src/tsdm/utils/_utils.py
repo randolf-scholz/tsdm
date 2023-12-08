@@ -11,8 +11,6 @@ __all__ = [
     "flatten_dict",
     "flatten_nested",
     "initialize_from_config",
-    "is_dunder",
-    "is_zipfile",
     "now",
     "pairwise_disjoint",
     "pairwise_disjoint_masks",
@@ -31,7 +29,7 @@ from datetime import datetime
 from importlib import import_module
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from zipfile import BadZipFile, ZipFile
+from zipfile import ZipFile
 
 import numpy as np
 import pandas
@@ -42,6 +40,7 @@ from tqdm.autonotebook import tqdm
 from typing_extensions import Any, Literal, Optional, cast, overload
 
 from tsdm.constants import BOOLEAN_PAIRS
+from tsdm.testing._testing import is_dunder, is_zipfile
 from tsdm.types.aliases import Nested, NestedDict, NestedMapping, PathLike
 from tsdm.types.variables import HashableType, key_other_var as K2, key_var as K
 
@@ -92,16 +91,6 @@ def flatten_nested(
     if isinstance(nested, Iterable):
         return set.union(*(flatten_nested(v, leaf_type=leaf_type) for v in nested))
     raise ValueError(f"{type(nested)} is not understood")
-
-
-def is_flattened(
-    d: Mapping, /, *, key_type: type = object, val_type: type = Mapping
-) -> bool:
-    r"""Check if mapping is flattened."""
-    return all(
-        isinstance(key, key_type) and not isinstance(val, val_type)
-        for key, val in d.items()
-    )
 
 
 def flatten_dict(
@@ -348,38 +337,12 @@ def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
     return cls(**opts)
 
 
-def is_dunder(name: str, /) -> bool:
-    r"""Check if the name is a dunder method."""
-    return name.isidentifier() and name.startswith("__") and name.endswith("__")
-
-
-def is_zipfile(path: Path, /) -> bool:
-    r"""Return `True` if the file is a zipfile."""
-    try:
-        with ZipFile(path):
-            return True
-    except (BadZipFile, IsADirectoryError):
-        return False
-
-
 def get_uniques(series: Series, /, *, ignore_nan: bool = True) -> Series:
     r"""Return unique values, excluding nan."""
     if ignore_nan:
         mask = pandas.notna(series)
         series = series[mask]
     return Series(series.unique())
-
-
-def series_is_boolean(series: Series, /, *, uniques: Optional[Series] = None) -> bool:
-    r"""Test if 'string' series could possibly be boolean."""
-    assert pandas.api.types.is_string_dtype(series), "Series must be 'string' dtype!"
-    values = get_uniques(series) if uniques is None else uniques
-
-    if len(values) == 0 or len(values) > 2:
-        return False
-    return any(
-        set(values.str.lower()) <= bool_pair.keys() for bool_pair in BOOLEAN_PAIRS
-    )
 
 
 def series_to_boolean(s: Series, uniques: Optional[Series] = None, /) -> Series:
@@ -393,22 +356,6 @@ def series_to_boolean(s: Series, uniques: Optional[Series] = None, /) -> Series:
     s = s.copy()
     s[mask] = s[mask].map(mapping)
     return s.astype(pandas.BooleanDtype())
-
-
-def series_numeric_is_boolean(s: Series, uniques: Optional[Series] = None, /) -> bool:
-    r"""Test if 'numeric' series could possibly be boolean."""
-    assert pandas.api.types.is_numeric_dtype(s), "Series must be 'numeric' dtype!"
-    values = get_uniques(s) if uniques is None else uniques
-    if len(values) == 0 or len(values) > 2:
-        return False
-    return any(set(values) <= set(bool_pair) for bool_pair in BOOLEAN_PAIRS)
-
-
-def series_is_int(s: Series, uniques: Optional[Series] = None, /) -> bool:
-    r"""Check whether float encoded column holds only integers."""
-    assert pandas.api.types.is_float_dtype(s), "Series must be 'float' dtype!"
-    values = get_uniques(s) if uniques is None else uniques
-    return cast(bool, values.apply(float.is_integer).all())
 
 
 def repackage_zip(path: PathLike, /) -> None:
