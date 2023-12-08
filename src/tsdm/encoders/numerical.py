@@ -73,7 +73,7 @@ from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axes, Nested, PandasObject, SizeLike
 from tsdm.types.protocols import NTuple, NumericalArray, SupportsDtype
-from tsdm.utils.strings import pprint_repr, repr_dataclass
+from tsdm.utils.strings import pprint_repr
 
 # NumericalArray: TypeAlias = Tensor | NDArray | DataFrame | Series
 # r"""Type Hint for tensor-like objects."""
@@ -555,6 +555,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
         return data
 
 
+@pprint_repr
 @dataclass(init=False)
 class LinearScaler(BaseEncoder[Arr, Arr]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
@@ -650,10 +651,6 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
         encoder = cls(loc, scale, axis=axis)
         encoder._is_fitted = self._is_fitted
         return encoder
-
-    def __repr__(self) -> str:
-        r"""Pretty print."""
-        return repr_dataclass(self)
 
     def fit(self, data: Arr, /) -> None:
         selected_backend = get_backend(data)

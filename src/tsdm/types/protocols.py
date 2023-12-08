@@ -93,7 +93,6 @@ from tsdm.types.variables import (
 
 P = ParamSpec("P")
 Scalar = TypeVar("Scalar")
-BoolArray = TypeVar("BoolArray", bound="NumericalArray", covariant=True)
 
 
 def assert_protocol(obj: Any, proto: type, /) -> None:
@@ -739,8 +738,8 @@ class SupportsKwargsType(type(Protocol)):  # type: ignore[misc]
     """Metaclass for `SupportsKwargs`."""
 
     def __instancecheck__(self, other: object, /) -> bool:
-        return isinstance(other, SupportsKeysAndGetItem) and isinstance(
-            next(iter(other.keys())), str
+        return isinstance(other, SupportsKeysAndGetItem) and all(
+            isinstance(key, str) for key in other.keys()
         )
 
     def __subclasscheck__(self, other: type, /) -> bool:

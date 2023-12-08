@@ -208,13 +208,13 @@ class BaseEncoderMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+        self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
         """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
 
 
 class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
@@ -266,15 +266,13 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         @wraps(original_fit)
         def fit(self: Self, data: T, /) -> None:
             r"""Fit the encoder to the data."""
-            if not self.requires_fit:
+            if self.requires_fit:
+                self.LOGGER.info("Fitting encoder to data.")
+                original_fit(self, data)
+            else:
                 self.LOGGER.info(
                     "Skipping fitting as encoder does not require fitting."
                 )
-                self.is_fitted = True
-                return
-            else:
-                self.LOGGER.info("Fitting encoder to data.")
-                original_fit(self, data)
             self.is_fitted = True
 
         @wraps(original_encode)

@@ -20,9 +20,10 @@ from tsdm.datasets import Electricity
 from tsdm.encoders import BaseEncoder, StandardScaler
 from tsdm.random.samplers import SequenceSampler
 from tsdm.tasks.base import TimeSeriesTask
-from tsdm.utils.strings import repr_namedtuple
+from tsdm.utils.strings import pprint_repr
 
 
+@pprint_repr
 class Batch(NamedTuple):
     r"""A single sample of the data."""
 
@@ -33,9 +34,6 @@ class Batch(NamedTuple):
     y_time: Tensor  # B×K:   the target timestamps.
     y_vals: Tensor  # B×K×D: the target values.
     y_mask: Tensor  # B×K×D: teh target mask.
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
 
 
 class ElectricityLim2021(TimeSeriesTask):

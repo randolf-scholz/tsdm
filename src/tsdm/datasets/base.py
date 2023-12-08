@@ -97,28 +97,28 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+        self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
         """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
 
         if "RAWDATA_DIR" not in namespace:
             if os.environ.get("GENERATING_DOCS", False):
-                cls.RAWDATA_DIR = Path("~/.tsdm/rawdata/") / cls.__name__
+                self.RAWDATA_DIR = Path("~/.tsdm/rawdata/") / self.__name__
             else:
-                cls.RAWDATA_DIR = CONFIG.RAWDATADIR / cls.__name__
+                self.RAWDATA_DIR = CONFIG.RAWDATADIR / self.__name__
 
         if "DATASET_DIR" not in namespace:
             if os.environ.get("GENERATING_DOCS", False):
-                cls.DATASET_DIR = Path("~/.tsdm/datasets") / cls.__name__
+                self.DATASET_DIR = Path("~/.tsdm/datasets") / self.__name__
             else:
-                cls.DATASET_DIR = CONFIG.DATASETDIR / cls.__name__
+                self.DATASET_DIR = CONFIG.DATASETDIR / self.__name__
 
     def __call__(
-        cls,
+        self,
         *init_args: Any,
         initialize: bool = True,
         reset: bool = False,
@@ -127,8 +127,8 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
         **init_kwargs: Any,
     ) -> Self:
         """Add custom initialization logic (pre/post hooks)."""
-        obj: Self = cls.__new__(cls, *init_args, **init_kwargs)  # pyright: ignore
-        cls.__pre_init__(
+        obj: Self = self.__new__(self, *init_args, **init_kwargs)  # pyright: ignore
+        self.__pre_init__(
             obj,
             *init_args,
             reset=reset,
@@ -136,8 +136,8 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
             verbose=verbose,
             **init_kwargs,
         )
-        cls.__init__(obj, *init_args, **init_kwargs)  # type: ignore[misc]
-        cls.__post_init__(obj, *init_args, initialize=initialize, **init_kwargs)
+        self.__init__(obj, *init_args, **init_kwargs)  # type: ignore[misc]
+        self.__post_init__(obj, *init_args, initialize=initialize, **init_kwargs)
         return obj
 
 
@@ -603,7 +603,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         def attr_exists(obj: object, key: str) -> bool:
             """Test if attribute exists using only __getattribute__ and not __getattr__."""
             try:
-                obj.__getattribute__(key)
+                obj.__getattribute__(key)  # pylint: disable=unnecessary-dunder-call
             except AttributeError:
                 return False
             return True

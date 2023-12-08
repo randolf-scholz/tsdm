@@ -67,9 +67,10 @@ from typing_extensions import Any, NamedTuple, deprecated
 from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_III_Bilos2021 as MIMIC_III_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.strings import repr_namedtuple
+from tsdm.utils.strings import pprint_repr
 
 
+@pprint_repr
 class Inputs(NamedTuple):
     r"""A single sample of the data."""
 
@@ -77,11 +78,8 @@ class Inputs(NamedTuple):
     x: Tensor
     t_target: Tensor
 
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
 
-
+@pprint_repr
 class Sample(NamedTuple):
     r"""A single sample of the data."""
 
@@ -90,11 +88,21 @@ class Sample(NamedTuple):
     targets: Tensor
     originals: tuple[Tensor, Tensor]
 
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
+
+@pprint_repr
+class Batch(NamedTuple):
+    r"""A single sample of the data."""
+
+    x_time: Tensor  # B×N:   the input timestamps.
+    x_vals: Tensor  # B×N×D: the input values.
+    x_mask: Tensor  # B×N×D: the input mask.
+
+    y_time: Tensor  # B×K:   the target timestamps.
+    y_vals: Tensor  # B×K×D: the target values.
+    y_mask: Tensor  # B×K×D: teh target mask.
 
 
+@pprint_repr
 @dataclass
 class MIMIC_III_SampleGenerator(Dataset):
     r"""Wrapper for creating samples of the dataset."""
@@ -123,24 +131,6 @@ class MIMIC_III_SampleGenerator(Dataset):
             targets=x[target_mask],
             originals=(t, x),
         )
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}"
-
-
-class Batch(NamedTuple):
-    r"""A single sample of the data."""
-
-    x_time: Tensor  # B×N:   the input timestamps.
-    x_vals: Tensor  # B×N×D: the input values.
-    x_mask: Tensor  # B×N×D: the input mask.
-
-    y_time: Tensor  # B×K:   the target timestamps.
-    y_vals: Tensor  # B×K×D: the target values.
-    y_mask: Tensor  # B×K×D: teh target mask.
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
 
 
 @deprecated("Consider using tasks.utils.collate_timeseries instead.")

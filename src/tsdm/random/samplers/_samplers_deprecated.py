@@ -10,7 +10,7 @@ from numpy._typing import NDArray
 from pandas import DataFrame, Timedelta, Timestamp
 from typing_extensions import Any, Generic, Iterable, Optional, cast, deprecated
 
-from tsdm.random.samplers import BaseSampler, compute_grid
+from tsdm.random.samplers._samplers import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
 from tsdm.types.time import DTVar, TDVar
 

@@ -24,9 +24,10 @@ from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FrameEncoder, MinMaxScaler, StandardScaler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.strings import repr_namedtuple
+from tsdm.utils.strings import pprint_repr
 
 
+@pprint_repr
 class Inputs(NamedTuple):
     r"""A single sample of the data."""
 
@@ -34,11 +35,8 @@ class Inputs(NamedTuple):
     x: Tensor
     t_target: Tensor
 
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
 
-
+@pprint_repr
 class Sample(NamedTuple):
     r"""A single sample of the data."""
 
@@ -47,11 +45,8 @@ class Sample(NamedTuple):
     targets: Tensor
     originals: tuple[Tensor, Tensor]
 
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
 
-
+@pprint_repr
 class Batch(NamedTuple):
     r"""A single sample of the data."""
 
@@ -62,9 +57,6 @@ class Batch(NamedTuple):
     y_time: Tensor  # B×K:   the target timestamps.
     y_vals: Tensor  # B×K×D: the target values.
     y_mask: Tensor  # B×K×D: teh target mask.
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
 
 
 @dataclass

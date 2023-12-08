@@ -32,9 +32,10 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Any, NamedTuple, Optional, Self, overload
 
-from tsdm.utils.strings import pprint_repr, repr_dataclass
+from tsdm.utils.strings import pprint_repr
 
 
+@pprint_repr
 @dataclass
 class TimeSeriesDataset(TorchDataset[Series]):  # Q: Should this be a Mapping?
     r"""Abstract Base Class for TimeSeriesDatasets.
@@ -90,11 +91,8 @@ class TimeSeriesDataset(TorchDataset[Series]):  # Q: Should this be a Mapping?
         # we might get an index object, or a slice, or boolean mask...
         return self.timeseries.loc[key]
 
-    def __repr__(self) -> str:
-        r"""Get the representation of the collection."""
-        return repr_dataclass(self, title=self.name)
 
-
+@pprint_repr
 @dataclass
 class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     r"""Abstract Base Class for **equimodal** TimeSeriesCollections.
@@ -236,10 +234,6 @@ class TimeSeriesCollection(Mapping[Any, TimeSeriesDataset]):
     def __iter__(self) -> Iterator[Any]:
         r"""Iterate over the collection."""
         return iter(self.metaindex)
-
-    def __repr__(self) -> str:
-        r"""Get the representation of the collection."""
-        return repr_dataclass(self, title=self.name)
 
 
 # TIMESERIES: dict[str, type[TimeSeriesCollection]] = {

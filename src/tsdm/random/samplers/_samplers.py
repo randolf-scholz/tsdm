@@ -190,29 +190,16 @@ class Sampler(Protocol[T_co]):
 class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
-    # def __new__(
-    #     cls,
-    #     name: str,
-    #     bases: tuple[type, ...],
-    #     namespace: dict[str, Any],
-    #     /,
-    #     **kwds: Any,
-    # ) -> Self:
-    #     # NOTE: https://stackoverflow.com/a/73677355/9318372
-    #     if "__slots__" not in namespace:
-    #         namespace["__slots__"] = tuple()
-    #     return super(BaseSamplerMetaClass, cls).__new__(
-    #         cls, name, bases, namespace, **kwds
-    #     )
+    # NOTE: https://stackoverflow.com/a/73677355/9318372
 
     def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+        self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
         """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
 
 
 @dataclass
@@ -266,7 +253,7 @@ class RandomSampler(BaseSampler[T_co]):
     # fmt: on
     def __init__(self, data, /, *, shuffle=False):
         """Initialize the sampler."""
-        super(RandomSampler, self).__init__(shuffle=shuffle)
+        super().__init__(shuffle=shuffle)
         self.data = data
         self.index = get_index(self.data)
         self.size = len(self.index)
@@ -348,16 +335,9 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
             key: iter(sampler) for key, sampler in self.subsamplers.items()
         }
 
-        # This won't raise StopIteration, because the length is matched.
+        # This won't raise `StopIteration`, because the length is matched.
         for key in permutation:
             yield key, next(activate_iterators[key])
-
-            # for-break faster than try-next-except
-            # for value in activate_iterators[key]:
-            #     yield key, value
-            #     break
-            # else:  # activate_iterators[key] is exhausted
-            #     raise RuntimeError(f"Sampler of {key=} exhausted prematurely.")
 
 
 # TODO: Hierarchical sampler for Sequence

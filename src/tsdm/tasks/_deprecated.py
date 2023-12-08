@@ -27,7 +27,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(
-        cls,
+        self,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -37,7 +37,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
         super().__init__(name, bases, namespace, **kwds)
 
         if "LOGGER" not in namespace:
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
 
 
 class BaseTask(Generic[K], metaclass=BaseDatasetMetaClass):

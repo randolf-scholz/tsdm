@@ -163,6 +163,7 @@ class TargetsAndPredics(NamedTuple):
 def eval_metric(
     metric: str | Metric | type[Metric], /, *, targets: Tensor, predics: Tensor
 ) -> Tensor:
+    r"""Evaluate a metric."""
     match metric:
         case str() as metric_name:
             _metric = LOSSES[metric_name]

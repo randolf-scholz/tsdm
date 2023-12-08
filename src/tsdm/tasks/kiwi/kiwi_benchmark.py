@@ -36,9 +36,10 @@ from tsdm.metrics import TimeSeriesMSE
 from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
 from tsdm.tasks.base import TimeSeriesTask
 from tsdm.types.aliases import SplitID
-from tsdm.utils.strings import repr_namedtuple
+from tsdm.utils.strings import pprint_repr
 
 
+@pprint_repr
 class Batch(NamedTuple):
     r"""A single sample of the data."""
 
@@ -49,9 +50,6 @@ class Batch(NamedTuple):
     y_time: Tensor  # B×K:   the target timestamps.
     y_vals: Tensor  # B×K×D: the target values.
     y_mask: Tensor  # B×K×D: teh target mask.
-
-    def __repr__(self) -> str:
-        return repr_namedtuple(self)
 
 
 class KiwiBenchmark(TimeSeriesTask):

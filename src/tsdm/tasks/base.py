@@ -138,7 +138,7 @@ from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
 from tsdm.types.variables import key_var as K
 from tsdm.utils import LazyDict
-from tsdm.utils.strings import repr_dataclass
+from tsdm.utils.strings import pprint_repr
 
 Sample_co = TypeVar("Sample_co", covariant=True)
 """Covariant type variable for `Sample`."""
@@ -219,14 +219,15 @@ class TimeSeriesTaskMetaClass(type(Protocol)):  # type: ignore[misc]
     """Metaclass for TimeSeriesTask."""
 
     def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+        self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
     ) -> None:
         """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
-        if not hasattr(cls, "LOGGER"):
-            cls.LOGGER = logging.getLogger(f"{cls.__module__}.{cls.__name__}")
+        if not hasattr(self, "LOGGER"):
+            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
 
 
+@pprint_repr
 @dataclass
 class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMetaClass):
     r"""Abstract Base Class for Tasks.
@@ -367,13 +368,6 @@ class TimeSeriesTask(Generic[SplitID, K, Sample_co], metaclass=TimeSeriesTaskMet
     def __len__(self) -> int:
         r"""Return the number of splits."""
         return len(self.index)
-
-    def __getitem__(self, key: SplitID) -> Any:
-        r"""Return the objects associated with the splitID."""
-        raise NotImplementedError
-
-    def __repr__(self) -> str:
-        return repr_dataclass(self)
 
     @staticmethod
     def default_test_metric(*, targets: Tensor, predictions: Tensor) -> Tensor:

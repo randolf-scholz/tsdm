@@ -13,7 +13,7 @@ from itertools import product
 import pandas as pd
 import torch
 from pandas import DataFrame, MultiIndex, Series, Timedelta, Timestamp
-from pandas._libs.missing import NAType
+from pandas.api.typing import NAType
 from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.nn import MSELoss
@@ -25,9 +25,10 @@ from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.strings import repr_namedtuple
+from tsdm.utils.strings import pprint_repr
 
 
+@pprint_repr
 class Sample(NamedTuple):
     r"""A sample of the data."""
 
@@ -35,10 +36,6 @@ class Sample(NamedTuple):
     inputs: tuple[DataFrame, DataFrame]
     targets: float
     originals: Optional[tuple[DataFrame, DataFrame]] = None
-
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
 
 
 def get_induction_time(s: Series) -> Timestamp | NAType:

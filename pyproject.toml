@@ -204,7 +204,7 @@ ignore = [
 ]
 per-file-ignores = ["tests/*:D103"]
 
-#Google Python style is not RST until after processed by Napoleon
+#Google Python style is not RST until after processed by Napoleon.
 #See https://github.com/peterjc/flake8-rst-docstrings/issues/17
 extend-ignore = [
     "D407",    # Missing dashed underline after section
@@ -256,15 +256,17 @@ rst-directives = ["Signature", "literalinclude"]
 [tool.pylint."MESSAGES CONTROL"]
 enable = ["useless-suppression"]
 disable = [
-    "C0103",  # invalid-name
+    "C0103",  # invalid-name  # Ridiculous...
     "C0144",  # non-ascii-name
     "C0204",  # bad-mcs-classmethod-argument
-    "C0415",  # import-outside-toplevel
-    "E0611",  # no-name-in-module
+    "C0301",  # line-too-long
+    # "E0611",  # no-name-in-module
     "E1101",  # no-member  # FIXME: too many false positives
-    "E1121",  # too-many-function-args  # too many false positives
-    "E1123",  # unexpected-keyword-arg  # too many false positives
+    "E1102",  # not-callable  # FIXME: too many false positives (torch)
+    "E1121",  # too-many-function-args
+    "E1123",  # unexpected-keyword-arg
     "E1130",  # invalid-unary-operand-type
+    "E1139",  # invalid-metaclass  # FIXME: too many false positives
     "R0801",  # similar lines
     "R0902",  # too-many-instance-attributes
     "R0903",  # too-few-public-methods
@@ -272,8 +274,8 @@ disable = [
     "R0913",  # too-many-arguments
     "R0914",  # too-many-locals
     "R0915",  # too-many-statements
-    #    "W0221",  # arguments-differ
-    #    "W0511",  # (fixme) (todos)
+    # "W0221",  # arguments-differ
+    # "W0511",  # (fixme) (todos)
     "W1113",  # keyword-arg-before-vararg
     "W2301",  # unnecessary-ellipsis
 ]
@@ -388,7 +390,7 @@ profile = "black"
 src_paths = ["src/", "tests/"]
 known_first_party = ["linodenet", "tsdm"]
 combine_as_imports = true
-# flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets
+# flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets.
 # black-compatible: black, appnexus
 # endregion isort Configuration --------------------------------------------------------
 
@@ -443,7 +445,7 @@ useLibraryCodeForTypes = false  # otherwise hundreds of pandas false-positives.
 #reportUnsupportedDunderAll = false
 reportOverlappingOverload = false
 reportPrivateImportUsage = false
-reportUnnecessaryTypeIgnoreComment = false  # highlight unnecessary # type: ignore
+reportUnnecessaryTypeIgnoreComment = false  # highlight any unnecessary # type: ignore
 reportSelfClsParameterName = false
 reportIncompatibleMethodOverride = false  # FIXME: temporary
 reportIncompatibleVariableOverride = false  # FIXME: temporary

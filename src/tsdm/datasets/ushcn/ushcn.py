@@ -6,6 +6,7 @@ import warnings
 
 import pandas as pd
 from pandas import DataFrame
+from pyarrow import csv
 from typing_extensions import Literal, TypeAlias
 
 from tsdm.data import InlineTable, make_dataframe, remove_outliers
@@ -475,8 +476,6 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             " Refactor if read_fwf becomes available in polars or pyarrow.",
             stacklevel=2,
         )
-
-        import pyarrow.csv as csv
 
         # table = pl.read_csv(self.rawdata_paths["us.txt.gz"], separator="\n")
         table = csv.read_csv(

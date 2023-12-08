@@ -23,9 +23,10 @@ from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.strings import repr_namedtuple
+from tsdm.utils.strings import pprint_repr
 
 
+@pprint_repr
 class Sample(NamedTuple):
     r"""A sample of the data."""
 
@@ -33,10 +34,6 @@ class Sample(NamedTuple):
     inputs: tuple[DataFrame, DataFrame]
     targets: float
     originals: Optional[tuple[DataFrame, DataFrame]] = None
-
-    def __repr__(self) -> str:
-        r"""Return string representation."""
-        return repr_namedtuple(self)
 
 
 @deprecated("outdated task, use tasks.KIWI_Benchmark instead!")
