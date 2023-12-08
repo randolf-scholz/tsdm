@@ -1,6 +1,8 @@
 r"""Plotting Functionality."""
 
 __all__ = [
+    # Constants
+    "MATPLOTLIB_CONFIG",
     # Functions
     "center_axes",
     "kernel_heatmap",
@@ -19,8 +21,30 @@ from tsdm.viz._plotting import (
     visualize_distribution,
 )
 
+MATPLOTLIB_CONFIG = {
+    # "mathtext.fontset": "stix",
+    # "font.family": "STIXGeneral",
+    # "svg.fonttype": "none",
+    "text.usetex": True,
+    "pgf.texsystem": r"lualatex",
+    "pgf.preamble": "\n".join([
+        r"\usepackage{fontspec}",
+        r"\usepackage[T1]{fontenc}",
+        r"\usepackage[utf8x]{inputenc}",
+        r"\usepackage{amsmath}",
+        r"\usepackage{amsfonts}",
+        r"\usepackage{amssymb}",
+        r"\usepackage{unicode-math}",
+    ]),
+    "text.latex.preamble": "\n".join([
+        r"\usepackage{amsmath}",
+        r"\usepackage{amsfonts}",
+        r"\usepackage{amssymb}",
+    ]),
+}
 
-def set_latex_plotting():
+
+def set_latex_plotting() -> None:
     r"""Set matplotlib to use LaTeX for rendering."""
     # pylint: disable=import-outside-toplevel
     import shutil
@@ -29,31 +53,6 @@ def set_latex_plotting():
     import matplotlib
 
     # pylint: enable=import-outside-toplevel
-    MATPLOTLIB_CONFIG = {
-        # "mathtext.fontset": "stix",
-        # "font.family": "STIXGeneral",
-        # "svg.fonttype": "none",
-        "text.usetex": True,
-        "pgf.texsystem": r"lualatex",
-        "pgf.preamble": "\n".join(
-            [
-                r"\usepackage{fontspec}",
-                r"\usepackage[T1]{fontenc}",
-                r"\usepackage[utf8x]{inputenc}",
-                r"\usepackage{amsmath}",
-                r"\usepackage{amsfonts}",
-                r"\usepackage{amssymb}",
-                r"\usepackage{unicode-math}",
-            ]
-        ),
-        "text.latex.preamble": "\n".join(
-            [
-                r"\usepackage{amsmath}",
-                r"\usepackage{amsfonts}",
-                r"\usepackage{amssymb}",
-            ]
-        ),
-    }
 
     try:
         if shutil.which("lualatex") is not None:
@@ -67,5 +66,5 @@ def set_latex_plotting():
         warnings.warn(
             "matplotlib: pgf backend not available / no LaTeX rendering!", stacklevel=1
         )
-
-    del matplotlib, shutil, warnings
+    finally:
+        del matplotlib, shutil, warnings

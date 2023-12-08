@@ -1,54 +1,42 @@
 r"""Random Samplers.
 
 Note:
-    Samplers are used to randomly select samples from pre-existing data.
-    For methods to randomly generate data, see `tsdm.random.generators`.
+    Samplers are used to randomly select **indices** that can be used to select data.
+    For methods that randomly select data from the data source directly, see `tsdm.random.generators`.
 """
 
 __all__ = [
     # Constants
     "SAMPLERS",
-    # ABC
+    # Protocols
     "Sampler",
+    # ABC
     "BaseSampler",
     # Classes
-    "CollectionSampler",
     "HierarchicalSampler",
     "IntervalSampler",
     "RandomSampler",
     "SequenceSampler",
-    "SliceSampler",
-    "SlidingWindowSampler",
+    "SlidingSampler",
     # Functions
     "compute_grid",
 ]
 
-from typing import Final, TypeAlias
-
-from torch.utils.data import Sampler as TorchSampler
-
 from tsdm.random.samplers._samplers import (
     BaseSampler,
-    CollectionSampler,
     HierarchicalSampler,
-    IntervalSampler,
     RandomSampler,
     Sampler,
-    SequenceSampler,
-    SliceSampler,
-    SlidingWindowSampler,
+    SlidingSampler,
     compute_grid,
 )
+from tsdm.random.samplers._samplers_deprecated import IntervalSampler, SequenceSampler
 
-SAMPLERS: Final[dict[str, type[Sampler]]] = {
-    "CollectionSampler": CollectionSampler,
+SAMPLERS: dict[str, type[Sampler]] = {
     "HierarchicalSampler": HierarchicalSampler,
     "IntervalSampler": IntervalSampler,
     "SequenceSampler": SequenceSampler,
-    "SliceSampler": SliceSampler,
-    "SlidingWindowSampler": SlidingWindowSampler,
+    "SlidingWindowSampler": SlidingSampler,
     "RandomSampler": RandomSampler,
 }
 r"""Dictionary of all available samplers."""
-
-del Final, TypeAlias, TorchSampler

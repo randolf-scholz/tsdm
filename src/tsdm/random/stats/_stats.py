@@ -7,10 +7,10 @@ __all__ = [
 ]
 
 from collections.abc import Hashable
-from typing import Optional
 
 import pandas
 from pandas import DataFrame, Series
+from typing_extensions import Optional
 
 
 def sparsity(df: DataFrame) -> tuple[float, float]:

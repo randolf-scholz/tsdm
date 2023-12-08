@@ -23,17 +23,6 @@ import json
 import pickle
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import (
-    Any,
-    Literal,
-    NamedTuple,
-    Optional,
-    Protocol,
-    TypeAlias,
-    TypedDict,
-    TypeGuard,
-    runtime_checkable,
-)
 
 import torch
 import yaml
@@ -44,6 +33,17 @@ from torch import Tensor, jit, nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard import SummaryWriter
+from typing_extensions import (
+    Any,
+    Literal,
+    NamedTuple,
+    Optional,
+    Protocol,
+    TypeAlias,
+    TypedDict,
+    TypeGuard,
+    runtime_checkable,
+)
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.linalg import (
@@ -68,6 +68,35 @@ from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
 """Type Alias for maybe wrapped values."""
+
+
+@runtime_checkable
+class LogFunction(Protocol):
+    """Protocol for logging functions."""
+
+    def __call__(
+        self,
+        step: int,
+        logged_object: Any,
+        writer: SummaryWriter,
+        /,
+        *,
+        name: str = "",
+        prefix: str = "",
+        postfix: str = "",
+    ) -> None:
+        """Log to tensorboard."""
+        ...
+
+
+def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
+    """Check if the function is a callback."""
+    sig = inspect.signature(func)
+    params = list(sig.parameters.values())
+    P = inspect.Parameter
+    return len(params) >= 6 and all(
+        p.kind in (P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD) for p in params[:3]
+    )
 
 
 class AdamState(TypedDict):
@@ -123,35 +152,6 @@ def transpose_list_of_dicts(lst: Iterable[dict[Key, T]], /) -> dict[Key, list[T]
     )
 
 
-@runtime_checkable
-class LogFunction(Protocol):
-    """Protocol for logging functions."""
-
-    def __call__(
-        self,
-        step: int,
-        logged_object: Any,
-        writer: SummaryWriter,
-        /,
-        *,
-        name: str = "",
-        prefix: str = "",
-        postfix: str = "",
-    ) -> None:
-        """Log to tensorboard."""
-        ...
-
-
-def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
-    """Check if the function is a callback."""
-    sig = inspect.signature(func)
-    params = list(sig.parameters.values())
-    P = inspect.Parameter
-    return len(params) >= 6 and all(
-        p.kind in (P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD) for p in params[:3]
-    )
-
-
 class TargetsAndPredics(NamedTuple):
     """Targets and predictions."""
 
@@ -160,9 +160,30 @@ class TargetsAndPredics(NamedTuple):
 
 
 @torch.no_grad()
+def eval_metric(
+    metric: str | Metric | type[Metric], /, *, targets: Tensor, predics: Tensor
+) -> Tensor:
+    match metric:
+        case str() as metric_name:
+            _metric = LOSSES[metric_name]
+            return eval_metric(_metric, targets=targets, predics=predics)
+        case type() as metric_type:
+            metric_func = metric_type()
+            assert isinstance(metric_func, Metric)
+            return metric_func(targets, predics)
+        case Metric() as func:
+            return func(targets, predics)
+        case _:
+            raise TypeError(f"{type(metric)=} not understood!")
+
+
+@torch.no_grad()
 def compute_metrics(
     metrics: (
-        Sequence[str | Metric | type[Metric]]
+        str
+        | Metric
+        | type[Metric]
+        | Sequence[str | Metric | type[Metric]]
         | Mapping[str, str | Metric | type[Metric]]
     ),
     /,
@@ -171,29 +192,26 @@ def compute_metrics(
     predics: Tensor,
 ) -> dict[str, Tensor]:
     r"""Compute multiple metrics."""
-    results: dict[str, Tensor] = {}
-
-    if isinstance(metrics, Sequence):
-        for metric in metrics:
-            if isinstance(metric, str):
-                metric = LOSSES[metric]
-            if isinstance(metric, type) and callable(metric):
-                results[metric.__name__] = metric()(targets, predics)
-            elif callable(metric):
-                results[metric.__class__.__name__] = metric(targets, predics)
-            else:
-                raise ValueError(f"{type(metric)=} not understood!")
-        return results
-
-    for name, metric in metrics.items():
-        if isinstance(metric, str):
-            metric = LOSSES[metric]
-        if isinstance(metric, type) and callable(metric):
-            results[name] = metric()(targets, predics)
-        elif callable(metric):
-            results[name] = metric(targets, predics)
-        else:
-            raise ValueError(f"{type(metric)=} not understood!")
+    match metrics:
+        case str() as name:
+            return {name: eval_metric(LOSSES[name], targets=targets, predics=predics)}
+        case type() as klass:
+            return {
+                klass.__name__: eval_metric(klass, targets=targets, predics=predics)
+            }
+        case Metric() as func:
+            return {func.__class__.__name__: func(targets, predics)}
+        case Sequence() as sequence:
+            results: dict[str, Tensor] = {}
+            for metric in sequence:
+                results |= compute_metrics(metric, targets=targets, predics=predics)
+        case Mapping() as mapping:
+            return {
+                key: eval_metric(metric, targets=targets, predics=predics)
+                for key, metric in mapping.items()
+            }
+        case _:
+            raise TypeError(f"{type(metrics)=} not understood!")
     return results
 
 
@@ -490,7 +508,7 @@ def log_optimizer(
 
     # get the variables and gradients
     variables = list(optim_state)
-    gradients = [w.grad for w in optim_state]
+    gradients = [w.grad for w in optim_state if w.grad is not None]
     log = writer.add_scalar
 
     if log_norms:

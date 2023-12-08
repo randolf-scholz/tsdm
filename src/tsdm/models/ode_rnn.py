@@ -12,11 +12,10 @@ from contextlib import contextmanager
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional
 
 import torch
 from torch import Tensor, nn
-from typing_extensions import Self
+from typing_extensions import Any, Optional, Self
 
 from tsdm.models._models import BaseModel
 from tsdm.utils import deep_dict_update

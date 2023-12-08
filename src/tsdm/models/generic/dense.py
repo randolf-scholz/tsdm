@@ -5,9 +5,8 @@ r"""#TODO add module summary line.
 
 __all__ = ["ReverseDense"]
 
-from typing import Any, Final, Optional
-
 from torch import Tensor, jit, nn
+from typing_extensions import Any, Final, Optional
 
 from tsdm.utils import deep_dict_update, initialize_from_config
 from tsdm.utils.wrappers import autojit
@@ -18,8 +17,8 @@ class ReverseDense(nn.Module):
     r"""ReverseDense module $x→A⋅ϕ(x)$."""
 
     HP: Final[dict] = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
+        "__module__": __module__,
         "input_size": None,
         "output_size": None,
         "bias": True,

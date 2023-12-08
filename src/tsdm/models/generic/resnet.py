@@ -8,10 +8,9 @@ __all__ = ["ResNet", "ResNetBlock"]
 
 from collections import OrderedDict
 from collections.abc import Iterable
-from typing import Any, Final, Optional, TypeVar
 
 from torch import Tensor, jit, nn
-from typing_extensions import Self
+from typing_extensions import Any, Final, Optional, Self, TypeVar
 
 from tsdm.models.generic.dense import ReverseDense
 from tsdm.utils import deep_dict_update, initialize_from_config
@@ -30,8 +29,8 @@ class ResNetBlock(nn.Sequential):
     """
 
     HP: Final[dict] = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
+        "__module__": __module__,
         "input_size": None,
         "num_subblocks": 2,
         "subblocks": [
@@ -69,9 +68,9 @@ class ResNetBlock(nn.Sequential):
 
         for k in range(HP["num_subblocks"]):
             key = f"subblock{k}"
-            module = nn.Sequential(
-                *[initialize_from_config(layer) for layer in HP["subblocks"]]
-            )
+            module = nn.Sequential(*[
+                initialize_from_config(layer) for layer in HP["subblocks"]
+            ])
             self.add_module(key, module)
             subblocks[key] = module
 
@@ -87,8 +86,8 @@ class ResNet(nn.ModuleList):
     r"""A ResNet model."""
 
     HP: Final[dict] = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
+        "__module__": __module__,
         "input_size": None,
         "num_blocks": 5,
         "blocks": ResNetBlock.HP,

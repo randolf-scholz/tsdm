@@ -119,11 +119,11 @@ __all__ = [
 from collections import abc
 from pathlib import Path
 from types import GenericAlias, ModuleType
-from typing import Any, TypeVar
 
 from numpy import ndarray
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor, nn
+from typing_extensions import Any, TypeVar
 
 # region Custom Type Variables ---------------------------------------------------------
 alias_var = TypeVar("alias_var", bound=GenericAlias)
@@ -455,5 +455,4 @@ r"""Type variable for AsyncGenerators."""
 
 del abc, TypeVar, ModuleType, GenericAlias, Path
 del DataFrame, Index, MultiIndex, Series
-del Tensor, nn
-del ndarray
+del Tensor, nn, ndarray

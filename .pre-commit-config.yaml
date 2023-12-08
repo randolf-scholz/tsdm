@@ -93,7 +93,7 @@ repos:
         description: "Detect mistake of inline code touching normal text in rst"
   # prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.3
+    rev: v3.1.0
     hooks:
       - id: prettier
   # absolufy-imports
@@ -108,7 +108,7 @@ repos:
       - id: isort
   # black
   - repo: https://github.com/psf/black
-    rev: 23.10.0
+    rev: 23.11.0
     hooks:
       - id: black
       - id: black-jupyter
@@ -121,7 +121,7 @@ repos:
         types: [python]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.0
+    rev: v0.1.7
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -167,59 +167,19 @@ repos:
         files: ^dev/
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.332
+    rev: v1.1.339
     hooks:
       - id: pyright
         # not everything works with pyright yet
         # verbose regex
-        files: |
-          (?x)^(
-            (?!)  # intentionally matches nothing
-            #|tests/tsdm/
-            |tests/tsdm/constants.py
-            |tests/tsdm/backend
-            |tests/tsdm/config
-            |tests/tsdm/datasets
-            #|tests/tsdm/encoders
-            |tests/tsdm/linalg
-            #|tests/tsdm/logutils
-            |tests/tsdm/metrics
-            #|tests/tsdm/models
-            |tests/tsdm/optimizers
-            |tests/tsdm/random/stats
-            #|tests/tsdm/random/samplers
-            |tests/tsdm/random/generators
-            #|tests/tsdm/tasks
-            |tests/tsdm/types
-            |tests/tsdm/utils
-            |tests/tsdm/viz
-            #|src/tsdm/
-            |src/tsdm/constants.py
-            |src/tsdm/backend
-            |src/tsdm/config
-            #|src/tsdm/datasets
-            #|src/tsdm/encoders
-            |src/tsdm/linalg
-            #|src/tsdm/logutils
-            |src/tsdm/metrics
-            |src/tsdm/models
-            |src/tsdm/optimizers
-            #|src/tsdm/random
-            |src/tsdm/random/stats
-            #|src/tsdm/random/samplers
-            |src/tsdm/random/generators
-            #|src/tsdm/tasks
-            |src/tsdm/types
-            #|src/tsdm/utils
-            |src/tsdm/viz
-          )
+        files: (^src/|^tests/)
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.38
+    rev: v0.1.47
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
       - id: pyproject-check-deps
-        args: ["--ignore-project-deps", "tensorboard"] # torch does not list this...
+        args: ["--ignore-project-deps", "tensorboard", "pydantic"] # torch does not list this...
       - id: python-no-blanket-type-ignore
         files: (^src/|^tests/)
       - id: python-no-builtin-eval
@@ -243,6 +203,12 @@ repos:
         files: (^src/|^tests/)
       - id: python-check-__all__-exists
         files: ^src/
+      - id: python-check-typing
+        files: (^src/|^tests/)
+        args:
+          - "--check-overload-default-ellipsis"
+          - "--check-no-future-annotations"
+      #          - "--check-no-hints-overload-implementation"
       - id: python-check-clean-interface
         files: ^src/
         args: ["--no-load-silent"]

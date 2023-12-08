@@ -7,7 +7,6 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import Any, ClassVar, Generic, Literal, Optional, Protocol
 
 from pandas import DataFrame
 from torch import Tensor
@@ -16,6 +15,7 @@ from torch.utils.data import (
     Dataset as TorchDataset,
     Sampler as TorchSampler,
 )
+from typing_extensions import Any, ClassVar, Generic, Literal, Optional, Protocol
 
 from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
@@ -27,7 +27,11 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
     r"""Metaclass for BaseDataset."""
 
     def __init__(
-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
+        cls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        **kwds: Any,
     ) -> None:
         """When a new class/subclass is created, this method is called."""
         super().__init__(name, bases, namespace, **kwds)
@@ -286,6 +290,6 @@ class OldBaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
             "drop_last": False,
         }
 
-        return LazyDict(
-            {key: (self.make_dataloader, (key,), kwargs) for key in self.splits}
-        )
+        return LazyDict({
+            key: (self.make_dataloader, (key,), kwargs) for key in self.splits
+        })

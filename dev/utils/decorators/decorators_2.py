@@ -183,13 +183,11 @@ def parametrized_decorator(decorator):
     for param in parameters.values():
         print(f"{param=}, kind={param.kind}", flush=True)
 
-    num_positionals = len(
-        [
-            param
-            for param in parameters.values()
-            if param.kind == Parameter.POSITIONAL_ONLY
-        ]
-    )
+    num_positionals = len([
+        param
+        for param in parameters.values()
+        if param.kind == Parameter.POSITIONAL_ONLY
+    ])
     print(f"{num_positionals=}")
 
     assert num_positionals >= 1, (

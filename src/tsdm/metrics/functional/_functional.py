@@ -7,6 +7,8 @@ Contains losses in functional form.
 """
 
 __all__ = [
+    # Callback Protocol
+    "Metric",
     # Functions
     "nd",
     "nrmse",
@@ -18,6 +20,16 @@ __all__ = [
 
 import torch
 from torch import Tensor, jit
+from typing_extensions import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class Metric(Protocol):
+    """Represents a metric."""
+
+    def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
+        """Compute the loss."""
+        ...
 
 
 @jit.script

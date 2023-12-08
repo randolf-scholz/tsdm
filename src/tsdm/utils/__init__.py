@@ -2,7 +2,6 @@ r"""Provides utility functions."""
 
 __all__ = [
     # Sub-Packages
-    "data",
     "decorators",
     # Sub-Modules
     "remote",
@@ -42,7 +41,7 @@ __all__ = [
     "get_mandatory_kwargs",
 ]
 
-from tsdm.utils import data, decorators, remote, system
+from tsdm.utils import decorators, remote, system
 from tsdm.utils._utils import (
     deep_dict_update,
     deep_kval_update,

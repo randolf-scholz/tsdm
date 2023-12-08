@@ -57,7 +57,6 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, NamedTuple, Optional, Protocol, runtime_checkable
 
 from pandas import DataFrame, MultiIndex
 from torch import Tensor
@@ -66,6 +65,14 @@ from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
+from typing_extensions import (
+    Any,
+    ClassVar,
+    NamedTuple,
+    Optional,
+    Protocol,
+    runtime_checkable,
+)
 
 from tsdm.logutils.callbacks import (  # ModelCallback,
     Callback,
@@ -147,13 +154,9 @@ class BaseLogger(Logger, metaclass=BaseLoggerMetaClass):
         )
 
         # set the frequency
-        if frequency is None:
-            if hasattr(callback, "frequency"):
-                frequency = callback.frequency
-            else:
-                frequency = 1
+        freq = getattr(callback, "frequency", 1) if frequency is None else frequency
 
-        self._callbacks[key].append((callback, frequency, required_kwargs))
+        self._callbacks[key].append((callback, freq, required_kwargs))
 
     def combined_kwargs(self, key: str) -> set[str]:
         """Get the combined kwargs of all callbacks."""
@@ -322,7 +325,7 @@ class DefaultLogger(BaseLogger):
                     "optimizer": self.optimizer,
                     "lr_scheduler": self.lr_scheduler,
                 }
-                | checkpointable_objects,
+                | dict(checkpointable_objects),
                 path=self.checkpoint_dir,
                 frequency=checkpoint_frequency,
             ),

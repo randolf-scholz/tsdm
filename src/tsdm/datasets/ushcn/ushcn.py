@@ -3,13 +3,13 @@ r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 __all__ = ["USHCN"]
 
 import warnings
-from typing import Literal, TypeAlias
 
 import pandas as pd
 from pandas import DataFrame
+from typing_extensions import Literal, TypeAlias
 
+from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 KEY: TypeAlias = Literal[
     "timeseries",
@@ -278,7 +278,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""
 
-    table_names = [
+    table_names = [  # pyright: ignore
         "timeseries",
         "timeseries_description",
         "metadata",
@@ -335,14 +335,14 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             # fmt: on
         },
     }
-    table_shapes = {
+    table_shapes = {  # pyright: ignore
         "timeseries": (204771562, 5),
         "metadata": (1218, 9),
         "state_codes": (48, 3),
         "metadata_description": (9, 6),
         "timeseries_description": (8, 6),
     }
-    table_schemas = {
+    table_schemas = {  # pyright: ignore
         "timeseries": {
             # fmt: off
             "PRCP" : "int16[pyarrow]",
@@ -468,12 +468,22 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         return ts
 
     def _clean_raw_timeseries(self) -> DataFrame:
+        # FIXME: https://github.com/pola-rs/polars/issues/8312
+        # FIXME: https://github.com/apache/arrow/issues/33404
         warnings.warn(
             "This can take a while to run. Consider using the Modin backend."
-            "Refactor if read_fwf becomes available in polars or pyarrow.",
-            UserWarning,
+            " Refactor if read_fwf becomes available in polars or pyarrow.",
             stacklevel=2,
         )
+
+        import pyarrow.csv as csv
+
+        # table = pl.read_csv(self.rawdata_paths["us.txt.gz"], separator="\n")
+        table = csv.read_csv(
+            self.rawdata_paths["us.txt.gz"],
+            # compression="gzip",
+        )
+        print(table.schema)
 
         # column: (start, stop)
         colspecs: dict[str | tuple[str, int], tuple[int, int]] = {
@@ -544,9 +554,9 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         self.LOGGER.info("Cleaning up columns...")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
         data.columns = pd.MultiIndex.from_frame(
-            DataFrame(data_cols, columns=["VAR", "DAY"]).astype(
-                {"VAR": "string[pyarrow]", "DAY": "int8[pyarrow]"}
-            )
+            DataFrame(data_cols, columns=["VAR", "DAY"]).astype({
+                "VAR": "string[pyarrow]", "DAY": "int8[pyarrow]"
+            })
         )
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")
@@ -554,15 +564,13 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         data = (
             data.stack(level="DAY", dropna=False)
             .reset_index(level="DAY")
-            .astype(  # correct dtypes after stacking operation
-                {
-                    "DAY": "int8[pyarrow]",
-                    "VALUE": VALUES_DTYPE,
-                    "MFLAG": MFLAGS_DTYPE,
-                    "QFLAG": QFLAGS_DTYPE,
-                    "SFLAG": SFLAGS_DTYPE,
-                }
-            )
+            .astype({  # correct dtypes after stacking operation
+                "DAY": "int8[pyarrow]",
+                "VALUE": VALUES_DTYPE,
+                "MFLAG": MFLAGS_DTYPE,
+                "QFLAG": QFLAGS_DTYPE,
+                "SFLAG": SFLAGS_DTYPE,
+            })
         )
 
         self.LOGGER.info("Merging on ID columns...")

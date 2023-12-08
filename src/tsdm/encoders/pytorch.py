@@ -9,10 +9,9 @@ __all__ = [
     "PositionalEncoder",
 ]
 
-from typing import ClassVar, Final
-
 import torch
 from torch import Tensor, jit, nn
+from typing_extensions import ClassVar, Final
 
 from tsdm.encoders.base import BaseEncoder
 from tsdm.utils.wrappers import autojit
@@ -24,9 +23,6 @@ class TensorEncoder(BaseEncoder):
     """Encodes nested data as tensors."""
 
     requires_fit: ClassVar[bool] = False
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def encode(self, data):
         match data:
@@ -75,7 +71,6 @@ class Time2Vec(nn.Module):
 
     def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
         super().__init__()
-
         self.num_dim = num_dim
         self.freq = nn.Parameter(torch.randn(num_dim - 1))
         self.phase = nn.Parameter(torch.randn(num_dim - 1))
@@ -118,9 +113,9 @@ class PositionalEncoding(nn.Module):
     """
 
     HP: dict = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__module__": __module__,
         "num_dim": int,
         "scale": float,
     }
@@ -175,7 +170,6 @@ class Time2VecEncoder(BaseEncoder):
     requires_fit: ClassVar[bool] = False
 
     def __init__(self, *, num_dim: int, activation: str = "sin") -> None:
-        super().__init__()
         self.encoder = Time2Vec(num_dim=num_dim, activation=activation)
 
     def encode(self, data: Tensor, /) -> Tensor:
@@ -191,7 +185,6 @@ class PositionalEncoder(BaseEncoder):
     requires_fit: ClassVar[bool] = False
 
     def __init__(self, *, num_dim: int, scale: float) -> None:
-        super().__init__()
         self.encoder = PositionalEncoding(num_dim=num_dim, scale=scale)
 
     def encode(self, data: Tensor, /) -> Tensor:

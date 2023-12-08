@@ -23,16 +23,17 @@ __all__ = [
     "EXAMPLE_EMOJIS",
     "EXAMPLE_STRINGS",
     "EXAMPLE_CATEGORIES",
+    "TIME_UNITS",
 ]
 
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Final, Literal
 
 import numpy as np
 import pandas
 import torch
+from typing_extensions import Any, Final, Literal
 
 ATOL: Final[float] = 1e-6
 """CONST: Default absolute precision."""
@@ -53,6 +54,12 @@ EPS: Final[dict[torch.dtype, float]] = {
 
 EMPTY_PATH: Final[Path] = Path()
 r"""Constant: Blank path."""
+
+TIME_UNITS: dict[str, np.timedelta64] = {
+    u: np.timedelta64(1, u)
+    for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
+}
+
 
 # NOTE: Use frozenmap() if PEP 603 is accepted.
 EMPTY_MAP: Final[Mapping] = MappingProxyType({})

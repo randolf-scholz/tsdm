@@ -9,7 +9,9 @@ __all__ = [
     # Functions
     "info",
     # Sub-Modules
+    "backend",
     "config",
+    "data",
     "datasets",
     "encoders",
     "linalg",
@@ -19,6 +21,7 @@ __all__ = [
     "optimizers",
     "random",
     "tasks",
+    "types",
     "utils",
     "viz",
 ]
@@ -26,7 +29,9 @@ __all__ = [
 from importlib import metadata
 
 from tsdm import (
+    backend,
     config,
+    data,
     datasets,
     encoders,
     linalg,
@@ -36,6 +41,7 @@ from tsdm import (
     optimizers,
     random,
     tasks,
+    types,
     utils,
     viz,
 )

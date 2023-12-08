@@ -12,7 +12,6 @@ __all__ = [
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from types import EllipsisType, NotImplementedType
-from typing import Generic, Literal, ParamSpec, TypeAlias, cast
 
 import numpy
 import pandas
@@ -20,7 +19,15 @@ import torch
 from numpy import ndarray
 from pandas import DataFrame, Series
 from torch import Tensor
-from typing_extensions import Self, get_args
+from typing_extensions import (
+    Generic,
+    Literal,
+    ParamSpec,
+    Self,
+    TypeAlias,
+    cast,
+    get_args,
+)
 
 from tsdm.backend.numpy import numpy_apply_along_axes, numpy_like
 from tsdm.backend.pandas import (
@@ -75,11 +82,20 @@ def gather_types(obj: object) -> set[BackendID]:
             types |= set().union(*map(gather_types, mapping.values()))
         case Tensor():
             types.add("torch")
-        case DataFrame() | Series():  # type: ignore[misc]
-            types.add("pandas")  # type: ignore[unreachable]
+        case DataFrame() | Series():
+            types.add("pandas")
         case ndarray():
             types.add("numpy")
-        case None | bool() | int() | float() | complex() | str() | datetime() | timedelta():
+        case (
+            None
+            | bool()
+            | int()
+            | float()
+            | complex()
+            | str()
+            | datetime()
+            | timedelta()
+        ):
             # FIXME: https://github.com/python/cpython/issues/106246
             # use PythonScalar instead of Scalar when the above issue is fixed
             # types.add("fallback")

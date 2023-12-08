@@ -1,18 +1,21 @@
 r"""Test converters to masked format etc."""
 
 import logging
+from collections.abc import Sequence
 
+import numpy as np
 from pytest import mark
 
-from tsdm.datasets import InSilico, TimeSeriesCollection, TimeSeriesDataset
-from tsdm.random.samplers import HierarchicalSampler, SlidingWindowSampler
+from tsdm.data import TimeSeriesSampleGenerator
+from tsdm.data.timeseries import Sample, TimeSeriesCollection, TimeSeriesDataset
+from tsdm.datasets import InSilico
+from tsdm.random.samplers import HierarchicalSampler, SlidingSampler
 from tsdm.tasks import (
     MIMIC_III_Bilos2021,
     MIMIC_III_DeBrouwer2019,
     MIMIC_IV_Bilos2021,
     USHCN_DeBrouwer2019,
 )
-from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator
 
 __logger__ = logging.getLogger(__name__)
 
@@ -46,7 +49,7 @@ def test_time_series_sample_generator() -> None:
 
     # make sampler, generate key
     subsamplers = {
-        key: SlidingWindowSampler(
+        key: SlidingSampler(
             ds.timeseries.index,
             horizons=["2h", "1h"],
             stride="1h",
@@ -57,12 +60,18 @@ def test_time_series_sample_generator() -> None:
     sampler = HierarchicalSampler(TSC, subsamplers, shuffle=False)
     key = next(iter(sampler))
 
-    # construct the task dataset
+    # validate key
+    assert isinstance(key, tuple) and len(key) == 2
+    assert key[0] == 16130
+    assert isinstance(key[1], Sequence)
+    assert all(isinstance(horizon, np.ndarray) for horizon in key[1])
+
+    # construct the sample generator
     targets = ["Biomass", "Product"]
     observables = ["Biomass", "Substrate", "Acetate", "DOTm"]
     covariates = ["Volume", "Feed"]
 
-    task = TimeSeriesSampleGenerator(
+    generator = TimeSeriesSampleGenerator(
         TSC,
         targets=targets,
         observables=observables,
@@ -70,13 +79,16 @@ def test_time_series_sample_generator() -> None:
         sparse_index=True,
         sparse_columns=True,
     )
-    sample = task[key]
+    sample = generator[key]
     assert isinstance(sample, Sample)
 
     # test with TimeSeriesDataset
-    TSD = TSC[16130]
+    outer_key = key[0]
+    inner_key = key[1]
+    TSD = TSC[outer_key]  # selecting individual time series.
     assert isinstance(TSD, TimeSeriesDataset)
-    task = TimeSeriesSampleGenerator(
+
+    generator = TimeSeriesSampleGenerator(
         TSD,
         targets=targets,
         observables=observables,
@@ -84,5 +96,8 @@ def test_time_series_sample_generator() -> None:
         sparse_index=True,
         sparse_columns=True,
     )
-    sample = task[key[1]]
+
+    # assert isinstance(subkey, tuple)
+
+    sample = generator[inner_key]
     assert isinstance(sample, Sample)

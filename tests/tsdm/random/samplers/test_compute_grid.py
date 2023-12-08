@@ -22,24 +22,20 @@ __logger__ = logging.getLogger(__name__)
 MODES = ["numpy", "pandas", "python", "np_int", "np_float", "int", "float"]
 
 
-def _validate_grid_results(tmin, tmax, timedelta, offset):
-    result = compute_grid(tmin, tmax, timedelta, offset=offset)
+def _validate_grid_results(tmin, tmax, tdelta, offset):
+    result = compute_grid(tmin, tmax, tdelta, offset=offset)
     kmin, kmax = result[0], result[-1]
 
     try:
-        lower_bound = offset + kmin * timedelta
-        upper_bound = offset + kmax * timedelta
-        lower_break = offset + (kmin - 1) * timedelta
-        upper_break = offset + (kmax + 1) * timedelta
-        assert tmin <= lower_bound, f"{lower_bound=}"
-        assert tmin > lower_break, f"{lower_break=}"
-        assert tmax >= upper_bound, f"{upper_bound=}"
-        assert tmax < upper_break, f"{upper_break=}"
+        assert tmin <= (lower_value := offset + kmin * tdelta), f"{lower_value=}"
+        assert tmin > (lower_next := offset + (kmin - 1) * tdelta), f"{lower_next=}"
+        assert tmax >= (upper_value := offset + kmax * tdelta), f"{upper_value=}"
+        assert tmax < (upper_next := offset + (kmax + 1) * tdelta), f"{upper_next=}"
     except AssertionError as E:
         values = {
             "tmin": tmin,
             "tmax": tmax,
-            "timedelta": timedelta,
+            "timedelta": tdelta,
             "offset": offset,
             "kmin": kmin,
             "kmax": kmax,
@@ -118,6 +114,23 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
             raise ValueError(f"Unknown mode {mode=}")
     return the_tuple
     # return tmin, tmax, timedelta, offset  # type: ignore[return-value]
+
+
+def test_edge_case() -> None:
+    import math
+
+    data = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    stride = 2
+    tmin = min(data)
+    tmax = max(data)
+    horizon = 4
+    offset = tmin + horizon
+    print((tmin - offset) / stride, math.ceil((tmin - offset) / stride))  # -2.0
+    print((tmax - offset) / stride, math.floor((tmax - offset) / stride))  # 2.5
+    print((tmax - tmin - horizon) / stride)
+
+    grid = compute_grid(tmin - tmin, tmax - tmin - horizon, stride)
+    print(grid)
 
 
 @mark.parametrize("mode", MODES)

@@ -16,13 +16,13 @@ from collections.abc import Iterator, Mapping
 from html.parser import HTMLParser
 from io import IOBase
 from pathlib import Path
-from typing import IO, Any, Optional
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import requests
 from requests import Session
 from tqdm.autonotebook import tqdm
+from typing_extensions import IO, Any, Optional
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.types.aliases import PathLike
@@ -62,7 +62,7 @@ def download_io(
             "auth": None if username is None else (username, password),
             "stream": True,
             "timeout": 10,
-        } | request_options
+        } | dict(request_options)
         response = requests.get(url, **request_options)
     else:
         response = session.get(url)
@@ -104,7 +104,7 @@ def stream_download(
             "auth": None if username is None else (username, password),
             "stream": True,
             "timeout": 10,
-        } | request_options
+        } | dict(request_options)
         response = requests.get(url, **request_options)
     else:
         response = session.get(url)
@@ -179,7 +179,7 @@ def download_directory_to_zip(
     path = Path(zip_filename)
     assert path.suffix == ".zip", f"{path=} must have .zip suffix!"
     stem = f"{path.stem}/" if add_toplevel_dir else ""
-    zip_options = {"mode": "w"} | zip_options
+    zip_options = {"mode": "w"} | dict(zip_options)
 
     # Create a session
     with Session() as session:

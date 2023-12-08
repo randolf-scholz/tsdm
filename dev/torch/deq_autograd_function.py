@@ -277,9 +277,9 @@ def deq_layer_factory(
 ) -> Callable[[Tensor], Tensor]:
     """Create functional deq_layer for the given module."""
 
-    params, param_spec = pytree.tree_flatten(
-        {**dict(module.named_parameters()), **dict(module.named_buffers())}
-    )
+    params, param_spec = pytree.tree_flatten({
+        **dict(module.named_parameters()), **dict(module.named_buffers())
+    })
 
     fsolver_kwargs = fsolver_kwargs | {"z0": torch.zeros(module.hidden_size)}
 

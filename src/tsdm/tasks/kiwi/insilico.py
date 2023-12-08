@@ -2,29 +2,22 @@ r"""Implementation of the kiwi task."""
 
 __all__ = [
     # Classes
-    "InSilicoSampleGenerator",
     "InSilicoTask",
 ]
 
 from pandas import DataFrame
 
-from tsdm.datasets import InSilicoTSC, TimeSeriesCollection
-from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
-from tsdm.tasks.base import TimeSeriesSampleGenerator, TimeSeriesTask
-from tsdm.types.variables import key_var as K
-from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
-
-
-class InSilicoSampleGenerator(TimeSeriesSampleGenerator):
-    r"""Sample generator for the KIWI dataset."""
-
-    def __init__(self, dataset: TimeSeriesCollection) -> None:
-        super().__init__(
-            dataset,
-            targets=["Biomass", "Product"],
-            observables=["Biomass", "Substrate", "Acetate", "DOTm"],
-            covariates=["Volume", "Feed"],
-        )
+from tsdm.data import (
+    TimeSeriesSampleGenerator,
+    folds_as_frame,
+    folds_as_sparse_frame,
+    folds_from_groups,
+)
+from tsdm.data.timeseries import TimeSeriesCollection
+from tsdm.datasets import InSilicoTSC
+from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
+from tsdm.tasks.base import TimeSeriesTask
+from tsdm.types.aliases import SplitID
 
 
 class InSilicoTask(TimeSeriesTask):
@@ -52,15 +45,21 @@ class InSilicoTask(TimeSeriesTask):
     def default_test_metric(*, targets, predictions):
         pass
 
-    def make_sampler(self, key: K, /) -> Sampler:
+    def make_sampler(self, key: SplitID, /) -> Sampler:
         split: TimeSeriesCollection = self.splits[key]
         subsamplers = {
-            key: SlidingWindowSampler(tsd.timeindex, horizons=["2h", "1h"], stride="1h")
+            key: SlidingSampler(
+                tsd.timeindex,
+                horizons=["2h", "1h"],
+                stride="1h",
+                mode="masks",
+            )
             for key, tsd in split.items()
         }
-        return HierarchicalSampler(
+        sampler = HierarchicalSampler(
             split, subsamplers, shuffle=self.split_type(key) == "training"
         )
+        return sampler
 
     def make_folds(self, /) -> DataFrame:
         # TODO: refactor code, use **fold_kwargs, move code to base class?!?
@@ -73,6 +72,11 @@ class InSilicoTask(TimeSeriesTask):
         df = folds_as_frame(folds)
         return folds_as_sparse_frame(df)
 
-    def make_generator(self, key: K, /) -> InSilicoSampleGenerator:
+    def make_generator(self, key: SplitID, /) -> TimeSeriesSampleGenerator:
         split = self.splits[key]
-        return InSilicoSampleGenerator(split)
+        return TimeSeriesSampleGenerator(
+            split,
+            targets=["Biomass", "Product"],
+            observables=["Biomass", "Substrate", "Acetate", "DOTm"],
+            covariates=["Volume", "Feed"],
+        )

@@ -6,9 +6,9 @@ r"""#TODO add module summary line.
 __all__ = ["ConvBlock"]
 
 from collections import OrderedDict
-from typing import Any, Literal
 
 from torch import nn
+from typing_extensions import Any, Literal
 
 from tsdm.utils.wrappers import autojit
 
@@ -18,8 +18,8 @@ class ConvBlock(nn.Sequential):
     r"""A conv-block for usage in a residual network."""
 
     HP = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
+        "__module__": __module__,
         "input_size": None,
         "num_subblocks": 2,
         "subblocks": [

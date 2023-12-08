@@ -17,15 +17,14 @@ from contextlib import ContextDecorator
 from importlib.util import find_spec
 from time import perf_counter_ns
 from types import ModuleType, TracebackType
-from typing import ClassVar, Literal, Optional
 
-from typing_extensions import Self
+from typing_extensions import ClassVar, Literal, Optional, Self
 
 
 class ray_cluster(ContextDecorator):
     """Context manager for starting and stopping a ray cluster."""
 
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")  # type: ignore[name-defined]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")
     """Logger for this class."""
     ray: ModuleType | None = None
     """Ray module."""
@@ -65,7 +64,7 @@ class ray_cluster(ContextDecorator):
 class timer(ContextDecorator):
     """Context manager for timing a block of code."""
 
-    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")  # type: ignore[name-defined]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__module__}/{__qualname__}")
 
     start_time: int
     """Start time of the timer."""

@@ -10,16 +10,17 @@ References:
 
 __all__ = ["DampedPendulum_Ansari2023"]
 
-from typing import final
-
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
+from typing_extensions import final
 
+import tsdm.data.timeseries
 from tsdm import datasets
+from tsdm.data import folds_as_frame, is_partition
+from tsdm.data.timeseries import FixedSliceSampleGenerator
 from tsdm.random.samplers import RandomSampler, Sampler
-from tsdm.tasks.base import SplitID, TimeSeriesTask
-from tsdm.tasks.utils import FixedSliceSampleGenerator
-from tsdm.utils.data import folds_as_frame, is_partition
+from tsdm.tasks.base import TimeSeriesTask
+from tsdm.types.aliases import SplitID
 
 
 @final
@@ -60,7 +61,7 @@ class DampedPendulum_Ansari2023(TimeSeriesTask):
         missing_rate: float = 0.0,
     ) -> None:
         dataset = datasets.synthetic.DampedPendulum_Ansari2023()
-        timeseries = datasets.TimeSeriesCollection(timeseries=dataset.table)
+        timeseries = tsdm.data.timeseries.TimeSeriesCollection(timeseries=dataset.table)
 
         super().__init__(dataset=timeseries, validate=validate, initialize=initialize)
 

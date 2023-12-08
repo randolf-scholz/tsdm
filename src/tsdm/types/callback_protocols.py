@@ -1,8 +1,10 @@
 """Callabck protocols for TSDM."""
 
 __all__ = [
+    # generic
+    "Func",
     # generic callback-protocols
-    "GetitemMap",
+    "IntMap",
     "NullMap",
     "SelfMap",
     "WrappedValue",
@@ -17,12 +19,25 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from typing import Protocol
 
 from numpy.typing import ArrayLike
+from typing_extensions import Protocol, SupportsIndex, SupportsInt, runtime_checkable
 
 from tsdm.types.aliases import Axes, Scalar
-from tsdm.types.variables import any_co as T_co, any_contra as T_contra, any_var as T
+from tsdm.types.protocols import P
+from tsdm.types.variables import (
+    any_co as T_co,
+    any_contra as T_contra,
+    any_var as T,
+    return_var_co as R,
+)
+
+
+@runtime_checkable
+class Func(Protocol[P, R]):
+    """Protocol for functions, alternative to `Callable`."""
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
 
 
 # region generic callback-protocols ----------------------------------------------------
@@ -42,11 +57,11 @@ class SelfMap(Protocol[T]):
         ...
 
 
-class GetitemMap(Protocol[T_co]):
+class IntMap(Protocol[T_co]):
     r"""A generic protocol for indexed values."""
 
-    def __call__(self, key: int, /) -> T_co:
-        r"""Returns the value at the given index."""
+    def __call__(self, index: SupportsInt | SupportsIndex, /) -> T_co:
+        r"""Returns the value at the given integer."""
         ...
 
 

@@ -2,14 +2,16 @@ r"""Implementations of loss functions.
 
 Note:
     Contains losses in modular form.
-    See `tsdm.metrics.functional` for functional implementations.
+    See `tsdm.Losss.functional` for functional implementations.
 """
 
 __all__ = [
-    # Base Classes
+    # Protocol
     "Metric",
-    "BaseLoss",
-    "WeightedLoss",
+    "NN_Metric",
+    # Base Classes
+    "BaseMetric",
+    "WeightedMetric",
     # Classes
     "WRMSE",
     "RMSE",
@@ -23,25 +25,26 @@ __all__ = [
 
 
 from abc import abstractmethod
-from typing import Final, Protocol, runtime_checkable
 
 import torch
 from torch import Tensor, jit, nn
+from typing_extensions import Final, Protocol, runtime_checkable
 
+from tsdm.metrics.functional import Metric
 from tsdm.types.aliases import Axes
 from tsdm.utils.wrappers import autojit
 
 
 @runtime_checkable
-class Metric(Protocol):
+class NN_Metric(Protocol):
     r"""Protocol for a loss function."""
 
-    def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
+    def forward(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
         r"""Compute the loss."""
         ...
 
 
-class BaseLoss(nn.Module, Metric):
+class BaseMetric(nn.Module, Metric):
     r"""Base class for a loss function."""
 
     # Constants
@@ -67,7 +70,7 @@ class BaseLoss(nn.Module, Metric):
         raise NotImplementedError
 
 
-class WeightedLoss(BaseLoss, Metric):
+class WeightedMetric(BaseMetric, Metric):
     r"""Base class for a weighted loss function."""
 
     # Parameters
@@ -115,7 +118,7 @@ class WeightedLoss(BaseLoss, Metric):
 
 
 @autojit
-class MAE(BaseLoss):
+class MAE(BaseMetric):
     r"""Mean Absolute Error.
 
     Given two random vectors $x,x̂∈ℝ^K$, the mean absolute error is defined as:
@@ -150,7 +153,7 @@ class MAE(BaseLoss):
 
 
 @autojit
-class WMAE(WeightedLoss):
+class WMAE(WeightedMetric):
     r"""Weighted Mean Absolute Error.
 
     Given two random vectors $x,x̂∈ℝ^K$, the weighted mean absolute error is defined as:
@@ -185,7 +188,7 @@ class WMAE(WeightedLoss):
 
 
 @autojit
-class MSE(BaseLoss):
+class MSE(BaseMetric):
     r"""Mean Square Error.
 
     Given two random vectors $x,x̂∈ℝ^K$, the mean square error is defined as:
@@ -251,7 +254,7 @@ class MSE(BaseLoss):
 
 
 @autojit
-class WMSE(WeightedLoss):
+class WMSE(WeightedMetric):
     r"""Weighted Mean Square Error.
 
     Given two random vectors $x,x̂∈ℝ^K$, the weighted mean square error is defined as:
@@ -316,7 +319,7 @@ class WMSE(WeightedLoss):
 
 
 @autojit
-class RMSE(BaseLoss):
+class RMSE(BaseMetric):
     r"""Root Mean Square Error.
 
     Given two random vectors $x,x̂∈ℝ^K$, the root-mean-square error is defined as:
@@ -351,7 +354,7 @@ class RMSE(BaseLoss):
 
 
 @autojit
-class WRMSE(WeightedLoss):
+class WRMSE(WeightedMetric):
     r"""Weighted Root Mean Square Error.
 
     Given two random vectors $x,x̂∈ℝ^K$, the root-mean-square error is defined as:
@@ -386,7 +389,7 @@ class WRMSE(WeightedLoss):
 
 
 @autojit
-class LP(BaseLoss):
+class LP(BaseMetric):
     r"""$L^p$ Loss.
 
     Given two random vectors $x,x̂∈ℝ^K$, the $L^p$-loss is defined as:
@@ -438,7 +441,7 @@ class LP(BaseLoss):
 
 
 @autojit
-class WLP(WeightedLoss):
+class WLP(WeightedMetric):
     r"""Weighted $L^p$ Loss.
 
     Given two random vectors $x,x̂∈ℝ^K$, the weighted $L^p$-loss is defined as:

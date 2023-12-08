@@ -68,14 +68,14 @@ Attribute Information
 
 __all__ = ["BeijingAirQuality"]
 
-from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import pandas as pd
 from pandas import DataFrame
+from typing_extensions import Literal, TypeAlias
 
+from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 KEY: TypeAlias = Literal["timeseries", "timeseries_description"]
 
@@ -161,8 +161,8 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         "WSPM"    : "float32[pyarrow]",
         # fmt: on
     }
-    table_names = ["timeseries", "timeseries_description"]
-    table_schemas = {
+    table_names = ["timeseries", "timeseries_description"]  # pyright: ignore
+    table_schemas = {  # pyright: ignore
         "timeseries": {
             # fmt: off
             "PM2.5" : "float[pyarrow]",

@@ -22,11 +22,11 @@ __all__ = ["MIMIC_III_DeBrouwer2019"]
 import os
 import subprocess
 from getpass import getpass
-from typing import Literal, TypeAlias
 
-import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
 from pandas import DataFrame
+from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
 
@@ -63,7 +63,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"
 
-    table_names = ["timeseries", "metadata"]
+    table_names = ["timeseries", "metadata"]  # pyright: ignore
     rawdata_files = ["complete_tensor.csv"]
     rawdata_hashes = {
         "complete_tensor.csv": (
@@ -81,7 +81,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
             "STD": "float32",
         }
     }
-    dataset_hashes = {
+    dataset_hashes = {  # pyright: ignore
         "timeseries": (
             "sha256:2ebb7da820560f420f71c0b6fb068a46449ef89b238e97ba81659220fae8151b"
         ),
@@ -89,7 +89,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
             "sha256:4779aa3639f468126ea263645510d5395d85b73caf1c7abb0a486561b761f5b4"
         ),
     }
-    table_shapes = {
+    table_shapes = {  # pyright: ignore
         "timeseries": (552327, 96),
         "metadata": (96, 3),
     }

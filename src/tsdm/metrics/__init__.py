@@ -48,18 +48,19 @@ See Also:
 __all__ = [
     # Sub-Modules
     "functional",
-    # Types
+    # Protocols
     "Metric",
-    "FunctionalLoss",
+    "NN_Metric",
     # Constants
     "LOSSES",
     "FUNCTIONAL_LOSSES",
     "MODULAR_LOSSES",
     "TORCH_LOSSES",
     "TORCH_ALIASES",
+    "TORCH_SPECIAL_LOSSES",
     # Base Classes
-    "BaseLoss",
-    "WeightedLoss",
+    "BaseMetric",
+    "WeightedMetric",
     # Classes
     "MAE",
     "MSE",
@@ -84,6 +85,7 @@ __all__ = [
 
 from torch import nn
 
+from tsdm.metrics import functional
 from tsdm.metrics._modular import (
     MAE,
     MSE,
@@ -91,9 +93,9 @@ from tsdm.metrics._modular import (
     WMAE,
     WMSE,
     WRMSE,
-    BaseLoss,
-    Metric,
-    WeightedLoss,
+    BaseMetric,
+    NN_Metric,
+    WeightedMetric,
 )
 from tsdm.metrics._timeseries import (
     ND,
@@ -105,7 +107,7 @@ from tsdm.metrics._timeseries import (
 )
 from tsdm.metrics.functional import (
     FUNCTIONAL_LOSSES,
-    FunctionalLoss,
+    Metric,
     nd,
     nrmse,
     q_quantile,
@@ -113,7 +115,7 @@ from tsdm.metrics.functional import (
     rmse,
 )
 
-TORCH_ALIASES: dict[str, type[nn.Module]] = {
+TORCH_ALIASES: dict[str, type[NN_Metric]] = {
     "MAE": nn.L1Loss,
     "L2": nn.MSELoss,
     "XENT": nn.CrossEntropyLoss,
@@ -122,18 +124,14 @@ TORCH_ALIASES: dict[str, type[nn.Module]] = {
 r"""Dictionary containing additional aliases for modular losses in torch."""
 
 
-TORCH_LOSSES: dict[str, type[nn.Module]] = {
+TORCH_LOSSES: dict[str, type[NN_Metric]] = {
     "L1": nn.L1Loss,
-    "CosineEmbedding": nn.CosineEmbeddingLoss,
     "CrossEntropy": nn.CrossEntropyLoss,
-    "CTC": nn.CTCLoss,
     "NLL": nn.NLLLoss,
     "PoissonNLL": nn.PoissonNLLLoss,
-    "GaussianNLL": nn.GaussianNLLLoss,
     "KLDiv": nn.KLDivLoss,
     "BCE": nn.BCELoss,
     "BCEWithLogits": nn.BCEWithLogitsLoss,
-    "MarginRanking": nn.MarginRankingLoss,
     "MSE": nn.MSELoss,
     "HingeEmbedding": nn.HingeEmbeddingLoss,
     "Huber": nn.HuberLoss,
@@ -142,10 +140,19 @@ TORCH_LOSSES: dict[str, type[nn.Module]] = {
     "MultiMargin": nn.MultiMarginLoss,
     "MultiLabelMargin": nn.MultiLabelMarginLoss,
     "MultiLabelSoftMargin": nn.MultiLabelSoftMarginLoss,
+}
+r"""Dictionary of all available modular losses in torch."""
+
+
+TORCH_SPECIAL_LOSSES: dict[str, type[nn.Module]] = {
+    "CosineEmbedding": nn.CosineEmbeddingLoss,
+    "CTC": nn.CTCLoss,
+    "GaussianNLL": nn.GaussianNLLLoss,
+    "MarginRanking": nn.MarginRankingLoss,
     "TripletMargin": nn.TripletMarginLoss,
     "TripletMarginWithDistance": nn.TripletMarginWithDistanceLoss,
-} | TORCH_ALIASES
-r"""Dictionary of all available modular losses in torch."""
+}
+"""Special losses that do not represent usual loss functions."""
 
 
 MODULAR_LOSSES: dict[str, type[Metric]] = {
@@ -165,7 +172,7 @@ MODULAR_LOSSES: dict[str, type[Metric]] = {
 r"""Dictionary of all available modular losses."""
 
 
-LOSSES: dict[str, FunctionalLoss | type[Metric]] = {
+LOSSES: dict[str, Metric | type[Metric]] = {
     **FUNCTIONAL_LOSSES,
     **MODULAR_LOSSES,
 }

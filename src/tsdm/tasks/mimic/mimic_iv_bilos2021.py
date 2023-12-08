@@ -56,7 +56,6 @@ import warnings
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, NamedTuple
 
 import torch
 from pandas import DataFrame, Index, MultiIndex
@@ -64,12 +63,12 @@ from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
-from typing_extensions import deprecated
+from typing_extensions import Any, NamedTuple, deprecated
 
+from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
-from tsdm.encoders import FastFrameEncoder, MinMaxScaler
+from tsdm.encoders import FrameEncoder, MinMaxScaler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
 
@@ -226,9 +225,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
 
         # we additionally min-max scale time axis
         ts = ds.table
-        self.preprocessor = FastFrameEncoder(
-            index_encoders={"time_stamp": MinMaxScaler()}
-        )
+        self.preprocessor = FrameEncoder(index_encoders={"time_stamp": MinMaxScaler()})
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
         index_encoder = self.preprocessor.index_encoders["time_stamp"]

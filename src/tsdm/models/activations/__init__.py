@@ -12,8 +12,6 @@ __all__ = [
     "functional",
     "modular",
     # Types
-    "FunctionalActivation",
-    "ModularActivation",
     "Activation",
     # Constants
     "ACTIVATIONS",
@@ -22,29 +20,15 @@ __all__ = [
     "TORCH_ACTIVATIONS",
     "TORCH_FUNCTIONAL_ACTIVATIONS",
     "TORCH_MODULAR_ACTIVATIONS",
+    "TORCH_SPECIAL_FUNCTIONAL_ACTIVATIONS",
 ]
 
-from collections.abc import Callable
-from typing import Final, TypeAlias
-
-from torch import Tensor, nn
+from torch import nn
 
 from tsdm.models.activations import functional, modular
+from tsdm.models.activations.functional import Activation
 
-ModularActivation: TypeAlias = nn.Module
-r"""Type hint for activation Functions."""
-
-FunctionalActivation: TypeAlias = Callable[..., Tensor]
-r"""Type hint for activation Functions."""
-
-Activation: TypeAlias = FunctionalActivation | ModularActivation
-r"""Type hint for activation Functions."""
-
-TORCH_FUNCTIONAL_ACTIVATIONS: Final[dict[str, FunctionalActivation]] = {
-    "threshold": nn.functional.threshold,
-    # Thresholds each element of the input Tensor.
-    "threshold_": nn.functional.threshold_,  # type: ignore[attr-defined]
-    # In-place version of threshold().
+TORCH_FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = {
     "relu": nn.functional.relu,
     # Applies the rectified linear unit function element-wise.
     "relu_": nn.functional.relu_,
@@ -69,8 +53,6 @@ TORCH_FUNCTIONAL_ACTIVATIONS: Final[dict[str, FunctionalActivation]] = {
     # Applies element-wise, `LeakyReLU(x)=\max(0,x)+negative_slope⋅\min(0,x)`.
     "leaky_relu_": nn.functional.leaky_relu_,
     # In-place version of leaky_relu().
-    "prelu": nn.functional.prelu,
-    # `PReLU(x)=\max(0,x)+ω⋅\min(0,x)` where ω is a learnable parameter.
     "rrelu": nn.functional.rrelu,
     # Randomized leaky ReLU.
     "rrelu_": nn.functional.rrelu_,
@@ -109,28 +91,38 @@ TORCH_FUNCTIONAL_ACTIVATIONS: Final[dict[str, FunctionalActivation]] = {
     # Applies the Sigmoid Linear Unit (SiLU) function, element-wise.
     "mish": nn.functional.mish,
     # Applies the Mish function, element-wise.
-    "batch_norm": nn.functional.batch_norm,
-    # Applies Batch Normalization for each channel across a batch of data.
-    "group_norm": nn.functional.group_norm,
-    # Applies Group Normalization for last certain number of dimensions.
     "instance_norm": nn.functional.instance_norm,
     # Applies Instance Normalization for each channel in each data sample in a batch.
-    "layer_norm": nn.functional.layer_norm,
-    # Applies Layer Normalization for last certain number of dimensions.
-    "local_response_norm": nn.functional.local_response_norm,
-    # Applies local response normalization over an input signal composed of several input planes.
     "normalize": nn.functional.normalize,
     # Performs Lp normalization of inputs over specified dimension.
 }
 r"""Dictionary containing all available functional activations in torch."""
 
-FUNCTIONAL_ACTIVATIONS: Final[dict[str, FunctionalActivation]] = {
+TORCH_SPECIAL_FUNCTIONAL_ACTIVATIONS = {
+    "threshold": nn.functional.threshold,
+    # Thresholds each element of the input Tensor.
+    "threshold_": nn.functional.threshold_,  # type: ignore[attr-defined]
+    # In-place version of threshold().
+    "prelu": nn.functional.prelu,
+    # `PReLU(x)=\max(0,x)+ω⋅\min(0,x)` where ω is a learnable parameter.
+    "batch_norm": nn.functional.batch_norm,
+    # Applies Batch Normalization for each channel across a batch of data.
+    "group_norm": nn.functional.group_norm,
+    # Applies Group Normalization for last certain number of dimensions.
+    "layer_norm": nn.functional.layer_norm,
+    # Applies Layer Normalization for last certain number of dimensions.
+    "local_response_norm": nn.functional.local_response_norm,
+    # Applies local response normalization over an input signal composed of several input planes.
+}
+"""Activations that do not adhere to standard signature"""
+
+FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = {
     **TORCH_FUNCTIONAL_ACTIVATIONS,
     **{},
 }
 r"""Dictionary containing all available functional activations."""
 
-TORCH_MODULAR_ACTIVATIONS: Final[dict[str, type[ModularActivation]]] = {
+TORCH_MODULAR_ACTIVATIONS: dict[str, type[Activation]] = {
     "AdaptiveLogSoftmaxWithLoss": nn.AdaptiveLogSoftmaxWithLoss,
     "ELU": nn.ELU,
     "Hardshrink": nn.Hardshrink,
@@ -162,24 +154,24 @@ TORCH_MODULAR_ACTIVATIONS: Final[dict[str, type[ModularActivation]]] = {
 }
 r"""Dictionary containing all available activations in torch."""
 
-MODULAR_ACTIVATIONS: Final[dict[str, type[ModularActivation]]] = {
+MODULAR_ACTIVATIONS: dict[str, type[Activation]] = {
     **TORCH_MODULAR_ACTIVATIONS,
     **{},
 }
 r"""Dictionary containing all available activations."""
 
-TORCH_ACTIVATIONS: Final[dict[str, FunctionalActivation | type[ModularActivation]]] = {
+TORCH_ACTIVATIONS: dict[str, Activation | type[Activation]] = {
     **TORCH_FUNCTIONAL_ACTIVATIONS,
     **TORCH_MODULAR_ACTIVATIONS,
 }
 r"""Dictionary containing all available activations."""
 
 
-ACTIVATIONS: Final[dict[str, FunctionalActivation | type[ModularActivation]]] = {
+ACTIVATIONS: dict[str, Activation | type[Activation]] = {
     **TORCH_ACTIVATIONS,
     **MODULAR_ACTIVATIONS,
     **FUNCTIONAL_ACTIVATIONS,
 }
 r"""Dictionary containing all available activations."""
 
-del Final, TypeAlias, nn, Callable, Tensor
+del nn

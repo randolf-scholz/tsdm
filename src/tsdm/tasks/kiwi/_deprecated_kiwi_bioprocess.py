@@ -1,7 +1,5 @@
 r"""Bio-process Forecasting Task."""
 
-# mypy: ignore-errors
-
 __all__ = [
     # Classes
     "Kiwi_BioProcessTask",
@@ -11,21 +9,20 @@ from collections.abc import Callable
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 from itertools import product
-from typing import Any, Literal, NamedTuple, Optional
 
 import torch
 from pandas import DataFrame, Series
 from torch import Tensor, jit
 from torch.utils.data import DataLoader
-from typing_extensions import deprecated
+from typing_extensions import Any, Literal, NamedTuple, Optional, deprecated
 
+from tsdm.data import MappingDataset, folds_as_frame, folds_from_groups
+from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import KiwiRuns
 from tsdm.encoders import Encoder
 from tsdm.metrics import WRMSE
 from tsdm.random.samplers import HierarchicalSampler, SequenceSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import MappingDataset, folds_as_frame, folds_from_groups
-from tsdm.utils.data.timeseries import TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
 
 
@@ -108,31 +105,27 @@ class Kiwi_BioProcessTask(OldBaseTask):
         self.targets = targets = Series(["Base", "DOT", "Glucose", "OD600"])
         self.targets.index = self.targets.apply(ts.columns.get_loc)
 
-        self.controls = controls = Series(
-            [
-                "Cumulated_feed_volume_glucose",
-                "Cumulated_feed_volume_medium",
-                "InducerConcentration",
-                "StirringSpeed",
-                "Flow_Air",
-                "Temperature",
-                "Probe_Volume",
-            ]
-        )
+        self.controls = controls = Series([
+            "Cumulated_feed_volume_glucose",
+            "Cumulated_feed_volume_medium",
+            "InducerConcentration",
+            "StirringSpeed",
+            "Flow_Air",
+            "Temperature",
+            "Probe_Volume",
+        ])
         controls.index = controls.apply(ts.columns.get_loc)
 
-        self.observables = observables = Series(
-            [
-                "Base",
-                "DOT",
-                "Glucose",
-                "OD600",
-                "Acetate",
-                "Fluo_GFP",
-                "Volume",
-                "pH",
-            ]
-        )
+        self.observables = observables = Series([
+            "Base",
+            "DOT",
+            "Glucose",
+            "OD600",
+            "Acetate",
+            "Fluo_GFP",
+            "Volume",
+            "pH",
+        ])
         observables.index = observables.apply(ts.columns.get_loc)
 
         assert (
@@ -157,7 +150,7 @@ class Kiwi_BioProcessTask(OldBaseTask):
         weights["normalized"] = weights["weight"] / weights["weight"].sum()
         weights.index.name = "col"
         w = torch.tensor(weights["weight"])
-        return jit.script(WRMSE(w))
+        return jit.script(WRMSE(w))  # pyright: ignore
 
     @cached_property
     def dataset(self) -> KiwiRuns:
@@ -222,20 +215,21 @@ class Kiwi_BioProcessTask(OldBaseTask):
             targets=self.targets.index,
         )
 
-        DS = MappingDataset(
-            {
-                idx: TimeSeriesDataset(
-                    ts.loc[idx],
-                    metadata=md.loc[idx],
-                )
-                for idx in md.index
-            }
-        )
+        DS = MappingDataset({
+            idx: TimeSeriesDataset(
+                ts.loc[idx],
+                metadata=md.loc[idx],
+            )
+            for idx in md.index
+        })
 
         # construct the sampler
         subsamplers = {
             key: SequenceSampler(
-                ds.timeseries, seq_len=self.horizon, stride=1, shuffle=shuffle  # type: ignore[arg-type]
+                ds.timeseries,
+                seq_len=self.horizon,
+                stride=1,
+                shuffle=shuffle,
             )
             for key, ds in DS.items()
         }

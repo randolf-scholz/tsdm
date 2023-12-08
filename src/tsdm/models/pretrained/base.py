@@ -44,7 +44,6 @@ from collections.abc import Collection, Mapping
 from functools import cached_property
 from io import IOBase
 from pathlib import Path
-from typing import IO, Any, ClassVar, Optional, Protocol, cast
 from zipfile import ZipFile
 
 import torch
@@ -52,7 +51,7 @@ import yaml
 from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
 from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
-from typing_extensions import Self
+from typing_extensions import IO, Any, ClassVar, Optional, Protocol, Self, cast
 
 from tsdm.config import CONFIG
 from tsdm.encoders import BaseEncoder
@@ -82,7 +81,7 @@ class PreTrainedMetaClass(type(Protocol)):  # type: ignore[misc]
     """Metaclass for PreTrained."""
 
     def __init__(
-        cls,  # pyright: ignore[reportSelfClsParameterName]
+        cls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
@@ -182,9 +181,9 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
 
         self.component_files = self.autodetect_component_files()
 
-        self.components = LazyDict(
-            {k: self.get_component for k in self.component_files}
-        )
+        self.components = LazyDict({
+            k: self.get_component for k in self.component_files
+        })
         self.device = device
 
     def __repr__(self) -> str:

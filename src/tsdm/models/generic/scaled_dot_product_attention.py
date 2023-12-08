@@ -9,10 +9,10 @@ __all__ = [
 ]
 
 from math import sqrt
-from typing import Optional
 
 import torch
 from torch import Tensor, nn
+from typing_extensions import Optional
 
 from tsdm.utils.wrappers import autojit
 
@@ -22,9 +22,9 @@ class ScaledDotProductAttention(nn.Module):
     r"""Permutation-invariant dot-product attention."""
 
     HP: dict = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__module__": __module__,
         "dim_k": int,
         "dim_v": int,
         "output_size": int,

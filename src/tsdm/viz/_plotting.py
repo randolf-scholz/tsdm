@@ -8,9 +8,7 @@ __all__ = [
     "center_axes",
 ]
 
-import logging
 from collections.abc import Callable, Mapping
-from typing import Any, Literal, Optional, TypeAlias
 
 import numpy as np
 import torch
@@ -21,10 +19,9 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.stats import mode
 from torch import Tensor
 from torch.linalg import eigvals
+from typing_extensions import Any, Literal, Optional, TypeAlias
 
 from tsdm.constants import EMPTY_MAP
-
-__logger__ = logging.getLogger(__name__)
 
 Location: TypeAlias = Literal[
     "upper right",
@@ -105,9 +102,6 @@ def visualize_distribution(
         pad = max(map(len, stats), default=0)
         table = "\n".join([f"{key:<{pad}}  {val}" for key, val in stats.items()])
 
-        # if extra_stats is not None:
-        __logger__.info("writing table %s", table)
-
         # use mono-spaced font
         textbox = AnchoredText(
             table,
@@ -145,13 +139,13 @@ def shared_grid_plot(
 
     nrows, ncols = array.shape[:2]
 
-    subplots_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
+    subplots_kwargs = {
         "figsize": (5 * ncols, 3 * nrows),
         "sharex": "col",
         "sharey": "row",
         "squeeze": False,
         "tight_layout": True,
-    } | subplots_kwargs
+    } | dict(subplots_kwargs)
 
     axes: NDArray[Axes]  # type: ignore[type-var]
     fig: Figure
@@ -165,7 +159,7 @@ def shared_grid_plot(
     if titles is not None:
         # for ax, title in np.nditer([axes, titles]):
         for ax, title in zip(axes.flat, np.asarray(titles).flat):
-            ax.set_title(title)  # pyright: ignore[reportGeneralTypeIssues]
+            ax.set_title(title)
 
     # set axes x-labels
     if xlabels is not None:
@@ -231,23 +225,23 @@ def plot_spectrum(
         figure_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.subplots`
         scatter_kwargs: Keyword-Arguments to pass to `matplotlib.pyplot.scatter`
     """
-    axis_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
+    axis_kwargs = {
         "xlim": (-2.5, +2.5),
         "ylim": (-2.5, +2.5),
         "aspect": "equal",
         "ylabel": "imag part",
         "xlabel": "real part",
-    } | axis_kwargs
+    } | dict(axis_kwargs)
 
-    figure_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
+    figure_kwargs = {
         "figsize": (4, 4),
         "constrained_layout": True,
         "dpi": 256,  # default: 1024px×1024px
-    } | figure_kwargs
+    } | dict(figure_kwargs)
 
-    scatter_kwargs = {  # pyright: ignore[reportGeneralTypeIssues]
+    scatter_kwargs = {
         "edgecolors": "none",
-    } | scatter_kwargs
+    } | dict(scatter_kwargs)
 
     if not isinstance(kernel, Tensor):
         kernel = torch.tensor(kernel, dtype=torch.float32)

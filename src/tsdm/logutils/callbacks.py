@@ -32,18 +32,6 @@ from dataclasses import KW_ONLY, dataclass, field
 from functools import wraps
 from itertools import chain
 from pathlib import Path
-from typing import (
-    Any,
-    ClassVar,
-    Literal,
-    Optional,
-    ParamSpec,
-    Protocol,
-    TypeGuard,
-    TypeVar,
-    overload,
-    runtime_checkable,
-)
 
 import torch
 import yaml
@@ -53,7 +41,19 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.autonotebook import tqdm
-from typing_extensions import Self
+from typing_extensions import (
+    Any,
+    ClassVar,
+    Literal,
+    Optional,
+    ParamSpec,
+    Protocol,
+    Self,
+    TypeGuard,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
 
 from tsdm.logutils.logfuncs import (
     TargetsAndPredics,
@@ -90,21 +90,26 @@ class Callback(Protocol[P]):
     # required_kwargs: ClassVar[set[str]]
     # """The required kwargs for the callback."""
 
+    # @property
+    # def frequency(self) -> int:
+    #     """The frequency at which the callback is called."""
+
     @property
     def required_kwargs(self) -> set[str]:
         """The required kwargs for the callback."""
         ...
 
-    # @property
-    # def frequency(self) -> int:
-    #     """The frequency at which the callback is called."""
-
-    def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:
+    def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:  # pyright: ignore
         """Log something at time index i."""
         ...
 
 
-def is_callback(func: Callable, /) -> TypeGuard[Callback]:
+# NOTE: overloads from MutableSequence.
+# NOTE: Use PEP 695: Type Parameter Syntax in 3.12
+CB = TypeVar("CB", bound=Callback)
+
+
+def is_callback(func: CB, /) -> TypeGuard[CB]:
     """Check if the function is a callback."""
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
@@ -132,7 +137,8 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
     """Base class for callbacks."""
 
     LOGGER: ClassVar[logging.Logger]
-    """The debug-logger for the callback."""
+    """Logger for the class."""
+
     # required_kwargs: ClassVar[set[str]]
     # """The required kwargs for the callback."""
 
@@ -153,32 +159,28 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
 
     def __init_subclass__(cls) -> None:
         """Automatically set the required kwargs for the callback."""
+        super().__init_subclass__()  # Important!
 
         @wraps(cls.callback)
-        def __call__(self: Self, i: int, /, **state_dict: P.kwargs) -> None:
+        def __call__(
+            self: Self, i: int, /, **state_dict: P.kwargs  # pyright: ignore
+        ) -> None:
             """Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:
                 self.callback(i, **state_dict)
-            else:
-                self.LOGGER.debug("Skipping callback.")
 
         cls.__call__ = __call__  # type: ignore[method-assign]
 
     @abstractmethod
-    def callback(self, i: int, /, **state_dict: P.kwargs) -> None:
+    def callback(self, i: int, /, **state_dict: P.kwargs) -> None:  # pyright: ignore
         """Log something at the end of a batch/epoch."""
 
-    def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:
+    def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:  # pyright: ignore
         """Log something at the end of a batch/epoch."""
 
     def __repr__(self) -> str:
         """Return a string representation of the callback."""
         return repr_object(self)
-
-
-# NOTE: overloads from MutableSequence.
-# NOTE: Use PEP 695: Type Parameter Syntax in 3.9
-CB = TypeVar("CB", bound=Callback)
 
 
 class CallbackList(BaseCallback, MutableSequence[CB]):
@@ -187,7 +189,7 @@ class CallbackList(BaseCallback, MutableSequence[CB]):
     callbacks: list[CB]
     """The callbacks to log."""
 
-    def insert(self, index: int, value: CB, /) -> None:
+    def insert(self, index: int, value: CB) -> None:
         self.callbacks.insert(index, value)
 
     @overload

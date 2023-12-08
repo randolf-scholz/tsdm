@@ -4,7 +4,7 @@ import logging
 
 from pandas import NA, DataFrame, testing
 
-from tsdm.encoders.functional import make_masked_format
+from tsdm.encoders.transforms import make_masked_format
 
 __logger__ = logging.getLogger(__name__)
 

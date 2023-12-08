@@ -5,11 +5,12 @@ Contains losses in functional form.
 
 __all__ = [
     # Types
-    "FunctionalLoss",
+    "Metric",
     # Constants
     "FUNCTIONAL_LOSSES",
     "TORCH_ALIASES",
     "TORCH_FUNCTIONAL_LOSSES",
+    "TORCH_SPECIAL_LOSSES",
     # Functions
     "nd",
     "nrmse",
@@ -18,12 +19,10 @@ __all__ = [
     "rmse",
 ]
 
-from collections.abc import Callable
-from typing import Final, TypeAlias
-
-from torch import Tensor, nn
+from torch import nn
 
 from tsdm.metrics.functional._functional import (
+    Metric,
     nd,
     nrmse,
     q_quantile,
@@ -31,25 +30,15 @@ from tsdm.metrics.functional._functional import (
     rmse,
 )
 
-# TODO: Variadic Generics better definition [Tensor, Tensor, ...] -> Tensor once supported
-FunctionalLoss: TypeAlias = Callable[..., Tensor]
-r"""Type hint for functional losses."""
-
-TORCH_FUNCTIONAL_LOSSES: Final[dict[str, FunctionalLoss]] = {
+TORCH_FUNCTIONAL_LOSSES: dict[str, Metric] = {
     "binary_cross_entropy": nn.functional.binary_cross_entropy,
     # Function that measures the Binary Cross Entropy between the target and the output.
     "binary_cross_entropy_with_logits": nn.functional.binary_cross_entropy_with_logits,
     # Function that measures Binary Cross Entropy between target and output logits.
     "poisson_nll": nn.functional.poisson_nll_loss,
     # Poisson negative log likelihood loss.
-    "cosine_embedding": nn.functional.cosine_embedding_loss,
-    # See CosineEmbeddingLoss for details.
     "cross_entropy": nn.functional.cross_entropy,
     # This criterion combines log_softmax and nll_loss in a single function.
-    "ctc_loss": nn.functional.ctc_loss,
-    # The Connectionist Temporal Classification loss.
-    "gaussian_nll": nn.functional.gaussian_nll_loss,
-    # Gaussian negative log likelihood loss.
     "hinge_embedding": nn.functional.hinge_embedding_loss,
     # See HingeEmbeddingLoss for details.
     "kl_div": nn.functional.kl_div,
@@ -58,8 +47,6 @@ TORCH_FUNCTIONAL_LOSSES: Final[dict[str, FunctionalLoss]] = {
     # Function that takes the mean element-wise absolute value difference.
     "mse": nn.functional.mse_loss,
     # Measures the element-wise mean squared error.
-    "margin_ranking": nn.functional.margin_ranking_loss,
-    # See MarginRankingLoss for details.
     "multilabel_margin": nn.functional.multilabel_margin_loss,
     # See MultiLabelMarginLoss for details.
     "multilabel_soft_margin": nn.functional.multilabel_soft_margin_loss,
@@ -76,14 +63,26 @@ TORCH_FUNCTIONAL_LOSSES: Final[dict[str, FunctionalLoss]] = {
     # beta and an L1 term otherwise.
     "soft_margin": nn.functional.soft_margin_loss,
     # See SoftMarginLoss for details.
+}
+r"""Dictionary of all available losses in torch."""
+
+TORCH_SPECIAL_LOSSES = {
+    "cosine_embedding": nn.functional.cosine_embedding_loss,
+    # See CosineEmbeddingLoss for details.
+    "ctc_loss": nn.functional.ctc_loss,
+    # The Connectionist Temporal Classification loss.
+    "gaussian_nll": nn.functional.gaussian_nll_loss,
+    # Gaussian negative log likelihood loss.
+    "margin_ranking": nn.functional.margin_ranking_loss,
+    # See MarginRankingLoss for details.
     "triplet_margin": nn.functional.triplet_margin_loss,
     # See TripletMarginLoss for details
     "triplet_margin_with_distance": nn.functional.triplet_margin_with_distance_loss,
     # See TripletMarginWithDistanceLoss for details.
 }
-r"""Dictionary of all available losses in torch."""
+"""Special losses that do not represent usual loss functions."""
 
-TORCH_ALIASES: Final[dict[str, FunctionalLoss]] = {
+TORCH_ALIASES: dict[str, Metric] = {
     "mae": nn.functional.l1_loss,
     "l2": nn.functional.mse_loss,
     "xent": nn.functional.cross_entropy,
@@ -91,7 +90,7 @@ TORCH_ALIASES: Final[dict[str, FunctionalLoss]] = {
 }
 r"""Dictionary containing additional aliases for losses in torch."""
 
-FUNCTIONAL_LOSSES: Final[dict[str, FunctionalLoss]] = {
+FUNCTIONAL_LOSSES: dict[str, Metric] = {
     "nd": nd,
     "nrmse": nrmse,
     "q_quantile": q_quantile,
@@ -99,4 +98,4 @@ FUNCTIONAL_LOSSES: Final[dict[str, FunctionalLoss]] = {
 } | (TORCH_FUNCTIONAL_LOSSES | TORCH_ALIASES)
 r"""Dictionary of all available functional losses."""
 
-del Final, TypeAlias, nn, Callable, Tensor
+del nn

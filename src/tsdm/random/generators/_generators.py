@@ -20,13 +20,20 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol, cast, final, runtime_checkable
 
 import numpy as np
 import scipy.stats
 from numpy.typing import ArrayLike
 from scipy.optimize import OptimizeResult as OdeResult
 from scipy.stats import rv_continuous
+from typing_extensions import (
+    TYPE_CHECKING,
+    Any,
+    Protocol,
+    cast,
+    final,
+    runtime_checkable,
+)
 
 from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
@@ -255,35 +262,36 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
     # region validation and projection -------------------------------------------------
     # NOTE: These are optional and can be overwritten by subclasses to enforce/validate
     #       constraints on the initial state, solution and observations.
+
+    @property
+    def project_initial_state(self) -> SelfMap[T_co]:
+        """Project the initial state onto the constraint set."""
+        return lambda y0: y0
+
+    @property
+    def project_observations(self) -> SelfMap[T_co]:
+        """Project the observations onto the constraint set."""
+        return lambda obs: obs
+
     @property
     def project_solution(self) -> SelfMap:
         """Project the solution onto the constraint set."""
         return lambda sol: sol
 
     @property
-    def project_initial_state(self) -> SelfMap:
-        """Project the initial state onto the constraint set."""
-        return lambda sol: sol
-
-    @property
-    def project_observations(self) -> SelfMap:
-        """Project the observations onto the constraint set."""
-        return lambda sol: sol
-
-    @property
-    def validate_initial_state(self) -> NullMap:
+    def validate_initial_state(self) -> NullMap[T_co]:
         """Validate constraints on the initial state."""
         return lambda y0: None
+
+    @property
+    def validate_observations(self) -> NullMap[T_co]:
+        """Validate constraints on the parameters."""
+        return lambda obs: None
 
     @property
     def validate_solution(self) -> NullMap:
         """Validate constraints on the parameters."""
         return lambda sol: None
-
-    @property
-    def validate_observations(self) -> NullMap:
-        """Validate constraints on the parameters."""
-        return lambda obs: None
 
     # endregion validation and projection ----------------------------------------------
 

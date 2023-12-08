@@ -1,6 +1,10 @@
 r"""Base Model that all other models must subclass."""
 
 __all__ = [
+    "Model",
+    # Protocols
+    "ForecastingModel",
+    "StateSpaceForecastingModel",
     # Classes
     "BaseModel",
 ]
@@ -10,12 +14,15 @@ import os
 import subprocess
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Optional, Protocol
 from urllib.parse import urlparse
 
-from torch import Tensor
+from torch import Tensor, nn
+from typing_extensions import Any, ClassVar, Optional, Protocol, TypeAlias
 
 from tsdm.config import CONFIG
+
+Model: TypeAlias = nn.Module
+r"""Type hint for models."""
 
 
 class ForecastingModel(Protocol):
@@ -134,7 +141,7 @@ class BaseModelMetaClass(type):
 class BaseModel(metaclass=BaseModelMetaClass):
     r"""BaseModel that all models should subclass."""
 
-    LOGGER: logging.Logger
+    LOGGER: ClassVar[logging.Logger]
     r"""Logger for the model."""
     SOURCE_URL: Optional[str] = None
     r"""HTTP address from where the model can be downloaded."""

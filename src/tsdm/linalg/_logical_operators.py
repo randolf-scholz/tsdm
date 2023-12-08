@@ -8,10 +8,9 @@ __all__ = [
     "cumulative_or",
 ]
 
-from typing import Optional, Union
-
 import torch
 from torch import Tensor, jit
+from typing_extensions import Optional, Union
 
 
 @jit.script

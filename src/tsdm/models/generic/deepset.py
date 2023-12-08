@@ -9,10 +9,9 @@ __all__ = [
     "DeepSetReZero",
 ]
 
-from typing import Optional
-
 import torch
 from torch import Tensor, nn
+from typing_extensions import Optional
 
 from tsdm.models.generic.mlp import MLP
 from tsdm.models.generic.rezero import ReZeroMLP
@@ -24,9 +23,9 @@ class DeepSet(nn.ModuleDict):
     r"""Permutation invariant deep set model."""
 
     HP: dict = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__module__": __module__,
         "input_size": int,
         "output_size": int,
         "latent_size": int,
@@ -79,9 +78,9 @@ class DeepSetReZero(nn.ModuleDict):
     r"""Permutation invariant deep set model."""
 
     HP: dict = {
-        "__name__": __qualname__,  # type: ignore[name-defined]
+        "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,  # type: ignore[name-defined]
+        "__module__": __module__,
         "input_size": int,
         "output_size": int,
         "latent_size": int,

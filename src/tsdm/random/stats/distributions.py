@@ -9,10 +9,10 @@ __all__ = [
 ]
 
 from abc import abstractmethod
-from typing import Protocol, runtime_checkable
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+from typing_extensions import Protocol, runtime_checkable
 
 from tsdm.types.aliases import SizeLike
 from tsdm.types.variables import any_co as T_co

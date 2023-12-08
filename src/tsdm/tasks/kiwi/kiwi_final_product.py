@@ -5,12 +5,10 @@ __all__ = [
     "KIWI_FINAL_PRODUCT",
 ]
 
-import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
-from typing import Any, Literal, NamedTuple, Optional
 
 import pandas as pd
 import torch
@@ -20,16 +18,14 @@ from sklearn.model_selection import ShuffleSplit
 from torch import Tensor, jit
 from torch.nn import MSELoss
 from torch.utils.data import DataLoader
-from typing_extensions import deprecated
+from typing_extensions import Any, Literal, NamedTuple, Optional, TypeAlias, deprecated
 
+from tsdm.data import MappingDataset
+from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import MappingDataset
-from tsdm.utils.data.timeseries import TimeSeriesDataset
 from tsdm.utils.strings import repr_namedtuple
-
-__logger__ = logging.getLogger(__name__)
 
 
 class Sample(NamedTuple):
@@ -92,7 +88,7 @@ def get_time_table(
         t_induction = get_induction_time(slc)
         t_target = get_final_product(slc, target=target)
         if pd.isna(t_induction):
-            __logger__.info("%s: no t_induction!", idx)
+            KIWI_FINAL_PRODUCT.LOGGER.info("%s: no t_induction!", idx)
             t_max = get_final_product(slc.loc[slc.index < t_target], target=target)
             assert t_max < t_target
         else:
@@ -111,9 +107,9 @@ def get_time_table(
 class KIWI_FINAL_PRODUCT(OldBaseTask):
     r"""Forecast the final biomass or product."""
 
-    KeyType = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
+    KEYS: TypeAlias = tuple[Literal[0, 1, 2, 3, 4], Literal["train", "test"]]
     r"""Type Hint for Keys."""
-    index: list[KeyType] = list(product(range(5), ("train", "test")))  # type: ignore[arg-type]
+    index: list[KEYS] = list(product((0, 1, 2, 3, 4), ("train", "test")))
     r"""Available index."""
     target: Literal["Fluo_GFP", "OD600"]
     r"""The target variables."""
@@ -174,42 +170,36 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         self.metadata = self.metadata.rename(columns={self.target: "target_value"})
 
         # Construct the dataset object
-        self.DS = MappingDataset(
-            {
-                key: TimeSeriesDataset(
-                    self.timeseries.loc[key],
-                    metadata=self.metadata.loc[key],
-                )
-                for key in self.metadata.index
-            }
-        )
+        self.DS = MappingDataset({
+            key: TimeSeriesDataset(
+                self.timeseries.loc[key],
+                metadata=self.metadata.loc[key],
+            )
+            for key in self.metadata.index
+        })
 
-        self.controls = controls = Series(
-            [
-                "Cumulated_feed_volume_glucose",
-                "Cumulated_feed_volume_medium",
-                "InducerConcentration",
-                "StirringSpeed",
-                "Flow_Air",
-                "Temperature",
-                "Probe_Volume",
-            ]
-        )
+        self.controls = controls = Series([
+            "Cumulated_feed_volume_glucose",
+            "Cumulated_feed_volume_medium",
+            "InducerConcentration",
+            "StirringSpeed",
+            "Flow_Air",
+            "Temperature",
+            "Probe_Volume",
+        ])
         # get reverse index
         controls.index = controls.apply(ts.columns.get_loc)
 
-        self.observables = observables = Series(
-            [
-                "Base",
-                "DOT",
-                "Glucose",
-                "OD600",
-                "Acetate",
-                "Fluo_GFP",
-                "Volume",
-                "pH",
-            ]
-        )
+        self.observables = observables = Series([
+            "Base",
+            "DOT",
+            "Glucose",
+            "OD600",
+            "Acetate",
+            "Fluo_GFP",
+            "Volume",
+            "pH",
+        ])
         # get reverse index
         observables.index = observables.apply(ts.columns.get_loc)
 
@@ -223,7 +213,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     @cached_property
     def test_metric(self) -> Callable[..., Tensor]:
-        return jit.script(MSELoss())
+        return jit.script(MSELoss())  # pyright: ignore
 
     @cached_property
     def split_idx(self) -> DataFrame:
@@ -278,7 +268,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         return result
 
     @cached_property
-    def splits(self) -> dict[KeyType, tuple[DataFrame, DataFrame]]:
+    def splits(self) -> dict[KEYS, tuple[DataFrame, DataFrame]]:
         splits = {}
         for key in self.index:
             assert key in self.index, f"Wrong {key=}. Only {self.index} work."
@@ -295,7 +285,7 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
 
     def make_dataloader(
         self,
-        key: KeyType,
+        key: KEYS,
         /,
         *,
         shuffle: bool = False,
@@ -305,15 +295,13 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         ts, md = self.splits[key]
         dataset = _Dataset(ts, md, self.observables)
 
-        DS = MappingDataset(
-            {
-                idx: TimeSeriesDataset(
-                    ts.loc[idx],
-                    metadata=(md.loc[idx], self.final_value.loc[idx]),
-                )
-                for idx in md.index
-            }
-        )
+        DS = MappingDataset({
+            idx: TimeSeriesDataset(
+                ts.loc[idx],
+                metadata=(md.loc[idx], self.final_value.loc[idx]),
+            )
+            for idx in md.index
+        })
 
         # construct the sampler
         subsamplers = {}

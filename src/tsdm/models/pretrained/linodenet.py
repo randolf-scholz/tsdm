@@ -50,16 +50,14 @@ class LinODEnet(PreTrainedBase):
         "encoder": ["encoder", "Encoder"],
         "hyperparameters": ["hyperparameters", "hparams", "hyperparameter", "hparam"],
     }
-    CONTROLS = Index(
-        [
-            "Cumulated_feed_volume_glucose",
-            "Cumulated_feed_volume_medium",
-            "InducerConcentration",
-            "StirringSpeed",
-            "Flow_Air",
-            "Probe_Volume",
-        ]
-    )
+    CONTROLS = Index([
+        "Cumulated_feed_volume_glucose",
+        "Cumulated_feed_volume_medium",
+        "InducerConcentration",
+        "StirringSpeed",
+        "Flow_Air",
+        "Probe_Volume",
+    ])
 
     @classmethod
     def available_checkpoints(cls) -> DataFrame:

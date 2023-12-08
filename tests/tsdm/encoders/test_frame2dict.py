@@ -7,14 +7,12 @@ from tsdm.encoders import FrameAsDict
 
 def test_frame2tensordict() -> None:
     """Make sure that the column order is preserved."""
-    df = DataFrame(
-        {
-            "A": [1, 2, 3],
-            "B": [4, 5, 6],
-            "C": [7, 8, 9],
-            "D": [1, 2, 3],
-        }
-    )
+    df = DataFrame({
+        "A": [1, 2, 3],
+        "B": [4, 5, 6],
+        "C": [7, 8, 9],
+        "D": [1, 2, 3],
+    })
     encoder = FrameAsDict(groups={"X": ["B"], "Y": ...})
     encoder.fit(df)
     encoded = encoder.encode(df)

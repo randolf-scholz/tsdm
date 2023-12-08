@@ -45,20 +45,8 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Callable, Iterable
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 from types import EllipsisType
-from typing import (
-    Any,
-    ClassVar,
-    Generic,
-    Literal,
-    NamedTuple,
-    NewType,
-    TypeAlias,
-    TypeVar,
-    cast,
-    overload,
-)
 
 import numpy as np
 import pandas as pd
@@ -66,34 +54,53 @@ import torch
 from numpy.typing import NDArray
 from pandas import DataFrame, Series
 from torch import Tensor
-from typing_extensions import Self
+from typing_extensions import (
+    Any,
+    ClassVar,
+    Generic,
+    Literal,
+    NamedTuple,
+    NewType,
+    Optional,
+    Self,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axes, Nested, PandasObject, SizeLike
-from tsdm.types.protocols import NTuple
-from tsdm.utils.strings import repr_dataclass, repr_namedtuple
+from tsdm.types.protocols import NTuple, NumericalArray, SupportsDtype
+from tsdm.utils.strings import pprint_repr, repr_dataclass
 
-TensorLike: TypeAlias = Tensor | NDArray | DataFrame | Series
-r"""Type Hint for tensor-like objects."""
-T = TypeVar("T", Tensor, np.ndarray, DataFrame, Series)
+# NumericalArray: TypeAlias = Tensor | NDArray | DataFrame | Series
+# r"""Type Hint for tensor-like objects."""
+# T = TypeVar("T", Tensor, np.ndarray, DataFrame, Series)
+# r"""TypeVar for tensor-like objects."""
+
+
+Arr = TypeVar("Arr", bound=NumericalArray)
 r"""TypeVar for tensor-like objects."""
-ClippingMode: TypeAlias = Literal["mask", "clip"]
-r"""Type Hint for clipping mode."""
+Arr2 = TypeVar("Arr2", bound=NumericalArray)
+r"""TypeVar for tensor-like objects."""
 Index: TypeAlias = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
 scalars: TypeAlias = None | bool | int | float | complex | str
 """Type Hint for scalar objects."""
+ClippingMode: TypeAlias = Literal["mask", "clip"]
+r"""Type Hint for clipping mode."""
 
 PARAMETERS: TypeAlias = tuple[
     scalars
-    | T
+    | Arr
     | list[scalars]
-    | list[T]
+    | list[Arr]
     | list["PARAMETERS"]
-    | tuple[scalars | T | "PARAMETERS", ...]
+    | tuple[scalars | Arr | "PARAMETERS", ...]
     | dict[str, scalars]
-    | dict[str, T]
+    | dict[str, Arr]
     | dict[str, "PARAMETERS"],
     ...,
 ]
@@ -190,7 +197,7 @@ def get_broadcast(
     return tuple(None if a in contracted_axes else slice(None) for a in range(rank))
 
 
-def slice_size(slc: slice) -> int | None:
+def slice_size(slc: slice) -> Optional[int]:
     """Get the size of a slice."""
     if slc.stop is None or slc.start is None:
         return None
@@ -248,10 +255,10 @@ def get_reduced_axes(item, axis):
             raise TypeError(f"Unknown type {type(item)}")
 
 
-class NumericalEncoder(BaseEncoder[T, T], Generic[T]):
+class NumericalEncoder(BaseEncoder[Arr, Arr]):
     """Represents a numerical encoder."""
 
-    backend: Backend[T]
+    backend: Backend[Arr]
     """The backend of the encoder."""
 
     Parameters = NewType("Parameters", tuple)
@@ -265,7 +272,7 @@ class NumericalEncoder(BaseEncoder[T, T], Generic[T]):
 
     def switch_backend(self, backend: str) -> None:
         r"""Switch the backend of the encoder."""
-        self.backend: Backend[T] = Backend(backend)
+        self.backend: Backend[Arr] = Backend(backend)
 
         # recast the parameters
         self.recast_parameters()
@@ -273,32 +280,33 @@ class NumericalEncoder(BaseEncoder[T, T], Generic[T]):
     def recast_parameters(self) -> None:
         r"""Recast the parameters to the current backend."""
         # switch the backend of the parameters
-        self.cast_backend(self.params)
+        self.cast_params(self.params)
+        raise NotImplementedError
 
-    def cast_backend(self, params: Nested) -> Nested:
+    def cast_params(self, params: Nested) -> Nested[Arr]:
         """Cast the parameters to the current backend."""
         if isinstance(params, (Tensor, np.ndarray, Series, DataFrame)):
-            return self.backend.to_tensor(params)
+            return self.backend.to_tensor(params)  # pyright: ignore
 
         match params:
             case NTuple() as ntup:
                 cls = type(ntup)
-                return cls(*(self.cast_backend(p) for p in ntup))
+                return cls(*(self.cast_params(p) for p in ntup))
             case tuple() as tup:
-                return tuple(self.cast_backend(p) for p in tup)
+                return tuple(self.cast_params(p) for p in tup)
             case list() as lst:
-                return [self.cast_backend(p) for p in lst]
+                return [self.cast_params(p) for p in lst]
             case dict() as dct:
-                return {k: self.cast_backend(v) for k, v in dct.items()}
-            # FIXME: activate when mypy 1.5 releases
-            # case Tensor() | np.ndarray() | Series() | DataFrame() as t:
-            #     return self.to_tensor(t)
+                return {k: self.cast_params(v) for k, v in dct.items()}
+            case Tensor() | np.ndarray() | Series() | DataFrame() as t:
+                return self.backend.to_tensor(t)
             case _ as p:
                 return p
 
 
-@dataclass
-class BoundaryEncoder(BaseEncoder[T, T]):
+@pprint_repr
+@dataclass(init=False)
+class BoundaryEncoder(BaseEncoder[Arr, Arr]):
     r"""Clip or mask values outside a given range.
 
     Args:
@@ -326,8 +334,8 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         - `BoundaryEncoder(0, mode=('mask', 'clip'))` will mask values below 0 and clip values above 1 to `data_max`.
     """
 
-    lower_bound: None | float | T = NotImplemented
-    upper_bound: None | float | T = NotImplemented
+    lower_bound: None | float | Arr
+    upper_bound: None | float | Arr
 
     _: KW_ONLY
 
@@ -338,15 +346,51 @@ class BoundaryEncoder(BaseEncoder[T, T]):
     axis: Axes = None
 
     # derived attributes
-    backend: Backend[T] = NotImplemented
-    lower_value: float | T = NotImplemented
-    upper_value: float | T = NotImplemented
-    lower_satisfied: Callable[[T], T] = NotImplemented
-    upper_satisfied: Callable[[T], T] = NotImplemented
+    backend: Backend[Arr]
+    lower_value: float | Arr
+    upper_value: float | Arr
+    lower_satisfied: Callable[[Arr], Arr]
+    upper_satisfied: Callable[[Arr], Arr]
 
-    def __post_init__(self) -> None:
-        """Validate the parameters."""
-        # convert nans to None
+    @overload  # only generic inputs.
+    def __init__(
+        self: "BoundaryEncoder[Any]",
+        lower_bound: None | float = ...,
+        upper_bound: None | float = ...,
+        *,
+        lower_included: bool = ...,
+        upper_included: bool = ...,
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = ...,
+        axis: Axes = ...,
+    ) -> None: ...
+    @overload  # at least one data type specific input.
+    def __init__(
+        self: "BoundaryEncoder[Arr]",
+        lower_bound: None | float | Arr = ...,
+        upper_bound: None | float | Arr = ...,
+        *,
+        lower_included: bool = ...,
+        upper_included: bool = ...,
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = ...,
+        axis: Axes = ...,
+    ) -> None: ...
+    def __init__(
+        self,
+        lower_bound: None | float | Arr = NotImplemented,
+        upper_bound: None | float | Arr = NotImplemented,
+        *,
+        lower_included: bool = True,
+        upper_included: bool = True,
+        mode: ClippingMode | tuple[ClippingMode, ClippingMode] = "mask",
+        axis: Axes = None,
+    ) -> None:
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.lower_included = lower_included
+        self.upper_included = upper_included
+        self.mode = mode
+        self.axis = axis
+
         if pd.isna(self.lower_bound):
             self.lower_bound = None
 
@@ -371,20 +415,21 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         ):
             raise ValueError("lower_bound must be smaller than upper_bound.")
 
-    class Parameters(NamedTuple):
+    @pprint_repr
+    class Parameters(NamedTuple, Generic[Arr2]):
         r"""The parameters of the BoundaryScalar."""
 
-        lower_bound: TensorLike
+        lower_bound: None | float | Arr2
+        upper_bound: None | float | Arr2
+
+        lower_value: float | Arr2
+        upper_value: float | Arr2
+
         lower_included: bool
-        lower_value: TensorLike
-        upper_bound: TensorLike
         upper_included: bool
-        upper_value: TensorLike
+
         mode: ClippingMode | tuple[ClippingMode, ClippingMode]
         axis: Axes = None
-
-        def __repr__(self) -> str:
-            return repr_namedtuple(self)
 
     @property
     def params(self) -> Parameters:
@@ -433,10 +478,10 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         """The mode for the upper boundary."""
         return self.mode[1] if isinstance(self.mode, tuple) else self.mode
 
-    def fit(self, data: T) -> None:
+    def fit(self, data: Arr) -> None:
         # select the backend
         selected_backend = get_backend(data)
-        self.backend: Backend[T] = Backend(selected_backend)
+        self.backend: Backend[Arr] = Backend(selected_backend)
 
         # fit the parameters
         if self.lower_bound is NotImplemented:
@@ -444,64 +489,74 @@ class BoundaryEncoder(BaseEncoder[T, T]):
         if self.upper_bound is NotImplemented:
             self.upper_bound = self.backend.nanmax(data)
 
-        self.lower_value: float | T = (
-            self.backend.to_tensor(float("-inf"))
-            if self.lower_bound is None
-            else (
-                self.backend.to_tensor(float("nan"))
-                if self.lower_mode == "mask"
-                else self.lower_bound if self.lower_mode == "clip" else NotImplemented
-            )
-        )
+        # set lower_value
+        match self.lower_bound, self.lower_mode:
+            case None, _:
+                self.lower_value = self.backend.to_tensor(float("-inf"))
+            case _, "mask":
+                self.lower_value = self.backend.to_tensor(float("nan"))
+            case _, "clip":
+                self.lower_value = self.lower_bound  # type: ignore[assignment]
+            case _:
+                self.lower_value = NotImplemented
 
-        self.upper_value: float | T = (
-            self.backend.to_tensor(float("+inf"))
-            if self.upper_bound is None
-            else (
-                self.backend.to_tensor(float("nan"))
-                if self.upper_mode == "mask"
-                else self.upper_bound if self.upper_mode == "clip" else NotImplemented
-            )
-        )
+        # set upper_value
+        match self.upper_bound, self.upper_mode:
+            case None, _:
+                self.upper_value = self.backend.to_tensor(float("+inf"))
+            case _, "mask":
+                self.upper_value = self.backend.to_tensor(float("nan"))
+            case _, "clip":
+                self.upper_value = self.upper_bound  # type: ignore[assignment]
+            case _:
+                self.upper_value = NotImplemented
 
-        # Create lower comparison function
-        self.lower_satisfied: Callable[[T], T] = (
-            self.backend.true_like
-            if self.lower_bound is None
-            else self._ge if self.lower_included else self._gt
-        )
+        # set lower comparison function
+        match self.lower_bound, self.lower_included:
+            case None, _:
+                self.lower_satisfied = self.backend.true_like
+            case _, True:
+                self.lower_satisfied = self._ge
+            case _, False:
+                self.lower_satisfied = self._gt
+            case _:
+                raise ValueError(f"Invalid {self.lower_bound=}/{self.lower_included=}")
 
-        # Create upper comparison function
-        self.upper_satisfied: Callable[[T], T] = (
-            self.backend.true_like
-            if self.upper_bound is None
-            else self._le if self.upper_included else self._lt
-        )
+        # set upper comparison function
+        match self.upper_bound, self.upper_included:
+            case None, _:
+                self.upper_satisfied = self.backend.true_like
+            case _, True:
+                self.upper_satisfied = self._le
+            case _, False:
+                self.upper_satisfied = self._lt
+            case _:
+                raise ValueError(f"Invalid {self.upper_bound=}/{self.upper_included=}")
 
-    def _ge(self, x: T) -> T:
+    def _ge(self, x: Arr) -> Arr:
         return (x >= self.lower_bound) | self.backend.isnan(x)
 
-    def _gt(self, x: T) -> T:
+    def _gt(self, x: Arr) -> Arr:
         return (x > self.lower_bound) | self.backend.isnan(x)
 
-    def _le(self, x: T) -> T:
+    def _le(self, x: Arr) -> Arr:
         return (x <= self.upper_bound) | self.backend.isnan(x)
 
-    def _lt(self, x: T) -> T:
+    def _lt(self, x: Arr) -> Arr:
         return (x < self.upper_bound) | self.backend.isnan(x)
 
-    def encode(self, data: T, /) -> T:
+    def encode(self, data: Arr, /) -> Arr:
         # NOTE: frame.where(cond, other) replaces with other if condition is false!
         data = self.backend.where(self.lower_satisfied(data), data, self.lower_value)
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def decode(self, data: T, /) -> T:
+    def decode(self, data: Arr, /) -> Arr:
         return data
 
 
 @dataclass(init=False)
-class LinearScaler(BaseEncoder[T, T]):
+class LinearScaler(BaseEncoder[Arr, Arr]):
     r"""Maps the data linearly $x ↦ σ⋅x + μ$.
 
     Args:
@@ -513,24 +568,53 @@ class LinearScaler(BaseEncoder[T, T]):
 
     requires_fit: ClassVar[bool] = False
 
-    loc: T  # NDArray[np.number] | Tensor
-    scale: T  # NDArray[np.number] | Tensor
+    loc: Arr  # NDArray[np.number] | Tensor
+    scale: Arr  # NDArray[np.number] | Tensor
     r"""The scaling factor."""
 
-    axis: tuple[int, ...]
+    axis: Axes
     r"""Over which axis to perform the scaling."""
-    backend: Backend[T]
+    backend: Backend[Arr]
     """The backend of the encoder."""
 
-    class Parameters(NamedTuple):
+    @overload
+    def __init__(
+        self: "LinearScaler[Any]",
+        loc: float = ...,
+        scale: float = ...,
+        *,
+        axis: Axes = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "LinearScaler[Arr]",
+        loc: float | Arr = ...,
+        scale: float | Arr = ...,
+        *,
+        axis: Axes = ...,
+    ) -> None: ...
+    def __init__(
+        self,
+        loc: float | Arr = 0.0,
+        scale: float | Arr = 1.0,
+        *,
+        axis: Axes = None,
+    ) -> None:
+        r"""Initialize the MinMaxScaler."""
+        self.loc = cast(Arr, loc)
+        self.scale = cast(Arr, scale)
+        self.axis = axis
+
+        if axis is not None:
+            raise NotImplementedError("Axis not implemented yet.")
+
+    @pprint_repr
+    class Parameters(NamedTuple, Generic[Arr2]):
         r"""The parameters of the LinearScaler."""
 
-        loc: TensorLike
-        scale: TensorLike
-        axis: tuple[int, ...]
-
-        def __repr__(self) -> str:
-            return repr_namedtuple(self)
+        loc: Arr2
+        scale: Arr2
+        axis: Axes
 
     @property
     def params(self) -> Parameters:
@@ -540,19 +624,6 @@ class LinearScaler(BaseEncoder[T, T]):
             scale=self.scale,
             axis=self.axis,
         )
-
-    def __init__(
-        self,
-        loc: float | T = 0.0,
-        scale: float | T = 1.0,
-        *,
-        axis: Axes = None,
-    ):
-        r"""Initialize the MinMaxScaler."""
-        super().__init__()
-        self.loc = cast(T, loc)
-        self.scale = cast(T, scale)
-        self.axis = axis  # type: ignore[assignment]
 
     def __getitem__(self, item: int | slice | tuple[int | slice, ...]) -> Self:
         r"""Return a slice of the LinearScaler.
@@ -584,18 +655,18 @@ class LinearScaler(BaseEncoder[T, T]):
         r"""Pretty print."""
         return repr_dataclass(self)
 
-    def fit(self, data: T, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         selected_backend = get_backend(data)
-        self.backend: Backend[T] = Backend(selected_backend)
+        self.backend: Backend[Arr] = Backend(selected_backend)
 
-    def encode(self, data: T, /) -> T:
+    def encode(self, data: Arr, /) -> Arr:
         # broadcast = get_broadcast(data.shape, axis=self.axis)
         # loc = self.loc[broadcast] if self.loc.ndim > 0 else self.loc
         # scale = self.scale[broadcast] if self.scale.ndim > 0 else self.scale
         # return data * scale + loc
         return data * self.scale + self.loc
 
-    def decode(self, data: T, /) -> T:
+    def decode(self, data: Arr, /) -> Arr:
         # broadcast = get_broadcast(data.shape, axis=self.axis)
         # loc = self.loc[broadcast] if self.loc.ndim > 0 else self.loc
         # scale = self.scale[broadcast] if self.scale.ndim > 0 else self.scale
@@ -604,37 +675,35 @@ class LinearScaler(BaseEncoder[T, T]):
 
 
 @dataclass(init=False)
-class StandardScaler(BaseEncoder[T, T]):
+class StandardScaler(BaseEncoder[Arr, Arr]):
     r"""Transforms data linearly x ↦ (x-μ)/σ.
 
     axis: tuple[int, ...] determines the shape of the mean and stdv.
     """
 
-    mean: T
+    mean: Arr
     r"""The mean value."""
-    stdv: T
+    stdv: Arr
     r"""The standard-deviation."""
 
     _: KW_ONLY
 
     axis: Axes
     r"""The axis to perform the scaling. If None, automatically select the axis."""
-    backend: Backend[T]
+    backend: Backend[Arr]
     """The backend of the encoder."""
 
     @property
     def requires_fit(self) -> bool:
         return (self.mean is NotImplemented) or (self.stdv is NotImplemented)
 
-    class Parameters(NamedTuple):
+    @pprint_repr
+    class Parameters(NamedTuple, Generic[Arr2]):
         r"""The parameters of the StandardScalar."""
 
-        mean: TensorLike
-        stdv: TensorLike
+        mean: Arr2
+        stdv: Arr2
         axis: Axes
-
-        def __repr__(self) -> str:
-            return repr_namedtuple(self)
 
     @property
     def params(self) -> Parameters:
@@ -645,16 +714,25 @@ class StandardScaler(BaseEncoder[T, T]):
             axis=self.axis,
         )
 
+    @overload
     def __init__(
-        self,
-        mean: float | T = NotImplemented,
-        stdv: float | T = NotImplemented,
+        self: "StandardScaler[Any]",
+        mean: float = ...,
+        stdv: float = ...,
         *,
-        axis: Axes = (),
-    ) -> None:
-        super().__init__()
-        self.mean = cast(T, mean)
-        self.stdv = cast(T, stdv)
+        axis: Axes = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "StandardScaler[Arr]",
+        mean: float | Arr = ...,
+        stdv: float | Arr = ...,
+        *,
+        axis: Axes = ...,
+    ) -> None: ...
+    def __init__(self, mean=NotImplemented, stdv=NotImplemented, *, axis=()):
+        self.mean = cast(Arr, mean)
+        self.stdv = cast(Arr, stdv)
         self.axis = axis
         self.mean_learnable = mean is NotImplemented
         self.stdv_learnable = stdv is NotImplemented
@@ -672,10 +750,10 @@ class StandardScaler(BaseEncoder[T, T]):
         encoder._is_fitted = self._is_fitted
         return encoder
 
-    def fit(self, data: T, /) -> None:
+    def fit(self, data: Arr, /) -> None:
         # switch the backend
         selected_backend = get_backend(data)
-        self.backend: Backend[T] = Backend(selected_backend)
+        self.backend: Backend[Arr] = Backend(selected_backend)
 
         # universal fitting procedure
         axes = invert_axis_selection(self.axis, ndim=len(data.shape))
@@ -688,19 +766,19 @@ class StandardScaler(BaseEncoder[T, T]):
             self.stdv = self.backend.nanstd(data, axis=axes)
         # self.stdv = self.backend.to_tensor(self.stdv)
 
-    def encode(self, data: T, /) -> T:
+    def encode(self, data: Arr, /) -> Arr:
         # broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         # return (data - self.mean[broadcast]) / self.stdv[broadcast]
         return (data - self.mean) / self.stdv
 
-    def decode(self, data: T, /) -> T:
+    def decode(self, data: Arr, /) -> Arr:
         # broadcast = get_broadcast(data.shape, axis=self.axis, keep_axis=True)
         # return data * self.stdv[broadcast] + self.mean[broadcast]
         return data * self.stdv + self.mean
 
 
 @dataclass(init=False)
-class MinMaxScaler(BaseEncoder[T, T]):
+class MinMaxScaler(BaseEncoder[Arr, Arr]):
     r"""Linearly transforms [x_min, x_max] to [y_min, y_max] (default: [0, 1]).
 
     If x_min and/or x_max are provided at initialization, they are marked as
@@ -739,11 +817,11 @@ class MinMaxScaler(BaseEncoder[T, T]):
         This might be violated due to numerical roundoff, so we need to be careful.
     """
 
-    ymin: T  # or: ScalarType.
-    ymax: T  # or: ScalarType.
-    xmin: T  # or: ScalarType.
-    xmax: T  # or: ScalarType.
-    scale: T  # or: ScalarType.
+    ymin: Arr  # or: ScalarType.
+    ymax: Arr  # or: ScalarType.
+    xmin: Arr  # or: ScalarType.
+    xmax: Arr  # or: ScalarType.
+    scale: Arr  # or: ScalarType.
     r"""The scaling factor."""
 
     _: KW_ONLY
@@ -752,21 +830,18 @@ class MinMaxScaler(BaseEncoder[T, T]):
     r"""Over which axis to perform the scaling."""
     safe_computation: bool
     r"""Whether to ensure that the bounds are not violated due to roundoff."""
-    backend: Backend[T]
+    backend: Backend[Arr]
     """The backend of the encoder."""
 
-    class Parameters(NamedTuple):
+    @pprint_repr
+    class Parameters(NamedTuple, Generic[Arr2]):
         r"""The parameters of the MinMaxScaler."""
 
-        xmin: TensorLike
-        xmax: TensorLike
-        ymin: TensorLike
-        ymax: TensorLike
+        xmin: Arr2
+        xmax: Arr2
+        ymin: Arr2
+        ymax: Arr2
         axis: Axes
-        safe_computation: bool
-
-        def __repr__(self) -> str:
-            return repr_namedtuple(self)
 
     @property
     def params(self) -> Parameters:
@@ -777,7 +852,6 @@ class MinMaxScaler(BaseEncoder[T, T]):
             ymin=self.ymin,
             ymax=self.ymax,
             axis=self.axis,
-            safe_computation=self.safe_computation,
         )
 
     @property
@@ -785,31 +859,49 @@ class MinMaxScaler(BaseEncoder[T, T]):
         r"""Whether the scaler requires fitting."""
         return True
 
+    @overload
+    def __init__(
+        self: "MinMaxScaler[Any]",
+        ymin: float = ...,
+        ymax: float = ...,
+        *,
+        xmin: None | float = ...,
+        xmax: None | float = ...,
+        axis: Axes = ...,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: "MinMaxScaler[Arr]",
+        ymin: float | Arr = ...,
+        ymax: float | Arr = ...,
+        *,
+        xmin: None | float | Arr = ...,
+        xmax: None | float | Arr = ...,
+        axis: Axes = ...,
+    ) -> None: ...
     def __init__(
         self,
-        ymin: float | T = 0.0,
-        ymax: float | T = 1.0,
+        ymin: float | Arr = 0.0,
+        ymax: float | Arr = 1.0,
         *,
-        xmin: float | T = NotImplemented,
-        xmax: float | T = NotImplemented,
+        xmin: None | float | Arr = None,
+        xmax: None | float | Arr = None,
         axis: Axes = (),
-        safe_computation: bool = True,
     ) -> None:
-        super().__init__()
-        self.xmin = cast(T, xmin)
-        self.xmax = cast(T, xmax)
-        self.ymin = cast(T, ymin)
-        self.ymax = cast(T, ymax)
+        self.safe_computation = True
+        self.ymin = cast(Arr, ymin)
+        self.ymax = cast(Arr, ymax)
         self.axis = axis
-        self.safe_computation = safe_computation
 
-        self.xmin_learnable = xmin is NotImplemented
-        self.xmax_learnable = xmax is NotImplemented
+        self.xmin_learnable = xmin is None
+        self.xmax_learnable = xmax is None
+        self.xmin = cast(Arr, NotImplemented if xmin is None else xmin)
+        self.xmax = cast(Arr, NotImplemented if xmax is None else xmax)
 
         # set derived parameters
         if not (self.xmin_learnable or self.xmax_learnable):
-            self.xbar: T = (self.xmax + self.xmin) / 2
-            self.ybar: T = (self.ymax + self.ymin) / 2
+            self.xbar: Arr = (self.xmax + self.xmin) / 2
+            self.ybar: Arr = (self.ymax + self.ymin) / 2
             self.scale = (self.ymax - self.ymin) / (self.xmax - self.xmin)
         else:
             self.xbar = NotImplemented
@@ -848,7 +940,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
     def switch_backend(self, backend: str | Backend) -> None:
         r"""Switch the backend of the scaler."""
-        self.backend: Backend[T] = Backend(backend)
+        self.backend: Backend[Arr] = Backend(backend)
         # recast the parameters
         # self.recast_parameters()
 
@@ -863,9 +955,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         self.ybar = self.backend.to_tensor(self.ybar)
         self.scale = self.backend.to_tensor(self.scale)
 
-    def fit(self, data: T, /) -> None:
-        # TODO: Why does singledispatch not work here? (wrap_func in BaseEncoder)
-
+    def fit(self, data: Arr, /) -> None:
         # switch the backend
         self.switch_backend(get_backend(data))
 
@@ -895,7 +985,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         scale = dy / dx
         self.scale = self.backend.where(dx != 0, scale, scale**0)
 
-    def encode(self, x: T, /) -> T:
+    def encode(self, x: Arr, /) -> Arr:
         """Maps [xₘᵢₙ, xₘₐₓ] to [yₘᵢₙ, yₘₐₓ]."""
         # broadcast = get_broadcast(x.shape, axis=self.axis, keep_axis=True)
 
@@ -910,7 +1000,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
         y = (x - xbar) * scale + ybar
 
         if self.safe_computation:
-            # ensure the conditions
+            # NOTE: Ensure the conditions
             # x < xₘᵢₙ ⟹ y < yₘᵢₙ  ∧  x > xₘₐₓ ⟹ y > yₘₐₓ  ∧  x∈[xₘᵢₙ, xₘₐₓ] ⟹ y∈[yₘᵢₙ, yₘₐₓ]
             y = self.backend.where(x < xmin, self.backend.clip(y, None, ymin), y)
             y = self.backend.where(x > xmax, self.backend.clip(y, ymax, None), y)
@@ -920,7 +1010,7 @@ class MinMaxScaler(BaseEncoder[T, T]):
 
         return y
 
-    def decode(self, y: T, /) -> T:
+    def decode(self, y: Arr, /) -> Arr:
         """Maps [yₘᵢₙ, yₘₐₓ] to [xₘᵢₙ, xₘₐₓ]."""
         # broadcast = get_broadcast(y.shape, axis=self.axis, keep_axis=True)
 
@@ -990,35 +1080,34 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 
+@dataclass
 class FloatEncoder(BaseEncoder[NDArray, NDArray]):
     r"""Converts all columns of DataFrame to float32."""
 
     requires_fit: ClassVar[bool] = True
 
-    dtypes: Series = None
+    target_dtype: str = "float32"
+
+    original_dtypes: Series = field(init=False)
     r"""The original dtypes."""
 
     def __init__(self, dtype: str = "float32") -> None:
         self.target_dtype = dtype
-        super().__init__()
 
     def fit(self, data: PandasObject, /) -> None:
-        if isinstance(data, DataFrame):
-            self.dtypes = data.dtypes
-        elif isinstance(data, (Series, pd.Index)):
-            self.dtypes = data.dtype
-        # elif hasattr(data, "dtype"):
-        #     self.dtypes = data.dtype
-        # elif hasattr(data, "dtypes"):
-        #     self.dtypes = data.dtype
-        else:
-            raise TypeError(f"Cannot get dtype of {type(data)}")
+        match data:
+            case DataFrame(dtypes=dtypes):
+                self.original_dtypes = dtypes
+            case SupportsDtype(dtype=dtype):
+                self.original_dtypes = dtype
+            case _:
+                raise TypeError(f"Cannot get dtype of {type(data)}")
 
     def encode(self, data: PandasObject, /) -> PandasObject:
         return data.astype(self.target_dtype)
 
     def decode(self, data: PandasObject, /) -> PandasObject:
-        return data.astype(self.dtypes)
+        return data.astype(self.original_dtypes)
 
 
 class IntEncoder(BaseEncoder[NDArray, NDArray]):
@@ -1054,7 +1143,6 @@ class TensorSplitter(BaseEncoder):
         self, *, indices_or_sections: int | list[int] = 1, axis: int = 0
     ) -> None:
         r"""Concatenate tensors along the specified axis."""
-        super().__init__()
         self.axis = axis
         self.indices_or_sections = indices_or_sections
 
@@ -1092,7 +1180,6 @@ class TensorConcatenator(BaseEncoder):
 
     def __init__(self, axis: int = 0) -> None:
         r"""Concatenate tensors along the specified axis."""
-        super().__init__()
         self.axis = axis
 
     def fit(self, data: tuple[Tensor, ...], /) -> None:
@@ -1111,7 +1198,3 @@ class TensorConcatenator(BaseEncoder):
     def decode(self, data: Tensor, /) -> tuple[Tensor, ...]:
         result = torch.split(data, self.lengths, dim=self.axis)
         return tuple(x.squeeze() for x in result)
-
-
-Standardizer = StandardScaler  # Do not remove! For old pickle files
-"""Alias for `StandardScaler`"""

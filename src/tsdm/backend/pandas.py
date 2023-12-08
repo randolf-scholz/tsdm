@@ -19,10 +19,9 @@ __all__ = [
     "strip_whitespace_dataframe",
 ]
 
-from typing import Literal, TypeVar
-
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Series
+from typing_extensions import Literal, TypeVar
 
 from tsdm.types.aliases import Axes, Scalar
 
@@ -55,12 +54,10 @@ def pandas_infer_axes(
             return None
         case int():
             pass
-        case tuple():
-            if len(axis) != 1:
-                raise ValueError(f"Expected 1 axis, got {len(axis)}.")
-            axis = axis[0]
+        case [int(ax)]:
+            axis = ax
         case _:
-            raise TypeError(f"Expected int or Iterable[int], got {type(axis)}.")
+            raise TypeError(f"Expected int or tuple[int], got {type(axis)}.")
     return "columns" if axis % len(x.shape) else "index"
 
 
@@ -113,9 +110,9 @@ def pandas_like(x: ArrayLike, ref: P, /) -> P:
 
 def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
     """Strip whitespace from selected columns in a DataFrame."""
-    return frame.assign(
-        **{col: strip_whitespace_series(frame[col]) for col in (cols or frame)}
-    )
+    return frame.assign(**{
+        col: strip_whitespace_series(frame[col]) for col in (cols or frame)
+    })
 
 
 def strip_whitespace_series(series: Series, /) -> Series:

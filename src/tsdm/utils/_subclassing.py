@@ -8,9 +8,9 @@ __all__ = [
 
 from abc import ABCMeta
 from collections.abc import Callable
-from typing import Any, Generic, Optional, TypeVar, cast
 
-T = TypeVar("T")
+from typing_extensions import Any, Optional, TypeVar, cast
+
 R = TypeVar("R")
 
 
@@ -20,7 +20,7 @@ class DummyAttribute:
     __is_abstract_attribute__ = True
 
 
-def abstractattribute(obj: Optional[Callable[[T], R]] = None) -> R:
+def abstractattribute(obj: Optional[Callable[[Any], R]] = None) -> R:
     r"""Decorate method as abstract attribute."""
     attr = DummyAttribute() if obj is None else obj
     try:
@@ -45,12 +45,12 @@ def abstractattribute(obj: Optional[Callable[[T], R]] = None) -> R:
 #     r"""Decorator equivalent of @attribute@staticmethod."""
 
 
-class PatchedABCMeta(ABCMeta, Generic[T]):
+class PatchedABCMeta(ABCMeta):
     r"""Patched ABCMeta class to allow @abstractattribute."""
 
-    def __call__(cls: type[T], *args: Any, **kwargs: Any) -> T:
+    def __call__(cls, *args: Any, **kwargs: Any) -> "PatchedABCMeta":
         r"""Override __call__ to allow @abstractattribute."""
-        instance = ABCMeta.__call__(cls, *args, **kwargs)
+        instance: PatchedABCMeta = ABCMeta.__call__(cls, *args, **kwargs)
         abstract_attributes = {
             name
             for name in dir(instance)
@@ -61,4 +61,4 @@ class PatchedABCMeta(ABCMeta, Generic[T]):
                 f"Can't instantiate abstract class {cls.__name__} with"
                 f" abstract attributes: f{', '.join(abstract_attributes)}"
             )
-        return cast(T, instance)
+        return instance

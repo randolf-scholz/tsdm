@@ -6,32 +6,37 @@ __all__ = [
 ]
 
 
-from collections.abc import Callable, Hashable
-from typing import Any, NamedTuple, TypeVar
+from collections.abc import Callable
 
 from pandas import DataFrame
 from torch import Tensor, nan as NAN
 from torch.nn.utils.rnn import pad_sequence
+from typing_extensions import Any, NamedTuple
 
 from tsdm import datasets
+from tsdm.data import (
+    TimeSeriesSampleGenerator,
+    folds_as_frame,
+    folds_as_sparse_frame,
+    folds_from_groups,
+)
+from tsdm.data.timeseries import Sample
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
     DateTimeEncoder,
     Encoder,
-    FastFrameEncoder,
     FrameAsDict,
+    FrameEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
     StandardScaler,
 )
 from tsdm.metrics import TimeSeriesMSE
-from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingWindowSampler
-from tsdm.tasks.base import Sample, TimeSeriesSampleGenerator, TimeSeriesTask
-from tsdm.utils.data import folds_as_frame, folds_as_sparse_frame, folds_from_groups
+from tsdm.random.samplers import HierarchicalSampler, Sampler, SlidingSampler
+from tsdm.tasks.base import TimeSeriesTask
+from tsdm.types.aliases import SplitID
 from tsdm.utils.strings import repr_namedtuple
-
-SplitID = TypeVar("SplitID", bound=Hashable)
 
 
 class Batch(NamedTuple):
@@ -268,7 +273,7 @@ class KiwiBenchmark(TimeSeriesTask):
                 "X": ...,
             },
             dtypes={"T": "float32", "X": "float32"},
-        ) @ FastFrameEncoder(
+        ) @ FrameEncoder(
             column_encoders=column_encoders,
             index_encoders={
                 # "run_id": IdentityEncoder(),
@@ -300,11 +305,12 @@ class KiwiBenchmark(TimeSeriesTask):
         assert not sampler_kwargs, f"Unknown sampler_kwargs: {sampler_kwargs}"
 
         subsamplers = {
-            key: SlidingWindowSampler(
+            key: SlidingSampler(
                 tsd.timeindex,
                 horizons=[observation_horizon, forecasting_horizon],
                 stride=stride,
                 shuffle=shuffle,
+                mode="masks",
             )
             for key, tsd in split.items()
         }

@@ -25,21 +25,17 @@ __all__ = [
     "mimic",
     "physionet",
     "kiwi",
+    "synthetic",
     "ushcn",
     # Types
     "Dataset",
     # Constants
     "DATASETS",
-    "TIMESERIES",
-    "OLD_DATASETS",
-    "OLD_TIMESERIES",
     # ABCs
     "BaseDataset",
     "SingleTableDataset",
     "MultiTableDataset",
     # Classes
-    "TimeSeriesCollection",
-    "TimeSeriesDataset",
     # Datasets
     "DampedPendulum_Ansari2023",
     "BeijingAirQuality",
@@ -69,14 +65,21 @@ __all__ = [
 ]
 
 # submodules
-from tsdm.datasets import base, kiwi, mimic, physionet, timeseries, uci, ushcn
+from tsdm.datasets import (
+    base,
+    kiwi,
+    mimic,
+    physionet,
+    synthetic,
+    timeseries,
+    uci,
+    ushcn,
+)
 from tsdm.datasets.base import (
     BaseDataset,
     Dataset,
     MultiTableDataset,
     SingleTableDataset,
-    TimeSeriesCollection,
-    TimeSeriesDataset,
 )
 from tsdm.datasets.ett import ETT
 from tsdm.datasets.kiwi import (
@@ -120,19 +123,3 @@ DATASETS: dict[str, type[Dataset]] = {
     "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
 }
 r"""Dictionary of all available dataset."""
-
-TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
-    "InSilicoTSC": InSilicoTSC,
-    "KiwiBenchmarkTSC": KiwiBenchmarkTSC,
-}
-"""Dictionary of all available timseries classes."""
-
-OLD_DATASETS: dict[str, type[Dataset]] = {
-    "KiwiRuns": KiwiRuns,
-}
-"""Deprecated dataset classes."""
-
-OLD_TIMESERIES: dict[str, type[TimeSeriesCollection]] = {
-    "KiwiRunsTSC": KiwiRunsTSC,
-}
-"""Deprecated timeseries classes."""

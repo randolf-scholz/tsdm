@@ -23,16 +23,14 @@ __all__ = [
     "unflatten_dict",
 ]
 
-import logging
 import os
 import shutil
 import warnings
-from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Mapping
 from datetime import datetime
 from importlib import import_module
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Literal, Optional, cast, overload
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -41,12 +39,11 @@ from numpy.typing import NDArray
 from pandas import Series
 from torch import nn
 from tqdm.autonotebook import tqdm
+from typing_extensions import Any, Literal, Optional, cast, overload
 
 from tsdm.constants import BOOLEAN_PAIRS
-from tsdm.types.aliases import Nested, PathLike
-from tsdm.types.variables import HashableType, key_var as K
-
-__logger__ = logging.getLogger(__name__)
+from tsdm.types.aliases import Nested, NestedDict, NestedMapping, PathLike
+from tsdm.types.variables import HashableType, key_other_var as K2, key_var as K
 
 
 def variants(s: str | list[str]) -> list[str]:
@@ -97,45 +94,131 @@ def flatten_nested(
     raise ValueError(f"{type(nested)} is not understood")
 
 
+def is_flattened(
+    d: Mapping, /, *, key_type: type = object, val_type: type = Mapping
+) -> bool:
+    r"""Check if mapping is flattened."""
+    return all(
+        isinstance(key, key_type) and not isinstance(val, val_type)
+        for key, val in d.items()
+    )
+
+
 def flatten_dict(
-    d: dict[str, Any],
+    d: NestedMapping[K, Any],
     /,
     *,
-    recursive: bool = True,
-    join_fn: Callable[[Sequence[str]], str] = ".".join,
-) -> dict[str, Any]:
-    r"""Flatten dictionaries recursively."""
-    result = {}
+    recursive: bool | int = True,
+    join_fn: Callable[[Iterable[K]], K2] = ".".join,  # type: ignore[assignment]
+    split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),  # type: ignore[attr-defined]
+) -> dict[K2, Any]:
+    r"""Flatten dictionaries recursively.
+
+    Args:
+        d: dictionary to flatten
+        recursive: whether to flatten recursively. If `recursive` is an integer,
+            then it flattens recursively up to `recursive` levels.
+        join_fn: function to join keys
+        split_fn: function to split keys
+
+    Examples:
+        Using ``join_fn = ".".join`` and ``split_fn = lambda s: s.split(".")``
+        will combine string keys like ``"a"`` and ``"b"`` into ``"a.b"``.
+
+        >>> flatten_dict({"a": {"b": 1, "c": 2}})
+        {'a.b': 1, 'a.c': 2}
+
+        >>> flatten_dict({"a": {"b": {"x": 2}, "c": 2}})
+        {'a.b.x': 2, 'a.c': 2}
+
+        >>> flatten_dict({"a": {"b": 1, "c": 2}}, recursive=False)
+        {'a': {'b': 1, 'c': 2}}
+
+        Using ``join_fn = tuple`` and ``split_fn = lambda s: s`` will combine
+        keys like ``("a", "b")`` and ``("a", "c")`` into ``("a", "b", "c")``.
+
+        >>> flatten_dict({"a": {"b": 1, "c": 2}}, join_fn=tuple, split_fn=lambda x: x)
+        {('a', 'b'): 1, ('a', 'c'): 2}
+
+        >>> flatten_dict({"a": {"b": {"x": 2}, "c": 2}}, join_fn=tuple, split_fn=lambda x: x)
+        {('a', 'b', 'x'): 2, ('a', 'c'): 2}
+
+        >>> flatten_dict({"a": {17: "foo", 18: "bar"}}, join_fn=tuple, split_fn=lambda x: x)
+        {('a', 17): 'foo', ('a', 18): 'bar'}
+
+        When trying to flatten a partially flattened dictionary, setting recursive=<int>.
+
+        >>> flatten_dict({"a": {(1, True): "foo", (2, False): "bar"}}, join_fn=tuple, split_fn=lambda x: x)
+        {('a', (1, True)): 'foo', ('a', (2, False)): 'bar'}
+
+        >>> flatten_dict({"a": {(1, True): "foo", (2, False): "bar"}}, join_fn=tuple, split_fn=lambda x: x, recursive=1)
+        {('a', 1, True): 'foo', ('a', 2, False): 'bar'}
+    """
+    if not recursive:
+        return cast(dict[K2, Any], dict(d))
+
+    recursive = recursive if isinstance(recursive, bool) else recursive - 1
+    result: dict[K2, Any] = {}
     for key, item in d.items():
-        if isinstance(item, dict) and recursive:
-            subdict = flatten_dict(item, recursive=True, join_fn=join_fn)
-            for subkey, subitem in subdict.items():
-                result[join_fn((key, subkey))] = subitem
+        if isinstance(item, Mapping):
+            for subkey, subitem in flatten_dict(
+                item,
+                recursive=recursive,
+                join_fn=join_fn,
+                split_fn=split_fn,
+            ).items():
+                new_key = join_fn((key, *split_fn(subkey)))
+                result[new_key] = subitem
         else:
-            result[key] = item
+            new_key = join_fn((key,))
+            result[new_key] = item
     return result
 
 
 def unflatten_dict(
-    d: dict[str, Any],
+    d: Mapping[K2, Any],
     /,
     *,
-    recursive: bool = True,
-    split_fn: Callable[[str], Sequence[str]] = lambda s: s.split(".", maxsplit=1),
-) -> dict[str, Any]:
-    r"""Unflatten dictionaries recursively."""
-    result: dict[str, Any] = {}
+    recursive: bool | int = True,
+    join_fn: Callable[[Iterable[K]], K2] = ".".join,  # type: ignore[assignment]
+    split_fn: Callable[[K2], Iterable[K]] = lambda s: s.split("."),  # type: ignore[attr-defined]
+) -> NestedDict[K, Any]:
+    r"""Unflatten dictionaries recursively.
+
+    Examples:
+        Using ``join_fn = ".".join`` and ``split_fn = lambda s: s.split(".")``
+        will split up string keys like ``"a.b.c"`` into ``{"a": {"b": {"c": ...}}}``.
+
+        >>> unflatten_dict({'a.b': 1, 'a.c': 2})
+        {'a': {'b': 1, 'c': 2}}
+
+        >>> unflatten_dict({'a.b': 1, 'a.c': 2}, recursive=False)
+        {'a.b': 1, 'a.c': 2}
+
+        Using ``join_fn = tuple`` and ``split_fn = lambda s: s`` will split up
+        keys like ``("a", "b", "c")`` into ``{"a": {"b": {"c": ...}}}``.
+
+        >>> unflatten_dict({('a', 17): 'foo', ('a', 18): 'bar'}, join_fn=tuple, split_fn=lambda x: x)
+        {'a': {17: 'foo', 18: 'bar'}}
+    """
+    if not recursive:
+        return cast(dict[K, Any], dict(d))
+
+    recursive = recursive if isinstance(recursive, bool) else recursive - 1
+    result: dict[K, Any] = {}
     for key, item in d.items():
-        split = split_fn(key)
-        result.setdefault(split[0], {})
-        if len(split) > 1 and recursive:
-            assert len(split) == 2
-            subdict = unflatten_dict(
-                {split[1]: item}, recursive=recursive, split_fn=split_fn
+        outer_key, *inner_keys = split_fn(key)
+        if inner_keys:
+            assert isinstance(d, Mapping), "d must be a Mapping!"
+            result.setdefault(outer_key, {})
+            result[outer_key] |= unflatten_dict(
+                {join_fn(inner_keys): item},
+                recursive=recursive,
+                split_fn=split_fn,
+                join_fn=join_fn,
             )
-            result[split[0]] |= subdict
         else:
-            result[split[0]] = item
+            result[outer_key] = item
     return result
 
 
@@ -190,77 +273,48 @@ def deep_kval_update(d: dict, /, **new_kvals: Any) -> dict:
 
 @overload
 def prepend_path(
-    files: Mapping[K, PathLike],
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = False,
+    files: Mapping[K, PathLike], parent: Path, /, *, keep_none: bool = ...
 ) -> dict[K, Path]: ...
 @overload
 def prepend_path(
-    files: list[PathLike],
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = False,
+    files: list[PathLike], parent: Path, /, *, keep_none: bool = ...
 ) -> list[Path]: ...
 @overload
 def prepend_path(
-    files: PathLike,
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = False,
+    files: PathLike, parent: Path, /, *, keep_none: bool = ...
 ) -> Path: ...
 @overload
 def prepend_path(
-    files: Nested[PathLike],
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = False,
+    files: Nested[PathLike], parent: Path, /, *, keep_none: bool = ...
 ) -> Nested[Path]: ...
 @overload
 def prepend_path(
-    files: Nested[Optional[PathLike]],
-    parent: Path,
-    /,
-    *,
-    keep_none: Literal[False] = False,
+    files: Nested[Optional[PathLike]], parent: Path, /, *, keep_none: Literal[False]
 ) -> Nested[Path]: ...
 @overload
 def prepend_path(
-    files: Nested[Optional[PathLike]],
-    parent: Path,
-    /,
-    *,
-    keep_none: Literal[True] = True,
+    files: Nested[Optional[PathLike]], parent: Path, /, *, keep_none: Literal[True]
 ) -> Nested[Optional[Path]]: ...
-def prepend_path(
-    files: Nested[Optional[PathLike]],
-    parent: Path,
-    /,
-    *,
-    keep_none: bool = True,
-) -> Nested[Optional[Path]]:
+def prepend_path(files, parent, /, *, keep_none=True):
     r"""Prepends the given path to all files in nested iterable.
 
     If `keep_none=True`, then `None` values are kept, else they are replaced by `parent`.
     """
     # TODO: change it to apply_nested in python 3.10
-
-    if files is None:
-        return None if keep_none else parent
-    if isinstance(files, str | Path | os.PathLike):
-        return parent / Path(files)
-    if isinstance(files, Mapping):
-        return {
-            k: prepend_path(v, parent, keep_none=keep_none) for k, v in files.items()  # type: ignore[arg-type]
-        }
-    # TODO https://github.com/python/mypy/issues/11615
-    if isinstance(files, Collection):
-        return [prepend_path(f, parent, keep_none=keep_none) for f in files]  # type: ignore[arg-type]
-    raise TypeError(f"Unsupported type: {type(files)}")
+    match files:
+        case None:
+            return None if keep_none else parent
+        case str() | Path() | os.PathLike() as path:
+            return parent / Path(path)
+        case Mapping() as mapping:
+            return {
+                k: prepend_path(v, parent, keep_none=keep_none)
+                for k, v in mapping.items()
+            }
+        case Collection() as coll:
+            return [prepend_path(f, parent, keep_none=keep_none) for f in coll]
+        case _:
+            raise TypeError(f"Unsupported type: {type(files)}")
 
 
 def paths_exists(paths: Nested[Optional[PathLike]], /) -> bool:
@@ -279,15 +333,14 @@ def paths_exists(paths: Nested[Optional[PathLike]], /) -> bool:
             return all(paths_exists(f) for f in mapping.values())
         case Iterable() as iterable:
             return all(paths_exists(f) for f in iterable)
-
-    raise ValueError(f"Unknown type for rawdata_file: {type(paths)}")
+        case _:
+            raise TypeError(f"Unknown type for rawdata_file: {type(paths)}")
 
 
 def initialize_from_config(config: dict[str, Any], /) -> nn.Module:
     r"""Initialize `nn.Module` from a config object."""
     assert "__name__" in config, "__name__ not found in dict!"
     assert "__module__" in config, "__module__ not found in dict!"
-    __logger__.debug("Initializing %s", config)
     config = config.copy()
     module = import_module(config.pop("__module__"))
     cls = getattr(module, config.pop("__name__"))
@@ -380,7 +433,7 @@ def repackage_zip(path: PathLike, /) -> None:
         )
 
         if not requirements:
-            __logger__.info("%s: skipping repackage_zip.", original_path)
+            print(f"Skipping repackage_zip for {original_path}.")
             return
 
     # create a temporary directory

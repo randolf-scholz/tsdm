@@ -1,13 +1,37 @@
 #!/usr/bin/env python
 
-import matplotlib.pyplot as plt
-import numpy as np
-from numpy.typing import NDArray
+from typing import Generic, Literal, TypeVar
 
-axes: NDArray[np.object_[plt.Axes]]  # type: ignore[type-var]
-fig: plt.Figure
-fig, axes = plt.subplots(2, 2, sharex=True, sharey=True)
+# class A(Generic[K]):
+#     table_names: list[K]
+#
+#
+# class B(A[KEYS]):
+#     table_names = ["foo", "bar"]  # ❌
+#     # Expression of type "list[str]" cannot be assigned to declared type "list[KEYS]"
 
-for ax in axes.flat:
-    # reveal_type(axes)
-    ax.set_title("A subplot")
+#
+# class C(A[KEYS]): ...
+#
+#
+# reveal_type(C.table_names)  # "C.table_names" is "list[Literal['foo', 'bar']]"
+# C.table_names = ["foo", "bar"]  # ✅
+#
+
+
+K = TypeVar("K")
+
+
+class A(Generic[K]):
+    table_names: list[K]
+
+
+class B(A[int]):
+    table_names = [
+        "1",
+        "2",
+    ]  # "list[str]" cannot be assigned to declared type "list[int]" ✅
+
+
+class C(A[int]):
+    table_names = [1, 2]  # ✅

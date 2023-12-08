@@ -159,16 +159,16 @@ HR 	Heart rate (beats per minute)
 
 __all__ = ["PhysioNet2019"]
 
-from typing import Literal, TypeAlias
 from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from tqdm.autonotebook import tqdm
+from typing_extensions import Literal, TypeAlias
 
+from tsdm.data import InlineTable, make_dataframe, remove_outliers
 from tsdm.datasets.base import MultiTableDataset
-from tsdm.utils.data import InlineTable, make_dataframe, remove_outliers
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
@@ -305,15 +305,15 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
             "sha256:8a88d69a5f64bc9a87d869f527fcc2741c0712cb9a7cb1f5cdcb725336b4c8cc"
         ),
     }
-    table_names = {
-        "timeseries": DataFrame,
-        "timeseries_description": DataFrame,
-        "metadata": DataFrame,
-        "metadata_description": DataFrame,
-        "raw_timeseries": DataFrame,
-        "raw_metadata": DataFrame,
-    }
-    table_schemas = {
+    table_names = [  # pyright: ignore
+        "timeseries",
+        "timeseries_description",
+        "metadata",
+        "metadata_description",
+        "raw_timeseries",
+        "raw_metadata",
+    ]
+    table_schemas = {  # pyright: ignore
         "timeseries": {
             # fmt: off
             "HR"               : "float32[pyarrow]",

@@ -17,7 +17,8 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from typing_extensions import deprecated
 
 from tsdm.constants import NULL_VALUES
-from tsdm.datasets.base import MultiTableDataset, TimeSeriesCollection
+from tsdm.data.timeseries import TimeSeriesCollection
+from tsdm.datasets.base import MultiTableDataset
 
 # fmt: off
 column_dtypes = {

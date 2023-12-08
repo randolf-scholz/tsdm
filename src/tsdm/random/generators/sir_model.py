@@ -69,13 +69,11 @@ class SIR(IVP_GeneratorBase[NDArray]):
         state = np.asarray(state)
 
         S, I, R = np.moveaxis(state, -1, 0)  # noqa: E741
-        x = np.stack(
-            [
-                -self.beta * I * S,
-                self.beta * I * S - self.alpha * I,
-                self.alpha * I,
-            ]
-        )
+        x = np.stack([
+            -self.beta * I * S,
+            self.beta * I * S - self.alpha * I,
+            self.alpha * I,
+        ])
         return np.einsum("..., ...d -> ...d", np.ones_like(t), x)
 
     def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:

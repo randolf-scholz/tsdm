@@ -14,9 +14,17 @@ __all__ = [
 
 import warnings
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from typing import Any, Generic, Optional, TypeAlias, Union, overload
 
-from typing_extensions import Self
+from typing_extensions import (
+    Any,
+    Generic,
+    Optional,
+    Self,
+    TypeAlias,
+    Union,
+    cast,
+    overload,
+)
 
 from tsdm.types.protocols import SupportsKeysAndGetItem
 from tsdm.types.variables import (
@@ -122,19 +130,13 @@ class LazyDict(dict[K, V]):
     def __init__(self, /, **kwargs: FuncSpec | V) -> None: ...
     @overload
     def __init__(
-        self,
-        mapping: Mapping[K, FuncSpec | V],
-        /,
-        **kwargs: FuncSpec | V,
+        self, mapping: Mapping[K, FuncSpec | V], /, **kwargs: FuncSpec | V
     ) -> None: ...
     @overload
     def __init__(
-        self,
-        iterable: Iterable[tuple[K, FuncSpec | V]],
-        /,
-        **kwargs: FuncSpec | V,
+        self, iterable: Iterable[tuple[K, FuncSpec | V]], /, **kwargs: FuncSpec | V
     ) -> None: ...
-    def __init__(self, /, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, /, *args, **kwargs):
         r"""Initialize the dictionary."""
         super().__init__()
         self.update(*args, **kwargs)
@@ -156,14 +158,19 @@ class LazyDict(dict[K, V]):
         r"""Return the representation of the dictionary."""
         return repr_mapping(self)
 
-    def __or__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
+    def __or__(
+        self, other: Mapping[K_other, T], /
+    ) -> "LazyDict[K | K_other, V | T]":  # pyright: ignore
         new = self.copy()
         new.update(other)  # type: ignore[arg-type]
         return new  # type: ignore[return-value]
 
-    def __ror__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
+    def __ror__(
+        self, other: Mapping[K_other, T], /
+    ) -> "LazyDict[K | K_other, V | T]":  # pyright: ignore
         if isinstance(other, self.__class__):
-            return other | self
+            return other | self  # pyright: ignore
+
         warnings.warn(
             "Using __ror__ with a non-LazyDict is not recommended, "
             "It causes all values to be evaluated.",
@@ -171,8 +178,9 @@ class LazyDict(dict[K, V]):
             source=LazyDict,
             stacklevel=2,
         )
-        new = other.copy() if isinstance(other, LazyDict) else LazyDict(other)
-        new.update(self.asdict())
+
+        new = cast("LazyDict[K | K_other, V | T]", LazyDict(other))
+        new.update(self)  # type: ignore[arg-type]
         return new
 
     def __ior__(self: Self, other: "SupportsKeysAndGetItem[K, V]", /) -> Self:  # type: ignore[override, misc]

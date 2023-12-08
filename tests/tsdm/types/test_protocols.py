@@ -1,235 +1,279 @@
-"""Test the Array protocol."""
+r"""Test other protocols."""
 
-import logging
+from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import NamedTuple
 
 import numpy
-import pyarrow as pa
+import pandas
 import torch
-from numpy.typing import NDArray
-from pandas import DataFrame, Index, Series
+from numpy._typing import NDArray
 from pytest import mark
-from torch import Tensor
-from typing_extensions import get_protocol_members
 
 from tsdm.types.protocols import (
-    Array,
-    MutableArray,
+    Dataclass,
     NTuple,
-    NumericalArray,
-    Shape,
-    SupportsShape,
-    assert_protocol,
+    SequenceProtocol,
+    ShapeLike,
+    SupportsKeysAndGetItem,
+    SupportsKwargs,
+    is_dataclass,
+    is_namedtuple,
 )
-
-__logger__ = logging.getLogger(__name__)
-
-
-ARRAY_PROTOCOLS = (Array, NumericalArray, MutableArray)
+from tsdm.types.variables import any_var as T
 
 
-ARRAYS = {
-    "torch_tensor": torch.tensor([1, 2, 3]),
-    "numpy_ndarray": numpy.ndarray([1, 2, 3]),
-    "pandas_series": Series([1, 2, 3]),
-    "pandas_index": Index([1, 2, 3]),
-    "pandas_dataframe": DataFrame(numpy.random.randn(3, 3)),
-    "pyarrow_array": pa.array([1, 2, 3]),
-    "pyarrow_table": pa.table({"a": [1, 2, 3], "b": [4, 5, 6]}),
-    # "python_array": memoryview(builtin_array("i", [1, 2, 3])),
-}
-
-NUMERICAL_ARRAYS = {
-    "torch_tensor": torch.tensor([1, 2, 3]),
-    "numpy_ndarray": numpy.ndarray([1, 2, 3]),
-    "pandas_series": Series([1, 2, 3]),
-    "pandas_dataframe": DataFrame(numpy.random.randn(3, 3)),
-}
-
-
-def test_shape() -> None:
+def test_shapelike_protocol() -> None:
     """Test the Shape protocol."""
     data = [1, 2, 3]
-    torch_tensor: Tensor = torch.tensor(data)
-    numpy_ndarray: NDArray = numpy.ndarray(data)
-    pandas_series: Series = Series(data)
-    pandas_index: Index = Index(data)
+    torch_tensor: torch.Tensor = torch.tensor(data)
+    numpy_ndarray: NDArray = numpy.array(data)
+    pandas_series: pandas.Series = pandas.Series(data)
+    pandas_index: pandas.Index = pandas.Index(data)
 
-    x: Shape = (1, 2, 3)
-    y: Shape = torch_tensor.shape
-    z: Shape = numpy_ndarray.shape
-    w: Shape = pandas_series.shape
-    v: Shape = pandas_index.shape
-    assert isinstance(x, Shape)
-    assert isinstance(y, Shape)
-    assert isinstance(z, Shape)
-    assert isinstance(w, Shape)
-    assert isinstance(v, Shape)
+    x: ShapeLike = (1, 2, 3)
+    y: ShapeLike = torch_tensor.shape
+    z: ShapeLike = numpy_ndarray.shape
+    w: ShapeLike = pandas_series.shape
+    v: ShapeLike = pandas_index.shape
+    assert isinstance(x, ShapeLike)
+    assert isinstance(y, ShapeLike)
+    assert isinstance(z, ShapeLike)
+    assert isinstance(w, ShapeLike)
+    assert isinstance(v, ShapeLike)
 
 
-def test_ntuple() -> None:
+def test_dataclass_protocol() -> None:
+    """Test the Dataclass protocol."""
+
+    @dataclass
+    class MyDataClass:
+        """Dummy dataclass."""
+
+        x: int
+        y: int
+
+    class Bar:
+        """Dummy class."""
+
+        x: int
+        y: int
+
+        def __init__(self, x: int, y: int):
+            self.x = x
+            self.y = y
+
+    # type checking
+    _typ: type[Dataclass] = MyDataClass
+    _obj: Dataclass = MyDataClass(1, 2)
+    del _typ, _obj
+
+    foo = MyDataClass(1, 2)
+    bar = Bar(1, 2)
+
+    # test match-case
+    match foo:
+        case Dataclass():
+            pass
+        case _:
+            raise AssertionError
+
+    match foo:
+        case MyDataClass(1, 2):
+            pass
+        case _:
+            raise AssertionError
+
+    match bar:
+        case Dataclass():
+            raise AssertionError
+        case _:
+            pass
+
+    # check that Foo has __dataclass_fields__
+    extra_attrs = set(dir(MyDataClass)) - set(dir(Bar))
+    print(f"Additional attributes: {extra_attrs}")
+    assert "__dataclass_fields__" in extra_attrs
+    assert isinstance(MyDataClass.__dataclass_fields__, dict)
+
+    # check that foo has __dataclass_fields__
+    extra_attrs = set(dir(foo)) - set(dir(bar))
+    print(f"Additional attributes: {extra_attrs}")
+    assert "__dataclass_fields__" in extra_attrs
+    assert isinstance(foo.__dataclass_fields__, dict)
+
+    # check is_dataclass utility
+    assert is_dataclass(foo)
+    assert is_dataclass(MyDataClass)
+    assert not is_dataclass(bar)
+    assert not is_dataclass(Bar)
+
+    # check that Foo is dataclass
+    assert isinstance(foo, Dataclass)
+    assert issubclass(MyDataClass, Dataclass)  # type: ignore[misc]
+    assert not isinstance(bar, Dataclass)
+    assert not issubclass(Bar, Dataclass)  # type: ignore[misc]
+
+
+@mark.xfail(reason="Attribute __dataclass_fields__ does not exist on class.")
+def test_dataclass_protocol_itself() -> None:
+    assert issubclass(Dataclass, Dataclass)  # type: ignore[misc]
+
+
+def test_namedtuple_protocol_itself() -> None:
+    assert issubclass(NTuple, NTuple)  # type: ignore[misc]
+
+
+def test_namedtuple_protocol() -> None:
     """Test the NTuple protocol."""
 
-    class Point(NamedTuple):
+    class MyTuple(NamedTuple):
         """A point in 2D space."""
 
-        x: float
-        y: float
+        x: int
+        y: int
 
-    # check that NamedTuples are tuples.
-    assert issubclass(Point, tuple)
-    assert isinstance(Point(1, 2), tuple)
+    class Bar(tuple[int, int]):
+        """A point in 2D space."""
 
-    # check against plain tuple
-    # assert issubclass(NTuple, tuple)
-    assert not issubclass(tuple, NTuple)  # type: ignore[misc]
+        x: int
+        y: int
 
-    assert isinstance((1, 2), tuple)
-    assert not isinstance((1, 2), NTuple)
+    # type checking
+    _typ: type[NTuple] = MyTuple
+    _obj: NTuple = MyTuple(1, 2)
+    del _typ, _obj
 
-    assert issubclass(Point, NTuple)  # type: ignore[misc]
-    assert issubclass(Point, tuple)
-    assert not issubclass(tuple, Point)
-    assert not issubclass(NTuple, Point)
+    foo = MyTuple(1, 2)
+    bar = Bar((1, 2))
 
-    assert isinstance(Point(1, 2), NTuple)
-    assert not isinstance((1, 2), Point)
+    # test match-case compatibility
+    match foo:
+        case NTuple():
+            pass
+        case _:
+            raise AssertionError
+
+    match foo:
+        case MyTuple(1, 2):
+            pass
+        case _:
+            raise AssertionError
+
+    match bar:
+        case NTuple():
+            raise AssertionError
+        case _:
+            pass
+
+    # check that Foo has _fields
+    extra_attrs = set(dir(MyTuple)) - set(dir(Bar))
+    print(f"Additional attributes: {extra_attrs}")
+    assert "_fields" in extra_attrs
+    assert isinstance(MyTuple._fields, tuple)
+
+    # check that foo has _fields
+    extra_attrs = set(dir(foo)) - set(dir(bar))
+    print(f"Additional attributes: {extra_attrs}")
+    assert "_fields" in extra_attrs
+    assert isinstance(foo._fields, tuple)
+
+    # check is_namedtuple utility
+    assert is_namedtuple(foo)
+    assert is_namedtuple(MyTuple)
+    assert not is_namedtuple(bar)
+    assert not is_namedtuple(Bar)
+
+    # check that point is tuple
+    assert isinstance(foo, tuple)
+    assert issubclass(MyTuple, tuple)
+    assert not issubclass(tuple, MyTuple)
+
+    # check that point is namedtuple
+    assert isinstance(foo, NTuple)
+    assert issubclass(MyTuple, NTuple)  # type: ignore[misc]
+    assert not issubclass(NTuple, MyTuple)
+
+    # check that tuple is not point
+    assert not isinstance(bar, NTuple)
+    assert not isinstance(bar, MyTuple)
 
 
-def test_table() -> None:
-    """Test the Table protocol (shape and __len__ and __getitem__)."""
-    LOGGER = __logger__.getChild(SupportsShape.__name__)
-    LOGGER.info("Testing.")
+def test_supportskwargs() -> None:
+    class Foo:
+        r"""Dummy class that supports `**kwargs`."""
 
-    torch_tensor: Tensor = torch.tensor([1, 2, 3])
-    torch_table: SupportsShape = torch_tensor
-    assert isinstance(
-        torch_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(torch_table))}"
+        @staticmethod
+        def keys() -> list[str]:
+            return ["some", "strings"]
 
-    numpy_ndarray: NDArray = numpy.ndarray([1, 2, 3])
-    numpy_table: SupportsShape = numpy_ndarray
-    assert isinstance(
-        numpy_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(numpy_table))}"
+        def __getitem__(self, key: str) -> int:
+            return len(key)
 
-    pandas_frame: DataFrame = DataFrame(numpy.random.randn(3, 3))
-    pandas_table: SupportsShape = pandas_frame
-    assert isinstance(
-        pandas_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_table))}"
+    class Bar:
+        r"""Dummy class that does not support `**kwargs`."""
 
-    pandas_series: Series = Series([1, 2, 3])
-    pandas_series_array: SupportsShape = pandas_series
-    assert isinstance(
-        pandas_series_array, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_series_array))}"
+        @staticmethod
+        def keys() -> list[int]:
+            return [1, 2]
 
-    pandas_index: Index = Index([1, 2, 3])
-    pandas_index_array: SupportsShape = pandas_index
-    assert isinstance(
-        pandas_index_array, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pandas_index_array))}"
+        def __getitem__(self, key: int) -> int:
+            return key
 
-    pyarrow_frame: pa.Table = pa.Table.from_pandas(pandas_frame)
-    pyarrow_table: SupportsShape = pyarrow_frame
-    assert isinstance(
-        pyarrow_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_table))}"
+    assert isinstance(Foo(), SupportsKeysAndGetItem)
+    assert isinstance(Bar(), SupportsKeysAndGetItem)
+    assert isinstance(Foo(), SupportsKwargs)
+    assert not isinstance(Bar(), SupportsKwargs)
 
-    pyarrow_series: pa.Array = pa.Array.from_pandas(pandas_series)
-    pyarrow_series_table: SupportsShape = pyarrow_series
-    assert isinstance(
-        pyarrow_table, SupportsShape
-    ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(pyarrow_series_table))}"
 
-    tables = [
-        torch_table,
-        numpy_table,
-        pandas_table,
-        pandas_series_array,
-        pandas_index_array,
-        pyarrow_table,
-        pyarrow_series_table,
+def test_sequence_protocol() -> None:
+    """Validate the SequenceProtocol class."""
+
+    def foo(x: Sequence[T]) -> SequenceProtocol[T]:
+        return x
+
+    # checking list
+    seq_list: SequenceProtocol[int] = [1, 2, 3]
+    assert isinstance(seq_list, Sequence)
+    assert isinstance(seq_list, SequenceProtocol)
+
+    # check tuple
+    seq_tup: SequenceProtocol[int] = (1, 2, 3)
+    assert isinstance(seq_tup, Sequence)
+    assert isinstance(seq_tup, SequenceProtocol)
+
+    # check string
+    seq_str: str = "foo"
+    assert isinstance(seq_str, Sequence)
+
+
+def test_get_interscetion_indexable() -> None:
+    containers = [
+        list,
+        tuple,
+        pandas.Series,
+        pandas.Index,
+        numpy.ndarray,
+        torch.Tensor,
     ]
-    shared_attrs = set.intersection(*(set(dir(tab)) for tab in tables))
-    __logger__.info("Shared attributes/methods of Tables: %s", shared_attrs)
-
-
-# @pytest.mark.parametrize("array", TEST_ARRAYS)
-@mark.parametrize("protocol", ARRAY_PROTOCOLS)
-def test_numerical_arrays(protocol: type) -> None:
-    """Test that all arrays share the same attributes."""
-    protocol_attrs = get_protocol_members(protocol)
-    for key, array in NUMERICAL_ARRAYS.items():
-        missing_attrs = protocol_attrs - set(dir(array))
-        assert not missing_attrs, f"{key}: missing Attributes: {missing_attrs}"
-        assert isinstance(array, protocol), f"{key} is not a {protocol.__name__}!"
-
-    shared_attrs = set.intersection(
-        *(set(dir(arr)) for arr in NUMERICAL_ARRAYS.values())
-    )
-    superfluous_attrs = shared_attrs - protocol_attrs
-    print(
-        f"Shared attributes/methods not covered by {protocol.__name__!r}:"
-        f" {superfluous_attrs}"
-    )
-
-
-# NOTE: Intentionally not using parametrize to allow type-checking
-def test_arrays_jointly() -> None:
-    """Test the Array protocol (singular dtype and ndim)."""
-    # list of all arrays
-    arrays: list = []
-
-    # test torch
-    torch_tensor: Tensor = torch.tensor([1, 2, 3])
-    assert_protocol(torch_tensor, Array)
-    arrays.append(torch_tensor)
-
-    # test numpy
-    numpy_array: Array = numpy.ndarray([1, 2, 3])
-    assert_protocol(numpy_array, Array)
-    arrays.append(numpy_array)
-
-    # test pandas Series
-    pandas_series: Array = Series([1, 2, 3])
-    assert_protocol(pandas_series, Array)
-    arrays.append(pandas_series)
-
-    # test pandas Index
-    pandas_index: Array = Index([1, 2, 3])
-    assert_protocol(pandas_index, Array)
-    arrays.append(pandas_index)
-
-    # test dataframe
-    pandas_frame: Array = DataFrame(numpy.random.randn(3, 3))
-    assert_protocol(pandas_frame, Array)
-    arrays.append(pandas_frame)
-
-    # test pyarrow.Array
-    pyarrow_array: Array = pa.array([1, 2, 3])
-    assert_protocol(pyarrow_array, Array)
-    arrays.append(pyarrow_array)
-
-    # test pyarrow.Table
-    pyarrow_table: Array = pa.table({"a": [1, 2, 3], "b": [4, 5, 6]})
-    assert_protocol(pyarrow_table, Array)
-    arrays.append(pyarrow_table)
-
-    # # test python array (missing: __array__)
-    # python_array: Array = memoryview(builtin_array("i", [1, 2, 3]))
-    # # assert_protocol(python_array, Array)
-    # arrays.append(python_array)
-
-    # test combined
-    shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
-    superfluous_attrs = shared_attrs - set(dir(Array))
-    assert not superfluous_attrs, f"Shared attributes/methods: {superfluous_attrs}"
-    __logger__.info("Shared attributes/methods of Arrays: %s", shared_attrs)
-
-
-@mark.parametrize("name", ARRAYS)
-def test_array_all(name: str) -> None:
-    """Test the Array protocol (singular dtype and ndim)."""
-    assert_protocol(ARRAYS[name], Array)
+    shared_attrs = set.intersection(*[set(dir(c)) for c in containers])
+    excluded_attrs = {
+        "__init__",
+        "__getattribute__",
+        "__sizeof__",
+        "__init_subclass__",
+        "__subclasshook__",
+        "__getstate__",
+        "__dir__",
+        "__doc__",
+        "__delattr__",
+        "__class__",
+        "__format__",
+        "__reduce_ex__",
+        "__setattr__",
+        "__repr__",
+        "__str__",
+        "__reduce__",
+    }
+    attrs = sorted(shared_attrs - excluded_attrs)
+    print("Shared attributes:\n" + "\n".join(attrs))

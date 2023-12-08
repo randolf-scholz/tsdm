@@ -12,30 +12,17 @@ __all__ = [
     # Abstract Base Classes
     "PreTrainedBase",
     # Classes
-    # "OldLinODEnet",
     "LinODEnet",
-    # Encoders
-    # "LinODEnetEncoder",
-    # Types
-    "Model",
     # Constants
     "MODELS",
 ]
 
-from typing import Final, TypeAlias
-
-from torch import nn
 
 from tsdm.models.pretrained.base import PreTrained, PreTrainedBase
 from tsdm.models.pretrained.linodenet import LinODEnet
 
-Model: TypeAlias = PreTrainedBase
-r"""Type hint for models."""
-
-MODELS: Final[dict[str, type[Model]]] = {
+MODELS: dict[str, type[PreTrainedBase]] = {
     # "OldLinODEnet": OldLinODEnet,
     "LinODEnet": LinODEnet,
 }
 r"""Dictionary of all available models."""
-
-del Final, TypeAlias, nn

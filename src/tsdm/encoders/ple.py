@@ -19,7 +19,6 @@ References:
 #
 #     def __init__(self, bins: list[float] = None) -> None:
 #         """Bins."""
-#         super().__init__()
 #         self.bins = bins
 #
 #     def encode(self, data: T, /) -> S:

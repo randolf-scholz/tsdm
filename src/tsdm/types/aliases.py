@@ -1,6 +1,8 @@
 """Collection of Useful Type Aliases."""
 
 __all__ = [
+    # New Types
+    "SplitID",
     # namedtuple
     # Custom Type Aliases
     "Axes",
@@ -49,6 +51,7 @@ import os
 from collections.abc import (
     Callable,
     Collection,
+    Hashable,
     Iterable,
     Mapping,
     MutableMapping,
@@ -56,12 +59,12 @@ from collections.abc import (
 )
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, TypeAlias
 
 import numpy as np
 import torch
 from pandas import DataFrame, Index, MultiIndex, Series
 from pandas.core.dtypes.base import ExtensionDtype
+from typing_extensions import Any, TypeAlias
 
 from tsdm.types.protocols import Lookup
 from tsdm.types.variables import (
@@ -91,6 +94,8 @@ DType: TypeAlias = np.dtype | torch.dtype | type[ExtensionDtype]
 r"""TypeAlias for dtypes."""
 ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]
 r"""Type Alias for container-like objects."""
+SplitID: TypeAlias = Hashable
+"""Type Alias for split identifiers."""
 # endregion Custom Type Aliases --------------------------------------------------------
 
 

@@ -11,7 +11,6 @@ __all__ = [
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, NamedTuple
 
 import torch
 from pandas import DataFrame, Index, MultiIndex
@@ -19,11 +18,12 @@ from sklearn.model_selection import train_test_split
 from torch import Tensor, nan as NAN, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
+from typing_extensions import Any, NamedTuple
 
+from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FrameEncoder, MinMaxScaler, StandardScaler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.data import is_partition
 from tsdm.utils.strings import repr_namedtuple
 
 
@@ -184,12 +184,12 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
     test_size = 0.15  # of total
     valid_size = 0.2  # of train split size, i.e. 0.85*0.2=0.17
 
-    preprocessor: FrameEncoder[StandardScaler, dict[Any, MinMaxScaler]]
+    preprocessor: FrameEncoder
 
     def __init__(self, *, normalize_time: bool = True) -> None:
         super().__init__()
         self.preprocessor = FrameEncoder(
-            column_encoders=StandardScaler(),
+            {self.dataset.columns: StandardScaler()},
             index_encoders={"time_stamp": MinMaxScaler()},
         )
         self.normalize_time = normalize_time
@@ -208,8 +208,8 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         ts = ds.table
         self.preprocessor.fit(ts)
         ts = self.preprocessor.encode(ts)
-        index_encoder = self.preprocessor.index_encoders["time_stamp"]
-        self.observation_time /= index_encoder.params.xmax  # type: ignore[assignment]
+        index_encoder: MinMaxScaler = self.preprocessor.index_encoders["time_stamp"]  # type: ignore[assignment]
+        self.observation_time /= index_encoder.params.xmax
 
         # drop values outside 5 sigma range
         ts = ts[(-5 < ts) & (ts < 5)]
