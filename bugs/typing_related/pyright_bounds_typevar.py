@@ -7,7 +7,6 @@ from typing import (
     Iterable,
     Iterator,
     Literal,
-    Never,
     TypeAlias,
     TypeVar,
     assert_type,

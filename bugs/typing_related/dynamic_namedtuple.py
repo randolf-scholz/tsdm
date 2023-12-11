@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from collections.abc import Iterable
-from typing import NamedTuple, Protocol, TypeGuard, TypeVar, cast
+from typing import TypeVar, cast
 
 T = TypeVar("T")
 

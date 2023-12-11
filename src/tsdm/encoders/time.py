@@ -111,6 +111,9 @@ class Time2Float(BaseEncoder):
         raise NotImplementedError
 
 
+# TimeArray = TypeVar(TimeArray, bound="TimeArray")
+
+
 class DateTimeEncoder(BaseEncoder[Series, Series]):
     r"""Encode DateTime as Float."""
 
@@ -126,7 +129,7 @@ class DateTimeEncoder(BaseEncoder[Series, Series]):
     r"""Whether to encode as index of Series."""
     name: Optional[str] = None
     r"""The name of the original Series."""
-    dtype: np.dtype
+    original_dtype: np.dtype
     r"""The original dtype of the Series."""
     freq: Optional[Any] = None
     r"""The frequency attribute in case of DatetimeIndex."""
@@ -145,7 +148,7 @@ class DateTimeEncoder(BaseEncoder[Series, Series]):
 
         self.offset = Timestamp(Series(data).iloc[0])
         self.name = None if data.name is None else str(data.name)
-        self.dtype = data.dtype
+        self.original_dtype = data.dtype
         if isinstance(data, DatetimeIndex):
             self.freq = data.freq
 
@@ -160,11 +163,13 @@ class DateTimeEncoder(BaseEncoder[Series, Series]):
     def decode(self, data: Series, /) -> Series | DatetimeIndex:
         self.LOGGER.debug("Decoding %s", type(data))
         converted = pd.to_timedelta(data, unit=self.unit)
-        datetimes = Series(converted + self.offset, name=self.name, dtype=self.dtype)
+        datetimes = Series(
+            converted + self.offset, name=self.name, dtype=self.original_dtype
+        )
         if self.kind == Series:
             return datetimes.round(self.base_freq)
         return DatetimeIndex(
-            datetimes, freq=self.freq, name=self.name, dtype=self.dtype
+            datetimes, freq=self.freq, name=self.name, dtype=self.original_dtype
         ).round(self.base_freq)
 
     def __repr__(self) -> str:

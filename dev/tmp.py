@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from typing import Generic, Literal, TypeVar
+from typing import Generic, TypeVar
 
 # class A(Generic[K]):
 #     table_names: list[K]

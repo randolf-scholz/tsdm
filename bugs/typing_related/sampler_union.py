@@ -3,13 +3,11 @@
 import random
 from dataclasses import dataclass
 from typing import (
-    TYPE_CHECKING,
     Any,
     Generic,
     Iterable,
     Iterator,
     Protocol,
-    SupportsIndex,
     TypeAlias,
     TypeVar,
     assert_type,

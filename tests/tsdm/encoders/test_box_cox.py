@@ -17,7 +17,7 @@ def test_box_cox_encoder(method):
     decoded = encoder.decode(encoded)
 
     assert np.allclose(data, decoded), max(abs(data - decoded))
-    assert decoded.min() == 0.0
+    assert all(decoded >= 0.0) and np.allclose(decoded.min(), 0.0)
 
 
 @mark.parametrize("method", METHODS)
@@ -31,5 +31,6 @@ def test_logit_box_cox_encoder(method):
     decoded = encoder.decode(encoded)
 
     assert np.allclose(data, decoded), max(abs(data - decoded))
-    assert decoded.max() == 1.0
-    assert all(decoded >= 0.0)  # not sure why doesn't quite reach 0.0
+    assert all(decoded <= 1.0) and np.allclose(decoded.max(), 1.0)
+    assert all(decoded >= 0.0) and np.allclose(decoded.min(), 0.0)
+    # not sure why doesn't quite reach 0.0

@@ -20,7 +20,6 @@ logging.basicConfig(level=logging.INFO)
 # In[2]:
 
 
-import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame, DatetimeIndex, Series
 

@@ -11,7 +11,7 @@ print(sys.version)
 # In[2]:
 
 
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, ABCMeta
 from time import sleep
 
 

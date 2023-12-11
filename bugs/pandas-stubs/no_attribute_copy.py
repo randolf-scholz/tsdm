@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from pandas import DataFrame, Index, MultiIndex, Series
-from typing_extensions import assert_type, reveal_type
+from typing_extensions import assert_type
 
 # Getting values
 df = DataFrame(

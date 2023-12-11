@@ -310,8 +310,6 @@ null_values = pyarrow.compute.is_null(chartevents["value"])
 # In[ ]:
 
 
-from pyarrow import compute as c
-
 # In[ ]:
 
 

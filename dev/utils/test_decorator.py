@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 
 import functools
-import inspect
-import sys
-from abc import ABCMeta
-from functools import partial, wraps
-from inspect import Parameter, signature
-from typing import Callable, Optional
+from functools import wraps
+from inspect import signature
+from typing import Callable
 
 
 def debug(func):
@@ -209,7 +206,7 @@ def parametrized_decorator(decorator, *meta_args, **meta_kwargs):
         print(f"Entering {decorator=}")
         print(f"{decorator_args=}")
         print(f"{decorator_kwargs=}")
-        print(f"constructing wrapper")
+        print("constructing wrapper")
 
         def wrapper(decorator, *wrapper_args, **wrapper_kwargs):
             print(f"Entering {wrapper=}")

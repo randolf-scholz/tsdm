@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-from typing import Generic, Protocol, Self, TypeVar, overload
+from typing import Protocol, Self, TypeVar, overload
 
 T = TypeVar("T")
 

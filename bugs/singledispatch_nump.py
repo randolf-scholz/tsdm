@@ -2,13 +2,12 @@
 
 from abc import ABC, abstractmethod
 from functools import singledispatchmethod, wraps
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 import numpy as np
 import torch
 
 TensorVar = TypeVar("TensorVar", np.ndarray, torch.Tensor)
-from tsdm.utils.decorators import wrap_func
 
 
 def add_hook(func, hook):

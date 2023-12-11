@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from typing import TypeVar
 
 import numpy as np
 from numpy.typing import NDArray

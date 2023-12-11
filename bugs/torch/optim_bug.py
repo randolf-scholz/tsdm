@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import torch
-from torch import Tensor, jit, nn
+from torch import nn
 
 device = torch.device("cuda")
 model = nn.Linear(4, 4).to(device=device)

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from collections.abc import MutableSequence, Sequence
 
 import pandas as pd
 

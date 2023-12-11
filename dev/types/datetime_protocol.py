@@ -1,16 +1,6 @@
 #! /usr/bin/env python3
 
-from typing import (
-    Any,
-    Protocol,
-    Self,
-    SupportsFloat,
-    SupportsInt,
-    TypeAlias,
-    TypeVar,
-    overload,
-    reveal_type,
-)
+from typing import Any, Protocol, Self, SupportsFloat, SupportsInt, TypeVar, reveal_type
 
 
 class TimeDelta(Protocol):

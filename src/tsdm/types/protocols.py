@@ -55,6 +55,7 @@ import typing
 from abc import abstractmethod
 from collections.abc import (
     Collection,
+    Hashable,
     ItemsView,
     Iterable,
     Iterator,
@@ -421,11 +422,11 @@ class TableKind(Protocol):
     #     """Return an element/slice of the table."""
     #     ...
 
-    # @property
-    # def columns(self) -> tuple[str, ...]:
-    #     """Yield the columns or the column names."""
-    #     ...
-    #
+    @property
+    def columns(self) -> Collection[Hashable] | Collection[SeriesKind]:
+        """Yield the columns or the column names."""
+        ...
+
     # def __iter__(self) -> Iterator[str]:
     #     """Iterate over the column or column names."""
     #     ...
@@ -478,32 +479,16 @@ class ArrayKind(Protocol[scalar_co]):
         """Number of elements along the first axis."""
         ...
 
-    def __getitem__(self, key: Any, /) -> Self | scalar_co:
-        """Return an element/slice of the table."""
-        ...
-
-    def take(self, indices: Any, /) -> Any:
-        """Return an element/slice of the table."""
-        ...
-
-    # @property
-    # def ndim(self) -> int:
-    #     r"""Number of dimensions."""
-    #     ...
-
-    # @property
-    # def shape(self) -> tuple[int, ...]:
-    #     """Yield the shape of the array."""
-    #     ...
-
     # def __iter__(self) -> Iterator[Self]:
     #     """Iterate over the first dimension."""
     #     ...
 
-    # @overload
-    # def __getitem__(self, key, /):
-    # def __getitem__(self, key: None | slice | list | tuple | Self, /) -> Self:
-    #     """Return an element/slice of the array."""
+    def __getitem__(self, key: Any, /) -> Self | scalar_co:
+        """Return an element/slice of the table."""
+        ...
+
+    # def take(self, indices: Any, /) -> Any:
+    #     """Return an element/slice of the table."""
     #     ...
 
 
@@ -513,6 +498,7 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
 
     Examples:
         - `numpy.ndarray`
+        - `pandas.Index`
         - `pandas.Series`
         - `pandas.DataFrame`
         - `torch.Tensor`
@@ -527,6 +513,31 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     @property
     def ndim(self) -> int:
         """Number of dimensions."""
+        ...
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """Yield the shape of the array."""
+        ...
+
+    def __array__(self) -> NDArray:
+        """Return a numpy array.
+
+        References
+            - https://numpy.org/devdocs/user/basics.interoperability.html
+        """
+        ...
+
+    def __len__(self) -> int:
+        """Number of elements along the first axis."""
+        ...
+
+    def __iter__(self) -> Iterator[Self]:
+        """Iterate over the first dimension."""
+        ...
+
+    def __getitem__(self, key: Any, /) -> Self | Scalar:
+        """Return an element/slice of the table."""
         ...
 
     def all(self) -> Self | bool:

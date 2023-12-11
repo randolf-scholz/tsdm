@@ -1,6 +1,8 @@
 """Test the Array protocol."""
 
 import logging
+from array import array as python_array
+from collections.abc import Collection
 from typing import Any
 
 import numpy
@@ -37,13 +39,14 @@ _TABLE_DATA = {
 }
 
 NP_ARRAY = numpy.array(_ARRAY_DATA)
-PD_INDEX = pandas.Index(_SERIES_DATA)
-PD_SERIES = pandas.Series(_SERIES_DATA)
-PD_DATAFRAME = pandas.DataFrame(_TABLE_DATA)
-PL_SERIES = polars.Series(_SERIES_DATA)
-PL_DATAFRAME = polars.DataFrame(_TABLE_DATA)
 PA_ARRAY = pyarrow.array(_SERIES_DATA)
 PA_TABLE = pyarrow.table(_TABLE_DATA)
+PD_DATAFRAME = pandas.DataFrame(_TABLE_DATA)
+PD_INDEX = pandas.Index(_SERIES_DATA)
+PD_SERIES = pandas.Series(_SERIES_DATA)
+PL_DATAFRAME = polars.DataFrame(_TABLE_DATA)
+PL_SERIES = polars.Series(_SERIES_DATA)
+PY_ARRAY = memoryview(python_array("i", [1, 2, 3]))
 TORCH_TENSOR = torch.tensor(_ARRAY_DATA)
 
 SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
@@ -55,23 +58,34 @@ SUPPORTS_ARRAYS: dict[str, SupportsArray] = {
     "polars_series": PL_SERIES,
     "pyarrow_array": PA_ARRAY,
     "pyarrow_table": PA_TABLE,
+    # "python_array": PY_ARRAY,
     "torch_tensor": TORCH_TENSOR,
-    # "python_array": memoryview(builtin_array("i", [1, 2, 3])),
 }
 
-
 SERIES: dict[str, SeriesKind[str]] = {
-    # "python_array": memoryview(builtin_array("i", [1, 2, 3])),
+    # "numpy_ndarray": NP_ARRAY,
+    # "pandas_dataframe": PD_DATAFRAME,
     "pandas_index": PD_INDEX,
     "pandas_series": PD_SERIES,
+    # "polars_dataframe": PL_DATAFRAME,
     "polars_series": PL_SERIES,
     "pyarrow_array": PA_ARRAY,
+    # "pyarrow_table": PA_TABLE,
+    # "python_array": PY_ARRAY,
+    # "torch_tensor": TORCH_TENSOR,
 }
 
 TABLES: dict[str, TableKind] = {
+    # "numpy_ndarray": NP_ARRAY,    # missing __dataframe__
     "pandas_dataframe": PD_DATAFRAME,
+    # "pandas_index": PD_INDEX,    # missing __dataframe__
+    # "pandas_series": PD_SERIES,    # missing __dataframe__
     "polars_dataframe": PL_DATAFRAME,
+    # "polars_series": PL_SERIES,    # missing __dataframe__
+    # "pyarrow_array": PA_ARRAY,    # missing __dataframe__
     "pyarrow_table": PA_TABLE,
+    # "python_array": PY_ARRAY,  # missing __dataframe__
+    # "torch_tensor": TORCH_TENSOR,    # missing __dataframe__
 }
 
 ARRAYS: dict[str, ArrayKind] = {
@@ -79,27 +93,37 @@ ARRAYS: dict[str, ArrayKind] = {
     "pandas_dataframe": PD_DATAFRAME,
     "pandas_index": PD_INDEX,
     "pandas_series": PD_SERIES,
-    # "polars_dataframe": PL_DATAFRAME,
+    "polars_dataframe": PL_DATAFRAME,
     "polars_series": PL_SERIES,
-    "torch_tensor": TORCH_TENSOR,
-    # "pyarrow_array": PA_ARRAY,
+    # "pyarrow_array": PA_ARRAY,  # missing shape
     "pyarrow_table": PA_TABLE,
-    # "python_array": memoryview(builtin_array("i", [1, 2, 3])),
+    # "python_array": PY_ARRAY,  # missing __array__
+    "torch_tensor": TORCH_TENSOR,
 }
 
 NUMERICAL_ARRAYS: dict[str, NumericalArray] = {
     "numpy_ndarray": NP_ARRAY,
     "pandas_dataframe": PD_DATAFRAME,
+    "pandas_index": PD_INDEX,
     "pandas_series": PD_SERIES,
-    # "polars_series": PL_SERIES,  # missing: ndim
-    # "polars_dataframe": PL_DATAFRAME, # missing: lots
+    # "polars_dataframe": PL_DATAFRAME,  # missing r-methods
+    # "polars_series": PL_SERIES,  # missing ndim
+    # "pyarrow_array": PA_ARRAY,
+    # "pyarrow_table": PA_TABLE,
+    # "python_array": PY_ARRAY,
     "torch_tensor": TORCH_TENSOR,
 }
 
 MUTABLE_ARRAYS: dict[str, MutableArray] = {
     "numpy_ndarray": NP_ARRAY,
     "pandas_dataframe": PD_DATAFRAME,
+    # "pandas_index": PD_INDEX,  # missing i-methods
     "pandas_series": PD_SERIES,
+    # "polars_dataframe": PL_DATAFRAME,  # missing i-methods
+    # "polars_series": PL_SERIES,  # missing i-methods
+    # "pyarrow_array": PA_ARRAY,  # missing i-methods
+    # "pyarrow_table": PA_TABLE,  # missing i-methods
+    # "python_array": PY_ARRAY,
     "torch_tensor": TORCH_TENSOR,
 }
 
@@ -110,6 +134,13 @@ EXAMPLES: dict[type, dict[str, Any]] = {
     NumericalArray: NUMERICAL_ARRAYS,
     MutableArray: MUTABLE_ARRAYS,
 }
+
+# frozensets of attributes
+TABLE_ATTRS = get_protocol_members(TableKind)
+SERIES_ATTRS = get_protocol_members(SeriesKind)
+ARRAY_ATTRS = get_protocol_members(ArrayKind)
+NUMERICAL_ARRAY_ATTRS = get_protocol_members(NumericalArray)
+MUTABLE_ARRAY_ATTRS = get_protocol_members(MutableArray)
 
 
 @mark.parametrize("name", SUPPORTS_ARRAYS)
@@ -126,11 +157,11 @@ def test_series(name: str) -> None:
     """Test the Series protocol."""
     series = SERIES[name]
     cls = series.__class__
-    assert isinstance(series, SeriesKind)
+    assert isinstance(series, SeriesKind), SERIES_ATTRS - set(dir(series))
     assert not isinstance(series, TableKind)
 
     # check methods
-    attrs = set(get_protocol_members(SeriesKind))
+    attrs = set(SERIES_ATTRS)
 
     assert isinstance(series.__array__(), numpy.ndarray)
     attrs.remove("__array__")
@@ -163,11 +194,11 @@ def test_series(name: str) -> None:
 def test_table(name: str) -> None:
     """Test the Table protocol."""
     table = TABLES[name]
-    assert isinstance(table, TableKind)
+    assert isinstance(table, TableKind), TABLE_ATTRS - set(dir(table))
     assert not isinstance(table, SeriesKind)
 
     # check methods
-    attrs = set(get_protocol_members(TableKind))
+    attrs = set(TABLE_ATTRS)
 
     assert isinstance(table.__array__(), numpy.ndarray)
     attrs.remove("__array__")
@@ -177,6 +208,12 @@ def test_table(name: str) -> None:
 
     assert isinstance(len(table), int)
     attrs.remove("__len__")
+
+    assert isinstance(table.columns, Collection)
+    assert all(isinstance(col, str) for col in table.columns) or all(
+        isinstance(col, SeriesKind) for col in table.columns
+    )
+    attrs.remove("columns")
 
     assert isinstance(table.shape, tuple)
     assert len(table.shape) == 2
@@ -193,19 +230,22 @@ def test_table(name: str) -> None:
 @mark.parametrize("name", ARRAYS)
 def test_array(name: str) -> None:
     """Test the Array protocol."""
-    assert_protocol(ARRAYS[name], ArrayKind)
+    array = ARRAYS[name]
+    assert_protocol(array, ArrayKind)
 
 
 @mark.parametrize("name", NUMERICAL_ARRAYS)
 def test_numerical_array(name: str) -> None:
     """Test the NumericalArray protocol."""
-    assert_protocol(NUMERICAL_ARRAYS[name], NumericalArray)
+    numerical_array = NUMERICAL_ARRAYS[name]
+    assert_protocol(numerical_array, NumericalArray)
 
 
 @mark.parametrize("name", MUTABLE_ARRAYS)
 def test_mutable_array(name: str) -> None:
     """Test the MutableArray protocol."""
-    assert_protocol(MUTABLE_ARRAYS[name], MutableArray)
+    mutable_array = MUTABLE_ARRAYS[name]
+    assert_protocol(mutable_array, MutableArray)
 
 
 def test_shared_attrs() -> None:
@@ -217,22 +257,34 @@ def test_shared_attrs() -> None:
         print(f"\n\t{proto.__name__!r}:\n\t{superfluous_attrs}")
 
 
-def test_series_joint_attrs() -> None:
+def test_joint_attrs_series() -> None:
     shared_attrs = set.intersection(*(set(dir(s)) for s in SERIES.values()))
     superfluous_attrs = shared_attrs - set(dir(SeriesKind))
     print(f"\nShared members not covered by SeriesKind:\n\t{superfluous_attrs}")
 
 
-def test_table_joint_attrs() -> None:
+def test_joint_attrs_table() -> None:
     shared_attrs = set.intersection(*(set(dir(t)) for t in TABLES.values()))
     superfluous_attrs = shared_attrs - set(dir(TableKind))
     print(f"\nShared members not covered by TableKind:\n\t{superfluous_attrs}")
 
 
-def test_array_joint_attrs() -> None:
+def test_joint_attrs_array() -> None:
     shared_attrs = set.intersection(*(set(dir(a)) for a in ARRAYS.values()))
     superfluous_attrs = shared_attrs - set(dir(ArrayKind))
     print(f"\nShared members not covered by ArrayKind:\n\t{superfluous_attrs}")
+
+
+def test_joint_attrs_numerical_array() -> None:
+    shared_attrs = set.intersection(*(set(dir(a)) for a in NUMERICAL_ARRAYS.values()))
+    superfluous_attrs = shared_attrs - set(dir(NumericalArray))
+    print(f"\nShared members not covered by NumericalArray:\n\t{superfluous_attrs}")
+
+
+def test_joint_attrs_mutable_array() -> None:
+    shared_attrs = set.intersection(*(set(dir(a)) for a in MUTABLE_ARRAYS.values()))
+    superfluous_attrs = shared_attrs - set(dir(MutableArray))
+    print(f"\nShared members not covered by MutableArray:\n\t{superfluous_attrs}")
 
 
 def test_table_manual() -> None:
@@ -293,75 +345,3 @@ def test_table_manual() -> None:
     ]
     shared_attrs = set.intersection(*(set(dir(tab)) for tab in tables))
     __logger__.info("\nShared members of Tables: %s", shared_attrs)
-
-
-# # @pytest.mark.parametrize("array", TEST_ARRAYS)
-# @mark.parametrize("protocol", ARRAY_PROTOCOLS)
-# def test_numerical_arrays(protocol: type) -> None:
-#     """Test that all arrays share the same attributes."""
-#     protocol_attrs = get_protocol_members(protocol)
-#     for key, array in NUMERICAL_ARRAYS.items():
-#         missing_attrs = protocol_attrs - set(dir(array))
-#         assert not missing_attrs, f"{key}: missing Attributes: {missing_attrs}"
-#         assert isinstance(array, protocol), f"{key} is not a {protocol.__name__}!"
-#
-#     shared_attrs = set.intersection(
-#         *(set(dir(arr)) for arr in NUMERICAL_ARRAYS.values())
-#     )
-#     superfluous_attrs = shared_attrs - protocol_attrs
-#     print(
-#         f"\nShared members not covered by {protocol.__name__!r}:\n\t{superfluous_attrs}"
-#     )
-
-
-# NOTE: Intentionally not using parametrize to allow type-checking
-def test_arrays_jointly() -> None:
-    """Test the Array protocol (singular dtype and ndim)."""
-    # list of all arrays
-    arrays: list = []
-
-    # test torch
-    torch_tensor: torch.Tensor = torch.tensor([1, 2, 3])
-    assert_protocol(torch_tensor, ArrayKind)
-    arrays.append(torch_tensor)
-
-    # test numpy
-    numpy_array: ArrayKind = numpy.array([1, 2, 3])
-    assert_protocol(numpy_array, ArrayKind)
-    arrays.append(numpy_array)
-
-    # test pandas Series
-    pandas_series: ArrayKind = pandas.Series([1, 2, 3])
-    assert_protocol(pandas_series, ArrayKind)
-    arrays.append(pandas_series)
-
-    # test pandas Index
-    pandas_index: ArrayKind = pandas.Index([1, 2, 3])
-    assert_protocol(pandas_index, ArrayKind)
-    arrays.append(pandas_index)
-
-    # test dataframe
-    pandas_frame: ArrayKind = pandas.DataFrame(numpy.random.randn(3, 3))
-    assert_protocol(pandas_frame, ArrayKind)
-    arrays.append(pandas_frame)
-
-    # test pyarrow.Array  # FIXME: missing .shape
-    # pyarrow_array: ArrayKind = pyarrow.array([1, 2, 3])
-    # assert_protocol(pyarrow_array, ArrayKind)
-    # arrays.append(pyarrow_array)
-
-    # test pyarrow.Table
-    pyarrow_table: ArrayKind = pyarrow.table({"a": [1, 2, 3], "b": [4, 5, 6]})
-    assert_protocol(pyarrow_table, ArrayKind)
-    arrays.append(pyarrow_table)
-
-    # # test python array (missing: __array__)
-    # python_array: Array = memoryview(builtin_array("i", [1, 2, 3]))
-    # # assert_protocol(python_array, Array)
-    # arrays.append(python_array)
-
-    # test combined
-    shared_attrs = set.intersection(*(set(dir(arr)) for arr in arrays))
-    superfluous_attrs = shared_attrs - set(dir(ArrayKind))
-    assert not superfluous_attrs, f"\nShared members:\n\t{superfluous_attrs}"
-    __logger__.info("\nShared members of Arrays: %s", shared_attrs)

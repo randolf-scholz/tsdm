@@ -8,7 +8,6 @@
             <JupyterConnectionParameters>
               <option name="managed" value="true" />
               <option name="sdkHomePath" value="$PROJECT_DIR$/.venv/bin/python" />
-              <option name="sdkName" value="" />
             </JupyterConnectionParameters>
           </value>
         </entry>

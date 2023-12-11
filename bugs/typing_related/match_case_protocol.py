@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from typing import ParamSpec, Protocol, TypeVar, runtime_checkable
+from typing import ParamSpec, Protocol, TypeVar
 
 P = ParamSpec("P")
 R = TypeVar("R")

@@ -5,21 +5,9 @@
 # from __future__ import annotations
 
 import logging
-from abc import abstractmethod
-from collections.abc import Iterator, Mapping, Sequence
-from copy import deepcopy
 from functools import wraps
 
-from typing_extensions import (
-    Any,
-    ClassVar,
-    Literal,
-    Protocol,
-    Self,
-    TypeVar,
-    overload,
-    runtime_checkable,
-)
+from typing_extensions import Any, ClassVar, Protocol, Self, TypeVar, runtime_checkable
 
 encoder_var = TypeVar("encoder_var", bound="BaseEncoder")
 """Type variable for encoders."""
