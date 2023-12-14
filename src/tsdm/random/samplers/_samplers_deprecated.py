@@ -112,9 +112,11 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
             if not valid_strides:
                 break
 
-            intervals.extend([  # pyright: ignore
-                (x0 + i * st, x0 + i * st + dt, dt, st) for i in valid_strides
-            ])
+            intervals.extend(
+                [  # pyright: ignore
+                    (x0 + i * st, x0 + i * st + dt, dt, st) for i in valid_strides
+                ]
+            )
 
         # set variables
         self.offset = cast(TDVar, offset)  # type: ignore[redundant-cast]

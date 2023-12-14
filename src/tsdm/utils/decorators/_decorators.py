@@ -434,13 +434,11 @@ def trace(func: Callable[P, R]) -> Callable[P, R]:
     def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         logger.info(
             "%s",
-            "\n\t".join(
-                (
-                    f"{func.__qualname__}: ENTERING",
-                    f"args={tuple(type(arg).__name__ for arg in args)}",
-                    f"kwargs={str({k:type(v).__name__ for k,v in kwargs.items()})}",
-                )
-            ),
+            "\n\t".join((
+                f"{func.__qualname__}: ENTERING",
+                f"args={tuple(type(arg).__name__ for arg in args)}",
+                f"kwargs={str({k:type(v).__name__ for k,v in kwargs.items()})}",
+            )),
         )
         try:
             logger.info("%s: EXECUTING", func.__qualname__)

@@ -553,9 +553,9 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         self.LOGGER.info("Cleaning up columns...")
         # Turn tuple[VALUE/FLAG, DAY] indices to multi-index:
         data.columns = pd.MultiIndex.from_frame(
-            DataFrame(data_cols, columns=["VAR", "DAY"]).astype({
-                "VAR": "string[pyarrow]", "DAY": "int8[pyarrow]"
-            })
+            DataFrame(data_cols, columns=["VAR", "DAY"]).astype(
+                {"VAR": "string[pyarrow]", "DAY": "int8[pyarrow]"}
+            )
         )
 
         self.LOGGER.info("Stacking on FLAGS and VALUES columns...")

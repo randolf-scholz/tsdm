@@ -299,9 +299,9 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
             }
 
         self.index: Index = get_index(self.data)
-        self.sizes: Series = Series({
-            key: len(self.subsamplers[key]) for key in self.index
-        })
+        self.sizes: Series = Series(
+            {key: len(self.subsamplers[key]) for key in self.index}
+        )
 
         self.partition: Series = (
             Series(chain(*([key] * min(self.sizes) for key in self.index)))

@@ -22,6 +22,7 @@ class Foo(Generic[X]):
         if isinstance(self.x, Sequence):
             return list(self.x)
         if isinstance(self.x, Mapping):
-            for k, v in self.x.items(): ...
+            for k, v in self.x.items():
+                ...
             return dict(**self.x)
         raise TypeError("Unexpected type")

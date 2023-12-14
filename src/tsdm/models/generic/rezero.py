@@ -73,9 +73,9 @@ class ResNetBlock(nn.Sequential):
 
         for k in range(HP["num_subblocks"]):
             key = f"subblock{k}"
-            module = nn.Sequential(*[
-                initialize_from_config(layer) for layer in HP["subblocks"]
-            ])
+            module = nn.Sequential(
+                *[initialize_from_config(layer) for layer in HP["subblocks"]]
+            )
             self.add_module(key, module)
             subblocks[key] = module
 
