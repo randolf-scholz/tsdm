@@ -123,7 +123,7 @@ __all__ = [
     "ChainedEncoder",
     "CloneEncoder",
     "CopyEncoder",
-    "DateTimeEncoder",
+    "OldDateTimeEncoder",
     "DuplicateEncoder",
     "FloatEncoder",
     "FrameAsDict",
@@ -196,7 +196,7 @@ from tsdm.encoders.numerical import (
     TensorSplitter,
 )
 from tsdm.encoders.time import (
-    DateTimeEncoder,
+    OldDateTimeEncoder,
     PeriodicEncoder,
     PeriodicSocialTimeEncoder,
     PositionalEncoder,
@@ -212,7 +212,7 @@ ENCODERS: dict[str, type[Encoder]] = {
     "BoxCoxEncoder": BoxCoxEncoder,
     "ChainedEncoder": ChainedEncoder,
     "CloneEncoder": CloneEncoder,
-    "DateTimeEncoder": DateTimeEncoder,
+    "DateTimeEncoder": OldDateTimeEncoder,
     "DuplicateEncoder": DuplicateEncoder,
     "FloatEncoder": FloatEncoder,
     "IdentityEncoder": IdentityEncoder,

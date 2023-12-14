@@ -14,13 +14,13 @@ from tsdm.encoders import (
     BaseEncoder,
     BoundaryEncoder,
     BoxCoxEncoder,
-    DateTimeEncoder,
     Encoder,
     FrameAsDict,
     FrameEncoder,
     IdentityEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
+    OldDateTimeEncoder,
     StandardScaler,
 )
 from tsdm.tasks import KiwiBenchmark
@@ -28,7 +28,7 @@ from tsdm.tasks import KiwiBenchmark
 RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 
 
-@mark.xfail(reason="https://github.com/pandas-dev/pandas/issues/56409")
+# @mark.xfail(reason="https://github.com/pandas-dev/pandas/issues/56409")
 @mark.slow
 def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
     r"""Test complicated combined encoder."""
@@ -85,7 +85,7 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
         @ StandardScaler(axis=-1)
         @ FrameEncoder(
             column_encoders=column_encoders,
-            index_encoders={"measurement_time": MinMaxScaler() @ DateTimeEncoder()},
+            index_encoders={"measurement_time": MinMaxScaler() @ OldDateTimeEncoder()},
         )
     )
 

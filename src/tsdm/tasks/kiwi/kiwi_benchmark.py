@@ -24,12 +24,12 @@ from tsdm.data.timeseries import Sample
 from tsdm.encoders import (
     BoundaryEncoder,
     BoxCoxEncoder,
-    DateTimeEncoder,
     Encoder,
     FrameAsDict,
     FrameEncoder,
     LogitBoxCoxEncoder,
     MinMaxScaler,
+    OldDateTimeEncoder,
     StandardScaler,
 )
 from tsdm.metrics import TimeSeriesMSE
@@ -275,7 +275,7 @@ class KiwiBenchmark(TimeSeriesTask):
             index_encoders={
                 # "run_id": IdentityEncoder(),
                 # "experiment_id": IdentityEncoder(),
-                "measurement_time": MinMaxScaler() @ DateTimeEncoder(),
+                "measurement_time": MinMaxScaler() @ OldDateTimeEncoder(),
             },
         )
 

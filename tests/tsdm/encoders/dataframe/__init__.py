@@ -1,0 +1,1 @@
+"""Test tsdm.encoders.dataframe."""

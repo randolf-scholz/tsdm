@@ -2,7 +2,7 @@ r"""Encoders for timedelta and datetime types."""
 
 __all__ = [
     # Classes
-    "DateTimeEncoder",
+    "OldDateTimeEncoder",
     "PeriodicEncoder",
     "PositionalEncoder",
     "SocialTimeEncoder",
@@ -12,6 +12,7 @@ __all__ = [
 
 from collections.abc import Hashable
 from copy import deepcopy
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -30,6 +31,8 @@ from typing_extensions import (
 from tsdm.encoders.base import BaseEncoder
 from tsdm.encoders.dataframe import FrameEncoder
 from tsdm.types.aliases import DType, PandasObject
+from tsdm.types.protocols import NumericalArray
+from tsdm.types.time import DT, TD, DateTime, TimeDelta
 
 
 @deprecated("decode unimplemented")
@@ -111,10 +114,48 @@ class Time2Float(BaseEncoder):
         raise NotImplementedError
 
 
-# TimeArray = TypeVar(TimeArray, bound="TimeArray")
+@dataclass(init=False)
+class DateTimeEncoder(BaseEncoder):
+    unit: TimeDelta
+    r"""The base frequency to convert timedeltas to."""
+    base_freq: TimeDelta
+    r"""The frequency the decoding should be rounded to."""
+    offset: DateTime
+    r"""The starting point of the timeseries."""
+
+    original_dtype: ...
+    r"""The original dtype of the Series."""
+
+    def __init__(
+        self, *, unit: str | TimeDelta = "s", base_freq: str | TimeDelta = "s"
+    ) -> None: ...
+
+    def fit(self, data: NumericalArray[DT], /) -> None: ...
+
+    def encode(self, data: NumericalArray[DT], /) -> NumericalArray[TD]:
+        # FIXME: remove this patch with pyarrow 14
+        # https://github.com/apache/arrow/issues/36789
+        if isinstance(data.dtype, pd.ArrowDtype):
+            data = data.astype("datetime64[ns]")
+
+        return (data - self.offset) / Timedelta(1, unit=self.unit)
+
+    def decode(self, data: NumericalArray[TD], /) -> NumericalArray[DT]:
+        (data * TimeDelta(1, unit=self.unit) + self.offset).round(self.base_freq)
+
+        converted = pd.to_timedelta(data, unit=self.unit)
+        datetimes = Series(
+            converted + self.offset, name=self.name, dtype=self.original_dtype
+        )
+        if self.kind == Series:
+            return datetimes.round(self.base_freq)
+        return DatetimeIndex(
+            datetimes, freq=self.freq, name=self.name, dtype=self.original_dtype
+        ).round(self.base_freq)
 
 
-class DateTimeEncoder(BaseEncoder[Series, Series]):
+@deprecated("use DateTimeEncoder")
+class OldDateTimeEncoder(BaseEncoder):
     r"""Encode DateTime as Float."""
 
     requires_fit: ClassVar[bool] = True
@@ -161,7 +202,6 @@ class DateTimeEncoder(BaseEncoder[Series, Series]):
         return (data - self.offset) / Timedelta(1, unit=self.unit)
 
     def decode(self, data: Series, /) -> Series | DatetimeIndex:
-        self.LOGGER.debug("Decoding %s", type(data))
         converted = pd.to_timedelta(data, unit=self.unit)
         datetimes = Series(
             converted + self.offset, name=self.name, dtype=self.original_dtype

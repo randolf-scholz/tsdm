@@ -10,8 +10,13 @@ __all__ = [
     "Map",
     "PandasObject",
     "PathLike",
-    "DType",
     "SizeLike",
+    # Dtype Aliases
+    "NumpyDtype",
+    "NumpyDtypeArg",
+    "PandasDtype",
+    "PandasDTypeArg",
+    "DType",
     # Scalar Type Aliases
     "Scalar",
     "StringScalar",
@@ -86,17 +91,33 @@ Map: TypeAlias = Lookup[key_contra, value_co] | Callable[[key_contra], value_co]
 r"""Type Alias for `Map`."""
 Nested: TypeAlias = T_co | Collection["Nested[T_co]"] | Mapping[Any, "Nested[T_co]"]
 r"""Type Alias for nested types (JSON-Like)."""
-PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
-r"""Type Alias for `pandas` objects."""
+
 PathLike: TypeAlias = str | Path | os.PathLike[str]
 r"""Type Alias for path-like objects."""
-DType: TypeAlias = np.dtype | torch.dtype | type[ExtensionDtype]
-r"""TypeAlias for dtypes."""
+
 ContainerLike: TypeAlias = T_co | Lookup[int, T_co] | Callable[[int], T_co]
 r"""Type Alias for container-like objects."""
 SplitID: TypeAlias = Hashable
 """Type Alias for split identifiers."""
 # endregion Custom Type Aliases --------------------------------------------------------
+
+
+# region Dtype Aliases -----------------------------------------------------------------
+NumpyDtype: TypeAlias = np.dtype
+"""Type Alias for `numpy` dtypes."""
+NumpyDtypeArg: TypeAlias = str | type | NumpyDtype
+"""Type Alias for `numpy` dtype arguments."""
+PandasDtype: TypeAlias = ExtensionDtype | NumpyDtype
+r"""Type Alias for `pandas` dtype."""
+PandasDTypeArg: TypeAlias = str | type | PandasDtype
+r"""Type Alias for `pandas` dtype arguments."""
+DType: TypeAlias = np.dtype | torch.dtype | type[ExtensionDtype]
+r"""TypeAlias for dtypes."""
+DTypeArg: TypeAlias = str | type
+r"""TypeAlias for dtype arguments."""
+PandasObject: TypeAlias = DataFrame | Series | Index | MultiIndex
+r"""Type Alias for `pandas` objects."""
+# endregion Dtype Aliases --------------------------------------------------------------
 
 
 # region Scalar Type Aliases -----------------------------------------------------------

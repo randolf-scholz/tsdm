@@ -2,6 +2,7 @@ r"""Implementation of encoders."""
 
 __all__ = [
     # Classes
+    "DTypeConverter",
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
@@ -32,7 +33,7 @@ from typing_extensions import Any, ClassVar, Optional, TypeVar, overload
 
 from tsdm.constants import EMPTY_MAP
 from tsdm.encoders.base import BaseEncoder, Encoder
-from tsdm.types.aliases import PandasObject, PathLike
+from tsdm.types.aliases import PandasDtype, PandasDTypeArg, PandasObject, PathLike
 from tsdm.types.dtypes import TORCH_DTYPES
 from tsdm.types.protocols import NTuple
 from tsdm.types.variables import key_var as K
@@ -41,6 +42,44 @@ from tsdm.utils.strings import repr_mapping
 
 E = TypeVar("E", bound=Encoder)
 F = TypeVar("F", bound=Encoder)
+
+
+class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
+    """Converts dtypes of a DataFrame.
+
+    Args:
+        dtypes: A mapping from column names to dtypes.
+            If a column is not present, it will be ignored.
+            If `...` (`Ellipsis`) is given, all remaining columns will be converted to the given dtype.
+    """
+
+    requires_fit: ClassVar[bool] = True
+    target_dtypes: dict[Hashable, PandasDTypeArg]
+    original_dtypes: Series
+    fill_dtype: Optional[PandasDtype] = None
+
+    def __init__(self, dtypes: Mapping[Hashable, PandasDTypeArg], /) -> None:
+        self.target_dtypes = dict(dtypes)
+        self.fill_dtype = self.target_dtypes.pop(Ellipsis, None)
+
+    def fit(self, data: DataFrame, /) -> None:
+        assert Ellipsis not in data.columns, "Ellipsis is a reserved column name!"
+        self.original_dtypes = data.dtypes.copy()
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        dtypes = {
+            col: (
+                self.fill_dtype
+                if col not in self.target_dtypes
+                else self.target_dtypes[col]
+            )
+            for col in data.columns
+        }
+
+        return data.astype(dtypes)
+
+    def decode(self, data: DataFrame, /) -> DataFrame:
+        return data.astype(self.original_dtypes)
 
 
 class CSVEncoder(BaseEncoder):

@@ -97,14 +97,14 @@ def test_timedelta_protocol(name: str) -> None:
     assert issubclass(type(zero), TimeDelta)
 
 
-def test_datetime_joint_attrs() -> None:
+def test_joint_attrs_datetime() -> None:
     """Test the joint attributes of datetime objects."""
     shared_attrs = set.intersection(*(set(dir(v)) for v in DATETIMES.values()))
     superfluous_attrs = shared_attrs - set(dir(DateTime))
     print(f"\nShared members not covered by DateTime:\n\t{superfluous_attrs}")
 
 
-def test_timedelta_joint_attrs() -> None:
+def test_joint_attrs_timedelta() -> None:
     """Test the joint attributes of datetime objects."""
     shared_attrs = set.intersection(*(set(dir(v)) for v in TIMEDELTAS.values()))
     superfluous_attrs = shared_attrs - set(dir(TimeDelta))

@@ -17,11 +17,11 @@ from typing_extensions import Any, Literal
 from tsdm.datasets import ETT
 from tsdm.encoders import (
     ChainedEncoder,
-    DateTimeEncoder,
     Encoder,
     FloatEncoder,
     FrameEncoder,
     MinMaxScaler,
+    OldDateTimeEncoder,
     StandardScaler,
     TensorEncoder,
 )
@@ -137,7 +137,9 @@ class ETT_Zhou2021(OldBaseTask):
 
         self.preprocessor = ChainedEncoder(
             TensorEncoder(),
-            FrameEncoder(index_encoders={"date": MinMaxScaler() @ DateTimeEncoder()}),
+            FrameEncoder(
+                index_encoders={"date": MinMaxScaler() @ OldDateTimeEncoder()}
+            ),
             StandardScaler() @ FloatEncoder(),
         )
 
