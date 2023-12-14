@@ -30,7 +30,6 @@ docs/_build
 reports/
 tests/results/
 tests/reports/
-tests/.benchmarks
 
 # pytorch model files
 *.pt
@@ -221,6 +220,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

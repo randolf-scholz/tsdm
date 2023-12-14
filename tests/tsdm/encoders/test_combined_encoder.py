@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import pandas.testing
+import pyarrow as pa
 import torch
 from pandas import DataFrame
 from pytest import mark
@@ -116,30 +117,22 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
         atol=atol,
         rtol=rtol,
     )
-    # manually compare index
-    reference_index = inputs.index
-    decoded_index = decoded.index
-    freq = pd.Timedelta("1us")
-    assert decoded_index.notna().all()
-    assert decoded_index.shape == reference_index.shape
-    assert decoded_index.dtype == reference_index.dtype
-    assert (decoded_index - reference_index).notna().all()
-    r = decoded_index - reference_index
-    print(r)
-    print(r / freq)
-    gg = r / freq
-    print(r[0])
-    print(r[1])
-    print(r.values)
-    print(gg[1])
-    raise
-    assert r.notna().all()
-    q = abs((reference_index - reference_index[0]) / freq)
-    assert q.notna().all()
-    print((rtol * q + atol))
-    print(r)
-    print(r <= (1e-3 * q + atol))
-    assert (r <= (1e-3 * q + atol)).all()
+
+    # manually compare index (broken for pyarrow 14.0.1)
+    pa_version = tuple(map(int, pa.__version__.split(".")))
+    if pa_version >= (15, 0, 0):  # FIXME: https://github.com/apache/arrow/issues/39156
+        reference_index = inputs.index
+        decoded_index = decoded.index
+        freq = pd.Timedelta("1us")
+        assert decoded_index.notna().all()
+        assert decoded_index.shape == reference_index.shape
+        assert decoded_index.dtype == reference_index.dtype
+        assert (decoded_index - reference_index).notna().all()
+        r = abs(decoded_index - reference_index) / freq
+        assert r.notna().all()
+        q = abs(reference_index - reference_index[0]) / freq
+        assert q.notna().all()
+        assert (r <= (1e-3 * q + atol)).all()
 
     # check that decoding random values satisfies bounds
     rng_data = torch.randn_like(encoded["X"])
