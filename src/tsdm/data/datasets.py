@@ -186,7 +186,7 @@ class DataFrame2Dataset(MapDataset[K, DataFrame]):
     def keys(self) -> Index:
         return self.index
 
-    def __getitem__(self, key: K) -> DataFrame:
+    def __getitem__(self, key: K, /) -> DataFrame:
         return self.data.loc[key]
 
     def __repr__(self) -> str:
@@ -224,12 +224,10 @@ class MappingDataset(Mapping[K, TorchDatasetVar]):
         return len(self.index)
 
     @overload
-    def __getitem__(self, key: K) -> TorchDatasetVar: ...
-
+    def __getitem__(self, key: K, /) -> TorchDatasetVar: ...
     @overload
-    def __getitem__(self, key: tuple[K, K2]) -> Any: ...
-
-    def __getitem__(self, key):
+    def __getitem__(self, key: tuple[K, K2], /) -> Any: ...
+    def __getitem__(self, key, /):
         r"""Get the dataset for the given key.
 
         If the key is a tuple, try to divert to the nested dataset.

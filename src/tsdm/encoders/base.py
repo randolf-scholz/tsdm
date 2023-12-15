@@ -9,19 +9,21 @@ __all__ = [
     "Encoder",
     # Classes
     "BaseEncoder",
-    "CopyEncoder",
     "ChainedEncoder",
     "CloneEncoder",
+    "CopyEncoder",
     "DuplicateEncoder",
     "IdentityEncoder",
     "InverseEncoder",
     "MappingEncoder",
-    "ProductEncoder",
+    "PipedEncoder",
+    "ParallelEncoder",
     # Functions
     "chain_encoders",
-    "direct_sum_encoders",
+    "parallel_encoders",
     "duplicate_encoder",
     "invert_encoder",
+    "pipe_encoders",
     "pow_encoder",
 ]
 # TODO: Improve Typing for Encoders.
@@ -172,7 +174,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
                       = (A > B).decode(x)
                       = B.decode(A.decode(x))
         """
-        return ChainedEncoder(other, self)
+        return PipedEncoder(self, other)
 
     def __or__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[U, X], tuple[V, Y]]":
         r"""Return product encoders.
@@ -181,7 +183,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
             enc = self | other
             enc((x, y)) == (self(x), other(y))
         """
-        return ProductEncoder(self, other)
+        return ParallelEncoder(self, other)  # pyright: ignore
 
     def __ror__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[X, U], tuple[Y, V]]":
         r"""Return product encoders.
@@ -190,7 +192,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
             enc = other | self
             enc((x, y)) == (other(x), self(y))
         """
-        return ProductEncoder(other, self)
+        return ParallelEncoder(other, self)  # pyright: ignore
 
     def __pow__(self: "Encoder[T, T]", power: int, /) -> "Encoder[T, T]":
         r"""Return the chain of itself multiple times.
@@ -487,6 +489,108 @@ def chain_encoders(*encoders, simplify=True):
     return ChainedEncoder(*encoders, simplify=simplify)
 
 
+@pprint_repr(recursive=2)
+class PipedEncoder(BaseEncoder, Sequence[E]):
+    r"""Represents function composition of encoders."""
+
+    encoders: list[E]
+    r"""List of encoders."""
+
+    def __init__(self, *encoders: E, simplify: bool = True) -> None:
+        self.encoders = []
+        for encoder in encoders:
+            if simplify and isinstance(encoder, PipedEncoder):
+                self.encoders.extend(encoder)
+            else:
+                self.encoders.append(encoder)
+
+    def __invert__(self) -> Self:
+        cls = type(self)
+        return cls(*(~e for e in reversed(self.encoders)))  # type: ignore[arg-type]
+
+    def __len__(self) -> int:
+        r"""Return number of chained encoders."""
+        return len(self.encoders)
+
+    @overload
+    def __getitem__(self, index: int) -> E: ...
+    @overload
+    def __getitem__(self, index: slice) -> Self: ...
+    def __getitem__(self, index):
+        r"""Get the encoder at the given index."""
+        match index:
+            case int(idx):
+                return self.encoders[idx]
+            case slice() as slc:
+                return PipedEncoder(*self.encoders[slc])
+            case _:
+                raise ValueError(f"Index {index} not supported.")
+
+    @property
+    def requires_fit(self) -> bool:
+        return any(e.requires_fit for e in self.encoders)
+
+    @property
+    def is_fitted(self) -> bool:
+        return all(e.is_fitted for e in self.encoders)
+
+    @is_fitted.setter
+    def is_fitted(self, value: bool) -> None:
+        for encoder in self.encoders:
+            encoder.is_fitted = value
+
+    @property
+    def is_surjective(self) -> bool:
+        return all(e.is_surjective for e in self.encoders)  # type: ignore[attr-defined]
+
+    @property
+    def is_injective(self) -> bool:
+        return all(e.is_injective for e in self.encoders)  # type: ignore[attr-defined]
+
+    def fit(self, data: Any, /) -> None:
+        for encoder in reversed(self.encoders):
+            try:
+                encoder.fit(data)
+            except Exception as exc:
+                raise RuntimeError(f"Failed to fit {type(encoder)}") from exc
+            data = encoder.encode(data)
+
+    def encode(self, data: Any, /) -> Any:
+        for encoder in self.encoders:
+            data = encoder.encode(data)
+        return data
+
+    def decode(self, data: Any, /) -> Any:
+        for encoder in reversed(self.encoders):
+            data = encoder.decode(data)
+        return data
+
+    def simplify(self) -> IdentityEncoder | E | Self:  # type: ignore[override]
+        r"""Simplify the chained encoder."""
+        if len(self) == 0:
+            return IdentityEncoder()
+        if len(self) == 1:
+            encoder = self[0]
+            return encoder.simplify()
+        cls = type(self)
+        return cls(*(e.simplify() for e in self), simplify=True)
+
+
+@overload
+def pipe_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
+@overload
+def pipe_encoders(e: E, /, *, simplify: Literal[True]) -> E: ...
+@overload
+def pipe_encoders(*encoders: E, simplify: bool = ...) -> PipedEncoder[E]: ...
+def pipe_encoders(*encoders, simplify=True):
+    r"""Chain encoders."""
+    if len(encoders) == 0 and simplify:
+        return IdentityEncoder()
+    if len(encoders) == 1 and simplify:
+        return encoders[0]
+    return PipedEncoder(*encoders, simplify=simplify)
+
+
 @overload
 def pow_encoder(
     e: Encoder,
@@ -503,7 +607,7 @@ def pow_encoder(
 @overload
 def pow_encoder(
     e: E, n: int, /, *, simplify: bool = ..., copy: bool = ...
-) -> ChainedEncoder[E]: ...
+) -> PipedEncoder[E]: ...
 def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
     r"""Apply encoder n times."""
     encoder = encoder.simplify() if simplify else encoder
@@ -516,12 +620,12 @@ def pow_encoder(encoder, n, /, *, simplify=True, copy=True):
     if n == 1 and simplify:
         return encoders[0]
     if n < 0:
-        return chain_encoders(*[~e for e in reversed(encoders)])
-    return chain_encoders(*encoders)
+        return pipe_encoders(*[~e for e in reversed(encoders)])
+    return PipedEncoder(*encoders)
 
 
 @pprint_repr(recursive=2)
-class ProductEncoder(BaseEncoder, Sequence[E]):
+class ParallelEncoder(BaseEncoder[tuple[Any, ...], tuple[Any, ...]], Sequence[E]):
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
@@ -555,7 +659,7 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
         self.encoders = []
 
         for encoder in encoders:
-            if simplify and isinstance(encoder, ProductEncoder):
+            if simplify and isinstance(encoder, ParallelEncoder):
                 self.encoders.extend(encoder)
             else:
                 self.encoders.append(encoder)
@@ -570,23 +674,29 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
     def __getitem__(self, index: slice) -> Self: ...
     def __getitem__(self, index):
         r"""Get the encoder at the given index."""
-        if isinstance(index, int):
-            return self.encoders[index]
-        if isinstance(index, slice):
-            return ProductEncoder(*self.encoders[index])
-        raise ValueError(f"Index {index} not supported.")
+        match index:
+            case int(idx):
+                return self.encoders[idx]
+            case slice() as slc:
+                return ParallelEncoder(*self.encoders[slc])
+            case _:
+                raise ValueError(f"Index {index} not supported.")
 
     def fit(self, data: tuple[Any, ...], /) -> None:
-        for encoder, x in zip(self.encoders, data):
+        for encoder, x in zip(self.encoders, data, strict=True):
             encoder.fit(x)
 
     def encode(self, data: tuple[Any, ...], /) -> tuple[Any, ...]:
         rtype = type(data)
-        return rtype(encoder.encode(x) for encoder, x in zip(self.encoders, data))
+        return rtype(
+            encoder.encode(x) for encoder, x in zip(self.encoders, data, strict=True)
+        )
 
     def decode(self, data: tuple[Any, ...], /) -> tuple[Any, ...]:
         rtype = type(data)
-        return rtype(encoder.decode(x) for encoder, x in zip(self.encoders, data))
+        return rtype(
+            encoder.decode(x) for encoder, x in zip(self.encoders, data, strict=True)
+        )
 
     def simplify(self) -> IdentityEncoder | E | Self:  # type: ignore[override]
         r"""Simplify the product encoder."""
@@ -600,14 +710,14 @@ class ProductEncoder(BaseEncoder, Sequence[E]):
 
 
 @overload
-def direct_sum_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
+def parallel_encoders(*, simplify: Literal[True]) -> IdentityEncoder: ...
 @overload
-def direct_sum_encoders(e: E, /, *, simplify: Literal[True]) -> E: ...
+def parallel_encoders(e: E, /, *, simplify: Literal[True]) -> E: ...
 @overload
-def direct_sum_encoders(
+def parallel_encoders(
     e1: E, e2: E, /, *encoders: E, simplify: bool = ...
-) -> ProductEncoder[E]: ...
-def direct_sum_encoders(*encoders, simplify=True):
+) -> ParallelEncoder[E]: ...
+def parallel_encoders(*encoders, simplify=True):
     r"""Product-Type for Encoders.
 
     Applies multiple encoders in parallel on tuples of data.
@@ -616,7 +726,7 @@ def direct_sum_encoders(*encoders, simplify=True):
         return IdentityEncoder()
     if len(encoders) == 1 and simplify:
         return encoders[0]
-    return ProductEncoder(*encoders, simplify=simplify)
+    return ParallelEncoder(*encoders, simplify=simplify)
 
 
 @overload
@@ -635,7 +745,7 @@ def duplicate_encoder(
 @overload
 def duplicate_encoder(
     e: E, n: int, /, *, simplify: bool = ..., copy: bool = ...
-) -> ProductEncoder[E]: ...
+) -> ParallelEncoder[E]: ...
 def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
     r"""Duplicate an encoder."""
     encoder = encoder.simplify() if simplify else encoder
@@ -648,12 +758,12 @@ def duplicate_encoder(encoder, n, /, *, simplify=True, copy=True):
     if n == 1 and simplify:
         return encoders[0]
     if n < 0:
-        return direct_sum_encoders(*[~e for e in reversed(encoders)])
-    return direct_sum_encoders(*encoders)
+        return parallel_encoders(*[~e for e in reversed(encoders)])
+    return parallel_encoders(*encoders)
 
 
 @pprint_repr(recursive=2)
-class MappingEncoder(BaseEncoder, Mapping[K, E]):
+class MappingEncoder(BaseEncoder[Mapping[K, Any], Mapping[K, Any]], Mapping[K, E]):
     r"""Encoder that maps keys to encoders."""
 
     encoders: Mapping[K, E]
@@ -663,7 +773,7 @@ class MappingEncoder(BaseEncoder, Mapping[K, E]):
     def requires_fit(self) -> bool:
         return any(e.requires_fit for e in self.encoders.values())
 
-    def __init__(self, encoders: Mapping[K, E]) -> None:
+    def __init__(self, encoders: Mapping[K, E], /) -> None:
         self.encoders = encoders
 
     @overload
@@ -720,7 +830,7 @@ class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     def __init__(self, encoder: Encoder[T, S], n: int = 1) -> None:
         self.base_encoder = encoder
         self.n = n
-        self.encoder = ProductEncoder(*(self.base_encoder for _ in range(n)))
+        self.encoder = ParallelEncoder(*(self.base_encoder for _ in range(n)))
         self.is_fitted = self.encoder.is_fitted
 
     def fit(self, data: tuple[T, ...], /) -> None:
@@ -743,7 +853,7 @@ class CloneEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     def __init__(self, encoder: BaseEncoder, n: int = 1) -> None:
         self.base_encoder = encoder
         self.n = n
-        self.encoder = ProductEncoder(*(deepcopy(self.base_encoder) for _ in range(n)))
+        self.encoder = ParallelEncoder(*(deepcopy(self.base_encoder) for _ in range(n)))
         self.is_fitted = self.encoder.is_fitted
 
     def fit(self, data: tuple[T, ...], /) -> None:

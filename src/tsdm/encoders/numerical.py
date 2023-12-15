@@ -626,7 +626,7 @@ class LinearScaler(BaseEncoder[Arr, Arr]):
             axis=self.axis,
         )
 
-    def __getitem__(self, item: int | slice | tuple[int | slice, ...]) -> Self:
+    def __getitem__(self, item: int | slice | tuple[int | slice, ...], /) -> Self:
         r"""Return a slice of the LinearScaler.
 
         Args:
@@ -734,7 +734,7 @@ class StandardScaler(BaseEncoder[Arr, Arr]):
         self.mean_learnable = mean is NotImplemented
         self.stdv_learnable = stdv is NotImplemented
 
-    def __getitem__(self, item: int | slice | list[int]) -> Self:
+    def __getitem__(self, item: int | slice | list[int], /) -> Self:
         r"""Return a slice of the Standardizer."""
         # slice the parameters
         mean = self.mean[item] if self.mean.ndim > 0 else self.mean
@@ -919,7 +919,7 @@ class MinMaxScaler(BaseEncoder[Arr, Arr]):
         r"""Construct a MinMaxScaler from parameters."""
         return cls(**params._asdict())
 
-    def __getitem__(self, item: int | slice | list[int]) -> Self:
+    def __getitem__(self, item: int | slice | list[int], /) -> Self:
         r"""Return a slice of the MinMaxScaler."""
         # slice the parameters
         xmin = self.xmin[item] if self.xmin.ndim > 0 else self.xmin

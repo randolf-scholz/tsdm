@@ -121,7 +121,7 @@ class MIMIC_III_SampleGenerator(Dataset):
         r"""Return an iterator over the dataset."""
         return iter(self.tensors)
 
-    def __getitem__(self, key: int) -> Sample:
+    def __getitem__(self, key: int, /) -> Sample:
         t, x = self.tensors[key]
         observations = t <= self.observation_time
         first_target = observations.sum()

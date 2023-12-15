@@ -168,12 +168,12 @@ class VectorLike(Protocol[T_co]):
 class Lookup(Protocol[key_contra, V_co]):
     """Mapping/Sequence like generic that is contravariant in Keys."""
 
-    def __contains__(self, key: key_contra) -> bool:
+    def __contains__(self, key: key_contra, /) -> bool:
         # Here, any Hashable input is accepted.
         """Return True if the map contains the given key."""
         ...
 
-    def __getitem__(self, key: key_contra) -> V_co:
+    def __getitem__(self, key: key_contra, /) -> V_co:
         """Return the value associated with the given key."""
         ...
 
@@ -839,7 +839,7 @@ class MappingProtocol(Collection[K], Protocol[K, V_co]):
     # FIXME: implement mixin methods
 
     @abstractmethod
-    def __getitem__(self, __key: K) -> V_co: ...
+    def __getitem__(self, __key: K, /) -> V_co: ...
 
     # Mixin methods
     @overload
@@ -860,9 +860,9 @@ class MutableMappingProtocol(MappingProtocol[K, V], Protocol[K, V]):
     # FIXME: implement mixin methods
 
     @abstractmethod
-    def __setitem__(self, __key: K, __value: V) -> None: ...
+    def __setitem__(self, __key: K, __value: V, /) -> None: ...
     @abstractmethod
-    def __delitem__(self, __key: K) -> None: ...
+    def __delitem__(self, __key: K, /) -> None: ...
 
     # Mixin methods
     def clear(self) -> None: ...

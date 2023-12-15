@@ -142,7 +142,7 @@ __all__ = [
     "PeriodicEncoder",
     "PeriodicSocialTimeEncoder",
     "PositionalEncoder",
-    "ProductEncoder",
+    "ParallelEncoder",
     "SocialTimeEncoder",
     "StandardScaler",
     "TensorConcatenator",
@@ -168,7 +168,7 @@ from tsdm.encoders.base import (
     IdentityEncoder,
     InvertibleTransform,
     MappingEncoder,
-    ProductEncoder,
+    ParallelEncoder,
     Transform,
 )
 from tsdm.encoders.box_cox import BoxCoxEncoder, LogitBoxCoxEncoder
@@ -225,7 +225,7 @@ ENCODERS: dict[str, type[Encoder]] = {
     "MinMaxScaler": MinMaxScaler,
     "PeriodicEncoder": PeriodicEncoder,
     "PeriodicSocialTimeEncoder": PeriodicSocialTimeEncoder,
-    "ProductEncoder": ProductEncoder,
+    "ProductEncoder": ParallelEncoder,
     "SocialTimeEncoder": SocialTimeEncoder,
     "StandardScaler": StandardScaler,
     "TensorConcatenator": TensorConcatenator,

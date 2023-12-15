@@ -213,7 +213,7 @@ class Project:
 
             TEST_RESULTS_PATH = self.TEST_RESULTS_PATH
 
-            def __setitem__(self, key, value):
+            def __setitem__(self, key, value, /):
                 raise RuntimeError("ResultsDir is read-only!")
 
             def __getitem__(self, key):
@@ -241,7 +241,7 @@ class Project:
                 if dry_run:
                     print(f"Dry-Run: Creating {test_package_path}")
                 else:
-                    print("Creating {test_package_path}")
+                    print(f"Creating {test_package_path}")
                     test_package_path.mkdir(parents=True, exist_ok=True)
             if not test_package_path.exists():
                 if dry_run:

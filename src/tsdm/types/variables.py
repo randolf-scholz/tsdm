@@ -90,12 +90,12 @@ __all__ = [
     "IteratorType",
     "Iterator_co",
     "Iterator_contra",
-    "mapping_var",
-    "mapping_co",
-    "mapping_contra",
-    "mutable_mapping_var",
-    "mutable_mapping_co",
-    "mutable_mapping_contra",
+    "MappingType",
+    "Mapping_co",
+    "Mapping_contra",
+    "MutableMappingType",
+    "MutableMapping_co",
+    "MutableMapping_contra",
     "MutableSequenceType",
     "MutableSequence_co",
     "MutableSequence_contra",
@@ -405,22 +405,22 @@ MutableSet_contra = TypeVar(
 r"""Type variable for MutableSets."""
 
 
-mapping_var = TypeVar("mapping_var", bound=abc.Mapping)
+MappingType = TypeVar("MappingType", bound=abc.Mapping)
 r"""Type variable for Mappings."""
-mapping_co = TypeVar("mapping_co", bound=abc.Mapping, covariant=True)
+Mapping_co = TypeVar("Mapping_co", bound=abc.Mapping, covariant=True)
 r"""Type variable for Mappings."""
-mapping_contra = TypeVar("mapping_contra", bound=abc.Mapping, contravariant=True)
+Mapping_contra = TypeVar("Mapping_contra", bound=abc.Mapping, contravariant=True)
 r"""Type variable for Mappings."""
 
 
-mutable_mapping_var = TypeVar("mutable_mapping_var", bound=abc.MutableMapping)
+MutableMappingType = TypeVar("MutableMappingType", bound=abc.MutableMapping)
 r"""Type variable for MutableMappings."""
-mutable_mapping_co = TypeVar(
-    "mutable_mapping_co", bound=abc.MutableMapping, covariant=True
+MutableMapping_co = TypeVar(
+    "MutableMapping_co", bound=abc.MutableMapping, covariant=True
 )
 r"""Type variable for MutableMappings."""
-mutable_mapping_contra = TypeVar(
-    "mutable_mapping_contra", bound=abc.MutableMapping, contravariant=True
+MutableMapping_contra = TypeVar(
+    "MutableMapping_contra", bound=abc.MutableMapping, contravariant=True
 )
 r"""Type variable for MutableMappings."""
 

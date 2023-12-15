@@ -141,7 +141,7 @@ class LazyDict(dict[K, V]):
         super().__init__()
         self.update(*args, **kwargs)
 
-    def __getitem__(self, key: K) -> V:
+    def __getitem__(self, key: K, /) -> V:
         r"""Get the value of the key."""
         value = super().__getitem__(key)
         if isinstance(value, LazyValue):
@@ -150,7 +150,7 @@ class LazyDict(dict[K, V]):
             return new_value
         return value
 
-    def __setitem__(self, key: K, value: FuncSpec | V) -> None:
+    def __setitem__(self, key: K, value: FuncSpec | V, /) -> None:
         r"""Set the value of the key."""
         super().__setitem__(key, self._make_lazy_function(key, value))  # type: ignore[assignment]
 
@@ -158,16 +158,16 @@ class LazyDict(dict[K, V]):
         r"""Return the representation of the dictionary."""
         return repr_mapping(self)
 
-    def __or__(
+    def __or__(  # pyright: ignore
         self, other: Mapping[K_other, T], /
-    ) -> "LazyDict[K | K_other, V | T]":  # pyright: ignore
+    ) -> "LazyDict[K | K_other, V | T]":
         new = self.copy()
         new.update(other)  # type: ignore[arg-type]
         return new  # type: ignore[return-value]
 
-    def __ror__(
+    def __ror__(  # pyright: ignore
         self, other: Mapping[K_other, T], /
-    ) -> "LazyDict[K | K_other, V | T]":  # pyright: ignore
+    ) -> "LazyDict[K | K_other, V | T]":
         if isinstance(other, self.__class__):
             return other | self  # pyright: ignore
 

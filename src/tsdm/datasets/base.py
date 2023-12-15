@@ -635,7 +635,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         r"""Return the number of samples in the dataset."""
         return self.tables.__len__()
 
-    def __getitem__(self, key: Key) -> T_co:
+    def __getitem__(self, key: Key, /) -> T_co:
         r"""Return the sample at index `idx`."""
         # need to manually raise KeyError otherwise __getitem__ will execute.
         if key not in self.tables:

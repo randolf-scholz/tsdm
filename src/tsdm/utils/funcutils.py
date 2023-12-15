@@ -231,3 +231,16 @@ def rpartial(
         return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
 
     return _wrapper
+
+
+def prod_fn(*funcs):
+    r"""Cartesian Product of Functions.
+
+    It is assumed every function takes a single positional argument.
+    """
+
+    def __prod_fn(args, /):
+        """Argument is a tuple with the input for each function."""
+        return tuple(f(arg) for f, arg in zip(funcs, args))
+
+    return __prod_fn

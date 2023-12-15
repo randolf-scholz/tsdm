@@ -31,18 +31,17 @@ def numpy_apply_along_axes(
     assert len({a.shape for a in arrays}) <= 1, "all arrays must have the same shape"
     assert len(arrays) >= 1, "at least one array is required"
 
-    if axis is None:
-        axis = ()
-    elif isinstance(axis, int):
-        axis = (axis,)
-    else:
-        axis = tuple(axis)
+    match axis:
+        case None:
+            axes: tuple[int, ...] = ()
+        case int(ax):
+            axes = (ax,)
+        case _:
+            axes = tuple(axis)
 
     rank = len(arrays[0].shape)
     source = tuple(range(rank))
-    inverse_permutation: tuple[int, ...] = axis + tuple(
-        ax for ax in range(rank) if ax not in axis
-    )
+    inverse_permutation = axes + tuple(ax for ax in range(rank) if ax not in axes)
     perm = tuple(np.argsort(inverse_permutation))
     arrays = tuple(np.moveaxis(array, source, perm) for array in arrays)
     result = op(*arrays)

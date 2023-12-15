@@ -339,7 +339,7 @@ class _Dataset(torch.utils.data.Dataset):
         r"""Return the number of samples in the dataset."""
         return len(self.metadata)
 
-    def __getitem__(self, item: tuple[tuple[int, int], slice]) -> Sample:
+    def __getitem__(self, item: tuple[tuple[int, int], slice], /) -> Sample:
         r"""Return a sample from the dataset."""
         key, slc = item
         ts = self.timeseries.loc[key].iloc[slc].copy(deep=True)

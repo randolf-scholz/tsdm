@@ -1,4 +1,4 @@
-r"""Implementation of encoders."""
+r"""Encoders for pandas DataFrames."""
 
 __all__ = [
     # Classes
@@ -18,6 +18,7 @@ __all__ = [
 import warnings
 from collections import namedtuple
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
+from pathlib import Path
 from types import EllipsisType
 
 import numpy as np
@@ -54,11 +55,11 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
     """
 
     requires_fit: ClassVar[bool] = True
-    target_dtypes: dict[Hashable, PandasDTypeArg]
+    target_dtypes: dict[Any, PandasDTypeArg]
     original_dtypes: Series
     fill_dtype: Optional[PandasDtype] = None
 
-    def __init__(self, dtypes: Mapping[Hashable, PandasDTypeArg], /) -> None:
+    def __init__(self, dtypes: Mapping[Any, PandasDTypeArg], /) -> None:
         self.target_dtypes = dict(dtypes)
         self.fill_dtype = self.target_dtypes.pop(Ellipsis, None)
 
@@ -82,12 +83,12 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
         return data.astype(self.original_dtypes)
 
 
-class CSVEncoder(BaseEncoder):
+class CSVEncoder(BaseEncoder[DataFrame, PathLike]):
     r"""Encode the data into a CSV file."""
 
     requires_fit: ClassVar[bool] = True
 
-    filename: PathLike
+    filename: Path
     r"""The filename of the CSV file."""
     dtypes: Series
     r"""The original dtypes."""
@@ -103,7 +104,7 @@ class CSVEncoder(BaseEncoder):
         to_csv_kwargs: Optional[dict[str, Any]] = None,
         read_csv_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
-        self.filename = filename
+        self.filename = Path(filename)
         self.read_csv_kwargs = read_csv_kwargs or {}
         self.to_csv_kwargs = to_csv_kwargs or {}
 
@@ -114,14 +115,13 @@ class CSVEncoder(BaseEncoder):
         data.to_csv(self.filename, **self.to_csv_kwargs)
         return self.filename
 
-    def decode(self, data: Optional[PathLike] = None, /) -> DataFrame:
-        if data is None:
-            data = self.filename
-        frame = pd.read_csv(data, **self.read_csv_kwargs)
+    def decode(self, str_or_path: Optional[PathLike] = None, /) -> DataFrame:
+        path = self.filename if str_or_path is None else Path(str_or_path)
+        frame = pd.read_csv(path, **self.read_csv_kwargs)
         return DataFrame(frame).astype(self.dtypes)
 
 
-class FrameEncoder(BaseEncoder, Mapping[K, Encoder]):
+class FrameEncoder(BaseEncoder[DataFrame, DataFrame], Mapping[K, Encoder]):
     r"""Encode a DataFrame by group-wise transformations.
 
     Per-column encoding is possible through the dictionary input.
@@ -154,7 +154,7 @@ class FrameEncoder(BaseEncoder, Mapping[K, Encoder]):
         self.column_encoders = column_encoders
         self.encoders = {**column_encoders, **index_encoders}
 
-    def __getitem__(self, key: K) -> Encoder:
+    def __getitem__(self, key: K, /) -> Encoder:
         return self.encoders[key]
 
     def __iter__(self) -> Iterator[K]:
@@ -521,7 +521,7 @@ class FrameSplitter(BaseEncoder, Mapping):
         r"""Iterate over the groups."""
         return iter(self.groups)
 
-    def __getitem__(self, item: Any) -> Hashable | list[Hashable]:
+    def __getitem__(self, item: Any, /) -> Hashable | list[Hashable]:
         r"""Return the group."""
         return self.groups[item]
 
@@ -977,7 +977,7 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
     def __iter__(self) -> Iterator[str]:
         return iter(self.groups)
 
-    def __getitem__(self, key: str) -> list[str]:
+    def __getitem__(self, key: str, /) -> list[str]:
         return self.groups[key]
 
     def fit(self, data: DataFrame, /) -> None:

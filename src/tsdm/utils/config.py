@@ -105,7 +105,7 @@ class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):
         r"""Return an iterator over the keys of the dictionary."""
         return iter(self.__dict__)
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str, /) -> Any:
         r"""Return the value of the specified key."""
         return self.__dict__[key]
 
@@ -127,8 +127,8 @@ class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):
         res.update(other)
         return self.__class__(**res)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value, /):
         self.__dict__[key] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key, /):
         self.__dict__.__delitem__(key)
