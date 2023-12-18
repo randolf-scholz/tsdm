@@ -28,7 +28,7 @@ TASKS = {
 
 
 @mark.slow
-@mark.parametrize("task_cls", TASKS.values(), ids=TASKS.keys())
+@mark.parametrize("task_cls", TASKS.values(), ids=TASKS)
 def test_tasks(task_cls: type) -> None:
     task = task_cls()
     key = (0, "train")

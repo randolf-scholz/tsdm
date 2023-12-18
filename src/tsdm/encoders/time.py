@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, DatetimeIndex, Series, Timedelta, Timestamp
+from pandas import DataFrame, DatetimeIndex, Series
 from typing_extensions import (
     Any,
     ClassVar,
@@ -115,7 +115,7 @@ class Time2Float(BaseEncoder):
 
 
 @dataclass(init=False)
-class DateTimeEncoder(BaseEncoder):
+class DateTimeEncoder(BaseEncoder[NumericalArray, NumericalArray]):
     unit: TimeDelta
     r"""The base frequency to convert timedeltas to."""
     base_freq: TimeDelta
@@ -138,10 +138,10 @@ class DateTimeEncoder(BaseEncoder):
         if isinstance(data.dtype, pd.ArrowDtype):
             data = data.astype("datetime64[ns]")
 
-        return (data - self.offset) / Timedelta(1, unit=self.unit)
+        return (data - self.offset) / pd.Timedelta(1, unit=self.unit)
 
     def decode(self, data: NumericalArray[TD], /) -> NumericalArray[DT]:
-        (data * TimeDelta(1, unit=self.unit) + self.offset).round(self.base_freq)
+        (data * pd.Timedelta(1, unit=self.unit) + self.offset).round(self.base_freq)
 
         converted = pd.to_timedelta(data, unit=self.unit)
         datetimes = Series(
@@ -164,7 +164,7 @@ class OldDateTimeEncoder(BaseEncoder):
     r"""The base frequency to convert timedeltas to."""
     base_freq: str = "s"
     r"""The frequency the decoding should be rounded to."""
-    offset: Timestamp
+    offset: pd.Timestamp
     r"""The starting point of the timeseries."""
     kind: type[Series] | type[DatetimeIndex]
     r"""Whether to encode as index of Series."""
@@ -187,7 +187,7 @@ class OldDateTimeEncoder(BaseEncoder):
         else:
             raise ValueError(f"Incompatible {type(data)=}")
 
-        self.offset = Timestamp(Series(data).iloc[0])
+        self.offset = pd.Timestamp(Series(data).iloc[0])
         self.name = None if data.name is None else str(data.name)
         self.original_dtype = data.dtype
         if isinstance(data, DatetimeIndex):
@@ -199,7 +199,7 @@ class OldDateTimeEncoder(BaseEncoder):
         if isinstance(data.dtype, pd.ArrowDtype):
             data = data.astype("datetime64[ns]")
 
-        return (data - self.offset) / Timedelta(1, unit=self.unit)
+        return (data - self.offset) / pd.Timedelta(1, unit=self.unit)
 
     def decode(self, data: Series, /) -> Series | DatetimeIndex:
         converted = pd.to_timedelta(data, unit=self.unit)
@@ -231,7 +231,7 @@ class TimeDeltaEncoder(BaseEncoder):
     def __init__(self, *, unit: str = "s", base_freq: str = "s") -> None:
         self.unit = unit
         self.base_freq = base_freq
-        self.timedelta = Timedelta(1, unit=self.unit)
+        self.timedelta = pd.Timedelta(1, unit=self.unit)
 
     def encode(self, data: PandasObject, /) -> PandasObject:
         return data.astype("timedelta64[ns]") / self.timedelta

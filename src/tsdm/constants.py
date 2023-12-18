@@ -60,7 +60,6 @@ TIME_UNITS: dict[str, np.timedelta64] = {
     for u in ("Y", "M", "W", "D", "h", "m", "s", "us", "ns", "ps", "fs", "as")
 }
 
-
 # NOTE: Use frozenmap() if PEP 603 is accepted.
 EMPTY_MAP: Final[Mapping] = MappingProxyType({})
 r"""Constant: Immutable Empty `Mapping`."""
@@ -81,12 +80,12 @@ def CONST_NONE_FN(*_: Any, **__: Any) -> Literal[None]:
     return None
 
 
-BUILTIN_CONSTANTS = [None, True, False, Ellipsis, NotImplemented]
+BUILTIN_CONSTANTS = frozenset([None, True, False, Ellipsis, NotImplemented])
 """Builtin constants https://docs.python.org/3/library/constants.html."""
 
 CONSTANT_FUNCTIONS = [CONST_TRUE_FN, CONST_FALSE_FN, CONST_NONE_FN]
 
-BUILTIN_TYPES: Final[list[type]] = [
+BUILTIN_TYPES: Final[frozenset[type]] = frozenset({
     type(None),
     bool,
     int,
@@ -105,11 +104,11 @@ BUILTIN_TYPES: Final[list[type]] = [
     object,
     type(Ellipsis),
     type(NotImplemented),
-]
+})
 """Builtin types https://docs.python.org/3/library/stdtypes.html."""
 
 
-NA_STRINGS: Final[set[str]] = {
+NA_STRINGS: Final[frozenset[str]] = frozenset({
     r"",
     r"-",
     r"n/a",
@@ -123,7 +122,7 @@ NA_STRINGS: Final[set[str]] = {
     r"none",
     r"None",
     r"NONE",
-}
+})
 r"""String that correspond to NA values."""
 
 NA_VALUES: Final[set] = {
@@ -136,8 +135,8 @@ NA_VALUES: Final[set] = {
 }
 r"""Values that correspond to NaN."""
 
-# fmt: off
-NULL_VALUES: Final[list[str]] = [
+NULL_VALUES: Final[frozenset[str]] = frozenset({
+    # fmt: off
     "", "-", "--", "?", "??",
     "1.#IND", "+1.#IND", "-1.#IND", "1.#QNAN", "+1.#QNAN", "-1.#QNAN",
     "#N/A N/A",
@@ -158,9 +157,9 @@ NULL_VALUES: Final[list[str]] = [
     "NOT APPLICABLE", "not applicable",
     "NOT AVAILABLE",  "not available",
     "NO ANSWER",      "no answer",
-]
+    # fmt: on
+})
 r"""A list of common null value string represenations."""
-# fmt: on
 
 BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
     # fmt: off

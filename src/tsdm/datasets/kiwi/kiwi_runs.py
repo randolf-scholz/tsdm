@@ -203,9 +203,10 @@ selected_columns = {
 }
 # fmt: on
 
-null_values = NULL_VALUES + [
+null_values = NULL_VALUES | {
     "value written to setpoints has been transferred to this table."
-]
+}
+
 
 # Timeseries Features
 # fmt: off
