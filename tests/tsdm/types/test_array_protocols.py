@@ -14,6 +14,7 @@ from numpy.typing import NDArray
 from pytest import mark
 from typing_extensions import get_protocol_members
 
+from tsdm.testing._testing import assert_protocol
 from tsdm.types.protocols import (
     ArrayKind,
     MutableArray,
@@ -22,7 +23,6 @@ from tsdm.types.protocols import (
     SupportsArray,
     SupportsShape,
     TableKind,
-    assert_protocol,
 )
 
 __logger__ = logging.getLogger(__name__)
@@ -252,39 +252,57 @@ def test_shared_attrs() -> None:
     """Test which shared attributes exist that are not covered by protocols."""
     print("\nShared Attributes not covered by protocols:")
     for proto, examples in EXAMPLES.items():
+        protocol_members = get_protocol_members(proto)
         shared_attrs = set.intersection(*(set(dir(s)) for s in examples.values()))
-        superfluous_attrs = sorted(shared_attrs - set(dir(proto)))
+        superfluous_attrs = sorted(shared_attrs - protocol_members)
         print(f"\n\t{proto.__name__!r}:\n\t{superfluous_attrs}")
+        missing_attrs = sorted(protocol_members - shared_attrs)
+        assert not missing_attrs, f"{proto}: not all examples have: {missing_attrs}!"
 
 
 def test_joint_attrs_series() -> None:
     shared_attrs = set.intersection(*(set(dir(s)) for s in SERIES.values()))
-    superfluous_attrs = shared_attrs - set(dir(SeriesKind))
+    series_members = get_protocol_members(SeriesKind)
+    superfluous_attrs = sorted(shared_attrs - series_members)
     print(f"\nShared members not covered by SeriesKind:\n\t{superfluous_attrs}")
+    missing_attrs = sorted(series_members - shared_attrs)
+    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
 
 
 def test_joint_attrs_table() -> None:
     shared_attrs = set.intersection(*(set(dir(t)) for t in TABLES.values()))
-    superfluous_attrs = shared_attrs - set(dir(TableKind))
+    table_members = get_protocol_members(TableKind)
+    superfluous_attrs = sorted(shared_attrs - table_members)
     print(f"\nShared members not covered by TableKind:\n\t{superfluous_attrs}")
+    missing_attrs = sorted(table_members - shared_attrs)
+    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
 
 
 def test_joint_attrs_array() -> None:
     shared_attrs = set.intersection(*(set(dir(a)) for a in ARRAYS.values()))
-    superfluous_attrs = shared_attrs - set(dir(ArrayKind))
+    array_members = get_protocol_members(ArrayKind)
+    superfluous_attrs = sorted(shared_attrs - array_members)
     print(f"\nShared members not covered by ArrayKind:\n\t{superfluous_attrs}")
+    missing_attrs = sorted(array_members - shared_attrs)
+    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
 
 
 def test_joint_attrs_numerical_array() -> None:
     shared_attrs = set.intersection(*(set(dir(a)) for a in NUMERICAL_ARRAYS.values()))
-    superfluous_attrs = shared_attrs - set(dir(NumericalArray))
+    numerical_array_members = get_protocol_members(NumericalArray)
+    superfluous_attrs = sorted(shared_attrs - numerical_array_members)
     print(f"\nShared members not covered by NumericalArray:\n\t{superfluous_attrs}")
+    missing_attrs = sorted(numerical_array_members - shared_attrs)
+    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
 
 
 def test_joint_attrs_mutable_array() -> None:
     shared_attrs = set.intersection(*(set(dir(a)) for a in MUTABLE_ARRAYS.values()))
-    superfluous_attrs = shared_attrs - set(dir(MutableArray))
+    mutable_array_members = get_protocol_members(MutableArray)
+    superfluous_attrs = sorted(shared_attrs - mutable_array_members)
     print(f"\nShared members not covered by MutableArray:\n\t{superfluous_attrs}")
+    missing_attrs = sorted(mutable_array_members - shared_attrs)
+    assert not missing_attrs, f"Missing attributes: {missing_attrs}"
 
 
 def test_table_manual() -> None:

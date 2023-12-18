@@ -15,18 +15,22 @@ __all__ = [
     "pandas_null_like",
     "pandas_where",
     # auxiliary functions
+    "strip_whitespace_index",
     "strip_whitespace_series",
     "strip_whitespace_dataframe",
 ]
 
 from numpy.typing import ArrayLike, NDArray
-from pandas import NA, DataFrame, Series
-from typing_extensions import Literal, TypeVar
+from pandas import NA, DataFrame, Index, Series
+from typing_extensions import Literal, TypeAlias, TypeVar
 
 from tsdm.types.aliases import Axes, Scalar
 
-P = TypeVar("P", Series, DataFrame)
+P = TypeVar("P", Index, Series, DataFrame)
 """A type variable for pandas objects."""
+
+PANDAS_TYPE: TypeAlias = Index | Series | DataFrame
+"""A type alias for pandas objects."""
 
 
 def pandas_false_like(x: P, /) -> P:
@@ -89,7 +93,7 @@ def pandas_nanstd(x: P, /, *, axis: Axes = None) -> P:
 
 def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
     """Analogue to `numpy.where`."""
-    if isinstance(a, Series | DataFrame):
+    if isinstance(a, PANDAS_TYPE):
         return a.where(cond, b)
     return a if cond else pandas_like(b, a)  # scalar fallback
 
@@ -101,18 +105,22 @@ def pandas_null_like(x: P, /) -> P:
 
 def pandas_like(x: ArrayLike, ref: P, /) -> P:
     """Create a Series/DataFrame with the same modality as a reference."""
-    if isinstance(ref, Series):
-        return Series(x, dtype=ref.dtype, index=ref.index)
-    if isinstance(ref, DataFrame):
-        return DataFrame(x, index=ref.index, columns=ref.columns).astype(ref.dtypes)
-    raise TypeError(f"Expected Series or DataFrame, got {type(ref)}.")
+    match ref:
+        case Index() as idx:
+            return Index(x, dtype=idx.dtype, name=idx.name)
+        case Series() as s:
+            return Series(x, dtype=s.dtype, index=s.index)
+        case DataFrame() as df:
+            return DataFrame(x, index=df.index, columns=df.columns).astype(df.dtypes)
+        case _:
+            raise TypeError(f"Expected {PANDAS_TYPE}, got {type(ref)}.")
 
 
-def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
-    """Strip whitespace from selected columns in a DataFrame."""
-    return frame.assign(
-        **{col: strip_whitespace_series(frame[col]) for col in (cols or frame)}
-    )
+def strip_whitespace_index(index: Index, /) -> Index:
+    """Strip whitespace from all string elements in an Index."""
+    if index.dtype == "string":
+        return index.str.strip()
+    return index
 
 
 def strip_whitespace_series(series: Series, /) -> Series:
@@ -122,10 +130,21 @@ def strip_whitespace_series(series: Series, /) -> Series:
     return series
 
 
+def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
+    """Strip whitespace from selected columns in a DataFrame."""
+    return frame.assign(
+        **{col: strip_whitespace_series(frame[col]) for col in (cols or frame)}
+    )
+
+
 def pandas_strip_whitespace(x: P, /) -> P:
     """Strip whitespace from all string elements in a `pandas` object."""
-    if isinstance(x, DataFrame):
-        return strip_whitespace_dataframe(x)
-    if isinstance(x, Series):
-        return strip_whitespace_series(x)
-    raise TypeError(f"Expected Series or DataFrame, got {type(x)}.")
+    match x:
+        case DataFrame() as df:
+            return strip_whitespace_dataframe(df)
+        case Series() as s:
+            return strip_whitespace_series(s)
+        case Index() as idx:
+            return strip_whitespace_index(idx)
+        case _:
+            raise TypeError(f"Expected {PANDAS_TYPE}, got {type(x)}.")

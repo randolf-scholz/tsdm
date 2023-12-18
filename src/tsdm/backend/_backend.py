@@ -17,7 +17,6 @@ import numpy
 import pandas
 import torch
 from numpy import ndarray
-from pandas import DataFrame, Series
 from torch import Tensor
 from typing_extensions import (
     Generic,
@@ -82,7 +81,7 @@ def gather_types(obj: object) -> set[BackendID]:
             types |= set().union(*map(gather_types, mapping.values()))
         case Tensor():
             types.add("torch")
-        case DataFrame() | Series():
+        case pandas.DataFrame() | pandas.Series() | pandas.Index():
             types.add("pandas")
         case ndarray():
             types.add("numpy")

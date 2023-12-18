@@ -8,6 +8,8 @@ __all__ = [
     "is_flattened",
     "is_dunder",
     "is_zipfile",
+    "assert_protocol",
+    "check_shared_attrs",
     # data
     "series_is_int",
     "series_is_boolean",
@@ -15,7 +17,13 @@ __all__ = [
 ]
 
 from tsdm.testing import data, hash
-from tsdm.testing._testing import is_dunder, is_flattened, is_zipfile
+from tsdm.testing._testing import (
+    assert_protocol,
+    check_shared_attrs,
+    is_dunder,
+    is_flattened,
+    is_zipfile,
+)
 from tsdm.testing.data import (
     series_is_boolean,
     series_is_int,

@@ -2,7 +2,7 @@ exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
 minimum_pre_commit_version: 3.3.3
 default_language_version:
   python: python3.11
-  node: "18.12.1"
+  node: "20.10.0"
 repos:
   #  - repo: meta
   #    hooks:
@@ -167,7 +167,7 @@ repos:
         files: ^dev/
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.340
+    rev: v1.1.341
     hooks:
       - id: pyright
         # not everything works with pyright yet

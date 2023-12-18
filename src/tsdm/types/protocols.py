@@ -42,7 +42,6 @@ __all__ = [
     "is_dataclass",
     "is_namedtuple",
     # Functions
-    "assert_protocol",
     # TypeVars
     "ArrayType",
     "TableType",
@@ -77,7 +76,6 @@ from typing_extensions import (
     TypeGuard,
     TypeVar,
     get_original_bases,
-    get_protocol_members,
     overload,
     runtime_checkable,
 )
@@ -94,22 +92,6 @@ from tsdm.types.variables import (
 
 P = ParamSpec("P")
 Scalar = TypeVar("Scalar")
-
-
-def assert_protocol(obj: Any, proto: type, /) -> None:
-    """Assert that the object is a given protocol."""
-    if isinstance(obj, type):
-        match = issubclass(obj, proto)
-        name = obj.__name__
-    else:
-        match = isinstance(obj, proto)
-        name = obj.__class__.__name__
-
-    if not match:
-        raise AssertionError(
-            f"{name} is not a {proto.__name__}!"
-            f"\n Missing Attributes: {get_protocol_members(proto) - set(dir(obj))}"
-        )
 
 
 # region misc protocols ----------------------------------------------------------------

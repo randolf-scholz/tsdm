@@ -68,7 +68,7 @@ def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
             instance: torch_module_var = base_class(*args, **kwargs)
 
             if CONFIG.autojit:
-                scripted: torch_module_var = jit.script(instance)  # pyright: ignore
+                scripted: torch_module_var = jit.script(instance)
                 return scripted
             return instance
 

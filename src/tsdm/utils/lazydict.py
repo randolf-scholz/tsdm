@@ -158,16 +158,12 @@ class LazyDict(dict[K, V]):
         r"""Return the representation of the dictionary."""
         return repr_mapping(self)
 
-    def __or__(  # pyright: ignore
-        self, other: Mapping[K_other, T], /
-    ) -> "LazyDict[K | K_other, V | T]":
+    def __or__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
         new = self.copy()
         new.update(other)  # type: ignore[arg-type]
         return new  # type: ignore[return-value]
 
-    def __ror__(  # pyright: ignore
-        self, other: Mapping[K_other, T], /
-    ) -> "LazyDict[K | K_other, V | T]":
+    def __ror__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
         if isinstance(other, self.__class__):
             return other | self  # pyright: ignore
 

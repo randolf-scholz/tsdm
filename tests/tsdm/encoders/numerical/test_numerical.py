@@ -32,6 +32,162 @@ D = TypeVar("D", pd.Series, pd.DataFrame, np.ndarray, torch.Tensor)
 E = TypeVar("E", StandardScaler, MinMaxScaler)
 
 
+_DATA = [-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]
+_DATA_2D = [[-2.0, -1.1, -1.0, -0.9], [0.0, 0.3, 0.5, 1.0], [1.5, 2.0, 2.5, 3.0]]
+
+DATA = {
+    "numpy-1D": np.array(_DATA),
+    "numpy-2D": np.array(_DATA_2D),
+    "torch-1D": torch.tensor(_DATA),
+    "torch-2D": torch.tensor(_DATA_2D),
+    "pandas-index": pd.Index(_DATA),
+    "pandas-series": pd.Series(_DATA),
+    # "pandas-dataframe": pd.DataFrame(_DATA_2D),
+}
+
+
+@mark.parametrize("data", DATA.values(), ids=DATA)
+def test_boundary_encoder(data: D) -> None:
+    """Test the boundary encoder."""
+    # test clip + numpy
+    encoder = BoundaryEncoder(-1, +1, mode="clip", axis=-1)
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert encoded.shape == data.shape
+    assert ((encoded >= -1) & (encoded <= 1)).all()
+    assert (encoded == -1).sum() == (data <= -1).sum()
+    assert (encoded == +1).sum() == (data >= +1).sum()
+
+    match data:
+        case np.ndarray() as array:
+            assert isinstance(encoded, np.ndarray)
+            assert encoded.dtype == array.dtype
+        case torch.Tensor() as tensor:
+            assert isinstance(encoded, torch.Tensor)
+            assert encoded.device == tensor.device
+            assert encoded.dtype == tensor.dtype
+        case pd.Index() as index:
+            assert isinstance(encoded, pd.Index)
+            assert encoded.name == index.name
+        case pd.Series() as series:
+            assert isinstance(encoded, pd.Series)
+            assert encoded.name == series.name
+            assert encoded.index.equals(series.index)
+        case pd.DataFrame() as df:
+            assert isinstance(encoded, pd.DataFrame)
+            assert encoded.columns.equals(df.columns)
+            assert encoded.index.equals(df.index)
+        case _:
+            raise TypeError(f"Unexpected type: {type(data)}")
+
+    # test numpy + mask
+    encoder = BoundaryEncoder(-1, +1, mode="mask")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert (np.isnan(encoded) ^ ((encoded >= -1) & (encoded <= 1))).all()
+    assert np.isnan(encoded).sum() == ((data < -1).sum() + (data > +1).sum())
+
+    # test fitting with mask
+    encoder = BoundaryEncoder(mode="mask")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    decoded = encoder.decode(encoded)
+    assert not (np.isnan(encoded)).any()
+    assert (data == encoded).all()
+    assert (data == decoded).all()
+
+    # encode some data that violates bounds
+    data2 = data * 2
+    encoded2 = encoder.encode(data2)
+    xmin, xmax = data.min(), data.max()
+    mask = (data2 >= xmin) & (data2 <= xmax)
+    assert (encoded2[mask] == data2[mask]).all()  # pyright: ignore
+    assert (np.isnan(encoded2[~mask])).all()
+
+    # test half-open interval + clip
+    encoder = BoundaryEncoder(0, None, mode="clip")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert (encoded >= 0).all()
+    assert (encoded == 0).sum() == (data <= 0).sum()
+
+    # test half-open unbounded interval + mask
+    encoder = BoundaryEncoder(0, None, mode="mask")
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert (np.isnan(encoded) ^ (encoded >= 0)).all()
+    assert np.isnan(encoded).sum() == (data < 0).sum()
+
+    # test half-open bounded interval + mask
+    encoder = BoundaryEncoder(0, 1, mode="mask", lower_included=False)
+    encoder.fit(data)
+    encoded = encoder.encode(data)
+    assert (np.isnan(encoded) ^ (encoded > 0)).all()
+    assert np.isnan(encoded).sum() == ((data <= 0).sum() + (data > 1).sum())
+
+
+@mark.parametrize("tensor_type", (pd.Series, pd.DataFrame, np.array, torch.tensor))
+def test_linear_scaler(tensor_type: T) -> None:
+    r"""Check whether the Standardizer encoder works as expected."""
+    LOGGER = __logger__.getChild(LinearScaler.__name__)
+    encoder_type = LinearScaler
+    LOGGER.info("Testing.")
+
+    LOGGER.info("Testing without batching.")
+    data = np.random.rand(3)
+    X = tensor_type(data)
+    encoder = encoder_type()
+    encoder.fit(X)
+    encoded = encoder.encode(X)
+    decoded = encoder.decode(encoded)
+    assert np.allclose(X, decoded)
+    assert isinstance(encoder.params[0], float), f"{encoder.params}"
+
+    if tensor_type == pd.Series:
+        return
+
+    LOGGER.info("Testing with single batch-dim.")
+    data = np.random.rand(3, 5)
+    X = tensor_type(data)
+    encoder = encoder_type()
+    encoder.fit(X)
+    encoded = encoder.encode(X)
+    decoded = encoder.decode(encoded)
+    assert np.allclose(X, decoded)
+    assert isinstance(encoder.params[0], float), f"{encoder.params}"
+
+    if tensor_type == pd.DataFrame:
+        return
+
+    # LOGGER.info("Testing slicing.")
+    # encoder = encoder[2]  # select the third encoder
+    # Y = encoded
+    # # encoder.fit(X[:, 2])
+    # encoded = encoder.encode(X[:, 2])
+    # decoded = encoder.decode(encoded)
+    # assert np.allclose(Y[:, 2], encoded)
+    # assert np.allclose(X[:, 2], decoded)
+    # assert encoder.params[0].shape == ()
+
+    LOGGER.info("Testing with many batch-dim.")
+    # weird input
+    data = np.random.rand(1, 2, 3, 4, 5)
+    X = tensor_type(data)
+    encoder = encoder_type()
+    encoder.fit(X)
+    encoded = encoder.encode(X)
+    decoded = encoder.decode(encoded)
+    assert np.allclose(X, decoded)
+    assert isinstance(encoder.params[0], float), f"{encoder.params}"
+
+    # encoder = encoder[:-1]  # select the first two components
+    # # encoder.fit(X)
+    # encoded = encoder.encode(X[:-1])
+    # decoded = encoder.decode(encoded)
+    # assert np.allclose(X, decoded)
+    # assert encoder.params[0].shape == (2, 3)
+
+
 @mark.parametrize("shape", ((5, 2, 3, 4), (7,)), ids=str)
 @mark.parametrize("axis", ((1, -1), (-1,), -2, 0, None, ()), ids=str)
 def test_get_broadcast(
@@ -83,86 +239,6 @@ def test_reduce_axes() -> None:
     assert get_reduced_axes((..., 1, slice(None)), axis) == (-4, -3, -1)
     assert get_reduced_axes((1, ..., 1), axis) == (-3, -2)
     assert get_reduced_axes((1, ...), axis) == (-3, -2, -1)
-
-
-@mark.parametrize(
-    "data",
-    (
-        np.array([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
-        torch.tensor([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
-        pd.Series([-2.0, -1.1, -1.0, -0.9, 0.0, 0.3, 0.5, 1.0, 1.5, 2.0]),
-    ),
-    ids=("numpy", "torch", "pandas"),
-)
-def test_boundary_encoder(data: D) -> None:
-    """Test the boundary encoder."""
-    # test clip + numpy
-    encoder = BoundaryEncoder(-1, +1, mode="clip")
-    encoder.fit(data)
-    encoded = encoder.encode(data)
-    assert all((encoded >= -1) & (encoded <= 1))
-    assert (encoded == -1).sum() == (data <= -1).sum()
-    assert (encoded == +1).sum() == (data >= +1).sum()
-
-    match data:
-        case torch.Tensor() as tensor:
-            assert isinstance(encoded, torch.Tensor) and encoded.shape == tensor.shape
-        case np.ndarray() as array:
-            assert isinstance(encoded, np.ndarray) and encoded.shape == array.shape
-        case pd.Series() as series:
-            assert (
-                isinstance(encoded, pd.Series)
-                and encoded.shape == series.shape
-                and encoded.name == series.name
-                and encoded.index.equals(series.index)
-            )
-        case _:
-            raise TypeError(f"Unexpected type: {type(data)}")
-
-    # test numpy + mask
-    encoder = BoundaryEncoder(-1, +1, mode="mask")
-    encoder.fit(data)
-    encoded = encoder.encode(data)
-    assert all(np.isnan(encoded) ^ ((encoded >= -1) & (encoded <= 1)))
-    assert np.isnan(encoded).sum() == ((data < -1).sum() + (data > +1).sum())
-
-    # test fitting with mask
-    encoder = BoundaryEncoder(mode="mask")
-    encoder.fit(data)
-    encoded = encoder.encode(data)
-    decoded = encoder.decode(encoded)
-    assert not any(np.isnan(encoded))
-    assert all(data == encoded)
-    assert all(data == decoded)
-
-    # encode some data that violates bounds
-    data2 = data * 2
-    encoded2 = encoder.encode(data2)
-    xmin, xmax = data.min(), data.max()
-    mask = (data2 >= xmin) & (data2 <= xmax)
-    assert all(encoded2[mask] == data2[mask])  # pyright: ignore
-    assert all(np.isnan(encoded2[~mask]))
-
-    # test half-open interval + clip
-    encoder = BoundaryEncoder(0, None, mode="clip")
-    encoder.fit(data)
-    encoded = encoder.encode(data)
-    assert all(encoded >= 0)
-    assert (encoded == 0).sum() == (data <= 0).sum()
-
-    # test half-open unbounded interval + mask
-    encoder = BoundaryEncoder(0, None, mode="mask")
-    encoder.fit(data)
-    encoded = encoder.encode(data)
-    assert all(np.isnan(encoded) ^ (encoded >= 0))
-    assert np.isnan(encoded).sum() == (data < 0).sum()
-
-    # test half-open bounded interval + mask
-    encoder = BoundaryEncoder(0, 1, mode="mask", lower_included=False)
-    encoder.fit(data)
-    encoded = encoder.encode(data)
-    assert all(np.isnan(encoded) ^ (encoded > 0))
-    assert np.isnan(encoded).sum() == ((data <= 0).sum() + (data > 1).sum())
 
 
 @mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
@@ -373,65 +449,3 @@ def test_minmax_scaler(axis):
     assert encoded.max() <= 1.0
     decoded = encoder.decode(encoded)
     assert np.allclose(X, decoded)
-
-
-@mark.parametrize("tensor_type", (pd.Series, pd.DataFrame, np.array, torch.tensor))
-def test_linear_scaler(tensor_type: T) -> None:
-    r"""Check whether the Standardizer encoder works as expected."""
-    LOGGER = __logger__.getChild(LinearScaler.__name__)
-    encoder_type = LinearScaler
-    LOGGER.info("Testing.")
-
-    LOGGER.info("Testing without batching.")
-    data = np.random.rand(3)
-    X = tensor_type(data)
-    encoder = encoder_type()
-    encoder.fit(X)
-    encoded = encoder.encode(X)
-    decoded = encoder.decode(encoded)
-    assert np.allclose(X, decoded)
-    assert isinstance(encoder.params[0], float), f"{encoder.params}"
-
-    if tensor_type == pd.Series:
-        return
-
-    LOGGER.info("Testing with single batch-dim.")
-    data = np.random.rand(3, 5)
-    X = tensor_type(data)
-    encoder = encoder_type()
-    encoder.fit(X)
-    encoded = encoder.encode(X)
-    decoded = encoder.decode(encoded)
-    assert np.allclose(X, decoded)
-    assert isinstance(encoder.params[0], float), f"{encoder.params}"
-
-    if tensor_type == pd.DataFrame:
-        return
-
-    # LOGGER.info("Testing slicing.")
-    # encoder = encoder[2]  # select the third encoder
-    # Y = encoded
-    # # encoder.fit(X[:, 2])
-    # encoded = encoder.encode(X[:, 2])
-    # decoded = encoder.decode(encoded)
-    # assert np.allclose(Y[:, 2], encoded)
-    # assert np.allclose(X[:, 2], decoded)
-    # assert encoder.params[0].shape == ()
-
-    LOGGER.info("Testing with many batch-dim.")
-    # weird input
-    data = np.random.rand(1, 2, 3, 4, 5)
-    X = tensor_type(data)
-    encoder = encoder_type()
-    encoder.fit(X)
-    encoded = encoder.encode(X)
-    decoded = encoder.decode(encoded)
-    assert np.allclose(X, decoded)
-    assert isinstance(encoder.params[0], float), f"{encoder.params}"
-
-    # encoder = encoder[:-1]  # select the first two components
-    # # encoder.fit(X)
-    # encoded = encoder.encode(X[:-1])
-    # decoded = encoder.decode(encoded)
-    # assert np.allclose(X, decoded)
-    # assert encoder.params[0].shape == (2, 3)
