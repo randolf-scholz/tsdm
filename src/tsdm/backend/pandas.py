@@ -93,7 +93,7 @@ def pandas_nanstd(x: P, /, *, axis: Axes = None) -> P:
 
 def pandas_where(cond: NDArray, a: P, b: Scalar | NDArray, /) -> P:
     """Analogue to `numpy.where`."""
-    if isinstance(a, PANDAS_TYPE):
+    if isinstance(a, PANDAS_TYPE):  # type: ignore[misc,arg-type]
         return a.where(cond, b)
     return a if cond else pandas_like(b, a)  # scalar fallback
 

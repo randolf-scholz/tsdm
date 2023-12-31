@@ -236,33 +236,30 @@ class KiwiBenchmark(TimeSeriesTask):
 
         return collate_fn
 
-    def make_encoder(self, key: SplitID, /) -> Encoder:
-        descr = self.dataset.timeseries_description[
-            ["kind", "lower_bound", "upper_bound"]
-        ]
-        column_encoders = {}
-        for col, scale, lower, upper in descr.itertuples():
-            encoder: Encoder
-            match scale:
-                case "percent" | "fraction":
-                    encoder = (
-                        StandardScaler()
-                        @ LogitBoxCoxEncoder()
-                        @ MinMaxScaler(xmin=lower, xmax=upper)
-                        @ BoundaryEncoder(lower, upper, mode="clip")
-                    )
-                case "absolute":
-                    encoder = (
-                        StandardScaler()
-                        @ BoxCoxEncoder()
-                        @ BoundaryEncoder(lower, upper, mode="clip")
-                    )
-                case "linear":
-                    encoder = StandardScaler()
-                case _:
-                    raise ValueError(f"{scale=} unknown")
-            column_encoders[col] = encoder
+    def get_columns_encoder(self, variable) -> Encoder:
+        descr = self.dataset.timeseries_description
+        kind, lower, upper = descr.loc[variable, ["kind", "lower_bound", "upper_bound"]]
 
+        match kind:
+            case "percent" | "fraction":
+                return (
+                    StandardScaler()
+                    @ LogitBoxCoxEncoder()
+                    @ MinMaxScaler(xmin=lower, xmax=upper)
+                    @ BoundaryEncoder(lower, upper, mode="clip")
+                )
+            case "absolute":
+                return (
+                    StandardScaler()
+                    @ BoxCoxEncoder()
+                    @ BoundaryEncoder(lower, upper, mode="clip")
+                )
+            case "linear":
+                return StandardScaler()
+            case _:
+                raise ValueError(f"{kind=} unknown")
+
+    def make_encoder(self, key: SplitID, /) -> Encoder:
         encoder = FrameAsDict(
             groups={
                 "key": ["run_id", "experiment_id"],
@@ -271,7 +268,10 @@ class KiwiBenchmark(TimeSeriesTask):
             },
             dtypes={"T": "float32", "X": "float32"},
         ) @ FrameEncoder(
-            column_encoders=column_encoders,
+            column_encoders={
+                col: self.get_columns_encoder(col)
+                for col in self.dataset.timeseries.columns
+            },
             index_encoders={
                 # "run_id": IdentityEncoder(),
                 # "experiment_id": IdentityEncoder(),

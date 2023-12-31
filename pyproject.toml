@@ -33,9 +33,9 @@ dependencies = [
     "numpy>=1.26.2",
     "pandas>=2.1.4",
     "pillow>=10.1.0",
-    "polars>=0.20.0",
-    "pyarrow>=14.0.1",
-    "pydantic>=2.5.2",
+    "polars>=0.20.2",
+    "pyarrow>=14.0.2",
+    "pydantic>=2.5.3",
     "pyyaml>=6.0.1",
     "requests>=2.31.0",
     "scikit-learn>=1.3.2",
@@ -50,7 +50,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["tsdm[test,docs,extras,typing,flake8,linters,formatters,devtools]"]
 test = [
-    "coverage>=7.3.3",
+    "coverage>=7.3.4",
     "hypothesis[numpy,pandas,pytest]>=6.92.1",
     "pygal>=3.0.4",
     "pytest-benchmark[histogram]>=4.0.0",
@@ -97,8 +97,8 @@ extras = [
     "torchinfo>=1.8.0",
 ]
 typing = [
-    "mypy>=1.7.1",
-    "pyright>=1.1.341",
+    "mypy>=1.8.0",
+    "pyright>=1.1.342",
     "types-colorama>=0.4.15",
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
@@ -134,12 +134,12 @@ linters = [
     "pyflakes>=3.1.0",
     "pylint>=3.0.3",
     "pylint-gitlab>=2.0.0",
-    "ruff>=0.1.8",
+    "ruff>=0.1.9",
     "ruff-lsp>=0.0.48",
     "slotscheck>=0.17.1",
 ]
 formatters = [
-    "black[d,jupyter]>=23.12.0",
+    "black[d,jupyter]>=23.12.1",
     "blacken-docs>=1.16.0",
     "isort>=5.13.2",
     "nbstripout-fast>=1.0.2",
@@ -553,9 +553,9 @@ matplotlib = ">=3.8.2"
 numpy = ">=1.26.2"
 pandas = ">=2.1.4"
 pillow = ">=10.1.0"
-polars = ">=0.20.0"
-pyarrow = ">=14.0.1"
-pydantic = ">=2.5.2"
+polars = ">=0.20.2"
+pyarrow = ">=14.0.2"
+pydantic = ">=2.5.3"
 pyyaml = ">=6.0.1"
 requests = ">=2.31.0"
 scikit-learn = ">=1.3.2"
@@ -578,7 +578,7 @@ torchinfo = ">=1.8.0"
 
 
 [tool.poetry.group.test.dependencies]
-coverage = ">=7.3.3"
+coverage = ">=7.3.4"
 hypothesis = {version=">=6.92.1", extras=["numpy", "pandas", "pytest"]}
 pygal = ">=3.0.4"
 pytest = ">=7.4.3"
@@ -640,7 +640,7 @@ flake8-rst-docstrings = ">=0.3.0"
 
 
 [tool.poetry.group.formatters.dependencies]
-black = { version = ">=23.12.0", extras = ["d", "jupyter"] }
+black = { version = ">=23.12.1", extras = ["d", "jupyter"] }
 blacken-docs = ">=1.16.0"
 isort = ">=5.13.2"
 nbstripout-fast = ">=1.0.2"
@@ -655,14 +655,14 @@ pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
 pylint = ">=3.0.3"
 pylint-gitlab = ">=2.0.0"
-ruff = ">=0.1.8"
+ruff = ">=0.1.9"
 ruff-lsp = ">=0.0.48"
 slotscheck = ">=0.17.1"
 
 
 [tool.poetry.group.typing.dependencies]
-mypy = ">=1.7.1"
-pyright = ">=1.1.341"
+mypy = ">=1.8.0"
+pyright = ">=1.1.342"
 types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"
