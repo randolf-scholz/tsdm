@@ -112,7 +112,7 @@ def test_lazydict_copy() -> None:
     ldB = ldA.copy()
     assert isinstance(ldB, LazyDict)
 
-    for (keyA, valueA), (keyB, valueB) in zip(ldA.items(), ldB.items()):
+    for (keyA, valueA), (keyB, valueB) in zip(ldA.items(), ldB.items(), strict=True):
         assert keyA is keyB
         assert valueA is valueB
         assert isinstance(valueA, LazyValue)
@@ -123,7 +123,7 @@ def test_lazydict_copy() -> None:
         assert isinstance(ldB[keyB], int)
 
     # check that the first dictionary is still lazy
-    for (keyA, valueA), (keyB, valueB) in zip(ldA.items(), ldB.items()):
+    for (keyA, valueA), (keyB, valueB) in zip(ldA.items(), ldB.items(), strict=True):
         assert keyA is keyB
         assert valueA is not valueB
         assert isinstance(valueB, int)

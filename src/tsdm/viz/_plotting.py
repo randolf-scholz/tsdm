@@ -158,26 +158,26 @@ def shared_grid_plot(
     # set axes titles
     if titles is not None:
         # for ax, title in np.nditer([axes, titles]):
-        for ax, title in zip(axes.flat, np.asarray(titles).flat):
+        for ax, title in zip(axes.flat, np.asarray(titles).flat, strict=True):
             ax.set_title(title)
 
     # set axes x-labels
     if xlabels is not None:
         # for ax, xlabel in np.nditer([axes[-1], xlabels], flags=["refs_ok"]):
-        for ax, xlabel in zip(axes[-1], np.asarray(xlabels).flat):
+        for ax, xlabel in zip(axes[-1], np.asarray(xlabels).flat, strict=True):
             ax.set_xlabel(xlabel)
 
     # set axes y-labels
     if ylabels is not None:
         # for ax, ylabel in np.nditer([axes[:, 0], ylabels], flags=["refs_ok"]):
-        for ax, ylabel in zip(axes[:, 0], np.asarray(ylabels).flat):
+        for ax, ylabel in zip(axes[:, 0], np.asarray(ylabels).flat, strict=True):
             ax.set_ylabel(ylabel)
 
     pad = 5  # in points
 
     # set axes col headers
     if col_headers is not None:
-        for ax, col_header in zip(axes[0], col_headers):
+        for ax, col_header in zip(axes[0], col_headers, strict=True):
             ax.annotate(
                 col_header,
                 xy=(0.5, 1),
@@ -191,7 +191,7 @@ def shared_grid_plot(
 
     # set axes row headers
     if row_headers is not None:
-        for ax, row_header in zip(axes[:, 0], row_headers):
+        for ax, row_header in zip(axes[:, 0], row_headers, strict=True):
             ax.annotate(
                 row_header,
                 xy=(0, 0.5),

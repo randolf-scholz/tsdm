@@ -269,14 +269,14 @@ class USHCN_DeBrouwer2019(OldBaseTask):
         if isinstance(df.columns, MultiIndex):
             index_tuples = [
                 (*col, cat)
-                for col, cats in zip(columns, categories)
+                for col, cats in zip(columns, categories, strict=True)
                 for cat in categories[col]
             ]
-            names = df.columns.names + ["partition"]
+            names = [*df.columns.names, "partition"]
         else:
             index_tuples = [
                 (col, cat)
-                for col, cats in zip(columns, categories)
+                for col, cats in zip(columns, categories, strict=True)
                 for cat in categories[col]
             ]
             names = [df.columns.name, "partition"]

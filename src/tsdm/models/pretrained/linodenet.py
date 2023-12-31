@@ -125,11 +125,11 @@ class LinODEnet(PreTrainedBase):
 
             predictions = (
                 {"T": t[:size], "X": xhat[:size]}
-                for t, xhat, size in zip(T, XHAT, sizes)
+                for t, xhat, size in zip(T, XHAT, sizes, strict=True)
             )
             d = {
                 key: self.encoder.decode(pred)
-                for key, pred in zip(sizes.index, predictions)
+                for key, pred in zip(sizes.index, predictions, strict=True)
             }
             return pd.concat(d, names=names)
 

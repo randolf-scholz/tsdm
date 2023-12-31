@@ -168,7 +168,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
             16, 6, figsize=(20, 32), constrained_layout=True, sharey=True
         )
 
-        for col, ax in zip(self.timeseries, axes.flatten()):
+        for col, ax in zip(self.timeseries, axes.flatten(), strict=True):
             self.timeseries[col].hist(ax=ax, density=True, log=True, bins=20)
             ax.set_ylim(10**-6, 1)
 

@@ -80,8 +80,8 @@ def get_time_table(
 
     min_wait = Timedelta(t_min)
 
-    for idx, slc in ts.groupby(level=[0, 1]):
-        slc = slc.reset_index(level=[0, 1], drop=True)
+    for idx, group in ts.groupby(level=[0, 1]):
+        slc = group.reset_index(level=[0, 1], drop=True)
         t_induction = get_induction_time(slc)
         t_target = get_final_product(slc, target=target)
         if pd.isna(t_induction):
@@ -240,14 +240,14 @@ class KIWI_FINAL_PRODUCT(OldBaseTask):
         if isinstance(df.columns, MultiIndex):
             index_tuples = [
                 (*col, cat)
-                for col, cats in zip(columns, categories)
+                for col, cats in zip(columns, categories, strict=True)
                 for cat in categories[col]
             ]
-            names = df.columns.names + ["partition"]
+            names = [*df.columns.names, "partition"]
         else:
             index_tuples = [
                 (col, cat)
-                for col, cats in zip(columns, categories)
+                for col, cats in zip(columns, categories, strict=True)
                 for cat in categories[col]
             ]
             names = [df.columns.name, "partition"]

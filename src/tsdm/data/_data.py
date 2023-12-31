@@ -134,7 +134,7 @@ def make_dataframe(
     df = DataFrame.from_records(data, columns=cols)
 
     if dtypes is not NotImplemented:
-        df = df.astype(dict(zip(df.columns, dtypes)))
+        df = df.astype(dict(zip(df.columns, dtypes, strict=True)))
     elif schema is not NotImplemented:
         df = df.astype(schema)
 
@@ -656,7 +656,10 @@ def describe(
         {
             # stats
             ("stats", "entropy"): entropy,
-            **{("quantile", f"{q:.2f}"): v for q, v in zip(quantiles, quantile_values)},
+            **{
+                ("quantile", f"{q:.2f}"): v
+                for q, v in zip(quantiles, quantile_values, strict=True)
+            },
             # special values
             ("value", "max"): max_value,
             ("value", "mean"): mean_value,

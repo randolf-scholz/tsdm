@@ -6,7 +6,7 @@ References:
 
 __all__ = ["LotkaVolterra"]
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, field
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -47,9 +47,13 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     """Initial angle."""
     predator0: float = 1.0
     """Initial angular velocity."""
-    observation_noise: Distribution = uniform(loc=0.95, scale=0.1)  # 5% noise
+    observation_noise: Distribution = field(
+        default_factory=lambda: uniform(loc=0.95, scale=0.1)
+    )  # 5% noise
     """Noise distribution."""
-    parameter_noise: Distribution = univariate_normal(loc=0, scale=1)
+    parameter_noise: Distribution = field(
+        default_factory=lambda: univariate_normal(loc=0, scale=1)
+    )
     """Noise distribution."""
 
     def _get_initial_state_impl(self, size: SizeLike = ()) -> NDArray:

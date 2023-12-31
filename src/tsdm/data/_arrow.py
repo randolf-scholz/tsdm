@@ -44,7 +44,7 @@ def force_cast(x, dtype=None, /, **dtypes):
         raise ValueError(f"Keys: {unknown_keys} not in table columns.")
 
     schema: pa.Schema = x.schema
-    current_dtypes = dict(zip(schema.names, schema.types))
+    current_dtypes = dict(zip(schema.names, schema.types, strict=True))
     new_schema = pa.schema(current_dtypes | dtypes)
 
     return pa.table(
@@ -74,7 +74,7 @@ def cast_column(table: Table, col: str, dtype: DataType, /, *, safe: bool) -> Ta
 def cast_columns(table: Table, safe: bool = True, /, **dtypes: DataType) -> Table:
     """Cast columns to the given data types."""
     schema: pa.Schema = table.schema
-    current_dtypes = dict(zip(schema.names, schema.types))
+    current_dtypes = dict(zip(schema.names, schema.types, strict=True))
     if unknown_keys := set(dtypes.keys()) - set(current_dtypes.keys()):
         raise ValueError(f"Keys: {unknown_keys} not in table columns.")
 
@@ -189,7 +189,7 @@ def table_info(table: Table, /) -> None:
     size = table.nbytes / (1024 * 1024 * 1024)
     print(f"shape={table.shape}  {size=:.3f} GiB")
     M = max(map(len, table.column_names)) + 1
-    for name, col in tqdm(zip(table.column_names, table.columns)):
+    for name, col in tqdm(zip(table.column_names, table.columns, strict=True)):
         num_total = len(col)
         num_null = pa.compute.sum(pa.compute.is_null(col)).as_py()
         value_counts = col.value_counts()

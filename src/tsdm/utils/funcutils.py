@@ -241,6 +241,6 @@ def prod_fn(*funcs):
 
     def __prod_fn(args, /):
         """Argument is a tuple with the input for each function."""
-        return tuple(f(arg) for f, arg in zip(funcs, args))
+        return tuple(f(arg) for f, arg in zip(funcs, args, strict=True))
 
     return __prod_fn

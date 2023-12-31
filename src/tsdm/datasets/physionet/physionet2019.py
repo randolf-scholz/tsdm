@@ -212,7 +212,7 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         ("SepsisLabel",      None, None, True, True, "bool",
             "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and 0 if t<tsepsis−6."
             " For non-sepsis patients, SepsisLabel is 0.",
-        ),  # noqa: E124 closing bracket does not match visual indentation
+        ),  # closing bracket does not match visual indentation
     ],
     "schema": {
         # fmt: off

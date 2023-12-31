@@ -127,7 +127,7 @@ class DecoratorError(Exception):
     def __str__(self) -> str:
         r"""Create Error Message."""
         sign = signature(self.decorated)
-        max_key_len = max(9, max(len(key) for key in sign.parameters))
+        max_key_len = max(9, *(len(key) for key in sign.parameters))
         max_kind_len = max(len(str(param.kind)) for param in sign.parameters.values())
         default_message: tuple[str, ...] = (
             f"Signature: {sign}",
@@ -706,7 +706,7 @@ def return_namedtuple(
         )
 
     # create namedtuple
-    tuple_type: type[NTuple] = NamedTuple(name, zip(field_names, type_hints))  # type: ignore[misc]
+    tuple_type: type[NTuple] = NamedTuple(name, zip(field_names, type_hints, strict=True))  # type: ignore[misc]
 
     @wraps(func)
     def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> NTuple:

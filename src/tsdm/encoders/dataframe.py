@@ -1069,11 +1069,11 @@ class FrameAsDict(BaseEncoder, Mapping[str, list[str]]):
         dfs = []
         for key, tensor in data.items():
             cols = self.groups[key]
-            if tensor is None:
-                df = DataFrame(columns=cols).astype(self.original_dtypes[cols])
-            else:
-                tensor = tensor.clone().detach().cpu()
-                df = DataFrame(tensor, columns=cols).astype(self.original_dtypes[cols])
+            dtypes = self.original_dtypes[cols]
+            df = DataFrame(
+                [] if tensor is None else tensor.clone().detach().cpu(),
+                columns=cols,
+            ).astype(dtypes)
             dfs.append(df)
 
         # Assemble the DataFrame

@@ -160,7 +160,7 @@ class ConcatEmbedding(nn.Module):
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
         r""".. Signature:: ``(..., d) -> (..., d+e)``."""
-        shape = list(x.shape[:-1]) + [self.pad_size]
+        shape = list(x.shape[:-1]) + [self.pad_size]  # noqa: RUF005
         z = torch.cat([x, self.padding.expand(shape)], dim=-1)
         torch.cuda.synchronize()  # needed when `cat` holds 0-size tensor
         return z

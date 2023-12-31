@@ -574,7 +574,7 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
         # extract key
         match self.dataset, key:
             case TimeSeriesDataset() as tsd, [observation_horizon, forecasting_horizon]:
-                tsd = tsd
+                pass
             case TimeSeriesCollection() as tsc, [
                 outer_key,
                 [observation_horizon, forecasting_horizon],

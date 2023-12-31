@@ -10,8 +10,6 @@ __all__ = [
 
 from math import prod
 
-import numpy as np
-import pandas as pd
 import pyarrow as pa
 from typing_extensions import Any
 
@@ -46,12 +44,7 @@ def is_singleton(x: SupportsShape, /) -> bool:
 
 def is_scalar(x: Any, /) -> bool:
     """Determines whether an object is a scalar."""
-    return (
-        isinstance(x, (int, float, str, bool))
-        or np.isscalar(x)
-        or pd.api.types.is_scalar(x)
-        or isinstance(x, pa.Scalar)
-    )
+    return isinstance(x, bool | float | int | pa.Scalar | str)
 
 
 def to_scalar():

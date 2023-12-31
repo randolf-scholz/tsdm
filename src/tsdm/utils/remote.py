@@ -14,6 +14,7 @@ import os
 import subprocess
 from collections.abc import Iterator, Mapping
 from html.parser import HTMLParser
+from http import HTTPStatus
 from io import IOBase
 from pathlib import Path
 from urllib.parse import urlparse
@@ -67,7 +68,7 @@ def download_io(
     else:
         response = session.get(url)
 
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         raise RuntimeError(
             f"Failed to download {url} with status code {response.status_code}."
         )
@@ -109,7 +110,7 @@ def stream_download(
     else:
         response = session.get(url)
 
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         raise RuntimeError(
             f"Failed to download {url} with status code {response.status_code}."
         )
@@ -130,7 +131,7 @@ def stream_download(
 def iter_content(url: str, /, *, session: Session) -> Iterator[str]:
     """Iterate over the contents of a directory."""
     response = session.get(url)
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         raise RuntimeError(
             f"Failed to download {url} with status code {response.status_code}."
         )
@@ -192,7 +193,7 @@ def download_directory_to_zip(
         session.stream = stream
 
         response = session.get(url)
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             raise RuntimeError(
                 f"Failed to create session for {url} with status code"
                 f" {response.status_code}."
@@ -294,13 +295,13 @@ def import_from_url(
     if parsed_url.netloc == "www.kaggle.com":
         kaggle_name = Path(parsed_url.path).name
         subprocess.run(
-            f"kaggle competitions download -p {str(path)} -c {kaggle_name}",
+            f"kaggle competitions download -p {path!s} -c {kaggle_name}",
             shell=True,
             check=True,
         )
     elif parsed_url.netloc == "github.com":
         subprocess.run(
-            f"svn export --force {url.replace('tree/main', 'trunk')} {str(path)}",
+            f"svn export --force {url.replace('tree/main', 'trunk')} {path!s}",
             shell=True,
             check=True,
         )
@@ -354,7 +355,7 @@ def import_from_url(
 #             warnings.warn(
 #                 f"File {file.name!r} failed to validate!"
 #                 f"File hash {filehash!r} does not match reference {reference!r}."
-#                 f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+#                 f"Ignore this warning if the file format is parquet."
 #             )
 #         self.LOGGER.info(
 #             f"File {file.name!r} validated successfully {filehash=!r}."
@@ -365,19 +366,19 @@ def import_from_url(
 #             warnings.warn(
 #                 f"File {file.name!r} cannot be validated as it is not contained in {reference}."
 #                 f"The filehash is {filehash!r}."
-#                 f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+#                 f"Ignore this warning if the file format is parquet."
 #             )
 #         elif file.name in reference and filehash != reference[file.name]:
 #             warnings.warn(
 #                 f"File {file.name!r} failed to validate!"
 #                 f"File hash {filehash!r} does not match reference {reference[file.name]!r}."
-#                 f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+#                 f"Ignore this warning if the file format is parquet."
 #             )
 #         elif file.stem in reference and filehash != reference[file.stem]:
 #             warnings.warn(
 #                 f"File {file.name!r} failed to validate!"
 #                 f"File hash {filehash!r} does not match reference {reference[file.stem]!r}."
-#                 f"𝗜𝗴𝗻𝗼𝗿𝗲 𝘁𝗵𝗶𝘀 𝘄𝗮𝗿𝗻𝗶𝗻𝗴 𝗶𝗳 𝘁𝗵𝗲 𝗳𝗶𝗹𝗲 𝗳𝗼𝗿𝗺𝗮𝘁 𝗶𝘀 𝗽𝗮𝗿𝗾𝘂𝗲𝘁."
+#                 f"Ignore this warning if the file format is parquet."
 #             )
 #         else:
 #             self.LOGGER.info(

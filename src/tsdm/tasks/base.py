@@ -111,7 +111,7 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
-from functools import cache, cached_property
+from functools import cached_property
 
 from pandas import DataFrame, Index, MultiIndex, Series
 from torch import Tensor
@@ -373,7 +373,7 @@ class TTT(ForecastingTask[Key, Sample_co], metaclass=TimeSeriesTaskMetaClass):
         elif (collate_fn := self.collate_fn) is not NotImplemented:
             kwargs["collate_fn"] = collate_fn
         else:
-            warnings.warn(f"No collate_fn provided, using identity.", stacklevel=2)
+            warnings.warn("No collate_fn provided, using identity.", stacklevel=2)
             kwargs["collate_fn"] = lambda x: x
 
         kwargs |= dataloader_kwargs
@@ -398,7 +398,6 @@ class TTT(ForecastingTask[Key, Sample_co], metaclass=TimeSeriesTaskMetaClass):
         r"""Return the sub-dataset associated with the specified split."""
         return self.dataset[self.folds[key]]
 
-    @cache
     def is_train_split(self, key: SplitID, /) -> bool:
         r"""Return whether the key is a training split."""
         match self.split_type(key):
@@ -714,7 +713,6 @@ class TimeSeriesTask(
         r"""Return the test metric."""
         return NotImplemented
 
-    @cache
     def is_train_split(self, key: SplitID, /) -> bool:
         r"""Return whether the key is a training split."""
         match self.split_type(key):

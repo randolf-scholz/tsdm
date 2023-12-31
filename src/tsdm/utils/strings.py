@@ -103,7 +103,7 @@ def dict2string(d: dict[str, Any]) -> str:
     string = "dict(" + "\n"
 
     for key, value in sorted(d.items()):
-        string += f"\n{pad}{key:<{max_key_length}}: {repr(value)}"
+        string += f"\n{pad}{key:<{max_key_length}}: {value!r}"
 
     string += "\n)"
     return string
@@ -396,7 +396,7 @@ def repr_mapping(
                 f" of type {type(value)}"
             ) from exc
 
-        return f"{str(key):<{justify}}: {encoded_value}"
+        return f"{key!s:<{justify}}: {encoded_value}"
 
     # precompute the items
     head_half = maxitems // 2
@@ -544,7 +544,7 @@ def repr_sequence(
         },
     )
 
-    def to_string(index: int, val: Any) -> str:
+    def to_string(index: int, val: Any, /) -> str:
         try:
             encoded_value = repr_fun(
                 val,

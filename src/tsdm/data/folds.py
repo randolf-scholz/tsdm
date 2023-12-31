@@ -162,14 +162,14 @@ def folds_as_sparse_frame(df: DataFrame, /) -> DataFrame:
     if isinstance(df.columns, MultiIndex):
         index_tuples = [
             (*col, cat)
-            for col, cats in zip(columns, categories)
+            for col, cats in zip(columns, categories, strict=True)
             for cat in categories[col]
         ]
-        names = df.columns.names + ["partition"]
+        names = [*df.columns.names, "partition"]
     else:
         index_tuples = [
             (col, cat)
-            for col, cats in zip(columns, categories)
+            for col, cats in zip(columns, categories, strict=True)
             for cat in categories[col]
         ]
         names = [df.columns.name, "partition"]

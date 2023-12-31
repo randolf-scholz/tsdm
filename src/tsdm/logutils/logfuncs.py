@@ -147,7 +147,8 @@ def transpose_list_of_dicts(lst: Iterable[dict[Key, T]], /) -> dict[Key, list[T]
     return dict(
         zip(
             next(iter(lst)),
-            zip(*(d.values() for d in lst)),
+            zip(*(d.values() for d in lst), strict=True),
+            strict=True,
         )
     )
 
@@ -517,7 +518,7 @@ def log_optimizer(
         log(f"{identifier}/model-variables", multi_norm(variables), step)
 
     if log_histograms:
-        for j, (w, g) in enumerate(zip(variables, gradients)):
+        for j, (w, g) in enumerate(zip(variables, gradients, strict=True)):
             if not w.numel():
                 continue
             writer.add_histogram(f"{identifier}:model-variables/{j}", w, step)

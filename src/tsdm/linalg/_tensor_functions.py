@@ -190,7 +190,7 @@ def multi_norm(
     _tensors: list[Tensor] = []
     for tensor in tensors:
         if tensor.numel() > 0:
-            _tensors.append(tensor)
+            _tensors.append(tensor)  # noqa: PERF401 (jit no support list comprehension)
     tensors = _tensors
 
     if len(tensors) == 0:

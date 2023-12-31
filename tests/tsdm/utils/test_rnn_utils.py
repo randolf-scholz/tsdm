@@ -33,7 +33,7 @@ def test_unpack_sequence(tensors: list[Tensor]) -> None:
 
     assert len(unpacked) == len(tensors)
 
-    for x, y in zip(tensors, unpacked):
+    for x, y in zip(tensors, unpacked, strict=True):
         assert torch.all(x == y)
 
 
@@ -55,7 +55,7 @@ def test_unpad_lengths(tensors: list[Tensor]) -> None:
 
     assert len(unpadded) == len(tensors)
 
-    for x, y in zip(tensors, unpadded):
+    for x, y in zip(tensors, unpadded, strict=True):
         mask_x = torch.isnan(x)
         mask_y = torch.isnan(y)
         assert torch.all(mask_x == mask_y)
@@ -80,7 +80,7 @@ def test_unpad_sequence_nan(tensors: list[Tensor]) -> None:
 
     assert len(unpadded) == len(tensors)
 
-    for x, y in zip(tensors, unpadded):
+    for x, y in zip(tensors, unpadded, strict=True):
         mask_x = torch.isnan(x)
         mask_y = torch.isnan(y)
         assert torch.all(mask_x == mask_y)
@@ -104,7 +104,7 @@ def test_unpad_sequence_float(tensors: list[Tensor]) -> None:
 
     assert len(unpadded) == len(tensors)
 
-    for x, y in zip(tensors, unpadded):
+    for x, y in zip(tensors, unpadded, strict=True):
         mask_x = x == padding_value
         mask_y = y == padding_value
         assert torch.all(mask_x == mask_y)

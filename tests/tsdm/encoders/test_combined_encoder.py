@@ -46,27 +46,26 @@ def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
     # Construct the encoder
     column_encoders: dict[str, Encoder] = {}
     for col, scale, lower, upper in descr.itertuples():
-        if pd.isna(upper):
-            upper = None
-        if pd.isna(lower):
-            lower = None
+        xmin = None if pd.isna(lower) else float(lower)
+        xmax = None if pd.isna(upper) else float(upper)
+
         match scale:
             case "percent" | "fraction":
                 column_encoders[col] = (
                     LogitBoxCoxEncoder()
-                    @ MinMaxScaler(0, 1, xmin=lower, xmax=upper)
-                    @ BoundaryEncoder(lower, upper, mode="clip")
+                    @ MinMaxScaler(0, 1, xmin=xmin, xmax=xmax)
+                    @ BoundaryEncoder(xmin, xmax, mode="clip")
                 )
             case "absolute":
-                if upper is not None and upper < np.inf:
+                if xmax is not None and xmax < np.inf:
                     column_encoders[col] = (
                         BoxCoxEncoder()
                         # @ MinMaxScaler(lower, upper)
-                        @ BoundaryEncoder(lower, upper, mode="clip")
+                        @ BoundaryEncoder(xmin, xmax, mode="clip")
                     )
                 else:
                     column_encoders[col] = BoxCoxEncoder() @ BoundaryEncoder(
-                        lower, upper, mode="clip"
+                        xmin, xmax, mode="clip"
                     )
             case "linear":
                 column_encoders[col] = IdentityEncoder()

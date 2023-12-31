@@ -68,7 +68,7 @@ def _reformat(s: str, replacements: dict, /) -> str:
     References:
         https://stackoverflow.com/a/64500851/9318372
     """
-    *_, result = (s := s.replace(c, r) for c, r in replacements.items())  # noqa: F841
+    *_, result = (s := s.replace(c, r) for c, r in replacements.items())
     return result
 
 

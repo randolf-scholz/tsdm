@@ -167,7 +167,7 @@ repos:
         files: ^dev/
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.342
+    rev: v1.1.344
     hooks:
       - id: pyright
         # not everything works with pyright yet
