@@ -212,9 +212,9 @@ class ForecastingTask(Protocol[Key, Sample_co]):
 
     A task should provide 3 things:
 
-    - A sampler that returns keys
-    - A generator that for a given key returns a sample (x,y), consisting of input x and target y
-    - A test metric that takes (possibly batched) samples and returns a scalar
+    - A sampler that returns keys.
+    - A generator that for a given key returns a sample (x,y), consisting of input x and target y.
+    - A test metric that takes (possibly batched) samples and returns a scalar.
     """
 
     @property

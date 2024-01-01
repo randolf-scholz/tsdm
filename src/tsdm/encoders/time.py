@@ -180,12 +180,13 @@ class OldDateTimeEncoder(BaseEncoder):
         self.base_freq = base_freq
 
     def fit(self, data: Series | DatetimeIndex, /) -> None:
-        if isinstance(data, Series):
-            self.kind = Series
-        elif isinstance(data, DatetimeIndex):
-            self.kind = DatetimeIndex
-        else:
-            raise ValueError(f"Incompatible {type(data)=}")
+        match data:
+            case Series():
+                self.kind = Series
+            case DatetimeIndex():
+                self.kind = DatetimeIndex
+            case _:
+                raise TypeError(f"Incompatible {type(data)=}")
 
         self.offset = pd.Timestamp(Series(data).iloc[0])
         self.name = None if data.name is None else str(data.name)

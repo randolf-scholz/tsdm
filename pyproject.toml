@@ -260,7 +260,15 @@ line-length = 120
 indent-width = 4
 
 [tool.ruff.lint]
-select = ["E", "F", "B", "PL", "PERF", "RUF"]
+select = [
+    "E",     # pycodestyle
+    "F",     # pyflakes
+    "B",     # bugbear
+    "PL",    # pylint
+    "PERF",  # performance related
+    "RUF",   # ruff specific
+    "TRY",
+]
 ignore = [
     "E201",  # Whitespace after '('
     "E202",  # Whitespace before ')'
@@ -284,6 +292,8 @@ ignore = [
     "RUF003",  # ambiguous-unicode-character-comment
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar # FIXME: PEP 603
     "RUF013",  # PEP 484 prohibits implicit Optional # FIXME: https://github.com/astral-sh/ruff/issues/9334
+    # tryceratops
+    "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 
 
