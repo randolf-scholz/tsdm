@@ -322,14 +322,13 @@ class KiwiRuns(MultiTableDataset):
         return self.metadata.index
 
     def clean_table(self, key: str) -> None:
-        if key in ["timeseries", "timeseries_description"]:
+        if key in {"timeseries", "timeseries_description"}:
             self.clean_timeseries()
-        if key in [
-            # "index",
+        if key in {
             "metadata",
             "metadata_description",
             "timeindex_description",
-        ]:
+        }:
             self.clean_metadata()
 
     def clean_metadata(self) -> None:

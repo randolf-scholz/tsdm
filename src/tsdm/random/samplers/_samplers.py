@@ -684,7 +684,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
                     yield horizons[0], horizons[-1]
             case "bounds", True:
                 for horizons in iter_horizons:
-                    yield [
+                    yield [  # noqa: C416
                         (start, stop)
                         for start, stop in sliding_window_view(horizons, 2)
                     ]

@@ -253,7 +253,7 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
         return table
 
     def download_file(self, fname: str, /) -> None:
-        if self.version_info not in [(1, 0), (2, 2)]:
+        if self.version_info not in {(1, 0), (2, 2)}:
             # zip file is not directly downloadable for other versions.
             download_directory_to_zip(
                 f"{self.CONTENT_URL}/{self.__version__}/",

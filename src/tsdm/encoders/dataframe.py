@@ -823,7 +823,7 @@ class TensorEncoder(BaseEncoder):
         self.device = torch.device("cpu") if device is None else device
 
         if names is not None:
-            self.return_type = namedtuple("namedtuple", names)  # type: ignore[misc]
+            self.return_type = namedtuple("namedtuple", names)  # type: ignore[misc]  # noqa: PYI024
 
         self.is_fitted = True
 

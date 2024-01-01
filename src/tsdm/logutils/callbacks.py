@@ -116,7 +116,7 @@ def is_callback(func: CB, /) -> TypeGuard[CB]:
     return (
         len(params) >= 1
         and params[0].kind is inspect.Parameter.POSITIONAL_ONLY
-        and all(p.kind in (p.KEYWORD_ONLY, p.VAR_KEYWORD) for p in params[1:])
+        and all(p.kind in {p.KEYWORD_ONLY, p.VAR_KEYWORD} for p in params[1:])
     )
 
 
@@ -308,7 +308,7 @@ class EvaluationCallback(BaseCallback):
         # make sure there is exactly one validation split.
         candidate = None
         for key in self.dataloaders:
-            if key.lower() in ("val", "valid", "validation"):
+            if key.lower() in {"val", "valid", "validation"}:
                 if candidate is not None:
                     raise ValueError(
                         f"Found multiple validation splits: {candidate} and {key}!"

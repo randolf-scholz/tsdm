@@ -25,25 +25,24 @@ How do we ensure logging is fast?
 - loggers should not recompute things that have already been computed
     - loggers need access to existing results
 
-Examples
---------
-We want to log the left-inverse residual of the linodenet.
-Sometimes, this is also used as a regularization term.
-Therefore, the logging function either has to:
+Examples:
+    We want to log the left-inverse residual of the linodenet.
+    Sometimes, this is also used as a regularization term.
+    Therefore, the logging function either has to:
 
-- compute R and log it
-- use the existing R and log it
+    - compute R and log it
+    - use the existing R and log it
 
-Typical things the loggers need access to include:
+    Typical things the loggers need access to include:
 
-- the current iteration
-- the current loss
-- the current model
-- the current optimizer
-- the current data
-    - the current predictions
-    - the current targets
-- the current metrics
+    - the current iteration
+    - the current loss
+    - the current model
+    - the current optimizer
+    - the current data
+        - the current predictions
+        - the current targets
+    - the current metrics
 """
 
 __all__ = [

@@ -25,7 +25,7 @@ __ALL__ = dir() + __all__
 
 import inspect
 import logging
-from collections.abc import Callable, Iterable, Mapping, Sequence, Set
+from collections.abc import Callable, Iterable, Mapping, Sequence, Set as AbstractSet
 from dataclasses import is_dataclass
 from functools import partialmethod
 from types import FunctionType
@@ -499,7 +499,7 @@ def repr_sequence(
     match obj:
         case tuple():
             left, right = "(", ")"
-        case Set():
+        case AbstractSet():
             left, right = "{", "}"
         case _:
             left, right = "[", "]"
@@ -510,7 +510,7 @@ def repr_sequence(
 
     # set title
     if title is None:
-        if cls in (list, tuple, set):
+        if cls in {list, tuple, set}:
             title = ""
         else:
             title = cls.__name__

@@ -12,10 +12,9 @@ __logger__ = logging.getLogger(__name__)
 def test_make_masked_format() -> None:
     r"""Using example taken from Figure 2 in [1].
 
-    References
-    ----------
-    1. Recurrent Neural Networks for Multivariate Time Series with Missing Values
-       Che et al., Nature 2017
+    References:
+        Recurrent Neural Networks for Multivariate Time Series with Missing Values
+        Che et al., Nature 2017
     """
     LOGGER = __logger__.getChild(make_masked_format.__name__)
     LOGGER.info("Testing.")

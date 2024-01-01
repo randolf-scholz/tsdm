@@ -29,19 +29,17 @@ from typing_extensions import overload
 
 def is_string_array(arr: Array, /) -> bool:
     """Check if an array is a string array."""
-    if arr.type in (pa.string(), pa.large_string()):
-        return True
-    if isinstance(arr.type, pa.ListType) and arr.type.value_type in (
-        pa.string(),
-        pa.large_string(),
-    ):
-        return True
-    if isinstance(arr.type, pa.DictionaryType) and arr.type.value_type in (
-        pa.string(),
-        pa.large_string(),
-    ):
-        return True
-    return False
+    STRING_TYPES = frozenset({pa.string(), pa.large_string()})
+
+    match arr.type:
+        case _ if arr.type in STRING_TYPES:
+            return True
+        case pa.ListType(value_type=value_type):
+            return value_type in STRING_TYPES
+        case pa.DictionaryType(value_type=value_type):
+            return value_type in STRING_TYPES
+        case _:
+            return False
 
 
 def strip_whitespace_table(table: Table, /, *cols: str) -> Table:

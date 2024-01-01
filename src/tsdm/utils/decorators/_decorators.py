@@ -204,15 +204,14 @@ def decorator(deco: Callable) -> Callable:
     | functional | ✔               | ✔        | ✔                 |
     +------------+-----------------+----------+-------------------+
 
-    Examples
-    --------
-    >>> def wrap_fun(
-    ...     func: Callable,
-    ...     before: Optional[Callable]=None,
-    ...     after: Optional[Callable]=None,
-    ...     /,
-    ... ) -> Callable:
-    ...     '''Wraps function.'''
+    Example:
+        >>> def wrap_fun(
+        ...     func: Callable,
+        ...     before: Optional[Callable]=None,
+        ...     after: Optional[Callable]=None,
+        ...     /,
+        ... ) -> Callable:
+        ...     '''Wraps function.'''
 
     Here, there is a problem:
 
@@ -478,13 +477,13 @@ def vectorize(
 
     if not params:
         raise ValueError(f"{func} has no parameters")
-    if params[0].kind not in (
+    if params[0].kind not in {
         Parameter.POSITIONAL_ONLY,
         Parameter.POSITIONAL_OR_KEYWORD,
-    ):
+    }:
         raise ValueError(f"{func} must have a single positional parameter!")
     for param in params[1:]:
-        if param.kind not in (Parameter.KEYWORD_ONLY, Parameter.VAR_KEYWORD):
+        if param.kind not in {Parameter.KEYWORD_ONLY, Parameter.VAR_KEYWORD}:
             raise ValueError(f"{func} must have a single positional parameter!")
 
     @wraps(func)

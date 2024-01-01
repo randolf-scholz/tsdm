@@ -261,15 +261,27 @@ indent-width = 4
 
 [tool.ruff.lint]
 select = [
-    "E",     # pycodestyle
-    "F",     # pyflakes
+    "A",     # builtins
     "B",     # bugbear
+    "C4",    # comprehensions
+    "D",     # pydocstyle
+    "E",     # pycodestyle
+    "EXE",   # executable
+    "F",     # pyflakes
     "PL",    # pylint
+    "PIE",   # pie
+    "PYI",   # pyi
     "PERF",  # performance related
     "RUF",   # ruff specific
-    "TRY",
+    "TRY",   # tryceratops
 ]
 ignore = [
+    # pydocstyle
+    "D102",  # Missing docstring in public method
+    "D103",  # Missing docstring in public function
+    "D105",  # Missing docstring in magic method
+    "D107",  # Missing docstring in __init__
+    # pycodestyle
     "E201",  # Whitespace after '('
     "E202",  # Whitespace before ')'
     "E203",  # Whitespace before ':'
@@ -280,12 +292,20 @@ ignore = [
     "E271",  # Multiple spaces after keyword
     "E272",  # Multiple spaces before keyword
     # pylint
+    "PLC2401",  # non-ascii-name
     "PLR0124",  # Name compared with itself
+    "PLR2004",  # Magic value used in comparison
+    # pylint "too-many-*" rules
+    "PLR0904",  # Too many public methods
     "PLR0911",  # Too many return statements
     "PLR0912",  # Too many branches
     "PLR0913",  # Too many arguments in function definition
+    "PLR0914",  # Too many local variables
     "PLR0915",  # Too many statements
-    "PLR2004",  # Magic value used in comparison
+    "PLR0916",  # Too many boolean expressions
+    "PLR0917",  # Too many positional arguments
+    # PYI
+    "PYI019",  # Methods like ... should return typing.Self instead of custom TypeVar
     # RUFF
     "RUF001",  # ambiguous-unicode-character-string
     "RUF002",  # ambiguous-unicode-character-docstring
@@ -295,7 +315,6 @@ ignore = [
     # tryceratops
     "TRY003",  # Avoid specifying long messages outside the exception class
 ]
-
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -327,6 +346,9 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 # endregion ruff configuration ---------------------------------------------------------
 
 

@@ -236,9 +236,8 @@ def deep_dict_update(d: dict, new_kvals: Mapping, /) -> dict:
     for key, value in new_kvals.items():
         if isinstance(value, Mapping) and value:
             d[key] = deep_dict_update(d.get(key, {}), value)
-        else:
-            # if value is not None or not safe:
-            d[key] = new_kvals[key]
+        else:  # if value is not None or not safe:
+            d[key] = value
     return d
 
 

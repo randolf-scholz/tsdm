@@ -35,14 +35,13 @@ Notes:
       Here, 20% validation refers to 20% of the non-test data, i.e. 20% of 90% = 18% of the total data. [3]_
     - The random seed is fixed to 432 at the start of the splitting process. [4]_
 
-References
-----------
-.. [1] | `GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
-       | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves.
-         `Advances in Neural Information Processing Systems 2019 <https://proceedings.neurips.cc/paper/2019>`_
-.. [2] https://github.com/edebrouwer/gru_ode_bayes
-.. [3] https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
-.. [4] https://github.com/edebrouwer/gru_ode_bayes/blob/ddd0b34e884dbee1c09b6a3927d1e9ab10443af8/data_preproc/Climate/generate_folds.py
+References:
+    .. [1] | `GRU-ODE-Bayes: Continuous Modeling of Sporadically﹣Observed Time Series <https://proceedings.neurips.cc/paper/2019/hash/455cb2657aaa59e32fad80cb0b65b9dc-Abstract.html>`_
+           | De Brouwer, Edward and Simm, Jaak and Arany, Adam and Moreau, Yves.
+             `Advances in Neural Information Processing Systems 2019 <https://proceedings.neurips.cc/paper/2019>`_
+    .. [2] https://github.com/edebrouwer/gru_ode_bayes
+    .. [3] https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
+    .. [4] https://github.com/edebrouwer/gru_ode_bayes/blob/ddd0b34e884dbee1c09b6a3927d1e9ab10443af8/data_preproc/Climate/generate_folds.py
 """
 
 __all__ = [

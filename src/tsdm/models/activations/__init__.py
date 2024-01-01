@@ -116,10 +116,7 @@ TORCH_SPECIAL_FUNCTIONAL_ACTIVATIONS = {
 }
 """Activations that do not adhere to standard signature"""
 
-FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = {
-    **TORCH_FUNCTIONAL_ACTIVATIONS,
-    **{},
-}
+FUNCTIONAL_ACTIVATIONS: dict[str, Activation] = TORCH_FUNCTIONAL_ACTIVATIONS
 r"""Dictionary containing all available functional activations."""
 
 TORCH_MODULAR_ACTIVATIONS: dict[str, type[Activation]] = {
@@ -154,10 +151,7 @@ TORCH_MODULAR_ACTIVATIONS: dict[str, type[Activation]] = {
 }
 r"""Dictionary containing all available activations in torch."""
 
-MODULAR_ACTIVATIONS: dict[str, type[Activation]] = {
-    **TORCH_MODULAR_ACTIVATIONS,
-    **{},
-}
+MODULAR_ACTIVATIONS: dict[str, type[Activation]] = TORCH_MODULAR_ACTIVATIONS
 r"""Dictionary containing all available activations."""
 
 TORCH_ACTIVATIONS: dict[str, Activation | type[Activation]] = {

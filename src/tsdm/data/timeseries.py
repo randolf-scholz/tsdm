@@ -497,23 +497,21 @@ class TimeSeriesSampleGenerator(TorchDataset[Sample]):
     | targets Y     | ✘                | ✔                |
     +---------------+------------------+------------------+
 
-    Examples
-    --------
-    - time series classification task: empty forecasting horizon, only metadata_targets set.
-    - time series imputation task: observation horizon and forecasting horizon overlap
-    - time series forecasting task: observation horizon and forecasting horizon
-    - time series forecasting task (autoregressive): observables = targets
-    - time series event forecasting: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} given n
-    - time series event forecasting++: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} and n
+    Examples:
+        - time series classification task: empty forecasting horizon, only metadata_targets set.
+        - time series imputation task: observation horizon and forecasting horizon overlap
+        - time series forecasting task: observation horizon and forecasting horizon
+        - time series forecasting task (autoregressive): observables = targets
+        - time series event forecasting: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} given n
+        - time series event forecasting++: predict both event and time of event (tᵢ, yᵢ)_{i=1:n} and n
 
-    Notes
-    -----
-    The option `pin_memory` of `torch.utils.data.DataLoader` recurses through
-    Mappings and Sequence. However, it will cast the types. The only preserved Types are
+    Notes:
+        The option `pin_memory` of `torch.utils.data.DataLoader` recurses through
+        Mappings and Sequence. However, it will cast the types. The only preserved Types are
 
-    - dicts
-    - tuples
-    - namedtuples
+        - dicts
+        - tuples
+        - namedtuples
 
     Dataclasses are currently not supported. Therefore, we preferably use namedtuples
     or dicts as containers.

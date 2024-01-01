@@ -188,6 +188,14 @@ class LazyDict(dict[K, V]):
         r"""Return a dictionary with all values evaluated."""
         return {k: self[k] for k in self}
 
+    def copy(self) -> Self:
+        r"""Return a shallow copy of the dictionary."""
+        return self.__class__(self.items())
+
+    def set(self, key: K, value: V, /) -> None:  # noqa: A003
+        r"""Set the value directly."""
+        super().__setitem__(key, value)
+
     @staticmethod
     def _make_lazy_function(key: K, value: FuncSpec | V, /) -> LazyValue:
         match value:
@@ -222,11 +230,3 @@ class LazyDict(dict[K, V]):
                     stacklevel=3,
                 )
                 return LazyValue(lambda: value)
-
-    def copy(self) -> Self:
-        r"""Return a shallow copy of the dictionary."""
-        return self.__class__(self.items())
-
-    def set(self, key: K, value: V, /) -> None:
-        r"""Set the value directly."""
-        super().__setitem__(key, value)

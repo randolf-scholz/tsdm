@@ -1,10 +1,9 @@
 r"""Protocols used in tsdm.
 
-References
-----------
-- https://www.python.org/dev/peps/pep-0544/
-- https://docs.python.org/3/library/typing.html#typing.Protocol
-- https://numpy.org/doc/stable/reference/c-api/array.html
+References:
+    - https://www.python.org/dev/peps/pep-0544/
+    - https://docs.python.org/3/library/typing.html#typing.Protocol
+    - https://numpy.org/doc/stable/reference/c-api/array.html
 """
 
 __all__ = [
@@ -312,7 +311,7 @@ class SeriesKind(Protocol[scalar_co]):
     def __array__(self) -> NDArray:
         """Return a numpy array (usually of type `object` since columns are heterogeneous).
 
-        References
+        References:
             - https://numpy.org/devdocs/user/basics.interoperability.html
         """
         ...
@@ -376,7 +375,7 @@ class TableKind(Protocol):
     def __array__(self) -> NDArray[np.object_]:
         """Return a numpy array (usually of type `object` since columns are heterogeneous).
 
-        References
+        References:
             - https://numpy.org/devdocs/user/basics.interoperability.html
         """
         ...
@@ -452,7 +451,7 @@ class ArrayKind(Protocol[scalar_co]):
     def __array__(self) -> NDArray:
         """Return a numpy array.
 
-        References
+        References:
             - https://numpy.org/devdocs/user/basics.interoperability.html
         """
         ...
@@ -505,7 +504,7 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     def __array__(self) -> NDArray:
         """Return a numpy array.
 
-        References
+        References:
             - https://numpy.org/devdocs/user/basics.interoperability.html
         """
         ...
@@ -522,11 +521,11 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         """Return an element/slice of the table."""
         ...
 
-    def all(self) -> Self | bool:
+    def all(self) -> Self | bool:  # noqa: A003
         """Return True if all elements are True."""
         ...
 
-    def any(self) -> Self | bool:
+    def any(self) -> Self | bool:  # noqa: A003
         """Return True if any element is True."""
         ...
 

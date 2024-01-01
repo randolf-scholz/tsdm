@@ -95,7 +95,7 @@ def is_logfunc(func: Callable, /) -> TypeGuard[LogFunction]:
     params = list(sig.parameters.values())
     P = inspect.Parameter
     return len(params) >= 6 and all(
-        p.kind in (P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD) for p in params[:3]
+        p.kind in {P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD} for p in params[:3]
     )
 
 

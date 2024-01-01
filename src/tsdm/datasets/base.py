@@ -278,7 +278,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         if hasattr(pandas, f"read_{file_type}"):
             loader = getattr(pandas, f"read_{file_type}")
 
-            if file_type in ("parquet", "feather"):
+            if file_type in {"parquet", "feather"}:
                 if "engine" not in kwargs:
                     kwargs["engine"] = "pyarrow"
                 if "dtype_backend" not in kwargs and pandas_version >= (2, 0, 0):

@@ -163,10 +163,7 @@ def get_return_typehint(f: Callable[..., Any]) -> Any:
 
 def is_mandatory_arg(p: Parameter, /) -> bool:
     r"""Check if parameter is mandatory."""
-    return p.default is Parameter.empty and p.kind not in (
-        VAR_POSITIONAL,
-        VAR_KEYWORD,
-    )
+    return p.default is Parameter.empty and p.kind not in {VAR_POSITIONAL, VAR_KEYWORD}
 
 
 @overload
@@ -177,12 +174,12 @@ def is_positional_arg(p, /, *, func=None):
     r"""Check if parameter is positional argument."""
     match p, func:
         case Parameter() as param, None:
-            return param.kind in (
+            return param.kind in {
                 POSITIONAL_ONLY,
                 POSITIONAL_OR_KEYWORD,
                 VAR_POSITIONAL,
-            )
-        case str() as name, Callable() as function:  # type: ignore[misc]
+            }
+        case str(name), Callable() as function:  # type: ignore[misc]
             # FIXME: https://github.com/python/cpython/issues/102395
             function = cast(Callable, function)  # type: ignore[has-type]
             sig = inspect.signature(function)
@@ -197,22 +194,22 @@ def is_positional_arg(p, /, *, func=None):
 
 def is_positional_only_arg(p: Parameter, /) -> bool:
     """Check if parameter is positional only argument."""
-    return p.kind in (POSITIONAL_ONLY, VAR_POSITIONAL)
+    return p.kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
 
 
 def is_keyword_only_arg(p: Parameter, /) -> bool:
     """Check if parameter is keyword only argument."""
-    return p.kind in (KEYWORD_ONLY, VAR_KEYWORD)
+    return p.kind in {KEYWORD_ONLY, VAR_KEYWORD}
 
 
 def is_keyword_arg(p: Parameter, /) -> bool:
     """Check if parameter is keyword argument."""
-    return p.kind in (POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD)
+    return p.kind in {POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD}
 
 
 def is_variadic_arg(p: Parameter, /) -> bool:
     """Check if parameter is variadic argument."""
-    return p.kind in (VAR_POSITIONAL, VAR_KEYWORD)
+    return p.kind in {VAR_POSITIONAL, VAR_KEYWORD}
 
 
 def rpartial(

@@ -34,14 +34,13 @@ Notes:
             )
     - on MIMIC-IV, the authors remove 5-sigma outliers, cf. [4]_
 
-References
-----------
-.. [1] | `Neural Flows: Efficient Alternative to Neural ODEs <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
-       | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann.
-         `Advances in Neural Information Processing Systems 2021 <https://proceedings.neurips.cc/paper/2021>`_
-.. [2] https://github.com/mbilos/neural-flows-experiments/
-.. [3] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
-.. [4] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L55-L63
+References:
+    .. [1] | `Neural Flows: Efficient Alternative to Neural ODEs <https://proceedings.neurips.cc/paper/2021/hash/b21f9f98829dea9a48fd8aaddc1f159d-Abstract.html>`_
+           | Marin Biloš, Johanna Sommer, Syama Sundar Rangapuram, Tim Januschowski, Stephan Günnemann.
+             `Advances in Neural Information Processing Systems 2021 <https://proceedings.neurips.cc/paper/2021>`_
+    .. [2] https://github.com/mbilos/neural-flows-experiments/
+    .. [3] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L66-L67
+    .. [4] https://github.com/mbilos/neural-flows-experiments/blob/bd19f7c92461e83521e268c1a235ef845a3dd963/nfe/experiments/gru_ode_bayes/lib/get_data.py#L55-L63
 """
 
 __all__ = [

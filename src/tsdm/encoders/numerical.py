@@ -87,19 +87,19 @@ Arr2 = TypeVar("Arr2", bound=NumericalArray)
 r"""TypeVar for tensor-like objects."""
 Index: TypeAlias = None | int | list[int] | slice | EllipsisType
 r"""Type Hint for single indexer."""
-scalars: TypeAlias = None | bool | int | float | complex | str
+Scalar: TypeAlias = None | bool | int | float | complex | str
 """Type Hint for scalar objects."""
 ClippingMode: TypeAlias = Literal["mask", "clip"]
 r"""Type Hint for clipping mode."""
 
 PARAMETERS: TypeAlias = tuple[
-    scalars
+    Scalar
     | Arr
-    | list[scalars]
+    | list[Scalar]
     | list[Arr]
     | list["PARAMETERS"]
-    | tuple[scalars | Arr | "PARAMETERS", ...]
-    | dict[str, scalars]
+    | tuple[Scalar | Arr | "PARAMETERS", ...]
+    | dict[str, Scalar]
     | dict[str, Arr]
     | dict[str, "PARAMETERS"],
     ...,
@@ -233,7 +233,7 @@ def get_reduced_axes(item, axis):
                 return axis[1:]
             return axis
         case slice() as slc:
-            if slice_size(slc) in (0, 1):
+            if slice_size(slc) in {0, 1}:
                 return axis[1:]
             return axis
         case tuple() as tup:

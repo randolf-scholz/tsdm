@@ -16,66 +16,57 @@ Specification:
 - Modules that are not reversible, we call transformations.
 - Example: Convert logit output of a NN to a class prediction.
 
-Note
-----
-Some important units
+Note:
+    Some important unit kinds:
 
-numerical
-
-- finite
-    - support: {a₁, ..., aₙ}
-    - dimensionless: False
-    - ordered: True
-- discrete:
-    - support: ℤ
-    - dimensionless: True
-    - ordered: True
-- absolute:
-    - support: [0, +∞)
-    - dimensionless: False
-    - ordered: True
-    - Encoders: `BoxCoxEncoder`
-- factor:
-    - support: (0, +∞)
-    - dimensionless: True
-    - ordered: True
-    - Encoders: `Logarithm`
-- percent
-    - support: [0, 100]
-    - dimensionless: True
-    - ordered: True
-    - Encoders: `Logit @ MinMaxScalar[0, 100]`, `HardLogit @ MinMaxScalar[0, 100]`
-- bounded
-    - support: [a, b]
-    - dimensionless: False
-    - ordered: True
-    - Encoders: `Logit @ MinMaxScalar[a, b]`, `HardLogit @ MinMaxScalar[a, b]`
-- linear
-    - support: (-∞, +∞)
-    - dimensionless: False
-    - ordered: True
-    - Encoders: `StandardScalar` (diagonal or full covariance)
-
-category
-
-- support: `{1, ..., K}`
-- dimensionless: `True`
-- ordered: `False`
-- Encoders: `OneHotEncoder`
-
-ordinal
-
-- support: `{1, ..., K}`
-- dimensionless: `True`
-- ordered: `True`
-- Encoders: `OrdinalEncoder`, `PositionalEncoder`
-
-cyclic
-
-- support: $[0, 2π)$
-- dimensionless: `True`
-- ordered: `False`
-- Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
+    - finite
+        - support: {a₁, ..., aₙ}
+        - dimensionless: False
+        - ordered: True
+    - discrete:
+        - support: ℤ
+        - dimensionless: True
+        - ordered: True
+    - absolute:
+        - support: [0, +∞)
+        - dimensionless: False
+        - ordered: True
+        - Encoders: `BoxCoxEncoder`
+    - factor:
+        - support: (0, +∞)
+        - dimensionless: True
+        - ordered: True
+        - Encoders: `Logarithm`
+    - percent
+        - support: [0, 100]
+        - dimensionless: True
+        - ordered: True
+        - Encoders: `Logit @ MinMaxScalar[0, 100]`, `HardLogit @ MinMaxScalar[0, 100]`
+    - bounded
+        - support: [a, b]
+        - dimensionless: False
+        - ordered: True
+        - Encoders: `Logit @ MinMaxScalar[a, b]`, `HardLogit @ MinMaxScalar[a, b]`
+    - linear
+        - support: (-∞, +∞)
+        - dimensionless: False
+        - ordered: True
+        - Encoders: `StandardScalar` (diagonal or full covariance)
+    - category
+        - support: `{1, ..., K}`
+        - dimensionless: `True`
+        - ordered: `False`
+        - Encoders: `OneHotEncoder`
+    - ordinal
+        - support: `{1, ..., K}`
+        - dimensionless: `True`
+        - ordered: `True`
+        - Encoders: `OrdinalEncoder`, `PositionalEncoder`
+    - cyclic
+        - support: $[0, 2π)$
+        - dimensionless: `True`
+        - ordered: `False`
+        - Encoders: `SinusoidalEncoder`, `CosineEncoder`, `PeriodicEncoder`
 
 See Also:
     - `tsdm.encoders.functional` for functional implementations.
