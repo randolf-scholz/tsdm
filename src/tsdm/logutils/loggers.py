@@ -86,7 +86,7 @@ from tsdm.logutils.callbacks import (  # ModelCallback,
 from tsdm.metrics import Metric
 from tsdm.types.aliases import JSON, PathLike
 from tsdm.utils.funcutils import get_mandatory_kwargs
-from tsdm.utils.strings import repr_mapping
+from tsdm.utils.pprint import repr_mapping
 
 
 class ResultTuple(NamedTuple):

@@ -22,7 +22,7 @@ from scipy.special import erfinv
 from typing_extensions import ClassVar, Literal, TypeAlias
 
 from tsdm.encoders.base import BaseEncoder
-from tsdm.utils.strings import pprint_repr
+from tsdm.utils.pprint import pprint_repr
 
 # region Constants ---------------------------------------------------------------------
 ROOT_3 = np.sqrt(3)

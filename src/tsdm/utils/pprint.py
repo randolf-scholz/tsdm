@@ -3,14 +3,16 @@ r"""Utility functions for string manipulation."""
 __all__ = [
     # CONSTANTS
     "RECURSIVE_REPR_FUNS",
+    "MAXITEMS",
+    "MAXITEMS_INLINE",
+    "LINEBREAKS",
+    "PADDING",
+    "RECURSIVE",
+    "ALIGN",
     # Types
     "ReprProtocol",
     # Functions
     "pprint_repr",
-    "snake2camel",
-    # "camel2snake",
-    "dict2string",
-    "tensor_info",
     # repr functions
     "repr_array",
     "repr_dataclass",
@@ -25,14 +27,14 @@ __ALL__ = dir() + __all__
 
 import inspect
 import logging
-from collections.abc import Callable, Iterable, Mapping, Sequence, Set as AbstractSet
+from collections.abc import Callable, Mapping, Sequence, Set as AbstractSet
 from dataclasses import is_dataclass
 from functools import partialmethod
+from math import prod
 from types import FunctionType
 
 from pandas import DataFrame, MultiIndex
 from pyarrow import Array as pyarrow_array, Table as pyarrow_table
-from torch import Tensor
 from typing_extensions import Any, Final, Optional, Protocol, cast, overload
 
 from tsdm.constants import BUILTIN_CONSTANTS, BUILTIN_TYPES
@@ -44,9 +46,16 @@ from tsdm.types.protocols import (
     SupportsArray,
     SupportsDevice,
     SupportsDtype,
+    SupportsItem,
+    SupportsShape,
 )
 from tsdm.types.variables import T
 from tsdm.utils.decorators import decorator
+
+
+def __dir__() -> list[str]:
+    return __ALL__
+
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 
@@ -62,51 +71,6 @@ RECURSIVE: Final[bool | int] = 1
 r"""Default recursive for repr_funcs."""
 ALIGN: Final[bool] = True
 r"""Default align for repr_mapping."""
-
-
-def __dir__() -> list[str]:
-    return __ALL__
-
-
-@overload
-def snake2camel(s: str) -> str: ...
-@overload
-def snake2camel(s: list[str]) -> list[str]: ...
-@overload
-def snake2camel(s: tuple[str, ...]) -> tuple[str, ...]: ...
-def snake2camel(s):
-    r"""Convert ``snake_case`` to ``CamelCase``."""
-    match s:
-        case tuple() as tup:
-            return tuple(snake2camel(x) for x in tup)
-        case str() as string:
-            substrings = string.split("_")
-            return "".join(s[0].capitalize() + s[1:] for s in substrings)
-        case Iterable() as iterable:
-            return [snake2camel(x) for x in iterable]
-        case _:
-            raise TypeError(
-                f"Type {type(s)} nor understood, expected string or iterable."
-            )
-
-
-def tensor_info(x: Tensor) -> str:
-    r"""Print useful information about Tensor."""
-    return f"{x.__class__.__name__}[{tuple(x.shape)}, {x.dtype}, {x.device.type}]"
-
-
-def dict2string(d: dict[str, Any]) -> str:
-    r"""Return pretty string representation of dictionary."""
-    max_key_length = max((len(key) for key in d), default=0)
-    pad = " " * 2
-
-    string = "dict(" + "\n"
-
-    for key, value in sorted(d.items()):
-        string += f"\n{pad}{key:<{max_key_length}}: {value!r}"
-
-    string += "\n)"
-    return string
 
 
 class ReprProtocol(Protocol):
@@ -723,8 +687,6 @@ def repr_array(
     **_: Any,
 ) -> str:
     r"""Return a string representation of an array object."""
-    if isinstance(obj, type):
-        raise TypeError("Input must be an instance, not Type.")
     if not isinstance(obj, SupportsArray):
         raise TypeError("Object does not support `__array__` dunder.")
 
@@ -734,11 +696,12 @@ def repr_array(
     string = f"{title}["
 
     # add the shape.
-    as_array = obj.__array__()
-    if as_array.size <= 1:  # scalar
-        string += repr(as_array.item())
-    else:
-        string += str(tuple(as_array.shape))
+    shape = obj.shape if isinstance(obj, SupportsShape) else obj.__array__().shape
+    string += (  # if object is scalar-like, try get the actual value.
+        repr(obj.item())
+        if prod(shape) <= 1 and isinstance(obj, SupportsItem)
+        else str(tuple(shape))
+    )
 
     # add the dtype
     match obj:
@@ -786,20 +749,6 @@ RECURSIVE_REPR_FUNS: list[ReprProtocol] = [
     repr_sequence,
     repr_shortform,
 ]
-
-
-# from functools import wraps
-#
-#
-# def class_decorator(deco):
-#     @wraps(deco)
-#     def __parametrized_decorator(cls=NotImplemented, /, *args: Any, **kwargs: Any):
-#         if cls is NotImplemented:
-#             return partial(deco, *args, **kwargs)
-#         return deco(cls, *args, **kwargs)
-#
-#     return __parametrized_decorator
-#
 
 
 @overload

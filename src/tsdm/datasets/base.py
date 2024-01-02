@@ -47,8 +47,8 @@ from tsdm.types.variables import T_co, str_var as Key
 from tsdm.utils import paths_exists
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict, LazyValue
+from tsdm.utils.pprint import repr_array, repr_mapping
 from tsdm.utils.remote import download
-from tsdm.utils.strings import repr_array, repr_mapping
 
 
 @runtime_checkable

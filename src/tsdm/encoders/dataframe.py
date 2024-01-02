@@ -39,7 +39,7 @@ from tsdm.types.dtypes import TORCH_DTYPES
 from tsdm.types.protocols import NTuple
 from tsdm.types.variables import K
 from tsdm.utils import pairwise_disjoint
-from tsdm.utils.strings import repr_mapping
+from tsdm.utils.pprint import repr_mapping
 
 E = TypeVar("E", bound=Encoder)
 F = TypeVar("F", bound=Encoder)

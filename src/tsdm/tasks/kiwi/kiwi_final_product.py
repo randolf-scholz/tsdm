@@ -25,7 +25,7 @@ from tsdm.data.timeseries import TimeSeriesDataset
 from tsdm.datasets import KiwiRuns
 from tsdm.random.samplers import HierarchicalSampler, IntervalSampler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.strings import pprint_repr
+from tsdm.utils.pprint import pprint_repr
 
 
 @pprint_repr

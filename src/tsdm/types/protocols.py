@@ -17,6 +17,7 @@ __all__ = [
     "SupportsDataframe",
     "SupportsDevice",
     "SupportsDtype",
+    "SupportsItem",
     "SupportsNdim",
     "SupportsShape",
     # Arrays
@@ -217,12 +218,13 @@ class ShapeLike(Protocol):
 
 
 @runtime_checkable
-class SupportsShape(Protocol[scalar_co]):
-    r"""We just test for shape, since e.g. tf.Tensor does not have ndim."""
+class SupportsDevice(Protocol):
+    """Protocol for objects that support `device`."""
 
     @property
-    def shape(self) -> tuple[int, ...]:
-        """Yield the shape of the array."""
+    @abstractmethod
+    def device(self) -> Any:
+        """Return the device of the tensor."""
         ...
 
 
@@ -231,6 +233,7 @@ class SupportsDtype(Protocol):
     r"""We just test for dtype, since e.g. tf.Tensor does not have ndim."""
 
     @property
+    @abstractmethod
     def dtype(self) -> str | np.dtype | type:
         r"""Yield the data type of the array."""
         ...
@@ -241,18 +244,20 @@ class SupportsNdim(Protocol):
     r"""We just test for ndim, since e.g. tf.Tensor does not have ndim."""
 
     @property
+    @abstractmethod
     def ndim(self) -> int:
         r"""Number of dimensions."""
         ...
 
 
 @runtime_checkable
-class SupportsDevice(Protocol):
-    """Protocol for objects that support `device`."""
+class SupportsShape(Protocol):
+    r"""Protocol for objects that support shape."""
 
     @property
-    def device(self) -> Any:
-        """Return the device of the tensor."""
+    @abstractmethod
+    def shape(self) -> tuple[int, ...]:
+        """Yield the shape of the array."""
         ...
 
 
@@ -263,6 +268,7 @@ class SupportsArray(Protocol):
     See: https://numpy.org/doc/stable/reference/c-api/array.html
     """
 
+    @abstractmethod
     def __array__(self) -> NDArray[np.object_]:
         """Return the array of the tensor."""
         ...
@@ -275,8 +281,22 @@ class SupportsDataframe(Protocol):
     See: https://data-apis.org/dataframe-protocol/latest/index.html
     """
 
+    @abstractmethod
     def __dataframe__(self) -> object:
         """Return the dataframe of the tensor."""
+        ...
+
+
+@runtime_checkable
+class SupportsItem(Protocol[scalar_co]):
+    """Protocol for objects that support `.item()`."""
+
+    @abstractmethod
+    def item(self) -> scalar_co:
+        """Return the scalar value the tensor if it only has a single element.
+
+        If the tensor has more than one element, raise an error.
+        """
         ...
 
 

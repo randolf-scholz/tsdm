@@ -66,7 +66,7 @@ from typing_extensions import Any, NamedTuple, deprecated
 from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_III_Bilos2021 as MIMIC_III_Dataset
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.strings import pprint_repr
+from tsdm.utils.pprint import pprint_repr
 
 
 @pprint_repr

@@ -46,7 +46,7 @@ from typing_extensions import (
 )
 
 from tsdm.types.variables import T2, K, T
-from tsdm.utils.strings import pprint_repr
+from tsdm.utils.pprint import pprint_repr
 
 E = TypeVar("E", bound="Encoder")
 """Type alias for encoder_var."""

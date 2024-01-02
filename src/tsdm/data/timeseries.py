@@ -32,7 +32,7 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset as TorchDataset
 from typing_extensions import Any, NamedTuple, Optional, Self, overload
 
-from tsdm.utils.strings import pprint_repr
+from tsdm.utils.pprint import pprint_repr
 
 
 @pprint_repr

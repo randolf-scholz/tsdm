@@ -73,7 +73,7 @@ from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
 from tsdm.types.aliases import Axes, Nested, PandasObject, SizeLike
 from tsdm.types.protocols import NTuple, NumericalArray, SupportsDtype
-from tsdm.utils.strings import pprint_repr
+from tsdm.utils.pprint import pprint_repr
 
 # NumericalArray: TypeAlias = Tensor | NDArray | DataFrame | Series
 # r"""Type Hint for tensor-like objects."""

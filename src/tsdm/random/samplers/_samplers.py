@@ -45,7 +45,7 @@ from tsdm.data.datasets import Dataset, IndexableDataset, MapDataset, Sequential
 from tsdm.types.protocols import VectorLike
 from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
 from tsdm.types.variables import K2, K, T, T_co
-from tsdm.utils.strings import pprint_repr
+from tsdm.utils.pprint import pprint_repr
 
 RNG: Generator = np.random.default_rng()
 

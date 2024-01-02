@@ -73,7 +73,7 @@ from tsdm.models import Model
 from tsdm.optimizers import Optimizer
 from tsdm.types.aliases import JSON, PathLike
 from tsdm.utils.funcutils import get_mandatory_kwargs
-from tsdm.utils.strings import repr_object
+from tsdm.utils.pprint import repr_object
 
 P = ParamSpec("P")
 

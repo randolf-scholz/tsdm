@@ -33,7 +33,7 @@ from typing_extensions import (
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
 from tsdm.types.variables import K2, K, K_contra, V_co
-from tsdm.utils.strings import pprint_repr, repr_array
+from tsdm.utils.pprint import pprint_repr, repr_array
 
 # region Protocols ---------------------------------------------------------------------
 

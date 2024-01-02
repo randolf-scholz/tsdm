@@ -33,7 +33,7 @@ from tsdm.utils.funcutils import (
     get_return_typehint,
     is_positional_arg,
 )
-from tsdm.utils.strings import repr_mapping
+from tsdm.utils.pprint import repr_mapping
 
 
 class LazyValue(Generic[R]):

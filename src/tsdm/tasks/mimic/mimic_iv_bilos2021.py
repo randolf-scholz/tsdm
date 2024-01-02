@@ -68,7 +68,7 @@ from tsdm.data import is_partition
 from tsdm.datasets import MIMIC_IV_Bilos2021 as MIMIC_IV_Dataset
 from tsdm.encoders import FrameEncoder, MinMaxScaler
 from tsdm.tasks._deprecated import OldBaseTask
-from tsdm.utils.strings import repr_namedtuple
+from tsdm.utils.pprint import repr_namedtuple
 
 
 class Inputs(NamedTuple):

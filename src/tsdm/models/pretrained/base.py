@@ -59,8 +59,8 @@ from tsdm.optimizers import LR_SCHEDULERS, OPTIMIZERS
 from tsdm.testing._testing import is_zipfile
 from tsdm.types.aliases import PathLike
 from tsdm.utils import LazyDict, initialize_from_config, paths_exists, repackage_zip
+from tsdm.utils.pprint import repr_mapping
 from tsdm.utils.remote import import_from_url
-from tsdm.utils.strings import repr_mapping
 
 # TODO: loading components!
 
