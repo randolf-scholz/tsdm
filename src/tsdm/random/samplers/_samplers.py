@@ -16,7 +16,6 @@ __all__ = [
     "compute_grid",
 ]
 
-import logging
 from abc import abstractmethod
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass, field
@@ -25,6 +24,7 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
+from numpy.random import Generator
 from numpy.typing import NDArray
 from pandas import DataFrame, Index, Series, Timedelta, Timestamp
 from typing_extensions import (
@@ -47,7 +47,7 @@ from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
 from tsdm.types.variables import K2, K, T, T_co
 from tsdm.utils.strings import pprint_repr
 
-RNG = np.random.default_rng()
+RNG: Generator = np.random.default_rng()
 
 
 # region helper functions --------------------------------------------------------------
@@ -169,47 +169,39 @@ class Sampler(Protocol[T_co]):
     In contrast, each Sampler must additionally have a `shuffle` attribute.
     """
 
+    @abstractmethod
+    def __len__(self) -> int:
+        """The number of indices that can be drawn by __iter__."""
+        ...
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[T_co]:
+        """Return an iterator over the indices of the data source."""
+        ...
+
     @property
     @abstractmethod
     def shuffle(self) -> bool:
         """Whether to shuffle the indices."""
         ...
 
-    def __iter__(self) -> Iterator[T_co]:
-        """Return an iterator over the indices of the data source."""
+    @property
+    @abstractmethod
+    def rng(self) -> Generator:
+        """The random number generator."""
         ...
-
-    def __len__(self) -> int:
-        """The number of indices that can be drawn by __iter__."""
-        ...
-
-
-class BaseSamplerMetaClass(type(Protocol)):  # type: ignore[misc]
-    r"""Metaclass for BaseDataset."""
-
-    # NOTE: https://stackoverflow.com/a/73677355/9318372
-
-    def __init__(
-        self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
-    ) -> None:
-        """When a new class/subclass is created, this method is called."""
-        super().__init__(name, bases, namespace, **kwds)
-
-        if "LOGGER" not in namespace:
-            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
 
 
 @dataclass
-class BaseSampler(Sampler[T_co], metaclass=BaseSamplerMetaClass):
+class BaseSampler(Sampler[T_co]):
     r"""Abstract Base Class for all Samplers."""
-
-    LOGGER: ClassVar[logging.Logger]
-    r"""Logger for the sampler."""
 
     _: KW_ONLY
 
     shuffle: bool = False
     r"""Whether to randomize sampling."""
+    rng: Generator = RNG
+    r"""The random number generator."""
 
     @abstractmethod
     def __len__(self) -> int:
@@ -238,6 +230,9 @@ class RandomSampler(BaseSampler[T_co]):
     _: KW_ONLY
 
     shuffle: bool = False
+    r"""Whether to randomize sampling."""
+    rng: Generator = RNG
+    r"""The random number generator."""
 
     index: Index = field(init=False)
     size: int = field(init=False)
@@ -248,15 +243,16 @@ class RandomSampler(BaseSampler[T_co]):
     @overload
     def __init__(self: "RandomSampler[T_co]", data: IndexableDataset[T_co], /, *, shuffle: bool = ...) -> None: ...
     # fmt: on
-    def __init__(self, data, /, *, shuffle=False):
+    def __init__(self, data, /, *, shuffle=False, rng=RNG):
         """Initialize the sampler."""
-        super().__init__(shuffle=shuffle)
+        super().__init__(shuffle=shuffle, rng=rng)
         self.data = data
         self.index = get_index(self.data)
         self.size = len(self.index)
 
     def __iter__(self) -> Iterator[T_co]:
-        index = self.index[RNG.permutation(self.size)] if self.shuffle else self.index
+        n = self.size
+        index = self.index[self.rng.permutation(n)] if self.shuffle else self.index
         data = self.data  # avoids attribute lookup in the loop
         for key in index:
             yield data[key]
@@ -283,6 +279,8 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
     r"""Whether to stop sampling when the index is exhausted."""
     shuffle: bool = False
     r"""Whether to sample in random order."""
+    rng: Generator = RNG
+    r"""The random number generator."""
 
     def __post_init__(self) -> None:
         if self.subsamplers is NotImplemented:
@@ -318,7 +316,7 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
         When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
         When ``early_stop=False``, it will sample all samples.
         """
-        index = RNG.permutation(self.partition) if self.shuffle else self.partition
+        index = self.rng.permutation(self.partition) if self.shuffle else self.partition
 
         activate_iterators = {
             key: iter(sampler) for key, sampler in self.subsamplers.items()
@@ -394,6 +392,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
     multi_horizon: bool
     shuffle: bool
     drop_last: bool
+    rng: Generator
 
     # dependent variables
     tmin: DT
@@ -415,6 +414,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: S,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -427,6 +427,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: B,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
 
     @overload
@@ -440,6 +441,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: M,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -452,6 +454,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: W,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -464,6 +467,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: S,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -476,6 +480,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: B,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -488,6 +493,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: M,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
     @overload
     def __init__(
@@ -500,6 +506,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: W,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
     @overload  # fallback mode=str
     def __init__(
@@ -512,6 +519,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: str,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
     @overload  # fallback mode=str
     def __init__(
@@ -524,6 +532,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         mode: str,
         shuffle: bool = ...,
         drop_last: bool = ...,
+        rng: Generator = ...,
     ) -> None: ...
 
     # endregion __init__ overloads -----------------------------------------------------
@@ -535,11 +544,12 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         horizons,
         stride,
         mode,
-        shuffle=False,
         drop_last=False,
+        shuffle=False,
+        rng=RNG,
     ):
         # FIXME: we can do better typing-wise once PEP696 is accepted and HKTs are supported.
-        super().__init__(shuffle=shuffle)
+        super().__init__(shuffle=shuffle, rng=rng)
 
         # region set basic attributes --------------------------------------------------
         self.tmin = get_first(data_source)
@@ -639,7 +649,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         grid = self.grid
 
         if self.shuffle:
-            grid = grid[RNG.permutation(len(grid))]
+            grid = grid[self.rng.permutation(len(grid))]
 
         # make_fn = self._MAKE_FUNCTIONS[self.mode, self.multi_horizon]
         # for k in grid:  # NOTE: k is some range of integers.

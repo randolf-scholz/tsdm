@@ -65,11 +65,12 @@ def unit_circle_lp_scaled():
 
     To do this, we use polar coordinates. Then we have:
 
-    .. math:: ‖x‖ₚ = c ⟺ |x|ᵖ + |y|ᴾ = cᵖ
-        ⟺ |r \cos φ|ᵖ + |r \sin φ|ᴾ = cᵖ
-        ⟺ rᵖ |\cos φ|ᵖ + rᵖ |\sin φ|ᴾ = c
-        ⟺ rᴾ = cᴾ / (|\cos φ|ᵖ + |\sin φ|ᴾ)
-        ⟺ r = c / ‖(\cos φ, \sin φ)‖ₚ
+    .. math::
+        ‖x‖ₚ = c &⟺ |x|ᵖ + |y|ᴾ = cᵖ                     \\
+        &⟺ |r \cos φ|ᵖ + |r \sin φ|ᴾ = cᵖ                \\
+        &⟺ rᵖ |\cos φ|ᵖ + rᵖ |\sin φ|ᴾ = c               \\
+        &⟺ rᴾ = cᴾ / (|\cos φ|ᵖ + |\sin φ|ᴾ)             \\
+        &⟺ r = c / ‖(\cos φ, \sin φ)‖ₚ
 
     This equation holds true for both scaled and unscaled versions.
     """
