@@ -44,19 +44,17 @@ def kernel_heatmap(
     if isinstance(kernel, Tensor):
         kernel = kernel.cpu().numpy()
 
-    if isinstance(cmap, str):
-        colormap = colormaps[cmap]
-    else:
-        colormap = cmap
-
+    colormap = colormaps[cmap] if isinstance(cmap, str) else cmap
     RGBA: NDArray = colormap(kernel)  # type: ignore[assignment]
     RGB = RGBA[..., :-1]
 
-    if fmt == "HWC":
-        return RGB
-    if fmt == "CHW":
-        return np.rollaxis(RGB, -1)
-    raise ValueError(fmt)
+    match fmt:
+        case "HWC":
+            return RGB
+        case "CHW":
+            return np.rollaxis(RGB, -1)
+        case _:
+            raise ValueError(f"Invalid format {fmt!r}")
 
 
 def rasterize(

@@ -328,11 +328,14 @@ def remove_outliers_series(
         __logger__.info("Skipping column with no boundaries.")
         return s
 
-    if lower_bound is not None and upper_bound is not None:
-        if lower_bound > upper_bound:
-            raise ValueError(
-                f"Lower bound {lower_bound} is greater than upper bound {upper_bound}."
-            )
+    if (
+        lower_bound is not None
+        and upper_bound is not None
+        and lower_bound > upper_bound
+    ):
+        raise ValueError(
+            f"Lower bound {lower_bound} is greater than upper bound {upper_bound}."
+        )
 
     __logger__.info("Removing outliers from %r.", s.name)
     s = s.copy() if inplace else s

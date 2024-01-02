@@ -320,9 +320,11 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
 
         # if zipfile
         if is_zipfile(self.rawdata_path):
-            with ZipFile(self.rawdata_path) as zf:
-                with zf.open(file) as f:
-                    return self.__load_component(f, component, extension)
+            with (
+                ZipFile(self.rawdata_path) as zf,
+                zf.open(file) as f,
+            ):
+                return self.__load_component(f, component, extension)
 
         raise ValueError(f"{self.rawdata_path=} is not a zipfile or directory!")
 

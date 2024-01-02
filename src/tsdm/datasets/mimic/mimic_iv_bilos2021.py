@@ -109,7 +109,7 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
         ts = (ts - ts.mean()) / ts.std()
 
         # NOTE: For the MIMIC-IV dataset, Bilos et al. drop 5σ-outliers.
-        ts = ts[(-5 < ts) & (ts < 5)].dropna(axis=1, how="all").copy()
+        ts = ts[(ts > -5) & (ts < 5)].dropna(axis=1, how="all").copy()
 
         # NOTE: only numpy float types supported by torch
         return ts.astype("float32")

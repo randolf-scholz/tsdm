@@ -365,19 +365,21 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         return labels.to_frame()
 
     def _clean_randperm(self) -> None:
-        with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
-            with archive.open("randperm") as file:
-                content = file.read().decode("utf8")
-                content = _reformat(content, {"[": "", "]": "", " ": "\n"})
-                randperm = pd.read_csv(
-                    StringIO(content),
-                    names=["randperm"],
-                    dtype="uint16",
-                ).squeeze()
-                randperm -= 1  # we use 0-based indexing
-                invperm = randperm.copy().argsort()
-                invperm.name = "invperm"
-                assert (randperm[invperm] == np.arange(len(randperm))).all()
+        with (
+            ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive,
+            archive.open("randperm") as file,
+        ):
+            content = file.read().decode("utf8")
+            content = _reformat(content, {"[": "", "]": "", " ": "\n"})
+            randperm = pd.read_csv(
+                StringIO(content),
+                names=["randperm"],
+                dtype="uint16",
+            ).squeeze()
+            randperm -= 1  # we use 0-based indexing
+            invperm = randperm.copy().argsort()
+            invperm.name = "invperm"
+            assert (randperm[invperm] == np.arange(len(randperm))).all()
 
         DataFrame(randperm).to_parquet(self.dataset_paths["randperm"])
         DataFrame(invperm).to_parquet(self.dataset_paths["invperm"])

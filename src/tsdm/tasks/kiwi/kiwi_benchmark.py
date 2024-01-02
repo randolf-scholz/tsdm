@@ -236,7 +236,7 @@ class KiwiBenchmark(TimeSeriesTask):
 
         return collate_fn
 
-    def get_columns_encoder(self, variable) -> Encoder:
+    def get_columns_encoder(self, variable: str, /) -> Encoder:
         descr = self.dataset.timeseries_description
         kind, lower, upper = descr.loc[variable, ["kind", "lower_bound", "upper_bound"]]
 

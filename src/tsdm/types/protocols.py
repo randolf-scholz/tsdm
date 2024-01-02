@@ -127,10 +127,7 @@ class VectorLike(Protocol[T_co]):
 
     def __contains__(self, value: object, /) -> bool:
         # NOTE: We need __contains__ to disallow `str`.
-        for x in self:
-            if x == value or x is value:
-                return True
-        return False
+        return any(x == value or x is value for x in self)
 
     # def __reversed__(self) -> Iterator[T_co]:
     #     for i in reversed(range(len(self))):
@@ -723,7 +720,7 @@ class SupportsKwargsType(type(Protocol)):  # type: ignore[misc]
 
     def __instancecheck__(self, other: object, /) -> bool:
         return isinstance(other, SupportsKeysAndGetItem) and all(
-            isinstance(key, str) for key in other.keys()
+            isinstance(key, str) for key in other.keys()  # noqa: SIM118
         )
 
     def __subclasscheck__(self, other: type, /) -> bool:

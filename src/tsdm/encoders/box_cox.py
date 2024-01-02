@@ -151,7 +151,7 @@ class BoxCoxEncoder(BaseEncoder):
         if not all(pd.isna(data) | (data >= 0)):
             raise ValueError("Data must be in [0, 1] or NaN.")
 
-        if not data.dtype == np.float64:
+        if data.dtype != np.float64:
             warnings.warn(
                 "It is not recommended to use this encoder with non-float64 data. "
                 f"But {data.dtype=}.",
@@ -323,7 +323,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
         if not all(np.isnan(data) | ((data >= 0) & (data <= 1))):
             raise ValueError("Data must be in [0, 1] or NaN.")
 
-        if not data.dtype == np.float64:
+        if data.dtype != np.float64:
             warnings.warn(
                 "It is not recommended to use this encoder with non-float64 data. "
                 f"But {data.dtype=}.",

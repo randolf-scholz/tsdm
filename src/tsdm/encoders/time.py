@@ -70,9 +70,7 @@ class Time2Float(BaseEncoder):
             ds = ds.view("datetime64[ns]")
             self.offset = deepcopy(ds[0])
             timedeltas = ds - self.offset
-        elif pd.api.types.is_timedelta64_dtype(ds):
-            timedeltas = ds.view("timedelta64[ns]")
-        elif pd.api.types.is_integer_dtype(ds):
+        elif pd.api.types.is_timedelta64_dtype(ds) or pd.api.types.is_integer_dtype(ds):
             timedeltas = ds.view("timedelta64[ns]")
         elif pd.api.types.is_float_dtype(ds):
             self.LOGGER.warning("Array is already floating dtype.")

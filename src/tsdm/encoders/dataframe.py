@@ -271,7 +271,7 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
                 raise TypeError(f"Invalid {type(encoders)=}")
 
         if self._has_ellipsis:
-            keys = list(self.encoders.keys())
+            keys = list(self.encoders)
             if copy_unused:
                 raise ValueError("Cannot copy unused columns when `...` is used.")
             if keys.count(Ellipsis) > 1:
@@ -280,7 +280,7 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
                 raise ValueError("`...` must be the last key.")
 
         # check that the groups are disjoint
-        groups = [keys for keys in self.encoders.keys() if keys is not Ellipsis]
+        groups = [keys for keys in self.encoders if keys is not Ellipsis]
         keys_disjoint = len(set().union(*groups)) == sum(map(len, groups))
         if not keys_disjoint:
             raise ValueError("Groups must be disjoint!")
@@ -288,7 +288,7 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
     @property
     def _has_ellipsis(self) -> bool:
         # NOTE: use property since this changes during fitting
-        return Ellipsis in self.encoders.keys()
+        return Ellipsis in self.encoders
 
     def fit(self, data: TableVar, /) -> None:
         # step 1, get columns
@@ -418,11 +418,7 @@ class FrameIndexer(BaseEncoder):
         self.index_columns = index.columns
         self.index_dtypes = index.dtypes
 
-        if self.reset is Ellipsis or not isinstance(self.reset, list):
-            num = len(index.columns)
-        else:
-            num = len(self.reset)
-
+        num = len(self.reset if isinstance(self.reset, list) else index.columns)
         self.index_indices = list(range(num))
 
     def encode(self, data: DataFrame, /) -> DataFrame:
@@ -589,10 +585,8 @@ class FrameSplitter(BaseEncoder, Mapping):
 
         encoded_frames = []
         for columns in self.groups.values():
-            if columns is Ellipsis:
-                encoded = data[self.ellipsis_columns]
-            else:
-                encoded = data[columns]
+            cols = self.ellipsis_columns if columns is Ellipsis else columns
+            encoded = data[cols]
             if self.dropna:
                 encoded = encoded.dropna(axis="index", how="all")
             encoded_frames.append(encoded)

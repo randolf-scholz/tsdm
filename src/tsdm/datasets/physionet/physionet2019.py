@@ -209,10 +209,12 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         ("Fibrinogen",       0,    None, True, True, "mg/dL",   None                                         ),
         ("Platelets",        0,    None, True, True, "10³/µL",  "Platelet count"                             ),
         # Outcome (column 41)
-        ("SepsisLabel",      None, None, True, True, "bool",
-            "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6 and 0 if t<tsepsis−6."
-            " For non-sepsis patients, SepsisLabel is 0.",
-        ),  # closing bracket does not match visual indentation
+        (
+            "SepsisLabel",      None, None, True, True, "bool",
+            "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6"
+            " and 0 if t<tsepsis−6. For non-sepsis patients, SepsisLabel is 0."
+        ),
+        # fmt: on
     ],
     "schema": {
         # fmt: off

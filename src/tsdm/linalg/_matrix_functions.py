@@ -417,10 +417,11 @@ def schatten_norm(
     σ = torch.where(m, σ, float("+nan"))
     σ = σ / σ_max
 
-    if scaled:
-        result = σ.pow(p).nanmean(dim=-1).pow(1 / p)
-    else:
-        result = σ.pow(p).nansum(dim=-1).pow(1 / p)
+    result = (
+        σ.pow(p).nanmean(dim=-1).pow(1 / p)
+        if scaled
+        else σ.pow(p).nansum(dim=-1).pow(1 / p)
+    )
     return apply_keepdim(result, dim, keepdim)
 
 
@@ -503,11 +504,9 @@ def operator_norm(
     rowdim, coldim = dim
     assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."
 
-    # branchless: c = (coldim / rowdim) ** (scaled / p)
-    if scaled:
-        c = (coldim / rowdim) ** (1 / p)
-    else:
-        c = 1.0
+    # c = (coldim / rowdim) ** (1 / p) if scaled else 1.0
+    # branchless:
+    c = (coldim / rowdim) ** (float(scaled) / p)
 
     if p == 2:
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)

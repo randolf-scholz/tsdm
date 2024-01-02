@@ -675,9 +675,13 @@ class TableCallback(BaseCallback):
     postfix: str = ""
 
     def callback(self, i: int, /, **state_dict: Any) -> None:
-        if hasattr(self.table, "name") and isinstance(self.table.name, str):
-            if self.table.name in state_dict:
-                self.table = state_dict[self.table.name]
+        if (
+            hasattr(self.table, "name")
+            and isinstance(self.table.name, str)
+            and self.table.name in state_dict
+        ):
+            self.table = state_dict[self.table.name]
+
         log_table(
             i,
             table=self.table,

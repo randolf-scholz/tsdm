@@ -204,7 +204,7 @@ class MIMIC_IV_Bilos2021(OldBaseTask):
         self.observation_time /= index_encoder.params.xmax
 
         # drop values outside 5 sigma range
-        ts = ts[(-5 < ts) & (ts < 5)]
+        ts = ts[(ts > -5) & (ts < 5)]
         ts = ts.dropna(axis=1, how="all").copy()
         return ts
 

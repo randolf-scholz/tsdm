@@ -29,14 +29,14 @@ def get_package_structure(root_module: ModuleType, /) -> dict[str, Any]:
     d = {}
     for name in dir(root_module):
         attr = getattr(root_module, name)
-        if isinstance(attr, ModuleType):
-            # check if it is a subpackage
-            if (
-                attr.__name__.startswith(root_module.__name__)
-                and attr.__package__ != root_module.__package__
-                and attr.__package__ is not None
-            ):
-                d[attr.__package__] = get_package_structure(attr)
+        # check if it is a subpackage
+        if (
+            isinstance(attr, ModuleType)
+            and attr.__name__.startswith(root_module.__name__)
+            and attr.__package__ != root_module.__package__
+            and attr.__package__ is not None
+        ):
+            d[attr.__package__] = get_package_structure(attr)
     return d
 
 

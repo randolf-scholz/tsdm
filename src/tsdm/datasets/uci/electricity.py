@@ -106,17 +106,19 @@ class Electricity(SingleTableDataset):
 
     def clean_table(self) -> DataFrame:
         r"""Create DataFrame with 1 column per client and `pandas.DatetimeIndex`."""
-        with ZipFile(self.rawdata_paths["LD2011_2014.txt.zip"]) as archive:
+        with (
             # can't use pandas.read_csv because of the zip contains other files.
-            with archive.open("LD2011_2014.txt") as file:
-                df = read_csv(
-                    file,
-                    sep=";",
-                    decimal=",",
-                    parse_dates=[0],
-                    index_col=0,
-                    dtype="float32",
-                )
+            ZipFile(self.rawdata_paths["LD2011_2014.txt.zip"]) as archive,
+            archive.open("LD2011_2014.txt") as file,
+        ):
+            df = read_csv(
+                file,
+                sep=";",
+                decimal=",",
+                parse_dates=[0],
+                index_col=0,
+                dtype="float32",
+            )
         return df.rename_axis(index="time", columns="client")
 
     def make_zero_plot(self) -> plt.Axes:

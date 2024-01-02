@@ -260,10 +260,11 @@ class GroupedSetFuncTS(nn.Module):
         slow = self.slow_encoder(slow)
 
         fast = fast.swapaxes(-1, -2)
-        if fast.ndim == 2:
-            fast = self.fast_encoder(fast.unsqueeze(0)).squeeze(0)
-        else:
-            fast = self.fast_encoder(fast)
+        fast = (
+            self.fast_encoder(fast.unsqueeze(0)).squeeze(0)
+            if fast.ndim == 2
+            else self.fast_encoder(fast)
+        )
         fast = fast.swapaxes(-1, -2)
 
         s = torch.cat([slow, fast], dim=-2)

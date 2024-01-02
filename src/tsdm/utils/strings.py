@@ -298,10 +298,7 @@ def repr_mapping(
 
     # set maxitems
     if maxitems is None:
-        if linebreaks:
-            maxitems = MAXITEMS
-        else:
-            maxitems = MAXITEMS_INLINE
+        maxitems = MAXITEMS if linebreaks else MAXITEMS_INLINE
 
     # set separators
     br = "\n" if linebreaks else ""
@@ -313,10 +310,10 @@ def repr_mapping(
     left, right = "{", "}"
 
     # set max_key_length
-    if align and linebreaks:
-        max_key_length = max((len(str(key)) for key in obj), default=0)
-    else:
-        max_key_length = 0
+
+    max_key_length = (
+        max((len(str(key)) for key in obj), default=0) if (align and linebreaks) else 0
+    )
 
     # set type
     self = obj if wrapped is None else wrapped
@@ -324,10 +321,7 @@ def repr_mapping(
 
     # set title
     if title is None:
-        if cls is dict:
-            title = ""
-        else:
-            title = cls.__name__
+        title = "" if cls is dict else cls.__name__
 
     # set identifier
     if identifier is None:
@@ -485,10 +479,7 @@ def repr_sequence(
 
     # set maxitems
     if maxitems is None:
-        if linebreaks:
-            maxitems = MAXITEMS
-        else:
-            maxitems = MAXITEMS_INLINE
+        maxitems = MAXITEMS if linebreaks else MAXITEMS_INLINE
 
     # set separators
     br = "\n" if linebreaks else ""
@@ -510,10 +501,7 @@ def repr_sequence(
 
     # set title
     if title is None:
-        if cls in {list, tuple, set}:
-            title = ""
-        else:
-            title = cls.__name__
+        title = "" if cls in {list, tuple, set} else cls.__name__
 
     # set identifier
     if identifier is None:
@@ -624,10 +612,7 @@ def repr_dataclass(
 
     # set title
     if title is None:
-        if self in BUILTIN_CONSTANTS:
-            title = ""
-        else:
-            title = cls.__name__
+        title = "" if self in BUILTIN_CONSTANTS else cls.__name__
 
     # set identifier
     if identifier is None:
@@ -695,10 +680,7 @@ def repr_namedtuple(
 
     # set title
     if title is None:
-        if self in BUILTIN_CONSTANTS:
-            title = ""
-        else:
-            title = cls.__name__
+        title = "" if self in BUILTIN_CONSTANTS else cls.__name__
 
     # set identifier
     if identifier is None:

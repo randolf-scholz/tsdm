@@ -11,17 +11,18 @@ def test_iteritems() -> None:
     r"""Test `IterItems`."""
     mapping_obj = {"a": 1, "b": 2, "c": 3}
     iter_obj = iter_items(mapping_obj)
+    keys = list(iter_obj.keys())
 
     # test __getitem__
-    for key in mapping_obj.keys():
+    for key in keys:
         assert iter_obj[key] == mapping_obj[key]
 
     # test .get()
-    for key in mapping_obj.keys():
+    for key in keys:
         assert iter_obj.get(key) == mapping_obj[key]
 
     # test .keys()
-    for key in iter_obj.keys():
+    for key in keys:
         assert isinstance(key, str)
 
     # test .values()
@@ -47,17 +48,18 @@ def test_iterkeys() -> None:
     r"""Test `IterItems`."""
     mapping_obj = {"a": 1, "b": 2, "c": 3}
     iter_obj = iter_keys(mapping_obj)
+    keys = list(iter_obj.keys())
 
     # test __getitem__
-    for key in mapping_obj.keys():
+    for key in keys:
         assert iter_obj[key] == mapping_obj[key]
 
     # test .get()
-    for key in mapping_obj.keys():
+    for key in keys:
         assert iter_obj.get(key) == mapping_obj[key]
 
     # test .keys()
-    for key in iter_obj.keys():
+    for key in keys:
         assert isinstance(key, str)
 
     # test .values()
@@ -80,17 +82,18 @@ def test_itervalues() -> None:
     r"""Test `IterItems`."""
     mapping_obj = {"a": 1, "b": 2, "c": 3}
     iter_obj = iter_values(mapping_obj)
+    keys = list(iter_obj.keys())
 
     # test __getitem__
-    for key in mapping_obj.keys():
+    for key in keys:
         assert iter_obj[key] == mapping_obj[key]
 
     # test .get()
-    for key in mapping_obj.keys():
+    for key in keys:
         assert iter_obj.get(key) == mapping_obj[key]
 
     # test .keys()
-    for key in iter_obj.keys():
+    for key in keys:
         assert isinstance(key, str)
 
     # test .values()

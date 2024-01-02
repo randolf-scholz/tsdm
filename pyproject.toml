@@ -274,6 +274,7 @@ select = [
     "PT",    # pytest
     "NPY",   # numpy
     "PERF",  # performance related
+    "SIM",   # simplify
     "RUF",   # ruff specific
     "TRY",   # tryceratops
 ]
@@ -311,6 +312,8 @@ ignore = [
     # PyTest
     "PT013",   # Found incorrect import of pytest, use simple import pytest instead
     "PT018",   # Assertion should be broken down into multiple parts
+    # simplify
+    "SIM300",  # Yoda conditions are discouraged
     # RUFF
     "RUF001",  # ambiguous-unicode-character-string
     "RUF002",  # ambiguous-unicode-character-docstring

@@ -232,23 +232,25 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
         return files  # type: ignore[return-value]
 
     def clean_table(self, key: KEYS) -> Table:
-        with ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive:
-            with archive.open(self.filelist[key], "r") as compressed_file:
-                with gzip.open(compressed_file, "r") as file:
-                    table = csv.read_csv(
-                        file,
-                        convert_options=csv.ConvertOptions(
-                            column_types=SCHEMAS[key],
-                            strings_can_be_null=True,
-                            null_values=NULL_VALUES,
-                            true_values=TRUE_VALUES,
-                            false_values=FALSE_VALUES,
-                        ),
-                        parse_options=csv.ParseOptions(
-                            newlines_in_values=(key == "NOTEEVENTS"),
-                        ),
-                    ).combine_chunks()  # <- reduces size and avoids some bugs
-                    # FIXME: https://github.com/apache/arrow/issues/37055
+        with (
+            ZipFile(self.rawdata_paths[self.rawdata_files[0]], "r") as archive,
+            archive.open(self.filelist[key], "r") as compressed_file,
+            gzip.open(compressed_file, "r") as file,
+        ):
+            table = csv.read_csv(
+                file,
+                convert_options=csv.ConvertOptions(
+                    column_types=SCHEMAS[key],
+                    strings_can_be_null=True,
+                    null_values=NULL_VALUES,
+                    true_values=TRUE_VALUES,
+                    false_values=FALSE_VALUES,
+                ),
+                parse_options=csv.ParseOptions(
+                    newlines_in_values=(key == "NOTEEVENTS"),
+                ),
+            ).combine_chunks()  # <- reduces size and avoids some bugs
+            # FIXME: https://github.com/apache/arrow/issues/37055
 
         return table
 

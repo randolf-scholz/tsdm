@@ -72,10 +72,7 @@ def unpad_sequence(
         return [x[:n] for x, n in zip(padded_seq, lengths, strict=True)]
 
     # infer lengths from mask
-    if torch.isnan(padding):
-        mask = torch.isnan(padded_seq)
-    else:
-        mask = padded_seq == padding_value
+    mask = torch.isnan(padded_seq) if torch.isnan(padding) else (padded_seq == padding)
 
     # all features are masked
     dims: list[int] = list(range(min(2, padded_seq.ndim), padded_seq.ndim))

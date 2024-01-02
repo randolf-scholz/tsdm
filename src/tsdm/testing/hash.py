@@ -133,10 +133,11 @@ def hash_pandas(
 
     row_hash = pd.util.hash_pandas_object(df, index=index)
 
-    if row_invariant:
-        hash_value = hash_set(row_hash, ignore_duplicates=ignore_duplicates)
-    else:
-        hash_value = hash(tuple(row_hash))
+    hash_value = (
+        hash_set(row_hash, ignore_duplicates=ignore_duplicates)
+        if row_invariant
+        else hash(tuple(row_hash))
+    )
 
     return hash_value
 

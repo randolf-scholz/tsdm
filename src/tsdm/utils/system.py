@@ -84,9 +84,7 @@ def get_napoleon_type_aliases(module: ModuleType) -> dict[str, str]:
             d[item] = f"{obj.__name__}"
             if not item.startswith("_"):
                 d |= get_napoleon_type_aliases(obj)
-        elif inspect.ismethod(obj):
-            d[item] = f"{obj.__module__}.{obj.__qualname__}"
-        elif inspect.isfunction(obj):
+        elif inspect.ismethod(obj) or inspect.isfunction(obj):
             d[item] = f"{obj.__module__}.{obj.__qualname__}"
         elif inspect.isclass(obj):
             if issubclass(obj, Exception):
