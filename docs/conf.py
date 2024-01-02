@@ -444,7 +444,7 @@ autoapi_keep_files = True
 # region sphinx.ext.autodoc configuration -----------------------------------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#directive-autoclass
 
-autoclass_content = "both"
+autoclass_content = "class"
 # This value selects what content will be inserted into the main body of an autoclass directive.
 # The possible values are: (default="class")
 # "class"
@@ -457,7 +457,7 @@ autoclass_content = "both"
 # If the class has no __init__ method or if the __init__ method’s docstring is empty,
 # but the class has a __new__ method’s docstring, it is used instead.
 
-autodoc_class_signature = "mixed"
+autodoc_class_signature = "separated"
 # This value selects how the signature will be displayed for the class defined by autoclass directive.
 # The possible values are: (default="mixed")
 # "mixed"
@@ -483,7 +483,7 @@ autodoc_default_options = {
     # 'members': 'var1, var2',
     # 'member-order': 'groupwise',
     # 'special-members': '__init__',
-    # "undoc-members": False,
+    "undoc-members": False,
     # "imported-members": False,
     # 'exclude-members': '__weakref__'
 }

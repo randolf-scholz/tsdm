@@ -49,7 +49,7 @@ from tsdm.backend.pandas import (
     strip_whitespace_series,
 )
 from tsdm.backend.pyarrow import strip_whitespace_array, strip_whitespace_table
-from tsdm.types.variables import any_var as T, pandas_var, tuple_co
+from tsdm.types.variables import T, pandas_var, tuple_co
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 

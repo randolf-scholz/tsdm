@@ -28,7 +28,7 @@ TIME = numpy.array(DATA) * numpy.timedelta64(1, "s")
 
 @mark.parametrize("formula", [lambda z: z**0], ids=["x**0"])
 @mark.parametrize(
-    "data, expected",
+    ("data", "expected"),
     [
         (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA))),
         (pandas.Series(DATA), pandas.Series(numpy.ones_like(DATA))),
@@ -52,7 +52,7 @@ def test_make_ones_like(data: T, expected: T, formula: SelfMap[T]) -> None:
 
 @mark.parametrize("formula", [lambda z: z**0 - z**0], ids=["x**0 - x**0"])
 @mark.parametrize(
-    "data, expected",
+    ("data", "expected"),
     [
         (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA))),
         (pandas.Series(DATA), pandas.Series(numpy.zeros_like(DATA))),
@@ -82,7 +82,7 @@ def test_zeros_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ids=["true_like", "(x==x)|(x!=x)"],
 )
 @mark.parametrize(
-    "data, expected",
+    ("data", "expected"),
     [
         (torch.tensor(DATA), torch.ones_like(torch.tensor(DATA), dtype=torch.bool)),
         (pandas.Series(DATA), pandas.Series(numpy.ones_like(DATA, dtype=bool))),
@@ -112,7 +112,7 @@ def test_true_like(data: T, expected: T, formula: SelfMap[T]) -> None:
     ids=["false_like", "(x==x)^(x==x)"],
 )
 @mark.parametrize(
-    "data, expected",
+    ("data", "expected"),
     [
         (torch.tensor(DATA), torch.zeros_like(torch.tensor(DATA), dtype=torch.bool)),
         (pandas.Series(DATA), pandas.Series(numpy.zeros_like(DATA, dtype=bool))),

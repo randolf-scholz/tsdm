@@ -45,7 +45,7 @@ from typing_extensions import (
 from tsdm.types.aliases import Nested
 from tsdm.types.callback_protocols import Func
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import CollectionType, any_var as T, return_var_co as R
+from tsdm.types.variables import CollectionType, R, T
 from tsdm.utils.funcutils import rpartial
 
 __logger__: logging.Logger = logging.getLogger(__name__)

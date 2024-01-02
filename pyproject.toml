@@ -271,6 +271,7 @@ select = [
     "PL",    # pylint
     "PIE",   # pie
     "PYI",   # pyi
+    "PT",    # pytest
     "PERF",  # performance related
     "RUF",   # ruff specific
     "TRY",   # tryceratops
@@ -306,6 +307,9 @@ ignore = [
     "PLR0917",  # Too many positional arguments
     # PYI
     "PYI019",  # Methods like ... should return typing.Self instead of custom TypeVar
+    # PyTest
+    "PT013",   # Found incorrect import of pytest, use simple import pytest instead
+    "PT018",   # Assertion should be broken down into multiple parts
     # RUFF
     "RUF001",  # ambiguous-unicode-character-string
     "RUF002",  # ambiguous-unicode-character-docstring
@@ -349,6 +353,10 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
 # endregion ruff configuration ---------------------------------------------------------
 
 

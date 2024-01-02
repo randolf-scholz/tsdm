@@ -15,7 +15,7 @@ from numpy.typing import ArrayLike, NDArray
 from typing_extensions import Protocol, runtime_checkable
 
 from tsdm.types.aliases import SizeLike
-from tsdm.types.variables import any_co as T_co
+from tsdm.types.variables import T_co
 
 
 @runtime_checkable

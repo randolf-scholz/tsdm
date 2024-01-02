@@ -62,7 +62,7 @@ from tsdm.types.callback_protocols import (
     ToTensorProto,
     WhereProto,
 )
-from tsdm.types.variables import any_var as T
+from tsdm.types.variables import T
 
 P = ParamSpec("P")
 

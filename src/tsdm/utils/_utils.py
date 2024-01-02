@@ -42,7 +42,7 @@ from typing_extensions import Any, Literal, Optional, cast, overload
 from tsdm.constants import BOOLEAN_PAIRS
 from tsdm.testing._testing import is_dunder, is_zipfile
 from tsdm.types.aliases import Nested, NestedDict, NestedMapping, PathLike
-from tsdm.types.variables import HashableType, key_other_var as K2, key_var as K
+from tsdm.types.variables import K2, HashableType, K
 
 
 def variants(s: str | list[str]) -> list[str]:

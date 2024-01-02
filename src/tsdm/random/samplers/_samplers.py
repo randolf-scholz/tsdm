@@ -44,12 +44,7 @@ from typing_extensions import (
 from tsdm.data.datasets import Dataset, IndexableDataset, MapDataset, SequentialDataset
 from tsdm.types.protocols import VectorLike
 from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
-from tsdm.types.variables import (
-    any_co as T_co,
-    any_var as T,
-    key_other_var as K2,
-    key_var as K,
-)
+from tsdm.types.variables import K2, K, T, T_co
 from tsdm.utils.strings import pprint_repr
 
 

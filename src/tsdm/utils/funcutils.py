@@ -24,7 +24,7 @@ from inspect import Parameter
 from typing_extensions import Any, Optional, ParamSpec, cast, overload
 
 from tsdm.types.protocols import Dataclass, is_dataclass
-from tsdm.types.variables import return_var_co as R
+from tsdm.types.variables import R
 
 KEYWORD_ONLY = Parameter.KEYWORD_ONLY
 POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY

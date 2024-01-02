@@ -138,7 +138,7 @@ from tsdm.data import (
 from tsdm.encoders import Encoder
 from tsdm.metrics import Metric
 from tsdm.random.samplers import Sampler
-from tsdm.types.variables import key_var as Key
+from tsdm.types.variables import K as Key
 from tsdm.utils import LazyDict
 from tsdm.utils.strings import pprint_repr
 

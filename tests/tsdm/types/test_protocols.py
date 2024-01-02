@@ -20,7 +20,7 @@ from tsdm.types.protocols import (
     is_dataclass,
     is_namedtuple,
 )
-from tsdm.types.variables import any_var as T
+from tsdm.types.variables import T
 
 
 def test_shapelike_protocol() -> None:

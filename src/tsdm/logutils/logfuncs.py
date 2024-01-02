@@ -63,7 +63,7 @@ from tsdm.linalg import (
 from tsdm.metrics import LOSSES, Metric
 from tsdm.models import Model
 from tsdm.types.aliases import JSON, PathLike
-from tsdm.types.variables import any_co as T_co, any_var as T, key_var as Key
+from tsdm.types.variables import K, T, T_co
 from tsdm.viz import center_axes, kernel_heatmap, plot_spectrum, rasterize
 
 MaybeWrapped: TypeAlias = T_co | Callable[[], T_co] | Callable[[int], T_co]
@@ -126,7 +126,7 @@ def unpack_maybewrapped(x: MaybeWrapped[T], /, *, step: int) -> T:
     return x
 
 
-def transpose_list_of_dicts(lst: Iterable[dict[Key, T]], /) -> dict[Key, list[T]]:
+def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
     r"""Fast way to 'transpose' a list of dictionaries.
 
     Assumptions:

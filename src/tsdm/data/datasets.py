@@ -32,12 +32,7 @@ from typing_extensions import (
 )
 
 from tsdm.types.protocols import ArrayKind, SupportsGetItem
-from tsdm.types.variables import (
-    key_contra as K_contra,
-    key_var as K,
-    nested_key_var as K2,
-    value_co as V_co,
-)
+from tsdm.types.variables import K2, K, K_contra, V_co
 from tsdm.utils.strings import pprint_repr, repr_array
 
 # region Protocols ---------------------------------------------------------------------

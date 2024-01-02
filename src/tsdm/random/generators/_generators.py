@@ -38,7 +38,7 @@ from typing_extensions import (
 from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
 from tsdm.types.callback_protocols import NullMap, SelfMap
-from tsdm.types.variables import any_co as T_co
+from tsdm.types.variables import T_co
 
 
 @runtime_checkable

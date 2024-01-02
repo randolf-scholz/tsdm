@@ -79,15 +79,7 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.types.variables import (
-    any_co as T_co,
-    any_var as T,
-    key_contra,
-    key_var as K,
-    scalar_co,
-    value_co as V_co,
-    value_var as V,
-)
+from tsdm.types.variables import K, K_contra, T, T_co, V, V_co, scalar_co
 
 P = ParamSpec("P")
 Scalar = TypeVar("Scalar")
@@ -146,15 +138,15 @@ class VectorLike(Protocol[T_co]):
 
 
 @runtime_checkable
-class Lookup(Protocol[key_contra, V_co]):
+class Lookup(Protocol[K_contra, V_co]):
     """Mapping/Sequence like generic that is contravariant in Keys."""
 
-    def __contains__(self, key: key_contra, /) -> bool:
+    def __contains__(self, key: K_contra, /) -> bool:
         # Here, any Hashable input is accepted.
         """Return True if the map contains the given key."""
         ...
 
-    def __getitem__(self, key: key_contra, /) -> V_co:
+    def __getitem__(self, key: K_contra, /) -> V_co:
         """Return the value associated with the given key."""
         ...
 
@@ -704,10 +696,10 @@ MutableArrayType = TypeVar("MutableArrayType", bound=MutableArray)
 
 
 @runtime_checkable
-class SupportsGetItem(Protocol[key_contra, V_co]):
+class SupportsGetItem(Protocol[K_contra, V_co]):
     """Protocol for objects that support `__getitem__`."""
 
-    def __getitem__(self, key: key_contra, /) -> V_co: ...
+    def __getitem__(self, key: K_contra, /) -> V_co: ...
 
 
 @runtime_checkable

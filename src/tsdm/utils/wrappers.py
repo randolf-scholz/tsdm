@@ -21,12 +21,7 @@ from typing_extensions import Any, Protocol, overload, override
 
 from tsdm.config import CONFIG
 from tsdm.types.protocols import MappingProtocol
-from tsdm.types.variables import (
-    any_var as T,
-    key_var as K,
-    torch_module_var,
-    value_co as V_co,
-)
+from tsdm.types.variables import K, T, V_co, torch_module_var
 
 
 def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:

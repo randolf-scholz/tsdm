@@ -45,7 +45,7 @@ from tsdm.types.protocols import (
     SupportsDevice,
     SupportsDtype,
 )
-from tsdm.types.variables import any_var as T
+from tsdm.types.variables import T
 from tsdm.utils.decorators import decorator
 
 __logger__: logging.Logger = logging.getLogger(__name__)

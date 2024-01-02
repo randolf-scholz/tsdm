@@ -25,12 +25,7 @@ from typing_extensions import Protocol, SupportsIndex, SupportsInt, runtime_chec
 
 from tsdm.types.aliases import Axes, Scalar
 from tsdm.types.protocols import P
-from tsdm.types.variables import (
-    any_co as T_co,
-    any_contra as T_contra,
-    any_var as T,
-    return_var_co as R,
-)
+from tsdm.types.variables import R, T, T_co, T_contra
 
 
 @runtime_checkable

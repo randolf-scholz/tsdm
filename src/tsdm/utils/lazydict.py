@@ -27,13 +27,7 @@ from typing_extensions import (
 )
 
 from tsdm.types.protocols import SupportsKeysAndGetItem
-from tsdm.types.variables import (
-    any_var as T,
-    key_other_var as K_other,
-    key_var as K,
-    return_var_co as R,
-    value_var as V,
-)
+from tsdm.types.variables import K2, K, R, T, V
 from tsdm.utils.funcutils import (
     get_function_args,
     get_return_typehint,
@@ -158,12 +152,12 @@ class LazyDict(dict[K, V]):
         r"""Return the representation of the dictionary."""
         return repr_mapping(self)
 
-    def __or__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
+    def __or__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":
         new = self.copy()
         new.update(other)  # type: ignore[arg-type]
         return new  # type: ignore[return-value]
 
-    def __ror__(self, other: Mapping[K_other, T], /) -> "LazyDict[K | K_other, V | T]":
+    def __ror__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":
         if isinstance(other, self.__class__):
             return other | self  # pyright: ignore
 
@@ -175,7 +169,7 @@ class LazyDict(dict[K, V]):
             stacklevel=2,
         )
 
-        new = cast("LazyDict[K | K_other, V | T]", LazyDict(other))
+        new = cast("LazyDict[K | K2, V | T]", LazyDict(other))
         new.update(self)  # type: ignore[arg-type]
         return new
 

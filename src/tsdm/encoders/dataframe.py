@@ -37,7 +37,7 @@ from tsdm.encoders.base import BaseEncoder, Encoder
 from tsdm.types.aliases import PandasDtype, PandasDTypeArg, PandasObject, PathLike
 from tsdm.types.dtypes import TORCH_DTYPES
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import key_var as K
+from tsdm.types.variables import K
 from tsdm.utils import pairwise_disjoint
 from tsdm.utils.strings import repr_mapping
 

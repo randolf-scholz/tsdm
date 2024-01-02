@@ -45,26 +45,23 @@ __all__ = [
     "tuple_co",
     "tuple_contra",
     # Generic Type Variables
-    "any_var",
-    "any_co",
-    "any_contra",
-    "any_other_var",
-    "any_other_co",
-    "any_other_contra",
-    "input_var_contra",
-    "key_var",
-    "key_co",
-    "key_contra",
-    "key_other_var",
-    "key_other_co",
-    "key_other_contra",
-    "nested_key_var",
-    "nested_key_co",
-    "nested_key_contra",
-    "return_var_co",
-    "value_var",
-    "value_co",
-    "value_contra",
+    "T",
+    "T_co",
+    "T_contra",
+    "T2",
+    "T2_co",
+    "T2_contra",
+    "I",
+    "K",
+    "K_co",
+    "K_contra",
+    "K2",
+    "K2_co",
+    "K2_contra",
+    "R",
+    "V",
+    "V_co",
+    "V_contra",
     # collections.abc Type Variables
     "ByteStringType",
     "ByteString_co",
@@ -227,55 +224,48 @@ r"""Contravariant type variable for `tuple`."""
 
 # Generic purpose type variables
 # region Generic Type Variables --------------------------------------------------------
-any_var = TypeVar("any_var", bound=Any)
-r"""Generic type variable."""
-any_co = TypeVar("any_co", bound=Any, covariant=True)
-r"""Generic covariant type variable."""
-any_contra = TypeVar("any_contra", bound=Any, contravariant=True)
-r"""Generic contravariant type variable."""
+T = TypeVar("T", bound=Any)
+r"""T(ype) variable (invariant)."""
+T_co = TypeVar("T_co", bound=Any, covariant=True)
+r"""T(ype) variable (covariant)."""
+T_contra = TypeVar("T_contra", bound=Any, contravariant=True)
+r"""T(ype) variable (contravariant)."""
 
-any_other_var = TypeVar("any_other_var", bound=Any)
-r"""Generic type variable."""
-any_other_co = TypeVar("any_other_co", bound=Any, covariant=True)
-r"""Generic covariant type variable."""
-any_other_contra = TypeVar("any_other_contra", bound=Any, contravariant=True)
-r"""Generic contravariant type variable."""
+T2 = TypeVar("T2", bound=Any)
+r"""T(ype) variable (invariant)."""
+T2_co = TypeVar("T2_co", bound=Any, covariant=True)
+r"""T(ype) variable (covariant)."""
+T2_contra = TypeVar("T2_contra", bound=Any, contravariant=True)
+r"""T(ype) variable (contravariant)."""
 
 # inputs are always contravariant!
-input_var_contra = TypeVar("input_var_contra", contravariant=True)
-r"""Generic type variable for inputs. Always contravariant."""
+I = TypeVar("I", contravariant=True)  # noqa: E741,PLC0105
+r"""I(nput) type variable (always contravariant)."""
 
-key_var = TypeVar("key_var", bound=abc.Hashable)
-r"""Type Variable for `Mapping` keys."""
-key_co = TypeVar("key_co", bound=abc.Hashable, covariant=True)
-r"""Covariant type Variable for `Mapping` keys."""
-key_contra = TypeVar("key_contra", bound=abc.Hashable, contravariant=True)
-r""" Contravariant type Variable for `Mapping` keys."""
+K = TypeVar("K", bound=abc.Hashable)
+r"""K(ey) type variable bound to `Hashable` (invariant)."""
+K_co = TypeVar("K_co", bound=abc.Hashable, covariant=True)
+r"""K(ey) type variable bound to `Hashable` (covariant)."""
+K_contra = TypeVar("K_contra", bound=abc.Hashable, contravariant=True)
+r"""K(ey) type variable bound to `Hashable` (contravariant)."""
 
-key_other_var = TypeVar("key_other_var", bound=abc.Hashable)
-r"""Type Variable for `Mapping` keys."""
-key_other_co = TypeVar("key_other_co", bound=abc.Hashable, covariant=True)
-r"""Covariant type Variable for `Mapping` keys."""
-key_other_contra = TypeVar("key_other_contra", bound=abc.Hashable, contravariant=True)
-r""" Contravariant type Variable for `Mapping` keys."""
-
-nested_key_var = TypeVar("nested_key_var", bound=abc.Hashable)
-r"""Type Variable for `Mapping` keys."""
-nested_key_co = TypeVar("nested_key_co", bound=abc.Hashable, covariant=True)
-r"""Covariant type variable for `Mapping` keys."""
-nested_key_contra = TypeVar("nested_key_contra", bound=abc.Hashable, contravariant=True)
-r"""Contravariant type variable for `Mapping` keys."""
+K2 = TypeVar("K2", bound=abc.Hashable)
+r"""K(ey) type variable bound to `Hashable` (invariant)."""
+K2_co = TypeVar("K2_co", bound=abc.Hashable, covariant=True)
+r"""K(ey) type variable bound to `Hashable` (covariant)."""
+K2_contra = TypeVar("K2_contra", bound=abc.Hashable, contravariant=True)
+r"""K(ey) type variable bound to `Hashable` (contravariant)."""
 
 # outputs/returns are always covariant!
-return_var_co = TypeVar("return_var_co", covariant=True)
-r"""Type Variable for return values. Always covariant."""
+R = TypeVar("R", covariant=True)  # noqa: PLC0105
+r"""R(eturn) type variable (always covariant)."""
 
-value_var = TypeVar("value_var")
-r"""Type Variable for `Mapping` values."""
-value_co = TypeVar("value_co", covariant=True)
-r"""Covariant type variable for `Mapping` values."""
-value_contra = TypeVar("value_contra", contravariant=True)
-r"""Contravariant type variable for `Mapping` values."""
+V = TypeVar("V")
+r"""V(alue) type variable (invariant)."""
+V_co = TypeVar("V_co", covariant=True)
+r"""V(alue) type variable (covariant)."""
+V_contra = TypeVar("V_contra", contravariant=True)
+r"""V(alue) type variable (contravariant)."""
 # endregion Generic Type Variables -----------------------------------------------------
 
 

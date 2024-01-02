@@ -19,7 +19,7 @@ from typing_extensions import Any, ClassVar, Generic, Literal, Optional, Protoco
 
 from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
-from tsdm.types.variables import key_var as K
+from tsdm.types.variables import K
 from tsdm.utils import LazyDict
 
 

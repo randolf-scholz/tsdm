@@ -72,14 +72,7 @@ from pandas.core.dtypes.base import ExtensionDtype
 from typing_extensions import Any, TypeAlias
 
 from tsdm.types.protocols import Lookup
-from tsdm.types.variables import (
-    any_co as T_co,
-    any_var as T,
-    key_contra,
-    key_var as K,
-    value_co,
-    value_var as V,
-)
+from tsdm.types.variables import K, K_contra, T, T_co, V, V_co
 
 # region Custom Type Aliases -----------------------------------------------------------
 Axes: TypeAlias = None | int | tuple[int, ...]
@@ -87,7 +80,7 @@ r"""Type Alias for axes."""
 SizeLike: TypeAlias = int | tuple[int, ...]
 r"""Type Alias for shape-like objects."""
 
-Map: TypeAlias = Lookup[key_contra, value_co] | Callable[[key_contra], value_co]
+Map: TypeAlias = Lookup[K_contra, V_co] | Callable[[K_contra], V_co]
 r"""Type Alias for `Map`."""
 Nested: TypeAlias = T_co | Collection["Nested[T_co]"] | Mapping[Any, "Nested[T_co]"]
 r"""Type Alias for nested types (JSON-Like)."""

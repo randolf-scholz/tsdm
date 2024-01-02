@@ -126,7 +126,7 @@ def test_boundary_encoder(data: D) -> None:
     assert np.isnan(encoded).sum() == ((data <= 0).sum() + (data > 1).sum())
 
 
-@mark.parametrize("tensor_type", (pd.Series, pd.DataFrame, np.array, torch.tensor))
+@mark.parametrize("tensor_type", [pd.Series, pd.DataFrame, np.array, torch.tensor])
 def test_linear_scaler(tensor_type: T) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(LinearScaler.__name__)
@@ -188,8 +188,8 @@ def test_linear_scaler(tensor_type: T) -> None:
     # assert encoder.params[0].shape == (2, 3)
 
 
-@mark.parametrize("shape", ((5, 2, 3, 4), (7,)), ids=str)
-@mark.parametrize("axis", ((1, -1), (-1,), -2, 0, None, ()), ids=str)
+@mark.parametrize("shape", [(5, 2, 3, 4), (7,)], ids=str)
+@mark.parametrize("axis", [(1, -1), (-1,), -2, 0, None, ()], ids=str)
 def test_get_broadcast(
     shape: tuple[int, ...], axis: None | int | tuple[int, ...]
 ) -> None:
@@ -241,8 +241,8 @@ def test_reduce_axes() -> None:
     assert get_reduced_axes((1, ...), axis) == (-3, -2, -1)
 
 
-@mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
-@mark.parametrize("tensor_type", (pd.Series, pd.DataFrame, np.array, torch.tensor))
+@mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
+@mark.parametrize("tensor_type", [pd.Series, pd.DataFrame, np.array, torch.tensor])
 def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     r"""Check whether the Standardizer encoder works as expected."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
@@ -314,7 +314,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
     LOGGER.info("Testing finished!")
 
 
-@mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
+@mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
 def test_scaler_dataframe(encoder_type: type[E]) -> None:
     """Check whether the scaler-encoders work as expected on DataFrame."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
@@ -364,7 +364,7 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
                 assert x == y
 
 
-@mark.parametrize("encoder_type", (StandardScaler, MinMaxScaler))
+@mark.parametrize("encoder_type", [StandardScaler, MinMaxScaler])
 def test_scaler_series(encoder_type: type[E]) -> None:
     """Check whether the scaler-encoders work as expected on Series."""
     LOGGER = __logger__.getChild(encoder_type.__name__)
@@ -398,7 +398,7 @@ def test_scaler_series(encoder_type: type[E]) -> None:
     assert np.allclose(X, decoded)
 
 
-@mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
+@mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
 def test_standard_scaler(axis):
     """Test the MinMaxScaler."""
     TRUE_SHAPE = {
@@ -428,7 +428,7 @@ def test_standard_scaler(axis):
     assert np.allclose(X, decoded)
 
 
-@mark.parametrize("axis", (None, (-2, -1), -1, ()), ids=lambda x: f"axis={x}")
+@mark.parametrize("axis", [None, (-2, -1), -1, ()], ids=lambda x: f"axis={x}")
 def test_minmax_scaler(axis):
     """Test the MinMaxScaler."""
     TRUE_SHAPE = {

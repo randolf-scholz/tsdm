@@ -45,7 +45,7 @@ from typing_extensions import (
     runtime_checkable,
 )
 
-from tsdm.types.variables import any_other_var as S, any_var as T, key_var as K
+from tsdm.types.variables import T2, K, T
 from tsdm.utils.strings import pprint_repr
 
 E = TypeVar("E", bound="Encoder")
@@ -218,7 +218,7 @@ class BaseEncoderMetaClass(type(Protocol)):  # type: ignore[misc]
             self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
 
 
-class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
+class BaseEncoder(Encoder[T, T2], metaclass=BaseEncoderMetaClass):
     r"""Base class that all encoders must subclass."""
 
     LOGGER: ClassVar[logging.Logger]
@@ -239,12 +239,12 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
         ...
 
     @abstractmethod
-    def encode(self, data: T, /) -> S:
+    def encode(self, data: T, /) -> T2:
         r"""Encode the data by transformation."""
         ...
 
     @abstractmethod
-    def decode(self, data: S, /) -> T:
+    def decode(self, data: T2, /) -> T:
         r"""Decode the data by inverse transformation."""
         ...
 
@@ -277,14 +277,14 @@ class BaseEncoder(Encoder[T, S], metaclass=BaseEncoderMetaClass):
             self.is_fitted = True
 
         @wraps(original_encode)
-        def encode(self: Self, data: T, /) -> S:
+        def encode(self: Self, data: T, /) -> T2:
             r"""Encode the data."""
             if self.requires_fit and not self.is_fitted:
                 raise RuntimeError("Encoder has not been fitted.")
             return original_encode(self, data)
 
         @wraps(original_decode)
-        def decode(self: Self, data: S, /) -> T:
+        def decode(self: Self, data: T2, /) -> T:
             r"""Decode the data."""
             if self.requires_fit and not self.is_fitted:
                 raise RuntimeError("Encoder has not been fitted.")
@@ -353,29 +353,29 @@ class CopyEncoder(BaseEncoder[T, T]):
         return deepcopy(data)
 
 
-class InverseEncoder(BaseEncoder[S, T]):
+class InverseEncoder(BaseEncoder[T2, T]):
     """Applies an encoder in reverse."""
 
-    encoder: BaseEncoder[T, S]
+    encoder: BaseEncoder[T, T2]
     """The encoder to invert."""
 
-    def __init__(self, encoder: BaseEncoder[T, S], /) -> None:
+    def __init__(self, encoder: BaseEncoder[T, T2], /) -> None:
         self.encoder = encoder
 
     def __repr__(self) -> str:
         return f"~{self.encoder}"
 
-    def fit(self, data: S, /) -> None:
+    def fit(self, data: T2, /) -> None:
         raise NotImplementedError("Inverse encoders cannot be fitted.")
 
     @property
     def requires_fit(self) -> bool:
         return self.encoder.requires_fit
 
-    def encode(self, data: S, /) -> T:
+    def encode(self, data: T2, /) -> T:
         return self.encoder.decode(data)
 
-    def decode(self, data: T, /) -> S:
+    def decode(self, data: T, /) -> T2:
         return self.encoder.encode(data)
 
     def simplify(self) -> Self:
@@ -383,7 +383,7 @@ class InverseEncoder(BaseEncoder[S, T]):
         return cls(self.encoder.simplify())
 
 
-def invert_encoder(encoder: Encoder[T, S], /) -> Encoder[S, T]:
+def invert_encoder(encoder: Encoder[T, T2], /) -> Encoder[T2, T]:
     r"""Return the inverse encoder (i.e. decoder)."""
     return ~encoder
 
@@ -817,16 +817,16 @@ class MappingEncoder(BaseEncoder[Mapping[K, Any], Mapping[K, Any]], Mapping[K, E
         return cls({k: e.simplify() for k, e in self.encoders.items()})
 
 
-class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
+class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[T2, ...]]):
     r"""Duplicate encoder multiple times (references same object)."""
 
-    base_encoder: Encoder[T, S]
+    base_encoder: Encoder[T, T2]
 
     @property
     def requires_fit(self) -> bool:
         return self.encoder.requires_fit
 
-    def __init__(self, encoder: Encoder[T, S], n: int = 1) -> None:
+    def __init__(self, encoder: Encoder[T, T2], n: int = 1) -> None:
         self.base_encoder = encoder
         self.n = n
         self.encoder = ParallelEncoder(*(self.base_encoder for _ in range(n)))
@@ -835,14 +835,14 @@ class DuplicateEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     def fit(self, data: tuple[T, ...], /) -> None:
         return self.encoder.fit(data)
 
-    def encode(self, data: tuple[T, ...], /) -> tuple[S, ...]:
+    def encode(self, data: tuple[T, ...], /) -> tuple[T2, ...]:
         return self.encoder.encode(data)
 
-    def decode(self, data: tuple[S, ...], /) -> tuple[T, ...]:
+    def decode(self, data: tuple[T2, ...], /) -> tuple[T, ...]:
         return self.encoder.decode(data)
 
 
-class CloneEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
+class CloneEncoder(BaseEncoder[tuple[T, ...], tuple[T2, ...]]):
     r"""Clone encoder multiple times (distinct copies)."""
 
     @property
@@ -858,8 +858,8 @@ class CloneEncoder(BaseEncoder[tuple[T, ...], tuple[S, ...]]):
     def fit(self, data: tuple[T, ...], /) -> None:
         return self.encoder.fit(data)
 
-    def encode(self, data: tuple[T, ...], /) -> tuple[S, ...]:
+    def encode(self, data: tuple[T, ...], /) -> tuple[T2, ...]:
         return self.encoder.encode(data)
 
-    def decode(self, data: tuple[S, ...], /) -> tuple[T, ...]:
+    def decode(self, data: tuple[T2, ...], /) -> tuple[T, ...]:
         return self.encoder.decode(data)
