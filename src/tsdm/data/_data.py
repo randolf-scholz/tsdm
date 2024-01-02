@@ -410,8 +410,8 @@ def remove_outliers_dataframe(
 @overload
 def remove_outliers(
     s: Series,
-    /,
     description: BoundaryInformation,
+    /,
     *,
     drop: bool = ...,
     inplace: bool = ...,
@@ -431,8 +431,8 @@ def remove_outliers(
 @overload
 def remove_outliers(
     df: DataFrame,
-    /,
     description: BoundaryInformation | DataFrame,
+    /,
     *,
     drop: bool = ...,
     inplace: bool = ...,
@@ -457,12 +457,12 @@ def remove_outliers(
     description=None,
     /,
     *,
-    drop=True,
-    inplace=False,
     lower_bound=None,
     upper_bound=None,
     lower_inclusive=None,
     upper_inclusive=None,
+    drop=True,
+    inplace=False,
 ):
     """Remove outliers from a DataFrame, given boundary values."""
     options = {
