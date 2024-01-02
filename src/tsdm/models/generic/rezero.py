@@ -97,7 +97,7 @@ class ReZero(nn.Sequential):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., n) -> (..., n)``."""
+        r""".. signature:: ``(..., n) -> (..., n)``."""
         for k, block in enumerate(self):
             x = x + self.weights[k] * block(x)
         return x
@@ -159,7 +159,7 @@ class ConcatEmbedding(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., d) -> (..., d+e)``."""
+        r""".. signature:: ``(..., d) -> (..., d+e)``."""
         shape = list(x.shape[:-1]) + [self.pad_size]  # noqa: RUF005
         z = torch.cat([x, self.padding.expand(shape)], dim=-1)
         torch.cuda.synchronize()  # needed when `cat` holds 0-size tensor
@@ -167,7 +167,7 @@ class ConcatEmbedding(nn.Module):
 
     @jit.export
     def inverse(self, z: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., d+e) -> (..., d)``.
+        r""".. signature:: ``(..., d+e) -> (..., d)``.
 
         The reverse of the forward. Satisfies inverse(forward(x)) = x for any input.
         """

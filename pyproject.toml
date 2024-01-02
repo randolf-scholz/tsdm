@@ -249,7 +249,7 @@ rst-roles = [
     "exc",
     "obj",
 ]
-rst-directives = ["Signature", "literalinclude"]
+rst-directives = ["details", "signature", "literalinclude"]
 # endregion flake8 configuration -------------------------------------------------------
 
 

@@ -33,5 +33,5 @@ help:
 	rm -rf apidoc
 	rm -rf api
 
-	sphinx-apidoc  --separate  --implicit-namespaces  -o apidoc/  ../src/tsdm
+	sphinx-apidoc  --separate --ext-autodoc --ext-intersphinx --ext-mathjax  -o apidoc/  ../src/tsdm
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

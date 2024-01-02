@@ -374,9 +374,9 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         data_source: A dataset that contains the ordered timestamps.
         stride: How much the window(s) advances at each step.
         horizons: The size of the window.
-            NOTE: The size is specified as a timedelta, not as the number of data points.
-              When sampling discrete data, this may lead to off-by-one errors.
-              Consider using `DiscreteSlidingWindowSampler` instead.
+            Note: The size is specified as a timedelta, not as the number of data points.
+            When sampling discrete data, this may lead to off-by-one errors.
+            Consider using `DiscreteSlidingWindowSampler` instead.
             Multiple horizons can be given, in which case the sampler will return a list.
         mode: There are 4 modes, determining the output of the sampler (default: 'masks').
             - `tuple` / 'bounds': return the bounds of the window(s) as a tuple.
@@ -389,25 +389,9 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
             If false, the last window may only partially overlap with the data.
             If multiple horizons are given, these rules apply to the last horizon.
 
-    The window is considered to be closed on the left and open on the right, but this
-    can be changed by setting 'closed'
-
-    Moreover, the sampler can return multiple subsequent horizons,
-    if `horizons` is a sequence of `TimeDelta` objects. In this case,
-    lists of the above objects are returned.
-
-    Inputs:
-    - Ordered timestamps $T$
-    - Starting time $t_0$
-    - Final time $t_f$
-    - stride ∆t (how much the sampler advances at each step) default,
-      depending on the data type of $T$:
-        - integer: $GCD(∆T)$
-        - float: $\max(⌊AVG(∆T)⌋, ε)$
-        - timestamp: resolution dependent.
-    - horizons: `TimeDelta` or `tuple[TimeDelta, ...]`
-
-    The sampler will return tuples of `len(horizons)+1`.
+    The window is considered to be closed on the left and open on the right. Moreover,
+    the sampler can return multiple subsequent horizons, if `horizons` is a sequence of
+    `TimeDelta` objects. In this case, lists of the above objects are returned.
     """
 
     # Mode: ClassVar[TypeAlias] = B | M | W | S

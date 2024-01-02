@@ -70,7 +70,7 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     def system(self, t: Any, state: ArrayLike) -> NDArray:
         """Vector field of the pendulum.
 
-        .. Signature:: ``[(...B, N), (...B, N, 2) -> (...B, N, 2)``
+        .. signature:: ``[(...B, N), (...B, N, 2) -> (...B, N, 2)``
 
         sub-signatures:
             - ``[(...,), (2, ) -> (..., 2)``

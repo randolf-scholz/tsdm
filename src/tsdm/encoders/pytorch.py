@@ -82,24 +82,24 @@ class Time2Vec(nn.Module):
 
     @jit.export
     def encode(self, t: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., d) -> ...``."""
+        r""".. signature:: ``(..., d) -> ...``."""
         z = torch.einsum("..., k -> ...k", t, self.freq) + self.phase
         z = self.act(z)
         return torch.cat([t.unsqueeze(dim=-1), z], dim=-1)
 
     @jit.export
     def decode(self, z: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., d) -> ...``."""
+        r""".. signature:: ``(..., d) -> ...``."""
         return z[..., 0]
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
-        r""".. Signature:: ``... -> (..., d)``."""
+        r""".. signature:: ``... -> (..., d)``."""
         return self.encode(t)
 
     @jit.export
     def inverse(self, z: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., d) -> ...``."""
+        r""".. signature:: ``(..., d) -> ...``."""
         return self.decode(z)
 
 
@@ -141,18 +141,18 @@ class PositionalEncoding(nn.Module):
 
     @jit.export
     def encode(self, t: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., d) -> ...``."""
+        r""".. signature:: ``(..., d) -> ...``."""
         z = torch.einsum("..., d -> ...d", t, self.scales)
         return torch.cat([torch.sin(z), torch.cos(z)], dim=-1)
 
     @jit.export
     def decode(self, z: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., 2d) -> ...``."""
+        r""".. signature:: ``(..., 2d) -> ...``."""
         return torch.asin(z[..., 0])
 
     @jit.export
     def forward(self, t: Tensor) -> Tensor:
-        r""".. Signature:: ``... -> (..., 2d)``.
+        r""".. signature:: ``... -> (..., 2d)``.
 
         Note: we simply concatenate the sin and cosine terms without interleaving them.
         """
@@ -160,7 +160,7 @@ class PositionalEncoding(nn.Module):
 
     @jit.export
     def inverse(self, t: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., 2d) -> ...``."""
+        r""".. signature:: ``(..., 2d) -> ...``."""
         return self.decode(t)
 
 

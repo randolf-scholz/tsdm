@@ -2,7 +2,7 @@ r"""Subclasses of `torch.util.data.Dataset`."""
 
 __all__ = [
     # Modules
-    "timeseries",
+    # "timeseries",
     # Protocols
     "TorchDataset",
     "MapDataset",
@@ -51,7 +51,6 @@ __all__ = [
     "vlookup_uniques",
 ]
 
-from tsdm.data import timeseries
 from tsdm.data._arrow import (
     cast_columns,
     compute_entropy,

@@ -131,7 +131,7 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     def system(self, t: ArrayLike, x: ArrayLike) -> NDArray:
         """Vector field of the pendulum.
 
-        .. Signature:: ``[(...,), (..., 2) -> (..., 2)``
+        .. signature:: ``[(...,), (..., 2) -> (..., 2)``
 
         sub-signatures:
             - ``[(...,), (2, ) -> (..., 2)``

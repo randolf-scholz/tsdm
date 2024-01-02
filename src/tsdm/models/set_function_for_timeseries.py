@@ -226,7 +226,7 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward(self, slow: Tensor, fast: Tensor) -> Tensor:
-        r""".. Signature:: ``(*N, dₖ), (*N, dᵥ) -> (..., F)``.
+        r""".. signature:: ``(*N, dₖ), (*N, dᵥ) -> (..., F)``.
 
         s must be a tensor of the shape $L×(2+C)$, $sᵢ = [tᵢ, zᵢ, mᵢ]$, where
         - $tᵢ$ is timestamp
@@ -280,12 +280,12 @@ class GroupedSetFuncTS(nn.Module):
 
     @jit.export
     def forward_batch(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
-        r""".. Signature:: ``[...,  [(*N, dₖ), (*N, dᵥ)]] -> (..., F)``."""
+        r""".. signature:: ``[...,  [(*N, dₖ), (*N, dᵥ)]] -> (..., F)``."""
         return torch.stack([self.forward(slow, fast) for slow, fast in batch])
 
     @jit.export
     def forward_padded(self, batch: list[tuple[Tensor, Tensor]]) -> Tensor:
-        r""".. Signature:: ``[...,  [(*N, dₖ), (*N, dᵥ)]] -> (..., F)``."""
+        r""".. signature:: ``[...,  [(*N, dₖ), (*N, dᵥ)]] -> (..., F)``."""
         # X, Y = list(zip(*batch))
         X = []
         Y = []

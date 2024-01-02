@@ -43,7 +43,7 @@ class TimeSeriesLoss(Protocol):
     def __call__(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
         r"""Compute a loss between the targets and the predictions.
 
-        .. Signature:: ``[(..., *t, 𝐧), (..., *t, 𝐧)] -> 0``
+        .. signature:: ``[(..., *t, 𝐧), (..., *t, 𝐧)] -> 0``
 
         A time series loss function acts on sequences of variable length.
         Given a collection of pairs of sequences $(x_n,x̂_n)∈⋃_{T∈ℕ}(V⊕V)^T$,
@@ -204,7 +204,7 @@ class ND(TimeSeriesBaseLoss):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., n), (..., n) -> ()``."""
+        r""".. signature:: ``(..., n), (..., n) -> ()``."""
         return nd(targets, predictions)
 
 
@@ -297,7 +297,7 @@ class TimeSeriesMSE(TimeSeriesBaseLoss):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., t, 𝐦), (..., t, 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan
@@ -345,7 +345,7 @@ class TimeSeriesWMSE(WeightedTimeSeriesLoss):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., t, m), (..., t, m)] → ...``."""
+        r""".. signature:: ``[(..., t, m), (..., t, m)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)  # 1 if not nan, 0 if nan

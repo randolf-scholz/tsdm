@@ -11,44 +11,33 @@ from sphinx.application import Sphinx
 class Signature(Directive):
     """Essentially just an admonition box without body, only a title.
 
-    References
-    ----------
-    - https://docutils.sourceforge.io/docutils/parsers/rst/directives/admonitions.py
+    References:
+        - https://docutils.sourceforge.io/docutils/parsers/rst/directives/admonitions.py
     """
 
-    required_arguments = 0
+    required_arguments = 1
     r"""The number of required arguments (default: 0)."""
     optional_arguments = 0
     r"""The number of optional arguments (default: 0)."""
     final_argument_whitespace = True
     r"""A boolean, indicating if the final argument may contain whitespace."""
-    has_content = True
+    has_content = False
     r"""A boolean; True if content is allowed.  Client code must handle the case where
     content is required but not supplied (an empty content list will be supplied)."""
 
     def run(self) -> list[nodes.Node]:
-        r"""Run the directive."""
-        # Raise an error if the directive does not have contents.
-        self.assert_has_content()
+        # Create a preformatted (literal) node for the signature
+        signature_text = self.arguments[0]
+        # preformatted_node = nodes.literal(signature_text, signature_text)
+        text_node = nodes.Text(signature_text)
 
-        if not len(self.content) == 1:
-            raise ValueError("Signature directive must have exactly one argument.")
+        # Create a title node and add the preformatted node to it
+        title_node = nodes.title("", "Signature: ", text_node)
 
-        text = "\n".join(self.content)
-        admonition_node = nodes.admonition(text, **self.options)
-        self.add_name(admonition_node)
-
-        title_text = self.content[0]
-        signature_text = f"Signature: {title_text}"
-
-        textnodes, messages = self.state.inline_text(signature_text, self.lineno)
-        title = nodes.title(signature_text, "", *textnodes)
-        title.source, title.line = self.state_machine.get_source_and_line(self.lineno)
-        admonition_node += title
-        admonition_node += messages
-
-        if "classes" not in self.options:
-            admonition_node["classes"] += ["admonition-" + nodes.make_id("signature")]
+        # Create the admonition node
+        admonition_node = nodes.admonition()
+        admonition_node["classes"] += ["signature"]
+        admonition_node += title_node
 
         return [admonition_node]
 

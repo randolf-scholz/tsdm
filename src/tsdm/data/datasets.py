@@ -40,13 +40,6 @@ from tsdm.types.variables import (
 )
 from tsdm.utils.strings import pprint_repr, repr_array
 
-# class DataFrame2Dataset(TorchDataset[T]):
-#     """Convert a DataFrame to a Dataset."""
-#
-#     def __getitem__(self):
-# MapStyleDataset: TypeAlias = MappingProtocol
-
-
 # region Protocols ---------------------------------------------------------------------
 
 
@@ -168,7 +161,7 @@ Dataset: TypeAlias = IndexableDataset[V_co] | MapDataset[Any, V_co]
 
 @dataclass
 class DataFrame2Dataset(MapDataset[K, DataFrame]):
-    """Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting `.loc`.
+    """Interpretes a `DataFrame` as a `torch.utils.data.Dataset` by redirecting ``.loc``.
 
     It is assumed that the DataFrame has a MultiIndex.
     """

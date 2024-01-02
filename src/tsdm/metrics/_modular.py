@@ -132,7 +132,7 @@ class MAE(BaseMetric):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)
@@ -167,7 +167,7 @@ class WMAE(WeightedMetric):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)
@@ -233,7 +233,7 @@ class MSE(BaseMetric):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)
@@ -298,7 +298,7 @@ class WMSE(WeightedMetric):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)
@@ -333,7 +333,7 @@ class RMSE(BaseMetric):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)
@@ -368,7 +368,7 @@ class WRMSE(WeightedMetric):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)
@@ -420,7 +420,7 @@ class LP(BaseMetric):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)
@@ -475,7 +475,7 @@ class WLP(WeightedMetric):
 
     @jit.export
     def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r""".. Signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
+        r""".. signature:: ``[(..., 𝐦), (..., 𝐦)] → ...``."""
         r = predictions - targets
 
         m = ~torch.isnan(targets)

@@ -141,38 +141,37 @@ class Encoder(EncoderProtocol[U, V], Protocol):
         r"""Chain the encoders (pure function composition).
 
         Example:
-            enc = other @ self
-            enc(x) == other(self(x))
+            >>> enc = other @ self
+            >>> enc(x) == other(self(x))
         """
         return ChainedEncoder(other, self)
 
-    def __gt__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
+    def __rshift__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
         r"""Pipe the encoders (encoder composition).
 
         Note that the order is reversed compared to `@`.
 
         Example:
-            enc = enc1 > enc2
-            enc(x) = enc2(enc1(x))
-            enc.encode(x) == enc2.encode(enc1.encode(x))
-            enc.decode(y) == enc1.decode(enc2.decode(y))
+            >>> enc1, enc2, x = ...
+            >>> enc = enc1 >> enc2
+            >>> assert (y := enc(x)) == enc2(enc1(x))
+            >>> assert enc.encode(x) == enc2.encode(enc1.encode(x))
+            >>> assert enc.decode(y) == enc1.decode(enc2.decode(y))
 
         Note:
-            - `>` is associative:
-                (enc1 > enc2) > enc3 == enc1 > (enc2 > enc3)
-              Proof::
-                 ((A > B) > C).encode(x)
-                     = C.encode((A > B).encode(x))
-                     = C.encode(B.encode(A.encode(x)))
-                 (A > (B > C)).encode(x)
-                     = (B > C).encode(A.encode(x))
-                     = C.encode(B.encode(A.encode(x)))
-            - inverse law:
-              ~(enc1 > enc2) == ~enc2 > ~enc1
-              Proof::
-                  ~(A > B).encode(x)
-                      = (A > B).decode(x)
-                      = B.decode(A.decode(x))
+            - `>>` is associative: `(A >> B) >> C = A >> (B >> C)`
+
+              .. math::
+                 ((A >> B) >> C)(x) = C((A >> B)(x)) = C(B(A(x)))  \\
+                 (A >> (B >> C))(x) = (B >> C)(A(x)) = C(B(A(x)))
+
+            .. details:: inverse law: `~(A >> B) == ~B >> ~A`
+
+                      ~(A >> B)(x)
+                          = (A >> B).decode(x)
+                          = B.decode(A.decode(x))
+                          = ~B(~A(x))
+                          = (~B >> ~A)(x)
         """
         return PipedEncoder(self, other)
 

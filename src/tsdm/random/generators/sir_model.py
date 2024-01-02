@@ -59,7 +59,7 @@ class SIR(IVP_GeneratorBase[NDArray]):
     def system(self, t: ArrayLike, state: ArrayLike) -> NDArray:
         r"""Vector field of the SIR model.
 
-        .. Signature:: ``[(...B, N), (...B, N, 3) -> (...B, N, 3)``
+        .. signature:: ``[(...B, N), (...B, N, 3) -> (...B, N, 3)``
 
         sub-signatures:
             - ``[(...,), (2, ) -> (..., 2)``

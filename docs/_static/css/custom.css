@@ -9,3 +9,13 @@ html[data-theme="light"] .bd-content {
   flex-grow: 1;
   max-width: 100%;
 }
+
+span.viewcode-link {
+    /*https://github.com/piccolo-orm/piccolo_theme/issues/68#issue-1992760338*/
+    float: right;
+}
+
+/* Remove extra whitespace below the signature admonition */
+.admonition.signature {
+    padding-bottom: 0;
+}

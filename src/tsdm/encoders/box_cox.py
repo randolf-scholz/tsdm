@@ -39,8 +39,8 @@ class BoxCoxEncoder(BaseEncoder):
     r"""Encode unbounded non-negative data with a logarithmic transform.
 
     .. math::
-        \text{encode}： ℝ_{≥0} ⟶ ℝ，x ⟼ \log(x+c)
-        \text{decode}： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(\exp(y)-c, 0)
+        \text{encode}&： ℝ_{≥0} ⟶ ℝ，x ⟼ \log(x+c)                            \\
+        \text{decode}&： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(\exp(y)-c, 0)
 
     We consider multiple ideas for how to fit the parameter $c$
 
@@ -72,14 +72,13 @@ class BoxCoxEncoder(BaseEncoder):
         r"""Construct the loss for the Uniform distribution.
 
         .. math::
-            W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
-            F^{-1}(q) &= a + (b-a)q
-            β &= ∫ F^{-1}(q)dq = aq + ½(b-a)q²
+            W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]       \\
+            F^{-1}(q) &= a + (b-a)q                                           \\
+            β &= ∫ F^{-1}(q)dq = aq + ½(b-a)q²                                \\
             C &= ∫_0^1 F^{-1}(q)^2 dq = ⅓(a^2 + ab + b^2)
 
-        Also note: (1, 1; -1, 1)(a,b) = (2, 0; 0, √12) (μ, σ)
-        Hence: a = μ-√3σ, b = μ+√3σ
-        And: μ = ½(a+b), σ² = (a-b)²/12
+        Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&√12}⋅\bmat{μ\\σ}$
+        Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/√12}$.
         """
 
         def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
@@ -116,9 +115,10 @@ class BoxCoxEncoder(BaseEncoder):
         r"""Construct the loss for the Normal distribution.
 
         .. math::
-            W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
-            F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)
-            β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
+            W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]                           \\
+            F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)                                                   \\
+            β &= ∫_a^b F^{-1}(q)dq                                                                \\
+              &= (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}               \\
             C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
         """
 
@@ -210,8 +210,8 @@ class LogitBoxCoxEncoder(BaseEncoder):
     An offset c is added/subtracted to avoid log(0) and division by zero.
 
     .. math::
-        \text{encode}： ℝ_{≥0} ⟶ ℝ，x ⟼ \log((x + c) / (1 - (x - c)))
-        \text{decode}： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(\exp(y)-c, 0)
+        \text{encode}&： ℝ_{≥0} ⟶ ℝ，x ⟼ \log((x + c) / (1 - (x - c)))       \\
+        \text{decode}&： ℝ ⟶ ℝ_{≥0}，y ⟼ \max(\exp(y)-c, 0)
 
     We consider multiple ideas for how to fit the parameter $c$
 
@@ -243,15 +243,14 @@ class LogitBoxCoxEncoder(BaseEncoder):
         r"""Construct the loss for the Uniform distribution.
 
         .. math::
-            W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² +Bxₖ + C]
-            F^{-1}(q) &= a + (b-a)q
-            β &= ∫ F^{-1}(q)dq = aq + ½(b-a)q²
-            B &= -2(βₖ/αₖ)
+            W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² +Bxₖ + C]                      \\
+            F^{-1}(q) &= a + (b-a)q                                                   \\
+            β &= ∫ F^{-1}(q)dq = aq + ½(b-a)q²                                        \\
+            B &= -2(βₖ/αₖ)                                                            \\
             C &= ∫_0^1 F^{-1}(q)^2 dq = ⅓(a^2 + ab + b^2)
 
-        Also note: (1, 1; -1, 1)(a,b) = (2, 0; 0, √12) (μ, σ)
-        Hence: a = μ-√3σ, b = μ+√3σ
-        And: μ = ½(a+b), σ² = (a-b)²/12
+        Also note: $\bmat{1&1\\-1&1}⋅\bmat{a\\b} = \bmat{2&0\\0&√12}⋅\bmat{μ\\σ}$
+        Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/√12}$.
         """
 
         def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
@@ -288,9 +287,10 @@ class LogitBoxCoxEncoder(BaseEncoder):
         r"""Construct the loss for the Normal distribution.
 
         .. math::
-            W₂² = ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]
-            F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)
-            β &= ∫_a^b F^{-1}(q)dq = (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}
+            W₂² &= ∑ₖ [αₖxₖ² -2βₖxₖ + αₖC] = ∑ₖ αₖ[xₖ² -2(βₖ/αₖ)xₖ + C]               \\
+            F^{-1}(q) &= μ + σ√2\erf^{-1}(2q-1)                                       \\
+            β &= ∫_a^b F^{-1}(q)dq                                                    \\
+              &= (b-a)μ - σ/√(2PI) (e^{-\erf^{-1}(2b-1)^2} - e^{-\erf^{-1}(2a-1)^2}   \\
             C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
         """
 

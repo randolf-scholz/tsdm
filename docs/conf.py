@@ -69,11 +69,13 @@ extensions = [
     "sphinx.ext.viewcode",
     # 1st party extensions
     "signatures",
+    "details",
     # 3rd party extensions
     # "autoapi.extension",
     "myst_parser",
     "sphinx_copybutton",
     "sphinx_math_dollar",
+    "sphinx_togglebutton",
     # "sphinx_autodoc_typehints",
 ]
 # Add any Sphinx extension module names here, as strings. They can be extensions coming with Sphinx
@@ -170,6 +172,10 @@ html_theme = "pydata_sphinx_theme"
 # The “theme” that the HTML output should use. See the section about theming. The default is 'alabaster'.
 
 html_theme_options = {
+    # faster builds?  https://stackoverflow.com/a/52175461/9318372
+    "collapse_navigation": False,
+    "navigation_depth": 4,
+    #
     "header_links_before_dropdown": 7,
     "icon_links": [
         {
@@ -336,6 +342,18 @@ html_sidebars = {}
 # endregion HTML Configuration ---------------------------------------------------------------------------------
 
 
+# region MyST Configuration ----------------------------------------------------------------------------------
+
+myst_enable_extensions = [
+    "colon_fence",
+    "dollarmath",
+    "html_admonition",
+    "html_image",
+]
+
+# endregion MyST Configuration -------------------------------------------------------------------------------
+
+
 # region sphinx-autoapi configuration ---------------------------------------------------------------------------------
 # https://github.com/readthedocs/sphinx-autoapi
 
@@ -460,14 +478,15 @@ autodoc_default_flags = []
 # The default options for autodoc directives. They are applied to all autodoc directives automatically.
 # It must be a dictionary which maps option names to the values. For example:
 #
-# autodoc_default_options = {
-#     # 'members': 'var1, var2',
-#     # 'member-order': 'groupwise',
-#     # 'special-members': '__init__',
-#     "undoc-members": False,
-#     "imported-members": False,
-#     # 'exclude-members': '__weakref__'
-# }
+autodoc_default_options = {
+    # "ignore-module-all": True,
+    # 'members': 'var1, var2',
+    # 'member-order': 'groupwise',
+    # 'special-members': '__init__',
+    # "undoc-members": False,
+    # "imported-members": False,
+    # 'exclude-members': '__weakref__'
+}
 # Setting None or True to the value is equivalent to giving only the option name to the directives.
 # The supported options are 'members', 'member-order', 'undoc-members', 'private-members', 'special-members',
 # 'inherited-members', 'show-inheritance', 'ignore-module-all', 'imported-members', 'exclude-members' and
@@ -667,11 +686,11 @@ mathjax_options = {}
 # The default is empty {}.
 
 mathjax3_config = {
-    "loader": {"load": [r"[tex]/physics"]},
+    "loader": {"load": [r"[tex]/ams", r"[tex]/physics"]},
     "tex": {
         "inlineMath": [[r"\(", r"\)"]],
         "displayMath": [[r"\[", r"\]"]],
-        "packages": {"[+]": ["physics"]},
+        "packages": {"[+]": ["ams", "physics"]},
         "macros": {
             "argmax": r"\operatorname*{arg\,max}",
             "argmin": r"\operatorname*{arg\,min}",
@@ -680,6 +699,7 @@ mathjax3_config = {
             "rank": r"\operatorname{rank}",
             "relu": r"\operatorname{ReLU}",
             "tr": r"\operatorname{tr}",
+            "bmat": [r"\begin{bmatrix} #1 \end{bmatrix}", 1],
         },
     },
 }

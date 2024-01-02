@@ -62,5 +62,5 @@ class ReverseDense(nn.Module):
 
     @jit.export
     def forward(self, x: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., k) -> (..., l)``."""
+        r""".. signature:: ``(..., k) -> (..., l)``."""
         return self.linear(self.activation(x))

@@ -28,8 +28,8 @@ def kernel_heatmap(
 ) -> NDArray:
     r"""Create heatmap of given matrix.
 
-    .. Signature:: ``(..., ) ⟶ (..., 3)`` if "HWC"
-    .. Signature:: ``(..., ) ⟶ (3, ...)`` if "CHW".
+    .. signature:: ``(..., ) ⟶ (..., 3)`` if "HWC"
+    .. signature:: ``(..., ) ⟶ (3, ...)`` if "CHW".
 
     By default, the data is linearly transformed to a normal distribution $𝓝(½,⅙)$,
     which ensures that 99.7% of the data lies in the interval $[0,1]$, and then clipped.

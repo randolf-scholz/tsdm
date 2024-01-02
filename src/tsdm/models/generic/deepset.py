@@ -60,7 +60,7 @@ class DeepSet(nn.ModuleDict):
         self.decoder = self["decoder"]
 
     def forward(self, x: Tensor) -> Tensor:
-        r""".. Signature:: ``(..., *V, D) -> (..., F)``.
+        r""".. signature:: ``(..., *V, D) -> (..., F)``.
 
         Components:
           - Encoder: `(..., D) -> (..., E)`
@@ -115,7 +115,7 @@ class DeepSetReZero(nn.ModuleDict):
         self.decoder = self["decoder"]
 
     def forward(self, x: Tensor) -> Tensor:
-        r""".. Signature:: `(..., *V, D) -> (..., F)`.
+        r""".. signature:: `(..., *V, D) -> (..., F)`.
 
         Components:
           - Encoder: ``(..., D) -> (..., E)``.

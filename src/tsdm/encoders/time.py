@@ -281,7 +281,7 @@ class PositionalEncoder(BaseEncoder):
         return np.concatenate([np.sin(z), np.cos(z)], axis=-1)
 
     def decode(self, data: np.ndarray, /) -> np.ndarray:
-        r""".. Signature:: ``(..., 2d) -> ...``."""
+        r""".. signature:: ``(..., 2d) -> ...``."""
         return np.arcsin(data[..., 0])
 
 

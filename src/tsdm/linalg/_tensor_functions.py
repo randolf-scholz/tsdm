@@ -21,7 +21,7 @@ from typing_extensions import Union
 def relative_error(xhat: Tensor, x_true: Tensor) -> Tensor:
     r"""Element-wise relative error of `xhat` w.r.t. `x_true`.
 
-    .. Signature:: ``[(..., n), (..., n)] -> (..., n)``
+    .. signature:: ``[(..., n), (..., n)] -> (..., n)``
 
     Note:
         Automatically adds a small epsilon to the denominator to avoid division by zero.
@@ -49,7 +49,7 @@ def geometric_mean(
 ) -> Tensor:
     r"""Geometric mean of a tensor.
 
-    .. Signature:: ``(..., n) -> (...)``
+    .. signature:: ``(..., n) -> (...)``
     """
     if axis is None:
         dim = list(range(x.ndim))
@@ -70,7 +70,7 @@ def scaled_norm(
 ) -> Tensor:
     r"""Shortcut for scaled norm.
 
-    .. Signature:: ``(..., n) -> ...``
+    .. signature:: ``(..., n) -> ...``
     """
     # TODO: deal with nan values
     x = x.abs()
@@ -105,7 +105,7 @@ def norm(
 ) -> Tensor:
     r"""Shortcut for non-scaled norm.
 
-    .. Signature:: ``(..., n) -> ...``
+    .. signature:: ``(..., n) -> ...``
 
     Only present here for testing purposes.
     """
@@ -144,7 +144,7 @@ def tensor_norm(
 ) -> Tensor:
     r"""Entry-wise norm of $p$-th order.
 
-    .. Signature:: ``(..., n) -> ...``
+    .. signature:: ``(..., n) -> ...``
 
     +--------+-----------------------------------+------------------------------------+
     |        | standard                          | size normalized                    |
@@ -180,8 +180,7 @@ def multi_norm(
 ) -> Tensor:
     r"""Return the (scaled) p-q norm of the gradients.
 
-    .. Signature:: ``(...) -> ()``
-
+    .. signature:: ``(...) -> ()``
 
     .. math:: ‖A‖_{p,q} ≔ \Bigl|∑_{j=1}^n \Big(∑_{i=1}^m |A_{ij}|^p\Big)^{q/p}\Bigr|^{1/q}
 

@@ -34,7 +34,7 @@ from tsdm.linalg._tensor_functions import geometric_mean, tensor_norm
 def erank(x: Tensor) -> Tensor:
     r"""Compute the effective rank of a matrix.
 
-    .. Signature:: ``(..., m, n) -> ...``
+    .. signature:: ``(..., m, n) -> ...``
 
     .. math:: \operatorname{erank}(A) ≔ e^{H(\frac{𝛔}{‖𝛔‖_1})}
         = ∏ \bigl(\frac{σ_i}{‖σ_i‖}\bigr)^{- \frac{σ_i}{‖σ_i‖}}
@@ -59,7 +59,7 @@ def erank(x: Tensor) -> Tensor:
 def relerank(x: Tensor) -> Tensor:
     r"""Compute the relative effective rank of a matrix.
 
-    .. Signature:: ``(..., m, n) -> ...``
+    .. signature:: ``(..., m, n) -> ...``
 
     This is the effective rank scaled by $\min(m,n)$.
     """
@@ -70,9 +70,9 @@ def relerank(x: Tensor) -> Tensor:
 def col_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
-    .. Signature:: ``(..., m, n) -> ...``
+    .. signature:: ``(..., m, n) -> ...``
 
-    .. math:: 1/(n(n-1)) ‖𝕀ₙ - XᵀX/diag(XᵀX)⊗diag(XᵀX)‖_{1,1}
+    .. math:: \frac{1}{n(n-1)}\left\|𝕀ₙ - \frac{XᵀX}{\diag(XᵀX)⊗\diag(XᵀX)}\right\|_{1,1}
     """
     _, n = x.shape[-2:]
     u = torch.linalg.norm(x, dim=0)
@@ -87,9 +87,9 @@ def col_corr(x: Tensor) -> Tensor:
 def row_corr(x: Tensor) -> Tensor:
     r"""Compute average column-wise correlation of a matrix.
 
-    .. Signature:: ``(..., m, n) -> ...``
+    .. signature:: ``(..., m, n) -> ...``
 
-    .. math:: 1/(m(m-1)) ‖𝕀ₘ - XXᵀ/diag(XXᵀ)⊗diag(XXᵀ)‖_{1,1}
+    .. math:: \frac{1}{m(m-1)}\left\|𝕀ₘ - \frac{XXᵀ}{diag(XXᵀ)⊗diag(XXᵀ)}\right\|_{1,1}
     """
     m, _ = x.shape[-2:]
     v = torch.linalg.norm(x, dim=1)
@@ -104,7 +104,7 @@ def row_corr(x: Tensor) -> Tensor:
 def closest_symm(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Symmetric part of square matrix.
 
-    .. Signature:: ``(..., n, n) -> (..., n, n)``
+    .. signature:: ``(..., n, n) -> (..., n, n)``
 
     .. math:: \argmin_{X: X^⊤ = -X} ‖A-X‖
     """
@@ -116,7 +116,7 @@ def closest_symm(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
 def closest_skew(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Skew-Symmetric part of a matrix.
 
-    .. Signature:: ``(..., n, n) -> (..., n, n)``
+    .. signature:: ``(..., n, n) -> (..., n, n)``
 
     .. math:: \argmin_{X: X^⊤ = X} ‖A-X‖
     """
@@ -128,7 +128,7 @@ def closest_skew(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
 def closest_orth(x: Tensor) -> Tensor:
     r"""Orthogonal part of a square matrix.
 
-    .. Signature:: ``(..., n, n) -> (..., n, n)``
+    .. signature:: ``(..., n, n) -> (..., n, n)``
 
     .. math:: \argmin_{X: XᵀX = 𝕀} ‖A-X‖
     """
@@ -143,7 +143,7 @@ def closest_diag(x: Tensor) -> Tensor:
 
     .. math:: \argmin_{X: X⊙𝕀 = X} ‖A-X‖
 
-    .. Signature:: ``(..., n, n) -> (..., n, n)``
+    .. signature:: ``(..., n, n) -> (..., n, n)``
     """
     d = torch.diagonal(x, dim1=-2, dim2=-1)
     return torch.diag_embed(d)
@@ -153,7 +153,7 @@ def closest_diag(x: Tensor) -> Tensor:
 def reldist(x: Tensor, y: Tensor) -> Tensor:
     r"""Relative distance between two matrices.
 
-    .. Signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
+    .. signature:: ``[(..., m, n), (..., m, n)]  -> (..., n, n)``
 
     .. math::  \frac{‖x-y‖}{‖y‖}
     """
@@ -167,7 +167,7 @@ def reldist(x: Tensor, y: Tensor) -> Tensor:
 def reldist_diag(x: Tensor) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
-    .. Signature:: ``(..., n, n) -> ...``
+    .. signature:: ``(..., n, n) -> ...``
 
     .. math:: \frac{‖A-X‖}{‖A‖}  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
     """
@@ -178,7 +178,7 @@ def reldist_diag(x: Tensor) -> Tensor:
 def reldist_symm(x: Tensor) -> Tensor:
     r"""Relative magnitude of closest_symm part.
 
-    .. Signature:: ``(..., n, n) -> ...``
+    .. signature:: ``(..., n, n) -> ...``
     """
     return reldist(closest_symm(x), x)
 
@@ -187,7 +187,7 @@ def reldist_symm(x: Tensor) -> Tensor:
 def reldist_skew(x: Tensor) -> Tensor:
     r"""Relative magnitude of skew-closest_symm part.
 
-    .. Signature:: ``(..., n, n) -> ...``
+    .. signature:: ``(..., n, n) -> ...``
     """
     return reldist(closest_skew(x), x)
 
@@ -196,7 +196,7 @@ def reldist_skew(x: Tensor) -> Tensor:
 def reldist_orth(x: Tensor) -> Tensor:
     r"""Relative magnitude of orthogonal part.
 
-    .. Signature:: ``(..., n, n) -> ...``
+    .. signature:: ``(..., n, n) -> ...``
 
     .. math:: \min_{X: X^⊤X = 𝕀} \frac{‖A-X‖}{‖A‖}
     """
@@ -207,7 +207,7 @@ def reldist_orth(x: Tensor) -> Tensor:
 def stiffness_ratio(x: Tensor) -> Tensor:
     r"""Compute the stiffness ratio of a matrix.
 
-    .. Signature:: ``(..., n, n) -> ...``
+    .. signature:: ``(..., n, n) -> ...``
 
     .. math:: \frac{|\Re(λ_\max)|}{|\Re(λ_\min)|}
 
@@ -230,7 +230,7 @@ def stiffness_ratio(x: Tensor) -> Tensor:
 def spectral_radius(x: Tensor) -> Tensor:
     r"""Return $\max_i | λ_i | $.
 
-    .. Signature:: ``(..., n, n) -> ...``
+    .. signature:: ``(..., n, n) -> ...``
     """
     λ = torch.linalg.eigvals(x)
     return λ.abs().amax(dim=-1)
@@ -240,7 +240,7 @@ def spectral_radius(x: Tensor) -> Tensor:
 def spectral_abscissa(x: Tensor) -> Tensor:
     r"""Return $\max_i \Re(λ_i)$.
 
-    .. Signature:: ``(..., n, n) -> ...``
+    .. signature:: ``(..., n, n) -> ...``
     """
     λ = torch.linalg.eigvals(x)
     return λ.real.amax(dim=-1)
@@ -278,7 +278,7 @@ def logarithmic_norm(
 
     .. math:: \lim_{ε→0⁺} \frac{‖𝕀+εA‖ₚ-1}{ε}
 
-    .. Signature:: ``(..., n, n) -> ...``
+    .. signature:: ``(..., n, n) -> ...``
 
     Special cases:
 
@@ -290,11 +290,11 @@ def logarithmic_norm(
     - p=-∞: minimum rowsum, using real value for diagonal
 
     References:
-        - Logarithmic Norm <https://en.wikipedia.org/wiki/Logarithmic_norm>
+        - Logarithmic Norm https://en.wikipedia.org/wiki/Logarithmic_norm
         - `What Is the Logarithmic Norm? <https://nhigham.com/2022/01/18/what-is-the-logarithmic-norm/>_`
         - | The logarithmic norm. History and modern theory
           | Gustaf Söderlind, BIT Numerical Mathematics, 2006
-          | <https://link.springer.com/article/10.1007/s10543-006-0069-9>_
+          | https://link.springer.com/article/10.1007/s10543-006-0069-9
     """
     if scaled:
         raise NotImplementedError("Implementation not validated!")
@@ -366,7 +366,7 @@ def schatten_norm(
 ) -> Tensor:
     r"""Schatten norm $p$-th order.
 
-    .. Signature:: ``(..., m, n) -> ...``
+    .. signature:: ``(..., m, n) -> ...``
 
     .. math::  ‖A‖_p^p ≔ \tr(|A|^p) = ∑_i σ_i^p
 
@@ -381,8 +381,8 @@ def schatten_norm(
     - $p=+∞$: Minimal Singular Value
 
     References:
-        - Matrix Norms (schatten) <https://en.wikipedia.org/wiki/Matrix_norm#Schatten_norms>
-        - Schatten Norms <https://en.wikipedia.org/wiki/Schatten_norms>
+        - Matrix Norms (schatten): https://en.wikipedia.org/wiki/Matrix_norm#Schatten_norms
+        - Schatten Norms: https://en.wikipedia.org/wiki/Schatten_norms
     """
     if not torch.is_floating_point(x):
         x = x.to(dtype=torch.float)
@@ -435,7 +435,7 @@ def matrix_norm(
 ) -> Tensor:
     r"""Entry-Wise Matrix norm of $p,q$-th order.
 
-    .. Signature:: ``(..., m, n) -> ...``
+    .. signature:: ``(..., m, n) -> ...``
 
     .. math:: ‖A‖_{p,q} ≔ \Bigl(∑_n \Bigl(∑_m |A_{mn}|^p\Bigr)^{q/p} \Bigr)^{1/q}
 
@@ -446,7 +446,7 @@ def matrix_norm(
     where $𝐄$ is the averaging operator, which estimates the expected value $𝔼$.
 
     References:
-        - Matrix Norms (entry-wise) <https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms>
+        - Matrix Norms (entry-wise): https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms
     """
     # convert to tuple
     dim = (dim[0] % x.ndim, dim[1] % x.ndim)  # absolufy dim
@@ -471,12 +471,12 @@ def operator_norm(
 ) -> Tensor:
     r"""Operator norm of $p$-th order.
 
-    .. Signature:: ``(..., m, n) -> ...``
+    .. signature:: ``(..., m, n) -> ...``
 
     .. math::
-        ‖x‖ₚ ≔ (   ∑_{k=0}^n |xₖ|ᵖ)^{1/p}  \text{scaled=False}
-        ‖x‖ₚ ≔ (⅟ₙ ∑_{k=0}^n |xₖ|ᵖ)^{1/p}  \text{scaled=True}
-        ‖A‖ₚ ≔ \sup_{x≠0} \frac{‖Ax‖ₚ}{‖x‖ₚ}
+        ‖x‖ₚ &≔ (   ∑_{k=0}^n |xₖ|ᵖ)^{1/p}  \text{scaled=False}               \\
+        ‖x‖ₚ &≔ (⅟ₙ ∑_{k=0}^n |xₖ|ᵖ)^{1/p}  \text{scaled=True}                \\
+        ‖A‖ₚ &≔ \sup_{x≠0} \frac{‖Ax‖ₚ}{‖x‖ₚ}
 
     +--------+--------------------------+---------+
     |        | regular                  | scaled  |
@@ -497,8 +497,8 @@ def operator_norm(
     +--------+--------------------------+---------+
 
     References:
-        - Matrix Norms (induced) <https://en.wikipedia.org/wiki/Matrix_norm#Matrix_norms_induced_by_vector_norms>
-        - Operator Norm <https://en.wikipedia.org/wiki/Operator_norm>
+        - Matrix Norms (induced): https://en.wikipedia.org/wiki/Matrix_norm#Matrix_norms_induced_by_vector_norms
+        - Operator Norm: https://en.wikipedia.org/wiki/Operator_norm
     """
     rowdim, coldim = dim
     assert x.shape[rowdim] == x.shape[coldim], "Matrix must be square."

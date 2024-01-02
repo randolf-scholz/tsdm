@@ -68,7 +68,7 @@ class ODE(Protocol[T_co]):
     def __call__(self, t: ArrayLike, y: ArrayLike) -> T_co:
         """Evaluate the vector field at given time and state.
 
-        .. Signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
+        .. signature:: ``[(N,), (..., N, *D) -> (..., N, *D)``
 
         Sub-signatures:
             - ``[(,), (..., *D) -> (..., *D)``
@@ -111,7 +111,7 @@ class IVP_Solver(Protocol[T_co]):
     def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
         """Solve the initial value problem.
 
-        .. Signature:: ``[(N,), (..., *D) -> (..., N, *D)``
+        .. signature:: ``[(N,), (..., *D) -> (..., N, *D)``
 
         Args:
             system: Some object that represents the dynamics of the systems.
