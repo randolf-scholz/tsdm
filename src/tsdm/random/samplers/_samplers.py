@@ -47,6 +47,8 @@ from tsdm.types.time import DT, TD, DateTime, TimeDelta as TDLike
 from tsdm.types.variables import K2, K, T, T_co
 from tsdm.utils.strings import pprint_repr
 
+RNG = np.random.default_rng()
+
 
 # region helper functions --------------------------------------------------------------
 def get_index(dataset: Dataset[T], /) -> Index:
@@ -254,11 +256,7 @@ class RandomSampler(BaseSampler[T_co]):
         self.size = len(self.index)
 
     def __iter__(self) -> Iterator[T_co]:
-        index = (
-            self.index
-            if not self.shuffle
-            else self.index[np.random.permutation(self.size)]
-        )
+        index = self.index[RNG.permutation(self.size)] if self.shuffle else self.index
         data = self.data  # avoids attribute lookup in the loop
         for key in index:
             yield data[key]
@@ -320,18 +318,14 @@ class HierarchicalSampler(BaseSampler[tuple[K, K2]]):
         When ``early_stop=True``, it will sample precisely ``min() * len(subsamplers)`` samples.
         When ``early_stop=False``, it will sample all samples.
         """
-        permutation = (
-            self.partition
-            if not self.shuffle
-            else np.random.permutation(self.partition)
-        )
+        index = RNG.permutation(self.partition) if self.shuffle else self.partition
 
         activate_iterators = {
             key: iter(sampler) for key, sampler in self.subsamplers.items()
         }
 
         # This won't raise `StopIteration`, because the length is matched.
-        for key in permutation:
+        for key in index:
             yield key, next(activate_iterators[key])
 
 
@@ -645,7 +639,7 @@ class SlidingSampler(BaseSampler, Generic[DT, Mode, Horizons]):
         grid = self.grid
 
         if self.shuffle:
-            grid = grid[np.random.permutation(len(grid))]
+            grid = grid[RNG.permutation(len(grid))]
 
         # make_fn = self._MAKE_FUNCTIONS[self.mode, self.multi_horizon]
         # for k in grid:  # NOTE: k is some range of integers.

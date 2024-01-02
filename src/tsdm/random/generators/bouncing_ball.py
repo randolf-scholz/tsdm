@@ -21,6 +21,8 @@ from typing_extensions import Final
 from tsdm.random.generators._generators import IVP_GeneratorBase
 from tsdm.types.aliases import SizeLike
 
+RNG = np.random.default_rng()
+
 
 @dataclass
 class BouncingBall(IVP_GeneratorBase[NDArray]):
@@ -52,10 +54,10 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
 
     def _get_initial_state_impl(self, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
-        x0 = np.random.uniform(low=self.x_min, high=self.x_max, size=size)
-        v0 = np.random.uniform(
-            low=self.v_min, high=self.v_max, size=size
-        ) * np.random.choice([-1, 1], size=size)
+        x0 = RNG.uniform(low=self.x_min, high=self.x_max, size=size)
+        v0 = RNG.uniform(low=self.v_min, high=self.v_max, size=size) * RNG.choice(
+            [-1, 1], size=size
+        )
         return np.stack([x0, v0], axis=-1)
 
     def _make_observations_impl(self, loc: NDArray, /) -> NDArray:

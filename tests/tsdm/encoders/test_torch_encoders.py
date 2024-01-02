@@ -12,6 +12,7 @@ from tsdm.encoders.pytorch import (
 )
 
 __logger__ = logging.getLogger(__name__)
+RNG = np.random.default_rng()
 
 
 def test_PositionalEncoder() -> None:
@@ -22,7 +23,7 @@ def test_PositionalEncoder() -> None:
     scale = 1.23
     N = 10
     num_dim = 6
-    t = np.sort(np.random.rand(N))
+    t = np.sort(RNG.uniform(size=N))
     LOGGER.info("Start Testing")
 
     try:

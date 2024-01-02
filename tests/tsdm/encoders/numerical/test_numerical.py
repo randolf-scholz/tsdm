@@ -21,6 +21,7 @@ from tsdm.encoders.numerical import (
 )
 
 __logger__ = logging.getLogger(__name__)
+RNG = np.random.default_rng()
 T = TypeVar(
     "T",
     Callable[..., pd.Series],
@@ -134,7 +135,7 @@ def test_linear_scaler(tensor_type: T) -> None:
     LOGGER.info("Testing.")
 
     LOGGER.info("Testing without batching.")
-    data = np.random.rand(3)
+    data = RNG.uniform(size=3)
     X = tensor_type(data)
     encoder = encoder_type()
     encoder.fit(X)
@@ -147,7 +148,7 @@ def test_linear_scaler(tensor_type: T) -> None:
         return
 
     LOGGER.info("Testing with single batch-dim.")
-    data = np.random.rand(3, 5)
+    data = RNG.uniform(size=(3, 5))
     X = tensor_type(data)
     encoder = encoder_type()
     encoder.fit(X)
@@ -171,7 +172,7 @@ def test_linear_scaler(tensor_type: T) -> None:
 
     LOGGER.info("Testing with many batch-dim.")
     # weird input
-    data = np.random.rand(1, 2, 3, 4, 5)
+    data = RNG.uniform(size=(1, 2, 3, 4, 5))
     X = tensor_type(data)
     encoder = encoder_type()
     encoder.fit(X)
@@ -199,7 +200,7 @@ def test_get_broadcast(
     ):
         skip(f"{shape=} {axis=}")
 
-    arr: NDArray = np.asarray(np.random.randn(*shape))
+    arr: NDArray = RNG.normal(size=shape)
 
     broadcast = get_broadcast(arr.shape, axis=axis)
     m = np.mean(arr, axis=axis)
@@ -250,7 +251,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
 
     if tensor_type != pd.DataFrame:
         LOGGER.info("Testing without batching.")
-        data = np.random.rand(3)
+        data = RNG.uniform(size=3)
         X = tensor_type(data)
         encoder = encoder_type()
         encoder.fit(X)
@@ -263,7 +264,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
         return
 
     LOGGER.info("Testing with single batch-dim.")
-    data = np.random.rand(3, 5)
+    data = RNG.uniform(size=(3, 5))
     X = tensor_type(data)
     encoder = encoder_type(axis=-1)
     encoder.fit(X)
@@ -295,7 +296,7 @@ def test_scaler(encoder_type: type[E], tensor_type: T) -> None:
 
     LOGGER.info("Testing with many batch-dim.")
     # weird input
-    data = np.random.rand(2, 3, 4, 5)
+    data = RNG.uniform(size=(2, 3, 4, 5))
     X = tensor_type(data)
     encoder = encoder_type(axis=(-2, -1))
     encoder.fit(X)
@@ -321,7 +322,7 @@ def test_scaler_dataframe(encoder_type: type[E]) -> None:
     LOGGER.info("Testing Encoder applied to pandas.DataFrame.")
 
     LOGGER.info("Testing without batching.")
-    X = pd.DataFrame(np.random.rand(5, 3), columns=["a", "b", "c"])
+    X = pd.DataFrame(RNG.uniform(size=(5, 3)), columns=["a", "b", "c"])
     encoder = encoder_type(axis=-1)
 
     # validate fitting
@@ -409,7 +410,7 @@ def test_standard_scaler(axis):
     }[axis]
 
     # initialize
-    X = np.random.randn(2, 3, 4, 5)
+    X = RNG.normal(size=(2, 3, 4, 5))
     encoder = StandardScaler(axis=axis)
     assert_type(encoder, StandardScaler[Any])
 
@@ -438,7 +439,7 @@ def test_minmax_scaler(axis):
         (): (),
     }[axis]
 
-    X = np.random.randn(2, 3, 4, 5)
+    X = RNG.normal(size=(2, 3, 4, 5))
     encoder = MinMaxScaler(axis=axis)
     assert_type(encoder, MinMaxScaler[Any])
 

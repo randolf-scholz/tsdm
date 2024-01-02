@@ -26,8 +26,7 @@ from tsdm.types.protocols import (
 )
 
 __logger__ = logging.getLogger(__name__)
-
-
+RNG = numpy.random.default_rng()
 ARRAY_PROTOCOLS = (ArrayKind, NumericalArray, MutableArray)
 
 _SERIES_DATA = ["a", "b", "c"]
@@ -322,7 +321,7 @@ def test_table_manual() -> None:
         numpy_table, SupportsShape
     ), f"Missing Attributes: {set(dir(SupportsShape)) - set(dir(numpy_table))}"
 
-    pandas_frame: pandas.DataFrame = pandas.DataFrame(numpy.random.randn(3, 3))
+    pandas_frame: pandas.DataFrame = pandas.DataFrame(RNG.normal(size=(3, 3)))
     pandas_table: SupportsShape = pandas_frame
     assert isinstance(
         pandas_table, SupportsShape

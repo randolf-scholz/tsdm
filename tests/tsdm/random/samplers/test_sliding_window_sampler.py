@@ -17,7 +17,7 @@ from tsdm.types.time import DateTime
 from tsdm.utils import flatten_dict
 
 __logger__ = logging.getLogger(__name__)
-
+RNG = np.random.default_rng()
 T = True
 F = False
 S: TypeAlias = Literal["slices"]  # slice
@@ -903,7 +903,7 @@ def test_float_data(mode: str, data: Any) -> None:
 # NOTE: here we have statically known mode, so they should be type checked.
 def test_pandas_timestamps() -> None:
     """Test the SlidingWindowSampler."""
-    timedeltas = Series(pd.to_timedelta(np.random.rand(200), "m"))
+    timedeltas = Series(pd.to_timedelta(RNG.uniform(size=200), "m"))
     tmin = pd.Timestamp(0)
     time: Iterable[DateTime] = pd.concat([
         Series([tmin]),

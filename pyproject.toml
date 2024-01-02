@@ -272,6 +272,7 @@ select = [
     "PIE",   # pie
     "PYI",   # pyi
     "PT",    # pytest
+    "NPY",   # numpy
     "PERF",  # performance related
     "RUF",   # ruff specific
     "TRY",   # tryceratops

@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colormaps
 
+RNG = np.random.default_rng()
+
 
 def f(x, p):
     """Normal Lᴾ norm.
 
-    .. Signature:: ``[(..., n), (m,)] -> (..., m)``
+    .. signature:: ``[(..., n), (m,)] -> (..., m)``
     """
     x = np.asarray(x)
     p = np.asarray(p)
@@ -19,7 +21,7 @@ def f(x, p):
 def g(x, p):
     """Scaled Lᴾ norm.
 
-    .. Signature:: ``[(..., n), (m,)] -> (..., m)``
+    .. signature:: ``[(..., n), (m,)] -> (..., m)``
     """
     x = np.asarray(x)
     p = np.asarray(p)
@@ -40,7 +42,7 @@ def gmean(x):
 def exp_scaled_norm():
     """Plot the scaled Lᴾ norm for different values of p."""
     N = 7
-    x = np.random.randn(N)
+    x = RNG.normal(size=N)
     p = np.logspace(-3, 3, 1000)
 
     fig, ax = plt.subplots()
@@ -61,7 +63,7 @@ def exp_scaled_norm():
 def unit_circle_lp_scaled():
     r"""Plot the unit circle of the scaled Lₚ norm.
 
-    To do this we use polar coordinates. Then we have:
+    To do this, we use polar coordinates. Then we have:
 
     .. math:: ‖x‖ₚ = c ⟺ |x|ᵖ + |y|ᴾ = cᵖ
         ⟺ |r \cos φ|ᵖ + |r \sin φ|ᴾ = cᵖ
@@ -69,7 +71,7 @@ def unit_circle_lp_scaled():
         ⟺ rᴾ = cᴾ / (|\cos φ|ᵖ + |\sin φ|ᴾ)
         ⟺ r = c / ‖(\cos φ, \sin φ)‖ₚ
 
-    This equation holds true for both scaled and unscaled version.
+    This equation holds true for both scaled and unscaled versions.
     """
     angle = np.linspace(0, 2 * np.pi, 2**16)
     circle = np.stack([np.cos(angle), np.sin(angle)], axis=-1)

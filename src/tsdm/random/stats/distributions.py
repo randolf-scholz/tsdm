@@ -17,6 +17,8 @@ from typing_extensions import Protocol, runtime_checkable
 from tsdm.types.aliases import SizeLike
 from tsdm.types.variables import T_co
 
+RNG = np.random.default_rng()
+
 
 @runtime_checkable
 class Generator(Protocol[T_co]):
@@ -125,6 +127,6 @@ class Dirichlet:
         """Random variates of the Dirichlet distribution."""
         alphas = np.asarray(alphas)
         size = (size,) if isinstance(size, int) else size
-        x = np.random.gamma(shape=alphas, size=size + alphas.shape)
+        x = RNG.gamma(shape=alphas, size=size + alphas.shape)
         x /= x.sum(axis=-1, keepdims=True)
         return x

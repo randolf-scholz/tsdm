@@ -14,6 +14,8 @@ from tsdm.random.samplers._samplers import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem
 from tsdm.types.time import DTVar, TDVar
 
+RNG = np.random.default_rng()
+
 
 @deprecated("Use SlidingWindowSampler instead.")
 class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
@@ -133,13 +135,10 @@ class IntervalSampler(BaseSampler[slice], Generic[TDVar]):
         lower_bounds = self.intervals["lower_bound"]
         upper_bounds = self.intervals["upper_bound"]
 
-        permutation = (
-            np.arange(len(self))
-            if not self.shuffle
-            else np.random.permutation(len(self))
-        )
+        n = len(self)
+        index = RNG.permutation(n) if self.shuffle else np.arange(n)
 
-        for k in permutation:
+        for k in index:
             yield slice(lower_bounds[k], upper_bounds[k])
 
     def __len__(self) -> int:
@@ -244,12 +243,9 @@ class SequenceSampler(BaseSampler, Generic[DTVar, TDVar]):
 
     def __iter__(self) -> Iterator:
         r"""Return an iterator over the samples."""
-        permutation = (
-            np.arange(len(self))
-            if not self.shuffle
-            else np.random.permutation(len(self))
-        )
-        return iter(self.samples[permutation])
+        n = len(self)
+        index = RNG.permutation(n) if self.shuffle else np.arange(n)
+        return iter(self.samples[index])
 
     def __repr__(self) -> str:
         r"""Return a string representation of the object."""

@@ -34,7 +34,7 @@ RESULT_DIR = PROJECT.RESULTS_DIR[__file__]
 def test_combined_encoder(SplitID=(0, "train"), atol=1e-5, rtol=2**-12):
     r"""Test complicated combined encoder."""
     torch.manual_seed(0)
-    np.random.seed(0)
+    np.random.seed(0)  # noqa: NPY002
     task = KiwiBenchmark()
     ts = task.dataset.timeseries.iloc[:20_000]  # use first 20_000 values only
     descr = task.dataset.timeseries_description[["kind", "lower_bound", "upper_bound"]]

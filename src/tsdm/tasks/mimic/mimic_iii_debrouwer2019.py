@@ -221,7 +221,7 @@ class MIMIC_III_DeBrouwer2019(OldBaseTask):
         num_folds = 5
         folds = []
         # https://github.com/edebrouwer/gru_ode_bayes/blob/aaff298c0fcc037c62050c14373ad868bffff7d2/data_preproc/Climate/generate_folds.py#L10-L14
-        np.random.seed(self.seed)
+        np.random.seed(self.seed)  # noqa: NPY002
         for _ in range(num_folds):
             train_idx, test_idx = train_test_split(self.IDs, test_size=self.test_size)
             train_idx, valid_idx = train_test_split(
