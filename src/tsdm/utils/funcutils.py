@@ -21,7 +21,7 @@ from collections.abc import Callable, Sequence
 from functools import wraps
 from inspect import Parameter
 
-from typing_extensions import Any, Optional, ParamSpec, cast, overload
+from typing_extensions import Any, Optional, ParamSpec, overload
 
 from tsdm.types.protocols import Dataclass, is_dataclass
 from tsdm.types.variables import R
@@ -33,17 +33,43 @@ VAR_KEYWORD = Parameter.VAR_KEYWORD
 VAR_POSITIONAL = Parameter.VAR_POSITIONAL
 Kind = inspect._ParameterKind  # pylint: disable=protected-access
 
+PARAMETER_KINDS = {
+    "positional": {POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL},
+    "positional_only": {POSITIONAL_ONLY, VAR_POSITIONAL},
+    "keyword": {POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD},
+    "keyword_only": {KEYWORD_ONLY, VAR_KEYWORD},
+    "variadic": {VAR_POSITIONAL, VAR_KEYWORD},
+}
+
 P = ParamSpec("P")
 
 
-def accepts_varkwargs(f: Callable[..., Any]) -> bool:
+def rpartial(
+    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
+) -> Callable[..., R]:
+    r"""Apply positional arguments from the right.
+
+    References:
+        - https://docs.python.org/3/library/functools.html#functools.partial
+        - https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129
+    """
+
+    @wraps(func)
+    def __wrapper(*func_args: Any, **func_kwargs: Any) -> R:
+        # FIXME: https://github.com/python/typeshed/issues/8703
+        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
+
+    return __wrapper
+
+
+def accepts_varkwargs(func: Callable[..., Any], /) -> bool:
     r"""Check if function accepts kwargs."""
-    sig = inspect.signature(f)
+    sig = inspect.signature(func)
     return any(p.kind is VAR_KEYWORD for p in sig.parameters.values())
 
 
 def dataclass_args_kwargs(
-    obj: Dataclass, *, ignore_parent_fields: bool = False
+    obj: Dataclass, /, *, ignore_parent_fields: bool = False
 ) -> tuple[tuple[Any, ...], dict[str, Any]]:
     r"""Return positional and keyword arguments of a dataclass."""
     if not isinstance(obj, Dataclass):
@@ -95,7 +121,7 @@ def get_parameter_kind(s: str | Kind, /) -> set[Kind]:
 
 
 def get_function_args(
-    f: Callable[..., Any],
+    func: Callable[..., Any],
     /,
     *,
     mandatory: Optional[bool] = None,
@@ -112,7 +138,7 @@ def get_function_args(
         case _:
             raise ValueError(f"Unknown type for kinds: {type(kinds)}")
 
-    sig = inspect.signature(f)
+    sig = inspect.signature(func)
     params = list(sig.parameters.values())
 
     if mandatory is None:
@@ -125,15 +151,15 @@ def get_function_args(
     ]
 
 
-def get_mandatory_argcount(f: Callable[..., Any]) -> int:
+def get_mandatory_argcount(func: Callable, /) -> int:
     r"""Get the number of mandatory arguments of a function."""
-    sig = inspect.signature(f)
+    sig = inspect.signature(func)
     return sum(is_mandatory_arg(p) for p in sig.parameters.values())
 
 
-def get_mandatory_kwargs(f: Callable[..., Any]) -> set[str]:
+def get_mandatory_kwargs(func: Callable, /) -> set[str]:
     r"""Get the mandatory keyword arguments of a function."""
-    sig = inspect.signature(f)
+    sig = inspect.signature(func)
     return {
         name
         for name, p in sig.parameters.items()
@@ -141,7 +167,15 @@ def get_mandatory_kwargs(f: Callable[..., Any]) -> set[str]:
     }
 
 
-def get_return_typehint(f: Callable[..., Any]) -> Any:
+def get_parameter(func: Callable, name: str, /) -> Parameter:
+    """Get parameter from function."""
+    sig = inspect.signature(func)
+    if name not in sig.parameters:
+        raise ValueError(f"{func=} takes np argument named {name!r}.")
+    return sig.parameters[name]
+
+
+def get_return_typehint(func: Callable, /) -> Any:
     r"""Get the return typehint of a function."""
     # if isinstance(self.func, FunctionType | MethodType):
     #     ann = self.func.__annotations__.get("return", object)  # type: ignore[unreachable]
@@ -149,7 +183,7 @@ def get_return_typehint(f: Callable[..., Any]) -> Any:
     #     ann = self.func.__call__.__annotations__.get("return", object)  # type: ignore[operator]
     #
     # ann.__name__ if isinstance(ann, type) else str(ann)
-    sig = inspect.signature(f)
+    sig = inspect.signature(func)
     ann = sig.return_annotation
 
     match ann:
@@ -161,76 +195,110 @@ def get_return_typehint(f: Callable[..., Any]) -> Any:
             return ann
 
 
-def is_mandatory_arg(p: Parameter, /) -> bool:
+@overload
+def is_mandatory_arg(param: Parameter, /) -> bool: ...
+@overload
+def is_mandatory_arg(func: Callable, name: str, /) -> bool: ...
+def is_mandatory_arg(func_or_param, name=None, /):
     r"""Check if parameter is mandatory."""
-    return p.default is Parameter.empty and p.kind not in {VAR_POSITIONAL, VAR_KEYWORD}
+    match func_or_param, name:
+        case Parameter() as param, None:
+            return param.default is Parameter.empty and param.kind not in {
+                VAR_POSITIONAL,
+                VAR_KEYWORD,
+            }
+        case Callable() as function, str(name):  # type: ignore[misc]
+            param = get_parameter(function, name)
+            return is_mandatory_arg(param)
+        case _:
+            raise TypeError("Unsupported input types.")
 
 
 @overload
-def is_positional_arg(p: Parameter, /) -> bool: ...
+def is_positional_arg(param: Parameter, /) -> bool: ...
 @overload
-def is_positional_arg(p: str, /, *, func: Callable) -> bool: ...
-def is_positional_arg(p, /, *, func=None):
+def is_positional_arg(func: Callable, name: str, /) -> bool: ...
+def is_positional_arg(func_or_param, name=None, /):
     r"""Check if parameter is positional argument."""
-    match p, func:
+    match func_or_param, name:
         case Parameter() as param, None:
             return param.kind in {
                 POSITIONAL_ONLY,
                 POSITIONAL_OR_KEYWORD,
                 VAR_POSITIONAL,
             }
-        case str(name), Callable() as function:  # type: ignore[misc]
-            # FIXME: https://github.com/python/cpython/issues/102395
-            function = cast(Callable, function)  # type: ignore[has-type]
-            sig = inspect.signature(function)
-            if name not in sig.parameters:
-                raise ValueError(
-                    f"Function {function} takes np argument named {name!r}."
-                )
-            return is_positional_arg(sig.parameters[name])
+        case Callable() as function, str(name):  # type: ignore[misc]
+            param = get_parameter(function, name)
+            return is_positional_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
 
 
-def is_positional_only_arg(p: Parameter, /) -> bool:
+@overload
+def is_positional_only_arg(param: Parameter, /) -> bool: ...
+@overload
+def is_positional_only_arg(func: Callable, name: str, /) -> bool: ...
+def is_positional_only_arg(func_or_param, name=None, /):
     """Check if parameter is positional only argument."""
-    return p.kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
+    match func_or_param, name:
+        case Parameter() as param, None:
+            return param.kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
+        case Callable() as function, str(name):  # type: ignore[misc]
+            param = get_parameter(function, name)
+            return is_positional_only_arg(param)
+        case _:
+            raise TypeError("Unsupported input types.")
 
 
-def is_keyword_only_arg(p: Parameter, /) -> bool:
-    """Check if parameter is keyword only argument."""
-    return p.kind in {KEYWORD_ONLY, VAR_KEYWORD}
-
-
-def is_keyword_arg(p: Parameter, /) -> bool:
+@overload
+def is_keyword_arg(param: Parameter, /) -> bool: ...
+@overload
+def is_keyword_arg(func: Callable, name: str, /) -> bool: ...
+def is_keyword_arg(func_or_param, name=None, /):
     """Check if parameter is keyword argument."""
-    return p.kind in {POSITIONAL_OR_KEYWORD, KEYWORD_ONLY, VAR_KEYWORD}
+    match func_or_param, name:
+        case Parameter() as param, None:
+            return param.kind in {KEYWORD_ONLY, POSITIONAL_OR_KEYWORD, VAR_KEYWORD}
+        case Callable() as function, str(name):  # type: ignore[misc]
+            param = get_parameter(function, name)
+            return is_keyword_arg(param)
+        case _:
+            raise TypeError("Unsupported input types.")
 
 
-def is_variadic_arg(p: Parameter, /) -> bool:
+@overload
+def is_keyword_only_arg(param: Parameter, /) -> bool: ...
+@overload
+def is_keyword_only_arg(func: Callable, name: str, /) -> bool: ...
+def is_keyword_only_arg(func_or_param, name=None, /):
+    """Check if parameter is keyword only argument."""
+    match func_or_param, name:
+        case Parameter() as param, None:
+            return param.kind in {KEYWORD_ONLY, VAR_KEYWORD}
+        case Callable() as function, str(name):  # type: ignore[misc]
+            param = get_parameter(function, name)
+            return is_keyword_only_arg(param)
+        case _:
+            raise TypeError("Unsupported input types.")
+
+
+@overload
+def is_variadic_arg(param: Parameter, /) -> bool: ...
+@overload
+def is_variadic_arg(func: Callable, name: str, /) -> bool: ...
+def is_variadic_arg(func_or_param, name=None, /):
     """Check if parameter is variadic argument."""
-    return p.kind in {VAR_POSITIONAL, VAR_KEYWORD}
+    match func_or_param, name:
+        case Parameter() as param, None:
+            return param.kind in {VAR_POSITIONAL, VAR_KEYWORD}
+        case Callable() as function, str(name):  # type: ignore[misc]
+            param = get_parameter(function, name)
+            return is_variadic_arg(param)
+        case _:
+            raise TypeError("Unsupported input types.")
 
 
-def rpartial(
-    func: Callable[P, R], /, *fixed_args: Any, **fixed_kwargs: Any
-) -> Callable[..., R]:
-    r"""Apply positional arguments from the right.
-
-    References:
-        - <https://docs.python.org/3/library/functools.html#functools.partial>
-        - <https://github.com/python/typeshed/blob/bbd9dd1c4f596f564542d48bb05b2cc2e2a7a28d/stdlib/functools.pyi#L129>
-    """
-
-    @wraps(func)
-    def _wrapper(*func_args: Any, **func_kwargs: Any) -> R:
-        # TODO: https://github.com/python/typeshed/issues/8703
-        return func(*(func_args + fixed_args), **(func_kwargs | fixed_kwargs))
-
-    return _wrapper
-
-
-def prod_fn(*funcs):
+def prod_fn(*funcs: Callable) -> Callable:
     r"""Cartesian Product of Functions.
 
     It is assumed every function takes a single positional argument.

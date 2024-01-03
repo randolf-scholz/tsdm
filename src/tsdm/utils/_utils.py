@@ -1,7 +1,4 @@
-r"""Utility functions.
-
-TODO:  Module description
-"""
+r"""Utility functions."""
 
 __all__ = [
     # Classes
@@ -11,12 +8,14 @@ __all__ = [
     "flatten_dict",
     "flatten_nested",
     "initialize_from_config",
+    "last",
     "now",
     "pairwise_disjoint",
     "pairwise_disjoint_masks",
     "paths_exists",
     "prepend_path",
     "repackage_zip",
+    "replace",
     "round_relative",
     "unflatten_dict",
 ]
@@ -24,7 +23,15 @@ __all__ = [
 import os
 import shutil
 import warnings
-from collections.abc import Callable, Collection, Iterable, Mapping
+from collections import deque
+from collections.abc import (
+    Callable,
+    Collection,
+    Iterable,
+    Mapping,
+    Reversible,
+    Sequence,
+)
 from datetime import datetime
 from importlib import import_module
 from pathlib import Path
@@ -39,13 +46,47 @@ from torch import nn
 from tqdm.autonotebook import tqdm
 from typing_extensions import Any, Literal, Optional, cast, overload
 
-from tsdm.constants import BOOLEAN_PAIRS
+from tsdm.constants import BOOLEAN_PAIRS, EMPTY_MAP
 from tsdm.testing._testing import is_dunder, is_zipfile
 from tsdm.types.aliases import Nested, NestedDict, NestedMapping, PathLike
-from tsdm.types.variables import K2, HashableType, K
+from tsdm.types.variables import K2, HashableType, K, T
 
 
-def variants(s: str | list[str]) -> list[str]:
+def last(iterable: Iterable[T], /) -> T:
+    r"""Return the last element of an `Iterable`.
+
+    Raises:
+        ValueError: if iterable is empty.
+    """
+    match iterable:
+        case Sequence() as seq:
+            try:
+                return seq[-1]
+            except IndexError as exc:
+                raise ValueError("Sequence is empty!") from exc
+        case Reversible() as rev:
+            try:
+                return next(reversed(rev))
+            except StopIteration as exc:
+                raise ValueError("Reversible is empty!") from exc
+        case _:
+            try:
+                return deque(iterable, maxlen=1).pop()
+            except IndexError as exc:
+                raise ValueError("Iterable is empty!") from exc
+
+
+def replace(s: str, mapping: Mapping[str, str] = EMPTY_MAP, /, **strings: str) -> str:
+    r"""Replace multiple substrings via dict.
+
+    References:
+        https://stackoverflow.com/a/64500851/9318372
+    """
+    replacements = dict(mapping, **strings)
+    return last((s := s.replace(x, y) for x, y in replacements.items()))
+
+
+def variants(s: str | list[str], /) -> list[str]:
     r"""Return all variants of a string."""
     if isinstance(s, str):
         cases: list[Callable[[str], str]] = [
@@ -65,13 +106,13 @@ def variants(s: str | list[str]) -> list[str]:
     return [j for i in (variants(s_) for s_ in s) for j in i]
 
 
-def pairwise_disjoint(sets: Iterable[set]) -> bool:
+def pairwise_disjoint(sets: Iterable[set], /) -> bool:
     r"""Check if sets are pairwise disjoint."""
     union = set().union(*sets)
     return len(union) == sum(len(s) for s in sets)
 
 
-def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]]) -> bool:
+def pairwise_disjoint_masks(masks: Iterable[NDArray[np.bool_]], /) -> bool:
     r"""Check if masks are pairwise disjoint."""
     return all(sum(masks) == 1)  # type: ignore[arg-type]
 

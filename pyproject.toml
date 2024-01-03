@@ -30,10 +30,10 @@ classifiers = [
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "matplotlib>=3.8.2",
-    "numpy>=1.26.2",
+    "numpy>=1.26.3",
     "pandas>=2.1.4",
-    "pillow>=10.1.0",
-    "polars>=0.20.2",
+    "pillow>=10.2.0",
+    "polars>=0.20.3",
     "pyarrow>=14.0.2",
     "pydantic>=2.5.3",
     "pyyaml>=6.0.1",
@@ -50,15 +50,15 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["tsdm[test,docs,extras,typing,flake8,linters,formatters,devtools]"]
 test = [
-    "coverage>=7.3.4",
-    "hypothesis[numpy,pandas,pytest]>=6.92.1",
+    "coverage>=7.4.0",
+    "hypothesis[numpy,pandas,pytest]>=6.92.2",
     "pygal>=3.0.4",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
     "pytest-repeat>=0.9.3",
     "pytest-rerunfailures>=13.0",
     "pytest-xdist>=3.5.0",
-    "pytest>=7.4.3",
+    "pytest>=7.4.4",
 
 ]
 docs = [
@@ -81,15 +81,15 @@ devtools = [
     "pybadges>=3.0.1",
     "pydeps>=1.12.17",
     "pygments>=2.17.2",
-    "setuptools>=69.0.2",
+    "setuptools>=69.0.3",
     "twine>=4.0.2",
     "wheel>=0.42.0",
 ]
 extras = [
     "ipympl>=0.9.3",
     "ipywidgets>=8.1.1",
-    "jupyterlab>=4.0.9",
-    "jupyterlab>=4.0.9",
+    "jupyterlab>=4.0.10",
+    "jupyterlab>=4.0.10",
     "notebook>=7.0.6",
     "openml>=0.14.1",
     "openpyxl>=3.1.2",
@@ -98,7 +98,7 @@ extras = [
 ]
 typing = [
     "mypy>=1.8.0",
-    "pyright>=1.1.342",
+    "pyright>=1.1.344",
     "types-colorama>=0.4.15",
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
@@ -134,7 +134,7 @@ linters = [
     "pyflakes>=3.1.0",
     "pylint>=3.0.3",
     "pylint-gitlab>=2.0.0",
-    "ruff>=0.1.9",
+    "ruff>=0.1.11",
     "ruff-lsp>=0.0.48",
     "slotscheck>=0.17.1",
 ]
@@ -142,8 +142,8 @@ formatters = [
     "black[d,jupyter]>=23.12.1",
     "blacken-docs>=1.16.0",
     "isort>=5.13.2",
-    "nbstripout-fast>=1.0.2",
-    "ssort>=0.11.6",
+    "nbstripout-fast>=1.0.3",
+    "ssort>=0.12.0",
 ]
 
 
@@ -655,10 +655,10 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
 matplotlib = ">=3.8.2"
-numpy = ">=1.26.2"
+numpy = ">=1.26.3"
 pandas = ">=2.1.4"
-pillow = ">=10.1.0"
-polars = ">=0.20.2"
+pillow = ">=10.2.0"
+polars = ">=0.20.3"
 pyarrow = ">=14.0.2"
 pydantic = ">=2.5.3"
 pyyaml = ">=6.0.1"
@@ -674,7 +674,7 @@ typing-extensions = ">=4.9.0"
 [tool.poetry.group.extra.dependencies]
 ipympl = ">=0.9.3"
 ipywidgets = ">=8.1.1"
-jupyterlab = ">=4.0.9"
+jupyterlab = ">=4.0.10"
 notebook = ">=7.0.6"
 openml = ">=0.14.1"
 openpyxl = ">=3.1.2"
@@ -683,10 +683,10 @@ torchinfo = ">=1.8.0"
 
 
 [tool.poetry.group.test.dependencies]
-coverage = ">=7.3.4"
-hypothesis = {version=">=6.92.1", extras=["numpy", "pandas", "pytest"]}
+coverage = ">=7.4.0"
+hypothesis = {version=">=6.92.2", extras=["numpy", "pandas", "pytest"]}
 pygal = ">=3.0.4"
-pytest = ">=7.4.3"
+pytest = ">=7.4.4"
 pytest-benchmark = ">=4.0.0"
 pytest-cov = ">=4.1.0"
 pytest-repeat = ">=0.9.3"
@@ -727,7 +727,7 @@ pipreqs = ">=0.4.13"
 pre-commit = ">=3.6.0"
 pybadges = ">=3.0.1"
 pydeps = ">=1.12.17"
-setuptools = ">=69.0.2"
+setuptools = ">=69.0.3"
 twine = ">=4.0.2"
 wheel = ">=0.42.0"
 
@@ -748,8 +748,8 @@ flake8-rst-docstrings = ">=0.3.0"
 black = { version = ">=23.12.1", extras = ["d", "jupyter"] }
 blacken-docs = ">=1.16.0"
 isort = ">=5.13.2"
-nbstripout-fast = ">=1.0.2"
-ssort = ">=0.11.6"
+nbstripout-fast = ">=1.0.3"
+ssort = ">=0.12.0"
 
 
 [tool.poetry.group.linters.dependencies]
@@ -760,19 +760,19 @@ pydocstyle = ">=6.3.0"
 pyflakes = ">=3.1.0"
 pylint = ">=3.0.3"
 pylint-gitlab = ">=2.0.0"
-ruff = ">=0.1.9"
+ruff = ">=0.1.11"
 ruff-lsp = ">=0.0.48"
 slotscheck = ">=0.17.1"
 
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.8.0"
-pyright = ">=1.1.342"
+pyright = ">=1.1.344"
 types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"
 types-jsonschema = ">=4.20.0"
-types-pillow = ">=10.1.0"
+types-pillow = ">=10.2.0"
 types-protobuf = ">=4.24.0"
 types-psutil = ">=5.9.5"
 types-pygments = ">=2.17.0"

@@ -10,13 +10,11 @@ r"""15 months worth of daily data (440 daily records) that describes the occupan
 
 Source
 ------
-
 Source: California Department of Transportation, www.pems.dot.ca.gov
 Creator: Marco Cuturi, Kyoto University, mcuturi '@' i.kyoto-u.ac.jp
 
 Data Set Information
 --------------------
-
 We have downloaded 15 months worth of daily data from the California Department of Transportation PEMS website, [Web Link], The data describes the occupancy
 rate, between 0 and 1, of different car lanes of San Francisco bay area freeways. The measurements cover the period from Jan. 1st 2008 to Mar. 30th 2009 and are sampled every 10 minutes. We consider each day in this database as a single time series of dimension 963 (the number of sensors which functioned consistently throughout the studied period) and length 6 x 24=144. We remove public holidays from the dataset, as well
 as two days with anomalies (March 8th 2009 and March 9th 2008) where all sensors were muted between 2:00 and 3:00 AM. This results in a database of 440 time series.
@@ -27,7 +25,6 @@ I will keep separate copies of this database on my website in a Matlab format. I
 
 Data-Format
 -----------
-
 There are two files for each fold, the data file and the labels file. We have key the 440 time series between train and test folds, but you are of course free to merge them to consider a different cross validation setting.
 - The PEMS_train textfile has 263 lines. Each line describes a time-series provided as a matrix. The matrix syntax is that of Matlab, e.g. [ a b ; c d] is the matrix with row vectors [a b] and [c d] in that order. Each matrix describes the different occupancies rates (963 lines, one for each station/detector) sampled every 10 minutes during the day (144 columns).
 - The PEMS_trainlabel text describes, for each day of measurements described above, the day of the week on which the data was sampled, namely an integer between 1 (Mon.) and 7 (Sun.).
@@ -38,12 +35,10 @@ There are two files for each fold, the data file and the labels file. We have ke
 
 Attribute Information
 ---------------------
-
 Each attribute describes the measurement of the occupancy rate (between 0 and 1) of a captor location as recorded by a measuring station, at a given timestamp in time during the day. The ID of each station is given in the stations_list text file. For more information on the location (GPS, Highway, Direction) of each station please refer to the PEMS website. There are 963 (stations) x 144 (timestamps) = 138.672 attributes for each record.
 
 Relevant Papers
 ---------------
-
 M. Cuturi, Fast Global Alignment Kernels, Proceedings of the Intern. Conference on Machine Learning 2011.
 """  # pylint: disable=line-too-long # noqa: E501
 
@@ -60,17 +55,7 @@ from pandas import DataFrame
 from typing_extensions import Literal, TypeAlias
 
 from tsdm.datasets.base import MultiTableDataset
-
-
-def _reformat(s: str, replacements: dict, /) -> str:
-    r"""Replace multiple substrings via dict.
-
-    References:
-        https://stackoverflow.com/a/64500851/9318372
-    """
-    *_, result = (s := s.replace(c, r) for c, r in replacements.items())
-    return result
-
+from tsdm.utils import replace
 
 KEY: TypeAlias = Literal["timeseries", "labels", "randperm", "invperm"]
 
@@ -93,6 +78,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     r"""HTTP address containing additional information about the dataset."""
 
     def __init__(self, *, use_corrected_dates: bool = True) -> None:
+        super().__init__()
         self.use_corrected_dates = use_corrected_dates
 
     table_names = ["timeseries", "labels", "randperm", "invperm"]  # pyright: ignore
@@ -276,7 +262,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
             with archive.open("stations_list") as file:
                 content = file.read().decode("utf8")
-                content = _reformat(content, {"[": "", "]": "", " ": "\n"})
+                content = replace(content, {"[": "", "]": "", " ": "\n"})
                 stations = pd.read_csv(
                     StringIO(content), names=["station"], dtype="category"
                 ).squeeze()
@@ -285,9 +271,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
                 train_dfs = []
                 for line in file:
                     content = line.decode("utf8")
-                    content = _reformat(
-                        content, {"[": "", "]": "", ";": "\n", " ": ","}
-                    )
+                    content = replace(content, {"[": "", "]": "", ";": "\n", " ": ","})
                     df = pd.read_csv(StringIO(content), header=None).squeeze()
                     df = DataFrame(df.values, index=stations, columns=time)
                     train_dfs.append(df.T)
@@ -297,9 +281,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
                 test_dfs = []
                 for line in file:
                     content = line.decode("utf8")
-                    content = _reformat(
-                        content, {"[": "", "]": "", ";": "\n", " ": ","}
-                    )
+                    content = replace(content, {"[": "", "]": "", ";": "\n", " ": ","})
                     df = pd.read_csv(StringIO(content), header=None).squeeze()
                     df = DataFrame(df.values, index=stations, columns=time)
                     test_dfs.append(df.T)
@@ -324,7 +306,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
         with ZipFile(self.rawdata_paths["PEMS-SF.zip"]) as archive:
             with archive.open("PEMS_trainlabels") as file:
                 content = file.read().decode("utf8")
-                content = _reformat(content, {"[": "", "]": "\n", " ": "\n"})
+                content = replace(content, {"[": "", "]": "\n", " ": "\n"})
                 trainlabels = pd.read_csv(
                     StringIO(content), names=["label"], dtype="uint8"
                 ).squeeze()
@@ -338,7 +320,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
 
             with archive.open("PEMS_testlabels") as file:
                 content = file.read().decode("utf8")
-                content = _reformat(content, {"[": "", "]": "", " ": "\n"})
+                content = replace(content, {"[": "", "]": "", " ": "\n"})
                 testlabels = pd.read_csv(
                     StringIO(content), names=["label"], dtype="uint8"
                 ).squeeze()
@@ -370,7 +352,7 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
             archive.open("randperm") as file,
         ):
             content = file.read().decode("utf8")
-            content = _reformat(content, {"[": "", "]": "", " ": "\n"})
+            content = replace(content, {"[": "", "]": "", " ": "\n"})
             randperm = pd.read_csv(
                 StringIO(content),
                 names=["randperm"],
