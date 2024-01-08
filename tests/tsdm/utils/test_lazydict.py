@@ -1,9 +1,13 @@
 r"""Test LazyDict."""
 
+# FIXME: mypy produces false positives...
+# mypy: disable-error-code="assert-type"
+
 import logging
 from collections.abc import MutableMapping
 
 import pytest
+from typing_extensions import Callable, assert_type
 
 from tsdm.utils import LazyDict, LazyValue
 
@@ -55,34 +59,34 @@ def test_lazydict() -> None:
     EMPTY: LazyDict = LazyDict()
 
     # test __or__ operator with other LazyDict
-    ld = EMPTY | LazyDict({0: lambda: 0})
+    ld = EMPTY | LazyDict({0: lambda: 0})  # type: ignore[arg-type]
     assert ld is not EMPTY, "__or__ should create a new dictionary"
     assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
         assert isinstance(value, LazyValue)
 
-    # test __or__ operator with other dict
+    # test `__or__` operator with other dictionary
     ld = EMPTY | {0: lambda: 0}
     assert ld is not EMPTY, "__or__ should create a new dictionary"
     assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
-        assert isinstance(value, LazyValue)
+        assert not isinstance(value, LazyValue)
 
-    # test __ror__ operatortsdm/utils/test_lazydict.py:73:
+    # test `__ror__` operator
     empty: dict = {}
-    other: dict = empty | LazyDict({0: lambda: 0})
+    other: dict = empty | LazyDict({0: lambda: 0})  # type: ignore[arg-type]
     assert other is not empty, "__ror__ should create a new dictionary"
     assert isinstance(other, dict) and isinstance(other, LazyDict)
     # for value in other.values():
     #     assert isinstance(value, int)
 
-    # test __ior__ operator
+    # test `__ior__` operator
     ld = EMPTY
     ld |= {0: lambda: 0}
     assert ld is EMPTY, "__ior__ should modify existing dictionary"
     assert isinstance(ld, LazyDict), f"Got {type(ld)} instead of LazyDict."
     for value in ld.values():
-        assert isinstance(value, LazyValue)
+        assert not isinstance(value, LazyValue)
 
 
 def test_lazydict_fromkeys() -> None:
@@ -128,3 +132,20 @@ def test_lazydict_copy() -> None:
         assert valueA is not valueB
         assert isinstance(valueB, int)
         assert isinstance(valueA, LazyValue)
+
+
+def test_type_a() -> None:
+    d: dict[int, int] = {0: 0}
+    ld = LazyDict(d)
+    assert_type(ld, LazyDict[int, int])
+
+
+def test_type_b() -> None:
+    d: dict[int, Callable[[], int]] = {0: lambda: 0}
+    ld = LazyDict(d)  # type: ignore[arg-type, var-annotated]
+    assert_type(ld, LazyDict[int, int])
+
+    # without type hints
+    e = {0: lambda: int(0), 1: lambda: int(1), 2: lambda: int(2)}
+    ld2 = LazyDict(e)  # type: ignore[arg-type, var-annotated]
+    assert_type(ld2, LazyDict[int, int])

@@ -313,6 +313,7 @@ ignore = [
     "PT013",   # Found incorrect import of pytest, use simple import pytest instead
     "PT018",   # Assertion should be broken down into multiple parts
     # simplify
+    "SIM118",  # Use `key in dict` instead of `key in dict.keys()`
     "SIM300",  # Yoda conditions are discouraged
     # RUFF
     "RUF001",  # ambiguous-unicode-character-string

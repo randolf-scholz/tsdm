@@ -100,7 +100,8 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
         case type() as cls:
             return f"<{cls.__name__}>"
         case _ if (cls := type(obj)) in BUILTIN_TYPES:
-            return f"<{cls.__name__}>"
+            # return f"<{cls.__name__}>"
+            return ""
         case SupportsArray():
             return "<array>"
         case Dataclass():

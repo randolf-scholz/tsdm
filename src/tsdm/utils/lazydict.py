@@ -6,14 +6,14 @@ Once the value is accessed, the function is called and the result is stored.
 
 __all__ = [
     # Type Alias
-    "FuncSpec",
+    "LazySpec",
     # Classes
     "LazyDict",
     "LazyValue",
 ]
 
 import warnings
-from collections.abc import Callable, Iterable, Mapping, MutableMapping
+from collections.abc import Callable, Iterable, Mapping
 
 from typing_extensions import (
     Any,
@@ -26,6 +26,7 @@ from typing_extensions import (
     overload,
 )
 
+from tsdm.constants import EMPTY_MAP
 from tsdm.types.protocols import SupportsKeysAndGetItem
 from tsdm.types.variables import K2, K, R, T, V
 from tsdm.utils.funcutils import (
@@ -33,7 +34,7 @@ from tsdm.utils.funcutils import (
     get_return_typehint,
     is_positional_arg,
 )
-from tsdm.utils.pprint import repr_mapping
+from tsdm.utils.pprint import pprint_repr
 
 
 class LazyValue(Generic[R]):
@@ -50,6 +51,7 @@ class LazyValue(Generic[R]):
     def __init__(
         self,
         func: Callable[..., R],
+        /,
         *,
         args: Iterable[Any] = NotImplemented,
         kwargs: Mapping[str, Any] = NotImplemented,
@@ -71,24 +73,27 @@ class LazyValue(Generic[R]):
         return f"{self.__class__.__name__}<{self.type_hint}>"
 
 
-FuncSpec: TypeAlias = Union[
-    Callable[[], R],
-    Callable[[V], R],
-    tuple[Callable[[], R]],  # no args
-    tuple[Callable[[V], R]],  # key arg
-    tuple[Callable[..., R], tuple],  # args
-    tuple[Callable[..., R], dict],  # kwargs
-    tuple[Callable[..., R], tuple, dict],  # args, kwargs
+LazySpec: TypeAlias = Union[
+    LazyValue[T],  # lazy value
+    Callable[[], T],  # no args
+    Callable[[Any], T],  # single arg
+    tuple[Callable[..., T], tuple],  # args
+    tuple[Callable[..., T], dict],  # kwargs
+    tuple[Callable[..., T], tuple, dict],  # args, kwargs
+    T,  # direct value
 ]
-"""A type alias for the possible values of a LazyDict."""
+"""A type alias for the possible values of a `LazyDict`."""
 
 
+@pprint_repr
 class LazyDict(dict[K, V]):
     r"""A Lazy Dictionary implementation.
 
     Note:
-        only `__getitem__` triggers the lazy evaluation. (get, pop, etc. do not)
-        only `__setitem__` triggers setting the value as a LazyValue. (set, setdefault, etc. do not)
+        - Getter methods `__getitem__`, `.pop`, `.get` trigger the lazy evaluation.
+        - Iterator methods `.values` and `.items` do not!
+        - Using `__setitem__` or `.setdefault` does not create `LazyValue` entries.
+        - Use `.get_lazy` and `.set_lazy` to lookup/create `LazyValue` entries.
 
     Values are allowed to be one of the following:
 
@@ -118,22 +123,33 @@ class LazyDict(dict[K, V]):
     #     return super().__new__(cls, *args, **kwargs)  # type: ignore[type-var]
 
     # inherit update from MutableMapping
-    update = MutableMapping.update
+    # update = MutableMapping.update
 
     @overload
-    def __init__(self, /, **kwargs: FuncSpec | V) -> None: ...
+    def __init__(self, /, **kwargs: LazySpec[V]) -> None: ...
     @overload
     def __init__(
-        self, mapping: Mapping[K, FuncSpec | V], /, **kwargs: FuncSpec | V
+        self, mapping: SupportsKeysAndGetItem[K, LazySpec[V]], /, **kwargs: LazySpec[V]
     ) -> None: ...
     @overload
     def __init__(
-        self, iterable: Iterable[tuple[K, FuncSpec | V]], /, **kwargs: FuncSpec | V
+        self, iterable: Iterable[tuple[K, LazySpec[V]]], /, **kwargs: LazySpec[V]
     ) -> None: ...
-    def __init__(self, /, *args, **kwargs):
+    def __init__(self, other=EMPTY_MAP, /, **kwargs):  # pyright: ignore
         r"""Initialize the dictionary."""
         super().__init__()
-        self.update(*args, **kwargs)
+        match other:
+            case SupportsKeysAndGetItem() as lookup:
+                for key in lookup.keys():
+                    self.set_lazy(key, lookup[key])
+            case Iterable() as iterable:
+                for key, value in iterable:
+                    self.set_lazy(key, value)
+            case _:
+                raise TypeError(f"Invalid type for {other=}")
+
+        for key, value in kwargs.items():
+            self.set_lazy(key, value)  # pyright: ignore
 
     def __getitem__(self, key: K, /) -> V:
         r"""Get the value of the key."""
@@ -144,13 +160,20 @@ class LazyDict(dict[K, V]):
             return new_value
         return value
 
-    def __setitem__(self, key: K, value: FuncSpec | V, /) -> None:
-        r"""Set the value of the key."""
-        super().__setitem__(key, self._make_lazy_function(key, value))  # type: ignore[assignment]
+    @overload
+    def get_lazy(self, key: K, /) -> V | LazyValue[V] | None: ...
+    @overload
+    def get_lazy(self, key: K, /, *, default: V) -> V | LazyValue[V]: ...
+    @overload
+    def get_lazy(self, key: K, /, *, default: T) -> V | LazyValue[V] | T: ...
+    def get_lazy(self, key, /, *, default=None):
+        r"""Get the lazy value of the key."""
+        return super().get(key, default)
 
-    def __repr__(self) -> str:
-        r"""Return the representation of the dictionary."""
-        return repr_mapping(self)
+    def set_lazy(self, key: K, value: LazySpec[V], /) -> None:
+        r"""Set the value directly."""
+        lazy_value = self._make_lazy_function(key, value)
+        super().__setitem__(key, lazy_value)  # type: ignore[assignment]
 
     def __or__(self, other: Mapping[K2, T], /) -> "LazyDict[K | K2, V | T]":
         new = self.copy()
@@ -173,7 +196,7 @@ class LazyDict(dict[K, V]):
         new.update(self)  # type: ignore[arg-type]
         return new
 
-    def __ior__(self: Self, other: "SupportsKeysAndGetItem[K, V]", /) -> Self:  # type: ignore[override, misc]
+    def __ior__(self, other: "SupportsKeysAndGetItem[K, V]", /) -> Self:  # type: ignore[override, misc]
         # TODO: fix typing error
         self.update(other)
         return self
@@ -184,35 +207,80 @@ class LazyDict(dict[K, V]):
 
     def copy(self) -> Self:
         r"""Return a shallow copy of the dictionary."""
-        return self.__class__(self.items())
+        new = self.__class__()
+        new.update(self)  # type: ignore[arg-type]
+        return new
 
-    def set(self, key: K, value: V, /) -> None:  # noqa: A003
-        r"""Set the value directly."""
-        super().__setitem__(key, value)
+    @overload  # type: ignore[override]
+    def get(self, key: K, /) -> V | None: ...
+    @overload
+    def get(self, key: K, default: V, /) -> V: ...
+    @overload
+    def get(self, key: K, default: T, /) -> V | T: ...
+    def get(self, key, default=None, /):
+        r"""Get the value of the key."""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    __NOTGIVEN = object()
+
+    @overload
+    def pop(self, key: K, /) -> V: ...
+    @overload
+    def pop(self, key: K, default: V, /) -> V: ...
+    @overload
+    def pop(self, key: K, default: T, /) -> V | T: ...
+    def pop(self, key, default=__NOTGIVEN, /):
+        r"""Pop the value of the key."""
+        value = (
+            super().pop(key)
+            if default is self.__NOTGIVEN
+            else super().pop(key, default)
+        )
+        if isinstance(value, LazyValue):
+            return value()
+        return value
+
+    def popitem(self) -> tuple[K, V]:
+        r"""Pop the last item."""
+        key, value = super().popitem()
+        if isinstance(value, LazyValue):
+            return key, cast(V, value())
+        return key, value
+
+    @classmethod  # type: ignore[override]
+    @overload
+    def fromkeys(cls, iterable: Iterable[K], value: None = ..., /) -> Self: ...
+    @classmethod
+    @overload
+    def fromkeys(cls, iterable: Iterable[K], value: LazySpec[V], /) -> Self: ...
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        r"""Create a new LazyDict from the keys."""
+        return cls({k: value for k in iterable})
 
     @staticmethod
-    def _make_lazy_function(key: K, value: FuncSpec | V, /) -> LazyValue:
+    def _make_lazy_function(key: K, value: LazySpec[V], /) -> LazyValue[V]:
         match value:
             case LazyValue():
                 return value
-            case Callable():  # type: ignore[misc]
-                args = get_function_args(value, mandatory=True)  # type: ignore[unreachable]
+            case Callable() as func:  # type: ignore[misc]
+                args = get_function_args(func, mandatory=True)  # type: ignore[unreachable]
                 match nargs := len(args):
                     case 0:
-                        return LazyValue(func=value)
+                        return LazyValue(func)
                     case 1 if all(is_positional_arg(p) for p in args):
-                        # set the key as input
-                        return LazyValue(func=value, args=(key,))
+                        return LazyValue(func, args=(key,))  # set the key as input
                     case _:
-                        raise TypeError(f"Function {value} requires {nargs} args.")
-            case [Callable()]:  # type: ignore[misc]
-                return LazyDict._make_lazy_function(key, value[0])  # type: ignore[index]
-            case Callable(), tuple():  # type: ignore[misc]
-                return LazyValue(func=value[0], args=value[1])  # type: ignore[index, misc]
-            case Callable(), dict():  # type: ignore[misc]
-                return LazyValue(func=value[0], kwargs=value[1])  # type: ignore[index, arg-type, misc]
-            case Callable(), tuple(), dict():  # type: ignore[misc]
-                return LazyValue(value[0], args=value[1], kwargs=value[2])  # type: ignore[index, misc]
+                        raise TypeError(f"Function {func} requires {nargs} args.")
+            case Callable() as func, tuple() as args:  # type: ignore[misc]
+                return LazyValue(func, args=args)  # type: ignore[has-type]
+            case Callable() as func, dict() as kwargs:  # type: ignore[misc]
+                return LazyValue(func, kwargs=kwargs)  # type: ignore[has-type]
+            case Callable() as func, tuple() as args, dict() as kwargs:  # type: ignore[misc]
+                return LazyValue(func, args=args, kwargs=kwargs)  # type: ignore[has-type]
             case _:
                 warnings.warn(
                     f"Value {value} for key {key!r} is not a callable."
@@ -223,4 +291,5 @@ class LazyDict(dict[K, V]):
                     source=LazyDict,
                     stacklevel=3,
                 )
+                value = cast(V, value)
                 return LazyValue(lambda: value)
