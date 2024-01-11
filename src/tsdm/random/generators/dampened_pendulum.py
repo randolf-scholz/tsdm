@@ -96,6 +96,7 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     """
 
     _: KW_ONLY
+
     g: float = 9.81
     """Gravitational acceleration."""
     length: float = 1.0
@@ -117,7 +118,7 @@ class DampedPendulum(IVP_GeneratorBase[NDArray]):
     )
     """Noise distribution."""
 
-    def _get_initial_state_impl(self, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         theta0 = self.theta0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.omega0 * self.parameter_noise.rvs(size=size).clip(-2, +2)

@@ -45,28 +45,27 @@ class MLP(nn.Sequential):
         self.inputs_size = inputs_size
         self.output_size = output_size
 
+        # build layers
         layers: list[nn.Module] = []
 
-        # input layer
-        layer = nn.Linear(self.inputs_size, self.hidden_size)
-        nn.init.kaiming_normal_(layer.weight, nonlinearity="linear")
-        nn.init.kaiming_normal_(layer.bias[None], nonlinearity="linear")
-        layers.append(layer)
+        # input layer (change shape to hidden_size)
+        linear = nn.Linear(self.inputs_size, self.hidden_size)
+        nn.init.kaiming_normal_(linear.weight, nonlinearity="linear")
+        nn.init.kaiming_normal_(linear.bias[None], nonlinearity="linear")
+        layers.append(linear)
 
-        # hidden layers
+        # hidden layers (pre-activation + dropout + linear)
         for _ in range(num_layers - 1):
-            layers.append(nn.ReLU())
-            layers.append(nn.Dropout(self.dropout))
-            layer = nn.Linear(self.hidden_size, self.hidden_size)
-            nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
-            nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
-            layers.append(layer)
+            # init layers
+            linear = nn.Linear(self.hidden_size, self.hidden_size)
+            nn.init.kaiming_normal_(linear.weight, nonlinearity="relu")
+            nn.init.kaiming_normal_(linear.bias[None], nonlinearity="relu")
+            layers.extend([nn.ReLU(), nn.Dropout(self.dropout), linear])
 
-        # output_layer
-        layers.append(nn.ReLU())
-        layers.append(nn.Dropout(self.dropout))
-        layer = nn.Linear(self.hidden_size, self.output_size)
-        nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
-        nn.init.kaiming_normal_(layer.bias[None], nonlinearity="relu")
-        layers.append(layer)
+        # output_layer (pre-activation + dropout + change shape to output_size)
+        linear = nn.Linear(self.hidden_size, self.output_size)
+        nn.init.kaiming_normal_(linear.weight, nonlinearity="relu")
+        nn.init.kaiming_normal_(linear.bias[None], nonlinearity="relu")
+        layers.extend([nn.ReLU(), nn.Dropout(self.dropout), linear])
+
         super().__init__(*layers)

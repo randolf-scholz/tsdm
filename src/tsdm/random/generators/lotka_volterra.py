@@ -11,7 +11,7 @@ from dataclasses import KW_ONLY, dataclass, field
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.stats import norm as univariate_normal, uniform
-from typing_extensions import Any
+from typing_extensions import Any, ClassVar
 
 from tsdm.random.generators._generators import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Distribution
@@ -34,7 +34,10 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     real parameters describing the interaction of the two species.
     """
 
+    X_MIN: ClassVar[float] = 0.0
+
     _: KW_ONLY
+
     alpha: float = 1.0
     """Prey reproduciton rate."""
     beta: float = 0.5
@@ -56,7 +59,7 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     )
     """Noise distribution."""
 
-    def _get_initial_state_impl(self, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         theta0 = self.prey0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
         omega0 = self.predator0 + self.parameter_noise.rvs(size=size).clip(-2, +2)
@@ -91,8 +94,10 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
     def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:
         """Project the solution onto the constraint set."""
         assert x.min() > -tol, f"Integrator produced vastly negative values {x.min()}."
-        return x.clip(0)
+        return x.clip(min=self.X_MIN)
 
     def validate_solution(self, x: NDArray, /) -> None:
         """Validate constraints on the parameters."""
-        assert x.min() >= 0, f"Integrator produced negative values: {x.min()}<0"
+        assert (
+            x.min() >= self.X_MIN
+        ), f"Integrator produced negative values: {x.min()}<0"

@@ -133,9 +133,8 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
         os.environ["PASSWORD"] = password
 
         subprocess.run(
-            f"wget --user {user} --password $PASSWORD -c -r -np -nH -N "
-            + f"--cut-dirs {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O"
-            f" {path}",
+            f"wget --user {user} --password $PASSWORD -c -r -np -nH -N --cut-dirs"
+            f" {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
             shell=True,
             check=True,
         )

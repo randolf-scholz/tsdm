@@ -41,6 +41,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
     """
 
     _: KW_ONLY
+
     x_min: Final[float] = -1.0
     """Lower bound of the ball's position."""
     x_max: Final[float] = +1.0
@@ -52,7 +53,7 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
     y_noise: Final[float] = 0.05
     """Standard deviation of the observation noise."""
 
-    def _get_initial_state_impl(self, size: SizeLike = ()) -> NDArray:
+    def _get_initial_state_impl(self, *, size: SizeLike = ()) -> NDArray:
         """Generate (multiple) initial state(s) y₀."""
         x0 = RNG.uniform(low=self.x_min, high=self.x_max, size=size)
         v0 = RNG.uniform(low=self.v_min, high=self.v_max, size=size) * RNG.choice(
@@ -126,7 +127,11 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
     def validate_solution(self, sol: NDArray, /) -> None:
         """Validate constraints on the parameters."""
         x = sol[..., 0]
-        assert x.min() >= -1 and x.max() <= +1, f"{[x.min(), x.max()]} not in [-1,+1]"
+        assert (
+            x.min() >= self.x_min and x.max() <= self.x_max
+        ), f"{[x.min(), x.max()]} not in [-1,+1]"
 
     def validate_observations(self, x: NDArray, /) -> None:
-        assert x.min() >= -1 and x.max() <= +1, f"{[x.min(), x.max()]} not in [-1,+1]"
+        assert (
+            x.min() >= self.x_min and x.max() <= self.x_max
+        ), f"{[x.min(), x.max()]} not in [-1,+1]"

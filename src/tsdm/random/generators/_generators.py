@@ -236,7 +236,7 @@ class IVP_GeneratorBase(IVP_Generator[T_co]):
 
     # region implementation ------------------------------------------------------------
     @abstractmethod
-    def _get_initial_state_impl(self, size: SizeLike = ()) -> T_co:
+    def _get_initial_state_impl(self, *, size: SizeLike = ()) -> T_co:
         """Generate (multiple) initial state(s) y₀."""
         ...
 

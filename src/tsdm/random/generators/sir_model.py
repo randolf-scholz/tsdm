@@ -6,6 +6,7 @@ from dataclasses import KW_ONLY, dataclass
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+from typing_extensions import ClassVar
 
 from tsdm.random.generators._generators import IVP_GeneratorBase
 from tsdm.random.stats.distributions import Dirichlet
@@ -31,14 +32,18 @@ class SIR(IVP_GeneratorBase[NDArray]):
     -dS/dt: incidence rate
     """
 
+    X_MIN: ClassVar[float] = 0.0
+    X_MAX: ClassVar[float] = 1.0
+
     _: KW_ONLY
     alpha: float = 0.1
     """Recovery rate."""
     beta: float = 0.5
     """Transmission rate."""
 
+    @staticmethod
     def _get_initial_state_impl(
-        self, size: SizeLike = (), *, weights: ArrayLike = (100, 1, 0)
+        size: SizeLike = (), *, weights: ArrayLike = (100, 1, 0)
     ) -> NDArray:
         """Generate (multiple) initial state(s) y₀.
 
@@ -46,9 +51,8 @@ class SIR(IVP_GeneratorBase[NDArray]):
         """
         return Dirichlet.rvs(weights, size=size)
 
-    def _make_observations_impl(
-        self, y: NDArray, /, *, noise: float = 0.001
-    ) -> NDArray:
+    @staticmethod
+    def _make_observations_impl(y: NDArray, /, *, noise: float = 0.001) -> NDArray:
         r"""Create observations from the solution.
 
         We sample from a dirichlet distribution with parameters
@@ -78,15 +82,20 @@ class SIR(IVP_GeneratorBase[NDArray]):
 
     def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:
         r"""Project the solution onto the constraint set."""
-        assert x.min() > -tol, "Integrator produced vastly negative values."
-        assert x.max() < 1 + tol, "Integrator produced vastly positive values."
-        assert np.allclose(x.sum(axis=-1), 1, atol=tol), "Constraints vioalted."
+        if x.min() > (self.X_MIN - tol):
+            raise RuntimeError("Integrator produced vastly negative values.")
+        if x.max() < (self.X_MAX + tol):
+            raise RuntimeError("Integrator produced vastly positive values.")
+        if not np.allclose(x.sum(axis=-1), 1, atol=tol):
+            raise RuntimeError("Constraints vioalted.")
 
-        x = x.clip(0, 1)
+        x = x.clip(min=self.X_MIN, max=self.X_MAX)
         x /= x.sum(axis=-1, keepdims=True)
         return x
 
     def validate_solution(self, x: NDArray, /) -> None:
         assert (
-            x.min() >= 0 and x.max() <= +1 and np.allclose(x.sum(axis=-1), 1)
+            x.min() >= self.X_MIN
+            and x.max() <= self.X_MAX
+            and np.allclose(x.sum(axis=-1), 1)
         ), "Integrator produced invalid values."
