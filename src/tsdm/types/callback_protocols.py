@@ -18,6 +18,7 @@ __all__ = [
     "WhereProto",
 ]
 
+from abc import abstractmethod
 from collections.abc import Callable
 
 from numpy.typing import ArrayLike
@@ -32,13 +33,17 @@ from tsdm.types.variables import R, T, T_co, T_contra
 class Func(Protocol[P, R]):
     """Protocol for functions, alternative to `Callable`."""
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
+    @abstractmethod
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        """Execute the callable."""
+        ...
 
 
 # region generic callback-protocols ----------------------------------------------------
 class NullMap(Protocol[T_contra]):
     r"""A generic protocol for functions without args that always returns None."""
 
+    @abstractmethod
     def __call__(self, x: T_contra, /) -> None:
         r"""Returns `None`."""
         ...
@@ -47,6 +52,7 @@ class NullMap(Protocol[T_contra]):
 class SelfMap(Protocol[T]):
     r"""A generic protocol for endofunctions."""
 
+    @abstractmethod
     def __call__(self, x: T, /) -> T:
         r"""Returns the result of the endofunction."""
         ...
@@ -55,6 +61,7 @@ class SelfMap(Protocol[T]):
 class IntMap(Protocol[T_co]):
     r"""A generic protocol for indexed values."""
 
+    @abstractmethod
     def __call__(self, index: SupportsInt | SupportsIndex, /) -> T_co:
         r"""Returns the value at the given integer."""
         ...
@@ -63,6 +70,7 @@ class IntMap(Protocol[T_co]):
 class WrappedValue(Protocol[T_co]):
     r"""A generic protocol for wrapped values."""
 
+    @abstractmethod
     def __call__(self) -> T_co:
         r"""Returns the wrapped value."""
         ...

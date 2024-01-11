@@ -107,11 +107,6 @@ repos:
     hooks:
       - id: isort
   # black
-  - repo: https://github.com/psf/black
-    rev: 23.12.1
-    hooks:
-      - id: black
-      - id: black-jupyter
   # blacken-docs
   - repo: https://github.com/asottile/blacken-docs
     rev: 1.16.0

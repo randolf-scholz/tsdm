@@ -139,15 +139,18 @@ class VectorLike(Protocol[T_co]):
 class Lookup(Protocol[K_contra, V_co]):
     """Mapping/Sequence like generic that is contravariant in Keys."""
 
+    @abstractmethod
     def __contains__(self, key: K_contra, /) -> bool:
         # Here, any Hashable input is accepted.
         """Return True if the map contains the given key."""
         ...
 
+    @abstractmethod
     def __getitem__(self, key: K_contra, /) -> V_co:
         """Return the value associated with the given key."""
         ...
 
+    @abstractmethod
     def __len__(self) -> int:
         """Return the number of items in the map."""
         ...
@@ -317,6 +320,7 @@ class SeriesKind(Protocol[scalar_co]):
         - `torch.Tensor`  lacks `value_counts`
     """
 
+    @abstractmethod
     def __array__(self) -> NDArray:
         """Return a numpy array (usually of type `object` since columns are heterogeneous).
 
@@ -325,29 +329,36 @@ class SeriesKind(Protocol[scalar_co]):
         """
         ...
 
+    @abstractmethod
     def __len__(self) -> int:
         """Number of elements in the series."""
         ...
 
+    @abstractmethod
     def __iter__(self) -> Iterator[scalar_co]:
         """Iterate over the elements of the series."""
         ...
 
     @overload
+    @abstractmethod
     def __getitem__(self, key: int, /) -> scalar_co: ...
     @overload
+    @abstractmethod
     def __getitem__(self, key: slice, /) -> Self: ...
 
+    @abstractmethod
     def unique(self) -> Self:
         """Return the unique elements of the series."""
         ...
 
     # NOTE: kind of inconsistent across backends
+    @abstractmethod
     def value_counts(self) -> Self | "SeriesKind" | "TableKind":
         """Return the number of occurences for each unique element of the series."""
         ...
 
     # NOTE: kind of inconsistent across backends
+    @abstractmethod
     def take(self, indices: Self | list[int] | NDArray, /) -> Self:
         """Select elements from the series by index."""
         ...
@@ -448,15 +459,18 @@ class ArrayKind(Protocol[scalar_co]):
     # NOTE: This is a highly cut down version, to support the bare minimum.
 
     @property
+    @abstractmethod
     def shape(self) -> tuple[int, ...]:
         """Yield the shape of the array."""
         ...
 
     # @property
+    # @abstractmethod
     # def ndim(self) -> int:
     #     """Number of dimensions."""
     #     ...
 
+    @abstractmethod
     def __array__(self) -> NDArray:
         """Return a numpy array.
 
@@ -465,18 +479,22 @@ class ArrayKind(Protocol[scalar_co]):
         """
         ...
 
+    @abstractmethod
     def __len__(self) -> int:
         """Number of elements along the first axis."""
         ...
 
+    # @abstractmethod
     # def __iter__(self) -> Iterator[Self]:
     #     """Iterate over the first dimension."""
     #     ...
 
+    @abstractmethod
     def __getitem__(self, key: Any, /) -> Self | scalar_co:
         """Return an element/slice of the table."""
         ...
 
+    # @abstractmethod
     # def take(self, indices: Any, /) -> Any:
     #     """Return an element/slice of the table."""
     #     ...
@@ -501,15 +519,18 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     """
 
     @property
-    def ndim(self) -> int:
-        """Number of dimensions."""
-        ...
-
-    @property
+    @abstractmethod
     def shape(self) -> tuple[int, ...]:
         """Yield the shape of the array."""
         ...
 
+    @property
+    def ndim(self) -> int:
+        """Number of dimensions."""
+        return len(self.shape)
+
+
+    @abstractmethod
     def __array__(self) -> NDArray:
         """Return a numpy array.
 
@@ -518,26 +539,32 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         """
         ...
 
+    @abstractmethod
     def __len__(self) -> int:
         """Number of elements along the first axis."""
-        ...
+        return int(self.shape[0])
 
+    @abstractmethod
     def __iter__(self) -> Iterator[Self]:
         """Iterate over the first dimension."""
         ...
 
+    @abstractmethod
     def __getitem__(self, key: Any, /) -> Self | Scalar:
         """Return an element/slice of the table."""
         ...
 
+    @abstractmethod
     def all(self) -> Self | bool:  # noqa: A003
         """Return True if all elements are True."""
         ...
 
+    @abstractmethod
     def any(self) -> Self | bool:  # noqa: A003
         """Return True if any element is True."""
         ...
 
+    # region arithmetic operations -----------------------------------------------------
     # unary operations
     # positive +
     def __pos__(self) -> Self: ...
@@ -625,6 +652,7 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     # def __rshift__(self, other: Self | Scalar, /) -> Self: ...
     # def __rrshift__(self, other: Self | Scalar, /) -> Self: ...
 
+    # endregion arithmetic operations --------------------------------------------------
 
 @runtime_checkable
 class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):
@@ -947,7 +975,6 @@ class NTuple(Protocol[T_co]):  # FIXME: Use TypeVarTuple
     # def count(self, __value: Any) -> int: ...
     # def index(self, __value: Any, __start: SupportsIndex = 0, __stop: SupportsIndex = sys.maxsize) -> int: ...
     # fmt: on
-
     @classmethod
     def __subclasshook__(cls, other: type, /) -> bool:
         """Cf https://github.com/python/cpython/issues/106363."""

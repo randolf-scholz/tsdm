@@ -2,7 +2,7 @@ r"""Encoders for pandas DataFrames."""
 
 __all__ = [
     # Classes
-    "DTypeConverter",
+    "DTypeEncoder",
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
@@ -45,7 +45,7 @@ E = TypeVar("E", bound=Encoder)
 F = TypeVar("F", bound=Encoder)
 
 
-class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
+class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
     """Converts dtypes of a DataFrame.
 
     Args:
@@ -55,29 +55,32 @@ class DTypeConverter(BaseEncoder[DataFrame, DataFrame]):
     """
 
     requires_fit: ClassVar[bool] = True
-    target_dtypes: dict[Any, PandasDTypeArg]
-    original_dtypes: Series
-    fill_dtype: Optional[PandasDtype] = None
 
-    def __init__(self, dtypes: Mapping[Any, PandasDTypeArg], /) -> None:
-        self.target_dtypes = dict(dtypes)
-        self.fill_dtype = self.target_dtypes.pop(Ellipsis, None)
+    target_dtypes: dict[Any, PandasDTypeArg]
+    fill_dtype: Optional[PandasDtype] = None
+    original_dtypes: Series
+
+    def __init__(self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg], /) -> None:
+        match dtypes:
+            case Mapping() as mapping:
+                self.target_dtypes = dict(mapping)
+            case dtype:
+                self.target_dtypes = {Ellipsis: dtype}
 
     def fit(self, data: DataFrame, /) -> None:
-        assert Ellipsis not in data.columns, "Ellipsis is a reserved column name!"
         self.original_dtypes = data.dtypes.copy()
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
-        dtypes = {
-            col: (
-                self.fill_dtype
-                if col not in self.target_dtypes
-                else self.target_dtypes[col]
-            )
-            for col in data.columns
-        }
+        if Ellipsis in self.target_dtypes:
+            if Ellipsis in data.columns:
+                raise ValueError("Ellipsis is a reserved column name!")
 
-        return data.astype(dtypes)
+            self.fill_dtype = self.target_dtypes.pop(Ellipsis)
+            for col in set(data.columns) - set(self.target_dtypes):
+                self.target_dtypes[col] = self.fill_dtype
+
+
+    def encode(self, data: DataFrame, /) -> DataFrame:
+        return data.astype(self.target_dtypes)
 
     def decode(self, data: DataFrame, /) -> DataFrame:
         return data.astype(self.original_dtypes)
@@ -261,7 +264,6 @@ class TableEncoder(BaseEncoder[TableVar, TableVar]):
         *,
         copy_unused: bool = False,
     ) -> None:
-
         match encoders:
             case Mapping() as mapping:
                 self.encoders = {FrozenList(keys): enc for keys, enc in mapping.items()}

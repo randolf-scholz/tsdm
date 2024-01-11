@@ -79,7 +79,7 @@ NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {
     "int16": np.int16,
     "int32": np.int32,
     "int64": np.int64,
-    "float_": np.float_,
+    "float_": np.float64,
     "float16": np.float16,
     "float32": np.float32,
     "float64": np.float64,
@@ -96,7 +96,7 @@ NUMPY_DTYPES: Final[dict[str, type[np.generic]]] = {
     "bool": np.bool_,
     "bytes": np.bytes_,
     "str": np.str_,
-    "unicode": np.unicode_,
+    "unicode": np.str_,
     "void": np.void,
     "object": np.object_,
 }
@@ -131,7 +131,7 @@ NUMPY_UINT_TYPECODES: Final[dict[type[np.unsignedinteger], str]] = {
 r"""Dictionary of all unsigned `numpy` integer data type typecodes."""
 
 NUMPY_FLOAT_TYPECODES: Final[dict[type[np.floating], str]] = {
-    np.float_: "d",
+    np.float64: "d",
     np.float16: "e",
     np.float32: "f",
     np.float64: "d",
@@ -140,7 +140,7 @@ NUMPY_FLOAT_TYPECODES: Final[dict[type[np.floating], str]] = {
     np.single: "f",
     np.double: "d",
     np.longdouble: "g",
-    np.longfloat: "g",
+    np.longdouble: "g",
 }
 r"""Dictionary of all `numpy` float data type typecodes."""
 
@@ -149,13 +149,13 @@ NUMPY_COMPLEX_TYPECODES: Final[dict[type[np.complexfloating], str]] = {
     np.complex128: "D",
     # np.complex256: "G",
     np.csingle: "F",
-    np.singlecomplex: "F",
+    np.complex64: "F",
     np.cdouble: "D",
-    np.cfloat: "D",
-    np.complex_: "D",
+    np.complex128: "D",
+    np.complex128: "D",
     np.clongdouble: "G",
-    np.clongfloat: "G",
-    np.longcomplex: "G",
+    np.clongdouble: "G",
+    np.clongdouble: "G",
 }
 r"""Dictionary of all `numpy` complex data types."""
 
@@ -173,9 +173,9 @@ r"""Dictionary of all `numpy` bool data type typecodes."""
 
 NUMPY_STRING_TYPECODES: Final[dict[type[np.flexible], str]] = {
     np.bytes_: "S",  # str
-    np.string_: "S",  # bytes
+    np.bytes_: "S",  # bytes
     np.str_: "U",  # str
-    np.unicode_: "U",  # unicode
+    np.str_: "U",  # unicode
     np.void: "V",  # "void"
 }
 r"""Dictionary of all `numpy` string data type typecodes."""
@@ -228,7 +228,7 @@ NUMPY_UINT_TYPESTRINGS: Final[dict[type[np.unsignedinteger], str]] = {
 r"""Dictionary of all unsigned `numpy` integer data type typestrings."""
 
 NUMPY_FLOAT_TYPESTRINGS: Final[dict[type[np.floating], str]] = {
-    np.float_: "float64",
+    np.float64: "float64",
     np.float16: "float16",
     np.float32: "float32",
     np.float64: "float64",
@@ -237,7 +237,7 @@ NUMPY_FLOAT_TYPESTRINGS: Final[dict[type[np.floating], str]] = {
     np.single: "float32",
     np.double: "float64",
     np.longdouble: "float128",
-    np.longfloat: "float128",
+    np.longdouble: "float128",
 }
 r"""Dictionary of all `numpy` float data type typestrings."""
 
@@ -246,13 +246,13 @@ NUMPY_COMPLEX_TYPESTRINGS: Final[dict[type[np.complexfloating], str]] = {
     np.complex128: "complex128",
     # np.complex256: "complex256",
     np.csingle: "complex64",
-    np.singlecomplex: "complex64",
+    np.complex64: "complex64",
     np.cdouble: "complex128",
-    np.cfloat: "complex128",
-    np.complex_: "complex128",
+    np.complex128: "complex128",
+    np.complex128: "complex128",
     np.clongdouble: "complex256",
-    np.clongfloat: "complex256",
-    np.longcomplex: "complex256",
+    np.clongdouble: "complex256",
+    np.clongdouble: "complex256",
 }
 r"""Dictionary of all `numpy` complex data typestrings."""
 
@@ -270,9 +270,9 @@ r"""Dictionary of all `numpy` bool data type typestrings."""
 
 NUMPY_STRING_TYPESTRINGS: Final[dict[type[np.flexible], str]] = {
     np.bytes_: "bytes",  # str
-    np.string_: "str",  # bytes
+    np.bytes_: "str",  # bytes
     np.str_: "str",  # str
-    np.unicode_: "unicode",  # unicode
+    np.str_: "unicode",  # unicode
     np.void: "void",  # "void"
 }
 r"""Dictionary of all `numpy` string data type typestrings."""

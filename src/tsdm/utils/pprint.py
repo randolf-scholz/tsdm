@@ -710,7 +710,7 @@ def repr_array(
             dtypes = [repr_dtype(dtype) for dtype in dtypes]
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
         case pyarrow_table() as table:
-            dtypes = [repr_dtype(dtype) for dtype in table.schema.types]  #
+            dtypes = [repr_dtype(dtype) for dtype in table.schema.types]
             string += ", " + repr_sequence(dtypes, linebreaks=False, maxitems=5)
         case pyarrow_array(type=dtype):
             string += ", " + repr_dtype(dtype)

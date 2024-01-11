@@ -703,7 +703,9 @@ def return_namedtuple(
         )
 
     # create namedtuple
-    tuple_type: type[NTuple] = NamedTuple(name, zip(field_names, type_hints, strict=True))  # type: ignore[misc]
+    tuple_type: type[NTuple] = NamedTuple(
+        name, zip(field_names, type_hints, strict=True)
+    )  # type: ignore[misc]
 
     @wraps(func)
     def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> NTuple:

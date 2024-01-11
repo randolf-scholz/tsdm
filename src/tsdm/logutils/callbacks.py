@@ -94,10 +94,12 @@ class Callback(Protocol[P]):
     #     """The frequency at which the callback is called."""
 
     @property
+    @abstractmethod
     def required_kwargs(self) -> set[str]:
         """The required kwargs for the callback."""
         ...
 
+    @abstractmethod
     def __call__(self, i: int, /, **kwargs: P.kwargs) -> None:  # pyright: ignore
         """Log something at time index i."""
         ...
@@ -162,7 +164,10 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
 
         @wraps(cls.callback)
         def __call__(
-            self, i: int, /, **state_dict: P.kwargs  # pyright: ignore
+            self,
+            i: int,
+            /,  # pyright: ignore
+            **state_dict: P.kwargs,
         ) -> None:
             """Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:
@@ -555,7 +560,9 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def callback(self, i: int, /, *, targets: Tensor, predics: Tensor, **_: Any) -> None:  # type: ignore[override]
+    def callback(
+        self, i: int, /, *, targets: Tensor, predics: Tensor, **_: Any
+    ) -> None:  # type: ignore[override]
         log_metrics(
             i,
             metrics=self.metrics,

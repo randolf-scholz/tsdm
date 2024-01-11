@@ -112,9 +112,9 @@ def random_data(
         result = (mant * 2**exp).astype(dtype)
     elif np.issubdtype(dtype, np.bool_):
         result = rng.choice(EXAMPLE_BOOLS, size=size)
-    elif np.issubdtype(dtype, np.unicode_):
+    elif np.issubdtype(dtype, np.str_):
         result = rng.choice(EXAMPLE_EMOJIS, size=size)
-    elif np.issubdtype(dtype, np.string_):
+    elif np.issubdtype(dtype, np.bytes_):
         result = rng.choice(EXAMPLE_STRINGS, size=size)
     else:
         raise NotImplementedError

@@ -60,16 +60,19 @@ class PandasDataset(Protocol[K, V_co]):
     """
 
     @property
+    @abstractmethod
     def index(self) -> ArrayKind[K]:
         """Returns the row labels of the DataFrame."""
         ...
 
     @property
+    @abstractmethod
     def loc(self) -> SupportsGetItem[K, V_co]:
         """Access a group of rows and columns by label(s) or a boolean array."""
         ...
 
     @property
+    @abstractmethod
     def iloc(self) -> SupportsGetItem[int, V_co]:
         """Purely integer location-based indexing for selection by position."""
         ...

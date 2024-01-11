@@ -44,7 +44,8 @@ class TensorEncoder(BaseEncoder):
                 except Exception as exc:
                     raise TypeError(f"Cannot encode data of type {type(data)}") from exc
 
-    def decode(self, data):
+    @staticmethod
+    def decode(data):
         return data.numpy()
 
 

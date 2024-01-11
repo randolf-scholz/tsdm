@@ -64,6 +64,7 @@ class Dataset(Protocol[T_co]):
     r"""The directory where the dataset is stored."""
 
     @classmethod
+    @abstractmethod
     def info(cls) -> None:
         """Print information about the dataset."""
         ...
@@ -180,6 +181,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     rawdata_shapes: Mapping[str, tuple[int, ...]] = NotImplemented
     r"""Shapes for the raw dataset tables(s)."""
 
+    @abstractmethod
     def __init__(
         self,
         *,

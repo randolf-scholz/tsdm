@@ -17,6 +17,7 @@ __all__ = [
 ]
 
 import warnings
+from abc import abstractmethod
 
 import numpy as np
 import pandas as pd
@@ -30,8 +31,9 @@ from tsdm.types.variables import T2_contra, T_co
 class Transform(Protocol[T2_contra, T_co]):
     r"""Protocol for encoders."""
 
+    @abstractmethod
     def __call__(self, x: T2_contra, /) -> T_co:
-        """Apply the encoder."""
+        """Apply the transformation."""
         ...
 
 

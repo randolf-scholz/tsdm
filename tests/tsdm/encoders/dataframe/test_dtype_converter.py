@@ -5,7 +5,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 from pytest import fixture
 
-from tsdm.encoders.dataframe import DTypeConverter
+from tsdm.encoders.dataframe import DTypeEncoder
 
 
 @fixture
@@ -18,8 +18,8 @@ def frame():
     }).astype({
         "A": np.dtype("timedelta64[ns]"),
         "B": np.int_,
-        "C": np.float_,
-        "D": np.float_,
+        "C": np.float64,
+        "D": np.float64,
     })
 
 
@@ -35,9 +35,11 @@ def frame():
 #     )
 # )
 def test_dtype_converter(frame):
-    encoder = DTypeConverter(
-        {"A": "duration[ns][pyarrow]", "B": "Int64", ...: "Float64"}
-    )
+    encoder = DTypeEncoder({
+        "A": "duration[ns][pyarrow]",
+        "B": "Int64",
+        ...: "Float64",
+    })
     assert frame.dtypes[0] == np.dtype("timedelta64[ns]")
     encoder.fit(frame)
     encoded = encoder.encode(frame)

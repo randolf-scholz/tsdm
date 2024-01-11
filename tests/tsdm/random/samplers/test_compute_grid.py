@@ -26,11 +26,16 @@ def _validate_grid_results(tmin, tmax, tdelta, offset):
     result = compute_grid(tmin, tmax, tdelta, offset=offset)
     kmin, kmax = result[0], result[-1]
 
+    lower_value = offset + kmin * tdelta
+    lower_next = offset + (kmin - 1) * tdelta
+    upper_value = offset + kmax * tdelta
+    upper_next = offset + (kmax + 1) * tdelta
+
     try:
-        assert tmin <= (lower_value := offset + kmin * tdelta), f"{lower_value=}"
-        assert tmin > (lower_next := offset + (kmin - 1) * tdelta), f"{lower_next=}"
-        assert tmax >= (upper_value := offset + kmax * tdelta), f"{upper_value=}"
-        assert tmax < (upper_next := offset + (kmax + 1) * tdelta), f"{upper_next=}"
+        assert tmin <= lower_value, f"{lower_value=}"
+        assert tmin > lower_next, f"{lower_next=}"
+        assert tmax >= upper_value , f"{upper_value=}"
+        assert tmax < upper_next, f"{upper_next=}"
     except AssertionError as E:
         values = {
             "tmin": tmin,
@@ -40,7 +45,7 @@ def _validate_grid_results(tmin, tmax, tdelta, offset):
             "kmin": kmin,
             "kmax": kmax,
         }
-        raise AssertionError(f"Failed with values {values=}") from E
+        raise AssertionError(f"Failed with {values=}") from E
 
 
 class GridTuple(NamedTuple, Generic[DTVar, TDVar]):

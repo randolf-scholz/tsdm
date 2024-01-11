@@ -81,7 +81,7 @@ class BoxCoxEncoder(BaseEncoder):
         Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/√12}$.
         """
 
-        def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
+        def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
             if (lower, upper) == (-ROOT_3, +ROOT_3):
                 return ROOT_3 * q * (q - 1)
             return lower * q + (upper - lower) * q**2 / 2
@@ -122,10 +122,10 @@ class BoxCoxEncoder(BaseEncoder):
             C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
         """
 
-        def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
+        def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
             if (loc, scale) == (0, 1):
-                return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
-            return loc * q - scale * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
+                return -np.exp(-(erfinv(2 * q - 1) ** 2)) / np.sqrt(2 * PI)
+            return loc * q - scale * np.exp(-(erfinv(2 * q - 1) ** 2)) / np.sqrt(2 * PI)
 
         μ = loc
         σ = scale
@@ -253,7 +253,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
         Hence: $\bmat{a\\b}=\bmat{μ-√3σ\\μ+√3σ}$ and $\bmat{μ\\σ}=\bmat{½(a+b)\\(a-b)/√12}$.
         """
 
-        def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
+        def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
             if (lower, upper) == (-ROOT_3, +ROOT_3):
                 return ROOT_3 * q * (q - 1)
             return lower * q + (upper - lower) * q**2 / 2
@@ -294,10 +294,10 @@ class LogitBoxCoxEncoder(BaseEncoder):
             C &= ∫_0^1 F^{-1}(q)^2 dq = μ^2 + σ^2
         """
 
-        def integrate_quantile(q: NDArray[np.float_]) -> NDArray[np.float_]:
+        def integrate_quantile(q: NDArray[np.float64]) -> NDArray[np.float64]:
             if (loc, scale) == (0, 1):
-                return -np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
-            return loc * q - scale * np.exp(-erfinv(2 * q - 1) ** 2) / np.sqrt(2 * PI)
+                return -np.exp(-(erfinv(2 * q - 1) ** 2)) / np.sqrt(2 * PI)
+            return loc * q - scale * np.exp(-(erfinv(2 * q - 1) ** 2)) / np.sqrt(2 * PI)
 
         μ = loc
         σ = scale

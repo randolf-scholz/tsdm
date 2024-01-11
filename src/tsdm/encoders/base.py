@@ -234,10 +234,6 @@ class BaseEncoder(Encoder[T, T2], metaclass=BaseEncoderMetaClass):
         r"""Whether the encoder requires fitting."""
         ...
 
-    def fit(self, data: T, /) -> None:
-        r"""Implement as necessary."""
-        ...
-
     @abstractmethod
     def encode(self, data: T, /) -> T2:
         r"""Encode the data by transformation."""
@@ -247,6 +243,9 @@ class BaseEncoder(Encoder[T, T2], metaclass=BaseEncoderMetaClass):
     def decode(self, data: T2, /) -> T:
         r"""Decode the data by inverse transformation."""
         ...
+
+    def fit(self, data: T, /) -> None:
+        r"""Implement as necessary."""
 
     def simplify(self) -> Self:
         r"""Simplify the encoder."""
@@ -331,10 +330,12 @@ class IdentityEncoder(BaseEncoder):
     is_surjective: ClassVar[bool] = True
     is_bijective: ClassVar[bool] = True
 
-    def encode(self, data: T, /) -> T:
+    @staticmethod
+    def encode(data: T, /) -> T:
         return data
 
-    def decode(self, data: T, /) -> T:
+    @staticmethod
+    def decode(data: T, /) -> T:
         return data
 
 
@@ -346,10 +347,12 @@ class CopyEncoder(BaseEncoder[T, T]):
     is_surjective: ClassVar[bool] = True
     is_bijective: ClassVar[bool] = True
 
-    def encode(self, data: T, /) -> T:
+    @staticmethod
+    def encode(data: T, /) -> T:
         return deepcopy(data)
 
-    def decode(self, data: T, /) -> T:
+    @staticmethod
+    def decode(data: T, /) -> T:
         return deepcopy(data)
 
 

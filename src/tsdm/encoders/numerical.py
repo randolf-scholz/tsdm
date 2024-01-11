@@ -45,7 +45,7 @@ __all__ = [
 
 from abc import abstractmethod
 from collections.abc import Callable, Iterable
-from dataclasses import KW_ONLY, dataclass, field
+from dataclasses import KW_ONLY, dataclass
 from types import EllipsisType
 
 import numpy as np
@@ -71,8 +71,8 @@ from typing_extensions import (
 
 from tsdm.backend import Backend, get_backend
 from tsdm.encoders.base import BaseEncoder
-from tsdm.types.aliases import Axes, Nested, PandasObject, SizeLike
-from tsdm.types.protocols import NTuple, NumericalArray, SupportsDtype
+from tsdm.types.aliases import Axes, Nested, SizeLike
+from tsdm.types.protocols import NTuple, NumericalArray
 from tsdm.utils.pprint import pprint_repr
 
 # NumericalArray: TypeAlias = Tensor | NDArray | DataFrame | Series
@@ -551,7 +551,8 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    def decode(self, data: Arr, /) -> Arr:
+    @staticmethod
+    def decode(data: Arr, /) -> Arr:
         return data
 
 
@@ -1069,60 +1070,16 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
 
     requires_fit: ClassVar[bool] = False
 
-    def encode(self, data: DataFrame, /) -> DataFrame:
+    @staticmethod
+    def encode(data: DataFrame, /) -> DataFrame:
         assert all((data > 0) & (data < 1))
         return np.log(data / (1 - data))
 
-    def decode(self, data: DataFrame, /) -> DataFrame:
+    @staticmethod
+    def decode(data: DataFrame, /) -> DataFrame:
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 
-@dataclass
-class FloatEncoder(BaseEncoder[NDArray, NDArray]):
-    r"""Converts all columns of DataFrame to float32."""
-
-    requires_fit: ClassVar[bool] = True
-
-    target_dtype: str = "float32"
-
-    original_dtypes: Series = field(init=False)
-    r"""The original dtypes."""
-
-    def __init__(self, dtype: str = "float32") -> None:
-        self.target_dtype = dtype
-
-    def fit(self, data: PandasObject, /) -> None:
-        match data:
-            case DataFrame(dtypes=dtypes):
-                self.original_dtypes = dtypes
-            case SupportsDtype(dtype=dtype):
-                self.original_dtypes = dtype
-            case _:
-                raise TypeError(f"Cannot get dtype of {type(data)}")
-
-    def encode(self, data: PandasObject, /) -> PandasObject:
-        return data.astype(self.target_dtype)
-
-    def decode(self, data: PandasObject, /) -> PandasObject:
-        return data.astype(self.original_dtypes)
-
-
-class IntEncoder(BaseEncoder[NDArray, NDArray]):
-    r"""Converts all columns of DataFrame to int32."""
-
-    requires_fit: ClassVar[bool] = True
-
-    dtypes: Series = None
-    r"""The original dtypes."""
-
-    def fit(self, data: PandasObject, /) -> None:
-        self.dtypes = data.dtypes
-
-    def encode(self, data: PandasObject, /) -> PandasObject:
-        return data.astype("int32")
-
-    def decode(self, data: PandasObject, /) -> PandasObject:
-        return data.astype(self.dtypes)
 
 
 class TensorSplitter(BaseEncoder):

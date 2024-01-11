@@ -99,7 +99,7 @@ class ODE_RNN(BaseModel, nn.Module):
         "n_units": 100,
         # nonlinearity used
         "nonlinear": nn.Tanh,
-        #
+        # whether to concatenate mask to input
         "concat_mask": True,
         # dimensionality of input
         "input_dim": None,
@@ -109,11 +109,11 @@ class ODE_RNN(BaseModel, nn.Module):
         "n_gru_units": 100,
         # measurement error
         "obsrv_std": 0.01,
-        #
+        # whether to use binary classification
         "use_binary_classif": False,
-        #
+        # whether to train classifier with reconstruction loss
         "train_classif_w_reconstr": False,
-        #
+        # whether to use classification per time point
         "classif_per_tp": False,
         # number of outputs
         "n_labels": 1,

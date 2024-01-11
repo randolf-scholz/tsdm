@@ -7,6 +7,7 @@ from typing import *
 SelfA = TypeVar("SelfA", bound="A")
 SelfB = TypeVar("SelfB", bound="B")
 
+
 # fmt: off
 class A:
     def __add__(self: SelfA, other: SelfA) -> SelfA:  return self

@@ -20,7 +20,7 @@ Decomposable METRICS
 
         dims = (1, ...)  # sum over all axes except batch dimension
         # y, yhat are of shape (B, ...)
-        test_metric = lambda y, yhat: torch.sum((y - yhat)**2, dim=dims)
+        test_metric = lambda y, yhat: torch.sum((y - yhat) ** 2, dim=dims)
         accumulation = torch.mean
 
 .. admonition:: **Recipe**
@@ -260,7 +260,6 @@ class TimeSeriesTaskMetaClass(type(Protocol)):  # type: ignore[misc]
 
 
 class TTT(ForecastingTask[Key, Sample_co], metaclass=TimeSeriesTaskMetaClass):
-
     # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
     # __slots__ = ()
 
