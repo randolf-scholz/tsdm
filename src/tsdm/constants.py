@@ -33,7 +33,7 @@ from types import MappingProxyType
 import numpy as np
 import pandas
 import torch
-from typing_extensions import Any, Final, Literal
+from typing_extensions import Any, Final, Literal, Never
 
 ATOL: Final[float] = 1e-6
 """CONST: Default absolute precision."""
@@ -61,7 +61,7 @@ TIME_UNITS: dict[str, np.timedelta64] = {
 }
 
 # NOTE: Use frozenmap() if PEP 603 is accepted.
-EMPTY_MAP: Final[Mapping] = MappingProxyType({})
+EMPTY_MAP: Final[Mapping[Any, Never]] = MappingProxyType({})
 r"""Constant: Immutable Empty `Mapping`."""
 
 
