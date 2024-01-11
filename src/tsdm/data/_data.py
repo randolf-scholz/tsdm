@@ -10,23 +10,16 @@ __all__ = [
     # Functions
     "aggregate_nondestructive",
     "detect_outliers",
-    "detect_outliers_dataframe",
-    "detect_outliers_series",
     "float_is_int",
     "get_integer_cols",
-    "joint_keys",
     "make_dataframe",
     "remove_outliers",
-    "remove_outliers_dataframe",
-    "remove_outliers_series",
     "strip_whitespace",
     "vlookup_uniques",
 ]
 
 import logging
-import operator
 from collections.abc import Mapping, Sequence
-from functools import reduce
 
 import pandas as pd
 from pandas import DataFrame, Index, Series
@@ -44,7 +37,10 @@ from typing_extensions import (
 )
 
 from tsdm.backend.pandas import (
-    pandas_false_like,
+    detect_outliers_dataframe,
+    detect_outliers_series,
+    remove_outliers_dataframe,
+    remove_outliers_series,
     strip_whitespace_dataframe,
     strip_whitespace_series,
 )
@@ -106,12 +102,6 @@ class BoundaryTable(TypedDict):
     dtype: NotRequired[Mapping[str, str]]
 
 
-def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
-    """Find joint keys in a collection of Mappings."""
-    # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
-    return set.intersection(*map(set, (d.keys() for d in mappings)))
-
-
 def make_dataframe(
     data: Sequence[tuple[Any, ...]],
     *,
@@ -168,77 +158,6 @@ def strip_whitespace(table, /, *cols):
             return strip_whitespace_dataframe(frame, *cols)
         case _:
             raise TypeError(f"Unsupported type: {type(table)}")
-
-
-def detect_outliers_series(
-    s: Series,
-    /,
-    *,
-    lower_bound: float | None,
-    upper_bound: float | None,
-    lower_inclusive: bool,
-    upper_inclusive: bool,
-) -> Series:
-    """Detect outliers in a Series, given boundary values."""
-    # detect lower-bound violations
-    match lower_bound, lower_inclusive:
-        case None, _:
-            mask_lower = pandas_false_like(s)
-        case _, True:
-            mask_lower = (s < lower_bound).fillna(False)
-        case _, False:
-            mask_lower = (s <= lower_bound).fillna(False)
-        case _:
-            raise ValueError("Invalid combination of lower_bound and lower_inclusive.")
-
-    # detect upper-bound violations
-    match upper_bound, upper_inclusive:
-        case None, _:
-            mask_upper = pandas_false_like(s)
-        case _, True:
-            mask_upper = (s > upper_bound).fillna(False)
-        case _, False:
-            mask_upper = (s >= upper_bound).fillna(False)
-        case _:
-            raise ValueError("Invalid combination of upper_bound and upper_inclusive.")
-
-    if __logger__.getEffectiveLevel() >= logging.INFO:
-        lower_rate = f"{mask_lower.mean():8.3%}" if mask_lower.any() else " ------%"
-        upper_rate = f"{mask_upper.mean():8.3%}" if mask_upper.any() else " ------%"
-        __logger__.info(
-            "%s/%s lower/upper bound violations in %r", lower_rate, upper_rate, s.name
-        )
-
-    return mask_lower | mask_upper
-
-
-def detect_outliers_dataframe(
-    df: DataFrame,
-    /,
-    *,
-    lower_bound: Mapping[Any, float | None],
-    upper_bound: Mapping[Any, float | None],
-    lower_inclusive: Mapping[Any, bool],
-    upper_inclusive: Mapping[Any, bool],
-) -> DataFrame:
-    """Detect outliers in a DataFrame, given boundary values."""
-    given_bounds = joint_keys(
-        lower_bound, upper_bound, lower_inclusive, upper_inclusive
-    )
-    if missing_bounds := set(df.columns) - given_bounds:
-        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
-
-    mask = pandas_false_like(df)
-    for col in df.columns:
-        mask[col] = detect_outliers_series(
-            df[col],
-            lower_bound=lower_bound[col],
-            upper_bound=upper_bound[col],
-            lower_inclusive=lower_inclusive[col],
-            upper_inclusive=upper_inclusive[col],
-        )
-
-    return mask
 
 
 # region overloads ---------------------------------------------------------------------
@@ -306,104 +225,6 @@ def detect_outliers(
             return detect_outliers_dataframe(df, **options)  # pyright: ignore
         case _:
             raise TypeError(f"Unsupported type: {type(obj)}")
-
-
-def remove_outliers_series(
-    s: Series,
-    /,
-    *,
-    drop: bool = True,
-    inplace: bool = False,
-    lower_bound: float | None,
-    upper_bound: float | None,
-    lower_inclusive: bool,
-    upper_inclusive: bool,
-) -> Series:
-    """Remove outliers from a Series, given boundary values."""
-    if s.dtype == "category":
-        __logger__.info("Skipping categorical column.")
-        return s
-
-    if lower_bound is None and upper_bound is None:
-        __logger__.info("Skipping column with no boundaries.")
-        return s
-
-    if (
-        lower_bound is not None
-        and upper_bound is not None
-        and lower_bound > upper_bound
-    ):
-        raise ValueError(
-            f"Lower bound {lower_bound} is greater than upper bound {upper_bound}."
-        )
-
-    __logger__.info("Removing outliers from %r.", s.name)
-    s = s.copy() if inplace else s
-
-    # compute mask for values that are considered outliers
-    mask = detect_outliers_series(
-        s,
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
-        lower_inclusive=lower_inclusive,
-        upper_inclusive=upper_inclusive,
-    )
-
-    # replace outliers with NaN
-    s.loc[mask] = pd.NA
-
-    if drop:
-        __logger__.info("Dropping rows which are outliers.")
-        s = s.loc[~mask]
-
-    return s
-
-
-def remove_outliers_dataframe(
-    df: DataFrame,
-    /,
-    *,
-    drop: bool = True,
-    inplace: bool = False,
-    lower_bound: Mapping[T, float | None],
-    upper_bound: Mapping[T, float | None],
-    lower_inclusive: Mapping[T, bool],
-    upper_inclusive: Mapping[T, bool],
-) -> DataFrame:
-    """Remove outliers from a DataFrame, given boundary values."""
-    __logger__.info("Removing outliers from DataFrame.")
-    df = df.copy() if not inplace else df
-
-    given_bounds = joint_keys(
-        lower_bound, upper_bound, lower_inclusive, upper_inclusive
-    )
-
-    if missing_bounds := set(df.columns) - given_bounds:
-        raise ValueError(f"Columns {missing_bounds} do not have bounds!")
-    # if extra_bounds := given_bounds - set(df.columns):
-    #     raise ValueError(f"Bounds for {extra_bounds} provided, but no such columns!")
-
-    # compute mask for values that are considered outliers
-    mask = detect_outliers_dataframe(
-        df,
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
-        lower_inclusive=lower_inclusive,
-        upper_inclusive=upper_inclusive,
-    )
-
-    # replace outliers with NaN
-    for col in df:
-        df.loc[mask[col], col] = pd.NA
-
-    # drop rows where all columns are outliers
-    if drop:
-        __logger__.info("Dropping rows where all columns are outliers.")
-        # FIXME: https://github.com/pandas-dev/pandas/issues/54389
-        m = reduce(operator.__and__, (s for _, s in mask.items()))
-        df = df.loc[~m]
-
-    return df
 
 
 # region overloads ---------------------------------------------------------------------
@@ -487,13 +308,13 @@ def remove_outliers(
             raise TypeError(f"Expected Series or DataFrame, got {type(obj)}")
 
 
-def float_is_int(series: Series) -> bool:
+def float_is_int(series: Series, /) -> bool:
     r"""Check if all float values are integers."""
     mask = pd.notna(series)
     return series[mask].apply(float.is_integer).all()
 
 
-def get_integer_cols(table: DataFrame) -> set[str]:
+def get_integer_cols(table: DataFrame, /) -> set[str]:
     r"""Get all columns that contain only integers."""
     cols: set[str] = set()
     for col in table.columns:
@@ -506,7 +327,7 @@ def get_integer_cols(table: DataFrame) -> set[str]:
     return cols
 
 
-def contains_no_information(df: DataFrame) -> Series:
+def contains_no_information(df: DataFrame, /) -> Series:
     r"""Check if a DataFrame contains no information."""
     return df.nunique() <= 1
 
@@ -520,7 +341,7 @@ def vlookup_uniques(df: DataFrame, /, *, lookup_values: Series) -> dict[str, lis
     return uniques
 
 
-def aggregate_nondestructive(df: pandas_var) -> pandas_var:
+def aggregate_nondestructive(df: pandas_var, /) -> pandas_var:
     r"""Aggregate multiple simulataneous measurements in a non-destructive way.
 
     Given a `DataFrame` of size $m×k$, this will construct a new DataFrame of size $m'×k$,

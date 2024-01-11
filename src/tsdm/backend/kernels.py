@@ -7,6 +7,7 @@ __all__ = [
     "Backend",
     # Functions
     "get_backend",
+    "gather_types",
 ]
 
 from collections.abc import Mapping
@@ -28,6 +29,10 @@ from typing_extensions import (
     get_args,
 )
 
+from tsdm.backend.generic import (
+    false_like as universal_false_like,
+    true_like as universal_true_like,
+)
 from tsdm.backend.numpy import numpy_apply_along_axes, numpy_like
 from tsdm.backend.pandas import (
     pandas_clip,
@@ -49,10 +54,6 @@ from tsdm.backend.torch import (
     torch_nanmin,
     torch_nanstd,
 )
-from tsdm.backend.universal import (
-    false_like as universal_false_like,
-    true_like as universal_true_like,
-)
 from tsdm.types.callback_protocols import (
     ApplyAlongAxes,
     ClipProto,
@@ -70,7 +71,7 @@ BackendID: TypeAlias = Literal["arrow", "numpy", "pandas", "torch"]
 """A type alias for the supported backends."""
 
 
-def gather_types(obj: object) -> set[BackendID]:
+def gather_types(obj: object, /) -> set[BackendID]:
     """Gather the backend types of a set of objects."""
     types: set[BackendID] = set()
 

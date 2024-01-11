@@ -661,7 +661,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
     # Cf. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @cached_property
-    def tables(self) -> Mapping[Key, T_co]:
+    def tables(self) -> dict[Key, T_co]:
         r"""Store cached version of dataset."""
         # (self.load, (key,), {}) → self.load(key=key) when tables[key] is accessed.
 
@@ -682,12 +682,12 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         })
 
     @cached_property
-    def dataset_files(self) -> Mapping[Key, str]:
+    def dataset_files(self) -> dict[Key, str]:
         r"""Relative paths to the dataset files for each key."""
         return {key: f"{key}.{self.DEFAULT_FILE_FORMAT}" for key in self.table_names}
 
     @cached_property
-    def dataset_paths(self) -> Mapping[Key, Path]:
+    def dataset_paths(self) -> dict[Key, Path]:
         r"""Absolute paths to the raw dataset file(s)."""
         return {k: self.DATASET_DIR / fname for k, fname in self.dataset_files.items()}
 
@@ -781,7 +781,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         force: bool = ...,
         validate: bool = ...,
         initializing: bool = ...,
-    ) -> Mapping[Key, T_co]: ...
+    ) -> dict[Key, T_co]: ...
     @overload
     def load(
         self,

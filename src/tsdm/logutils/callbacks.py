@@ -48,7 +48,6 @@ from typing_extensions import (
     Optional,
     ParamSpec,
     Protocol,
-    Self,
     TypeGuard,
     TypeVar,
     overload,
@@ -163,7 +162,7 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
 
         @wraps(cls.callback)
         def __call__(
-            self: Self, i: int, /, **state_dict: P.kwargs  # pyright: ignore
+            self, i: int, /, **state_dict: P.kwargs  # pyright: ignore
         ) -> None:
             """Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:

@@ -119,7 +119,7 @@ class DecoratorError(Exception):
     message: str = ""
     r"""Default message to print."""
 
-    def __call__(self: Self, *message_lines: str) -> Self:
+    def __call__(self, *message_lines: str) -> Self:
         r"""Raise a new error."""
         # TODO: CHECK if dataclasses are the problem
         return DecoratorError(self.decorated, message="\n".join(message_lines))  # type: ignore[return-value]

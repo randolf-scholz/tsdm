@@ -27,7 +27,8 @@ from pandas import DataFrame
 from pyarrow import Table, csv
 from typing_extensions import get_args
 
-from tsdm.data import cast_columns, filter_nulls, strip_whitespace
+from tsdm.backend.pyarrow import cast_columns, filter_nulls, set_nulls
+from tsdm.data import strip_whitespace
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.datasets.mimic.mimic_iii_schema import (
     FALSE_VALUES,
@@ -174,7 +175,12 @@ class MIMIC_III(MIMIC_III_RAW):
         # Post-processing
         match key:
             case "ADMISSIONS":
-                pass
+                table = set_nulls(
+                    table,
+                    ETHNICITY=["UNKNOWN/NOT SPECIFIED"],
+                    RELIGION=["NOT SPECIFIED", "UNOBTAINABLE"],
+                    MARTIAL_STATUS=["UNKNOWN (DEFAULT)"],
+                )
             case "CALLOUT":
                 pass
             case "CAREGIVERS":

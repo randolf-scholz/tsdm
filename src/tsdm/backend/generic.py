@@ -1,17 +1,16 @@
-"""Universal backend functions that are independent of the backend used."""
+"""Generic kernels that work for a variety of backends."""
 
 __all__ = [
     "false_like",
-    "true_like",
-    "is_singleton",
     "is_scalar",
+    "is_singleton",
     "to_scalar",
+    "true_like",
 ]
 
 from math import prod
 
 import pyarrow as pa
-from typing_extensions import Any
 
 from tsdm.types.protocols import NumericalArray, SupportsShape
 
@@ -42,7 +41,7 @@ def is_singleton(x: SupportsShape, /) -> bool:
     # pyarrow array: ????
 
 
-def is_scalar(x: Any, /) -> bool:
+def is_scalar(x: object, /) -> bool:
     """Determines whether an object is a scalar."""
     return isinstance(x, bool | float | int | pa.Scalar | str)
 

@@ -8,6 +8,7 @@ __all__ = [
     "flatten_dict",
     "flatten_nested",
     "initialize_from_config",
+    "joint_keys",
     "last",
     "now",
     "pairwise_disjoint",
@@ -435,3 +436,9 @@ def repackage_zip(path: PathLike, /) -> None:
             for item in tqdm(contents[1:], desc="Repackaging zip file"):
                 _, new_name = item.split(top, 1)
                 new_archive.writestr(new_name, old_archive.read(item))
+
+
+def joint_keys(*mappings: Mapping[T, Any]) -> set[T]:
+    """Find joint keys in a collection of Mappings."""
+    # NOTE: `.keys()` is necessary for working with `pandas.Series` and `pandas.DataFrame`.
+    return set.intersection(*map(set, (d.keys() for d in mappings)))

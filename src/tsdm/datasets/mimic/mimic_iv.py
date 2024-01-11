@@ -68,7 +68,8 @@ from pyarrow import Array, Table, csv
 from tqdm.autonotebook import tqdm
 from typing_extensions import get_args
 
-from tsdm.data import cast_columns, filter_nulls, force_cast, strip_whitespace
+from tsdm.backend.pyarrow import cast_columns, filter_nulls, force_cast
+from tsdm.data import strip_whitespace
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.datasets.mimic.mimic_iv_schema import (
     FALSE_VALUES,

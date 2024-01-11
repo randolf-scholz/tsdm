@@ -265,7 +265,7 @@ class BaseEncoder(Encoder[T, T2], metaclass=BaseEncoderMetaClass):
         original_decode = cls.decode
 
         @wraps(original_fit)
-        def fit(self: Self, data: T, /) -> None:
+        def fit(self, data: T, /) -> None:
             r"""Fit the encoder to the data."""
             if self.requires_fit:
                 self.LOGGER.info("Fitting encoder to data.")
@@ -277,14 +277,14 @@ class BaseEncoder(Encoder[T, T2], metaclass=BaseEncoderMetaClass):
             self.is_fitted = True
 
         @wraps(original_encode)
-        def encode(self: Self, data: T, /) -> T2:
+        def encode(self, data: T, /) -> T2:
             r"""Encode the data."""
             if self.requires_fit and not self.is_fitted:
                 raise RuntimeError("Encoder has not been fitted.")
             return original_encode(self, data)
 
         @wraps(original_decode)
-        def decode(self: Self, data: T2, /) -> T:
+        def decode(self, data: T2, /) -> T:
             r"""Decode the data."""
             if self.requires_fit and not self.is_fitted:
                 raise RuntimeError("Encoder has not been fitted.")
