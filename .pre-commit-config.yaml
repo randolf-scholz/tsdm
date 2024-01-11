@@ -120,6 +120,8 @@ repos:
     hooks:
       - id: ruff
         files: (^src/|^tests/)
+      - id: ruff-format
+        files: (^src/|^tests/)
 #  # flake8
 #  - repo: https://github.com/pycqa/flake8
 #    rev: 7.0.0
