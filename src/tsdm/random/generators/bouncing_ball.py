@@ -127,11 +127,13 @@ class BouncingBall(IVP_GeneratorBase[NDArray]):
     def validate_solution(self, sol: NDArray, /) -> None:
         """Validate constraints on the parameters."""
         x = sol[..., 0]
-        assert (
-            x.min() >= self.x_min and x.max() <= self.x_max
-        ), f"{[x.min(), x.max()]} not in [-1,+1]"
+        if (x_min := x.min()) < self.x_min:
+            raise ValueError(f"Lower bound violated: {x_min}<{self.x_min}.")
+        if (x_max := x.max()) > self.x_max:
+            raise ValueError(f"Upper bound violated: {x_max}>{self.x_max}.")
 
     def validate_observations(self, x: NDArray, /) -> None:
-        assert (
-            x.min() >= self.x_min and x.max() <= self.x_max
-        ), f"{[x.min(), x.max()]} not in [-1,+1]"
+        if (x_min := x.min()) < self.x_min:
+            raise ValueError(f"Lower bound violated: {x_min}<{self.x_min}.")
+        if (x_max := x.max()) > self.x_max:
+            raise ValueError(f"Upper bound violated: {x_max}>{self.x_max}.")

@@ -35,7 +35,6 @@ from typing_extensions import (
     ClassVar,
     Optional,
     Protocol,
-    Self,
     overload,
     runtime_checkable,
 )
@@ -45,6 +44,7 @@ from tsdm.testing.hash import validate_file_hash, validate_table_hash
 from tsdm.types.aliases import PathLike
 from tsdm.types.variables import T_co, str_var as Key
 from tsdm.utils import paths_exists
+from tsdm.utils.decorators import wrap_method
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.pprint import repr_array, repr_mapping
@@ -118,28 +118,8 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
             else:
                 self.DATASET_DIR = CONFIG.DATASETDIR / self.__name__
 
-    def __call__(
-        self,
-        *init_args: Any,
-        initialize: bool = True,
-        reset: bool = False,
-        verbose: bool = True,
-        version: str = NotImplemented,
-        **init_kwargs: Any,
-    ) -> Self:
-        """Add custom initialization logic (pre/post hooks)."""
-        obj: Self = self.__new__(self, *init_args, **init_kwargs)  # pyright: ignore
-        self.__pre_init__(
-            obj,
-            *init_args,
-            reset=reset,
-            version=version,
-            verbose=verbose,
-            **init_kwargs,
-        )
-        self.__init__(obj, *init_args, **init_kwargs)  # type: ignore[misc]
-        self.__post_init__(obj, *init_args, initialize=initialize, **init_kwargs)
-        return obj
+        # add post_init hook
+        self.__init__ = wrap_method(self.__init__, after=self.__post_init__)
 
 
 class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
@@ -181,7 +161,6 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     rawdata_shapes: Mapping[str, tuple[int, ...]] = NotImplemented
     r"""Shapes for the raw dataset tables(s)."""
 
-    @abstractmethod
     def __init__(
         self,
         *,
@@ -198,18 +177,8 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
             version: Version of the dataset. Leave empty for unversioned dataset.
             verbose: Whether to print verbose output.
         """
-        ...
-
-    def __pre_init__(
-        self,
-        *_: Any,
-        reset: bool,
-        verbose: bool,
-        version: Any,
-        **__: Any,
-    ) -> None:
-        r"""Initialize the dataset."""
         self.verbose = verbose
+        self.initialize = initialize
 
         # set the version
         if version is not NotImplemented:
@@ -229,12 +198,12 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
             self.remove_rawdata_files()
             self.remove_dataset_files()
 
-    def __post_init__(self, *_: Any, initialize: bool, **__: Any) -> None:
+    def __post_init__(self) -> None:
         r"""Initialize the dataset."""
-        if initialize:
+        if self.initialize:
             # NOTE: We call clean first for memory efficiency.
             #  Preprocessing can take lots of resources, so we should only load tables
-            #  on a need-to basis.
+            #  on a need-to-know basis.
             self.clean()
             self.load(initializing=True)
 

@@ -136,7 +136,7 @@ repos:
         # verbose regex
         files: (^src/|^tests/)
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.48
+    rev: v0.1.49
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps

@@ -551,8 +551,7 @@ class BoundaryEncoder(BaseEncoder[Arr, Arr]):
         data = self.backend.where(self.upper_satisfied(data), data, self.upper_value)
         return data
 
-    @staticmethod
-    def decode(data: Arr, /) -> Arr:
+    def decode(self, data: Arr, /) -> Arr:
         return data
 
 
@@ -1070,13 +1069,11 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
 
     requires_fit: ClassVar[bool] = False
 
-    @staticmethod
-    def encode(data: DataFrame, /) -> DataFrame:
+    def encode(self, data: DataFrame, /) -> DataFrame:
         assert all((data > 0) & (data < 1))
         return np.log(data / (1 - data))
 
-    @staticmethod
-    def decode(data: DataFrame, /) -> DataFrame:
+    def decode(self, data: DataFrame, /) -> DataFrame:
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 

@@ -562,9 +562,9 @@ class MetricsCallback(BaseCallback):
     prefix: str = ""
     postfix: str = ""
 
-    def callback(
+    def callback(  # type: ignore[override]
         self, i: int, /, *, targets: Tensor, predics: Tensor, **_: Any
-    ) -> None:  # type: ignore[override]
+    ) -> None:
         log_metrics(
             i,
             metrics=self.metrics,

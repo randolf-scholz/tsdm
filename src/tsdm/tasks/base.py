@@ -109,7 +109,7 @@ __all__ = [
 import logging
 import warnings
 from abc import abstractmethod
-from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
 
@@ -120,7 +120,6 @@ from typing_extensions import (
     Any,
     ClassVar,
     Generic,
-    Iterable,
     Literal,
     NewType,
     Protocol,

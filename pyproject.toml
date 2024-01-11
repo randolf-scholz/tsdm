@@ -51,7 +51,7 @@ dependencies = [
 dev = ["tsdm[test,docs,extras,typing,flake8,linters,formatters,devtools]"]
 test = [
     "coverage>=7.4.0",
-    "hypothesis[numpy,pandas,pytest]>=6.92.5",
+    "hypothesis[numpy,pandas,pytest]>=6.92.8",
     "pygal>=3.0.4",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
@@ -103,7 +103,7 @@ typing = [
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
     "types-jsonschema>=4.20.0",
-    "types-pillow>=10.1.0",
+    "types-pillow>=10.2.0",
     "types-protobuf>=4.24.0",
     "types-psutil>=5.9.5",
     "types-pygments>=2.17.0",
@@ -691,7 +691,7 @@ torchinfo = ">=1.8.0"
 
 [tool.poetry.group.test.dependencies]
 coverage = ">=7.4.0"
-hypothesis = {version=">=6.92.5", extras=["numpy", "pandas", "pytest"]}
+hypothesis = {version=">=6.92.8", extras=["numpy", "pandas", "pytest"]}
 pygal = ">=3.0.4"
 pytest = ">=7.4.4"
 pytest-benchmark = ">=4.0.0"
@@ -729,7 +729,7 @@ johnnydep = ">=1.20.4"
 ninja = ">=1.11.1"
 pip = ">=23.3.2"
 pip-tools = ">=7.3.0"
-pipdeptree = ">=2.13.1"
+pipdeptree = ">=2.13.2"
 pipreqs = ">=0.4.13"
 pre-commit = ">=3.6.0"
 pybadges = ">=3.0.1"
@@ -779,7 +779,7 @@ types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"
 types-jsonschema = ">=4.20.0"
-types-pillow = ">=10.1.0"
+types-pillow = ">=10.2.0"
 types-protobuf = ">=4.24.0"
 types-psutil = ">=5.9.5"
 types-pygments = ">=2.17.0"

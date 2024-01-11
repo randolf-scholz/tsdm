@@ -82,9 +82,9 @@ class SIR(IVP_GeneratorBase[NDArray]):
 
     def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:
         r"""Project the solution onto the constraint set."""
-        if x.min() > (self.X_MIN - tol):
+        if x.min() < (self.X_MIN - tol):
             raise RuntimeError("Integrator produced vastly negative values.")
-        if x.max() < (self.X_MAX + tol):
+        if x.max() > (self.X_MAX + tol):
             raise RuntimeError("Integrator produced vastly positive values.")
         if not np.allclose(x.sum(axis=-1), 1, atol=tol):
             raise RuntimeError("Constraints vioalted.")
@@ -94,8 +94,10 @@ class SIR(IVP_GeneratorBase[NDArray]):
         return x
 
     def validate_solution(self, x: NDArray, /) -> None:
-        assert (
-            x.min() >= self.X_MIN
-            and x.max() <= self.X_MAX
-            and np.allclose(x.sum(axis=-1), 1)
-        ), "Integrator produced invalid values."
+        r"""Validate constraints on the parameters."""
+        if (x_min := x.min()) < self.X_MIN:
+            raise ValueError(f"Lower bound violated: {x_min}.")
+        if (x_max := x.max()) > self.X_MAX:
+            raise ValueError(f"Upper bound violated: {x_max}.")
+        if not np.allclose(x.sum(axis=-1), 1):
+            raise ValueError("Constraints violated.")

@@ -80,7 +80,7 @@ def CONST_NONE_FN(*_: Any, **__: Any) -> Literal[None]:
     return None
 
 
-BUILTIN_CONSTANTS = frozenset([None, True, False, Ellipsis, NotImplemented])
+BUILTIN_CONSTANTS = [None, True, False, Ellipsis, NotImplemented]
 """Builtin constants https://docs.python.org/3/library/constants.html."""
 
 CONSTANT_FUNCTIONS = [CONST_TRUE_FN, CONST_FALSE_FN, CONST_NONE_FN]

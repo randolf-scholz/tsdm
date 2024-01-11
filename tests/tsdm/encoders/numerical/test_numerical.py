@@ -2,6 +2,7 @@ r"""Test numerical encoders."""
 
 import logging
 import pickle
+from collections.abc import Callable
 from tempfile import TemporaryFile
 
 import numpy as np
@@ -9,7 +10,7 @@ import pandas as pd
 import torch
 from numpy.typing import NDArray
 from pytest import mark, skip
-from typing_extensions import Any, Callable, TypeVar, assert_type
+from typing_extensions import Any, TypeVar, assert_type
 
 from tsdm.encoders.numerical import (
     BoundaryEncoder,

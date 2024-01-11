@@ -77,8 +77,8 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     INFO_URL = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
     r"""HTTP address containing additional information about the dataset."""
 
-    def __init__(self, *, use_corrected_dates: bool = True) -> None:
-        super().__init__()
+    def __init__(self, *, use_corrected_dates: bool = True, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.use_corrected_dates = use_corrected_dates
 
     table_names = ["timeseries", "labels", "randperm", "invperm"]  # pyright: ignore

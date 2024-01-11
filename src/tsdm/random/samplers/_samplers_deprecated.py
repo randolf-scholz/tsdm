@@ -2,13 +2,13 @@
 
 __all__ = ["IntervalSampler", "SequenceSampler"]
 
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from itertools import count
 
 import numpy as np
 from numpy._typing import NDArray
 from pandas import DataFrame, Timedelta, Timestamp
-from typing_extensions import Any, Generic, Iterable, Optional, cast, deprecated
+from typing_extensions import Any, Generic, Optional, cast, deprecated
 
 from tsdm.random.samplers._samplers import BaseSampler, compute_grid
 from tsdm.types.protocols import Lookup, SupportsLenAndGetItem

@@ -3,14 +3,14 @@ r"""Test Sliding Window Sampler."""
 
 import datetime
 import logging
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from pandas import Series
 from pytest import mark
-from typing_extensions import Any, Iterator, Literal, TypeAlias, assert_type
+from typing_extensions import Any, Literal, TypeAlias, assert_type
 
 from tsdm.random.samplers import SlidingSampler
 from tsdm.types.time import DateTime

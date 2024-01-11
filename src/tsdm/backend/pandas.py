@@ -26,11 +26,12 @@ __all__ = [
 
 import logging
 import operator
+from collections.abc import Mapping
 from functools import reduce
 
 from numpy.typing import ArrayLike, NDArray
 from pandas import NA, DataFrame, Index, Series
-from typing_extensions import Any, Literal, Mapping, TypeAlias, TypeVar
+from typing_extensions import Any, Literal, TypeAlias, TypeVar
 
 from tsdm.types.aliases import Axes, Scalar
 from tsdm.types.variables import T

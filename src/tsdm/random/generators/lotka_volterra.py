@@ -93,11 +93,12 @@ class LotkaVolterra(IVP_GeneratorBase[NDArray]):
 
     def project_solution(self, x: NDArray, /, *, tol: float = 1e-3) -> NDArray:
         """Project the solution onto the constraint set."""
-        assert x.min() > -tol, f"Integrator produced vastly negative values {x.min()}."
+        if x.min() < (self.X_MIN - tol):
+            raise RuntimeError("Integrator produced vastly negative values.")
+
         return x.clip(min=self.X_MIN)
 
     def validate_solution(self, x: NDArray, /) -> None:
         """Validate constraints on the parameters."""
-        assert (
-            x.min() >= self.X_MIN
-        ), f"Integrator produced negative values: {x.min()}<0"
+        if (x_min := x.min()) < self.X_MIN:
+            raise ValueError(f"Lower bound violated: {x_min}.")

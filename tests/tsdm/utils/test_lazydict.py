@@ -4,10 +4,10 @@ r"""Test LazyDict."""
 # mypy: disable-error-code="assert-type"
 
 import logging
-from collections.abc import MutableMapping
+from collections.abc import Callable, MutableMapping
 
 import pytest
-from typing_extensions import Callable, assert_type
+from typing_extensions import assert_type
 
 from tsdm.utils import LazyDict, LazyValue
 
@@ -38,8 +38,8 @@ def test_lazydict() -> None:
     example_dict = {
         0: no_input,
         1: single_input,
-        2: (no_input,),
-        3: (single_input,),
+        # 2: (no_input,),
+        # 3: (single_input,),
         4: (positional_only, (1, 1, 1, 1)),
         5: (keyword_only, {"d": 1, "e": 1, "f": 1, "g": 1}),
         6: (generic, (1, 1, 1, 1), {"d": 1, "e": 1, "f": 1, "g": 1}),

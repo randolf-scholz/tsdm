@@ -5,7 +5,7 @@ import pandas as pd
 import pyarrow as pa
 import torch
 
-from tsdm.backend import is_singleton
+from tsdm.backend.generic import is_singleton
 
 
 def test_is_singleton() -> None:

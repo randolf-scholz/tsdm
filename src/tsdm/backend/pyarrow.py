@@ -24,6 +24,8 @@ __all__ = [
     "strip_whitespace_array",
 ]
 
+from collections.abc import Sequence
+
 import pandas as pd
 import polars as pl
 import pyarrow as pa
@@ -39,7 +41,7 @@ from pyarrow import (
     Table,
 )
 from tqdm import tqdm
-from typing_extensions import Literal, Sequence, overload
+from typing_extensions import Literal, overload
 
 from tsdm.types.dtypes import PYARROW_TO_POLARS
 

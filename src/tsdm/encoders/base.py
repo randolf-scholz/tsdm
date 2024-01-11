@@ -33,6 +33,7 @@ from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from copy import deepcopy
 from functools import wraps
+from inspect import getattr_static
 
 from typing_extensions import (
     Any,
@@ -259,6 +260,14 @@ class BaseEncoder(Encoder[T, T2], metaclass=BaseEncoderMetaClass):
         The wrapping of fit/encode/decode must be done here to avoid `~pickle.PickleError`!
         """
         super().__init_subclass__()  # <-- This is important! Otherwise, weird things happen.
+
+        for meth in ("fit", "encode", "decode"):
+            static_meth = getattr_static(cls, meth, None)
+            if static_meth is None:
+                raise NotImplementedError(f"Missing method {meth}.")
+            if isinstance(static_meth, staticmethod | classmethod):
+                raise TypeError(f"Method {meth} can't be static/class method.")
+
         original_fit = cls.fit
         original_encode = cls.encode
         original_decode = cls.decode
@@ -330,12 +339,10 @@ class IdentityEncoder(BaseEncoder):
     is_surjective: ClassVar[bool] = True
     is_bijective: ClassVar[bool] = True
 
-    @staticmethod
-    def encode(data: T, /) -> T:
+    def encode(self, data: T, /) -> T:
         return data
 
-    @staticmethod
-    def decode(data: T, /) -> T:
+    def decode(self, data: T, /) -> T:
         return data
 
 
@@ -347,12 +354,10 @@ class CopyEncoder(BaseEncoder[T, T]):
     is_surjective: ClassVar[bool] = True
     is_bijective: ClassVar[bool] = True
 
-    @staticmethod
-    def encode(data: T, /) -> T:
+    def encode(self, data: T, /) -> T:
         return deepcopy(data)
 
-    @staticmethod
-    def decode(data: T, /) -> T:
+    def decode(self, data: T, /) -> T:
         return deepcopy(data)
 
 
