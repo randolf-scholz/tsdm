@@ -164,8 +164,8 @@ def decorator(deco: Callable) -> Callable:
     2. FUNCTIONAL MODE::
 
         deco(func, *args, **kwargs)
-            # Input: func, args, kwargs
-            # Output: Wrapped Function
+        # Input: func, args, kwargs
+        # Output: Wrapped Function
 
     3. BRACKET MODE::
 
@@ -207,8 +207,8 @@ def decorator(deco: Callable) -> Callable:
     Example:
         >>> def wrap_fun(
         ...     func: Callable,
-        ...     before: Optional[Callable]=None,
-        ...     after: Optional[Callable]=None,
+        ...     before: Optional[Callable] = None,
+        ...     after: Optional[Callable] = None,
         ...     /,
         ... ) -> Callable:
         ...     '''Wraps function.'''
@@ -216,15 +216,15 @@ def decorator(deco: Callable) -> Callable:
     Here, there is a problem:
 
     >>> @wrap_func
-    ... def func(x): pass
-    ...
+    ... def func(x):
+    ...     pass
 
     here, and also in the case of wrap_func(func), the result should be an identity operation.
     However, the other case
 
     >>> @wrap_func(before)
-    ... def func(x): pass
-    ...
+    ... def func(x):
+    ...     pass
     Traceback (most recent call last):
         ...
     NameError: name 'before' is not defined
@@ -241,8 +241,8 @@ def decorator(deco: Callable) -> Callable:
     >>> def wrap_fun(
     ...     func: Callable,
     ...     before: Optional[Callable],
-    ...     after: Optional[Callable]=None,
-    ...     /
+    ...     after: Optional[Callable] = None,
+    ...     /,
     ... ) -> Callable:
     ...     '''Wraps function.'''
 
@@ -469,9 +469,8 @@ def vectorize(
         >>> @vectorize(kind=list)
         ... def f(x):
         ...     return x + 1
-        ...
         >>> assert f(1) == 2
-        >>> assert f(1,2) == [2,3]
+        >>> assert f(1, 2) == [2, 3]
     """
     params = list(signature(func).parameters.values())
 

@@ -106,14 +106,6 @@ repos:
     rev: 5.13.2
     hooks:
       - id: isort
-  # black
-  # blacken-docs
-  - repo: https://github.com/asottile/blacken-docs
-    rev: 1.16.0
-    hooks:
-      - id: blacken-docs
-        files: (^src/|^tests/)
-        types: [python]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.11

@@ -171,7 +171,9 @@ def flatten_dict(
         >>> flatten_dict({"a": {"b": 1, "c": 2}}, join_fn=tuple, split_fn=lambda x: x)
         {('a', 'b'): 1, ('a', 'c'): 2}
 
-        >>> flatten_dict({"a": {"b": {"x": 2}, "c": 2}}, join_fn=tuple, split_fn=lambda x: x)
+        >>> flatten_dict(
+        ...     {"a": {"b": {"x": 2}, "c": 2}}, join_fn=tuple, split_fn=lambda x: x
+        ... )
         {('a', 'b', 'x'): 2, ('a', 'c'): 2}
 
         >>> flatten_dict({"a": {17: "foo", 18: "bar"}}, join_fn=tuple, split_fn=lambda x: x)
@@ -179,10 +181,19 @@ def flatten_dict(
 
         When trying to flatten a partially flattened dictionary, setting recursive=<int>.
 
-        >>> flatten_dict({"a": {(1, True): "foo", (2, False): "bar"}}, join_fn=tuple, split_fn=lambda x: x)
+        >>> flatten_dict(
+        ...     {"a": {(1, True): "foo", (2, False): "bar"}},
+        ...     join_fn=tuple,
+        ...     split_fn=lambda x: x,
+        ... )
         {('a', (1, True)): 'foo', ('a', (2, False)): 'bar'}
 
-        >>> flatten_dict({"a": {(1, True): "foo", (2, False): "bar"}}, join_fn=tuple, split_fn=lambda x: x, recursive=1)
+        >>> flatten_dict(
+        ...     {"a": {(1, True): "foo", (2, False): "bar"}},
+        ...     join_fn=tuple,
+        ...     split_fn=lambda x: x,
+        ...     recursive=1,
+        ... )
         {('a', 1, True): 'foo', ('a', 2, False): 'bar'}
     """
     if not recursive:
@@ -220,16 +231,18 @@ def unflatten_dict(
         Using ``join_fn = ".".join`` and ``split_fn = lambda s: s.split(".")``
         will split up string keys like ``"a.b.c"`` into ``{"a": {"b": {"c": ...}}}``.
 
-        >>> unflatten_dict({'a.b': 1, 'a.c': 2})
+        >>> unflatten_dict({"a.b": 1, "a.c": 2})
         {'a': {'b': 1, 'c': 2}}
 
-        >>> unflatten_dict({'a.b': 1, 'a.c': 2}, recursive=False)
+        >>> unflatten_dict({"a.b": 1, "a.c": 2}, recursive=False)
         {'a.b': 1, 'a.c': 2}
 
         Using ``join_fn = tuple`` and ``split_fn = lambda s: s`` will split up
         keys like ``("a", "b", "c")`` into ``{"a": {"b": {"c": ...}}}``.
 
-        >>> unflatten_dict({('a', 17): 'foo', ('a', 18): 'bar'}, join_fn=tuple, split_fn=lambda x: x)
+        >>> unflatten_dict(
+        ...     {("a", 17): "foo", ("a", 18): "bar"}, join_fn=tuple, split_fn=lambda x: x
+        ... )
         {'a': {17: 'foo', 18: 'bar'}}
     """
     if not recursive:

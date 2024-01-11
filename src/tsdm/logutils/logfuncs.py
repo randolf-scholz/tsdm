@@ -137,8 +137,8 @@ def transpose_list_of_dicts(lst: Iterable[dict[K, T]], /) -> dict[K, list[T]]:
 
     Example:
         >>> list_of_dicts = [
-        ...     {"name": "Alice",   "age": 30},
-        ...     {"name": "Bob",     "age": 25},
+        ...     {"name": "Alice", "age": 30},
+        ...     {"name": "Bob", "age": 25},
         ...     {"name": "Charlie", "age": 35},
         ... ]
         >>> transpose_list_of_dicts(list_of_dicts)

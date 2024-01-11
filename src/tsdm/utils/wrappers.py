@@ -31,8 +31,7 @@ def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
 
     .. code-block:: python
 
-        class MyModule:
-            ...
+        class MyModule: ...
 
 
         model = jit.script(MyModule())
@@ -42,8 +41,7 @@ def autojit(base_class: type[torch_module_var]) -> type[torch_module_var]:
     .. code-block:: python
 
         @autojit
-        class MyModule:
-            ...
+        class MyModule: ...
 
 
         model = MyModule()
