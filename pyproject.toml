@@ -256,7 +256,7 @@ rst-directives = ["details", "signature", "literalinclude"]
 # region ruff configuration ------------------------------------------------------------
 [tool.ruff]
 target-version = "py311"
-line-length = 120
+line-length = 88
 indent-width = 4
 
 [tool.ruff.lint]
@@ -329,6 +329,19 @@ ignore = [
 fixable = ["ALL"]
 unfixable = []
 
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 120
+max-line-length = 120
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
 quote-style = "double"
@@ -355,13 +368,6 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = false
-mark-parentheses = false
 # endregion ruff configuration ---------------------------------------------------------
 
 
