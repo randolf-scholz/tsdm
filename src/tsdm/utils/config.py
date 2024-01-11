@@ -28,7 +28,6 @@ def is_dunder(s: str) -> bool:
 class ConfigMetaclass(ABCMeta):
     r"""Metaclass for `BaseConfig`."""
 
-    # fmt: off
     _FORBIDDEN_FIELDS = {
         "clear",       # Removes all the elements from the dictionary
         "copy",        # Returns a copy of the dictionary
@@ -41,8 +40,7 @@ class ConfigMetaclass(ABCMeta):
         "setdefault",  # Returns the value of the specified key or set default
         "update",      # Updates the dictionary with the specified key-value pairs
         "values",      # Returns a list of all the values in the dictionary
-    }
-    # fmt: on
+    }  # fmt: skip
 
     # NOTE: This is the canonical signature
     #   https://github.com/python/typeshed/blob/7f9b3ea6c354273ff6ef78c15f274d6e29becb22/stdlib/builtins.pyi#L193-L195

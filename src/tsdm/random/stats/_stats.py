@@ -52,7 +52,6 @@ def data_overview(
     overview.loc[numerical_cols, "std"] = df[numerical_cols].std()
     overview.loc[numerical_cols, "max"] = df[numerical_cols].max()
 
-    # fmt: off
     column_dtypes = {
         "datapoints" : "Int64",
         "missing"    : "Float64",
@@ -60,8 +59,7 @@ def data_overview(
         "mean"       : "Float64",
         "std"        : "Float64",
         "max"        : "Float64",
-    }
-    # fmt: on
+    }  # fmt: skip
 
     overview = overview.astype(column_dtypes)
     for col, dtype in column_dtypes.items():

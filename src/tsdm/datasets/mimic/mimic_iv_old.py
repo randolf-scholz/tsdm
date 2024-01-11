@@ -55,7 +55,6 @@ class MIMIC_IV(MultiTableDataset):
         )
     }
 
-    # fmt: off
     internal_files = {
         "admissions"         : "mimic-iv-1.0/core/admissions.csv.gz",
         "patients"           : "mimic-iv-1.0/core/patients.csv.gz",
@@ -84,8 +83,7 @@ class MIMIC_IV(MultiTableDataset):
         "prescriptions"      : "mimic-iv-1.0/hosp/prescriptions.csv.gz",
         "procedures_icd"     : "mimic-iv-1.0/hosp/procedures_icd.csv.gz",
         "services"           : "mimic-iv-1.0/hosp/services.csv.gz",
-    }
-    # fmt: on
+    }  # fmt: skip
 
     table_names = list(internal_files.keys())
 

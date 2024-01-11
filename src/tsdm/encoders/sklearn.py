@@ -14,7 +14,6 @@ from sklearn import preprocessing as sk_preprocessing
 from tsdm.encoders.base import InvertibleTransform, Transform
 
 SKLEARN_TRANSFORMS: dict[str, type[Transform]] = {
-    # fmt: off
     "Binarizer"           : sk_preprocessing.Binarizer,
     "FunctionTransformer" : sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,
@@ -33,13 +32,11 @@ SKLEARN_TRANSFORMS: dict[str, type[Transform]] = {
     "RobustScaler"        : sk_preprocessing.RobustScaler,
     "SplineTransformer"   : sk_preprocessing.SplineTransformer,
     "StandardScaler"      : sk_preprocessing.StandardScaler,
-    # fmt: on
-}
+}  # fmt: skip
 r"""Dictionary of all available sklearn transforms."""
 
 
 SKLEARN_ENCODERS: dict[str, type[InvertibleTransform]] = {
-    # fmt: off
     # "Binarizer"           : sk_preprocessing.Binarizer,
     "FunctionTransformer" : sk_preprocessing.FunctionTransformer,
     "KBinsDiscretizer"    : sk_preprocessing.KBinsDiscretizer,
@@ -58,6 +55,5 @@ SKLEARN_ENCODERS: dict[str, type[InvertibleTransform]] = {
     "RobustScaler"        : sk_preprocessing.RobustScaler,
     # "SplineTransformer"   : sk_preprocessing.SplineTransformer,
     "StandardScaler"      : sk_preprocessing.StandardScaler,
-    # fmt: on
-}
+}  # fmt: skip
 r"""Dictionary of all available sklearn encoders."""

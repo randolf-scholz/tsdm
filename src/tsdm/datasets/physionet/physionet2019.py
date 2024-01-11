@@ -172,7 +172,6 @@ from tsdm.datasets.base import MultiTableDataset
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
-        # fmt: off
         ("HR",               0,    None, True, True, "bpm",     "Heart rate"                                 ),
         ("O2Sat",            0,    100,  True, True, "%",       "Pulse oximetry"                             ),
         ("Temp",             0,    None, True, True, "°C",      "Temperature"                                ),
@@ -214,10 +213,8 @@ TIMESERIES_DESCRIPTION: InlineTable = {
             "For sepsis patients, SepsisLabel is 1 if t≥tsepsis−6"
             " and 0 if t<tsepsis−6. For non-sepsis patients, SepsisLabel is 0."
         ),
-        # fmt: on
     ],
     "schema": {
-        # fmt: off
         "variable"        : "string[pyarrow]",
         "lower_bound"     : "float32[pyarrow]",
         "upper_bound"     : "float32[pyarrow]",
@@ -225,24 +222,20 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "upper_inclusive" : "bool[pyarrow]",
         "unit"            : "string[pyarrow]",
         "description"     : "string[pyarrow]",
-        # fmt: on
     },
     "index": ["variable"],
-}
+}  # fmt: skip
 
 METADATA_DESCRIPTION: InlineTable = {
     "data": [
-        # fmt: off
         # Demographics (columns 35-40)
         ("Age"        ,    0,  100, False, True  , "years", "Years (100 for patients 90 or above)"      ),
         ("Gender"     , None, None, True , True  , "bool" , "Female (0) or Male (1)"                    ),
         ("Unit1"      ,    0,    1, True , True  , "MICU" , "Administrative identifier for ICU unit"    ),
         ("Unit2"      ,    0,    1, True , True  , "SICU" , "Administrative identifier for ICU unit"    ),
         ("HospAdmTime", None, None, True , False , "h"    , "Hours between hospital admit and ICU admit"),
-        # fmt: on
     ],
     "schema": {
-        # fmt: off
         "variable"       : "string[pyarrow]",
         "lower_bound"    : "float32[pyarrow]",
         "upper_bound"    : "float32[pyarrow]",
@@ -250,10 +243,9 @@ METADATA_DESCRIPTION: InlineTable = {
         "upper_inclusive": "bool[pyarrow]",
         "unit"           : "string[pyarrow]",
         "description"    : "string[pyarrow]",
-        # fmt: on
     },
     "index": ["variable"],
-}
+}  # fmt: skip
 
 KEY: TypeAlias = Literal[
     "timeseries",
@@ -307,6 +299,7 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
             "sha256:8a88d69a5f64bc9a87d869f527fcc2741c0712cb9a7cb1f5cdcb725336b4c8cc"
         ),
     }
+
     table_names = [  # pyright: ignore
         "timeseries",
         "timeseries_description",
@@ -315,9 +308,9 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         "raw_timeseries",
         "raw_metadata",
     ]
+
     table_schemas = {  # pyright: ignore
         "timeseries": {
-            # fmt: off
             "HR"               : "float32[pyarrow]",
             "O2Sat"            : "float32[pyarrow]",
             "Temp"             : "float32[pyarrow]",
@@ -353,23 +346,19 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
             "Fibrinogen"       : "float32[pyarrow]",
             "Platelets"        : "float32[pyarrow]",
             "SepsisLabel"      : "boolean[pyarrow]",
-            # fmt: on
         },
         "metadata": {
-            # fmt: off
             "Age"         : "float32[pyarrow]",
             "Gender"      : "string[pyarrow]",
             "Unit1"       : "bool[pyarrow]",
             "Unit2"       : "bool[pyarrow]",
             "HospAdmTime" : "timedelta64[ns]",
-            # fmt: on
         },
         "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
         "metadata_description": METADATA_DESCRIPTION["schema"],
-    }
+    }  # fmt: skip
 
     rawdata_schema = {
-        # fmt: off
         "HR"               : "float32[pyarrow]",
         "O2Sat"            : "float32[pyarrow]",
         "Temp"             : "float32[pyarrow]",
@@ -411,8 +400,7 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
         "HospAdmTime"      : "float32[pyarrow]",
         "ICULOS"           : "int32[pyarrow]",
         "SepsisLabel"      : "boolean[pyarrow]",
-        # fmt: on
-    }
+    }  # fmt: skip
 
     def read_patient_file(
         self, archive: ZipFile, /, *, compressed_file: str

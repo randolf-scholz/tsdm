@@ -20,7 +20,6 @@ from tsdm.constants import NULL_VALUES
 from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.base import MultiTableDataset
 
-# fmt: off
 column_dtypes = {
     "metadata": {
         # "experiment_id"        : "Int32",
@@ -134,10 +133,8 @@ column_dtypes = {
     #     "lower" : "Float32",
     #     "upper" : "Float32",
     # },
-}
-# fmt: on
+}  # fmt: skip
 
-# fmt: off
 selected_columns = {
     "metadata" : {
         # "experiment_id"          : True,
@@ -200,8 +197,7 @@ selected_columns = {
         "Volume"                        : False,
         "Acid"                          : False,
     }
-}
-# fmt: on
+}  # fmt: skip
 
 null_values = NULL_VALUES | {
     "value written to setpoints has been transferred to this table."
@@ -209,7 +205,6 @@ null_values = NULL_VALUES | {
 
 
 # Timeseries Features
-# fmt: off
 timeseries_description_dict = {
     # Name                          : [Unit,     Type,      Dtype, Lower, Upper, Lower included, Upper included]
     "Acetate"                       : ["%",      "percent",  pd.NA, 0,   100      , True, True],
@@ -227,10 +222,8 @@ timeseries_description_dict = {
     "Temperature"                   : ["°C",     "linear",   pd.NA, 20,  45       , True, True],
     "Volume"                        : ["mL",     "absolute", pd.NA, 0,   np.inf   , True, True],
     "pH"                            : ["pH",     "linear",   pd.NA, 4,   10       , True, True],
-}
-# fmt: on
+}  # fmt: skip
 
-# fmt: off
 metadata_description_dict = {
     # Name                   : [Unit,     Type,      Dtype, Lower, Upper, Lower included, Upper included]
     "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
@@ -244,8 +237,7 @@ metadata_description_dict = {
     "ph_Tolerance"           : [pd.NA, "linear",   pd.NA, 0,     np.inf],
     "μ_set"                  : ["%",   "percent",  pd.NA, 0,     100   ],
     "IPTG"                   : ["mM",  "absolute", pd.NA, 0,     np.inf],
-}
-# fmt: on
+}  # fmt: skip
 
 
 @deprecated("outdated class, use datasets.KIWI_Benchmark instead!")

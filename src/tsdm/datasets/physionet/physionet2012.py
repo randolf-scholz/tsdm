@@ -167,7 +167,6 @@ KEY: TypeAlias = Literal[
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
-        # fmt: off
         # variable, lower, upper, lower_included, upper_included, unit, description
         ("Albumin"    , 0,    None, False, True, "g/dL",     None                                            ),
         ("ALP"        , 0,    None, False, True, "IU/L",     "Alkaline phosphatase"                          ),
@@ -206,10 +205,8 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         ("Urine"      , 0,    None, True,  True, "mL",       "Urine output"                                  ),
         ("WBC"        , 0,    1000, False, True, "cells/nL", "White blood cell count"                        ),
         ("Weight"     , 20,   None, True,  True, "kg",       None                                            ),
-        # fmt: on
     ],
     "schema": {
-        # fmt: off
         "name"            : "string[pyarrow]",
         "lower_bound"     : "float32[pyarrow]",
         "upper_bound"     : "float32[pyarrow]",
@@ -217,24 +214,20 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "upper_inclusive" : "bool[pyarrow]",
         "unit"            : "string[pyarrow]",
         "description"     : "string[pyarrow]",
-        # fmt: on
     },
     "index": ["name"],
-}
+}  # fmt: skip
 
 METADATA_DESCRIPTION: InlineTable = {
     "data": [
-        # fmt: off
         ("Age"    , "uint8[pyarrow]"  , 0   , 100 , True, True, "years"   , None                           ),
         ("Gender" , "int8[pyarrow]"   , None, None, True, True, "category", "0: female, 1: male, -1: other"),
         ("Height" , "float32[pyarrow]", 20  , 270 , True, True, "cm"      , None                           ),
         ("Weight" , "float32[pyarrow]", 20  , None, True, True, "kg"      , None                           ),
         ("ICUType", "uint8[pyarrow]"  , 1   , 4   , True, True, "category",
             "1: Coronary Care Unit, 2: Cardiac Surgery Recovery Unit, 3: Medical ICU, or 4: Surgical ICU"),
-        # fmt: on
     ],
     "schema": {
-        # fmt: off
         "name"            : "string[pyarrow]",
         "dtype"           : "string[pyarrow]",
         "lower_bound"     : "float32[pyarrow]",
@@ -243,10 +236,9 @@ METADATA_DESCRIPTION: InlineTable = {
         "upper_inclusive" : "bool[pyarrow]",
         "unit"            : "string[pyarrow]",
         "description"     : "string[pyarrow]",
-        # fmt: on
     },
     "index": ["name"],
-}
+}  # fmt: skip
 
 
 class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
@@ -323,6 +315,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
     r"""HTTP address containing additional information about the dataset."""
 
     rawdata_files = ["set-a.tar.gz", "set-b.tar.gz", "set-c.tar.gz"]
+
     rawdata_hashes = {
         "set-a.tar.gz": (
             "sha256:8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920"
@@ -334,11 +327,13 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             "sha256:a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1"
         ),
     }
+
     rawdata_schema = {
         "Time": "string[pyarrow]",
         "Parameter": "string[pyarrow]",
         "Value": "float32[pyarrow]",
     }
+
     table_names = [  # pyright: ignore
         "timeseries",
         "metadata",
@@ -347,9 +342,9 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
         "raw_timeseries",
         "raw_metadata",
     ]
+
     table_schemas = {  # pyright: ignore
         "timeseries": {
-            # fmt: off
             "Albumin"     : "float32[pyarrow]",
             "ALP"         : "float32[pyarrow]",
             "ALT"         : "float32[pyarrow]",
@@ -387,20 +382,17 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
             "Urine"       : "float32[pyarrow]",
             "WBC"         : "float32[pyarrow]",
             "Weight"      : "float32[pyarrow]",
-            # fmt: on
         },
         "metadata": {
-            # fmt: off
             "Age"     : "uint8[pyarrow]",
             "Gender"  : "int8[pyarrow]",
             "Height"  : "float32[pyarrow]",
             "ICUType" : "uint8[pyarrow]",
             "Weight"  : "float32[pyarrow]",
-            # fmt:on
         },
         "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
         "metadata_description": METADATA_DESCRIPTION["schema"],
-    }
+    }  # fmt: skip
 
     def _clean_single_rawdataset(self, fname: str) -> tuple[DataFrame, DataFrame]:
         with (

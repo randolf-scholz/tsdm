@@ -4,7 +4,6 @@
 
 __all__ = ["timeseries_description", "metadata_description"]
 
-# fmt: off
 timeseries_description = {
     # Name                          : [Unit,     Type,  Dtype, Lower, Upper, Lower included, Upper included]
     "Acetate"                       : ["%",      "percent",  "float32", 0,   100,       True, True],
@@ -22,10 +21,8 @@ timeseries_description = {
     "Temperature"                   : ["°C",     "linear",   "float32", 20,  45,        True, True],
     "Volume"                        : ["mL",     "absolute", "float32", 0,   None,      True, True],
     "pH"                            : ["pH",     "linear",   "float32", 4,   10,        True, True],
-}
-# fmt: on
+}  # fmt: skip
 
-# fmt: off
 metadata_description = {
     # Name                   : [Unit,  Type,   Dtype, Lower, Upper, Lower included, Upper included]
     "Feed_concentration_glc" : ["g/L", "absolute", None, None, None, True, True],
@@ -39,5 +36,4 @@ metadata_description = {
     "plasmid_id"             : [None,  "category", None, None, None, True, True],
     "profile_name"           : [None,  "category", None, None, None, True, True],
     "μ_set"                  : ["%",   "percent",  None, 0,    100,  True, True],
-}
-# fmt: on
+}  # fmt: skip

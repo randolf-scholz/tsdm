@@ -136,7 +136,6 @@ NA_VALUES: Final[set] = {
 r"""Values that correspond to NaN."""
 
 NULL_VALUES: Final[frozenset[str]] = frozenset({
-    # fmt: off
     "", "-", "--", "?", "??",
     "1.#IND", "+1.#IND", "-1.#IND", "1.#QNAN", "+1.#QNAN", "-1.#QNAN",
     "#N/A N/A",
@@ -157,12 +156,10 @@ NULL_VALUES: Final[frozenset[str]] = frozenset({
     "NOT APPLICABLE", "not applicable",
     "NOT AVAILABLE",  "not available",
     "NO ANSWER",      "no answer",
-    # fmt: on
-})
+})  # fmt: skip
 r"""A list of common null value string represenations."""
 
 BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
-    # fmt: off
     {"f"     : False, "t"    : True},
     {"false" : False, "true" : True},
     {"n"     : False, "y"    : True},
@@ -172,12 +169,10 @@ BOOLEAN_PAIRS: Final[list[dict[str | int | float, bool]]] = [
     {-1      : False, +1     : True},
     {0.0     : False, 1.0    : True},
     {-1.0    : False, +1.0   : True},
-    # fmt: on
-]
+]  # fmt: skip
 r"""Matched pairs of values that correspond to booleans."""
 
 PRECISION: Final[dict] = {
-    # fmt: off
     16            : 2**-11,
     32            : 2**-24,
     64            : 2**-53,
@@ -187,8 +182,7 @@ PRECISION: Final[dict] = {
     np.float16    : 2**-11,
     np.float32    : 2**-24,
     np.float64    : 2**-53,
-    # fmt: on
-}
+}  # fmt: skip
 r"""Maps precision to the corresponding precision factor."""
 
 

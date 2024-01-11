@@ -82,7 +82,6 @@ from tsdm.datasets.mimic.mimic_iv_schema import (
 from tsdm.utils.remote import download_directory_to_zip
 
 disallow_nan_values = {
-    # fmt: off
     "admissions"         : ["admit_provider_id"],
     "d_hcpcs"            : (..., ["code", "short_description"]),
     "d_icd_diagnoses"    : [],
@@ -114,8 +113,7 @@ disallow_nan_values = {
     "inputevents"        : [],
     "outputevents"       : [],
     "procedureevents"    : [],
-    # fmt: on
-}
+}  # fmt: skip
 
 
 class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
@@ -168,7 +166,6 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
         top = f"mimic-iv-{self.__version__}"
 
         files = {
-            # fmt: off
             # "CHANGELOG"          : f"{top}/CHANGELOG.txt",
             # "LICENSE"            : f"{top}/LICENSE.txt",
             # "SHA256SUMS"         : f"{top}/SHA256SUMS.txt",
@@ -189,46 +186,40 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
             "labevents"          : f"{top}/hosp/labevents.csv.gz",
             "microbiologyevents" : f"{top}/hosp/microbiologyevents.csv.gz",
             "pharmacy"           : f"{top}/hosp/pharmacy.csv.gz",
-            # "omr"                : f"{top}/hosp/omr.csv.gz",                    # NOTE: only version ≥2.0
+            # "omr"                : f"{top}/hosp/omr.csv.gz",              # NOTE: only version ≥2.0
             "poe"                : f"{top}/hosp/poe.csv.gz",
             "poe_detail"         : f"{top}/hosp/poe_detail.csv.gz",
             "prescriptions"      : f"{top}/hosp/prescriptions.csv.gz",
             "procedures_icd"     : f"{top}/hosp/procedures_icd.csv.gz",
-            # "provider"           : f"{top}/hosp/provider.csv.gz",               # NOTE: only version ≥2.2
+            # "provider"           : f"{top}/hosp/provider.csv.gz",         # NOTE: only version ≥2.2
             "services"           : f"{top}/hosp/services.csv.gz",
             # icu
-            # "caregiver"          : f"{top}/icu/caregiver.csv.gz",             # NOTE: only version ≥2.2
+            # "caregiver"          : f"{top}/icu/caregiver.csv.gz",         # NOTE: only version ≥2.2
             "chartevents"        : f"{top}/icu/chartevents.csv.gz",
             "d_items"            : f"{top}/icu/d_items.csv.gz",
             "datetimeevents"     : f"{top}/icu/datetimeevents.csv.gz",
             "icustays"           : f"{top}/icu/icustays.csv.gz",
             "inputevents"        : f"{top}/icu/inputevents.csv.gz",
-            # "ingredientevents"   : f"{top}/icu/ingredientevents.csv.gz",        # NOTE: only version ≥2.0
+            # "ingredientevents"   : f"{top}/icu/ingredientevents.csv.gz",  # NOTE: only version ≥2.0
             "outputevents"       : f"{top}/icu/outputevents.csv.gz",
             "procedureevents"    : f"{top}/icu/procedureevents.csv.gz",
-            # fmt: on
-        }
+        }  # fmt: skip
 
         if self.version_info >= (2, 0):
             files |= {
-                # fmt: off
-                "admissions"       : f"{top}/hosp/admissions.csv.gz",           # NOTE: changed folder
-                "patients"         : f"{top}/hosp/patients.csv.gz",             # NOTE: changed folder
-                "transfers"        : f"{top}/hosp/transfers.csv.gz",            # NOTE: changed folder
-                "ingredientevents" : f"{top}/icu/ingredientevents.csv.gz",      # NOTE: new table
+                "admissions"       : f"{top}/hosp/admissions.csv.gz",       # NOTE: changed folder
+                "patients"         : f"{top}/hosp/patients.csv.gz",         # NOTE: changed folder
+                "transfers"        : f"{top}/hosp/transfers.csv.gz",        # NOTE: changed folder
+                "ingredientevents" : f"{top}/icu/ingredientevents.csv.gz",  # NOTE: new table
                 "omr"              : f"{top}/hosp/omr.csv.gz",
                 # NOTE: new table
-                # fmt: on
-            }
+            }  # fmt: skip
 
         if self.version_info >= (2, 2):
             files |= {
-                # fmt: off
-                "caregiver"        : f"{top}/icu/caregiver.csv.gz",             # NOTE: new table
-                "provider"         : f"{top}/hosp/provider.csv.gz",
-                # NOTE: new table
-                # fmt: on
-            }
+                "caregiver"        : f"{top}/icu/caregiver.csv.gz",  # NOTE: new table
+                "provider"         : f"{top}/hosp/provider.csv.gz",  # NOTE: new table
+            }  # fmt: skip
 
         return files  # type: ignore[return-value]
 
@@ -303,7 +294,6 @@ class MIMIC_IV(MIMIC_IV_RAW):
     RAWDATA_DIR = MIMIC_IV_RAW.RAWDATA_DIR
 
     dataset_shapes = {
-        # fmt: off
         "admissions"         : (  431231, 16),
         "d_hcpcs"            : (   89200,  4),
         "d_icd_diagnoses"    : (  109775,  3),
@@ -335,8 +325,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
         "inputevents"        : ( 8978893, 26),
         "outputevents"       : ( 4234967,  9),
         "procedureevents"    : (  696092, 21),
-        # fmt: on
-    }
+    }  # fmt: skip
 
     def clean_table(self, key: KEYS) -> Table:
         table: Table = super().clean_table(key)

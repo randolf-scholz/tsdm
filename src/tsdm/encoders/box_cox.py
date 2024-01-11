@@ -134,7 +134,7 @@ class BoxCoxEncoder(BaseEncoder):
         α = counts / np.sum(counts)
         p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
         β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
-        C = 1.0 if (μ, σ) == (0, 1) else μ ** 2 + σ**2
+        C = μ**2 + σ**2
         B = -2 * (β / α)
 
         def fun(c: NDArray) -> NDArray:

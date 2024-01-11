@@ -342,7 +342,6 @@ r"""Dictionary of all `pandas` data types."""
 
 # region polars dtypes -----------------------------------------------------------------
 PYARROW_DTYPES: Final[dict[str, pyarrow.DataType]] = {
-    # fmt: off
     # numeric
     "null"    : pyarrow.null(),
     "bool"    : pyarrow.bool_(),
@@ -374,14 +373,13 @@ PYARROW_DTYPES: Final[dict[str, pyarrow.DataType]] = {
     "binary"  : pyarrow.binary(),
     "large_string"  : pyarrow.large_string(),
     "string"  : pyarrow.string(),
-}
+}  # fmt: skip
 r"""Dictionary of all `pyarrow` data types."""
 # endregion polars dtypes --------------------------------------------------------------
 
 
 # region polars dtypes -----------------------------------------------------------------
 POLARS_DTYPES: Final[dict[str, polars.PolarsDataType]] = {
-    # fmt: off
     # numeric
     "Float32"    : polars.Float32(),
     "Float64"    : polars.Float64(),
@@ -405,8 +403,7 @@ POLARS_DTYPES: Final[dict[str, polars.PolarsDataType]] = {
     "Null"       : polars.Null(),
     "Object"     : polars.Object(),
     "Utf8"       : polars.Utf8(),
-    # fmt: on
-}
+}  # fmt: skip
 r"""Dictionary of all elementary `polars` data types."""
 # endregion polars dtypes --------------------------------------------------------------
 
@@ -514,7 +511,6 @@ r"""Dictionary of all `python` data types."""
 
 # region dtype conversion --------------------------------------------------------------
 PYARROW_TO_POLARS: Final[dict[pyarrow.DataType, polars.PolarsDataType]] = {
-    # fmt: off
     pyarrow.null()          : polars.Null(),
     pyarrow.bool_()         : polars.Boolean(),
     pyarrow.int8()          : polars.Int8(),
@@ -544,8 +540,7 @@ PYARROW_TO_POLARS: Final[dict[pyarrow.DataType, polars.PolarsDataType]] = {
     pyarrow.large_string()  : polars.Utf8(),
     pyarrow.string()        : polars.Utf8(),
     pyarrow.dictionary(pyarrow.int32(), pyarrow.string())   : polars.Categorical(),
-    # fmt: on
-}
+}  # fmt: skip
 r"""Dictionary of converting pyarrow to polars."""
 # endregion dtype conversion -----------------------------------------------------------
 

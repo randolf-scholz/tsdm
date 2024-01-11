@@ -16,7 +16,6 @@ from tsdm.datasets.base import MultiTableDataset
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
-        # fmt: off
         ("Biomass"  , 0, None, True, True, "g/L", None),
         ("Substrate", 0, None, True, True, "g/L", None),
         ("Acetate"  , 0, None, True, True, "g/L", None),
@@ -24,10 +23,8 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         ("Product"  , 0, None, True, True, "g/L", None),
         ("Volume"   , 0, None, True, True, "L",   None),
         ("Feed"     , 0, None, True, True, "μL",  None),
-        # fmt: on
     ],
     "schema": {
-        # fmt: off
         "variable"       : "string[pyarrow]",
         "lower_bound"    : "float32[pyarrow]",
         "upper_bound"    : "float32[pyarrow]",
@@ -35,10 +32,9 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "upper_inclusive": "bool[pyarrow]",
         "unit"           : "string[pyarrow]",
         "description"    : "string[pyarrow]",
-        # fmt: on
     },
     "index": "variable",
-}
+}  # fmt: skip
 
 KEY: TypeAlias = Literal[
     "timeseries",

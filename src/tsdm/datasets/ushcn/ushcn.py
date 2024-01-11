@@ -23,16 +23,13 @@ KEY: TypeAlias = Literal[
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
-        # fmt: off
         ("PRCP", "float32[pyarrow]",    0, None,  True,  True, "10²in", "precipitation"      ),
         ("SNOW", "float32[pyarrow]",    0, None,  True,  True, "10¹in", "snowfall"           ),
         ("SNWD", "float32[pyarrow]",    0, None,  True,  True, "in"   , "snow depth"         ),
         ("TMAX", "float32[pyarrow]", -100,  150, False, False, "°F"   , "maximum temperature"),
         ("TMIN", "float32[pyarrow]", -100,  150, False, False, "°F"   , "minimum temperature"),
-        # fmt: on
     ],
     "schema": {
-        # fmt: off
         "variable"        : "string[pyarrow]",
         "dtype"           : "string[pyarrow]",
         "lower_bound"     : "float32[pyarrow]",
@@ -40,15 +37,13 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "lower_inclusive" : "bool[pyarrow]",
         "upper_inclusive" : "bool[pyarrow]",
         "unit"            : "string[pyarrow]",
-        "description"     : "string[pyarrow]",
         # fmt: on
     },
     "index": ["variable"],
-}
+}  # fmt: skip
 
 METADATA_DESCRIPTION: InlineTable = {
     "data": [
-        # fmt: off
         ("LATITUDE"   , "float32[pyarrow]",  -90,    90, True, True,  "°" , "latitude"   ),
         ("LONGITUDE"  , "float32[pyarrow]", -180,   180, True, True,  "°" , "longitude"  ),
         ("ELEVATION"  , "float32[pyarrow]", -100, 10000, True, True,  "m" , "elevation"  ),
@@ -58,10 +53,8 @@ METADATA_DESCRIPTION: InlineTable = {
         ("COMPONENT_2", "int32[pyarrow]"  ,    0,  None, True, True,  None, "station ID" ),
         ("COMPONENT_3", "int32[pyarrow]"  ,    0,  None, True, True,  None, "station ID" ),
         ("UTC_OFFSET" , "string[pyarrow]" , None,  None, True, True,  "h" ,  "UTC offset"),
-        # fmt: on
     ],
     "schema": {
-        # fmt: off
         "variable"        : "string[pyarrow]",
         "dtype"           : "string[pyarrow]",
         "lower_bound"     : "float32[pyarrow]",
@@ -70,10 +63,9 @@ METADATA_DESCRIPTION: InlineTable = {
         "upper_inclusive" : "bool[pyarrow]",
         "unit"            : "string[pyarrow]",
         "description"     : "string[pyarrow]",
-        # fmt: on
     },
     "index": ["variable"],
-}
+}  # fmt: skip
 
 STATE_CODES: InlineTable = {
     "data": [
@@ -310,7 +302,6 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
     }
     rawdata_schemas = {
         "timeseries": {
-            # fmt: off
             "COOP_ID" : "int32[pyarrow]",
             "YEAR"    : "int16[pyarrow]",
             "MONTH"   : "int8[pyarrow]",
@@ -319,10 +310,8 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             "MFLAG"   : "string[pyarrow]",
             "QFLAG"   : "string[pyarrow]",
             "SFLAG"   : "string[pyarrow]",
-            # fmt: on
         },
         "metadata": {
-            # fmt: off
             "COOP_ID"     : "int32[pyarrow]",
             "LATITUDE"    : "float32[pyarrow]",
             "LONGITUDE"   : "float32[pyarrow]",
@@ -333,9 +322,9 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             "COMPONENT_2" : "int32[pyarrow]",
             "COMPONENT_3" : "int32[pyarrow]",
             "UTC_OFFSET"  : "int8[pyarrow]",
-            # fmt: on
         },
-    }
+    }  # fmt: skip
+
     table_shapes = {  # pyright: ignore
         "timeseries": (204771562, 5),
         "metadata": (1218, 9),
@@ -343,18 +332,16 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         "metadata_description": (9, 6),
         "timeseries_description": (8, 6),
     }
+
     table_schemas = {  # pyright: ignore
         "timeseries": {
-            # fmt: off
             "PRCP" : "int16[pyarrow]",
             "SNOW" : "int16[pyarrow]",
             "SNWD" : "int16[pyarrow]",
             "TMAX" : "int16[pyarrow]",
             "TMIN" : "int16[pyarrow]",
-            # fmt: on
         },
         "metadata": {
-            # fmt: off
             "LATITUDE"    : "float[pyarrow]",
             "LONGITUDE"   : "float[pyarrow]",
             "ELEVATION"   : "float[pyarrow]",
@@ -364,10 +351,8 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             "COMPONENT_2" : "int32[pyarrow]",
             "COMPONENT_3" : "int32[pyarrow]",
             "UTC_OFFSET"  : "int8[pyarrow]",
-            # fmt: on
         },
         "timeseries_description": {
-            # fmt: off
             "variable"       : "string[pyarrow]",
             "lower"          : "float32[pyarrow]",
             "upper"          : "float32[pyarrow]",
@@ -375,10 +360,8 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             "upper_included" : "bool[pyarrow]",
             "unit"           : "string[pyarrow]",
             "description"    : "string[pyarrow]",
-            # fmt: on
         },
         "metadata_description": {
-            # fmt: off
             "variable"       : "string[pyarrow]",
             "lower"          : "float32[pyarrow]",
             "upper"          : "float32[pyarrow]",
@@ -386,9 +369,8 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             "upper_included" : "bool[pyarrow]",
             "unit"           : "string[pyarrow]",
             "description"    : "string[pyarrow]",
-            # fmt: on
         },
-    }
+    }  # fmt: skip
 
     def clean_table(self, key: KEY = "timeseries") -> DataFrame:
         match key:
@@ -409,7 +391,6 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
 
     def _clean_metadata(self) -> DataFrame:
         stations_colspecs = {
-            # fmt: off
             "COOP_ID":     (1, 6),
             "LATITUDE":    (8, 15),
             "LONGITUDE":   (17, 25),
@@ -420,8 +401,8 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             "COMPONENT_2": (75, 80),
             "COMPONENT_3": (82, 87),
             "UTC_OFFSET":  (89, 90),
-            # fmt: on
-        }
+        }  # fmt: skip
+
         # pandas wants list[tuple[int, int]], 0 indexed, half open intervals.
         stations_cspecs = [(a - 1, b) for a, b in stations_colspecs.values()]
 
@@ -511,7 +492,6 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
         VALUES_DTYPE = "int16[pyarrow]"
 
         updated_dtypes = {
-            # fmt: off
             "COOP_ID" : "int32[pyarrow]",
             "YEAR"    : "int16[pyarrow]",
             "MONTH"   : "int8[pyarrow]",
@@ -520,8 +500,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
             "MFLAG"   : MFLAGS_DTYPE,
             "QFLAG"   : QFLAGS_DTYPE,
             "SFLAG"   : SFLAGS_DTYPE,
-            # fmt: on
-        }
+        }  # fmt: skip
 
         # dtypes but with the same index as colspec.
         base_dtypes = self.rawdata_schemas["timeseries"]

@@ -301,12 +301,11 @@ class KIWI_RUNS_TASK(OldBaseTask):
             targets=self.targets.index,
         )
 
-        # fmt: off
         DS = MappingDataset({
             idx: TimeSeriesDataset(ts.loc[idx], metadata=md.loc[idx])
             for idx in md.index
         })
-        # fmt: on
+
         # construct the sampler
         subsamplers = {
             key: SequenceSampler(

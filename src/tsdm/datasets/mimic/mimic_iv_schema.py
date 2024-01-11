@@ -121,7 +121,6 @@ KEYS: TypeAlias = Literal[
 SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
     # NOTE: /HOSP/ tables
     "admissions": {
-        # fmt: off
         "subject_id"           : ID_TYPE,
         "hadm_id"              : ID_TYPE,
         "admittime"            : TIME_TYPE,
@@ -138,49 +137,37 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "edregtime"            : TIME_TYPE,
         "edouttime"            : TIME_TYPE,
         "hospital_expire_flag" : BOOL_TYPE,
-        # fmt: on
     },
     "d_hcpcs": {
-        # fmt: off
         "code"              : STRING_TYPE,
         "category"          : INT8_TYPE,
         "long_description"  : TEXT_TYPE,
         "short_description" : DICT_TYPE,
-        # fmt: on
     },
     "d_icd_diagnoses": {
-        # fmt: off
         "icd_code"    : STRING_TYPE,
         "icd_version" : ID_TYPE,
         "long_title"  : STRING_TYPE,
-        # fmt: on
     },
     "d_icd_procedures": {
-        # fmt: off
         "icd_code"    : STRING_TYPE,
         "icd_version" : ID_TYPE,
         "long_title"  : STRING_TYPE,
-        # fmt: on
     },
     "d_labitems": {
-        # fmt: off
         "itemid"   : ID_TYPE,
         "label"    : STRING_TYPE,
         "fluid"    : DICT_TYPE,
         "category" : DICT_TYPE,
-        # fmt: on
     },
     "diagnoses_icd": {
-        # fmt: off
         "subject_id"  : ID_TYPE,
         "hadm_id"     : ID_TYPE,
         "seq_num"     : ID_TYPE,
         "icd_code"    : DICT_TYPE,
         "icd_version" : ID_TYPE,
-        # fmt: on
     },
     "drgcodes": {
-        # fmt: off
         "subject_id"    : ID_TYPE,
         "hadm_id"       : ID_TYPE,
         "drg_type"      : DICT_TYPE,
@@ -188,10 +175,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "description"   : DICT_TYPE,
         "drg_severity"  : INT8_TYPE,
         "drg_mortality" : INT8_TYPE,
-        # fmt: on
     },
     "emar": {
-        # fmt: off
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,  # NOTE: filter NULLS
         "emar_id"           : STRING_TYPE,
@@ -204,10 +189,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "event_txt"         : DICT_TYPE,
         "scheduletime"      : TIME_TYPE,
         "storetime"         : TIME_TYPE,
-        # fmt: on
     },
     "emar_detail": {
-        # fmt: off
         "subject_id"                           : ID_TYPE,
         "emar_id"                              : STRING_TYPE,
         "emar_seq"                             : ID_TYPE,
@@ -241,20 +224,16 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "side"                                 : DICT_TYPE,
         "site"                                 : DICT_TYPE,
         "non_formulary_visual_verification"    : BOOL_TYPE,
-        # fmt: on
     },
     "hcpcsevents": {
-        # fmt: off
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,
         "chartdate"         : DATE_TYPE,
         "hcpcs_cd"          : DICT_TYPE,
         "seq_num"           : ID_TYPE,
         "short_description" : DICT_TYPE,
-        # fmt: on
     },
     "labevents": {
-        # fmt: off
         "labevent_id"       : ID_TYPE,
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,  # NOTE: DROP MISSING ?
@@ -271,10 +250,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "flag"              : DICT_TYPE,
         "priority"          : DICT_TYPE,
         "comments"          : TEXT_TYPE,
-        # fmt: on
     },
     "microbiologyevents": {
-        # fmt: off
         "microevent_id"       : ID_TYPE,
         "subject_id"          : ID_TYPE,
         "hadm_id"             : ID_TYPE,
@@ -300,30 +277,23 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "dilution_value"      : VALUE_TYPE,
         "interpretation"      : DICT_TYPE,
         "comments"            : TEXT_TYPE,
-        # fmt: on
     },
     "omr": {
-        # fmt: off
         "subject_id"   : ID_TYPE,
         "chartdate"    : DATE_TYPE,
         "seq_num"      : ID_TYPE,
         "result_name"  : DICT_TYPE,  # NOTE: unstack
-        "result_value" : STRING_TYPE,
-        # NOTE: split blood pressure into systolic/diastolic.
-        # fmt: on
+        "result_value" : STRING_TYPE,  # NOTE: split blood pressure into systolic/diastolic.
     },
     "patients": {
-        # fmt: off
         "subject_id"        : ID_TYPE,
         "gender"            : DICT_TYPE,
         "anchor_age"        : ID_TYPE,
         "anchor_year"       : ID_TYPE,
         "anchor_year_group" : DICT_TYPE,
         "dod"               : DATE_TYPE,
-        # fmt: on
     },
     "pharmacy": {
-        # fmt: off
         "subject_id"        :  ID_TYPE,
         "hadm_id"           :  ID_TYPE,
         "pharmacy_id"       :  ID_TYPE,
@@ -351,10 +321,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "expirationdate"    :  TIME_TYPE,
         "dispensation"      :  DICT_TYPE,
         "fill_quantity"     :  DICT_TYPE,
-        # fmt: on
     },
     "poe": {
-        # fmt: off
         "poe_id"                 : STRING_TYPE,
         "poe_seq"                : ID_TYPE,
         "subject_id"             : ID_TYPE,
@@ -367,19 +335,15 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "discontinued_by_poe_id" : STRING_TYPE,
         "order_provider_id"      : DICT_TYPE,
         "order_status"           : DICT_TYPE,
-        # fmt: on
     },
     "poe_detail": {
-        # fmt: off
         "poe_id"      : STRING_TYPE,
         "poe_seq"     : ID_TYPE,
         "subject_id"  : ID_TYPE,
         "field_name"  : DICT_TYPE,  # NOTE: unstack column
         "field_value" : STRING_TYPE,
-        # fmt: on
     },
     "prescriptions": {
-        # fmt: off
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,
         "pharmacy_id"       : ID_TYPE,
@@ -401,34 +365,26 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "form_unit_disp"    : DICT_TYPE,
         "doses_per_24_hrs"  : VALUE_TYPE,
         "route"             : DICT_TYPE,
-        # fmt: on
     },
     "procedures_icd": {
-        # fmt: off
         "subject_id"  : ID_TYPE,
         "hadm_id"     : ID_TYPE,
         "seq_num"     : ID_TYPE,
         "chartdate"   : DATE_TYPE,
         "icd_code"    : DICT_TYPE,
         "icd_version" : ID_TYPE,
-        # fmt: on
     },
     "provider": {
-        # fmt: off
-        "provider_id": STRING_TYPE,
-        # fmt: on
+        "provider_id" : STRING_TYPE,
     },
     "services": {
-        # fmt: off
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "transfertime" : TIME_TYPE,
         "prev_service" : DICT_TYPE,
         "curr_service" : DICT_TYPE,
-        # fmt: on
     },
     "transfers": {
-        # fmt: off
         "subject_id"  : ID_TYPE,
         "hadm_id"     : ID_TYPE,
         "transfer_id" : ID_TYPE,
@@ -436,16 +392,12 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "careunit"    : DICT_TYPE,
         "intime"      : TIME_TYPE,
         "outtime"     : TIME_TYPE,
-        # fmt: on
     },
     # NOTE: /ICU/ tables
     "caregiver": {
-        # fmt: off
         "caregiver_id": ID_TYPE,
-        # fmt: on
     },
     "chartevents": {
-        # fmt: off
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "stay_id"      : ID_TYPE,
@@ -457,10 +409,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "valuenum"     : VALUE_TYPE,
         "valueuom"     : DICT_TYPE,
         "warning"      : BOOL_TYPE,
-        # fmt: on
     },
     "d_items": {
-        # fmt: off
         "itemid"          : ID_TYPE,
         "label"           : STRING_TYPE,
         "abbreviation"    : STRING_TYPE,
@@ -470,10 +420,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "param_type"      : DICT_TYPE,
         "lownormalvalue"  : VALUE_TYPE,
         "highnormalvalue" : VALUE_TYPE,
-        # fmt: on
     },
     "datetimeevents": {
-        # fmt: off
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "stay_id"      : ID_TYPE,
@@ -484,10 +432,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "value"        : TIME_TYPE,
         "valueuom"     : DICT_TYPE,  # NOTE: unstack?
         "warning"      : BOOL_TYPE,
-        # fmt: on
     },
     "icustays": {
-        # fmt: off
         "subject_id"     : ID_TYPE,
         "hadm_id"        : ID_TYPE,
         "stay_id"        : ID_TYPE,
@@ -496,10 +442,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "intime"         : TIME_TYPE,
         "outtime"        : TIME_TYPE,
         "los"            : VALUE_TYPE,
-        # fmt: on
     },
     "ingredientevents": {
-        # fmt: off
         "subject_id"        : ID_TYPE,
         "hadm_id"           : ID_TYPE,
         "stay_id"           : ID_TYPE,
@@ -517,10 +461,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "statusdescription" : DICT_TYPE,
         "originalamount"    : VALUE_TYPE,
         "originalrate"      : VALUE_TYPE,
-        # fmt: on
     },
     "inputevents": {
-        # fmt: off
         "subject_id"                    : ID_TYPE,
         "hadm_id"                       : ID_TYPE,
         "stay_id"                       : ID_TYPE,
@@ -547,10 +489,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "statusdescription"             : DICT_TYPE,
         "originalamount"                : VALUE_TYPE,
         "originalrate"                  : VALUE_TYPE,
-        # fmt: on
     },
     "outputevents": {
-        # fmt: off
         "subject_id"   : ID_TYPE,
         "hadm_id"      : ID_TYPE,
         "stay_id"      : ID_TYPE,
@@ -560,10 +500,8 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "itemid"       : ID_TYPE,
         "value"        : VALUE_TYPE,
         "valueuom"     : DICT_TYPE,
-        # fmt: on
     },
     "procedureevents": {
-        # fmt: off
         "subject_id"               : ID_TYPE,
         "hadm_id"                  : ID_TYPE,
         "stay_id"                  : ID_TYPE,
@@ -586,14 +524,12 @@ SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "statusdescription"        : DICT_TYPE,
         "originalamount"           : VALUE_TYPE,
         "originalrate"             : BOOL_TYPE,
-        # fmt: on
     },
-}
+}  # fmt: skip
 
 
 UNSTACKED_SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
     "omr": {
-        # fmt: off
         "subject_id"                                   : ID_TYPE,
         "seq_num"                                      : ID_TYPE,
         "chartdate"                                    : DATE_TYPE,
@@ -616,10 +552,8 @@ UNSTACKED_SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "Blood Pressure Standing (diastolic)"          : VALUE_TYPE,
         "eGFR"                                         : DICT_TYPE,
         "Height"                                       : VALUE_TYPE,
-        # fmt: on
     },
     "poe_detail": {
-        # fmt: off
         "poe_id"              : STRING_TYPE,
         "poe_seq"             : ID_TYPE,
         "subject_id"          : ID_TYPE,
@@ -634,6 +568,5 @@ UNSTACKED_SCHEMAS: dict[KEYS, dict[str, pa.DataType]] = {
         "Level of Urgency"    : DICT_TYPE,
         "Transfer to"         : DICT_TYPE,
         "Tubes & Drains type" : DICT_TYPE,
-        # fmt: on
     },
-}
+}  # fmt: skip

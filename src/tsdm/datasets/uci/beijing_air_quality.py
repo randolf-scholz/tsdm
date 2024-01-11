@@ -82,7 +82,6 @@ KEY: TypeAlias = Literal["timeseries", "timeseries_description"]
 
 TIMESERIES_DESCRIPTION: InlineTable = {
     "data": [
-        # fmt: off
         ("PM2.5",    0, None, True, True, "μg/m³", "PM2.5 concentration"),
         ("PM10" ,    0, None, True, True, "μg/m³", "PM10 concentration" ),
         ("SO2"  ,    0, None, True, True, "μg/m³", "SO2 concentration"  ),
@@ -95,10 +94,8 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         ("RAIN" ,    0, None, True, True, "mm"   , "precipitation"      ),
         ("wd"   , None, None, True, True, None   , "wind direction"     ),
         ("WSPM" ,    0, None, True, True, "m/s"  , "wind speed"         ),
-        # fmt: on
     ],
     "schema": {
-        # fmt: off
         "variable"        : "string[pyarrow]",
         "lower_bound"     : "float32[pyarrow]",
         "upper_bound"     : "float32[pyarrow]",
@@ -106,10 +103,9 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "upper_inclusive" : "bool[pyarrow]",
         "unit"            : "string[pyarrow]",
         "description"     : "string[pyarrow]",
-        # fmt: on
     },
     "index": ["variable"],
-}
+}  # fmt: skip
 
 
 class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
@@ -140,7 +136,6 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
     }
 
     rawdata_schema = {
-        # fmt: off
         "No"      : "uint16[pyarrow]",
         "year"    : "uint16[pyarrow]",
         "month"   : "uint8[pyarrow]",
@@ -159,12 +154,12 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
         "wd"      : "string[pyarrow]",  # FIXME bug in pandas prevents using pyarrow here.
         "station" : "string[pyarrow]",  # FIXME bug in pandas prevents using pyarrow here.
         "WSPM"    : "float32[pyarrow]",
-        # fmt: on
-    }
+    }  # fmt: skip
+
     table_names = ["timeseries", "timeseries_description"]  # pyright: ignore
+
     table_schemas = {  # pyright: ignore
         "timeseries": {
-            # fmt: off
             "PM2.5" : "float[pyarrow]",
             "PM10"  : "float[pyarrow]",
             "SO2"   : "float[pyarrow]",
@@ -177,10 +172,9 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
             "RAIN"  : "float[pyarrow]",
             "wd"    : "string[pyarrow]",
             "WSPM"  : "float[pyarrow]",
-            # fmt: on
         },
         "timeseries_description": TIMESERIES_DESCRIPTION["schema"],
-    }
+    }  # fmt: skip
 
     def _clean_timeseries(self) -> DataFrame:
         self.LOGGER.info("Loading Data.")
