@@ -15,7 +15,7 @@ def test_jit_optimization() -> None:
 
         use_relu: Final[bool]
 
-        def __init__(self, use_relu: bool) -> None:
+        def __init__(self, *, use_relu: bool) -> None:
             super().__init__()
             self.use_relu = use_relu
 

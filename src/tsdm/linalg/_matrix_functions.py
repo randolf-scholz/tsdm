@@ -2,20 +2,20 @@ r"""Functions specific to rank-2 tensors."""
 
 __all__ = [
     # Functions
-    "closest_diag",
-    "closest_orth",
+    "closest_diagonal",
+    "closest_orthogonal",
     "closest_skew",
-    "closest_symm",
+    "closest_symmetric",
     "col_corr",
     "erank",
     "logarithmic_norm",
     "matrix_norm",
     "operator_norm",
     "reldist",
-    "reldist_diag",
-    "reldist_orth",
+    "reldist_diagonal",
+    "reldist_orthogonal",
     "reldist_skew",
-    "reldist_symm",
+    "reldist_symmetric",
     "relerank",
     "row_corr",
     "schatten_norm",
@@ -101,7 +101,7 @@ def row_corr(x: Tensor) -> Tensor:
 
 
 @jit.script
-def closest_symm(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
+def closest_symmetric(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
     r"""Symmetric part of square matrix.
 
     .. signature:: ``(..., n, n) -> (..., n, n)``
@@ -125,7 +125,7 @@ def closest_skew(x: Tensor, dim: tuple[int, int] = (-2, -1)) -> Tensor:
 
 
 @jit.script
-def closest_orth(x: Tensor) -> Tensor:
+def closest_orthogonal(x: Tensor) -> Tensor:
     r"""Orthogonal part of a square matrix.
 
     .. signature:: ``(..., n, n) -> (..., n, n)``
@@ -138,7 +138,7 @@ def closest_orth(x: Tensor) -> Tensor:
 
 
 @jit.script
-def closest_diag(x: Tensor) -> Tensor:
+def closest_diagonal(x: Tensor) -> Tensor:
     r"""Diagonal part of a square matrix.
 
     .. math:: \argmin_{X: X⊙𝕀 = X} ‖A-X‖
@@ -164,23 +164,23 @@ def reldist(x: Tensor, y: Tensor) -> Tensor:
 
 
 @jit.script
-def reldist_diag(x: Tensor) -> Tensor:
+def reldist_diagonal(x: Tensor) -> Tensor:
     r"""Compute the relative distance to being a diagonal matrix.
 
     .. signature:: ``(..., n, n) -> ...``
 
     .. math:: \frac{‖A-X‖}{‖A‖}  X = \argmin_{X: X⊙𝕀 = X} ‖A-X‖
     """
-    return reldist(closest_diag(x), x)
+    return reldist(closest_diagonal(x), x)
 
 
 @jit.script
-def reldist_symm(x: Tensor) -> Tensor:
+def reldist_symmetric(x: Tensor) -> Tensor:
     r"""Relative magnitude of closest_symm part.
 
     .. signature:: ``(..., n, n) -> ...``
     """
-    return reldist(closest_symm(x), x)
+    return reldist(closest_symmetric(x), x)
 
 
 @jit.script
@@ -193,14 +193,14 @@ def reldist_skew(x: Tensor) -> Tensor:
 
 
 @jit.script
-def reldist_orth(x: Tensor) -> Tensor:
+def reldist_orthogonal(x: Tensor) -> Tensor:
     r"""Relative magnitude of orthogonal part.
 
     .. signature:: ``(..., n, n) -> ...``
 
     .. math:: \min_{X: X^⊤X = 𝕀} \frac{‖A-X‖}{‖A‖}
     """
-    return reldist(closest_orth(x), x)
+    return reldist(closest_orthogonal(x), x)
 
 
 @jit.script
@@ -307,13 +307,13 @@ def logarithmic_norm(
     assert M == N, "Matrix must be square."
 
     if p == 2:
-        x = closest_symm(x, dim=dim)
+        x = closest_symmetric(x, dim=dim)
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         λ = torch.linalg.eigvals(x)
         r = λ.real.amax(dim=-1)
         return apply_keepdim(r, dim, keepdim)
     if p == -2:
-        x = closest_symm(x, dim=dim)
+        x = closest_symmetric(x, dim=dim)
         x = x.swapaxes(rowdim, -2).swapaxes(coldim, -1)
         λ = torch.linalg.eigvals(x)
         r = λ.real.amin(dim=-1)

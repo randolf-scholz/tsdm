@@ -400,9 +400,7 @@ class TableKind(Protocol):
         """
         ...
 
-    def __dataframe__(
-        self, nan_as_null: bool = False, allow_copy: bool = True
-    ) -> object:
+    def __dataframe__(self, *, allow_copy: bool = True) -> object:
         """Return the dataframe interchange object implementing the interchange protocol.
 
         References:

@@ -178,9 +178,9 @@ def detect_outliers_series(
         case None, _:
             mask_lower = pandas_false_like(s)
         case _, True:
-            mask_lower = (s < lower_bound).fillna(False)
+            mask_lower = (s < lower_bound).fillna(value=False)
         case _, False:
-            mask_lower = (s <= lower_bound).fillna(False)
+            mask_lower = (s <= lower_bound).fillna(value=False)
         case _:
             raise ValueError("Invalid combination of lower_bound and lower_inclusive.")
 
@@ -189,9 +189,9 @@ def detect_outliers_series(
         case None, _:
             mask_upper = pandas_false_like(s)
         case _, True:
-            mask_upper = (s > upper_bound).fillna(False)
+            mask_upper = (s > upper_bound).fillna(value=False)
         case _, False:
-            mask_upper = (s >= upper_bound).fillna(False)
+            mask_upper = (s >= upper_bound).fillna(value=False)
         case _:
             raise ValueError("Invalid combination of upper_bound and upper_inclusive.")
 

@@ -53,10 +53,10 @@ from tsdm.linalg import (
     matrix_norm,
     multi_norm,
     operator_norm,
-    reldist_diag,
-    reldist_orth,
+    reldist_diagonal,
+    reldist_orthogonal,
     reldist_skew,
-    reldist_symm,
+    reldist_symmetric,
     row_corr,
     schatten_norm,
 )
@@ -303,10 +303,10 @@ def log_kernel(
     if log_scalars and log_distances:
         # fmt: off
         # relative distance to some matrix groups
-        log(f"{identifier}:distances/diagonal_(relative)",       reldist_diag(K), step)
+        log(f"{identifier}:distances/diagonal_(relative)", reldist_diagonal(K), step)
         log(f"{identifier}:distances/skew-symmetric_(relative)", reldist_skew(K), step)
-        log(f"{identifier}:distances/symmetric_(relative)",      reldist_symm(K), step)
-        log(f"{identifier}:distances/orthogonal_(relative)",     reldist_orth(K), step)
+        log(f"{identifier}:distances/symmetric_(relative)", reldist_symmetric(K), step)
+        log(f"{identifier}:distances/orthogonal_(relative)", reldist_orthogonal(K), step)
         # fmt: on
 
     if log_scalars and log_linalg:

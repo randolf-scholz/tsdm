@@ -6,6 +6,7 @@ __all__ = [
     # namedtuple
     # Custom Type Aliases
     "Axes",
+    "Dims",
     "Nested",
     "Map",
     "PandasObject",
@@ -77,6 +78,8 @@ from tsdm.types.variables import K, K_contra, T, T_co, V, V_co
 # region Custom Type Aliases -----------------------------------------------------------
 Axes: TypeAlias = None | int | tuple[int, ...]
 r"""Type Alias for axes."""
+Dims: TypeAlias = None | int | list[int]
+r"""Type Alias for dimensions compatible with torchscript."""
 SizeLike: TypeAlias = int | tuple[int, ...]
 r"""Type Alias for shape-like objects."""
 

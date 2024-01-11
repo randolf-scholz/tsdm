@@ -68,7 +68,12 @@ from pyarrow import Array, Table, csv
 from tqdm.autonotebook import tqdm
 from typing_extensions import get_args
 
-from tsdm.backend.pyarrow import cast_columns, filter_nulls, force_cast
+from tsdm.backend.pyarrow import (
+    cast_columns,
+    filter_nulls,
+    force_cast,
+    unsafe_cast_columns,
+)
 from tsdm.data import strip_whitespace
 from tsdm.datasets.base import MultiTableDataset
 from tsdm.datasets.mimic.mimic_iv_schema import (
@@ -460,7 +465,7 @@ class MIMIC_IV(MIMIC_IV_RAW):
             case "outputevents":
                 pass
             case "procedureevents":
-                table = cast_columns(table, False, storetime="timestamp[s]")
+                table = unsafe_cast_columns(table, storetime="timestamp[s]")
                 time_conversion = pd.Series(
                     {"None": 0, "min": 60, "day": 60 * 60 * 24, "hour": 60 * 60},
                     dtype="duration[s][pyarrow]",

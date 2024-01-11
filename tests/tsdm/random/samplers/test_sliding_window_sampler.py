@@ -735,7 +735,7 @@ EXPECTED_RESULTS_CONTINUOUS_DATA: dict = flatten_dict(
 @mark.parametrize("horizons", [2, 3, 4], ids=lambda x: f"horizon={x}")
 @mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
 def test_sliding_window_sampler_discrete(
-    drop_last: bool, stride: int, horizons: int, mode: str
+    *, drop_last: bool, stride: int, horizons: int, mode: str
 ) -> None:
     """Test the SlidingWindowSampler."""
     sampler = SlidingSampler(
@@ -776,7 +776,7 @@ def test_sliding_window_sampler_discrete(
 @mark.parametrize("horizons", [2.5, 3.5, 4.5], ids=lambda x: f"horizon={x}")
 @mark.parametrize("mode", ["bounds", "masks", "slices", "windows"])
 def test_sliding_window_sampler_continuous(
-    drop_last: bool, stride: float, horizons: float, mode: str
+    *, drop_last: bool, stride: float, horizons: float, mode: str
 ) -> None:
     """Test the SlidingWindowSampler."""
     sampler = SlidingSampler(

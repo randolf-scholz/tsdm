@@ -260,6 +260,9 @@ indent-width = 4
 line-length = 88
 target-version = "py311"
 
+[tool.ruff.per-file-ignores]
+"src/tsdm/linalg/*" = ["FBT001", "FBT002"]
+
 [tool.ruff.lint]
 select = [
     "A",     # builtins
@@ -277,6 +280,7 @@ select = [
     "NPY",   # numpy
     "PERF",  # performance related
     "SIM",   # simplify
+    "FBT",   # boolean-trap
     "RUF",   # ruff specific
     "TRY",   # tryceratops
 ]

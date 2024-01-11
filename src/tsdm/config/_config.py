@@ -225,7 +225,7 @@ class Project:
 
         return ResultsDir()
 
-    def make_test_folders(self, dry_run: bool = True) -> None:
+    def make_test_folders(self, *, dry_run: bool = True) -> None:
         r"""Make the tests folder if it does not exist."""
         package_structure = get_package_structure(self.ROOT_PACKAGE)
 

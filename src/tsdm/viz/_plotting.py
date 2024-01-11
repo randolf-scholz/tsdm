@@ -67,7 +67,7 @@ def visualize_distribution(
     x = x[~nans]
 
     ax.grid(axis="x")
-    ax.set_axisbelow(True)
+    ax.set_axisbelow(True)  #  noqa: FBT003
 
     if log:
         base = 10 if log is True else log
@@ -265,8 +265,8 @@ def center_axes(fig: Figure, /, *, remove_labels: bool = True) -> Figure:
         ax.spines["left"].set_color("k")
         ax.spines["bottom"].set_color("k")
         ax.spines["bottom"].set_position(("data", 0))
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)  #  noqa: FBT003
+        ax.spines["right"].set_visible(False)  #  noqa: FBT003
         ax.plot(0.99, 0, ">k", transform=ax.get_yaxis_transform(), clip_on=True)
         ax.plot(0, 0.99, "^k", transform=ax.get_xaxis_transform(), clip_on=True)
     return fig

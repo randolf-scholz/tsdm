@@ -412,9 +412,10 @@ class LP(BaseMetric):
     def __init__(
         self,
         p: float = 2.0,
+        *,
         normalize: bool = False,
         axis: int | tuple[int, ...] = -1,
-    ):
+    ) -> None:
         super().__init__(normalize=normalize, axis=axis)
         self.p = p
 

@@ -10,6 +10,7 @@ __all__ = [
     "force_cast",
     "cast_columns",
     "cast_column",
+    "unsafe_cast_columns",
     "is_numeric",
     "compute_entropy",
     "filter_nulls",
@@ -202,7 +203,7 @@ def cast_column(table: Table, col: str, dtype: DataType, /, *, safe: bool) -> Ta
     return table.set_column(index, col, casted_column)
 
 
-def cast_columns(table: Table, safe: bool = True, /, **dtypes: DataType) -> Table:
+def cast_columns(table: Table, /, **dtypes: DataType) -> Table:
     """Cast columns to the given data types."""
     schema: pa.Schema = table.schema
     current_dtypes = dict(zip(schema.names, schema.types, strict=True))
@@ -212,7 +213,20 @@ def cast_columns(table: Table, safe: bool = True, /, **dtypes: DataType) -> Tabl
     new_dtypes = current_dtypes | dtypes
 
     for col, dtype in new_dtypes.items():
-        table = cast_column(table, col, dtype, safe=safe)
+        table = cast_column(table, col, dtype, safe=True)
+    return table
+
+
+def unsafe_cast_columns(table: Table, /, **dtypes: DataType) -> Table:
+    schema: pa.Schema = table.schema
+    current_dtypes = dict(zip(schema.names, schema.types, strict=True))
+    if unknown_keys := set(dtypes.keys()) - set(current_dtypes.keys()):
+        raise ValueError(f"Keys: {unknown_keys} not in table columns.")
+
+    new_dtypes = current_dtypes | dtypes
+
+    for col, dtype in new_dtypes.items():
+        table = cast_column(table, col, dtype, safe=False)
     return table
 
 
