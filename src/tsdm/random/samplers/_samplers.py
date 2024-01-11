@@ -237,12 +237,24 @@ class RandomSampler(BaseSampler[T_co]):
     index: Index = field(init=False)
     size: int = field(init=False)
 
-    # fmt: off
     @overload
-    def __init__(self: "RandomSampler[T_co]", data: MapDataset[Any, T_co], /, *, shuffle: bool = ...) -> None: ...
+    def __init__(
+        self: "RandomSampler[T_co]",
+        data: MapDataset[Any, T_co],
+        /,
+        *,
+        shuffle: bool = ...,
+        rng: Generator = ...,
+    ) -> None: ...
     @overload
-    def __init__(self: "RandomSampler[T_co]", data: IndexableDataset[T_co], /, *, shuffle: bool = ...) -> None: ...
-    # fmt: on
+    def __init__(
+        self: "RandomSampler[T_co]",
+        data: IndexableDataset[T_co],
+        /,
+        *,
+        shuffle: bool = ...,
+        rng: Generator = ...,
+    ) -> None: ...
     def __init__(self, data, /, *, shuffle=False, rng=RNG):
         """Initialize the sampler."""
         super().__init__(shuffle=shuffle, rng=rng)
