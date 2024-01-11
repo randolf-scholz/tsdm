@@ -1080,8 +1080,6 @@ class LogitEncoder(BaseEncoder[NDArray, NDArray]):
         return np.clip(1 / (1 + np.exp(-data)), 0, 1)
 
 
-
-
 class TensorSplitter(BaseEncoder):
     r"""Split tensor along specified axis."""
 

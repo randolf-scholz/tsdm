@@ -284,8 +284,6 @@ class PositionalEncoder(BaseEncoder):
         return np.arcsin(data[..., 0])
 
 
-
-
 class PeriodicEncoder(BaseEncoder):
     r"""Encode periodic data as sin/cos waves."""
 

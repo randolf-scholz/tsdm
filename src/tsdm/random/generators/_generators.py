@@ -109,7 +109,6 @@ class IVP_Solver(Protocol[T_co]):
           `y0` is passed as a keyword argument.
     """
 
-
     @abstractmethod
     def __call__(self, system: ODE | Any, t: ArrayLike, /, *, y0: ArrayLike) -> T_co:
         """Solve the initial value problem.

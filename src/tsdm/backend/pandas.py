@@ -145,9 +145,9 @@ def strip_whitespace_series(series: Series, /) -> Series:
 
 def strip_whitespace_dataframe(frame: DataFrame, /, *cols: str) -> DataFrame:
     """Strip whitespace from selected columns in a DataFrame."""
-    return frame.assign(
-        **{col: strip_whitespace_series(frame[col]) for col in (cols or frame)}
-    )
+    return frame.assign(**{
+        col: strip_whitespace_series(frame[col]) for col in (cols or frame)
+    })
 
 
 def pandas_strip_whitespace(x: P, /) -> P:

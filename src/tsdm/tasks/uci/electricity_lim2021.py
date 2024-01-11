@@ -141,23 +141,22 @@ class ElectricityLim2021(TimeSeriesTask):
     def masks(self) -> dict[KeyType, np.ndarray]:
         r"""Masks for the training, validation and test sets."""
         return {
-            "train": (self.boundaries["start"] <= self.dataset.timeindex) & (
-                self.dataset.timeindex < self.boundaries["train"]
-            ),
+            "train": (self.boundaries["start"] <= self.dataset.timeindex)
+            & (self.dataset.timeindex < self.boundaries["train"]),
             "valid": (
                 self.boundaries["train"] - self.observation_period
                 <= self.dataset.timeindex
-            ) & (self.dataset.timeindex < self.boundaries["valid"]),
+            )
+            & (self.dataset.timeindex < self.boundaries["valid"]),
             "test": (
                 self.boundaries["valid"] - self.observation_period
                 <= self.dataset.timeindex
-            ) & (self.dataset.timeindex < self.boundaries["final"]),
-            "whole": (self.boundaries["start"] <= self.dataset.timeindex) & (
-                self.dataset.timeindex < self.boundaries["final"]
-            ),
-            "joint": (self.boundaries["start"] <= self.dataset.timeindex) & (
-                self.dataset.timeindex < self.boundaries["valid"]
-            ),
+            )
+            & (self.dataset.timeindex < self.boundaries["final"]),
+            "whole": (self.boundaries["start"] <= self.dataset.timeindex)
+            & (self.dataset.timeindex < self.boundaries["final"]),
+            "joint": (self.boundaries["start"] <= self.dataset.timeindex)
+            & (self.dataset.timeindex < self.boundaries["valid"]),
         }
 
     def make_split(self, key: KeyType) -> Any:

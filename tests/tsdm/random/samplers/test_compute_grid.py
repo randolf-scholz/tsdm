@@ -34,7 +34,7 @@ def _validate_grid_results(tmin, tmax, tdelta, offset):
     try:
         assert tmin <= lower_value, f"{lower_value=}"
         assert tmin > lower_next, f"{lower_next=}"
-        assert tmax >= upper_value , f"{upper_value=}"
+        assert tmax >= upper_value, f"{upper_value=}"
         assert tmax < upper_next, f"{upper_next=}"
     except AssertionError as E:
         values = {

@@ -60,7 +60,9 @@ class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
     fill_dtype: Optional[PandasDtype] = None
     original_dtypes: Series
 
-    def __init__(self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg], /) -> None:
+    def __init__(
+        self, dtypes: PandasDTypeArg | Mapping[Any, PandasDTypeArg], /
+    ) -> None:
         match dtypes:
             case Mapping() as mapping:
                 self.target_dtypes = dict(mapping)
@@ -77,7 +79,6 @@ class DTypeEncoder(BaseEncoder[DataFrame, DataFrame]):
             self.fill_dtype = self.target_dtypes.pop(Ellipsis)
             for col in set(data.columns) - set(self.target_dtypes):
                 self.target_dtypes[col] = self.fill_dtype
-
 
     def encode(self, data: DataFrame, /) -> DataFrame:
         return data.astype(self.target_dtypes)

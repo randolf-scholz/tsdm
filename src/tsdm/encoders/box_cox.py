@@ -307,7 +307,7 @@ class LogitBoxCoxEncoder(BaseEncoder):
         p = np.insert(np.cumsum(α), 0, 0).clip(0, 1)
         β = integrate_quantile(p[1:]) - integrate_quantile(p[:-1])
         B = -2 * (β / α)
-        C = 1.0 if (μ, σ) == (0, 1) else μ ** 2 + σ**2
+        C = 1.0 if (μ, σ) == (0, 1) else μ**2 + σ**2
 
         def fun(c: NDArray) -> NDArray:
             u = np.log(np.add.outer(c, unique) / (1 + np.add.outer(c, -unique)))

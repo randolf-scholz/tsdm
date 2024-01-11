@@ -78,15 +78,17 @@ class MIMIC_III_Scholz2024(MIMIC_III):
         metadata = metadata.loc[metadata.HAS_CHARTEVENTS_DATA]
 
         # select relevant columns.
-        metadata = metadata[[
-            "SUBJECT_ID",
-            "HADM_ID",
-            "ADMITTIME",
-            "DISCHTIME",
-            "AGE",
-            "ETHNICITY",
-            "GENDER",
-            "INSURANCE",
-            "MARITAL_STATUS",
-            "RELIGION",
-        ]]
+        metadata = metadata[
+            [
+                "SUBJECT_ID",
+                "HADM_ID",
+                "ADMITTIME",
+                "DISCHTIME",
+                "AGE",
+                "ETHNICITY",
+                "GENDER",
+                "INSURANCE",
+                "MARITAL_STATUS",
+                "RELIGION",
+            ]
+        ]

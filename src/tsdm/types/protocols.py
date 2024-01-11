@@ -529,7 +529,6 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         """Number of dimensions."""
         return len(self.shape)
 
-
     @abstractmethod
     def __array__(self) -> NDArray:
         """Return a numpy array.
@@ -653,6 +652,7 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
     # def __rrshift__(self, other: Self | Scalar, /) -> Self: ...
 
     # endregion arithmetic operations --------------------------------------------------
+
 
 @runtime_checkable
 class MutableArray(NumericalArray[Scalar], Protocol[Scalar]):

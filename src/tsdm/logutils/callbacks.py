@@ -224,14 +224,16 @@ class CallbackList(BaseCallback, MutableSequence[CB]):
     def required_kwargs(self) -> set[str]:
         """The required kwargs for the callback."""
         # result: set[str] = set()
-        return set().union(*(
-            (
-                callback.required_kwargs
-                if hasattr(callback, "required_kwargs")
-                else get_mandatory_kwargs(callback)
+        return set().union(
+            *(
+                (
+                    callback.required_kwargs
+                    if hasattr(callback, "required_kwargs")
+                    else get_mandatory_kwargs(callback)
+                )
+                for callback in self.callbacks
             )
-            for callback in self.callbacks
-        ))
+        )
 
     def callback(self, i: int, /, **state_dict: Any) -> None:
         """Log something at the end of a batch/epoch."""

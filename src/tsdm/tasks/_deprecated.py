@@ -290,6 +290,6 @@ class OldBaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
             "drop_last": False,
         }
 
-        return LazyDict(
-            {key: (self.make_dataloader, (key,), kwargs) for key in self.splits}
-        )
+        return LazyDict({
+            key: (self.make_dataloader, (key,), kwargs) for key in self.splits
+        })

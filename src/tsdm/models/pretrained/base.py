@@ -176,9 +176,9 @@ class PreTrainedBase(PreTrained, metaclass=PreTrainedMetaClass):
 
         self.component_files = self.autodetect_component_files()
 
-        self.components = LazyDict(
-            {k: self.get_component for k in self.component_files}
-        )
+        self.components = LazyDict({
+            k: self.get_component for k in self.component_files
+        })
         self.device = device
 
     def __repr__(self) -> str:
