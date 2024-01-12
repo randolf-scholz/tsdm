@@ -1,8 +1,6 @@
 """Callabck protocols for TSDM."""
 
 __all__ = [
-    # generic
-    "Func",
     # generic callback-protocols
     "IntMap",
     "NullMap",
@@ -22,21 +20,10 @@ from abc import abstractmethod
 from collections.abc import Callable
 
 from numpy.typing import ArrayLike
-from typing_extensions import Protocol, SupportsIndex, SupportsInt, runtime_checkable
+from typing_extensions import Protocol, SupportsIndex, SupportsInt
 
 from tsdm.types.aliases import Axes, Scalar
-from tsdm.types.protocols import P
-from tsdm.types.variables import R, T, T_co, T_contra
-
-
-@runtime_checkable
-class Func(Protocol[P, R]):
-    """Protocol for functions, alternative to `Callable`."""
-
-    @abstractmethod
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        """Execute the callable."""
-        ...
+from tsdm.types.variables import T, T_co, T_contra
 
 
 # region generic callback-protocols ----------------------------------------------------

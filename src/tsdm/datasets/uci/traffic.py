@@ -72,14 +72,10 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     +---------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa: E501
 
-    BASE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
+    SOURCE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00204/"
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = r"https://archive.ics.uci.edu/ml/datasets/PEMS-SF"
     r"""HTTP address containing additional information about the dataset."""
-
-    def __init__(self, *, use_corrected_dates: bool = True, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.use_corrected_dates = use_corrected_dates
 
     table_names = ["timeseries", "labels", "randperm", "invperm"]  # pyright: ignore
     rawdata_files = ["PEMS-SF.zip"]
@@ -107,6 +103,10 @@ class Traffic(MultiTableDataset[KEY, DataFrame]):
     labels: DataFrame
     randperm: DataFrame
     invperm: DataFrame
+
+    def __init__(self, *, use_corrected_dates: bool = True, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.use_corrected_dates = use_corrected_dates
 
     @cached_property
     def weekdays(self) -> dict[int, str]:

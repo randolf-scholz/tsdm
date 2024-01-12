@@ -266,7 +266,7 @@ class USHCN(MultiTableDataset[KEY, DataFrame]):
       at the station (i.e., the number of hours that must be added to local standard time to match UTC).
     """
 
-    BASE_URL = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
+    SOURCE_URL = "https://cdiac.ess-dive.lbl.gov/ftp/ushcn_daily/"
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = "https://cdiac.ess-dive.lbl.gov/epubs/ndp/ushcn/daily_doc.html"
     r"""HTTP address containing additional information about the dataset."""

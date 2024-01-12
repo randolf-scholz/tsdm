@@ -57,7 +57,7 @@ class MIMIC_III_DeBrouwer2019(MultiTableDataset[KEY, DataFrame]):
         so e.g. the last patient was roughly 250 hours, 10½ days.
     """
 
-    BASE_URL = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
+    SOURCE_URL = r"https://physionet.org/content/mimiciii/get-zip/1.4/"
     INFO_URL = r"https://physionet.org/content/mimiciii/1.4/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/edebrouwer/gru_ode_bayes/"

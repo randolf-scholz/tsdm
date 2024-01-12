@@ -120,7 +120,7 @@ class BeijingAirQuality(MultiTableDataset[KEY, DataFrame]):
     +--------------------------------+---------------------------+---------------------------+--------+-------------------------+------------+
     """  # pylint: disable=line-too-long # noqa: E501
 
-    BASE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
+    SOURCE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00501/"
     r"""HTTP address from where the dataset can be downloaded."""
 
     INFO_URL = (

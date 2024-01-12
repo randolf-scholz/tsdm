@@ -309,7 +309,7 @@ class PhysioNet2012(MultiTableDataset[KEY, DataFrame]):
     Entries of NaN (not a number) indicate that there was no recorded measurement of a variable at the time.
     """
 
-    BASE_URL = r"https://archive.physionet.org/challenge/2012/"
+    SOURCE_URL = r"https://archive.physionet.org/challenge/2012/"
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = r"https://archive.physionet.org/challenge/2012/"
     r"""HTTP address containing additional information about the dataset."""

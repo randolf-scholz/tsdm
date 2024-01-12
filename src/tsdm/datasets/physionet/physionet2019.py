@@ -285,7 +285,7 @@ class PhysioNet2019(MultiTableDataset[KEY, DataFrame]):
     indicate that there was no recorded measurement of a variable at the time interval.
     """
 
-    BASE_URL = r"https://archive.physionet.org/users/shared/challenge-2019/"
+    SOURCE_URL = r"https://archive.physionet.org/users/shared/challenge-2019/"
     r"""HTTP address from where the dataset can be downloaded"""
     INFO_URL = r"https://physionet.org/content/challenge-2019/"
     r"""HTTP address containing additional information about the dataset"""

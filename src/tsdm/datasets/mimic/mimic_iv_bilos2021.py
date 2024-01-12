@@ -45,7 +45,7 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
     MIMIC-IV is intended to carry on the success of MIMIC-III and support a broad set of applications within healthcare.
     """
 
-    BASE_URL = r"https://physionet.org/content/mimiciv/get-zip/1.0/"
+    SOURCE_URL = r"https://physionet.org/content/mimiciv/get-zip/1.0/"
     INFO_URL = r"https://physionet.org/content/mimiciv/1.0/"
     HOME_URL = r"https://mimic.mit.edu/"
     GITHUB_URL = r"https://github.com/mbilos/neural-flows-experiments"

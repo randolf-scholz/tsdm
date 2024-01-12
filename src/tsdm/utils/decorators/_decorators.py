@@ -34,18 +34,19 @@ from torch import jit
 from typing_extensions import (
     Any,
     Concatenate,
+    Literal,
     NamedTuple,
     Optional,
     ParamSpec,
     Protocol,
     Self,
     cast,
+    overload,
 )
 
 from tsdm.types.aliases import Nested
-from tsdm.types.callback_protocols import Func
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import CollectionType, R, T
+from tsdm.types.variables import CallableType as F, CollectionType, R, T
 from tsdm.utils.funcutils import rpartial
 
 __logger__: logging.Logger = logging.getLogger(__name__)
@@ -88,28 +89,6 @@ class ClassDecorator(Protocol):
         ...
 
 
-def collect_exit_points(func: Callable) -> list[ast.Return]:
-    """Collect all exit points of a function as ast nodes."""
-    tree = ast.parse(getsource(func))
-    return [node for node in ast.walk(tree) if isinstance(node, ast.Return)]
-
-
-def exit_point_names(func: Callable) -> list[tuple[str, ...]]:
-    """Return the variable names used in exit nodes."""
-    exit_points = collect_exit_points(func)
-
-    var_names = []
-    for exit_point in exit_points:
-        assert isinstance(exit_point.value, ast.Tuple)
-
-        e: tuple[str, ...] = ()
-        for obj in exit_point.value.elts:
-            assert isinstance(obj, ast.Name)
-            e += (obj.id,)
-        var_names.append(e)
-    return var_names
-
-
 @dataclass
 class DecoratorError(Exception):
     r"""Raise Error related to decorator construction."""
@@ -141,15 +120,7 @@ class DecoratorError(Exception):
         return super().__str__() + "\n" + "\n".join(default_message)
 
 
-def _last_positional_only_arg_index(sig: Signature) -> int:
-    r"""Returns last index for which all preceeding parameters are POSITIONAL_ONLY."""
-    for i, param in enumerate(sig.parameters.values()):
-        if param.kind is not POSITIONAL_ONLY:
-            return i
-    return len(sig.parameters)
-
-
-def decorator(deco: Callable) -> Callable:
+def decorator(deco: Callable, /) -> Callable:
     r"""Meta-Decorator for constructing parametrized decorators.
 
     There are 3 different ways of using decorators:
@@ -222,12 +193,11 @@ def decorator(deco: Callable) -> Callable:
     here, and also in the case of wrap_func(func), the result should be an identity operation.
     However, the other case
 
-    >>> @wrap_func(before)
-    ... def func(x):
-    ...     pass
-    Traceback (most recent call last):
-        ...
-    NameError: name 'before' is not defined
+    >>> @wrap_func(before=lambda: print("Hello", end=""))
+    ... def func():
+    ...     print(" World!")
+    >>> func()
+    Hello World!
 
     the result is a wrapped function. The fundamental problem is a disambiguation between the cases.
     In either case, the decorator sees as input (callable, None, None) and so it cannot distinguish
@@ -340,7 +310,7 @@ def decorator(deco: Callable) -> Callable:
     return _parametrized_decorator
 
 
-def attribute(func: Callable[[T], R]) -> R:
+def attribute(func: Callable[[T], R], /) -> R:
     r"""Create a decorator that converts method to attribute."""
 
     @wraps(func, updated=())
@@ -364,7 +334,7 @@ def attribute(func: Callable[[T], R]) -> R:
     return cast(R, _attribute(func))
 
 
-def debug(func: Callable[P, R]) -> Callable[P, R]:
+def debug(func: Callable[P, R], /) -> Callable[P, R]:
     """Print the function signature and return value."""
 
     @wraps(func)
@@ -380,13 +350,58 @@ def debug(func: Callable[P, R]) -> Callable[P, R]:
     return _wrapper
 
 
+def lazy_torch_jit(func: Callable[P, R], /) -> Callable[P, R]:
+    """Create decorator to lazily compile a function with `torch.jit.script`."""
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        # script the original function if it hasn't been scripted yet
+        if wrapper.__scripted is None:  # type: ignore[attr-defined]
+            wrapper.__scripted = jit.script(wrapper.__original_fn)  # type: ignore[attr-defined]
+        return wrapper.__scripted(*args, **kwargs)  # type: ignore[attr-defined]
+
+    wrapper.__original_fn = func  # type: ignore[attr-defined]
+    wrapper.__scripted = None  # type: ignore[attr-defined]
+    wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
+    return wrapper
+
+
+def recurse_on_builtin_container(
+    func: Callable[[T], R], /, *, kind: type[T]
+) -> Callable[[Nested[T]], Nested[R]]:
+    r"""Apply function to nested iterables of a given kind.
+
+    Args:
+        kind: The type of the leave nodes
+        func: A function to apply to all leave Nodes
+    """
+    if issubclass(kind, (tuple, list, set, frozenset, dict)):
+        raise TypeError(f"kind must not be a builtin container! Got {kind=}")
+
+    @wraps(func)
+    def recurse(x: Nested[T]) -> Nested[R]:
+        match x:
+            case kind():  # type: ignore[misc]
+                return func(x)  # type: ignore[unreachable]
+            case dict() as Dict:
+                return {k: recurse(v) for k, v in Dict.items()}
+            case list() as List:
+                return [recurse(obj) for obj in List]
+            case tuple() as Tuple:
+                return tuple(recurse(obj) for obj in Tuple)
+            case set() as Set:
+                return {recurse(obj) for obj in Set}  # pyright: ignore
+            case frozenset() as FrozenSet:
+                return frozenset(recurse(obj) for obj in FrozenSet)
+            case _:
+                raise TypeError(f"Unsupported type: {type(x)}")
+
+    return recurse
+
+
 @decorator
 def timefun(
-    func: Callable[P, R],
-    /,
-    *,
-    append: bool = False,
-    loglevel: int = logging.WARNING,
+    func: Callable[P, R], /, *, append: bool = False, loglevel: int = logging.WARNING
 ) -> Callable[P, R | tuple[R, float]]:
     r"""Log the execution time of the function. Use as decorator.
 
@@ -423,7 +438,7 @@ def timefun(
     return _timed_fun
 
 
-def trace(func: Callable[P, R]) -> Callable[P, R]:
+def trace(func: Callable[P, R], /) -> Callable[P, R]:
     r"""Log entering and exiting of function."""
     logger = logging.getLogger("trace")
 
@@ -456,10 +471,7 @@ def trace(func: Callable[P, R]) -> Callable[P, R]:
 
 @decorator
 def vectorize(
-    func: Callable[[T], R],
-    /,
-    *,
-    kind: type[CollectionType],
+    func: Callable[[T], R], /, *, kind: type[CollectionType]
 ) -> Callable[[T | CollectionType], R | CollectionType]:
     r"""Vectorize a function with a single, positional-only input.
 
@@ -512,7 +524,7 @@ def wrap_func(
             logger.debug("No hooks to add, returning as-is.")
             return func
 
-        case Func() as pre, None, True:
+        case Callable() as pre, None, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -520,7 +532,7 @@ def wrap_func(
                 pre(*args, **kwargs)
                 return func(*args, **kwargs)
 
-        case None, Func() as post, True:
+        case None, Callable() as post, True:  # type: ignore[misc]
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -529,7 +541,7 @@ def wrap_func(
                 post(*args, **kwargs)
                 return result
 
-        case Func() as pre, Func() as post, True:
+        case Callable() as pre, Callable() as post, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -539,7 +551,7 @@ def wrap_func(
                 post(*args, **kwargs)
                 return result
 
-        case Func() as pre, None, False:
+        case Callable() as pre, None, False:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -547,7 +559,7 @@ def wrap_func(
                 pre()
                 return func(*args, **kwargs)
 
-        case None, Func() as post, False:
+        case None, Callable() as post, False:  # type: ignore[misc]
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -556,7 +568,7 @@ def wrap_func(
                 post()
                 return result
 
-        case Func() as pre, Func() as post, False:
+        case Callable() as pre, Callable() as post, False:  # type: ignore[misc]
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -589,7 +601,7 @@ def wrap_method(
             logger.debug("No hooks to add, returning as-is.")
             return func
 
-        case Func() as pre, None, True:
+        case Callable() as pre, None, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -599,7 +611,7 @@ def wrap_method(
                 pre(self, *args, **kwargs)
                 return func(self, *args, **kwargs)
 
-        case None, Func() as post, True:
+        case None, Callable() as post, True:  # type: ignore[misc]
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -608,7 +620,7 @@ def wrap_method(
                 post(self, *args, **kwargs)
                 return result
 
-        case Func() as pre, Func() as post, True:
+        case Callable() as pre, Callable() as post, True:  # type: ignore[misc]
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -618,7 +630,7 @@ def wrap_method(
                 post(self, *args, **kwargs)
                 return result
 
-        case Func() as pre, None, False:
+        case Callable() as pre, None, False:  # type: ignore[misc]
             logger.debug("Adding pre hook %s", pre)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -626,7 +638,7 @@ def wrap_method(
                 pre(self)
                 return func(self, *args, **kwargs)
 
-        case None, Func() as post, False:
+        case None, Callable() as post, False:  # type: ignore[misc]
             logger.debug("Adding post hook %s", post)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -635,7 +647,7 @@ def wrap_method(
                 post(self)
                 return result
 
-        case Func() as pre, Func() as post, False:
+        case Callable() as pre, Callable() as post, False:  # type: ignore[misc]
             logger.debug("Adding pre hook %s and post hook %s", pre, post)  # type: ignore[unreachable]
 
             @wraps(func)
@@ -651,20 +663,26 @@ def wrap_method(
     return _method  # type: ignore[unreachable]
 
 
-def lazy_torch_jit(func: Callable[P, R]) -> Callable[P, R]:
-    """Create decorator to lazily compile a function with `torch.jit.script`."""
+def collect_exit_points(func: Callable, /) -> list[ast.Return]:
+    """Collect all exit points of a function as ast nodes."""
+    tree = ast.parse(getsource(func))
+    return [node for node in ast.walk(tree) if isinstance(node, ast.Return)]
 
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        # script the original function if it hasn't been scripted yet
-        if wrapper.__scripted is None:  # type: ignore[attr-defined]
-            wrapper.__scripted = jit.script(wrapper.__original_fn)  # type: ignore[attr-defined]
-        return wrapper.__scripted(*args, **kwargs)  # type: ignore[attr-defined]
 
-    wrapper.__original_fn = func  # type: ignore[attr-defined]
-    wrapper.__scripted = None  # type: ignore[attr-defined]
-    wrapper.__script_if_tracing_wrapper = True  # type: ignore[attr-defined]
-    return wrapper
+def exit_point_names(func: Callable, /) -> list[tuple[str, ...]]:
+    """Return the variable names used in exit nodes."""
+    exit_points = collect_exit_points(func)
+
+    var_names = []
+    for exit_point in exit_points:
+        assert isinstance(exit_point.value, ast.Tuple)
+
+        e: tuple[str, ...] = ()
+        for obj in exit_point.value.elts:
+            assert isinstance(obj, ast.Name)
+            e += (obj.id,)
+        var_names.append(e)
+    return var_names
 
 
 @decorator
@@ -712,42 +730,6 @@ def return_namedtuple(
         return tuple_type(*func(*func_args, **func_kwargs))
 
     return _wrapper
-
-
-def recurse_on_builtin_container(
-    func: Callable[[T], R],
-    /,
-    *,
-    kind: type[T],
-) -> Callable[[Nested[T]], Nested[R]]:
-    r"""Apply function to nested iterables of a given kind.
-
-    Args:
-        kind: The type of the leave nodes
-        func: A function to apply to all leave Nodes
-    """
-    if issubclass(kind, (tuple, list, set, frozenset, dict)):
-        raise TypeError(f"kind must not be a builtin container! Got {kind=}")
-
-    @wraps(func)
-    def recurse(x: Nested[T]) -> Nested[R]:
-        match x:
-            case kind():  # type: ignore[misc]
-                return func(x)  # type: ignore[unreachable]
-            case dict() as Dict:
-                return {k: recurse(v) for k, v in Dict.items()}
-            case list() as List:
-                return [recurse(obj) for obj in List]
-            case tuple() as Tuple:
-                return tuple(recurse(obj) for obj in Tuple)
-            case set() as Set:
-                return {recurse(obj) for obj in Set}  # pyright: ignore
-            case frozenset() as FrozenSet:
-                return frozenset(recurse(obj) for obj in FrozenSet)
-            case _:
-                raise TypeError(f"Unsupported type: {type(x)}")
-
-    return recurse
 
 
 # def extends(parent_func: Callable[P, None], /) -> Callable[[Callable], Callable]:

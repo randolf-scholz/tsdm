@@ -757,8 +757,6 @@
     </inspection_tool>
     <inspection_tool class="PyUnusedLocalInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="PyVulnerableApiCodeInspection" enabled="false" level="WARNING" enabled_by_default="false" />
-    <inspection_tool class="PydanticInspection" enabled="false" level="WARNING" enabled_by_default="false" />
-    <inspection_tool class="PydanticTypeCheckerInspection" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="PyprojectInspection" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="PyramidSetupInspection" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="QodanaSanity" enabled="false" level="ERROR" enabled_by_default="false" />

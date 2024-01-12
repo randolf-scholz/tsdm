@@ -74,9 +74,9 @@ def return_namedtuple(
         raise ValueError("Number of names does not match number of return values.")
 
     # create namedtuple
-    tuple_type: type[tuple] = NamedTuple(
+    tuple_type: type[tuple] = NamedTuple(  # type: ignore[misc]
         name, zip(field_names, type_hints, strict=True)
-    )  # type: ignore[misc]
+    )
 
     @wraps(func)
     def _wrapper(*func_args: P.args, **func_kwargs: P.kwargs) -> tuple:

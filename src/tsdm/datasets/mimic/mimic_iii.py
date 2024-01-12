@@ -65,7 +65,7 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
 
     __version__ = "1.4"
 
-    BASE_URL = r"https://physionet.org/content/mimiciii/get-zip/"
+    SOURCE_URL = r"https://physionet.org/content/mimiciii/get-zip/"
     INFO_URL = r"https://physionet.org/content/mimiciii/"
     HOME_URL = r"https://mimic.mit.edu/"
 

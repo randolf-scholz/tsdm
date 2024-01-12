@@ -23,7 +23,7 @@ class ETT(MultiTableDataset[KEY, DataFrame]):
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
     """  # pylint: disable=line-too-long # noqa: E501
 
-    BASE_URL = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
+    SOURCE_URL = r"https://github.com/zhouhaoyi/ETDataset/tree/main/ETT-small/"
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = r"https://github.com/zhouhaoyi/ETDataset"
     r"""HTTP address containing additional information about the dataset."""

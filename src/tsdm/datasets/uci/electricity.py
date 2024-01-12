@@ -88,7 +88,7 @@ class Electricity(SingleTableDataset):
         At the given dates, replace zero with NaN.
     """  # noqa: E501
 
-    BASE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
+    SOURCE_URL = r"https://archive.ics.uci.edu/ml/machine-learning-databases/00321/"
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL = (
         r"https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014"

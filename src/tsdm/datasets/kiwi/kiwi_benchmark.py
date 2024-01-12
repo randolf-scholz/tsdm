@@ -18,7 +18,7 @@ class KiwiBenchmark(MultiTableDataset):
 
     # https://tubcloud.tu-berlin.de/s/YA65b8iieQoWQTW
     # BASE_URL = r"https://tubcloud.tu-berlin.de/s/rorBS7Lwbgmreti/download/"
-    BASE_URL = r"https://tubcloud.tu-berlin.de/s/YA65b8iieQoWQTW/download/"
+    SOURCE_URL = r"https://tubcloud.tu-berlin.de/s/YA65b8iieQoWQTW/download/"
     INFO_URL = r"https://kiwi-biolab.de/"
     HOME_URL = r"https://kiwi-biolab.de/"
     GITHUB_URL = r"https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/kiwi-dataset"

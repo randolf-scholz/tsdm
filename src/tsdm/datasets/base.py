@@ -33,6 +33,7 @@ from tqdm.autonotebook import tqdm
 from typing_extensions import (
     Any,
     ClassVar,
+    Generic,
     Optional,
     Protocol,
     overload,
@@ -43,12 +44,11 @@ from tsdm.config import CONFIG
 from tsdm.testing.hash import validate_file_hash, validate_table_hash
 from tsdm.types.aliases import PathLike
 from tsdm.types.variables import T_co, str_var as Key
-from tsdm.utils import paths_exists
+from tsdm.utils import paths_exists, remote
 from tsdm.utils.decorators import wrap_method
 from tsdm.utils.funcutils import get_return_typehint
 from tsdm.utils.lazydict import LazyDict, LazyValue
 from tsdm.utils.pprint import repr_array, repr_mapping
-from tsdm.utils.remote import download
 
 
 @runtime_checkable
@@ -58,34 +58,48 @@ class Dataset(Protocol[T_co]):
     # TODO: make a bug report. Mypy does not honor the type hint for INFO_URL
     # INFO_URL: ClassVar[Optional[str]]
     # r"""HTTP address containing additional information about the dataset."""
+    SOURCE_URL: ClassVar[str] = NotImplemented
+    r"""Web address from where the dataset can be downloaded."""
+    INFO_URL: ClassVar[str] = NotImplemented
+    r"""Web address containing documentational information about the dataset."""
     RAWDATA_DIR: ClassVar[Path]
-    r"""The directory where the raw data is stored."""
+    r"""Directory where the raw data is stored."""
     DATASET_DIR: ClassVar[Path]
-    r"""The directory where the dataset is stored."""
+    r"""Directory where the dataset is stored."""
 
     @classmethod
-    @abstractmethod
     def info(cls) -> None:
-        """Print information about the dataset."""
-        ...
+        r"""Open dataset information in browser."""
+        if cls.INFO_URL is NotImplemented:
+            print(cls.__doc__)
+        else:
+            webbrowser.open_new_tab(cls.INFO_URL)
 
     @property
     @abstractmethod
-    def rawdata_paths(self) -> Mapping[str, Path]:
-        """Return list of paths to the rawdata files."""
+    def rawdata_files(self) -> Sequence[str]:
+        """Return list of file names that make up the raw data."""
         ...
+
+    @property
+    def rawdata_paths(self) -> Mapping[str, Path]:
+        """Return mapping from filenames to paths to the rawdata files."""
+        return {
+            str(fname): (self.RAWDATA_DIR / fname).absolute()
+            for fname in self.rawdata_files
+        }
 
     # rawdata_paths: Mapping[str, Path]  # type: ignore[no-redef]
     # # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @abstractmethod
-    def clean(self) -> T_co | None:
-        """Clean the dataset."""
+    def download(self) -> None:
+        """Download the dataset."""
         ...
 
     @abstractmethod
-    def download(self) -> None:
-        """Download the dataset."""
+    def clean(self) -> None:
+        """Clean the dataset."""
         ...
 
     @abstractmethod
@@ -119,7 +133,7 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
                 self.DATASET_DIR = CONFIG.DATASETDIR / self.__name__
 
         # add post_init hook
-        self.__init__ = wrap_method(self.__init__, after=self.__post_init__)
+        self.__init__ = wrap_method(self.__init__, after=self.__post_init__)  # type: ignore[misc]
 
 
 class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
@@ -142,7 +156,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
     DEFAULT_FILE_FORMAT: ClassVar[str] = "parquet"
     r"""Default format for the dataset."""
 
-    BASE_URL: ClassVar[str] = NotImplemented
+    SOURCE_URL: ClassVar[str] = NotImplemented
     r"""HTTP address from where the dataset can be downloaded."""
     INFO_URL: ClassVar[str] = NotImplemented
     r"""HTTP address containing additional information about the dataset."""
@@ -207,13 +221,6 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
             self.clean()
             self.load(initializing=True)
 
-    @property
-    def version_info(self) -> tuple[int, ...]:
-        r"""Version information of the dataset."""
-        if self.__version__ is NotImplemented:
-            return NotImplemented
-        return tuple(int(i) for i in self.__version__.split("."))
-
     def __repr__(self) -> str:
         r"""Return a string representation of the dataset."""
         return f"{self.__class__.__name__}()"
@@ -262,29 +269,12 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
 
         raise NotImplementedError(f"No loader for {file_type=}")
 
-    @classmethod
-    def info(cls) -> None:
-        r"""Open dataset information in browser."""
-        if cls.INFO_URL is NotImplemented:
-            print(cls.__doc__)
-        else:
-            webbrowser.open_new_tab(cls.INFO_URL)
-
     @property
-    @abstractmethod
-    def rawdata_files(self) -> Sequence[str]:  # pyright: ignore
-        r"""File names of the raw dataset files."""
-
-    rawdata_files: Sequence[str]  # type: ignore[no-redef]
-    # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
-
-    @property
-    def rawdata_paths(self) -> Mapping[str, Path]:
-        r"""Absolute paths corresponding to the raw dataset file(s)."""
-        return {
-            str(fname): (self.RAWDATA_DIR / fname).absolute()
-            for fname in self.rawdata_files
-        }
+    def version_info(self) -> tuple[int, ...]:
+        r"""Version information of the dataset."""
+        if self.__version__ is NotImplemented:
+            return NotImplemented
+        return tuple(int(i) for i in self.__version__.split("."))
 
     @cached_property
     def rawdata_valid(self) -> bool:
@@ -307,16 +297,18 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
 
         Preferably, use the '.parquet' data format.
         """
+        ...
 
     @abstractmethod
     def load(self, *, initializing: bool = False) -> T_co:
         r"""Load the pre-processed dataset."""
+        ...
 
-    @classmethod
-    def download_from_url(cls, url: str, path: PathLike, /, **options: Any) -> None:
+    def download_from_url(self, url: str, path: PathLike, /, **options: Any) -> None:
         r"""Download files from a URL."""
-        cls.LOGGER.debug("Downloading from %s", url)
         parsed_url = urlparse(url)
+        path = Path(path)
+        target_directory = path.parent
 
         match parsed_url.netloc:
             case "www.kaggle.com":
@@ -325,7 +317,7 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
                 kaggle_name = Path(parsed_url.path).name
                 subprocess.run(
                     "kaggle competitions download"
-                    f" -p {cls.RAWDATA_DIR} -c {kaggle_name} {opts}",
+                    f" -p {target_directory} -c {kaggle_name} {opts}",
                     shell=True,
                     check=True,
                 )
@@ -333,24 +325,25 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
                 opts = " ".join(f"--{k} {v}" for k, v in options.items())
                 svn_url = url.replace("tree/main", "trunk")
                 subprocess.run(
-                    f"svn export --force {svn_url} {cls.RAWDATA_DIR} {opts}",
+                    f"svn export --force {svn_url} {target_directory} {opts}",
                     shell=True,
                     check=True,
                 )
             case _:  # default parsing, including for UCI dataset
-                download(url, path, **options)
+                remote.download(url, path, **options)
 
     def download_file(self, fname: str, /) -> None:
         r"""Download a single rawdata file.
 
         Override this method for custom download logic.
         """
-        if self.BASE_URL is NotImplemented:
+        if self.SOURCE_URL is NotImplemented:
             self.LOGGER.debug("Dataset provides no base_url. Assumed offline")
             return
 
-        url = self.BASE_URL + fname
+        url = self.SOURCE_URL + fname
         path = self.RAWDATA_DIR / fname
+        self.LOGGER.debug("Downloading from %s", url)
         self.download_from_url(url, path)
 
     def download(
@@ -383,28 +376,42 @@ class BaseDataset(Dataset[T_co], metaclass=BaseDatasetMetaClass):
         if validate and self.rawdata_hashes is not NotImplemented:
             validate_file_hash(self.rawdata_paths[key], self.rawdata_hashes)
 
-    def remove_rawdata_files(self) -> None:
+    def remove_rawdata_files(self, *, ask_permission: bool = True) -> None:
         r"""Recreate the rawdata directory."""
         if not self.RAWDATA_DIR.exists():
-            warnings.warn(f"{self.RAWDATA_DIR} does not exist!", stacklevel=2)
-            return
-        # ask for confirmation
-        if input(f"Delete {self.RAWDATA_DIR}? [y/N] ").lower() != "y":
+            raise FileNotFoundError(f"{self.RAWDATA_DIR} does not exist!")
+
+        if (
+            ask_permission
+            and input(f"Delete {self.RAWDATA_DIR}? [y/N] ").lower() == "y"
+        ):
             return
 
-        shutil.rmtree(self.RAWDATA_DIR)
+        try:  # remove the rawdata directory
+            shutil.rmtree(self.RAWDATA_DIR)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to delete {self.RAWDATA_DIR}") from exc
+
+        # recreate the rawdata directory
         self.RAWDATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    def remove_dataset_files(self) -> None:
+    def remove_dataset_files(self, *, ask_permission: bool = True) -> None:
         r"""Recreate the dataset directory."""
         if not self.DATASET_DIR.exists():
-            warnings.warn(f"{self.DATASET_DIR} does not exist!", stacklevel=2)
-            return
-        # ask for confirmation
-        if input(f"Delete {self.DATASET_DIR}? [y/N] ").lower() != "y":
+            raise FileNotFoundError(f"{self.DATASET_DIR} does not exist!")
+
+        if (
+            ask_permission
+            and input(f"Delete {self.DATASET_DIR}? [y/N] ").lower() == "y"
+        ):
             return
 
-        shutil.rmtree(self.DATASET_DIR)
+        try:  # remove the dataset directory
+            shutil.rmtree(self.DATASET_DIR)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to delete {self.DATASET_DIR}") from exc
+
+        # recreate the dataset directory
         self.DATASET_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -538,7 +545,9 @@ class SingleTableDataset(BaseDataset[T_co]):
             validate_file_hash(self.dataset_path, self.dataset_hash)
 
 
-class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
+class MultiTableDataset(
+    BaseDataset[dict[Key, T_co]], Mapping[Key, T_co], Generic[Key, T_co]
+):
     r"""Dataset class that consists of multiple tables.
 
     The tables are stored in a dictionary-like object.
@@ -675,6 +684,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
         If a table is returned, the `self.serialize` method is used to write it to disk.
         If manually writing the table to disk, return None.
         """
+        ...
 
     def clean(
         self,
@@ -747,7 +757,6 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
     @overload
     def load(
         self,
-        key: None = ...,
         *,
         force: bool = ...,
         validate: bool = ...,
@@ -756,7 +765,7 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
     @overload
     def load(
         self,
-        key: Key = ...,
+        key: Key,
         *,
         force: bool = ...,
         validate: bool = ...,
@@ -764,12 +773,12 @@ class MultiTableDataset(Mapping[Key, T_co], BaseDataset[T_co]):
     ) -> T_co: ...
     def load(
         self,
-        key=None,
+        key: Optional[Key] = None,
         *,
-        force=False,
-        validate=True,
-        initializing=False,
-    ):
+        force: bool = False,
+        validate: bool = True,
+        initializing: bool = False,
+    ) -> T_co | dict[Key, T_co]:
         r"""Load the selected DATASET_OBJECT.
 
         Args:

@@ -208,7 +208,7 @@ def is_mandatory_arg(func_or_param, name=None, /):
                 VAR_KEYWORD,
             }
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)
+            param = get_parameter(function, name)  # type: ignore[has-type]
             return is_mandatory_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -228,7 +228,7 @@ def is_positional_arg(func_or_param, name=None, /):
                 VAR_POSITIONAL,
             }
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)
+            param = get_parameter(function, name)  # type: ignore[has-type]
             return is_positional_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -244,7 +244,7 @@ def is_positional_only_arg(func_or_param, name=None, /):
         case Parameter() as param, None:
             return param.kind in {POSITIONAL_ONLY, VAR_POSITIONAL}
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)
+            param = get_parameter(function, name)  # type: ignore[has-type]
             return is_positional_only_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -260,7 +260,7 @@ def is_keyword_arg(func_or_param, name=None, /):
         case Parameter() as param, None:
             return param.kind in {KEYWORD_ONLY, POSITIONAL_OR_KEYWORD, VAR_KEYWORD}
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)
+            param = get_parameter(function, name)  # type: ignore[has-type]
             return is_keyword_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -276,7 +276,7 @@ def is_keyword_only_arg(func_or_param, name=None, /):
         case Parameter() as param, None:
             return param.kind in {KEYWORD_ONLY, VAR_KEYWORD}
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)
+            param = get_parameter(function, name)  # type: ignore[has-type]
             return is_keyword_only_arg(param)
         case _:
             raise TypeError("Unsupported input types.")
@@ -292,7 +292,7 @@ def is_variadic_arg(func_or_param, name=None, /):
         case Parameter() as param, None:
             return param.kind in {VAR_POSITIONAL, VAR_KEYWORD}
         case Callable() as function, str(name):  # type: ignore[misc]
-            param = get_parameter(function, name)
+            param = get_parameter(function, name)  # type: ignore[has-type]
             return is_variadic_arg(param)
         case _:
             raise TypeError("Unsupported input types.")

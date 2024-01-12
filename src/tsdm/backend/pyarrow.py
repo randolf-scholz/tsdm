@@ -54,9 +54,9 @@ def is_string_array(arr: Array, /) -> bool:
         case _ if arr.type in STRING_TYPES:
             return True
         case pa.ListType(value_type=value_type):
-            return value_type in STRING_TYPES
+            return value_type in STRING_TYPES  # type: ignore[has-type]
         case pa.DictionaryType(value_type=value_type):
-            return value_type in STRING_TYPES
+            return value_type in STRING_TYPES  # type: ignore[has-type]
         case _:
             return False
 

@@ -163,12 +163,7 @@ class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
         super().__init_subclass__()  # Important!
 
         @wraps(cls.callback)
-        def __call__(
-            self,
-            i: int,
-            /,  # pyright: ignore
-            **state_dict: P.kwargs,
-        ) -> None:
+        def __call__(self, i: int, /, **state_dict: P.kwargs) -> None:
             """Log something at the end of a batch/epoch."""
             if i % self.frequency == 0:
                 self.callback(i, **state_dict)

@@ -274,7 +274,7 @@ class KiwiRuns(MultiTableDataset):
         ]
     """
 
-    BASE_URL = (
+    SOURCE_URL = (
         "https://owncloud.innocampus.tu-berlin.de/index.php/s/fGFEJicrcjsxDBd/download/"
     )
 

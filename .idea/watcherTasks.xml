@@ -22,7 +22,7 @@
       <envs />
     </TaskOptions>
     <TaskOptions isEnabled="true">
-      <option name="arguments" value="format $FilePath$" />
+      <option name="arguments" value="format $FilePath$ --preview" />
       <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
       <option name="exitCodeBehavior" value="ERROR" />

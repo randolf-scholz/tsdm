@@ -19,7 +19,7 @@ class USHCN_DeBrouwer2019(SingleTableDataset):
             <https://proceedings.neurips.cc/paper/2019>`_
     """
 
-    BASE_URL = (
+    SOURCE_URL = (
         r"https://raw.githubusercontent.com/edebrouwer/gru_ode_bayes/"
         r"master/gru_ode_bayes/datasets/Climate/"
     )
