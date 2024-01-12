@@ -552,12 +552,12 @@ class NumericalArray(ArrayKind[Scalar], Protocol[Scalar]):
         ...
 
     @abstractmethod
-    def all(self) -> Self | bool:  # noqa: A003
+    def all(self) -> Self | bool:
         """Return True if all elements are True."""
         ...
 
     @abstractmethod
-    def any(self) -> Self | bool:  # noqa: A003
+    def any(self) -> Self | bool:
         """Return True if any element is True."""
         ...
 

@@ -126,7 +126,7 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
 
         path = self.rawdata_paths[fname]
 
-        cut_dirs = self.BASE_URL.count("/") - 3
+        cut_dirs = self.SOURCE_URL.count("/") - 3
         user = input("MIMIC-IV username: ")
         password = getpass(prompt="MIMIC-IV password: ", stream=None)
 
@@ -134,7 +134,7 @@ class MIMIC_IV_Bilos2021(SingleTableDataset):
 
         subprocess.run(
             f"wget --user {user} --password $PASSWORD -c -r -np -nH -N --cut-dirs"
-            f" {cut_dirs} -P {self.RAWDATA_DIR!r} {self.BASE_URL} -O {path}",
+            f" {cut_dirs} -P {self.RAWDATA_DIR!r} {self.SOURCE_URL} -O {path}",
             shell=True,
             check=True,
         )

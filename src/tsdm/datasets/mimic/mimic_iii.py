@@ -154,7 +154,7 @@ class MIMIC_III_RAW(MultiTableDataset[KEYS, DataFrame]):
             )
 
         self.download_from_url(
-            self.BASE_URL + f"{self.__version__}/",
+            self.SOURCE_URL + f"{self.__version__}/",
             self.rawdata_paths[fname],
             username=input("MIMIC-III username: "),
             password=getpass(prompt="MIMIC-III password: ", stream=None),

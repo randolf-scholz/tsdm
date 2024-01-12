@@ -263,7 +263,7 @@ class MIMIC_IV_RAW(MultiTableDataset[KEYS, DataFrame]):
             )
         else:
             self.download_from_url(
-                f"{self.BASE_URL}/{self.__version__}/",
+                f"{self.SOURCE_URL}/{self.__version__}/",
                 self.rawdata_paths[fname],
                 username=input("MIMIC-IV username: "),
                 password=getpass(prompt="MIMIC-IV password: ", stream=None),

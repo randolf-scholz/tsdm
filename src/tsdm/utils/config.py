@@ -129,4 +129,4 @@ class Config(MutableMapping[str, Any], metaclass=ConfigMetaclass):
         self.__dict__[key] = value
 
     def __delitem__(self, key, /):
-        self.__dict__.__delitem__(key)
+        del self.__dict__[key]

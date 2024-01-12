@@ -26,7 +26,7 @@ import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import wraps
-from inspect import Parameter, Signature, getsource, signature
+from inspect import Parameter, getsource, signature
 from time import perf_counter_ns
 from types import GenericAlias
 
@@ -34,19 +34,17 @@ from torch import jit
 from typing_extensions import (
     Any,
     Concatenate,
-    Literal,
     NamedTuple,
     Optional,
     ParamSpec,
     Protocol,
     Self,
     cast,
-    overload,
 )
 
 from tsdm.types.aliases import Nested
 from tsdm.types.protocols import NTuple
-from tsdm.types.variables import CallableType as F, CollectionType, R, T
+from tsdm.types.variables import CollectionType, R, T
 from tsdm.utils.funcutils import rpartial
 
 __logger__: logging.Logger = logging.getLogger(__name__)

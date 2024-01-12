@@ -89,8 +89,10 @@ class Dataset(Protocol[T_co]):
             for fname in self.rawdata_files
         }
 
-    # rawdata_paths: Mapping[str, Path]  # type: ignore[no-redef]
-    # # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    rawdata_files: Sequence[str]  # type: ignore[no-redef]
+    # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
+    rawdata_paths: Mapping[str, Path]  # type: ignore[no-redef]
+    # CF. https://github.com/microsoft/pyright/issues/2601#issuecomment-1545609020
 
     @abstractmethod
     def download(self) -> None:
@@ -121,16 +123,18 @@ class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
             self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
 
         if "RAWDATA_DIR" not in namespace:
-            if os.environ.get("GENERATING_DOCS", False):
-                self.RAWDATA_DIR = Path("~/.tsdm/rawdata/") / self.__name__
-            else:
-                self.RAWDATA_DIR = CONFIG.RAWDATADIR / self.__name__
+            self.RAWDATA_DIR = (
+                Path("~/.tsdm/rawdata/")
+                if os.environ.get("GENERATING_DOCS", False)
+                else CONFIG.RAWDATADIR
+            ) / self.__name__
 
         if "DATASET_DIR" not in namespace:
-            if os.environ.get("GENERATING_DOCS", False):
-                self.DATASET_DIR = Path("~/.tsdm/datasets") / self.__name__
-            else:
-                self.DATASET_DIR = CONFIG.DATASETDIR / self.__name__
+            self.DATASET_DIR = (
+                Path("~/.tsdm/datasets")
+                if os.environ.get("GENERATING_DOCS", False)
+                else CONFIG.DATASETDIR
+            ) / self.__name__
 
         # add post_init hook
         self.__init__ = wrap_method(self.__init__, after=self.__post_init__)  # type: ignore[misc]
@@ -583,7 +587,7 @@ class MultiTableDataset(
         def attr_exists(obj: object, key: str) -> bool:
             """Test if attribute exists using only __getattribute__ and not __getattr__."""
             try:
-                obj.__getattribute__(key)  # pylint: disable=unnecessary-dunder-call
+                obj.__getattribute__(key)
             except AttributeError:
                 return False
             return True
@@ -613,18 +617,18 @@ class MultiTableDataset(
 
     def __len__(self) -> int:
         r"""Return the number of samples in the dataset."""
-        return self.tables.__len__()
+        return len(self.tables)
 
     def __getitem__(self, key: Key, /) -> T_co:
         r"""Return the sample at index `idx`."""
         # need to manually raise KeyError otherwise __getitem__ will execute.
         if key not in self.tables:
             raise KeyError(f"Key {key} not in {self.__class__.__name__}!")
-        return self.tables.__getitem__(key)
+        return self.tables[key]
 
     def __iter__(self) -> Iterator[Key]:
         r"""Return an iterator over the dataset."""
-        return self.tables.__iter__()
+        return iter(self.tables)
 
     def __repr__(self) -> str:
         r"""Pretty Print."""
