@@ -98,7 +98,7 @@ extras = [
 ]
 typing = [
     "mypy>=1.8.0",
-    "pyright>=1.1.345",
+    "pyright>=1.1.346",
     "types-colorama>=0.4.15",
     "types-decorator>=5.1.8",
     "types-docutils>=0.20.0",
@@ -384,8 +384,8 @@ disable = [
     # "E0611",  # no-name-in-module
     "E1101",  # no-member  # FIXME: too many false positives
     "E1102",  # not-callable  # FIXME: too many false positives (torch)
-    "E1121",  # too-many-function-args
-    "E1123",  # unexpected-keyword-arg
+    "E1121",  # too-many-function-args  # FIXME: too many false positives
+    "E1123",  # unexpected-keyword-arg  # FIXME: too many false positives
     "E1130",  # invalid-unary-operand-type
     "E1139",  # invalid-metaclass  # FIXME: too many false positives
     "R0801",  # similar lines
@@ -595,6 +595,9 @@ addopts = [
     "--cov-report=term:skip-covered",
     "--cov-report=xml:reports/coverage.xml",
     #    "--cov-report=annotate:reports/coverage",
+    # benchmark options
+    "--benchmark-group-by=func",
+    "--benchmark-sort=mean",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -775,7 +778,7 @@ slotscheck = ">=0.17.1"
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.8.0"
-pyright = ">=1.1.345"
+pyright = ">=1.1.346"
 types-colorama = ">=0.4.15"
 types-decorator = ">=5.1.8"
 types-docutils = ">=0.20.0"
