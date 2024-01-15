@@ -1,6 +1,7 @@
 r"""Test compute_grid function."""
 
 import logging
+import math
 from datetime import datetime as py_dt, timedelta as py_td
 from typing import Generic
 
@@ -122,8 +123,6 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
 
 
 def test_edge_case() -> None:
-    import math
-
     data = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     stride = 2
     tmin = min(data)

@@ -304,6 +304,7 @@ ignore = [
     "E271",  # Multiple spaces after keyword
     "E272",  # Multiple spaces before keyword
     # pylint
+    "PLC1901",  # compare-to-empty-string
     "PLC2401",  # non-ascii-name
     "PLR0124",  # Name compared with itself
     "PLR2004",  # Magic value used in comparison
