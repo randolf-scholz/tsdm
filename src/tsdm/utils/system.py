@@ -42,9 +42,9 @@ def get_requirements(
     reqs = subprocess.check_output(
         (
             r"johnnydep",
-            f"{package}" + f"=={version}" * bool(version),
-            r"--output-format",
-            r"pinned",
+            f" {package}" + f"=={version}" * bool(version),
+            r" --output-format",
+            r" pinned",
         ),
         text=True,
     )
