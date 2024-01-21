@@ -108,7 +108,7 @@ repos:
       - id: isort
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.13
+    rev: v0.1.14
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -129,7 +129,7 @@ repos:
         files: ^dev/
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.346
+    rev: v1.1.348
     hooks:
       - id: pyright
         # not everything works with pyright yet

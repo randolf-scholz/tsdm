@@ -57,4 +57,4 @@ match baz:
         reveal_type(func)  # ✅
 ```
 
-https://mypy-play.net/?mypy=latest&python=3.12&flags=strict%2Cwarn-unreachable&gist=f90a2f8b6bc47bc57c01be7538aa242b
+<https://mypy-play.net/?mypy=latest&python=3.12&flags=strict%2Cwarn-unreachable&gist=f90a2f8b6bc47bc57c01be7538aa242b>
