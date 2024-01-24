@@ -14,7 +14,7 @@ from numpy.typing import NDArray
 from pytest import mark
 from typing_extensions import get_protocol_members
 
-from tsdm.testing._testing import assert_protocol
+from tsdm.testing import assert_protocol
 from tsdm.types.protocols import (
     ArrayKind,
     MutableArray,

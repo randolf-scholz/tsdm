@@ -42,7 +42,7 @@ from typing_extensions import (
     cast,
 )
 
-from tsdm.types.aliases import Nested
+from tsdm.types.aliases import BUILTIN_CONTAINERS, Nested
 from tsdm.types.protocols import NTuple
 from tsdm.types.variables import CollectionType, R, T
 from tsdm.utils.funcutils import rpartial
@@ -373,7 +373,7 @@ def recurse_on_builtin_container(
         kind: The type of the leave nodes
         func: A function to apply to all leave Nodes
     """
-    if issubclass(kind, (tuple, list, set, frozenset, dict)):
+    if issubclass(kind, BUILTIN_CONTAINERS):
         raise TypeError(f"kind must not be a builtin container! Got {kind=}")
 
     @wraps(func)

@@ -15,7 +15,7 @@ from types import ModuleType
 
 import torch
 from torch import Tensor, nn
-from typing_extensions import Any, Optional, Self
+from typing_extensions import Optional
 
 from tsdm.models._models import BaseModel
 from tsdm.utils import deep_dict_update
@@ -133,10 +133,6 @@ class ODE_RNN(BaseModel, nn.Module):
             "device": None,
         },
     }
-
-    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
-        r"""TODO: add docstring."""
-        return super(ODE_RNN, cls).__new__(*args, **kwargs)
 
     def __init__(
         self,

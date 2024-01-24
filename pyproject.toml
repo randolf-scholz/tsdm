@@ -255,6 +255,7 @@ select = [
     "EXE",   # executable
     "F",     # pyflakes
     "I",     # import-order
+    "UP",     # pyupgrade
     "PL",    # pylint
     "PIE",   # pie
     "PYI",   # pyi
@@ -284,6 +285,10 @@ ignore = [
     "E241",  # Multiple spaces after comma
     "E271",  # Multiple spaces after keyword
     "E272",  # Multiple spaces before keyword
+    # pyupgrade
+    "UP007",  # Use `X | Y` for type annotations
+    "UP015",  # Unnecessary open mode parameters
+    "UP035",  # deprecated-import
     # pylint
     "PLC1901",  # compare-to-empty-string
     "PLC2401",  # non-ascii-name
@@ -313,6 +318,7 @@ ignore = [
     "RUF003",  # ambiguous-unicode-character-comment
     "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar # FIXME: PEP 603
     "RUF013",  # PEP 484 prohibits implicit Optional # FIXME: https://github.com/astral-sh/ruff/issues/9334
+    "RUF022",  # __all__ not sorted
     # tryceratops
     "TRY003",  # Avoid specifying long messages outside the exception class
     # refurb

@@ -50,7 +50,7 @@ import torch
 import yaml
 from torch.nn import Module as TorchModule
 from torch.optim import Optimizer as TorchOptimizer
-from torch.optim.lr_scheduler import _LRScheduler as TorchLRScheduler
+from torch.optim.lr_scheduler import LRScheduler as TorchLRScheduler
 from typing_extensions import IO, Any, ClassVar, Optional, Protocol, Self, cast
 
 from tsdm.config import CONFIG

@@ -7,7 +7,7 @@ import pandas as pd
 from pytest import mark
 
 from tsdm.data import MapDataset, PandasDataset
-from tsdm.testing._testing import assert_protocol
+from tsdm.testing import assert_protocol
 from tsdm.types.protocols import MappingProtocol
 
 logging.basicConfig(level=logging.INFO)

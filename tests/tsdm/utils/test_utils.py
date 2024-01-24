@@ -29,7 +29,7 @@ def test_last_empty():
         last({})
 
     with pytest.raises(ValueError, match="Iterable is empty!"):
-        last((i for i in range(0)))
+        last(i for i in range(0))
 
 
 def test_replace():

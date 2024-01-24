@@ -94,7 +94,7 @@ def hash_set(x: Iterable[Hashable], /, *, ignore_duplicates: bool = False) -> in
     if ignore_duplicates:
         return hash(frozenset(hash_object(y) for y in x))
     # We use counter as a proxy for multisets, do deal with duplicates in x.
-    mdict = Counter((hash_object(y) for y in x))
+    mdict = Counter(hash_object(y) for y in x)
     return hash(frozenset(mdict.items()))
 
 

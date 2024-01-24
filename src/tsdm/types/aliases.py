@@ -1,6 +1,8 @@
 """Collection of Useful Type Aliases."""
 
 __all__ = [
+    # Constants
+    "BUILTIN_CONTAINERS",
     # New Types
     "SplitID",
     # namedtuple
@@ -168,6 +170,8 @@ r"""Generic Type Alias for nested `Sequence` or `Mapping`."""
 
 
 # region Nested Builtins ---------------------------------------------------------------
+BUILTIN_CONTAINERS: TypeAlias = tuple | list | set | frozenset | dict
+r"""Alias for builtin containers."""
 NestedDict: TypeAlias = dict[K, V | "NestedDict[K, V]"]
 r"""Generic Type Alias for nested `dict`."""
 NestedList: TypeAlias = list[V | "NestedList[V]"]

@@ -285,7 +285,7 @@ class NumericalEncoder(BaseEncoder[Arr, Arr]):
 
     def cast_params(self, params: Nested) -> Nested[Arr]:
         """Cast the parameters to the current backend."""
-        if isinstance(params, (Tensor, np.ndarray, Series, DataFrame)):
+        if isinstance(params, Tensor | np.ndarray | Series | DataFrame):
             return self.backend.to_tensor(params)  # pyright: ignore
 
         match params:
