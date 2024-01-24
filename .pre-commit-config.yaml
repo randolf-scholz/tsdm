@@ -160,7 +160,6 @@ repos:
             "--no-pretty",
             "--no-error-summary",
           ]
-        stages: [pre-push, manual]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.348

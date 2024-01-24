@@ -183,7 +183,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
             enc = self | other
             enc((x, y)) == (self(x), other(y))
         """
-        return ParallelEncoder(self, other)  # pyright: ignore
+        return ParallelEncoder(self, other)
 
     def __ror__(self, other: "Encoder[X, Y]", /) -> "Encoder[tuple[X, U], tuple[Y, V]]":
         r"""Return product encoders.
@@ -192,7 +192,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
             enc = other | self
             enc((x, y)) == (other(x), self(y))
         """
-        return ParallelEncoder(other, self)  # pyright: ignore
+        return ParallelEncoder(other, self)
 
     def __pow__(self: "Encoder[T, T]", power: int, /) -> "Encoder[T, T]":
         r"""Return the chain of itself multiple times.

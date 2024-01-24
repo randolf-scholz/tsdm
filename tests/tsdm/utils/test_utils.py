@@ -8,16 +8,16 @@ from tsdm.utils import flatten_dict, last, pairwise_disjoint, replace, unflatten
 def test_last():
     """Test `tsdm.utils.last`."""
     # test with Sequence.
-    x = [1, 2, 3]
-    assert last(x) == 3
+    seq = [1, 2, 3]
+    assert last(seq) == 3
 
-    # test with reversible (non-sequence)
-    x = {1: 1, 2: 2, 3: 3}
-    assert last(x) == 3
+    # test with dictionary
+    mapping = {1: 1, 2: 2, 3: 3}
+    assert last(mapping) == 3
 
     # test with generator
-    x = (i for i in range(3))
-    assert last(x) == 2
+    gen = (i for i in range(3))
+    assert last(gen) == 2
 
 
 def test_last_empty():
@@ -44,20 +44,20 @@ def test_replace():
 
 def test_flatten_dict():
     """Test `tsdm.utils.flatten_dict`."""
-    d = {}
-    assert flatten_dict(d) == {}
-
     d = {"a": {"b": {"c": 1}, "d": {"e": 2}, "f": 3}}
     assert flatten_dict(d) == {"a.b.c": 1, "a.d.e": 2, "a.f": 3}
+
+    d = {}
+    assert flatten_dict(d) == {}
 
 
 def test_unflatten_dict():
     """Test `tsdm.utils.unflatten_dict`."""
-    d = {}
-    assert unflatten_dict(d) == {}
-
     d = {"a.b.c": 1, "a.d.e": 2, "a.f": 3}
     assert unflatten_dict(d) == {"a": {"b": {"c": 1}, "d": {"e": 2}, "f": 3}}
+
+    d = {}
+    assert unflatten_dict(d) == {}
 
 
 def test_pairwise_disjoint():

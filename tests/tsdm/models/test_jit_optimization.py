@@ -25,9 +25,23 @@ def test_jit_optimization() -> None:
                 return F.relu(x)
             return torch.tanh(x)
 
-    model = Foo(use_relu=False)
-    scripted = jit.script(model)
+    # check that compiled model does not contain if-clause
+    model_with_tanh = Foo(use_relu=False)
+    scripted_with_tanh = jit.script(model_with_tanh)
+    tanh_code: str = scripted_with_tanh.code  # pyright: ignore[reportAttributeAccessIssue,reportAssignmentType]
+    print(f"\n{'-'*80}\n{'model without relu'}\n{tanh_code}\n{'-'*80}")
+    assert "relu" not in tanh_code
+    assert "tanh" in tanh_code
 
+    # check that compiled model does not contain if-clause
+    model_with_relu = Foo(use_relu=True)
+    scripted_with_relu = jit.script(model_with_relu)
+    relu_code: str = scripted_with_relu.code  # pyright: ignore[reportAttributeAccessIssue,reportAssignmentType]
+    print(f"\n{'-'*80}\n{'model with relu'}\n{relu_code}\n{'-'*80}")
+    assert "relu" in relu_code
+    assert "tanh" not in relu_code
+
+    # check remaining properties
     for prop in [
         "code",
         "code_with_constants",
@@ -35,13 +49,6 @@ def test_jit_optimization() -> None:
         "inlined_graph",
         "original_name",
     ]:
-        attr = getattr(scripted, prop)
+        assert hasattr(scripted_with_relu, prop)
+        attr = getattr(scripted_with_relu, prop)
         print(f"\nscripted.{prop}<{type(attr)}> = {attr!r}")
-    assert "relu" not in scripted.code  # pyright: ignore[reportGeneralTypeIssues]
-    assert "tanh" in scripted.code  # pyright: ignore[reportGeneralTypeIssues]
-
-    model = Foo(use_relu=True)
-    scripted = jit.script(model)
-    print(scripted.code)  # pyright: ignore[reportGeneralTypeIssues]
-    assert "relu" in scripted.code  # pyright: ignore[reportGeneralTypeIssues]
-    assert "tanh" not in scripted.code  # pyright: ignore[reportGeneralTypeIssues]
