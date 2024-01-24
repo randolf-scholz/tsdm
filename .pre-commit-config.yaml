@@ -66,6 +66,7 @@ repos:
     rev: v0.3.1
     hooks:
       - id: absolufy-imports
+        files: (^src/|^tests/)
   # isort
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
@@ -107,6 +108,7 @@ repos:
           - "predict"
           - "--ignore-decorators"
           - "jit.script"
+          - "torch.no_grad"
           - "--ignore-dunder"
           # - "--allow-one"
           - "--ignore-without-positional-only"
