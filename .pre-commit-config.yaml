@@ -114,26 +114,25 @@ repos:
         files: (^src/|^tests/)
       - id: ruff-format
         files: (^src/|^tests/)
-  # slotscheck
-  #  - repo: https://github.com/ariebovenberg/slotscheck
-  #    rev: v0.17.0
-  #    hooks:
-  #      - id: slotscheck
-  #        language: system
-  #        files: ^src/
   # nbstripout-fast
   - repo: https://github.com/deshaw/nbstripout-fast.git
     rev: v1.0.3
     hooks:
       - id: nbstripout-fast
         files: ^dev/
+  # mypy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
+        files: (^src/|^tests/)
+        additional_dependencies: [types-all]
+        stages: [pre-push]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.348
     hooks:
       - id: pyright
-        # not everything works with pyright yet
-        # verbose regex
         files: (^src/|^tests/)
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
     rev: v0.1.49

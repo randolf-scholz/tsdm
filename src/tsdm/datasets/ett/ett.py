@@ -14,7 +14,10 @@ KEY: TypeAlias = Literal["ETTh1", "ETTh2", "ETTm1", "ETTm2"]
 
 
 class ETT(MultiTableDataset[KEY, DataFrame]):
-    r"""ETT-small-h1.
+    r"""ETT dataset.
+
+    This dataset contains 4 variants: ETTh1, ETTh2, ETTm1, ETTm2, which contain time series data
+    from two electrical transformers (1 and 2) with hourly (h) and minute (m) resolution.
 
     +-------------+-------------------+------------------+-------------------+--------------------+---------------------+-----------------+------------------+--------------------------+
     | Field       | date              | HUFL             | HULL              | MUFL               | MULL                | LUFL            | LULL             | OT                       |
