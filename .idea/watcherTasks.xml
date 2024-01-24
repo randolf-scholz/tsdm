@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ProjectTasksOptions">
-    <TaskOptions isEnabled="true">
+    <TaskOptions isEnabled="false">
       <option name="arguments" value="$FilePath$" />
       <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
@@ -22,6 +22,7 @@
       <envs />
     </TaskOptions>
     <enabled-global>
+      <option value="ruff-isort" />
       <option value="ruff-format" />
     </enabled-global>
   </component>

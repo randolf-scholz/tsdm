@@ -48,10 +48,10 @@ dependencies = [
 
 
 [project.optional-dependencies]
-dev = ["tsdm[test,docs,extras,typing,flake8,linters,formatters,devtools]"]
+dev = ["tsdm[test,docs,extras,typing,linters,devtools]"]
 test = [
     "coverage>=7.4.0",
-    "hypothesis[numpy,pandas,pytest]>=6.96.2",
+    "hypothesis[numpy,pandas,pytest]>=6.96.4",
     "pygal>=3.0.4",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
@@ -79,22 +79,11 @@ devtools = [
     "pip>=23.3.2",
     "pre-commit>=3.6.0",
     "pybadges>=3.0.1",
-    "pydeps>=1.12.17",
+    "pydeps>=1.12.18",
     "pygments>=2.17.2",
     "setuptools>=69.0.3",
     "twine>=4.0.2",
     "wheel>=0.42.0",
-]
-extras = [
-    "ipympl>=0.9.3",
-    "ipywidgets>=8.1.1",
-    "jupyterlab>=4.0.11",
-    "jupyterlab>=4.0.11",
-    "notebook>=7.0.7",
-    "openml>=0.14.2",
-    "openpyxl>=3.1.2",
-    "psutil>=5.9.8",
-    "torchinfo>=1.8.0",
 ]
 typing = [
     "mypy>=1.8.0",
@@ -115,19 +104,8 @@ typing = [
     "types-tqdm>=4.66.0",
     "types-urllib3>=1.26.25",
 ]
-flake8 = [
-    "flake8>=7.0.0",
-    "flake8-annotations>=3.0.1",
-    "flake8-bugbear>=24.1.17",
-    "flake8-comprehensions>=3.14.0",
-    "flake8-docstrings>=1.7.0",
-    "flake8-pyi>=24.1.0",
-    "flake8-pyproject>=1.2.3",
-    "flake8-rst>=0.8.0",
-    "flake8-rst-docstrings>=0.3.0",
-]
 linters = [
-    "bandit>=1.7.6",
+    "bandit>=1.7.7",
     "mccabe>=0.7.0",
     "pycodestyle>=2.11.1",
     "pydocstyle>=6.3.0",
@@ -136,16 +114,19 @@ linters = [
     "pylint-gitlab>=2.0.0",
     "ruff>=0.1.14",
     "ruff-lsp>=0.0.49",
-    "slotscheck>=0.17.1",
 ]
-formatters = [
-    "black[d,jupyter]>=23.12.1",
-    "blacken-docs>=1.16.0",
-    "isort>=5.13.2",
-    "nbstripout-fast>=1.0.3",
-    "ssort>=0.12.2",
+extras = [
+    "ipympl>=0.9.3",
+    "ipywidgets>=8.1.1",
+    "jupyterlab>=4.0.11",
+    "jupyterlab>=4.0.11",
+    "notebook>=7.0.7",
+    "openml>=0.14.2",
+    "openpyxl>=3.1.2",
+    "psutil>=5.9.8",
+    "pygments>=2.17.2",
+    "torchinfo>=1.8.0",
 ]
-
 
 
 [project.urls]
@@ -662,7 +643,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 
-
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
 matplotlib = ">=3.8.2"
@@ -681,21 +661,9 @@ torch = ">=2.1.2"
 tqdm = ">=4.66.1"
 typing-extensions = ">=4.9.0"
 
-
-[tool.poetry.group.extra.dependencies]
-ipympl = ">=0.9.3"
-ipywidgets = ">=8.1.1"
-jupyterlab = ">=4.0.11"
-notebook = ">=7.0.7"
-openml = ">=0.14.2"
-openpyxl = ">=3.1.2"
-psutil = ">=5.9.8"
-torchinfo = ">=1.8.0"
-
-
 [tool.poetry.group.test.dependencies]
 coverage = ">=7.4.0"
-hypothesis = {version=">=6.96.2", extras=["numpy", "pandas", "pytest"]}
+hypothesis = {version=">=6.96.4", extras=["numpy", "pandas", "pytest"]}
 pygal = ">=3.0.4"
 pytest = ">=7.4.4"
 pytest-benchmark = ">=4.0.0"
@@ -703,7 +671,6 @@ pytest-cov = ">=4.1.0"
 pytest-repeat = ">=0.9.3"
 pytest-rerunfailures = ">=13.0"
 pytest-xdist = ">=3.5.0"
-
 
 [tool.poetry.group.docs.dependencies]
 docutils = ">=0.20.1"
@@ -725,7 +692,6 @@ sphinx-togglebutton = ">=0.3.2"
 sphinx-typo3-theme = ">=4.9.0"
 # sphinxawesome-theme = ">=4.1.0"
 
-
 [tool.poetry.group.devtools.dependencies]
 cmake = ">=3.28.1"
 devtools = ">=0.12.2"
@@ -737,34 +703,13 @@ pipdeptree = ">=2.13.2"
 pipreqs = ">=0.4.13"
 pre-commit = ">=3.6.0"
 pybadges = ">=3.0.1"
-pydeps = ">=1.12.17"
+pydeps = ">=1.12.18"
 setuptools = ">=69.0.3"
 twine = ">=4.0.2"
 wheel = ">=0.42.0"
 
-
-[tool.poetry.group.flake8.dependencies]
-flake8 = ">=7.0.0"
-flake8-annotations = ">=3.0.1"
-flake8-bugbear = ">=24.1.17"
-flake8-comprehensions = ">=3.14.0"
-flake8-docstrings = ">=1.7.0"
-flake8-pyi = ">=24.1.0"
-flake8-pyproject = ">=1.2.3"
-flake8-rst = ">=0.8.0"
-flake8-rst-docstrings = ">=0.3.0"
-
-
-[tool.poetry.group.formatters.dependencies]
-black = { version = ">=23.12.1", extras = ["d", "jupyter"] }
-blacken-docs = ">=1.16.0"
-isort = ">=5.13.2"
-nbstripout-fast = ">=1.0.3"
-ssort = ">=0.12.2"
-
-
 [tool.poetry.group.linters.dependencies]
-bandit = ">=1.7.6"
+bandit = ">=1.7.7"
 mccabe = ">=0.7.0"
 pycodestyle = ">=2.11.1"
 pydocstyle = ">=6.3.0"
@@ -773,8 +718,6 @@ pylint = ">=3.0.3"
 pylint-gitlab = ">=2.0.0"
 ruff = ">=0.1.14"
 ruff-lsp = ">=0.0.49"
-slotscheck = ">=0.17.1"
-
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.8.0"
@@ -795,7 +738,15 @@ types-tabulate = ">=0.9.0"
 types-tqdm = ">=4.66.0"
 types-urllib3 = ">=1.26.25"
 
-
-[tool.poetry.group.unsorted.dependencies]
+[tool.poetry.group.extra.dependencies]
+ipympl = ">=0.9.3"
+ipywidgets = ">=8.1.1"
+jupyterlab = ">=4.0.11"
+notebook = ">=7.0.7"
+openml = ">=0.14.2"
+openpyxl = ">=3.1.2"
+psutil = ">=5.9.8"
 pygments = ">=2.17.2"
+torchinfo = ">=1.8.0"
+
 # endregion poetry configuration -------------------------------------------------------
