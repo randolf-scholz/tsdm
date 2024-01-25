@@ -2,16 +2,10 @@ r"""Implementations of loss functions.
 
 Note:
     Contains losses in modular form.
-    See `tsdm.Losss.functional` for functional implementations.
+    See `tsdm.metrics.functional` for functional implementations.
 """
 
 __all__ = [
-    # Protocol
-    "Metric",
-    "NN_Metric",
-    # Base Classes
-    "BaseMetric",
-    "WeightedMetric",
     # Classes
     "WRMSE",
     "RMSE",
@@ -23,98 +17,13 @@ __all__ = [
     "WLP",
 ]
 
-
-from abc import abstractmethod
-
 import torch
-from torch import Tensor, jit, nn
-from typing_extensions import Final, Protocol, runtime_checkable
+from torch import Tensor, jit
+from typing_extensions import Final
 
-from tsdm.metrics.functional import Metric
+from tsdm.metrics.base import BaseMetric, WeightedMetric
 from tsdm.types.aliases import Axes
 from tsdm.utils.wrappers import autojit
-
-
-@runtime_checkable
-class NN_Metric(Protocol):
-    r"""Protocol for a loss function."""
-
-    def forward(self, targets: Tensor, predictions: Tensor, /) -> Tensor:
-        r"""Compute the loss."""
-        ...
-
-
-class BaseMetric(nn.Module, Metric):
-    r"""Base class for a loss function."""
-
-    # Constants
-    axis: Final[tuple[int, ...]]
-    r"""CONST: The axes over which the loss is computed."""
-    normalize: Final[bool]
-    r"""CONST: Whether to normalize the weights."""
-
-    def __init__(
-        self,
-        /,
-        *,
-        axis: int | tuple[int, ...] = -1,
-        normalize: bool = False,
-    ):
-        super().__init__()
-        self.normalize = normalize
-        self.axis = (axis,) if isinstance(axis, int) else tuple(axis)
-
-    @abstractmethod
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r"""Compute the loss."""
-        raise NotImplementedError
-
-
-class WeightedMetric(BaseMetric, Metric):
-    r"""Base class for a weighted loss function."""
-
-    # Parameters
-    weight: Tensor
-    r"""PARAM: The weight-vector."""
-
-    # Constants
-    learnable: Final[bool]
-    r"""CONST: Whether the weights are learnable."""
-
-    def __init__(
-        self,
-        weight: Tensor,
-        /,
-        *,
-        learnable: bool = False,
-        normalize: bool = False,
-        axis: Axes = None,
-    ) -> None:
-        r"""Initialize the loss function."""
-        w = torch.as_tensor(weight, dtype=torch.float32)
-        if not torch.all(w >= 0) and torch.any(w > 0):
-            raise ValueError(
-                "Weights must be non-negative and at least one must be positive."
-            )
-        axis = tuple(range(-w.ndim, 0)) if axis is None else axis
-        super().__init__(axis=axis, normalize=normalize)
-
-        # Set the weight tensor.
-        w = w / torch.sum(w)
-        self.weight = nn.Parameter(w, requires_grad=self.learnable)
-        self.learnable = learnable
-
-        # Validate the axes.
-        if len(self.axis) != self.weight.ndim:
-            raise ValueError(
-                "Number of axes does not match weight shape:"
-                f" {len(self.axis)} != {self.weight.ndim=}"
-            )
-
-    @abstractmethod
-    def forward(self, targets: Tensor, predictions: Tensor) -> Tensor:
-        r"""Compute the loss."""
-        raise NotImplementedError
 
 
 @autojit

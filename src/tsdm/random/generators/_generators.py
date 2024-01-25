@@ -9,13 +9,12 @@ contains generators for synthetic dataset. By design, each generator consists of
 """
 
 __all__ = [
-    # Protocols
-    "Generator",
+    # ABCs & Protocols
     "TimeSeriesGenerator",
     "IVP_Generator",
     "IVP_GeneratorBase",
     "IVP_Solver",
-    # functions
+    # Functions
     "solve_ivp",
 ]
 
@@ -39,16 +38,6 @@ from tsdm.random.stats.distributions import Distribution
 from tsdm.types.aliases import SizeLike
 from tsdm.types.callback_protocols import NullMap, SelfMap
 from tsdm.types.variables import T_co
-
-
-@runtime_checkable
-class Generator(Protocol[T_co]):
-    r"""Protocol for generators."""
-
-    @abstractmethod
-    def rvs(self, size: SizeLike = ()) -> T_co:
-        """Random variates of the given type."""
-        ...
 
 
 @runtime_checkable

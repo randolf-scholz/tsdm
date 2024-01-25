@@ -27,16 +27,14 @@ __all__ = [
     "kiwi",
     "synthetic",
     "ushcn",
-    # Types
-    "Dataset",
     # Constants
     "DATASETS",
-    # ABCs
+    # ABCs & Protocols
+    "Dataset",
     "BaseDataset",
     "SingleTableDataset",
     "MultiTableDataset",
     # Classes
-    # Datasets
     "DampedPendulum_Ansari2023",
     "BeijingAirQuality",
     "ETT",
@@ -64,7 +62,6 @@ __all__ = [
     "KiwiRunsTSC",
 ]
 
-# submodules
 from tsdm.datasets import (
     base,
     kiwi,
@@ -105,21 +102,21 @@ from tsdm.datasets.uci import BeijingAirQuality, Electricity, Traffic
 from tsdm.datasets.ushcn import USHCN, USHCN_DeBrouwer2019
 
 DATASETS: dict[str, type[Dataset]] = {
-    "BeijingAirQuality": BeijingAirQuality,
-    "DampedPendulum_Ansari2023": DampedPendulum_Ansari2023,
-    "ETT": ETT,
-    "Electricity": Electricity,
-    "InSilico": InSilico,
-    "KiwiBenchmark": KiwiBenchmark,
-    "MIMIC_III": MIMIC_III_RAW,
-    "MIMIC_III_DeBrouwer2019": MIMIC_III_DeBrouwer2019,
-    "MIMIC_III_Bilos2021": MIMIC_III_Bilos2021,
-    "MIMIC_IV": MIMIC_IV_RAW,
-    "MIMIC_IV_Bilos2021": MIMIC_IV_Bilos2021,
-    "Physionet2012": PhysioNet2012,
-    "Physionet2019": PhysioNet2019,
-    "Traffic": Traffic,
-    "USHCN": USHCN,
-    "USHCN_DeBrouwer2019": USHCN_DeBrouwer2019,
-}
+    "BeijingAirQuality"         : BeijingAirQuality,
+    "DampedPendulum_Ansari2023" : DampedPendulum_Ansari2023,
+    "ETT"                       : ETT,
+    "Electricity"               : Electricity,
+    "InSilico"                  : InSilico,
+    "KiwiBenchmark"             : KiwiBenchmark,
+    "MIMIC_III"                 : MIMIC_III_RAW,
+    "MIMIC_III_Bilos2021"       : MIMIC_III_Bilos2021,
+    "MIMIC_III_DeBrouwer2019"   : MIMIC_III_DeBrouwer2019,
+    "MIMIC_IV"                  : MIMIC_IV_RAW,
+    "MIMIC_IV_Bilos2021"        : MIMIC_IV_Bilos2021,
+    "Physionet2012"             : PhysioNet2012,
+    "Physionet2019"             : PhysioNet2019,
+    "Traffic"                   : Traffic,
+    "USHCN"                     : USHCN,
+    "USHCN_DeBrouwer2019"       : USHCN_DeBrouwer2019,
+}  # fmt: skip
 r"""Dictionary of all available dataset."""

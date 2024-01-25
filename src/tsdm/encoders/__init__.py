@@ -92,22 +92,20 @@ See Also:
 # - Backward Difference Coding:
 
 __all__ = [
-    # Sub-Packages
-    "transforms",
-    # Modules
+    # Sub-Packages & Modules
     "base",
     "numerical",
-    "time",
     "pytorch",
-    # Types
+    "time",
+    "transforms",
+    # Constants
+    "ENCODERS",
+    # ABCs & Protocols
+    "BaseEncoder",
     "Encoder",
     "EncoderProtocol",
     "InvertibleTransform",
     "Transform",
-    # Constants
-    "ENCODERS",
-    # ABC
-    "BaseEncoder",
     # Classes
     "BoundaryEncoder",
     "BoxCoxEncoder",
@@ -143,7 +141,6 @@ __all__ = [
     "TripletDecoder",
     "TripletEncoder",
     "ValueEncoder",
-    # Aliases
 ]
 
 from tsdm.encoders import base, numerical, pytorch, time, transforms
@@ -195,31 +192,30 @@ from tsdm.encoders.time import (
 )
 
 ENCODERS: dict[str, type[Encoder]] = {
-    # "BaseEncoder": BaseEncoder,  # Only concrete classes!
-    "BoundaryEncoder": BoundaryEncoder,
-    "BoxCoxEncoder": BoxCoxEncoder,
-    "ChainedEncoder": ChainedEncoder,
-    "CloneEncoder": CloneEncoder,
-    "CopyEncoder": CopyEncoder,
-    "DateTimeEncoder": OldDateTimeEncoder,
-    "DuplicateEncoder": DuplicateEncoder,
-    "IdentityEncoder": IdentityEncoder,
-    "LinearScaler": LinearScaler,
-    "LogEncoder": LogEncoder,
-    "LogitBoxCoxEncoder": LogitBoxCoxEncoder,
-    "LogitEncoder": LogitEncoder,
-    "MappingEncoder": MappingEncoder,
-    "MinMaxScaler": MinMaxScaler,
-    "PeriodicEncoder": PeriodicEncoder,
-    "PeriodicSocialTimeEncoder": PeriodicSocialTimeEncoder,
-    "ProductEncoder": ParallelEncoder,
-    "SocialTimeEncoder": SocialTimeEncoder,
-    "StandardScaler": StandardScaler,
-    "TensorConcatenator": TensorConcatenator,
-    "TensorEncoder": TensorEncoder,
-    "TensorSplitter": TensorSplitter,
-    "Time2Float": Time2Float,
-    "TimeDeltaEncoder": TimeDeltaEncoder,
-    "TripletEncoder": TripletEncoder,
-}
+    "BoundaryEncoder"           : BoundaryEncoder,
+    "BoxCoxEncoder"             : BoxCoxEncoder,
+    "ChainedEncoder"            : ChainedEncoder,
+    "CloneEncoder"              : CloneEncoder,
+    "CopyEncoder"               : CopyEncoder,
+    "DateTimeEncoder"           : OldDateTimeEncoder,
+    "DuplicateEncoder"          : DuplicateEncoder,
+    "IdentityEncoder"           : IdentityEncoder,
+    "LinearScaler"              : LinearScaler,
+    "LogEncoder"                : LogEncoder,
+    "LogitBoxCoxEncoder"        : LogitBoxCoxEncoder,
+    "LogitEncoder"              : LogitEncoder,
+    "MappingEncoder"            : MappingEncoder,
+    "MinMaxScaler"              : MinMaxScaler,
+    "PeriodicEncoder"           : PeriodicEncoder,
+    "PeriodicSocialTimeEncoder" : PeriodicSocialTimeEncoder,
+    "ProductEncoder"            : ParallelEncoder,
+    "SocialTimeEncoder"         : SocialTimeEncoder,
+    "StandardScaler"            : StandardScaler,
+    "TensorConcatenator"        : TensorConcatenator,
+    "TensorEncoder"             : TensorEncoder,
+    "TensorSplitter"            : TensorSplitter,
+    "Time2Float"                : Time2Float,
+    "TimeDeltaEncoder"          : TimeDeltaEncoder,
+    "TripletEncoder"            : TripletEncoder,
+}  # fmt: skip
 r"""Dictionary of all available encoders."""

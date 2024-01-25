@@ -5,12 +5,11 @@ r"""Base Classes for dataset."""
 # NOTE: type.__init__(self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwargs: Any) -> None
 
 __all__ = [
-    # Protocols
-    "Dataset",
-    # Classes
+    # ABCs & Protocols
     "BaseDataset",
-    "SingleTableDataset",
+    "Dataset",
     "MultiTableDataset",
+    "SingleTableDataset",
 ]
 
 import html

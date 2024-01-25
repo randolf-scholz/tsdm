@@ -1,7 +1,4 @@
-r"""Time Series Datasets and Models (TSDM).
-
-TODO: rewrite introduction
-"""
+r"""Time Series Datasets and Models (TSDM)."""
 
 __all__ = [
     # Constants
@@ -44,8 +41,7 @@ from tsdm import (
     viz,
 )
 
-# single-source version
-try:
+try:  # single-source version
     __version__ = metadata.version(__package__ or __name__)
     r"""The version number of the `tsdm` package."""
 except metadata.PackageNotFoundError:

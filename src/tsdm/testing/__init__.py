@@ -1,18 +1,17 @@
 """Utilities for testing and validation."""
 
 __all__ = [
-    # submodules
+    # Submodules
     "data",
     "hash",
-    # functions
-    "is_flattened",
-    "is_dunder",
-    "is_zipfile",
+    # Functions
     "assert_protocol",
     "check_shared_attrs",
-    # data
-    "series_is_int",
+    "is_dunder",
+    "is_flattened",
+    "is_zipfile",
     "series_is_boolean",
+    "series_is_int",
     "series_numeric_is_boolean",
 ]
 

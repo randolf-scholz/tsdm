@@ -6,9 +6,8 @@ Note:
 """
 
 __all__ = [
-    # Protocols
+    # ABCs & Protocols
     "TimeSeriesLoss",
-    # ABCs
     "TimeSeriesBaseLoss",
     "WeightedTimeSeriesLoss",
     # Classes

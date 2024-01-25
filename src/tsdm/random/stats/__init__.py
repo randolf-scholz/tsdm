@@ -5,14 +5,13 @@ __all__ = [
     "regularity_tests",
     "distributions",
     # Functions
-    "data_overview",
-    "sparsity",
-    # Regularity tests
     "approx_float_gcd",
+    "data_overview",
     "float_gcd",
     "is_quasiregular",
     "is_regular",
     "regularity_coefficient",
+    "sparsity",
     "time_gcd",
 ]
 

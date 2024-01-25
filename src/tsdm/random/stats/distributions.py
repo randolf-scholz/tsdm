@@ -1,10 +1,12 @@
 """Probability distributions."""
 
 __all__ = [
+    # ABCs & Protocols
     "Generator",
     "TimeSeriesGenerator",
     "Distribution",
     "TimeSeriesDistribution",
+    # Classes
     "Dirichlet",
 ]
 

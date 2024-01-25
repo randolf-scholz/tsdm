@@ -8,10 +8,9 @@ Note:
 __all__ = [
     # Constants
     "SAMPLERS",
-    # Protocols
-    "Sampler",
-    # ABC
+    # ABC & Protocols
     "BaseSampler",
+    "Sampler",
     # Classes
     "HierarchicalSampler",
     "IntervalSampler",
@@ -33,10 +32,10 @@ from tsdm.random.samplers._samplers import (
 from tsdm.random.samplers._samplers_deprecated import IntervalSampler, SequenceSampler
 
 SAMPLERS: dict[str, type[Sampler]] = {
-    "HierarchicalSampler": HierarchicalSampler,
-    "IntervalSampler": IntervalSampler,
-    "SequenceSampler": SequenceSampler,
-    "SlidingWindowSampler": SlidingSampler,
-    "RandomSampler": RandomSampler,
-}
+    "HierarchicalSampler"  : HierarchicalSampler,
+    "IntervalSampler"      : IntervalSampler,
+    "RandomSampler"        : RandomSampler,
+    "SequenceSampler"      : SequenceSampler,
+    "SlidingWindowSampler" : SlidingSampler,
+}  # fmt: skip
 r"""Dictionary of all available samplers."""

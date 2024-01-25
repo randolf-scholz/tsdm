@@ -48,134 +48,98 @@ See Also:
 __all__ = [
     # Sub-Modules
     "functional",
-    # Protocols
-    "Metric",
-    "NN_Metric",
+    "modular",
+    "timeseries",
     # Constants
     "LOSSES",
     "FUNCTIONAL_LOSSES",
     "MODULAR_LOSSES",
-    "TORCH_LOSSES",
     "TORCH_ALIASES",
+    "TORCH_ALIASES_FUNCTIONAL",
+    "TORCH_LOSSES",
+    "TORCH_LOSSES_FUNCTIONAL",
     "TORCH_SPECIAL_LOSSES",
-    # Base Classes
+    "TORCH_SPECIAL_LOSSES_FUNCTIONAL",
+    # ABCs & Protocols
+    "Metric",
     "BaseMetric",
     "WeightedMetric",
+    "NN_Metric",
+    "TimeSeriesLoss",
+    "TimeSeriesBaseLoss",
     # Classes
     "MAE",
     "MSE",
-    "RMSE",
-    "WMAE",
-    "WMSE",
-    "WRMSE",
     "ND",
     "NRMSE",
     "Q_Quantile",
     "Q_Quantile_Loss",
+    "RMSE",
     "TimeSeriesMSE",
     "TimeSeriesWMSE",
+    "WMAE",
+    "WMSE",
+    "WRMSE",
     # Functions
     "nd",
     "nrmse",
-    "rmse",
     "q_quantile",
     "q_quantile_loss",
+    "rmse",
 ]
 
 
-from torch import nn
-
-from tsdm.metrics import functional
-from tsdm.metrics._modular import (
-    MAE,
-    MSE,
-    RMSE,
-    WMAE,
-    WMSE,
-    WRMSE,
-    BaseMetric,
-    NN_Metric,
-    WeightedMetric,
+from tsdm.metrics import functional, modular, timeseries
+from tsdm.metrics._torch_imports import (
+    TORCH_ALIASES,
+    TORCH_ALIASES_FUNCTIONAL,
+    TORCH_LOSSES,
+    TORCH_LOSSES_FUNCTIONAL,
+    TORCH_SPECIAL_LOSSES,
+    TORCH_SPECIAL_LOSSES_FUNCTIONAL,
 )
-from tsdm.metrics._timeseries import (
+from tsdm.metrics.base import BaseMetric, Metric, NN_Metric, WeightedMetric
+from tsdm.metrics.functional import nd, nrmse, q_quantile, q_quantile_loss, rmse
+from tsdm.metrics.modular import MAE, MSE, RMSE, WMAE, WMSE, WRMSE
+from tsdm.metrics.timeseries import (
     ND,
     NRMSE,
     Q_Quantile,
     Q_Quantile_Loss,
+    TimeSeriesBaseLoss,
+    TimeSeriesLoss,
     TimeSeriesMSE,
     TimeSeriesWMSE,
 )
-from tsdm.metrics.functional import (
-    FUNCTIONAL_LOSSES,
-    Metric,
-    nd,
-    nrmse,
-    q_quantile,
-    q_quantile_loss,
-    rmse,
-)
 
-TORCH_ALIASES: dict[str, type[NN_Metric]] = {
-    "MAE": nn.L1Loss,
-    "L2": nn.MSELoss,
-    "XENT": nn.CrossEntropyLoss,
-    "KL": nn.KLDivLoss,
-}
-r"""Dictionary containing additional aliases for modular losses in torch."""
-
-
-TORCH_LOSSES: dict[str, type[NN_Metric]] = {
-    "L1": nn.L1Loss,
-    "CrossEntropy": nn.CrossEntropyLoss,
-    "NLL": nn.NLLLoss,
-    "PoissonNLL": nn.PoissonNLLLoss,
-    "KLDiv": nn.KLDivLoss,
-    "BCE": nn.BCELoss,
-    "BCEWithLogits": nn.BCEWithLogitsLoss,
-    "MSE": nn.MSELoss,
-    "HingeEmbedding": nn.HingeEmbeddingLoss,
-    "Huber": nn.HuberLoss,
-    "SmoothL1": nn.SmoothL1Loss,
-    "SoftMargin": nn.SoftMarginLoss,
-    "MultiMargin": nn.MultiMarginLoss,
-    "MultiLabelMargin": nn.MultiLabelMarginLoss,
-    "MultiLabelSoftMargin": nn.MultiLabelSoftMarginLoss,
-}
-r"""Dictionary of all available modular losses in torch."""
-
-
-TORCH_SPECIAL_LOSSES: dict[str, type[nn.Module]] = {
-    "CosineEmbedding": nn.CosineEmbeddingLoss,
-    "CTC": nn.CTCLoss,
-    "GaussianNLL": nn.GaussianNLLLoss,
-    "MarginRanking": nn.MarginRankingLoss,
-    "TripletMargin": nn.TripletMarginLoss,
-    "TripletMarginWithDistance": nn.TripletMarginWithDistanceLoss,
-}
-"""Special losses that do not represent usual loss functions."""
-
+FUNCTIONAL_LOSSES: dict[str, Metric] = {
+    "nd"              : nd,
+    "rmse"            : rmse,
+    "nrmse"           : nrmse,
+    "q_quantile"      : q_quantile,
+    "q_quantile_loss" : q_quantile_loss,
+}  # fmt: skip
+r"""Dictionary of all available functional losses."""
 
 MODULAR_LOSSES: dict[str, type[Metric]] = {
-    "ND": ND,
-    "NRMSE": NRMSE,
-    "Q_Quantile": Q_Quantile,
-    "Q_Quantile_Loss": Q_Quantile_Loss,
-    "MAE": MAE,
-    "MSE": MSE,
-    "RMSE": RMSE,
-    "WMAE": WMAE,
-    "WMSE": WMSE,
-    "WRMSE": WRMSE,
-    "TimeSeriesMSE": TimeSeriesMSE,
-    "TimeSeriesWMSE": TimeSeriesWMSE,
-}
+    "MAE"             : MAE,
+    "MSE"             : MSE,
+    "ND"              : ND,
+    "NRMSE"           : NRMSE,
+    "Q_Quantile"      : Q_Quantile,
+    "Q_Quantile_Loss" : Q_Quantile_Loss,
+    "RMSE"            : RMSE,
+    "TimeSeriesMSE"   : TimeSeriesMSE,
+    "TimeSeriesWMSE"  : TimeSeriesWMSE,
+    "WMAE"            : WMAE,
+    "WMSE"            : WMSE,
+    "WRMSE"           : WRMSE,
+}  # fmt: skip
 r"""Dictionary of all available modular losses."""
 
 
 LOSSES: dict[str, Metric | type[Metric]] = {
     **FUNCTIONAL_LOSSES,
     **MODULAR_LOSSES,
-}
+}  # fmt: skip
 r"""Dictionary of all available losses."""
-
-del nn
