@@ -146,6 +146,6 @@ def test_type_b() -> None:
     assert_type(ld, LazyDict[int, int])
 
     # without type hints
-    e = {0: lambda: int(0), 1: lambda: int(1), 2: lambda: int(2)}
+    e = {0: lambda: 0, 1: lambda: 1, 2: lambda: 2}
     ld2 = LazyDict(e)  # type: ignore[arg-type, var-annotated]
-    assert_type(ld2, LazyDict[int, int])
+    assert_type(ld2, LazyDict[int, int])  # pyright: ignore[reportAssertTypeFailure]

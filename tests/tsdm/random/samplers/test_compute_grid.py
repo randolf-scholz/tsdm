@@ -103,18 +103,18 @@ def _make_inputs(mode: str) -> GridTuple[DTVar, TDVar]:
         case "int":
             # noinspection PyArgumentList
             the_tuple = GridTuple(
-                int(0),
-                int(100),
-                int(1),
-                int(1),
+                0,
+                100,
+                1,
+                1,
             )
         case "float":
             # noinspection PyArgumentList
             the_tuple = GridTuple(
-                float(0.0),
-                float(99.9),
-                float(0.6),
-                float(1.4),
+                0.0,
+                99.9,
+                0.6,
+                1.4,
             )
         case _:
             raise ValueError(f"Unknown mode {mode=}")
