@@ -1,3 +1,5 @@
+# Removing files from GIT history
+
 [GitLab recommends](https://docs.gitlab.com/ee/user/project/repository/reducing_the_repo_size_using_git.html) [`git filter-repo`](https://github.com/newren/git-filter-repo/blob/main/README.md) over [`git filter-branch`](https://git-scm.com/docs/git-filter-branch) and [`BFG`](https://rtyley.github.io/bfg-repo-cleaner/).
 
 Some usage examples are given in <https://github.com/newren/git-filter-repo/tree/main/contrib/filter-repo-demos>:

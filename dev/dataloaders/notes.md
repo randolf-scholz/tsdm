@@ -1,3 +1,5 @@
+# DataLoader Notes
+
 The whole start-to-end data pipeline looks as follows:
 
 Modus Operandi: small data-set, everything in-memory

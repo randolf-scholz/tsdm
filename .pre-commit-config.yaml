@@ -39,7 +39,6 @@ repos:
         description: "ensures that a file is either empty, or ends with one newline."
       - id: pretty-format-json
         args: ["--autofix"]
-        exclude: ^.*.ipynb$
         description: "sets a standard for formatting json files."
       - id: requirements-txt-fixer
         description: "sorts entries in requirements.txt"
@@ -88,7 +87,7 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.49
+    rev: v0.1.50
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
@@ -116,7 +115,7 @@ repos:
         files: (^src/|^tests/)
       - id: check-separator-length
         files: (^src/|^tests/)
-      - id: python-check-__all__-exists
+      - id: python-check-dunder-all-exists
         files: ^src/
       - id: python-check-typing
         files: (^src/|^tests/)
@@ -127,21 +126,18 @@ repos:
       - id: python-check-clean-interface
         files: ^src/
         args: ["--no-load-silent"]
-  - repo: local
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
     hooks:
       - id: markdownlint
-        name: markdownlint
-        types: [markdown]
-        language: system
-        stages: [pre-push, manual]
-        verbose: true
-        entry: mdl
         args:
-          ["-r", "~MD007,~MD013,~MD029,~MD033"]
-          # MD007: Unordered list indentation (false positives)
-          # MD013: Line length (unused)
-        # MD029: Ordered list item prefix (false positives)
-        # MD033: Inline HTML (unused)
+          [
+            "--disable",
+            "MD013", # Line length
+            "--"  # otherwise files are interpreted as args
+          ]
+  - repo: local
+    hooks:
       - id: axes-axis
         name: rename 'axes=' => 'axis='
         types: [python]
@@ -162,7 +158,7 @@ repos:
           ]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.348
+    rev: v1.1.349
     hooks:
       - id: pyright
         files: (^src/|^tests/)

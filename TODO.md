@@ -1,7 +1,5 @@
 # TODOs
 
-##
-
 - Encoder serialization / deserialization (beyond pickle)
   - use a library like pydantic/attrs to convert to JSON
   - What about the "params" tuple
@@ -99,7 +97,7 @@ Example: Encoder:
 - Time Encoding?
 - negative values: truncate to zero!
 
-```
+```pycon
 >>> timeseries.min()
 Flow_Air                           0.000000
 StirringSpeed                      0.000000

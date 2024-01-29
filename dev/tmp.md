@@ -1,3 +1,5 @@
+# TMP
+
 As a workaround, I tried using a `Protocol` that emulates `Callable`, but it still results in a bunch of `[unreachable]` errors
 
 ```python

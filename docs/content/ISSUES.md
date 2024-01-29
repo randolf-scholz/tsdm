@@ -12,7 +12,7 @@ This however has the side effect that for `imported-members`, types are no longe
 
 - We want to import stuff because we use the implemented folder structure.
 
-  ```
+  ```text
   ├── package
   │   ├── __init__.py
   │   ├── _package.py
