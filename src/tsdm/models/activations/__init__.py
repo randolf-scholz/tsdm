@@ -11,8 +11,6 @@ __all__ = [
     # Sub-Modules
     "functional",
     "modular",
-    # Types
-    "Activation",
     # Constants
     "ACTIVATIONS",
     "FUNCTIONAL_ACTIVATIONS",
@@ -21,6 +19,8 @@ __all__ = [
     "TORCH_FUNCTIONAL_ACTIVATIONS",
     "TORCH_MODULAR_ACTIVATIONS",
     "TORCH_SPECIAL_FUNCTIONAL_ACTIVATIONS",
+    # ABCs & Protocols
+    "Activation",
 ]
 
 from torch import nn

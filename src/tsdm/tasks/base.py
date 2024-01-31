@@ -246,23 +246,11 @@ class ForecastingTask(Protocol[Key, Sample_co]):
     #         yield metric(sample.targets, predictions)
 
 
-class TimeSeriesTaskMetaClass(type(Protocol)):  # type: ignore[misc]
-    """Metaclass for TimeSeriesTask."""
-
-    def __init__(
-        self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
-    ) -> None:
-        """When a new class/subclass is created, this method is called."""
-        super().__init__(name, bases, namespace, **kwds)
-        if not hasattr(self, "LOGGER"):
-            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
-
-
-class TTT(ForecastingTask[Key, Sample_co], metaclass=TimeSeriesTaskMetaClass):
+class TTT(ForecastingTask[Key, Sample_co]):
     # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
     # __slots__ = ()
 
-    LOGGER: ClassVar[logging.Logger]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
 
     dataset: TimeSeriesCollection
@@ -495,9 +483,7 @@ class TTT(ForecastingTask[Key, Sample_co], metaclass=TimeSeriesTaskMetaClass):
 
 @pprint_repr
 @dataclass
-class TimeSeriesTask(
-    Generic[SplitID, Key, Sample_co], metaclass=TimeSeriesTaskMetaClass
-):
+class TimeSeriesTask(Generic[SplitID, Key, Sample_co]):
     r"""Abstract Base Class for Tasks.
 
     A task has the following responsibilities:
@@ -549,7 +535,7 @@ class TimeSeriesTask(
     # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
     # __slots__ = ()
 
-    LOGGER: ClassVar[logging.Logger]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
 
     dataset: TimeSeriesCollection

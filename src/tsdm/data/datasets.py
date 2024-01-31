@@ -1,11 +1,10 @@
 r"""Generic Dataset classes."""
 
 __all__ = [
-    # Type Aliases
+    # ABCs & Protocols
     "Dataset",
     "TabularDataset",
     "SequentialDataset",
-    # Protocols
     "TorchDataset",
     "IterableDataset",
     "MapDataset",

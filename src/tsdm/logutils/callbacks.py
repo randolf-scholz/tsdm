@@ -1,13 +1,8 @@
 """Callback utilities for logging."""
 
 __all__ = [
-    # Functions
-    # Classes
-    # Protocols
+    # ABCs & Protocols
     "Callback",
-    # functions
-    "is_callback",
-    # Base Classes
     "BaseCallback",
     "CallbackList",
     # Callbacks
@@ -22,6 +17,8 @@ __all__ = [
     "OptimizerCallback",
     "ScalarsCallback",
     "TableCallback",
+    # Functions
+    "is_callback",
 ]
 
 import inspect
@@ -110,9 +107,20 @@ class Callback(Protocol[P]):
 CB = TypeVar("CB", bound=Callback)
 
 
-def is_callback(func: CB, /) -> TypeGuard[CB]:
+@overload
+def is_callback(obj: CB, /) -> TypeGuard[CB]: ...
+@overload
+def is_callback(obj: object, /) -> TypeGuard[Callback]: ...
+def is_callback(obj, /):
     """Check if the function is a callback."""
-    sig = inspect.signature(func)
+    if not callable(obj):
+        return False
+
+    try:
+        sig = inspect.signature(obj)
+    except Exception as exc:
+        raise ValueError(f"Could not inspect signature of {obj=}") from exc
+
     params = list(sig.parameters.values())
     return (
         len(params) >= 1
@@ -121,23 +129,11 @@ def is_callback(func: CB, /) -> TypeGuard[CB]:
     )
 
 
-class BaseCallbackMetaClass(type(Protocol)):  # type: ignore[misc]
-    """Metaclass for PreTrained."""
-
-    def __init__(
-        self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
-    ) -> None:
-        """When a new class/subclass is created, this method is called."""
-        super().__init__(name, bases, namespace, **kwds)
-        if not hasattr(self, "LOGGER"):
-            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
-
-
 @dataclass(repr=False)
-class BaseCallback(Callback[P], metaclass=BaseCallbackMetaClass):
+class BaseCallback(Callback[P]):
     """Base class for callbacks."""
 
-    LOGGER: ClassVar[logging.Logger]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     """Logger for the class."""
 
     # required_kwargs: ClassVar[set[str]]

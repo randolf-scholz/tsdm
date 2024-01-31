@@ -1,12 +1,12 @@
 """Encoders based on scikit-learn transformers."""
 
 __all__ = [
-    # Types
-    "Transform",
-    "InvertibleTransform",
     # Constants
     "SKLEARN_TRANSFORMS",
     "SKLEARN_ENCODERS",
+    # ABCs & Protocols
+    "Transform",
+    "InvertibleTransform",
 ]
 
 from sklearn import preprocessing as sk_preprocessing

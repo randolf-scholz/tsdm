@@ -1,14 +1,13 @@
 r"""Base Classes for Encoders."""
 
 __all__ = [
-    # Types / TypeVars
-    "Transform",
-    "InvertibleTransform",
-    "EncoderProtocol",
-    # ABCs
-    "Encoder",
-    # Classes
+    # ABCs & Protocols
     "BaseEncoder",
+    "Encoder",
+    "EncoderProtocol",
+    "InvertibleTransform",
+    "Transform",
+    # Classes
     "ChainedEncoder",
     "CloneEncoder",
     "CopyEncoder",
@@ -26,7 +25,6 @@ __all__ = [
     "pipe_encoders",
     "pow_encoder",
 ]
-# TODO: Improve Typing for Encoders.
 
 import logging
 from abc import abstractmethod
@@ -142,6 +140,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
         r"""Chain the encoders (pure function composition).
 
         Example:
+            >>> x = ...
             >>> enc = other @ self
             >>> enc(x) == other(self(x))
         """
@@ -150,7 +149,7 @@ class Encoder(EncoderProtocol[U, V], Protocol):
     def __rshift__(self, other: "Encoder[V, W]", /) -> "Encoder[U, W]":
         r"""Pipe the encoders (encoder composition).
 
-        Note that the order is reversed compared to `@`.
+        Note that the order is reversed compared to the `@`-operator.
 
         Example:
             >>> enc1, enc2, x = ...
@@ -206,23 +205,10 @@ class Encoder(EncoderProtocol[U, V], Protocol):
     # endregion mixin methods ----------------------------------------------------------
 
 
-class BaseEncoderMetaClass(type(Protocol)):  # type: ignore[misc]
-    r"""Metaclass for BaseDataset."""
-
-    def __init__(
-        self, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwds: Any
-    ) -> None:
-        """When a new class/subclass is created, this method is called."""
-        super().__init__(name, bases, namespace, **kwds)
-
-        if "LOGGER" not in namespace:
-            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
-
-
-class BaseEncoder(Encoder[T, T2], metaclass=BaseEncoderMetaClass):
+class BaseEncoder(Encoder[T, T2]):
     r"""Base class that all encoders must subclass."""
 
-    LOGGER: ClassVar[logging.Logger]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Logger for the Encoder."""
 
     _is_fitted: bool = False

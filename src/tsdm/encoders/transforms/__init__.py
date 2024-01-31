@@ -5,11 +5,11 @@ See Also:
 """
 
 __all__ = [
-    # Types
-    "Transform",
     # Constants
     "TRANSFORMS",
     "SKLEARN_TRANSFORMS",
+    # ABCs & Protocols
+    "Transform",
     # Functions
     "make_dense_triplets",
     "make_masked_format",

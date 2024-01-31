@@ -303,23 +303,23 @@ def log_kernel(
     if log_scalars and log_distances:
         # fmt: off
         # relative distance to some matrix groups
-        log(f"{identifier}:distances/diagonal_(relative)", reldist_diagonal(K), step)
-        log(f"{identifier}:distances/skew-symmetric_(relative)", reldist_skew(K), step)
-        log(f"{identifier}:distances/symmetric_(relative)", reldist_symmetric(K), step)
-        log(f"{identifier}:distances/orthogonal_(relative)", reldist_orthogonal(K), step)
+        log(f"{identifier}:distances/diagonal_(relative)",       reldist_diagonal(K)  , step)
+        log(f"{identifier}:distances/skew-symmetric_(relative)", reldist_skew(K)      , step)
+        log(f"{identifier}:distances/symmetric_(relative)",      reldist_symmetric(K) , step)
+        log(f"{identifier}:distances/orthogonal_(relative)",     reldist_orthogonal(K), step)
         # fmt: on
 
     if log_scalars and log_linalg:
         # fmt: off
         # general properties
-        log(f"{identifier}:linalg/condition-number", torch.linalg.cond(K), step)
-        log(f"{identifier}:linalg/correlation-cols", col_corr(K), step)
-        log(f"{identifier}:linalg/correlation-rows", row_corr(K), step)
-        log(f"{identifier}:linalg/effective-rank",   erank(K), step)
+        log(f"{identifier}:linalg/condition-number", torch.linalg.cond(K)       , step)
+        log(f"{identifier}:linalg/correlation-cols", col_corr(K)                , step)
+        log(f"{identifier}:linalg/correlation-rows", row_corr(K)                , step)
+        log(f"{identifier}:linalg/effective-rank",   erank(K)                   , step)
         log(f"{identifier}:linalg/logdet",           torch.linalg.slogdet(K)[-1], step)
-        log(f"{identifier}:linalg/mean",             torch.mean(K), step)
-        log(f"{identifier}:linalg/stdev",            torch.std(K), step)
-        log(f"{identifier}:linalg/trace",            torch.trace(K), step)
+        log(f"{identifier}:linalg/mean",             torch.mean(K)              , step)
+        log(f"{identifier}:linalg/stdev",            torch.std(K)               , step)
+        log(f"{identifier}:linalg/trace",            torch.trace(K)             , step)
         # fmt: on
 
     if log_scalars and log_norms:

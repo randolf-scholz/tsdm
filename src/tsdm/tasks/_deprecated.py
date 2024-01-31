@@ -1,6 +1,10 @@
 """Deprecated Task code."""
 
-__all__ = ["BaseTask", "OldBaseTask"]
+__all__ = [
+    # ABCs & Protocols
+    "BaseTask",
+    "OldBaseTask",
+]
 
 import logging
 import warnings
@@ -15,7 +19,7 @@ from torch.utils.data import (
     Dataset as TorchDataset,
     Sampler as TorchSampler,
 )
-from typing_extensions import Any, ClassVar, Generic, Literal, Optional, Protocol
+from typing_extensions import Any, ClassVar, Generic, Literal, Optional
 
 from tsdm.datasets import Dataset
 from tsdm.encoders import Encoder
@@ -23,24 +27,7 @@ from tsdm.types.variables import K
 from tsdm.utils import LazyDict
 
 
-class BaseDatasetMetaClass(type(Protocol)):  # type: ignore[misc]
-    r"""Metaclass for BaseDataset."""
-
-    def __init__(
-        self,
-        name: str,
-        bases: tuple[type, ...],
-        namespace: dict[str, Any],
-        **kwds: Any,
-    ) -> None:
-        """When a new class/subclass is created, this method is called."""
-        super().__init__(name, bases, namespace, **kwds)
-
-        if "LOGGER" not in namespace:
-            self.LOGGER = logging.getLogger(f"{self.__module__}.{self.__name__}")
-
-
-class BaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
+class BaseTask(Generic[K]):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
@@ -56,7 +43,7 @@ class BaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
 
     # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
 
-    LOGGER: ClassVar[logging.Logger]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
     preprocessor: Optional[Encoder] = None
     r"""Optional task specific preprocessor (applied before sampling/batching)."""
@@ -197,7 +184,7 @@ class BaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
         return LazyDict({k: self.make_dataloader for k in self.splits})
 
 
-class OldBaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
+class OldBaseTask(Generic[K]):
     r"""Abstract Base Class for Tasks.
 
     A task is a combination of a dataset and an evaluation protocol (EVP).
@@ -215,7 +202,7 @@ class OldBaseTask(Generic[K], metaclass=BaseDatasetMetaClass):
 
     # __slots__ = ()  # https://stackoverflow.com/a/62628857/9318372
 
-    LOGGER: ClassVar[logging.Logger]
+    LOGGER: ClassVar[logging.Logger] = logging.getLogger(f"{__name__}.{__qualname__}")
     r"""Class specific logger instance."""
     train_batch_size: int = 32
     r"""Default batch size."""

@@ -11,15 +11,14 @@ __all__ = [
     "activations",
     "generic",
     "pretrained",
-    # protocols
-    "ForecastingModel",
-    "StateSpaceForecastingModel",
-    # Type Hints
-    "Model",
     # Constants
     "MODELS",
-    # Classes
+    # ABCs & Protocols
+    "ForecastingModel",
+    "StateSpaceForecastingModel",
+    "Model",
     "BaseModel",
+    # Classes
     "ODE_RNN",
     "SetFuncTS",
     "GroupedSetFuncTS",

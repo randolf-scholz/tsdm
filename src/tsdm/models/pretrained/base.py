@@ -28,9 +28,8 @@ Therefore, we need to define a way of storing and loading these files.
 """
 
 __all__ = [
-    # Protocols
+    # ABCs & Protocols
     "PreTrained",
-    # Classes
     "PreTrainedBase",
 ]
 

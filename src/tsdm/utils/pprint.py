@@ -9,11 +9,10 @@ __all__ = [
     "PADDING",
     "RECURSIVE",
     "ALIGN",
-    # Types
+    # ABCs & Protocols
     "ReprProtocol",
     # Functions
     "pprint_repr",
-    # repr functions
     "repr_array",
     "repr_dataclass",
     "repr_dtype",
@@ -99,7 +98,7 @@ def get_identifier(obj: Any, /, **_: Any) -> str:
     match obj:
         case type() as cls:
             return f"<{cls.__name__}>"
-        case _ if (cls := type(obj)) in BUILTIN_TYPES:
+        case _ if type(obj) in BUILTIN_TYPES:
             # return f"<{cls.__name__}>"
             return ""
         case SupportsArray():
@@ -698,11 +697,11 @@ def repr_array(
 
     # add the shape.
     shape = obj.shape if isinstance(obj, SupportsShape) else obj.__array__().shape
-    string += (  # if object is scalar-like, try get the actual value.
-        repr(obj.item())
-        if prod(shape) <= 1 and isinstance(obj, SupportsItem)
-        else str(tuple(shape))
-    )
+    # if the object is scalar-like, try to get the actual value.
+    if prod(shape) <= 1 and isinstance(obj, SupportsItem):
+        string += repr(obj.item())
+    else:
+        string += str(tuple(shape))
 
     # add the dtype
     match obj:

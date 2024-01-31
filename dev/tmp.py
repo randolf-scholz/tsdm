@@ -2,10 +2,7 @@
 
 
 class A:
-    a = 1
-
-    def __getattribute__(self, item):
-        return object.__getattribute__(self, item)
+    foo = f"{__package__}.{__module__}.{__name__}.{__qualname__}"
 
 
-A().a
+print(A.foo)
