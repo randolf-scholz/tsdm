@@ -41,7 +41,7 @@ dependencies = [
     "scikit-learn>=1.4.0",
     "scipy>=1.12.0",
     "tensorboard>=2.15.1",
-    "torch>=2.1.2",
+    "torch>=2.2.0",
     "tqdm>=4.66.1",
     "typing-extensions>=4.9.0",
 ]
@@ -51,7 +51,7 @@ dependencies = [
 dev = ["tsdm[test,docs,extras,typing,linters,devtools]"]
 test = [
     "coverage>=7.4.1",
-    "hypothesis[numpy,pandas,pytest]>=6.97.1",
+    "hypothesis[numpy,pandas,pytest]>=6.97.3",
     "pygal>=3.0.4",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
@@ -112,14 +112,14 @@ linters = [
     "pyflakes>=3.2.0",
     "pylint>=3.0.3",
     "pylint-gitlab>=2.0.0",
-    "ruff>=0.1.14",
+    "ruff>=0.1.15",
     "ruff-lsp>=0.0.50",
 ]
 extras = [
     "ipympl>=0.9.3",
     "ipywidgets>=8.1.1",
-    "jupyterlab>=4.0.11",
-    "jupyterlab>=4.0.11",
+    "jupyterlab>=4.0.12",
+    "jupyterlab>=4.0.12",
     "notebook>=7.0.7",
     "openml>=0.14.2",
     "openpyxl>=3.1.2",
@@ -236,7 +236,7 @@ rst-directives = ["details", "signature", "literalinclude"]
 
 # region ruff configuration ------------------------------------------------------------
 [tool.ruff]
-src = ["src/"]
+src = ["src/", "tests/"]
 indent-width = 4
 line-length = 88
 target-version = "py311"
@@ -329,7 +329,6 @@ ignore = [
 fixable = ["ALL"]
 unfixable = []
 
-
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
@@ -343,7 +342,6 @@ mark-parentheses = false
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-
 
 [tool.ruff.lint.pylint]
 allow-dunder-method-names = ["__array__", "__dataframe__", "_repr_html_", "__pre_init__"]
@@ -663,13 +661,13 @@ requests = ">=2.31.0"
 scikit-learn = ">=1.4.0"
 scipy = ">=1.12.0"
 tensorboard = ">=2.15.1"
-torch = ">=2.1.2"
+torch = ">=2.2.0"
 tqdm = ">=4.66.1"
 typing-extensions = ">=4.9.0"
 
 [tool.poetry.group.test.dependencies]
 coverage = ">=7.4.1"
-hypothesis = {version=">=6.97.1", extras=["numpy", "pandas", "pytest"]}
+hypothesis = {version=">=6.97.3", extras=["numpy", "pandas", "pytest"]}
 pygal = ">=3.0.4"
 pytest = ">=8.0.0"
 pytest-benchmark = ">=4.0.0"
@@ -722,7 +720,7 @@ pydocstyle = ">=6.3.0"
 pyflakes = ">=3.2.0"
 pylint = ">=3.0.3"
 pylint-gitlab = ">=2.0.0"
-ruff = ">=0.1.14"
+ruff = ">=0.1.15"
 ruff-lsp = ">=0.0.50"
 
 [tool.poetry.group.typing.dependencies]
@@ -747,7 +745,7 @@ types-urllib3 = ">=1.26.25"
 [tool.poetry.group.extra.dependencies]
 ipympl = ">=0.9.3"
 ipywidgets = ">=8.1.1"
-jupyterlab = ">=4.0.11"
+jupyterlab = ">=4.0.12"
 notebook = ">=7.0.7"
 openml = ">=0.14.2"
 openpyxl = ">=3.1.2"

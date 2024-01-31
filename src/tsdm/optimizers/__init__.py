@@ -38,7 +38,7 @@ LR_SCHEDULERS: dict[str, type[LRScheduler]] = {
     "MultiStepLR"                 : lr_scheduler.MultiStepLR,
     "MultiplicativeLR"            : lr_scheduler.MultiplicativeLR,
     "OneCycleLR"                  : lr_scheduler.OneCycleLR,
-    "ReduceLROnPlateau"           : lr_scheduler.ReduceLROnPlateau,  # type: ignore[dict-item]
+    "ReduceLROnPlateau"           : lr_scheduler.ReduceLROnPlateau,
     "StepLR"                      : lr_scheduler.StepLR,
 }  # fmt: skip
 r"""Dictionary of all available lr_schedulers."""

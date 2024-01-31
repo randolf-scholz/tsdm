@@ -67,18 +67,16 @@ repos:
     hooks:
       - id: absolufy-imports
         files: (^src/|^tests/)
-  # isort
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: ["--check"]
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.14
+    rev: v0.1.15
     hooks:
       - id: ruff
         files: (^src/|^tests/)
+      - id: ruff
+        name: ruff-isort
+        files: (^src/|^tests/)
+        args: ["--select", "I", "--fix"]
       - id: ruff-format
         files: (^src/|^tests/)
   # nbstripout-fast
@@ -88,7 +86,7 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.50
+    rev: v0.1.51
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
@@ -136,6 +134,7 @@ repos:
           [
             "--disable",
             "MD013", # Line length
+            "MD033", # Inline HTML
             "--"  # otherwise files are interpreted as args
           ]
   - repo: local

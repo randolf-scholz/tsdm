@@ -51,7 +51,7 @@ TORCH_ALIASES_FUNCTIONAL: dict[str, Metric] = {
     "l2"   : nn.functional.mse_loss,
     "xent" : nn.functional.cross_entropy,
     "kl"   : nn.functional.kl_div,
-}  # fmt: off
+}  # fmt: skip
 r"""Dictionary containing additional aliases for losses in torch."""
 
 TORCH_ALIASES: dict[str, type[NN_Metric]] = {

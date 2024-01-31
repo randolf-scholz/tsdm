@@ -37,7 +37,6 @@ TIMESERIES_DESCRIPTION: InlineTable = {
         "lower_inclusive" : "bool[pyarrow]",
         "upper_inclusive" : "bool[pyarrow]",
         "unit"            : "string[pyarrow]",
-        # fmt: on
     },
     "index": ["variable"],
 }  # fmt: skip
