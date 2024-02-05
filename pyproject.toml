@@ -33,7 +33,7 @@ dependencies = [
     "numpy>=1.26.3",
     "pandas>=2.2.0",
     "pillow>=10.2.0",
-    "polars>=0.20.6",
+    "polars>=0.20.7",
     "pyarrow>=15.0.0",
     "pydantic>=2.6.0",
     "pyyaml>=6.0.1",
@@ -51,7 +51,7 @@ dependencies = [
 dev = ["tsdm[test,docs,extras,typing,linters,devtools]"]
 test = [
     "coverage>=7.4.1",
-    "hypothesis[numpy,pandas,pytest]>=6.97.3",
+    "hypothesis[numpy,pandas,pytest]>=6.98.1",
     "pygal>=3.0.4",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
@@ -76,10 +76,10 @@ docs = [
     "sphinx>=7.2.6",
 ]
 devtools = [
-    "pip>=23.3.2",
+    "devtools>=0.12.2",
+    "pip>=24.0",
     "pre-commit>=3.6.0",
     "pybadges>=3.0.1",
-    "pydeps>=1.12.18",
     "pygments>=2.17.2",
     "setuptools>=69.0.3",
     "twine>=4.0.2",
@@ -112,8 +112,8 @@ linters = [
     "pyflakes>=3.2.0",
     "pylint>=3.0.3",
     "pylint-gitlab>=2.0.0",
-    "ruff>=0.1.15",
-    "ruff-lsp>=0.0.50",
+    "ruff>=0.2.0",
+    "ruff-lsp>=0.0.51",
 ]
 extras = [
     "ipympl>=0.9.3",
@@ -240,10 +240,7 @@ src = ["src/", "tests/"]
 indent-width = 4
 line-length = 88
 target-version = "py311"
-
-[tool.ruff.per-file-ignores]
-"src/tsdm/linalg/*" = ["FBT001", "FBT002"]
-"src/tsdm/metrics/*" = ["PLR6301"]
+output-format = "concise"
 
 [tool.ruff.lint]
 select = [
@@ -331,6 +328,10 @@ ignore = [
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"src/tsdm/linalg/*" = ["FBT001", "FBT002"]
+"src/tsdm/metrics/*" = ["PLR6301"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -656,7 +657,7 @@ matplotlib = ">=3.8.2"
 numpy = ">=1.26.3"
 pandas = ">=2.2.0"
 pillow = ">=10.2.0"
-polars = ">=0.20.6"
+polars = ">=0.20.7"
 pyarrow = ">=15.0.0"
 pydantic = ">=2.6.0"
 pyyaml = ">=6.0.1"
@@ -670,7 +671,7 @@ typing-extensions = ">=4.9.0"
 
 [tool.poetry.group.test.dependencies]
 coverage = ">=7.4.1"
-hypothesis = {version=">=6.97.3", extras=["numpy", "pandas", "pytest"]}
+hypothesis = {version=">=6.98.1", extras=["numpy", "pandas", "pytest"]}
 pygal = ">=3.0.4"
 pytest = ">=8.0.0"
 pytest-benchmark = ">=4.0.0"
@@ -704,7 +705,7 @@ cmake = ">=3.28.1"
 devtools = ">=0.12.2"
 johnnydep = ">=1.20.4"
 ninja = ">=1.11.1"
-pip = ">=23.3.2"
+pip = ">=24.0"
 pip-tools = ">=7.3.0"
 pipdeptree = ">=2.13.2"
 pipreqs = ">=0.4.13"
@@ -723,8 +724,8 @@ pydocstyle = ">=6.3.0"
 pyflakes = ">=3.2.0"
 pylint = ">=3.0.3"
 pylint-gitlab = ">=2.0.0"
-ruff = ">=0.1.15"
-ruff-lsp = ">=0.0.50"
+ruff = ">=0.2.0"
+ruff-lsp = ">=0.0.51"
 
 [tool.poetry.group.typing.dependencies]
 mypy = ">=1.8.0"
