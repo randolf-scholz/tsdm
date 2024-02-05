@@ -28,8 +28,8 @@ docs/_build
 !docs/_ext/
 !docs/_templates/
 reports/
-tests/results/
-tests/reports/
+tests/**/results/
+tests/**/reports/
 
 # pytorch model files
 *.pt
