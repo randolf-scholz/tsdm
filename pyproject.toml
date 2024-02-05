@@ -2,17 +2,12 @@
 # requires = ["poetry-core>=1.6.0"]
 # build-backend = "poetry.core.masonry.api"
 
-
-# region project configuration ------------------------------------------------------
+# region project configuration ---------------------------------------------------------
 [project]
 name = "tsdm"
 version = "0.5.8"
 authors = [{name="Randolf Scholz", email="randolf.scholz@gmail.com"}]
 description = "Time-Series Datasets and Models"
-
-# package-content
-license = {file="LICENSE"}
-readme = "README.md"
 
 # meta-information
 keywords = ["time-series", "machine-learning"]
@@ -25,6 +20,10 @@ classifiers = [
     "Typing :: Typed",
     "Operating System :: POSIX :: Linux",
 ]
+
+# package content
+license = {file="LICENSE"}
+readme = "README.md"
 
 # dependencies
 requires-python = ">=3.11,<3.12"
@@ -46,24 +45,18 @@ dependencies = [
     "typing-extensions>=4.9.0",
 ]
 
+[project.urls]
+homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
+documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
+repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple"
+# endregion project configuration ------------------------------------------------------
 
-[project.optional-dependencies]
-dev = ["tsdm[test,docs,extras,typing,linters,devtools]"]
-test = [
-    "coverage>=7.4.1",
-    "hypothesis[numpy,pandas,pytest]>=6.98.1",
-    "pygal>=3.0.4",
-    "pytest-benchmark[histogram]>=4.0.0",
-    "pytest-cov>=4.1.0",
-    "pytest-repeat>=0.9.3",
-    "pytest-rerunfailures>=13.0",
-    "pytest-xdist>=3.5.0",
-    "pytest>=8.0.0",
 
-]
+# region development dependencies ------------------------------------------------------
+[tool.pdm.dev-dependencies]
 docs = [
     "docutils>=0.20.1",
-    "myst_parser>=2.0.0",
+    "myst-parser>=2.0.0",
     "nbsphinx>=0.9.3",
     "piccolo-theme>=0.19.0",
     "pydata-sphinx-theme>=0.15.2",
@@ -75,6 +68,44 @@ docs = [
     "sphinx-typo3-theme>=4.9.0",
     "sphinx>=7.2.6",
 ]
+tests = [
+    "coverage>=7.4.1",
+    "hypothesis[numpy,pandas,pytest]>=6.98.1",
+    "pygal>=3.0.4",
+    "pytest-benchmark[histogram]>=4.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-repeat>=0.9.3",
+    "pytest-rerunfailures>=13.0",
+    "pytest-xdist>=3.5.0",
+    "pytest>=8.0.0",
+]
+linters = [
+    "pylint>=3.0.3",
+    "pylint-gitlab>=2.0.0",
+    "ruff>=0.2.0",
+    "ruff-lsp>=0.0.51",
+]
+typing = [
+    "mypy>=1.8.0",
+    "pyright>=1.1.349",
+    "types-colorama>=0.4.15.20240205",
+    "types-decorator>=5.1.8.20240106",
+    "types-docutils>=0.20.0.20240201",
+    "types-jsonschema>=4.21.0.20240118",
+    "types-pillow>=10.2.0.20240125",
+    "types-protobuf>=4.24.0.20240129",
+    "types-psutil>=5.9.5.20240205",
+    "types-pygments>=2.17.0.20240106",
+    "types-pytz>=2024.1.0.20240203",
+    "types-pyyaml>=6.0.12.12",
+    "types-requests>=2.31.0.20240125",
+    "types-setuptools>=69.0.0.20240125",
+    "types-six>=1.16.21.20240106",
+    "types-tabulate>=0.9.0.20240106",
+    "types-tqdm>=4.66.0.20240106",
+    "types-urllib3>=1.26.25.14",
+    "typing-extensions>=4.9.0",
+]
 devtools = [
     "devtools>=0.12.2",
     "pip>=24.0",
@@ -85,41 +116,11 @@ devtools = [
     "twine>=4.0.2",
     "wheel>=0.42.0",
 ]
-typing = [
-    "mypy>=1.8.0",
-    "pyright>=1.1.349",
-    "types-colorama>=0.4.15",
-    "types-decorator>=5.1.8",
-    "types-docutils>=0.20.0",
-    "types-jsonschema>=4.21.0",
-    "types-pillow>=10.2.0",
-    "types-protobuf>=4.24.0",
-    "types-psutil>=5.9.5",
-    "types-pygments>=2.17.0",
-    "types-pyyaml>=6.0.12",
-    "types-requests>=2.31.0",
-    "types-setuptools>=69.0.0",
-    "types-six>=1.16.21",
-    "types-tabulate>=0.9.0",
-    "types-tqdm>=4.66.0",
-    "types-urllib3>=1.26.25",
-]
-linters = [
-    "bandit>=1.7.7",
-    "mccabe>=0.7.0",
-    "pycodestyle>=2.11.1",
-    "pydocstyle>=6.3.0",
-    "pyflakes>=3.2.0",
-    "pylint>=3.0.3",
-    "pylint-gitlab>=2.0.0",
-    "ruff>=0.2.0",
-    "ruff-lsp>=0.0.51",
-]
-extras = [
+experiment = [
     "ipympl>=0.9.3",
     "ipywidgets>=8.1.1",
-    "jupyterlab>=4.0.12",
-    "jupyterlab>=4.0.12",
+    "jupyterlab>=4.1.0",
+    "jupyterlab>=4.1.0",
     "notebook>=7.0.7",
     "openml>=0.14.2",
     "openpyxl>=3.1.2",
@@ -127,111 +128,7 @@ extras = [
     "pygments>=2.17.2",
     "torchinfo>=1.8.0",
 ]
-
-
-[project.urls]
-homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
-repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple"
-# endregion project configuration ------------------------------------------------------
-
-
-# region flake8 configuration ----------------------------------------------------------
-[tool.flake8]
-max-line-length = 120
-
-# ANN: Annotations
-# A:   builtins
-# B:   bugbear
-# B9:  bugbear future proof
-# BLK: black
-# C:   mccabe / comprehensions
-# D:   docstring
-# E:   pycodestyle errors
-# F:   pyflakes warnings
-# I:   import-order
-# M:   flake8 extension for mutable default arguments
-# RST: restructured text
-# W:   pycodestyle warnings
-# Y:   type hinting in stub files
-# select = B,B9,BLK,C,D,E,F,I,S,W
-
-#filename = [
-#    "src/",
-#    "tests/",
-#    "examples/",
-#    "docs/conf.py",
-#    "run/",
-#    "dev/",
-#]
-
-ignore = [
-    "ANN10", # ANN10 Missing type annotation for self in method
-    "ANN10", # ANN10 Missing type annotation for cls in classmethod
-    "ANN40", # ANN40 Dynamically typed expressions (typing.Any) are disallowed
-    "B024",  # B024 BaseDatasetMetaClass is an abstract base class, but it has no abstract methods
-    "D102",  # D102 Missing docstring in public method
-    "D105",  # D105 Missing docstring in magic method
-    "D107",  # D107 Missing docstring in __init__
-    "E201",  # E201 whitespace after '('
-    "E202",  # E202 whitespace before ']'
-    "E203",  # E203 whitespace before ':'
-    "E301",  # E301 expected 1 blank line, found 0
-    "E302",  # E302 expected 2 blank lines, found 1
-    "E241",  # E241 multiple spaces after ','
-    "E501",  # E501 line too long (use ruff instead)
-    "E704",  # E704 multiple statements on one line (def)
-    # "E741",  # E741 ambiguous variable nam
-    "W503",  # W503 line break before binary operator
-    "W504",  # W504 line break after binary operator
-]
-per-file-ignores = ["tests/*:D103"]
-
-#Google Python style is not RST until after processed by Napoleon.
-#See https://github.com/peterjc/flake8-rst-docstrings/issues/17
-extend-ignore = [
-    "D407",    # Missing dashed underline after section
-    "RST201",  # Unexpected indentation.
-    "RST203",  # Definition list ends without a blank line# unexpected unindent.
-    "RST301",  # Block quote ends without a blank line# unexpected unindent.
-    # "ANN101",  # Missing type annotation for self in method
-    # "ANN201",  # Missing return type annotation for public function
-    # "RST303",  # Unknown directive type
-    # "RST304",  # Unknown interpreted text role
-]
-
-exclude = [
-    "*.pyi",
-    "./.git",
-    "./.idea",
-    "./.venv",
-    "./bugs",
-    "./build",
-    "./dev",
-    "./scripts",
-    "./venv",
-]
-
-# Annotations plugin
-# Suppress ANN200-level errors for functions that have no return (return None)
-suppress-none-returning = true
-allow-untyped-defs = true
-
-# docstring plugin
-docstring-convention = "google"
-rst-roles = [
-    "mod",
-    "func",
-    "data",
-    "const",
-    "class",
-    "meth",
-    "attr",
-    "exc",
-    "obj",
-]
-rst-directives = ["details", "signature", "literalinclude"]
-# endregion flake8 configuration -------------------------------------------------------
+# endregion development dependencies ---------------------------------------------------
 
 
 # region ruff configuration ------------------------------------------------------------
@@ -491,45 +388,6 @@ ignore_missing_imports = true
 # endregion mypy configuration ---------------------------------------------------------
 
 
-# region isort Configuration -----------------------------------------------------------
-[tool.isort]
-# isort profiles: black, django, pycharm, google, open_stack, plone, attrs, hug, wemake, appnexus
-# black-compatible: black, appnexus
-py_version = 311
-profile = "black"
-src_paths = ["src/", "tests/"]
-known_first_party = ["linodenet"]
-combine_as_imports = true
-# flake8-profiles: appnexus, cryptography, edited, google, pep8, pycharm, smarkets.
-# black-compatible: black, appnexus
-# endregion isort Configuration --------------------------------------------------------
-
-
-# region Black Configuration -----------------------------------------------------------
-[tool.black]
-line-length = 88
-target-version = ['py311']
-color = true
-preview = true
-# endregion Black Configuration --------------------------------------------------------
-
-
-# region Pydocstyle Configuration ------------------------------------------------------
-[tool.pydocstyle]
-convention = "google"
-#count = true
-# https://github.com/PyCQA/pydocstyle/issues/363
-#match = '.*\.py$'
-#match = '(?!test_).*\.py$'
-match_dir = '^(?!(.venv|bugs|dev|.*ipynb_checkpoints)).*'
-add-ignore = [
-    "D105",  # Missing docstring in magic method
-    "D102",  # Missing docstring in public method
-    "D107",  # Missing docstring in __init__
-]
-# endregion Pydocstyle Configuration ---------------------------------------------------
-
-
 # region Pyright Configuration ---------------------------------------------------------
 [tool.pyright]
 root = ""
@@ -619,141 +477,3 @@ exclude_lines = [
 [tool.coverage.run]
 source = ["src/"]
 # endregion coverage configuration -----------------------------------------------------
-
-
-# region poetry configuration ----------------------------------------------------------
-[tool.poetry]
-name = "tsdm"
-version = "0.5.8"
-authors = ["Randolf Scholz <rscholz@ismll.de>"]
-description = "Time-Series Datasets and Models"
-
-# package-content
-include = ["LICENSE", "README.md", "CHANGELOG.md", "CONTRIBUTING.md"]
-license = "MIT"
-packages = [{include = "tsdm", from = "src"}]
-readme = "README.md"
-
-# urls
-documentation = "https://bvt-htbd.gitlab-pages.tu-berlin.de/kiwi/tf1/tsdm/"
-homepage = "https://git.tu-berlin.de/bvt-htbd/kiwi/tf1/tsdm"
-repository = "https://git.tu-berlin.de/api/v4/projects/6694/packages/pypi/simple"
-
-# meta-information
-keywords = ["time-series", "machine-learning"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Environment :: GPU :: NVIDIA CUDA :: 12.1",
-    "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3.11",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Typing :: Typed",
-    "Operating System :: POSIX :: Linux",
-]
-
-[tool.poetry.dependencies]
-python = ">=3.11,<3.12"
-matplotlib = ">=3.8.2"
-numpy = ">=1.26.3"
-pandas = ">=2.2.0"
-pillow = ">=10.2.0"
-polars = ">=0.20.7"
-pyarrow = ">=15.0.0"
-pydantic = ">=2.6.0"
-pyyaml = ">=6.0.1"
-requests = ">=2.31.0"
-scikit-learn = ">=1.4.0"
-scipy = ">=1.12.0"
-tensorboard = ">=2.15.1"
-torch = ">=2.2.0"
-tqdm = ">=4.66.1"
-typing-extensions = ">=4.9.0"
-
-[tool.poetry.group.test.dependencies]
-coverage = ">=7.4.1"
-hypothesis = {version=">=6.98.1", extras=["numpy", "pandas", "pytest"]}
-pygal = ">=3.0.4"
-pytest = ">=8.0.0"
-pytest-benchmark = ">=4.0.0"
-pytest-cov = ">=4.1.0"
-pytest-repeat = ">=0.9.3"
-pytest-rerunfailures = ">=13.0"
-pytest-xdist = ">=3.5.0"
-
-[tool.poetry.group.docs.dependencies]
-docutils = ">=0.20.1"
-# karma_sphinx_theme = ">=0.0.0"
-myst_parser = ">=2.0.0"
-nbsphinx = ">=0.9.3"
-# numpydoc = ">=1.5.0"
-# pandoc = ">=2.3"
-piccolo-theme = ">=0.19.0"
-pydata-sphinx-theme = ">=0.15.2"
-sphinx = ">=7.2.6"
-sphinx-autoapi = ">=3.0.0"
-sphinx-autodoc-typehints = ">=1.25.3"
-sphinx-automodapi = ">=0.16.0"
-sphinx-copybutton = ">=0.5.2"
-sphinx-math-dollar = ">=1.2.1"
-# sphinx-pdj-theme = ">=0.4.0"
-sphinx-togglebutton = ">=0.3.2"
-sphinx-typo3-theme = ">=4.9.0"
-# sphinxawesome-theme = ">=4.1.0"
-
-[tool.poetry.group.devtools.dependencies]
-cmake = ">=3.28.1"
-devtools = ">=0.12.2"
-johnnydep = ">=1.20.4"
-ninja = ">=1.11.1"
-pip = ">=24.0"
-pip-tools = ">=7.3.0"
-pipdeptree = ">=2.13.2"
-pipreqs = ">=0.4.13"
-pre-commit = ">=3.6.0"
-pybadges = ">=3.0.1"
-pydeps = ">=1.12.18"
-setuptools = ">=69.0.3"
-twine = ">=4.0.2"
-wheel = ">=0.42.0"
-
-[tool.poetry.group.linters.dependencies]
-bandit = ">=1.7.7"
-mccabe = ">=0.7.0"
-pycodestyle = ">=2.11.1"
-pydocstyle = ">=6.3.0"
-pyflakes = ">=3.2.0"
-pylint = ">=3.0.3"
-pylint-gitlab = ">=2.0.0"
-ruff = ">=0.2.0"
-ruff-lsp = ">=0.0.51"
-
-[tool.poetry.group.typing.dependencies]
-mypy = ">=1.8.0"
-pyright = ">=1.1.349"
-types-colorama = ">=0.4.15"
-types-decorator = ">=5.1.8"
-types-docutils = ">=0.20.0"
-types-jsonschema = ">=4.21.0"
-types-pillow = ">=10.2.0"
-types-protobuf = ">=4.24.0"
-types-psutil = ">=5.9.5"
-types-pygments = ">=2.17.0"
-types-pyyaml = ">=6.0.12"
-types-requests = ">=2.31.0"
-types-setuptools = ">=69.0.0"
-types-six = ">=1.16.21"
-types-tabulate = ">=0.9.0"
-types-tqdm = ">=4.66.0"
-types-urllib3 = ">=1.26.25"
-
-[tool.poetry.group.extra.dependencies]
-ipympl = ">=0.9.3"
-ipywidgets = ">=8.1.1"
-jupyterlab = ">=4.0.12"
-notebook = ">=7.0.7"
-openml = ">=0.14.2"
-openpyxl = ">=3.1.2"
-psutil = ">=5.9.8"
-pygments = ">=2.17.2"
-torchinfo = ">=1.8.0"
-# endregion poetry configuration -------------------------------------------------------

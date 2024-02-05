@@ -1,5 +1,5 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
-minimum_pre_commit_version: 3.3.3
+minimum_pre_commit_version: 3.5.0
 default_language_version:
   python: python3.11
   node: "20.10.0"
@@ -86,7 +86,7 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.51
+    rev: v0.1.54
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
