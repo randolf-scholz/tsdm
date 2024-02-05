@@ -24,7 +24,7 @@ class ScaledDotProductAttention(nn.Module):
     HP: dict = {
         "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,
+        "__module__": __name__,
         "dim_k": int,
         "dim_v": int,
         "output_size": int,

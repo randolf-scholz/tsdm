@@ -25,7 +25,7 @@ class DeepSet(nn.ModuleDict):
     HP: dict = {
         "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,
+        "__module__": __name__,
         "input_size": int,
         "output_size": int,
         "latent_size": int,
@@ -80,7 +80,7 @@ class DeepSetReZero(nn.ModuleDict):
     HP: dict = {
         "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,
+        "__module__": __name__,
         "input_size": int,
         "output_size": int,
         "latent_size": int,

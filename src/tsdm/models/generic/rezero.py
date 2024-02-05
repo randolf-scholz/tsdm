@@ -35,7 +35,7 @@ class ResNetBlock(nn.Sequential):
 
     HP = {
         "__name__": __qualname__,
-        "__module__": __module__,
+        "__module__": __name__,
         "input_size": None,
         "num_subblocks": 2,
         "subblocks": [
@@ -125,7 +125,7 @@ class ConcatEmbedding(nn.Module):
     HP = {
         "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,
+        "__module__": __name__,
         "input_size": int,
         "hidden_size": int,
     }

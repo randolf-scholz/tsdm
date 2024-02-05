@@ -22,7 +22,7 @@ class MLP(nn.Sequential):
     HP: dict = {
         "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,
+        "__module__": __name__,
         "inputs_size": int,
         "output_size": int,
         "hidden_size": int,

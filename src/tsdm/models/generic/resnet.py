@@ -30,7 +30,7 @@ class ResNetBlock(nn.Sequential):
 
     HP: Final[dict] = {
         "__name__": __qualname__,
-        "__module__": __module__,
+        "__module__": __name__,
         "input_size": None,
         "num_subblocks": 2,
         "subblocks": [
@@ -87,7 +87,7 @@ class ResNet(nn.ModuleList):
 
     HP: Final[dict] = {
         "__name__": __qualname__,
-        "__module__": __module__,
+        "__module__": __name__,
         "input_size": None,
         "num_blocks": 5,
         "blocks": ResNetBlock.HP,

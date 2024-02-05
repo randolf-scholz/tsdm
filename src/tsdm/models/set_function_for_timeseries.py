@@ -52,7 +52,7 @@ class SetFuncTS(nn.Module):
     HP: dict = {
         "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,
+        "__module__": __name__,
         "time_encoder": PositionalEncoding.HP,
         "key_encoder": DeepSet.HP,
         "value_encoder": MLP.HP,
@@ -169,7 +169,7 @@ class GroupedSetFuncTS(nn.Module):
     HP: dict = {
         "__name__": __qualname__,
         "__doc__": __doc__,
-        "__module__": __module__,
+        "__module__": __name__,
         "time_encoder": PositionalEncoding.HP,
         "key_encoder": DeepSet.HP,
         "value_encoder": MLP.HP,
