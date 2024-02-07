@@ -154,21 +154,25 @@ repos:
         types: [python]
         language: pygrep
         entry: "\baxes="
-      - id: mypy
-        name: mypy
-        language: system
-        pass_filenames: false
-        types_or: [python, pyi]
-        files: (^src/|^tests/)
-        entry: mypy
-        args:
-          [
-            "--hide-error-context",
-            "--hide-error-end",
-            "--no-pretty",
-            # "--no-error-summary",
-            "--",
-          ]
+  # mypy
+  - repo: local
+    hooks:
+    - id: mypy
+      name: mypy
+      language: system
+      require_serial: true
+      types_or: [python, pyi]
+      files: (^src/|^tests/)
+      entry: mypy
+      args:
+        [
+          "--scripts-are-modules",
+          "--hide-error-context",
+          "--hide-error-end",
+          "--no-pretty",
+          # "--no-error-summary",
+          "--",
+        ]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.350
