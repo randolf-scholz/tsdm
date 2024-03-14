@@ -53,6 +53,13 @@ repos:
         description: "Enforce that RST directives have colons."
       - id: rst-inline-touching-normal
         description: "Detect mistake of inline code touching normal text in rst"
+  - repo: local
+    hooks:
+      - id: axes-axis
+        name: rename 'axes=' => 'axis='
+        types: [ python ]
+        language: pygrep
+        entry: "\baxes="
   # prettier
   #  - repo: https://github.com/pre-commit/mirrors-prettier
   #    rev: v4.0.0-alpha.8
@@ -83,8 +90,10 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.60
+    rev: v0.1.61
     hooks:
+      - id: check-separator-length
+        files: (^src/|^tests/)
       - id: pyproject-validate-version
       - id: pyproject-update-deps
       - id: pyproject-check-deps
@@ -109,8 +118,7 @@ repos:
           - "--ignore-without-positional-only"
       - id: python-standard-generics
         files: (^src/|^tests/)
-      - id: check-separator-length
-        files: (^src/|^tests/)
+
       - id: python-check-dunder-all
         files: ^src/
       - id: python-check-typing
@@ -140,13 +148,6 @@ repos:
     hooks:
     - id: shellcheck
       args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
-  - repo: local
-    hooks:
-      - id: axes-axis
-        name: rename 'axes=' => 'axis='
-        types: [python]
-        language: pygrep
-        entry: "\baxes="
   # mypy
   - repo: local
     hooks:
