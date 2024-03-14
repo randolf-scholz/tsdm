@@ -3,6 +3,7 @@ r"""Code for the electricty task from the paper "Temporal Fusion Transformer" by
 __all__ = [
     # CLASSES
     "ElectricityLim2021",
+    "Batch",
 ]
 
 

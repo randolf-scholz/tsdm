@@ -3,6 +3,10 @@ r"""Predicting Final Biomass in BioProcesses."""
 __all__ = [
     # Classes
     "KIWI_FINAL_PRODUCT",
+    "Sample",
+    "get_final_product",
+    "get_time_table",
+    "get_induction_time",
 ]
 
 from collections.abc import Callable, Sequence

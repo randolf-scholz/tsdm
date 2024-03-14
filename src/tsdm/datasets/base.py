@@ -7,6 +7,7 @@ r"""Base Classes for dataset."""
 __all__ = [
     # ABCs & Protocols
     "BaseDataset",
+    "BaseDatasetMetaClass",
     "Dataset",
     "MultiTableDataset",
     "SingleTableDataset",

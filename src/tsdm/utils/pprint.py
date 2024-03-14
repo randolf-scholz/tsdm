@@ -12,6 +12,7 @@ __all__ = [
     # ABCs & Protocols
     "ReprProtocol",
     # Functions
+    "get_identifier",
     "pprint_repr",
     "repr_array",
     "repr_dataclass",
@@ -22,7 +23,6 @@ __all__ = [
     "repr_sequence",
     "repr_shortform",
 ]
-__ALL__ = dir() + __all__
 
 import inspect
 import logging
@@ -50,11 +50,6 @@ from tsdm.types.protocols import (
 )
 from tsdm.types.variables import T
 from tsdm.utils.decorators import decorator
-
-
-def __dir__() -> list[str]:
-    return __ALL__
-
 
 __logger__: logging.Logger = logging.getLogger(__name__)
 

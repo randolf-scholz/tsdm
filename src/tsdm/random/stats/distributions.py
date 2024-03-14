@@ -16,10 +16,9 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from typing_extensions import Protocol, runtime_checkable
 
+from tsdm.constants import RNG
 from tsdm.types.aliases import SizeLike
 from tsdm.types.variables import T_co
-
-RNG = np.random.default_rng()
 
 
 @runtime_checkable

@@ -157,7 +157,13 @@ HR 	Heart rate (beats per minute)
 +------------------+------------------------------------------------------------------+
 """
 
-__all__ = ["PhysioNet2019"]
+__all__ = [
+    # Constants
+    "TIMESERIES_DESCRIPTION",
+    "METADATA_DESCRIPTION",
+    # Classes
+    "PhysioNet2019",
+]
 
 from zipfile import ZipFile
 

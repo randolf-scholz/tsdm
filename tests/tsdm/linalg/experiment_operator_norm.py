@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colormaps
 
-RNG = np.random.default_rng()
+from tsdm.constants import RNG
 
 
 def f(x, p):

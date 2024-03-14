@@ -36,6 +36,9 @@ __all__ = [
     "SupportsKwargs",
     "SupportsLenAndGetItem",
     "MutableSequenceProtocol",
+    # other
+    "GenericIterable",
+    "SupportsKwargsType",
     # Factory classes
     "Dataclass",
     "NTuple",

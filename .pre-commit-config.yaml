@@ -4,9 +4,6 @@ default_language_version:
   python: python3.11
   node: "20.10.0"
 repos:
-  #  - repo: meta
-  #    hooks:
-  #      - id: identity
   # https://pre-commit.com/hooks.html
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -69,7 +66,7 @@ repos:
         files: (^src/|^tests/)
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.1
+    rev: v0.3.2
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -86,7 +83,7 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.54
+    rev: v0.1.60
     hooks:
       - id: pyproject-validate-version
       - id: pyproject-update-deps
@@ -96,9 +93,9 @@ repos:
         files: (^src/|^tests/)
       - id: python-no-builtin-eval
         files: (^src/|^tests/)
-      - id: python-use-imported-attributes
+      - id: python-direct-imports
         files: (^src/|^tests/)
-      - id: python-check-no-mixed-args
+      - id: python-no-mixed-args
         files: ^src/
         args:
           - "--ignore-names"
@@ -110,11 +107,11 @@ repos:
           - "--ignore-dunder"
           # - "--allow-one"
           - "--ignore-without-positional-only"
-      - id: python-check-standard-generics
+      - id: python-standard-generics
         files: (^src/|^tests/)
       - id: check-separator-length
         files: (^src/|^tests/)
-      - id: python-check-dunder-all-exists
+      - id: python-check-dunder-all
         files: ^src/
       - id: python-check-typing
         files: (^src/|^tests/)
@@ -142,11 +139,7 @@ repos:
     rev: v0.9.0.6
     hooks:
     - id: shellcheck
-      args:
-        - "-x"
-        - "--shell=bash"
-        - "--color=always"
-        - "--format=gcc"
+      args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
   - repo: local
     hooks:
       - id: axes-axis
@@ -175,7 +168,7 @@ repos:
         ]
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.352
+    rev: v1.1.354
     hooks:
       - id: pyright
         files: (^src/|^tests/)

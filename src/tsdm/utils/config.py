@@ -3,6 +3,7 @@
 __all__ = [
     # Classes
     "Config",
+    "ConfigMetaclass",
     # Functions
     "is_allcaps",
     "is_dunder",

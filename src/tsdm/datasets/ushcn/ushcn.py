@@ -1,6 +1,13 @@
 r"""UNITED STATES HISTORICAL CLIMATOLOGY NETWORK (USHCN) Daily Dataset."""
 
-__all__ = ["USHCN"]
+__all__ = [
+    # Constants
+    "METADATA_DESCRIPTION",
+    "STATE_CODES",
+    "TIMESERIES_DESCRIPTION",
+    # Classes
+    "USHCN",
+]
 
 import warnings
 

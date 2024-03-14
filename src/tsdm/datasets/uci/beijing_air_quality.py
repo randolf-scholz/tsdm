@@ -66,7 +66,12 @@ Attribute Information
 +---------+-----------------------------------------+
 """  # pylint: disable=line-too-long # noqa: E501
 
-__all__ = ["BeijingAirQuality"]
+__all__ = [
+    # Constants
+    "TIMESERIES_DESCRIPTION",
+    # Classes
+    "BeijingAirQuality",
+]
 
 from zipfile import ZipFile
 

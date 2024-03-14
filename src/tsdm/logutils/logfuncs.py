@@ -6,6 +6,9 @@ TODO: Add module description.
 __all__ = [
     # Protocols
     "LogFunction",
+    # Classes
+    "TargetsAndPredics",
+    "AdamState",
     # Functions
     "make_checkpoint",
     "log_config",
@@ -14,8 +17,16 @@ __all__ = [
     "log_metrics",
     "log_model",
     "log_optimizer",
-    "log_values",
+    "log_plot",
     "log_table",
+    "log_values",
+    # utilities
+    "compute_metrics",
+    "eval_metric",
+    "is_logfunc",
+    "transpose_list_of_dicts",
+    "unpack_maybewrapped",
+    "yield_optimizer_params",
 ]
 
 import inspect

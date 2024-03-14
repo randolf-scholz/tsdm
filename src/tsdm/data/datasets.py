@@ -3,12 +3,13 @@ r"""Generic Dataset classes."""
 __all__ = [
     # ABCs & Protocols
     "Dataset",
-    "TabularDataset",
-    "SequentialDataset",
-    "TorchDataset",
+    "IndexableDataset",
     "IterableDataset",
     "MapDataset",
     "PandasDataset",
+    "SequentialDataset",
+    "TabularDataset",
+    "TorchDataset",
     # Classes
     "DataFrame2Dataset",
     "MappingDataset",

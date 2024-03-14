@@ -50,6 +50,8 @@ References:
 
 __all__ = [
     "Batch",
+    "Inputs",
+    "Sample",
     "USHCN_DeBrouwer2019",
     "USHCN_SampleGenerator",
     "ushcn_collate",

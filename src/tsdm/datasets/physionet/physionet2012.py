@@ -143,7 +143,13 @@ Given these definitions and constraints,
 - 2 <= Survival <= Length of stay  =>  In-hospital death
 """
 
-__all__ = ["PhysioNet2012"]
+__all__ = [
+    # Constants
+    "TIMESERIES_DESCRIPTION",
+    "METADATA_DESCRIPTION",
+    # Classes
+    "PhysioNet2012",
+]
 
 import tarfile
 

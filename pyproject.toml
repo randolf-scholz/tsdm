@@ -33,12 +33,12 @@ dependencies = [
     "numpy>=1.26.4",
     "pandas>=2.2.1",
     "pillow>=10.2.0",
-    "polars>=0.20.13",
-    "pyarrow>=15.0.0",
-    "pydantic>=2.6.3",
+    "polars>=0.20.15",
+    "pyarrow>=15.0.1",
+    "pydantic>=2.6.4",
     "pyyaml>=6.0.1",
     "requests>=2.31.0",
-    "scikit-learn>=1.4.1",
+    "scikit-learn>=1.4.1.post1",
     "scipy>=1.12.0",
     "tensorboard>=2.16.2",
     "torch>=2.2.1",
@@ -59,7 +59,7 @@ docs = [
     "docutils>=0.20.1",
     "myst-parser>=2.0.0",
     "nbsphinx>=0.9.3",
-    "piccolo-theme>=0.19.0",
+    "piccolo-theme>=0.20.0",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-autoapi>=3.0.0",
     "sphinx-automodapi>=0.17.0",
@@ -70,41 +70,41 @@ docs = [
     "sphinx>=7.2.6",
 ]
 tests = [
-    "coverage>=7.4.1",
-    "hypothesis[numpy,pandas,pytest]>=6.98.1",
+    "coverage>=7.4.3",
+    "hypothesis[numpy,pandas,pytest]>=6.99.5",
     "pygal>=3.0.4",
     "pytest-benchmark[histogram]>=4.0.0",
     "pytest-cov>=4.1.0",
     "pytest-repeat>=0.9.3",
-    "pytest-rerunfailures>=13.0",
+    "pytest-rerunfailures>=14.0",
     "pytest-xdist>=3.5.0",
-    "pytest>=8.0.0",
+    "pytest>=8.1.1",
 ]
 linters = [
     "pylint>=3.1.0",
     "pylint-gitlab>=2.0.0",
-    "ruff>=0.3.1",
+    "ruff>=0.3.2",
     "ruff-lsp>=0.0.53",
 ]
 typing = [
-    "mypy>=1.8.0",
-    "pyright>=1.1.352",
-    "types-colorama>=0.4.15",
-    "types-decorator>=5.1.8",
-    "types-docutils>=0.20.0",
-    "types-jsonschema>=4.21.0",
-    "types-pillow>=10.2.0",
-    "types-protobuf>=4.24.0",
-    "types-psutil>=5.9.5",
-    "types-pygments>=2.17.0",
-    "types-pytz>=2024.1.0",
-    "types-pyyaml>=6.0.12",
-    "types-requests>=2.31.0",
-    "types-setuptools>=69.1.0",
-    "types-six>=1.16.21",
-    "types-tabulate>=0.9.0",
-    "types-tqdm>=4.66.0",
-    "types-urllib3>=1.26.25",
+    "mypy>=1.9.0",
+    "pyright>=1.1.354",
+    "types-colorama>=0.4.15.20240311",
+    "types-decorator>=5.1.8.20240310",
+    "types-docutils>=0.20.0.20240314",
+    "types-jsonschema>=4.21.0.20240311",
+    "types-pillow>=10.2.0.20240311",
+    "types-protobuf>=4.24.0.20240311",
+    "types-psutil>=5.9.5.20240311",
+    "types-pygments>=2.17.0.20240310",
+    "types-pytz>=2024.1.0.20240203",
+    "types-pyyaml>=6.0.12.20240311",
+    "types-requests>=2.31.0.20240311",
+    "types-setuptools>=69.1.0.20240310",
+    "types-six>=1.16.21.20240311",
+    "types-tabulate>=0.9.0.20240106",
+    "types-tqdm>=4.66.0.20240106",
+    "types-urllib3>=1.26.25.14",
     "typing-extensions>=4.10.0",
 ]
 devtools = [
@@ -113,16 +113,16 @@ devtools = [
     "pre-commit>=3.6.2",
     "pybadges>=3.0.1",
     "pygments>=2.17.2",
-    "setuptools>=69.1.1",
+    "setuptools>=69.2.0",
     "twine>=5.0.0",
-    "wheel>=0.42.0",
+    "wheel>=0.43.0",
 ]
 experiment = [
     "ipympl>=0.9.3",
-    "ipywidgets>=8.1.1",
+    "ipywidgets>=8.1.2",
+    "jupyterlab>=4.1.4",
     "jupyterlab>=4.1.0",
-    "jupyterlab>=4.1.0",
-    "notebook>=7.0.7",
+    "notebook>=7.1.1",
     "openml>=0.14.2",
     "openpyxl>=3.1.2",
     "psutil>=5.9.8",
@@ -141,6 +141,10 @@ target-version = "py311"
 output-format = "concise"
 
 [tool.ruff.lint]
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
 select = [
     "A",     # builtins
     "B",     # bugbear
@@ -223,13 +227,12 @@ ignore = [
     "FURB140", # reimplemented-starmap (less efficient than comprehension)
 ]
 
-# Allow fix for all enabled rules (when `--fix`) is provided.
-fixable = ["ALL"]
-unfixable = []
-
 [tool.ruff.lint.per-file-ignores]
 "src/tsdm/linalg/*" = ["FBT001", "FBT002"]
 "src/tsdm/metrics/*" = ["PLR6301"]
+
+[tool.ruff.lint.pylint]
+allow-dunder-method-names = ["__array__", "__dataframe__", "_repr_html_", "__pre_init__"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -244,9 +247,6 @@ mark-parentheses = false
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-
-[tool.ruff.lint.pylint]
-allow-dunder-method-names = ["__array__", "__dataframe__", "_repr_html_", "__pre_init__"]
 
 [tool.ruff.format]
 preview = true
@@ -432,7 +432,7 @@ addopts = [
     "--doctest-modules",
     "--junit-xml=reports/pytest.xml",
     # rerunfailures options
-    #    "--reruns=",          # number of times to re-run failed tests. defaults to 0.
+    #    "--reruns=",          # number of times to re-run failed tests (default 0)
     #    "--reruns-delay=",    # add time (seconds) delay between reruns.
     #    "--only-rerun=",      # If passed, only rerun errors matching the regex provided.
     # xdists options

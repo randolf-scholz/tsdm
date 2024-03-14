@@ -1,19 +1,30 @@
 """Utility functions relating to function arguments and return values."""
 
 __all__ = [
+    # Constants
+    "KEYWORD_ONLY",
+    "PARAMETER_KINDS",
+    "POSITIONAL_ONLY",
+    "POSITIONAL_OR_KEYWORD",
+    "VAR_KEYWORD",
+    "VAR_POSITIONAL",
+    # Functions
     "accepts_varkwargs",
     "dataclass_args_kwargs",
     "get_function_args",
+    "get_mandatory_argcount",
+    "get_mandatory_kwargs",
+    "get_parameter",
     "get_parameter_kind",
+    "get_return_typehint",
     "is_keyword_arg",
     "is_keyword_only_arg",
     "is_mandatory_arg",
     "is_positional_arg",
     "is_positional_only_arg",
     "is_variadic_arg",
-    "get_mandatory_argcount",
-    "get_mandatory_kwargs",
-    "get_return_typehint",
+    "prod_fn",
+    "rpartial",
 ]
 
 import inspect
@@ -21,7 +32,7 @@ from collections.abc import Callable, Sequence
 from functools import wraps
 from inspect import Parameter
 
-from typing_extensions import Any, Optional, ParamSpec, overload
+from typing_extensions import Any, Optional, ParamSpec, TypeAlias, overload
 
 from tsdm.types.protocols import Dataclass, is_dataclass
 from tsdm.types.variables import R
@@ -31,7 +42,7 @@ POSITIONAL_ONLY = Parameter.POSITIONAL_ONLY
 POSITIONAL_OR_KEYWORD = Parameter.POSITIONAL_OR_KEYWORD
 VAR_KEYWORD = Parameter.VAR_KEYWORD
 VAR_POSITIONAL = Parameter.VAR_POSITIONAL
-Kind = inspect._ParameterKind  # pylint: disable=protected-access
+Kind: TypeAlias = inspect._ParameterKind  # pylint: disable=protected-access
 
 PARAMETER_KINDS = {
     "positional": {POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD, VAR_POSITIONAL},

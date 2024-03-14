@@ -12,6 +12,7 @@ from numpy.typing import NDArray
 from pytest import mark, skip
 from typing_extensions import Any, TypeVar, assert_type
 
+from tsdm.constants import RNG
 from tsdm.encoders.numerical import (
     BoundaryEncoder,
     LinearScaler,
@@ -22,7 +23,6 @@ from tsdm.encoders.numerical import (
 )
 
 __logger__ = logging.getLogger(__name__)
-RNG = np.random.default_rng()
 T = TypeVar(
     "T",
     Callable[..., pd.Series],

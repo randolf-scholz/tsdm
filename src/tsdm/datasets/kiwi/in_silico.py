@@ -1,6 +1,12 @@
 r"""In silico experiments."""
 
-__all__ = ["InSilico", "InSilicoTSC"]
+__all__ = [
+    # Constants
+    "TIMESERIES_DESCRIPTION",
+    # Classes
+    "InSilico",
+    "InSilicoTSC",
+]
 
 import shutil
 from importlib import resources

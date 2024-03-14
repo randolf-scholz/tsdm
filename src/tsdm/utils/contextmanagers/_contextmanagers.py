@@ -6,6 +6,7 @@ __all__ = [
     # Classes
     "ray_cluster",
     "timer",
+    "add_to_path",
 ]
 
 import gc
@@ -13,8 +14,10 @@ import importlib
 import logging
 import os
 import sys
-from contextlib import ContextDecorator
+from collections.abc import Iterator
+from contextlib import ContextDecorator, contextmanager
 from importlib.util import find_spec
+from pathlib import Path
 from time import perf_counter_ns
 from types import ModuleType, TracebackType
 
@@ -96,3 +99,19 @@ class timer(ContextDecorator):
         gc.enable()
         self.LOGGER.info("Re-Enabled garbage collection.")
         return False
+
+
+@contextmanager
+def add_to_path(p: Path) -> Iterator:
+    r"""Appends a path to environment variable PATH.
+
+    References:
+        - https://stackoverflow.com/a/41904558/9318372
+    """
+    old_path = sys.path
+    sys.path = sys.path[:]
+    sys.path.insert(0, str(p))
+    try:
+        yield
+    finally:
+        sys.path = old_path

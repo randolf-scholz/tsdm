@@ -2,16 +2,17 @@ r"""Encoders for pandas DataFrames."""
 
 __all__ = [
     # Classes
+    "CSVEncoder",
     "DTypeEncoder",
     "FrameAsDict",
     "FrameAsTuple",
     "FrameEncoder",
     "FrameIndexer",
     "FrameSplitter",
+    "TableEncoder",
     "TensorEncoder",
     "TripletDecoder",
     "TripletEncoder",
-    "TableEncoder",
     "ValueEncoder",
 ]
 

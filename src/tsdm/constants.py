@@ -8,21 +8,23 @@ __all__ = [
     "CONSTANT_FUNCTIONS",
     # Constants
     "ATOL",
-    "RTOL",
-    "EPS",
+    "BOOLEAN_PAIRS",
     "BUILTIN_CONSTANTS",
     "BUILTIN_TYPES",
-    "EMPTY_PATH",
     "EMPTY_MAP",
-    "NULL_VALUES",
-    "PRECISION",
-    "BOOLEAN_PAIRS",
-    "NA_VALUES",
-    "NA_STRINGS",
+    "EMPTY_PATH",
+    "EPS",
     "EXAMPLE_BOOLS",
+    "EXAMPLE_CATEGORIES",
     "EXAMPLE_EMOJIS",
     "EXAMPLE_STRINGS",
-    "EXAMPLE_CATEGORIES",
+    "NA_STRINGS",
+    "NA_VALUES",
+    "NULL_VALUES",
+    "PRECISION",
+    "RTOL",
+    "RNG",
+    "ROOT_3",
     "TIME_UNITS",
 ]
 
@@ -35,6 +37,10 @@ import pandas
 import torch
 from typing_extensions import Any, Final, Literal, Never
 
+RNG = np.random.default_rng()
+"""Default random number generator."""
+ROOT_3 = np.sqrt(3)
+r"""Square root of 3."""
 ATOL: Final[float] = 1e-6
 """CONST: Default absolute precision."""
 RTOL: Final[float] = 1e-6

@@ -98,12 +98,15 @@ create a `Sample` from the `TimeSeriesCollection`.
 """
 
 __all__ = [
-    # Protocol
+    # Protocol & ABCs
     "ForecastingTask",
+    "TTT",
     # Classes
     "Batch",
     "Split",
     "TimeSeriesTask",
+    # Functions
+    "infer_split_type",
 ]
 
 import logging
@@ -247,6 +250,8 @@ class ForecastingTask(Protocol[Key, Sample_co]):
 
 
 class TTT(ForecastingTask[Key, Sample_co]):
+    """WIP: TimeSeriesTask."""
+
     # ABCs should have slots https://stackoverflow.com/a/62628857/9318372
     # __slots__ = ()
 

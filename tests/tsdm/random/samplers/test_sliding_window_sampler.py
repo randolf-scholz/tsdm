@@ -12,12 +12,12 @@ from pandas import Series
 from pytest import mark
 from typing_extensions import Any, Literal, TypeAlias, assert_type
 
+from tsdm.constants import RNG
 from tsdm.random.samplers import SlidingSampler
 from tsdm.types.time import DateTime
 from tsdm.utils import flatten_dict
 
 __logger__ = logging.getLogger(__name__)
-RNG = np.random.default_rng()
 T = True
 F = False
 S: TypeAlias = Literal["slices"]  # slice

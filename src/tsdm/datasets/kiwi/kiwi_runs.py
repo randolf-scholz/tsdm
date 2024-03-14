@@ -4,6 +4,11 @@ Extracted from iLab DataBase.
 """
 
 __all__ = [
+    # Constants
+    "COLUMN_DTYPES",
+    "SELECTED_COLUMNS",
+    "TIMESERIES_DESCRIPTION",
+    "METADATA_DESCRIPTION",
     # Classes
     "KiwiRuns",
     "KiwiRunsTSC",
@@ -16,11 +21,10 @@ import pandas as pd
 from pandas import DataFrame, Index, MultiIndex, Series
 from typing_extensions import deprecated
 
-from tsdm.constants import NULL_VALUES
 from tsdm.data.timeseries import TimeSeriesCollection
 from tsdm.datasets.base import MultiTableDataset
 
-column_dtypes = {
+COLUMN_DTYPES = {
     "metadata": {
         # "experiment_id"        : "Int32",
         "bioreactor_id"          : "Int32",
@@ -135,7 +139,7 @@ column_dtypes = {
     # },
 }  # fmt: skip
 
-selected_columns = {
+SELECTED_COLUMNS = {
     "metadata" : {
         # "experiment_id"          : True,
         "bioreactor_id"          : True,
@@ -199,13 +203,8 @@ selected_columns = {
     }
 }  # fmt: skip
 
-null_values = NULL_VALUES | {
-    "value written to setpoints has been transferred to this table."
-}
-
-
 # Timeseries Features
-timeseries_description_dict = {
+TIMESERIES_DESCRIPTION = {
     # Name                          : [Unit,     Type,      Dtype, Lower, Upper, Lower included, Upper included]
     "Acetate"                       : ["%",      "percent",  pd.NA, 0,   100      , True, True],
     "Base"                          : ["uL",     "absolute", pd.NA, 0,   np.inf   , True, True],
@@ -224,7 +223,7 @@ timeseries_description_dict = {
     "pH"                            : ["pH",     "linear",   pd.NA, 4,   10       , True, True],
 }  # fmt: skip
 
-metadata_description_dict = {
+METADATA_DESCRIPTION = {
     # Name                   : [Unit,     Type,      Dtype, Lower, Upper, Lower included, Upper included]
     "bioreactor_id"          : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
     "container_number"       : [pd.NA, "category", pd.NA, pd.NA, pd.NA ],
@@ -349,7 +348,7 @@ class KiwiRuns(MultiTableDataset):
         metadata["IPTG"] = mu_sets["amount"]
 
         # fix datatypes
-        metadata = metadata.astype(column_dtypes["metadata"])
+        metadata = metadata.astype(COLUMN_DTYPES["metadata"])
 
         # timeseries_description
         timeindex_description = metadata[["start_time", "end_time"]].copy()
@@ -366,11 +365,11 @@ class KiwiRuns(MultiTableDataset):
             ["unit", "scale", "dtype", "lower", "upper", "start_time", "end_time"]
         ]
         timeindex_description = timeindex_description.astype(
-            column_dtypes["timeindex_description"]
+            COLUMN_DTYPES["timeindex_description"]
         )
 
         # select columns
-        columns = [key for key, val in selected_columns["metadata"].items() if val]
+        columns = [key for key, val in SELECTED_COLUMNS["metadata"].items() if val]
         metadata = metadata[columns]
 
         # Metadata Features
@@ -382,16 +381,16 @@ class KiwiRuns(MultiTableDataset):
         units["μ_set"] = "%"
 
         metadata_description = DataFrame.from_dict(
-            metadata_description_dict,
+            METADATA_DESCRIPTION,
             orient="index",
-            columns=column_dtypes["metadata_description"],
+            columns=COLUMN_DTYPES["metadata_description"],
         )
         metadata_description["dtype"] = metadata.dtypes.astype("string[pyarrow]")
         metadata_description = metadata_description[
             ["unit", "scale", "dtype", "lower", "upper"]
         ]
         metadata_description = metadata_description.astype(
-            column_dtypes["metadata_description"]
+            COLUMN_DTYPES["metadata_description"]
         )
 
         # Remove values out of bounds
@@ -437,7 +436,7 @@ class KiwiRuns(MultiTableDataset):
         timeseries = timeseries.set_index("measurement_time", append=True)
 
         # fix data types
-        timeseries = timeseries.astype(column_dtypes["timeseries"])
+        timeseries = timeseries.astype(COLUMN_DTYPES["timeseries"])
 
         # replace spurious na values
         timeseries["unit"].replace("-", pd.NA, inplace=True)
@@ -470,17 +469,17 @@ class KiwiRuns(MultiTableDataset):
         assert ((uniques_per_run_id > 1).sum() > 1).all()
 
         # Select Columns
-        columns = [key for key, val in selected_columns["timeseries"].items() if val]
+        columns = [key for key, val in SELECTED_COLUMNS["timeseries"].items() if val]
         timeseries = timeseries[columns]
 
         timeseries_description = DataFrame.from_dict(
-            timeseries_description_dict,
+            TIMESERIES_DESCRIPTION,
             orient="index",
-            columns=column_dtypes["timeseries_description"],
+            columns=COLUMN_DTYPES["timeseries_description"],
         )
         timeseries_description["dtype"] = timeseries.dtypes.astype("string[pyarrow]")
         timeseries_description = timeseries_description.astype(
-            column_dtypes["timeseries_description"]
+            COLUMN_DTYPES["timeseries_description"]
         )
         timeseries_description = timeseries_description.loc[timeseries.columns]
 

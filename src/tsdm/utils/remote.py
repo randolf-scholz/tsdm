@@ -1,6 +1,9 @@
 r"""Implements a downloader for the TSDM-package."""
 
 __all__ = [
+    # Classes
+    "LinkParser",
+    # Functions
     "download",
     "download_directory_to_zip",
     "download_io",

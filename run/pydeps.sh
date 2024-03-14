@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 # execute pydeps and create dependency graph
-pydeps src/tsdm --cluster --rankdir BT --max-bacon=1
+# get the project name
+project_name=$(basename "$(pwd)")
+pydeps "src/$project_name" --cluster --rankdir BT --max-bacon=1

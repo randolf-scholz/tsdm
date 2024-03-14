@@ -2,7 +2,24 @@
 
 # NOTE: THis should only contain static data
 
-__all__ = ["KEYS", "SCHEMAS", "TRUE_VALUES", "FALSE_VALUES", "NULL_VALUES"]
+__all__ = [
+    # Constants
+    "KEYS",
+    "SCHEMAS",
+    "TRUE_VALUES",
+    "FALSE_VALUES",
+    "NULL_VALUES",
+    # Types
+    "ID_TYPE",
+    "VALUE_TYPE",
+    "TIME_TYPE",
+    "DATE_TYPE",
+    "BOOL_TYPE",
+    "STRING_TYPE",
+    "DICT_TYPE",
+    "NULL_TYPE",
+    "TEXT_TYPE",
+]
 
 import pyarrow as pa
 from typing_extensions import Literal, TypeAlias

@@ -52,7 +52,13 @@ Tables that may require unstacking
 - hosp/omr  # <- unstack for sure
 """
 
-__all__ = ["MIMIC_IV_RAW", "MIMIC_IV"]
+__all__ = [
+    # Constants
+    "BAD_NAN_COLUMNS",
+    # Classes
+    "MIMIC_IV_RAW",
+    "MIMIC_IV",
+]
 
 
 import gzip
@@ -86,7 +92,7 @@ from tsdm.datasets.mimic.mimic_iv_schema import (
 )
 from tsdm.utils.remote import download_directory_to_zip
 
-disallow_nan_values = {
+BAD_NAN_COLUMNS = {
     "admissions"         : ["admit_provider_id"],
     "d_hcpcs"            : (..., ["code", "short_description"]),
     "d_icd_diagnoses"    : [],

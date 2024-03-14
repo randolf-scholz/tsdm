@@ -1,6 +1,11 @@
 """Test functions for data (pandas/numpy/polars/pyarrow/etc.)."""
 
-__all__ = ["series_is_int", "series_is_boolean", "series_numeric_is_boolean"]
+__all__ = [
+    "compare_dataframes",
+    "series_is_boolean",
+    "series_is_int",
+    "series_numeric_is_boolean",
+]
 
 
 from typing import Optional, cast
@@ -40,7 +45,7 @@ def series_is_int(s: Series, uniques: Optional[Series] = None, /) -> bool:
     return cast(bool, values.apply(float.is_integer).all())
 
 
-def compare(
+def compare_dataframes(
     given: DataFrame, reference: DataFrame, *, rtol: float = 1e-5, atol: float = 1e-5
 ) -> None:
     """Compare two dataframes."""
