@@ -1,5 +1,5 @@
 exclude: '(\.git/|\.venv/|\.idea/|\docs/_build/)'
-minimum_pre_commit_version: 3.5.0
+minimum_pre_commit_version: 3.6.0
 default_language_version:
   python: python3.11
   node: "20.10.0"
@@ -16,6 +16,8 @@ repos:
         description: "requires literal syntax when initializing empty or zero python builtin types."
       - id: check-byte-order-marker
         description: "forbids files which have a utf-8 byte-order marker."
+      - id: check-case-conflict
+        description: "checks for files with names that would conflict on a case-insensitive filesystem."
       - id: check-json
         description: "checks json files for parseable syntax."
       - id: check-executables-have-shebangs
@@ -53,13 +55,6 @@ repos:
         description: "Enforce that RST directives have colons."
       - id: rst-inline-touching-normal
         description: "Detect mistake of inline code touching normal text in rst"
-  - repo: local
-    hooks:
-      - id: axes-axis
-        name: rename 'axes=' => 'axis='
-        types: [ python ]
-        language: pygrep
-        entry: "\baxes="
   # prettier
   #  - repo: https://github.com/pre-commit/mirrors-prettier
   #    rev: v4.0.0-alpha.8
@@ -73,7 +68,7 @@ repos:
         files: (^src/|^tests/)
   # ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.2
+    rev: v0.3.4
     hooks:
       - id: ruff
         files: (^src/|^tests/)
@@ -90,7 +85,7 @@ repos:
       - id: nbstripout-fast
         files: ^dev/
   - repo: https://github.com/randolf-scholz/assorted-hooks.git
-    rev: v0.1.61
+    rev: v0.1.63
     hooks:
       - id: check-separator-length
         files: (^src/|^tests/)
@@ -99,6 +94,8 @@ repos:
       - id: pyproject-check-deps
         args: ["--ignore-project-deps", "tensorboard", "pydantic"] # torch does not list this...
       - id: python-no-blanket-type-ignore
+        files: (^src/|^tests/)
+      - id: python-rename-axes-axis
         files: (^src/|^tests/)
       - id: python-no-builtin-eval
         files: (^src/|^tests/)
@@ -126,7 +123,7 @@ repos:
         args:
           - "--check-overload-default-ellipsis"
           - "--check-no-future-annotations"
-      #          - "--check-no-hints-overload-implementation"
+          # - "--check-no-hints-overload-implementation"
       - id: python-check-clean-interface
         files: ^src/
         args: ["--no-load-silent"]
@@ -136,15 +133,13 @@ repos:
     hooks:
       - id: markdownlint
         args:
-          [
-            "--disable",
-            "MD013", # Line length
-            "MD033", # Inline HTML
-            "--"  # otherwise files are interpreted as args
-          ]
+          - "--disable" # disable rules
+          - "MD013"     # Line length
+          - "MD033"     # Inline HTML
+          - "--"        # otherwise files are interpreted as args
   # shellcheck
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
+    rev: v0.10.0.1
     hooks:
     - id: shellcheck
       args: ["-x", "--shell=bash", "--color=always", "--format=gcc", "--"]
@@ -159,17 +154,15 @@ repos:
       files: (^src/|^tests/)
       entry: mypy
       args:
-        [
-          "--scripts-are-modules",
-          "--hide-error-context",
-          "--hide-error-end",
-          "--no-pretty",
-          # "--no-error-summary",
-          "--",
-        ]
+        - "--scripts-are-modules"
+        - "--hide-error-context"
+        - "--hide-error-end"
+        - "--no-pretty"
+        # - "--no-error-summary"
+        - "--"
   # pyright
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.354
+    rev: v1.1.356
     hooks:
       - id: pyright
         files: (^src/|^tests/)
